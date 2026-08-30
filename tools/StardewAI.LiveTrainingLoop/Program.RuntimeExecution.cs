@@ -1701,6 +1701,9 @@ static partial class Program
         ApplyMultiplayerChatRequestFields(
             executionRequest,
             item);
+        ApplyBobberSelectionRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

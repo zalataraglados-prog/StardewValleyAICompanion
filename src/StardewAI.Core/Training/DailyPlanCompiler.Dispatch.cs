@@ -78,6 +78,7 @@ namespace StardewAI.Core.Training
                 ["mining.activate_calico_statue"] = new[] { "activate_calico_statue" },
                 ["multiplayer.manage_wallet"] = new[] { "route_connector_tile", "manage_multiplayer_wallet" },
                 ["multiplayer.send_chat"] = new[] { "send_multiplayer_chat" },
+                ["player.choose_bobber"] = new[] { "route_connector_tile", "choose_bobber_style" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
@@ -374,6 +375,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return MultiplayerChatSteps(candidate);
+            }
+
+            if (candidate.Kind == "choose_bobber_style" &&
+                OptionCandidateCompilerKinds["player.choose_bobber"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return BobberSelectionSteps(candidate);
             }
 
             if (candidate.Kind == "claim_pot_of_gold" &&

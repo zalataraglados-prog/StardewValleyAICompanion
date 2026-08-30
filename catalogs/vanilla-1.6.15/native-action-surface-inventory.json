@@ -6,10 +6,9 @@
   "surface_count": 322,
   "mapped_count": 110,
   "catalogued_blocked_surface_count": 58,
-  "catalogued_blocked_action_count": 15,
+  "catalogued_blocked_action_count": 14,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "player.choose_bobber",
     "player.choose_jukebox_track",
     "player.customize",
     "processing.crack_geode",

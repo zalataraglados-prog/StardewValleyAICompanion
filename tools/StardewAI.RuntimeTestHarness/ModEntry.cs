@@ -55,6 +55,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCalicoStatueFixture? activeCalicoStatueFixture;
     private ActiveCalicoStatue? activeCalicoStatue;
     private ActiveMultiplayerWallet? activeMultiplayerWallet;
+    private ActiveBobberSelection? activeBobberSelection;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -491,6 +492,7 @@ public sealed partial class ModEntry : Mod
         TickCalicoStatueFixture();
         TickCalicoStatue();
         TickMultiplayerWallet();
+        TickBobberSelection();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1019,6 +1021,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_bobber_selection")
+            {
+                pending.Completion.SetResult(ExecuteSetupBobberSelectionFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_multiplayer_chat")
             {
                 pending.Completion.SetResult(ExecuteSetupMultiplayerChatFixture(pending.Request));
@@ -1483,6 +1491,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.send_multiplayer_chat")
             {
                 pending.Completion.SetResult(ExecuteSendMultiplayerChat(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.choose_bobber_style")
+            {
+                StartBobberSelection(pending);
                 return;
             }
 
@@ -2121,6 +2135,7 @@ public sealed partial class ModEntry : Mod
             activeCalicoStatueFixture = null;
             activeCalicoStatue = null;
             activeMultiplayerWallet = null;
+            activeBobberSelection = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2360,6 +2375,7 @@ public sealed partial class ModEntry : Mod
             activeCalicoStatueFixture is not null ||
             activeCalicoStatue is not null ||
             activeMultiplayerWallet is not null ||
+            activeBobberSelection is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

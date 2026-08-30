@@ -68,6 +68,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.activate_calico_statue"] = (snapshot, _) => CalicoStatueCandidates(snapshot),
                 ["multiplayer.manage_wallet"] = MultiplayerWalletCandidates,
                 ["multiplayer.send_chat"] = MultiplayerChatCandidates,
+                ["player.choose_bobber"] = BobberSelectionCandidates,
                 ["rewards.claim_pot_of_gold"] = (snapshot, _) => PotOfGoldCandidates(snapshot),
                 ["mining.choose_dwarf_statue_power"] = (snapshot, _) => DwarfKingStatuePowerCandidates(snapshot),
                 ["rewards.claim_statue_blessing"] = (snapshot, _) => StatueBlessingCandidates(snapshot),

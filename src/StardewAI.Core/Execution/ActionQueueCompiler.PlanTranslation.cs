@@ -116,6 +116,7 @@ namespace StardewAI.Core.Execution
                 "activate_calico_statue" => "executor.activate_calico_statue",
                 "manage_multiplayer_wallet" => "executor.manage_multiplayer_wallet",
                 "send_multiplayer_chat" => "executor.send_multiplayer_chat",
+                "choose_bobber_style" => "executor.choose_bobber_style",
                 "claim_pot_of_gold" => "rewards.claim_pot_of_gold",
                 "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",
                 "claim_statue_blessing" => "rewards.claim_statue_blessing",

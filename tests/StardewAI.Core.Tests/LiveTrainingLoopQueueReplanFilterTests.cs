@@ -654,6 +654,34 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
     }
 
+    [Fact]
+    public void BobberContinuationKeepsExactExplicitStyleUntilNativeTerminal()
+    {
+        var route = QueueItem("queue.bobber.route", "executor.traverse_connector", "4", "4", string.Empty);
+        var parameters = route["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "player.choose_bobber"));
+        parameters.Add(Parameter("continuation.bobber_style_id", "7"));
+        parameters.Add(Parameter("continuation.bobber_reason", "explicit player request"));
+        parameters.Add(Parameter("continuation.confirm_bobber_style", "true"));
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("bobber_selection", continuation!["kind"]!.GetValue<string>());
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(new JsonArray
+        {
+            BobberCandidate("-2"), BobberCandidate("7")
+        }, continuation));
+        Assert.Equal("7", selected!["parameters"]![0]!["value"]!.GetValue<string>());
+
+        var terminal = QueueItem("queue.bobber.terminal", "executor.choose_bobber_style", "10", "4", string.Empty);
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("bobber_style_id", "7"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("bobber_reason", "explicit player request"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+        terminal["normalized_command"]!["parameters"]!.AsArray()
+            .Single(node => node!["name"]!.GetValue<string>() == "bobber_style_id")!["value"] = "-2";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -847,6 +875,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             }
         };
     }
+
+    private static JsonObject BobberCandidate(string styleId) => new()
+    {
+        ["candidate_id"] = "bobber-selection:" + styleId,
+        ["option_id"] = "player.choose_bobber",
+        ["kind"] = "choose_bobber_style",
+        ["parameters"] = new JsonArray
+        {
+            Parameter("bobber_style_id", styleId),
+            Parameter("bobber_reason", "explicit player request"),
+            Parameter("confirm_bobber_style", "true")
+        }
+    };
 
     private static JsonObject Parameter(string name, string value)
     {

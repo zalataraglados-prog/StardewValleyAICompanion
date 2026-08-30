@@ -612,6 +612,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player supplies exact scope, reason and text", "compiler rebinds current sender, language, network role and native recipient match", "native ChatTextBox character input enforces the live width gate", "native ChatBox dispatches global AllPlayers or compiler-owned message private type-10 traffic", "sender-local filtered ChatMessage receipt is verified" },
                 new[] { "block_without_explicit_command_reason_text_and_confirmation", "block_leading_slash_control_or_private_space_normalization", "block_non_multiplayer_or_missing_network_role", "block_unknown_inactive_or_ambiguous_private_recipient", "block_menu_chatbox_projection_or_input_width_drift", "block_direct_network_send_or_local_receipt_injection", "never_claim_unobserved_remote_delivery" }));
 
+            Register(Option("player.choose_bobber", "player", "Choose one unlocked cosmetic fishing bobber style through the native FishShop menu after an explicit player command",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.bobber_selection", "menus.active_menu" },
+                new[] { "player supplies one exact fixed or randomized style, reason and confirmation", "compiler rebinds the current fish-count unlock quotient and live FishShop Bobbers endpoint", "shared BFS reaches an adjacent stand", "native ChooseFromIconsMenu icon and close inputs produce the exact preference receipt" },
+                new[] { "block_without_explicit_player_command_reason_and_confirmation", "block_unknown_or_locked_fixed_style", "block_menu_or_FishShop_endpoint_unavailable", "block_projection_or_unlock_drift", "block_native_menu_icon_or_receipt_mismatch", "block_direct_bobberStyle_usingRandomizedBobber_or_rng_mutation", "exclude_from_autonomous_candidates_and_strategy_training" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -908,6 +916,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.multiplayer_chat", "menus.active_menu" },
                 new[] { "live sender, language, network role, message list and exact private target are revalidated", "ChatBox.activate and character-by-character ChatTextBox input reproduce the native width and strict-platform filter", "ChatBox.textBoxEnter owns dirty-word filtering, command parsing and type-10 transport", "new sender-local ChatMessage snippets, kind, language and bounded message count match the native expected receipt" },
                 new[] { "block_unconfirmed_or_unsafe_text", "block_nonexact_private_first_match", "block_input_width_or_strict_filter_change", "block_live_projection_or_menu_drift", "block_sender_local_receipt_mismatch", "block_direct_sendChatMessage_or_receiveChatMessage", "never_fabricate_remote_receipt" }));
+
+            Register(Option("executor.choose_bobber_style", "player", "Execute and verify one explicitly requested native cosmetic fishing bobber selection",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.bobber_selection", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact FishShop Bobbers action", "native action opens the bobbers ChooseFromIconsMenu", "the exact unlocked icon and native close control are clicked", "bobberStyle and usingRandomizedBobber match the explicit request" },
+                new[] { "block_unconfirmed_or_locked_style", "block_endpoint_menu_icon_or_projection_drift", "block_unverified_preference_receipt", "block_direct_bobberStyle_usingRandomizedBobber_or_rng_mutation", "player_command_only" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

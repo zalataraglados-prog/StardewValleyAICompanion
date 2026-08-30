@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-312
+
+- `player.choose_bobber` 已闭合透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享逐帧移动、原生鱼店菜单输入和严格回执。唯一动作链为 `player.choose_bobber -> choose_bobber_style -> executor.choose_bobber_style`，没有第二套钓鱼装备或偏好写入系统。
+- 锁定 1.6.15 规则为 FishShop `Buildings[10,4] Action=Bobbers` 打开 `ChooseFromIconsMenu("bobbers")`；固定样式 `0..38` 的解锁条件是 `style_id <= fishCaught.Count()/2`，随机样式为 `-2` 且始终可选。声呐浮标 `(O)789` 只把实际显示样式临时覆盖为 `39`，不改变本动作可选的偏好目录。随机样式只在原生 `FishingRod.getBobberStyle` 使用阶段消耗共享 RNG；透明读取不推进 RNG。
+- 该能力严格为 `PlayerCommandOnly`：必须给出精确样式、原因和确认；锁定样式在上游排除，不进入默认候选、自主日计划或策略训练。fresh 编译器从当前鱼获数、偏好、FishShop 端点和站位重绑定全部机械字段。生产执行器只调用原生 `checkAction`、准确非锁定图标的 `receiveLeftClick` 和原生关闭按钮，不直接写 `bobberStyle`、`usingRandomizedBobber` 或 RNG。
+- 隐藏静音 E 盘矩阵 `3/3` PASS：`artifacts/runtime-bobber-selection/runtime-bobber-selection-20260830-193216/summary.json`。固定样式 7、随机样式 -2 均 `applied/verified`，鱼获种类数为 2 时固定样式 2 被严格拒绝；只加载 TransparentBridge 与 RuntimeTestHarness。
+- 最新 full snapshot 为 `159 required / 142 readable with provenance / 17 contextual / 0 blocking`；对账为 `204 registered / 218 semantic / 203 compiler-bound / 127 five-gate / 54 training allowlist / 14 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2112/2112`、Backend `152/152`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 继续按既定边界后置原生完美代打，下一实际纵向切片为 `player.choose_jukebox_track`。
+
 ## 2026-08-30 当前权威检查点：EVD-311
 
 - `multiplayer.send_chat` 已闭合完整透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求、原生 ChatBox 输入和严格发送者本地回执。唯一动作链为 `multiplayer.send_chat -> send_multiplayer_chat -> executor.send_multiplayer_chat`，没有第二套聊天网络协议。

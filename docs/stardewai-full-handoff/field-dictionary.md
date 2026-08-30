@@ -10,7 +10,18 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **158 required / 141 readable with provenance / 17 contextual / 0 blocking** (EVD-311).
+Current installed full-snapshot schema checkpoint: **159 required / 142 readable with provenance / 17 contextual / 0 blocking** (EVD-312).
+
+## Bobber Selection Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.bobber_selection.projection_fingerprint` | Current preference, fish-caught count, FishShop endpoint, menu identity and Sonar override | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `current_style_id` / `using_randomized_bobber` | `Farmer.bobberStyle` and `Farmer.usingRandomizedBobber` | typed request and native receipt | covered_for_read / native_runtime_verified |
+| `fish_caught_species_count` / `native_unlock_quotient` / `styles[]` | `Farmer.fishCaught.Count()/2`, `FishingRod.NUM_BOBBER_STYLES=39`, native ghosted-icon rule | upstream locked-style exclusion and runtime revalidation | covered_for_read / covered_for_gate / native_runtime_verified |
+| `action_tiles[]` | FishShop Buildings `Action=Bobbers` | rolling route, stand selection and native `checkAction` | covered_for_read / cross_map_continuation_verified / native_runtime_verified |
+| `sonar_tackle_visible_style_override` / `effective_visible_style_id` | `(O)789` branch in `FishingRod.getBobberStyle` | explain why selected preference may render as style 39 | covered_for_read / non-mutating |
+| `random_resolution_policy` | Native randomized-bobber branch and per-rod cache | prevent deterministic RNG claims during reads | covered_for_read / shared_rng_not_advanced |
 
 ## Multiplayer Chat Transparency
 

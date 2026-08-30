@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 鱼漂外观玩家命令闭环（EVD-312）
+
+`player.choose_bobber` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布 FishShop `Bobbers` 端点、当前偏好、随机标志、`fishCaught.Count()/2` 原生解锁商、固定 `0..38` 与随机 `-2` 的完整目录、声呐浮标显示覆盖 `39` 和实时菜单身份。上游只接受带原因和确认的精确已解锁样式；锁定、未知、未确认样式不会成为候选。跨地图 continuation 保留同一玩家指令，到达 FishShop 后才从 fresh 快照重建机械终端。
+
+生产运行层复用共享逐帧移动，只经 FishShop `checkAction`、`ChooseFromIconsMenu.receiveLeftClick` 和原生关闭按钮执行；禁止直接写偏好字段或推进 RNG。隐藏静音矩阵 `3/3` 覆盖固定、随机和锁定拒绝。当前对账为 `204 registered / 218 semantic / 203 compiler-bound / 127 five-gate / 54 allowlist / 14 catalogued blocked / 0 Product Executor`，full snapshot `159/142/17/0`、KnowledgeCompiler `585/585` blocking 0。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.choose_jukebox_track`。
+
 ## 2026-08-30 联机聊天玩家命令闭环（EVD-311）
 
 `multiplayer.send_chat` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布当前发送者、语言、默认颜色、网络角色、消息队列边界、ChatTextBox 宽度和在线收件人的原生枚举/匹配信息。上游只接受带原因和确认的普通全局消息或精确私聊，拒绝任意斜杠命令、控制字符、模糊目标及原生输入宽度无法容纳的文本；fresh 编译器不信任模型提供的机械字段，全部从当前投影重新绑定。

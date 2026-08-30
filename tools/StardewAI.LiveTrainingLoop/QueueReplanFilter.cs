@@ -153,6 +153,22 @@ public static class QueueReplanFilter
                 ["wallet_transfer_amount"] = ReadParameter(queueItem, "continuation.wallet_transfer_amount")
             };
         }
+        var bobberStyleId = ReadParameter(queueItem, "continuation.bobber_style_id");
+        var bobberReason = ReadParameter(queueItem, "continuation.bobber_reason");
+        var bobberConfirmed = ReadParameter(queueItem, "continuation.confirm_bobber_style");
+        if (string.Equals(optionId, "player.choose_bobber", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(bobberStyleId) && !string.IsNullOrWhiteSpace(bobberReason) &&
+            string.Equals(bobberConfirmed, "true", StringComparison.Ordinal))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "bobber_selection",
+                ["option_id"] = optionId,
+                ["bobber_style_id"] = bobberStyleId,
+                ["bobber_reason"] = bobberReason,
+                ["confirm_bobber_style"] = bobberConfirmed
+            };
+        }
 
         var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
         if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal) &&
@@ -507,6 +523,12 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "wallet_recipient_player_id"), ReadString(continuation, "wallet_recipient_player_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "wallet_transfer_amount"), ReadString(continuation, "wallet_transfer_amount"), StringComparison.Ordinal);
         }
+        if (string.Equals(continuationKind, "bobber_selection", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.choose_bobber_style", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bobber_style_id"), ReadString(continuation, "bobber_style_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bobber_reason"), ReadString(continuation, "bobber_reason"), StringComparison.Ordinal);
+        }
 
         if (string.Equals(
                 continuationKind,
@@ -770,6 +792,12 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_wallet_transfer") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "wallet_recipient_player_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "wallet_transfer_amount");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "bobber_selection", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "bobber_style_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "bobber_reason") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "confirm_bobber_style");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_donation", StringComparison.Ordinal))
