@@ -4,11 +4,12 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 108,
-  "catalogued_blocked_surface_count": 60,
-  "catalogued_blocked_action_count": 18,
+  "mapped_count": 104,
+  "catalogued_blocked_surface_count": 64,
+  "catalogued_blocked_action_count": 19,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
+    "minigame.play_slots",
     "mining.activate_calico_statue",
     "multiplayer.manage_wallet",
     "multiplayer.send_chat",
@@ -4512,7 +4513,7 @@
       "mappedOptionIds": [
         "minigame.play_slots"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option",
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -4529,7 +4530,7 @@
       "mappedOptionIds": [
         "minigame.play_slots"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option",
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -4546,7 +4547,7 @@
       "mappedOptionIds": [
         "minigame.play_slots"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option",
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -4563,7 +4564,7 @@
       "mappedOptionIds": [
         "minigame.play_slots"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option",
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

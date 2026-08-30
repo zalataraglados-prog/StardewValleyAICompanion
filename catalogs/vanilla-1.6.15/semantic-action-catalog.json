@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "38f689a05a68248574eb669974abd7b4144eb16ecc85b40b9c5fb09deaf749a3",
-  "action_count": 214,
-  "registered_option_spec_count": 196,
-  "catalogued_blocked_count": 18,
+  "denominator_fingerprint_sha256": "9fa2f1571eeedb1772dd45615f02962fd5305d85b12c72e83dd3d2afb837eec2",
+  "action_count": 213,
+  "registered_option_spec_count": 194,
+  "catalogued_blocked_count": 19,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -899,15 +899,6 @@
       "native_runtime_types": []
     },
     {
-      "action_id": "executor.play_slots",
-      "domain": "minigame",
-      "semantic_kind": "PrimitiveOptionSpec",
-      "primary_engine_id": "engine.minigame",
-      "catalog_status": "registered_option_spec",
-      "block_reason": "",
-      "native_runtime_types": []
-    },
-    {
       "action_id": "executor.purchase_animal",
       "domain": "animals",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -1551,11 +1542,13 @@
     {
       "action_id": "minigame.play_slots",
       "domain": "minigame",
-      "semantic_kind": "CompositeOptionSpec",
+      "semantic_kind": "composite",
       "primary_engine_id": "engine.minigame",
-      "catalog_status": "registered_option_spec",
-      "block_reason": "",
-      "native_runtime_types": []
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Slots"
+      ]
     },
     {
       "action_id": "mining.acquire_golden_scythe",

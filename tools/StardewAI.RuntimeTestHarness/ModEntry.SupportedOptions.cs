@@ -38,7 +38,6 @@ public sealed partial class ModEntry
             "debug.setup_fair_strength_game",
             "debug.setup_fair_wheel_spin",
             "debug.setup_calico_jack",
-            "debug.setup_slots",
             "debug.setup_crane_game",
             "debug.setup_darts_game",
             "debug.setup_prairie_king",

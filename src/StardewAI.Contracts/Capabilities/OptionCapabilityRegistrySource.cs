@@ -279,7 +279,7 @@ namespace StardewAI.Contracts.Capabilities
                 });
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_slots", "executor.play_slots", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king",
+            "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king",
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "housing.advance_farmhouse", "housing.renovate", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
@@ -320,7 +320,7 @@ namespace StardewAI.Contracts.Capabilities
             "inventory.transfer_item", "executor.transfer_material");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
-            "executor.play_calico_jack", "executor.play_slots", "executor.play_crane_game", "executor.play_darts", "executor.play_prairie_king",
+            "executor.play_calico_jack", "executor.play_crane_game", "executor.play_darts", "executor.play_prairie_king",
             "executor.change_building_skin",
             "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward",
             "executor.move_to_tile", "executor.traverse_connector",
@@ -353,7 +353,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.transfer_material");
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
-            "minigame.play_calico_jack", "minigame.play_slots", "minigame.play_crane_game", "minigame.play_darts", "minigame.play_prairie_king",
+            "minigame.play_calico_jack", "minigame.play_crane_game", "minigame.play_darts", "minigame.play_prairie_king",
             "buildings.change_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
@@ -414,7 +414,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly string[] RegisteredOptionIds =
         {
-            "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_slots", "executor.play_slots", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king",
+            "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king",
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward", "mail.process_letter",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item",
@@ -643,12 +643,6 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.play_calico_jack"] = VerifiedEvidence(
                         "vanilla_native_ClubCards_or_BlackJack_Play_real_CalicoJack_shared_exact_seed_replay_hit_or_stand_coin_delta_and_quit_executor_calibration_only",
                         "EVD-304"),
-                    ["minigame.play_slots"] = VerifiedEvidence(
-                        "vanilla_missing_(BC)126_rarecrow_currency_demand_exact_ClubSlots_Luck_probability_distribution_native_10_or_100_spin_shared_rng_reel_payout_coin_and_single_spin_exit_receipt",
-                        "EVD-308"),
-                    ["executor.play_slots"] = VerifiedEvidence(
-                        "vanilla_native_ClubSlots_real_Slots_10_or_100_button_shared_rng_result_icons_payout_multiplier_coin_delta_times_played_and_done_cleanup_executor_calibration_only",
-                        "EVD-308"),
                     ["minigame.play_crane_game"] = VerifiedEvidence(
                         "vanilla_MovieTheater_machine_occupancy_500g_three_attempt_live_prize_physics_native_directional_input_and_ItemGrabMenu_reward_conservation_player_command_only",
                         "EVD-305"),
@@ -897,7 +891,6 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("donate_community_center_item"),
                 SupportedCandidate("donate_museum_item"), SupportedCandidate("donate_field_office_piece"), SupportedCandidate("answer_field_office_survey"), SupportedCandidate("manage_grange_display"), SupportedCandidate("play_fair_fishing_game"), SupportedCandidate("play_fair_slingshot_game"), SupportedCandidate("play_fair_strength_game"), SupportedCandidate("spin_fair_wheel"), SupportedCandidate("fill_pet_bowl"),
                 SupportedCandidate("play_calico_jack"),
-                SupportedCandidate("play_slots"),
                 SupportedCandidate("play_crane_game"),
                 SupportedCandidate("play_darts"),
                 SupportedCandidate("play_prairie_king"),

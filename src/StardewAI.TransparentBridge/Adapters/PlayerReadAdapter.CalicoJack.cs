@@ -14,6 +14,9 @@ public sealed partial class PlayerReadAdapter
 {
     private const string CalicoJackNativeContract =
         "ClubCards_or_BlackJack_checkAction_then_CalicoJack_Play_then_native_CalicoJack_hit_or_stand_then_native_settlement_then_quit";
+    private const string CalicoJackTargetItemId = "(BC)126";
+    private const int CalicoJackTargetCoins = 10000;
+
     private static readonly FieldInfo? CalicoCurrentBetField = PrivateField<CalicoJack>("currentBet");
     private static readonly FieldInfo? CalicoStartTimerField = PrivateField<CalicoJack>("startTimer");
     private static readonly FieldInfo? CalicoDealerTurnTimerField = PrivateField<CalicoJack>("dealerTurnTimer");
@@ -28,12 +31,12 @@ public sealed partial class PlayerReadAdapter
             return new { projection_status = "unavailable_world_player_or_location", interaction_tiles = Array.Empty<object>() };
 
         var hasClubCard = player.hasClubCard;
-        var demand = ReadCasinoCurrencyDemand(player);
-        var recipeUnlocked = demand.DeluxeScarecrowRecipeUnlocked;
-        var societyReceivedOrPending = demand.RarecrowSocietyReceivedOrPending;
-        var targetExistsAnywhere = demand.TargetExistsAnywhere;
-        var targetRequired = demand.TargetRequired;
-        var coinShortfall = demand.RemainingClubCoinDemand;
+        var recipeUnlocked = player.craftingRecipes.ContainsKey("Deluxe Scarecrow");
+        var societyReceivedOrPending = player.hasOrWillReceiveMail("RarecrowSociety");
+        var targetExistsAnywhere = hasClubCard && !recipeUnlocked && !societyReceivedOrPending &&
+            Utility.doesItemExistAnywhere(CalicoJackTargetItemId);
+        var targetRequired = !recipeUnlocked && !societyReceivedOrPending && !targetExistsAnywhere;
+        var coinShortfall = targetRequired ? Math.Max(0, CalicoJackTargetCoins - player.clubCoins) : 0;
         var activeGame = Game1.currentMinigame as CalicoJack;
         var interactionTiles = ReadCalicoJackInteractionTiles(player.currentLocation);
         var nextProjection = activeGame is null
@@ -103,12 +106,12 @@ public sealed partial class PlayerReadAdapter
             is_current_location = inClub,
             has_club_card = hasClubCard,
             club_coins = player.clubCoins,
-            target_qualified_item_id = CasinoCurrencyTargetItemId,
+            target_qualified_item_id = CalicoJackTargetItemId,
             target_item_exists_anywhere = targetExistsAnywhere,
             deluxe_scarecrow_recipe_unlocked = recipeUnlocked,
             rarecrow_society_received_or_pending = societyReceivedOrPending,
             automatic_currency_demand = targetRequired,
-            target_club_coins = CasinoCurrencyTargetCoins,
+            target_club_coins = CalicoJackTargetCoins,
             remaining_club_coin_demand = coinShortfall,
             recommended_bet = recommendedBet,
             recommended_table_kind = recommendedBet == 1000 ? "high_stakes" : recommendedBet == 100 ? "low_stakes" : "none",
@@ -162,6 +165,23 @@ public sealed partial class PlayerReadAdapter
             });
         }
         return result.ToArray();
+    }
+
+    private static object[] ReadCasinoShopRows()
+    {
+        var shops = DataLoader.Shops(Game1.content);
+        if (!shops.TryGetValue("Casino", out var casino))
+            return Array.Empty<object>();
+        return casino.Items.Select(row => new
+        {
+            id = row.Id ?? string.Empty,
+            item_id = row.ItemId ?? string.Empty,
+            price_club_coins = row.Price,
+            available_stock = row.AvailableStock,
+            condition = row.Condition ?? string.Empty,
+            actions_on_purchase = row.ActionsOnPurchase ?? new List<string>(),
+            is_calico_jack_demand_target = string.Equals(row.ItemId, CalicoJackTargetItemId, StringComparison.Ordinal)
+        }).ToArray();
     }
 
     private static CalicoNextRoundProjection? ProjectNextCalicoJackRound(Farmer player)

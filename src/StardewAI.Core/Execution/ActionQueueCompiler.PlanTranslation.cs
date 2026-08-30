@@ -133,7 +133,6 @@ namespace StardewAI.Core.Execution
                 "donate_field_office_piece" => "executor.donate_field_office_piece",
                 "answer_field_office_survey" => "executor.answer_field_office_survey",
                 "play_calico_jack" => "executor.play_calico_jack",
-                "play_slots" => "executor.play_slots",
                 "play_crane_game" => "executor.play_crane_game",
                 "play_darts" => "executor.play_darts",
                 "play_prairie_king" => "executor.play_prairie_king",

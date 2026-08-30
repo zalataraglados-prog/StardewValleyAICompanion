@@ -115,7 +115,6 @@ public static class OptionImplementationCatalog
         "festival.play_strength_game",
         "festival.spin_wheel",
         "minigame.play_calico_jack",
-        "minigame.play_slots",
         "minigame.play_crane_game",
         "minigame.play_darts",
         "minigame.play_prairie_king",
@@ -125,7 +124,6 @@ public static class OptionImplementationCatalog
         "executor.play_fair_strength_game",
         "executor.spin_fair_wheel",
         "executor.play_calico_jack",
-        "executor.play_slots",
         "executor.play_crane_game",
         "executor.play_darts",
         "executor.play_prairie_king");

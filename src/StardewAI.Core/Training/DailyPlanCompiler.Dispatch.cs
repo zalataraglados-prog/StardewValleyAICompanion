@@ -25,7 +25,6 @@ namespace StardewAI.Core.Training
                 ["island.field_office_donate"] = new[] { "route_connector_tile", "donate_field_office_piece" },
                 ["island.field_office_survey"] = new[] { "route_connector_tile", "answer_field_office_survey" },
                 ["minigame.play_calico_jack"] = new[] { "route_connector_tile", "play_calico_jack" },
-                ["minigame.play_slots"] = new[] { "route_connector_tile", "play_slots" },
                 ["minigame.play_crane_game"] = new[] { "route_connector_tile", "play_crane_game" },
                 ["minigame.play_darts"] = new[] { "route_connector_tile", "play_darts" },
                 ["minigame.play_prairie_king"] = new[] { "route_connector_tile", "play_prairie_king" },
@@ -483,10 +482,6 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "play_calico_jack")
             {
                 return CalicoJackSteps(candidate);
-            }
-            if (candidate.Kind == "play_slots")
-            {
-                return SlotsSteps(candidate);
             }
             if (candidate.Kind == "play_crane_game")
             {

@@ -1,13 +1,5 @@
 # StardewAI 当前工作
 
-## 2026-08-30 当前权威检查点：EVD-308
-
-- `minigame.play_slots` 已闭合透明读取、Rarecrow 齐币需求候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生 `ClubSlots`/下注按钮输入和随机结算回执。唯一动作链为 `minigame.play_slots -> play_slots -> executor.play_slots`；小模型只决定是否安排一次下注，转轴、RNG、倍率、齐币和统计完全由原版游戏产生。
-- 锁定 1.6.15 规则为 10/100 两档下注；`DailyLuck` 与 `LuckLevel` 形成 `1 + DailyLuck*2 + LuckLevel*0.08` 倍概率阈值。透明桥发布完整 11 分支概率/图案/倍率、期望收益、四台实时机器、活动转轴及赌场商店。共享 `Game1.random` 不具备稳定独占前瞻，因此明确采用 live feedback，不伪造确定结果。
-- 自动候选严格限定为缺少 `(BC)126`、Deluxe Scarecrow 依赖开放且齐币不足 10000 时，每次只旋转一次并结算后重规划。`BuyQiCoins` 继续由既有 `executor.choose_dialogue_response` 原生分支负责，不复制购币执行器。
-- 隐藏静音 E 盘矩阵 `2/2` PASS：`artifacts/runtime-slots-smoke/runtime-slots-smoke-20260830-132407/summary.json`。10 币无奖分支 `50->40`，100 币单七 `x2` 分支 `1000->1100`；两次均原生 `timesPlayedSlots +1`、图案/倍率/币差一致且 Done 后退出。
-- 最新 full snapshot 为 `155 required / 139 readable with provenance / 16 contextual / 0 blocking`；对账为 `196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 training allowlist / 18 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2080/2080`、Backend `148/148`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `mining.activate_calico_statue`。
-
 ## 2026-08-30 当前权威检查点：EVD-307
 
 - `minigame.play_prairie_king` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线和定时等价执行。唯一动作链为 `minigame.play_prairie_king -> play_prairie_king -> executor.play_prairie_king`；小模型只学习是否、何时安排，机械层始终执行不可见等价会话。

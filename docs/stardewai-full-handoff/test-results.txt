@@ -1,11 +1,3 @@
-2026-08-30 EVD-308 native Casino Slots spin
-- Locked 1.6.15 source audit PASS: ClubSlots direct entry, both 10/100 bets, complete Luck-scaled 11-branch probability/pattern/payout model, shared RNG, native debit/payout, times-played and Done/forceQuit behavior are covered.
-- Hidden/silent isolated E-drive matrix PASS 2/2: `artifacts/runtime-slots-smoke/runtime-slots-smoke-20260830-132407/summary.json`. Native 10-coin no-payout settled `50->40`; native 100-coin one-seven x2 settled `1000->1100`; icons, multiplier, statistic and cleanup matched.
-- Runtime source guard confirms native action/button/Done input only and forbids direct production mutation of RNG, reels, payout, ClubCoins or times-played.
-- Installed full snapshot schema is 155 required, 139 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
-- Reconciliation: 196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 training allowlist / 18 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
-- Final regression PASS: Core 2080/2080; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next active slice is `mining.activate_calico_statue`.
-
 2026-08-30 EVD-307 Prairie King AI timed-equivalent completion
 - Locked 1.6.15 source audit PASS: Saloon `Arcade_Prairie`, optional saved-game `CowboyGame/NewGame`, `AbigailGame.usePowerup(-3)`, phase-one completion/no-death stats, missed-mail/recipe update, achievement check and global chat are covered.
 - Hidden/silent isolated E-drive smoke PASS: `artifacts/runtime-prairie-king-smoke/runtime-prairie-king-smoke-20260830-120617/summary.json`. Result was `applied/simulated_equivalent`; native completion `0->1`, no-death `0->1`, `Beat_PK=True`, final gate complete.
