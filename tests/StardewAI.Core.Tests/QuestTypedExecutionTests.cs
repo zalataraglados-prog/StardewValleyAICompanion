@@ -251,7 +251,11 @@ public sealed class QuestTypedExecutionTests
     [Fact]
     public void RuntimeQuestTerminalUsesNativeProbeAndNativeCheckAction()
     {
-        var source = RuntimeHarnessSources.All;
+        var source = string.Join("\n", new[]
+        {
+            RuntimeHarnessSources.LoadFile("ModEntry.QuestNpc.cs"),
+            RuntimeHarnessSources.LoadFile("ModEntry.QuestSlay.cs")
+        });
 
         Assert.Contains("FirstNativeQuestOfferReceiver(npc, offeredItem)", source, StringComparison.Ordinal);
         Assert.Contains("quest.OnItemOfferedToNpc(npc, item, probe: true)", source, StringComparison.Ordinal);

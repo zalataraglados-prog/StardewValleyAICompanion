@@ -121,7 +121,7 @@ public sealed partial class ModEntry
         if (!active.RewardClicked)
         {
             var pages = (List<List<IQuest>>)QuestLogPagesField.GetValue(active.Menu)!;
-            var target = FindQuestRewardMenuPosition(pages, active.Quest);
+            var target = FindQuestMenuPosition(pages, active.Quest);
             if (!target.HasValue)
             {
                 CompleteBlockedQuestRewardClaim(active, "quest_reward_exact_menu_row_missing");
@@ -257,7 +257,7 @@ public sealed partial class ModEntry
             reasons));
     }
 
-    private static (int Page, int Row)? FindQuestRewardMenuPosition(List<List<IQuest>> pages, Quest quest)
+    private static (int Page, int Row)? FindQuestMenuPosition(List<List<IQuest>> pages, IQuest quest)
     {
         for (var page = 0; page < pages.Count; page++)
         for (var row = 0; row < pages[page].Count; row++)

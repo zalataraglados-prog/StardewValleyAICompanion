@@ -4,6 +4,12 @@ internal static class RuntimeHarnessSources
 {
     public static readonly string All = Load();
 
+    public static string LoadFile(string fileName)
+    {
+        var directory = Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness");
+        return System.IO.File.ReadAllText(Path.Combine(directory, fileName));
+    }
+
     private static string Load()
     {
         var root = FindRepositoryRoot();

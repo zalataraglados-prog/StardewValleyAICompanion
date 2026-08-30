@@ -281,10 +281,10 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_slots", "executor.play_slots", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king", "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode",
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
-            "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
+            "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "quest.cancel", "mail.process_letter", "mining.use_elevator",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "housing.advance_farmhouse", "housing.renovate", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
-            "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
+            "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.cancel_quest", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
             "executor.clear_obstacle", "executor.break_farm_resource_clump",
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
@@ -312,7 +312,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.transfer_material");
 
         private static readonly HashSet<string> ParameterCompilerIds = Set(
-            "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode",
+            "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode", "quest.cancel", "executor.cancel_quest",
             "exploration.visit_location", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
@@ -323,7 +323,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> HarnessDispatchIds = Set(
             "executor.play_calico_jack", "executor.play_slots", "executor.play_crane_game", "executor.play_darts", "executor.play_prairie_king",
             "executor.change_building_skin",
-            "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward",
+            "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.cancel_quest",
             "executor.move_to_tile", "executor.traverse_connector",
             "executor.face_direction", "executor.interact", "executor.buy_shop_item",
             "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "recovery.sleep_in_tent",
@@ -356,7 +356,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
             "minigame.play_calico_jack", "minigame.play_slots", "minigame.play_crane_game", "minigame.play_darts", "minigame.play_prairie_king",
             "buildings.change_skin", "buildings.paint",
-            "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
+            "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "quest.cancel", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse", "housing.renovate",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "mining.activate_calico_statue", "multiplayer.manage_wallet", "multiplayer.send_chat", "player.choose_bobber", "player.choose_jukebox_track", "player.customize", "processing.crack_geode", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing",
@@ -391,7 +391,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "minigame.play_crane_game", "executor.play_crane_game",
-            "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player",
+            "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "quest.cancel", "executor.cancel_quest",
             "museum.donate_items", "island.field_office_donate", "community_center.donate_bundle_items",
             "fishing.manage_fish_pond",
             "joja.advance_development", "housing.advance_farmhouse", "housing.renovate", "mining.acquire_golden_scythe", "social.advance_partnership",
@@ -405,6 +405,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> PlayerCommandOnlyIds = Set(
             "minigame.play_crane_game", "executor.play_crane_game",
             "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player",
+            "quest.cancel", "executor.cancel_quest",
             "buildings.change_skin", "buildings.paint",
             "fishing.manage_fish_pond", "housing.renovate",
             "executor.change_building_skin", "executor.place_furniture",
@@ -420,7 +421,7 @@ namespace StardewAI.Contracts.Capabilities
         {
             "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_slots", "executor.play_slots", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king", "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode",
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
-            "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward", "mail.process_letter",
+            "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward", "quest.cancel", "executor.cancel_quest", "mail.process_letter",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item",
             "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel",
             "community_center.donate_bundle_items", "joja.advance_development",
@@ -695,6 +696,12 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.crack_geode"] = VerifiedEvidence(
                         "vanilla_native_Blacksmith_checkAction_Process_GeodeMenu_inventory_and_geodeSpot_click_2700ms_animation_one_input_25g_stats_mail_team_and_exact_or_complete_family_output_conservation_receipt",
                         "EVD-315"),
+                    ["quest.cancel"] = VerifiedEvidence(
+                        "vanilla_exact_ordinary_Quest_not_completed_not_hidden_accepted_canBeCancelled_identity_count_and_same_day_daily_acceptedDailyQuest_projection_explicit_player_command_only",
+                        "EVD-316"),
+                    ["executor.cancel_quest"] = VerifiedEvidence(
+                        "vanilla_native_QuestLog_exact_row_and_cancelQuestButton_receiveLeftClick_immediate_accepted_false_questLog_remove_same_day_daily_flag_and_unchanged_money_stats_special_orders_receipt_player_command_only",
+                        "EVD-316"),
                     ["minigame.play_crane_game"] = VerifiedEvidence(
                         "vanilla_MovieTheater_machine_occupancy_500g_three_attempt_live_prize_physics_native_directional_input_and_ItemGrabMenu_reward_conservation_player_command_only",
                         "EVD-305"),
@@ -951,6 +958,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("choose_jukebox_track"),
                 SupportedCandidate("customize_player"),
                 SupportedCandidate("crack_geode"),
+                SupportedCandidate("cancel_quest"),
                 SupportedCandidate("play_crane_game"),
                 SupportedCandidate("play_darts"),
                 SupportedCandidate("play_prairie_king"),

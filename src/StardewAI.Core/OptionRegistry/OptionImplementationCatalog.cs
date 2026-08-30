@@ -51,6 +51,7 @@ public static class OptionImplementationCatalog
         "executor.accept_daily_quest",
         "executor.accept_special_order",
         "executor.claim_quest_reward",
+        "executor.cancel_quest",
         "executor.buy_shop_item",
         "executor.sell_shop_item",
         "executor.choose_dialogue_response",

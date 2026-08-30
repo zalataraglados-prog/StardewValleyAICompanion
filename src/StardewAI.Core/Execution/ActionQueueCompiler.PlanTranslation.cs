@@ -83,6 +83,7 @@ namespace StardewAI.Core.Execution
                 "accept_daily_quest" => "executor.accept_daily_quest",
                 "accept_special_order" => "executor.accept_special_order",
                 "claim_quest_reward" => "executor.claim_quest_reward",
+                "cancel_quest" => "executor.cancel_quest",
                 "sleep" => "executor.sleep",
                 "sleep_in_tent" => "recovery.sleep_in_tent",
                 "escape_object_trap" => "recovery.escape_object_trap",

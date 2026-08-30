@@ -415,6 +415,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "exact reward identity rebound", "native QuestLog selection and reward clicks compiled", "money and reward-consumption receipt verified" },
                 new[] { "block_hidden_or_incomplete_quest", "block_reward_identity_drift", "block_money_drift", "block_direct_money_or_quest_state_mutation" }));
 
+            Register(Option("quest.cancel", "quest", "Cancel one exact eligible ordinary quest through the native QuestLog",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "quests.cancellation_candidates", "quests.active_quests", "menus.active_menu" },
+                new[] { "player explicitly selects one exact cancellation fingerprint and supplies a reason", "compiler rebinds the live ordinary quest and projected daily-flag side effect", "native QuestLog row and cancel button clicks remove the task" },
+                new[] { "block_without_explicit_player_confirmation", "block_special_order_completed_hidden_destroyed_or_non_cancellable_quest", "block_identity_count_or_daily_flag_drift", "block_direct_quest_log_accepted_or_acceptedDailyQuest_mutation", "exclude_from_autonomous_candidates_and_strategy_training" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -804,6 +812,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "quests.claimable_rewards", "quests.active_quests", "player.money", "menus.active_menu" },
                 new[] { "native QuestLog row and rewardBox receiveLeftClick invoked", "money increased by exact reward", "native OnMoneyRewardClaimed and OnLeaveQuestPage effects verified" },
                 new[] { "block_quest_log_identity_drift", "block_reward_not_claimable", "block_money_receipt_mismatch", "block_direct_money_or_quest_state_mutation" }));
+
+            Register(Option("executor.cancel_quest", "quest", "Select and cancel one exact eligible ordinary quest through native QuestLog clicks",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "quests.cancellation_candidates", "quests.active_quests", "menus.active_menu" },
+                new[] { "native QuestLog exact row receiveLeftClick invoked", "native cancelQuestButton receiveLeftClick invoked", "quest removal, accepted=false and same-day daily flag side effect verified" },
+                new[] { "block_without_explicit_player_confirmation", "block_quest_log_identity_or_prestate_drift", "block_special_order_completed_hidden_destroyed_or_non_cancellable_quest", "block_money_stats_special-order_or_daily-flag_receipt_mismatch", "block_direct_quest_log_accepted_or_acceptedDailyQuest_mutation", "player_command_only" }));
 
             Register(Option("executor.buy_shop_item", "economy", "Buy one safe shop item",
                 OptionBehaviorCategories.Mechanical,

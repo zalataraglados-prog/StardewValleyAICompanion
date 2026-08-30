@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-31 普通任务取消玩家命令闭环（EVD-316）
+
+`quest.cancel` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布普通任务日志的完整取消投影，包括精确任务身份、接受/完成/隐藏/每日/待删除状态、`CanBeCancelled`、接受日、剩余日、奖励、当前任务数和同日每日委托标志副作用。特别订单不进入该投影的可执行域；隐藏、已完成、未接受、待删除或原生不可取消任务保留为带诊断的阻断行。上游只有在玩家给出精确指纹、原因和显式确认时才生成候选，默认策略和训练永远看不到取消欲望。
+
+锁定 1.6.15 的原生 `QuestLog` 不显示二次确认框，取消按钮会立即设置普通任务 `accepted=false`、从日志删除，并仅对同日接受的每日委托清除 `acceptedDailyQuest`。生产运行层只创建原生任务日志、点击精确行和 `cancelQuestButton`，然后验证任务移除、接受标志、每日标志、任务数及金钱/完成统计/特别订单不变；生产代码禁止直接写这些状态。隐藏静音矩阵 `4/4` 覆盖两个成功副作用分支及伪造指纹、不可取消任务拒绝。当前对账为 `212 registered / 222 semantic / 211 compiler-bound / 137 harness dispatch / 135 five-gate / 55 allowlist / 10 catalogued blocked / 0 Product Executor`，full snapshot `163/146/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2133/2133`、Backend `155/155`、Release `0 warnings / 0 errors`。Junimo Kart 继续后置；下一实际纵向切片为 `rewards.claim_adventure_guild_reward`。
+
 ## 2026-08-31 铁匠晶球处理闭环（EVD-315）
 
 `processing.crack_geode` 已按完整纵向切片闭合，覆盖全部八种锁定基础版晶球。透明桥发布铁匠铺柜台、Clint/工具领取拦截、角色控制状态、库存槽位与容量、25g、晶球/神秘盒计数、金椰子及金核桃前态、季节/技能/矿层/邮件上下文，以及纯本地 RNG 的精确结果或共享 RNG 的完整当季作物族。候选阶段即排除当前不可服务项；跨地图 continuation 只锁定晶球身份和目的，到达后由 fresh 快照重绑全部机械字段。

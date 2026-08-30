@@ -43,6 +43,7 @@ public sealed partial class ProgressQuestReadAdapter : ReadAdapterBase
             ["daily_quest_offer"] = Field(ReadDailyQuestOffer(player), "Game1.questOfTheDay; Game1.CanAcceptDailyQuest; Game1.player.acceptedDailyQuest; live Town Buildings Action=Billboard 3; GameLocation.IsTileBlockedBy read-only stand scan", tick),
             ["special_order_boards"] = Field(ReadSpecialOrderBoards(team), "Utility.ForEachLocation live Buildings Action tokens SpecialOrders/QiChallengeBoard/DesertMarlon; FarmerTeam.availableSpecialOrders/acceptedSpecialOrderTypes; active SpecialOrdersBoard leftOrder/rightOrder", tick),
             ["active_quests"] = Field(ReadActiveQuests(player), "Game1.player.questLog", tick),
+            ["cancellation_candidates"] = Field(ReadQuestCancellationProjection(player), "Game1.player.questLog; Quest.CanBeCancelled; QuestLog.receiveLeftClick exact ordinary Quest cancellation branch; Game1.player.acceptedDailyQuest; Game1.Date.TotalDays", tick),
             ["claimable_rewards"] = Field(ReadClaimableQuestRewards(player), "Game1.player.questLog; Quest.IsHidden/ShouldDisplayAsComplete/HasMoneyReward/GetMoneyReward", tick),
             ["completed_quests"] = Field(ReadCompletedQuests(player), "Game1.stats.QuestsCompleted; Game1.player.questLog where Quest.completed", tick),
             ["mail_received"] = Field(player?.mailReceived.OrderBy(id => id).ToArray(), "Game1.player.mailReceived", tick),

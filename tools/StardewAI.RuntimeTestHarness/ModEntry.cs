@@ -135,6 +135,7 @@ public sealed partial class ModEntry : Mod
     private readonly NativeObjectInteractionDomainState nativeObjectInteractions = new();
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
+    private ActiveQuestCancellation? activeQuestCancellation;
 
     public override void Entry(IModHelper helper)
     {
@@ -552,6 +553,7 @@ public sealed partial class ModEntry : Mod
         TickNativeObjectInteractionDomain();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
+        TickQuestCancellationSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1012,6 +1014,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_slots")
             {
                 pending.Completion.SetResult(ExecuteSetupSlotsFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_quest_cancellation")
+            {
+                pending.Completion.SetResult(ExecuteSetupQuestCancellationFixture(pending.Request));
                 return;
             }
 
@@ -1497,6 +1505,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_slots")
             {
                 StartSlots(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.cancel_quest")
+            {
+                StartQuestCancellation(pending);
                 return;
             }
 
@@ -2206,6 +2220,7 @@ public sealed partial class ModEntry : Mod
             activeForge = null;
             activeSpecialOrderBoardOpen = null;
             activeQuestRewardClaim = null;
+            activeQuestCancellation = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2489,7 +2504,8 @@ public sealed partial class ModEntry : Mod
             activeStatueBlessingClaim is not null ||
             nativeObjectInteractions.IsActive ||
             activeSpecialOrderBoardOpen is not null ||
-            activeQuestRewardClaim is not null;
+            activeQuestRewardClaim is not null ||
+            activeQuestCancellation is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

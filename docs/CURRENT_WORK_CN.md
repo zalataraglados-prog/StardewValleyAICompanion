@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-31 当前权威检查点：EVD-316
+
+- `quest.cancel` 已闭合透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求、原生 `QuestLog` 输入和严格回执。唯一动作链为 `quest.cancel -> cancel_quest -> executor.cancel_quest`；严格 `PlayerCommandOnly`，不进入默认候选、自主日计划或策略训练。
+- 锁定 1.6.15 原生条件为普通 `Quest` 尚未完成、未隐藏、已接受、未等待删除且 `CanBeCancelled()`。透明桥发布当前 `questLog` 中每一条普通任务及阻断诊断、完整身份指纹、任务数和 `acceptedDailyQuest` 副作用。`SpecialOrder.CanBeCancelled()` 恒为 false，且原生点击分支只处理普通 `Quest`，因此特别订单不会被该动作冒领。
+- 原版取消按钮没有二次确认菜单：选中任务后点击 `cancelQuestButton` 会立即执行 `accepted=false`、从 `questLog` 删除，并在同日接受的每日委托上清除 `acceptedDailyQuest`。StardewAI 在原生点击前额外要求精确指纹、非空原因和显式玩家确认；fresh 编译器重绑全部任务字段、计数和每日标志。生产执行器只创建原生 `QuestLog`、点击精确任务行和取消按钮，不直接写任务、列表或每日标志。
+- 隐藏静音 E 盘矩阵 `4/4` PASS：`artifacts/runtime-quest-cancellation/runtime-quest-cancellation-20260831-011556/summary.json`。覆盖同日每日委托清标志、普通任务保留标志、伪造指纹拒绝和不可取消任务双层拒绝；金钱、任务完成统计和特别订单数量保持不变。
+- 最新 full snapshot 为 `163 required / 146 readable with provenance / 17 contextual / 0 blocking`；对账为 `212 registered / 222 semantic / 211 compiler-bound / 137 harness dispatch / 135 five-gate / 55 training allowlist / 10 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens`；KnowledgeCompiler `585/585`、blocking 0；Core `2133/2133`、Backend `155/155`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 继续按既定边界后置，下一实际纵向切片为 `rewards.claim_adventure_guild_reward`。
+
 ## 2026-08-31 当前权威检查点：EVD-315
 
 - `processing.crack_geode` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享逐帧移动、原生铁匠对话与 `GeodeMenu` 输入，以及严格领取回执。唯一动作链为 `processing.crack_geode -> crack_geode -> executor.crack_geode`，没有第二套库存、奖励或晶球 RNG 系统。

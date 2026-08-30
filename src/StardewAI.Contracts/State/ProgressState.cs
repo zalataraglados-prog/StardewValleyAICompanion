@@ -234,6 +234,63 @@ namespace StardewAI.Contracts.State
         public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
     }
 
+    public sealed class QuestCancellationProjectionRef
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "quest_cancellation.v1";
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = "unavailable";
+
+        [JsonPropertyName("invocation_policy")]
+        public string InvocationPolicy { get; set; } = "player_command_only";
+
+        [JsonPropertyName("native_contract")]
+        public string NativeContract { get; set; } = string.Empty;
+
+        [JsonPropertyName("current_total_days")]
+        public int CurrentTotalDays { get; set; }
+
+        [JsonPropertyName("quest_log_count_before")]
+        public int QuestLogCountBefore { get; set; }
+
+        [JsonPropertyName("accepted_daily_quest_before")]
+        public bool AcceptedDailyQuestBefore { get; set; }
+
+        [JsonPropertyName("candidates")]
+        public QuestCancellationCandidateRef[] Candidates { get; set; } = System.Array.Empty<QuestCancellationCandidateRef>();
+    }
+
+    public sealed class QuestCancellationCandidateRef
+    {
+        [JsonPropertyName("cancellation_fingerprint")]
+        public string CancellationFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest")]
+        public QuestProgressRef Quest { get; set; } = new();
+
+        [JsonPropertyName("eligible")]
+        public bool Eligible { get; set; }
+
+        [JsonPropertyName("native_button_visible")]
+        public bool NativeButtonVisible { get; set; }
+
+        [JsonPropertyName("resets_accepted_daily_quest")]
+        public bool ResetsAcceptedDailyQuest { get; set; }
+
+        [JsonPropertyName("expected_accepted_daily_quest_after")]
+        public bool ExpectedAcceptedDailyQuestAfter { get; set; }
+
+        [JsonPropertyName("expected_quest_log_count_after")]
+        public int ExpectedQuestLogCountAfter { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "blocked";
+
+        [JsonPropertyName("blocked_diagnostics")]
+        public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
+    }
+
     public sealed class PerTypeQuestFields
     {
         [JsonPropertyName("is_base_quest")]

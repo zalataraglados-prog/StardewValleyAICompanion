@@ -338,6 +338,13 @@ namespace StardewAI.Core.OptionRegistry
                     "no_quest_reward_claim_candidates",
                     "no_available_quest_reward_claim_candidates");
             }
+            if (optionId == "quest.cancel")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_explicit_quest_cancellation_candidate",
+                    "no_available_explicit_quest_cancellation_candidate");
+            }
             if (optionId == "mail.process_letter")
             {
                 return EventCandidateAvailabilityReasons(

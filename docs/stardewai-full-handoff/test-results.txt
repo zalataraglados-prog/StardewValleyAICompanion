@@ -1,3 +1,11 @@
+2026-08-31 EVD-316 native ordinary-quest cancellation
+- Locked 1.6.15 source audit PASS: ordinary QuestLog row/button visibility and click predicates, immediate accepted=false/log removal, same-day acceptedDailyQuest reset, no native confirmation dialogue, and SpecialOrder exclusion are covered.
+- Hidden/silent isolated E-drive matrix PASS 4/4: `artifacts/runtime-quest-cancellation/runtime-quest-cancellation-20260831-011556/summary.json`. Same-day daily and ordinary cases returned `applied/verified`; forged fingerprint and non-cancellable cases were rejected before native state mutation.
+- Runtime source guard PASS: production creates a native QuestLog and clicks the exact row/cancel button; direct quest accepted/completed/destroy, questLog and acceptedDailyQuest writes are forbidden. Debug fixture state setup is isolated in `ModEntry.QuestCancellationFixture.cs`.
+- Installed full snapshot schema is 163 required, 146 readable with provenance, 17 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 212 registered / 222 semantic / 211 compiler-bound / 137 harness dispatch / 135 five-gate / 55 training allowlist / 10 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2133/2133; Backend 155/155; full solution Release build 0 warnings / 0 errors. Junimo Kart remains deliberately deferred; next active slice is `rewards.claim_adventure_guild_reward`.
+
 2026-08-31 EVD-315 native Blacksmith geode processing
 - Locked 1.6.15 source/data audit PASS: all eight base geodes, Clint/tool/control/service/capacity gates, exact counter/seed timing, two fixed-count RNG burn loops, data-driven drops, artifact guard, Mystery Book mutation, shared-RNG crop families and first Golden Coconut mutex contingency are covered.
 - Hidden/silent isolated E-drive matrix PASS 9/9: `artifacts/runtime-geode-processing/runtime-geode-processing-20260831-003313/summary.json`. All eight native inputs returned `applied/verified`; a forged GeodesCracked binding was rejected before input.

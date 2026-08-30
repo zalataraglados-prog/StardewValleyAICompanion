@@ -1713,6 +1713,9 @@ static partial class Program
         ApplyGeodeProcessingRequestFields(
             executionRequest,
             item);
+        ApplyQuestCancellationRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);
