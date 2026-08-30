@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-305
+
+- `minigame.play_crane_game` 已闭合透明读取、玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生机器/确认对话/小游戏方向输入和原生奖励菜单回执。唯一动作链为 `minigame.play_crane_game -> play_crane_game -> executor.play_crane_game`；该动作严格为 `PlayerCommandOnly`，要求显式确认，不进入默认候选或策略训练。
+- 锁定 1.6.15 反编译确认一次会话原生收费 500g、3 次机会、每次 900 tick，只接受先向右再向下的方向输入。机器占用规则、当日电影奖池覆盖、基础奖池、实时奖品/传送带/爪钩/掉落检查/计时与生命均由 `player.crane_game` 发布；奖品使用共享 `Game1.random`，因此不伪造确定性预测，执行器每次只按实时状态选择可达奖品。
+- 隐藏静音 E 盘冒烟 `1/1` PASS：`artifacts/runtime-crane-game-smoke/runtime-crane-game-smoke-20260830-095512/summary.json`。原生扣费 `10000->9500`，完成 3 次机会，2 件奖品经原生 `ItemGrabMenu` 转入背包，小游戏和菜单正常退出。方向输入固定在 `UpdateTicking`，生产路径不写 Money、RNG、奖品/爪钩位置、小游戏状态或背包结果。
+- 最新 full snapshot 为 `152 required / 136 readable with provenance / 16 contextual / 0 blocking`；对账为 `190 registered / 211 semantic / 189 compiler-bound / 113 five-gate / 50 training allowlist / 21 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结、blocking 为 0；Core `2066/2066`、Backend `148/148`、Release `0 warnings / 0 errors`。下一冻结目录切片为 `minigame.play_darts`。
+
 ## 2026-08-30 当前权威检查点：EVD-304
 
 - `minigame.play_calico_jack` 已闭合透明读取、自主需求候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生牌桌/对话/小游戏输入和严格齐币结算回执。唯一动作链为 `minigame.play_calico_jack -> play_calico_jack -> executor.play_calico_jack`；生产执行不直接写牌、RNG、齐币、牌局结果或统计。

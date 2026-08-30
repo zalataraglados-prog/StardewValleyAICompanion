@@ -239,6 +239,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one native low- or high-stakes round is selected from a fresh exact seed projection", "automatic demand exists only while (BC)126 is absent and the Deluxe Scarecrow dependency remains open", "the shared deterministic hidden-card and future-draw decision model chooses native hit or stand input", "the executor quits after one native settlement so every coin delta is auditable" },
                 new[] { "block_no_rarecrow_currency_demand", "block_club_card_or_seed_coins_missing", "block_projected_loss_of_last_seed_coins", "block_unverified_route", "block_projection_or_rng_replay_drift", "block_direct_card_rng_coin_result_or_minigame_mutation" }));
 
+            Register(Option("minigame.play_crane_game", "minigame", "Play one explicitly authorized native Movie Theater Crane Game session",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.inventory", "player.crane_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "the exact live Movie Theater machine occupancy, fee, movie prize rules and active physics are transparent", "one explicit command authorizes exactly 500g and the native three-attempt session", "the executor selects a reachable live prize afresh for each attempt and transfers all rewards through the native menu" },
+                new[] { "block_without_explicit_player_command", "block_occupied_machine_or_insufficient_gold_or_reward_capacity", "block_unverified_route_or_projection_drift", "block_direct_rng_money_prize_position_state_or_inventory_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1266,6 +1274,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.club_coins", "player.has_club_card", "player.calico_jack", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the exact live ClubCards or BlackJack table", "native Play dialogue constructs CalicoJack with the projected bet and seed", "shared exact seed replay validates every dealt card and chooses native hit or stand", "native result settlement and quit verify the exact Qi-coin delta without direct mutation" },
                 new[] { "block_club_or_table_projection_drift", "block_dialogue_bet_or_seed_replay_drift", "block_unverified_native_settlement_or_cleanup", "block_unverified_route", "block_direct_card_rng_coin_result_or_minigame_mutation" }));
+
+            Register(Option("executor.play_crane_game", "minigame", "Execute one verified native Movie Theater Crane Game session",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.inventory", "player.crane_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one exact live CraneGame action tile", "native Yes deducts exactly 500g and constructs the real CraneGame", "right and down input drive all three attempts against live prizes and physics", "native ItemGrabMenu rewards, money delta and cleanup are conserved and verified" },
+                new[] { "block_movie_theater_machine_or_projection_drift", "block_fee_dialogue_or_input_contract_drift", "block_unverified_reward_transfer_or_cleanup", "block_unverified_route", "block_direct_rng_money_prize_position_state_or_inventory_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

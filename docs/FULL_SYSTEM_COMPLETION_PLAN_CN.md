@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 抓娃娃机原生玩家命令闭环（EVD-305）
+
+`minigame.play_crane_game` 已按完整纵向切片闭合，但保持为玩家命令能力。透明桥发布机器占用、电影奖池规则、基础奖池、500g/3 次/900 tick 规则、交互端点，以及活动会话的原生状态、爪钩、奖品、传送带、速度、抓取与掉落字段。高层只授权一次会话；fresh 编译器绑定全部机械字段，运行层复用共享路线并只经原生交互、确认、D/S 输入和奖励菜单完成。
+
+隐藏静音冒烟 `1/1` 完成三次原生机会、500g 精确扣费和两件奖励转移；不存在第二套 RNG、奖品物理或背包写入器。当前对账为 `190 registered / 211 semantic / 189 compiler-bound / 113 five-gate / 50 allowlist / 21 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母已冻结且 full snapshot `152/136/16/0` blocking 0，回归为 Core `2066/2066`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_darts`。
+
 ## 2026-08-30 Calico Jack 原生牌局闭环（EVD-304）
 
 `minigame.play_calico_jack` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布赌场权限、齐币、Rarecrow 需求、两张桌子、精确动作格、下一局种子、初始牌、隐藏牌、完整未来随机流、推荐要牌/停牌序列、预期结算和活动小游戏私有状态。高层只决定是否接受一个由 `(BC)126`/Deluxe Scarecrow 依赖产生的单局候选；fresh 编译器覆盖下注、牌、随机数、点击和结算等全部机械字段。

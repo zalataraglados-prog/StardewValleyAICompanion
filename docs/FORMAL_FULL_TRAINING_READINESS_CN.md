@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 抓娃娃机执行准入（EVD-305）
+
+`minigame.play_crane_game` 已通过 read / candidate / compile / native runtime / output receipt 五门，但治理为 `PlayerCommandOnly`，只形成可验证的玩家命令执行能力，不进入策略训练 allowlist。玩家只授权一次 500g 会话；机器占用、路线、三次机会、实时奖品选择、横向/纵向释放时机、原生随机物理和奖励转移均由 fresh snapshot 与机械执行层处理。费用不足、少于 3 个空槽、机器占用、忙碌、路线或投影漂移会在上游或 fresh 编译阶段关闭。
+
+隐藏静音 E 盘 `1/1` 原生冒烟完成 3 次机会并通过原生奖励菜单转移 2 件奖品，Money 精确 `-500`；生产执行仅使用 `MovieTheater.checkAction`、原生 Yes 对话、`UpdateTicking` D/S 输入和 `ItemGrabMenu`，不写结果状态。最新 schema 为 `152/136/16/0`；对账为 `190 registered / 211 semantic / 189 compiler-bound / 113 five-gate / 50 allowlist / 21 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 21 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一目录切片为 `minigame.play_darts`。
+
 ## 2026-08-30 Calico Jack 训练准入（EVD-304）
 
 `minigame.play_calico_jack` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否执行一局由稀有稻草人依赖驱动的牌局；牌桌、路线、下注、初始牌、隐藏牌、未来抽牌、要牌/停牌序列、齐币结算和单局退出都由 fresh snapshot 与共享确定性模型机械绑定。缺少赌场权限、无 Rarecrow 需求、菜单/路线/牌局漂移、余额不足或仅剩 100 且下一局投影损失会在上游排除。

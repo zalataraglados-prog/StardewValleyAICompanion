@@ -51,6 +51,7 @@ public sealed partial class ModEntry : Mod
     private ActiveFairStrengthGame? activeFairStrengthGame;
     private ActiveFairWheelSpin? activeFairWheelSpin;
     private ActiveCalicoJack? activeCalicoJack;
+    private ActiveCraneGame? activeCraneGame;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -480,6 +481,7 @@ public sealed partial class ModEntry : Mod
         TickFairStrengthGame();
         TickFairWheelSpin();
         TickCalicoJack();
+        TickCraneGame();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -987,6 +989,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_crane_game")
+            {
+                pending.Completion.SetResult(ExecuteSetupCraneGameFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1397,6 +1405,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_calico_jack")
             {
                 StartCalicoJack(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.play_crane_game")
+            {
+                StartCraneGame(pending);
                 return;
             }
 
@@ -2100,6 +2114,13 @@ public sealed partial class ModEntry : Mod
             }
             CaptureExecutorDiagnosticFrame("update_ticking");
             ApplyFairStrengthGameInput();
+            if (activeCraneGame is not null &&
+                !ApplyCraneGameInput(activeCraneGame, out var craneInputReason))
+            {
+                BlockCraneGame(activeCraneGame,
+                    "crane_game_input_failed:" + craneInputReason);
+                return;
+            }
             if (activeCatchFish is not null && !ApplyCatchFishUseToolInput(activeCatchFish, out var castInputReason))
             {
                 CompleteBlockedCatchFish(activeCatchFish, castInputReason);
@@ -2186,6 +2207,13 @@ public sealed partial class ModEntry : Mod
                 CompleteBlockedJunimoKart(activeKart, "junimo_kart_input_dispatch_exception:" + ex.GetType().Name);
                 return;
             }
+            var activeCrane = activeCraneGame;
+            if (activeCrane is not null)
+            {
+                Monitor.Log($"Crane Game input dispatch failed once and was blocked: {ex}", LogLevel.Error);
+                BlockCraneGame(activeCrane, "crane_game_input_dispatch_exception:" + ex.GetType().Name);
+                return;
+            }
             if (sleepObj is not null && sleepObj.Stage == SleepStage.WaitForPostSleepStable)
             {
                 Monitor.Log($"Ship summary input dispatch failed once and was blocked: {ex}", LogLevel.Error);
@@ -2220,6 +2248,7 @@ public sealed partial class ModEntry : Mod
             activeFairStrengthGame is not null ||
             activeFairWheelSpin is not null ||
             activeCalicoJack is not null ||
+            activeCraneGame is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

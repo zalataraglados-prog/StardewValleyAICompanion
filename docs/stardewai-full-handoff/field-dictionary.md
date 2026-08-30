@@ -10,7 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **151 required / 135 readable with provenance / 16 contextual / 0 blocking** (EVD-304).
+Current installed full-snapshot schema checkpoint: **152 required / 136 readable with provenance / 16 contextual / 0 blocking** (EVD-305).
+
+## Crane Game Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.crane_game.gate_status` / `machine_occupied` / `fee_gold` / `money` / `inventory_empty_slots` / `interaction_tiles[]` | Exclude impossible sessions upstream and bind one exact native machine endpoint | live MovieTheater map, player/menu state; locked `MovieTheater.performAction/tryToStartCraneGame` | Movie Theater page secondarily confirms access, occupancy and 500g play | covered_for_read_and_gate_EVD_305 | Requires explicit player command, 500g, three empty slots, clear player/menu state and an unoccupied machine. |
+| `base_prize_groups` / `current_movie_rules` / `projection_fingerprint` | Preserve the full locked prize domain and movie overrides without consuming production RNG | locked 1.6.15 CraneGame constructor and live `Data/Movies` row | Movie Theater page confirms crane prize and movie variation semantics | covered_for_read_candidate_compile_EVD_305 | Shared `Game1.random` means exact future layout/outcome is not projected; changed data or fingerprint fails closed. |
+| `active_session.state` / `timer_ticks` / `lives` / `claw.*` / `prizes[]` / `collected_items[]` | Drive native right/down release timing from exact live physics and verify all native rewards | live reflected `CraneGame.GameLogic`, `Claw` and `Prize`; locked state machine, 900-tick attempts and drop checks | n/a | covered_for_live_runtime_and_receipt_EVD_305 | Input is issued in `UpdateTicking`; production never writes RNG, Money, prize/claw position, state or inventory. Native `ItemGrabMenu` owns transfer. |
+| `minigame.play_crane_game` / `executor.play_crane_game` | Separate one-session authorization from all mechanical control | governance, candidate/DailyPlan/compiler, typed transport and native runtime | n/a | five_gate_closed_player_command_only_EVD_305 | Not a default candidate and not training-allowlisted. One confirmation authorizes exactly one 500g/three-attempt session. |
 
 ## Calico Jack Transparency
 

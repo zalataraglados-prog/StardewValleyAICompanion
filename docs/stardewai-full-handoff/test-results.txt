@@ -1,3 +1,12 @@
+2026-08-30 EVD-305 native Crane Game player-command session
+- Locked 1.6.15 source/data audit PASS: MovieTheater occupancy/movie rules, exact 500g entry, three 900-tick attempts, right-then-down input, live shared-RNG prize physics, drop checks and native ItemGrabMenu settlement are covered.
+- Focused Crane mainline/governance/source regression PASS 6/6; full Core PASS 2066/2066.
+- Hidden/silent isolated E-drive smoke PASS 1/1: `artifacts/runtime-crane-game-smoke/runtime-crane-game-smoke-20260830-095512/summary.json`. Money `10000->9500`, three attempts, two rewards transferred, and clean minigame/menu exit all verified.
+- Runtime source guard fixes directional injection at `UpdateTicking` and forbids direct production mutation of Money, RNG, prize/claw position, minigame state or inventory results.
+- Installed full snapshot schema is 152 required, 136 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 190 registered / 211 semantic / 189 compiler-bound / 113 five-gate / 50 training allowlist / 21 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2066/2066; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next slice is `minigame.play_darts`.
+
 2026-08-30 EVD-304 native Calico Jack deterministic rounds
 - Locked 1.6.15 source/data audit PASS: 100/1000 tables, exact constructor seed, initial/hidden/future card stream, hit bias, dealer 18/19/20 branches, native settlement, single-round exit and Qi fruit luck conflict are covered.
 - Focused Calico Jack mainline/governance/allowlist regression PASS 12/12; full Core PASS 2060/2060.
