@@ -10,7 +10,20 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **160 required / 143 readable with provenance / 17 contextual / 0 blocking** (EVD-313).
+Current installed full-snapshot schema checkpoint: **161 required / 144 readable with provenance / 17 contextual / 0 blocking** (EVD-314).
+
+## Player Customization Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.customization.projection_fingerprint` | Current appearance, exact branch endpoints, service gates, control domains and makeover projection | candidate, rolling continuation and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `current` | Live name, favorite thing, gender, skin, hair, accessory, eye/hair HSV and equipped clothing identities | explicit-change detection and native receipt | covered_for_read / native_runtime_verified |
+| `wizard_shrine` | `WizardHouseBasement` `Action=WizardShrine`, 500g, Wizard friendship/access context, `Farmer.GetAllHairstyleIndices`, exact skin/accessory/HSV domains | upstream service/domain gate, route endpoint and native menu binding | covered_for_read / covered_for_gate / native_runtime_verified |
+| `desert_makeover` | Replacement location `DesertFestival`; `TouchAction=DesertMakeover`; live stylist, festival day, daily flag, free slots/equipped count; complete `Data/MakeoverOutfits` rows and day-save RNG projection | upstream impossible-service exclusion, exact event binding and output receipt | covered_for_read / covered_for_gate / deterministic_projection / native_runtime_verified |
+| `active_menu_status` / `active_event_status` | Live `CharacterCustomization` source and current event state | fail-closed execution precondition and observability | covered_for_read / covered_for_gate |
+| `native_contract` / `source_boundaries` | Locked 1.6.15 call chains and ownership split for dye/onboarding/Dresser | source guard, runtime executor and architecture ownership | native_input_only / no_direct_state_mutation / ownership_explicit |
+
+`player.customize` and `executor.customize_player` are `PlayerCommandOnly`. Dye remains `tailoring.dye_item`; new-game/farmhand customization remains onboarding control plane; no reachable base-game Dresser constructor chain is claimed.
 
 ## Jukebox Selection Transparency
 

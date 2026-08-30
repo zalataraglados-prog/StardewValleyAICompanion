@@ -61,6 +61,7 @@ public static class OptionImplementationCatalog
         "executor.send_multiplayer_chat",
         "executor.choose_bobber_style",
         "executor.choose_jukebox_track",
+        "executor.customize_player",
         "executor.close_menu",
         "executor.social_interact",
         "executor.quest_npc_interact",

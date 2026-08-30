@@ -1707,6 +1707,9 @@ static partial class Program
         ApplyJukeboxSelectionRequestFields(
             executionRequest,
             item);
+        ApplyPlayerCustomizationRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

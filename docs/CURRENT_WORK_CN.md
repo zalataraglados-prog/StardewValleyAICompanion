@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-314
+
+- `player.customize` 已闭合完整透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求和两条原生执行分支。唯一动作链为 `player.customize -> customize_player -> executor.customize_player`，严格 `PlayerCommandOnly`，不进入默认候选、自主日计划或策略训练。
+- 巫师神龛分支绑定 `WizardHouseBasement` 的 `WizardShrine`、500g 前态和完整原生控件域：姓名、最爱之物、性别、皮肤 `0..23`、实时 `Farmer.GetAllHairstyleIndices`、饰品 `-1..29`、眼睛与头发六个 HSV 滑条 `0..100`。运行层只经共享移动、`checkAction`、Yes 对话和 `CharacterCustomization(Source.Wizard)` 控件/OK 输入，不直接写金钱或外观。
+- 沙漠改造分支明确读取替换地图 `DesertFestival`，不是普通 `Desert`；绑定当前造型师、每日标志、装备回收所需空位、完整 `Data/MakeoverOutfits` 过滤和原生日存档 RNG 投影。运行层走上 `DesertMakeover` TouchAction、跳过原生事件并等待 `ReceiveMakeOver` 完成回调，不直接写装备、每日标志或调用回调。
+- 源边界保持分离：染色仍属 `tailoring.dye_item`；NewGame/HostNewFarm/NewFarmhand 属于建档控制面；锁定基础版调用点中没有可达 Dresser 构造链。隐藏静音 E 盘矩阵 `4/4` PASS：`artifacts/runtime-player-customization/runtime-player-customization-20260830-215722/summary.json`，含巫师全字段、六滑条 100 边界、伪造金钱拒绝与沙漠改造。
+- 最新 full snapshot 为 `161 required / 144 readable with provenance / 17 contextual / 0 blocking`；对账为 `208 registered / 220 semantic / 207 compiler-bound / 135 harness dispatch / 131 five-gate / 54 training allowlist / 12 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens`；KnowledgeCompiler `585/585`、blocking 0；Core `2123/2123`、Backend `155/155`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 按既定边界后置，下一实际纵向切片为 `processing.crack_geode`。
+
 ## 2026-08-30 当前权威检查点：EVD-313
 
 - `player.choose_jukebox_track` 已闭合透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享逐帧移动、原生 Saloon 点唱机菜单输入和严格回执。唯一动作链为 `player.choose_jukebox_track -> choose_jukebox_track -> executor.choose_jukebox_track`，没有第二套音乐切换或 Mini-Jukebox 状态写入系统。

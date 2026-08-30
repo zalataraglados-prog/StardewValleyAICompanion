@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 玩家外观定制命令闭环（EVD-314）
+
+`player.customize` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥覆盖当前外观、巫师神龛 500g 与完整控件域，以及沙漠节替换地图 `DesertFestival` 上的造型师、每日限制、装备回收空位、完整 `Data/MakeoverOutfits` 过滤和原生日存档 RNG 投影。无法在当前目标位置形成 `ready` 服务的请求在上游排除；跨地图请求只保留玩家给定的模式、目标、原因和确认，到达后由 fresh 快照重绑机械字段。
+
+生产运行层复用共享逐帧移动。巫师分支只经 `WizardShrine checkAction -> Yes -> CharacterCustomization(Source.Wizard) native controls -> OK`；沙漠分支只经 `DesertMakeover TouchAction -> native skippable Event -> onEventFinished ReceiveMakeOver`。禁止直接写金钱、外观、装备、每日标志或直接调用 `ReceiveMakeOver`。隐藏静音矩阵 `4/4` 覆盖完整巫师目标、六个 HSV 上边界、伪造金钱拒绝和沙漠造型。当前对账为 `208 registered / 220 semantic / 207 compiler-bound / 135 harness dispatch / 131 five-gate / 54 allowlist / 12 catalogued blocked / 0 Product Executor`，full snapshot `161/144/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2123/2123`、Backend `155/155`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；Junimo Kart 继续后置，下一实际纵向切片为 `processing.crack_geode`。
+
 ## 2026-08-30 点唱机曲目玩家命令闭环（EVD-313）
 
 `player.choose_jukebox_track` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布 Saloon 两个固定 `Jukebox` 地块、可达站位、默认与当前音乐上下文、绿雨限制，以及 `Utility.GetJukeboxTracks` 按原生顺序形成的完整曲目目录。目录同时绑定 `Data/JukeboxTracks` 的可用性、`Farmer.songsHeard`、AlternativeTrackIds 规范化和 soundbank 实际存在性；上游只接受带原因和确认的精确已解锁合法曲目，未知、伪造、禁用或绿雨期不合法曲目不会成为候选。

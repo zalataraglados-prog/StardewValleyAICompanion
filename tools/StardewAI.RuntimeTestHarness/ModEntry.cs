@@ -57,6 +57,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMultiplayerWallet? activeMultiplayerWallet;
     private ActiveBobberSelection? activeBobberSelection;
     private ActiveJukeboxSelection? activeJukeboxSelection;
+    private ActivePlayerCustomization? activePlayerCustomization;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -495,6 +496,7 @@ public sealed partial class ModEntry : Mod
         TickMultiplayerWallet();
         TickBobberSelection();
         TickJukeboxSelection();
+        TickPlayerCustomization();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1035,6 +1037,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_player_customization")
+            {
+                pending.Completion.SetResult(ExecuteSetupPlayerCustomizationFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_multiplayer_chat")
             {
                 pending.Completion.SetResult(ExecuteSetupMultiplayerChatFixture(pending.Request));
@@ -1511,6 +1519,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.choose_jukebox_track")
             {
                 StartJukeboxSelection(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.customize_player")
+            {
+                StartPlayerCustomization(pending);
                 return;
             }
 
@@ -2151,6 +2165,7 @@ public sealed partial class ModEntry : Mod
             activeMultiplayerWallet = null;
             activeBobberSelection = null;
             activeJukeboxSelection = null;
+            activePlayerCustomization = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2392,6 +2407,7 @@ public sealed partial class ModEntry : Mod
             activeMultiplayerWallet is not null ||
             activeBobberSelection is not null ||
             activeJukeboxSelection is not null ||
+            activePlayerCustomization is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

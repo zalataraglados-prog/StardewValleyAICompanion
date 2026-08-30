@@ -12,6 +12,14 @@ public static class QueueReplanFilter
         "estimated_minutes"
     };
 
+    private static readonly string[] PlayerCustomizationContinuationNames =
+    {
+        "customization_name", "customization_favorite_thing", "customization_gender",
+        "customization_skin_index", "customization_hair_style_id", "customization_accessory_index",
+        "customization_eye_hue", "customization_eye_saturation", "customization_eye_value",
+        "customization_hair_hue", "customization_hair_saturation", "customization_hair_value"
+    };
+
     public static JsonObject[] FilterUnattempted(JsonObject[] queueItems, ISet<string> attemptedSemanticKeys)
     {
         return queueItems
@@ -184,6 +192,29 @@ public static class QueueReplanFilter
                 ["jukebox_reason"] = jukeboxReason,
                 ["confirm_jukebox_track"] = jukeboxConfirmed
             };
+        }
+        var customizationMode = ReadParameter(queueItem, "continuation.customization_mode");
+        var customizationReason = ReadParameter(queueItem, "continuation.customization_reason");
+        var customizationConfirmed = ReadParameter(queueItem, "continuation.confirm_customization");
+        if (string.Equals(optionId, "player.customize", StringComparison.Ordinal) &&
+            customizationMode is "wizard_shrine" or "desert_makeover" &&
+            !string.IsNullOrWhiteSpace(customizationReason) && string.Equals(customizationConfirmed, "true", StringComparison.Ordinal))
+        {
+            var result = new JsonObject
+            {
+                ["kind"] = "player_customization",
+                ["option_id"] = optionId,
+                ["customization_mode"] = customizationMode,
+                ["customization_reason"] = customizationReason,
+                ["confirm_customization"] = customizationConfirmed
+            };
+            foreach (var name in PlayerCustomizationContinuationNames)
+            {
+                var value = ReadParameter(queueItem, "continuation." + name);
+                if (!string.IsNullOrEmpty(value))
+                    result[name] = value;
+            }
+            return result;
         }
 
         var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
@@ -550,6 +581,14 @@ public static class QueueReplanFilter
             return string.Equals(optionId, "executor.choose_jukebox_track", StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "jukebox_track_id"), ReadString(continuation, "jukebox_track_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "jukebox_reason"), ReadString(continuation, "jukebox_reason"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "player_customization", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.customize_player", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "customization_mode"), ReadString(continuation, "customization_mode"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "customization_reason"), ReadString(continuation, "customization_reason"), StringComparison.Ordinal) &&
+                PlayerCustomizationContinuationNames.All(name => string.IsNullOrEmpty(ReadString(continuation, name)) ||
+                    string.Equals(ReadParameter(queueItem, name), ReadString(continuation, name), StringComparison.Ordinal));
         }
 
         if (string.Equals(

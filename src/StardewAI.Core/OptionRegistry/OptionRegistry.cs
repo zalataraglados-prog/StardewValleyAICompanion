@@ -628,6 +628,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player supplies one exact native track id, reason and confirmation", "compiler rebinds Utility.GetJukeboxTracks order, green-rain guard and live Saloon Jukebox endpoint", "shared BFS reaches an adjacent stand", "native forward, OK and cancel inputs produce the exact default music-context request receipt" },
                 new[] { "block_without_explicit_player_command_reason_and_confirmation", "block_unknown_locked_or_weather-blocked_track", "block_menu_or_Saloon_endpoint_unavailable", "block_projection_catalog_index_or_music_state_drift", "block_native_menu_or_receipt_mismatch", "block_direct_changeMusicTrack_or_music_state_mutation", "exclude_mini_jukebox_turn_off_random_and_persistent_state", "exclude_from_autonomous_candidates_and_strategy_training" }));
 
+            Register(Option("player.customize", "player", "Apply one explicitly confirmed native Wizard Shrine character target or deterministic Desert Festival makeover",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.customization", "player.inventory", "menus.active_menu" },
+                new[] { "player chooses Wizard Shrine exact targets or accepts the exact projected Desert makeover", "compiler rebinds endpoint, price, stylist, inventory and deterministic outfit", "shared BFS reaches the native action", "native menu controls or touch-event completion produce the exact receipt" },
+                new[] { "block_without_explicit_mode_reason_and_confirmation", "block_unknown_hair_skin_accessory_color_or_text_target", "block_price_route_stylist_daily_inventory_or_festival_gate", "block_projection_rng_outfit_or_endpoint_drift", "block_direct_money_appearance_equipment_daily_flag_or_ReceiveMakeOver_mutation", "exclude_dye_onboarding_and_unreachable_dresser_sources", "exclude_from_autonomous_candidates_and_strategy_training" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -940,6 +948,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.jukebox_selection", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact Saloon Jukebox action", "native action opens ChooseFromListMenu at index zero", "the exact number of native forward clicks is followed by native OK and cancel", "the default music context request matches the explicit track" },
                 new[] { "block_unconfirmed_unknown_or_weather-blocked_track", "block_endpoint_catalog_index_menu_or_projection_drift", "block_unverified_default_music_request_receipt", "block_direct_changeMusicTrack_or_music_state_mutation", "player_command_only" }));
+
+            Register(Option("executor.customize_player", "player", "Execute and verify one explicitly requested native Wizard Shrine or Desert Festival customization",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.customization", "player.inventory", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact native action", "WizardShrine Yes opens CharacterCustomization(Source.Wizard) and exact native controls are used", "DesertMakeover touch starts the native event and its completion callback applies the projected outfit", "money, appearance, equipment, inventory conservation and daily flag are verified" },
+                new[] { "block_unconfirmed_or_out_of_domain_target", "block_endpoint_price_stylist_inventory_rng_menu_event_or_projection_drift", "block_unverified_exact_receipt", "block_direct_money_appearance_equipment_daily_flag_or_ReceiveMakeOver_mutation", "player_command_only" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

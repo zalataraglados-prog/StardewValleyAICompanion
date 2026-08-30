@@ -1,3 +1,11 @@
+2026-08-30 EVD-314 native player customization
+- Locked 1.6.15 source audit PASS: Wizard Shrine exact 500g/native editable domains and Desert Festival replacement-location stylist/daily/inventory/Data/MakeoverOutfits/day-save-RNG branches are covered; dye and onboarding remain separate owners.
+- Hidden/silent isolated E-drive matrix PASS 4/4: `artifacts/runtime-player-customization/runtime-player-customization-20260830-215722/summary.json`. Wizard full edit, all six HSV sliders at 100, forged money binding rejection and native Desert makeover all returned the expected verified receipt.
+- Runtime source guards PASS: production uses shared movement plus native shrine dialogue/menu input or native TouchAction/event completion; direct money/appearance/equipment/daily-flag writes and direct `ReceiveMakeOver` calls are forbidden. A dedicated guard fixes the replacement location at `DesertFestival`, never ordinary `Desert`.
+- Installed full snapshot schema is 161 required, 144 readable with provenance, 17 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 208 registered / 220 semantic / 207 compiler-bound / 135 harness dispatch / 131 five-gate / 54 training allowlist / 12 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2123/2123; Backend 155/155; full solution Release build 0 warnings / 0 errors. Junimo Kart remains deliberately deferred; next active slice is `processing.crack_geode`.
+
 2026-08-30 EVD-309 native Calico Statue activation
 - Locked 1.6.15 source audit PASS: Desert Festival Skull Cavern gate, host-authoritative activation counter, `CreateDaySaveRandom(total + 1)`, team average Luck, all 18 effect branches, tile 284/285 transition, rating, effect stacks and native side effects are covered.
 - Hidden/silent isolated E-drive matrix PASS 18/18: `artifacts/runtime-calico-statue/runtime-calico-statue-20260830-144828/summary.json`. Every effect ID 0..17 returned `applied/verified`; 10/25/50/100 egg rewards, speed, full refresh, rating, effect dictionary and one-use tile transition matched.

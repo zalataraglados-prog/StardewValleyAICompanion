@@ -4,12 +4,11 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 110,
-  "catalogued_blocked_surface_count": 58,
-  "catalogued_blocked_action_count": 13,
+  "mapped_count": 112,
+  "catalogued_blocked_surface_count": 56,
+  "catalogued_blocked_action_count": 12,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "player.customize",
     "processing.crack_geode",
     "quest.cancel",
     "rewards.claim_adventure_guild_reward",
@@ -1276,7 +1275,7 @@
       "mappedOptionIds": [
         "player.customize"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -1293,7 +1292,7 @@
       "mappedOptionIds": [
         "player.customize"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
