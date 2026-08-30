@@ -122,10 +122,9 @@ public sealed partial class ModEntry
         {
             reasons.Add("junimo_kart_equivalent_acceleration_invalid");
         }
-        if (strategy == "timed_equivalent" &&
-            !string.Equals(request.ExecutionMode, "training_singleplayer", StringComparison.Ordinal))
+        if (strategy == "timed_equivalent" && !IsAiExecutionMode(request.ExecutionMode))
         {
-            reasons.Add("junimo_kart_timed_equivalent_training_singleplayer_only");
+            reasons.Add("junimo_kart_timed_equivalent_ai_actor_only");
         }
         if (Game1.currentMinigame is not MineCart game)
         {
@@ -174,6 +173,9 @@ public sealed partial class ModEntry
             config.JunimoKartEquivalentDurationTicks,
             config.JunimoKartEquivalentAcceleration);
     }
+
+    private static bool IsAiExecutionMode(string executionMode) =>
+        executionMode is "training_singleplayer" or "coop_companion" or "dedicated_host_ai";
 
     private static JKScoreObjective? ResolveJunimoKartObjective(
         TrainingExecutionRequest request)

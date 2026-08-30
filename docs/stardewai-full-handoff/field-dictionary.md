@@ -10,7 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **153 required / 137 readable with provenance / 16 contextual / 0 blocking** (EVD-306).
+Current installed full-snapshot schema checkpoint: **154 required / 138 readable with provenance / 16 contextual / 0 blocking** (EVD-307).
+
+## Prairie King Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.prairie_king.projection_fingerprint` | Hash of locked base-game stats, JOTPK progress, Saloon endpoints and active `AbigailGame` state | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `player.prairie_king.completed_before` / `completed_without_dying_before` | `Farmer.stats` | upstream completion gate and exact native receipt | covered_for_read / runtime_verified |
+| `player.prairie_king.interaction_tiles[]` | Live Saloon Buildings `Action=Arcade_Prairie` scan | route, stand selection and native entry | covered_for_read / covered_for_gate |
+| `player.prairie_king.equivalent_duration_ticks` / `equivalent_acceleration` | Locked AI actor policy `108000 / 60` | DailyPlan, compiler and timed-equivalent executor | covered_for_read / simulated_equivalent_runtime_verified |
+| `player.prairie_king.invocation_policy` / `native_proxy_policy` | Controller-owned policy boundary | trainer, runtime and audit | `autonomous_timed_equivalent` / `post_core_training_player_command_only` |
 
 ## Pirate Cove Darts Transparency
 

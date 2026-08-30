@@ -1,3 +1,11 @@
+2026-08-30 EVD-307 Prairie King AI timed-equivalent completion
+- Locked 1.6.15 source audit PASS: Saloon `Arcade_Prairie`, optional saved-game `CowboyGame/NewGame`, `AbigailGame.usePowerup(-3)`, phase-one completion/no-death stats, missed-mail/recipe update, achievement check and global chat are covered.
+- Hidden/silent isolated E-drive smoke PASS: `artifacts/runtime-prairie-king-smoke/runtime-prairie-king-smoke-20260830-120617/summary.json`. Result was `applied/simulated_equivalent`; native completion `0->1`, no-death `0->1`, `Beat_PK=True`, final gate complete.
+- AI actor policy PASS: training, coop companion and dedicated host use timed-equivalent execution; native perfect proxy play is deferred until after core-game training and is PlayerCommandOnly.
+- Installed full snapshot schema is 154 required, 138 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 194 registered / 213 semantic / 193 compiler-bound / 117 five-gate / 52 training allowlist / 19 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2075/2075; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next active slice is `minigame.play_slots`; the Junimo Kart native-perfect placeholder remains deferred.
+
 2026-08-30 EVD-306 native Pirate Cove Darts progression
 - Locked 1.6.15 source audit PASS: even-day, non-raining, 20:00 pirate-night gate; live DartsGame action; native Yes flow; 20/15/10 dart stages; 301 points; three limited Darts walnuts; and six-throw perfect-victory rule are covered.
 - Hidden/silent isolated E-drive matrix PASS 3/3: `artifacts/runtime-darts-game-smoke/runtime-darts-game-smoke-20260830-110428/summary.json`. All three rounds were `applied/verified`, scored `60,60,60,60,51,10` in six throws, and advanced the native limited-nut count `0->1->2->3`.

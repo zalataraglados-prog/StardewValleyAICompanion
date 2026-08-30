@@ -40,6 +40,7 @@ public sealed partial class ModEntry
             "debug.setup_calico_jack",
             "debug.setup_crane_game",
             "debug.setup_darts_game",
+            "debug.setup_prairie_king",
             "debug.setup_furniture_placement_target",
             "debug.setup_sign_placement_target",
             "debug.setup_sign_display_item_target",

@@ -2,6 +2,8 @@
 
 日期：2026-08-11
 
+> 2026-08-30 策略更新：EVD-307 已将 Junimo Kart `timed_equivalent` 扩展到训练、联机陪玩和专用房主中的 AI actor。下文“只允许 training_singleplayer”是历史运行证据范围，不再是当前限制；`native_perfect` 仍严格后置为训练完成后的 `PlayerCommandOnly` 代打。
+
 ## 当前状态
 
 - 动作对账：113 registered / 177 semantic / 112 compiler-bound / 64 catalogued-blocked。
@@ -13,7 +15,7 @@
 ## 本轮闭合
 
 1. Junimo Kart 默认 `timed_equivalent`，按 54,000 游戏 tick 表示 15 分钟平均预算；墙钟默认 60 倍加速。
-   只允许隔离 `training_singleplayer`，结果标记 `simulated_equivalent`。原 `native_perfect` 控制器完整保留，
+   当前允许训练、联机陪玩和专用房主中的 AI actor，结果标记 `simulated_equivalent`。原 `native_perfect` 控制器完整保留，
    以后用于帮玩家打完美存档，真实 50,000 分前不得声称原生五门闭合。
 2. `quest.claim_reward -> executor.claim_quest_reward` 已闭合。透明桥读精确可领取奖励；正式执行器只操作原生
    `QuestLog`，不直接写钱或任务状态。隔离运行验证 750g 增量和任务移除。

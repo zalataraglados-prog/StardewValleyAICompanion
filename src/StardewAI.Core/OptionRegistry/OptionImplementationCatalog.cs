@@ -117,6 +117,7 @@ public static class OptionImplementationCatalog
         "minigame.play_calico_jack",
         "minigame.play_crane_game",
         "minigame.play_darts",
+        "minigame.play_prairie_king",
         "executor.play_junimo_kart",
         "executor.play_fair_fishing_game",
         "executor.play_fair_slingshot_game",
@@ -124,7 +125,8 @@ public static class OptionImplementationCatalog
         "executor.spin_fair_wheel",
         "executor.play_calico_jack",
         "executor.play_crane_game",
-        "executor.play_darts");
+        "executor.play_darts",
+        "executor.play_prairie_king");
 
     private static readonly HashSet<string> InventoryOptions = Set(
         "rewards.claim_pot_of_gold",

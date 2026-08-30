@@ -135,6 +135,7 @@ namespace StardewAI.Core.Execution
                 "play_calico_jack" => "executor.play_calico_jack",
                 "play_crane_game" => "executor.play_crane_game",
                 "play_darts" => "executor.play_darts",
+                "play_prairie_king" => "executor.play_prairie_king",
                 "manage_grange_display" => "executor.manage_grange_display",
                 "play_fair_fishing_game" => "executor.play_fair_fishing_game",
                 "play_fair_slingshot_game" => "executor.play_fair_slingshot_game",

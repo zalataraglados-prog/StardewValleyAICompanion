@@ -255,6 +255,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one session exists only on a live non-raining even-day pirate night while the Darts limited drop count is below three", "the exact 20, 15 or 10 dart allowance is rebound from the team drop count", "native mouse aim and charge-release input completes the 301-point board in at most six throws", "native dialogue and FarmerTeam limited-nut machinery issue exactly the next reward" },
                 new[] { "block_not_pirate_night_or_three_rewards_complete", "block_live_DartsGame_endpoint_or_route_unavailable", "block_projection_drift", "block_unverified_native_score_dialogue_reward_or_cleanup", "block_direct_score_dart_count_timer_rng_reward_or_progress_mutation" }));
 
+            Register(Option("minigame.play_prairie_king", "minigame", "Schedule one AI-only timed-equivalent Prairie King completion while the no-death objective remains open",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.StrategyValue,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.prairie_king", "locations.collision_grid", "menus.active_menu" },
+                new[] { "the AI actor enters the live Saloon arcade and spends the conservative equivalent session budget", "the native AbigailGame completion branch increments completion and no-death stats and applies mail and achievement side effects", "the candidate disappears upstream after no-death completion" },
+                new[] { "block_no_death_completion_already_recorded", "block_non_ai_actor", "block_unverified_route_or_arcade_endpoint", "block_projection_drift", "block_direct_stats_mail_achievement_inventory_or_reward_mutation", "block_native_proxy_play_until_post_training_explicit_player_command" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -979,13 +987,21 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "legal fishing input lifecycle executed", "catch outcome observed" },
                 new[] { "block_wrong_location_or_stand_tile", "block_invalid_rod_or_bobber_tile", "block_unobserved_catch_result" }));
 
-            Register(Option("executor.play_junimo_kart", "minigame", "Play one native Junimo Kart endless session to an exact quest score",
+            Register(Option("executor.play_junimo_kart", "minigame", "Run one AI-only timed-equivalent Junimo Kart endless session to an exact quest score",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
                 new[] { "player.has_skull_key", "quests.special_orders", "current_location.arcade_action_tiles", "menus.active_menu" },
-                new[] { "native endless score submitted", "matching JKScoreObjective progress observed" },
-                new[] { "block_missing_skull_key", "block_wrong_minigame_or_mode", "block_unobserved_score_submission", "block_direct_minigame_state_mutation" }));
+                new[] { "equivalent session budget elapsed", "MineCart native score-submission callback invoked", "matching JKScoreObjective progress observed" },
+                new[] { "block_missing_skull_key", "block_non_ai_execution_target", "block_wrong_minigame_or_mode", "block_unobserved_score_submission", "native_perfect_proxy_reserved_for_post_training_player_command" }));
+
+            Register(Option("executor.play_prairie_king", "minigame", "Execute one AI-only timed-equivalent Prairie King completion through the native settlement branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.prairie_king", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native Arcade_Prairie entry and optional NewGame response observed", "equivalent session budget elapsed", "native AbigailGame phase-one settlement and exact stat deltas observed" },
+                new[] { "block_non_ai_execution_target", "block_wrong_minigame_or_saved_progress_branch", "block_projection_drift", "block_unobserved_native_settlement", "block_direct_stats_mail_achievement_inventory_or_reward_mutation" }));
 
             Register(Option("executor.ship_inventory_item_to_bin", "economy", "Put one inventory item into a completed shipping bin safely",
                 OptionBehaviorCategories.Mechanical,

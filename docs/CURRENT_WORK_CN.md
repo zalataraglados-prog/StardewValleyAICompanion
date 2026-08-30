@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-307
+
+- `minigame.play_prairie_king` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线和定时等价执行。唯一动作链为 `minigame.play_prairie_king -> play_prairie_king -> executor.play_prairie_king`；小模型只学习是否、何时安排，机械层始终执行不可见等价会话。
+- 该边界适用于训练和正式 AI 陪玩：AI 不进行原生逐帧草原大王操作。运行层经原生 `Arcade_Prairie` 创建 `AbigailGame`，在 108000 游戏 tick 等价预算期间暂停开始界面，随后只调用原生 `usePowerup(-3)`，由游戏自身增加通关/无伤统计、补发 `Beat_PK`、检查成就并发送全局消息。结果必须记录为 `simulated_equivalent` 和 `not_native_perfect_proxy_play`。
+- 隐藏静音 E 盘冒烟 `runtime-prairie-king-smoke-20260830-120617` PASS：原生统计 `0->1`、无伤统计 `0->1`、`Beat_PK=True`，最终闸门为 `complete_prairie_king_without_dying`。执行器未直接写统计、邮件、成就或奖励。
+- 最新 full snapshot 为 `154 required / 138 readable with provenance / 16 contextual / 0 blocking`；对账为 `194 registered / 213 semantic / 193 compiler-bound / 117 five-gate / 52 training allowlist / 19 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2075/2075`、Backend `148/148`、Release `0 warnings / 0 errors`。
+- Junimo Kart 的 AI actor 继续复用已有 `timed_equivalent`，覆盖训练、陪玩和专用房主；其原生完美代打只保留为核心能力训练完成后的 `PlayerCommandOnly` 占位，不阻塞主线。下一实际纵向切片为 `minigame.play_slots`。
+
 ## 2026-08-30 当前权威检查点：EVD-306
 
 - `minigame.play_darts` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生交互/确认/鼠标输入和限量核桃回执。唯一动作链为 `minigame.play_darts -> play_darts -> executor.play_darts`；小模型只决定是否完成下一轮，瞄准、充能、投掷和结果对话均由机械执行层负责。
@@ -465,12 +473,12 @@
   type-11 时明确失败关闭，不生成除草执行器。
 - EVD-239 已闭合 Junimo Kart 分数的静态主链：真实 full 快照验证
   `current_location.arcade_action_tiles` 可读且带来源；`JKScoreObjective` 绑定 Saloon 街机，复用移动、地图交互和
-  `MinecartGame/Endless` 对话原语和唯一 `executor.play_junimo_kart`。训练默认策略现为 `timed_equivalent`：按既有
+  `MinecartGame/Endless` 对话原语和唯一 `executor.play_junimo_kart`。经 EVD-307 更新后，所有 AI actor 的默认策略均为 `timed_equivalent`：按既有
   15 分钟平均预算计时 54,000 tick，运行时可加速墙钟，但只通过原生 `MineCart.submitHighScore()` 提交并核对
   `JKScoreObjective`，结果必须标记 `simulated_equivalent`，不得伪装成原生完美游玩证据。
-- 原有只发送跳跃输入的 `native_perfect` 控制器完整保留且与等价分数写入隔离；它后续用于帮玩家完成完美存档。
-  只有该模式真实达到 Endless 50,000 分并自然提交，才能登记 Junimo Kart 原生五门证据。训练等价模式不得增加
-  five-gate 或 allowlist 计数。
+- 原有只发送跳跃输入的 `native_perfect` 控制器完整保留且与等价分数写入隔离；它后续只用于玩家明确触发的完美存档代打。
+  只有该模式真实达到 Endless 50,000 分并自然提交，才能登记 Junimo Kart 原生五门证据。等价模式可服务训练、联机陪玩和专用房主，
+  但不得冒充原生完美证据；独立 `minigame.play_junimo_kart` 高层项继续后置，不阻塞其他游戏能力。
 - 2026-08-11 复核发现 `30,190` 历史运行的 smoke 脚本没有设置 `SMAPI_MODS_PATH`，实际还加载了
   `JunimoTestClient`，因此该制品只保留为受污染诊断样本，不再作为运行验收或回退基线。脚本现使用每次运行独立的
   两模组白名单，并把白名单写入汇总。首个干净矩阵为

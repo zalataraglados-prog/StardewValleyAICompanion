@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 草原大王正式 AI 等价闭环（EVD-307）
+
+`minigame.play_prairie_king` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布原生完成统计、无伤统计、JOTPK 存档、Saloon 端点、活动小游戏状态、108000-tick 等价预算和策略边界；fresh 编译器绑定全部机械字段。运行层复用共享路线，经原生入口创建 `AbigailGame`，计时期间暂停开始界面，结束后调用 `usePowerup(-3)` 并只接受原生统计、邮件和成就检查回执。
+
+此处的“闭合”明确等于 AI actor 的最终正式行为，不是原生完美代打。高层选择可训练，底层结果永久标记 `simulated_equivalent`；逐帧代理控制仅作为核心能力训练完成后的玩家指令扩展。隐藏静音冒烟通过统计 `0->1`、无伤 `0->1`、`Beat_PK=True`。当前对账为 `194 registered / 213 semantic / 193 compiler-bound / 117 five-gate / 52 allowlist / 19 catalogued blocked / 0 Product Executor`，full snapshot `154/138/16/0`、KnowledgeCompiler `585/585` blocking 0。Junimo Kart AI 继续复用既有等价执行器；下一实际纵向切片为 `minigame.play_slots`。
+
 ## 2026-08-30 飞镖原生自主闭环（EVD-306）
 
 `minigame.play_darts` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布目标洞穴天气上下文、海盗夜、活动状态、地图端点、三阶段飞镖限额、分数/投掷/瞄准/充能状态和限量核桃计数。高层只决定是否取得下一枚核桃；fresh 编译器绑定全部机械字段，运行层复用共享路线并只经原生 `checkAction`、Yes 对话和鼠标输入完成。
@@ -780,14 +786,14 @@ Town 隐藏静默隔离运行已通过；Qi 和沙漠节庆保留为同一实现
 
 ## 2026-08-11 Junimo Kart 训练等价模式与完美模式分流（EVD-243）
 
-当前权威策略覆盖上方 EVD-239 的“禁止任何分数写入”运行约束，但不删除其原生控制器和诊断证据。训练默认使用
+EVD-307 已覆盖本节早期的单机限制，但不删除其原生控制器和诊断证据。训练、联机陪玩和专用房主中的 AI actor 默认使用
 `timed_equivalent`：以既有 15 分钟平均预算作为等价时长（54,000 游戏 tick），墙钟可配置加速；计时结束后只在
-`training_singleplayer` 隔离模式内设置本局 MineCart 分数，再调用原生 `UpdateScoreState()` 与
+受控 AI actor 执行模式内设置本局 MineCart 分数，再调用原生 `UpdateScoreState()` 与
 `submitHighScore()`，并以同一个 `JKScoreObjective` 的精确进度作为收据。结果必须标记
 `simulated_equivalent` 和 `synthetic_score_assignment_not_native_perfect_play`，不得登记成原生完美五门证据。
 
 原有轨道、障碍、物理预测和跳跃输入控制器保留在独立 `native_perfect` 模式，且该文件不得包含分数或任务进度写入。
-它是后续“帮玩家打完美存档”的唯一继续校准路径；真实自然达到 50,000 分前，不增加 five-gate 或 allowlist。
+它是后续“帮玩家打完美存档”的唯一继续校准路径，严格 `PlayerCommandOnly`；真实自然达到 50,000 分前，不登记原生 five-gate 证据。
 隐藏静默 E 盘矩阵 `runtime-junimo-kart-20260811-194648` 已验证等价计时、原生提交回调和目标 `0 -> 50000`。
 
 ## 2026-08-11 普通任务奖励领取（EVD-242 已闭合）

@@ -53,6 +53,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCalicoJack? activeCalicoJack;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
+    private ActivePrairieKing? activePrairieKing;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -484,6 +485,7 @@ public sealed partial class ModEntry : Mod
         TickCalicoJack();
         TickCraneGame();
         TickDartsGame();
+        TickPrairieKing();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -1003,6 +1005,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_prairie_king")
+            {
+                pending.Completion.SetResult(ExecuteSetupPrairieKingFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1425,6 +1433,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_darts")
             {
                 StartDartsGame(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.play_prairie_king")
+            {
+                StartPrairieKing(pending);
                 return;
             }
 
@@ -2033,6 +2047,7 @@ public sealed partial class ModEntry : Mod
             StopAllMovement();
             activeCatchFish = null;
             activeJunimoKart = null;
+            activePrairieKing = null;
             activeCrabPotCollect = null;
             activeBushHarvest = null;
             activeFruitTreeHarvest = null;
@@ -2278,6 +2293,7 @@ public sealed partial class ModEntry : Mod
             activeCalicoJack is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
+            activePrairieKing is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

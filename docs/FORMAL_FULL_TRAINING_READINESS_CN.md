@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 草原大王等价训练准入（EVD-307）
+
+`minigame.play_prairie_king` 已通过 read / candidate / compile / equivalent runtime / native output receipt 五门并进入策略训练 allowlist。训练的标签是高层“是否、何时安排无伤通关”，不是逐帧射击动作；`executor.play_prairie_king` 仍为机械执行层。训练、联机陪玩和专用房主中的 AI actor 均使用相同的不可见 108000-tick 定时等价会话，禁止将其标成原生完美操作。
+
+隐藏静音 E 盘冒烟验证原生 `Arcade_Prairie -> AbigailGame -> usePowerup(-3)` 结算，通关与无伤统计均精确 `+1`，`Beat_PK` 邮件由游戏自身产生。最新 schema 为 `154/138/16/0`；对账为 `194 registered / 213 semantic / 193 compiler-bound / 117 five-gate / 52 allowlist / 19 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 19 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡。Junimo Kart 原生完美代打后置为训练完成后的 `PlayerCommandOnly`；下一实际目录切片为 `minigame.play_slots`。
+
 ## 2026-08-30 飞镖训练准入（EVD-306）
 
 `minigame.play_darts` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否取得下一枚尚未发放的海盗湾飞镖核桃；海盗夜、目标地图天气、路线、20/15/10 支限额、301 分六投方案、鼠标瞄准/充能/释放、结果对话和限量奖励都由 fresh snapshot 与机械执行层绑定。非海盗夜、3 枚奖励已完成、端点/路线/菜单忙碌或投影漂移会在上游或 fresh 编译阶段关闭。

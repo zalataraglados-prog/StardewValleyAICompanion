@@ -1695,6 +1695,9 @@ static partial class Program
         ApplyDartsGameRequestFields(
             executionRequest,
             item);
+        ApplyPrairieKingRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);
