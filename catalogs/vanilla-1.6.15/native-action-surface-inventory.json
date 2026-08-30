@@ -4,12 +4,11 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 108,
-  "catalogued_blocked_surface_count": 60,
-  "catalogued_blocked_action_count": 16,
+  "mapped_count": 110,
+  "catalogued_blocked_surface_count": 58,
+  "catalogued_blocked_action_count": 15,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "multiplayer.send_chat",
     "player.choose_bobber",
     "player.choose_jukebox_track",
     "player.customize",
@@ -1313,7 +1312,7 @@
       "mappedOptionIds": [
         "multiplayer.send_chat"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -1330,7 +1329,7 @@
       "mappedOptionIds": [
         "multiplayer.send_chat"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

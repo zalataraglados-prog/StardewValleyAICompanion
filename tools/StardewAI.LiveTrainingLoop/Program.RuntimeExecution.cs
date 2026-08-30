@@ -1698,6 +1698,9 @@ static partial class Program
         ApplyMultiplayerWalletRequestFields(
             executionRequest,
             item);
+        ApplyMultiplayerChatRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

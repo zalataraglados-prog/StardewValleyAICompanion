@@ -604,6 +604,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player selects one exact schedule, cancellation, or transfer command", "compiler rebinds current wallet mode, participant balances, recipient response key and live LedgerBook stand", "shared BFS reaches the ManorHouse ledger", "native dialogue or digit-menu input produces an immediate receipt", "scheduled mode changes settle only at the native next-day wallet barrier" },
                 new[] { "block_without_explicit_command_reason_and_confirmation", "block_mode_change_when_not_host", "block_transfer_outside_separate_wallet_mode", "block_unknown_recipient_or_invalid_amount", "block_menu_or_ledger_unavailable", "block_projection_or_balance_drift", "block_direct_wallet_flag_money_balance_or_stat_mutation" }));
 
+            Register(Option("multiplayer.send_chat", "multiplayer", "Send one explicitly confirmed global or exact-recipient multiplayer chat message through the native chat box",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.multiplayer_chat", "menus.active_menu" },
+                new[] { "player supplies exact scope, reason and text", "compiler rebinds current sender, language, network role and native recipient match", "native ChatTextBox character input enforces the live width gate", "native ChatBox dispatches global AllPlayers or compiler-owned message private type-10 traffic", "sender-local filtered ChatMessage receipt is verified" },
+                new[] { "block_without_explicit_command_reason_text_and_confirmation", "block_leading_slash_control_or_private_space_normalization", "block_non_multiplayer_or_missing_network_role", "block_unknown_inactive_or_ambiguous_private_recipient", "block_menu_chatbox_projection_or_input_width_drift", "block_direct_network_send_or_local_receipt_injection", "never_claim_unobserved_remote_delivery" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -892,6 +900,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.multiplayer_wallet", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact live LedgerBook stand", "native DialogueBox response clicks select one authorized mode command or recipient", "native DigitEntryMenu clicks enter an exact transfer amount", "pending flag, balances and gifted statistic are checked without production writes", "native next-day settlement is verified separately for shared-to-separate and separate-to-shared transitions" },
                 new[] { "block_without_explicit_command_reason_and_confirmation", "block_mode_change_when_not_host", "block_transfer_outside_separate_wallet_mode", "block_unknown_recipient_or_invalid_amount", "block_endpoint_menu_or_projection_drift", "block_unverified_immediate_or_next_day_receipt", "block_direct_wallet_flag_money_balance_or_stat_mutation" }));
+
+            Register(Option("executor.send_multiplayer_chat", "multiplayer", "Execute and verify one explicitly confirmed native multiplayer ChatBox send",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.multiplayer_chat", "menus.active_menu" },
+                new[] { "live sender, language, network role, message list and exact private target are revalidated", "ChatBox.activate and character-by-character ChatTextBox input reproduce the native width and strict-platform filter", "ChatBox.textBoxEnter owns dirty-word filtering, command parsing and type-10 transport", "new sender-local ChatMessage snippets, kind, language and bounded message count match the native expected receipt" },
+                new[] { "block_unconfirmed_or_unsafe_text", "block_nonexact_private_first_match", "block_input_width_or_strict_filter_change", "block_live_projection_or_menu_drift", "block_sender_local_receipt_mismatch", "block_direct_sendChatMessage_or_receiveChatMessage", "never_fabricate_remote_receipt" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

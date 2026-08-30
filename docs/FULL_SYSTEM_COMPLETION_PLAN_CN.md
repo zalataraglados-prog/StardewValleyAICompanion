@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 联机聊天玩家命令闭环（EVD-311）
+
+`multiplayer.send_chat` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布当前发送者、语言、默认颜色、网络角色、消息队列边界、ChatTextBox 宽度和在线收件人的原生枚举/匹配信息。上游只接受带原因和确认的普通全局消息或精确私聊，拒绝任意斜杠命令、控制字符、模糊目标及原生输入宽度无法容纳的文本；fresh 编译器不信任模型提供的机械字段，全部从当前投影重新绑定。
+
+生产运行层只模拟原生聊天框生命周期：激活 ChatBox、逐字符输入 ChatTextBox，再调用 `textBoxEnter`。脏词过滤、全局 AllPlayers/私聊 exact recipient、type-10 网络分发和发送者本地 kind 0/kind 3 回执都由 1.6.15 原版处理；执行器禁止直接调用 `sendChatMessage`/`receiveChatMessage`，且只声明发送路径与本地回执，不伪造远端送达。隐藏静音矩阵 `2/2` 通过。当前对账为 `202 registered / 217 semantic / 201 compiler-bound / 125 five-gate / 54 allowlist / 15 catalogued blocked / 0 Product Executor`，full snapshot `158/141/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2105/2105`、Backend `151/151`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.choose_bobber`。
+
 ## 2026-08-30 联机钱包玩家命令闭环（EVD-310）
 
 `multiplayer.manage_wallet` 已按完整纵向切片闭合，但严格保持 `PlayerCommandOnly`。透明桥发布 ManorHouse LedgerBook 端点、当前共享/独立模式、今晚待切换状态、已认领参与者、原生收款人顺序与响应键、共享及个人余额、赠款统计、五项命令门控和两种次日结算投影。上游仅接收带原因和确认的显式命令；fresh 编译器从实时投影重绑全部机械字段，跨地图 continuation 锁定同一操作、收款人和金额。

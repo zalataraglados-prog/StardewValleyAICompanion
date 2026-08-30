@@ -1019,6 +1019,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_multiplayer_chat")
+            {
+                pending.Completion.SetResult(ExecuteSetupMultiplayerChatFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.settle_multiplayer_wallet")
             {
                 pending.Completion.SetResult(ExecuteSettleMultiplayerWalletFixture(pending.Request));
@@ -1471,6 +1477,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.manage_multiplayer_wallet")
             {
                 StartMultiplayerWallet(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.send_multiplayer_chat")
+            {
+                pending.Completion.SetResult(ExecuteSendMultiplayerChat(pending.Request));
                 return;
             }
 

@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-311
+
+- `multiplayer.send_chat` 已闭合完整透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求、原生 ChatBox 输入和严格发送者本地回执。唯一动作链为 `multiplayer.send_chat -> send_multiplayer_chat -> executor.send_multiplayer_chat`，没有第二套聊天网络协议。
+- 该能力严格为 `PlayerCommandOnly`：玩家必须给出作用域、原因、正文和确认；只接受普通全局消息或绑定当前在线玩家的私聊。任意 `/` 命令、控制字符、模糊私聊目标、超出原生 880px 内容宽度和未确认文本均在上游排除，不进入默认候选、自主规划或策略训练。
+- fresh 编译器从 `player.multiplayer_chat` 重绑发送者、语言、默认颜色、网络角色、消息数、输入宽度、在线收件人原生顺序与精确 first-match。运行层只经 `ChatBox.activate -> ChatTextBox.RecieveTextInput -> ChatBox.textBoxEnter`，由原版完成脏词过滤、全局 `AllPlayers` 或私聊 exact recipient 的 type-10 传输；不直接调用 `sendChatMessage`/`receiveChatMessage`，也不伪造远端送达回执。
+- 隐藏静音 E 盘矩阵 `2/2` PASS：`artifacts/runtime-multiplayer-chat/runtime-multiplayer-chat-20260830-183025/summary.json`。全局 kind 0 与私聊 kind 3 均 `applied/verified`，输入框原生复位、消息上限、语言、颜色、格式化片段和发送者本地回执全部一致。
+- 最新 full snapshot 为 `158 required / 141 readable with provenance / 17 contextual / 0 blocking`；对账为 `202 registered / 217 semantic / 201 compiler-bound / 125 five-gate / 54 training allowlist / 15 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2105/2105`、Backend `151/151`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 继续按既定边界后置原生完美代打，下一实际纵向切片为 `player.choose_bobber`。
+
 ## 2026-08-30 当前权威检查点：EVD-310
 
 - `multiplayer.manage_wallet` 已闭合透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 ManorHouse LedgerBook 菜单输入和严格回执。唯一动作链为 `multiplayer.manage_wallet -> manage_multiplayer_wallet -> executor.manage_multiplayer_wallet`，没有第二套钱包执行系统。

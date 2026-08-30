@@ -58,6 +58,7 @@ public static class OptionImplementationCatalog
         "executor.purchase_animal",
         "executor.manage_animal",
         "executor.manage_multiplayer_wallet",
+        "executor.send_multiplayer_chat",
         "executor.close_menu",
         "executor.social_interact",
         "executor.quest_npc_interact",

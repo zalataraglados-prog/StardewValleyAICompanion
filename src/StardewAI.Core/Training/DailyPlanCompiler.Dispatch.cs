@@ -77,6 +77,7 @@ namespace StardewAI.Core.Training
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
                 ["mining.activate_calico_statue"] = new[] { "activate_calico_statue" },
                 ["multiplayer.manage_wallet"] = new[] { "route_connector_tile", "manage_multiplayer_wallet" },
+                ["multiplayer.send_chat"] = new[] { "send_multiplayer_chat" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
@@ -365,6 +366,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return MultiplayerWalletSteps(candidate);
+            }
+
+            if (candidate.Kind == "send_multiplayer_chat" &&
+                OptionCandidateCompilerKinds["multiplayer.send_chat"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return MultiplayerChatSteps(candidate);
             }
 
             if (candidate.Kind == "claim_pot_of_gold" &&

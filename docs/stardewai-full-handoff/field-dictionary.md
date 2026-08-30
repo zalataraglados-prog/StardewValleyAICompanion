@@ -10,7 +10,19 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **156 required / 139 readable with provenance / 17 contextual / 0 blocking** (EVD-309).
+Current installed full-snapshot schema checkpoint: **158 required / 141 readable with provenance / 17 contextual / 0 blocking** (EVD-311).
+
+## Multiplayer Chat Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.multiplayer_chat.projection_fingerprint` | Live sender, language/color, network role, message queue bounds, input geometry and active recipient order | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `sender_player_id` / `sender_display_name` / `sender_default_color` / `language_code` / `network_role` | `Game1.player`, `LocalizedContentManager` and live multiplayer role | typed request and sender-local receipt verification | covered_for_read / native_runtime_verified |
+| `message_count` / `message_limit` / `input_width_pixels` / `input_content_width_pixels` | Live `ChatBox.messages`, `maxMessages` and `ChatTextBox.Width` | upstream width exclusion, runtime revalidation and bounded receipt | covered_for_read / covered_for_gate / native_runtime_verified |
+| `online_recipients[]` / native command tokens and order | Active `Game1.otherFarmers` in the same order consumed by `ChatBox.findMatchingFarmer` | exact private first-match binding | covered_for_read / private_target_fail_closed |
+| `network_message_type` / `native_contract` / `direct_transport_policy` | Locked 1.6.15 `ChatBox.textBoxEnter`, `/message`, `Multiplayer.sendChatMessage` and receive path | compiler, native executor and source guard | type_10_native / no_direct_transport / no_remote_receipt_fabrication |
+
+`multiplayer.send_chat` and `executor.send_multiplayer_chat` are `PlayerCommandOnly`. They are registered for explicit commands and runtime verification but intentionally absent from autonomous candidate generation and policy-training admission.
 
 ## Calico Statue Transparency
 
