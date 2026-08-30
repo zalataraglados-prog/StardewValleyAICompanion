@@ -75,6 +75,7 @@ namespace StardewAI.Core.Execution
                 ["executor.donate_field_office_piece"] = (action, _) => CompileDonateFieldOfficePieceStep(action),
                 ["executor.answer_field_office_survey"] = (action, _) => CompileAnswerFieldOfficeSurveyStep(action),
                 ["executor.play_calico_jack"] = (action, _) => CompilePlayCalicoJackStep(action),
+                ["executor.play_slots"] = (action, _) => CompilePlaySlotsStep(action),
                 ["executor.play_crane_game"] = (action, _) => CompilePlayCraneGameStep(action),
                 ["executor.play_darts"] = (action, _) => CompilePlayDartsStep(action),
                 ["executor.play_prairie_king"] = (action, _) => CompilePlayPrairieKingStep(action),

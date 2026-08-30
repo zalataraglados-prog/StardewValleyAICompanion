@@ -61,6 +61,7 @@ namespace StardewAI.Core.Tests
                     "minigame.play_calico_jack",
                     "minigame.play_darts",
                     "minigame.play_prairie_king",
+                    "minigame.play_slots",
                     "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                     "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
                     "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"

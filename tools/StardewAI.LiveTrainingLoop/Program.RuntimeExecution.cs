@@ -1689,6 +1689,9 @@ static partial class Program
         ApplyCalicoJackRequestFields(
             executionRequest,
             item);
+        ApplySlotsRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

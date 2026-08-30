@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 赌场老虎机原生闭环（EVD-308）
+
+`minigame.play_slots` 已按完整纵向切片闭合并进入策略训练范围。透明桥实时发布共享 Rarecrow 齐币需求、ClubSlots 机器、10/100 下注、Luck 倍率、完整概率/图案/倍率分布、期望净收益、活动转轴和原生退出状态；fresh 编译器锁定全部机械字段。运行层复用共享路线，只经原生 `checkAction` 和 `Slots.receiveLeftClick` 输入执行一次旋转，原版共享 RNG 独占结果生成，执行器只验收图案、倍率、齐币差、`timesPlayedSlots` 和 Done 清理。
+
+隐藏静音矩阵 `2/2` 覆盖 10 币无奖和 100 币单七 `x2` 分支，不存在第二套 RNG、转轴或齐币写入器。当前对账为 `196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 allowlist / 18 catalogued blocked / 0 Product Executor`，full snapshot `155/139/16/0`、KnowledgeCompiler `585/585` blocking 0、Core `2080/2080`、Backend `148/148`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `mining.activate_calico_statue`。
+
 ## 2026-08-30 草原大王正式 AI 等价闭环（EVD-307）
 
 `minigame.play_prairie_king` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布原生完成统计、无伤统计、JOTPK 存档、Saloon 端点、活动小游戏状态、108000-tick 等价预算和策略边界；fresh 编译器绑定全部机械字段。运行层复用共享路线，经原生入口创建 `AbigailGame`，计时期间暂停开始界面，结束后调用 `usePowerup(-3)` 并只接受原生统计、邮件和成就检查回执。

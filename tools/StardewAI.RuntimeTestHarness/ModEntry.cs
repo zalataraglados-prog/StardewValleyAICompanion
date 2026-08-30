@@ -51,6 +51,7 @@ public sealed partial class ModEntry : Mod
     private ActiveFairStrengthGame? activeFairStrengthGame;
     private ActiveFairWheelSpin? activeFairWheelSpin;
     private ActiveCalicoJack? activeCalicoJack;
+    private ActiveSlots? activeSlots;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -483,6 +484,7 @@ public sealed partial class ModEntry : Mod
         TickFairStrengthGame();
         TickFairWheelSpin();
         TickCalicoJack();
+        TickSlots();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -993,6 +995,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_slots")
+            {
+                pending.Completion.SetResult(ExecuteSetupSlotsFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_crane_game")
             {
                 pending.Completion.SetResult(ExecuteSetupCraneGameFixture(pending.Request));
@@ -1421,6 +1429,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_calico_jack")
             {
                 StartCalicoJack(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.play_slots")
+            {
+                StartSlots(pending);
                 return;
             }
 
@@ -2291,6 +2305,7 @@ public sealed partial class ModEntry : Mod
             activeFairStrengthGame is not null ||
             activeFairWheelSpin is not null ||
             activeCalicoJack is not null ||
+            activeSlots is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

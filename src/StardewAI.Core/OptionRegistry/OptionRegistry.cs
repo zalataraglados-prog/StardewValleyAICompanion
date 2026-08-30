@@ -239,6 +239,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one native low- or high-stakes round is selected from a fresh exact seed projection", "automatic demand exists only while (BC)126 is absent and the Deluxe Scarecrow dependency remains open", "the shared deterministic hidden-card and future-draw decision model chooses native hit or stand input", "the executor quits after one native settlement so every coin delta is auditable" },
                 new[] { "block_no_rarecrow_currency_demand", "block_club_card_or_seed_coins_missing", "block_projected_loss_of_last_seed_coins", "block_unverified_route", "block_projection_or_rng_replay_drift", "block_direct_card_rng_coin_result_or_minigame_mutation" }));
 
+            Register(Option("minigame.play_slots", "minigame", "Play one bounded native Slots spin while the missing Casino Rarecrow creates an exact Qi-coin deficit",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.club_coins", "player.has_club_card", "player.slots", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one native 10- or 100-coin spin is selected from a fresh demand and Luck projection", "the complete locked payout threshold distribution and expected value are transparent while shared RNG remains live feedback", "automatic demand exists only while (BC)126 is absent and the Deluxe Scarecrow dependency remains open", "the executor exits after one settlement so every stochastic coin delta is auditable" },
+                new[] { "block_no_rarecrow_currency_demand", "block_club_card_or_seed_coins_missing", "block_unverified_route", "block_projection_drift", "block_unverified_native_random_settlement_or_cleanup", "block_direct_rng_reel_coin_result_or_stat_mutation" }));
+
             Register(Option("minigame.play_crane_game", "minigame", "Play one explicitly authorized native Movie Theater Crane Game session",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1298,6 +1306,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.club_coins", "player.has_club_card", "player.calico_jack", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the exact live ClubCards or BlackJack table", "native Play dialogue constructs CalicoJack with the projected bet and seed", "shared exact seed replay validates every dealt card and chooses native hit or stand", "native result settlement and quit verify the exact Qi-coin delta without direct mutation" },
                 new[] { "block_club_or_table_projection_drift", "block_dialogue_bet_or_seed_replay_drift", "block_unverified_native_settlement_or_cleanup", "block_unverified_route", "block_direct_card_rng_coin_result_or_minigame_mutation" }));
+
+            Register(Option("executor.play_slots", "minigame", "Execute one verified native Slots spin and record its stochastic settlement",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.club_coins", "player.has_club_card", "player.slots", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one exact live ClubSlots endpoint", "native Slots 10- or 100-coin button starts exactly one spin", "the real shared RNG owns reels and payout", "result icons, payout multiplier, coin delta, times-played increment and Done cleanup are verified without direct mutation" },
+                new[] { "block_club_or_machine_projection_drift", "block_bet_probability_or_input_contract_drift", "block_unverified_native_random_settlement_or_cleanup", "block_unverified_route", "block_direct_rng_reel_coin_result_or_stat_mutation" }));
 
             Register(Option("executor.play_crane_game", "minigame", "Execute one verified native Movie Theater Crane Game session",
                 OptionBehaviorCategories.Mechanical,

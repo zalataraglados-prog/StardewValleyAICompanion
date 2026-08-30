@@ -10,7 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **154 required / 138 readable with provenance / 16 contextual / 0 blocking** (EVD-307).
+Current installed full-snapshot schema checkpoint: **155 required / 139 readable with provenance / 16 contextual / 0 blocking** (EVD-308).
+
+## Slots Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.slots.projection_fingerprint` | Hash of live casino demand, ClubCoins, Luck, play count, machines, payout model and active spin | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `player.slots.payout_rows[]` / `luck_multiplier` / `expected_payout_multiplier` | Locked 1.6.15 `Slots.setSlotResults`; live `DailyLuck` and `LuckLevel` | bet policy, training features and typed runtime request | covered_for_read / native_source_exact |
+| `player.slots.interaction_tiles[]` / `recommended_bet` | Live Club Buildings `ClubSlots` scan and 10/100 native balance rules | route, stand selection and native button input | covered_for_read / covered_for_gate |
+| `player.slots.active_spin.*` | Native public spin state plus reflected reels/results/buttons | runtime settlement and cleanup verifier | covered_for_live_runtime_and_receipt |
+| `rng_contract` | Shared `Game1.random` ownership in locked native source | compiler/runtime anti-hallucination guard | `live_feedback_not_stable_future_prediction` |
 
 ## Prairie King Transparency
 

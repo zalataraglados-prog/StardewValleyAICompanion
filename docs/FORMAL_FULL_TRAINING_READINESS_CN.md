@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 赌场老虎机训练准入（EVD-308）
+
+`minigame.play_slots` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否在缺少 `(BC)126` 且 Deluxe Scarecrow 依赖开放时安排一次齐币下注；赌场权限、机器、路线、10/100 下注、Luck 概率分布、转轴、倍率、原生币差和退出均由 fresh snapshot 与机械执行层绑定。共享 `Game1.random` 的未来结果不作确定性伪预测，每次原生结算后以 live feedback 重规划。
+
+隐藏静音 E 盘矩阵 `2/2` 验证 10 币无奖和 100 币单七 `x2`，图案、倍率、`ClubCoins` 差、`timesPlayedSlots +1` 与 Done 清理完全一致；生产执行不写 RNG、转轴、倍率、齐币或统计。最新 schema 为 `155/139/16/0`；对账为 `196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 allowlist / 18 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 18 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一实际目录切片为 `mining.activate_calico_statue`。
+
 ## 2026-08-30 草原大王等价训练准入（EVD-307）
 
 `minigame.play_prairie_king` 已通过 read / candidate / compile / equivalent runtime / native output receipt 五门并进入策略训练 allowlist。训练的标签是高层“是否、何时安排无伤通关”，不是逐帧射击动作；`executor.play_prairie_king` 仍为机械执行层。训练、联机陪玩和专用房主中的 AI actor 均使用相同的不可见 108000-tick 定时等价会话，禁止将其标成原生完美操作。
