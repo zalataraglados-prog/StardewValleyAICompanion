@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-31 当前权威检查点：EVD-315
+
+- `processing.crack_geode` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享逐帧移动、原生铁匠对话与 `GeodeMenu` 输入，以及严格领取回执。唯一动作链为 `processing.crack_geode -> crack_geode -> executor.crack_geode`，没有第二套库存、奖励或晶球 RNG 系统。
+- 锁定 1.6.15 范围覆盖全部八种基础输入：`(O)275/535/536/537/749/791/MysteryBox/GoldenMysteryBox`。透明预测复刻 `Utility.getTreasureFromGeode` 的计数时序、种子、两段固定次数随机预热、数据驱动掉落、文物保护、Mystery Book 邮件和首次金椰子互斥分支；两个原生共享 `Game1.random` 作物分支只发布完整当季候选族，不伪造确定结果。
+- 上游在 Clint 不在铁匠铺、成品工具领取拦截、菜单/事件/控制锁、金钱不足、库存容量不足或端点不可达时排除候选。fresh 编译器重新绑定输入槽位/品质/堆叠、计数、金椰子与金核桃状态、邮件/技能/季节/矿层上下文、输出族、柜台和站位。生产执行器只经 `Blacksmith checkAction -> Process -> GeodeMenu inventory/geodeSpot click -> 2700ms native animation`；不直接写金钱、库存、统计、邮件或团队状态。
+- 隐藏静音 E 盘矩阵 `9/9` PASS：`artifacts/runtime-geode-processing/runtime-geode-processing-20260831-003313/summary.json`。八种基础晶球均 `applied/verified`，另含伪造计数拒绝；运行中发现并修正了随机预热循环、产物占原槽后的剩余堆叠归还、首次矿物 `artifactFound` 和金椰子产物转团队金核桃而不留库存四个真实缺口。
+- 最新 full snapshot 为 `162 required / 145 readable with provenance / 17 contextual / 0 blocking`；对账为 `210 registered / 221 semantic / 209 compiler-bound / 136 harness dispatch / 133 five-gate / 55 training allowlist / 11 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens`；KnowledgeCompiler `585/585`、blocking 0；Core `2128/2128`、Backend `155/155`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 按既定边界继续后置，下一实际纵向切片为 `quest.cancel`。
+
 ## 2026-08-30 当前权威检查点：EVD-314
 
 - `player.customize` 已闭合完整透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求和两条原生执行分支。唯一动作链为 `player.customize -> customize_player -> executor.customize_player`，严格 `PlayerCommandOnly`，不进入默认候选、自主日计划或策略训练。

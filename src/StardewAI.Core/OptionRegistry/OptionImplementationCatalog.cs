@@ -62,6 +62,7 @@ public static class OptionImplementationCatalog
         "executor.choose_bobber_style",
         "executor.choose_jukebox_track",
         "executor.customize_player",
+        "executor.crack_geode",
         "executor.close_menu",
         "executor.social_interact",
         "executor.quest_npc_interact",

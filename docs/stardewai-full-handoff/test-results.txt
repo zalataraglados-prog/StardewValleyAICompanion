@@ -1,3 +1,11 @@
+2026-08-31 EVD-315 native Blacksmith geode processing
+- Locked 1.6.15 source/data audit PASS: all eight base geodes, Clint/tool/control/service/capacity gates, exact counter/seed timing, two fixed-count RNG burn loops, data-driven drops, artifact guard, Mystery Book mutation, shared-RNG crop families and first Golden Coconut mutex contingency are covered.
+- Hidden/silent isolated E-drive matrix PASS 9/9: `artifacts/runtime-geode-processing/runtime-geode-processing-20260831-003313/summary.json`. All eight native inputs returned `applied/verified`; a forged GeodesCracked binding was rejected before input.
+- Runtime receipt covers one input, 25g, GeodesCracked/MysteryBoxesOpened, output inventory conservation, first mineral/artifact mail, output pickup effects, GoldenCoconutCracked and team GoldenWalnuts. Production uses shared movement plus native Blacksmith dialogue and GeodeMenu clicks only; direct state mutation is forbidden.
+- Installed full snapshot schema is 162 required, 145 readable with provenance, 17 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 210 registered / 221 semantic / 209 compiler-bound / 136 harness dispatch / 133 five-gate / 55 training allowlist / 11 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2128/2128; Backend 155/155; full solution Release build 0 warnings / 0 errors. Junimo Kart remains deliberately deferred; next active slice is `quest.cancel`.
+
 2026-08-30 EVD-314 native player customization
 - Locked 1.6.15 source audit PASS: Wizard Shrine exact 500g/native editable domains and Desert Festival replacement-location stylist/daily/inventory/Data/MakeoverOutfits/day-save-RNG branches are covered; dye and onboarding remain separate owners.
 - Hidden/silent isolated E-drive matrix PASS 4/4: `artifacts/runtime-player-customization/runtime-player-customization-20260830-215722/summary.json`. Wizard full edit, all six HSV sliders at 100, forged money binding rejection and native Desert makeover all returned the expected verified receipt.

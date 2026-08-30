@@ -216,6 +216,19 @@ public static class QueueReplanFilter
             }
             return result;
         }
+        var geodeQid = ReadParameter(queueItem, "continuation.geode_qualified_item_id");
+        var geodePurpose = ReadParameter(queueItem, "continuation.geode_purpose");
+        if (string.Equals(optionId, "processing.crack_geode", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(geodeQid) && !string.IsNullOrWhiteSpace(geodePurpose))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "geode_processing",
+                ["option_id"] = optionId,
+                ["geode_qualified_item_id"] = geodeQid,
+                ["geode_purpose"] = geodePurpose
+            };
+        }
 
         var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
         if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal) &&
@@ -590,6 +603,12 @@ public static class QueueReplanFilter
                 PlayerCustomizationContinuationNames.All(name => string.IsNullOrEmpty(ReadString(continuation, name)) ||
                     string.Equals(ReadParameter(queueItem, name), ReadString(continuation, name), StringComparison.Ordinal));
         }
+        if (string.Equals(continuationKind, "geode_processing", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.crack_geode", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "geode_qualified_item_id"), ReadString(continuation, "geode_qualified_item_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "geode_purpose"), ReadString(continuation, "geode_purpose"), StringComparison.Ordinal);
+        }
 
         if (string.Equals(
                 continuationKind,
@@ -865,6 +884,11 @@ public static class QueueReplanFilter
             return CandidateParameterMatchesContinuation(candidate, continuation, "jukebox_track_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "jukebox_reason") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_jukebox_track");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "geode_processing", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "geode_qualified_item_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "geode_purpose");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_donation", StringComparison.Ordinal))

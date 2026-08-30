@@ -636,6 +636,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player chooses Wizard Shrine exact targets or accepts the exact projected Desert makeover", "compiler rebinds endpoint, price, stylist, inventory and deterministic outfit", "shared BFS reaches the native action", "native menu controls or touch-event completion produce the exact receipt" },
                 new[] { "block_without_explicit_mode_reason_and_confirmation", "block_unknown_hair_skin_accessory_color_or_text_target", "block_price_route_stylist_daily_inventory_or_festival_gate", "block_projection_rng_outfit_or_endpoint_drift", "block_direct_money_appearance_equipment_daily_flag_or_ReceiveMakeOver_mutation", "exclude_dye_onboarding_and_unreachable_dresser_sources", "exclude_from_autonomous_candidates_and_strategy_training" }));
 
+            Register(Option("processing.crack_geode", "processing", "Process one locked-base geode through Clint's native Blacksmith counter",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.geode_processing", "player.inventory", "menus.active_menu", "locations.route_graph" },
+                new[] { "small model selects a geode identity and purpose, not menu mechanics", "compiler rebinds the exact live slot, counters, seed projection, money, capacity and counter endpoint", "shared routing reaches Blacksmith", "native Clint dialogue and GeodeMenu clicks consume one geode and yield one verified output" },
+                new[] { "block_non_locked_base_geode", "block_clint_absent_completed_tool_claim_money_capacity_or_menu", "block_unresolved_route_or_counter_stand", "block_counter_seed_output_family_or_endpoint_drift", "block_direct_money_inventory_stats_mail_or_team_state_mutation" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -956,6 +964,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.customization", "player.inventory", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact native action", "WizardShrine Yes opens CharacterCustomization(Source.Wizard) and exact native controls are used", "DesertMakeover touch starts the native event and its completion callback applies the projected outfit", "money, appearance, equipment, inventory conservation and daily flag are verified" },
                 new[] { "block_unconfirmed_or_out_of_domain_target", "block_endpoint_price_stylist_inventory_rng_menu_event_or_projection_drift", "block_unverified_exact_receipt", "block_direct_money_appearance_equipment_daily_flag_or_ReceiveMakeOver_mutation", "player_command_only" }));
+
+            Register(Option("executor.crack_geode", "processing", "Execute and verify one native Blacksmith geode-processing cycle",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.geode_processing", "player.inventory", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Blacksmith counter", "native counter action and Process response open GeodeMenu", "native inventory and geode-spot clicks run the 2700ms animation", "money, counters, mail, Golden Coconut state and exact or complete-family output receipt are verified" },
+                new[] { "block_untyped_or_stale_geode_projection", "block_live_slot_money_capacity_counter_clint_or_tool-claim_drift", "block_native_menu_or_animation_timeout", "block_output_or_conservation_receipt_mismatch", "block_direct_money_inventory_stats_mail_or_team_state_mutation" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

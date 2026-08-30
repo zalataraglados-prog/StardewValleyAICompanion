@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "03cef83696564b7a2adbac3f0f2b7a7ea6d0f811f83123060385e1e32dd01a1e",
-  "action_count": 220,
-  "registered_option_spec_count": 208,
-  "catalogued_blocked_count": 12,
+  "denominator_fingerprint_sha256": "ff0cb9e29e6a7df1d46bce5a0132f2a5b8483100a47623058991c0f8e2d4516c",
+  "action_count": 221,
+  "registered_option_spec_count": 210,
+  "catalogued_blocked_count": 11,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -462,6 +462,15 @@
       "domain": "volcano",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.dungeon_traversal",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.crack_geode",
+      "domain": "processing",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
@@ -1740,13 +1749,11 @@
     {
       "action_id": "processing.crack_geode",
       "domain": "processing",
-      "semantic_kind": "composite",
-      "primary_engine_id": "engine.crafting_processing",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "GeodeMenu"
-      ]
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "quest.accept_daily",

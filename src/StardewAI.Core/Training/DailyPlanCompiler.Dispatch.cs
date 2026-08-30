@@ -81,6 +81,7 @@ namespace StardewAI.Core.Training
                 ["player.choose_bobber"] = new[] { "route_connector_tile", "choose_bobber_style" },
                 ["player.choose_jukebox_track"] = new[] { "route_connector_tile", "choose_jukebox_track" },
                 ["player.customize"] = new[] { "route_connector_tile", "customize_player" },
+                ["processing.crack_geode"] = new[] { "route_connector_tile", "crack_geode" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
@@ -399,6 +400,12 @@ namespace StardewAI.Core.Training
                 OptionCandidateCompilerKinds["player.customize"].Contains(candidate.Kind, StringComparer.Ordinal))
             {
                 return PlayerCustomizationSteps(candidate);
+            }
+
+            if (candidate.Kind == "crack_geode" &&
+                OptionCandidateCompilerKinds["processing.crack_geode"].Contains(candidate.Kind, StringComparer.Ordinal))
+            {
+                return GeodeProcessingSteps(candidate);
             }
 
             if (candidate.Kind == "claim_pot_of_gold" &&

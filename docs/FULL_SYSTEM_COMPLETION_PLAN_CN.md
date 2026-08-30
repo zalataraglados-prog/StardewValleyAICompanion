@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-31 铁匠晶球处理闭环（EVD-315）
+
+`processing.crack_geode` 已按完整纵向切片闭合，覆盖全部八种锁定基础版晶球。透明桥发布铁匠铺柜台、Clint/工具领取拦截、角色控制状态、库存槽位与容量、25g、晶球/神秘盒计数、金椰子及金核桃前态、季节/技能/矿层/邮件上下文，以及纯本地 RNG 的精确结果或共享 RNG 的完整当季作物族。候选阶段即排除当前不可服务项；跨地图 continuation 只锁定晶球身份和目的，到达后由 fresh 快照重绑全部机械字段。
+
+生产运行层复用共享逐帧移动，只执行 `Blacksmith checkAction -> Process -> GeodeMenu inventory click -> geodeSpot click -> 2700ms native animation -> inventory receipt`。回执覆盖输入消耗、25g、GeodesCracked/MysteryBoxesOpened、首次矿物/文物邮件、矿物领取副作用、首次金椰子互斥结果、团队金核桃和库存守恒；生产代码禁止直接写这些状态。隐藏静音矩阵 `9/9` 覆盖八种输入和伪造计数拒绝。当前对账为 `210 registered / 221 semantic / 209 compiler-bound / 136 harness dispatch / 133 five-gate / 55 allowlist / 11 catalogued blocked / 0 Product Executor`，full snapshot `162/145/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2128/2128`、Backend `155/155`、Release `0 warnings / 0 errors`。Junimo Kart 继续后置；下一实际纵向切片为 `quest.cancel`。
+
 ## 2026-08-30 玩家外观定制命令闭环（EVD-314）
 
 `player.customize` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥覆盖当前外观、巫师神龛 500g 与完整控件域，以及沙漠节替换地图 `DesertFestival` 上的造型师、每日限制、装备回收空位、完整 `Data/MakeoverOutfits` 过滤和原生日存档 RNG 投影。无法在当前目标位置形成 `ready` 服务的请求在上游排除；跨地图请求只保留玩家给定的模式、目标、原因和确认，到达后由 fresh 快照重绑机械字段。

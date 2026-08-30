@@ -1710,6 +1710,9 @@ static partial class Program
         ApplyPlayerCustomizationRequestFields(
             executionRequest,
             item);
+        ApplyGeodeProcessingRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

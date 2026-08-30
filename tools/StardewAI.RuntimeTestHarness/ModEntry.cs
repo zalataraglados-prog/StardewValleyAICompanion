@@ -58,6 +58,7 @@ public sealed partial class ModEntry : Mod
     private ActiveBobberSelection? activeBobberSelection;
     private ActiveJukeboxSelection? activeJukeboxSelection;
     private ActivePlayerCustomization? activePlayerCustomization;
+    private ActiveGeodeProcessing? activeGeodeProcessing;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -497,6 +498,7 @@ public sealed partial class ModEntry : Mod
         TickBobberSelection();
         TickJukeboxSelection();
         TickPlayerCustomization();
+        TickGeodeProcessing();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1043,6 +1045,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_geode_processing")
+            {
+                pending.Completion.SetResult(ExecuteSetupGeodeProcessingFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_multiplayer_chat")
             {
                 pending.Completion.SetResult(ExecuteSetupMultiplayerChatFixture(pending.Request));
@@ -1525,6 +1533,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.customize_player")
             {
                 StartPlayerCustomization(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.crack_geode")
+            {
+                StartGeodeProcessing(pending);
                 return;
             }
 
@@ -2166,6 +2180,7 @@ public sealed partial class ModEntry : Mod
             activeBobberSelection = null;
             activeJukeboxSelection = null;
             activePlayerCustomization = null;
+            activeGeodeProcessing = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2408,6 +2423,7 @@ public sealed partial class ModEntry : Mod
             activeBobberSelection is not null ||
             activeJukeboxSelection is not null ||
             activePlayerCustomization is not null ||
+            activeGeodeProcessing is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

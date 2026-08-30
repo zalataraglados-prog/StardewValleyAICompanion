@@ -291,6 +291,9 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             MineElevatorMenu mineElevatorMenu =>
                 (Field(ReadMineElevatorMenuState(mineElevatorMenu), "MineElevatorMenu public elevators and locked native destination rules", tick, AdapterId),
                     Array.Empty<string>()),
+            GeodeMenu geodeMenu =>
+                (Field(ReadGeodeMenuState(geodeMenu), "GeodeMenu public held item, geode spot, treasure, animation, mutex and close-readiness fields", tick, AdapterId),
+                    Array.Empty<string>()),
             PurchaseAnimalsMenu purchaseAnimalsMenu =>
                 (Field(
                     ReadPurchaseAnimalsMenuState(purchaseAnimalsMenu),
