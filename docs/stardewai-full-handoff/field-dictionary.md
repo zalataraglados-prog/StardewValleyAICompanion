@@ -10,7 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **152 required / 136 readable with provenance / 16 contextual / 0 blocking** (EVD-305).
+Current installed full-snapshot schema checkpoint: **153 required / 137 readable with provenance / 16 contextual / 0 blocking** (EVD-306).
+
+## Pirate Cove Darts Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.darts_game.location_context_id`, `raining_here`, `pirate_night`, `day_of_month`, `time_of_day` | exact autonomous access gate | Locked 1.6.15 `IslandSouthEastCave.isPirateNight`; projection reads the target cave's `IsRainingHere()` even while the player is elsewhere | secondary only; source is authoritative | `covered_for_read`, `covered_for_gate` | Requires non-rain, even day and time at least 20:00. |
+| `limited_nut_dropped_before/after`, `starting_dart_count`, `starting_points`, `perfect_score_plan` | bind exactly one remaining progression round | Locked 1.6.15 cave response and `Darts` reward branches | secondary only | `covered_for_read`, `covered_for_gate`, `native_runtime_verified` | Stages are `0/20`, `1/15`, `2/10`; completion at 3 rewards. Six throws are `T20,T20,T20,T20,T17,D5`. |
+| `interaction_tiles[]`, `active_session.*`, `native_contract` | fresh endpoint, input and receipt validation | Live map `DartsGame` action plus active `Darts` state | not needed | `covered_for_read`, `covered_for_gate`, `native_runtime_verified` | Runtime uses native action, Yes dialogue and mouse input only; direct score/reward/progress mutation is forbidden. |
 
 ## Crane Game Transparency
 

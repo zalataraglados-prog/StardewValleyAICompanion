@@ -247,6 +247,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "the exact live Movie Theater machine occupancy, fee, movie prize rules and active physics are transparent", "one explicit command authorizes exactly 500g and the native three-attempt session", "the executor selects a reachable live prize afresh for each attempt and transfers all rewards through the native menu" },
                 new[] { "block_without_explicit_player_command", "block_occupied_machine_or_insufficient_gold_or_reward_capacity", "block_unverified_route_or_projection_drift", "block_direct_rng_money_prize_position_state_or_inventory_mutation" }));
 
+            Register(Option("minigame.play_darts", "minigame", "Win the next native Pirate Cove darts round while one of its three limited Golden Walnuts remains",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.darts_game", "world_progress.golden_walnuts", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one session exists only on a live non-raining even-day pirate night while the Darts limited drop count is below three", "the exact 20, 15 or 10 dart allowance is rebound from the team drop count", "native mouse aim and charge-release input completes the 301-point board in at most six throws", "native dialogue and FarmerTeam limited-nut machinery issue exactly the next reward" },
+                new[] { "block_not_pirate_night_or_three_rewards_complete", "block_live_DartsGame_endpoint_or_route_unavailable", "block_projection_drift", "block_unverified_native_score_dialogue_reward_or_cleanup", "block_direct_score_dart_count_timer_rng_reward_or_progress_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1282,6 +1290,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.inventory", "player.crane_game", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one exact live CraneGame action tile", "native Yes deducts exactly 500g and constructs the real CraneGame", "right and down input drive all three attempts against live prizes and physics", "native ItemGrabMenu rewards, money delta and cleanup are conserved and verified" },
                 new[] { "block_movie_theater_machine_or_projection_drift", "block_fee_dialogue_or_input_contract_drift", "block_unverified_reward_transfer_or_cleanup", "block_unverified_route", "block_direct_rng_money_prize_position_state_or_inventory_mutation" }));
+
+            Register(Option("executor.play_darts", "minigame", "Execute one verified native Pirate Cove darts victory",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.darts_game", "world_progress.golden_walnuts", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact live DartsGame action tile", "native Yes constructs Darts with the projected 20, 15 or 10 dart allowance", "mouse position and left-button charge timing drive the real 301-point board", "native result dialogue and limited-nut request advance exactly one Darts reward" },
+                new[] { "block_pirate_night_endpoint_or_projection_drift", "block_dialogue_dart_allowance_or_input_contract_drift", "block_unverified_native_score_reward_or_cleanup", "block_unverified_route", "block_direct_score_dart_count_timer_rng_reward_or_progress_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

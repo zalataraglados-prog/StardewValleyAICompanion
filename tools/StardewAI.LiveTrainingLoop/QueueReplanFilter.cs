@@ -87,6 +87,19 @@ public static class QueueReplanFilter
                 ["crane_fee_gold"] = craneFeeGold
             };
         }
+        var dartsDroppedBefore = ReadParameter(queueItem, "continuation.darts_limited_nut_dropped_before");
+        var dartsStartingCount = ReadParameter(queueItem, "continuation.darts_starting_dart_count");
+        if (string.Equals(optionId, "minigame.play_darts", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(dartsDroppedBefore) && !string.IsNullOrWhiteSpace(dartsStartingCount))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "darts_game",
+                ["option_id"] = optionId,
+                ["darts_limited_nut_dropped_before"] = dartsDroppedBefore,
+                ["darts_starting_dart_count"] = dartsStartingCount
+            };
+        }
         var renovationId = ReadParameter(queueItem, "continuation.renovation_id");
         var renovationSelectedIndex = ReadParameter(queueItem, "continuation.selected_index");
         var renovationReason = ReadParameter(queueItem, "continuation.renovation_reason");
@@ -429,6 +442,12 @@ public static class QueueReplanFilter
             return string.Equals(optionId, "executor.play_crane_game", StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "crane_selection_policy"), ReadString(continuation, "crane_selection_policy"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "crane_fee_gold"), ReadString(continuation, "crane_fee_gold"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "darts_game", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.play_darts", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "darts_limited_nut_dropped_before"), ReadString(continuation, "darts_limited_nut_dropped_before"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "darts_starting_dart_count"), ReadString(continuation, "darts_starting_dart_count"), StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "home_renovation", StringComparison.Ordinal))
         {

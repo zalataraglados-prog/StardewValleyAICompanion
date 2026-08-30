@@ -1,3 +1,12 @@
+2026-08-30 EVD-306 native Pirate Cove Darts progression
+- Locked 1.6.15 source audit PASS: even-day, non-raining, 20:00 pirate-night gate; live DartsGame action; native Yes flow; 20/15/10 dart stages; 301 points; three limited Darts walnuts; and six-throw perfect-victory rule are covered.
+- Hidden/silent isolated E-drive matrix PASS 3/3: `artifacts/runtime-darts-game-smoke/runtime-darts-game-smoke-20260830-110428/summary.json`. All three rounds were `applied/verified`, scored `60,60,60,60,51,10` in six throws, and advanced the native limited-nut count `0->1->2->3`.
+- Cross-map weather correctness guard PASS: the projection reads `IslandSouthEastCave.IsRainingHere()` instead of the player's current-map `Game1.IsRainingHere()`.
+- Runtime source guard confirms native action/dialogue/mouse input only and forbids direct production mutation of score, dart count, throw count, timers, RNG, limited rewards or progress.
+- Installed full snapshot schema is 153 required, 137 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 192 registered / 212 semantic / 191 compiler-bound / 115 five-gate / 51 training allowlist / 20 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2071/2071; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next slice is `minigame.play_junimo_kart`, reusing the existing executor.
+
 2026-08-30 EVD-305 native Crane Game player-command session
 - Locked 1.6.15 source/data audit PASS: MovieTheater occupancy/movie rules, exact 500g entry, three 900-tick attempts, right-then-down input, live shared-RNG prize physics, drop checks and native ItemGrabMenu settlement are covered.
 - Focused Crane mainline/governance/source regression PASS 6/6; full Core PASS 2066/2066.

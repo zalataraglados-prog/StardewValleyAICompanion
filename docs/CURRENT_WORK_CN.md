@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-306
+
+- `minigame.play_darts` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生交互/确认/鼠标输入和限量核桃回执。唯一动作链为 `minigame.play_darts -> play_darts -> executor.play_darts`；小模型只决定是否完成下一轮，瞄准、充能、投掷和结果对话均由机械执行层负责。
+- 锁定 1.6.15 规则为非雨、偶数日、20:00 后的海盗夜；`Darts` 限量掉落计数 `0/1/2` 分别给 `20/15/10` 支飞镖，最多发放 3 个核桃。六投精确方案为 `T20,T20,T20,T20,T17,D5`，总分 301。候选在跨地图时直接读取 `IslandSouthEastCave.IsRainingHere()`，不会误用玩家当前地图天气。
+- 隐藏静音 E 盘矩阵 `3/3` PASS：`artifacts/runtime-darts-game-smoke/runtime-darts-game-smoke-20260830-110428/summary.json`。三轮均由原生 `DartsGame`、Yes 对话和鼠标按下/释放完成，命中 `60,60,60,60,51,10`，6 投清零并依次得到第 1、2、3 个核桃；生产路径不写分数、投掷数、计时器、RNG、奖励或进度。
+- 最新 full snapshot 为 `153 required / 137 readable with provenance / 16 contextual / 0 blocking`；对账为 `192 registered / 212 semantic / 191 compiler-bound / 115 five-gate / 51 training allowlist / 20 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens`，冻结状态为 `frozen`，KnowledgeCompiler `585/585`、blocking 0；Core `2071/2071`、Backend `148/148`、Release `0 warnings / 0 errors`。下一冻结目录切片为 `minigame.play_junimo_kart`。
+
 ## 2026-08-30 当前权威检查点：EVD-305
 
 - `minigame.play_crane_game` 已闭合透明读取、玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生机器/确认对话/小游戏方向输入和原生奖励菜单回执。唯一动作链为 `minigame.play_crane_game -> play_crane_game -> executor.play_crane_game`；该动作严格为 `PlayerCommandOnly`，要求显式确认，不进入默认候选或策略训练。

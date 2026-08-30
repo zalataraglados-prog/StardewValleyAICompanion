@@ -183,6 +183,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "island.field_office_survey",
                 "mail.process_letter",
                 "minigame.play_calico_jack",
+                "minigame.play_darts",
                 "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
                 "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
@@ -244,6 +245,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "island.field_office_survey" => "vanilla_unique_next_FieldOfficeSurvey_rolling_island_route_exact_22_or_18_native_dialogue_plant_collected_nut_walnut_debris_failed_day_lock_and_finale_receipt",
                 "mail.process_letter" => "vanilla_native_order_owned_farm_mailbox_all_locked_Data_mail_directives_exact_LetterViewer_pages_attachments_quests_special_orders_stardrop_overflow_and_native_receipts",
                 "minigame.play_calico_jack" => "vanilla_missing_(BC)126_rarecrow_currency_demand_exact_ClubCards_table_seed_replay_hidden_card_future_draw_native_round_coin_settlement_and_single_round_exit_receipt",
+                "minigame.play_darts" => "vanilla_Pirate_Cove_even_day_nonrain_2000_live_DartsGame_three_limited_walnuts_20_15_10_darts_native_301_score_mouse_aim_charge_release_dialogue_and_drop_receipt",
                 "mining.choose_dwarf_statue_power" => "vanilla_mining_mastery_exact_daily_two_offer_rng_all_five_power_projections_native_object_menu_click_and_selected_day_buff_receipt",
                 "mining.claim_reward_chests" => "loaded_vanilla_mineshaft_exact_reward_chests_fixed_stardrop_forced_random_receipt_and_cleanup_matrix",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",

@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 飞镖训练准入（EVD-306）
+
+`minigame.play_darts` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否取得下一枚尚未发放的海盗湾飞镖核桃；海盗夜、目标地图天气、路线、20/15/10 支限额、301 分六投方案、鼠标瞄准/充能/释放、结果对话和限量奖励都由 fresh snapshot 与机械执行层绑定。非海盗夜、3 枚奖励已完成、端点/路线/菜单忙碌或投影漂移会在上游或 fresh 编译阶段关闭。
+
+隐藏静音 E 盘 `3/3` 原生矩阵覆盖全部三个限量核桃阶段，每轮均以 6 投和 `60,60,60,60,51,10` 完成。生产执行不直接写分数、投掷数、计时器、RNG、奖励或进度。最新 schema 为 `153/137/16/0`；对账为 `192 registered / 212 semantic / 191 compiler-bound / 115 five-gate / 51 allowlist / 20 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 20 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一目录切片为 `minigame.play_junimo_kart`。
+
 ## 2026-08-30 抓娃娃机执行准入（EVD-305）
 
 `minigame.play_crane_game` 已通过 read / candidate / compile / native runtime / output receipt 五门，但治理为 `PlayerCommandOnly`，只形成可验证的玩家命令执行能力，不进入策略训练 allowlist。玩家只授权一次 500g 会话；机器占用、路线、三次机会、实时奖品选择、横向/纵向释放时机、原生随机物理和奖励转移均由 fresh snapshot 与机械执行层处理。费用不足、少于 3 个空槽、机器占用、忙碌、路线或投影漂移会在上游或 fresh 编译阶段关闭。

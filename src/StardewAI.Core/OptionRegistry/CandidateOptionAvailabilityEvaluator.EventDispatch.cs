@@ -24,6 +24,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["island.field_office_survey"] = (snapshot, _) => FieldOfficeSurveyCandidates(snapshot),
                 ["minigame.play_calico_jack"] = (snapshot, _) => CalicoJackCandidates(snapshot),
                 ["minigame.play_crane_game"] = (snapshot, _) => CraneGameCandidates(snapshot),
+                ["minigame.play_darts"] = (snapshot, _) => DartsGameCandidates(snapshot),
                 ["festival.manage_grange_display"] = (snapshot, _) => GrangeDisplayCandidates(snapshot),
                 ["festival.play_fishing_game"] = (snapshot, _) => FairFishingGameCandidates(snapshot),
                 ["festival.play_slingshot_game"] = (snapshot, _) => FairSlingshotGameCandidates(snapshot),

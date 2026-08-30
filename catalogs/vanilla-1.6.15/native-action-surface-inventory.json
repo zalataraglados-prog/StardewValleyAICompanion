@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 96,
-  "catalogued_blocked_surface_count": 72,
-  "catalogued_blocked_action_count": 21,
+  "mapped_count": 100,
+  "catalogued_blocked_surface_count": 68,
+  "catalogued_blocked_action_count": 20,
   "catalogued_blocked_action_ids": [
-    "minigame.play_darts",
     "minigame.play_junimo_kart",
     "minigame.play_prairie_king",
     "minigame.play_slots",
@@ -3790,7 +3789,7 @@
       "mappedOptionIds": [
         "minigame.play_darts"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3807,7 +3806,7 @@
       "mappedOptionIds": [
         "minigame.play_darts"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3824,7 +3823,7 @@
       "mappedOptionIds": [
         "minigame.play_darts"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3841,7 +3840,7 @@
       "mappedOptionIds": [
         "minigame.play_darts"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

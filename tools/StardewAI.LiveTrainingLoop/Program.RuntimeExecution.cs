@@ -1692,6 +1692,9 @@ static partial class Program
         ApplyCraneGameRequestFields(
             executionRequest,
             item);
+        ApplyDartsGameRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

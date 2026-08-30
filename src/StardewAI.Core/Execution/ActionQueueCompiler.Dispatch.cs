@@ -76,6 +76,7 @@ namespace StardewAI.Core.Execution
                 ["executor.answer_field_office_survey"] = (action, _) => CompileAnswerFieldOfficeSurveyStep(action),
                 ["executor.play_calico_jack"] = (action, _) => CompilePlayCalicoJackStep(action),
                 ["executor.play_crane_game"] = (action, _) => CompilePlayCraneGameStep(action),
+                ["executor.play_darts"] = (action, _) => CompilePlayDartsStep(action),
                 ["executor.manage_grange_display"] = (action, _) => CompileManageGrangeDisplayStep(action),
                 ["executor.play_fair_fishing_game"] = (action, _) => CompileFairFishingGameStep(action),
                 ["executor.play_fair_slingshot_game"] = (action, _) => CompileFairSlingshotGameStep(action),

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 飞镖原生自主闭环（EVD-306）
+
+`minigame.play_darts` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布目标洞穴天气上下文、海盗夜、活动状态、地图端点、三阶段飞镖限额、分数/投掷/瞄准/充能状态和限量核桃计数。高层只决定是否取得下一枚核桃；fresh 编译器绑定全部机械字段，运行层复用共享路线并只经原生 `checkAction`、Yes 对话和鼠标输入完成。
+
+隐藏静音矩阵 `3/3` 覆盖 `20/15/10` 支飞镖和全部三枚核桃，六投方案全部原生结算；不存在第二套分数或奖励写入器。当前对账为 `192 registered / 212 semantic / 191 compiler-bound / 115 five-gate / 51 allowlist / 20 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母已冻结且 full snapshot `153/137/16/0` blocking 0，回归为 Core `2071/2071`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_junimo_kart`，应先核对并复用已有 `executor.play_junimo_kart`，禁止再建第二套小游戏执行器。
+
 ## 2026-08-30 抓娃娃机原生玩家命令闭环（EVD-305）
 
 `minigame.play_crane_game` 已按完整纵向切片闭合，但保持为玩家命令能力。透明桥发布机器占用、电影奖池规则、基础奖池、500g/3 次/900 tick 规则、交互端点，以及活动会话的原生状态、爪钩、奖品、传送带、速度、抓取与掉落字段。高层只授权一次会话；fresh 编译器绑定全部机械字段，运行层复用共享路线并只经原生交互、确认、D/S 输入和奖励菜单完成。
