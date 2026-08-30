@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 点唱机曲目玩家命令闭环（EVD-313）
+
+`player.choose_jukebox_track` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布 Saloon 两个固定 `Jukebox` 地块、可达站位、默认与当前音乐上下文、绿雨限制，以及 `Utility.GetJukeboxTracks` 按原生顺序形成的完整曲目目录。目录同时绑定 `Data/JukeboxTracks` 的可用性、`Farmer.songsHeard`、AlternativeTrackIds 规范化和 soundbank 实际存在性；上游只接受带原因和确认的精确已解锁合法曲目，未知、伪造、禁用或绿雨期不合法曲目不会成为候选。
+
+生产运行层复用共享逐帧移动，只经 Saloon `checkAction` 和 `ChooseFromListMenu` 的前进、OK、Cancel 原生点击执行。它不直接调用 `Game1.changeMusicTrack`，不写歌曲解锁、当前音乐或 Mini-Jukebox 状态；Mini-Jukebox 是另一套有持久位置状态的原生能力，不被本动作冒领。隐藏静音矩阵 `3/3` 覆盖首曲、最后曲和伪造索引拒绝。当前对账为 `206 registered / 219 semantic / 205 compiler-bound / 134 harness dispatch / 129 five-gate / 54 allowlist / 13 catalogued blocked / 0 Product Executor`，full snapshot `160/143/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2118/2118`、Backend `153/153`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.customize`。
+
 ## 2026-08-30 鱼漂外观玩家命令闭环（EVD-312）
 
 `player.choose_bobber` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布 FishShop `Bobbers` 端点、当前偏好、随机标志、`fishCaught.Count()/2` 原生解锁商、固定 `0..38` 与随机 `-2` 的完整目录、声呐浮标显示覆盖 `39` 和实时菜单身份。上游只接受带原因和确认的精确已解锁样式；锁定、未知、未确认样式不会成为候选。跨地图 continuation 保留同一玩家指令，到达 FishShop 后才从 fresh 快照重建机械终端。

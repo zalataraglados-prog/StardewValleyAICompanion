@@ -56,6 +56,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCalicoStatue? activeCalicoStatue;
     private ActiveMultiplayerWallet? activeMultiplayerWallet;
     private ActiveBobberSelection? activeBobberSelection;
+    private ActiveJukeboxSelection? activeJukeboxSelection;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -493,6 +494,7 @@ public sealed partial class ModEntry : Mod
         TickCalicoStatue();
         TickMultiplayerWallet();
         TickBobberSelection();
+        TickJukeboxSelection();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1027,6 +1029,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_jukebox_selection")
+            {
+                pending.Completion.SetResult(ExecuteSetupJukeboxSelectionFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_multiplayer_chat")
             {
                 pending.Completion.SetResult(ExecuteSetupMultiplayerChatFixture(pending.Request));
@@ -1497,6 +1505,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.choose_bobber_style")
             {
                 StartBobberSelection(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.choose_jukebox_track")
+            {
+                StartJukeboxSelection(pending);
                 return;
             }
 
@@ -2136,6 +2150,7 @@ public sealed partial class ModEntry : Mod
             activeCalicoStatue = null;
             activeMultiplayerWallet = null;
             activeBobberSelection = null;
+            activeJukeboxSelection = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2376,6 +2391,7 @@ public sealed partial class ModEntry : Mod
             activeCalicoStatue is not null ||
             activeMultiplayerWallet is not null ||
             activeBobberSelection is not null ||
+            activeJukeboxSelection is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

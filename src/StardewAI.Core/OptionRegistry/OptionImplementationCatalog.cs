@@ -60,6 +60,7 @@ public static class OptionImplementationCatalog
         "executor.manage_multiplayer_wallet",
         "executor.send_multiplayer_chat",
         "executor.choose_bobber_style",
+        "executor.choose_jukebox_track",
         "executor.close_menu",
         "executor.social_interact",
         "executor.quest_npc_interact",

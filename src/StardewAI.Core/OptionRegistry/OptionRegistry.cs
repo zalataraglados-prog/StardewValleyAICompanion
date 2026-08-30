@@ -620,6 +620,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player supplies one exact fixed or randomized style, reason and confirmation", "compiler rebinds the current fish-count unlock quotient and live FishShop Bobbers endpoint", "shared BFS reaches an adjacent stand", "native ChooseFromIconsMenu icon and close inputs produce the exact preference receipt" },
                 new[] { "block_without_explicit_player_command_reason_and_confirmation", "block_unknown_or_locked_fixed_style", "block_menu_or_FishShop_endpoint_unavailable", "block_projection_or_unlock_drift", "block_native_menu_icon_or_receipt_mismatch", "block_direct_bobberStyle_usingRandomizedBobber_or_rng_mutation", "exclude_from_autonomous_candidates_and_strategy_training" }));
 
+            Register(Option("player.choose_jukebox_track", "player", "Choose one unlocked Saloon jukebox track through the native list menu after an explicit player command",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.jukebox_selection", "menus.active_menu" },
+                new[] { "player supplies one exact native track id, reason and confirmation", "compiler rebinds Utility.GetJukeboxTracks order, green-rain guard and live Saloon Jukebox endpoint", "shared BFS reaches an adjacent stand", "native forward, OK and cancel inputs produce the exact default music-context request receipt" },
+                new[] { "block_without_explicit_player_command_reason_and_confirmation", "block_unknown_locked_or_weather-blocked_track", "block_menu_or_Saloon_endpoint_unavailable", "block_projection_catalog_index_or_music_state_drift", "block_native_menu_or_receipt_mismatch", "block_direct_changeMusicTrack_or_music_state_mutation", "exclude_mini_jukebox_turn_off_random_and_persistent_state", "exclude_from_autonomous_candidates_and_strategy_training" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -924,6 +932,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.bobber_selection", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact FishShop Bobbers action", "native action opens the bobbers ChooseFromIconsMenu", "the exact unlocked icon and native close control are clicked", "bobberStyle and usingRandomizedBobber match the explicit request" },
                 new[] { "block_unconfirmed_or_locked_style", "block_endpoint_menu_icon_or_projection_drift", "block_unverified_preference_receipt", "block_direct_bobberStyle_usingRandomizedBobber_or_rng_mutation", "player_command_only" }));
+
+            Register(Option("executor.choose_jukebox_track", "player", "Execute and verify one explicitly requested native Saloon jukebox track selection",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.jukebox_selection", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Saloon Jukebox action", "native action opens ChooseFromListMenu at index zero", "the exact number of native forward clicks is followed by native OK and cancel", "the default music context request matches the explicit track" },
+                new[] { "block_unconfirmed_unknown_or_weather-blocked_track", "block_endpoint_catalog_index_menu_or_projection_drift", "block_unverified_default_music_request_receipt", "block_direct_changeMusicTrack_or_music_state_mutation", "player_command_only" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

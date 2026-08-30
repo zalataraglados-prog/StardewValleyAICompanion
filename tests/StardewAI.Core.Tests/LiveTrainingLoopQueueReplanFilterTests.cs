@@ -682,6 +682,34 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
     }
 
+    [Fact]
+    public void JukeboxContinuationKeepsExactExplicitTrackUntilNativeTerminal()
+    {
+        var route = QueueItem("queue.jukebox.route", "executor.traverse_connector", "4", "4", string.Empty);
+        var parameters = route["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "player.choose_jukebox_track"));
+        parameters.Add(Parameter("continuation.jukebox_track_id", "spring1"));
+        parameters.Add(Parameter("continuation.jukebox_reason", "explicit player request"));
+        parameters.Add(Parameter("continuation.confirm_jukebox_track", "true"));
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("jukebox_selection", continuation!["kind"]!.GetValue<string>());
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(new JsonArray
+        {
+            JukeboxCandidate("summer1"), JukeboxCandidate("spring1")
+        }, continuation));
+        Assert.Equal("spring1", selected!["parameters"]![0]!["value"]!.GetValue<string>());
+
+        var terminal = QueueItem("queue.jukebox.terminal", "executor.choose_jukebox_track", "1", "17", string.Empty);
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("jukebox_track_id", "spring1"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("jukebox_reason", "explicit player request"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+        terminal["normalized_command"]!["parameters"]!.AsArray()
+            .Single(node => node!["name"]!.GetValue<string>() == "jukebox_track_id")!["value"] = "summer1";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -886,6 +914,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             Parameter("bobber_style_id", styleId),
             Parameter("bobber_reason", "explicit player request"),
             Parameter("confirm_bobber_style", "true")
+        }
+    };
+
+    private static JsonObject JukeboxCandidate(string trackId) => new()
+    {
+        ["candidate_id"] = "jukebox-selection:" + trackId,
+        ["option_id"] = "player.choose_jukebox_track",
+        ["kind"] = "choose_jukebox_track",
+        ["parameters"] = new JsonArray
+        {
+            Parameter("jukebox_track_id", trackId),
+            Parameter("jukebox_reason", "explicit player request"),
+            Parameter("confirm_jukebox_track", "true")
         }
     };
 

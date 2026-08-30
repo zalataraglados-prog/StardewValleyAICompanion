@@ -1704,6 +1704,9 @@ static partial class Program
         ApplyBobberSelectionRequestFields(
             executionRequest,
             item);
+        ApplyJukeboxSelectionRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

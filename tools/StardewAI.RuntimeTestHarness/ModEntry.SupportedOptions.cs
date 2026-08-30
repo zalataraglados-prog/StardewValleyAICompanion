@@ -43,6 +43,7 @@ public sealed partial class ModEntry
             "debug.setup_multiplayer_wallet",
             "debug.setup_multiplayer_chat",
             "debug.setup_bobber_selection",
+            "debug.setup_jukebox_selection",
             "debug.settle_multiplayer_wallet",
             "debug.setup_crane_game",
             "debug.setup_darts_game",

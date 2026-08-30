@@ -10,7 +10,20 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **159 required / 142 readable with provenance / 17 contextual / 0 blocking** (EVD-312).
+Current installed full-snapshot schema checkpoint: **160 required / 143 readable with provenance / 17 contextual / 0 blocking** (EVD-313).
+
+## Jukebox Selection Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.jukebox_selection.projection_fingerprint` | Track IDs, Saloon Jukebox action tiles, green-rain guard and default location track | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `tracks[]` / `selected_track_id` | `Utility.GetJukeboxTracks`, `Data/JukeboxTracks`, `Farmer.songsHeard`, AlternativeTrackIds and soundbank membership | exact player command binding and native menu index | covered_for_read / native_source_exact / native_runtime_verified |
+| `action_tiles[]` | Saloon Buildings `Action=Jukebox` at `(1,17)` and `(2,17)` | rolling route, stand selection and native `checkAction` | covered_for_read / cross_map_continuation_verified / native_runtime_verified |
+| `green_rain_guard` / `default_music_track` | `Game1.changeMusicTrack` green-rain branch and live Saloon music context | upstream impossible-track exclusion and runtime revalidation | covered_for_read / covered_for_gate |
+| `current_song` / `requested_global_track` | Live playback state | observability and native receipt only | covered_for_read / excluded_from_candidate_fingerprint |
+| `native_contract` | `ChooseFromListMenu` index-0 start, wrapping forward, OK action and Cancel close | production executor and source guards | native_input_only / no_direct_music_or_unlock_writes |
+
+`player.choose_jukebox_track` and `executor.choose_jukebox_track` are `PlayerCommandOnly`, excluded from autonomous candidates and strategy training. This surface is the static Saloon Jukebox only; Mini-Jukebox persistence and multiplayer location state are not claimed.
 
 ## Bobber Selection Transparency
 

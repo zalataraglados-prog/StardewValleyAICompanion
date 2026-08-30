@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-313
+
+- `player.choose_jukebox_track` 已闭合透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享逐帧移动、原生 Saloon 点唱机菜单输入和严格回执。唯一动作链为 `player.choose_jukebox_track -> choose_jukebox_track -> executor.choose_jukebox_track`，没有第二套音乐切换或 Mini-Jukebox 状态写入系统。
+- 锁定 1.6.15 规则为 Saloon `Buildings[(1,17),(2,17)] Action=Jukebox` 打开 `ChooseFromListMenu`；曲目按 `Utility.GetJukeboxTracks` 的原生顺序生成：先收录 `Data/JukeboxTracks` 中 `Available=true` 的行，再规范化 `Farmer.songsHeard` 的替代曲目 ID，仅保留 soundbank 中实际存在且未被数据明确禁用的曲目。菜单从索引 0 开始，前进按钮循环，OK 调用原生选择动作但菜单不自动关闭，Cancel 才关闭。绿雨期间非 `rain` 曲目由原生 `Game1.changeMusicTrack` 规则禁止。
+- 该能力严格为 `PlayerCommandOnly`：玩家必须给出精确曲目、原因和确认；未知、未解锁、绿雨期不合法或指纹漂移的曲目在上游排除，不进入默认候选、自主日计划或策略训练。fresh 编译器从当前曲目目录、Saloon 端点、站位、天气和默认音乐轨重绑定全部机械字段。生产执行器只使用共享移动、原生 `checkAction` 以及菜单的前进/OK/Cancel `receiveLeftClick`，不直接调用 `Game1.changeMusicTrack`，不写播放、解锁或 Mini-Jukebox 状态。
+- 隐藏静音 E 盘矩阵 `3/3` PASS：`artifacts/runtime-jukebox-selection/runtime-jukebox-selection-20260830-201036/summary.json`。原生第一首、循环前进到最后一首均 `applied/verified`，伪造曲目索引被严格拒绝；只加载 TransparentBridge 与 RuntimeTestHarness。
+- 最新 full snapshot 为 `160 required / 143 readable with provenance / 17 contextual / 0 blocking`；对账为 `206 registered / 219 semantic / 205 compiler-bound / 134 harness dispatch / 129 five-gate / 54 training allowlist / 13 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2118/2118`、Backend `153/153`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 继续按既定边界后置原生完美代打，下一实际纵向切片为 `player.customize`。
+
 ## 2026-08-30 当前权威检查点：EVD-312
 
 - `player.choose_bobber` 已闭合透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享逐帧移动、原生鱼店菜单输入和严格回执。唯一动作链为 `player.choose_bobber -> choose_bobber_style -> executor.choose_bobber_style`，没有第二套钓鱼装备或偏好写入系统。

@@ -169,6 +169,22 @@ public static class QueueReplanFilter
                 ["confirm_bobber_style"] = bobberConfirmed
             };
         }
+        var jukeboxTrackId = ReadParameter(queueItem, "continuation.jukebox_track_id");
+        var jukeboxReason = ReadParameter(queueItem, "continuation.jukebox_reason");
+        var jukeboxConfirmed = ReadParameter(queueItem, "continuation.confirm_jukebox_track");
+        if (string.Equals(optionId, "player.choose_jukebox_track", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(jukeboxTrackId) && !string.IsNullOrWhiteSpace(jukeboxReason) &&
+            string.Equals(jukeboxConfirmed, "true", StringComparison.Ordinal))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "jukebox_selection",
+                ["option_id"] = optionId,
+                ["jukebox_track_id"] = jukeboxTrackId,
+                ["jukebox_reason"] = jukeboxReason,
+                ["confirm_jukebox_track"] = jukeboxConfirmed
+            };
+        }
 
         var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
         if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal) &&
@@ -529,6 +545,12 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "bobber_style_id"), ReadString(continuation, "bobber_style_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "bobber_reason"), ReadString(continuation, "bobber_reason"), StringComparison.Ordinal);
         }
+        if (string.Equals(continuationKind, "jukebox_selection", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.choose_jukebox_track", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "jukebox_track_id"), ReadString(continuation, "jukebox_track_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "jukebox_reason"), ReadString(continuation, "jukebox_reason"), StringComparison.Ordinal);
+        }
 
         if (string.Equals(
                 continuationKind,
@@ -798,6 +820,12 @@ public static class QueueReplanFilter
             return CandidateParameterMatchesContinuation(candidate, continuation, "bobber_style_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "bobber_reason") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_bobber_style");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "jukebox_selection", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "jukebox_track_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "jukebox_reason") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "confirm_jukebox_track");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_donation", StringComparison.Ordinal))
