@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 卡利科雕像训练准入（EVD-309）
+
+`mining.activate_calico_statue` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否接受 fresh snapshot 投影的精确下一效果；沙漠节/骷髅洞/房主权限、日存档随机种子、效果栈、站位、移动和原生交互均由透明桥与机械执行层绑定。每次激活后必须以 live feedback 重规划，模型不得自行指定不同效果。
+
+隐藏静音 E 盘矩阵 `18/18` 覆盖全部效果 ID、四档 Calico Egg 奖励、速度、完全恢复、正负效果栈、评分和单次地块转换；生产执行不写评分、效果、奖励、生命、耐力、Buff、地块或 RNG。最新 schema 为 `156/139/17/0`；对账为 `198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 allowlist / 17 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 17 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一实际目录切片为 `multiplayer.manage_wallet`。
+
 ## 2026-08-30 赌场老虎机训练准入（EVD-308）
 
 `minigame.play_slots` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否在缺少 `(BC)126` 且 Deluxe Scarecrow 依赖开放时安排一次齐币下注；赌场权限、机器、路线、10/100 下注、Luck 概率分布、转轴、倍率、原生币差和退出均由 fresh snapshot 与机械执行层绑定。共享 `Game1.random` 的未来结果不作确定性伪预测，每次原生结算后以 live feedback 重规划。

@@ -6,10 +6,9 @@
   "surface_count": 322,
   "mapped_count": 108,
   "catalogued_blocked_surface_count": 60,
-  "catalogued_blocked_action_count": 18,
+  "catalogued_blocked_action_count": 17,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "mining.activate_calico_statue",
     "multiplayer.manage_wallet",
     "multiplayer.send_chat",
     "player.choose_bobber",

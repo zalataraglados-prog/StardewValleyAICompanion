@@ -588,6 +588,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact live reward chest selected", "one native reward-open starts the lid animation", "after dumpContents empties the chest a separate empty-chest cleanup removes it" },
                 new[] { "block_skull_key_specialized_chain", "block_unknown_chest_family", "block_non_vanilla_chest_shape", "block_inventory_full", "block_projection_drift", "block_claim_click_before_dump" }));
 
+            Register(Option("mining.activate_calico_statue", "mining", "Accept one exact projected Desert Festival Calico Statue effect on the loaded Skull Cavern floor",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.StrategyValue,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "mining.current_mine", "mining.calico_statue", "mining.tiles", "menus.active_menu" },
+                new[] { "small model accepts or rejects the exact day-save-seeded next effect", "compiler replays the fresh seed and binds the one live unactivated tile and adjacent stand", "shared BFS reaches the statue", "one native MineShaft.checkAction advances rating and applies the exact team effect" },
+                new[] { "block_not_desert_festival_skull_cavern", "block_no_unactivated_calico_statue", "block_projected_effect_changed", "block_no_reachable_adjacent_stand", "block_menu_or_player_busy", "block_seed_tile_or_team_state_drift", "block_direct_rating_effect_reward_health_stamina_buff_tile_or_rng_mutation" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -860,6 +868,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "player.inventory", "player.skills_detail", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "one native reward-open starts the lid animation", "only after native dumpContents empties the chest does an empty-chest cleanup interaction remove it" },
                 new[] { "block_target_not_exact_reward_chest", "block_inventory_full", "block_menu_or_player_busy", "block_projection_drift", "block_claim_click_before_dump", "block_direct_reward_or_experience_mutation" }));
+
+            Register(Option("executor.activate_calico_statue", "mining", "Execute and verify one native Desert Festival Calico Statue activation",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "mining.current_mine", "mining.calico_statue", "mining.tiles", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact adjacent stand", "one native Buildings tile 284 checkAction fires the activation event", "tile 285, rating plus one, activation count plus one and exact seeded effect dictionary are verified", "egg, refresh or speed side effects remain game-owned and are checked from the receipt" },
+                new[] { "block_endpoint_or_projection_drift", "block_not_master_seed_receipt", "block_unverified_effect_or_side_effect", "block_unverified_route", "block_direct_rating_effect_reward_health_stamina_buff_tile_or_rng_mutation" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

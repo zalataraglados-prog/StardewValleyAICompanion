@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 卡利科雕像原生闭环（EVD-309）
+
+`mining.activate_calico_statue` 已按完整纵向切片闭合并进入策略训练范围。透明桥以房主权威的日存档随机域发布下一次精确效果、完整 18 效果目录、当前效果栈、雕像地块、可达站位、评分和所有效果回执；上游只在沙漠节骷髅洞内、当前层雕像未激活且存在安全站位时生成候选。fresh 编译器重新计算效果并锁定种子输入、投影指纹、效果身份、地块和前后状态。
+
+运行层复用共享 BFS，只调用一次原生 `MineShaft.checkAction`，并以 `284 -> 285`、激活计数、评分、效果栈、蛋奖励、速度或完全恢复状态验收。隐藏静音矩阵 `18/18` 覆盖效果 ID `0..17`，不存在第二套随机、奖励或状态写入器。当前对账为 `198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 allowlist / 17 catalogued blocked / 0 Product Executor`，full snapshot `156/139/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2087/2087`、Backend `149/149`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `multiplayer.manage_wallet`。
+
 ## 2026-08-30 赌场老虎机原生闭环（EVD-308）
 
 `minigame.play_slots` 已按完整纵向切片闭合并进入策略训练范围。透明桥实时发布共享 Rarecrow 齐币需求、ClubSlots 机器、10/100 下注、Luck 倍率、完整概率/图案/倍率分布、期望净收益、活动转轴和原生退出状态；fresh 编译器锁定全部机械字段。运行层复用共享路线，只经原生 `checkAction` 和 `Slots.receiveLeftClick` 输入执行一次旋转，原版共享 RNG 独占结果生成，执行器只验收图案、倍率、齐币差、`timesPlayedSlots` 和 Done 清理。

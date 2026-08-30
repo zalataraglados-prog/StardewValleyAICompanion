@@ -1,3 +1,11 @@
+2026-08-30 EVD-309 native Calico Statue activation
+- Locked 1.6.15 source audit PASS: Desert Festival Skull Cavern gate, host-authoritative activation counter, `CreateDaySaveRandom(total + 1)`, team average Luck, all 18 effect branches, tile 284/285 transition, rating, effect stacks and native side effects are covered.
+- Hidden/silent isolated E-drive matrix PASS 18/18: `artifacts/runtime-calico-statue/runtime-calico-statue-20260830-144828/summary.json`. Every effect ID 0..17 returned `applied/verified`; 10/25/50/100 egg rewards, speed, full refresh, rating, effect dictionary and one-use tile transition matched.
+- Runtime source guard confirms shared BFS plus one native `MineShaft.checkAction` only and forbids direct production mutation of rating, effects, rewards, health, stamina, Buff, tile or RNG.
+- Installed full snapshot schema is 156 required, 139 readable with provenance, 17 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; denominator freeze is current.
+- Reconciliation: 198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 training allowlist / 17 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2087/2087; Backend 149/149; full solution Release build 0 warnings / 0 errors. Next active slice is `multiplayer.manage_wallet`.
+
 2026-08-30 EVD-308 native Casino Slots spin
 - Locked 1.6.15 source audit PASS: ClubSlots direct entry, both 10/100 bets, complete Luck-scaled 11-branch probability/pattern/payout model, shared RNG, native debit/payout, times-played and Done/forceQuit behavior are covered.
 - Hidden/silent isolated E-drive matrix PASS 2/2: `artifacts/runtime-slots-smoke/runtime-slots-smoke-20260830-132407/summary.json`. Native 10-coin no-payout settled `50->40`; native 100-coin one-seven x2 settled `1000->1100`; icons, multiplier, statistic and cleanup matched.

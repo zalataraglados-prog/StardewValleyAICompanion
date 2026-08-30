@@ -186,7 +186,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "minigame.play_darts",
                 "minigame.play_prairie_king",
                 "minigame.play_slots",
-                "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
+                "mining.activate_calico_statue", "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
                 "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
@@ -250,6 +250,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "minigame.play_darts" => "vanilla_Pirate_Cove_even_day_nonrain_2000_live_DartsGame_three_limited_walnuts_20_15_10_darts_native_301_score_mouse_aim_charge_release_dialogue_and_drop_receipt",
                 "minigame.play_prairie_king" => "vanilla_Saloon_Arcade_Prairie_native_entry_AI_actor_30_minute_timed_equivalent_suspended_start_screen_usePowerup_minus3_native_no_death_stats_Beat_PK_mail_and_achievement_check_settlement_not_native_proxy_play",
                 "minigame.play_slots" => "vanilla_missing_(BC)126_rarecrow_currency_demand_exact_ClubSlots_Luck_probability_distribution_native_10_or_100_spin_shared_rng_reel_payout_coin_and_single_spin_exit_receipt",
+                "mining.activate_calico_statue" => "vanilla_loaded_Desert_Festival_Skull_Cavern_unactivated_Buildings_284_exact_day_save_seed_effect_strategy_acceptance_fresh_rebind_native_rating_effect_and_side_effect_receipt",
                 "mining.choose_dwarf_statue_power" => "vanilla_mining_mastery_exact_daily_two_offer_rng_all_five_power_projections_native_object_menu_click_and_selected_day_buff_receipt",
                 "mining.claim_reward_chests" => "loaded_vanilla_mineshaft_exact_reward_chests_fixed_stardrop_forced_random_receipt_and_cleanup_matrix",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",

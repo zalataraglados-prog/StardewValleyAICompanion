@@ -10,7 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **155 required / 139 readable with provenance / 16 contextual / 0 blocking** (EVD-308).
+Current installed full-snapshot schema checkpoint: **156 required / 139 readable with provenance / 17 contextual / 0 blocking** (EVD-309).
+
+## Calico Statue Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `mining.calico_statue.projection_fingerprint` | Live MineShaft identity, festival day, statue/activated spot, tile, stands, host seed inputs, Luck, rating and effects | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `projected_effect` / `effect_catalog[]` / `current_effects[]` | Locked 1.6.15 effect selector over `Utility.CreateDaySaveRandom(totalActivatedToday + 1)`, team average daily luck and current stacks | small-model accept/reject decision, typed request and exact receipt | covered_for_read / native_source_exact / all_18_runtime_verified |
+| `stand_tiles[]` / `target_tile_index_before/after` | Live MineShaft collision and Buildings layer statue tile 284/285 | shared BFS, native interaction and one-use verification | covered_for_read / covered_for_gate / native_runtime_verified |
+| `rating_before/expected_rating_after` / egg, health, stamina and speed fields | Live team/player/MineShaft state and locked native side effects | production postcondition verifier and training feedback | covered_for_live_runtime_and_receipt |
+| `host_authoritative` / `gate_status` | `Game1.IsMasterGame`, Desert Festival, Skull Cavern area and live loaded floor | upstream exclusion and runtime fail-closed gate | host_only / contextual_off_floor |
 
 ## Slots Transparency
 

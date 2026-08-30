@@ -75,6 +75,7 @@ namespace StardewAI.Core.Training
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
+                ["mining.activate_calico_statue"] = new[] { "activate_calico_statue" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
@@ -347,6 +348,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return ClaimMineRewardChestSteps(candidate);
+            }
+
+            if (candidate.Kind == "activate_calico_statue" &&
+                OptionCandidateCompilerKinds["mining.activate_calico_statue"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return CalicoStatueSteps(candidate);
             }
 
             if (candidate.Kind == "claim_pot_of_gold" &&

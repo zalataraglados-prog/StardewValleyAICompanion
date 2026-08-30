@@ -40,6 +40,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 "mining.debris",
                 "mining.floor_objectives",
                 "mining.reward_chests",
+                "mining.calico_statue",
                 "mining.player_resources"
             };
             return Section("mining", unavailable.ToDictionary(
@@ -58,6 +59,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             ["debris"] = Field(ReadDebris(mine), "MineShaft.debris live item and chunk fields", tick, "mining_read_adapter"),
             ["floor_objectives"] = Field(ReadFloorObjectives(mine), "MineShaft live flags, ladder rule, and deterministic per-stone preview inputs", tick, "mining_read_adapter"),
             ["reward_chests"] = Field(ReadRewardChests(mine, Game1.player), "MineShaft.overlayObjects exact vanilla Chest contents and decompiled Chest.dumpContents effects", tick, "mining_read_adapter"),
+            ["calico_statue"] = Field(ReadCalicoStatue(mine), "MineShaft Calico Statue live tile and team state plus exact Utility.CreateDaySaveRandom next-effect replay", tick, "vanilla_1_6_15_calico_statue"),
             ["player_resources"] = Field(ReadPlayerResources(Game1.player), "Game1.player resources and inventory", tick, "mining_read_adapter"),
             ["completeness"] = Field(new
             {

@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "38f689a05a68248574eb669974abd7b4144eb16ecc85b40b9c5fb09deaf749a3",
-  "action_count": 214,
-  "registered_option_spec_count": 196,
-  "catalogued_blocked_count": 18,
+  "denominator_fingerprint_sha256": "977db7a4cbc71cf35fec45980375eb16459f533c3cd198f485be010e74be4a34",
+  "action_count": 215,
+  "registered_option_spec_count": 198,
+  "catalogued_blocked_count": 17,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -165,6 +165,15 @@
       "domain": "quest",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.activate_calico_statue",
+      "domain": "mining",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.dungeon_traversal",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
@@ -1569,13 +1578,11 @@
     {
       "action_id": "mining.activate_calico_statue",
       "domain": "mining",
-      "semantic_kind": "composite",
-      "primary_engine_id": "engine.interaction_menu",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "MineShaft"
-      ]
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "mining.choose_dwarf_statue_power",

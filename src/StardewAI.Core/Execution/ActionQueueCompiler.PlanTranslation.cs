@@ -113,6 +113,7 @@ namespace StardewAI.Core.Execution
                 "harvest_tree_product" => "executor.harvest_tree_product",
                 "rummage_garbage" => "executor.rummage_garbage",
                 "claim_mine_reward_chest" => "executor.claim_mine_reward_chest",
+                "activate_calico_statue" => "executor.activate_calico_statue",
                 "claim_pot_of_gold" => "rewards.claim_pot_of_gold",
                 "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",
                 "claim_statue_blessing" => "rewards.claim_statue_blessing",

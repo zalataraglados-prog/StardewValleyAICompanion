@@ -52,6 +52,8 @@ public sealed partial class ModEntry : Mod
     private ActiveFairWheelSpin? activeFairWheelSpin;
     private ActiveCalicoJack? activeCalicoJack;
     private ActiveSlots? activeSlots;
+    private ActiveCalicoStatueFixture? activeCalicoStatueFixture;
+    private ActiveCalicoStatue? activeCalicoStatue;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -485,6 +487,8 @@ public sealed partial class ModEntry : Mod
         TickFairWheelSpin();
         TickCalicoJack();
         TickSlots();
+        TickCalicoStatueFixture();
+        TickCalicoStatue();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1001,6 +1005,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_calico_statue")
+            {
+                StartSetupCalicoStatueFixture(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_crane_game")
             {
                 pending.Completion.SetResult(ExecuteSetupCraneGameFixture(pending.Request));
@@ -1435,6 +1445,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_slots")
             {
                 StartSlots(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.activate_calico_statue")
+            {
+                StartCalicoStatue(pending);
                 return;
             }
 
@@ -2070,6 +2086,8 @@ public sealed partial class ModEntry : Mod
             activeMineRewardChest = null;
             activePotOfGoldClaim = null;
             activeDwarfKingStatueChoice = null;
+            activeCalicoStatueFixture = null;
+            activeCalicoStatue = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2306,6 +2324,8 @@ public sealed partial class ModEntry : Mod
             activeFairWheelSpin is not null ||
             activeCalicoJack is not null ||
             activeSlots is not null ||
+            activeCalicoStatueFixture is not null ||
+            activeCalicoStatue is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

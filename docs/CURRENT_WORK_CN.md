@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-309
+
+- `mining.activate_calico_statue` 已闭合透明读取、自主候选、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 MineShaft 地块交互和严格结果回执。唯一动作链为 `mining.activate_calico_statue -> activate_calico_statue -> executor.activate_calico_statue`；小模型只接受或拒绝当前精确投影的下一效果，移动、交互和结果验收由机械层完成。
+- 锁定 1.6.15 规则使用 `Utility.CreateDaySaveRandom(totalActivatedToday + 1)`、队伍平均每日运气和当前效果栈选择下一效果。透明桥发布完整 18 效果目录、当前/预计效果栈、评分、奖励蛋、生命/耐力/速度回执、雕像 `284 -> 285` 地块状态和可达相邻站位；非沙漠节骷髅洞、非房主、已激活、地块漂移或无站位均在上游排除。
+- 隐藏静音 E 盘矩阵 `18/18` PASS：`artifacts/runtime-calico-statue/runtime-calico-statue-20260830-144828/summary.json`。全部效果 ID `0..17` 均经原生 `MineShaft.checkAction` 应用并验证；四档蛋奖励 `10/25/50/100`、速度、完全恢复、评分 `+1`、效果字典和单次地块转换均一致。生产执行器不直接写评分、效果、奖励、生命、耐力、Buff、地块或 RNG。
+- 最新 full snapshot 为 `156 required / 139 readable with provenance / 17 contextual / 0 blocking`；对账为 `198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 training allowlist / 17 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2087/2087`、Backend `149/149`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `multiplayer.manage_wallet`。
+
 ## 2026-08-30 当前权威检查点：EVD-308
 
 - `minigame.play_slots` 已闭合透明读取、Rarecrow 齐币需求候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生 `ClubSlots`/下注按钮输入和随机结算回执。唯一动作链为 `minigame.play_slots -> play_slots -> executor.play_slots`；小模型只决定是否安排一次下注，转轴、RNG、倍率、齐币和统计完全由原版游戏产生。

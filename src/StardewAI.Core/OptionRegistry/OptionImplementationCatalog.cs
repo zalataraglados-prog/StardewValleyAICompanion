@@ -86,6 +86,7 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> DungeonOptions = Set(
         "executor.claim_mine_reward_chest",
+        "executor.activate_calico_statue",
         "executor.mine_stone",
         "executor.break_container",
         "executor.break_resource_clump",
