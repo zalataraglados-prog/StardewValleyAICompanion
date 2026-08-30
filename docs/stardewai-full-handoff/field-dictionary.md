@@ -10,7 +10,20 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **161 required / 144 readable with provenance / 17 contextual / 0 blocking** (EVD-314).
+Current installed full-snapshot schema checkpoint: **165 required / 148 readable with provenance / 17 contextual / 0 blocking** (EVD-317).
+
+## Adventure Guild Reward Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `quests.adventure_guild_reward.batch_fingerprint` | Canonical live array of every complete, unclaimed locked-base monster-eradication goal | candidate identity, fresh compiler binding and runtime drift guard | covered_for_read / covered_for_gate / native_runtime_verified |
+| `goals[]` | `DataLoader.MonsterSlayerQuests`, native kill statistics and `Gil_<goalId>` collection flags | all-or-nothing batch identity and exact output receipt | covered_for_read / complete_locked_base_domain / native_runtime_verified |
+| `goals[].reward_*` | Native data reward item/dialogue/mail/flag fields plus exact `ItemRegistry.Create` results | full native side-effect projection and post-action verification | covered_for_read / covered_for_gate / native_runtime_verified |
+| `inventory_capacity_sufficient` | A clone of the live inventory evaluated with native `Utility.addItemToThisInventoryList` for every pending reward item | upstream rejection before the native method schedules irreversible batch side effects | covered_for_read / covered_for_gate / entire_batch_capacity_proven |
+| `action_tile_*` / `stand_tile_*` | Live AdventureGuild Buildings-layer Gil tile set `1291/1292/1355/1356/1357/1358` and current collision geometry | shared BFS approach and native `AdventureGuild.checkAction` binding | covered_for_read / animated_endpoint_family_bound / native_runtime_verified |
+| execution output | Native optional dialogues, one `ItemGrabMenu`, each projected reward click, `Gil_<goalId>` flags, item deltas and reward mail/flags | verifier and policy-training feedback | native_input_only / entire_batch_receipt_verified / direct_inventory_mail_flag_or_kill_stat_mutation_forbidden |
+
+`rewards.claim_adventure_guild_reward` is an autonomous positive-reward decision and is admitted to strategy training. The model emits only the parameterless claim intent; the fresh compiler owns the exact current batch and all mechanical fields. The corresponding executor is calibration-only.
 
 ## Player Customization Transparency
 

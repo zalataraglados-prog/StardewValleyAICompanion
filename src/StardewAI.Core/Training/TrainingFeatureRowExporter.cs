@@ -228,6 +228,8 @@ namespace StardewAI.Core.Training
                 case "executor.harvest_bush":
                 case "executor.break_current_location_resource_clump":
                 case "executor.claim_mine_reward_chest":
+                case "rewards.claim_adventure_guild_reward":
+                case "executor.claim_adventure_guild_reward":
                 case "rewards.claim_pot_of_gold":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":

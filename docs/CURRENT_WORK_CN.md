@@ -745,3 +745,12 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 既有晚间恢复链在 119 完成 `22:00 -> 回家/睡觉 -> NewDay`。三项服务为 server healthy、planner healthy、host-ai running，透明 `daily` 快照完整且 unavailable 0；这证明展示日循环主体成立，不等于完整动作全集、Product Executor 或正式训练完成。
 - 本地最终回归：Core 1671/1671、Backend 122/122、Release solution build 0 errors；保留 1 个既有 `AvoidNetField` 警告。
 - EVD-254 已完成上述 `crafting.forge_item` 切片，未建立第二套移动、库存或菜单系统。下一主开发切片为 `executor.apply_tree_treatment`：复用既有树木定位、移动、站位和工具/物品交互基础设施，先按锁定 1.6.15 原生分支明确适用树种、物品消费、成长状态变化、许可与严格回执，再决定其高层目的归属；不得把底层处理动作直接当作策略候选。
+
+## 2026-08-31 当前权威检查点：EVD-317
+
+- `rewards.claim_adventure_guild_reward` 已完成透明读取、自治正收益候选、DailyPlan、fresh 编译重绑、类型化传输、共享 BFS、原生 Gil 交互、可选对话、整批奖励菜单点击和严格回执。小模型只输出无参数的“领取已获得奖励”，整批身份和所有机械字段由当前快照绑定。
+- 锁定版反编译确认 `gil()` 会在一次交互中枚举全部已完成且未领取的怪物讨伐目标，并在奖励菜单出现前立即安排全部邮件/标志副作用。因此上游必须用克隆背包和原生 `Utility.addItemToThisInventoryList` 证明整批容量，不能把目标拆成逐条领取，也不能等下游菜单卡住再恢复。
+- 隐藏静音 E 盘运行 `runtime-adventure-guild-reward-20260831-023014` 为 3/3：伪造批次指纹拒绝、背包容量漂移拒绝、真实原生批次领取成功。成功用例新增一个 `Gil_<goalId>`、收取一个精确物品并使 pending 归零；生产代码不直接写背包、邮件、标志或击杀统计。
+- 当前 full 快照为 165 required / 148 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 214 registered / 223 semantic / 213 compiler-bound / 138 harness dispatch / 137 five-gate / 56 training allowlist / 9 catalogued blocked / 0 Product Executor。
+- 最终回归为 Core 2138/2138、Backend 155/155、Release 0 warnings / 0 errors。原生分母为 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0，冻结指纹为 `10b8329f92466d34ce5570679fea0096b298a36693668e8ff107be1794804902`。
+- 下一主切片是 `rewards.claim_prize_ticket`。先锁定 `PrizeTicketMenu` 的批次、随机性、容量、菜单与副作用语义，再复用现有路线、菜单输入和收据基础设施。`minigame.play_junimo_kart` 按既有决策继续暂缓，不得在下一轮误当主切片。

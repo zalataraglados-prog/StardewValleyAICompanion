@@ -25,7 +25,7 @@ namespace StardewAI.Core.Tests
 
             var prediction = new BaselineOptionRanker().Rank(report, Array.Empty<string>());
 
-            Assert.Equal(55, prediction.RankedOptions.Length);
+            Assert.Equal(56, prediction.RankedOptions.Length);
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "processing.crack_geode" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "animals.collect_auto_grabber_contents" && item.Evidence == "unseen_option");
             Assert.DoesNotContain(prediction.RankedOptions, item => item.OptionId == "farm.maintain_crops");
@@ -55,6 +55,7 @@ namespace StardewAI.Core.Tests
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "island.field_office_survey" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "fishing.catch_fish" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "rewards.claim_pot_of_gold" && item.Evidence == "unseen_option");
+            Assert.Contains(prediction.RankedOptions, item => item.OptionId == "rewards.claim_adventure_guild_reward" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "rewards.claim_statue_blessing" && item.Evidence == "unseen_option");
             Assert.DoesNotContain(prediction.RankedOptions, item => item.OptionId == "world.rotate_house_plant");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "social.gift_npc" && item.Evidence == "unseen_option");

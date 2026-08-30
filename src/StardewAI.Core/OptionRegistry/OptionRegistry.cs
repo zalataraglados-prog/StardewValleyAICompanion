@@ -423,6 +423,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player explicitly selects one exact cancellation fingerprint and supplies a reason", "compiler rebinds the live ordinary quest and projected daily-flag side effect", "native QuestLog row and cancel button clicks remove the task" },
                 new[] { "block_without_explicit_player_confirmation", "block_special_order_completed_hidden_destroyed_or_non_cancellable_quest", "block_identity_count_or_daily_flag_drift", "block_direct_quest_log_accepted_or_acceptedDailyQuest_mutation", "exclude_from_autonomous_candidates_and_strategy_training" }));
 
+            Register(Option("rewards.claim_adventure_guild_reward", "rewards", "Claim the complete current batch of earned monster eradication rewards from Gil",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "quests.adventure_guild_reward", "quests.mail_received", "quests.mail_for_tomorrow", "player.inventory", "player.inventory_capacity", "menus.active_menu" },
+                new[] { "small model emits one parameterless earned-reward claim", "compiler rebinds the complete pending goal batch, exact Gil endpoint and cloned-inventory capacity proof", "shared BFS reaches Gil", "native dialogue and ItemGrabMenu clicks collect every projected item and flag" },
+                new[] { "block_no_complete_unclaimed_item_backed_goal", "block_partial_batch_or_insufficient_capacity", "block_not_current_AdventureGuild_or_no_exact_Gil_endpoint", "block_goal_item_mail_flag_or_inventory_drift", "block_direct_kill_mail_flag_or_inventory_mutation" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -812,6 +820,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "quests.claimable_rewards", "quests.active_quests", "player.money", "menus.active_menu" },
                 new[] { "native QuestLog row and rewardBox receiveLeftClick invoked", "money increased by exact reward", "native OnMoneyRewardClaimed and OnLeaveQuestPage effects verified" },
                 new[] { "block_quest_log_identity_drift", "block_reward_not_claimable", "block_money_receipt_mismatch", "block_direct_money_or_quest_state_mutation" }));
+
+            Register(Option("executor.claim_adventure_guild_reward", "rewards", "Claim the complete rebound monster-eradication reward batch through Gil's native interaction chain",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "quests.adventure_guild_reward", "quests.mail_received", "quests.mail_for_tomorrow", "player.inventory", "player.inventory_capacity", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Gil stand", "native AdventureGuild.checkAction invokes Gil's dialogue and ItemGrabMenu", "native item clicks collect every projected reward and add every Gil goal flag" },
+                new[] { "block_batch_identity_or_capacity_drift", "block_not_current_AdventureGuild_or_no_exact_Gil_endpoint", "block_goal_item_mail_flag_or_inventory_drift", "block_direct_kill_mail_flag_or_inventory_mutation" }));
 
             Register(Option("executor.cancel_quest", "quest", "Select and cancel one exact eligible ordinary quest through native QuestLog clicks",
                 OptionBehaviorCategories.Mechanical,

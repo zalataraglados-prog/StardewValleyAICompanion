@@ -44,6 +44,7 @@ public sealed partial class ProgressQuestReadAdapter : ReadAdapterBase
             ["special_order_boards"] = Field(ReadSpecialOrderBoards(team), "Utility.ForEachLocation live Buildings Action tokens SpecialOrders/QiChallengeBoard/DesertMarlon; FarmerTeam.availableSpecialOrders/acceptedSpecialOrderTypes; active SpecialOrdersBoard leftOrder/rightOrder", tick),
             ["active_quests"] = Field(ReadActiveQuests(player), "Game1.player.questLog", tick),
             ["cancellation_candidates"] = Field(ReadQuestCancellationProjection(player), "Game1.player.questLog; Quest.CanBeCancelled; QuestLog.receiveLeftClick exact ordinary Quest cancellation branch; Game1.player.acceptedDailyQuest; Game1.Date.TotalDays", tick),
+            ["adventure_guild_reward"] = Field(ReadAdventureGuildReward(player), "Data/MonsterSlayerQuests; Game1.stats.specificMonstersKilled; Farmer.mailReceived/mailForTomorrow; AdventureGuild.checkAction/gil/OnRewardCollected; native DialogueBox and ItemGrabMenu; cloned-inventory Utility.addItemToThisInventoryList capacity simulation", tick),
             ["claimable_rewards"] = Field(ReadClaimableQuestRewards(player), "Game1.player.questLog; Quest.IsHidden/ShouldDisplayAsComplete/HasMoneyReward/GetMoneyReward", tick),
             ["completed_quests"] = Field(ReadCompletedQuests(player), "Game1.stats.QuestsCompleted; Game1.player.questLog where Quest.completed", tick),
             ["mail_received"] = Field(player?.mailReceived.OrderBy(id => id).ToArray(), "Game1.player.mailReceived", tick),

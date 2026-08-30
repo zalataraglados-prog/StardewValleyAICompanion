@@ -6,10 +6,9 @@
   "surface_count": 322,
   "mapped_count": 116,
   "catalogued_blocked_surface_count": 52,
-  "catalogued_blocked_action_count": 10,
+  "catalogued_blocked_action_count": 9,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "rewards.claim_adventure_guild_reward",
     "rewards.claim_prize_ticket",
     "skills.claim_mastery",
     "social.emote",

@@ -40,6 +40,7 @@ namespace StardewAI.Core.Training
                 ["quest.accept_special_order"] = new[] { "route_connector_tile", "special_order_board_approach", "special_order_board_open", "special_order_board_dialogue_advance", "accept_special_order" },
                 ["quest.claim_reward"] = new[] { "claim_quest_reward" },
                 ["quest.cancel"] = new[] { "cancel_quest" },
+                ["rewards.claim_adventure_guild_reward"] = new[] { "claim_adventure_guild_reward" },
                 ["quest.advance"] = QuestActionCoverageCatalog.BoundCandidateKinds.ToArray(),
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.process_machines"] = new[]
@@ -319,6 +320,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "cancel_quest")
             {
                 return QuestCancellationSteps(candidate);
+            }
+
+            if (candidate.Kind == "claim_adventure_guild_reward")
+            {
+                return AdventureGuildRewardSteps(candidate);
             }
 
             if (candidate.Kind == "apply_fertilizer_tile")

@@ -1716,6 +1716,9 @@ static partial class Program
         ApplyQuestCancellationRequestFields(
             executionRequest,
             item);
+        ApplyAdventureGuildRewardRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

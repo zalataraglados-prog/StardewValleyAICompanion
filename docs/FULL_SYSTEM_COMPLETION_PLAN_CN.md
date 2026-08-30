@@ -918,3 +918,13 @@ DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作
 DailyPlan 的语义步骤为 `paint_building_region`，但动作队列仍进入唯一 `executor.change_building_skin`。共享 `ActiveBuildingAppearanceChange` 负责 Robin 路由、Carpenter 对话、农场建筑选择和菜单收尾；参数存在 `paint_target_mode` 时才进入 `BuildingPaintMenu` 区域/滑杆/默认按钮分支。结算必须同时证明目标区域精确匹配和所有兄弟区域不变。生产代码禁止直接写 `BuildingPaintColor`；直接设定仅允许隔离 fixture 建立前态。
 
 EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H180/S37/L-30` 原生全链，训练行已落盘。冻结语义分母保持 180：`123 registered + 57 catalogued_blocked`，说明本切片替换待办项而没有制造第 181 个重复动作；compiler-bound 为 122，Product Executor 仍为 0。最新 full snapshot 为 113 required、96 带来源可读、17 场景性、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1666/1666、Backend 121/121。
+
+## 2026-08-31 Adventure Guild 整批奖励闭环（EVD-317）
+
+`rewards.claim_adventure_guild_reward` 已替换对应待办语义项，并只复用现有路线与菜单执行基础设施。模型出口是无参数的高层领取意图；透明桥实时枚举全部完成且未领取的怪物讨伐目标，发布精确物品、对话、邮件、标志、Gil 收据、六帧动画入口集合、站位和整批指纹。fresh 编译器覆盖模型提供的所有机械字段；非空旧指纹发生漂移时失败关闭。
+
+锁定版 `AdventureGuild.gil()` 把当前所有可领取目标合并为一次事务：先安排各目标邮件和标志副作用，再展示可选对话和单个 `ItemGrabMenu`，每次取物按 `SpecialVariable` 写入对应 `Gil_<goalId>`。因此本动作不能拆成逐目标语义。候选与执行前必须通过克隆实时背包并调用原生背包插入算法，证明整个奖励批次均可接收；容量不确定时在上游排除。
+
+隐藏静音 E 盘矩阵 `runtime-adventure-guild-reward-20260831-023014` 已 3/3 通过，包括伪造批次、容量漂移和真实原生领取。当前冻结口径为 214 registered / 223 semantic / 9 catalogued blocked / 213 compiler-bound / 138 harness dispatch / 137 five-gate / 56 training allowlist / 0 Product Executor；full snapshot 为 165/148/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2138/2138、Backend 155/155、Release 0 警告和 0 错误。
+
+下一切片固定为 `rewards.claim_prize_ticket`，按“本地反编译锁语义 -> 透明字段与整批/随机输出边界 -> 上游许可 -> 复用 DailyPlan/菜单机械链 -> 原生执行与回执 -> 隐藏隔离矩阵 -> 目录冻结”的顺序完成。Junimo Kart 继续保留为已知暂缓项，不阻塞其他动作闭环，也不允许用等价模拟结果冒充原生完美游玩。
