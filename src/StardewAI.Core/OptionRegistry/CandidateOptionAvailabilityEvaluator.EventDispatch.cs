@@ -48,6 +48,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["social.emote"] = PlayerEmoteCandidates,
                 ["social.watch_movie"] = MovieTheaterCandidates,
                 ["story.advance_event"] = StoryEventCandidates,
+                ["story.advance_event_minigame"] = StoryEventMinigameCandidates,
                 ["mail.process_letter"] = (snapshot, _) => MailProcessingCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),
                 ["executor.plant_seed"] = (snapshot, _) => PlantSeedCandidates(snapshot),

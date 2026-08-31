@@ -25,7 +25,7 @@ namespace StardewAI.Core.Tests
 
             var prediction = new BaselineOptionRanker().Rank(report, Array.Empty<string>());
 
-            Assert.Equal(60, prediction.RankedOptions.Length);
+            Assert.Equal(61, prediction.RankedOptions.Length);
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "processing.crack_geode" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "social.watch_movie" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "story.advance_event" && item.Evidence == "unseen_option");

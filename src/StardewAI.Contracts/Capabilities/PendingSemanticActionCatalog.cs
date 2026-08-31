@@ -22,9 +22,6 @@ public static class PendingSemanticActionCatalog
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
             C("minigame.play_junimo_kart", "minigame", "composite", "engine.minigame", "MineCart"),
-            C("story.advance_event_minigame", "story", "composite", "engine.minigame",
-                "BoatJourney", "FantasyBoardGame", "GrandpaStory", "HaleyCowPictures", "Intro",
-                "MaruComet", "PlaneFlyBy", "RobotBlastoff", "TelescopeScene"),
             C("tailoring.dye_item", "tailoring", "composite", "engine.crafting_processing", "DyeMenu"),
             C("tailoring.sew_item", "tailoring", "composite", "engine.crafting_processing", "TailoringMenu")
         });

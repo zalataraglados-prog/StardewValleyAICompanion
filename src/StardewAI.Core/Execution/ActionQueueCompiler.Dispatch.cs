@@ -34,6 +34,7 @@ namespace StardewAI.Core.Execution
                 ["executor.perform_emote"] = CompilePlayerEmoteStep,
                 ["executor.watch_movie"] = CompileWatchMovieStep,
                 ["executor.advance_story_event"] = CompileAdvanceStoryEventStep,
+                ["executor.advance_story_event_minigame"] = CompileAdvanceStoryEventMinigameStep,
                 ["executor.buy_shop_item"] = CompileBuyShopItemStep,
                 ["executor.sell_shop_item"] = (action, _) => CompileSellShopItemStep(action),
                 ["executor.choose_dialogue_response"] = (action, _) => CompileChooseDialogueResponseStep(action),

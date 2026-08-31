@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "3806442b4eedf4b38dbbc49452db747fa8b1d5e94e5ae65c1dbfd811439c098e",
-  "action_count": 228,
-  "registered_option_spec_count": 224,
-  "catalogued_blocked_count": 4,
+  "denominator_fingerprint_sha256": "1fd102fe2803620c09ee8c9e0ea5b5e7460b9d333f8386430fdd85489a839996",
+  "action_count": 229,
+  "registered_option_spec_count": 226,
+  "catalogued_blocked_count": 3,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -183,6 +183,15 @@
       "domain": "story",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.advance_story_event_minigame",
+      "domain": "story",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.minigame",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
@@ -2010,21 +2019,11 @@
     {
       "action_id": "story.advance_event_minigame",
       "domain": "story",
-      "semantic_kind": "composite",
+      "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.minigame",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "BoatJourney",
-        "FantasyBoardGame",
-        "GrandpaStory",
-        "HaleyCowPictures",
-        "Intro",
-        "MaruComet",
-        "PlaneFlyBy",
-        "RobotBlastoff",
-        "TelescopeScene"
-      ]
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "strategy.grandpa_progress",

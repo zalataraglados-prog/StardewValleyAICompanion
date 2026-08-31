@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using StardewValley;
 using StardewValley.Menus;
@@ -8,6 +9,23 @@ public sealed partial class PlayerReadAdapter
 {
     private const string StoryEventNativeContract =
         "live_Event_Update_tryEventCommand_and_DialogueBox_native_input_until_event_end_or_fresh_decision_minigame_or_player_control_boundary_without_skipEvent_or_direct_event_state_mutation";
+
+    private const string StoryEventMinigameNativeContract =
+        "live_Game1_currentMinigame_native_tick_and_event_Update_with_exact_DialogueBox_input_until_minigame_end_or_fresh_decision_without_forceQuit_manual_tick_or_direct_event_minigame_state_mutation";
+
+    private static readonly HashSet<string> SupportedEventMinigameTypes = new(StringComparer.Ordinal)
+    {
+        "StardewValley.Minigames.FantasyBoardGame",
+        "StardewValley.Minigames.HaleyCowPictures",
+        "StardewValley.Minigames.MaruComet",
+        "StardewValley.Minigames.PlaneFlyBy",
+        "StardewValley.Minigames.RobotBlastoff"
+    };
+
+    private const string BoatJourneyType = "StardewValley.Minigames.BoatJourney";
+    private const string GrandpaStoryType = "StardewValley.Minigames.GrandpaStory";
+    private const string IntroType = "StardewValley.Minigames.Intro";
+    private const string TelescopeSceneType = "StardewValley.Minigames.TelescopeScene";
 
     private static object ReadStoryEventContext(Farmer? player)
     {
@@ -52,11 +70,13 @@ public sealed partial class PlayerReadAdapter
         var currentCommandName = ReadEventCommandName(currentCommandRaw);
         var minigame = Game1.currentMinigame;
         var minigameType = minigame?.GetType().FullName ?? string.Empty;
+        var minigameSupport = ClassifyStoryEventMinigame(minigameType, active);
+        var minigameRuntimeState = ReadStoryEventMinigameRuntimeState(minigame, minigameType);
         var questionOpen = dialogue?.isQuestion == true && dialogue.responses is { Length: > 0 };
-        var boundaryKind = !active
-            ? "none"
-            : minigame is not null
-                ? "event_minigame"
+        var boundaryKind = minigame is not null
+            ? active ? "event_minigame" : "world_minigame"
+            : !active
+                ? "none"
                 : currentEvent!.playerControlSequence
                     ? "player_control"
                     : questionOpen
@@ -95,6 +115,14 @@ public sealed partial class PlayerReadAdapter
             currentEvent?.markEventSeen,
             active_minigame = minigameType,
             minigame_id = minigame?.minigameId(),
+            minigame_support = new
+            {
+                minigameSupport.supported,
+                minigameSupport.owner_kind,
+                minigameSupport.execution_mode,
+                minigameSupport.support_status,
+                minigameSupport.block_reason
+            },
             active_menu_type = Game1.activeClickableMenu?.GetType().FullName,
             question_key = location?.lastQuestionKey,
             responses = responseRows
@@ -149,6 +177,14 @@ public sealed partial class PlayerReadAdapter
             active_custom_event_script_type = currentEvent?.currentCustomEventScript?.GetType().FullName ?? string.Empty,
             active_minigame_type = minigameType,
             active_minigame_id = minigame?.minigameId() ?? string.Empty,
+            active_minigame_native_contract = StoryEventMinigameNativeContract,
+            active_minigame_owner_kind = minigameSupport.owner_kind,
+            active_minigame_execution_mode = minigameSupport.execution_mode,
+            active_minigame_support_status = minigameSupport.support_status,
+            active_minigame_supported = minigameSupport.supported,
+            active_minigame_requires_model_response = minigameSupport.supported && questionOpen,
+            active_minigame_block_reason = minigameSupport.block_reason,
+            active_minigame_runtime_state = minigameRuntimeState,
             dialogue_menu_open = dialogue is not null,
             dialogue_is_question = dialogue?.isQuestion ?? false,
             dialogue_question_key = location?.lastQuestionKey ?? string.Empty,
@@ -162,11 +198,116 @@ public sealed partial class PlayerReadAdapter
             boundary_kind = boundaryKind,
             exit_location_name = currentEvent?.exitLocation?.Name ?? string.Empty,
             exit_location_is_structure = currentEvent?.exitLocation?.IsStructure,
-            service_status = active && currentEvent?.isFestival != true && minigame is null && currentEvent?.playerControlSequence != true
-                ? "ordinary_event_ready"
-                : boundaryKind,
+            service_status = minigameSupport.supported
+                ? "story_minigame_ready"
+                : active && currentEvent?.isFestival != true && minigame is null && currentEvent?.playerControlSequence != true
+                    ? "ordinary_event_ready"
+                    : boundaryKind,
             blocked_diagnostics = diagnostics.ToArray()
         };
+    }
+
+    private static object ReadStoryEventMinigameRuntimeState(object? minigame, string type)
+    {
+        if (minigame is null)
+            return new { state_kind = "none" };
+        return type switch
+        {
+            "StardewValley.Minigames.FantasyBoardGame" => new
+            {
+                state_kind = "fantasy_board_game",
+                which_slide = ReadMinigameMember<int>(minigame, "whichSlide"),
+                shake_timer_ms = ReadMinigameMember<int>(minigame, "shakeTimer"),
+                end_timer_ms = ReadMinigameMember<int>(minigame, "endTimer")
+            },
+            "StardewValley.Minigames.MaruComet" => new
+            {
+                state_kind = "maru_comet",
+                total_timer_ms = ReadMinigameMember<int>(minigame, "totalTimer"),
+                flyby_timer_ms = ReadMinigameMember<int>(minigame, "flybyTimer"),
+                fade = ReadMinigameMember<float>(minigame, "fade")
+            },
+            "StardewValley.Minigames.HaleyCowPictures" => new
+            {
+                state_kind = "haley_cow_pictures",
+                between_photo_timer_ms = ReadMinigameMember<int>(minigame, "betweenPhotoTimer"),
+                photos_taken = ReadMinigameMember<int>(minigame, "numberOfPhotosSoFar"),
+                fade_alpha = ReadMinigameMember<float>(minigame, "fadeAlpha")
+            },
+            "StardewValley.Minigames.PlaneFlyBy" or "StardewValley.Minigames.RobotBlastoff" => new
+            {
+                state_kind = type.EndsWith("PlaneFlyBy", StringComparison.Ordinal) ? "plane_fly_by" : "robot_blastoff",
+                elapsed_ms = ReadMinigameMember<int>(minigame, "millisecondsSinceStart"),
+                smoke_timer_ms = ReadMinigameMember<int>(minigame, "smokeTimer")
+            },
+            BoatJourneyType => new
+            {
+                state_kind = "boat_journey",
+                fade_complete = ReadMinigameMember<bool>(minigame, "_fadeComplete"),
+                total_path_distance = ReadMinigameMember<float>(minigame, "_totalPathDistance"),
+                traveled_distance = ReadMinigameMember<float>(minigame, "traveledBoatDistance"),
+                departure_delay_seconds = ReadMinigameMember<float>(minigame, "departureDelay")
+            },
+            GrandpaStoryType => new
+            {
+                state_kind = "grandpa_story_player_setup",
+                scene = ReadMinigameMember<int>(minigame, "scene"),
+                total_ms = ReadMinigameMember<int>(minigame, "totalMilliseconds"),
+                speech_timer_ms = ReadMinigameMember<int>(minigame, "grandpaSpeechTimer"),
+                mouse_active = ReadMinigameMember<bool>(minigame, "mouseActive"),
+                letter_clicked = ReadMinigameMember<bool>(minigame, "clickedLetter"),
+                letter_open = ReadMinigameMember<object>(minigame, "letterView") is not null,
+                fading_to_quit = ReadMinigameMember<bool>(minigame, "fadingToQuit")
+            },
+            IntroType => new
+            {
+                state_kind = "intro_player_setup",
+                current_state = ReadMinigameMember<int>(minigame, "currentState"),
+                character_creation_open = ReadMinigameMember<object>(minigame, "characterCreateMenu") is not null,
+                quit_requested = ReadMinigameMember<bool>(minigame, "quit"),
+                quit_completed = ReadMinigameMember<bool>(minigame, "hasQuit")
+            },
+            TelescopeSceneType => new { state_kind = "deprecated_telescope_scene_placeholder" },
+            _ => new { state_kind = "other_minigame" }
+        };
+    }
+
+    private static (bool supported, string owner_kind, string execution_mode, string support_status, string block_reason)
+        ClassifyStoryEventMinigame(string type, bool eventActive)
+    {
+        if (SupportedEventMinigameTypes.Contains(type))
+        {
+            return eventActive
+                ? (true, "event_script", type.EndsWith("FantasyBoardGame", StringComparison.Ordinal)
+                    ? "native_event_with_dialogue" : "native_passive", "supported", string.Empty)
+                : (false, "orphaned_event_minigame", "blocked", "blocked", "event_minigame_without_active_event");
+        }
+        if (type == BoatJourneyType)
+            return (true, "world_cinematic", "native_passive", "supported", string.Empty);
+        if (type is GrandpaStoryType or IntroType)
+            return (false, "new_game_player_setup", "player_owned", "excluded_player_setup", "player_identity_and_character_creation_boundary");
+        if (type == TelescopeSceneType)
+            return (false, "deprecated_base_placeholder", "unreachable", "deprecated_placeholder", "base_1_6_15_has_no_instantiation_and_no_completion_path");
+        return string.IsNullOrWhiteSpace(type)
+            ? (false, "none", "none", "inactive", string.Empty)
+            : (false, "other_minigame_owner", "separate_action", "owned_elsewhere", "minigame_owned_by_another_registered_action");
+    }
+
+    private static T? ReadMinigameMember<T>(object source, string name)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        var type = source.GetType();
+        while (type is not null)
+        {
+            var field = type.GetField(name, flags | BindingFlags.DeclaredOnly);
+            if (field is not null)
+                return field.GetValue(source) is T value ? value : default;
+            var property = type.GetProperty(name, flags | BindingFlags.DeclaredOnly);
+            if (property is not null)
+                return property.GetValue(source) is T value ? value : default;
+            type = type.BaseType;
+        }
+        return default;
     }
 
     private static string ReadEventCommandName(string? raw)

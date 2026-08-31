@@ -407,6 +407,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact live dialogue response may be selected by the model", "all non-decision commands advance through Event.Update and native DialogueBox input", "execution stops for a fresh snapshot at event completion, a new choice, a story minigame, or an exact player-control sequence" },
                 new[] { "block_festival_or_inactive_event", "block_event_command_question_or_response_drift", "block_story_minigame_or_unhandled_player_control_boundary", "block_skipEvent_direct_command_index_event_seen_reward_or_world_state_mutation" }));
 
+            Register(Option("story.advance_event_minigame", "story", "Advance one supported native story minigame to completion or its next fresh decision boundary",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.StrategyValue,
+                new[] { "player.story_event", "player.location_id", "menus.active_menu" },
+                new[] { "five event-owned cinematic minigames and the BoatJourney world cinematic are classified from the exact live runtime type", "passive progress remains owned by Game1 currentMinigame tick and FantasyBoardGame remains owned by its native Event.Update", "one exact live FantasyBoardGame dialogue response may be selected by the model", "execution stops at minigame completion, a fresh dialogue choice, or an unexpected instance transition" },
+                new[] { "block_unsupported_or_orphaned_minigame_type", "exclude_GrandpaStory_Intro_player_setup_and_deprecated_TelescopeScene_placeholder", "block_event_minigame_instance_command_question_or_response_drift", "block_forceQuit_manual_tick_skipEvent_or_direct_event_minigame_state_mutation" }));
+
             Register(Option("quest.advance", "quest", "Advance one transparent quest objective stage",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -1250,6 +1258,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.story_event", "player.location_id", "menus.active_menu" },
                 new[] { "native Event.Update owns every event command side effect", "native DialogueBox input advances text or one compiler-bound response", "event end or the next decision/minigame/player-control boundary is verified" },
                 new[] { "block_event_identity_command_or_dialogue_projection_drift", "block_festival_minigame_or_unhandled_player_control", "block_unverified_event_progress", "block_skipEvent_direct_event_state_seen_reward_or_world_state_mutation" }));
+
+            Register(Option("executor.advance_story_event_minigame", "story", "Observe one exact native story minigame and inject only its compiler-bound dialogue input",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.story_event", "player.location_id", "menus.active_menu" },
+                new[] { "Game1 owns every currentMinigame tick and event command side effect", "FantasyBoardGame forwards native DialogueBox input while its own tick owns Event.Update", "minigame disappearance plus event-command or BoatJourney warp receipt is verified" },
+                new[] { "block_minigame_type_owner_event_command_or_dialogue_projection_drift", "block_unsupported_menu_or_instance_transition", "block_unverified_completion_or_BoatJourney_destination", "block_forceQuit_manual_tick_skipEvent_or_direct_event_minigame_state_mutation" }));
 
             Register(Option("executor.perform_emote", "social", "Execute and verify one explicitly requested native player emote",
                 OptionBehaviorCategories.Mechanical,

@@ -22,6 +22,8 @@ public sealed partial class ModEntry
         {
             "automatic_fixture" => "EVD322Automatic",
             "choice_fixture" => "EVD322Choice",
+            "passive_minigame_fixture" => "EVD323Passive",
+            "choice_minigame_fixture" => "EVD323Choice",
             _ => string.Empty
         };
         if (string.IsNullOrWhiteSpace(eventId))
@@ -30,9 +32,13 @@ public sealed partial class ModEntry
         Game1.exitActiveMenu();
         Game1.dialogueUp = false;
         StopAllMovement();
-        var body = profile == "choice_fixture"
-            ? "question EVD322Question \"Choose a branch#First#Second\"/message \"EVD-322 choice complete\"/end"
-            : "message \"EVD-322 automatic text\"/message \"EVD-322 automatic complete\"/end";
+        var body = profile switch
+        {
+            "choice_fixture" => "question EVD322Question \"Choose a branch#First#Second\"/message \"EVD-322 choice complete\"/end",
+            "passive_minigame_fixture" => "cutscene boardGame/pause 50/message \"EVD-323 passive complete\"/updateMinigame -2/pause 20000/end",
+            "choice_minigame_fixture" => "cutscene boardGame/pause 50/question EVD323Question \"Choose a board branch#First#Second\"/updateMinigame -2/pause 20000/end",
+            _ => "message \"EVD-322 automatic text\"/message \"EVD-322 automatic complete\"/end"
+        };
         var script = "none/follow/farmer 0 0 2/" + body;
         var nativeEvent = new Event(
             script,
@@ -43,7 +49,7 @@ public sealed partial class ModEntry
 
         var verified = Game1.eventUp && ReferenceEquals(Game1.CurrentEvent, nativeEvent) &&
             string.Equals(nativeEvent.id, eventId, StringComparison.Ordinal) &&
-            nativeEvent.eventCommands.Length == 6;
+            nativeEvent.eventCommands.Length == script.Split('/').Length;
         return new TrainingExecutionResult
         {
             RunId = request.RunId,

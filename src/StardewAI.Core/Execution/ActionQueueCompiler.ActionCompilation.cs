@@ -184,6 +184,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidatePlayerEmotePlan(action, snapshot));
             blocking.AddRange(ValidateWatchMoviePlan(action, snapshot));
             blocking.AddRange(ValidateAdvanceStoryEventPlan(action, snapshot));
+            blocking.AddRange(ValidateAdvanceStoryEventMinigamePlan(action, snapshot));
             blocking.AddRange(ValidatePotOfGoldPlan(action, snapshot));
             blocking.AddRange(ValidateDwarfKingStatuePlan(action, snapshot));
             blocking.AddRange(ValidateStatueBlessingPlan(action, snapshot));

@@ -30,4 +30,19 @@ public sealed partial class TrainingExecutionRequest
 
     [JsonPropertyName("story_event_response_key")]
     public string StoryEventResponseKey { get; set; } = string.Empty;
+
+    [JsonPropertyName("story_event_minigame_native_contract")]
+    public string StoryEventMinigameNativeContract { get; set; } = string.Empty;
+
+    [JsonPropertyName("story_event_minigame_type")]
+    public string StoryEventMinigameType { get; set; } = string.Empty;
+
+    [JsonPropertyName("story_event_minigame_id")]
+    public string StoryEventMinigameId { get; set; } = string.Empty;
+
+    [JsonPropertyName("story_event_minigame_owner_kind")]
+    public string StoryEventMinigameOwnerKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("story_event_minigame_execution_mode")]
+    public string StoryEventMinigameExecutionMode { get; set; } = string.Empty;
 }

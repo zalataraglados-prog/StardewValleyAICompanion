@@ -189,7 +189,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "mining.activate_calico_statue", "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "processing.crack_geode",
                 "rewards.claim_adventure_guild_reward", "rewards.claim_pot_of_gold", "rewards.claim_prize_ticket", "rewards.claim_statue_blessing",
-                "skills.choose_profession", "skills.claim_mastery", "skills.read_books", "social.gift_npc", "social.talk_npc", "social.watch_movie", "story.advance_event", "volcano.reach_caldera"
+                "skills.choose_profession", "skills.claim_mastery", "skills.read_books", "social.gift_npc", "social.talk_npc", "social.watch_movie", "story.advance_event", "story.advance_event_minigame", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -269,6 +269,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                 "social.watch_movie" => "vanilla_complete_weekly_MovieTheater_movie_guest_concession_ticket_invitation_endpoint_BFS_reachability_mutex_event_week_and_exact_friendship_projection_with_rolling_native_stage_binding",
                 "story.advance_event" => "vanilla_complete_live_ordinary_Event_automatic_message_and_projected_dialogue_response_native_Update_and_DialogueBox_input_until_event_end_or_fresh_minigame_player_control_or_decision_boundary_without_skip_or_direct_state_mutation",
+                "story.advance_event_minigame" => "vanilla_complete_exact_live_six_supported_story_cinematic_minigame_types_with_player_setup_and_deprecated_placeholders_native_Game1_tick_and_Event_Update_ownership_exact_FantasyBoardGame_dialogue_choice_until_completion_or_fresh_boundary",
                 "volcano.reach_caldera" => "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
                 "world.rotate_house_plant" => "vanilla_all_eight_base_house_plant_visual_frames_empty_hand_native_location_object_interaction_double_call_edge_permanent_identity_and_selected_slot_receipt",
                 _ => throw new InvalidOperationException("Unexpected training option: " + optionId)

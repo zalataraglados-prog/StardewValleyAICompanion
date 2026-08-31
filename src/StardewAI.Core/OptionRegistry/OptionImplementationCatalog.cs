@@ -133,6 +133,7 @@ public static class OptionImplementationCatalog
         "minigame.play_crane_game",
         "minigame.play_darts",
         "minigame.play_prairie_king",
+        "story.advance_event_minigame",
         "executor.play_junimo_kart",
         "executor.play_fair_fishing_game",
         "executor.play_fair_slingshot_game",
@@ -142,7 +143,8 @@ public static class OptionImplementationCatalog
         "executor.play_slots",
         "executor.play_crane_game",
         "executor.play_darts",
-        "executor.play_prairie_king");
+        "executor.play_prairie_king",
+        "executor.advance_story_event_minigame");
 
     private static readonly HashSet<string> InventoryOptions = Set(
         "rewards.claim_adventure_guild_reward",
@@ -319,6 +321,8 @@ public static class OptionImplementationCatalog
             return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.MovieTheater";
         if (optionId == "story.advance_event")
             return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.StoryEvent";
+        if (optionId == "story.advance_event_minigame")
+            return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.StoryEventMinigame";
         if (optionId.StartsWith("social.", StringComparison.Ordinal))
             return "StardewAI.Core.OptionRegistry.SocialCandidateBuilder";
         return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator";

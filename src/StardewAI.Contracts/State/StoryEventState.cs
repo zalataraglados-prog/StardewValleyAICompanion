@@ -50,6 +50,30 @@ public sealed class StoryEventProjectionRef
     [JsonPropertyName("active_minigame_type")]
     public string ActiveMinigameType { get; set; } = string.Empty;
 
+    [JsonPropertyName("active_minigame_id")]
+    public string ActiveMinigameId { get; set; } = string.Empty;
+
+    [JsonPropertyName("active_minigame_native_contract")]
+    public string ActiveMinigameNativeContract { get; set; } = string.Empty;
+
+    [JsonPropertyName("active_minigame_owner_kind")]
+    public string ActiveMinigameOwnerKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("active_minigame_execution_mode")]
+    public string ActiveMinigameExecutionMode { get; set; } = string.Empty;
+
+    [JsonPropertyName("active_minigame_support_status")]
+    public string ActiveMinigameSupportStatus { get; set; } = string.Empty;
+
+    [JsonPropertyName("active_minigame_supported")]
+    public bool ActiveMinigameSupported { get; set; }
+
+    [JsonPropertyName("active_minigame_requires_model_response")]
+    public bool ActiveMinigameRequiresModelResponse { get; set; }
+
+    [JsonPropertyName("active_minigame_block_reason")]
+    public string ActiveMinigameBlockReason { get; set; } = string.Empty;
+
     [JsonPropertyName("player_control_sequence")]
     public bool PlayerControlSequence { get; set; }
 

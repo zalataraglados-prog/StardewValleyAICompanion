@@ -2,7 +2,7 @@
 
 ## 2026-08-31 训练优先执行顺序与服务器启动门
 
-EVD-320 后的冻结基线为 `220 registered / 226 semantic / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 6 catalogued blocked / 0 Product Executor`。为尽快进入真实全量训练，剩余目录不再按展示价值排序，而按训练阻塞排序：`social.watch_movie` -> `story.advance_event` -> `story.advance_event_minigame` -> `tailoring.sew_item` -> Product Executor -> 正式轨迹重建与服务器全量训练。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者在训练启动后补齐；AI 自主游玩赛车继续使用已经锁定的定时等价路径。
+EVD-323 后的冻结基线为 `226 registered / 229 semantic / 225 compiler-bound / 144 harness dispatch / 149 five-gate / 61 training allowlist / 3 catalogued blocked / 0 Product Executor`。训练阻塞顺序中的 `social.watch_movie`、`story.advance_event` 和 `story.advance_event_minigame` 已闭合，当前仅剩 `tailoring.sew_item` -> Product Executor -> 正式轨迹重建与服务器全量训练。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者在训练启动后补齐；AI 自主游玩赛车继续使用已经锁定的定时等价路径。
 
 每个训练前动作仍须完成同一纵向闭环：锁定 1.6.15 反编译与实时数据读取、上游合法候选、DailyPlan、高层到机械队列编译、唯一原生运行路径、fresh 输出回执、五门证据与隐藏静音运行。四项闭合只清除目录阻塞，不自动授权训练。RuntimeTestHarness 只保留 fixture 与证据职责；正式训练必须先把已验证状态机装配到独立 Product Executor，并由能力注册表明确声明产品支持，禁止以 Harness 的 8767 测试端点伪装生产执行器。
 
@@ -977,4 +977,4 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 
 隐藏静音 E 盘矩阵 `runtime-movie-theater-smoke-20260831-185111` 已 4/4 通过，邀请、入场、零食和放映均为 `applied/verified`，玩家与 Abigail 周标记更新到同一周，好感从 1000 精确增加到 1050，原生事件清理并返回影院大厅。当前冻结口径为 `222 registered / 227 semantic / 5 catalogued blocked / 221 compiler-bound / 142 harness dispatch / 145 five-gate / 59 training allowlist / 0 Product Executor`；full snapshot 为 `169/152/17/0`，KnowledgeCompiler `585/585` 且阻塞 0，原生分母保持 `322/448/150`。最终静态回归为 Core `2170/2170`、Backend `155/155`、冻结/目录一致性 `50/50`，全解决方案 Release `0 warnings / 0 errors`。
 
-下一主切片固定为 `story.advance_event`，随后闭合 `story.advance_event_minigame` 和 `tailoring.sew_item`。三项训练相关动作完成后进入 Product Executor 与正式轨迹链，不得用 RuntimeTestHarness 或测试夹具冒充产品执行器。
+EVD-322 已闭合普通 `story.advance_event`，EVD-323 已闭合独立的 `story.advance_event_minigame`。下一主切片固定为 `tailoring.sew_item`；完成后进入 Product Executor 与正式轨迹链，不得用 RuntimeTestHarness 或测试夹具冒充产品执行器。

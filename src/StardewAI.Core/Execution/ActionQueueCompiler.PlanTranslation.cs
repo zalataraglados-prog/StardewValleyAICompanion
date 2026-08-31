@@ -90,6 +90,7 @@ namespace StardewAI.Core.Execution
                 "perform_emote" => "executor.perform_emote",
                 "watch_movie" => "executor.watch_movie",
                 "advance_story_event" => "executor.advance_story_event",
+                "advance_story_event_minigame" => "executor.advance_story_event_minigame",
                 "sleep" => "executor.sleep",
                 "sleep_in_tent" => "recovery.sleep_in_tent",
                 "escape_object_trap" => "recovery.escape_object_trap",

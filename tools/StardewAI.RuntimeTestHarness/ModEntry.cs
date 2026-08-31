@@ -142,6 +142,7 @@ public sealed partial class ModEntry : Mod
     private ActivePlayerEmote? activePlayerEmote;
     private ActiveMovieTheater? activeMovieTheater;
     private ActiveStoryEvent? activeStoryEvent;
+    private ActiveStoryEventMinigame? activeStoryEventMinigame;
 
     public override void Entry(IModHelper helper)
     {
@@ -566,6 +567,7 @@ public sealed partial class ModEntry : Mod
         TickPlayerEmoteSafely();
         TickMovieTheaterSafely();
         TickStoryEventSafely();
+        TickStoryEventMinigameSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1646,6 +1648,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.advance_story_event_minigame")
+            {
+                StartStoryEventMinigame(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.play_darts")
             {
                 StartDartsGame(pending);
@@ -2311,6 +2319,7 @@ public sealed partial class ModEntry : Mod
             activePlayerEmote = null;
             activeMovieTheater = null;
             activeStoryEvent = null;
+            activeStoryEventMinigame = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2601,7 +2610,8 @@ public sealed partial class ModEntry : Mod
             activeMasteryClaim is not null ||
             activePlayerEmote is not null ||
             activeMovieTheater is not null ||
-            activeStoryEvent is not null;
+            activeStoryEvent is not null ||
+            activeStoryEventMinigame is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)
