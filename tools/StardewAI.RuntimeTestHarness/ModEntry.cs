@@ -123,6 +123,7 @@ public sealed partial class ModEntry : Mod
     private ActiveWorkbenchCraft? activeWorkbenchCraft;
     private ActiveCooking? activeCooking;
     private ActiveForge? activeForge;
+    private ActiveTailoring? activeTailoring;
     private ActiveDialogueAdvance? activeDialogueAdvance;
     private ActiveMenuClose? activeMenuClose;
     private ActiveMailProcessing? activeMailProcessing;
@@ -547,6 +548,7 @@ public sealed partial class ModEntry : Mod
         TickWorkbenchCraftSafely();
         TickCookingSafely();
         TickForgeSafely();
+        TickTailoringSafely();
         TickDialogueAdvance();
         TickMenuClose();
         TickMailProcessing();
@@ -2136,6 +2138,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.tailor_item")
+            {
+                StartTailoring(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_cooking_fixture")
             {
                 pending.Completion.SetResult(ExecuteSetupCookingFixture(pending.Request));
@@ -2145,6 +2153,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_forge_fixture")
             {
                 pending.Completion.SetResult(ExecuteSetupForgeFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_tailoring_fixture")
+            {
+                pending.Completion.SetResult(ExecuteSetupTailoringFixture(pending.Request));
                 return;
             }
 
@@ -2310,6 +2324,7 @@ public sealed partial class ModEntry : Mod
             activeWorkbenchCraft = null;
             activeCooking = null;
             activeForge = null;
+            activeTailoring = null;
             activeSpecialOrderBoardOpen = null;
             activeQuestRewardClaim = null;
             activeQuestCancellation = null;
@@ -2591,6 +2606,7 @@ public sealed partial class ModEntry : Mod
             activeWorkbenchCraft is not null ||
             activeCooking is not null ||
             activeForge is not null ||
+            activeTailoring is not null ||
             activeDialogueAdvance is not null ||
             activeMenuClose is not null ||
             activeMailProcessing is not null ||

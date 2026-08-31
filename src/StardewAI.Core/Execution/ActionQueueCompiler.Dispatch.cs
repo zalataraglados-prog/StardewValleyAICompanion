@@ -43,6 +43,7 @@ namespace StardewAI.Core.Execution
                 ["executor.manage_animal"] = (action, _) => CompileAnimalManagementStep(action),
                 ["executor.cook_recipe"] = (action, _) => CompileCookRecipeStep(action),
                 ["executor.forge_item"] = (action, _) => CompileForgeItemStep(action),
+                ["executor.tailor_item"] = (action, _) => CompileTailorItemStep(action),
                 ["executor.sleep"] = (action, snapshot) => CompileSleepSteps(snapshot, action),
                 ["recovery.sleep_in_tent"] = (action, _) => CompileSleepInTentSteps(action),
                 ["recovery.escape_object_trap"] = CompileObjectTrapRecoverySteps,

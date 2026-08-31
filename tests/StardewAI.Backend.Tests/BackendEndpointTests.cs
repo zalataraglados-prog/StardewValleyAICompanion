@@ -848,7 +848,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(61, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(62, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "processing.crack_geode");
@@ -858,6 +858,9 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "rewards.claim_prize_ticket");
+            Assert.Contains(
+                trainRoot.GetProperty("training_allowlist").EnumerateArray(),
+                item => item.GetString() == "tailoring.sew_item");
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "skills.claim_mastery");

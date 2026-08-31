@@ -58,6 +58,7 @@ public sealed partial class ModEntry
             "debug.setup_text_sign_edit_target",
             "debug.setup_crab_pot_bait_target",
             "debug.setup_forge_fixture",
+            "debug.setup_tailoring_fixture",
             "debug.setup_collection_task_fixture",
             "debug.setup_community_center_donation",
             "debug.setup_crab_pot_target",

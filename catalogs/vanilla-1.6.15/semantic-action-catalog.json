@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "1fd102fe2803620c09ee8c9e0ea5b5e7460b9d333f8386430fdd85489a839996",
-  "action_count": 229,
-  "registered_option_spec_count": 226,
-  "catalogued_blocked_count": 3,
+  "denominator_fingerprint_sha256": "e3b96d096204b39d3a4bad0982fc7f254efe093d74fcb2efddf000be3e777d5b",
+  "action_count": 230,
+  "registered_option_spec_count": 228,
+  "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -1205,6 +1205,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.tailor_item",
+      "domain": "tailoring",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.crafting_processing",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "executor.till_soil",
       "domain": "farm",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -2048,13 +2057,11 @@
     {
       "action_id": "tailoring.sew_item",
       "domain": "tailoring",
-      "semantic_kind": "composite",
+      "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.crafting_processing",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "TailoringMenu"
-      ]
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "volcano.reach_caldera",

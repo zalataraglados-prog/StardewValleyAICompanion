@@ -135,6 +135,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact operation, live input source set, purpose and loaded native forge selected", "rolling route reaches the selected forge", "shared native ForgeMenu mechanics consume exact inputs and shards and verify deterministic output or complete random result domain" },
                 new[] { "block_missing_explicit_operation_inputs_or_purpose", "block_unknown_input_or_unavailable_forge", "block_insufficient_shards_or_output_capacity", "block_projection_or_random_domain_drift", "block_direct_inventory_enchantment_ring_stat_or_achievement_mutation" }));
 
+            Register(Option("tailoring.sew_item", "tailoring", "Sew one exact live recipe output or transfer one boots stat profile for a stated purpose",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.tailoring", "locations.route_graph", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one live legal input pair, native tailoring endpoint and purpose selected", "compiler binds exact deterministic output or complete native random domain", "shared route and native TailoringMenu clicks perform one craft and collect every leftover" },
+                new[] { "block_dye_or_prismatic_character_customization_branch", "block_locked_or_unreachable_endpoint", "block_input_recipe_output_domain_or_capacity_drift", "block_direct_inventory_tailoredItems_boot_clothing_or_rng_mutation" }));
+
             Register(Option("buildings.construct", "buildings", "Construct one exact purpose-bound building through the native builder service",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -964,6 +972,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.forge", "locations.collision_grid", "menus.active_menu" },
                 new[] { "native forge action or Mini-Forge opens ForgeMenu", "native inventory or equipped-ring clicks fill exact slots and run one 1600ms operation", "exact input, shard, timesEnchanted, output state or complete native random-domain receipt is verified" },
                 new[] { "block_forge_source_input_or_state_projection_drift", "block_insufficient_shards_or_output_capacity", "block_native_menu_or_postcondition_mismatch", "block_random_output_outside_native_domain", "block_direct_inventory_enchantment_ring_stat_or_achievement_mutation" }));
+
+            Register(Option("executor.tailor_item", "tailoring", "Drive one rebound recipe or boots transfer through the native TailoringMenu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.tailoring", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native Tailoring action or placed sewing machine opens TailoringMenu", "native inventory clicks fill exact slots and run one 1500ms operation", "exact input consumption, output state/domain, tailored history and all leftovers are verified" },
+                new[] { "block_tailoring_source_input_recipe_or_projection_drift", "block_native_menu_start_or_output_domain_mismatch", "block_uncollected_output_or_leftovers", "block_direct_inventory_tailoredItems_boot_clothing_or_rng_mutation" }));
 
             Register(Option("executor.sleep", "recovery", "Terminal sleep macro",
                 OptionBehaviorCategories.Recovery,

@@ -1737,6 +1737,9 @@ static partial class Program
         ApplyStoryEventRequestFields(
             executionRequest,
             item);
+        ApplyTailoringRequestFields(
+            executionRequest,
+            item);
         ApplyDartsGameRequestFields(
             executionRequest,
             item);

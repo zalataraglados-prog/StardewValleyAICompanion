@@ -22,8 +22,7 @@ public static class PendingSemanticActionCatalog
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
             C("minigame.play_junimo_kart", "minigame", "composite", "engine.minigame", "MineCart"),
-            C("tailoring.dye_item", "tailoring", "composite", "engine.crafting_processing", "DyeMenu"),
-            C("tailoring.sew_item", "tailoring", "composite", "engine.crafting_processing", "TailoringMenu")
+            C("tailoring.dye_item", "tailoring", "composite", "engine.crafting_processing", "DyeMenu")
         });
 
     private static readonly IReadOnlyDictionary<string, PendingSemanticActionDeclaration> ById =

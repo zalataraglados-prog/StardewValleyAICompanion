@@ -4,13 +4,12 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 158,
-  "catalogued_blocked_surface_count": 10,
-  "catalogued_blocked_action_count": 3,
+  "mapped_count": 161,
+  "catalogued_blocked_surface_count": 7,
+  "catalogued_blocked_action_count": 2,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "tailoring.dye_item",
-    "tailoring.sew_item"
+    "tailoring.dye_item"
   ],
   "compatibility_placeholder_surface_count": 2,
   "compatibility_placeholder_action_count": 2,
@@ -3265,7 +3264,7 @@
       "mappedOptionIds": [
         "tailoring.sew_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3282,7 +3281,7 @@
       "mappedOptionIds": [
         "tailoring.sew_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3299,7 +3298,7 @@
       "mappedOptionIds": [
         "tailoring.sew_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

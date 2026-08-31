@@ -198,7 +198,8 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> CraftingOptions = Set(
         "executor.cook_recipe",
-        "executor.forge_item");
+        "executor.forge_item",
+        "executor.tailor_item");
 
     private static readonly HashSet<string> PlacementOptions = Set(
         "executor.place_cookout_kit",
@@ -262,7 +263,8 @@ public static class OptionImplementationCatalog
     {
         if (optionId is "animals.manage_animal" or "executor.manage_animal")
             return ImplementationEngineIds.AnimalManagement;
-        if (optionId is "crafting.cook_recipe" or "executor.cook_recipe" or "crafting.forge_item" or "executor.forge_item")
+        if (optionId is "crafting.cook_recipe" or "executor.cook_recipe" or "crafting.forge_item" or "executor.forge_item" or
+            "tailoring.sew_item" or "executor.tailor_item")
             return ImplementationEngineIds.CraftingProcessing;
         if (optionId is "inventory.transfer_item" or "festival.manage_grange_display")
             return ImplementationEngineIds.InventoryTransfer;

@@ -213,6 +213,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_native_forge_candidate");
             }
 
+            if (optionId == "tailoring.sew_item")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_live_native_tailoring_recipe_input_and_endpoint_candidates",
+                    "no_available_native_tailoring_candidate");
+            }
+
             if (optionId == "farm.process_machines")
             {
                 return EventCandidateAvailabilityReasons(

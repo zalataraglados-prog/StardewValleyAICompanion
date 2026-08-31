@@ -79,6 +79,19 @@ Complete snapshots read already loaded map layers, buildable-location state, Far
 
 `player.customize` and `executor.customize_player` are `PlayerCommandOnly`. Dye remains `tailoring.dye_item`; new-game/farmhand customization remains onboarding control plane; no reachable base-game Dresser constructor chain is claimed.
 
+## Tailoring Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.tailoring.projection_fingerprint` | Live endpoint, input-pair, recipe, output-domain, capacity and history projection | candidate and fresh compiler drift guard | covered_for_read / covered_for_gate |
+| `rows[].tailoring_candidate_id` / input state | Exact inventory slots and serialized Clothing/Boots/Object state | candidate identity, compiler rebinding and runtime precondition | covered_for_read / native_runtime_verified |
+| `recipe_id` / `output_contract_kind` | First live `Data/TailoringRecipes` context-tag match, deterministic output or complete `CraftedItemIds` domain | policy choice, output verifier and training feedback | covered_for_read / exact_or_complete_native_random_domain |
+| `source_id` / endpoint geometry | Loaded unlocked `Action=Tailoring` tiles and placed `(BC)247` sewing machines | shared BFS, native menu opening and stale-source guard | covered_for_read / covered_for_route / native_runtime_verified |
+| spend counts / tailored history / post-capacity | Native TailoringMenu consumption, leftovers, `Farmer.tailoredItems` and simulated inventory acceptance | upstream impossible-pair exclusion and exact receipt | covered_for_gate / native_runtime_verified |
+| excluded dye branch | Dyeable Clothing plus native color/prismatic input | ownership boundary for `tailoring.dye_item` | player_command_only / excluded_from_sew_training |
+
+`tailoring.sew_item` is training-admitted for exact recipe crafting and boots stat transfer. The model selects one published candidate; the compiler and executor own all mechanical slot/menu input. `tailoring.dye_item` remains a separate player-triggered appearance command.
+
 ## Jukebox Selection Transparency
 
 | field | source | consumer | status |

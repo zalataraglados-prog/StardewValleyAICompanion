@@ -42,7 +42,7 @@ public sealed partial class ModEntry
         player.Items[2] = ItemRegistry.Create("(O)848", 100);
 
         var farm = Game1.getFarm();
-        var tile = FindForgeFixtureTile(farm);
+        var tile = FindOpenFixtureInteractionTile(farm);
         if (!tile.HasValue) return BlockedWithPrimitive(request, "debug_setup_forge_fixture", "forge_fixture=ready", "forge_fixture=blocked", "forge_fixture_tile_missing");
         farm.objects[tile.Value.ToVector2()] = ItemRegistry.Create<StardewValley.Object>("(BC)MiniForge");
         var moved = MoveFixtureFarmerToLocationAdjacent(farm, tile.Value, out var stand, out var moveReason);
@@ -62,7 +62,7 @@ public sealed partial class ModEntry
         };
     }
 
-    private static Point? FindForgeFixtureTile(GameLocation location)
+    private static Point? FindOpenFixtureInteractionTile(GameLocation location)
     {
         for (var y = 8; y < 40; y++)
         for (var x = 8; x < 70; x++)
