@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-09-01 当前接续点：EVD-326 正式训练编排与真实结构化更新
+
+- Product Executor 轨迹已从测试 Harness 版本解绑：正式回执写入 `executor=product_executor.v1`，清洗器可识别历史 Harness 校准数据，但 `StructuredPolicyTrainer` 与 checkpoint 只接受 Product 版本。当前权威轨迹 schema 是 `policy_decision_trajectory.v2`，旧文档中的 `.v1` 表述不得继续沿用。
+- `training_run_manifest.v2` 冻结结构化 checkpoint、policy dataset manifest 及其 SHA-256，并记录 Product Executor、游戏和 LiveTrainingLoop 三个进程。正式 launch 必须复用同一个已成功 prepare 的 manifest；任一工具缺失、路径越界、hash 漂移、非 SMAPI、非隐藏静音或非 loopback 执行端都会失败关闭。启动任一后续进程失败时，已启动进程会回收，避免半闭环残留。
+- `training_ready_probe.v2` 现在验证透明快照/run-id、游戏与两个训练进程、Product `/health`、收据目录、孤立 pending、数据 manifest/checkpoint 及全部 cleaned/train/validation/test 文件 hash。pending 不会重发；探针报告 `formal_product_receipt_recovery_required`，由同请求恢复为 indeterminate final 后重规划。
+- 正式 LiveTrainingLoop 不再训练旧 baseline 冒充小模型更新。每个训练周期使用 Product 轨迹重建确定性 80/10/10 数据 manifest，训练结构化 ranker checkpoint，并通过 `FormalTrainingManifestStore` 原子刷新 run manifest hash；下一轮直接读取更新后的 checkpoint。非 `--skip-training` 模式同时强制 Product Executor、真实 feedback、结构化 checkpoint 和 prepared manifest。
+- 本轮尚未宣称全量训练开始。E 盘目前只有历史自动化存档和旧 2026-07 feature rows，没有独立新存档的 Product v2 轨迹、正式 policy manifest 或结构化 checkpoint。下一步固定为：在独立新存档上用 `--skip-training` 仅采集最小 Product bootstrap 校准轨迹，离线生成首个真实 checkpoint；随后 prepare/launch 正式闭环并以完整首个游戏日验收。bootstrap 不是正式训练，不能计入启动完成标志。
+
 ## 2026-08-31 当前接续点：EVD-325 Product Executor 之后
 
 - 当前机器可读状态为 `228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 145 Product Executor / 151 five-gate / 62 training allowlist / 2 catalogued blocked`；full snapshot 为 `171 required / 154 readable with provenance / 17 contextual / 0 blocking`，KnowledgeCompiler 为 `585/585`、blocking 0。原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且三类 blocking 均为 0。

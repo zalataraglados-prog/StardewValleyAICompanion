@@ -111,8 +111,8 @@ public sealed class StructuredPolicyCheckpointStore
             !string.Equals(versions.CandidateVocabulary, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) ||
             !string.Equals(versions.CapabilityRegistry, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) ||
             !string.Equals(versions.KnowledgeDictionary, PolicyTrajectoryVersionPins.KnowledgeDictionary, StringComparison.Ordinal) ||
-            !string.Equals(versions.Compiler, "action_queue.v1", StringComparison.Ordinal) ||
-            !string.Equals(versions.Executor, "runtime_test_harness_executor.v1", StringComparison.Ordinal))
+            !string.Equals(versions.Compiler, PolicyTrajectoryVersionPins.Compiler, StringComparison.Ordinal) ||
+            !string.Equals(versions.Executor, PolicyTrajectoryVersionPins.ProductExecutor, StringComparison.Ordinal))
             throw new InvalidOperationException("Structured policy checkpoint version binding is stale or incomplete.");
     }
 

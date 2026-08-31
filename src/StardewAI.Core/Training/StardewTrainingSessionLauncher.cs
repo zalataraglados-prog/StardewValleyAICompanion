@@ -32,8 +32,16 @@ namespace StardewAI.Core.Training
         public TrainingLaunchResult Launch(TrainingLaunchRequest request)
         {
             var rootPath = FullPathOrDefault(request.RootPath, @"E:\StardewAITraining");
-            var manifest = BuildManifest(request, rootPath);
+            var formalTraining = string.Equals(
+                request.Mode,
+                TrainingSessionMode.FormalProductTraining,
+                StringComparison.OrdinalIgnoreCase);
+            var loadReasons = new List<string>();
+            var manifest = formalTraining
+                ? LoadPreparedManifest(request, rootPath, loadReasons)
+                : BuildManifest(request, rootPath);
             var blockReasons = Validate(request, manifest, requireLaunchPermission: true);
+            blockReasons.InsertRange(0, loadReasons);
             if (blockReasons.Count > 0)
             {
                 manifest.Status = "blocked";
@@ -49,16 +57,32 @@ namespace StardewAI.Core.Training
                 };
             }
 
+            Process? productExecutorProcess = null;
+            Process? gameProcess = null;
+            Process? liveTrainingLoopProcess = null;
             try
             {
-                var process = StartTrainingProcess(manifest);
-                manifest.ProcessId = process.Id;
+                if (formalTraining)
+                {
+                    productExecutorProcess = StartProductExecutorProcess(manifest);
+                    manifest.ProductExecutorProcessId = productExecutorProcess.Id;
+                }
+                gameProcess = StartTrainingProcess(manifest);
+                manifest.ProcessId = gameProcess.Id;
+                if (formalTraining)
+                {
+                    liveTrainingLoopProcess = StartLiveTrainingLoopProcess(manifest);
+                    manifest.LiveTrainingLoopProcessId = liveTrainingLoopProcess.Id;
+                }
                 manifest.Status = "running";
                 manifest.GameLaunch = "started";
                 WriteManifest(manifest);
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is System.ComponentModel.Win32Exception)
+            catch (Exception ex) when (ex is InvalidOperationException || ex is System.ComponentModel.Win32Exception || ex is IOException)
             {
+                StopStartedProcess(liveTrainingLoopProcess);
+                StopStartedProcess(gameProcess);
+                StopStartedProcess(productExecutorProcess);
                 manifest.Status = "blocked";
                 manifest.Audit.Notes = new[] { "process_start_failed: " + ex.Message };
                 WriteManifest(manifest);
@@ -81,15 +105,62 @@ namespace StardewAI.Core.Training
             };
         }
 
+        private static TrainingRunManifest LoadPreparedManifest(
+            TrainingLaunchRequest request,
+            string rootPath,
+            List<string> reasons)
+        {
+            if (string.IsNullOrWhiteSpace(request.ManifestPath))
+            {
+                reasons.Add("formal_launch_requires_prepared_manifest");
+                return BuildManifest(request, rootPath);
+            }
+
+            var path = Path.GetFullPath(request.ManifestPath);
+            if (!File.Exists(path))
+            {
+                reasons.Add("formal_prepared_manifest_not_found");
+                return BuildManifest(request, rootPath);
+            }
+
+            try
+            {
+                var manifest = JsonSerializer.Deserialize<TrainingRunManifest>(File.ReadAllText(path), JsonOptions);
+                if (manifest is null ||
+                    !string.Equals(manifest.SchemaVersion, "training_run_manifest.v2", StringComparison.Ordinal) ||
+                    !string.Equals(manifest.Mode, TrainingSessionMode.FormalProductTraining, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(manifest.Status, "prepared", StringComparison.Ordinal) ||
+                    !string.Equals(Path.GetFullPath(manifest.RootPath), rootPath, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(Path.GetFullPath(manifest.ManifestPath), path, StringComparison.OrdinalIgnoreCase))
+                {
+                    reasons.Add("formal_prepared_manifest_identity_mismatch");
+                    return BuildManifest(request, rootPath);
+                }
+                return manifest;
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or ArgumentException)
+            {
+                reasons.Add("formal_prepared_manifest_invalid");
+                return BuildManifest(request, rootPath);
+            }
+        }
+
         private static TrainingRunManifest BuildManifest(TrainingLaunchRequest request, string rootPath)
         {
             var runId = "train." + DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss") + "." + Guid.NewGuid().ToString("N").Substring(0, 8);
             var mode = string.IsNullOrWhiteSpace(request.Mode) ? TrainingSessionMode.OfflineSmoke : request.Mode.Trim();
+            var formalTraining = string.Equals(mode, TrainingSessionMode.FormalProductTraining, StringComparison.OrdinalIgnoreCase);
             var manifestPath = FullPathOrDefault(request.ManifestPath, Path.Combine(rootPath, "runs", runId, "training-run-manifest.json"));
             var gameExecutablePath = FullPathOrEmpty(request.GameExecutablePath);
             var gameWorkingDirectory = FullPathOrDefault(request.GameWorkingDirectory, string.IsNullOrWhiteSpace(gameExecutablePath)
                 ? rootPath
                 : Path.GetDirectoryName(gameExecutablePath)!);
+            var checkpointPath = FullPathOrDefault(
+                request.CheckpointPath,
+                Path.Combine(rootPath, "checkpoints", formalTraining ? "structured-policy-latest.json" : "baseline-latest.json"));
+            var policyDatasetManifestPath = FullPathOrDefault(
+                request.PolicyDatasetManifestPath,
+                Path.Combine(rootPath, "datasets", "formal-policy", "policy-dataset-manifest.json"));
 
             return new TrainingRunManifest
             {
@@ -98,7 +169,25 @@ namespace StardewAI.Core.Training
                 RootPath = rootPath,
                 DatasetPath = FullPathOrDefault(request.DatasetPath, Path.Combine(rootPath, "datasets", "training-feature-rows.jsonl")),
                 ReportPath = FullPathOrDefault(request.ReportPath, Path.Combine(rootPath, "reports", "training-report.json")),
-                CheckpointPath = FullPathOrDefault(request.CheckpointPath, Path.Combine(rootPath, "checkpoints", "baseline-latest.json")),
+                CheckpointPath = checkpointPath,
+                CheckpointSha256 = HashExistingFile(checkpointPath),
+                PolicyTrajectoryPath = FullPathOrDefault(
+                    request.PolicyTrajectoryPath,
+                    Path.Combine(rootPath, "datasets", "policy-decision-trajectories.jsonl")),
+                PolicyDatasetManifestPath = policyDatasetManifestPath,
+                PolicyDatasetManifestSha256 = HashExistingFile(policyDatasetManifestPath),
+                ProductReceiptRoot = FullPathOrDefault(
+                    request.ProductReceiptRoot,
+                    Path.Combine(rootPath, "product-executor", runId)),
+                ProductExecutorUrl = request.ProductExecutorUrl,
+                NativeExecutorUrl = request.NativeExecutorUrl,
+                ProductExecutorExecutablePath = FullPathOrEmpty(request.ProductExecutorExecutablePath),
+                LiveTrainingLoopExecutablePath = FullPathOrEmpty(request.LiveTrainingLoopExecutablePath),
+                MaxAttempts = Math.Max(1, request.MaxAttempts),
+                RequiredVerifiedActions = Math.Max(0, request.RequiredVerifiedActions),
+                CompilerVersion = formalTraining ? PolicyTrajectoryVersionPins.Compiler : string.Empty,
+                ExecutorVersion = formalTraining ? PolicyTrajectoryVersionPins.ProductExecutor : string.Empty,
+                StructuredPolicyRequired = formalTraining,
                 ManifestPath = manifestPath,
                 GameExecutablePath = gameExecutablePath,
                 GameWorkingDirectory = gameWorkingDirectory,
@@ -117,7 +206,14 @@ namespace StardewAI.Core.Training
         private static List<string> Validate(TrainingLaunchRequest request, TrainingRunManifest manifest, bool requireLaunchPermission)
         {
             var reasons = new List<string>();
-            var realGameMode = string.Equals(manifest.Mode, TrainingSessionMode.StardewWindowed, StringComparison.OrdinalIgnoreCase);
+            var formalTraining = string.Equals(manifest.Mode, TrainingSessionMode.FormalProductTraining, StringComparison.OrdinalIgnoreCase);
+            var realGameMode = formalTraining ||
+                string.Equals(manifest.Mode, TrainingSessionMode.StardewWindowed, StringComparison.OrdinalIgnoreCase);
+
+            if (!IsKnownMode(manifest.Mode))
+            {
+                reasons.Add("training_mode_unsupported");
+            }
 
             if (request.SoundEnabled)
             {
@@ -162,7 +258,89 @@ namespace StardewAI.Core.Training
                 reasons.Add("save_isolation_path_required_for_real_game_training");
             }
 
+            if (formalTraining)
+            {
+                ValidateFormalBoundary(manifest, reasons);
+            }
+
             return reasons;
+        }
+
+        private static void ValidateFormalBoundary(TrainingRunManifest manifest, List<string> reasons)
+        {
+            if (!string.Equals(manifest.WindowStyle, "hidden", StringComparison.OrdinalIgnoreCase))
+                reasons.Add("formal_training_window_style_must_be_hidden");
+            if (!IsLoopbackHttpUrl(manifest.ProductExecutorUrl))
+                reasons.Add("formal_product_executor_url_must_be_loopback");
+            if (!IsLoopbackHttpUrl(manifest.NativeExecutorUrl))
+                reasons.Add("formal_native_executor_url_must_be_loopback");
+            if (string.IsNullOrWhiteSpace(manifest.ProductExecutorExecutablePath) ||
+                !File.Exists(manifest.ProductExecutorExecutablePath))
+                reasons.Add("formal_product_executor_executable_not_found");
+            if (string.IsNullOrWhiteSpace(manifest.LiveTrainingLoopExecutablePath) ||
+                !File.Exists(manifest.LiveTrainingLoopExecutablePath))
+                reasons.Add("formal_live_training_loop_executable_not_found");
+
+            foreach (var path in new[]
+                     {
+                         manifest.DatasetPath,
+                         manifest.ReportPath,
+                         manifest.CheckpointPath,
+                         manifest.PolicyTrajectoryPath,
+                         manifest.PolicyDatasetManifestPath,
+                         manifest.ProductReceiptRoot,
+                         manifest.ManifestPath
+                     })
+            {
+                if (string.IsNullOrWhiteSpace(path) || !IsSameOrChildPath(manifest.RootPath, path))
+                {
+                    reasons.Add("formal_artifact_path_outside_training_root");
+                    break;
+                }
+            }
+
+            if (!File.Exists(manifest.PolicyTrajectoryPath))
+                reasons.Add("formal_policy_trajectory_not_found");
+            if (!File.Exists(manifest.PolicyDatasetManifestPath))
+                reasons.Add("formal_policy_dataset_manifest_not_found");
+            if (!File.Exists(manifest.CheckpointPath))
+                reasons.Add("formal_structured_policy_checkpoint_not_found");
+
+            if (File.Exists(manifest.PolicyDatasetManifestPath) &&
+                !string.Equals(
+                    HashExistingFile(manifest.PolicyDatasetManifestPath),
+                    manifest.PolicyDatasetManifestSha256,
+                    StringComparison.OrdinalIgnoreCase))
+                reasons.Add("formal_policy_dataset_manifest_changed_after_prepare");
+            if (File.Exists(manifest.CheckpointPath) &&
+                !string.Equals(
+                    HashExistingFile(manifest.CheckpointPath),
+                    manifest.CheckpointSha256,
+                    StringComparison.OrdinalIgnoreCase))
+                reasons.Add("formal_structured_policy_checkpoint_changed_after_prepare");
+
+            if (!File.Exists(manifest.CheckpointPath) || !File.Exists(manifest.PolicyDatasetManifestPath))
+                return;
+
+            try
+            {
+                var checkpoint = new StructuredPolicyCheckpointStore().Load(manifest.CheckpointPath);
+                if (!string.Equals(
+                        Path.GetFullPath(checkpoint.Dataset.ManifestPath),
+                        Path.GetFullPath(manifest.PolicyDatasetManifestPath),
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(
+                        checkpoint.Dataset.ManifestSha256,
+                        manifest.PolicyDatasetManifestSha256,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    reasons.Add("formal_checkpoint_dataset_binding_mismatch");
+                }
+            }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException)
+            {
+                reasons.Add("formal_structured_policy_checkpoint_invalid");
+            }
         }
 
         private static Process StartTrainingProcess(TrainingRunManifest manifest)
@@ -191,6 +369,93 @@ namespace StardewAI.Core.Training
             return process;
         }
 
+        private static Process StartProductExecutorProcess(TrainingRunManifest manifest)
+        {
+            var startInfo = CreateToolStartInfo(manifest.ProductExecutorExecutablePath);
+            startInfo.Environment["STARDEWAI_PRODUCT_EXECUTOR_URL"] = manifest.ProductExecutorUrl;
+            startInfo.Environment["STARDEWAI_NATIVE_EXECUTOR_URL"] = manifest.NativeExecutorUrl;
+            startInfo.Environment["STARDEWAI_BRIDGE_SNAPSHOT_URL"] = SnapshotUrl(manifest.BridgeUrl);
+            startInfo.Environment["STARDEWAI_PRODUCT_JOURNAL_ROOT"] = manifest.ProductReceiptRoot;
+            startInfo.Environment["STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT"] = manifest.SaveIsolationPath;
+            startInfo.Environment["STARDEWAI_PRODUCT_RUN_ID"] = manifest.RunId;
+            return Process.Start(startInfo)
+                ?? throw new InvalidOperationException("failed_to_start_product_executor_process");
+        }
+
+        private static Process StartLiveTrainingLoopProcess(TrainingRunManifest manifest)
+        {
+            var startInfo = CreateToolStartInfo(manifest.LiveTrainingLoopExecutablePath);
+            AddArguments(
+                startInfo,
+                "--root", manifest.RootPath,
+                "--backend-url", manifest.BackendUrl,
+                "--bridge-snapshot-url", SnapshotUrl(manifest.BridgeUrl),
+                "--executor-url", manifest.ProductExecutorUrl,
+                "--manifest-path", manifest.ManifestPath,
+                "--run-id", manifest.RunId,
+                "--save-isolation-path", manifest.SaveIsolationPath,
+                "--max-attempts", manifest.MaxAttempts.ToString(),
+                "--required-verified-actions", manifest.RequiredVerifiedActions.ToString(),
+                "--policy-checkpoint-path", manifest.CheckpointPath,
+                "--artifact-retention-mode", "rolling",
+                "--use-product-executor",
+                "--use-daily-plan",
+                "--require-structured-policy");
+            return Process.Start(startInfo)
+                ?? throw new InvalidOperationException("failed_to_start_live_training_loop_process");
+        }
+
+        private static ProcessStartInfo CreateToolStartInfo(string executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
+                throw new InvalidOperationException("formal_training_tool_executable_not_found");
+            var fullPath = Path.GetFullPath(executablePath);
+            var managedAssembly = string.Equals(Path.GetExtension(fullPath), ".dll", StringComparison.OrdinalIgnoreCase);
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = managedAssembly ? "dotnet" : fullPath,
+                WorkingDirectory = Path.GetDirectoryName(fullPath)!,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+            if (managedAssembly)
+                startInfo.ArgumentList.Add(fullPath);
+            return startInfo;
+        }
+
+        private static void AddArguments(ProcessStartInfo startInfo, params string[] arguments)
+        {
+            foreach (var argument in arguments)
+                startInfo.ArgumentList.Add(argument);
+        }
+
+        private static string SnapshotUrl(string bridgeUrl)
+        {
+            var value = bridgeUrl.TrimEnd('/');
+            return value.IndexOf("/api/v1/snapshot", StringComparison.OrdinalIgnoreCase) >= 0
+                ? value
+                : value + "/api/v1/snapshot?profile=full&fresh=1";
+        }
+
+        private static void StopStartedProcess(Process? process)
+        {
+            if (process is null)
+                return;
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
         private static ProcessWindowStyle ResolveWindowStyle(string? value)
         {
             return string.Equals(value, "hidden", StringComparison.OrdinalIgnoreCase)
@@ -204,6 +469,9 @@ namespace StardewAI.Core.Training
             Directory.CreateDirectory(Path.GetDirectoryName(manifest.DatasetPath)!);
             Directory.CreateDirectory(Path.GetDirectoryName(manifest.ReportPath)!);
             Directory.CreateDirectory(Path.GetDirectoryName(manifest.CheckpointPath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(manifest.PolicyTrajectoryPath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(manifest.PolicyDatasetManifestPath)!);
+            Directory.CreateDirectory(manifest.ProductReceiptRoot);
             Directory.CreateDirectory(Path.GetDirectoryName(manifest.ManifestPath)!);
             if (!string.IsNullOrWhiteSpace(manifest.SaveIsolationPath))
             {
@@ -222,6 +490,8 @@ namespace StardewAI.Core.Training
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_BACKEND_URL", Value = request.BackendUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_BRIDGE_URL", Value = request.BridgeUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_SAVE_ISOLATION_PATH", Value = request.SaveIsolationPath ?? string.Empty },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_PRODUCT_EXECUTOR_URL", Value = request.ProductExecutorUrl },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_NATIVE_EXECUTOR_URL", Value = request.NativeExecutorUrl },
                 new TrainingEnvironmentOverride { Name = "SDL_AUDIODRIVER", Value = "dummy" },
                 new TrainingEnvironmentOverride { Name = "ALSOFT_DRIVERS", Value = "null" }
             };
@@ -248,6 +518,31 @@ namespace StardewAI.Core.Training
             var parent = Path.GetFullPath(parentPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
             var child = Path.GetFullPath(childPath);
             return child.StartsWith(parent, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsKnownMode(string mode) =>
+            string.Equals(mode, TrainingSessionMode.OfflineSmoke, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mode, TrainingSessionMode.SimulatedTransition, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mode, TrainingSessionMode.StardewWindowed, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mode, TrainingSessionMode.FormalProductTraining, StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsLoopbackHttpUrl(string value) =>
+            Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+            uri.Scheme is "http" or "https" &&
+            uri.IsLoopback;
+
+        private static string HashExistingFile(string path)
+        {
+            if (!File.Exists(path))
+                return string.Empty;
+            try
+            {
+                return StructuredPolicyCheckpointStore.HashFile(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return string.Empty;
+            }
         }
 
         private static string FullPathOrDefault(string? value, string defaultPath)

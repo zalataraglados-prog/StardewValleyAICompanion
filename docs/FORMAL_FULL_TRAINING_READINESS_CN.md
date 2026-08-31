@@ -1,5 +1,15 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-01 EVD-326 正式训练编排与模型更新准入
+
+正式版本绑定已固定为 `policy_decision_trajectory.v2 / policy_features.v2 / action_queue.v1 / product_executor.v1`。轨迹写入端会按实际执行入口区分 Product 与 RuntimeTestHarness；清洗层允许保留 Harness 校准数据，但正式结构化训练器和 checkpoint store 只接受 Product 数据，且一个 manifest 只能包含一个不可混合的版本集。
+
+`training_run_manifest.v2` 是启动与运行中的唯一控制记录。prepare 冻结数据 manifest/checkpoint hash、路径、run-id、隔离存档、执行端和工具二进制；launch 必须加载同一份 prepared manifest，并拉起 Product Executor、SMAPI 与 LiveTrainingLoop。`training_ready_probe.v2` 逐轮核对三进程、Product health、透明快照、run-id、收据 pending、dataset manifest、cleaned/三分区文件及 checkpoint hash。任何崩溃中间态都不得继续发动作。
+
+正式循环已经改为真实结构化更新：Product applied/verified/fresh 轨迹落盘后，重建 policy dataset，训练结构化 ranker，并原子刷新 checkpoint 和 run manifest hash；旧 baseline 训练只保留非正式兼容路径。正式模式缺 Product、feedback、prepared manifest 或结构化 checkpoint 时启动即失败。
+
+当前仍处于“可启动控制面完成、真实初始数据未生成”状态。E 盘尚无独立新存档的 Product v2 数据与初始 checkpoint；必须先进行明确标记的 `--skip-training` Product bootstrap 校准采集，再离线构建首个 checkpoint。只有正式模式完整运行一个真实游戏日且 checkpoint 随数据更新，才可把状态改为“全量训练已开始”。
+
 ## 2026-08-31 Product Executor 准入（EVD-325）
 
 独立 `StardewAI.ProductExecutor` 已把 145 个现有原生 Harness dispatch 状态机装配到产品入口，但不复制动作实现。产品授权锁定 loopback、非 debug 产品能力、run-id、执行模式/actor、精确隔离存档根、nonce 和时间戳；正式 `LiveTrainingLoop` 未选择产品入口或关闭 executor feedback 时直接失败。62 项策略 allowlist 仍独立决定哪些高层候选可进入训练，Product Executor 数量不能反向扩大训练准入。

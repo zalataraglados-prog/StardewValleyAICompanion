@@ -1051,7 +1051,7 @@ namespace StardewAI.Backend.Tests
             Assert.False(rootElement.GetProperty("blocked").GetBoolean());
             Assert.False(rootElement.GetProperty("started").GetBoolean());
             var manifest = rootElement.GetProperty("manifest");
-            Assert.Equal("training_run_manifest.v1", manifest.GetProperty("schema_version").GetString());
+            Assert.Equal("training_run_manifest.v2", manifest.GetProperty("schema_version").GetString());
             Assert.Equal("offline_smoke", manifest.GetProperty("mode").GetString());
             Assert.Equal(root, manifest.GetProperty("root_path").GetString());
             Assert.EndsWith(Path.Combine("datasets", "training-feature-rows.jsonl"), manifest.GetProperty("dataset_path").GetString());
@@ -1122,6 +1122,69 @@ namespace StardewAI.Backend.Tests
             Assert.True(json.RootElement.GetProperty("blocked").GetBoolean());
             Assert.Contains(json.RootElement.GetProperty("block_reasons").EnumerateArray(), item =>
                 item.GetString() == "smapi_executable_required_for_transparent_bridge_training");
+        }
+
+        [Fact]
+        public async Task TrainingSessionPrepareFormalProductFailsClosedWithoutFrozenArtifacts()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(smapi, string.Empty);
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "formal_product_training",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                allow_game_launch = true,
+                sound_enabled = false,
+                window_style = "hidden",
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var result = json.RootElement;
+            Assert.True(result.GetProperty("blocked").GetBoolean());
+            Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "formal_policy_trajectory_not_found");
+            Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "formal_policy_dataset_manifest_not_found");
+            Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "formal_structured_policy_checkpoint_not_found");
+            var manifest = result.GetProperty("manifest");
+            Assert.Equal("training_run_manifest.v2", manifest.GetProperty("schema_version").GetString());
+            Assert.Equal("product_executor.v1", manifest.GetProperty("executor_version").GetString());
+            Assert.True(manifest.GetProperty("structured_policy_required").GetBoolean());
+            Assert.True(Directory.Exists(manifest.GetProperty("product_receipt_root").GetString()));
+        }
+
+        [Fact]
+        public async Task TrainingSessionLaunchFormalProductRequiresPreparedManifest()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/launch", new
+            {
+                mode = "formal_product_training",
+                root_path = root,
+                allow_game_launch = true,
+                sound_enabled = false,
+                window_style = "hidden",
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var result = json.RootElement;
+            Assert.True(result.GetProperty("blocked").GetBoolean());
+            Assert.False(result.GetProperty("launch_attempted").GetBoolean());
+            Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "formal_launch_requires_prepared_manifest");
         }
 
         [Fact]
@@ -1232,6 +1295,55 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(runId, readyRoot.GetProperty("run_id").GetString());
             Assert.Equal(runId, readyRoot.GetProperty("snapshot_run_id").GetString());
             Assert.Empty(readyRoot.GetProperty("block_reasons").EnumerateArray());
+        }
+
+        [Fact]
+        public async Task TrainingReadyProbeFormalProductReportsRecoveryAndRuntimeBlocks()
+        {
+            await using var isolatedFactory = factory.WithWebHostBuilder(_ => { });
+            using var client = isolatedFactory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(smapi, string.Empty);
+
+            var prepareResponse = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "formal_product_training",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                allow_game_launch = true,
+                sound_enabled = false,
+                window_style = "hidden",
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+            using var prepareJson = JsonDocument.Parse(await prepareResponse.Content.ReadAsStringAsync());
+            var manifest = prepareJson.RootElement.GetProperty("manifest");
+            var manifestPath = manifest.GetProperty("manifest_path").GetString()!;
+            var receiptRoot = manifest.GetProperty("product_receipt_root").GetString()!;
+            var runId = manifest.GetProperty("run_id").GetString();
+            File.WriteAllText(Path.Combine(receiptRoot, "orphan.pending.json"), "{}");
+
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent(trainingRunId: runId));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            var readyResponse = await client.GetAsync(
+                "/api/v1/training/session/ready-probe?manifest_path=" + Uri.EscapeDataString(manifestPath));
+
+            Assert.Equal(HttpStatusCode.OK, readyResponse.StatusCode);
+            using var readyJson = JsonDocument.Parse(await readyResponse.Content.ReadAsStringAsync());
+            var ready = readyJson.RootElement;
+            Assert.Equal("training_ready_probe.v2", ready.GetProperty("schema_version").GetString());
+            Assert.False(ready.GetProperty("ready").GetBoolean());
+            Assert.True(ready.GetProperty("formal_boundary_required").GetBoolean());
+            Assert.False(ready.GetProperty("dataset_manifest_verified").GetBoolean());
+            Assert.False(ready.GetProperty("checkpoint_verified").GetBoolean());
+            Assert.False(ready.GetProperty("product_executor_reachable").GetBoolean());
+            Assert.False(ready.GetProperty("game_process_alive").GetBoolean());
+            Assert.Equal(1, ready.GetProperty("unresolved_product_receipts").GetInt32());
+            Assert.Contains(ready.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "formal_product_receipt_recovery_required");
         }
 
         private static StringContent SampleSnapshotContent(

@@ -189,13 +189,21 @@ public sealed class ProductExecutorTests
     public void FormalTrainingRequiresProductExecutorWhileCalibrationCanUseHarness()
     {
         var harness = LiveTrainingOptions.Parse(new[] { "--skip-training" });
-        var product = LiveTrainingOptions.Parse(new[] { "--use-product-executor" });
+        var product = LiveTrainingOptions.Parse(new[]
+        {
+            "--use-product-executor",
+            "--policy-checkpoint-path", "structured-policy.json",
+            "--require-structured-policy",
+            "--manifest-path", "training-run-manifest.json"
+        });
 
         Assert.False(harness.UseProductExecutor);
         Assert.Equal("/api/v1/training/execute", harness.ExecutorEndpointPath);
         Assert.True(product.UseProductExecutor);
         Assert.Equal("/api/v1/product/execute", product.ExecutorEndpointPath);
         Assert.Equal("product_executor", product.ExecutorFeedbackSource);
+        Assert.Equal(PolicyTrajectoryVersionPins.ProductExecutor, product.PolicyTrajectoryExecutorVersion);
+        Assert.Equal(PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor, harness.PolicyTrajectoryExecutorVersion);
         Assert.Equal("product_executor_unverified", product.ExecutorUnverifiedSource);
         Assert.Equal("runtime_test_harness_unverified", harness.ExecutorUnverifiedSource);
         harness.ValidateFormalExecutionBoundary();
@@ -214,6 +222,11 @@ public sealed class ProductExecutorTests
         var feedbackError = Assert.Throws<InvalidOperationException>(
             feedbacklessProduct.ValidateFormalExecutionBoundary);
         Assert.Contains("formal_training_requires_executor_feedback", feedbackError.Message);
+
+        var unstructuredProduct = LiveTrainingOptions.Parse(new[] { "--use-product-executor" });
+        var structuredError = Assert.Throws<InvalidOperationException>(
+            unstructuredProduct.ValidateFormalExecutionBoundary);
+        Assert.Contains("formal_training_requires_structured_policy_checkpoint", structuredError.Message);
     }
 
     private static ProductExecutorOptions Options(

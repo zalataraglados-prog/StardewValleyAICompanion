@@ -8,6 +8,7 @@ namespace StardewAI.Contracts.Training
         public const string OfflineSmoke = "offline_smoke";
         public const string SimulatedTransition = "simulated_transition";
         public const string StardewWindowed = "stardew_windowed";
+        public const string FormalProductTraining = "formal_product_training";
     }
 
     public sealed class TrainingLaunchRequest
@@ -27,6 +28,33 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("checkpoint_path")]
         public string? CheckpointPath { get; set; }
 
+        [JsonPropertyName("policy_trajectory_path")]
+        public string? PolicyTrajectoryPath { get; set; }
+
+        [JsonPropertyName("policy_dataset_manifest_path")]
+        public string? PolicyDatasetManifestPath { get; set; }
+
+        [JsonPropertyName("product_receipt_root")]
+        public string? ProductReceiptRoot { get; set; }
+
+        [JsonPropertyName("product_executor_url")]
+        public string ProductExecutorUrl { get; set; } = "http://127.0.0.1:8768";
+
+        [JsonPropertyName("native_executor_url")]
+        public string NativeExecutorUrl { get; set; } = "http://127.0.0.1:8767";
+
+        [JsonPropertyName("product_executor_executable_path")]
+        public string? ProductExecutorExecutablePath { get; set; }
+
+        [JsonPropertyName("live_training_loop_executable_path")]
+        public string? LiveTrainingLoopExecutablePath { get; set; }
+
+        [JsonPropertyName("max_attempts")]
+        public int MaxAttempts { get; set; } = 1000000;
+
+        [JsonPropertyName("required_verified_actions")]
+        public int RequiredVerifiedActions { get; set; }
+
         [JsonPropertyName("manifest_path")]
         public string? ManifestPath { get; set; }
 
@@ -40,7 +68,7 @@ namespace StardewAI.Contracts.Training
         public string? SaveIsolationPath { get; set; }
 
         [JsonPropertyName("bridge_url")]
-        public string BridgeUrl { get; set; } = "http://127.0.0.1:8766";
+        public string BridgeUrl { get; set; } = "http://127.0.0.1:8765";
 
         [JsonPropertyName("backend_url")]
         public string BackendUrl { get; set; } = "http://127.0.0.1:5000";
@@ -58,7 +86,7 @@ namespace StardewAI.Contracts.Training
     public sealed class TrainingRunManifest
     {
         [JsonPropertyName("schema_version")]
-        public string SchemaVersion { get; set; } = "training_run_manifest.v1";
+        public string SchemaVersion { get; set; } = "training_run_manifest.v2";
 
         [JsonPropertyName("run_id")]
         public string RunId { get; set; } = string.Empty;
@@ -77,6 +105,48 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("checkpoint_path")]
         public string CheckpointPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("checkpoint_sha256")]
+        public string CheckpointSha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("policy_trajectory_path")]
+        public string PolicyTrajectoryPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("policy_dataset_manifest_path")]
+        public string PolicyDatasetManifestPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("policy_dataset_manifest_sha256")]
+        public string PolicyDatasetManifestSha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("product_receipt_root")]
+        public string ProductReceiptRoot { get; set; } = string.Empty;
+
+        [JsonPropertyName("product_executor_url")]
+        public string ProductExecutorUrl { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_executor_url")]
+        public string NativeExecutorUrl { get; set; } = string.Empty;
+
+        [JsonPropertyName("product_executor_executable_path")]
+        public string ProductExecutorExecutablePath { get; set; } = string.Empty;
+
+        [JsonPropertyName("live_training_loop_executable_path")]
+        public string LiveTrainingLoopExecutablePath { get; set; } = string.Empty;
+
+        [JsonPropertyName("max_attempts")]
+        public int MaxAttempts { get; set; }
+
+        [JsonPropertyName("required_verified_actions")]
+        public int RequiredVerifiedActions { get; set; }
+
+        [JsonPropertyName("compiler_version")]
+        public string CompilerVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("executor_version")]
+        public string ExecutorVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("structured_policy_required")]
+        public bool StructuredPolicyRequired { get; set; }
 
         [JsonPropertyName("manifest_path")]
         public string ManifestPath { get; set; } = string.Empty;
@@ -113,6 +183,12 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("process_id")]
         public int? ProcessId { get; set; }
+
+        [JsonPropertyName("product_executor_process_id")]
+        public int? ProductExecutorProcessId { get; set; }
+
+        [JsonPropertyName("live_training_loop_process_id")]
+        public int? LiveTrainingLoopProcessId { get; set; }
 
         [JsonPropertyName("created_at")]
         public string CreatedAt { get; set; } = string.Empty;
@@ -169,7 +245,7 @@ namespace StardewAI.Contracts.Training
     public sealed class TrainingReadyProbeResult
     {
         [JsonPropertyName("schema_version")]
-        public string SchemaVersion { get; set; } = "training_ready_probe.v1";
+        public string SchemaVersion { get; set; } = "training_ready_probe.v2";
 
         [JsonPropertyName("ready")]
         public bool Ready { get; set; }
@@ -188,6 +264,33 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("manifest_loaded")]
         public bool ManifestLoaded { get; set; }
+
+        [JsonPropertyName("formal_boundary_required")]
+        public bool FormalBoundaryRequired { get; set; }
+
+        [JsonPropertyName("dataset_manifest_verified")]
+        public bool DatasetManifestVerified { get; set; }
+
+        [JsonPropertyName("checkpoint_verified")]
+        public bool CheckpointVerified { get; set; }
+
+        [JsonPropertyName("product_executor_reachable")]
+        public bool ProductExecutorReachable { get; set; }
+
+        [JsonPropertyName("receipt_journal_ready")]
+        public bool ReceiptJournalReady { get; set; }
+
+        [JsonPropertyName("game_process_alive")]
+        public bool GameProcessAlive { get; set; }
+
+        [JsonPropertyName("product_executor_process_alive")]
+        public bool ProductExecutorProcessAlive { get; set; }
+
+        [JsonPropertyName("live_training_loop_process_alive")]
+        public bool LiveTrainingLoopProcessAlive { get; set; }
+
+        [JsonPropertyName("unresolved_product_receipts")]
+        public int UnresolvedProductReceipts { get; set; }
 
         [JsonPropertyName("run_id")]
         public string RunId { get; set; } = string.Empty;

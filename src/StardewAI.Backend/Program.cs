@@ -65,6 +65,10 @@ builder.Services.AddSingleton<GrandpaDirectionDailyCandidateBinding>();
 builder.Services.AddSingleton<GrandpaDailySubgoalResolver>();
 builder.Services.AddSingleton<IStrategyCommitmentRepository, FileStrategyCommitmentRepository>();
 builder.Services.AddSingleton<ActionQueueDispatchReadinessService>();
+builder.Services.AddSingleton(new HttpClient
+{
+    Timeout = TimeSpan.FromSeconds(2)
+});
 
 var app = builder.Build();
 
@@ -605,10 +609,24 @@ app.MapPost("/api/v1/training/session/prepare", (TrainingLaunchRequest request, 
 app.MapPost("/api/v1/training/session/launch", (TrainingLaunchRequest request, StardewTrainingSessionLauncher launcher) =>
     Results.Ok(launcher.Launch(request)));
 
-app.MapGet("/api/v1/training/session/ready-probe", (HttpRequest request, StateStore store, TrainingReadyProbe probe) =>
+app.MapGet("/api/v1/training/session/ready-probe", async (
+    HttpRequest request,
+    StateStore store,
+    TrainingReadyProbe probe,
+    HttpClient healthClient,
+    CancellationToken cancellationToken) =>
 {
     var manifestPath = request.Query.TryGetValue("manifest_path", out var value) ? value.ToString() : null;
-    return Results.Ok(probe.Check(store.LatestSnapshot(), store.LatestSnapshot() is not null, manifestPath));
+    var productExecutorReachable = await ProbeProductExecutorAsync(
+        manifestPath,
+        healthClient,
+        cancellationToken);
+    var snapshot = store.LatestSnapshot();
+    return Results.Ok(probe.Check(
+        snapshot,
+        snapshot is not null,
+        manifestPath,
+        productExecutorReachable));
 });
 
 app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker) =>
@@ -845,6 +863,39 @@ app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCo
 });
 
 app.Run();
+
+static async Task<bool> ProbeProductExecutorAsync(
+    string? manifestPath,
+    HttpClient client,
+    CancellationToken cancellationToken)
+{
+    if (string.IsNullOrWhiteSpace(manifestPath) || !File.Exists(manifestPath))
+        return false;
+    try
+    {
+        var manifest = JsonSerializer.Deserialize<TrainingRunManifest>(
+            await File.ReadAllTextAsync(manifestPath, cancellationToken),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        if (manifest is null ||
+            !string.Equals(
+                manifest.Mode,
+                TrainingSessionMode.FormalProductTraining,
+                StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (!Uri.TryCreate(manifest.ProductExecutorUrl, UriKind.Absolute, out var baseUri) ||
+            baseUri.Scheme is not ("http" or "https") ||
+            !baseUri.IsLoopback)
+            return false;
+        using var response = await client.GetAsync(
+            new Uri(baseUri.ToString().TrimEnd('/') + "/health"),
+            cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+    catch (Exception ex) when (ex is IOException or JsonException or HttpRequestException or TaskCanceledException)
+    {
+        return false;
+    }
+}
 
 public sealed class CompileRequest
 {

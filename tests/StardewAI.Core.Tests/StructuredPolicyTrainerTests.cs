@@ -184,8 +184,8 @@ public sealed class StructuredPolicyTrainerTests
         CandidateVocabulary = "capability_registry.v3",
         CapabilityRegistry = "capability_registry.v3",
         KnowledgeDictionary = PolicyTrajectoryVersionPins.KnowledgeDictionary,
-        Compiler = "action_queue.v1",
-        Executor = "runtime_test_harness_executor.v1"
+        Compiler = PolicyTrajectoryVersionPins.Compiler,
+        Executor = PolicyTrajectoryVersionPins.ProductExecutor
     };
 
     private static void WriteLines(string path, IEnumerable<string> lines)

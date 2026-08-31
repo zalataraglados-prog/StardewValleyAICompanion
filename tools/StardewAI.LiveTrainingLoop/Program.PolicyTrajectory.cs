@@ -116,8 +116,8 @@ static partial class Program
                         CandidateVocabulary = OptionCapabilityRegistrySource.SchemaVersion,
                         CapabilityRegistry = OptionCapabilityRegistrySource.SchemaVersion,
                         KnowledgeDictionary = options.KnowledgeDictionaryVersion,
-                        Compiler = "action_queue.v1",
-                        Executor = "runtime_test_harness_executor.v1"
+                        Compiler = PolicyTrajectoryVersionPins.Compiler,
+                        Executor = options.PolicyTrajectoryExecutorVersion
                     },
                     decisionSourceHash,
                     decision,

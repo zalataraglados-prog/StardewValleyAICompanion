@@ -10,6 +10,13 @@ public static class PolicyTrajectoryVersionPins
     public const string TrajectorySchema = "policy_decision_trajectory.v2";
     public const string FeatureSchema = "policy_features.v2";
     public const string KnowledgeDictionary = "game-1.6.15-20260723T093543Z-linux-v24";
+    public const string Compiler = "action_queue.v1";
+    public const string RuntimeTestHarnessExecutor = "runtime_test_harness_executor.v1";
+    public const string ProductExecutor = "product_executor.v1";
+
+    public static bool IsKnownExecutor(string? value) =>
+        string.Equals(value, RuntimeTestHarnessExecutor, StringComparison.Ordinal) ||
+        string.Equals(value, ProductExecutor, StringComparison.Ordinal);
 }
 
 public sealed class PolicyDecisionTrajectoryEnvelope

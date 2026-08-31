@@ -79,6 +79,9 @@ public sealed class LiveTrainingOptions
     public string ExecutorUnverifiedSource => UseProductExecutor
         ? "product_executor_unverified"
         : "runtime_test_harness_unverified";
+    public string PolicyTrajectoryExecutorVersion => UseProductExecutor
+        ? PolicyTrajectoryVersionPins.ProductExecutor
+        : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor;
 
     public string RunDir => string.IsNullOrWhiteSpace(ManifestPath)
         ? Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(ArtifactRunId)
@@ -109,6 +112,16 @@ public sealed class LiveTrainingOptions
         {
             throw new InvalidOperationException(
                 "formal_training_requires_executor_feedback; use --skip-training for offline or calibration workflows");
+        }
+        if (!RequireStructuredPolicy || string.IsNullOrWhiteSpace(PolicyCheckpointPath))
+        {
+            throw new InvalidOperationException(
+                "formal_training_requires_structured_policy_checkpoint; use --skip-training only for bootstrap calibration data collection");
+        }
+        if (string.IsNullOrWhiteSpace(ManifestPath))
+        {
+            throw new InvalidOperationException(
+                "formal_training_requires_prepared_manifest; use --skip-training only for bootstrap calibration data collection");
         }
     }
 

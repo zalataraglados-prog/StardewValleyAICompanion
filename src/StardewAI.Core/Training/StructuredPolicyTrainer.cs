@@ -117,8 +117,8 @@ public sealed class StructuredPolicyTrainer
             !string.Equals(version.CandidateVocabulary, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) ||
             !string.Equals(version.CapabilityRegistry, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) ||
             !string.Equals(version.KnowledgeDictionary, PolicyTrajectoryVersionPins.KnowledgeDictionary, StringComparison.Ordinal) ||
-            !string.Equals(version.Compiler, "action_queue.v1", StringComparison.Ordinal) ||
-            !string.Equals(version.Executor, "runtime_test_harness_executor.v1", StringComparison.Ordinal))
+            !string.Equals(version.Compiler, PolicyTrajectoryVersionPins.Compiler, StringComparison.Ordinal) ||
+            !string.Equals(version.Executor, PolicyTrajectoryVersionPins.ProductExecutor, StringComparison.Ordinal))
             throw new InvalidOperationException("Policy dataset version binding is stale or unsupported.");
         if (version.RowCount != manifest.Counts.AcceptedRows)
             throw new InvalidOperationException("Policy dataset version row count does not match the manifest.");

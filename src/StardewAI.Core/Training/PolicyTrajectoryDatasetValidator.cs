@@ -130,8 +130,8 @@ internal sealed class PolicyTrajectoryDatasetValidator
         string.Equals(versions.CandidateVocabulary, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) &&
         string.Equals(versions.CapabilityRegistry, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) &&
         !string.IsNullOrWhiteSpace(versions.KnowledgeDictionary) &&
-        string.Equals(versions.Compiler, "action_queue.v1", StringComparison.Ordinal) &&
-        string.Equals(versions.Executor, "runtime_test_harness_executor.v1", StringComparison.Ordinal);
+        string.Equals(versions.Compiler, PolicyTrajectoryVersionPins.Compiler, StringComparison.Ordinal) &&
+        PolicyTrajectoryVersionPins.IsKnownExecutor(versions.Executor);
 
     private static bool ValidGameTime(int time)
     {

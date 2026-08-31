@@ -1,5 +1,13 @@
 # StardewAI 完全体完成路线图
 
+## 2026-09-01 正式训练控制面修正（EVD-326）
+
+正式训练使用 `policy_decision_trajectory.v2 + action_queue.v1 + product_executor.v1` 的唯一版本组合。Harness 轨迹只保留校准用途，禁止进入结构化 checkpoint。两阶段启动必须先 prepare 并冻结 `training_run_manifest.v2`，再使用同一 manifest 拉起 Product Executor、SMAPI 游戏和 LiveTrainingLoop；不得在 launch 时生成第二个 run-id。
+
+训练循环每周期必须重建 policy dataset manifest、训练结构化 ranker、原子更新 checkpoint 与 run manifest hash。旧 baseline feature-row 聚合器不再算正式模型训练。`training_ready_probe.v2` 在每轮动作前验证三进程、Product 健康、透明快照/run-id、全套数据文件 hash、checkpoint 绑定及 pending 收据恢复状态，任一漂移都停止新动作。
+
+首个 checkpoint 的来源是独立新存档上的 Product bootstrap 校准轨迹：该阶段允许 `--skip-training`，只采集真实 applied/verified/fresh 轨迹并离线构建初始 checkpoint，不称为正式训练。正式 launch 后必须连续完成至少一个真实游戏日，并证明 checkpoint hash 随新增 Product 轨迹更新，才算全量训练已经启动。
+
 ## 2026-08-31 训练优先执行顺序与服务器启动门
 
 EVD-325 后的当前基线为 `228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 145 Product Executor / 151 five-gate / 62 training allowlist / 2 catalogued blocked`。训练优先动作与独立 Product Executor 已闭合；当前顺序固定为：正式轨迹与结构化 checkpoint 重建 -> 启动前恢复探针 -> 服务器全量训练 -> 后置玩家命令动作。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者不得重新插回训练启动关键路径；AI 自主游玩赛车继续使用已经锁定的定时等价路径。

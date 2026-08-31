@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -55,6 +56,53 @@ static partial class Program
         if (iteration % options.TrainEvery != 0 && iteration != options.MaxAttempts)
         {
             return (null, null);
+        }
+
+        if (options.RequireStructuredPolicy)
+        {
+            var outputRoot = Path.Combine(options.Root, "datasets", "formal-policy");
+            var horizonPath = File.Exists(options.PolicyHorizonObservationPath)
+                ? options.PolicyHorizonObservationPath
+                : null;
+            var dataset = new PolicyTrajectoryDatasetBuilder().Build(
+                options.PolicyTrajectoryDatasetPath,
+                outputRoot,
+                horizonPath,
+                options.KnowledgeDictionaryVersion);
+            var training = new StructuredPolicyTrainer().Train(
+                dataset.ManifestPath,
+                options.PolicyCheckpointPath);
+            new FormalTrainingManifestStore().UpdateArtifacts(
+                options.ManifestPath,
+                options.RunId,
+                dataset.ManifestPath,
+                training.CheckpointPath,
+                training.CheckpointSha256);
+            var structuredReport = JsonSerializer.SerializeToNode(new
+            {
+                schema_version = "structured_policy_live_training.v1",
+                checkpoint_id = training.Checkpoint.CheckpointId,
+                checkpoint_path = training.CheckpointPath,
+                checkpoint_sha256 = training.CheckpointSha256,
+                dataset_manifest_path = dataset.ManifestPath,
+                accepted_rows = dataset.Manifest.Counts.AcceptedRows,
+                rejected_rows = dataset.Manifest.Counts.RejectedRows,
+                train_rows = dataset.Manifest.Partitions.Single(value => value.Partition == PolicyDatasetPartitions.Train).Rows,
+                validation_rows = dataset.Manifest.Partitions.Single(value => value.Partition == PolicyDatasetPartitions.Validation).Rows,
+                test_rows = dataset.Manifest.Partitions.Single(value => value.Partition == PolicyDatasetPartitions.Test).Rows,
+                train_pairs = training.Checkpoint.Training.TrainPairs
+            }, JsonOptions)?.AsObject() ?? new JsonObject();
+            AppendProgress(
+                options,
+                "train_structured",
+                iteration,
+                string.Empty,
+                string.Empty,
+                "checkpoint=" + training.Checkpoint.CheckpointId +
+                " rows=" + dataset.Manifest.Counts.AcceptedRows +
+                " pairs=" + training.Checkpoint.Training.TrainPairs +
+                " source=" + options.ExecutorFeedbackSource);
+            return (structuredReport, null);
         }
 
         var trainRequest = JsonSerializer.Serialize(new

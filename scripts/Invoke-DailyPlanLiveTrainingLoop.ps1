@@ -3,11 +3,15 @@ param(
     [string] $Root = "artifacts\daily-plan-live-loop",
     [string] $BackendUrl = "http://localhost:5108",
     [string] $BridgeSnapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot",
-    [string] $ExecutorUrl = "http://127.0.0.1:8767",
+    [string] $ExecutorUrl = "http://127.0.0.1:8768",
+    [string] $ManifestPath,
+    [string] $PolicyCheckpointPath,
     [string] $RunId = $env:STARDEWAI_TRAINING_RUN_ID,
     [string] $SaveIsolationPath = $env:STARDEWAI_SAVE_ISOLATION_PATH,
-    [string] $CandidateOptions = "economy.buy_supplies,executor.interact,exploration.visit_location,recovery.stabilize_day",
-    [int] $MaxCandidates = 4
+    [string] $CandidateOptions = "",
+    [int] $MaxCandidates = 4,
+    [int] $MaxAttempts = 1000000,
+    [int] $RequiredVerifiedActions = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,17 +24,37 @@ if ([string]::IsNullOrWhiteSpace($SaveIsolationPath)) {
     throw "SaveIsolationPath is required. Pass -SaveIsolationPath or set STARDEWAI_SAVE_ISOLATION_PATH."
 }
 
-dotnet run --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
-    --root $Root `
-    --backend-url $BackendUrl `
-    --bridge-snapshot-url $BridgeSnapshotUrl `
-    --executor-url $ExecutorUrl `
-    --no-manifest `
-    --run-id $RunId `
-    --save-isolation-path $SaveIsolationPath `
-    --iterations 1 `
-    --train-every 1 `
-    --sleep-ms 0 `
-    --use-daily-plan `
-    --daily-plan-max-candidates $MaxCandidates `
-    --daily-plan-candidate-options $CandidateOptions
+if ([string]::IsNullOrWhiteSpace($ManifestPath) -or -not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
+    throw "ManifestPath must reference the prepared formal training manifest."
+}
+
+if ([string]::IsNullOrWhiteSpace($PolicyCheckpointPath) -or -not (Test-Path -LiteralPath $PolicyCheckpointPath -PathType Leaf)) {
+    throw "PolicyCheckpointPath must reference the frozen structured policy checkpoint."
+}
+
+$arguments = @(
+    "run", "--project", (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"), "--",
+    "--root", $Root,
+    "--backend-url", $BackendUrl,
+    "--bridge-snapshot-url", $BridgeSnapshotUrl,
+    "--executor-url", $ExecutorUrl,
+    "--manifest-path", $ManifestPath,
+    "--run-id", $RunId,
+    "--save-isolation-path", $SaveIsolationPath,
+    "--max-attempts", $MaxAttempts,
+    "--required-verified-actions", $RequiredVerifiedActions,
+    "--train-every", 1,
+    "--use-product-executor",
+    "--use-daily-plan",
+    "--daily-plan-max-candidates", $MaxCandidates,
+    "--policy-checkpoint-path", $PolicyCheckpointPath,
+    "--require-structured-policy"
+)
+if (-not [string]::IsNullOrWhiteSpace($CandidateOptions)) {
+    $arguments += @("--daily-plan-candidate-options", $CandidateOptions)
+}
+
+& dotnet $arguments
+if ($LASTEXITCODE -ne 0) {
+    throw "LiveTrainingLoop exited with code $LASTEXITCODE."
+}
