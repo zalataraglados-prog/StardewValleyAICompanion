@@ -103,6 +103,33 @@ public sealed class CookingMainlineTests
     }
 
     [Fact]
+    public void TransparentCookingScanDoesNotForcePersistentHomeMapReloads()
+    {
+        var cooking = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.Cooking.cs"));
+        var forge = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.Forge.cs"));
+        var boards = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "ProgressReadAdapter.SpecialOrderBoards.cs"));
+        var construction = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.BuildingConstruction.cs"));
+        var currentLocation = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "CurrentLocationReadAdapter.cs"));
+
+        foreach (var source in new[] { cooking, forge, boards })
+        {
+            Assert.Contains("location.map?.GetLayer(\"Buildings\")", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("location.Map?.GetLayer(\"Buildings\")", source, StringComparison.Ordinal);
+        }
+        Assert.Contains("Where(IsLoadedBuildableLocation)", construction, StringComparison.Ordinal);
+        Assert.Contains("var map = location.map;", construction, StringComparison.Ordinal);
+        Assert.DoesNotContain("Where(location => location.IsBuildableLocation())", construction, StringComparison.Ordinal);
+        Assert.Contains("ReadLoadedHomeEntry(home)", currentLocation, StringComparison.Ordinal);
+        Assert.DoesNotContain("home.getEntryLocation()", currentLocation, StringComparison.Ordinal);
+        Assert.DoesNotContain("home.GetPlayerBedSpot()", currentLocation, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TypedRuntimeRequestRoundTripsCookingContract()
     {
         var request = new TrainingExecutionRequest

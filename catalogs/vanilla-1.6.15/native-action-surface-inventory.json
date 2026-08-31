@@ -4,12 +4,11 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 116,
-  "catalogued_blocked_surface_count": 52,
-  "catalogued_blocked_action_count": 9,
+  "mapped_count": 117,
+  "catalogued_blocked_surface_count": 51,
+  "catalogued_blocked_action_count": 8,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "rewards.claim_prize_ticket",
     "skills.claim_mastery",
     "social.emote",
     "social.watch_movie",
@@ -2831,7 +2830,7 @@
       "mappedOptionIds": [
         "rewards.claim_prize_ticket"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

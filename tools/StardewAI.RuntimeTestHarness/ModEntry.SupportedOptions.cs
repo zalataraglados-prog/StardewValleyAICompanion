@@ -121,6 +121,7 @@ public sealed partial class ModEntry
             "debug.setup_quest_reward",
             "debug.setup_quest_cancellation",
             "debug.setup_adventure_guild_reward",
+            "debug.setup_prize_ticket_reward",
             "debug.setup_sale_target",
             "debug.setup_shipping_target",
             "debug.setup_single_gift_item",

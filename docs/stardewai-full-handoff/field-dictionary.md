@@ -10,7 +10,24 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **165 required / 148 readable with provenance / 17 contextual / 0 blocking** (EVD-317).
+Current installed full-snapshot schema checkpoint: **166 required / 149 readable with provenance / 17 contextual / 0 blocking** (EVD-318).
+
+## Prize Ticket Reward Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.prize_ticket_reward.projection_fingerprint` | Canonical live ticket source, reward level, current and next-three reward tracks, endpoints, stands and native contract | candidate identity, fresh compiler binding and runtime drift guard | covered_for_read / covered_for_gate / native_runtime_verified |
+| `held_ticket_count` / `pending_special_order_ticket_count` | Live `(O)PrizeTicket` inventory stacks and `Farmer.stats.Get("specialOrderPrizeTickets")` | upstream stage selection and exact collection/redemption receipt | covered_for_read / two_source_domain_complete / native_runtime_verified |
+| `current_reward_level` / `reward_preview[]` | `Farmer.stats.Get("ticketPrizesClaimed")` and locked `PrizeTicketMenu.getPrizeItem(level)` for current plus next three levels | exact first-reward identity, menu binding and post-action verification | covered_for_read / levels_0_through_21_and_9_level_cycle_locked / native_runtime_verified |
+| `town_collection_endpoint` | Town `Action=SpecialOrdersPrizeTickets` at `(60,93)`, live route and safe stand | pending-ticket stage, shared BFS and fresh continuation | covered_for_read / covered_for_gate / native_runtime_verified |
+| `manor_house_prize_machine_endpoint` | ManorHouse `Action=PrizeMachine` near `(1,5)`, loaded collision geometry and house route | redemption stage, shared BFS and native menu opening | covered_for_read / covered_for_gate / upgraded_house_verified / native_runtime_verified |
+| execution output | Native inventory-or-debris reward, one ticket consumed and `ticketPrizesClaimed +1` | verifier and policy-training feedback | native_input_only / exact_receipt_verified / full_inventory_debris_verified / direct_ticket_reward_stat_or_inventory_mutation_forbidden |
+
+`rewards.claim_prize_ticket` is an autonomous positive-reward decision and is admitted to strategy training. The model emits only the parameterless claim intent. Collection and redemption are separate fresh-plan stages; the executor remains calibration-only.
+
+## Loaded-State Read Safety
+
+Complete snapshots read already loaded map layers, buildable-location state, FarmHouse entry and bed state without invoking side-effectful map/asset getters. Missing or inconsistent assets remain contextual/unavailable instead of being loaded by observation. This applies to Cooking, Forge, Special Order Board, building appearance/construction and current-home projections.
 
 ## Adventure Guild Reward Transparency
 

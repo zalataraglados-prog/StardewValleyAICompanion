@@ -53,6 +53,7 @@ public static class OptionImplementationCatalog
         "executor.claim_quest_reward",
         "executor.cancel_quest",
         "executor.claim_adventure_guild_reward",
+        "executor.claim_prize_ticket",
         "executor.buy_shop_item",
         "executor.sell_shop_item",
         "executor.choose_dialogue_response",
@@ -141,6 +142,7 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> InventoryOptions = Set(
         "rewards.claim_adventure_guild_reward",
+        "rewards.claim_prize_ticket",
         "rewards.claim_pot_of_gold",
         "executor.ship_inventory_item_to_bin",
         "executor.transfer_material",

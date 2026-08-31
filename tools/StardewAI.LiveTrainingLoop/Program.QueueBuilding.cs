@@ -122,7 +122,9 @@ static partial class Program
                             new { name = "continuation.selected_index", value = ReadString(objectiveContinuation, "selected_index") },
                             new { name = "continuation.renovation_reason", value = ReadString(objectiveContinuation, "renovation_reason") },
                             new { name = "continuation.confirm_renovation", value = ReadString(objectiveContinuation, "confirm_renovation") },
-                            new { name = "continuation.confirm_destructive", value = ReadString(objectiveContinuation, "confirm_destructive") }
+                            new { name = "continuation.confirm_destructive", value = ReadString(objectiveContinuation, "confirm_destructive") },
+                            new { name = "continuation.expected_prize_level", value = ReadString(objectiveContinuation, "expected_prize_level") },
+                            new { name = "continuation.expected_reward_fingerprint", value = ReadString(objectiveContinuation, "expected_reward_fingerprint") }
                         }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
                     }
                 },

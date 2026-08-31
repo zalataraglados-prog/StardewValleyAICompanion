@@ -749,8 +749,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             };
         }
 
-        var entry = home.getEntryLocation();
-        var bed = home.GetPlayerBedSpot();
+        var entry = ReadLoadedHomeEntry(home);
+        var bed = home.GetPlayerBed()?.GetBedSpot() ?? entry;
         return new
         {
             home_available = true,
@@ -764,6 +764,23 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             bed_tile_y = bed.Y,
             bed_tile_has_bed = BedFurniture.IsBedHere(home, bed.X, bed.Y),
             sleep_executor_enabled = true
+        };
+    }
+
+    private static Point ReadLoadedHomeEntry(StardewValley.Locations.FarmHouse home)
+    {
+        if (home.map?.Properties.TryGetValue("EntryLocation", out var property) == true)
+        {
+            var values = property?.ToString()?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            if (ArgUtility.TryGetPoint(values, 0, out var parsed, out _)) return parsed;
+        }
+
+        return home.upgradeLevel switch
+        {
+            0 => new Point(3, 11),
+            1 => new Point(9, 11),
+            2 or 3 => new Point(27, 30),
+            _ => new Point(-1000, -1000)
         };
     }
 

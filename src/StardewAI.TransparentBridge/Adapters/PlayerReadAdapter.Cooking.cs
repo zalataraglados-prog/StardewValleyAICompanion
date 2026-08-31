@@ -143,7 +143,9 @@ public sealed partial class PlayerReadAdapter
         foreach (var locationRef in MachineLocationTopology.ReadPersistentLocations(farm, player))
         {
             var location = locationRef.Location;
-            var buildings = location.Map?.GetLayer("Buildings");
+            // Persistent multiplayer homes can contain a stale vanilla map-path combination.
+            // Scan the already loaded map without forcing GameLocation.updateMap() during a read.
+            var buildings = location.map?.GetLayer("Buildings");
             if (buildings is not null)
             {
                 for (var y = 0; y < buildings.LayerHeight; y++)

@@ -146,7 +146,7 @@ public sealed partial class PlayerReadAdapter
         var rows = new List<ForgeSource>();
         foreach (var location in locations.Distinct())
         {
-            var layer = location.Map?.GetLayer("Buildings");
+            var layer = location.map?.GetLayer("Buildings");
             if (layer is not null)
             {
                 for (var y = 0; y < layer.LayerHeight; y++)

@@ -39,6 +39,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["quest.claim_reward"] = (snapshot, _) => QuestRewardClaimCandidates(snapshot),
                 ["quest.cancel"] = QuestCancellationCandidates,
                 ["rewards.claim_adventure_guild_reward"] = (snapshot, _) => AdventureGuildRewardCandidates(snapshot),
+                ["rewards.claim_prize_ticket"] = PrizeTicketRewardCandidates,
                 ["housing.advance_farmhouse"] = (snapshot, _) => FarmhouseUpgradeCandidates(snapshot),
                 ["housing.renovate"] = HomeRenovationCandidates,
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),

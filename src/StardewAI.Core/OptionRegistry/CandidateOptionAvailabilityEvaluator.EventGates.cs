@@ -352,6 +352,13 @@ namespace StardewAI.Core.OptionRegistry
                     "no_adventure_guild_reward_batch_candidate",
                     "no_available_adventure_guild_reward_batch_candidate");
             }
+            if (optionId == "rewards.claim_prize_ticket")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_prize_ticket_reward_candidate",
+                    "no_available_prize_ticket_reward_candidate");
+            }
             if (optionId == "mail.process_letter")
             {
                 return EventCandidateAvailabilityReasons(

@@ -23,7 +23,7 @@ public sealed partial class PlayerReadAdapter
         var currentAtService = service.Location is not null && ReferenceEquals(Game1.currentLocation, service.Location);
         var rows = new List<object>();
         foreach (var location in Game1.locations
-                     .Where(value => value.IsBuildableLocation())
+                     .Where(IsLoadedBuildableLocation)
                      .OrderBy(value => value.NameOrUniqueName, StringComparer.Ordinal))
         {
             foreach (var building in location.buildings

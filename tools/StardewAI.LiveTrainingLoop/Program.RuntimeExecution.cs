@@ -1719,6 +1719,9 @@ static partial class Program
         ApplyAdventureGuildRewardRequestFields(
             executionRequest,
             item);
+        ApplyPrizeTicketRewardRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

@@ -102,11 +102,11 @@ public sealed partial class ProgressQuestReadAdapter
 
         var rows = new List<SpecialOrderBoardTile>();
         foreach (var location in locations
-                     .Where(location => location.Map?.GetLayer("Buildings") is not null)
                      .GroupBy(location => location.NameOrUniqueName, StringComparer.OrdinalIgnoreCase)
                      .Select(group => group.First()))
         {
-            var layer = location.Map.GetLayer("Buildings");
+            var layer = location.map?.GetLayer("Buildings");
+            if (layer is null) continue;
             for (var y = 0; y < layer.LayerHeight; y++)
             {
                 for (var x = 0; x < layer.LayerWidth; x++)

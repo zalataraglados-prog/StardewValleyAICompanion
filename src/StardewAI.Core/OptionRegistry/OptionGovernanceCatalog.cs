@@ -58,6 +58,7 @@ namespace StardewAI.Core.OptionRegistry
             "recovery.escape_object_trap",
             "rewards.claim_pot_of_gold",
             "rewards.claim_adventure_guild_reward",
+            "rewards.claim_prize_ticket",
             "rewards.claim_statue_blessing",
             "executor.close_menu"
         };
@@ -260,6 +261,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("quest.claim_reward", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("quest.cancel", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit, PlayerCommand),
                 P("rewards.claim_adventure_guild_reward", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("rewards.claim_prize_ticket", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mail.process_letter", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("skills.choose_profession", C, R4, Asset, PolicyConfirm, Actor, ActorState, Policy),
                 P("strategy.grandpa_progress", Goal, R1, None, NoConfirm, Actor, Mixed, Allowed),
@@ -314,6 +316,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.claim_quest_reward", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("executor.cancel_quest", Primitive, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit, PlayerCommand),
                 P("executor.claim_adventure_guild_reward", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("executor.claim_prize_ticket", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.buy_shop_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.sell_shop_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.choose_dialogue_response", Primitive, R5, Route, ExplicitConfirm, Actor, Mixed, Explicit),

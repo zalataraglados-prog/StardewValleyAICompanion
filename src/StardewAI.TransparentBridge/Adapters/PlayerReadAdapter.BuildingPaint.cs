@@ -20,7 +20,7 @@ public sealed partial class PlayerReadAdapter
         var service = FindBuildingService("Robin");
         var currentAtService = service.Location is not null && ReferenceEquals(Game1.currentLocation, service.Location);
         var rows = new List<object>();
-        foreach (var location in Game1.locations.Where(value => value.IsBuildableLocation()).OrderBy(value => value.NameOrUniqueName, StringComparer.Ordinal))
+        foreach (var location in Game1.locations.Where(IsLoadedBuildableLocation).OrderBy(value => value.NameOrUniqueName, StringComparer.Ordinal))
         {
             foreach (var building in location.buildings.OrderBy(value => value.tileY.Value).ThenBy(value => value.tileX.Value).ThenBy(value => value.buildingType.Value, StringComparer.Ordinal))
             {

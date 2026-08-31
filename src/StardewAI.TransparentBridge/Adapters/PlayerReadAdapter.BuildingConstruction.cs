@@ -19,7 +19,7 @@ public sealed partial class PlayerReadAdapter
         }
 
         var locations = Game1.locations
-            .Where(location => location.IsBuildableLocation())
+            .Where(IsLoadedBuildableLocation)
             .OrderBy(location => location.NameOrUniqueName, StringComparer.Ordinal)
             .ToArray();
         var services = new Dictionary<string, (GameLocation? Location, Point? ActionTile, string ActionRaw, bool OwnerReady)>(StringComparer.Ordinal)
@@ -149,7 +149,7 @@ public sealed partial class PlayerReadAdapter
         var expectedAction = builder == "Wizard" ? "WizardBook" : "Carpenter";
         foreach (var location in Game1.locations.OrderBy(location => location.NameOrUniqueName, StringComparer.Ordinal))
         {
-            var layer = location.Map?.GetLayer("Buildings");
+            var layer = location.map?.GetLayer("Buildings");
             if (layer is null)
             {
                 continue;
@@ -168,5 +168,22 @@ public sealed partial class PlayerReadAdapter
             }
         }
         return (null, null, expectedAction, false);
+    }
+
+    private static bool IsLoadedBuildableLocation(GameLocation location)
+    {
+        var map = location.map;
+        if (map is null ||
+            !map.Properties.TryGetValue("CanBuildHere", out var canBuildHere) ||
+            string.IsNullOrEmpty(canBuildHere?.ToString()) ||
+            !location.isAlwaysActive.Value)
+        {
+            return false;
+        }
+
+        var buildConditions = map.Properties.TryGetValue("BuildConditions", out var conditions)
+            ? conditions?.ToString()
+            : null;
+        return string.IsNullOrEmpty(buildConditions) || GameStateQuery.CheckConditions(buildConditions, location);
     }
 }

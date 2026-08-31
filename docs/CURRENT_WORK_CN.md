@@ -754,3 +754,13 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 当前 full 快照为 165 required / 148 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 214 registered / 223 semantic / 213 compiler-bound / 138 harness dispatch / 137 five-gate / 56 training allowlist / 9 catalogued blocked / 0 Product Executor。
 - 最终回归为 Core 2138/2138、Backend 155/155、Release 0 warnings / 0 errors。原生分母为 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0，冻结指纹为 `10b8329f92466d34ce5570679fea0096b298a36693668e8ff107be1794804902`。
 - 下一主切片是 `rewards.claim_prize_ticket`。先锁定 `PrizeTicketMenu` 的批次、随机性、容量、菜单与副作用语义，再复用现有路线、菜单输入和收据基础设施。`minigame.play_junimo_kart` 按既有决策继续暂缓，不得在下一轮误当主切片。
+
+## 2026-08-31 当前权威检查点：EVD-318
+
+- `rewards.claim_prize_ticket` 已完成透明读取、上游许可、DailyPlan、两阶段 fresh 重规划、类型化传输、共享 BFS、原生地点交互、原生 `PrizeTicketMenu` 点击和严格回执。模型只输出无参数的“领取当前奖券奖励”；票券来源、当前奖励等级、精确奖励指纹、地点、站位、库存或 debris 结算均由当前快照和编译器负责。
+- 锁定版反编译确认：持有 `(O)PrizeTicket` 时直接前往 ManorHouse `PrizeMachine`；仅有 `specialOrderPrizeTickets` 待发数量时，先在 Town 的 `SpecialOrdersPrizeTickets` 原生端点领取一张实体票券，然后必须用新快照重规划。兑换只领取 `currentPrizeTrack[0]`，背包可接收时进入库存，否则生成原生 debris；随后票券减一且 `ticketPrizesClaimed` 加一。等级 `0..21` 和之后的 9 级循环均已冻结。
+- 隐藏静音 E 盘运行 `runtime-prize-ticket-reward-20260831-121025` 为 6/6：伪造投影拒绝、Town 待发票券领取、等级 0、升级房屋等级 5、满背包等级 21 debris、等级 22 循环均通过。生产执行器不直接写票券、奖励、统计或背包。
+- 本轮运行还暴露并修正了透明观察器副作用：Cooking、Forge、SpecialOrderBoard、Building 与 FarmHouse 上下文只读取已经加载的地图/床/入口状态，不再因完整快照访问 `Map` 或房屋资产懒加载而改变运行环境。异常多人房屋组合也能生成完整只读快照。
+- 当前 full 快照为 166 required / 149 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 216 registered / 224 semantic / 215 compiler-bound / 139 harness dispatch / 139 five-gate / 57 training allowlist / 8 catalogued blocked / 0 Product Executor。
+- 最终回归为 Core 2145/2145、Backend 155/155、Release 0 warnings / 0 errors。原生分母保持 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0；冻结指纹为 `7327c9af60be86fc79d7aff82a33af4ad09ca0aa58398d2bebed1affa5ae6f67`。
+- 下一主切片是 `skills.claim_mastery`。先锁定五种精通领取资格、菜单入口、星级/经验结算、奖励与一次性标志，再复用现有路线和菜单输入链。`minigame.play_junimo_kart` 继续暂缓；不得把 8 个显式 blocked、0 Product Executor 或尚未开始的正式全量训练描述为完成。

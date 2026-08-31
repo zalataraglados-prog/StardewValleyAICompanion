@@ -431,6 +431,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "small model emits one parameterless earned-reward claim", "compiler rebinds the complete pending goal batch, exact Gil endpoint and cloned-inventory capacity proof", "shared BFS reaches Gil", "native dialogue and ItemGrabMenu clicks collect every projected item and flag" },
                 new[] { "block_no_complete_unclaimed_item_backed_goal", "block_partial_batch_or_insufficient_capacity", "block_not_current_AdventureGuild_or_no_exact_Gil_endpoint", "block_goal_item_mail_flag_or_inventory_drift", "block_direct_kill_mail_flag_or_inventory_mutation" }));
 
+            Register(Option("rewards.claim_prize_ticket", "rewards", "Collect and redeem one earned Prize Ticket through the native two-stage reward chain",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.prize_ticket_reward", "player.inventory", "player.inventory_capacity", "player.location_id", "player.tile_x", "player.tile_y", "menus.active_menu", "locations.route_graph", "locations.route_connectors", "locations.collision_grid" },
+                new[] { "small model emits one parameterless positive-reward objective", "compiler freezes the current prize level and exact native reward identity", "shared route and BFS execute one fresh native collection or redemption stage", "rolling continuation ends only after one exact reward settles to inventory or debris" },
+                new[] { "block_no_held_or_pending_ticket", "block_pending_ticket_collection_without_inventory_capacity", "block_missing_Town_or_ManorHouse_native_action", "block_prize_level_preview_endpoint_or_count_drift", "block_direct_ticket_stat_inventory_or_reward_mutation" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -828,6 +836,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "quests.adventure_guild_reward", "quests.mail_received", "quests.mail_for_tomorrow", "player.inventory", "player.inventory_capacity", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact Gil stand", "native AdventureGuild.checkAction invokes Gil's dialogue and ItemGrabMenu", "native item clicks collect every projected reward and add every Gil goal flag" },
                 new[] { "block_batch_identity_or_capacity_drift", "block_not_current_AdventureGuild_or_no_exact_Gil_endpoint", "block_goal_item_mail_flag_or_inventory_drift", "block_direct_kill_mail_flag_or_inventory_mutation" }));
+
+            Register(Option("executor.claim_prize_ticket", "rewards", "Execute one freshly rebound native Prize Ticket collection or redemption stage",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.prize_ticket_reward", "player.inventory", "player.inventory_capacity", "player.location_id", "player.tile_x", "player.tile_y", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact native action tile", "Town checkAction collects one pending physical ticket or ManorHouse checkAction opens PrizeTicketMenu", "native menu button settles one exact reward to inventory or debris" },
+                new[] { "block_stage_projection_preview_or_endpoint_drift", "block_pending_ticket_capacity_drift", "block_native_menu_or_receipt_mismatch", "block_direct_ticket_stat_inventory_or_reward_mutation" }));
 
             Register(Option("executor.cancel_quest", "quest", "Select and cancel one exact eligible ordinary quest through native QuestLog clicks",
                 OptionBehaviorCategories.Mechanical,

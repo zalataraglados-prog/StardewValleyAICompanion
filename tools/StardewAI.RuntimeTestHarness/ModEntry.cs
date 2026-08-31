@@ -137,6 +137,7 @@ public sealed partial class ModEntry : Mod
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
     private ActiveQuestCancellation? activeQuestCancellation;
     private ActiveAdventureGuildReward? activeAdventureGuildReward;
+    private ActivePrizeTicketReward? activePrizeTicketReward;
 
     public override void Entry(IModHelper helper)
     {
@@ -556,6 +557,7 @@ public sealed partial class ModEntry : Mod
         TickQuestRewardClaimSafely();
         TickQuestCancellationSafely();
         TickAdventureGuildRewardClaimSafely();
+        TickPrizeTicketRewardSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1028,6 +1030,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_adventure_guild_reward")
             {
                 pending.Completion.SetResult(ExecuteSetupAdventureGuildRewardFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_prize_ticket_reward")
+            {
+                pending.Completion.SetResult(ExecuteSetupPrizeTicketRewardFixture(pending.Request));
                 return;
             }
 
@@ -1525,6 +1533,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.claim_adventure_guild_reward")
             {
                 StartAdventureGuildRewardClaim(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_prize_ticket")
+            {
+                StartPrizeTicketReward(pending);
                 return;
             }
 
@@ -2236,6 +2250,7 @@ public sealed partial class ModEntry : Mod
             activeQuestRewardClaim = null;
             activeQuestCancellation = null;
             activeAdventureGuildReward = null;
+            activePrizeTicketReward = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2521,7 +2536,8 @@ public sealed partial class ModEntry : Mod
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null ||
             activeQuestCancellation is not null ||
-            activeAdventureGuildReward is not null;
+            activeAdventureGuildReward is not null ||
+            activePrizeTicketReward is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

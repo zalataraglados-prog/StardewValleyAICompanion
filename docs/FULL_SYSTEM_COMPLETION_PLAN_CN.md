@@ -928,3 +928,13 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 隐藏静音 E 盘矩阵 `runtime-adventure-guild-reward-20260831-023014` 已 3/3 通过，包括伪造批次、容量漂移和真实原生领取。当前冻结口径为 214 registered / 223 semantic / 9 catalogued blocked / 213 compiler-bound / 138 harness dispatch / 137 five-gate / 56 training allowlist / 0 Product Executor；full snapshot 为 165/148/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2138/2138、Backend 155/155、Release 0 警告和 0 错误。
 
 下一切片固定为 `rewards.claim_prize_ticket`，按“本地反编译锁语义 -> 透明字段与整批/随机输出边界 -> 上游许可 -> 复用 DailyPlan/菜单机械链 -> 原生执行与回执 -> 隐藏隔离矩阵 -> 目录冻结”的顺序完成。Junimo Kart 继续保留为已知暂缓项，不阻塞其他动作闭环，也不允许用等价模拟结果冒充原生完美游玩。
+
+## 2026-08-31 Prize Ticket 两阶段奖励闭环（EVD-318）
+
+`rewards.claim_prize_ticket` 已替换对应待办语义项并进入高层训练白名单。它不是让模型规划菜单细节：模型只决定是否领取当前正收益奖励；透明桥实时发布持有票券、待发特别订单票券、当前 `ticketPrizesClaimed` 等级、当前及后三个预览奖励、精确首奖指纹、Town/ManorHouse 原生端点和安全站位。fresh 编译器覆盖模型提供的机械字段并拒绝投影漂移。
+
+唯一编译链按实时前态选择阶段：有实体票券时滚动到 ManorHouse `PrizeMachine` 并点击当前首奖；没有实体票券但存在 `specialOrderPrizeTickets` 时，先去 Town 原生端点领取一张票券，停止旧队列并以新快照重规划。禁止把两张地图上的步骤用旧投影硬拼成一条队列。原生结算保留满背包 debris 分支、票券减一和领取等级加一；生产代码不直接写结果。
+
+隐藏静音隔离矩阵 `runtime-prize-ticket-reward-20260831-121025` 已 6/6 通过，覆盖投影伪造、待发票券、普通/升级房屋、满背包和 9 级循环。完整快照同时验证了只读观察器不会为 Cooking、Forge、SpecialOrderBoard、建筑或 FarmHouse 主动加载缺失地图资产。当前冻结口径为 216 registered / 224 semantic / 8 catalogued blocked / 215 compiler-bound / 139 harness dispatch / 139 five-gate / 57 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2145/2145、Backend 155/155、Release 0 警告和 0 错误。
+
+下一主切片为 `skills.claim_mastery`，继续按同一动作打包流程闭合五种原版精通领取。Junimo Kart 保持暂缓。正式全量训练仍须等待剩余语义动作处理、Product Executor 集成和全量长线准入验收，不因本动作通过而提前开始。
