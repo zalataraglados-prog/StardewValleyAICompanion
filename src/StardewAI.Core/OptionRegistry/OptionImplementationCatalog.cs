@@ -63,6 +63,7 @@ public static class OptionImplementationCatalog
         "executor.manage_animal",
         "executor.manage_multiplayer_wallet",
         "executor.send_multiplayer_chat",
+        "executor.perform_emote",
         "executor.choose_bobber_style",
         "executor.choose_jukebox_track",
         "executor.customize_player",
@@ -310,6 +311,8 @@ public static class OptionImplementationCatalog
             return "StardewAI.Core.OptionRegistry.MiningCandidateBuilders";
         if (optionId == "volcano.reach_caldera")
             return "StardewAI.Core.OptionRegistry.VolcanoReachCalderaCandidateBuilder";
+        if (optionId == "social.emote")
+            return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.PlayerEmote";
         if (optionId.StartsWith("social.", StringComparison.Ordinal))
             return "StardewAI.Core.OptionRegistry.SocialCandidateBuilder";
         return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator";

@@ -1725,6 +1725,9 @@ static partial class Program
         ApplyMasteryClaimRequestFields(
             executionRequest,
             item);
+        ApplyPlayerEmoteRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

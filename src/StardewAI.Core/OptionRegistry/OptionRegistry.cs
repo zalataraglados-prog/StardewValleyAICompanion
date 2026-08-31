@@ -383,6 +383,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "exact native partnership branch and relationship item verified", "native social executor handoff envelope produced" },
                 new[] { "explicit_player_confirmation_required", "block_unavailable_required_state", "block_rejected_native_partnership_branch", "block_unverified_relationship_item" }));
 
+            Register(Option("social.emote", "social", "Perform one explicitly requested native player emote",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.emote", "player.location_id", "menus.active_menu" },
+                new[] { "player supplies one exact base-game emote key, reason and confirmation", "compiler rebinds the live 22-entry Farmer.EMOTES catalog and current CanEmote state", "native ChatBox input enters the same /emote command used by EmoteMenu", "native doEmoteEvent records performed state and starts the exact icon or animation" },
+                new[] { "block_without_explicit_player_command_reason_and_confirmation", "block_unknown_or_drifted_emote_key", "block_native_CanEmote_menu_chat_or_existing_emote_conflict", "block_native_command_or_local_icon_animation_receipt_mismatch", "block_direct_netDoEmote_performPlayerEmote_doEmote_or_performedEmotes_mutation", "exclude_from_autonomous_candidates_and_strategy_training" }));
+
             Register(Option("quest.advance", "quest", "Advance one transparent quest objective stage",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -1210,6 +1218,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "npcs.social_interaction", "npcs.friendships", "npcs.gift_tastes", "player.inventory", "menus.active_menu", "locations.collision_grid" },
                 new[] { "social interaction executed with observed outcome" },
                 new[] { "block_unverified_movement", "block_unavailable_required_state" }));
+
+            Register(Option("executor.perform_emote", "social", "Execute and verify one explicitly requested native player emote",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.emote", "player.location_id", "menus.active_menu" },
+                new[] { "native ChatTextBox receives the exact compiler-owned /emote command", "ChatBox.textBoxEnter dispatches through ChatCommands.Emote and Farmer.netDoEmote", "the performed entry and exact native icon or animation are observed" },
+                new[] { "block_unconfirmed_unknown_or_stale_emote", "block_CanEmote_menu_chat_or_active_emote_conflict", "block_unverified_native_command_receipt", "block_direct_emote_event_animation_or_persistent_state_mutation", "player_command_only" }));
 
             Register(Option("executor.quest_npc_interact", "quest", "Advance one exact live quest objective through native NPC interaction",
                 OptionBehaviorCategories.Mechanical,

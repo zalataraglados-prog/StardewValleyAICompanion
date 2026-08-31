@@ -774,3 +774,13 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 当前 full 快照为 166 required / 149 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 218 registered / 225 semantic / 217 compiler-bound / 140 harness dispatch / 141 five-gate / 58 training allowlist / 7 catalogued blocked / 0 Product Executor。
 - 最终回归为 Core 2154/2154、Backend 155/155、Release 0 warnings / 0 errors。原生分母保持 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0；冻结指纹为 `c5ba5f114d07060305187ab7266e26ae13c8b24fb2ed9177d5f06f86b4fbe1f4`。
 - 下一主切片是 `social.emote`。先锁定原生表情候选、触发权限、多人可见副作用和玩家指令/自治边界，再复用现有社交定位及输入链。`minigame.play_junimo_kart` 继续暂缓；正式全量训练仍未开始。
+
+## 2026-08-31 当前权威检查点：EVD-320
+
+- `social.emote` 已完成实时透明读取、显式玩家指令候选、DailyPlan、fresh 编译重绑、类型化传输、原生聊天输入和严格回执。小模型/玩家只提供准确表情 key、理由与确认；机械层生成并输入完整 `/emote <key>`，不需要路线，也不复制第二套社交执行器。
+- 锁定版反编译确认 `Farmer.EMOTES` 恰有 22 项，其中 `blush/taunt/music/jar` 四项隐藏；透明桥实时发布顺序、显示键/名称、图标、方向、逐帧动画、raw favorites、无副作用推导的八项 effective defaults、performed 状态、selector 可见性和全部 `CanEmote`/聊天/菜单/小游戏门槛。锁定目录顺序或隐藏集合漂移时整体失败关闭，读取侧禁止调用会补写默认值的 `GetEmoteFavorites()`。
+- 生产运行只激活原生 ChatBox、逐字符输入并调用 `ChatBox.textBoxEnter`，后续由 `ChatCommands.Emote -> Farmer.netDoEmote -> doEmoteEvent -> performPlayerEmote` 负责联网与结果；禁止直接调用后三者或写 `performedEmotes`。本地回执核对 performed entry 及准确图标/动画；远端可见性归原生网络事件所有，不伪造远端收据。
+- 隐藏静音 E 盘矩阵 `runtime-player-emote-20260831-145638` 为 23/23：一项伪造投影被拒，22 个原生表情逐一成功。两项 Option 都是 `player_command_only`、需显式确认，并从默认自主候选与策略训练中排除；训练 allowlist 保持 58。
+- 当前 full 快照为 168 required / 151 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 220 registered / 226 semantic / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 6 catalogued blocked / 0 Product Executor。
+- 最终回归为 Core 2162/2162、Backend 155/155、Release 0 warnings / 0 errors。原生分母保持 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0；冻结指纹为 `d145570835f06f8ffb14460ce1107950a4aed243939ed60ee08c583bc17a97e9`。
+- 下一主切片固定为 `social.watch_movie`。先反编译锁定购票/邀请/放映/同伴反应/奖励与一次性状态，再判断哪些选择属于模型、哪些机械流程归既有社交/商店/菜单执行层。`minigame.play_junimo_kart` 继续暂缓；正式全量训练仍等待剩余动作、Product Executor 与长线验收。

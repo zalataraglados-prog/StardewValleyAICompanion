@@ -43,6 +43,7 @@ namespace StardewAI.Core.Training
                 ["rewards.claim_adventure_guild_reward"] = new[] { "claim_adventure_guild_reward" },
                 ["rewards.claim_prize_ticket"] = new[] { "route_connector_tile", "claim_prize_ticket" },
                 ["skills.claim_mastery"] = new[] { "route_connector_tile", "claim_mastery" },
+                ["social.emote"] = new[] { "perform_emote" },
                 ["quest.advance"] = QuestActionCoverageCatalog.BoundCandidateKinds.ToArray(),
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.process_machines"] = new[]
@@ -337,6 +338,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "claim_mastery")
             {
                 return MasteryClaimSteps(candidate);
+            }
+
+            if (candidate.Kind == "perform_emote")
+            {
+                return PlayerEmoteSteps(candidate);
             }
 
             if (candidate.Kind == "apply_fertilizer_tile")

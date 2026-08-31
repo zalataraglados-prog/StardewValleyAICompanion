@@ -10,7 +10,19 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **166 required / 149 readable with provenance / 17 contextual / 0 blocking** (EVD-319).
+Current installed full-snapshot schema checkpoint: **168 required / 151 readable with provenance / 17 contextual / 0 blocking** (EVD-320).
+
+## Player Emote Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.emote.projection_fingerprint` | Live player/control/chat/network state, raw favorites, effective favorites, performed keys and all live `Farmer.EMOTES` option fingerprints | explicit-command candidate identity, fresh compiler binding and runtime drift guard | covered_for_read / covered_for_gate / native_runtime_verified |
+| `emotes[]` | Live locked-base `Farmer.EMOTES` order, key, display key/name, icon, hidden flag, facing and exact animation-frame metadata | exact command selection and native icon-or-animation receipt | covered_for_read / exact_22_and_four_hidden_locked / runtime_catalog_mismatch_fails_closed |
+| `raw_favorites[]` / `effective_favorites[]` | Direct `emoteFavorites` read plus non-mutating derivation of the eight native defaults | selector state and favorite-slot projection | covered_for_read / `GetEmoteFavorites` observer mutation forbidden |
+| `performed_emote_keys[]` / per-option performed state | Live `performedEmotes` keys and values | hidden selector visibility, option freshness and post-command receipt | covered_for_read / native_event_write_only / direct_production_mutation_forbidden |
+| execution output | Native `/emote <key>` input, performed entry, exact icon and/or animation receipt | player-command executor verification only | native_input_only / local_receipt_verified / remote_visibility_owned_by_native_net_event |
+
+Both `social.emote` and `executor.perform_emote` require an explicit player reason and confirmation. They are excluded from autonomous candidates and strategy training; the compiler and executor own the complete mechanical command expansion.
 
 ## Mastery Claim Transparency
 

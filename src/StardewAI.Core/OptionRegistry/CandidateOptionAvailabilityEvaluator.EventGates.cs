@@ -366,6 +366,13 @@ namespace StardewAI.Core.OptionRegistry
                     "no_mastery_claim_candidate",
                     "no_available_mastery_claim_candidate");
             }
+            if (optionId == "social.emote")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_explicit_player_emote_candidate",
+                    "no_available_explicit_player_emote_candidate");
+            }
             if (optionId == "mail.process_letter")
             {
                 return EventCandidateAvailabilityReasons(

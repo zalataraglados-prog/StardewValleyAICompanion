@@ -234,6 +234,8 @@ namespace StardewAI.Core.Training
                 case "executor.claim_prize_ticket":
                 case "skills.claim_mastery":
                 case "executor.claim_mastery":
+                case "social.emote":
+                case "executor.perform_emote":
                 case "rewards.claim_pot_of_gold":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":

@@ -123,6 +123,7 @@ public sealed partial class ModEntry
             "debug.setup_adventure_guild_reward",
             "debug.setup_prize_ticket_reward",
             "debug.setup_mastery_claim",
+            "debug.setup_player_emote",
             "debug.setup_sale_target",
             "debug.setup_shipping_target",
             "debug.setup_single_gift_item",

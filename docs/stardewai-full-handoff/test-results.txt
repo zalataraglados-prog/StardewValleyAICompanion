@@ -1,3 +1,11 @@
+2026-08-31 EVD-320 native player emote command
+- Locked 1.6.15 source audit PASS: exact 22-entry `Farmer.EMOTES` order, four hidden rows, display/icon/animation metadata, raw/effective favorites, performed visibility, `CanEmote`, command matching and native network-event route are covered.
+- Hidden/silent isolated E-drive matrix PASS 23/23: `artifacts/runtime-player-emote/runtime-player-emote-20260831-145638/summary.json`. One forged projection was rejected and all 22 native `/emote` commands returned performed plus exact icon-or-animation receipts.
+- Runtime source guards PASS: production types through ChatTextBox and calls `ChatBox.textBoxEnter`; direct `netDoEmote`, `performPlayerEmote`, `doEmote` and performed-state mutation are forbidden. Transparent read does not call mutating `GetEmoteFavorites()`.
+- Installed full snapshot schema is 168 required, 151 readable with provenance, 17 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0; freeze is `d145570835f06f8ffb14460ce1107950a4aed243939ed60ee08c583bc17a97e9`.
+- Reconciliation: 220 registered / 226 semantic / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 6 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2162/2162; Backend 155/155; full solution Release build 0 warnings / 0 errors. Emotes remain explicit player-command-only and outside training; Junimo Kart remains deferred and next active slice is `social.watch_movie`.
+
 2026-08-31 EVD-318 native Prize Ticket reward
 - Locked 1.6.15 source audit PASS: both ticket sources, Town pending-stat collection, ManorHouse PrizeMachine, deterministic current plus next-three reward projection, levels 0..21, repeating 9-level cycle, inventory-or-debris delivery, one-ticket consumption and `ticketPrizesClaimed +1` are covered.
 - Hidden/silent isolated E-drive matrix PASS 6/6: `artifacts/runtime-prize-ticket-reward/runtime-prize-ticket-reward-20260831-121025/summary.json`. Forged projection was rejected; pending collection, level 0, upgraded-house level 5, full-inventory level 21 debris and level 22 cycle all returned the expected verified receipt.

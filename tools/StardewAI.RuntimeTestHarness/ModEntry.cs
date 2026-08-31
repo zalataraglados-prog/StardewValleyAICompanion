@@ -139,6 +139,7 @@ public sealed partial class ModEntry : Mod
     private ActiveAdventureGuildReward? activeAdventureGuildReward;
     private ActivePrizeTicketReward? activePrizeTicketReward;
     private ActiveMasteryClaim? activeMasteryClaim;
+    private ActivePlayerEmote? activePlayerEmote;
 
     public override void Entry(IModHelper helper)
     {
@@ -560,6 +561,7 @@ public sealed partial class ModEntry : Mod
         TickAdventureGuildRewardClaimSafely();
         TickPrizeTicketRewardSafely();
         TickMasteryClaimSafely();
+        TickPlayerEmoteSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1044,6 +1046,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_mastery_claim")
             {
                 pending.Completion.SetResult(ExecuteSetupMasteryClaimFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_player_emote")
+            {
+                pending.Completion.SetResult(ExecuteSetupPlayerEmoteFixture(pending.Request));
                 return;
             }
 
@@ -1553,6 +1561,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.claim_mastery")
             {
                 StartMasteryClaim(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.perform_emote")
+            {
+                StartPlayerEmote(pending);
                 return;
             }
 
@@ -2266,6 +2280,7 @@ public sealed partial class ModEntry : Mod
             activeAdventureGuildReward = null;
             activePrizeTicketReward = null;
             activeMasteryClaim = null;
+            activePlayerEmote = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2553,7 +2568,8 @@ public sealed partial class ModEntry : Mod
             activeQuestCancellation is not null ||
             activeAdventureGuildReward is not null ||
             activePrizeTicketReward is not null ||
-            activeMasteryClaim is not null;
+            activeMasteryClaim is not null ||
+            activePlayerEmote is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

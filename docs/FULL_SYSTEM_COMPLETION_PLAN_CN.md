@@ -948,3 +948,13 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 连续隐藏静音矩阵 `runtime-mastery-claim-20260831-130708` 与 `runtime-mastery-claim-20260831-130839` 均为 6/6。当前冻结口径为 218 registered / 225 semantic / 7 catalogued blocked / 217 compiler-bound / 140 harness dispatch / 141 five-gate / 58 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2154/2154、Backend 155/155、Release 0 警告和 0 错误。
 
 下一主切片固定为 `social.emote`。必须先区分可自治的陪玩表达、只能由玩家指令触发的表达以及多人可见回执，再复用现有社交和输入基础设施。Junimo Kart 继续暂缓；正式全量训练仍等待剩余动作、Product Executor 和长线验收。
+
+## 2026-08-31 原生玩家表情闭环（EVD-320）
+
+`social.emote` 已替换待办语义项，但不进入自主策略训练。它和 `executor.perform_emote` 都固定为玩家指令专用：玩家必须给出一个实时目录中的准确 key、用途和显式确认；候选、DailyPlan 与 fresh 编译器只负责把该授权传给机械执行层。不得把陪玩系统自行决定的社交表达扩张到这条人工命令接口。
+
+透明桥实时枚举锁定版 22 项 `Farmer.EMOTES`，包括四项隐藏表情、显示元数据、图标、方向、逐帧动画、raw favorites、无副作用推导的 effective favorites、performed 状态、selector 可见性和 `CanEmote`/聊天/菜单/小游戏/网络前态。共享身份层同时验证锁定目录顺序与隐藏集合；被 MOD 改写或字段缺失时不再宣称 `complete_locked_base_1.6.15`。读取侧不得调用会补写默认收藏的 `GetEmoteFavorites()`。
+
+唯一生产执行链逐字符输入 `/emote <key>` 并调用原生 `ChatBox.textBoxEnter`；联网、performed 写入、图标和动画都留给原生 `ChatCommands.Emote` 与 `doEmoteEvent`。隐藏静音矩阵 `runtime-player-emote-20260831-145638` 已 23/23 通过。冻结口径为 220 registered / 226 semantic / 6 catalogued blocked / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 0 Product Executor；full snapshot 为 168/151/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2162/2162、Backend 155/155、Release 0 警告和 0 错误。
+
+下一主切片为 `social.watch_movie`，按“锁定反编译语义 -> 透明字段 -> 模型选择边界 -> 复用商店/社交/菜单机械层 -> 原生回执 -> 隐藏矩阵 -> 目录冻结”推进。Junimo Kart 保持已知暂缓项，不得用模拟结果冒充原生完美游玩。
