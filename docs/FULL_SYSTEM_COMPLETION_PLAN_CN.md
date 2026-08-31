@@ -938,3 +938,13 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 隐藏静音隔离矩阵 `runtime-prize-ticket-reward-20260831-121025` 已 6/6 通过，覆盖投影伪造、待发票券、普通/升级房屋、满背包和 9 级循环。完整快照同时验证了只读观察器不会为 Cooking、Forge、SpecialOrderBoard、建筑或 FarmHouse 主动加载缺失地图资产。当前冻结口径为 216 registered / 224 semantic / 8 catalogued blocked / 215 compiler-bound / 139 harness dispatch / 139 five-gate / 57 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2145/2145、Backend 155/155、Release 0 警告和 0 错误。
 
 下一主切片为 `skills.claim_mastery`，继续按同一动作打包流程闭合五种原版精通领取。Junimo Kart 保持暂缓。正式全量训练仍须等待剩余语义动作处理、Product Executor 集成和全量长线准入验收，不因本动作通过而提前开始。
+
+## 2026-08-31 五分支精通领取闭环（EVD-319）
+
+`skills.claim_mastery` 已替换待办语义项并进入高层训练白名单。这里的模型输出是战略选择，不是动作脚本：当五项基础技能均达到 10 且存在未花费精通等级时，小模型从尚未领取的耕作、钓鱼、采集、采矿、战斗分支中选择一个。透明投影发布 MasteryExp、当前等级、已花费点、五个 `mastery_N`、饰品槽、精确碑牌 Action、配方已知状态、直接奖励库存/debris 基线和独立指纹。
+
+唯一执行链复用跨图路由与共享 BFS，到达所选碑牌后只调用原生 `GameLocation.checkAction`，确认 `MasteryTrackerMenu` 后点击其公开 `mainButton`。回执要求目标碑牌增加一次、其他四块不变、`masteryLevelsSpent` 增加一次、MasteryExp/等级不变、全部配方存在、直接奖励在库存或 debris 中守恒，并核对战斗饰品槽及第五碑牌完成态。生产代码禁止直接修改这些结果。
+
+连续隐藏静音矩阵 `runtime-mastery-claim-20260831-130708` 与 `runtime-mastery-claim-20260831-130839` 均为 6/6。当前冻结口径为 218 registered / 225 semantic / 7 catalogued blocked / 217 compiler-bound / 140 harness dispatch / 141 five-gate / 58 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2154/2154、Backend 155/155、Release 0 警告和 0 错误。
+
+下一主切片固定为 `social.emote`。必须先区分可自治的陪玩表达、只能由玩家指令触发的表达以及多人可见回执，再复用现有社交和输入基础设施。Junimo Kart 继续暂缓；正式全量训练仍等待剩余动作、Product Executor 和长线验收。

@@ -189,7 +189,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "mining.activate_calico_statue", "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "processing.crack_geode",
                 "rewards.claim_adventure_guild_reward", "rewards.claim_pot_of_gold", "rewards.claim_prize_ticket", "rewards.claim_statue_blessing",
-                "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                "skills.choose_profession", "skills.claim_mastery", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -263,6 +263,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "rewards.claim_prize_ticket" => "vanilla_complete_two_branch_Prize_Ticket_chain_exact_pending_special_order_ticket_and_deterministic_current_four_reward_preview_rolling_route_native_collection_and_single_redemption",
                 "rewards.claim_statue_blessing" => "vanilla_farming_mastery_exact_daily_rng_rain_festival_denominator_all_seven_effect_projections_native_object_action_and_day_buff_receipt",
                 "skills.choose_profession" => "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
+                "skills.claim_mastery" => "vanilla_complete_five_branch_mastery_level_spend_exact_plaque_endpoints_rewards_and_strategic_skill_choice_projection",
                 "skills.read_books" => "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",

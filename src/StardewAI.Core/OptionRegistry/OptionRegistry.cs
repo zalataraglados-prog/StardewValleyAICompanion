@@ -439,6 +439,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "small model emits one parameterless positive-reward objective", "compiler freezes the current prize level and exact native reward identity", "shared route and BFS execute one fresh native collection or redemption stage", "rolling continuation ends only after one exact reward settles to inventory or debris" },
                 new[] { "block_no_held_or_pending_ticket", "block_pending_ticket_collection_without_inventory_capacity", "block_missing_Town_or_ManorHouse_native_action", "block_prize_level_preview_endpoint_or_count_drift", "block_direct_ticket_stat_inventory_or_reward_mutation" }));
 
+            Register(Option("skills.claim_mastery", "skills", "Choose and claim one currently available mastery plaque through its native menu",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.mastery_claim", "player.inventory", "player.location_id", "player.tile_x", "player.tile_y", "menus.active_menu", "locations.route_graph", "locations.route_connectors", "locations.collision_grid" },
+                new[] { "small model selects exactly one of the currently unclaimed mastery branches", "compiler freezes exact skill, plaque endpoint, mastery counters and rewards", "shared route and BFS reach MasteryCave", "native MasteryTrackerMenu main button settles all rewards and stats" },
+                new[] { "block_without_all_five_base_skills_level_ten_or_unspent_mastery_level", "block_claimed_or_forged_skill_choice", "block_projection_option_endpoint_or_counter_drift", "block_native_menu_reward_or_stat_receipt_mismatch", "block_direct_mastery_recipe_inventory_trinket_or_finale_mutation" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -844,6 +852,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.prize_ticket_reward", "player.inventory", "player.inventory_capacity", "player.location_id", "player.tile_x", "player.tile_y", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact native action tile", "Town checkAction collects one pending physical ticket or ManorHouse checkAction opens PrizeTicketMenu", "native menu button settles one exact reward to inventory or debris" },
                 new[] { "block_stage_projection_preview_or_endpoint_drift", "block_pending_ticket_capacity_drift", "block_native_menu_or_receipt_mismatch", "block_direct_ticket_stat_inventory_or_reward_mutation" }));
+
+            Register(Option("executor.claim_mastery", "skills", "Execute one freshly rebound native mastery plaque claim",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.mastery_claim", "player.inventory", "player.location_id", "player.tile_x", "player.tile_y", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact selected plaque stand", "MasteryCave checkAction opens the exact MasteryTrackerMenu", "native main button grants exact recipes, direct items or debris, mastery stat and optional trinket slot" },
+                new[] { "block_projection_option_endpoint_or_counter_drift", "block_native_menu_or_claim_button_mismatch", "block_reward_mastery_stat_spent_level_trinket_or_finale_receipt_mismatch", "block_direct_mastery_recipe_inventory_trinket_or_finale_mutation" }));
 
             Register(Option("executor.cancel_quest", "quest", "Select and cancel one exact eligible ordinary quest through native QuestLog clicks",
                 OptionBehaviorCategories.Mechanical,

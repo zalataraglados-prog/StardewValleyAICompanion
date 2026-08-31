@@ -51,6 +51,19 @@ public static class QueueReplanFilter
                 ["expected_reward_fingerprint"] = prizeRewardFingerprint
             };
         }
+        var masterySkillId = ReadParameter(queueItem, "continuation.mastery_skill_id");
+        var masteryOptionFingerprint = ReadParameter(queueItem, "continuation.mastery_option_fingerprint");
+        if (string.Equals(optionId, "skills.claim_mastery", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(masterySkillId) && !string.IsNullOrWhiteSpace(masteryOptionFingerprint))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "mastery_claim",
+                ["option_id"] = optionId,
+                ["mastery_skill_id"] = masterySkillId,
+                ["mastery_option_fingerprint"] = masteryOptionFingerprint
+            };
+        }
         var fieldOfficeSlot = ReadParameter(queueItem, "continuation.inventory_slot_index");
         var fieldOfficeItem = ReadParameter(queueItem, "continuation.qualified_item_id");
         var fieldOfficePiece = ReadParameter(queueItem, "continuation.target_piece_index");
@@ -545,6 +558,12 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "prize_ticket_stage"), "redeem_prize", StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "prize_ticket_prize_level"), ReadString(continuation, "expected_prize_level"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "prize_ticket_current_reward_fingerprint"), ReadString(continuation, "expected_reward_fingerprint"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "mastery_claim", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.claim_mastery", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "mastery_skill_id"), ReadString(continuation, "mastery_skill_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "mastery_option_fingerprint"), ReadString(continuation, "mastery_option_fingerprint"), StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "field_office_donation", StringComparison.Ordinal))
         {

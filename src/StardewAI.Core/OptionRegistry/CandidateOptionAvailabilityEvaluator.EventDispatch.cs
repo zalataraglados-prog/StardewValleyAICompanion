@@ -44,6 +44,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["housing.renovate"] = HomeRenovationCandidates,
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["skills.choose_profession"] = (snapshot, _) => ProfessionChoiceCandidates(snapshot),
+                ["skills.claim_mastery"] = MasteryClaimCandidates,
                 ["mail.process_letter"] = (snapshot, _) => MailProcessingCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),
                 ["executor.plant_seed"] = (snapshot, _) => PlantSeedCandidates(snapshot),

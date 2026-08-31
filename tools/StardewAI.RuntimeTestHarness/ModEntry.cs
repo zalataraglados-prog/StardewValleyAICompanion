@@ -138,6 +138,7 @@ public sealed partial class ModEntry : Mod
     private ActiveQuestCancellation? activeQuestCancellation;
     private ActiveAdventureGuildReward? activeAdventureGuildReward;
     private ActivePrizeTicketReward? activePrizeTicketReward;
+    private ActiveMasteryClaim? activeMasteryClaim;
 
     public override void Entry(IModHelper helper)
     {
@@ -558,6 +559,7 @@ public sealed partial class ModEntry : Mod
         TickQuestCancellationSafely();
         TickAdventureGuildRewardClaimSafely();
         TickPrizeTicketRewardSafely();
+        TickMasteryClaimSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1036,6 +1038,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_prize_ticket_reward")
             {
                 pending.Completion.SetResult(ExecuteSetupPrizeTicketRewardFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_mastery_claim")
+            {
+                pending.Completion.SetResult(ExecuteSetupMasteryClaimFixture(pending.Request));
                 return;
             }
 
@@ -1539,6 +1547,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.claim_prize_ticket")
             {
                 StartPrizeTicketReward(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_mastery")
+            {
+                StartMasteryClaim(pending);
                 return;
             }
 
@@ -2251,6 +2265,7 @@ public sealed partial class ModEntry : Mod
             activeQuestCancellation = null;
             activeAdventureGuildReward = null;
             activePrizeTicketReward = null;
+            activeMasteryClaim = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2537,7 +2552,8 @@ public sealed partial class ModEntry : Mod
             activeQuestRewardClaim is not null ||
             activeQuestCancellation is not null ||
             activeAdventureGuildReward is not null ||
-            activePrizeTicketReward is not null;
+            activePrizeTicketReward is not null ||
+            activeMasteryClaim is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

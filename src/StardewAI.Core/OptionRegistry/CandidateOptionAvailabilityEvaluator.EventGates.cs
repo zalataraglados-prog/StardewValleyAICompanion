@@ -359,6 +359,13 @@ namespace StardewAI.Core.OptionRegistry
                     "no_prize_ticket_reward_candidate",
                     "no_available_prize_ticket_reward_candidate");
             }
+            if (optionId == "skills.claim_mastery")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_mastery_claim_candidate",
+                    "no_available_mastery_claim_candidate");
+            }
             if (optionId == "mail.process_letter")
             {
                 return EventCandidateAvailabilityReasons(

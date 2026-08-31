@@ -232,6 +232,8 @@ namespace StardewAI.Core.Training
                 case "executor.claim_adventure_guild_reward":
                 case "rewards.claim_prize_ticket":
                 case "executor.claim_prize_ticket":
+                case "skills.claim_mastery":
+                case "executor.claim_mastery":
                 case "rewards.claim_pot_of_gold":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":

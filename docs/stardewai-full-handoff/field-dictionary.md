@@ -10,7 +10,19 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
-Current installed full-snapshot schema checkpoint: **166 required / 149 readable with provenance / 17 contextual / 0 blocking** (EVD-318).
+Current installed full-snapshot schema checkpoint: **166 required / 149 readable with provenance / 17 contextual / 0 blocking** (EVD-319).
+
+## Mastery Claim Transparency
+
+| field | source | consumer | status |
+|---|---|---|---|
+| `player.mastery_claim.projection_fingerprint` | Live five raw skill levels, MasteryExp, current mastery level, spent levels, five mastery stats, plaques and native contract | candidate identity, fresh compiler binding and runtime drift guard | covered_for_read / covered_for_gate / native_runtime_verified |
+| `skills[]` / `claimable_options[]` | `StatKeys.Mastery(0..4)`, locked thresholds and exact MasteryCave Action tiles | small-model selection among only currently legal strategic branches | covered_for_read / all_five_branches_complete / training_admitted |
+| `recipe_rewards[]` | Locked native `MasteryTrackerMenu` reward descriptors plus live `craftingRecipes` membership | option identity and exact post-claim receipt | covered_for_read / covered_for_gate / native_runtime_verified |
+| `direct_rewards[]` | Locked native item IDs, live registry identity, inventory count and MasteryCave debris count | selected-option freshness and inventory-or-debris conservation | covered_for_read / full_inventory_debris_verified / native_runtime_verified |
+| execution output | Native target mastery stat, spent level, recipes, direct rewards, combat trinket slot and all-plaque state | verifier and strategy/executor feedback | native_input_only / exact_receipt_verified / direct_state_mutation_forbidden |
+
+`skills.claim_mastery` is training-admitted because branch order is a real strategic choice. The model emits one skill choice; the compiler owns route, plaque, stand and menu mechanics. One claim is allowed per fresh snapshot.
 
 ## Prize Ticket Reward Transparency
 

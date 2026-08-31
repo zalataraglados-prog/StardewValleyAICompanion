@@ -1722,6 +1722,9 @@ static partial class Program
         ApplyPrizeTicketRewardRequestFields(
             executionRequest,
             item);
+        ApplyMasteryClaimRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

@@ -86,6 +86,7 @@ namespace StardewAI.Core.Execution
                 "cancel_quest" => "executor.cancel_quest",
                 "claim_adventure_guild_reward" => "executor.claim_adventure_guild_reward",
                 "claim_prize_ticket" => "executor.claim_prize_ticket",
+                "claim_mastery" => "executor.claim_mastery",
                 "sleep" => "executor.sleep",
                 "sleep_in_tent" => "recovery.sleep_in_tent",
                 "escape_object_trap" => "recovery.escape_object_trap",

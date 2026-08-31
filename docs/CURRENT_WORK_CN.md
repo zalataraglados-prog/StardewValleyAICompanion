@@ -764,3 +764,13 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 当前 full 快照为 166 required / 149 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 216 registered / 224 semantic / 215 compiler-bound / 139 harness dispatch / 139 five-gate / 57 training allowlist / 8 catalogued blocked / 0 Product Executor。
 - 最终回归为 Core 2145/2145、Backend 155/155、Release 0 warnings / 0 errors。原生分母保持 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0；冻结指纹为 `7327c9af60be86fc79d7aff82a33af4ad09ca0aa58398d2bebed1affa5ae6f67`。
 - 下一主切片是 `skills.claim_mastery`。先锁定五种精通领取资格、菜单入口、星级/经验结算、奖励与一次性标志，再复用现有路线和菜单输入链。`minigame.play_junimo_kart` 继续暂缓；不得把 8 个显式 blocked、0 Product Executor 或尚未开始的正式全量训练描述为完成。
+
+## 2026-08-31 当前权威检查点：EVD-319
+
+- `skills.claim_mastery` 已完成透明读取、五分支战略候选、DailyPlan、跨图 fresh 续接、类型化传输、共享 BFS、原生 `MasteryCave.checkAction`、原生 `MasteryTrackerMenu.mainButton` 和严格回执。小模型只在当前可领取的技能中选一个；路线、碑牌、站位、奖励和菜单操作全部由编译器与执行器展开。
+- 锁定版反编译确认入口要求五项基础技能均达到 10；MasteryExp 阈值依次为 10000/25000/45000/70000/100000。五块碑牌分别对应耕作、钓鱼、采集、采矿和战斗，领取会原生增加所选 `mastery_N` 与 `masteryLevelsSpent`，授予精确配方/直接物品，满背包时直接物品落为 debris；战斗额外设置一个饰品槽，第五块触发完成态。
+- 隐藏静音 E 盘矩阵最终连续两轮 6/6：`runtime-mastery-claim-20260831-130708`、`runtime-mastery-claim-20260831-130839`。覆盖伪造投影、耕作直接物品、钓鱼满背包 debris、采集双配方、采矿双配方、战斗饰品槽和第五碑牌。生产执行器不直接写精通统计、配方、背包、饰品槽或终局状态。
+- 首轮 5/6 暴露了无关掉落物数量进入全局指纹导致的误阻塞。修正后全局指纹只锁技能/碑牌/点数结构，所选分支的奖励基线继续由独立 option 指纹严格锁定；这不是放宽状态校验。
+- 当前 full 快照为 166 required / 149 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 218 registered / 225 semantic / 217 compiler-bound / 140 harness dispatch / 141 five-gate / 58 training allowlist / 7 catalogued blocked / 0 Product Executor。
+- 最终回归为 Core 2154/2154、Backend 155/155、Release 0 warnings / 0 errors。原生分母保持 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0；冻结指纹为 `c5ba5f114d07060305187ab7266e26ae13c8b24fb2ed9177d5f06f86b4fbe1f4`。
+- 下一主切片是 `social.emote`。先锁定原生表情候选、触发权限、多人可见副作用和玩家指令/自治边界，再复用现有社交定位及输入链。`minigame.play_junimo_kart` 继续暂缓；正式全量训练仍未开始。
