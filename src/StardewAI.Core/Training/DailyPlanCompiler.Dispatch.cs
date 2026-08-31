@@ -50,6 +50,7 @@ namespace StardewAI.Core.Training
                     "watch_movie_invite_guest", "watch_movie_enter", "watch_movie_wait_guest",
                     "watch_movie_concession", "watch_movie_screening"
                 },
+                ["story.advance_event"] = new[] { "advance_story_event_automatic", "advance_story_event_choice" },
                 ["quest.advance"] = QuestActionCoverageCatalog.BoundCandidateKinds.ToArray(),
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.process_machines"] = new[]
@@ -358,6 +359,12 @@ namespace StardewAI.Core.Training
                 candidate.Kind == "watch_movie_screening")
             {
                 return MovieTheaterSteps(candidate);
+            }
+
+            if (candidate.Kind == "advance_story_event_automatic" ||
+                candidate.Kind == "advance_story_event_choice")
+            {
+                return StoryEventSteps(candidate);
             }
 
             if (candidate.Kind == "apply_fertilizer_tile")

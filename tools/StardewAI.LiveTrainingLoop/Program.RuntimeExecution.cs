@@ -1734,6 +1734,9 @@ static partial class Program
         ApplyMovieTheaterRequestFields(
             executionRequest,
             item);
+        ApplyStoryEventRequestFields(
+            executionRequest,
+            item);
         ApplyDartsGameRequestFields(
             executionRequest,
             item);

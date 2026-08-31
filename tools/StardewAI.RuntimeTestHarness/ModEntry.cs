@@ -141,6 +141,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMasteryClaim? activeMasteryClaim;
     private ActivePlayerEmote? activePlayerEmote;
     private ActiveMovieTheater? activeMovieTheater;
+    private ActiveStoryEvent? activeStoryEvent;
 
     public override void Entry(IModHelper helper)
     {
@@ -564,6 +565,7 @@ public sealed partial class ModEntry : Mod
         TickMasteryClaimSafely();
         TickPlayerEmoteSafely();
         TickMovieTheaterSafely();
+        TickStoryEventSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1117,6 +1119,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_story_event")
+            {
+                pending.Completion.SetResult(ExecuteSetupStoryEventFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_darts_game")
             {
                 pending.Completion.SetResult(ExecuteSetupDartsGameFixture(pending.Request));
@@ -1629,6 +1637,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.watch_movie")
             {
                 StartMovieTheater(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.advance_story_event")
+            {
+                StartStoryEvent(pending);
                 return;
             }
 
@@ -2296,6 +2310,7 @@ public sealed partial class ModEntry : Mod
             activeMasteryClaim = null;
             activePlayerEmote = null;
             activeMovieTheater = null;
+            activeStoryEvent = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2585,7 +2600,8 @@ public sealed partial class ModEntry : Mod
             activePrizeTicketReward is not null ||
             activeMasteryClaim is not null ||
             activePlayerEmote is not null ||
-            activeMovieTheater is not null;
+            activeMovieTheater is not null ||
+            activeStoryEvent is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

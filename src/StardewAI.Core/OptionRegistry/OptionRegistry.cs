@@ -399,6 +399,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one current movie, optional invited guest and optional offered concession remain bound across rolling route and ticket-purchase stages", "native MovieTheaterScreening completes and records the current week", "native movie and concession friendship deltas are observed" },
                 new[] { "block_closed_festival_or_already_watched_week", "block_unverified_guest_ticket_shop_endpoint_or_route", "block_projection_drift", "block_skipEvent_or_direct_money_inventory_invitation_mutex_movie_week_or_friendship_mutation" }));
 
+            Register(Option("story.advance_event", "story", "Advance one active native story event to its next fresh decision boundary or completion",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.StrategyValue,
+                new[] { "player.story_event", "player.location_id", "menus.active_menu" },
+                new[] { "one exact live dialogue response may be selected by the model", "all non-decision commands advance through Event.Update and native DialogueBox input", "execution stops for a fresh snapshot at event completion, a new choice, a story minigame, or an exact player-control sequence" },
+                new[] { "block_festival_or_inactive_event", "block_event_command_question_or_response_drift", "block_story_minigame_or_unhandled_player_control_boundary", "block_skipEvent_direct_command_index_event_seen_reward_or_world_state_mutation" }));
+
             Register(Option("quest.advance", "quest", "Advance one transparent quest objective stage",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -1234,6 +1242,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.inventory", "player.movie_theater", "npcs.friendships", "locations.collision_grid", "menus.active_menu" },
                 new[] { "native ticket invitation, Theater_Entrance, concession ShopMenu, or Theater_Doors stage executes from an exact live endpoint", "the terminal stage runs MovieTheaterScreening without skip and verifies week plus friendship receipts" },
                 new[] { "block_wrong_stage_location_endpoint_or_projection", "block_unverified_ticket_concession_invitation_or_mutex", "block_unverified_native_event_completion", "block_direct_money_inventory_invitation_mutex_movie_week_or_friendship_mutation" }));
+
+            Register(Option("executor.advance_story_event", "story", "Drive one exact live Event through native update and dialogue input until its next fresh boundary",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.story_event", "player.location_id", "menus.active_menu" },
+                new[] { "native Event.Update owns every event command side effect", "native DialogueBox input advances text or one compiler-bound response", "event end or the next decision/minigame/player-control boundary is verified" },
+                new[] { "block_event_identity_command_or_dialogue_projection_drift", "block_festival_minigame_or_unhandled_player_control", "block_unverified_event_progress", "block_skipEvent_direct_event_state_seen_reward_or_world_state_mutation" }));
 
             Register(Option("executor.perform_emote", "social", "Execute and verify one explicitly requested native player emote",
                 OptionBehaviorCategories.Mechanical,

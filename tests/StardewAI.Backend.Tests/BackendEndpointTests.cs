@@ -848,7 +848,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(59, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(60, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "processing.crack_geode");
@@ -864,6 +864,9 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "social.watch_movie");
+            Assert.Contains(
+                trainRoot.GetProperty("training_allowlist").EnumerateArray(),
+                item => item.GetString() == "story.advance_event");
             Assert.DoesNotContain(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "buildings.paint");

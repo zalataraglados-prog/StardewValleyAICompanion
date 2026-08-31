@@ -65,6 +65,7 @@ public static class OptionImplementationCatalog
         "executor.send_multiplayer_chat",
         "executor.perform_emote",
         "executor.watch_movie",
+        "executor.advance_story_event",
         "executor.choose_bobber_style",
         "executor.choose_jukebox_track",
         "executor.customize_player",
@@ -316,6 +317,8 @@ public static class OptionImplementationCatalog
             return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.PlayerEmote";
         if (optionId == "social.watch_movie")
             return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.MovieTheater";
+        if (optionId == "story.advance_event")
+            return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.StoryEvent";
         if (optionId.StartsWith("social.", StringComparison.Ordinal))
             return "StardewAI.Core.OptionRegistry.SocialCandidateBuilder";
         return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator";

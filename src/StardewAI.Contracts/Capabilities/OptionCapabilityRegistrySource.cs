@@ -279,7 +279,7 @@ namespace StardewAI.Contracts.Capabilities
                 });
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_slots", "executor.play_slots", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king", "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "social.emote", "executor.perform_emote", "social.watch_movie", "executor.watch_movie", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode",
+            "minigame.play_calico_jack", "executor.play_calico_jack", "minigame.play_slots", "executor.play_slots", "minigame.play_crane_game", "executor.play_crane_game", "minigame.play_darts", "executor.play_darts", "minigame.play_prairie_king", "executor.play_prairie_king", "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "social.emote", "executor.perform_emote", "social.watch_movie", "executor.watch_movie", "story.advance_event", "executor.advance_story_event", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode",
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "quest.cancel", "rewards.claim_adventure_guild_reward", "rewards.claim_prize_ticket", "skills.claim_mastery", "mail.process_letter", "mining.use_elevator",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "housing.advance_farmhouse", "housing.renovate", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
@@ -323,7 +323,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> HarnessDispatchIds = Set(
             "executor.play_calico_jack", "executor.play_slots", "executor.play_crane_game", "executor.play_darts", "executor.play_prairie_king",
             "executor.change_building_skin",
-            "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.cancel_quest", "executor.claim_adventure_guild_reward", "executor.claim_prize_ticket", "executor.claim_mastery", "executor.perform_emote", "executor.watch_movie",
+            "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.cancel_quest", "executor.claim_adventure_guild_reward", "executor.claim_prize_ticket", "executor.claim_mastery", "executor.perform_emote", "executor.watch_movie", "executor.advance_story_event",
             "executor.move_to_tile", "executor.traverse_connector",
             "executor.face_direction", "executor.interact", "executor.buy_shop_item",
             "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "recovery.sleep_in_tent",
@@ -359,7 +359,7 @@ namespace StardewAI.Contracts.Capabilities
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "quest.cancel", "rewards.claim_adventure_guild_reward", "rewards.claim_prize_ticket", "skills.claim_mastery", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse", "housing.renovate",
-            "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "mining.activate_calico_statue", "multiplayer.manage_wallet", "multiplayer.send_chat", "social.emote", "social.watch_movie", "player.choose_bobber", "player.choose_jukebox_track", "player.customize", "processing.crack_geode", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing",
+            "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "mining.activate_calico_statue", "multiplayer.manage_wallet", "multiplayer.send_chat", "social.emote", "social.watch_movie", "story.advance_event", "player.choose_bobber", "player.choose_jukebox_track", "player.customize", "processing.crack_geode", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.use_elevator", "mining.obtain_skull_key",
@@ -368,7 +368,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
-            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets", "island.field_office_survey", "festival.manage_grange_display", "festival.play_strength_game", "minigame.play_darts", "minigame.play_prairie_king", "social.watch_movie",
+            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets", "island.field_office_survey", "festival.manage_grange_display", "festival.play_strength_game", "minigame.play_darts", "minigame.play_prairie_king", "social.watch_movie", "story.advance_event",
             "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.clear_green_rain_bushes",
@@ -426,7 +426,7 @@ namespace StardewAI.Contracts.Capabilities
             "buildings.construct", "farm.care_for_pets", "museum.donate_items", "island.field_office_donate", "island.field_office_survey", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "housing.renovate", "skills.read_books", "skills.choose_profession", "economy.buy_supplies",
-            "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc", "social.advance_partnership", "social.emote", "social.watch_movie", "executor.watch_movie",
+            "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc", "social.advance_partnership", "social.emote", "social.watch_movie", "executor.watch_movie", "story.advance_event", "executor.advance_story_event",
             "quest.advance", "strategy.grandpa_progress", "exploration.visit_location",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
@@ -732,6 +732,12 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.watch_movie"] = VerifiedEvidence(
                         "vanilla_native_NPC_ticket_invite_Town_Theater_Entrance_Concessions_ShopMenu_Theater_Doors_mutex_ready_MovieTheaterScreening_requestMovieEnd_week_friendship_and_lobby_cleanup_receipt",
                         "EVD-321"),
+                    ["story.advance_event"] = VerifiedEvidence(
+                        "vanilla_complete_live_ordinary_Event_automatic_message_and_projected_dialogue_response_native_Update_and_DialogueBox_input_until_event_end_or_fresh_minigame_player_control_or_decision_boundary_without_skip_or_direct_state_mutation",
+                        "EVD-322"),
+                    ["executor.advance_story_event"] = VerifiedEvidence(
+                        "vanilla_native_live_ordinary_Event_automatic_message_and_exact_projected_dialogue_response_input_until_event_end_or_fresh_minigame_player_control_or_decision_boundary_with_event_command_and_seen_receipt_without_skip_or_direct_state_mutation",
+                        "EVD-322"),
                     ["minigame.play_crane_game"] = VerifiedEvidence(
                         "vanilla_MovieTheater_machine_occupancy_500g_three_attempt_live_prize_physics_native_directional_input_and_ItemGrabMenu_reward_conservation_player_command_only",
                         "EVD-305"),
@@ -999,6 +1005,8 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("watch_movie_wait_guest"),
                 SupportedCandidate("watch_movie_concession"),
                 SupportedCandidate("watch_movie_screening"),
+                SupportedCandidate("advance_story_event_automatic"),
+                SupportedCandidate("advance_story_event_choice"),
                 SupportedCandidate("play_darts"),
                 SupportedCandidate("play_prairie_king"),
                 SupportedCandidate("harvest_bush"), SupportedCandidate("harvest_fruit_tree"), SupportedCandidate("harvest_tree_product"), SupportedCandidate("rummage_garbage"), SupportedCandidate("harvest_crop_tile"),
