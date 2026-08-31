@@ -1,5 +1,21 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-01 EVD-327 Product bootstrap 与隔离存档绑定
+
+E 盘隔离副本 `StardewAIDebug_16564609768130219756` 已完成隐藏静音 Product bootstrap 校准。运行
+`product-bootstrap-20260901-013441` 形成 3 条 `policy_decision_trajectory.v2 / product_executor.v1`
+真实轨迹，其中 2 条包含至少两个准入候选；首两组分别保留 107 与 143 个可训练候选。数据集构建为
+3/3 接收、0 拒绝、0 重复，并形成 248 个训练比较对。初始 checkpoint 为
+`E:\StardewAITraining\checkpoints\structured-policy-bootstrap-20260901.json`，模型类型是
+`return_weighted_pairwise_linear_ranker.v1`。当前三条数据全部位于 train 分区，validation/test 均为 0，
+因此该 checkpoint 只作为正式循环冷启动，不构成泛化评测或全量训练完成证据。
+
+正式 launcher 现把 `save_slot` 冻结进 `training_run_manifest.v2`，并在 prepare 阶段验证槽位名、
+隔离根和主存档文件。游戏进程显式接收 `STARDEWAI_TEST_SAVES`、`STARDEWAI_TEST_SLOT` 与
+`STARDEWAI_TEST_AUTO_LOAD=true`；缺失或越界槽位失败关闭，不能再以停在主菜单的进程冒充运行中的训练。
+下一准入门是把 bootstrap 轨迹按哈希种入正式训练根，prepare/launch 同一份 manifest，并由新存档完整运行
+至少一个真实游戏日，使 Product 轨迹、正式数据 manifest 和 checkpoint 哈希发生受控更新。
+
 ## 2026-09-01 EVD-326 正式训练编排与模型更新准入
 
 正式版本绑定已固定为 `policy_decision_trajectory.v2 / policy_features.v2 / action_queue.v1 / product_executor.v1`。轨迹写入端会按实际执行入口区分 Product 与 RuntimeTestHarness；清洗层允许保留 Harness 校准数据，但正式结构化训练器和 checkpoint store 只接受 Product 数据，且一个 manifest 只能包含一个不可混合的版本集。
@@ -8,7 +24,9 @@
 
 正式循环已经改为真实结构化更新：Product applied/verified/fresh 轨迹落盘后，重建 policy dataset，训练结构化 ranker，并原子刷新 checkpoint 和 run manifest hash；旧 baseline 训练只保留非正式兼容路径。正式模式缺 Product、feedback、prepared manifest 或结构化 checkpoint 时启动即失败。
 
-当前仍处于“可启动控制面完成、真实初始数据未生成”状态。E 盘尚无独立新存档的 Product v2 数据与初始 checkpoint；必须先进行明确标记的 `--skip-training` Product bootstrap 校准采集，再离线构建首个 checkpoint。只有正式模式完整运行一个真实游戏日且 checkpoint 随数据更新，才可把状态改为“全量训练已开始”。
+EVD-327 已完成 Product bootstrap 与初始 checkpoint，控制面不再受“无真实初始数据”阻塞。当前仍未满足
+“全量训练已开始”：必须由正式 prepared manifest 拉起 Product Executor、SMAPI 和 LiveTrainingLoop，
+完整运行一个真实游戏日，并证明 checkpoint 随新增 Product 数据更新。bootstrap 校准运行本身不得计入正式训练时长。
 
 ## 2026-08-31 Product Executor 准入（EVD-325）
 

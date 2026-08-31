@@ -1156,11 +1156,59 @@ namespace StardewAI.Backend.Tests
                 item.GetString() == "formal_policy_dataset_manifest_not_found");
             Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
                 item.GetString() == "formal_structured_policy_checkpoint_not_found");
+            Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "formal_save_slot_required");
             var manifest = result.GetProperty("manifest");
             Assert.Equal("training_run_manifest.v2", manifest.GetProperty("schema_version").GetString());
             Assert.Equal("product_executor.v1", manifest.GetProperty("executor_version").GetString());
             Assert.True(manifest.GetProperty("structured_policy_required").GetBoolean());
             Assert.True(Directory.Exists(manifest.GetProperty("product_receipt_root").GetString()));
+        }
+
+        [Fact]
+        public async Task TrainingSessionPrepareFormalProductBindsIsolatedSaveForAutoLoad()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            var saves = Path.Combine(root, "saves");
+            const string slot = "TrainingFarm_123";
+            Directory.CreateDirectory(runtime);
+            Directory.CreateDirectory(Path.Combine(saves, slot));
+            File.WriteAllText(smapi, string.Empty);
+            File.WriteAllText(Path.Combine(saves, slot, slot), "save");
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "formal_product_training",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                allow_game_launch = true,
+                sound_enabled = false,
+                window_style = "hidden",
+                save_isolation_path = saves,
+                save_slot = slot
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var result = json.RootElement;
+            Assert.DoesNotContain(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() is "formal_save_slot_required" or "formal_save_slot_invalid" or "formal_save_slot_not_found");
+            var manifest = result.GetProperty("manifest");
+            Assert.Equal(slot, manifest.GetProperty("save_slot").GetString());
+            var overrides = manifest.GetProperty("environment_overrides").EnumerateArray().ToArray();
+            Assert.Contains(overrides, item =>
+                item.GetProperty("name").GetString() == "STARDEWAI_TEST_SAVES" &&
+                item.GetProperty("value").GetString() == saves);
+            Assert.Contains(overrides, item =>
+                item.GetProperty("name").GetString() == "STARDEWAI_TEST_SLOT" &&
+                item.GetProperty("value").GetString() == slot);
+            Assert.Contains(overrides, item =>
+                item.GetProperty("name").GetString() == "STARDEWAI_TEST_AUTO_LOAD" &&
+                item.GetProperty("value").GetString() == "true");
         }
 
         [Fact]

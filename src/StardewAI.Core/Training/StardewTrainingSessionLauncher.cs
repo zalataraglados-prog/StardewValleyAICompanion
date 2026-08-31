@@ -192,6 +192,7 @@ namespace StardewAI.Core.Training
                 GameExecutablePath = gameExecutablePath,
                 GameWorkingDirectory = gameWorkingDirectory,
                 SaveIsolationPath = FullPathOrEmpty(request.SaveIsolationPath),
+                SaveSlot = request.SaveSlot?.Trim() ?? string.Empty,
                 BridgeUrl = request.BridgeUrl,
                 BackendUrl = request.BackendUrl,
                 GameLaunch = request.AllowGameLaunch ? "requested" : "disabled",
@@ -260,10 +261,39 @@ namespace StardewAI.Core.Training
 
             if (formalTraining)
             {
+                ValidateFormalSaveSlot(manifest, reasons);
+            }
+
+            if (formalTraining)
+            {
                 ValidateFormalBoundary(manifest, reasons);
             }
 
             return reasons;
+        }
+
+        private static void ValidateFormalSaveSlot(TrainingRunManifest manifest, List<string> reasons)
+        {
+            if (string.IsNullOrWhiteSpace(manifest.SaveSlot))
+            {
+                reasons.Add("formal_save_slot_required");
+                return;
+            }
+
+            if (manifest.SaveSlot.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0 ||
+                string.Equals(manifest.SaveSlot, ".", StringComparison.Ordinal) ||
+                string.Equals(manifest.SaveSlot, "..", StringComparison.Ordinal))
+            {
+                reasons.Add("formal_save_slot_invalid");
+                return;
+            }
+
+            var slotDirectory = Path.Combine(manifest.SaveIsolationPath, manifest.SaveSlot);
+            var saveFile = Path.Combine(slotDirectory, manifest.SaveSlot);
+            if (!IsSameOrChildPath(manifest.SaveIsolationPath, slotDirectory) || !File.Exists(saveFile))
+            {
+                reasons.Add("formal_save_slot_not_found");
+            }
         }
 
         private static void ValidateFormalBoundary(TrainingRunManifest manifest, List<string> reasons)
@@ -490,6 +520,9 @@ namespace StardewAI.Core.Training
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_BACKEND_URL", Value = request.BackendUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_BRIDGE_URL", Value = request.BridgeUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_SAVE_ISOLATION_PATH", Value = request.SaveIsolationPath ?? string.Empty },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_TEST_SAVES", Value = request.SaveIsolationPath ?? string.Empty },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_TEST_SLOT", Value = request.SaveSlot?.Trim() ?? string.Empty },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_TEST_AUTO_LOAD", Value = string.IsNullOrWhiteSpace(request.SaveSlot) ? "false" : "true" },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_PRODUCT_EXECUTOR_URL", Value = request.ProductExecutorUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_NATIVE_EXECUTOR_URL", Value = request.NativeExecutorUrl },
                 new TrainingEnvironmentOverride { Name = "SDL_AUDIODRIVER", Value = "dummy" },

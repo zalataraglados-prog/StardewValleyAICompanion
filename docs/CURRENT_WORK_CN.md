@@ -748,6 +748,14 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 不因独立架构重构暂停动作主线；
 - 不开始短训或正式训练；
 - 不启动游戏，除非当前动作已完成静态和单元测试且明确进入运行验收。
+
+## 2026-09-01 当前权威检查点：EVD-327
+
+- Product bootstrap 隐藏静音运行 `product-bootstrap-20260901-013441` 已在 E 盘 Spring 4 隔离副本上通过；3 条真实 Product v2 轨迹全部被数据集接收，前两条分别含 107/143 个准入候选。
+- 首个结构化 bootstrap checkpoint 已由 3 条轨迹和 248 个比较对生成，执行器版本固定为 `product_executor.v1`。validation/test 仍为 0，所以它只是正式循环初始权重，不是训练质量结论。
+- 正式 launcher 已新增 manifest 级 `save_slot` 与存档文件校验，并显式传递自动加载环境变量；正式进程不能再停在主菜单却被计为训练。
+- Core `2193/2193`、Backend `166/166` 全量回归通过；校准结束后 SMAPI 与 8765/8767/8768/8795 均无残留监听。
+- 下一步固定为：种入标准正式轨迹路径，prepare/launch 同一份 `training_run_manifest.v2`，完成一个真实游戏日的 Product 训练并验证 checkpoint/hash 更新；之后部署到 119 的全量训练实例，再补非训练动作。
 ## 2026-08-12 当前权威检查点：EVD-249
 
 - `buildings.change_skin` 已完成透明读取、上游候选、DailyPlan、共享动作队列、类型化请求、原生 Robin/CarpenterMenu 执行与严格回执。

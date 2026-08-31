@@ -986,3 +986,15 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 隐藏静音 E 盘矩阵 `runtime-movie-theater-smoke-20260831-185111` 已 4/4 通过，邀请、入场、零食和放映均为 `applied/verified`，玩家与 Abigail 周标记更新到同一周，好感从 1000 精确增加到 1050，原生事件清理并返回影院大厅。当前冻结口径为 `222 registered / 227 semantic / 5 catalogued blocked / 221 compiler-bound / 142 harness dispatch / 145 five-gate / 59 training allowlist / 0 Product Executor`；full snapshot 为 `169/152/17/0`，KnowledgeCompiler `585/585` 且阻塞 0，原生分母保持 `322/448/150`。最终静态回归为 Core `2170/2170`、Backend `155/155`、冻结/目录一致性 `50/50`，全解决方案 Release `0 warnings / 0 errors`。
 
 EVD-322 已闭合普通 `story.advance_event`，EVD-323 已闭合独立的 `story.advance_event_minigame`。下一主切片固定为 `tailoring.sew_item`；完成后进入 Product Executor 与正式轨迹链，不得用 RuntimeTestHarness 或测试夹具冒充产品执行器。
+
+## 2026-09-01 正式训练冷启动闭环（EVD-327）
+
+正式训练冷启动只接受 `product_executor.v1` 的真实 applied/verified/fresh 回执。E 盘隔离校准已经形成
+3 条 v2 轨迹、248 个训练对和首个结构化 checkpoint；该批数据没有 validation/test 分区，故只负责解除
+冷启动死锁。正式长期数据继续按确定性 split 写入，不得复制、改标签或人为调整分区来制造评测样本。
+
+启动顺序固定为：验证并种入标准 policy trajectory 文件；冻结数据 manifest、checkpoint、隔离存档根和
+`save_slot`；prepare 生成唯一 v2 manifest；launch 仅加载该 manifest；Product Executor、SMAPI、
+LiveTrainingLoop 三进程与 Backend ready probe 全部通过后才发出动作；首个真实完整日结束后核对新增轨迹、
+跨日回报、正式数据 manifest、checkpoint 和 manifest 哈希。完成该验收后才把状态改为“正式全量训练已开始”，
+随后更新 119 训练实例并恢复剩余非训练动作开发。

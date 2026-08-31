@@ -67,6 +67,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("save_isolation_path")]
         public string? SaveIsolationPath { get; set; }
 
+        [JsonPropertyName("save_slot")]
+        public string? SaveSlot { get; set; }
+
         [JsonPropertyName("bridge_url")]
         public string BridgeUrl { get; set; } = "http://127.0.0.1:8765";
 
@@ -159,6 +162,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("save_isolation_path")]
         public string SaveIsolationPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("save_slot")]
+        public string SaveSlot { get; set; } = string.Empty;
 
         [JsonPropertyName("bridge_url")]
         public string BridgeUrl { get; set; } = string.Empty;
