@@ -88,6 +88,7 @@ namespace StardewAI.Core.Execution
                 "claim_prize_ticket" => "executor.claim_prize_ticket",
                 "claim_mastery" => "executor.claim_mastery",
                 "perform_emote" => "executor.perform_emote",
+                "watch_movie" => "executor.watch_movie",
                 "sleep" => "executor.sleep",
                 "sleep_in_tent" => "recovery.sleep_in_tent",
                 "escape_object_trap" => "recovery.escape_object_trap",

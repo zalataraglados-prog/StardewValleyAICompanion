@@ -38,6 +38,25 @@ public static class QueueReplanFilter
     public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
     {
         var optionId = ReadParameter(queueItem, "continuation.option_id");
+        var movieId = ReadParameter(queueItem, "continuation.movie_id");
+        var movieGuest = ReadParameter(queueItem, "continuation.movie_guest_name");
+        var movieObjectiveKey = ReadParameter(queueItem, "continuation.movie_objective_key");
+        if (string.Equals(optionId, "social.watch_movie", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(movieId) && !string.IsNullOrWhiteSpace(movieGuest) &&
+            !string.IsNullOrWhiteSpace(movieObjectiveKey))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "movie_theater",
+                ["option_id"] = optionId,
+                ["movie_id"] = movieId,
+                ["movie_guest_name"] = movieGuest,
+                ["movie_concession_id"] = ReadParameter(queueItem, "continuation.movie_concession_id"),
+                ["movie_objective_key"] = movieObjectiveKey,
+                ["movie_friendship_effective"] = ReadParameter(queueItem, "continuation.movie_friendship_effective"),
+                ["movie_concession_friendship_effective"] = ReadParameter(queueItem, "continuation.movie_concession_friendship_effective")
+            };
+        }
         var prizeLevel = ReadParameter(queueItem, "continuation.expected_prize_level");
         var prizeRewardFingerprint = ReadParameter(queueItem, "continuation.expected_reward_fingerprint");
         if (string.Equals(optionId, "rewards.claim_prize_ticket", StringComparison.Ordinal) &&
@@ -552,6 +571,12 @@ public static class QueueReplanFilter
         }
 
         var continuationKind = ReadString(continuation, "kind");
+        if (string.Equals(continuationKind, "movie_theater", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.watch_movie", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "movie_stage"), "watch_movie_screening", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "continuation.movie_objective_key"), ReadString(continuation, "movie_objective_key"), StringComparison.Ordinal);
+        }
         if (string.Equals(continuationKind, "prize_ticket_reward", StringComparison.Ordinal))
         {
             return string.Equals(optionId, "executor.claim_prize_ticket", StringComparison.Ordinal) &&
@@ -902,6 +927,13 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "renovation_reason") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_renovation") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_destructive");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "movie_theater", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "movie_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "movie_guest_name") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "movie_concession_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "movie_objective_key");
         }
         if (string.Equals(ReadString(continuation, "kind"), "prize_ticket_reward", StringComparison.Ordinal))
         {

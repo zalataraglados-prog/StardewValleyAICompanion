@@ -44,6 +44,12 @@ namespace StardewAI.Core.Training
                 ["rewards.claim_prize_ticket"] = new[] { "route_connector_tile", "claim_prize_ticket" },
                 ["skills.claim_mastery"] = new[] { "route_connector_tile", "claim_mastery" },
                 ["social.emote"] = new[] { "perform_emote" },
+                ["social.watch_movie"] = new[]
+                {
+                    "route_connector_tile", "interact_endpoint", "buy_shop_item",
+                    "watch_movie_invite_guest", "watch_movie_enter", "watch_movie_wait_guest",
+                    "watch_movie_concession", "watch_movie_screening"
+                },
                 ["quest.advance"] = QuestActionCoverageCatalog.BoundCandidateKinds.ToArray(),
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.process_machines"] = new[]
@@ -343,6 +349,15 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "perform_emote")
             {
                 return PlayerEmoteSteps(candidate);
+            }
+
+            if (candidate.Kind == "watch_movie_invite_guest" ||
+                candidate.Kind == "watch_movie_enter" ||
+                candidate.Kind == "watch_movie_wait_guest" ||
+                candidate.Kind == "watch_movie_concession" ||
+                candidate.Kind == "watch_movie_screening")
+            {
+                return MovieTheaterSteps(candidate);
             }
 
             if (candidate.Kind == "apply_fertilizer_tile")

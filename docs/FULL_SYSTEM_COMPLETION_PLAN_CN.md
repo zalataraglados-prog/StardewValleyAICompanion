@@ -1,5 +1,13 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-31 训练优先执行顺序与服务器启动门
+
+EVD-320 后的冻结基线为 `220 registered / 226 semantic / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 6 catalogued blocked / 0 Product Executor`。为尽快进入真实全量训练，剩余目录不再按展示价值排序，而按训练阻塞排序：`social.watch_movie` -> `story.advance_event` -> `story.advance_event_minigame` -> `tailoring.sew_item` -> Product Executor -> 正式轨迹重建与服务器全量训练。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者在训练启动后补齐；AI 自主游玩赛车继续使用已经锁定的定时等价路径。
+
+每个训练前动作仍须完成同一纵向闭环：锁定 1.6.15 反编译与实时数据读取、上游合法候选、DailyPlan、高层到机械队列编译、唯一原生运行路径、fresh 输出回执、五门证据与隐藏静音运行。四项闭合只清除目录阻塞，不自动授权训练。RuntimeTestHarness 只保留 fixture 与证据职责；正式训练必须先把已验证状态机装配到独立 Product Executor，并由能力注册表明确声明产品支持，禁止以 Harness 的 8767 测试端点伪装生产执行器。
+
+服务器启动门要求独立新存档、SMAPI、静音隐藏、run-id/快照绑定、非空正式 allowlist、结构化策略检查点、Product Executor 健康、轨迹与回执持久化、可恢复停机全部通过。启动完成标志为至少一个真实游戏日形成连续、可校验的 `policy_decision_trajectory.v1`：选择均在准入范围内，机械动作均由 Product Executor 原生执行，前后快照 fresh 且回执 verified，正式数据集 manifest 和 checkpoint 哈希已经落盘。仅启动游戏、仅运行测试循环、使用 `--skip-training` 或 baseline 聚合器均不算开始全量训练。
+
 ## 2026-08-31 普通任务取消玩家命令闭环（EVD-316）
 
 `quest.cancel` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布普通任务日志的完整取消投影，包括精确任务身份、接受/完成/隐藏/每日/待删除状态、`CanBeCancelled`、接受日、剩余日、奖励、当前任务数和同日每日委托标志副作用。特别订单不进入该投影的可执行域；隐藏、已完成、未接受、待删除或原生不可取消任务保留为带诊断的阻断行。上游只有在玩家给出精确指纹、原因和显式确认时才生成候选，默认策略和训练永远看不到取消欲望。
@@ -958,3 +966,15 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 唯一生产执行链逐字符输入 `/emote <key>` 并调用原生 `ChatBox.textBoxEnter`；联网、performed 写入、图标和动画都留给原生 `ChatCommands.Emote` 与 `doEmoteEvent`。隐藏静音矩阵 `runtime-player-emote-20260831-145638` 已 23/23 通过。冻结口径为 220 registered / 226 semantic / 6 catalogued blocked / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 0 Product Executor；full snapshot 为 168/151/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2162/2162、Backend 155/155、Release 0 警告和 0 错误。
 
 下一主切片为 `social.watch_movie`，按“锁定反编译语义 -> 透明字段 -> 模型选择边界 -> 复用商店/社交/菜单机械层 -> 原生回执 -> 隐藏矩阵 -> 目录冻结”推进。Junimo Kart 保持已知暂缓项，不得用模拟结果冒充原生完美游玩。
+
+## 2026-08-31 原生影院完整访问闭环（EVD-321）
+
+`social.watch_movie` 已替换待办语义项并进入高层训练白名单。模型出口只选择当前电影、独自或一个实时合法宾客、以及可选零食；买票数量、商店端点、跨图路线、精确站位、邀请物品槽、入场确认、柜台菜单、影院门互斥锁和放映事件均由编译器机械展开。唯一动作链为 `social.watch_movie -> watch_movie -> executor.watch_movie`，执行器校准动作不进入策略训练。
+
+透明桥实时读取本周电影、开放时间与节日门、玩家和宾客观影周、票券槽、全队邀请、电影/零食偏好及精确有效好感、三个原生 Action 端点、当前影院状态、showing id、互斥锁和事件。每个当前地图端点相邻格额外发布与共享运行语义一致的 BFS 可达性和路径长度；候选与 fresh 编译器只绑定明确可达格。邀请宾客按 `MovieInvitation.invitedNPC`/`Game1.getCharacterFromName` 选择规范 NPC，影院生成的同名观众实例不能污染周标记。
+
+滚动状态机依次复用既有商店和路线基础设施，并只走原生入口：向 NPC 使用 `(O)809`、Town `Theater_Entrance` 的 Yes、MovieTheater `Concessions` 的真实 `ShopMenu` 购买、`Theater_Doors` 的 mutex/ready 流程及完整 `MovieTheaterScreening` 到 `requestMovieEnd`。生产代码不直接修改票券、金钱、邀请、零食、好感、观影周、事件或互斥锁，也不调用 `skipEvent`。每一阶段后停止旧队列并用新快照重新规划；进入影院后剩余票数需求为零，禁止错误购买第三张票。
+
+隐藏静音 E 盘矩阵 `runtime-movie-theater-smoke-20260831-185111` 已 4/4 通过，邀请、入场、零食和放映均为 `applied/verified`，玩家与 Abigail 周标记更新到同一周，好感从 1000 精确增加到 1050，原生事件清理并返回影院大厅。当前冻结口径为 `222 registered / 227 semantic / 5 catalogued blocked / 221 compiler-bound / 142 harness dispatch / 145 five-gate / 59 training allowlist / 0 Product Executor`；full snapshot 为 `169/152/17/0`，KnowledgeCompiler `585/585` 且阻塞 0，原生分母保持 `322/448/150`。最终静态回归为 Core `2170/2170`、Backend `155/155`、冻结/目录一致性 `50/50`，全解决方案 Release `0 warnings / 0 errors`。
+
+下一主切片固定为 `story.advance_event`，随后闭合 `story.advance_event_minigame` 和 `tailoring.sew_item`。三项训练相关动作完成后进入 Product Executor 与正式轨迹链，不得用 RuntimeTestHarness 或测试夹具冒充产品执行器。

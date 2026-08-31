@@ -64,6 +64,7 @@ public static class OptionImplementationCatalog
         "executor.manage_multiplayer_wallet",
         "executor.send_multiplayer_chat",
         "executor.perform_emote",
+        "executor.watch_movie",
         "executor.choose_bobber_style",
         "executor.choose_jukebox_track",
         "executor.customize_player",
@@ -313,6 +314,8 @@ public static class OptionImplementationCatalog
             return "StardewAI.Core.OptionRegistry.VolcanoReachCalderaCandidateBuilder";
         if (optionId == "social.emote")
             return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.PlayerEmote";
+        if (optionId == "social.watch_movie")
+            return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.MovieTheater";
         if (optionId.StartsWith("social.", StringComparison.Ordinal))
             return "StardewAI.Core.OptionRegistry.SocialCandidateBuilder";
         return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator";

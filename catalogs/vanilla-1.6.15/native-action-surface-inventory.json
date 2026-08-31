@@ -6,10 +6,9 @@
   "surface_count": 322,
   "mapped_count": 122,
   "catalogued_blocked_surface_count": 46,
-  "catalogued_blocked_action_count": 6,
+  "catalogued_blocked_action_count": 5,
   "catalogued_blocked_action_ids": [
     "minigame.play_junimo_kart",
-    "social.watch_movie",
     "story.advance_event",
     "story.advance_event_minigame",
     "tailoring.dye_item",

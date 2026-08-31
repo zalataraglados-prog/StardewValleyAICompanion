@@ -1731,6 +1731,9 @@ static partial class Program
         ApplyCraneGameRequestFields(
             executionRequest,
             item);
+        ApplyMovieTheaterRequestFields(
+            executionRequest,
+            item);
         ApplyDartsGameRequestFields(
             executionRequest,
             item);

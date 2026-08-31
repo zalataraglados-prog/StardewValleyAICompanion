@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-08-31 训练优先接续点：EVD-321 之后
+
+- 当前冻结状态为 `222 registered / 227 semantic / 221 compiler-bound / 142 harness dispatch / 145 five-gate / 59 training allowlist / 5 catalogued blocked / 0 Product Executor`；full snapshot 为 `169 required / 152 readable with provenance / 17 contextual / 0 blocking`。EVD-317 至 EVD-321 已闭合，顶部旧检查点不得再被解释为当前下一步。
+- `social.watch_movie -> watch_movie -> executor.watch_movie` 已闭合。模型只选择当周电影、可选宾客和可选零食；编译器以 fresh 快照滚动展开买票、跨图移动、原生邀请、入场、等待宾客、柜台购买和完整放映。EVD-321 隐藏静音矩阵四阶段全部 `applied/verified`，玩家与规范宾客周标记、精确好感增量和影院大厅清理一致。
+- 影院运行验证修复了三个不得回退的真实缺陷：进入影院后不得再要求第三张票；柜台/影院门相邻站位必须由透明桥发布当前玩家 BFS 可达性并被核心和运行时共同重绑；同名影院观众实例不得覆盖 `Game1.getCharacterFromName`/`MovieInvitation.invitedNPC` 的规范 NPC 周标记。
+- 正式训练前剩余三项训练动作依次为 `story.advance_event`、`story.advance_event_minigame`、`tailoring.sew_item`。`tailoring.dye_item` 是外观型玩家指令；`minigame.play_junimo_kart` 的逐帧完美代打继续后置，AI 自主游玩只使用已有定时等价执行。
+- 三项训练动作闭合后仍不得直接把 RuntimeTestHarness 当成正式训练执行器。下一硬步骤是将已验证的唯一原生状态机装配为 Product Executor，完成产品分发、动作授权、fresh 快照漂移门、回执持久化和失败重规划，并使机器可读准入计数不再为 `0 Product Executor`。
+- EVD-321 最终静态回归为 Core `2170/2170`、Backend `155/155`，全解决方案 Release `0 warnings / 0 errors`；冻结/目录一致性 `50/50`。这些数字只证明影院切片及全仓库静态契约无回退，运行证据仍以独立隐藏矩阵为准。
+- 服务器全量训练的启动退出条件是：独立新存档、SMAPI、静音/隐藏、run-id 与快照绑定、非空正式 allowlist、结构化策略检查点、Product Executor 健康、真实执行回执、轨迹 manifest/checkpoint 持久化和可恢复停机全部通过；禁止使用玩家存档、测试 fixture、`--skip-training` 或 baseline 聚合器冒充全量训练。
+- 服务器训练成功启动的完成标志不是“进程存在”，而是至少一个真实游戏日产生连续的 `policy_decision_trajectory.v1`，其中所有被选动作均准入、经 Product Executor 原生执行并得到 fresh verified 回执，数据集与检查点哈希落盘，断点恢复探针通过。启动完成后再补两项后置玩家能力。
+
 ## 2026-08-31 当前权威检查点：EVD-316
 
 - `quest.cancel` 已闭合透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求、原生 `QuestLog` 输入和严格回执。唯一动作链为 `quest.cancel -> cancel_quest -> executor.cancel_quest`；严格 `PlayerCommandOnly`，不进入默认候选、自主日计划或策略训练。

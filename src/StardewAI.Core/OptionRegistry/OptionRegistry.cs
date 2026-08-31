@@ -391,6 +391,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player supplies one exact base-game emote key, reason and confirmation", "compiler rebinds the live 22-entry Farmer.EMOTES catalog and current CanEmote state", "native ChatBox input enters the same /emote command used by EmoteMenu", "native doEmoteEvent records performed state and starts the exact icon or animation" },
                 new[] { "block_without_explicit_player_command_reason_and_confirmation", "block_unknown_or_drifted_emote_key", "block_native_CanEmote_menu_chat_or_existing_emote_conflict", "block_native_command_or_local_icon_animation_receipt_mismatch", "block_direct_netDoEmote_performPlayerEmote_doEmote_or_performedEmotes_mutation", "exclude_from_autonomous_candidates_and_strategy_training" }));
 
+            Register(Option("social.watch_movie", "social", "Choose and complete one weekly native Movie Theater visit",
+                OptionBehaviorCategories.SocialStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.StrategyValue,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.inventory", "player.movie_theater", "npcs.friendships", "locations.collision_grid", "locations.route_graph", "locations.shops", "menus.active_menu" },
+                new[] { "one current movie, optional invited guest and optional offered concession remain bound across rolling route and ticket-purchase stages", "native MovieTheaterScreening completes and records the current week", "native movie and concession friendship deltas are observed" },
+                new[] { "block_closed_festival_or_already_watched_week", "block_unverified_guest_ticket_shop_endpoint_or_route", "block_projection_drift", "block_skipEvent_or_direct_money_inventory_invitation_mutex_movie_week_or_friendship_mutation" }));
+
             Register(Option("quest.advance", "quest", "Advance one transparent quest objective stage",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -1218,6 +1226,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "npcs.social_interaction", "npcs.friendships", "npcs.gift_tastes", "player.inventory", "menus.active_menu", "locations.collision_grid" },
                 new[] { "social interaction executed with observed outcome" },
                 new[] { "block_unverified_movement", "block_unavailable_required_state" }));
+
+            Register(Option("executor.watch_movie", "social", "Execute one fresh native Movie Theater objective stage and verify its receipt",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.inventory", "player.movie_theater", "npcs.friendships", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native ticket invitation, Theater_Entrance, concession ShopMenu, or Theater_Doors stage executes from an exact live endpoint", "the terminal stage runs MovieTheaterScreening without skip and verifies week plus friendship receipts" },
+                new[] { "block_wrong_stage_location_endpoint_or_projection", "block_unverified_ticket_concession_invitation_or_mutex", "block_unverified_native_event_completion", "block_direct_money_inventory_invitation_mutex_movie_week_or_friendship_mutation" }));
 
             Register(Option("executor.perform_emote", "social", "Execute and verify one explicitly requested native player emote",
                 OptionBehaviorCategories.Mechanical,

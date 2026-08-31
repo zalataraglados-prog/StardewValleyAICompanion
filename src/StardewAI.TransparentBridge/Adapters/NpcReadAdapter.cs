@@ -116,7 +116,7 @@ public sealed class NpcReadAdapter : ReadAdapterBase
         };
     }
 
-    private static NPC[] CollectAllLoadedNpcs()
+    internal static NPC[] CollectAllLoadedNpcs()
     {
         var seen = new HashSet<NPC>(ReferenceEqualityComparer.Instance);
         var firstSeen = new List<NPC>();
@@ -357,7 +357,7 @@ public sealed class NpcReadAdapter : ReadAdapterBase
         };
     }
 
-    private static bool SupportsVanillaSocialQueries(NPC npc)
+    internal static bool SupportsVanillaSocialQueries(NPC npc)
     {
         return npc.GetType().Assembly == typeof(NPC).Assembly &&
             npc.GetType().GetProperty(nameof(NPC.CanSocialize))?.GetMethod?.DeclaringType == typeof(NPC) &&

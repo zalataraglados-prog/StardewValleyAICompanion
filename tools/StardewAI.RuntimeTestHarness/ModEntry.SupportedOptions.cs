@@ -48,6 +48,7 @@ public sealed partial class ModEntry
             "debug.setup_geode_processing",
             "debug.settle_multiplayer_wallet",
             "debug.setup_crane_game",
+            "debug.setup_movie_theater",
             "debug.setup_darts_game",
             "debug.setup_prairie_king",
             "debug.setup_furniture_placement_target",

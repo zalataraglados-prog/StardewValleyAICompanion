@@ -140,6 +140,7 @@ public sealed partial class ModEntry : Mod
     private ActivePrizeTicketReward? activePrizeTicketReward;
     private ActiveMasteryClaim? activeMasteryClaim;
     private ActivePlayerEmote? activePlayerEmote;
+    private ActiveMovieTheater? activeMovieTheater;
 
     public override void Entry(IModHelper helper)
     {
@@ -562,6 +563,7 @@ public sealed partial class ModEntry : Mod
         TickPrizeTicketRewardSafely();
         TickMasteryClaimSafely();
         TickPlayerEmoteSafely();
+        TickMovieTheaterSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickAnimalManagement();
@@ -1109,6 +1111,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_movie_theater")
+            {
+                pending.Completion.SetResult(ExecuteSetupMovieTheaterFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_darts_game")
             {
                 pending.Completion.SetResult(ExecuteSetupDartsGameFixture(pending.Request));
@@ -1615,6 +1623,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_crane_game")
             {
                 StartCraneGame(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.watch_movie")
+            {
+                StartMovieTheater(pending);
                 return;
             }
 
@@ -2281,6 +2295,7 @@ public sealed partial class ModEntry : Mod
             activePrizeTicketReward = null;
             activeMasteryClaim = null;
             activePlayerEmote = null;
+            activeMovieTheater = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -2569,7 +2584,8 @@ public sealed partial class ModEntry : Mod
             activeAdventureGuildReward is not null ||
             activePrizeTicketReward is not null ||
             activeMasteryClaim is not null ||
-            activePlayerEmote is not null;
+            activePlayerEmote is not null ||
+            activeMovieTheater is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

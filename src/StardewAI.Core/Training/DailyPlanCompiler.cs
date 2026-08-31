@@ -710,7 +710,13 @@ namespace StardewAI.Core.Training
                 "social_route.future_schedule_projection",
                 "social_continuation_dialogue_recovery",
                 "profession_choice_id",
-                "profession_choice_source"
+                "profession_choice_source",
+                "continuation.movie_id",
+                "continuation.movie_guest_name",
+                "continuation.movie_concession_id",
+                "continuation.movie_objective_key",
+                "continuation.movie_friendship_effective",
+                "continuation.movie_concession_friendship_effective"
             }, StringComparer.Ordinal);
             return candidate.Parameters
                 .Where(parameter => names.Contains(parameter.Name))

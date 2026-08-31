@@ -65,7 +65,7 @@ namespace StardewAI.Core.Tests
                     "mining.activate_calico_statue", "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                     "processing.crack_geode",
                     "rewards.claim_adventure_guild_reward", "rewards.claim_pot_of_gold", "rewards.claim_prize_ticket", "rewards.claim_statue_blessing",
-                    "skills.choose_profession", "skills.claim_mastery", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                    "skills.choose_profession", "skills.claim_mastery", "skills.read_books", "social.gift_npc", "social.talk_npc", "social.watch_movie", "volcano.reach_caldera"
                 },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);

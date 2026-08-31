@@ -124,7 +124,13 @@ static partial class Program
                             new { name = "continuation.confirm_renovation", value = ReadString(objectiveContinuation, "confirm_renovation") },
                             new { name = "continuation.confirm_destructive", value = ReadString(objectiveContinuation, "confirm_destructive") },
                             new { name = "continuation.expected_prize_level", value = ReadString(objectiveContinuation, "expected_prize_level") },
-                            new { name = "continuation.expected_reward_fingerprint", value = ReadString(objectiveContinuation, "expected_reward_fingerprint") }
+                            new { name = "continuation.expected_reward_fingerprint", value = ReadString(objectiveContinuation, "expected_reward_fingerprint") },
+                            new { name = "continuation.movie_id", value = ReadString(objectiveContinuation, "movie_id") },
+                            new { name = "continuation.movie_guest_name", value = ReadString(objectiveContinuation, "movie_guest_name") },
+                            new { name = "continuation.movie_concession_id", value = ReadString(objectiveContinuation, "movie_concession_id") },
+                            new { name = "continuation.movie_objective_key", value = ReadString(objectiveContinuation, "movie_objective_key") },
+                            new { name = "continuation.movie_friendship_effective", value = ReadString(objectiveContinuation, "movie_friendship_effective") },
+                            new { name = "continuation.movie_concession_friendship_effective", value = ReadString(objectiveContinuation, "movie_concession_friendship_effective") }
                         }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
                     }
                 },
