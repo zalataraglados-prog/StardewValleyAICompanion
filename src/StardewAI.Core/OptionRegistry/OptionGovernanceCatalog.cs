@@ -142,7 +142,9 @@ namespace StardewAI.Core.OptionRegistry
             spec.TrainingEvidenceScope = capability.TrainingEvidenceScope;
             spec.AutonomousCandidatePolicy = policy.AutonomousCandidatePolicy;
             spec.InvocationPolicy = policy.InvocationPolicy;
-            spec.ProductStatus = OptionProductStatus.Registered;
+            spec.ProductStatus = capability.ProductExecutorSupported
+                ? OptionProductStatus.ProductReady
+                : OptionProductStatus.Registered;
             spec.IrreversibleEffects = policy.Irreversibility == OptionIrreversibility.None
                 ? Array.Empty<string>()
                 : new[] { ToWireValue(policy.Irreversibility) };

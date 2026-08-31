@@ -50,12 +50,13 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
-    public void HarnessSupportDoesNotImplyRuntimeEvidenceTests()
+    public void ProductTransportSupportDoesNotImplyRuntimeEvidenceTests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("executor.interact");
 
         Assert.True(declaration.HarnessDispatchSupported);
-        Assert.False(declaration.ProductExecutorSupported);
+        Assert.True(declaration.ProductExecutorSupported);
+        Assert.Equal(CapabilityProductIntegrationStatus.ProductIntegrated, declaration.ProductIntegrationStatus);
         Assert.Equal(OptionRuntimeStatus.RegisteredOnly, declaration.RuntimeEvidenceStatus);
         Assert.Equal(
             OptionTrainingEligibility.BlockedPendingRuntimeEvidence,

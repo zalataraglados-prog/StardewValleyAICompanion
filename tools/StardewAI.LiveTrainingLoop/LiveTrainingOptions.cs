@@ -39,6 +39,7 @@ public sealed class LiveTrainingOptions
     public int AfterSnapshotPollMs { get; set; } = 100;
     public bool RequireExecutorFeedback { get; set; } = true;
     public bool UseRuntimeTestHarnessExecutor { get; set; } = true;
+    public bool UseProductExecutor { get; set; }
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
     public bool UseParameterizedAction { get; set; }
@@ -65,8 +66,19 @@ public sealed class LiveTrainingOptions
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
     public string FeedbackMode => RequireExecutorFeedback
-        ? UseRuntimeTestHarnessExecutor ? "runtime_test_harness_executor" : "training_sandbox_feedback_gate"
+        ? UseProductExecutor
+            ? "product_executor"
+            : UseRuntimeTestHarnessExecutor ? "runtime_test_harness_executor" : "training_sandbox_feedback_gate"
         : "disabled";
+    public string ExecutorEndpointPath => UseProductExecutor
+        ? "/api/v1/product/execute"
+        : "/api/v1/training/execute";
+    public string ExecutorFeedbackSource => UseProductExecutor
+        ? "product_executor"
+        : "runtime_test_harness_executor";
+    public string ExecutorUnverifiedSource => UseProductExecutor
+        ? "product_executor_unverified"
+        : "runtime_test_harness_unverified";
 
     public string RunDir => string.IsNullOrWhiteSpace(ManifestPath)
         ? Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(ArtifactRunId)
@@ -83,6 +95,22 @@ public sealed class LiveTrainingOptions
     public string PolicyHorizonObservationPath => Path.Combine(Root, "datasets", "policy-horizon-observations.jsonl");
     public string ProgressLogPath => Path.Combine(Root, "logs", "live-training-progress.log");
     public string ReadyProbeUrl => BackendUrl + "/api/v1/training/session/ready-probe?manifest_path=" + Uri.EscapeDataString(ManifestPath);
+
+    public void ValidateFormalExecutionBoundary()
+    {
+        if (SkipTraining)
+            return;
+        if (!UseProductExecutor)
+        {
+            throw new InvalidOperationException(
+                "formal_training_requires_product_executor; pass --use-product-executor or use --skip-training for calibration smoke");
+        }
+        if (!RequireExecutorFeedback)
+        {
+            throw new InvalidOperationException(
+                "formal_training_requires_executor_feedback; use --skip-training for offline or calibration workflows");
+        }
+    }
 
     public static LiveTrainingOptions Parse(string[] args)
     {
@@ -246,6 +274,17 @@ public sealed class LiveTrainingOptions
             else if (current == "--use-sandbox-executor")
             {
                 options.UseRuntimeTestHarnessExecutor = false;
+                options.UseProductExecutor = false;
+            }
+            else if (current == "--use-product-executor")
+            {
+                options.UseRuntimeTestHarnessExecutor = true;
+                options.UseProductExecutor = true;
+            }
+            else if (current == "--use-runtime-test-harness-executor")
+            {
+                options.UseRuntimeTestHarnessExecutor = true;
+                options.UseProductExecutor = false;
             }
             else if (current == "--use-plan-output")
             {

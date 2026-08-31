@@ -1,6 +1,6 @@
 {
   "schema_version": "stardewai.action_progress_dashboard.v1",
-  "generated_at_utc": "2026-08-31T14:58:23.5248326\u002B00:00",
+  "generated_at_utc": "2026-08-31T15:46:09.7094371\u002B00:00",
   "semantic_denominator_status": "native_action_denominator_frozen",
   "native_action_denominator_fingerprint_sha256": "e3b96d096204b39d3a4bad0982fc7f254efe093d74fcb2efddf000be3e777d5b",
   "registered_option_count": 228,
@@ -17,7 +17,7 @@
   "missing_semantic_action_registration_count": 0,
   "compiler_bound_count": 227,
   "harness_dispatch_count": 145,
-  "product_executor_count": 0,
+  "product_executor_count": 145,
   "five_gate_evidence_closed_count": 151,
   "training_allowlist_count": 62,
   "warning": "Registered count is not the whole-game denominator. Native surfaces are source evidence, not semantic actions."

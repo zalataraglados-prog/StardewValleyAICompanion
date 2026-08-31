@@ -1198,7 +1198,7 @@ namespace StardewAI.Contracts.Capabilities
                     CandidateStatus = candidateStatus,
                     CompilerStatus = compilerStatus,
                     HarnessDispatchSupported = seed?.HarnessDispatch ?? HarnessDispatchIds.Contains(id),
-                    ProductExecutorSupported = false,
+                    ProductExecutorSupported = seed?.HarnessDispatch ?? HarnessDispatchIds.Contains(id),
                     InternalExecutionPipelineSupported =
                         (seed?.HarnessDispatch ?? HarnessDispatchIds.Contains(id)) ||
                         (seed?.InternalExecution ?? InternalHighLevelExecutionIds.Contains(id)),
@@ -1223,7 +1223,9 @@ namespace StardewAI.Contracts.Capabilities
                     AutonomousCandidateEnabled = seed?.AutonomousCandidate ?? AutonomousCandidateIds.Contains(id),
                     PlayerConfirmationRequired = seed?.PlayerConfirmation ?? PlayerConfirmationIds.Contains(id),
                     HostOnly = HostOnlyIds.Contains(id),
-                    ProductIntegrationStatus = CapabilityProductIntegrationStatus.NotIntegrated,
+                    ProductIntegrationStatus = (seed?.HarnessDispatch ?? HarnessDispatchIds.Contains(id))
+                        ? CapabilityProductIntegrationStatus.ProductIntegrated
+                        : CapabilityProductIntegrationStatus.NotIntegrated,
                     PolicyTrainingCandidate = policyTrainingCandidate,
                     InvocationPolicy = (seed?.PlayerCommandOnly ?? PlayerCommandOnlyIds.Contains(id))
                         ? OptionInvocationPolicy.PlayerCommandOnly

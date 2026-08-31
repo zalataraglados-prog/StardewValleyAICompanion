@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-31 Product Executor 准入（EVD-325）
+
+独立 `StardewAI.ProductExecutor` 已把 145 个现有原生 Harness dispatch 状态机装配到产品入口，但不复制动作实现。产品授权锁定 loopback、非 debug 产品能力、run-id、执行模式/actor、精确隔离存档根、nonce 和时间戳；正式 `LiveTrainingLoop` 未选择产品入口或关闭 executor feedback 时直接失败。62 项策略 allowlist 仍独立决定哪些高层候选可进入训练，Product Executor 数量不能反向扩大训练准入。
+
+产品层在原生动作前原子写 pending，随后采集并记录实际执行前/后快照、校验原生回执身份与 verified 状态并写 final。全量世界状态在运行中会自然漂移，因此请求决策哈希与实际分发哈希同时保留，动作安全由游戏线程中的动作级 fresh 前置条件负责；漂移会强制后续重规划。相同 final 收据可长期幂等返回；nonce 冲突拒绝；孤立 pending 永不重发并转为结果不确定的阻断回执。隐藏静音 E 盘 `3/3` 产品冒烟位于 `artifacts/product-executor-smoke/product-executor-20260831-235239/summary.json`，服务测试 `10/10`，全量 Core `2191/2191`、Backend `162/162`、Release `0 warnings / 0 errors`。
+
+当前训练阻塞已从“无产品执行器”转为“尚未重建并冻结正式轨迹 manifest/checkpoint，服务器启动与恢复探针尚未完成”。下一步必须使用独立新存档和 62 项 allowlist 生成真实 `policy_decision_trajectory.v1`，验证 Product Executor 回执、数据集/checkpoint 哈希与断点恢复后，才启动服务器全量训练。
+
 ## 2026-08-30 联机钱包执行准入（EVD-310）
 
 `multiplayer.manage_wallet` 已通过 read / candidate / compile / native runtime / output receipt 五门，但治理为 `PlayerCommandOnly`，不进入策略训练 allowlist。玩家命令层给出五类操作之一；转账还必须给出精确收款人、金额和第二级确认。模式、房主权限、参与者、余额、原生菜单响应键、LedgerBook 站位、路线、即时回执和次日结算均由 fresh snapshot 与机械执行层绑定，模型不能自主决定分钱、合并或转账。

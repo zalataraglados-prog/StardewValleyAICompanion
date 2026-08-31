@@ -175,7 +175,7 @@ static partial class Program
             var effectiveStateHash = currentStateHash;
             var executionRequest = BuildExecutionRequest(options, item, currentStateHash, queueId);
             var request = JsonSerializer.Serialize(executionRequest, JsonOptions);
-            var execution = await PostJsonStringAsync(executorHttp, options.ExecutorUrl + "/api/v1/training/execute", request);
+            var execution = await PostJsonStringAsync(executorHttp, options.ExecutorUrl + options.ExecutorEndpointPath, request);
             attemptedCount++;
 
             var afterSnapshot = await ReadAfterExecutionSnapshotAsync(http, options, currentBeforeSnapshot);
@@ -214,7 +214,7 @@ static partial class Program
                 execution["primitive_verification_status"] = "stale_after_snapshot";
                 execution["primitive_verification_reasons"] = new JsonArray("after_snapshot_not_fresh");
             }
-            execution["source"] = "runtime_test_harness_executor";
+            execution["source"] = options.ExecutorFeedbackSource;
             currentBeforeSnapshot = afterSnapshot.Snapshot;
             currentBeforeSnapshotPath = afterPath;
             currentStateHash = ReadString(afterSnapshot.Snapshot, "state_hash");
@@ -342,7 +342,7 @@ static partial class Program
         aggregate["before_game_tick"] = ReadLong(beforeSnapshot, "game_tick");
         aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
-        aggregate["source"] = "runtime_test_harness_executor";
+        aggregate["source"] = options.ExecutorFeedbackSource;
         aggregate["objective_continuation_completed"] = objectiveContinuationCompleted;
         aggregate["objective_continuation"] = activeObjectiveContinuation is null
             ? null

@@ -9,6 +9,7 @@ using StardewAI.Contracts.Training;
 using StardewAI.LiveTrainingLoop;
 
 var options = LiveTrainingOptions.Parse(args);
+options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
 Directory.CreateDirectory(options.RunDir);
 Directory.CreateDirectory(options.SnapshotDir);
@@ -175,7 +176,7 @@ for (var attemptOrdinal = 1;
                 string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal);
             if (!primitiveVerified)
             {
-                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "runtime_test_harness_unverified status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status"));
+                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, options.ExecutorUnverifiedSource + " status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status"));
                 await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
@@ -204,7 +205,7 @@ for (var attemptOrdinal = 1;
             if (!executionNoProgress.NoProgress)
             {
                 verifiedActions++;
-                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " horizon_observations=" + horizonObservations + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
+                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " horizon_observations=" + horizonObservations + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=" + options.ExecutorFeedbackSource);
                 var train = await TrainIfNeededAsync(http, options, iteration);
                 if (train.TrainingReport is not null)
                 {

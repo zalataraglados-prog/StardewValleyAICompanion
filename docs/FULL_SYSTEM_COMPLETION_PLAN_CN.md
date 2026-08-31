@@ -2,11 +2,11 @@
 
 ## 2026-08-31 训练优先执行顺序与服务器启动门
 
-EVD-323 后的冻结基线为 `226 registered / 229 semantic / 225 compiler-bound / 144 harness dispatch / 149 five-gate / 61 training allowlist / 3 catalogued blocked / 0 Product Executor`。训练阻塞顺序中的 `social.watch_movie`、`story.advance_event` 和 `story.advance_event_minigame` 已闭合，当前仅剩 `tailoring.sew_item` -> Product Executor -> 正式轨迹重建与服务器全量训练。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者在训练启动后补齐；AI 自主游玩赛车继续使用已经锁定的定时等价路径。
+EVD-325 后的当前基线为 `228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 145 Product Executor / 151 five-gate / 62 training allowlist / 2 catalogued blocked`。训练优先动作与独立 Product Executor 已闭合；当前顺序固定为：正式轨迹与结构化 checkpoint 重建 -> 启动前恢复探针 -> 服务器全量训练 -> 后置玩家命令动作。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者不得重新插回训练启动关键路径；AI 自主游玩赛车继续使用已经锁定的定时等价路径。
 
 每个训练前动作仍须完成同一纵向闭环：锁定 1.6.15 反编译与实时数据读取、上游合法候选、DailyPlan、高层到机械队列编译、唯一原生运行路径、fresh 输出回执、五门证据与隐藏静音运行。四项闭合只清除目录阻塞，不自动授权训练。RuntimeTestHarness 只保留 fixture 与证据职责；正式训练必须先把已验证状态机装配到独立 Product Executor，并由能力注册表明确声明产品支持，禁止以 Harness 的 8767 测试端点伪装生产执行器。
 
-服务器启动门要求独立新存档、SMAPI、静音隐藏、run-id/快照绑定、非空正式 allowlist、结构化策略检查点、Product Executor 健康、轨迹与回执持久化、可恢复停机全部通过。启动完成标志为至少一个真实游戏日形成连续、可校验的 `policy_decision_trajectory.v1`：选择均在准入范围内，机械动作均由 Product Executor 原生执行，前后快照 fresh 且回执 verified，正式数据集 manifest 和 checkpoint 哈希已经落盘。仅启动游戏、仅运行测试循环、使用 `--skip-training` 或 baseline 聚合器均不算开始全量训练。
+服务器启动门要求独立新存档、SMAPI、静音隐藏、run-id/快照绑定、非空正式 allowlist、结构化策略检查点、Product Executor 健康、轨迹与回执持久化、可恢复停机全部通过。Product Executor 已通过本地真实动作、授权和 at-most-once 恢复验收，但服务器编排与正式轨迹/checkpoint 尚未因此自动完成。启动完成标志为至少一个真实游戏日形成连续、可校验的 `policy_decision_trajectory.v1`：选择均在准入范围内，机械动作均由 Product Executor 原生执行，前后快照 fresh 且回执 verified，正式数据集 manifest 和 checkpoint 哈希已经落盘。仅启动游戏、仅运行测试循环、使用 `--skip-training` 或 baseline 聚合器均不算开始全量训练。
 
 ## 2026-08-31 普通任务取消玩家命令闭环（EVD-316）
 

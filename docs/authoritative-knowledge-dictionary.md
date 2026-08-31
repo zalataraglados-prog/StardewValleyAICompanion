@@ -108,21 +108,17 @@ verified or training eligible; those statuses require separately indexed E3 or E
 `capability_registry.v3` is the versioned machine-readable source for operational capability
 stages. `OptionRegistry`, compiler-binding checks, RuntimeTestHarness dispatch projection,
 product-executor projection, daily-candidate classification, bridge capability output,
-knowledge matrices, and the training allowlist consume or validate that source. The current
-baseline deliberately declares zero product executors. It generates
+knowledge matrices, and the training allowlist consume or validate that source. EVD-325
+projects every existing native Harness dispatch through one independently authorized,
+journaled Product Executor gateway without copying action state machines. The generated
+dashboard currently reports 145 Harness dispatches, 145 product executors, 151 five-gate
+closures, and 62 training-allowlisted options. Product support does not imply training
+eligibility, and training eligibility does not bypass product authorization. The registry generates
 `training-admission-manifest.json` with independent read/candidate/compile/runtime/output
-gates, evidence IDs, bounded evidence scope, and typed exclusion reasons. The current allowlist
-contains `mining.reach_depth`, restricted to the candidate-bound ordinary-mine rolling scope
-proven by EVD-095, and the explicit player/ordinary-owned-chest scope of
-`inventory.transfer_item` proven by EVD-192. It also contains `social.talk_npc` only for the
-EVD-076/EVD-105 scope: a current loaded vanilla NPC reached on the same map or through rolling
-resolved connectors, followed by safe ordinary dialogue closure. EVD-196 adds `social.gift_npc`
-only for a current loaded vanilla NPC reached on the same map or through rolling resolved
-connectors and one ordinary owned item whose final stack is observed changing from one to null.
-None of these scopes implies
-broader completion. `recovery.stabilize_day` has verified read/candidate/compile/runtime/output
-evidence through EVD-195, but remains excluded because it is a calibration-only high-level
-option.
+gates, evidence IDs, bounded evidence scope, and typed exclusion reasons. Individual evidence
+scope remains authoritative; the generated allowlist must be read directly rather than inferred
+from examples in this document. Player-command-only and calibration-only options remain excluded
+even when their compiler, native runtime, output, and product transport are complete.
 
 Invocation policy is orthogonal to runtime capability. `PlayerCommandOnly` options remain in
 the semantic dictionary and may retain complete compiler/runtime evidence, but are excluded

@@ -1359,6 +1359,12 @@
           "StardewAI.Contracts": "[1.0.0, )",
           "StardewAI.Core": "[1.0.0, )"
         }
+      },
+      "stardewai.productexecutor": {
+        "type": "Project",
+        "dependencies": {
+          "StardewAI.Contracts": "[1.0.0, )"
+        }
       }
     }
   }

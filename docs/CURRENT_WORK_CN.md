@@ -1,6 +1,15 @@
 # StardewAI 当前工作
 
-## 2026-08-31 训练优先接续点：EVD-324 之后
+## 2026-08-31 当前接续点：EVD-325 Product Executor 之后
+
+- 当前机器可读状态为 `228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 145 Product Executor / 151 five-gate / 62 training allowlist / 2 catalogued blocked`；full snapshot 为 `171 required / 154 readable with provenance / 17 contextual / 0 blocking`，KnowledgeCompiler 为 `585/585`、blocking 0。原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且三类 blocking 均为 0。
+- EVD-325 已建立独立 `StardewAI.ProductExecutor`。正式执行地址为 loopback `/api/v1/product/execute`，只接受能力目录支持的非 debug 动作、精确 run-id、执行模式/actor、GUID nonce、精确隔离存档根和有效时间戳；`LiveTrainingLoop` 在非 `--skip-training` 模式下同时强制 Product Executor 与真实 executor feedback，拒绝 RuntimeTestHarness 或无反馈绕过。
+- Product Executor 不复制 145 个动作状态机，只在现有唯一原生执行端点前增加产品授权、串行分发、fresh 前后快照、持久化 pending/final 收据和结果契约校验。请求中的决策快照哈希与实际分发前全量哈希均保留；自然世界漂移不再误杀动作，动作级 fresh 前置条件由游戏线程中的现有原生状态机验证，发生漂移时结果强制要求重规划。
+- 分发采用 at-most-once 恢复语义：pending 必须在原生 POST 前原子落盘；相同 nonce/相同请求的 final 可跨请求过期窗口幂等返回；nonce 复用不同载荷立即拒绝；重启后发现孤立 pending 时禁止再次下发，落盘为 `native_dispatch_indeterminate_no_replay` 并要求重规划。
+- 最终隐藏静音产品冒烟 `3/3` PASS：`artifacts/product-executor-smoke/product-executor-20260831-235239/summary.json`。真实 `executor.tailor_item` 经产品入口 `applied/verified`，同一持久收据重放未二次执行，debug fixture 被产品授权层拒绝。服务级产品测试 `10/10`，全量回归 Core `2191/2191`、Backend `162/162`，Release 解决方案构建 `0 warnings / 0 errors`。
+- 下一步不再补动作注册：先用独立新存档重建正式 `policy_decision_trajectory.v1` 数据清单和结构化策略 checkpoint，完成 Product Executor、run-id、快照、manifest、断点恢复和静音进程编排的启动前探针；全部通过后在服务器启动全量训练。启动成功仍以至少一个真实游戏日的连续准入动作、产品原生 verified 回执、数据集/checkpoint 哈希落盘和恢复探针通过为准，不能以进程存在或 `--skip-training` 冒充。
+
+## 2026-08-31 训练优先动作闭合快照：EVD-324
 
 - 当前冻结状态为 `228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 151 five-gate / 62 training allowlist / 2 catalogued blocked / 0 Product Executor`；full snapshot 为 `171 required / 154 readable with provenance / 17 contextual / 0 blocking`。EVD-317 至 EVD-324 已闭合，顶部旧检查点不得再被解释为当前下一步。
 - `story.advance_event -> advance_story_event -> executor.advance_story_event` 已闭合普通事件链。透明桥发布活动事件全部命令、当前命令、问题键、完整响应数组、原生菜单和下一边界；模型只在新问题边界选择响应，编译器重绑事件实例与投影指纹，运行时仅使用原生 `Event.Update` 和菜单输入并在结束、新问题、小游戏或玩家控制序列边界收口。EVD-322 隐藏静音测试的自动消息和第二响应两例均为 `applied/verified`，禁止 `skipEvent`、直接命令索引或已看事件写入。
@@ -8,7 +17,7 @@
 - `social.watch_movie -> watch_movie -> executor.watch_movie` 已闭合。模型只选择当周电影、可选宾客和可选零食；编译器以 fresh 快照滚动展开买票、跨图移动、原生邀请、入场、等待宾客、柜台购买和完整放映。EVD-321 隐藏静音矩阵四阶段全部 `applied/verified`，玩家与规范宾客周标记、精确好感增量和影院大厅清理一致。
 - 影院运行验证修复了三个不得回退的真实缺陷：进入影院后不得再要求第三张票；柜台/影院门相邻站位必须由透明桥发布当前玩家 BFS 可达性并被核心和运行时共同重绑；同名影院观众实例不得覆盖 `Game1.getCharacterFromName`/`MovieInvitation.invitedNPC` 的规范 NPC 周标记。
 - `tailoring.sew_item -> tailor_item -> executor.tailor_item` 已闭合训练优先动作。透明桥实时读取全部 `Data/TailoringRecipes`、库存输入对、原生 Tailoring/`(BC)247` 入口、确定输出或完整随机域、鞋靴属性转移、裁缝历史与余量容量；染色/棱彩外观分支仍归 `tailoring.dye_item` 玩家指令。运行层只使用原生 `TailoringMenu` 输入和 1500ms 生命周期，并回收全部左右余料，不直接改库存、鞋靴、服装、历史或 RNG。
-- RuntimeTestHarness 原生闭环不能冒充正式训练执行器。当前唯一下一硬步骤是将已验证的动作状态机装配为 Product Executor，完成产品分发、动作授权、fresh 快照漂移门、回执持久化和失败重规划，并使机器可读准入计数不再为 `0 Product Executor`。在此之前不得启动或宣称正式全量训练。
+- RuntimeTestHarness 原生闭环不能冒充正式训练执行器。该历史检查点之后的 Product Executor 装配、授权、快照审计、回执持久化和失败重规划已由 EVD-325 完成；不得再把本条解释为当前待办。
 - EVD-324 原生烟测为 `3/3` PASS，证据位于 `artifacts/runtime-tailoring/runtime-tailoring-20260831-225159/summary.json`；确定配方、原生随机配方和鞋靴属性转移均为 `applied/verified`。动作对账为 585/585 导出、blocking 0；最终静态回归为 Core `2191/2191`、Backend `155/155`，全解决方案 Release 构建 `0 warnings / 0 errors`。
 - 服务器全量训练的启动退出条件是：独立新存档、SMAPI、静音/隐藏、run-id 与快照绑定、非空正式 allowlist、结构化策略检查点、Product Executor 健康、真实执行回执、轨迹 manifest/checkpoint 持久化和可恢复停机全部通过；禁止使用玩家存档、测试 fixture、`--skip-training` 或 baseline 聚合器冒充全量训练。
 - 服务器训练成功启动的完成标志不是“进程存在”，而是至少一个真实游戏日产生连续的 `policy_decision_trajectory.v1`，其中所有被选动作均准入、经 Product Executor 原生执行并得到 fresh verified 回执，数据集与检查点哈希落盘，断点恢复探针通过。启动完成后再补两项后置玩家能力。
