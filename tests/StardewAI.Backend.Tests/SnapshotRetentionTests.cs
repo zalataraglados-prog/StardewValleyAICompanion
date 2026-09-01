@@ -47,6 +47,10 @@ public sealed class SnapshotRetentionTests
             "\"--min-free-space-mb\", Math.Max(",
             launcher,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--max-persisted-iterations\", manifest.MaxPersistedIterations.ToString()",
+            launcher,
+            StringComparison.Ordinal);
 
         var script = File.ReadAllText(Path.Combine(
             FindRepositoryRoot(),
@@ -58,6 +62,14 @@ public sealed class SnapshotRetentionTests
             StringComparison.Ordinal);
         Assert.Contains(
             "\"min_free_space_mb\": $MIN_FREE_SPACE_MB",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "STARDEWAI_FORMAL_MAX_PERSISTED_ITERATIONS:-4",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"max_persisted_iterations\": $MAX_PERSISTED_ITERATIONS",
             script,
             StringComparison.Ordinal);
         Assert.Contains(

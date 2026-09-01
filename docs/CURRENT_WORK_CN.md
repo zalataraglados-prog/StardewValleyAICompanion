@@ -1,5 +1,20 @@
 # StardewAI 当前工作
 
+## 2026-09-01 当前接续点：r25 四轮滚动证据通过
+
+- 正式训练请求与 `training_run_manifest.v2` 新增 `max_persisted_iterations`，默认并冻结为 4；launcher、
+  Windows/Linux 启动器和服务器 Compose 已贯通。只滚动当前 run 的旧 `live-snapshots` 迭代家族，
+  不删除策略轨迹、Product 回执、数据集、checkpoint、manifest 或日志。
+- 119 已部署 `formal-r25-20260901`。`train.server.20260901.r25` 的 manifest 实际记录
+  `max_attempts=1 / max_persisted_iterations=4 / min_free_space_mb=4800`；邮件五步再次全部
+  `applied/verified/fresh`，5 条显式候选轨迹全部入库，来源遗漏为 0。
+- 数据集现为 accepted 186 / rejected 0 / train 128 / validation 5 / test 53，首次出现非空 validation；
+  checkpoint 为 `structured-policy-52c9f785cc6dcc46c02f94e7`，SHA-256
+  `b97bbdc1b64ba77b38097fc691581d4397c32807246f312b00dd883249e23b67`。
+- 训练后约 54.124 UPS，full snapshot 12 次、平均 1406.835 ms。服务器只有一块 60GB 系统盘，约
+  4999 MiB 可用、使用率 92%。滚动窗口降低未来单 run 增长，但当前仍无第二数据盘；不得开启无界长训。
+  下一外部准入是扩容/挂载训练盘，或经审核回收明确可删除的旧服务器资产；在此之前只允许有界批次。
+
 ## 2026-09-01 当前接续点：r24 单目标正式闭环通过，准备多日长训
 
 - 119 服务器已部署 `formal-r24-20260901`。运行 `train.server.20260901.r24` 在同一隔离存档上完成一个

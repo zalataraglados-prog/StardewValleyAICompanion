@@ -9,6 +9,8 @@ param(
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
     [int] $MaxAttempts = 2000,
+    [ValidateRange(1, 64)]
+    [int] $MaxPersistedIterations = 4,
     [int] $RequiredVerifiedActions = 0,
     [switch] $Launch
 )
@@ -108,6 +110,7 @@ try {
         product_executor_executable_path = $productDll
         live_training_loop_executable_path = $loopDll
         max_attempts = $MaxAttempts
+        max_persisted_iterations = $MaxPersistedIterations
         required_verified_actions = $RequiredVerifiedActions
         manifest_path = $manifestPath
         game_executable_path = $gameExecutable

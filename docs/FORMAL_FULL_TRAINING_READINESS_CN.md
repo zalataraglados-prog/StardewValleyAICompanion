@@ -1,5 +1,21 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-01 119 服务器 r25 有界证据保留
+
+r25 将正式运行的诊断快照窗口从 LiveTrainingLoop 默认 64 轮改为 manifest 冻结的 4 轮。请求、
+`training_run_manifest.v2`、launcher CLI、Linux attached 脚本、Windows 启动器和 Compose 使用同一
+`max_persisted_iterations`；范围限制为 1-64。滚动清理只处理当前 run 的 `live-snapshots` 中旧迭代
+家族，保留最近四轮；正式策略轨迹、Product pending/final 回执、数据集、checkpoint、manifest 和日志不受影响。
+
+发布 `formal-r25-20260901`、运行 `train.server.20260901.r25` 再次完成邮件目标五步，全部为
+`applied/verified/fresh`，5 条候选轨迹全部入库且来源遗漏为 0。manifest 实际冻结
+`max_attempts=1 / max_persisted_iterations=4 / min_free_space_mb=4800`。正式数据集现为 accepted 186、
+rejected 0、train/validation/test 128/5/53，首次得到非空 validation 分区；checkpoint 更新为
+`structured-policy-52c9f785cc6dcc46c02f94e7`，SHA-256 为
+`b97bbdc1b64ba77b38097fc691581d4397c32807246f312b00dd883249e23b67`。训练结束后约 54.124 UPS，
+12 次 full snapshot 平均 1406.835 ms。服务器只有一块 60GB 系统盘，当前约 4999 MiB 可用、使用率
+92%；四轮滚动可限制后续单 run 工作集，但不能替代扩盘，也不得据此直接开启无界长训。
+
 ## 2026-09-01 119 服务器 r24 正式闭环实证
 
 正式 Product 训练控制闭环已经开始产生真实更新，但全量长训尚未启动。服务器使用隔离槽位

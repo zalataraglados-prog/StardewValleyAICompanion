@@ -55,6 +55,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("max_attempts")]
         public int MaxAttempts { get; set; } = 1000000;
 
+        [JsonPropertyName("max_persisted_iterations")]
+        public int MaxPersistedIterations { get; set; } = 4;
+
         [JsonPropertyName("required_verified_actions")]
         public int RequiredVerifiedActions { get; set; }
 
@@ -153,6 +156,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("max_attempts")]
         public int MaxAttempts { get; set; }
+
+        [JsonPropertyName("max_persisted_iterations")]
+        public int MaxPersistedIterations { get; set; } = 4;
 
         [JsonPropertyName("required_verified_actions")]
         public int RequiredVerifiedActions { get; set; }

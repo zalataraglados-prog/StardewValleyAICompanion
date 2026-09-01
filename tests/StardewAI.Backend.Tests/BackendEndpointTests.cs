@@ -1042,6 +1042,7 @@ namespace StardewAI.Backend.Tests
                 mode = "offline_smoke",
                 root_path = root,
                 min_free_space_mb = 6144,
+                max_persisted_iterations = 4,
                 allow_game_launch = true,
                 sound_enabled = false
             });
@@ -1056,6 +1057,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("offline_smoke", manifest.GetProperty("mode").GetString());
             Assert.Equal(root, manifest.GetProperty("root_path").GetString());
             Assert.Equal(6144, manifest.GetProperty("min_free_space_mb").GetInt32());
+            Assert.Equal(4, manifest.GetProperty("max_persisted_iterations").GetInt32());
             Assert.EndsWith(Path.Combine("datasets", "training-feature-rows.jsonl"), manifest.GetProperty("dataset_path").GetString());
             Assert.True(File.Exists(manifest.GetProperty("manifest_path").GetString()));
         }

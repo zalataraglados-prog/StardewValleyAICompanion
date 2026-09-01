@@ -8,6 +8,7 @@ SAVE_ROOT="${STARDEWAI_FORMAL_SAVE_ROOT:-/config/xdg/config/StardewValley/Saves}
 SAVE_SLOT="${STARDEWAI_FORMAL_SAVE_SLOT:?STARDEWAI_FORMAL_SAVE_SLOT is required}"
 MIN_FREE_SPACE_MB="${STARDEWAI_FORMAL_MIN_FREE_SPACE_MB:-8192}"
 MAX_ATTEMPTS="${STARDEWAI_FORMAL_MAX_ATTEMPTS:-2000}"
+MAX_PERSISTED_ITERATIONS="${STARDEWAI_FORMAL_MAX_PERSISTED_ITERATIONS:-4}"
 BACKEND_URL="http://127.0.0.1:8795"
 PRODUCT_URL="http://127.0.0.1:8768"
 BRIDGE_URL="http://127.0.0.1:8765"
@@ -41,6 +42,17 @@ case "$MAX_ATTEMPTS" in
 esac
 if [ "$MAX_ATTEMPTS" -lt 1 ]; then
   echo "formal maximum attempts must be at least 1" >&2
+  exit 2
+fi
+
+case "$MAX_PERSISTED_ITERATIONS" in
+  *[!0-9]*|'')
+    echo "invalid formal maximum persisted iterations" >&2
+    exit 2
+    ;;
+esac
+if [ "$MAX_PERSISTED_ITERATIONS" -lt 1 ] || [ "$MAX_PERSISTED_ITERATIONS" -gt 64 ]; then
+  echo "formal maximum persisted iterations must be between 1 and 64" >&2
   exit 2
 fi
 
@@ -107,6 +119,7 @@ cat >"$request_path" <<EOF
   "live_training_loop_executable_path": "$APP_ROOT/StardewAI.LiveTrainingLoop",
   "target_execution_mode": "dedicated_host_ai",
   "max_attempts": $MAX_ATTEMPTS,
+  "max_persisted_iterations": $MAX_PERSISTED_ITERATIONS,
   "required_verified_actions": 0,
   "min_free_space_mb": $MIN_FREE_SPACE_MB,
   "manifest_path": "$MANIFEST_PATH",

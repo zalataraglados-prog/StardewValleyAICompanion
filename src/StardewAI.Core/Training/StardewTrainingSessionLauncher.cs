@@ -201,6 +201,10 @@ namespace StardewAI.Core.Training
                 ProductExecutorExecutablePath = FullPathOrEmpty(request.ProductExecutorExecutablePath),
                 LiveTrainingLoopExecutablePath = FullPathOrEmpty(request.LiveTrainingLoopExecutablePath),
                 MaxAttempts = Math.Max(1, request.MaxAttempts),
+                MaxPersistedIterations = Math.Clamp(
+                    request.MaxPersistedIterations,
+                    1,
+                    64),
                 RequiredVerifiedActions = Math.Max(0, request.RequiredVerifiedActions),
                 MinFreeSpaceMb = Math.Clamp(
                     request.MinFreeSpaceMb,
@@ -516,6 +520,7 @@ namespace StardewAI.Core.Training
                 "--target-execution-mode", manifest.TargetExecutionMode,
                 "--policy-checkpoint-path", manifest.CheckpointPath,
                 "--artifact-retention-mode", "rolling",
+                "--max-persisted-iterations", manifest.MaxPersistedIterations.ToString(),
                 "--continue-after-blocked-queue-items",
                 "--no-progress-backoff-ms", "5000",
                 "--no-progress-max-backoff-ms", "60000",

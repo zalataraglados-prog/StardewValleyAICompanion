@@ -1,4 +1,4 @@
-# StardewAI r24 正式训练短交接
+# StardewAI r25 正式训练短交接
 
 ## 当前结论
 
@@ -19,22 +19,24 @@
 6. 一个外层 iteration 对应一个高层目标 episode，可包含多个机械动作和多次 fresh replan；目标完成立即结束
    iteration，不能顺带执行下一个全局目标。
 
-## r24 实证
+## r25 实证
 
-- 发布/运行：`formal-r24-20260901` / `train.server.20260901.r24`。
+- 发布/运行：`formal-r25-20260901` / `train.server.20260901.r25`。
 - 隔离槽位：`StardewAIDebug_16564609768130219756`。
 - 单目标：处理 `landslideDone` 邮件。
 - 原生动作：跨图、走到信箱、交互、等待 LetterViewer 可输入、关闭信件，共 `5/5` applied/verified/fresh。
 - 策略轨迹：5 条成功，五个候选 ID 均存在，`effective_candidate_id_missing=0`。
-- 数据集：accepted 181、rejected 0、train/validation/test 128/0/53、train pairs 3415。
-- checkpoint：`structured-policy-35eb3439e19036a75b9c628b`，SHA-256
-  `11f38de448370bb401278bd8cd32ca4faea1e42e67df3b5299e20394c53ef0f7`。
-- 性能：约 56.346 UPS；12 次 full snapshot 平均 1430.682 ms。
+- manifest：`max_attempts=1 / max_persisted_iterations=4 / min_free_space_mb=4800`。
+- 数据集：accepted 186、rejected 0、train/validation/test 128/5/53、train pairs 3415。
+- checkpoint：`structured-policy-52c9f785cc6dcc46c02f94e7`，SHA-256
+  `b97bbdc1b64ba77b38097fc691581d4397c32807246f312b00dd883249e23b67`。
+- 性能：训练后约 54.124 UPS；12 次 full snapshot 平均 1406.835 ms。
 - 进程：游戏、Backend、Product Executor 运行；LiveTrainingLoop 已正常退出，当前没有长训。
 
 ## 下一步与退出条件
 
-服务器仅约 5072 MiB 可用、使用率 92%。先扩容或迁移正式训练根并验证数据、manifest、checkpoint 全部
+正式 run 已将诊断快照限制为最近四个迭代家族，但服务器仍仅约 4999 MiB 可用、使用率 92%，且没有
+第二块数据盘。先扩容或迁移正式训练根并验证数据、manifest、checkpoint 全部
 哈希，再启动有界多日批次。每批退出条件为：完成计划游戏日数或达到显式 attempt 上限；所有入库动作有
 Product verified/fresh 回执；无孤立 pending；dataset/checkpoint/manifest 哈希一致；游戏 UPS 和剩余空间不越线；
 停止后可由 ready/recovery probe 恢复。达到跨季、跨年、第三年爷爷 21 分独立长跑与完整动作覆盖前，禁止写
