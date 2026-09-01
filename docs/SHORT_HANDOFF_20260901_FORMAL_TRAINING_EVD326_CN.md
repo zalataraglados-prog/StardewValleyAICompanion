@@ -1,43 +1,34 @@
-# StardewAI r25 正式训练短交接
+# StardewAI r29 有序高层队列正式闭环短交接
 
 ## 当前结论
 
-正式 Product 训练闭环已在 119 服务器产生真实数据和新 checkpoint；这不是 bootstrap，也不是仅有进程。
-但只完成了一个有界高层目标，尚未开始连续多日的全量长训，更不能称为完整陪玩模型训练完成。
+队列级决策边界已经修正并在 119 服务器通过有界正式证明。现在不是“每个机械动作调用一次模型”，而是模型一次选择一条有序高层候选队列，C# 编译器和执行器逐候选完成全部机械动作。多日全量长训尚未开始。
 
-## 每轮训练
+## 每次模型决策
 
-1. 透明桥生成 fresh 全量游戏快照、状态哈希和当前可用信息。
-2. 上游按时间、资源、安全、目标和准入证据排除不可能候选；C#
-   `return_weighted_pairwise_linear_ranker.v1` 只排序“现在做什么”。
-3. DailyPlanCompiler 将被选中的高层目标展开为动作队列；坐标、路线、菜单、工具、按键和安全时序属于
-   编译器/执行器，不交给小模型猜测。
-4. Product Executor 通过现有原生执行端执行，每个需要重规划的动作后读取 fresh snapshot，并核对
-   `applied + verified + fresh`。失败、状态漂移或回执不确定时失败关闭并重规划。
-5. 只有有候选来源、准入且验证成功的显式决策进入 `policy_decision_trajectory.v2`；随后确定性重建数据集、
-   训练结构化 checkpoint，并原子更新 manifest/hash。
-6. 一个外层 iteration 对应一个高层目标 episode，可包含多个机械动作和多次 fresh replan；目标完成立即结束
-   iteration，不能顺带执行下一个全局目标。
+1. 透明桥生成 fresh 游戏快照、状态哈希和当前可用信息。
+2. 上游按时间、资源、安全、目标和准入证据排除不可能候选；策略模型只对剩余高层候选排序，并一次选择有序队列。
+3. `SelectedQueueDecisionLease` 持有原始排序、编译队列、候选顺序和当前游标，不因机械 continuation 或 fresh snapshot 被替换。
+4. 每到一个高层候选边界，运行时从 fresh snapshot 重新物化同一候选，检查队列先后关系、累计时间/能量和身份一致性，再由 DailyPlanCompiler 确定性编译。
+5. 候选内部的寻路、移动、交互、等待、菜单和其他 continuation 只进行本地确定性重编译，`policy_model_invoked=false`。
+6. 一个高层候选只有在 Product Executor 回执 `applied + verified + fresh` 且完成条件成立后，才写入一条 `policy_decision_trajectory.v2`。机械原语不单独写策略轨迹。
+7. 队列全部完成或任一候选使队列失效后，才允许重新调用模型。失败候选不计完成；已完成候选的有效轨迹可保留。
 
-## r25 实证
+## r29 实证
 
-- 发布/运行：`formal-r25-20260901` / `train.server.20260901.r25`。
+- 发布/运行：`formal-r29-20260901` / `train.server.20260901.r29`。
 - 隔离槽位：`StardewAIDebug_16564609768130219756`。
-- 单目标：处理 `landslideDone` 邮件。
-- 原生动作：跨图、走到信箱、交互、等待 LetterViewer 可输入、关闭信件，共 `5/5` applied/verified/fresh。
-- 策略轨迹：5 条成功，五个候选 ID 均存在，`effective_candidate_id_missing=0`。
-- manifest：`max_attempts=1 / max_persisted_iterations=4 / min_free_space_mb=4800`。
-- 数据集：accepted 186、rejected 0、train/validation/test 128/5/53、train pairs 3415。
-- checkpoint：`structured-policy-52c9f785cc6dcc46c02f94e7`，SHA-256
-  `b97bbdc1b64ba77b38097fc691581d4397c32807246f312b00dd883249e23b67`。
-- 性能：训练后约 54.124 UPS；12 次 full snapshot 平均 1406.835 ms。
-- 进程：游戏、Backend、Product Executor 运行；LiveTrainingLoop 已正常退出，当前没有长训。
+- 一次策略排序选择 4 个高层候选：处理邮件和 3 个装箱候选。
+- 共执行 9 个机械动作，全部 `applied/verified/fresh`。
+- 发生 3 次候选边界刷新、5 次候选内部 continuation 刷新；这些刷新都没有调用策略模型。
+- 形成 4 条高层候选策略轨迹，`policy_trajectory_skips=0`，最终 `selected_queue_decision_complete=true`。
+- checkpoint：`structured-policy-184b08e75e9672a4cd8a74b1`；本轮报告追加 203 行。
+- r27/r28 只用于发现并修正站位身份和 continuation 跨候选问题，不算成功训练证据。
+
+## 迁移与服务器状态
+
+修正前训练根已迁移至 `I:\StardewAITrainingArchive\119.91.139.160\formal-training-r18-pre-queue-boundary-fix-20260901`。远端 910 个文件、本地 910 个文件，SHA-256 验证 910/910；远端源目录保留。服务器当前保留单个 SMAPI 游戏进程及 r29 Backend/Product 服务，没有运行 LiveTrainingLoop 长训。
 
 ## 下一步与退出条件
 
-正式 run 已将诊断快照限制为最近四个迭代家族，但服务器仍仅约 4999 MiB 可用、使用率 92%，且没有
-第二块数据盘。先扩容或迁移正式训练根并验证数据、manifest、checkpoint 全部
-哈希，再启动有界多日批次。每批退出条件为：完成计划游戏日数或达到显式 attempt 上限；所有入库动作有
-Product verified/fresh 回执；无孤立 pending；dataset/checkpoint/manifest 哈希一致；游戏 UPS 和剩余空间不越线；
-停止后可由 ready/recovery probe 恢复。达到跨季、跨年、第三年爷爷 21 分独立长跑与完整动作覆盖前，禁止写
-“全量训练完成”。当前线性 ranker 不需要 RTX 5070 8GB；GPU 只在长期轨迹足够后评估神经模型或 QLoRA。
+先在扩容或迁移正式训练根后做一次有界多外层迭代恢复验证，确认队列 lease 能跨外层循环续跑且每条队列只产生一次模型排序；随后启动可恢复的多日正式批次。每批必须同时满足：计划游戏日或 attempt 上限到达；无孤立 Product pending；所有入库高层候选有 verified/fresh 回执；dataset/checkpoint/manifest 哈希一致；策略调用计数不超过队列决策次数；UPS 和剩余磁盘不越线。达到跨季、跨年、第三年爷爷 21 分独立长跑前，不得宣称全量训练完成。

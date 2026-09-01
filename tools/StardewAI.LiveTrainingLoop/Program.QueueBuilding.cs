@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -55,11 +56,9 @@ static partial class Program
         HttpClient http,
         LiveTrainingOptions options,
         string stateHash,
-        JsonObject? objectiveContinuation,
         IReadOnlyCollection<JsonObject> suppressedObjectiveContinuations)
     {
         var explicitCandidates =
-            objectiveContinuation is null &&
             options.DailyPlanCandidateParameters.Count > 0
                 ? new object[]
                 {
@@ -82,21 +81,10 @@ static partial class Program
             require_structured_policy = options.RequireStructuredPolicy,
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
-            candidate_option_ids = objectiveContinuation is null && explicitCandidates.Length == 0
+            candidate_option_ids = explicitCandidates.Length == 0
                 ? options.DailyPlanCandidateOptionIds
                 : Array.Empty<string>(),
-            candidates = objectiveContinuation is null
-                ? explicitCandidates
-                : new object[]
-                {
-                    new
-                    {
-                        option_id = ReadString(objectiveContinuation, "option_id"),
-                        explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
-                        invocation_source = options.DailyPlanInvocationSource,
-                        parameters = ContinuationRequestParameters(objectiveContinuation)
-                    }
-                },
+            candidates = explicitCandidates,
             include_blocked_options = false
         }, JsonOptions);
         var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
@@ -117,40 +105,30 @@ static partial class Program
                     "recovery_",
                     StringComparison.Ordinal);
         });
-        var unsuppressedCandidates = objectiveContinuation is null || exclusiveRecovery
-            ? QueueReplanFilter.FilterSuppressedContinuations(
-                rankedCandidates,
-                suppressedObjectiveContinuations)
-            : JsonNode.Parse(rankedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
-        var continuationCandidates =
-            exclusiveRecovery
-                ? JsonNode.Parse(unsuppressedCandidates.ToJsonString())?.AsArray() ?? new JsonArray()
-                : QueueReplanFilter.FilterRankedCandidates(
-                    unsuppressedCandidates,
-                    objectiveContinuation);
+        var unsuppressedCandidates = QueueReplanFilter.FilterSuppressedContinuations(
+            rankedCandidates,
+            suppressedObjectiveContinuations);
+        var continuationCandidates = JsonNode.Parse(
+            unsuppressedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
         var effectiveCandidateKind = exclusiveRecovery
             ? string.Empty
-            : QueueReplanFilter.EffectiveCandidateKindFilter(
-                options.DailyPlanCandidateKind,
-                objectiveContinuation);
+            : options.DailyPlanCandidateKind;
         var selectedCandidates =
             QueueReplanFilter.FilterCandidateKind(
                 continuationCandidates,
                 effectiveCandidateKind);
         var effectiveCandidateId = exclusiveRecovery
             ? string.Empty
-            : QueueReplanFilter.EffectiveCandidateIdFilter(
-                options.DailyPlanCandidateId,
-                objectiveContinuation);
+            : options.DailyPlanCandidateId;
         selectedCandidates =
             QueueReplanFilter.FilterCandidateId(
                 selectedCandidates,
                 effectiveCandidateId);
         var objectiveContinuationFilter = new JsonObject
         {
-            ["active"] = objectiveContinuation is not null,
+            ["active"] = false,
             ["exclusive_recovery_override"] = exclusiveRecovery,
-            ["objective"] = objectiveContinuation is null ? null : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions)),
+            ["objective"] = null,
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = continuationCandidates.Count,
             ["policy"] = exclusiveRecovery
@@ -162,7 +140,7 @@ static partial class Program
             objectiveContinuationFilter.ToJsonString(JsonOptions));
         ranking["released_objective_suppression"] = new JsonObject
         {
-            ["active"] = objectiveContinuation is null && suppressedObjectiveContinuations.Count > 0,
+            ["active"] = suppressedObjectiveContinuations.Count > 0,
             ["suppressed_objective_count"] = suppressedObjectiveContinuations.Count,
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = unsuppressedCandidates.Count,
@@ -206,6 +184,104 @@ static partial class Program
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
         var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
         return (response, plan, queue, ranking);
+    }
+
+    private static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Evidence)> BuildQueueFromSelectedCandidateAsync(
+        HttpClient http,
+        LiveTrainingOptions options,
+        string stateHash,
+        string effectiveGoalId,
+        SelectedQueueCandidateLock selectedCandidate,
+        JsonObject? objectiveContinuation = null)
+    {
+        var effectiveContinuation = objectiveContinuation ??
+            selectedCandidate.ObjectiveContinuation;
+        var requestParameters = effectiveContinuation is null
+            ? JsonNode.Parse(
+                selectedCandidate.RankedCandidate["parameters"]?.ToJsonString() ?? "[]")?.AsArray() ??
+                new JsonArray()
+            : ContinuationRequestParameters(effectiveContinuation);
+        var availabilityRequest = JsonSerializer.Serialize(new
+        {
+            state_hash = stateHash,
+            candidates = new[]
+            {
+                new
+                {
+                    option_id = selectedCandidate.OptionId,
+                    explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
+                    invocation_source = options.DailyPlanInvocationSource,
+                    parameters = requestParameters
+                }
+            }
+        }, JsonOptions);
+        var availabilityNode = await PostJsonStringAsync(
+            http,
+            options.BackendUrl + "/api/v1/planner/options/availability",
+            availabilityRequest);
+        var availability = JsonSerializer.Deserialize<OptionAvailabilityEnvelope>(
+            availabilityNode.ToJsonString(JsonOptions),
+            JsonOptions) ?? throw new InvalidOperationException(
+                "selected queue candidate availability response is empty");
+
+        // This is deterministic candidate materialization. It must never invoke
+        // the structured policy that selected the high-level queue.
+        var materialized = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            effectiveGoalId);
+        var materializedNodes = JsonNode.Parse(
+            JsonSerializer.Serialize(materialized, JsonOptions))?.AsArray() ?? new JsonArray();
+        var effectiveLock = selectedCandidate with
+        {
+            ObjectiveContinuation = effectiveContinuation
+        };
+        var selectedCandidates = SelectedQueueCandidateMatcher.FilterMaterializedCandidates(
+            materializedNodes,
+            effectiveLock);
+        var evidence = new JsonObject
+        {
+            ["schema_version"] = "selected_queue_candidate_refresh.v1",
+            ["state_hash"] = stateHash,
+            ["goal_id"] = effectiveGoalId,
+            ["policy_model_invoked"] = false,
+            ["selection_locked"] = true,
+            ["selected_queue_index"] = selectedCandidate.QueueIndex,
+            ["selected_candidate_id"] = selectedCandidate.CandidateId,
+            ["selected_option_id"] = selectedCandidate.OptionId,
+            ["objective"] = effectiveContinuation is null
+                ? null
+                : JsonNode.Parse(effectiveContinuation.ToJsonString(JsonOptions)),
+            ["availability"] = JsonNode.Parse(availabilityNode.ToJsonString(JsonOptions)),
+            ["materialized_candidate_count"] = materializedNodes.Count,
+            ["selected_candidate_count"] = selectedCandidates.Count,
+            ["selected_candidate_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["selected_candidate_count"] = selectedCandidates.Count,
+                ["policy"] = effectiveContinuation is null
+                    ? "locked_exact_candidate_identity;fresh_state_rebind;fail_closed;no_policy_rerank"
+                    : "locked_typed_objective_identity;fresh_state_rebind;fail_closed;no_policy_rerank"
+            }
+        };
+        var compileRequest = JsonSerializer.Serialize(new
+        {
+            state_hash = stateHash,
+            goal_id = effectiveGoalId,
+            execution_mode = options.TargetExecutionMode,
+            max_candidates = 1,
+            compile_action_queue = true,
+            ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
+        }, JsonOptions);
+        var response = await PostJsonStringAsync(
+            http,
+            options.BackendUrl + "/api/v1/planner/daily-plan/compile",
+            compileRequest);
+        var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException(
+            "selected queue candidate response did not include plan");
+        var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException(
+            "selected queue candidate response did not include action_queue");
+        return (response, plan, queue, evidence);
     }
 
     private static JsonArray ContinuationRequestParameters(

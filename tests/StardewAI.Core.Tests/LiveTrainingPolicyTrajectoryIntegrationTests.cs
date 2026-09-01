@@ -9,7 +9,7 @@ namespace StardewAI.Core.Tests;
 public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
 {
     [Fact]
-    public void AggregateExecutionWritesOneTrajectoryPerEffectiveDecisionCandidate()
+    public void AggregateExecutionWritesOneTrajectoryForAllMechanicalContinuationSteps()
     {
         var root = Path.Combine(Path.GetTempPath(), "stardewai-tests", Guid.NewGuid().ToString("N"));
         var artifactDirectory = Path.Combine(root, "artifacts");
@@ -20,6 +20,10 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         File.WriteAllText(rankingPath, JsonSerializer.Serialize(Decision(), JsonOptions));
         var first = Execution(beforeSnapshotPath, rankingPath, "execution.1.json");
         var duplicatePrimitive = Execution(beforeSnapshotPath, rankingPath, "execution.2.json");
+        first["selected_queue_candidate_completed"] = false;
+        duplicatePrimitive["effective_before_state_hash"] = "hash.after.first";
+        duplicatePrimitive["before_game_tick"] = 130L;
+        duplicatePrimitive["after_game_tick"] = 160L;
         var aggregate = new JsonObject
         {
             ["step_results"] = new JsonArray(first, duplicatePrimitive)
@@ -39,13 +43,14 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         var result = InvokeAppender(options, aggregate, append);
 
         Assert.Equal(1, result.AppendedCount);
-        Assert.Equal(1, result.SkippedCount);
-        Assert.Equal("decision_already_emitted", result.FirstSkipReason);
+        Assert.Equal(0, result.SkippedCount);
+        Assert.Equal(string.Empty, result.FirstSkipReason);
         var line = Assert.Single(File.ReadAllLines(options.PolicyTrajectoryDatasetPath));
         using var document = JsonDocument.Parse(line);
         Assert.Equal("social:gift:Abigail", document.RootElement.GetProperty("selection").GetProperty("candidate_id").GetString());
         Assert.Equal(2, document.RootElement.GetProperty("candidates").GetArrayLength());
         Assert.Equal("hash.before", document.RootElement.GetProperty("source_state_hash").GetString());
+        Assert.Equal(60L, document.RootElement.GetProperty("outcome").GetProperty("actual_ticks").GetInt64());
     }
 
     [Fact]
@@ -107,6 +112,7 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         ["status"] = "applied",
         ["primitive_verification_status"] = "verified",
         ["after_snapshot_fresh"] = true,
+        ["selected_queue_candidate_completed"] = true,
         ["effective_ranking_path"] = rankingPath,
         ["effective_decision_source_state_hash"] = "hash.before",
         ["effective_before_state_hash"] = "hash.before",

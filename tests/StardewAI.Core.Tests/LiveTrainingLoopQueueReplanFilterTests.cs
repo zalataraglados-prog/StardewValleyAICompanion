@@ -6,6 +6,42 @@ namespace StardewAI.Core.Tests;
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
     [Fact]
+    public void MechanicalContinuationNeverInvokesOrReplacesThePolicyDecision()
+    {
+        var runtimeSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
+        var queueBuildingSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.QueueBuilding.cs"));
+
+        Assert.Contains("BuildQueueFromSelectedCandidateAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("SelectedQueueDecisionLease.Load(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("StampSelectedQueueIdentity(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "activeObjectiveContinuation is not null ||",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SelectedQueueContinuationBoundaryRejectedExecution(",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("BuildQueueFromDailyPlanAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("effectiveDecisionArtifacts.Replace(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("/api/v1/planner/options/availability", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("policy_model_invoked\"] = false", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("no_policy_rerank", queueBuildingSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "selected queue continuation must use deterministic continuation compilation",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+
+        var mainSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        Assert.Contains("hasDecisionLease", mainSource, StringComparison.Ordinal);
+        Assert.Contains("resumedSelectedQueueDecision", mainSource, StringComparison.Ordinal);
+        Assert.Contains("suppressedObjectiveContinuations: suppressedObjectiveContinuations", mainSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MainLoopExecutesPendingSubsetOnlyWhenContinueFlagIsEnabled()
     {
         var source = File.ReadAllText(FindRepositoryFile(
@@ -66,7 +102,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("completed_objective_continuations", runtimeExecutionSource, StringComparison.Ordinal);
         Assert.Contains("AddSuppressedContinuation", runtimeExecutionSource, StringComparison.Ordinal);
         Assert.Contains("FilterSuppressedContinuations", queueBuildingSource, StringComparison.Ordinal);
-        Assert.Contains("ContinuationRequestParameters(objectiveContinuation)", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("ContinuationRequestParameters(effectiveContinuation)", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("\"continuation.\" + property.Key", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("IsTrainingVerifiedExecution(execution)", source, StringComparison.Ordinal);
         Assert.Contains("IsTrainingVerifiedExecution(step)", policyTrajectorySource, StringComparison.Ordinal);
@@ -170,7 +206,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
-    public void CompletedObjectiveStopsAtTheTrainingIterationBoundary()
+    public void CompletedObjectiveContinuesToNextSelectedQueueCandidate()
     {
         var decision = QueueReplanFilter.DecideAfterExecution(
             "applied",
@@ -183,18 +219,67 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             objectiveContinuationCompleted: true);
 
         Assert.False(decision.ShouldReplan);
-        Assert.True(decision.ShouldStop);
+        Assert.False(decision.ShouldStop);
         Assert.False(decision.ShouldFilterRegeneratedQueue);
         Assert.Equal(
-            "objective_continuation_completed_iteration_boundary",
+            "selected_queue_candidate_completed_continue_in_order",
             decision.Reason);
 
         var runtimeSource = File.ReadAllText(FindRepositoryFile(
             "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
         Assert.Contains(
-            "objectiveContinuationCompleted);",
+            "completedContinuationThisStep);",
             runtimeSource,
             StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("applied", true)]
+    [InlineData("no_op", true)]
+    [InlineData("blocked", false)]
+    [InlineData("rejected", false)]
+    public void OnlyContinuableTerminalStepCompletesSelectedCandidate(
+        string status,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            QueueReplanFilter.CompletesSelectedQueueCandidate(
+                status,
+                objectiveContinuationCompleted: false,
+                activeObjectiveContinuation: null,
+                selectedCandidateId: "candidate.first",
+                nextCandidateId: "candidate.second"));
+    }
+
+    [Fact]
+    public void CompletedVerifiedCandidateSurvivesLaterQueueInvalidation()
+    {
+        var completed = new JsonObject
+        {
+            ["status"] = "applied",
+            ["primitive_verification_status"] = "verified",
+            ["after_snapshot_fresh"] = true,
+            ["selected_queue_candidate_completed"] = true,
+            ["effective_selected_candidate_id"] = "candidate.first"
+        };
+        var invalidated = new JsonObject
+        {
+            ["status"] = "blocked",
+            ["primitive_verification_status"] = "blocked",
+            ["after_snapshot_fresh"] = true,
+            ["selected_queue_candidate_completed"] = false,
+            ["effective_selected_candidate_id"] = "candidate.second"
+        };
+        var aggregate = new JsonObject
+        {
+            ["step_results"] = new JsonArray(completed, invalidated)
+        };
+
+        Assert.Same(
+            completed,
+            QueueReplanFilter.LastTrainingVerifiedCompletedSelectedCandidateStep(
+                aggregate));
     }
 
     [Fact]

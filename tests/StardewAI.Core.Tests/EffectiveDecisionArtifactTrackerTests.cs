@@ -77,6 +77,28 @@ public sealed class EffectiveDecisionArtifactTrackerTests
         Assert.Equal("social:gift:Abigail:slot:11:(O)388:route:FarmHouse:27,31", candidateId);
     }
 
+    [Fact]
+    public void MechanicalContinuationKeepsOriginalDecisionAndSelectedCandidate()
+    {
+        var tracker = new EffectiveDecisionArtifactTracker(
+            "initial-plan.json",
+            "initial-ranking.json",
+            "initial-queue.json",
+            "hash.initial",
+            "before-initial.json");
+        tracker.SelectCandidate("mail:process:spring_18", 0);
+        var execution = new JsonObject();
+
+        tracker.Stamp(execution);
+
+        Assert.Equal("initial-ranking.json", execution["effective_ranking_path"]!.GetValue<string>());
+        Assert.Equal("hash.initial", execution["effective_decision_source_state_hash"]!.GetValue<string>());
+        Assert.Equal("before-initial.json", execution["effective_decision_snapshot_path"]!.GetValue<string>());
+        Assert.Equal("mail:process:spring_18", EffectiveDecisionArtifactTracker.ReadCandidateId(execution));
+        Assert.Equal(0, execution["effective_selected_queue_index"]!.GetValue<int>());
+        Assert.Equal(0, execution["effective_decision_revision"]!.GetValue<int>());
+    }
+
     private static JsonObject Parameter(string name, string value) => new()
     {
         ["name"] = name,

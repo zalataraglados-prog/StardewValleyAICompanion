@@ -39,6 +39,14 @@ var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
 var objectiveCompleted = false;
 var socialObjectiveCompleted = false;
+var leasedDecisionModelPlanPath = string.Empty;
+var leasedDecisionRankingPath = string.Empty;
+var leasedDecisionCompiledQueuePath = string.Empty;
+var leasedDecisionSnapshotPath = string.Empty;
+var leasedDecisionSourceStateHash = string.Empty;
+var leasedDecisionGoalId = string.Empty;
+var leasedSelectedCandidateId = string.Empty;
+var leasedSelectedQueueIndex = -1;
 var persistedIterationCount = Directory.EnumerateFiles(
     options.SnapshotDir,
     "before-snapshot-*.json",
@@ -118,24 +126,75 @@ for (var attemptOrdinal = 1;
 
     var modelPlanPath = string.Empty;
     var rankingPath = string.Empty;
+    var decisionModelPlanPath = string.Empty;
+    var decisionRankingPath = string.Empty;
+    var decisionCompiledQueuePath = string.Empty;
+    var decisionSnapshotPath = snapshotPath;
+    var decisionSourceStateHash = lastStateHash;
+    var selectedCandidateId = string.Empty;
+    var selectedQueueIndex = -1;
+    var resumedSelectedQueueDecision = false;
     JsonObject? dailyPlanRanking = null;
     JsonObject queue;
     if (options.UseDailyPlan)
     {
-        var dailyPlan = await BuildQueueFromDailyPlanAsync(
-            http,
-            options,
-            lastStateHash,
-            activeObjectiveContinuation,
-            suppressedObjectiveContinuations);
-        modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
-        await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
-        var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
-        await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
-        rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
-        await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
-        dailyPlanRanking = dailyPlan.Ranking;
-        queue = dailyPlan.Queue;
+        var hasDecisionLease = File.Exists(leasedDecisionModelPlanPath) &&
+            File.Exists(leasedDecisionRankingPath) &&
+            File.Exists(leasedDecisionCompiledQueuePath) &&
+            File.Exists(leasedDecisionSnapshotPath) &&
+            !string.IsNullOrWhiteSpace(leasedDecisionSourceStateHash) &&
+            !string.IsNullOrWhiteSpace(leasedDecisionGoalId) &&
+            !string.IsNullOrWhiteSpace(leasedSelectedCandidateId) &&
+            leasedSelectedQueueIndex >= 0;
+        if (hasDecisionLease)
+        {
+            var decisionLease = SelectedQueueDecisionLease.Load(
+                leasedDecisionCompiledQueuePath,
+                leasedDecisionRankingPath);
+            var selectedCandidate = decisionLease.CandidateAt(
+                leasedSelectedQueueIndex);
+            var refresh = await BuildQueueFromSelectedCandidateAsync(
+                http,
+                options,
+                lastStateHash,
+                leasedDecisionGoalId,
+                selectedCandidate,
+                activeObjectiveContinuation);
+            modelPlanPath = Path.Combine(options.SnapshotDir, "candidate-compiled-plan-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(modelPlanPath, refresh.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
+            var dailyPlanPath = Path.Combine(options.SnapshotDir, "candidate-compile-response-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(dailyPlanPath, refresh.Response.ToJsonString(JsonOptions), Encoding.UTF8);
+            var evidencePath = Path.Combine(options.SnapshotDir, "candidate-refresh-evidence-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(evidencePath, refresh.Evidence.ToJsonString(JsonOptions), Encoding.UTF8);
+            dailyPlanRanking = refresh.Evidence;
+            queue = refresh.Queue;
+            decisionModelPlanPath = leasedDecisionModelPlanPath;
+            decisionRankingPath = leasedDecisionRankingPath;
+            decisionCompiledQueuePath = leasedDecisionCompiledQueuePath;
+            decisionSnapshotPath = leasedDecisionSnapshotPath;
+            decisionSourceStateHash = leasedDecisionSourceStateHash;
+            selectedCandidateId = selectedCandidate.CandidateId;
+            selectedQueueIndex = selectedCandidate.QueueIndex;
+            resumedSelectedQueueDecision = true;
+        }
+        else
+        {
+            var dailyPlan = await BuildQueueFromDailyPlanAsync(
+                http,
+                options,
+                lastStateHash,
+                suppressedObjectiveContinuations: suppressedObjectiveContinuations);
+            modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
+            var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
+            rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
+            dailyPlanRanking = dailyPlan.Ranking;
+            queue = dailyPlan.Queue;
+            decisionModelPlanPath = modelPlanPath;
+            decisionRankingPath = rankingPath;
+        }
     }
     else if (options.UseParameterizedAction)
     {
@@ -157,6 +216,25 @@ for (var attemptOrdinal = 1;
     }
     var queuePath = Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
+    if (options.UseDailyPlan && !resumedSelectedQueueDecision)
+    {
+        var firstSelectedItem = ExecutableQueueItems(queue).FirstOrDefault();
+        selectedCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(firstSelectedItem);
+        selectedQueueIndex = QueueReplanFilter.ReadAcceptedCandidateIndex(firstSelectedItem);
+        decisionCompiledQueuePath = queuePath;
+        leasedDecisionModelPlanPath = decisionModelPlanPath;
+        leasedDecisionRankingPath = decisionRankingPath;
+        leasedDecisionCompiledQueuePath = decisionCompiledQueuePath;
+        leasedDecisionSnapshotPath = decisionSnapshotPath;
+        leasedDecisionSourceStateHash = decisionSourceStateHash;
+        leasedDecisionGoalId = ReadString(queue, "goal_id");
+        if (string.IsNullOrWhiteSpace(leasedDecisionGoalId))
+        {
+            leasedDecisionGoalId = options.Goal;
+        }
+        leasedSelectedCandidateId = selectedCandidateId;
+        leasedSelectedQueueIndex = selectedQueueIndex;
+    }
     lastQueueId = ReadString(queue, "queue_id");
     var queueStatus = ReadString(queue, "status");
     var noProgressDecision = noProgressBackoff.Observe(queue);
@@ -165,6 +243,33 @@ for (var attemptOrdinal = 1;
         if (!string.Equals(queueStatus, "pending", StringComparison.Ordinal))
         {
             var executableSubsetCount = ExecutableQueueItems(queue).Length;
+            if (options.UseDailyPlan &&
+                resumedSelectedQueueDecision &&
+                executableSubsetCount == 0)
+            {
+                var invalidatedCandidateId = leasedSelectedCandidateId;
+                activeObjectiveContinuation = null;
+                leasedDecisionModelPlanPath = string.Empty;
+                leasedDecisionRankingPath = string.Empty;
+                leasedDecisionCompiledQueuePath = string.Empty;
+                leasedDecisionSnapshotPath = string.Empty;
+                leasedDecisionSourceStateHash = string.Empty;
+                leasedDecisionGoalId = string.Empty;
+                leasedSelectedCandidateId = string.Empty;
+                leasedSelectedQueueIndex = -1;
+                noProgressBackoff.Reset();
+                AppendProgress(
+                    options,
+                    "selected_queue_invalidated",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "reason=locked_candidate_unavailable_on_fresh_snapshot candidate_id=" +
+                    invalidatedCandidateId +
+                    " policy_model_invoked=false");
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
+            }
             if (!options.ContinueAfterBlockedQueueItems || executableSubsetCount == 0)
             {
                 if (executableSubsetCount == 0 &&
@@ -219,7 +324,7 @@ for (var attemptOrdinal = 1;
         }
 
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, modelPlanPath, rankingPath, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
@@ -231,8 +336,12 @@ for (var attemptOrdinal = 1;
 
         if (options.UseRuntimeTestHarnessExecutor)
         {
+            var completedCandidateRepresentative =
+                QueueReplanFilter.LastTrainingVerifiedCompletedSelectedCandidateStep(
+                    execution);
             var primitiveVerified =
-                QueueReplanFilter.IsTrainingVerifiedExecution(execution);
+                QueueReplanFilter.IsTrainingVerifiedExecution(execution) ||
+                completedCandidateRepresentative is not null;
             if (!primitiveVerified)
             {
                 var unverifiedDecision =
@@ -249,13 +358,17 @@ for (var attemptOrdinal = 1;
 
             unverifiedExecutionBackoff.Reset();
 
+            var trainingRepresentative =
+                QueueReplanFilter.IsTrainingVerifiedExecution(execution)
+                    ? execution
+                    : completedCandidateRepresentative!;
             var executionNoProgress =
-                noProgressBackoff.ObserveExecution(queue, execution);
+                noProgressBackoff.ObserveExecution(queue, trainingRepresentative);
             var realAppend = AppendRealExecutionRow(
                 options,
                 beforeSnapshot,
                 queue,
-                execution,
+                trainingRepresentative,
                 lastStateHash,
                 lastQueueId,
                 appendToDataset: !executionNoProgress.NoProgress);
@@ -275,6 +388,33 @@ for (var attemptOrdinal = 1;
             activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
                 ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
                 : null;
+            var selectedQueueDecisionComplete = execution[
+                "selected_queue_decision_complete"]?.GetValue<bool>() == true;
+            var selectedQueueRedecisionRequired = execution[
+                "selected_queue_redecision_required"]?.GetValue<bool>() == true;
+            var selectedQueueResumeIndex = execution[
+                "selected_queue_resume_index"]?.GetValue<int>() ?? -1;
+            if (options.UseDailyPlan &&
+                !selectedQueueDecisionComplete &&
+                !selectedQueueRedecisionRequired &&
+                selectedQueueResumeIndex >= 0)
+            {
+                leasedSelectedCandidateId = ReadString(
+                    execution,
+                    "selected_queue_resume_candidate_id");
+                leasedSelectedQueueIndex = selectedQueueResumeIndex;
+            }
+            else
+            {
+                leasedDecisionModelPlanPath = string.Empty;
+                leasedDecisionRankingPath = string.Empty;
+                leasedDecisionCompiledQueuePath = string.Empty;
+                leasedDecisionSnapshotPath = string.Empty;
+                leasedDecisionSourceStateHash = string.Empty;
+                leasedDecisionGoalId = string.Empty;
+                leasedSelectedCandidateId = string.Empty;
+                leasedSelectedQueueIndex = -1;
+            }
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
             var policyAppend = executionNoProgress.NoProgress
