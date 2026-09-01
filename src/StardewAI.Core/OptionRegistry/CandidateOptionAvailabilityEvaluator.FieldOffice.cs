@@ -91,17 +91,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null)
+        if (route?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
 
         return candidates.EnumerateArray()
             .Where(candidate => candidate.ValueKind == JsonValueKind.Object &&
                 ReadString(candidate, "action_status") == "route_to_field_office_required")
             .Select(candidate => CloneCandidate(
-                route.FirstConnectorCandidate,
+                route.FirstActionCandidate,
                 candidateId: "field-office-route:" + FieldOfficeCandidateId(candidate) + ":" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";field_office_target_piece=" + ReadInt(candidate, "target_piece_index"),
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(new[]
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";field_office_target_piece=" + ReadInt(candidate, "target_piece_index"),
+                parameters: route.FirstActionCandidate.Parameters.Concat(new[]
                 {
                     Parameter("continuation.option_id", "island.field_office_donate"),
                     Parameter("continuation.inventory_slot_index", ReadInt(candidate, "slot_index").ToString(CultureInfo.InvariantCulture)),

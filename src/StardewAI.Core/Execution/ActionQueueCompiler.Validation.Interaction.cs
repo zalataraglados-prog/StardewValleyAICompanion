@@ -33,6 +33,7 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.name_hatched_animal" ||
                 action.OptionId == "executor.advance_story_event" ||
                 action.OptionId == "executor.advance_story_event_minigame" ||
+                IsBoundedLetterViewerSettleWait(action, snapshot) ||
                 (action.OptionId == "executor.sleep" &&
                     string.Equals(
                         ReadParameter(action, "sleep_resume_mode"),
@@ -54,6 +55,57 @@ namespace StardewAI.Core.Execution
             return ActionSeesActiveMenuOpen(action, snapshot)
                 ? new[] { "active_menu_must_be_closed_before_action" }
                 : Array.Empty<string>();
+        }
+
+        private static bool IsBoundedLetterViewerSettleWait(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
+        {
+            if (!string.Equals(
+                    action.OptionId,
+                    "executor.wait_ticks",
+                    StringComparison.Ordinal) ||
+                !int.TryParse(
+                    ReadParameter(action, "wait_ticks"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var waitTicks) ||
+                waitTicks is < 1 or > 60 ||
+                !string.Equals(
+                    ReadParameter(action, "continuation.option_id"),
+                    "mail.process_letter",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "target_runtime_type"),
+                    "LetterViewerMenu",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ActiveMenuType(snapshot),
+                    "LetterViewerMenu",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var expectedIdentity = ReadParameter(
+                action,
+                "mail_menu_identity_sha256");
+            var menuState = ReadStateFieldValue(
+                snapshot,
+                "menus",
+                "menu_specific_state");
+            return !string.IsNullOrWhiteSpace(expectedIdentity) &&
+                menuState.HasValue &&
+                menuState.Value.ValueKind == JsonValueKind.Object &&
+                string.Equals(
+                    ReadString(menuState.Value, "kind"),
+                    "letter_viewer",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadString(menuState.Value, "menu_identity_sha256"),
+                    expectedIdentity,
+                    StringComparison.Ordinal) &&
+                ReadBool(menuState.Value, "can_receive_input") == false;
         }
 
         private static string[] ValidateSleepPlan(SmallModelAction action, SnapshotEnvelope snapshot)

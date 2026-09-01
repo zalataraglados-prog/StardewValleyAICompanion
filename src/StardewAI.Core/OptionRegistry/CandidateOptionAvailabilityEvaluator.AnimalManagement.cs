@@ -48,15 +48,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             var plan = FindResolvedRoutePlan(snapshot, currentLocation, locationId,
                 RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-            return plan?.FirstConnectorCandidate is null
+            return plan?.FirstActionCandidate is null
                 ? Array.Empty<EventCandidate>()
                 : new[]
                 {
                     CloneCandidate(
-                        plan.FirstConnectorCandidate,
+                        plan.FirstActionCandidate,
                         candidateId: "animal-management-route:" + animalId + ":" + managementIntent + ":" + currentLocation,
-                        expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";animal_management_target=" + animalId,
-                        parameters: plan.FirstConnectorCandidate.Parameters.Concat(continuation).ToArray(),
+                        expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";animal_management_target=" + animalId,
+                        parameters: plan.FirstActionCandidate.Parameters.Concat(continuation).ToArray(),
                         availabilityClass: "animal_management_rolling_route")
                 };
         }

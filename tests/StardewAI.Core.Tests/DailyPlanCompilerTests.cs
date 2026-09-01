@@ -20,7 +20,12 @@ public sealed partial class DailyPlanCompilerTests
             TileX = 11,
             TileY = 10,
             ExpectedEffect = "move_to_adjacent=10,10;preview_interact=OpenShop",
-            EstimatedTicks = 90
+            EstimatedTicks = 90,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "minigame.play_prairie_king" },
+                new SmallModelActionParameter { Name = "continuation.prairie_king_completion_goal", Value = "complete_without_dying" }
+            }
         };
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
@@ -31,7 +36,11 @@ public sealed partial class DailyPlanCompilerTests
         var wait = Assert.Single(plan.Steps);
         Assert.Equal("wait_ticks", wait.Kind);
         Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains("candidate_id:" + candidate.CandidateId, wait.Preconditions);
         Assert.Contains("fresh_snapshot_replan_required=true", wait.ExpectedEffects);
+        Assert.Contains(wait.Parameters, parameter =>
+            parameter.Name == "continuation.prairie_king_completion_goal" &&
+            parameter.Value == "complete_without_dying");
         Assert.Contains(plan.CandidateAudit[0].Reasons, reason => reason == "rolling_horizon_wait_then_refresh_snapshot");
     }
 
@@ -270,7 +279,7 @@ public sealed partial class DailyPlanCompilerTests
             new[] { first, second },
             "state.1",
             maxCandidates: 4,
-            availableMinutes: 1,
+            availableMinutes: 2,
             energyBudget: 270);
 
         var step = Assert.Single(plan.Steps);
@@ -327,13 +336,13 @@ public sealed partial class DailyPlanCompilerTests
         Assert.Contains(step.Parameters, parameter =>
             parameter.Name == "budget.accepted_candidate_index" && parameter.Value == "0");
         Assert.Contains(step.Parameters, parameter =>
-            parameter.Name == "budget.candidate_minutes" && parameter.Value == "1");
+            parameter.Name == "budget.candidate_minutes" && parameter.Value == "2");
         Assert.Contains(step.Parameters, parameter =>
             parameter.Name == "budget.candidate_energy_cost" && parameter.Value == "2");
         Assert.Contains(step.Parameters, parameter =>
             parameter.Name == "budget.remaining_minutes_before" && parameter.Value == "10");
         Assert.Contains(step.Parameters, parameter =>
-            parameter.Name == "budget.remaining_minutes_after" && parameter.Value == "9");
+            parameter.Name == "budget.remaining_minutes_after" && parameter.Value == "8");
         Assert.Contains(step.Parameters, parameter =>
             parameter.Name == "budget.remaining_energy_before" && parameter.Value == "20");
         Assert.Contains(step.Parameters, parameter =>
@@ -342,7 +351,7 @@ public sealed partial class DailyPlanCompilerTests
         Assert.Equal("accepted", audit.Decision);
         Assert.Contains("fits_aggregate_budget", audit.Reasons);
         Assert.Equal(10, audit.RemainingMinutesBefore);
-        Assert.Equal(9, audit.RemainingMinutesAfter);
+        Assert.Equal(8, audit.RemainingMinutesAfter);
         Assert.Equal(20, audit.RemainingEnergyBefore);
         Assert.Equal(18, audit.RemainingEnergyAfter);
     }
@@ -730,6 +739,7 @@ public sealed partial class DailyPlanCompilerTests
         var candidate = new PolicyEventCandidatePrediction
         {
             CandidateId = "clear:Farm:11,10:grass",
+            OptionId = "economy.buy_supplies",
             Kind = "clear_obstacle_tile",
             Rank = 1,
             TimelineStatus = "ready_now",
@@ -737,7 +747,13 @@ public sealed partial class DailyPlanCompilerTests
             TileX = 11,
             TileY = 10,
             ExpectedEffect = "current_location.obstacle[11,10]=clear;clear_kind=grass;source=Grass",
-            EstimatedTicks = 60
+            EstimatedTicks = 60,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "route_repair.candidate_id", Value = "route:Farm:12,10:warp:to=Town" },
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "economy.buy_supplies" },
+                new SmallModelActionParameter { Name = "continuation.qualified_item_id", Value = "(O)494" }
+            }
         };
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
@@ -751,6 +767,10 @@ public sealed partial class DailyPlanCompilerTests
             effect == "current_location.obstacle[11,10]=clear;clear_kind=grass;source=Grass");
         Assert.Contains(step.Parameters, parameter =>
             parameter.Name == "max_tool_swings" && parameter.Value == "8");
+        Assert.Contains(step.Parameters, parameter =>
+            parameter.Name == "continuation.option_id" && parameter.Value == "economy.buy_supplies");
+        Assert.Contains(step.Parameters, parameter =>
+            parameter.Name == "continuation.qualified_item_id" && parameter.Value == "(O)494");
     }
 
     [Fact]
@@ -1182,6 +1202,7 @@ public sealed partial class DailyPlanCompilerTests
         var candidate = new PolicyEventCandidatePrediction
         {
             CandidateId = "route:Farm:12,10:warp:to=Town:arrival=1,2",
+            OptionId = "minigame.play_prairie_king",
             Kind = "route_connector_tile",
             Rank = 1,
             TimelineStatus = "ready_now",
@@ -1198,7 +1219,10 @@ public sealed partial class DailyPlanCompilerTests
                 new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "2" },
                 new SmallModelActionParameter { Name = "max_movement_tiles", Value = "3" },
                 new SmallModelActionParameter { Name = "estimated_ticks", Value = "180" },
-                new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" }
+                new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" },
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "minigame.play_prairie_king" },
+                new SmallModelActionParameter { Name = "continuation.prairie_king_completion_goal", Value = "complete_without_dying" },
+                new SmallModelActionParameter { Name = "continuation.future_typed_identity", Value = "preserved_without_whitelist" }
             }
         };
 
@@ -1213,6 +1237,8 @@ public sealed partial class DailyPlanCompilerTests
         Assert.Contains(step.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
         Assert.Contains(step.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Town");
         Assert.Contains(step.Parameters, parameter => parameter.Name == "expected_arrival_tile_x" && parameter.Value == "1");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "continuation.prairie_king_completion_goal" && parameter.Value == "complete_without_dying");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "continuation.future_typed_identity" && parameter.Value == "preserved_without_whitelist");
         Assert.Contains(step.SafetyConstraints, constraint => constraint == "one_connector_per_replan");
     }
 

@@ -674,9 +674,18 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
         return Results.NotFound(new { detail = "no matching snapshot available" });
     }
 
-    var availability = request.Candidates.Length > 0
-        ? availabilityEvaluator.Evaluate(snapshot, request.Candidates, commitmentLedger: commitmentRepository.Get(snapshot))
-        : availabilityEvaluator.Evaluate(snapshot, request.CandidateOptionIds, commitmentLedger: commitmentRepository.Get(snapshot));
+    var commitmentLedger = commitmentRepository.Get(snapshot);
+    var availability = CandidateOptionAvailabilityEvaluator.RequiresExclusiveRecovery(snapshot)
+        ? availabilityEvaluator.Evaluate(
+            snapshot,
+            new[] { "recovery.stabilize_day" },
+            commitmentLedger: commitmentLedger)
+        : request.Candidates.Length > 0
+            ? availabilityEvaluator.Evaluate(snapshot, request.Candidates, commitmentLedger: commitmentLedger)
+            : availabilityEvaluator.EvaluateForAutonomousRuntimePlanning(
+                snapshot,
+                request.CandidateOptionIds,
+                commitmentLedger);
     var rankedCandidates = request.IncludeBlockedOptions
         ? availability.Options.Select(option => option.OptionId).ToArray()
         : availability.Options.Where(option => option.Available).Select(option => option.OptionId).ToArray();
@@ -754,7 +763,9 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
         string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
         request.MaxCandidates <= 0 ? 4 : request.MaxCandidates,
-        DailyPlanBudgetReader.AvailablePlanMinutes(snapshot),
+        DailyPlanBudgetReader.AvailablePlanMinutes(
+            snapshot,
+            request.RankedEventCandidates),
         DailyPlanBudgetReader.ReadSnapshotInt(snapshot, "player", "energy"));
 
     if (!request.CompileActionQueue)
@@ -1479,7 +1490,9 @@ public static class CapabilityValidator
 
 public static class DailyPlanBudgetReader
 {
-    public static int? AvailablePlanMinutes(SnapshotEnvelope? snapshot)
+    public static int? AvailablePlanMinutes(
+        SnapshotEnvelope? snapshot,
+        IEnumerable<PolicyEventCandidatePrediction> rankedCandidates)
     {
         var currentTime = ReadSnapshotInt(snapshot, "time", "time");
         if (!currentTime.HasValue)
@@ -1487,7 +1500,23 @@ public static class DailyPlanBudgetReader
             return null;
         }
 
-        return Math.Max(0, ClockMinutesBetween(currentTime.Value, 2600) - 60);
+        var recoveryPlan = rankedCandidates.Any(candidate =>
+            string.Equals(
+                candidate.OptionId,
+                "recovery.stabilize_day",
+                StringComparison.Ordinal) ||
+            candidate.Kind.StartsWith("recovery_", StringComparison.Ordinal));
+        var deadline = recoveryPlan
+            ? GameClockBudgetPolicy.DayEndTime
+            : GameClockBudgetPolicy.AutonomousRecoveryStartTime;
+        var buffer = recoveryPlan
+            ? GameClockBudgetPolicy.RecoverySafetyBufferMinutes
+            : 0;
+        return Math.Max(
+            0,
+            GameClockBudgetPolicy.ClockMinutesBetween(
+                currentTime.Value,
+                deadline) - buffer);
     }
 
     public static int? ReadSnapshotInt(SnapshotEnvelope? snapshot, string sectionName, string fieldName)
@@ -1507,17 +1536,6 @@ public static class DailyPlanBudgetReader
         return result;
     }
 
-    private static int ClockMinutesBetween(int start, int end)
-    {
-        return ToAbsoluteMinutes(end) - ToAbsoluteMinutes(start);
-    }
-
-    private static int ToAbsoluteMinutes(int hhmm)
-    {
-        var hours = hhmm / 100;
-        var minutes = hhmm % 100;
-        return hours * 60 + minutes;
-    }
 }
 
 public partial class Program

@@ -51,7 +51,13 @@ public sealed partial class DailyPlanCompiler
                 TargetTileX = candidate.TileX,
                 TargetTileY = candidate.TileY,
                 EstimatedMinutes = 1,
-                Preconditions = new[] { "player_at_owned_mailbox_stand_tile=true", "mailbox_first_identity_matches=true", "attachment_capacity_sufficient=true" },
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "player_at_owned_mailbox_stand_tile=true",
+                    "mailbox_first_identity_matches=true",
+                    "attachment_capacity_sufficient=true"
+                },
                 ExpectedEffects = new[] { candidate.ExpectedEffect, "fresh_snapshot_replan_required=true" },
                 SafetyConstraints = new[] { "interaction_kind=map_action", "expected_action_type=Mailbox", "GameLocation.mailbox_only", "do_not_mutate_mail_state_directly" },
                 FailurePolicy = new[] { "refresh_snapshot_and_replan" },
@@ -75,10 +81,53 @@ public sealed partial class DailyPlanCompiler
                 Kind = "close_menu",
                 TargetLocation = candidate.LocationId,
                 EstimatedMinutes = 1,
-                Preconditions = new[] { "menus.active_menu.type=LetterViewerMenu", "mail_menu_identity_matches=true", "attachment_capacity_sufficient=true" },
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "menus.active_menu.type=LetterViewerMenu",
+                    "mail_menu_identity_matches=true",
+                    "attachment_capacity_sufficient=true"
+                },
                 ExpectedEffects = new[] { candidate.ExpectedEffect, "fresh_snapshot_replan_required=true" },
                 SafetyConstraints = new[] { "native_LetterViewerMenu_receiveLeftClick_only", "reuse_executor.close_menu", "do_not_mutate_mail_inventory_recipe_money_quest_or_special_order_state_directly" },
                 FailurePolicy = new[] { "stop_refresh_snapshot_and_replan" },
+                Parameters = candidate.Parameters
+            }
+        };
+    }
+
+    private static IEnumerable<SmallModelPlanStep> MailInputWaitSteps(
+        PolicyEventCandidatePrediction candidate)
+    {
+        var waitTicks = Math.Clamp(
+            CandidateInt(candidate, "retry_wait_ticks") ?? 30,
+            1,
+            MaxWaitTicksPerStep);
+        return new[]
+        {
+            new SmallModelPlanStep
+            {
+                StepId = StepId(candidate, "mail_input_wait", 0),
+                Kind = "wait_ticks",
+                WaitTicks = waitTicks,
+                EstimatedMinutes = TicksToMinutes(waitTicks),
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "menus.active_menu.type=LetterViewerMenu",
+                    "same_mail_menu_identity=true"
+                },
+                ExpectedEffects = new[]
+                {
+                    "letter_viewer.can_receive_input=true",
+                    "fresh_snapshot_replan_required=true"
+                },
+                SafetyConstraints = new[]
+                {
+                    "native_menu_timer_only",
+                    "do_not_mutate_mail_or_menu_state"
+                },
+                FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                 Parameters = candidate.Parameters
             }
         };

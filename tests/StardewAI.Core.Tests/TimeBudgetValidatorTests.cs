@@ -86,7 +86,7 @@ public sealed class TimeBudgetValidatorTests
         var report = new TimeBudgetValidator().Validate(model, queue);
 
         Assert.Equal("navigation_perfect_executor.v1", report.Items[0].Estimator);
-        Assert.Equal(15, report.Items[0].EstimatedMinutes);
+        Assert.Equal(40, report.Items[0].EstimatedMinutes);
         Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:navigation"));
         Assert.Contains(report.Items[0].Notes, item => item.Contains("walking_into_walls"));
     }
@@ -284,8 +284,17 @@ public sealed class TimeBudgetValidatorTests
 
         var report = new TimeBudgetValidator().Validate(model, queue);
 
-        Assert.Equal(5, Assert.Single(report.Items).EstimatedMinutes);
+        Assert.Equal(7, Assert.Single(report.Items).EstimatedMinutes);
         Assert.Equal("recovery_sleep_macro_steps.v2", report.Items[0].Estimator);
+    }
+
+    [Fact]
+    public void GameClockTickConversionMatchesLockedRuntimeConstants()
+    {
+        Assert.Equal(1, GameClockBudgetPolicy.TicksToGameMinutes(42));
+        Assert.Equal(2, GameClockBudgetPolicy.TicksToGameMinutes(60));
+        Assert.Equal(10, GameClockBudgetPolicy.ClockMinutesBetween(1850, 1900));
+        Assert.True(GameClockBudgetPolicy.RecoveryWindowStarted(1900));
     }
 
     private static ActionQueueItem Item(string optionId, string role)

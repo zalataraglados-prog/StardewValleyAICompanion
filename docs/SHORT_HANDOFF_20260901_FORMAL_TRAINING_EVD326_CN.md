@@ -1,22 +1,41 @@
-# StardewAI EVD-326 短交接
+# StardewAI r24 正式训练短交接
 
-## 已完成
+## 当前结论
 
-- Product 轨迹版本绑定为 `product_executor.v1`；Harness 数据不能训练正式结构化 checkpoint。
-- `training_run_manifest.v2` 冻结 dataset/checkpoint hash，并记录 Product、游戏、LiveTrainingLoop 三进程。
-- 正式 launch 复用 prepare 的同一 manifest，同时隐藏启动三进程；部分启动失败会回收已启动进程。
-- `training_ready_probe.v2` 验证 Product health、三进程、透明快照/run-id、全套数据 hash 与 pending 收据恢复门。
-- LiveTrainingLoop 每周期重建 policy dataset、训练结构化 checkpoint，并原子刷新 manifest hash；不再用 baseline 更新冒充正式训练。
-- `scripts/Invoke-DailyPlanLiveTrainingLoop.ps1` 已改为强制 Product、prepared manifest 和结构化 checkpoint，默认不再限制四项候选。
+正式 Product 训练闭环已在 119 服务器产生真实数据和新 checkpoint；这不是 bootstrap，也不是仅有进程。
+但只完成了一个有界高层目标，尚未开始连续多日的全量长训，更不能称为完整陪玩模型训练完成。
 
-## 当前阻塞
+## 每轮训练
 
-E 盘没有独立新存档的 Product v2 轨迹、正式 policy dataset manifest 或结构化 checkpoint；只有历史自动化存档和旧 feature rows。因此尚未启动正式全量训练。
+1. 透明桥生成 fresh 全量游戏快照、状态哈希和当前可用信息。
+2. 上游按时间、资源、安全、目标和准入证据排除不可能候选；C#
+   `return_weighted_pairwise_linear_ranker.v1` 只排序“现在做什么”。
+3. DailyPlanCompiler 将被选中的高层目标展开为动作队列；坐标、路线、菜单、工具、按键和安全时序属于
+   编译器/执行器，不交给小模型猜测。
+4. Product Executor 通过现有原生执行端执行，每个需要重规划的动作后读取 fresh snapshot，并核对
+   `applied + verified + fresh`。失败、状态漂移或回执不确定时失败关闭并重规划。
+5. 只有有候选来源、准入且验证成功的显式决策进入 `policy_decision_trajectory.v2`；随后确定性重建数据集、
+   训练结构化 checkpoint，并原子更新 manifest/hash。
+6. 一个外层 iteration 对应一个高层目标 episode，可包含多个机械动作和多次 fresh replan；目标完成立即结束
+   iteration，不能顺带执行下一个全局目标。
 
-## 下一步
+## r24 实证
 
-1. 建立独立新存档根，使用 Product Executor 与 `--skip-training` 采集最小 bootstrap 校准轨迹；只接受 applied/verified/fresh，明确不称为正式训练。
-2. 运行 `StardewAI.PolicyDataset` 和 `StardewAI.PolicyModel`，生成首个 Product 绑定 checkpoint。
-3. 调用 formal prepare，确认所有 hash、二进制、SMAPI、静音隐藏和隔离路径门通过。
-4. 使用同一 manifest formal launch，连续跑完首个真实游戏日；确认 Product 回执、轨迹增长、结构化 checkpoint 更新、manifest hash 更新和 ready/recovery probe 全部通过。
-5. 本地验收通过后再更新服务器部署，不把 bootstrap、进程存在或 baseline 输出描述成正式训练。
+- 发布/运行：`formal-r24-20260901` / `train.server.20260901.r24`。
+- 隔离槽位：`StardewAIDebug_16564609768130219756`。
+- 单目标：处理 `landslideDone` 邮件。
+- 原生动作：跨图、走到信箱、交互、等待 LetterViewer 可输入、关闭信件，共 `5/5` applied/verified/fresh。
+- 策略轨迹：5 条成功，五个候选 ID 均存在，`effective_candidate_id_missing=0`。
+- 数据集：accepted 181、rejected 0、train/validation/test 128/0/53、train pairs 3415。
+- checkpoint：`structured-policy-35eb3439e19036a75b9c628b`，SHA-256
+  `11f38de448370bb401278bd8cd32ca4faea1e42e67df3b5299e20394c53ef0f7`。
+- 性能：约 56.346 UPS；12 次 full snapshot 平均 1430.682 ms。
+- 进程：游戏、Backend、Product Executor 运行；LiveTrainingLoop 已正常退出，当前没有长训。
+
+## 下一步与退出条件
+
+服务器仅约 5072 MiB 可用、使用率 92%。先扩容或迁移正式训练根并验证数据、manifest、checkpoint 全部
+哈希，再启动有界多日批次。每批退出条件为：完成计划游戏日数或达到显式 attempt 上限；所有入库动作有
+Product verified/fresh 回执；无孤立 pending；dataset/checkpoint/manifest 哈希一致；游戏 UPS 和剩余空间不越线；
+停止后可由 ready/recovery probe 恢复。达到跨季、跨年、第三年爷爷 21 分独立长跑与完整动作覆盖前，禁止写
+“全量训练完成”。当前线性 ranker 不需要 RTX 5070 8GB；GPU 只在长期轨迹足够后评估神经模型或 QLoRA。

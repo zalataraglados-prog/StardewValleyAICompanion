@@ -9,14 +9,9 @@ namespace StardewAI.Contracts.State
 {
     public static class SnapshotHash
     {
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
-        {
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        };
-
         public static string ComputeStateHash(Dictionary<string, JsonElement> state)
         {
-            var canonical = Canonicalize(JsonSerializer.SerializeToElement(state, JsonOptions));
+            var canonical = CanonicalizeState(state);
             byte[] bytes;
             using (var sha256 = SHA256.Create())
             {
@@ -29,6 +24,28 @@ namespace StardewAI.Contracts.State
             }
 
             return hashBuilder.ToString();
+        }
+
+        private static string CanonicalizeState(IReadOnlyDictionary<string, JsonElement> state)
+        {
+            var builder = new StringBuilder();
+            builder.Append('{');
+            var first = true;
+            foreach (var item in state.OrderBy(item => item.Key, StringComparer.Ordinal))
+            {
+                if (!first)
+                {
+                    builder.Append(',');
+                }
+
+                first = false;
+                builder.Append(JsonSerializer.Serialize(item.Key));
+                builder.Append(':');
+                WriteCanonical(item.Value, builder);
+            }
+
+            builder.Append('}');
+            return builder.ToString();
         }
 
         public static string Canonicalize(JsonElement element)

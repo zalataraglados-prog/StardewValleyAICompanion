@@ -49,12 +49,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 return Array.Empty<EventCandidate>();
             var plan = FindResolvedRoutePlan(snapshot, currentLocation, serviceLocation,
                 RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-            return plan?.FirstConnectorCandidate is null ? Array.Empty<EventCandidate>() : new[]
+            return plan?.FirstActionCandidate is null ? Array.Empty<EventCandidate>() : new[]
             {
-                CloneCandidate(plan.FirstConnectorCandidate,
+                CloneCandidate(plan.FirstActionCandidate,
                     candidateId: "building-paint-route:" + ReadString(row.Value, "building_identity") + ":" + regionId + ":" + currentLocation,
-                    expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";building_paint_service_location=" + serviceLocation,
-                    parameters: plan.FirstConnectorCandidate.Parameters.Concat(continuation).ToArray(), availabilityClass: "building_paint_rolling_route")
+                    expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";building_paint_service_location=" + serviceLocation,
+                    parameters: plan.FirstActionCandidate.Parameters.Concat(continuation).ToArray(), availabilityClass: "building_paint_rolling_route")
             };
         }
 

@@ -13,6 +13,9 @@ namespace StardewAI.Contracts.Training
 
     public sealed class TrainingLaunchRequest
     {
+        [JsonPropertyName("run_id")]
+        public string? RunId { get; set; }
+
         [JsonPropertyName("mode")]
         public string Mode { get; set; } = TrainingSessionMode.OfflineSmoke;
 
@@ -55,6 +58,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_verified_actions")]
         public int RequiredVerifiedActions { get; set; }
 
+        [JsonPropertyName("min_free_space_mb")]
+        public int MinFreeSpaceMb { get; set; } = 8192;
+
+        [JsonPropertyName("target_execution_mode")]
+        public string TargetExecutionMode { get; set; } = "training_singleplayer";
+
         [JsonPropertyName("manifest_path")]
         public string? ManifestPath { get; set; }
 
@@ -78,6 +87,12 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("allow_game_launch")]
         public bool AllowGameLaunch { get; set; }
+
+        [JsonPropertyName("attach_existing_game")]
+        public bool AttachExistingGame { get; set; }
+
+        [JsonPropertyName("existing_game_process_id")]
+        public int? ExistingGameProcessId { get; set; }
 
         [JsonPropertyName("sound_enabled")]
         public bool SoundEnabled { get; set; }
@@ -142,6 +157,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_verified_actions")]
         public int RequiredVerifiedActions { get; set; }
 
+        [JsonPropertyName("min_free_space_mb")]
+        public int MinFreeSpaceMb { get; set; } = 8192;
+
+        [JsonPropertyName("target_execution_mode")]
+        public string TargetExecutionMode { get; set; } = "training_singleplayer";
+
         [JsonPropertyName("compiler_version")]
         public string CompilerVersion { get; set; } = string.Empty;
 
@@ -174,6 +195,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("game_launch")]
         public string GameLaunch { get; set; } = "disabled";
+
+        [JsonPropertyName("game_process_ownership")]
+        public string GameProcessOwnership { get; set; } = "launcher";
 
         [JsonPropertyName("sound")]
         public string Sound { get; set; } = "disabled";

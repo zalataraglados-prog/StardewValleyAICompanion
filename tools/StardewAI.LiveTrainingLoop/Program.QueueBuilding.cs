@@ -55,7 +55,8 @@ static partial class Program
         HttpClient http,
         LiveTrainingOptions options,
         string stateHash,
-        JsonObject? objectiveContinuation)
+        JsonObject? objectiveContinuation,
+        IReadOnlyCollection<JsonObject> suppressedObjectiveContinuations)
     {
         var explicitCandidates =
             objectiveContinuation is null &&
@@ -93,45 +94,7 @@ static partial class Program
                         option_id = ReadString(objectiveContinuation, "option_id"),
                         explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
                         invocation_source = options.DailyPlanInvocationSource,
-                        parameters = new[]
-                        {
-                            new { name = "continuation.option_id", value = ReadString(objectiveContinuation, "option_id") },
-                            new { name = "continuation.npc_name", value = ReadString(objectiveContinuation, "npc_name") },
-                            new { name = "continuation.target_location", value = ReadString(objectiveContinuation, "target_location") },
-                            new { name = "continuation.slot_index", value = ReadString(objectiveContinuation, "slot_index") },
-                            new { name = "continuation.qualified_item_id", value = ReadString(objectiveContinuation, "qualified_item_id") },
-                            new { name = "continuation.shop_id", value = ReadString(objectiveContinuation, "shop_id") },
-                            new { name = "continuation.item_id", value = ReadString(objectiveContinuation, "item_id") },
-                            new { name = "continuation.max_unit_price", value = ReadString(objectiveContinuation, "max_unit_price") },
-                            new { name = "continuation.expected_unit_price", value = ReadString(objectiveContinuation, "expected_unit_price") },
-                            new { name = "continuation.quantity", value = ReadString(objectiveContinuation, "quantity") },
-                            new { name = "continuation.bin_location", value = ReadString(objectiveContinuation, "bin_location") },
-                            new { name = "continuation.bin_tile_x", value = ReadString(objectiveContinuation, "bin_tile_x") },
-                            new { name = "continuation.bin_tile_y", value = ReadString(objectiveContinuation, "bin_tile_y") },
-                            new { name = "continuation.stand_tile_x", value = ReadString(objectiveContinuation, "stand_tile_x") },
-                            new { name = "continuation.stand_tile_y", value = ReadString(objectiveContinuation, "stand_tile_y") },
-                            new { name = "continuation.quest_candidate_id", value = ReadString(objectiveContinuation, "quest_candidate_id") },
-                            new { name = "continuation.execution_option_id", value = ReadString(objectiveContinuation, "execution_option_id") },
-                            new { name = "continuation.machine_location_id", value = ReadString(objectiveContinuation, "machine_location_id") },
-                            new { name = "continuation.machine_tile_x", value = ReadString(objectiveContinuation, "machine_tile_x") },
-                            new { name = "continuation.machine_tile_y", value = ReadString(objectiveContinuation, "machine_tile_y") },
-                            new { name = "continuation.machine_inventory_slot_index", value = ReadString(objectiveContinuation, "machine_inventory_slot_index") },
-                            new { name = "continuation.machine_qualified_item_id", value = ReadString(objectiveContinuation, "machine_qualified_item_id") },
-                            new { name = "continuation.machine_item_id", value = ReadString(objectiveContinuation, "machine_item_id") },
-                            new { name = "continuation.renovation_id", value = ReadString(objectiveContinuation, "renovation_id") },
-                            new { name = "continuation.selected_index", value = ReadString(objectiveContinuation, "selected_index") },
-                            new { name = "continuation.renovation_reason", value = ReadString(objectiveContinuation, "renovation_reason") },
-                            new { name = "continuation.confirm_renovation", value = ReadString(objectiveContinuation, "confirm_renovation") },
-                            new { name = "continuation.confirm_destructive", value = ReadString(objectiveContinuation, "confirm_destructive") },
-                            new { name = "continuation.expected_prize_level", value = ReadString(objectiveContinuation, "expected_prize_level") },
-                            new { name = "continuation.expected_reward_fingerprint", value = ReadString(objectiveContinuation, "expected_reward_fingerprint") },
-                            new { name = "continuation.movie_id", value = ReadString(objectiveContinuation, "movie_id") },
-                            new { name = "continuation.movie_guest_name", value = ReadString(objectiveContinuation, "movie_guest_name") },
-                            new { name = "continuation.movie_concession_id", value = ReadString(objectiveContinuation, "movie_concession_id") },
-                            new { name = "continuation.movie_objective_key", value = ReadString(objectiveContinuation, "movie_objective_key") },
-                            new { name = "continuation.movie_friendship_effective", value = ReadString(objectiveContinuation, "movie_friendship_effective") },
-                            new { name = "continuation.movie_concession_friendship_effective", value = ReadString(objectiveContinuation, "movie_concession_friendship_effective") }
-                        }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
+                        parameters = ContinuationRequestParameters(objectiveContinuation)
                     }
                 },
             include_blocked_options = false
@@ -143,20 +106,40 @@ static partial class Program
             ? options.Goal
             : resolvedGoalId;
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
-        var continuationCandidates =
-            QueueReplanFilter.FilterRankedCandidates(
+        var exclusiveRecovery = rankedCandidates.Any(node =>
+        {
+            var candidate = node?.AsObject();
+            return string.Equals(
+                    ReadString(candidate, "option_id"),
+                    "recovery.stabilize_day",
+                    StringComparison.Ordinal) ||
+                ReadString(candidate, "kind").StartsWith(
+                    "recovery_",
+                    StringComparison.Ordinal);
+        });
+        var unsuppressedCandidates = objectiveContinuation is null || exclusiveRecovery
+            ? QueueReplanFilter.FilterSuppressedContinuations(
                 rankedCandidates,
-                objectiveContinuation);
-        var effectiveCandidateKind =
-            QueueReplanFilter.EffectiveCandidateKindFilter(
+                suppressedObjectiveContinuations)
+            : JsonNode.Parse(rankedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
+        var continuationCandidates =
+            exclusiveRecovery
+                ? JsonNode.Parse(unsuppressedCandidates.ToJsonString())?.AsArray() ?? new JsonArray()
+                : QueueReplanFilter.FilterRankedCandidates(
+                    unsuppressedCandidates,
+                    objectiveContinuation);
+        var effectiveCandidateKind = exclusiveRecovery
+            ? string.Empty
+            : QueueReplanFilter.EffectiveCandidateKindFilter(
                 options.DailyPlanCandidateKind,
                 objectiveContinuation);
         var selectedCandidates =
             QueueReplanFilter.FilterCandidateKind(
                 continuationCandidates,
                 effectiveCandidateKind);
-        var effectiveCandidateId =
-            QueueReplanFilter.EffectiveCandidateIdFilter(
+        var effectiveCandidateId = exclusiveRecovery
+            ? string.Empty
+            : QueueReplanFilter.EffectiveCandidateIdFilter(
                 options.DailyPlanCandidateId,
                 objectiveContinuation);
         selectedCandidates =
@@ -166,14 +149,25 @@ static partial class Program
         var objectiveContinuationFilter = new JsonObject
         {
             ["active"] = objectiveContinuation is not null,
+            ["exclusive_recovery_override"] = exclusiveRecovery,
             ["objective"] = objectiveContinuation is null ? null : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions)),
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = continuationCandidates.Count,
-            ["policy"] = "typed_objective_identity_match;fail_closed_no_objective_switch"
+            ["policy"] = exclusiveRecovery
+                ? "exclusive_recovery_preempts_objective_continuation"
+                : "typed_objective_identity_match;fail_closed_no_objective_switch"
         };
         ranking["objective_continuation_filter"] = objectiveContinuationFilter;
         ranking["social_continuation_filter"] = JsonNode.Parse(
             objectiveContinuationFilter.ToJsonString(JsonOptions));
+        ranking["released_objective_suppression"] = new JsonObject
+        {
+            ["active"] = objectiveContinuation is null && suppressedObjectiveContinuations.Count > 0,
+            ["suppressed_objective_count"] = suppressedObjectiveContinuations.Count,
+            ["input_candidate_count"] = rankedCandidates.Count,
+            ["selected_candidate_count"] = unsuppressedCandidates.Count,
+            ["policy"] = "same_typed_objective_suppressed_until_game_day_changes"
+        };
         ranking["candidate_kind_filter"] = new JsonObject
         {
             ["active"] = !string.IsNullOrWhiteSpace(
@@ -212,6 +206,35 @@ static partial class Program
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
         var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
         return (response, plan, queue, ranking);
+    }
+
+    private static JsonArray ContinuationRequestParameters(
+        JsonObject continuation)
+    {
+        var parameters = new JsonArray();
+        foreach (var property in continuation)
+        {
+            if (string.Equals(property.Key, "kind", StringComparison.Ordinal) ||
+                property.Value is not JsonValue value)
+            {
+                continue;
+            }
+
+            var text = value.TryGetValue<string>(out var stringValue)
+                ? stringValue
+                : value.ToString();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            parameters.Add(new JsonObject
+            {
+                ["name"] = "continuation." + property.Key,
+                ["value"] = text
+            });
+        }
+        return parameters;
     }
 
     private static string BuildMovePlanRequest(LiveTrainingOptions options, string stateHash)

@@ -50,12 +50,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             {
                 var plan = FindResolvedRoutePlan(snapshot, currentLocation, locationId,
                     RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-                if (plan?.FirstConnectorCandidate is not null)
+                if (plan?.FirstActionCandidate is not null)
                 {
-                    result.Add(CloneCandidate(plan.FirstConnectorCandidate,
+                    result.Add(CloneCandidate(plan.FirstActionCandidate,
                         candidateId: "forge-route:" + ReadString(row, "forge_candidate_id") + ":" + currentLocation,
-                        expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";forge_target=" + operation,
-                        parameters: plan.FirstConnectorCandidate.Parameters.Concat(new[]
+                        expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";forge_target=" + operation,
+                        parameters: plan.FirstActionCandidate.Parameters.Concat(new[]
                         {
                             Parameter("continuation.option_id", "crafting.forge_item"),
                             Parameter("continuation.forge_operation", operation),

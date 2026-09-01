@@ -61,8 +61,28 @@ public sealed class DedicatedHostAiRuntimeGuardTests
         Assert.Contains("Game1.options.pauseWhenOutOfFocus = false", source, StringComparison.Ordinal);
         Assert.Contains("Vanilla AI host ready", source, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_SUPPRESS_LOCAL_RENDER", source, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_OBSERVER_RENDER_INTERVAL_MS", source, StringComparison.Ordinal);
         Assert.Contains("HostLocalDrawPatch", source, StringComparison.Ordinal);
+        Assert.Contains("HostLocalDrawPatch.Configure(observerRenderIntervalMilliseconds)", source, StringComparison.Ordinal);
+        Assert.Contains("Environment.TickCount64", source, StringComparison.Ordinal);
+        Assert.Contains("Interlocked.CompareExchange", source, StringComparison.Ordinal);
         Assert.Contains("AccessTools.Method(typeof(Game1), \"Draw\"", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FormalServerDefaultsToHeadlessButSupportsExplicitLowFrequencyObservation()
+    {
+        var compose = File.ReadAllText(FindRepositoryFile(
+            "deploy", "stardew-server", "compose.formal-training.yaml"));
+
+        Assert.Contains(
+            "STARDEWAI_SUPPRESS_LOCAL_RENDER: \"${STARDEWAI_SUPPRESS_LOCAL_RENDER:-1}\"",
+            compose,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "STARDEWAI_OBSERVER_RENDER_INTERVAL_MS: \"${STARDEWAI_OBSERVER_RENDER_INTERVAL_MS:-0}\"",
+            compose,
+            StringComparison.Ordinal);
     }
 
     [Fact]

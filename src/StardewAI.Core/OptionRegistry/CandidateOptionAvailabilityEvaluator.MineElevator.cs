@@ -119,7 +119,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             if (!inMineShaft && !string.Equals(currentLocation, "Mine", StringComparison.OrdinalIgnoreCase) && target > 0)
             {
-                var route = FindResolvedRoutePlan(snapshot, currentLocation, "Mine", RouteConnectorCandidates(snapshot))?.FirstConnectorCandidate;
+                var route = FindResolvedRoutePlan(snapshot, currentLocation, "Mine", RouteConnectorCandidates(snapshot))?.FirstActionCandidate;
                 if (route is null)
                     return new[] { BlockedMineElevatorCandidate(target, reasons.Append("mine_elevator_route_to_entrance_unavailable").ToArray()) };
 

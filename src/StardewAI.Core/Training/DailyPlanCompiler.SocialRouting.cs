@@ -52,7 +52,7 @@ namespace StardewAI.Core.Training
                     TargetLocation = candidate.LocationId,
                     TargetTileX = standTileX,
                     TargetTileY = standTileY,
-                    EstimatedMinutes = Math.Max(1, (int)Math.Ceiling(routeDistance / 5d)),
+                    EstimatedMinutes = Execution.GameClockBudgetPolicy.MovementTilesToGameMinutes(routeDistance),
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId },
                     ExpectedEffects = new[] { "player.tile=" + standTileX + "," + standTileY },
                     SafetyConstraints = new[] { "collision_checked_by_action_queue_compiler", "no_direct_coordinate_teleport" },
@@ -117,6 +117,14 @@ namespace StardewAI.Core.Training
                 Parameter("connector_kind", connectorKind),
                 Parameter("expected_target_location", expectedTargetLocation)
             };
+            foreach (var continuationParameter in candidate.Parameters.Where(parameter =>
+                         parameter.Name.StartsWith("continuation.", StringComparison.Ordinal) &&
+                         !string.IsNullOrWhiteSpace(parameter.Value)))
+            {
+                parameters.Add(Parameter(
+                    continuationParameter.Name,
+                    continuationParameter.Value));
+            }
             foreach (var name in new[]
             {
                 "expected_arrival_tile_x",
@@ -124,36 +132,6 @@ namespace StardewAI.Core.Training
                 "max_movement_tiles",
                 "estimated_ticks",
                 "estimated_minutes",
-                "continuation.option_id",
-                "continuation.npc_name",
-                "continuation.target_location",
-                "continuation.slot_index",
-                "continuation.qualified_item_id",
-                "continuation.partnership_action_kind",
-                "continuation.shop_id",
-                "continuation.item_id",
-                "continuation.max_unit_price",
-                "continuation.expected_unit_price",
-                "continuation.quantity",
-                "continuation.bin_location",
-                "continuation.bin_tile_x",
-                "continuation.bin_tile_y",
-                "continuation.stand_tile_x",
-                "continuation.stand_tile_y",
-                "continuation.quest_candidate_id",
-                "continuation.machine_location_id",
-                "continuation.machine_tile_x",
-                "continuation.machine_tile_y",
-                "continuation.machine_inventory_slot_index",
-                "continuation.machine_qualified_item_id",
-                "continuation.machine_item_id",
-                "continuation.relocation_intent_id",
-                "continuation.storage_location_id",
-                "continuation.storage_inventory_slot_index",
-                "continuation.storage_qualified_item_id",
-                "continuation.storage_item_id",
-                "continuation.native_storage_branch",
-                "continuation.storage_role",
                 "social_route.remaining_connector_count",
                 "social_route.position_source",
                 "social_route.future_schedule_projection",

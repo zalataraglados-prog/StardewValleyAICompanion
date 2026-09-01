@@ -34,7 +34,7 @@ namespace StardewAI.Core.Training
                     TargetLocation = candidate.LocationId,
                     TargetTileX = standX,
                     TargetTileY = standY,
-                    EstimatedMinutes = Math.Max(1, (int)Math.Ceiling(routeDistance / 5d)),
+                    EstimatedMinutes = Execution.GameClockBudgetPolicy.MovementTilesToGameMinutes(routeDistance),
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId },
                     ExpectedEffects = new[] { "player.tile=" + standX + "," + standY },
                     SafetyConstraints = new[]

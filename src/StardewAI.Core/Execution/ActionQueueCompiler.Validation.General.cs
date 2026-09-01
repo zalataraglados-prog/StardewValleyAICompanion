@@ -44,7 +44,7 @@ namespace StardewAI.Core.Execution
             }
 
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (time < 2200)
+            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time))
             {
                 return Array.Empty<string>();
             }
@@ -247,9 +247,9 @@ namespace StardewAI.Core.Execution
             }
 
             var lastQuestionKey = ReadString(activeMenu.Value, "last_question_key");
-            if (!string.IsNullOrWhiteSpace(lastQuestionKey))
+            if (IsTerminalSleepQuestionKey(lastQuestionKey))
             {
-                reasons.Add("dialogue_close_last_question_key_present:" + lastQuestionKey);
+                reasons.Add("dialogue_close_terminal_question_key_present:" + lastQuestionKey);
             }
 
             if (ReadBool(activeMenu.Value, "is_sleep_prompt"))
@@ -315,6 +315,12 @@ namespace StardewAI.Core.Execution
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool IsTerminalSleepQuestionKey(string questionKey)
+        {
+            return string.Equals(questionKey, "Sleep", StringComparison.Ordinal) ||
+                string.Equals(questionKey, "SleepTent", StringComparison.Ordinal);
         }
 
         private static bool? ReadNullableBool(JsonElement element, string property)

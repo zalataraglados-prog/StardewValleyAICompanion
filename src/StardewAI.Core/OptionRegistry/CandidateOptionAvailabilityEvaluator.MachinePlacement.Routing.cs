@@ -88,7 +88,7 @@ namespace StardewAI.Core.OptionRegistry
                     targetLocationId,
                     routeCandidates,
                     relocationIntent);
-            var route = routePlan?.FirstConnectorCandidate;
+            var route = routePlan?.FirstActionCandidate;
             var blockReasons = new List<string>();
             if (string.IsNullOrWhiteSpace(reservationGuard.LedgerId))
             {

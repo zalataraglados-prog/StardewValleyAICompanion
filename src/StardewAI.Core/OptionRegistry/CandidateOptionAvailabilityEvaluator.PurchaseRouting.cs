@@ -247,7 +247,7 @@ namespace StardewAI.Core.OptionRegistry
                 currentLocation,
                 targetLocation,
                 routeCandidates);
-            var route = routePlan?.FirstConnectorCandidate;
+            var route = routePlan?.FirstActionCandidate;
             if (route is null)
             {
                 return BlockedShopObjectiveStageCandidate(
@@ -273,12 +273,13 @@ namespace StardewAI.Core.OptionRegistry
                     currentLocation,
                     route.TileX,
                     route.TileY),
-                Kind = "route_connector_tile",
+                Kind = route.Kind,
                 Available = preview.Available && route.Available && routeReasons.Length == 0,
                 LocationId = currentLocation,
                 TileX = route.TileX,
                 TileY = route.TileY,
-                ExpectedEffect = objectivePrefix + "_route_target_location=" + targetLocation + ";" +
+                ExpectedEffect = route.ExpectedEffect + ";" +
+                    objectivePrefix + "_route_target_location=" + targetLocation + ";" +
                     objectivePrefix + "_target_shop_id=" + preview.ShopId + ";" +
                     objectivePrefix + "_target_qualified_item_id=" + preview.QualifiedItemId +
                     ";one_connector_then_fresh_snapshot=true",
@@ -291,7 +292,7 @@ namespace StardewAI.Core.OptionRegistry
                 UnitPrice = preview.UnitPrice,
                 TotalValue = preview.TotalValue,
                 EstimatedTicks = route.EstimatedTicks,
-                EnergyCost = 0,
+                EnergyCost = route.EnergyCost,
                 AvailabilityClass = objectivePrefix + "_cross_map_route_step",
                 AllowedNow = route.AllowedNow,
                 AllowedToday = route.AllowedToday,

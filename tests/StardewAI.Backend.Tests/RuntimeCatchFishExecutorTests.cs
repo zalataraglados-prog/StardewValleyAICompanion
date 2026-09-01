@@ -307,6 +307,25 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("if (profile is \"fishing\")", source);
         Assert.Contains("domains.Add(\"quests_progress\")", source);
         Assert.Contains("domains.Add(\"modded_state\")", source);
+        Assert.Contains("\"daily\" or \"clock\"", source, StringComparison.Ordinal);
+        Assert.Contains("\"clock\" or \"identity\"", source, StringComparison.Ordinal);
+        Assert.Contains("SnapshotRefreshTickInterval = 600", source, StringComparison.Ordinal);
+        Assert.Contains("RefreshSnapshotCache(\"clock\", publishSnapshotEvent: false)", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("RefreshSnapshotCache(publishSnapshotEvent: false)", source, StringComparison.Ordinal);
+        Assert.Contains("/api/v1/performance", source, StringComparison.Ordinal);
+        Assert.Contains("WriteIndented = false", source, StringComparison.Ordinal);
+
+        var performanceSource = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "StardewAI.TransparentBridge",
+            "ModEntry.Performance.cs"));
+        Assert.Contains("RecordUpdateGap", performanceSource, StringComparison.Ordinal);
+        Assert.Contains("RecordSnapshotBuild", performanceSource, StringComparison.Ordinal);
+        Assert.Contains("RecordAdapterCollection", performanceSource, StringComparison.Ordinal);
+        Assert.Contains("slow_gap_count", performanceSource, StringComparison.Ordinal);
+        Assert.Contains("observed_updates_per_second", performanceSource, StringComparison.Ordinal);
+        Assert.Contains("adapter_domains", performanceSource, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -16,14 +16,14 @@ using StardewAI.TransparentBridge.State;
 
 namespace StardewAI.TransparentBridge;
 
-public sealed class ModEntry : Mod
+public sealed partial class ModEntry : Mod
 {
-    private const uint SnapshotRefreshTickInterval = 120;
+    private const uint SnapshotRefreshTickInterval = 600;
     private const long SnapshotProfileMaxAgeTicks = 30;
 
     private readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        WriteIndented = true
+        WriteIndented = false
     };
 
     private HttpListener? listener;
@@ -89,6 +89,7 @@ public sealed class ModEntry : Mod
 
     private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
     {
+        RecordUpdateGap();
         Interlocked.Exchange(ref latestGameTick, unchecked((long)Game1.ticks));
         ProcessPendingSnapshotRequests();
 
@@ -99,7 +100,7 @@ public sealed class ModEntry : Mod
 
         if (e.IsMultipleOf(SnapshotRefreshTickInterval))
         {
-            RefreshSnapshotCache(publishSnapshotEvent: false);
+            RefreshSnapshotCache("clock", publishSnapshotEvent: false);
         }
     }
 
@@ -194,12 +195,13 @@ public sealed class ModEntry : Mod
                     schema_version = "event_stream.v2"
                 },
                 "/api/v1/audit" => ReadAuditTail(),
+                "/api/v1/performance" => BuildPerformanceResponse(),
                 "/" => new { service = "StardewAI.TransparentBridge", version = "0.1.0" },
                 _ => new { error = "not_found", path }
             };
         }
 
-        context.Response.StatusCode = path is "/api/v1/snapshot" or "/api/v1/capabilities" or "/api/v1/events" or "/api/v1/events/ws" or "/api/v1/audit" or "/" ? 200 : 404;
+        context.Response.StatusCode = path is "/api/v1/snapshot" or "/api/v1/capabilities" or "/api/v1/events" or "/api/v1/events/ws" or "/api/v1/audit" or "/api/v1/performance" or "/" ? 200 : 404;
         context.Response.ContentType = "application/json; charset=utf-8";
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(response, jsonOptions);
@@ -344,21 +346,73 @@ public sealed class ModEntry : Mod
     {
         var profile = SnapshotProfile(request);
         var forceRefresh = SnapshotForceRefresh(request);
+        var expectedStateHash = string.Empty;
+        var expectedGameTick = 0L;
+        var hasExpectedCacheIdentity =
+            string.Equals(profile, "full", StringComparison.OrdinalIgnoreCase) &&
+            TryReadExpectedSnapshotCacheIdentity(
+                request,
+                out expectedStateHash,
+                out expectedGameTick);
         if (!forceRefresh)
         {
             lock (snapshotLock)
             {
-                if (profileSnapshots.TryGetValue(profile, out var cached) && IsSnapshotFresh(cached, Interlocked.Read(ref latestGameTick)))
+                if (profileSnapshots.TryGetValue(profile, out var cached) &&
+                    (hasExpectedCacheIdentity
+                        ? SnapshotMatchesExpectedCacheIdentity(
+                            cached,
+                            expectedStateHash,
+                            expectedGameTick)
+                        : IsSnapshotFresh(
+                            cached,
+                            Interlocked.Read(ref latestGameTick))))
                 {
                     return cached;
                 }
             }
         }
 
+        // A caller requesting an exact cached post-action snapshot must never receive
+        // a different merely-recent snapshot when that cache entry is unavailable.
+        if (hasExpectedCacheIdentity)
+        {
+            forceRefresh = true;
+        }
+
         var completion = new TaskCompletionSource<SnapshotEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);
         pendingSnapshotRequests.Enqueue(new PendingSnapshotRequest(profile, forceRefresh, completion));
         return await completion.Task.WaitAsync(TimeSpan.FromSeconds(180));
     }
+
+    private static bool TryReadExpectedSnapshotCacheIdentity(
+        HttpListenerRequest request,
+        out string stateHash,
+        out long gameTick)
+    {
+        var query = ParseQuery(request.Url?.Query ?? string.Empty);
+        stateHash = query.TryGetValue("expected_state_hash", out var hash)
+            ? hash
+            : string.Empty;
+        gameTick = query.TryGetValue("expected_game_tick", out var tick) &&
+            long.TryParse(
+                tick,
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsedTick)
+                ? parsedTick
+                : 0;
+        return stateHash.Length == 64 &&
+            stateHash.All(Uri.IsHexDigit) &&
+            gameTick > 0;
+    }
+
+    private static bool SnapshotMatchesExpectedCacheIdentity(
+        SnapshotEnvelope snapshot,
+        string stateHash,
+        long gameTick) =>
+        snapshot.GameTick == gameTick &&
+        string.Equals(snapshot.StateHash, stateHash, StringComparison.OrdinalIgnoreCase);
 
     private static bool IsSnapshotFresh(SnapshotEnvelope snapshot, long currentGameTick)
     {
@@ -589,9 +643,17 @@ public sealed class ModEntry : Mod
 
     private SnapshotEnvelope RefreshSnapshotCache(string profile, bool publishSnapshotEvent)
     {
-        var snapshot = BuildSnapshotWithoutEvent(profile);
-        CacheSnapshot(profile, snapshot, publishSnapshotEvent);
-        return snapshot;
+        var startedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+        try
+        {
+            var snapshot = BuildSnapshotWithoutEvent(profile);
+            CacheSnapshot(profile, snapshot, publishSnapshotEvent);
+            return snapshot;
+        }
+        finally
+        {
+            RecordSnapshotBuild(profile, startedAt);
+        }
     }
 
     private void CacheSnapshot(string profile, SnapshotEnvelope snapshot, bool publishSnapshotEvent)
@@ -614,7 +676,7 @@ public sealed class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "daily" or "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "clock" or "identity" or "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static bool SnapshotForceRefresh(HttpListenerRequest request)
@@ -628,6 +690,11 @@ public sealed class ModEntry : Mod
         if (string.Equals(profile, "full", StringComparison.OrdinalIgnoreCase))
         {
             return null;
+        }
+
+        if (profile is "clock" or "identity")
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         }
 
         var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -903,7 +970,8 @@ public sealed class ModEntry : Mod
             new ModReadAdapter(helper.ModRegistry),
             new ModdedStateReadAdapter(helper.ModRegistry),
             new UnavailableFieldsAdapter(config.Host, config.WebSocketPort)
-        });
+        },
+        RecordAdapterCollection);
 
     private sealed record PendingSnapshotRequest(
         string Profile,

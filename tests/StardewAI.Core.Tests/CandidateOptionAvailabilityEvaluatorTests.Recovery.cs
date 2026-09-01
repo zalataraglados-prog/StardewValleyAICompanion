@@ -2,6 +2,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 
 namespace StardewAI.Core.Tests;
@@ -16,6 +17,24 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Options[0];
 
         Assert.Empty(option.EventCandidates);
+    }
+
+    [Fact]
+    public void AutonomousPlanningEvaluatesOnlyRecoveryAtTheDepartureBoundary()
+    {
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .EvaluateForAutonomousRuntimePlanning(
+                RecoverySnapshot(
+                    time: GameClockBudgetPolicy.AutonomousRecoveryStartTime,
+                    menuOpen: false,
+                    currentLocationIsHome: true),
+                new[] { "farm.maintain_crops", "social.talk_to_npc" });
+
+        var option = Assert.Single(availability.Options);
+        Assert.Equal("recovery.stabilize_day", option.OptionId);
+        Assert.Contains(
+            option.EventCandidates,
+            candidate => candidate.Kind == "recovery_return_home" && candidate.Available);
     }
 
     [Fact]
@@ -156,6 +175,28 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void RecoverySleepImmediatelyCanLeaveUnsupportedSleepActionStartTile()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                RecoverySnapshot(
+                    time: 2400,
+                    menuOpen: false,
+                    currentLocationIsHome: true,
+                    playerTileX: 3,
+                    playerTileY: 8,
+                    routeActionRows: "{\"tile_x\":3,\"tile_y\":8,\"branch\":\"Sleep\",\"route_training_blocked\":true}"),
+                new[] { "recovery.stabilize_day" },
+                includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.Equal("recovery:sleep_immediately", candidate.CandidateId);
+        Assert.True(candidate.Available);
+        Assert.DoesNotContain("unsupported_route_action_branch_on_path", candidate.BlockReasons);
+    }
+
+    [Fact]
     public void RecoverySleepImmediatelyBlocksWhenOutsideHomeAtOrPast2400()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
@@ -241,7 +282,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.DoesNotContain("executor_disabled", option.BlockingReasons);
     }
 
-    private static SnapshotEnvelope RecoverySnapshot(int time, bool menuOpen, bool currentLocationIsHome = true, bool bedBlocked = false, bool adjacentBedTilesBlocked = false, string activeObjectQualifiedId = "", bool sleepPromptOpen = false)
+    private static SnapshotEnvelope RecoverySnapshot(
+        int time,
+        bool menuOpen,
+        bool currentLocationIsHome = true,
+        bool bedBlocked = false,
+        bool adjacentBedTilesBlocked = false,
+        string activeObjectQualifiedId = "",
+        bool sleepPromptOpen = false,
+        int playerTileX = 3,
+        int playerTileY = 9,
+        string routeActionRows = "")
     {
         return Snapshot("""
         {
@@ -250,8 +301,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"CURRENT_LOCATION","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tile_x": {"value":3,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tile_y": {"value":9,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":PLAYER_TILE_X,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":PLAYER_TILE_Y,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "current_item_qualified_id": {"value":"","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "active_object_qualified_id": {"value":"ACTIVE_OBJECT","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -265,14 +316,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "locations": {
             "collision_grid": {"value":{"location_id":"CURRENT_LOCATION","width":12,"height":12,"notable_tiles":[BLOCKED_TILES]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "route_action_branch_coverage": {"value":{"rows":[ROUTE_ACTION_ROWS]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """
         .Replace("TIME", time.ToString())
         .Replace("CURRENT_LOCATION", currentLocationIsHome ? "FarmHouse" : "Town")
         .Replace("CURRENT_HOME", currentLocationIsHome ? "true" : "false")
+        .Replace("PLAYER_TILE_X", playerTileX.ToString())
+        .Replace("PLAYER_TILE_Y", playerTileY.ToString())
         .Replace("BLOCKED_TILES", RecoveryBlockedTiles(bedBlocked, adjacentBedTilesBlocked))
+        .Replace("ROUTE_ACTION_ROWS", routeActionRows)
         .Replace("ACTIVE_OBJECT", activeObjectQualifiedId)
         .Replace("SLEEP_PROMPT_OPEN", sleepPromptOpen ? "true" : "false")
         .Replace("CAN_CONFIRM_SLEEP", sleepPromptOpen ? "true" : "false")
@@ -436,7 +490,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
     private static SnapshotEnvelope BuyPreviewSnapshot(
         string entryOverride,
-        bool endpointAllowed = true)
+        bool endpointAllowed = true,
+        string endpointExtra = "")
     {
         return Snapshot("""
         {
@@ -462,7 +517,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_graph": {"value":{"edges":[
               {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true},
-              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED,"resolved":false}
+              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false}
             ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "current_location": {
@@ -477,7 +532,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Replace("ENTRY", entryOverride)
             .Replace(
                 "ENDPOINT_ALLOWED",
-                endpointAllowed ? "true" : "false"));
+                endpointAllowed ? "true" : "false")
+            .Replace("ENDPOINT_EXTRA", endpointExtra));
     }
 
     private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)

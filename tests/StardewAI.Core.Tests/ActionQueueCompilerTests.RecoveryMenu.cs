@@ -513,14 +513,25 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompileCloseMenuBlocksDialogueWithLastQuestionKey()
+    public void CompileCloseMenuAllowsDialogueWithStaleAnsweredQuestionKey()
     {
         var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""last_question_key"": ""Blacksmith""");
 
         var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
 
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithTerminalSleepQuestionKey()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""last_question_key"": ""Sleep""");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
         Assert.Equal("blocked", queue.Status);
-        Assert.Contains(queue.Items[0].BlockingReasons, reason => reason.StartsWith("dialogue_close_last_question_key_present:"));
+        Assert.Contains("dialogue_close_terminal_question_key_present:Sleep", queue.Items[0].BlockingReasons);
     }
 
     [Fact]

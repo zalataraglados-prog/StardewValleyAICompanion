@@ -19,7 +19,7 @@ public sealed partial class DailyPlanCompiler
                     StepId = StepId(candidate, "watch_movie_wait_guest", 0),
                     Kind = "wait_ticks",
                     WaitTicks = waitTicks,
-                    EstimatedMinutes = Math.Max(1, waitTicks / 60),
+                    EstimatedMinutes = TicksToMinutes(waitTicks),
                     Preconditions = new[] { "same_movie_objective_active=true", "invited_guest_fulfillment_pending=true" },
                     ExpectedEffects = new[] { "native_invited_guest_spawn_polled=true", "fresh_snapshot_replan_required=true" },
                     SafetyConstraints = new[] { "native_movie_invitation_only", "do_not_skip_or_mutate_movie_state" },

@@ -80,15 +80,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null)
+        if (route?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         return new[]
         {
             CloneCandidate(
-                route.FirstConnectorCandidate,
+                route.FirstActionCandidate,
                 candidateId: "prairie-king-route:" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";prairie_king_continuation=true",
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(new[]
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";prairie_king_continuation=true",
+                parameters: route.FirstActionCandidate.Parameters.Concat(new[]
                 {
                     Parameter("continuation.option_id", "minigame.play_prairie_king"),
                     Parameter("continuation.prairie_king_completion_goal", "complete_without_dying")

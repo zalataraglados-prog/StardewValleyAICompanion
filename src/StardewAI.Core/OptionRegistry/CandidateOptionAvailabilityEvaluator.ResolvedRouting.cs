@@ -59,7 +59,11 @@ namespace StardewAI.Core.OptionRegistry
             var plans = new List<ResolvedRoutePlan>();
             foreach (var firstEdge in firstEdges)
             {
-                var tail = FindShortestResolvedRouteTail(adjacency, firstEdge.TargetLocation, targetLocation);
+                var tail = FindShortestResolvedRouteTail(
+                    adjacency,
+                    firstEdge.TargetLocation,
+                    targetLocation,
+                    startLocation);
                 if (tail is null)
                 {
                     continue;
@@ -70,15 +74,18 @@ namespace StardewAI.Core.OptionRegistry
                     string.Equals(ReadParameter(candidate.Parameters, "connector_kind"), firstEdge.Kind, StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(ReadParameter(candidate.Parameters, "expected_target_location"), firstEdge.TargetLocation, StringComparison.OrdinalIgnoreCase) &&
                     ArrivalMatches(candidate.Parameters, firstEdge.TargetX, firstEdge.TargetY));
-                plans.Add(new ResolvedRoutePlan(new[] { firstEdge }.Concat(tail).ToArray(), firstConnectorCandidate));
+                plans.Add(new ResolvedRoutePlan(
+                    new[] { firstEdge }.Concat(tail).ToArray(),
+                    firstConnectorCandidate,
+                    FirstRouteActionCandidate(routeCandidates, firstConnectorCandidate)));
             }
 
             return plans
-                .OrderByDescending(plan => plan.FirstConnectorCandidate is not null &&
-                    (plan.FirstConnectorCandidate.Available || plan.FirstConnectorCandidate.AllowedToday == true))
-                .ThenByDescending(plan => plan.FirstConnectorCandidate is not null)
+                .OrderByDescending(plan => plan.FirstActionCandidate is not null)
                 .ThenBy(plan => plan.Path.Length)
-                .ThenByDescending(plan => plan.FirstConnectorCandidate?.Available == true)
+                .ThenByDescending(plan => plan.FirstActionCandidate?.Available == true)
+                .ThenByDescending(plan => plan.FirstActionCandidate?.AllowedToday == true)
+                .ThenByDescending(plan => plan.FirstActionCandidate is not null)
                 .ThenBy(plan => plan.Path[0].TargetLocation, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(plan => plan.Path[0].Kind, StringComparer.Ordinal)
                 .ThenBy(plan => plan.Path[0].FromY)
@@ -86,17 +93,48 @@ namespace StardewAI.Core.OptionRegistry
                 .FirstOrDefault();
         }
 
+        private static EventCandidate? FirstRouteActionCandidate(
+            IEnumerable<EventCandidate> routeCandidates,
+            EventCandidate? firstConnectorCandidate)
+        {
+            if (firstConnectorCandidate is null ||
+                firstConnectorCandidate.Available ||
+                firstConnectorCandidate.AllowedToday == true)
+            {
+                return firstConnectorCandidate;
+            }
+
+            return routeCandidates
+                .Where(candidate =>
+                    candidate.Available &&
+                    string.Equals(candidate.Kind, "clear_obstacle_tile", StringComparison.Ordinal) &&
+                    string.Equals(
+                        ReadParameter(candidate.Parameters, "route_repair.candidate_id"),
+                        firstConnectorCandidate.CandidateId,
+                        StringComparison.Ordinal))
+                .OrderBy(candidate => candidate.EstimatedTicks)
+                .ThenBy(candidate => candidate.EnergyCost)
+                .ThenBy(candidate => candidate.TileY)
+                .ThenBy(candidate => candidate.TileX)
+                .FirstOrDefault() ?? firstConnectorCandidate;
+        }
+
         private static ResolvedRouteEdge[]? FindShortestResolvedRouteTail(
             IReadOnlyDictionary<string, ResolvedRouteEdge[]> adjacency,
             string startLocation,
-            string targetLocation)
+            string targetLocation,
+            string routeOrigin)
         {
             if (string.Equals(startLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
             {
                 return Array.Empty<ResolvedRouteEdge>();
             }
 
-            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { startLocation };
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                startLocation,
+                routeOrigin
+            };
             var queue = new Queue<(string Location, ResolvedRouteEdge[] Path)>();
             queue.Enqueue((startLocation, Array.Empty<ResolvedRouteEdge>()));
             while (queue.Count > 0)
@@ -239,19 +277,25 @@ namespace StardewAI.Core.OptionRegistry
                         first.TargetY));
             return new ResolvedRoutePlan(
                 path.ToArray(),
-                firstConnectorCandidate);
+                firstConnectorCandidate,
+                FirstRouteActionCandidate(routeCandidates, firstConnectorCandidate));
         }
 
         private sealed class ResolvedRoutePlan
         {
-            public ResolvedRoutePlan(ResolvedRouteEdge[] path, EventCandidate? firstConnectorCandidate)
+            public ResolvedRoutePlan(
+                ResolvedRouteEdge[] path,
+                EventCandidate? firstConnectorCandidate,
+                EventCandidate? firstActionCandidate)
             {
                 Path = path;
                 FirstConnectorCandidate = firstConnectorCandidate;
+                FirstActionCandidate = firstActionCandidate;
             }
 
             public ResolvedRouteEdge[] Path { get; }
             public EventCandidate? FirstConnectorCandidate { get; }
+            public EventCandidate? FirstActionCandidate { get; }
         }
 
         private sealed class ResolvedRouteEdge

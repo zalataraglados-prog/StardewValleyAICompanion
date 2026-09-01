@@ -103,6 +103,7 @@ public sealed partial class ModEntry : Mod
         var menu = Game1.activeClickableMenu;
         if (menu is null)
         {
+            RestorePlayerControlAfterSafeMenuClose();
             activeMenuClose = null;
             close.Pending.Completion.SetResult(CompletedCloseMenu(
                 close.Pending.Request,
@@ -149,7 +150,8 @@ public sealed partial class ModEntry : Mod
         }
 
         menu.exitThisMenu();
-        var verified = Game1.activeClickableMenu is null;
+        var controlReady = RestorePlayerControlAfterSafeMenuClose();
+        var verified = Game1.activeClickableMenu is null && controlReady;
         activeMenuClose = null;
         close.Pending.Completion.SetResult(CompletedCloseMenu(
             close.Pending.Request,
@@ -159,9 +161,11 @@ public sealed partial class ModEntry : Mod
             verified ? "verified" : "observed_mismatch",
             verified
                 ? bypassedVisualOnlyShopAnimation
-                    ? new[] { "active_menu_closed", "shop_visual_animation_only_block_bypassed", "ready_wait_ticks=" + close.ElapsedTicks }
-                    : new[] { "active_menu_closed", "ready_wait_ticks=" + close.ElapsedTicks }
-                : new[] { "active_menu_still_open" }));
+                    ? new[] { "active_menu_closed", "player_control_ready", "shop_visual_animation_only_block_bypassed", "ready_wait_ticks=" + close.ElapsedTicks }
+                    : new[] { "active_menu_closed", "player_control_ready", "ready_wait_ticks=" + close.ElapsedTicks }
+                : Game1.activeClickableMenu is not null
+                    ? new[] { "active_menu_still_open" }
+                    : new[] { "player_control_not_restored_after_menu_close" }));
     }
 
     private void TickDialogueAdvance()
@@ -433,6 +437,9 @@ public sealed partial class ModEntry : Mod
 
     private static string CloseMenuObservedEffect()
     {
-        return "menus.active_menu.is_open=" + (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() + ";menus.active_menu.type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
+        return "menus.active_menu.is_open=" + (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() +
+            ";menus.active_menu.type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") +
+            ";menus.dialogue_up=" + Game1.dialogueUp.ToString().ToLowerInvariant() +
+            ";player.can_move=" + Game1.player.CanMove.ToString().ToLowerInvariant();
     }
 }

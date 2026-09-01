@@ -80,12 +80,22 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void CloseMenuBlocksWhenLastQuestionKeyPresent()
+    public void CloseMenuBlocksWhenTerminalSleepQuestionKeyPresent()
     {
         var snapshot = DialogueMenuRecoverySnapshot(lastQuestionKey: "Sleep");
         var candidate = GetCloseMenuCandidate(snapshot);
         Assert.False(candidate.Available);
-        Assert.Contains(candidate.BlockReasons, reason => reason.Contains("dialogue_close_last_question_key_present"));
+        Assert.Contains("dialogue_close_terminal_question_key_present:Sleep", candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void CloseMenuAllowsStaleAnsweredQuestionKeyOnOrdinaryDialogue()
+    {
+        var snapshot = DialogueMenuRecoverySnapshot(lastQuestionKey: "carpenter");
+        var candidate = GetCloseMenuCandidate(snapshot);
+
+        Assert.True(candidate.Available);
+        Assert.Empty(candidate.BlockReasons);
     }
 
     [Fact]

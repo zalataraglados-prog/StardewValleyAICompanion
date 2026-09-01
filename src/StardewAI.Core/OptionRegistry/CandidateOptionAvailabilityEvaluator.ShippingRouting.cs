@@ -60,7 +60,7 @@ namespace StardewAI.Core.OptionRegistry
             string currentLocation,
             ResolvedRoutePlan? routePlan)
         {
-            var route = routePlan?.FirstConnectorCandidate;
+            var route = routePlan?.FirstActionCandidate;
             var continuation = ShippingContinuationParameters(physical);
             var reasons = physical.BlockReasons
                 .Concat(route?.BlockReasons ?? new[] { "shipping_cross_map_route_unavailable" })

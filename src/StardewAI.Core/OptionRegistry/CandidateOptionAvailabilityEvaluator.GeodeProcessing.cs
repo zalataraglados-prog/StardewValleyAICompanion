@@ -37,11 +37,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 return Array.Empty<EventCandidate>();
             var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
                 RouteConnectorCandidates(snapshot, int.MaxValue).Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-            if (route?.FirstConnectorCandidate is null) return Array.Empty<EventCandidate>();
-            return rows.Select(row => CloneCandidate(route.FirstConnectorCandidate,
+            if (route?.FirstActionCandidate is null) return Array.Empty<EventCandidate>();
+            return rows.Select(row => CloneCandidate(route.FirstActionCandidate,
                 candidateId: "geode-route:" + ReadString(row, "qualified_item_id") + ":" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";geode_processing_continuation=" + ReadString(row, "qualified_item_id"),
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(new[]
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";geode_processing_continuation=" + ReadString(row, "qualified_item_id"),
+                parameters: route.FirstActionCandidate.Parameters.Concat(new[]
                 {
                     Parameter("continuation.option_id", "processing.crack_geode"),
                     Parameter("continuation.geode_qualified_item_id", ReadString(row, "qualified_item_id")),

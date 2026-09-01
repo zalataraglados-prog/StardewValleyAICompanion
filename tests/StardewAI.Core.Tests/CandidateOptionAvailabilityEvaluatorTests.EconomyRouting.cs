@@ -146,6 +146,122 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void BuySuppliesExcludesRemoteDialogueShopWhenRuntimeOwnerIsNotAtCounter()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"378",
+                "qualified_item_id":"(O)378",
+                "display_name":"Copper Ore",
+                "price":150,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false, endpointExtra:
+                ",\"direct_time_allowed\":true,\"owner_service_status\":{\"owner_required\":true,\"owner_npc\":\"Clint\",\"owner_found\":false,\"in_service_area\":false,\"block_reason\":\"owner_npc_not_in_current_location\"}"),
+                new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.False(gate.AllowedToday);
+        Assert.Contains("owner_npc_not_in_current_location", gate.BlockReasons);
+        Assert.DoesNotContain("shop_endpoint_direct_time_gate_blocked", gate.BlockReasons);
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.owner-away",
+                CurrentTime = 1850,
+                Options = new[] { option }
+            }));
+    }
+
+    [Fact]
+    public void BuySuppliesDoesNotChooseRouteWhoseTailReentersCurrentLocation()
+    {
+        var snapshot = BuyPreviewOscillationSnapshot();
+        var routeCandidates = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" })
+            .Options[0]
+            .EventCandidates;
+        Assert.Contains(routeCandidates, candidate =>
+            candidate.Available &&
+            candidate.Kind == "clear_obstacle_tile" &&
+            candidate.Parameters.Any(parameter =>
+                parameter.Name == "route_repair.expected_target_location" &&
+                parameter.Value == "BusStop"));
+
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.Equal("clear_obstacle_tile", candidate.Kind);
+        Assert.Equal("purchase:AnimalShop:(BC)45:route:Farm:1,0", candidate.CandidateId);
+        Assert.True(candidate.Available);
+        Assert.Empty(candidate.BlockReasons);
+        Assert.DoesNotContain("Backwoods", candidate.CandidateId, StringComparison.Ordinal);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_repair.expected_target_location" &&
+            parameter.Value == "BusStop");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "purchase_route.remaining_connector_count" &&
+            parameter.Value == "3");
+    }
+
+    private static SnapshotEnvelope BuyPreviewOscillationSnapshot()
+    {
+        return Snapshot("""
+        {
+          "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "money": {"value":10000,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "seed_inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crop_catalog": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"AnimalShop","stock_preview":{"kind":"shop_stock_preview","shop_id":"AnimalShop","entries":[{"item_id":"45","qualified_item_id":"(BC)45","display_name":"Barn","price":6000,"stock":1,"infinite_stock":false,"currency_balance":10000,"executor_purchase_preview_enabled":true,"executor_block_reasons":[]}]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "collision_grid": {"value":{"location_id":"Farm","width":4,"height":2,"notable_tiles":[{"tile_x":1,"tile_y":0,"collision_blocked":true},{"tile_x":1,"tile_y":1,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Farm","connectors":[{"kind":"warp","tile_x":0,"tile_y":1,"target_location":"Backwoods","target_x":0,"target_y":0,"resolved":true},{"kind":"warp","tile_x":3,"tile_y":0,"target_location":"BusStop","target_x":0,"target_y":0,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"warp","from_location":"Farm","from_x":0,"from_y":1,"target_location":"Backwoods","target_x":0,"target_y":0,"resolved":true},
+              {"kind":"warp","from_location":"Backwoods","from_x":0,"from_y":0,"target_location":"Farm","target_x":0,"target_y":1,"resolved":true},
+              {"kind":"warp","from_location":"Farm","from_x":3,"from_y":0,"target_location":"BusStop","target_x":0,"target_y":0,"resolved":true},
+              {"kind":"warp","from_location":"BusStop","from_x":0,"from_y":0,"target_location":"Town","target_x":0,"target_y":0,"resolved":true},
+              {"kind":"building_door","from_location":"Town","from_x":0,"from_y":0,"target_location":"AnimalShop","target_x":0,"target_y":0,"resolved":true},
+              {"kind":"shop_endpoint","from_location":"AnimalShop","from_x":1,"from_y":1,"shop_id":"AnimalShop","action_type":"AnimalShop","allowed_now":true,"resolved":false}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "map": {"value":{"id":"Farm"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[{"tile_x":1,"tile_y":0,"type":"Grass"},{"tile_x":1,"tile_y":1,"type":"Grass"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "shop_action_tiles": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+    }
+
+    [Fact]
     public void BuySuppliesBlocksWhenNoShopStockEntryPassesValueGates()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

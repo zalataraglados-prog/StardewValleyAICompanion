@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -23,7 +24,8 @@ static partial class Program
         string initialModelPlanPath,
         string initialRankingPath,
         string initialCompiledQueuePath,
-        JsonObject? objectiveContinuation)
+        JsonObject? objectiveContinuation,
+        List<JsonObject> suppressedObjectiveContinuations)
     {
         var queueItems = ExecutableQueueItems(queue);
         if (!string.IsNullOrWhiteSpace(options.ExecutorOptionId))
@@ -53,6 +55,7 @@ static partial class Program
             : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions))?.AsObject();
         var objectiveContinuationKind = ReadString(activeObjectiveContinuation, "kind");
         var objectiveContinuationCompleted = false;
+        var completedObjectiveContinuations = new JsonArray();
         var effectiveDecisionArtifacts = new EffectiveDecisionArtifactTracker(
             initialModelPlanPath,
             initialRankingPath,
@@ -62,7 +65,50 @@ static partial class Program
         for (var itemIndex = 0; itemIndex < queueItems.Length && attemptedCount < options.MaxQueueItemAttempts; itemIndex++)
         {
             var item = queueItems[itemIndex];
-            var dispatchReadiness = await ReadDispatchReadinessAsync(
+            JsonObject? dispatchReadiness = null;
+            if (!QueueContainsRecoveryWork(queue))
+            {
+                var latest = await ReadCurrentSnapshotAsync(http, options);
+                var latestTime = ReadInGameTime(latest.Snapshot);
+                if (latestTime >= GameClockBudgetPolicy.AutonomousRecoveryStartTime)
+                {
+                    latest = await ReadFullSnapshotAsync(
+                        http,
+                        options,
+                        forceRefresh: true);
+                    latestTime = ReadInGameTime(latest.Snapshot);
+                    var recoverySuffix = "-dispatch-recovery-" +
+                        (dispatchGateReplanCount + 1).ToString("D4");
+                    var recoverySnapshotPath = Path.Combine(
+                        options.SnapshotDir,
+                        "before-snapshot-" + iteration.ToString("D4") +
+                        recoverySuffix + ".json");
+                    await File.WriteAllTextAsync(
+                        recoverySnapshotPath,
+                        latest.Json,
+                        Encoding.UTF8);
+                    var ingest = await PostJsonStringAsync(
+                        http,
+                        SnapshotIngestUrl(options),
+                        latest.Json);
+                    currentBeforeSnapshot = latest.Snapshot;
+                    currentBeforeSnapshotPath = recoverySnapshotPath;
+                    currentStateHash = ReadString(ingest, "state_hash");
+                    dispatchReadiness = new JsonObject
+                    {
+                        ["ready"] = false,
+                        ["status"] = "blocked",
+                        ["state_hash"] = currentStateHash,
+                        ["current_time"] = latestTime,
+                        ["blocking_reasons"] = new JsonArray(
+                            "dispatch_recovery_window_started"),
+                        ["policy"] =
+                            "fresh_snapshot_before_dispatch;exclusive_recovery_replan"
+                    };
+                }
+            }
+
+            dispatchReadiness ??= await ReadDispatchReadinessAsync(
                 http,
                 options,
                 item,
@@ -102,7 +148,8 @@ static partial class Program
                     http,
                     options,
                     currentStateHash,
-                    activeObjectiveContinuation);
+                    activeObjectiveContinuation,
+                    suppressedObjectiveContinuations);
                 var replanPlanPath = Path.Combine(
                     options.SnapshotDir,
                     "replan-model-plan-" + iteration.ToString("D4") +
@@ -178,7 +225,11 @@ static partial class Program
             var execution = await PostJsonStringAsync(executorHttp, options.ExecutorUrl + options.ExecutorEndpointPath, request);
             attemptedCount++;
 
-            var afterSnapshot = await ReadAfterExecutionSnapshotAsync(http, options, currentBeforeSnapshot);
+            var afterSnapshot = await ReadAfterExecutionSnapshotAsync(
+                http,
+                options,
+                currentBeforeSnapshot,
+                execution);
             finalAfterJson = afterSnapshot.Json;
             finalAfterSnapshot = afterSnapshot.Snapshot;
             var itemSuffix = "-item-" + attemptedCount.ToString("D4");
@@ -246,14 +297,27 @@ static partial class Program
                         "kind");
                 }
                 objectiveContinuationCompleted = true;
+                if (continuationForCompletion is not null)
+                {
+                    var completedContinuation = JsonNode.Parse(
+                        continuationForCompletion.ToJsonString(JsonOptions))!.AsObject();
+                    completedObjectiveContinuations.Add(
+                        JsonNode.Parse(completedContinuation.ToJsonString(JsonOptions)));
+                    QueueReplanFilter.AddSuppressedContinuation(
+                        suppressedObjectiveContinuations,
+                        completedContinuation);
+                }
                 activeObjectiveContinuation = null;
             }
             else if (continuationForCompletion is not null &&
                 string.Equals(executionStatus, "applied", StringComparison.Ordinal))
             {
-                activeObjectiveContinuation = continuationForCompletion;
+                activeObjectiveContinuation =
+                    QueueReplanFilter.RefreshAppliedObjectiveContinuation(
+                        item,
+                        continuationForCompletion);
                 objectiveContinuationKind = ReadString(
-                    continuationForCompletion,
+                    activeObjectiveContinuation,
                     "kind");
             }
 
@@ -263,7 +327,9 @@ static partial class Program
                 options.UseDailyPlan,
                 !string.IsNullOrWhiteSpace(options.ExecutorOptionId),
                 afterSnapshot.Fresh,
-                attemptedCount < options.MaxQueueItemAttempts);
+                attemptedCount < options.MaxQueueItemAttempts,
+                QueueReplanFilter.RequiresFreshSnapshotReplan(item),
+                objectiveContinuationCompleted);
 
             if (replanDecision.ShouldStop)
             {
@@ -277,7 +343,12 @@ static partial class Program
 
             if (replanDecision.ShouldReplan)
             {
-                var replan = await BuildQueueFromDailyPlanAsync(http, options, currentStateHash, activeObjectiveContinuation);
+                var replan = await BuildQueueFromDailyPlanAsync(
+                    http,
+                    options,
+                    currentStateHash,
+                    activeObjectiveContinuation,
+                    suppressedObjectiveContinuations);
                 var replanSuffix = "-item-" + (attemptedCount + 1).ToString("D4");
                 var replanPlanPath = Path.Combine(options.SnapshotDir, "replan-model-plan-" + iteration.ToString("D4") + replanSuffix + ".json");
                 var replanDailyPlanPath = Path.Combine(options.SnapshotDir, "replan-daily-plan-response-" + iteration.ToString("D4") + replanSuffix + ".json");
@@ -344,6 +415,9 @@ static partial class Program
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
         aggregate["source"] = options.ExecutorFeedbackSource;
         aggregate["objective_continuation_completed"] = objectiveContinuationCompleted;
+        aggregate["completed_objective_continuations"] = completedObjectiveContinuations;
+        aggregate["objective_continuation_suppressed_until_day_change"] =
+            completedObjectiveContinuations.Count > 0;
         aggregate["objective_continuation"] = activeObjectiveContinuation is null
             ? null
             : JsonNode.Parse(activeObjectiveContinuation.ToJsonString(JsonOptions));

@@ -40,7 +40,7 @@ namespace StardewAI.Core.Execution
             }
 
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (time < 2200)
+            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time))
             {
                 return new[] { Step("refresh_plan_after_stabilization", "planner", "urgent_risks_rechecked", 0) };
             }

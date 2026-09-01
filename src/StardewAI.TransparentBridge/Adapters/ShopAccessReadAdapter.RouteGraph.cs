@@ -253,6 +253,18 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
         if (IsShopEndpointAction(parts[0]))
         {
+            var parsed = CurrentLocationReadAdapter.ParseShopAction(
+                location,
+                action.raw_action,
+                action.tile_x,
+                action.tile_y);
+            var ownerServiceStatus = parsed is null
+                ? null
+                : CurrentLocationReadAdapter.ReadOwnerServiceStatus(location, parsed);
+            var ownerRequired = ownerServiceStatus is not null &&
+                ReadBoolProperty(ownerServiceStatus, "owner_required") == true;
+            var ownerAtServiceCounter = !ownerRequired ||
+                ReadBoolProperty(ownerServiceStatus!, "in_service_area") == true;
             var openTime = string.Equals(parts[0], "OpenShop", StringComparison.OrdinalIgnoreCase)
                 ? ParseIntPart(parts, 3)
                 : null;
@@ -282,8 +294,10 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 close_time = closeTime,
                 direct_time_gate_known = directTimeGateKnown,
                 direct_time_allowed = directTimeAllowed,
+                parsed,
+                owner_service_status = ownerServiceStatus,
                 festival_closed = festivalClosed,
-                allowed_now = directTimeAllowed && !festivalClosed,
+                allowed_now = directTimeAllowed && ownerAtServiceCounter && !festivalClosed,
                 resolved = false,
                 unresolved_reason = "shop_endpoint_not_location_transition"
             };

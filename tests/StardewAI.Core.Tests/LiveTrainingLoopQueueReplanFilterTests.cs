@@ -20,15 +20,129 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "tools", "StardewAI.LiveTrainingLoop", "Program.QueueInspection.cs"));
         Assert.Contains(".TakeWhile(item => item is not null && IsExecutableQueueItem(item))", inspection, StringComparison.Ordinal);
         Assert.DoesNotContain(".Where(item => item is not null && IsExecutableQueueItem(item))", inspection, StringComparison.Ordinal);
+        Assert.Contains("\"clock\"", inspection, StringComparison.Ordinal);
+        Assert.Contains("ReadFullSnapshotAsync", inspection, StringComparison.Ordinal);
+        Assert.Contains("forceRefresh: false", inspection, StringComparison.Ordinal);
+        Assert.Contains("product_after_snapshot_cache_match", inspection, StringComparison.Ordinal);
+        Assert.Contains("product_after_state_hash", inspection, StringComparison.Ordinal);
+        Assert.Contains("product_after_game_tick", inspection, StringComparison.Ordinal);
+
+        var jsonHttp = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.JsonHttp.cs"));
+        Assert.Contains("SnapshotUrlForProfile", jsonHttp, StringComparison.Ordinal);
+        Assert.Contains("query.Add(\"fresh=1\")", jsonHttp, StringComparison.Ordinal);
+        Assert.Contains("expected_state_hash=", jsonHttp, StringComparison.Ordinal);
+        Assert.Contains("expected_game_tick=", jsonHttp, StringComparison.Ordinal);
+
+        var bridge = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "ModEntry.cs"));
+        Assert.Contains("TryReadExpectedSnapshotCacheIdentity", bridge, StringComparison.Ordinal);
+        Assert.Contains("SnapshotMatchesExpectedCacheIdentity", bridge, StringComparison.Ordinal);
+        Assert.Contains("forceRefresh = true", bridge, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainLoopReleasesUnavailableContinuationBeforeNoProgressBackoff()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var queueBuildingSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.QueueBuilding.cs"));
+        var policyTrajectorySource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.PolicyTrajectory.cs"));
+        var runtimeExecutionSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
+        var connectorRuntimeSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs"));
+
+        Assert.Contains("ShouldReleaseUnavailableContinuation", source, StringComparison.Ordinal);
+        Assert.Contains("continuation_released", source, StringComparison.Ordinal);
+        Assert.Contains("activeObjectiveContinuation = null", source, StringComparison.Ordinal);
+        Assert.Contains("noProgressBackoff.Reset()", source, StringComparison.Ordinal);
+        Assert.Contains("suppressedObjectiveContinuations", source, StringComparison.Ordinal);
+        Assert.Contains("objective_suppression_reset", source, StringComparison.Ordinal);
+        Assert.Contains("completed_objective_continuations", source, StringComparison.Ordinal);
+        Assert.Contains("AddSuppressedContinuation", source, StringComparison.Ordinal);
+        Assert.Contains("completed_objective_continuations", runtimeExecutionSource, StringComparison.Ordinal);
+        Assert.Contains("AddSuppressedContinuation", runtimeExecutionSource, StringComparison.Ordinal);
+        Assert.Contains("FilterSuppressedContinuations", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("ContinuationRequestParameters(objectiveContinuation)", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("\"continuation.\" + property.Key", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("IsTrainingVerifiedExecution(execution)", source, StringComparison.Ordinal);
+        Assert.Contains("IsTrainingVerifiedExecution(step)", policyTrajectorySource, StringComparison.Ordinal);
+        Assert.Contains("policyAppend.AppendedCount == 0 &&", source, StringComparison.Ordinal);
+        Assert.Contains("horizonObservations == 0", source, StringComparison.Ordinal);
+        Assert.Contains("connector_native_arrival_tile_adjusted", connectorRuntimeSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("reasons.Add(\"connector_unexpected_arrival_tile\")", connectorRuntimeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ContinuationLeaseReleasesOnlyWhenActiveFilterHasNoCandidate()
+    {
+        var continuation = new JsonObject
+        {
+            ["option_id"] = "economy.buy_supplies"
+        };
+        var unavailable = new JsonObject
+        {
+            ["objective_continuation_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["selected_candidate_count"] = 0
+            }
+        };
+        var available = new JsonObject
+        {
+            ["objective_continuation_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["selected_candidate_count"] = 1
+            }
+        };
+
+        Assert.True(QueueReplanFilter.ShouldReleaseUnavailableContinuation(continuation, unavailable));
+        Assert.False(QueueReplanFilter.ShouldReleaseUnavailableContinuation(continuation, available));
+        Assert.False(QueueReplanFilter.ShouldReleaseUnavailableContinuation(null, unavailable));
+        Assert.False(QueueReplanFilter.ShouldReleaseUnavailableContinuation(continuation, new JsonObject()));
     }
 
     [Theory]
-    [InlineData("blocked", true, true, false, true, true, true, false, "blocked_continue_after_fresh_after_snapshot")]
-    [InlineData("blocked", true, true, false, false, true, false, true, "stale_after_snapshot")]
-    [InlineData("applied", true, true, false, true, true, false, false, "continuable_execution")]
-    [InlineData("blocked", false, true, false, true, true, false, true, "continue_after_blocked_disabled")]
-    [InlineData("blocked", true, false, false, true, true, false, false, "non_daily_plan_continue_after_blocked")]
-    [InlineData("blocked", true, true, true, true, true, false, false, "non_daily_plan_continue_after_blocked")]
+    [InlineData("executor.move_to_tile", "verified", "applied", true)]
+    [InlineData("executor.play_prairie_king", "simulated_equivalent", "applied", true)]
+    [InlineData("executor.play_junimo_kart", "simulated_equivalent", "applied", true)]
+    [InlineData("executor.move_to_tile", "simulated_equivalent", "applied", false)]
+    [InlineData("executor.play_prairie_king", "simulated_equivalent", "blocked", false)]
+    [InlineData("executor.play_prairie_king", "unverified", "applied", false)]
+    public void TrainingVerificationAllowsOnlyExplicitTimedEquivalentExecutors(
+        string optionId,
+        string verificationStatus,
+        string executionStatus,
+        bool expected)
+    {
+        var execution = new JsonObject
+        {
+            ["option_id"] = optionId,
+            ["primitive_verification_status"] = verificationStatus,
+            ["status"] = executionStatus
+        };
+
+        Assert.Equal(
+            expected,
+            QueueReplanFilter.IsTrainingVerifiedExecution(execution));
+    }
+
+    [Theory]
+    [InlineData("blocked", true, true, false, true, true, false, true, false, "blocked_continue_after_fresh_after_snapshot")]
+    [InlineData("blocked", true, true, false, false, true, false, false, true, "stale_after_snapshot")]
+    [InlineData("applied", true, true, false, true, true, false, false, false, "continuable_execution")]
+    [InlineData("applied", true, true, false, true, true, true, true, false, "continuable_execution_requires_fresh_snapshot_replan")]
+    [InlineData("no_op", true, true, false, true, true, true, true, false, "continuable_execution_requires_fresh_snapshot_replan")]
+    [InlineData("applied", true, true, false, false, true, true, false, true, "stale_after_snapshot")]
+    [InlineData("applied", true, true, false, true, false, true, false, true, "max_queue_item_attempts_reached")]
+    [InlineData("applied", true, false, false, true, true, true, false, false, "non_daily_plan_fresh_snapshot_replan_not_applicable")]
+    [InlineData("blocked", false, true, false, true, true, false, false, true, "continue_after_blocked_disabled")]
+    [InlineData("blocked", true, false, false, true, true, false, false, false, "non_daily_plan_continue_after_blocked")]
+    [InlineData("blocked", true, true, true, true, true, false, false, false, "non_daily_plan_continue_after_blocked")]
     public void DecideAfterExecutionCoversBlockedFreshStaleAndSkipCases(
         string executionStatus,
         bool continueAfterBlocked,
@@ -36,6 +150,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         bool hasExecutorOverride,
         bool afterSnapshotFresh,
         bool canAttemptMoreItems,
+        bool requiresFreshSnapshotReplan,
         bool shouldReplan,
         bool shouldStop,
         string reason)
@@ -46,11 +161,127 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             useDailyPlan,
             hasExecutorOverride,
             afterSnapshotFresh,
-            canAttemptMoreItems);
+            canAttemptMoreItems,
+            requiresFreshSnapshotReplan);
 
         Assert.Equal(shouldReplan, decision.ShouldReplan);
         Assert.Equal(shouldStop, decision.ShouldStop);
         Assert.Equal(reason, decision.Reason);
+    }
+
+    [Fact]
+    public void CompletedObjectiveStopsAtTheTrainingIterationBoundary()
+    {
+        var decision = QueueReplanFilter.DecideAfterExecution(
+            "applied",
+            continueAfterBlocked: true,
+            useDailyPlan: true,
+            hasExecutorOverride: false,
+            afterSnapshotFresh: true,
+            canAttemptMoreItems: true,
+            requiresFreshSnapshotReplan: true,
+            objectiveContinuationCompleted: true);
+
+        Assert.False(decision.ShouldReplan);
+        Assert.True(decision.ShouldStop);
+        Assert.False(decision.ShouldFilterRegeneratedQueue);
+        Assert.Equal(
+            "objective_continuation_completed_iteration_boundary",
+            decision.Reason);
+
+        var runtimeSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
+        Assert.Contains(
+            "objectiveContinuationCompleted);",
+            runtimeSource,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FreshSnapshotReplanSignalAcceptsCompilerAndExpectedEffectForms()
+    {
+        var direct = QueueItem("queue.replan.direct", "executor.traverse_connector", "1", "2", string.Empty);
+        direct["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("fresh_snapshot_replan_required", "true"));
+        var compiler = QueueItem("queue.replan.compiler", "executor.traverse_connector", "1", "2", string.Empty);
+        compiler["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("compiler_context.fresh_snapshot_replan_required", "true"));
+        var expectedEffect = QueueItem("queue.replan.effect", "executor.interact", "1", "2", string.Empty);
+        expectedEffect["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_effect", "menu_open=true;fresh_snapshot_replan_required=true"));
+        var ordinary = QueueItem("queue.replan.ordinary", "executor.move_to_tile", "1", "2", string.Empty);
+
+        Assert.True(QueueReplanFilter.RequiresFreshSnapshotReplan(direct));
+        Assert.True(QueueReplanFilter.RequiresFreshSnapshotReplan(compiler));
+        Assert.True(QueueReplanFilter.RequiresFreshSnapshotReplan(expectedEffect));
+        Assert.False(QueueReplanFilter.RequiresFreshSnapshotReplan(ordinary));
+    }
+
+    [Fact]
+    public void MailContinuationSurvivesRouteAndCompletesOnlyAtExactNativeLetterTerminal()
+    {
+        var route = QueueItem(
+            "queue.mail.route",
+            "executor.traverse_connector",
+            "3",
+            "4",
+            string.Empty);
+        var routeParameters = route["normalized_command"]!["parameters"]!.AsArray();
+        routeParameters.Add(Parameter("continuation.option_id", "mail.process_letter"));
+        routeParameters.Add(Parameter("continuation.mail_id", "spring_18"));
+        routeParameters.Add(Parameter("continuation.mail_data_sha256", "mail-hash"));
+        routeParameters.Add(Parameter("continuation.target_location", "Farm"));
+        routeParameters.Add(Parameter("fresh_snapshot_replan_required", "true"));
+
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("mail", continuation!["kind"]!.GetValue<string>());
+        Assert.Equal("spring_18", continuation["mail_id"]!.GetValue<string>());
+        Assert.True(QueueReplanFilter.RequiresFreshSnapshotReplan(route));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            route,
+            continuation,
+            "applied"));
+
+        var exact = MailCandidate("mailbox_approach", "spring_18");
+        var other = MailCandidate("mailbox_approach", "spring_19");
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(
+            new JsonArray { exact, other },
+            continuation));
+        Assert.Equal("spring_18", selected!["parameters"]![0]!["value"]!.GetValue<string>());
+
+        var unsuppressed = QueueReplanFilter.FilterSuppressedContinuations(
+            new JsonArray
+            {
+                MailCandidate("mailbox_approach", "spring_18"),
+                MailCandidate("mailbox_approach", "spring_19")
+            },
+            new[] { continuation });
+        var remaining = Assert.Single(unsuppressed);
+        Assert.Equal("spring_19", remaining!["parameters"]![0]!["value"]!.GetValue<string>());
+
+        var interact = QueueItem("queue.mail.open", "executor.interact", "68", "15", string.Empty);
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            interact,
+            continuation,
+            "applied"));
+
+        var terminal = QueueItem("queue.mail.close", "executor.close_menu", "0", "0", string.Empty);
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("target_runtime_type", "LetterViewerMenu"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("mail_menu_identity_sha256", "menu-hash"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            terminal,
+            continuation,
+            "applied"));
+        terminal["normalized_command"]!["parameters"]!.AsArray()
+            .Single(node => node!["name"]!.GetValue<string>() == "target_runtime_type")!["value"] = "ShopMenu";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            terminal,
+            continuation,
+            "applied"));
     }
 
     [Fact]
@@ -157,10 +388,27 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.option_id", "social.talk_npc"));
         wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.npc_name", "Abigail"));
         wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.target_location", "SeedShop"));
+        wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.retry_count", "1"));
+        wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.retry_game_time", "900"));
         var continuation = QueueReplanFilter.ReadSocialContinuation(wait);
 
         Assert.NotNull(continuation);
         Assert.Equal("Abigail", continuation!["npc_name"]!.GetValue<string>());
+        Assert.Equal("1", continuation["retry_count"]!.GetValue<string>());
+        Assert.Equal("900", continuation["retry_game_time"]!.GetValue<string>());
+
+        var prior = new JsonObject
+        {
+            ["kind"] = "social",
+            ["option_id"] = "social.talk_npc",
+            ["npc_name"] = "Abigail",
+            ["target_location"] = "SeedShop"
+        };
+        var refreshed = QueueReplanFilter.RefreshAppliedObjectiveContinuation(
+            wait,
+            prior);
+        Assert.Equal("1", refreshed["retry_count"]!.GetValue<string>());
+        Assert.Equal("900", refreshed["retry_game_time"]!.GetValue<string>());
 
         var interact = QueueItem("queue.social", "executor.social_interact", "10", "10", string.Empty);
         interact["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("npc_name", "Abigail"));
@@ -264,6 +512,127 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "applied"));
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
             buy,
+            continuation,
+            "blocked"));
+    }
+
+    [Fact]
+    public void ReleasedPurchaseSuppressionRemovesOnlyExactShopAndItem()
+    {
+        var suppressed = new JsonObject
+        {
+            ["kind"] = "economy_purchase",
+            ["option_id"] = "economy.buy_supplies",
+            ["shop_id"] = "Sandy",
+            ["qualified_item_id"] = "(O)494"
+        };
+        var candidates = new JsonArray
+        {
+            PurchaseCandidate("Sandy", "(O)494"),
+            PurchaseCandidate("Sandy", "(O)495"),
+            PurchaseCandidate("AnimalShop", "(O)494")
+        };
+
+        var selected = QueueReplanFilter.FilterSuppressedContinuations(
+            candidates,
+            new[] { suppressed });
+
+        Assert.Equal(2, selected.Count);
+        Assert.Contains(selected, node =>
+            node!["shop_id"]!.GetValue<string>() == "Sandy" &&
+            node["qualified_item_id"]!.GetValue<string>() == "(O)495");
+        Assert.Contains(selected, node =>
+            node!["shop_id"]!.GetValue<string>() == "AnimalShop" &&
+            node["qualified_item_id"]!.GetValue<string>() == "(O)494");
+    }
+
+    [Fact]
+    public void SnapshotDayKeyRequiresCompleteGameDayIdentity()
+    {
+        var snapshot = SnapshotWithDay(1, "spring", 4);
+
+        Assert.Equal("1:spring:4", QueueReplanFilter.SnapshotDayKey(snapshot));
+
+        snapshot["state"]!["time"]!["day"]!["value"] = 5;
+        Assert.Equal("1:spring:5", QueueReplanFilter.SnapshotDayKey(snapshot));
+
+        snapshot["state"]!["time"]!.AsObject().Remove("season");
+        Assert.Equal(string.Empty, QueueReplanFilter.SnapshotDayKey(snapshot));
+    }
+
+    [Fact]
+    public void CompletedObjectiveSuppressionIsExactAndIdempotent()
+    {
+        var completed = new JsonObject
+        {
+            ["kind"] = "economy_purchase",
+            ["option_id"] = "economy.buy_supplies",
+            ["shop_id"] = "AnimalShop",
+            ["qualified_item_id"] = "(BC)45",
+            ["quantity"] = "1"
+        };
+        var suppressed = new List<JsonObject>();
+
+        Assert.True(QueueReplanFilter.AddSuppressedContinuation(suppressed, completed));
+        Assert.False(QueueReplanFilter.AddSuppressedContinuation(suppressed, completed));
+        Assert.Single(suppressed);
+
+        var selected = QueueReplanFilter.FilterSuppressedContinuations(
+            new JsonArray(
+                PurchaseCandidate("AnimalShop", "(BC)45"),
+                PurchaseCandidate("Sandy", "(O)494")),
+            suppressed);
+
+        var remaining = Assert.IsType<JsonObject>(Assert.Single(selected));
+        Assert.Equal("purchase:Sandy:(O)494", remaining["candidate_id"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void PrairieKingRouteKeepsObjectiveLeaseUntilExactTerminalActionApplies()
+    {
+        var route = QueueItem(
+            "queue.prairie-king.route",
+            "executor.traverse_connector",
+            "3",
+            "12",
+            string.Empty);
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.option_id", "minigame.play_prairie_king"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.prairie_king_completion_goal", "complete_without_dying"));
+
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("prairie_king", continuation!["kind"]!.GetValue<string>());
+        var selected = QueueReplanFilter.FilterRankedCandidates(
+            new JsonArray
+            {
+                PrairieKingCandidate("route_connector_tile", "complete_without_dying", continuationParameter: true),
+                PrairieKingCandidate("play_prairie_king", "complete_without_dying", continuationParameter: false),
+                PurchaseCandidate("AnimalShop", "(BC)45")
+            },
+            continuation);
+        Assert.Equal(2, selected.Count);
+
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            route,
+            continuation,
+            "applied"));
+        var terminal = QueueItem(
+            "queue.prairie-king.terminal",
+            "executor.play_prairie_king",
+            "30",
+            "28",
+            string.Empty);
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("prairie_king_completion_goal", "complete_without_dying"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            terminal,
+            continuation,
+            "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            terminal,
             continuation,
             "blocked"));
     }
@@ -740,6 +1109,20 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         };
     }
 
+    private static JsonObject MailCandidate(string kind, string mailId)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "mail:" + kind + ":" + mailId,
+            ["option_id"] = "mail.process_letter",
+            ["kind"] = kind,
+            ["parameters"] = new JsonArray
+            {
+                Parameter("continuation.mail_id", mailId)
+            }
+        };
+    }
+
     private static JsonObject PurchaseCandidate(
         string shopId,
         string qualifiedItemId)
@@ -752,6 +1135,43 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["shop_id"] = shopId,
             ["qualified_item_id"] = qualifiedItemId,
             ["parameters"] = new JsonArray()
+        };
+    }
+
+    private static JsonObject SnapshotWithDay(int year, string season, int day)
+    {
+        return new JsonObject
+        {
+            ["state"] = new JsonObject
+            {
+                ["time"] = new JsonObject
+                {
+                    ["year"] = new JsonObject { ["value"] = year },
+                    ["season"] = new JsonObject { ["value"] = season },
+                    ["day"] = new JsonObject { ["value"] = day }
+                }
+            }
+        };
+    }
+
+    private static JsonObject PrairieKingCandidate(
+        string kind,
+        string completionGoal,
+        bool continuationParameter)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "prairie-king:" + kind,
+            ["option_id"] = "minigame.play_prairie_king",
+            ["kind"] = kind,
+            ["parameters"] = new JsonArray
+            {
+                Parameter(
+                    continuationParameter
+                        ? "continuation.prairie_king_completion_goal"
+                        : "prairie_king_completion_goal",
+                    completionGoal)
+            }
         };
     }
 

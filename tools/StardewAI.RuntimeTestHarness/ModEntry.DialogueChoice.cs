@@ -57,17 +57,52 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "choose_dialogue_response", DialogueRequestedEffect(request), DialogueObservedEffect(), "dialogue_response_not_whitelisted");
         }
 
-        var response = menu.responses?.FirstOrDefault(item => string.Equals(item.responseKey, responseKey, StringComparison.Ordinal));
-        if (response is null)
+        var responseIndex = Array.FindIndex(
+            menu.responses ?? Array.Empty<Response>(),
+            item => string.Equals(
+                item.responseKey,
+                responseKey,
+                StringComparison.Ordinal));
+        if (responseIndex < 0)
         {
             return BlockedWithPrimitive(request, "choose_dialogue_response", DialogueRequestedEffect(request), DialogueObservedEffect(), "dialogue_response_key_not_available");
+        }
+
+        if (menu.transitioning ||
+            menu.safetyTimer > 0 ||
+            menu.responseCC is null ||
+            responseIndex >= menu.responseCC.Count)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "choose_dialogue_response",
+                DialogueRequestedEffect(request),
+                DialogueObservedEffect(),
+                "dialogue_response_menu_not_ready");
         }
 
         var beforeMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var beforeQuestionKey = actualKey;
         var beforeMinigame = Game1.currentMinigame?.minigameId() ?? "none";
+        var beforeDialogueUp = Game1.dialogueUp;
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var handled = Game1.currentLocation.answerDialogue(response);
+        var responseBounds = menu.responseCC[responseIndex].bounds;
+        menu.performHoverAction(
+            responseBounds.Center.X,
+            responseBounds.Center.Y);
+        if (menu.selectedResponse != responseIndex)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "choose_dialogue_response",
+                DialogueRequestedEffect(request),
+                DialogueObservedEffect(),
+                "dialogue_response_hover_not_selected");
+        }
+
+        menu.receiveLeftClick(
+            responseBounds.Center.X,
+            responseBounds.Center.Y);
         var afterMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var afterShopId = Game1.activeClickableMenu is ShopMenu shopMenu ? shopMenu.ShopId : string.Empty;
         var expectsMinigame = DialogueResponseStartsExpectedMinigame(
@@ -77,22 +112,24 @@ public sealed partial class ModEntry : Mod
             request.MinigameMode);
         var minigameVerified = expectsMinigame &&
             Game1.currentMinigame is MineCart mineCart &&
-            (int)MineCartModeField.GetValue(mineCart)! == request.MinigameMode;
+            (int)MineCartModeField.GetValue(mineCart)! == request.MinigameMode &&
+            !Game1.dialogueUp;
         var shopVerified = !expectsMinigame &&
             string.Equals(afterMenuType, "ShopMenu", StringComparison.Ordinal) &&
-            (string.IsNullOrWhiteSpace(request.ExpectedShopId) || string.Equals(afterShopId, request.ExpectedShopId, StringComparison.OrdinalIgnoreCase));
-        var verified = handled && (minigameVerified || shopVerified);
+            (string.IsNullOrWhiteSpace(request.ExpectedShopId) || string.Equals(afterShopId, request.ExpectedShopId, StringComparison.OrdinalIgnoreCase)) &&
+            !Game1.dialogueUp;
+        var verified = minigameVerified || shopVerified;
         var verificationReasons = verified
             ? expectsMinigame
-                ? new[] { "dialogue_response_handled", "expected_native_minigame_started" }
-                : new[] { "dialogue_response_handled", "expected_shop_menu_opened" }
+                ? new[] { "native_dialogue_menu_response_selected", "expected_native_minigame_started", "dialogue_lifecycle_closed" }
+                : new[] { "native_dialogue_menu_response_selected", "expected_shop_menu_opened", "dialogue_lifecycle_closed" }
             : new[]
             {
-                handled
-                    ? expectsMinigame
-                        ? "dialogue_response_handled_without_expected_minigame"
-                        : "dialogue_response_handled_without_expected_shop_menu"
-                    : "dialogue_response_not_handled"
+                Game1.dialogueUp
+                    ? "dialogue_lifecycle_still_open"
+                    : expectsMinigame
+                        ? "native_dialogue_response_without_expected_minigame"
+                        : "native_dialogue_response_without_expected_shop_menu"
             };
 
         return new TrainingExecutionResult
@@ -117,6 +154,7 @@ public sealed partial class ModEntry : Mod
                 new SimulatedFactChange { Path = "menus.active_menu.type", Before = beforeMenuType, After = afterMenuType },
                 new SimulatedFactChange { Path = "menus.active_menu.shop_id", Before = "", After = afterShopId },
                 new SimulatedFactChange { Path = "menus.active_menu.last_question_key", Before = beforeQuestionKey, After = Game1.currentLocation.lastQuestionKey ?? string.Empty },
+                new SimulatedFactChange { Path = "menus.dialogue_up", Before = beforeDialogueUp.ToString().ToLowerInvariant(), After = Game1.dialogueUp.ToString().ToLowerInvariant() },
                 new SimulatedFactChange { Path = "minigame.id", Before = beforeMinigame, After = Game1.currentMinigame?.minigameId() ?? "none" }
             }
         };
@@ -179,6 +217,7 @@ public sealed partial class ModEntry : Mod
         return "menus.active_menu.type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") +
             ";last_question_key=" + (Game1.currentLocation?.lastQuestionKey ?? "none") +
             ";shop_id=" + (Game1.activeClickableMenu is ShopMenu menu ? menu.ShopId : "none") +
+            ";dialogue_up=" + Game1.dialogueUp.ToString().ToLowerInvariant() +
             ";minigame_id=" + (Game1.currentMinigame?.minigameId() ?? "none");
     }
 }

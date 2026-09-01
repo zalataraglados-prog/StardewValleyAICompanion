@@ -36,6 +36,38 @@ public sealed class SnapshotRetentionTests
         Assert.Contains("ApplyRollingArtifactRetention(options, iteration)", source, StringComparison.Ordinal);
         Assert.Contains("RollingArtifactRetention.Apply(", source, StringComparison.Ordinal);
         Assert.Contains("MinFreeSpaceMb { get; set; } = 8192", source, StringComparison.Ordinal);
+
+        var launcher = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "StardewAI.Core",
+            "Training",
+            "StardewTrainingSessionLauncher.cs"));
+        Assert.Contains(
+            "\"--min-free-space-mb\", Math.Max(",
+            launcher,
+            StringComparison.Ordinal);
+
+        var script = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "scripts",
+            "start-formal-product-training-attached.sh"));
+        Assert.Contains(
+            "STARDEWAI_FORMAL_MIN_FREE_SPACE_MB:-8192",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"min_free_space_mb\": $MIN_FREE_SPACE_MB",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "formal training executable bit is missing",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[ ! -x \"$executable\" ]",
+            script,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -123,5 +155,24 @@ public sealed class SnapshotRetentionTests
             StateHash = stateHash,
             GameTick = gameTick
         };
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(
+                    current.FullName,
+                    "StardewValleyAICompanion.sln")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException(
+            "Repository root was not found.");
     }
 }

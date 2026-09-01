@@ -84,7 +84,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     {
         var plan = FindResolvedRoutePlan(snapshot, currentLocation, serviceLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-        if (plan?.FirstConnectorCandidate is null)
+        if (plan?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         var continuation = new[]
         {
@@ -97,10 +97,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
         return new[]
         {
-            CloneCandidate(plan.FirstConnectorCandidate,
+            CloneCandidate(plan.FirstActionCandidate,
                 candidateId: "building-skin-route:" + ReadString(row, "building_identity") + ":" + currentLocation,
-                expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";building_skin_service_location=" + serviceLocation,
-                parameters: plan.FirstConnectorCandidate.Parameters.Concat(continuation).ToArray(),
+                expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";building_skin_service_location=" + serviceLocation,
+                parameters: plan.FirstActionCandidate.Parameters.Concat(continuation).ToArray(),
                 availabilityClass: "building_skin_rolling_route")
         };
     }

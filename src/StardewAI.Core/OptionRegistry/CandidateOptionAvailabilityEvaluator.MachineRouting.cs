@@ -60,7 +60,7 @@ namespace StardewAI.Core.OptionRegistry
             string playerLocation)
         {
             var routePlan = FindResolvedRoutePlan(snapshot, playerLocation, machineLocation, routeCandidates);
-            var routeCandidate = routePlan?.FirstConnectorCandidate;
+            var routeCandidate = routePlan?.FirstActionCandidate;
             var reasons = routeCandidate is null
                 ? new[] { "machine_cross_map_route_unavailable" }
                 : routeCandidate.BlockReasons.Distinct(StringComparer.Ordinal).ToArray();

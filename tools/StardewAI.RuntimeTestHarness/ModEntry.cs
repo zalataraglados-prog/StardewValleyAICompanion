@@ -203,6 +203,25 @@ public sealed partial class ModEntry : Mod
                 "1",
                 StringComparison.Ordinal))
         {
+            var observerRenderIntervalMilliseconds = 0;
+            var observerRenderIntervalText = Environment.GetEnvironmentVariable(
+                "STARDEWAI_OBSERVER_RENDER_INTERVAL_MS");
+            if (!string.IsNullOrWhiteSpace(observerRenderIntervalText) &&
+                (!int.TryParse(
+                    observerRenderIntervalText,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out observerRenderIntervalMilliseconds) ||
+                 observerRenderIntervalMilliseconds < 0 ||
+                 observerRenderIntervalMilliseconds > 60000))
+            {
+                Monitor.Log(
+                    "Ignoring invalid STARDEWAI_OBSERVER_RENDER_INTERVAL_MS; expected 0..60000.",
+                    LogLevel.Warn);
+                observerRenderIntervalMilliseconds = 0;
+            }
+
+            HostLocalDrawPatch.Configure(observerRenderIntervalMilliseconds);
             harmony.Patch(
                 original: AccessTools.Method(typeof(Game1), "Draw", new[] { typeof(GameTime) }),
                 prefix: new HarmonyMethod(typeof(HostLocalDrawPatch), nameof(HostLocalDrawPatch.Prefix)));
@@ -212,7 +231,9 @@ public sealed partial class ModEntry : Mod
                     typeof(HeadlessSaveGameMenuLifecyclePatch),
                     nameof(HeadlessSaveGameMenuLifecyclePatch.Prefix)));
             Monitor.Log(
-                "Suppressing host-local rendering; game updates, native save lifecycle, original multiplayer sync, and remote farmer rendering remain active.",
+                observerRenderIntervalMilliseconds > 0
+                    ? $"Throttling host-local rendering to one frame every {observerRenderIntervalMilliseconds}ms; game updates and native input remain unthrottled."
+                    : "Suppressing host-local rendering; game updates, native save lifecycle, original multiplayer sync, and remote farmer rendering remain active.",
                 LogLevel.Info);
         }
 
@@ -2683,9 +2704,34 @@ internal static class SavesFolderPatch
 
 internal static class HostLocalDrawPatch
 {
+    private static int minimumIntervalMilliseconds;
+    private static long nextAllowedTimestamp;
+
+    public static void Configure(int intervalMilliseconds)
+    {
+        Volatile.Write(ref minimumIntervalMilliseconds, intervalMilliseconds);
+        Interlocked.Exchange(ref nextAllowedTimestamp, 0);
+    }
+
     public static bool Prefix()
     {
-        return false;
+        var interval = Volatile.Read(ref minimumIntervalMilliseconds);
+        if (interval <= 0)
+        {
+            return false;
+        }
+
+        var now = Environment.TickCount64;
+        var next = Interlocked.Read(ref nextAllowedTimestamp);
+        if (now < next)
+        {
+            return false;
+        }
+
+        return Interlocked.CompareExchange(
+            ref nextAllowedTimestamp,
+            now + interval,
+            next) == next;
     }
 }
 

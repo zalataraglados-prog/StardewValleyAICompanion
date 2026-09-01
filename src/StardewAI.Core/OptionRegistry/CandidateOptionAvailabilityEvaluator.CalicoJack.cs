@@ -82,15 +82,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null)
+        if (route?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         return new[]
         {
             CloneCandidate(
-                route.FirstConnectorCandidate,
+                route.FirstActionCandidate,
                 candidateId: "calico-jack-route:" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";calico_jack_currency_demand=true",
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(new[]
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";calico_jack_currency_demand=true",
+                parameters: route.FirstActionCandidate.Parameters.Concat(new[]
                 {
                     Parameter("continuation.option_id", "minigame.play_calico_jack"),
                     Parameter("continuation.calico_target_club_coins", ReadInt(projection, "target_club_coins").ToString(CultureInfo.InvariantCulture)),

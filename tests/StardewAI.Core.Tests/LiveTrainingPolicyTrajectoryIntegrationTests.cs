@@ -48,6 +48,38 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         Assert.Equal("hash.before", document.RootElement.GetProperty("source_state_hash").GetString());
     }
 
+    [Fact]
+    public void DeferredCompilerWaitIsNotMisreportedAsRejectedPolicySelection()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "stardewai-tests", Guid.NewGuid().ToString("N"));
+        var artifactDirectory = Path.Combine(root, "artifacts");
+        Directory.CreateDirectory(artifactDirectory);
+        var beforeSnapshotPath = Path.Combine(artifactDirectory, "before.json");
+        File.WriteAllText(beforeSnapshotPath, BeforeSnapshot().ToJsonString());
+        var rankingPath = Path.Combine(artifactDirectory, "ranking.json");
+        File.WriteAllText(rankingPath, JsonSerializer.Serialize(Decision(selectedAvailable: false), JsonOptions));
+        var options = new LiveTrainingOptions
+        {
+            Root = root,
+            RunId = "run.deferred"
+        };
+
+        var result = InvokeAppender(
+            options,
+            Execution(beforeSnapshotPath, rankingPath, "execution.wait.json"),
+            new TrainingDatasetAppendResult
+            {
+                DatasetPath = Path.Combine(root, "datasets", "features.jsonl"),
+                RowId = "row.deferred",
+                EpisodeId = "episode.deferred"
+            });
+
+        Assert.Equal(0, result.AppendedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal("effective_candidate_unavailable", result.FirstSkipReason);
+        Assert.False(File.Exists(options.PolicyTrajectoryDatasetPath));
+    }
+
     private static PolicyTrajectoryAppendBatchResult InvokeAppender(
         LiveTrainingOptions options,
         JsonObject execution,
@@ -120,7 +152,7 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         }
     };
 
-    private static AvailabilityAwarePolicyPredictionEnvelope Decision() => new()
+    private static AvailabilityAwarePolicyPredictionEnvelope Decision(bool selectedAvailable = true) => new()
     {
         RankedEventCandidates = new[]
         {
@@ -132,7 +164,7 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
                 Rank = 1,
                 Score = 1,
                 ExpectedReward = 0.2,
-                Available = true,
+                Available = selectedAvailable,
                 EstimatedTicks = 30
             },
             new PolicyEventCandidatePrediction

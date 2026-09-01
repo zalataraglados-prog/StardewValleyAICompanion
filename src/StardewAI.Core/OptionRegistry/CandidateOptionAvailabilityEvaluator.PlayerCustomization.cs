@@ -131,7 +131,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue)
                 .Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null)
+        if (route?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         var continuation = intent.Where(parameter => parameter.Name.StartsWith("customization_", StringComparison.Ordinal))
             .Select(parameter => Parameter("continuation." + parameter.Name, parameter.Value))
@@ -144,10 +144,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             }).GroupBy(parameter => parameter.Name, StringComparer.Ordinal).Select(group => group.Last()).ToArray();
         return new[]
         {
-            CloneCandidate(route.FirstConnectorCandidate,
+            CloneCandidate(route.FirstActionCandidate,
                 candidateId: "player-customization-route:" + mode + ":" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";customization_continuation=" + mode,
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(continuation).ToArray(),
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";customization_continuation=" + mode,
+                parameters: route.FirstActionCandidate.Parameters.Concat(continuation).ToArray(),
                 availabilityClass: "player_customization_player_command_rolling_route")
         };
     }

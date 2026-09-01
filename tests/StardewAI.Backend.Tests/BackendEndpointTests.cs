@@ -1041,6 +1041,7 @@ namespace StardewAI.Backend.Tests
             {
                 mode = "offline_smoke",
                 root_path = root,
+                min_free_space_mb = 6144,
                 allow_game_launch = true,
                 sound_enabled = false
             });
@@ -1054,6 +1055,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("training_run_manifest.v2", manifest.GetProperty("schema_version").GetString());
             Assert.Equal("offline_smoke", manifest.GetProperty("mode").GetString());
             Assert.Equal(root, manifest.GetProperty("root_path").GetString());
+            Assert.Equal(6144, manifest.GetProperty("min_free_space_mb").GetInt32());
             Assert.EndsWith(Path.Combine("datasets", "training-feature-rows.jsonl"), manifest.GetProperty("dataset_path").GetString());
             Assert.True(File.Exists(manifest.GetProperty("manifest_path").GetString()));
         }
@@ -1209,6 +1211,51 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(overrides, item =>
                 item.GetProperty("name").GetString() == "STARDEWAI_TEST_AUTO_LOAD" &&
                 item.GetProperty("value").GetString() == "true");
+        }
+
+        [Fact]
+        public async Task TrainingSessionPrepareFormalProductRejectsMissingAttachedGameProcess()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, OperatingSystem.IsWindows() ? "StardewModdingAPI.exe" : "StardewModdingAPI");
+            var saves = Path.Combine(root, "saves");
+            const string slot = "TrainingFarm_123";
+            Directory.CreateDirectory(runtime);
+            Directory.CreateDirectory(Path.Combine(saves, slot));
+            File.WriteAllText(smapi, string.Empty);
+            File.WriteAllText(Path.Combine(saves, slot, slot), "save");
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                run_id = "train.server.attach-test",
+                mode = "formal_product_training",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                attach_existing_game = true,
+                existing_game_process_id = int.MaxValue,
+                target_execution_mode = "dedicated_host_ai",
+                allow_game_launch = false,
+                sound_enabled = false,
+                window_style = "hidden",
+                save_isolation_path = saves,
+                save_slot = slot
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var result = json.RootElement;
+            Assert.True(result.GetProperty("blocked").GetBoolean());
+            Assert.Contains(result.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "attached_game_process_not_alive");
+            var manifest = result.GetProperty("manifest");
+            Assert.Equal("train.server.attach-test", manifest.GetProperty("run_id").GetString());
+            Assert.Equal("attach_requested", manifest.GetProperty("game_launch").GetString());
+            Assert.Equal("external", manifest.GetProperty("game_process_ownership").GetString());
+            Assert.Equal("dedicated_host_ai", manifest.GetProperty("target_execution_mode").GetString());
+            Assert.Equal(int.MaxValue, manifest.GetProperty("process_id").GetInt32());
         }
 
         [Fact]

@@ -63,6 +63,76 @@ public sealed partial class EventCandidateRankerTests
     }
 
     [Fact]
+    public void RankMakesLateDayRecoveryExclusiveAcrossEventSocialAndEconomicCandidates()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            CurrentTime = 2230,
+            Options = new[]
+            {
+                new OptionAvailability
+                {
+                    OptionId = "recovery.stabilize_day",
+                    EventCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "recovery:return_home",
+                            Kind = "recovery_return_home",
+                            Available = true,
+                            EstimatedTicks = 600
+                        }
+                    }
+                },
+                new OptionAvailability
+                {
+                    OptionId = "economy.buy_supplies",
+                    EventCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "purchase:Joja:(O)167:route:Mountain:14,41",
+                            Kind = "route_to_purchase_shop",
+                            Available = true,
+                            EstimatedTicks = 1020
+                        }
+                    },
+                    EconomicCandidates = new[]
+                    {
+                        new EconomicCandidate
+                        {
+                            CandidateId = "purchase:Joja:(O)167",
+                            Kind = "buy_shop_item",
+                            Available = true,
+                            TotalValue = 75
+                        }
+                    }
+                },
+                new OptionAvailability
+                {
+                    OptionId = "social.talk_npc",
+                    SocialCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "social:talk:Robin",
+                            Kind = "talk_npc",
+                            Available = true,
+                            EstimatedTicks = 120
+                        }
+                    }
+                }
+            }
+        };
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+
+        var candidate = Assert.Single(ranked);
+        Assert.Equal("recovery:return_home", candidate.CandidateId);
+        Assert.Equal("recovery_return_home", candidate.Kind);
+    }
+
+    [Fact]
     public void RankIncludesAvailableInteractEndpointCandidates()
     {
         var report = new BaselineTrainingReport
@@ -200,6 +270,46 @@ public sealed partial class EventCandidateRankerTests
         };
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+
+        Assert.Empty(ranked);
+    }
+
+    [Fact]
+    public void RankSkipsUnavailableCandidateWhoseClockGateIsOpenButRuntimePreconditionsBlock()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            CurrentTime = 1850,
+            Options = new[]
+            {
+                new OptionAvailability
+                {
+                    OptionId = "economy.buy_supplies",
+                    EventCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "purchase:Carpenter:(O)390:interact:ScienceHouse:8,19",
+                            Kind = "interact_endpoint",
+                            Available = false,
+                            AllowedNow = true,
+                            AllowedToday = true,
+                            EffectiveOpenTime = 900,
+                            ClosesAt = 2000,
+                            BlockReasons = new[]
+                            {
+                                "interact_menu_must_be_clear",
+                                "interact_shop_owner_npc_not_at_service_counter"
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability);
 
         Assert.Empty(ranked);
     }

@@ -70,13 +70,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     RouteConnectorCandidates(snapshot, int.MaxValue)
                         .Where(value => value.Kind == "route_connector_tile")
                         .ToArray());
-                if (plan?.FirstConnectorCandidate is not null)
+                if (plan?.FirstActionCandidate is not null)
                 {
                     result.Add(CloneCandidate(
-                        plan.FirstConnectorCandidate,
+                        plan.FirstActionCandidate,
                         candidateId: "cook-route:" + recipeName + ":" + selectedSourceId + ":" + currentLocation,
-                        expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";cooking_target=" + recipeName,
-                        parameters: plan.FirstConnectorCandidate.Parameters.Concat(new[]
+                        expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";cooking_target=" + recipeName,
+                        parameters: plan.FirstActionCandidate.Parameters.Concat(new[]
                         {
                             Parameter("continuation.option_id", "crafting.cook_recipe"),
                             Parameter("continuation.recipe_name", recipeName),

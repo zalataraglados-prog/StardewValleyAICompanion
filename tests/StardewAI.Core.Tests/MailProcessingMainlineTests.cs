@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Mail;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
@@ -21,12 +22,17 @@ public sealed class MailProcessingMainlineTests
 
         var openPlan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new(), mailboxAvailability), mailbox.StateHash);
         var openStep = Assert.Single(openPlan.Steps);
+        Assert.Contains(
+            "candidate_id:" + openCandidate.CandidateId,
+            openStep.Preconditions);
         Assert.Equal("interact", openStep.Kind);
         var openQueue = new ActionQueueCompiler().Compile(openPlan, mailbox);
         var openItem = Assert.Single(openQueue.Items);
         Assert.Equal("executor.interact", openItem.OptionId);
         Assert.Empty(openItem.BlockingReasons);
         Assert.Contains(openItem.NormalizedCommand.Parameters, row => row.Name == "expected_action_type" && row.Value == "Mailbox");
+        Assert.Contains(openItem.NormalizedCommand.Parameters, row => row.Name == "continuation.option_id" && row.Value == "mail.process_letter");
+        Assert.Contains(openItem.NormalizedCommand.Parameters, row => row.Name == "continuation.mail_id" && row.Value == "mail-fixture");
 
         var letter = Snapshot(LetterState());
         var letterAvailability = new CandidateOptionAvailabilityEvaluator().Evaluate(
@@ -37,6 +43,9 @@ public sealed class MailProcessingMainlineTests
 
         var closePlan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new(), letterAvailability), letter.StateHash);
         var closeStep = Assert.Single(closePlan.Steps);
+        Assert.Contains(
+            "candidate_id:" + processCandidate.CandidateId,
+            closeStep.Preconditions);
         Assert.Equal("close_menu", closeStep.Kind);
         var closeQueue = new ActionQueueCompiler().Compile(closePlan, letter);
         var closeItem = Assert.Single(closeQueue.Items);
@@ -44,6 +53,8 @@ public sealed class MailProcessingMainlineTests
         Assert.Empty(closeItem.BlockingReasons);
         Assert.Contains(closeItem.NormalizedCommand.Parameters, row => row.Name == "target_runtime_identity" && row.Value == "mail-fixture");
         Assert.Contains(closeItem.NormalizedCommand.Parameters, row => row.Name == "mail_attachment_slots_required" && row.Value == "1");
+        Assert.Contains(closeItem.NormalizedCommand.Parameters, row => row.Name == "continuation.option_id" && row.Value == "mail.process_letter");
+        Assert.Contains(closeItem.NormalizedCommand.Parameters, row => row.Name == "continuation.mail_menu_identity_sha256" && row.Value == "identity");
     }
 
     [Fact]
@@ -74,6 +85,73 @@ public sealed class MailProcessingMainlineTests
             parsed.Where(row => row.Kind == "item").Select(row => row.Command).OrderBy(value => value));
         Assert.All(parsed, row => Assert.Empty(row.Errors));
         Assert.Contains(parsed[0].Arguments, value => value.StartsWith("quoted value", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void LetterViewerInputSettleReusesBoundedWaitBeforeNativeClose()
+    {
+        var settling = Snapshot(LetterState().Replace(
+            "\"can_receive_input\":true",
+            "\"can_receive_input\":false",
+            StringComparison.Ordinal));
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            settling,
+            new[] { "mail.process_letter" },
+            true);
+        var candidate = Assert.Single(availability.Options.Single().EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("mail_input_wait", candidate.Kind);
+        Assert.Equal("native_letter_viewer_input_settle_wait", candidate.AvailabilityClass);
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new(), availability),
+            settling.StateHash);
+        var step = Assert.Single(plan.Steps);
+        Assert.Contains(
+            "candidate_id:" + candidate.CandidateId,
+            step.Preconditions);
+        Assert.Equal("wait_ticks", step.Kind);
+        Assert.Equal(30, step.WaitTicks);
+        var queue = new ActionQueueCompiler().Compile(plan, settling);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        Assert.Contains(item.NormalizedCommand.Parameters, row =>
+            row.Name == "continuation.option_id" &&
+            row.Value == "mail.process_letter");
+        Assert.Contains(item.NormalizedCommand.Parameters, row =>
+            row.Name == "expected_effect" &&
+            row.Value == "fresh_snapshot_replan_required=true");
+
+        var wrongMenuIdentityPlan = new SmallModelPlanEnvelope
+        {
+            StateHash = settling.StateHash,
+            Steps = plan.Steps.Select(value => new SmallModelPlanStep
+            {
+                StepId = value.StepId,
+                Kind = value.Kind,
+                WaitTicks = value.WaitTicks,
+                EstimatedMinutes = value.EstimatedMinutes,
+                Preconditions = value.Preconditions,
+                ExpectedEffects = value.ExpectedEffects,
+                SafetyConstraints = value.SafetyConstraints,
+                FailurePolicy = value.FailurePolicy,
+                Parameters = value.Parameters.Select(parameter =>
+                    parameter.Name == "mail_menu_identity_sha256"
+                        ? new SmallModelActionParameter
+                        {
+                            Name = parameter.Name,
+                            Value = "wrong-menu"
+                        }
+                        : parameter).ToArray()
+            }).ToArray()
+        };
+        var blocked = new ActionQueueCompiler().Compile(
+            wrongMenuIdentityPlan,
+            settling);
+        Assert.Contains(
+            Assert.Single(blocked.Items).BlockingReasons,
+            reason => reason == "active_menu_must_be_closed_before_action");
     }
 
     [Fact]

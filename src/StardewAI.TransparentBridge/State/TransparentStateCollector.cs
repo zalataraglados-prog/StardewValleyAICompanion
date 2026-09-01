@@ -3,6 +3,7 @@ using StardewValley;
 using StardewAI.TransparentBridge.Adapters;
 using StardewAI.Contracts.State;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace StardewAI.TransparentBridge.State;
 
@@ -11,12 +12,18 @@ public sealed class TransparentStateCollector
     private readonly string bridgeVersion;
     private readonly IModRegistry modRegistry;
     private readonly IReadOnlyList<IStateAdapter> adapters;
+    private readonly Action<string, long>? adapterCollectionObserver;
 
-    public TransparentStateCollector(string bridgeVersion, IModRegistry modRegistry, IEnumerable<IStateAdapter> adapters)
+    public TransparentStateCollector(
+        string bridgeVersion,
+        IModRegistry modRegistry,
+        IEnumerable<IStateAdapter> adapters,
+        Action<string, long>? adapterCollectionObserver = null)
     {
         this.bridgeVersion = bridgeVersion;
         this.modRegistry = modRegistry;
         this.adapters = adapters.OrderBy(adapter => adapter.Priority).ToArray();
+        this.adapterCollectionObserver = adapterCollectionObserver;
     }
 
     public IReadOnlyList<IStateAdapter> Adapters => adapters;
@@ -35,7 +42,18 @@ public sealed class TransparentStateCollector
                 continue;
             }
 
-            var result = adapter.Collect(tick);
+            var startedAt = Stopwatch.GetTimestamp();
+            StateAdapterResult result;
+            try
+            {
+                result = adapter.Collect(tick);
+            }
+            finally
+            {
+                adapterCollectionObserver?.Invoke(
+                    adapter.Domain,
+                    ElapsedMicroseconds(startedAt, Stopwatch.GetTimestamp()));
+            }
             if (sections.TryGetValue(result.SectionName, out var existing) &&
                 existing is Dictionary<string, object> existingFields)
             {
@@ -104,6 +122,9 @@ public sealed class TransparentStateCollector
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private static long ElapsedMicroseconds(long startedAt, long endedAt) =>
+        Math.Max(0, (long)((endedAt - startedAt) * 1_000_000d / Stopwatch.Frequency));
 
     private static FieldEnvelope<T> Field<T>(T value, string source, long readAtTick, string adapter = "vanilla_1_6") => new()
     {

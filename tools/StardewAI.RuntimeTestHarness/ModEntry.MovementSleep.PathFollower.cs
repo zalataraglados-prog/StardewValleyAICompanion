@@ -22,7 +22,8 @@ public sealed partial class ModEntry
         GameLocation location,
         IReadOnlyList<Point> path,
         ExecutorPathCursor cursor,
-        out string reason)
+        out string reason,
+        bool waitForSoftObstacle = false)
     {
         while (cursor.PathIndex < path.Count &&
             Game1.player.TilePoint == path[cursor.PathIndex])
@@ -38,8 +39,34 @@ public sealed partial class ModEntry
         }
 
         var next = path[cursor.PathIndex];
-        if (!IsTileWalkable(location, next) ||
-            IsTileOccupiedByCharacter(location, next))
+        var occupiedByCharacter = IsTileOccupiedByCharacter(location, next);
+        if (occupiedByCharacter && waitForSoftObstacle)
+        {
+            cursor.LastPosition = Game1.player.Position;
+            var obstacleDirection = DirectionTo(Game1.player.TilePoint, next);
+            StartMoving(obstacleDirection);
+            cursor.CurrentDirection = obstacleDirection;
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                cursor.PathIndex++;
+                cursor.StuckTicks = 0;
+                reason = string.Empty;
+                return true;
+            }
+
+            cursor.StuckTicks++;
+            if (cursor.StuckTicks > 180)
+            {
+                reason = "soft_obstacle_timeout";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
+
+        if (!IsTileWalkable(location, next) || occupiedByCharacter)
         {
             reason = "dynamic_path_blocked";
             return false;

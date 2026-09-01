@@ -35,6 +35,8 @@ var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
 JsonObject? activeObjectiveContinuation = null;
+var suppressedObjectiveContinuations = new List<JsonObject>();
+var suppressionDayKey = string.Empty;
 var objectiveCompleted = false;
 var socialObjectiveCompleted = false;
 var persistedIterationCount = Directory.EnumerateFiles(
@@ -46,6 +48,9 @@ var consecutiveErrors = 0;
 var lastErrorIteration = 0;
 var stopReason = string.Empty;
 var noProgressBackoff = new NoProgressBackoffPolicy(
+    options.NoProgressBackoffMs,
+    options.NoProgressMaxBackoffMs);
+var unverifiedExecutionBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
 
@@ -72,6 +77,26 @@ for (var attemptOrdinal = 1;
             ? await File.ReadAllTextAsync(options.SnapshotFile, Encoding.UTF8)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
+        var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
+        if (!string.IsNullOrWhiteSpace(currentDayKey) &&
+            !string.Equals(currentDayKey, suppressionDayKey, StringComparison.Ordinal))
+        {
+            unverifiedExecutionBackoff.Reset();
+            var clearedCount = suppressedObjectiveContinuations.Count;
+            suppressedObjectiveContinuations.Clear();
+            suppressionDayKey = currentDayKey;
+            if (clearedCount > 0)
+            {
+                AppendProgress(
+                    options,
+                    "objective_suppression_reset",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "reason=game_day_changed cleared_count=" + clearedCount +
+                    " day_key=" + currentDayKey);
+            }
+        }
         var snapshotJson = beforeSnapshot.ToJsonString(JsonlOptions);
         var snapshotPath = Path.Combine(options.SnapshotDir, "before-snapshot-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(snapshotPath, snapshotJson, Encoding.UTF8);
@@ -93,16 +118,23 @@ for (var attemptOrdinal = 1;
 
     var modelPlanPath = string.Empty;
     var rankingPath = string.Empty;
+    JsonObject? dailyPlanRanking = null;
     JsonObject queue;
     if (options.UseDailyPlan)
     {
-        var dailyPlan = await BuildQueueFromDailyPlanAsync(http, options, lastStateHash, activeObjectiveContinuation);
+        var dailyPlan = await BuildQueueFromDailyPlanAsync(
+            http,
+            options,
+            lastStateHash,
+            activeObjectiveContinuation,
+            suppressedObjectiveContinuations);
         modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
         var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
         rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
+        dailyPlanRanking = dailyPlan.Ranking;
         queue = dailyPlan.Queue;
     }
     else if (options.UseParameterizedAction)
@@ -135,6 +167,33 @@ for (var attemptOrdinal = 1;
             var executableSubsetCount = ExecutableQueueItems(queue).Length;
             if (!options.ContinueAfterBlockedQueueItems || executableSubsetCount == 0)
             {
+                if (executableSubsetCount == 0 &&
+                    QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+                        activeObjectiveContinuation,
+                        dailyPlanRanking))
+                {
+                    var releasedContinuation = activeObjectiveContinuation!;
+                    var releasedOptionId = ReadString(
+                        releasedContinuation,
+                        "option_id");
+                    QueueReplanFilter.AddSuppressedContinuation(
+                        suppressedObjectiveContinuations,
+                        releasedContinuation);
+                    activeObjectiveContinuation = null;
+                    noProgressBackoff.Reset();
+                    AppendProgress(
+                        options,
+                        "continuation_released",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        "reason=no_available_continuation_candidate option_id=" +
+                        releasedOptionId +
+                        " suppressed_until_day_change=true suppressed_count=" +
+                        suppressedObjectiveContinuations.Count);
+                    await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                    continue;
+                }
                 AppendProgress(
                     options,
                     "blocked",
@@ -160,7 +219,7 @@ for (var attemptOrdinal = 1;
         }
 
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, modelPlanPath, rankingPath, queuePath, activeObjectiveContinuation)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, modelPlanPath, rankingPath, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
@@ -172,14 +231,23 @@ for (var attemptOrdinal = 1;
 
         if (options.UseRuntimeTestHarnessExecutor)
         {
-            var primitiveVerified = string.Equals(ReadString(execution, "primitive_verification_status"), "verified", StringComparison.Ordinal) &&
-                string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal);
+            var primitiveVerified =
+                QueueReplanFilter.IsTrainingVerifiedExecution(execution);
             if (!primitiveVerified)
             {
-                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, options.ExecutorUnverifiedSource + " status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status"));
-                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                var unverifiedDecision =
+                    unverifiedExecutionBackoff.ObserveUnverifiedExecution(
+                        queue,
+                        execution);
+                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, options.ExecutorUnverifiedSource + " status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status") + NoProgressDetail(unverifiedDecision));
+                await DelayBeforeNextAttemptAsync(
+                    options,
+                    attemptOrdinal,
+                    unverifiedDecision.DelayMs);
                 continue;
             }
+
+            unverifiedExecutionBackoff.Reset();
 
             var executionNoProgress =
                 noProgressBackoff.ObserveExecution(queue, execution);
@@ -191,11 +259,22 @@ for (var attemptOrdinal = 1;
                 lastStateHash,
                 lastQueueId,
                 appendToDataset: !executionNoProgress.NoProgress);
+            objectiveCompleted = execution["objective_continuation_completed"]?.GetValue<bool>() == true;
+            socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
+            if (execution["completed_objective_continuations"] is JsonArray completedContinuations)
+            {
+                foreach (var completedContinuation in completedContinuations
+                    .Select(node => node as JsonObject)
+                    .Where(node => node is not null))
+                {
+                    QueueReplanFilter.AddSuppressedContinuation(
+                        suppressedObjectiveContinuations,
+                        completedContinuation);
+                }
+            }
             activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
                 ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
                 : null;
-            objectiveCompleted = execution["objective_continuation_completed"]?.GetValue<bool>() == true;
-            socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
             var policyAppend = executionNoProgress.NoProgress
@@ -206,7 +285,11 @@ for (var attemptOrdinal = 1;
             {
                 verifiedActions++;
                 AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " horizon_observations=" + horizonObservations + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=" + options.ExecutorFeedbackSource);
-                var train = await TrainIfNeededAsync(http, options, iteration);
+                var train = options.RequireStructuredPolicy &&
+                    policyAppend.AppendedCount == 0 &&
+                    horizonObservations == 0
+                        ? (TrainingReport: (JsonObject?)null, Prediction: (JsonObject?)null)
+                        : await TrainIfNeededAsync(http, options, iteration);
                 if (train.TrainingReport is not null)
                 {
                     lastTrainingReport = train.TrainingReport;

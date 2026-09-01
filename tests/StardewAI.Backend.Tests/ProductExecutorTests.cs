@@ -96,6 +96,10 @@ public sealed class ProductExecutorTests
         Assert.True(result["product_replan_required"]!.GetValue<bool>());
         Assert.Equal("native_action_preconditions", result["product_dispatch_guard"]!.GetValue<string>());
         Assert.Equal(1, handler.NativeDispatchCount);
+        Assert.Equal(2, handler.SnapshotRequestUris.Count);
+        Assert.All(
+            handler.SnapshotRequestUris,
+            uri => Assert.Contains("fresh=1", uri.Query, StringComparison.Ordinal));
 
         var requestHash = ProductReceiptStore.Sha256(raw.ToJsonString());
         var receipt = await store.ReadAsync(request, requestHash, default);
@@ -268,6 +272,7 @@ public sealed class ProductExecutorTests
 
         public int NativeDispatchCount { get; private set; }
         public int SnapshotReadCount { get; private set; }
+        public List<Uri> SnapshotRequestUris { get; } = new();
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage message,
@@ -277,6 +282,7 @@ public sealed class ProductExecutorTests
             if (message.Method == HttpMethod.Get)
             {
                 SnapshotReadCount++;
+                SnapshotRequestUris.Add(message.RequestUri!);
                 response = new JsonObject
                 {
                     ["schema_version"] = "snapshot.v1",

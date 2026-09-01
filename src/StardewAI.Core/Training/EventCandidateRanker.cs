@@ -42,6 +42,12 @@ namespace StardewAI.Core.Training
             var mandatoryMenuRecovery = !professionChoiceActive && !mailProcessingActive && availability.Options
                 .SelectMany(option => option.EventCandidates)
                 .Any(candidate => candidate.Available && candidate.Kind == "recovery_close_menu");
+            var mandatoryDayRecovery = !professionChoiceActive &&
+                !mailProcessingActive &&
+                !mandatoryMenuRecovery &&
+                availability.Options
+                    .SelectMany(option => option.EventCandidates)
+                    .Any(candidate => candidate.Available && IsMandatoryDayRecovery(candidate.Kind));
             foreach (var option in availability.Options)
             {
                 var seenCandidateIds = new HashSet<string>(StringComparer.Ordinal);
@@ -50,6 +56,7 @@ namespace StardewAI.Core.Training
                     .Where(candidate => !professionChoiceActive || candidate.Kind == "choose_profession")
                     .Where(candidate => !mailProcessingActive || candidate.Kind == "process_open_letter")
                     .Where(candidate => !mandatoryMenuRecovery || candidate.Kind == "recovery_close_menu")
+                    .Where(candidate => !mandatoryDayRecovery || IsMandatoryDayRecovery(candidate.Kind))
                     .ToArray();
                 foreach (var ec in legalEventCandidates)
                 {
@@ -61,6 +68,10 @@ namespace StardewAI.Core.Training
 
                 var legalSocialCandidates = option.SocialCandidates
                     .Where(CanEnterTimeline)
+                    .Where(_ => !professionChoiceActive &&
+                        !mailProcessingActive &&
+                        !mandatoryMenuRecovery &&
+                        !mandatoryDayRecovery)
                     .Where(sc => string.IsNullOrEmpty(sc.CandidateId) || seenCandidateIds.Add(sc.CandidateId));
 
                 var combined = legalEventCandidates.Concat(legalSocialCandidates);
@@ -333,7 +344,12 @@ namespace StardewAI.Core.Training
                     });
                 }
 
-                foreach (var candidate in option.EconomicCandidates.Where(candidate => candidate.Available && !mandatoryMenuRecovery))
+                foreach (var candidate in option.EconomicCandidates.Where(candidate =>
+                    candidate.Available &&
+                    !professionChoiceActive &&
+                    !mailProcessingActive &&
+                    !mandatoryMenuRecovery &&
+                    !mandatoryDayRecovery))
                 {
                     var baseReward = optionScores.TryGetValue(option.OptionId, out var optionScore)
                         ? optionScore.AverageTotalReward
@@ -385,7 +401,16 @@ namespace StardewAI.Core.Training
 
         private static bool CanEnterTimeline(EventCandidate candidate)
         {
-            return candidate.Available || candidate.AllowedToday == true;
+            return candidate.Available ||
+                candidate.AllowedNow == false &&
+                candidate.AllowedToday == true;
+        }
+
+        private static bool IsMandatoryDayRecovery(string kind)
+        {
+            return kind is "recovery_return_home" or
+                "recovery_sleep_immediately" or
+                "recovery_resume_sleep_prompt";
         }
 
         private static int ReadCurrentTime(OptionAvailabilityEnvelope availability)

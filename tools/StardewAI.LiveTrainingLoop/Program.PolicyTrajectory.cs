@@ -41,8 +41,7 @@ static partial class Program
                 continue;
             }
 
-            if (!string.Equals(ReadString(step, "status"), "applied", StringComparison.Ordinal) ||
-                !string.Equals(ReadString(step, "primitive_verification_status"), "verified", StringComparison.Ordinal) ||
+            if (!QueueReplanFilter.IsTrainingVerifiedExecution(step) ||
                 step["after_snapshot_fresh"]?.GetValue<bool>() != true)
             {
                 result.Skip("execution_not_verified_applied_fresh");
@@ -81,6 +80,13 @@ static partial class Program
                 var decision = JsonSerializer.Deserialize<AvailabilityAwarePolicyPredictionEnvelope>(
                     File.ReadAllText(rankingPath),
                     JsonOptions) ?? throw new InvalidOperationException("ranking response is empty");
+                var selectedCandidate = decision.RankedEventCandidates?.SingleOrDefault(candidate =>
+                    string.Equals(candidate.CandidateId, candidateId, StringComparison.Ordinal));
+                if (selectedCandidate is not null && !selectedCandidate.Available)
+                {
+                    result.Skip("effective_candidate_unavailable");
+                    continue;
+                }
                 var beforeSnapshotPath = ReadString(step, "effective_before_snapshot_path");
                 if (string.IsNullOrWhiteSpace(beforeSnapshotPath) || !File.Exists(beforeSnapshotPath))
                 {

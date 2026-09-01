@@ -745,16 +745,19 @@ public sealed partial class ModEntry : Mod
             var expectedArrival = new Point(request.ExpectedArrivalTileX.Value, request.ExpectedArrivalTileY.Value);
             if (observedTile != expectedArrival)
             {
-                reasons.Add("connector_unexpected_arrival_tile");
+                reasons.Add("connector_native_arrival_tile_adjusted");
             }
         }
 
-        if (reasons.Count == 0)
+        var verified = string.Equals(
+            observedLocation,
+            request.ExpectedTargetLocation,
+            StringComparison.Ordinal);
+        if (verified && reasons.Count == 0)
         {
             reasons.Add("connector_location_changed_as_expected");
         }
 
-        var verified = reasons.Count == 1 && reasons[0] == "connector_location_changed_as_expected";
         move.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,

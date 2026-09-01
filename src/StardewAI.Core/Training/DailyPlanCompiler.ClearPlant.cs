@@ -76,6 +76,7 @@ namespace StardewAI.Core.Training
             AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
             parameters.AddRange(candidate.Parameters.Where(parameter =>
                 parameter.Name.StartsWith("quest_", StringComparison.Ordinal) ||
+                parameter.Name.StartsWith("continuation.", StringComparison.Ordinal) ||
                 parameter.Name.StartsWith(
                     "route_repair.",
                     StringComparison.Ordinal)));

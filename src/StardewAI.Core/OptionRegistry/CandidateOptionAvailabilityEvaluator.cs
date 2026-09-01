@@ -14,6 +14,12 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
+        private static readonly HashSet<string> ExplicitTargetCandidateIds =
+            new(StringComparer.Ordinal)
+            {
+                "exploration.visit_location"
+            };
+
         private readonly OptionRegistry optionRegistry;
         private readonly Verifier.Verifier verifier;
         private readonly ActionQueueCompiler compiler;
@@ -45,6 +51,40 @@ namespace StardewAI.Core.OptionRegistry
             return Evaluate(snapshot, candidates, includeExecutorCalibrationOptions, commitmentLedger);
         }
 
+        public OptionAvailabilityEnvelope EvaluateForAutonomousRuntimePlanning(
+            SnapshotEnvelope snapshot,
+            string[] candidateOptionIds,
+            StrategyCommitmentLedger? commitmentLedger = null)
+        {
+            if (RequiresExclusiveRecovery(snapshot))
+            {
+                return Evaluate(
+                    snapshot,
+                    new[] { "recovery.stabilize_day" },
+                    commitmentLedger: commitmentLedger);
+            }
+
+            if (candidateOptionIds.Length > 0)
+            {
+                return Evaluate(snapshot, candidateOptionIds, commitmentLedger: commitmentLedger);
+            }
+
+            var candidates = DefaultCandidates(includeExecutorCalibrationOptions: false)
+                .Append(new OptionAvailabilityCandidate { OptionId = "recovery.stabilize_day" })
+                .GroupBy(candidate => candidate.OptionId, StringComparer.Ordinal)
+                .Select(group => group.First())
+                .OrderBy(candidate => candidate.OptionId, StringComparer.Ordinal)
+                .ToArray();
+            return Evaluate(snapshot, candidates, commitmentLedger: commitmentLedger);
+        }
+
+        public static bool RequiresExclusiveRecovery(SnapshotEnvelope snapshot)
+        {
+            var time = ReadStateFieldInt(snapshot, "time", "time");
+            return GameClockBudgetPolicy.RecoveryWindowStarted(time) ||
+                Infrastructure.SleepPromptResumeProjection.IsAvailable(snapshot);
+        }
+
         public OptionAvailabilityEnvelope Evaluate(
             SnapshotEnvelope snapshot,
             OptionAvailabilityCandidate[] candidates,
@@ -67,6 +107,7 @@ namespace StardewAI.Core.OptionRegistry
             return optionRegistry.All
                 .Where(option => includeExecutorCalibrationOptions || option.TrainingRole != TrainingRoles.ExecutorCalibration)
                 .Where(option => option.InvocationPolicy != OptionInvocationPolicy.PlayerCommandOnly)
+                .Where(option => !ExplicitTargetCandidateIds.Contains(option.OptionId))
                 .Select(option => new OptionAvailabilityCandidate { OptionId = option.OptionId })
                 .OrderBy(candidate => candidate.OptionId, StringComparer.Ordinal)
                 .ToArray();

@@ -951,7 +951,44 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.DoesNotContain(availability.Options, option => option.OptionId == "executor.move_to_tile");
         Assert.DoesNotContain(availability.Options, option => option.OptionId == "executor.face_direction");
         Assert.DoesNotContain(availability.Options, option => option.OptionId == "executor.wait_ticks");
+        Assert.DoesNotContain(availability.Options, option => option.OptionId == "exploration.visit_location");
         Assert.Contains(availability.Options, option => option.OptionId == "social.gift_npc");
+    }
+
+    [Fact]
+    public void AutonomousRuntimeDefaultsIncludeDeterministicDayRecoveryWithoutOtherCalibrationOptions()
+    {
+        var snapshot = Snapshot("{}");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .EvaluateForAutonomousRuntimePlanning(snapshot, Array.Empty<string>());
+
+        Assert.Contains(availability.Options, option => option.OptionId == "recovery.stabilize_day");
+        Assert.DoesNotContain(availability.Options, option => option.OptionId == "farm.maintain_crops");
+        Assert.DoesNotContain(availability.Options, option => option.OptionId == "executor.move_to_tile");
+    }
+
+    [Fact]
+    public void AutonomousRuntimeExplicitCandidatesRemainExactForCalibrationRuns()
+    {
+        var snapshot = Snapshot("{}");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .EvaluateForAutonomousRuntimePlanning(snapshot, new[] { "executor.wait_ticks" });
+
+        var option = Assert.Single(availability.Options);
+        Assert.Equal("executor.wait_ticks", option.OptionId);
+    }
+
+    [Fact]
+    public void ExplicitVisitLocationRemainsAvailableForTargetedRoutingAndCalibration()
+    {
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(RouteConnectorSnapshot(routeTrainingBlocked: false), new[] { "exploration.visit_location" });
+
+        var option = Assert.Single(availability.Options);
+        Assert.Equal("exploration.visit_location", option.OptionId);
+        Assert.Single(option.EventCandidates);
     }
 
     [Fact]

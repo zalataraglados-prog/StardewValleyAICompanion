@@ -8,8 +8,6 @@ namespace StardewAI.Core.Execution
 {
     public sealed class TimeBudgetValidator
     {
-        private const int DefaultDeadlineTime = 2600;
-        private const int DefaultSafetyBufferMinutes = 60;
         private const string PerfectHumanProfile = "perfect_human_player";
         private readonly ExecutionAssumptionRegistry assumptionRegistry;
         private readonly MiningPerfectExecutorModel miningModel;
@@ -40,7 +38,18 @@ namespace StardewAI.Core.Execution
         public TimeBudgetReport Validate(WorldModelEnvelope model, ActionQueueEnvelope queue)
         {
             var currentTime = model.InGameTime ?? 600;
-            var available = Math.Max(0, ClockMinutesBetween(currentTime, DefaultDeadlineTime) - DefaultSafetyBufferMinutes);
+            var recoveryQueue = queue.Items.Any(item =>
+                string.Equals(item.OptionId, "recovery.stabilize_day", StringComparison.Ordinal));
+            var deadlineTime = recoveryQueue
+                ? GameClockBudgetPolicy.DayEndTime
+                : GameClockBudgetPolicy.AutonomousRecoveryStartTime;
+            var safetyBufferMinutes = recoveryQueue
+                ? GameClockBudgetPolicy.RecoverySafetyBufferMinutes
+                : 0;
+            var available = Math.Max(
+                0,
+                GameClockBudgetPolicy.ClockMinutesBetween(currentTime, deadlineTime) -
+                safetyBufferMinutes);
             var items = queue.Items
                 .Where(item => item.Status == "pending")
                 .SelectMany(EstimateItems)
@@ -78,8 +87,8 @@ namespace StardewAI.Core.Execution
             {
                 StateHash = model.StateHash,
                 CurrentTime = currentTime,
-                DeadlineTime = DefaultDeadlineTime,
-                SafetyBufferMinutes = DefaultSafetyBufferMinutes,
+                DeadlineTime = deadlineTime,
+                SafetyBufferMinutes = safetyBufferMinutes,
                 AvailableMinutes = available,
                 RequiredMinutes = required,
                 OptionalMinutes = optional,
@@ -445,19 +454,7 @@ namespace StardewAI.Core.Execution
 
         private static int TicksToMinutes(int ticks)
         {
-            return Math.Max(1, (int)Math.Ceiling(Math.Max(1, ticks) / 60d));
-        }
-
-        private static int ClockMinutesBetween(int start, int end)
-        {
-            return ToAbsoluteMinutes(end) - ToAbsoluteMinutes(start);
-        }
-
-        private static int ToAbsoluteMinutes(int hhmm)
-        {
-            var hours = hhmm / 100;
-            var minutes = hhmm % 100;
-            return hours * 60 + minutes;
+            return GameClockBudgetPolicy.TicksToGameMinutes(ticks);
         }
     }
 }

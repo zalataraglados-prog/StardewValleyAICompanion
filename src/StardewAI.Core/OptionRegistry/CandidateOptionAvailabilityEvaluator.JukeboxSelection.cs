@@ -97,7 +97,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue)
                 .Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null)
+        if (route?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         var continuation = new[]
         {
@@ -108,10 +108,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
         return new[]
         {
-            CloneCandidate(route.FirstConnectorCandidate,
+            CloneCandidate(route.FirstActionCandidate,
                 candidateId: "jukebox-selection-route:" + ReadInt(track.Value, "track_index") + ":" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";jukebox_track_continuation=" + trackId,
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(continuation).ToArray(),
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";jukebox_track_continuation=" + trackId,
+                parameters: route.FirstActionCandidate.Parameters.Concat(continuation).ToArray(),
                 availabilityClass: "jukebox_selection_player_command_rolling_route")
         };
     }

@@ -559,9 +559,9 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var lastQuestionKey = ReadString(activeMenu.Value, "last_question_key");
-            if (!string.IsNullOrWhiteSpace(lastQuestionKey))
+            if (IsTerminalSleepQuestionKey(lastQuestionKey))
             {
-                reasons.Add("dialogue_close_last_question_key_present:" + lastQuestionKey);
+                reasons.Add("dialogue_close_terminal_question_key_present:" + lastQuestionKey);
             }
 
             if (ReadBool(activeMenu.Value, "is_sleep_prompt") == true)
@@ -627,6 +627,12 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool IsTerminalSleepQuestionKey(string questionKey)
+        {
+            return string.Equals(questionKey, "Sleep", StringComparison.Ordinal) ||
+                string.Equals(questionKey, "SleepTent", StringComparison.Ordinal);
         }
 
         private static bool? ReadNullableBool(JsonElement element, string property)

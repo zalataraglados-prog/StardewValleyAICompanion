@@ -97,13 +97,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         if (ReadString(projection, "service_status") != "route_required") return Array.Empty<EventCandidate>();
         var route = FindResolvedRoutePlan(snapshot, currentLocation, "MasteryCave",
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null) return Array.Empty<EventCandidate>();
+        if (route?.FirstActionCandidate is null) return Array.Empty<EventCandidate>();
         return new[]
         {
-            CloneCandidate(route.FirstConnectorCandidate,
+            CloneCandidate(route.FirstActionCandidate,
                 candidateId: "mastery-claim-route:" + ReadString(option, "skill_key") + ":" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";mastery_claim_continuation=true",
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(MasteryClaimContinuationParameters(projection, option)).ToArray(),
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";mastery_claim_continuation=true",
+                parameters: route.FirstActionCandidate.Parameters.Concat(MasteryClaimContinuationParameters(projection, option)).ToArray(),
                 availabilityClass: "mastery_claim_rolling_route")
         };
     }

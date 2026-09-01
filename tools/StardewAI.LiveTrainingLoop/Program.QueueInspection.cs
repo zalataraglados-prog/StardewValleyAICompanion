@@ -25,31 +25,142 @@ static partial class Program
             .ToArray() ?? Array.Empty<JsonObject>();
     }
 
+    private static bool QueueContainsRecoveryWork(JsonObject queue)
+    {
+        return (queue["items"] as JsonArray)?.Any(node =>
+        {
+            var item = node?.AsObject();
+            if (item is null)
+            {
+                return false;
+            }
+
+            if (string.Equals(
+                    ReadString(item, "option_id"),
+                    "recovery.stabilize_day",
+                    StringComparison.Ordinal) ||
+                ReadString(item, "source_action_id").StartsWith(
+                    "recovery_",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return (item["normalized_command"]?["parameters"] as JsonArray)?.Any(parameterNode =>
+            {
+                var parameter = parameterNode?.AsObject();
+                var name = ReadString(parameter, "name");
+                var value = ReadString(parameter, "value");
+                return string.Equals(name, "recovery_step_kind", StringComparison.Ordinal) ||
+                    string.Equals(name, "precondition", StringComparison.Ordinal) &&
+                    value.StartsWith("candidate_id:recovery:", StringComparison.Ordinal);
+            }) == true;
+        }) == true;
+    }
+
+    private static int ReadInGameTime(JsonObject snapshot)
+    {
+        var value = snapshot["in_game_time"]?["value"] ??
+            snapshot["state"]?["time"]?["time"]?["value"];
+        return value is JsonValue jsonValue &&
+            jsonValue.TryGetValue<int>(out var time)
+                ? time
+                : 0;
+    }
+
+    private static async Task<(string Json, JsonObject Snapshot)> ReadCurrentSnapshotAsync(
+        HttpClient http,
+        LiveTrainingOptions options)
+    {
+        var json = await http.GetStringAsync(SnapshotUrlForProfile(
+            options.BridgeSnapshotUrl,
+            "clock",
+            forceRefresh: true));
+        return (json, JsonNode.Parse(json)?.AsObject() ?? new JsonObject());
+    }
+
+    private static async Task<(string Json, JsonObject Snapshot)> ReadFullSnapshotAsync(
+        HttpClient http,
+        LiveTrainingOptions options,
+        bool forceRefresh,
+        string? expectedStateHash = null,
+        long? expectedGameTick = null)
+    {
+        var json = await http.GetStringAsync(SnapshotUrlForProfile(
+            options.BridgeSnapshotUrl,
+            "full",
+            forceRefresh,
+            expectedStateHash,
+            expectedGameTick));
+        return (json, JsonNode.Parse(json)?.AsObject() ?? new JsonObject());
+    }
+
     private static async Task<(string Json, JsonObject Snapshot, bool Fresh, string Note)> ReadAfterExecutionSnapshotAsync(
         HttpClient http,
         LiveTrainingOptions options,
-        JsonObject beforeSnapshot)
+        JsonObject beforeSnapshot,
+        JsonObject execution)
     {
         var beforeHash = ReadString(beforeSnapshot, "state_hash");
         var beforeTick = ReadLong(beforeSnapshot, "game_tick");
-        JsonObject latest = new();
-        var latestJson = "{}";
+        var productAfterHash = ReadString(execution, "product_after_state_hash");
+        var productAfterTick = ReadLong(execution, "product_after_game_tick");
+        var initial = await ReadFullSnapshotAsync(
+            http,
+            options,
+            forceRefresh: false,
+            expectedStateHash: productAfterHash,
+            expectedGameTick: productAfterTick);
+        var latest = initial.Snapshot;
+        var latestJson = initial.Json;
         var deadline = DateTimeOffset.UtcNow.AddMilliseconds(options.AfterSnapshotWaitMs);
+
+        var latestHash = ReadString(latest, "state_hash");
+        var latestTick = ReadLong(latest, "game_tick");
+        if (!string.IsNullOrWhiteSpace(productAfterHash) &&
+            productAfterTick > 0 &&
+            string.Equals(latestHash, productAfterHash, StringComparison.Ordinal) &&
+            latestTick == productAfterTick)
+        {
+            return (
+                latestJson,
+                latest,
+                true,
+                "product_after_snapshot_cache_match");
+        }
+
+        if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
+        {
+            return (latestJson, latest, true, "state_hash_changed");
+        }
+
+        if (latestTick > beforeTick)
+        {
+            return (latestJson, latest, true, "game_tick_advanced_without_hash_change");
+        }
 
         do
         {
-            latestJson = await http.GetStringAsync(options.BridgeSnapshotUrl);
-            latest = JsonNode.Parse(latestJson)?.AsObject() ?? new JsonObject();
-            var latestHash = ReadString(latest, "state_hash");
-            var latestTick = ReadLong(latest, "game_tick");
-            if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
+            var clock = await ReadCurrentSnapshotAsync(http, options);
+            if (ReadLong(clock.Snapshot, "game_tick") > beforeTick)
             {
-                return (latestJson, latest, true, "state_hash_changed");
-            }
+                var refreshed = await ReadFullSnapshotAsync(
+                    http,
+                    options,
+                    forceRefresh: true);
+                latest = refreshed.Snapshot;
+                latestJson = refreshed.Json;
+                latestHash = ReadString(latest, "state_hash");
+                latestTick = ReadLong(latest, "game_tick");
+                if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
+                {
+                    return (latestJson, latest, true, "state_hash_changed");
+                }
 
-            if (latestTick > beforeTick)
-            {
-                return (latestJson, latest, true, "game_tick_advanced_without_hash_change");
+                if (latestTick > beforeTick)
+                {
+                    return (latestJson, latest, true, "game_tick_advanced_without_hash_change");
+                }
             }
 
             await Task.Delay(options.AfterSnapshotPollMs);

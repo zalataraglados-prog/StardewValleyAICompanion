@@ -81,7 +81,8 @@ public sealed partial class ModEntry : Mod
                 target.StandTile,
                 512,
                 out blockReason,
-                avoidSoftObstacles: true);
+                avoidSoftObstacles: false,
+                allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "sleep", "day_transition=new_day", SleepObservedEffect(), blockReason));
@@ -293,7 +294,8 @@ public sealed partial class ModEntry : Mod
                 Game1.currentLocation,
                 sleep.Path,
                 sleep.PathCursor,
-                out var reason))
+                out var reason,
+                waitForSoftObstacle: true))
         {
             CompleteBlockedSleep(sleep, "sleep_" + reason);
         }

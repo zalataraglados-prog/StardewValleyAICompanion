@@ -182,6 +182,12 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Equal("current_loaded_social_target_temporarily_unreachable_retry", candidate.AvailabilityClass);
         Assert.Contains("social_no_reachable_adjacent_stand_tile", candidate.GateReasons);
         Assert.Empty(candidate.BlockReasons);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.retry_count" &&
+            parameter.Value == "1");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.retry_game_time" &&
+            parameter.Value == "900");
 
         var plan = new StardewAI.Core.Training.DailyPlanCompiler().Compile(
             new[] { ToPrediction(candidate, "social.talk_npc") },
@@ -190,6 +196,74 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Equal("wait_ticks", wait.Kind);
         Assert.Equal(600, wait.WaitTicks);
         Assert.Contains(wait.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+    }
+
+    [Fact]
+    public void BoundTalkContinuationStopsRetryingWhenGameTimeDidNotAdvance()
+    {
+        var collision = "{\"width\":20,\"height\":20,\"notable_tiles\":[{\"tile_x\":9,\"tile_y\":10,\"collision_blocked\":true},{\"tile_x\":11,\"tile_y\":10,\"collision_blocked\":true},{\"tile_x\":10,\"tile_y\":9,\"collision_blocked\":true},{\"tile_x\":10,\"tile_y\":11,\"collision_blocked\":true}]}";
+        var snapshot = CompleteSocialSnapshot(
+            collisionValue: collision,
+            currentTime: 900);
+        var binding = new OptionAvailabilityCandidate
+        {
+            OptionId = "social.talk_npc",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "social.talk_npc" },
+                new SmallModelActionParameter { Name = "continuation.npc_name", Value = "Abigail" },
+                new SmallModelActionParameter { Name = "continuation.target_location", Value = "Town" },
+                new SmallModelActionParameter { Name = "continuation.retry_count", Value = "1" },
+                new SmallModelActionParameter { Name = "continuation.retry_game_time", Value = "900" }
+            }
+        };
+
+        var candidate = Assert.Single(Assert.Single(
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(snapshot, new[] { binding })
+                .Options).SocialCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Equal(
+            "social_continuation_retry_exhausted",
+            candidate.AvailabilityClass);
+        Assert.Contains(
+            "social_continuation_game_time_not_advancing",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void BoundTalkContinuationCarriesRetryForwardWhenGameTimeAdvances()
+    {
+        var collision = "{\"width\":20,\"height\":20,\"notable_tiles\":[{\"tile_x\":9,\"tile_y\":10,\"collision_blocked\":true},{\"tile_x\":11,\"tile_y\":10,\"collision_blocked\":true},{\"tile_x\":10,\"tile_y\":9,\"collision_blocked\":true},{\"tile_x\":10,\"tile_y\":11,\"collision_blocked\":true}]}";
+        var snapshot = CompleteSocialSnapshot(
+            collisionValue: collision,
+            currentTime: 910);
+        var binding = new OptionAvailabilityCandidate
+        {
+            OptionId = "social.talk_npc",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "social.talk_npc" },
+                new SmallModelActionParameter { Name = "continuation.npc_name", Value = "Abigail" },
+                new SmallModelActionParameter { Name = "continuation.target_location", Value = "Town" },
+                new SmallModelActionParameter { Name = "continuation.retry_count", Value = "1" },
+                new SmallModelActionParameter { Name = "continuation.retry_game_time", Value = "900" }
+            }
+        };
+
+        var candidate = Assert.Single(Assert.Single(
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(snapshot, new[] { binding })
+                .Options).SocialCandidates);
+
+        Assert.True(candidate.Available);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.retry_count" &&
+            parameter.Value == "2");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.retry_game_time" &&
+            parameter.Value == "910");
     }
 
     [Fact]

@@ -686,8 +686,12 @@ namespace StardewAI.Core.Training
                     StepId = StepId(candidate, "wait", index++),
                     Kind = "wait_ticks",
                     WaitTicks = ticks,
-                    EstimatedMinutes = Math.Max(1, ticks / 60),
-                    Preconditions = new[] { "timeline_status:" + candidate.TimelineStatus },
+                    EstimatedMinutes = TicksToMinutes(ticks),
+                    Preconditions = new[]
+                    {
+                        "candidate_id:" + candidate.CandidateId,
+                        "timeline_status:" + candidate.TimelineStatus
+                    },
                     ExpectedEffects = new[] { "time_advances", "fresh_snapshot_replan_required=true" },
                     SafetyConstraints = new[] { "do_not_wait_with_danger_or_active_menu" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
@@ -719,7 +723,11 @@ namespace StardewAI.Core.Training
                 "continuation.movie_concession_friendship_effective"
             }, StringComparer.Ordinal);
             return candidate.Parameters
-                .Where(parameter => names.Contains(parameter.Name))
+                .Where(parameter =>
+                    parameter.Name.StartsWith(
+                        "continuation.",
+                        StringComparison.Ordinal) ||
+                    names.Contains(parameter.Name))
                 .ToArray();
         }
 

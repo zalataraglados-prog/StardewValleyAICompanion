@@ -197,7 +197,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     {
         var plan = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (plan?.FirstConnectorCandidate is not { } connector)
+        if (plan?.FirstActionCandidate is not { } connector)
             return Array.Empty<EventCandidate>();
         return new[]
         {

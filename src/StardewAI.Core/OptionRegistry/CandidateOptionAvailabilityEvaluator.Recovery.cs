@@ -170,7 +170,7 @@ namespace StardewAI.Core.OptionRegistry
                 return candidates.ToArray();
             }
 
-            if (time >= 2200)
+            if (GameClockBudgetPolicy.RecoveryWindowStarted(time))
             {
                 var homeContext = ReadStateFieldValue(snapshot, "current_location", "home_context");
                 var homeLocation = homeContext.HasValue ? ReadString(homeContext.Value, "home_location_id") : string.Empty;

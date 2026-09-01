@@ -551,13 +551,13 @@ namespace StardewAI.Core.OptionRegistry
                 .Where(candidate => candidate.Kind == "route_connector_tile")
                 .ToArray();
             var plan = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation, routeCandidates);
-            if (plan?.FirstConnectorCandidate is null)
+            if (plan?.FirstActionCandidate is null)
             {
                 return BlockedQuestCandidate(snapshot, quest, "quest_target_location_route_unavailable:" + targetLocation);
             }
 
             return AttachQuest(
-                plan.FirstConnectorCandidate,
+                plan.FirstActionCandidate,
                 quest,
                 new[]
                 {
@@ -729,13 +729,13 @@ namespace StardewAI.Core.OptionRegistry
                     .Where(candidate => candidate.Kind == "route_connector_tile")
                     .ToArray();
                 var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation, routeCandidates);
-                if (route?.FirstConnectorCandidate is null)
+                if (route?.FirstActionCandidate is null)
                 {
                     return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_route_unavailable:" + targetLocation);
                 }
 
                 return AttachQuest(
-                    route.FirstConnectorCandidate,
+                    route.FirstActionCandidate,
                     quest,
                     new[]
                     {

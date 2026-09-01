@@ -480,6 +480,37 @@ public sealed class SocialNativeSourceGuardTests
     }
 
     [Fact]
+    public void DialogueChoiceUsesNativeMenuLifecycleAndRestoresControl()
+    {
+        var dialogueSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.DialogueChoice.cs"));
+        var choiceSource = Slice(
+            dialogueSource,
+            "private TrainingExecutionResult ExecuteChooseDialogueResponse",
+            "private static bool IsDialogueResponseWhitelisted");
+
+        Assert.Contains("menu.performHoverAction", choiceSource, StringComparison.Ordinal);
+        Assert.Contains("menu.receiveLeftClick", choiceSource, StringComparison.Ordinal);
+        Assert.Contains("!Game1.dialogueUp", choiceSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Game1.currentLocation.answerDialogue",
+            choiceSource,
+            StringComparison.Ordinal);
+
+        var closeSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Farming.cs"));
+        Assert.Contains(
+            "RestorePlayerControlAfterSafeMenuClose",
+            closeSource,
+            StringComparison.Ordinal);
+        Assert.Contains("Game1.player.forceCanMove()", closeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SocialRectangleReasonIsRenamed()
     {
         var source = RuntimeHarnessSources.All;

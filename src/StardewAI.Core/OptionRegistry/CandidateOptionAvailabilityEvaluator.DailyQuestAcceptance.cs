@@ -73,7 +73,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 currentLocation,
                 boardLocation,
                 RouteConnectorCandidates(snapshot));
-            var route = routePlan?.FirstConnectorCandidate;
+            var route = routePlan?.FirstActionCandidate;
             if (route is null)
             {
                 reasons.Add("daily_quest_board_route_unavailable");

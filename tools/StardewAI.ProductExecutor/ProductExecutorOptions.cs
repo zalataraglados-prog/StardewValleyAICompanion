@@ -5,7 +5,7 @@ public sealed class ProductExecutorOptions
     public string ListenUrl { get; init; } = "http://127.0.0.1:8768";
     public string NativeExecutorUrl { get; init; } = "http://127.0.0.1:8767";
     public string BridgeSnapshotUrl { get; init; } =
-        "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=1";
+        "http://127.0.0.1:8765/api/v1/snapshot?profile=full";
     public string JournalRoot { get; init; } = @"E:\StardewAITraining\product-executor";
     public string AllowedSaveRoot { get; init; } =
         @"E:\StardewValleyAICompanion-runtime\saves";
@@ -19,7 +19,7 @@ public sealed class ProductExecutorOptions
         NativeExecutorUrl = Read("STARDEWAI_NATIVE_EXECUTOR_URL", "http://127.0.0.1:8767"),
         BridgeSnapshotUrl = Read(
             "STARDEWAI_BRIDGE_SNAPSHOT_URL",
-            "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=1"),
+            "http://127.0.0.1:8765/api/v1/snapshot?profile=full"),
         JournalRoot = Read(
             "STARDEWAI_PRODUCT_JOURNAL_ROOT",
             @"E:\StardewAITraining\product-executor"),

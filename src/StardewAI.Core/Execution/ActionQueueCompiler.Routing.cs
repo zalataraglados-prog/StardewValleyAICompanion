@@ -107,7 +107,7 @@ namespace StardewAI.Core.Execution
                 TargetLocation = currentLocation,
                 TargetTileX = edge.FromX,
                 TargetTileY = edge.FromY,
-                EstimatedMinutes = Math.Max(1, (int)Math.Ceiling((pathTiles.Value + 1) / 5d)),
+                EstimatedMinutes = GameClockBudgetPolicy.MovementTilesToGameMinutes(pathTiles.Value + 1),
                 Preconditions = new[] { "transparent_route_connector_still_matches_snapshot=true" },
                 ExpectedEffects = new[]
                 {
@@ -931,7 +931,9 @@ namespace StardewAI.Core.Execution
         {
             var startKey = TileKey(startX, startY);
             var targetKey = TileKey(targetX, targetY);
-            if (blockedTiles.Contains(startKey) || blockedTiles.Contains(targetKey) || extraBlockedTiles.Contains(startKey) || extraBlockedTiles.Contains(targetKey))
+            // The actor can already be standing on a touch/action tile. Leaving that
+            // established start is safe; only entering unsupported route tiles is blocked.
+            if (blockedTiles.Contains(startKey) || blockedTiles.Contains(targetKey) || extraBlockedTiles.Contains(targetKey))
             {
                 return false;
             }
@@ -974,7 +976,7 @@ namespace StardewAI.Core.Execution
             var startKey = TileKey(startX, startY);
             var targetKey = TileKey(targetX, targetY);
             if (blockedTiles.Contains(startKey) || blockedTiles.Contains(targetKey) ||
-                extraBlockedTiles.Contains(startKey) || extraBlockedTiles.Contains(targetKey))
+                extraBlockedTiles.Contains(targetKey))
             {
                 return null;
             }

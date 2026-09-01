@@ -22,7 +22,7 @@ namespace StardewAI.Core.Training
 
         private static int TicksToMinutes(int ticks)
         {
-            return Math.Max(1, (int)Math.Ceiling(Math.Max(1, ticks) / 60.0));
+            return Execution.GameClockBudgetPolicy.TicksToGameMinutes(ticks);
         }
 
         private static string CandidateParameter(PolicyEventCandidatePrediction candidate, string name)

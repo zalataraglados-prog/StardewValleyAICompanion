@@ -69,7 +69,7 @@ namespace StardewAI.Core.Execution
         public DurationEstimate Estimate(ActionQueueItem item)
         {
             var routeTiles = Math.Max(1, ParseInt(Parameter(item, "route_tiles")) ?? 60);
-            var minutes = 10 + (int)Math.Ceiling(routeTiles / 18.0);
+            var minutes = 10 + GameClockBudgetPolicy.MovementTilesToGameMinutes(routeTiles);
             return new DurationEstimate
             {
                 Minutes = minutes,

@@ -104,7 +104,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     {
         var plan = FindResolvedRoutePlan(snapshot, currentLocation, serviceLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-        if (plan?.FirstConnectorCandidate is null)
+        if (plan?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         var continuation = new[]
         {
@@ -117,10 +117,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
         return new[]
         {
-            CloneCandidate(plan.FirstConnectorCandidate,
+            CloneCandidate(plan.FirstActionCandidate,
                 candidateId: "home-renovation-route:" + ReadString(option, "renovation_id") + ":" + currentLocation,
-                expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";home_renovation_service_location=" + serviceLocation,
-                parameters: plan.FirstConnectorCandidate.Parameters.Concat(continuation).ToArray(),
+                expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";home_renovation_service_location=" + serviceLocation,
+                parameters: plan.FirstActionCandidate.Parameters.Concat(continuation).ToArray(),
                 availabilityClass: "home_renovation_rolling_route")
         };
     }

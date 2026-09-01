@@ -111,7 +111,7 @@ namespace StardewAI.Core.Training
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
-                ["mail.process_letter"] = new[] { "route_connector_tile", "mailbox_approach", "open_mailbox_letter", "process_open_letter" },
+                ["mail.process_letter"] = new[] { "route_connector_tile", "mailbox_approach", "open_mailbox_letter", "mail_input_wait", "process_open_letter" },
                 ["recovery.escape_object_trap"] = new[] { "recovery_escape_object_trap" }
             };
 
@@ -133,7 +133,9 @@ namespace StardewAI.Core.Training
         private static IEnumerable<SmallModelPlanStep> CandidateSteps(PolicyEventCandidatePrediction candidate)
         {
             if (OptionCandidateCompilerKinds.TryGetValue(candidate.OptionId, out var allowedKinds) &&
-                !allowedKinds.Contains(candidate.Kind, StringComparer.Ordinal))
+                !allowedKinds.Contains(candidate.Kind, StringComparer.Ordinal) &&
+                !(string.Equals(candidate.Kind, "clear_obstacle_tile", StringComparison.Ordinal) &&
+                  allowedKinds.Contains("route_connector_tile", StringComparer.Ordinal)))
             {
                 return Array.Empty<SmallModelPlanStep>();
             }
@@ -223,6 +225,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "open_mailbox_letter")
             {
                 return OpenMailboxLetterSteps(candidate);
+            }
+
+            if (candidate.Kind == "mail_input_wait")
+            {
+                return MailInputWaitSteps(candidate);
             }
 
             if (candidate.Kind == "process_open_letter")
@@ -833,7 +840,7 @@ namespace StardewAI.Core.Training
                     StepId = StepId(candidate, "social_continuation_retry_wait", 0),
                     Kind = "wait_ticks",
                     WaitTicks = Math.Clamp(waitTicks, 1, MaxWaitTicksPerStep),
-                    EstimatedMinutes = Math.Max(1, waitTicks / 60),
+                    EstimatedMinutes = TicksToMinutes(waitTicks),
                     Preconditions = new[] { "same_social_objective_active=true", "current_social_interaction_not_executable=true" },
                     ExpectedEffects = new[] { "time_advances", "fresh_snapshot_replan_required=true" },
                     SafetyConstraints = new[] { "do_not_wait_with_danger_or_active_menu", "do_not_compile_social_interaction_until_reachable" },

@@ -127,6 +127,30 @@ public sealed class LiveTrainingNoProgressBackoffTests
         Assert.Equal(0, decision.DelayMs);
     }
 
+    [Fact]
+    public void RepeatedUnverifiedExecutionUsesIndependentSemanticBackoff()
+    {
+        var policy = new NoProgressBackoffPolicy(5000, 60000);
+        var queue = ExecutableSleepQueue();
+        var execution = BlockedSleepExecution();
+
+        Assert.Equal(
+            5000,
+            policy.ObserveUnverifiedExecution(queue, execution).DelayMs);
+        Assert.Equal(
+            10000,
+            policy.ObserveUnverifiedExecution(queue, execution).DelayMs);
+        Assert.Equal(
+            20000,
+            policy.ObserveUnverifiedExecution(queue, execution).DelayMs);
+
+        execution["block_reasons"] = new JsonArray(
+            "sleep_prompt_not_open");
+        var changed = policy.ObserveUnverifiedExecution(queue, execution);
+        Assert.Equal(1, changed.Streak);
+        Assert.Equal(5000, changed.DelayMs);
+    }
+
     private static JsonObject BlockedQueue()
     {
         return new JsonObject
@@ -166,6 +190,32 @@ public sealed class LiveTrainingNoProgressBackoffTests
                 ["before"] = "0",
                 ["after"] = "30"
             })
+        };
+    }
+
+    private static JsonObject ExecutableSleepQueue()
+    {
+        return new JsonObject
+        {
+            ["status"] = "pending",
+            ["items"] = new JsonArray(new JsonObject
+            {
+                ["option_id"] = "executor.sleep",
+                ["status"] = "pending"
+            })
+        };
+    }
+
+    private static JsonObject BlockedSleepExecution()
+    {
+        return new JsonObject
+        {
+            ["option_id"] = "executor.sleep",
+            ["status"] = "blocked",
+            ["primitive_kind"] = "sleep",
+            ["primitive_verification_status"] = "blocked",
+            ["block_reasons"] = new JsonArray(
+                "movement_no_collision_safe_path")
         };
     }
 }

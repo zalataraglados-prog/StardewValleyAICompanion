@@ -22,7 +22,24 @@ namespace StardewAI.Core.OptionRegistry
             {
                 reasons.Add("stores_closed_for_festival");
             }
-            if (ReadBool(endpoint, "allowed_now") == false)
+
+            if (ReadBool(endpoint, "direct_time_allowed") == false)
+            {
+                reasons.Add("shop_endpoint_direct_time_gate_blocked");
+            }
+
+            if (endpoint.TryGetProperty("owner_service_status", out var ownerStatus) &&
+                ownerStatus.ValueKind == JsonValueKind.Object &&
+                ReadBool(ownerStatus, "owner_required") == true &&
+                ReadBool(ownerStatus, "in_service_area") != true)
+            {
+                var ownerBlockReason = ReadString(ownerStatus, "block_reason");
+                reasons.Add(string.IsNullOrWhiteSpace(ownerBlockReason)
+                    ? "shop_owner_not_at_service_counter"
+                    : ownerBlockReason);
+            }
+
+            if (ReadBool(endpoint, "allowed_now") == false && reasons.Count == 0)
             {
                 reasons.Add("shop_endpoint_direct_time_gate_blocked");
             }

@@ -59,6 +59,27 @@ public sealed class NoProgressBackoffPolicy
             SemanticSignature(queue));
     }
 
+    public NoProgressBackoffDecision ObserveUnverifiedExecution(
+        JsonObject queue,
+        JsonObject execution)
+    {
+        var reasons = ReadStrings(
+                execution["block_reasons"] as JsonArray)
+            .Concat(ReadStrings(
+                execution["primitive_verification_reasons"] as JsonArray))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal);
+        return Accumulate(
+            "unverified_execution|" +
+            SemanticSignature(queue) +
+            "|option:" + ReadString(execution, "option_id") +
+            "|status:" + ReadString(execution, "status") +
+            "|primitive:" + ReadString(execution, "primitive_kind") +
+            "|verification:" +
+            ReadString(execution, "primitive_verification_status") +
+            "|reasons:" + string.Join(",", reasons));
+    }
+
     private NoProgressBackoffDecision Accumulate(string signature)
     {
         Streak = string.Equals(

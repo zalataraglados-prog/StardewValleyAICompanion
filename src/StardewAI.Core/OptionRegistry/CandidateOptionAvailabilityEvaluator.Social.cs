@@ -13,6 +13,8 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
+        private const int MaxSocialContinuationRetryCount = 12;
+
         private EventCandidate[] SocialCandidates(
             SnapshotEnvelope snapshot,
             string optionId,
@@ -64,7 +66,11 @@ namespace StardewAI.Core.OptionRegistry
                         string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase) &&
                         candidate.BlockReasons.Length > 0 &&
                         candidate.BlockReasons.All(IsRetryableSocialContinuationBlock)
-                            ? SocialContinuationRetryWait(optionId, candidate)
+                            ? SocialContinuationRetryCandidate(
+                                snapshot,
+                                optionId,
+                                candidate,
+                                boundParameters)
                             : candidate)
                     .ToArray();
             }
@@ -109,18 +115,84 @@ namespace StardewAI.Core.OptionRegistry
                 "social_npc_sleeping";
         }
 
-        private static EventCandidate SocialContinuationRetryWait(string optionId, EventCandidate candidate)
+        private static EventCandidate SocialContinuationRetryCandidate(
+            SnapshotEnvelope snapshot,
+            string optionId,
+            EventCandidate candidate,
+            SmallModelActionParameter[] boundParameters)
         {
             var npcName = ReadParameter(candidate.Parameters, "npc_name");
-            var parameters = new List<SmallModelActionParameter>(candidate.Parameters)
+            var currentGameTime = ReadStateFieldIntOptional(
+                snapshot,
+                "time",
+                "time");
+            var retryCount = int.TryParse(
+                ReadParameter(boundParameters, "continuation.retry_count"),
+                out var parsedRetryCount)
+                    ? Math.Max(0, parsedRetryCount)
+                    : 0;
+            var priorRetryGameTime = int.TryParse(
+                ReadParameter(
+                    boundParameters,
+                    "continuation.retry_game_time"),
+                out var parsedRetryGameTime)
+                    ? parsedRetryGameTime
+                    : (int?)null;
+            var parameters = candidate.Parameters
+                .Where(parameter => parameter.Name is not
+                    "continuation.option_id" and not
+                    "continuation.npc_name" and not
+                    "continuation.target_location" and not
+                    "continuation.retry_count" and not
+                    "continuation.retry_game_time")
+                .ToList();
+            parameters.AddRange(new[]
             {
                 Parameter("continuation.option_id", optionId),
                 Parameter("continuation.npc_name", npcName),
                 Parameter("continuation.target_location", candidate.LocationId),
                 Parameter("social_route.position_source", "npcs.social_interaction.current_loaded_instance"),
                 Parameter("social_route.future_schedule_projection", "not_used"),
-                Parameter("retry_wait_ticks", "600")
-            };
+                Parameter("retry_wait_ticks", "600"),
+                Parameter(
+                    "continuation.retry_count",
+                    (retryCount + 1).ToString()),
+                Parameter(
+                    "continuation.retry_game_time",
+                    currentGameTime?.ToString() ?? string.Empty)
+            });
+
+            var retryBlock = currentGameTime is null
+                ? "social_continuation_game_time_unavailable"
+                : retryCount >= MaxSocialContinuationRetryCount
+                    ? "social_continuation_retry_budget_exhausted"
+                    : retryCount > 0 &&
+                        priorRetryGameTime == currentGameTime
+                        ? "social_continuation_game_time_not_advancing"
+                        : string.Empty;
+            if (!string.IsNullOrWhiteSpace(retryBlock))
+            {
+                return new EventCandidate
+                {
+                    CandidateId = candidate.CandidateId +
+                        ":continuation-retry-blocked",
+                    Kind = "social_continuation_retry_wait",
+                    Available = false,
+                    LocationId = candidate.LocationId,
+                    TileX = candidate.TileX,
+                    TileY = candidate.TileY,
+                    ExpectedEffect =
+                        "same_social_objective_released_for_day=true",
+                    EstimatedTicks = 0,
+                    EnergyCost = 0,
+                    AvailabilityClass =
+                        "social_continuation_retry_exhausted",
+                    GateReasons = candidate.BlockReasons,
+                    BlockReasons = new[] { retryBlock },
+                    Parameters = parameters.ToArray()
+                };
+            }
+
             return new EventCandidate
             {
                 CandidateId = candidate.CandidateId + ":continuation-retry-wait",
@@ -156,7 +228,9 @@ namespace StardewAI.Core.OptionRegistry
                 "continuation.qualified_item_id",
                 "continuation.partnership_action_kind",
                 "continuation.observed_state_hash",
-                "continuation.observed_game_time"
+                "continuation.observed_game_time",
+                "continuation.retry_count",
+                "continuation.retry_game_time"
             })
             {
                 var value = ReadParameter(boundParameters, name);
@@ -209,7 +283,7 @@ namespace StardewAI.Core.OptionRegistry
                     remainingReasons);
             }
 
-            var routeCandidate = routePlan.FirstConnectorCandidate;
+            var routeCandidate = routePlan.FirstActionCandidate;
             if (routeCandidate is null)
             {
                 remainingReasons.Add("social_cross_map_first_connector_not_available");

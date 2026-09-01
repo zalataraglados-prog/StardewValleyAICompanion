@@ -183,13 +183,32 @@ public sealed class ProductExecutionService
 
     private async Task<JsonObject> ReadSnapshotAsync(CancellationToken cancellationToken)
     {
-        using var response = await http.GetAsync(options.BridgeSnapshotUrl, cancellationToken);
+        using var response = await http.GetAsync(
+            ForceFreshSnapshotUrl(options.BridgeSnapshotUrl),
+            cancellationToken);
         response.EnsureSuccessStatusCode();
         var value = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancellationToken))?.AsObject()
             ?? throw new JsonException("snapshot response is not an object");
         if (ReadString(value, "schema_version") != "snapshot.v1" || string.IsNullOrWhiteSpace(ReadString(value, "state_hash")))
             throw new JsonException("snapshot response contract mismatch");
         return value;
+    }
+
+    private static string ForceFreshSnapshotUrl(string value)
+    {
+        var uri = new Uri(value, UriKind.Absolute);
+        var query = uri.Query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(pair => !string.Equals(
+                Uri.UnescapeDataString(pair.Split('=', 2)[0]),
+                "fresh",
+                StringComparison.OrdinalIgnoreCase))
+            .Append("fresh=1");
+        var builder = new UriBuilder(uri)
+        {
+            Query = string.Join("&", query)
+        };
+        return builder.Uri.AbsoluteUri;
     }
 
     private async Task<JsonObject> PostNativeAsync(string requestJson, CancellationToken cancellationToken)

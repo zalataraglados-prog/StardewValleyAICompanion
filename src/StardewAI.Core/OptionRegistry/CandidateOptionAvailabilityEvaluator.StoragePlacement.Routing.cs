@@ -97,7 +97,7 @@ namespace StardewAI.Core.OptionRegistry
                 currentLocationId,
                 targetLocationId,
                 routeCandidates);
-            var route = routePlan?.FirstConnectorCandidate;
+            var route = routePlan?.FirstActionCandidate;
             var blockReasons = new List<string>();
             if (string.IsNullOrWhiteSpace(
                     reservationGuard.LedgerId))

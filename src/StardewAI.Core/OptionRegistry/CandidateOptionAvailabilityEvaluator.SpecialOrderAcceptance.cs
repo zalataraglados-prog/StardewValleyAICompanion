@@ -77,7 +77,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 snapshot,
                 currentLocation,
                 location,
-                RouteConnectorCandidates(snapshot))?.FirstConnectorCandidate;
+                RouteConnectorCandidates(snapshot))?.FirstActionCandidate;
             if (route is null)
             {
                 reasons.Add("special_order_board_route_unavailable");

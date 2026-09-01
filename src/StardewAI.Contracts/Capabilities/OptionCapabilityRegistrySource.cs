@@ -1027,7 +1027,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("harvest_bush"), SupportedCandidate("harvest_fruit_tree"), SupportedCandidate("harvest_tree_product"), SupportedCandidate("rummage_garbage"), SupportedCandidate("harvest_crop_tile"),
                 SupportedCandidate("harvest_giant_crop_tile"), SupportedCandidate("harvest_ginger"),
                 SupportedCandidate("interact_endpoint"), SupportedCandidate("load_machine_input_tile"),
-                SupportedCandidate("mailbox_approach"),
+                SupportedCandidate("mail_input_wait"), SupportedCandidate("mailbox_approach"),
                 SupportedCandidate("mine_elevator_approach"),
                 SupportedCandidate("name_hatched_animal"),
                 SupportedCandidate("mining_acquire_golden_scythe_plan_envelope"),

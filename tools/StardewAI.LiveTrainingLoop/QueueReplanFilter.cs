@@ -4,6 +4,12 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static class QueueReplanFilter
 {
+    private static readonly HashSet<string> TrainingEquivalentOptionIds = new(StringComparer.Ordinal)
+    {
+        "executor.play_junimo_kart",
+        "executor.play_prairie_king"
+    };
+
     private static readonly HashSet<string> NonSemanticParameterNames = new(StringComparer.Ordinal)
     {
         "precondition",
@@ -27,6 +33,45 @@ public static class QueueReplanFilter
             .ToArray();
     }
 
+    public static bool ShouldReleaseUnavailableContinuation(
+        JsonObject? continuation,
+        JsonObject? ranking)
+    {
+        if (continuation is null ||
+            ranking?["objective_continuation_filter"] is not JsonObject filter ||
+            filter["active"]?.GetValue<bool>() != true)
+        {
+            return false;
+        }
+
+        return filter["selected_candidate_count"]?.GetValue<int>() == 0;
+    }
+
+    public static bool IsTrainingVerifiedExecution(JsonObject? execution)
+    {
+        if (!string.Equals(
+                ReadString(execution, "status"),
+                "applied",
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var verificationStatus = ReadString(
+            execution,
+            "primitive_verification_status");
+        return string.Equals(
+                verificationStatus,
+                "verified",
+                StringComparison.Ordinal) ||
+            string.Equals(
+                verificationStatus,
+                "simulated_equivalent",
+                StringComparison.Ordinal) &&
+            TrainingEquivalentOptionIds.Contains(
+                ReadString(execution, "option_id"));
+    }
+
     public static JsonObject? ReadSocialContinuation(JsonObject? queueItem)
     {
         var continuation = ReadObjectiveContinuation(queueItem);
@@ -38,6 +83,41 @@ public static class QueueReplanFilter
     public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
     {
         var optionId = ReadParameter(queueItem, "continuation.option_id");
+        if (string.Equals(optionId, "mail.process_letter", StringComparison.Ordinal))
+        {
+            var mailId = ReadParameter(queueItem, "continuation.mail_id");
+            if (string.IsNullOrWhiteSpace(mailId))
+            {
+                mailId = ReadParameter(queueItem, "target_runtime_identity");
+            }
+            var mailMenuIdentity = ReadParameter(
+                queueItem,
+                "continuation.mail_menu_identity_sha256");
+            if (string.IsNullOrWhiteSpace(mailMenuIdentity))
+            {
+                mailMenuIdentity = ReadParameter(
+                    queueItem,
+                    "mail_menu_identity_sha256");
+            }
+
+            if (!string.IsNullOrWhiteSpace(mailId) ||
+                !string.IsNullOrWhiteSpace(mailMenuIdentity))
+            {
+                return new JsonObject
+                {
+                    ["kind"] = "mail",
+                    ["option_id"] = optionId,
+                    ["mail_id"] = mailId,
+                    ["mail_data_sha256"] = ReadParameter(
+                        queueItem,
+                        "continuation.mail_data_sha256"),
+                    ["mail_menu_identity_sha256"] = mailMenuIdentity,
+                    ["target_location"] = ReadParameter(
+                        queueItem,
+                        "continuation.target_location")
+                };
+            }
+        }
         var movieId = ReadParameter(queueItem, "continuation.movie_id");
         var movieGuest = ReadParameter(queueItem, "continuation.movie_guest_name");
         var movieObjectiveKey = ReadParameter(queueItem, "continuation.movie_objective_key");
@@ -164,6 +244,19 @@ public static class QueueReplanFilter
                 ["option_id"] = optionId,
                 ["darts_limited_nut_dropped_before"] = dartsDroppedBefore,
                 ["darts_starting_dart_count"] = dartsStartingCount
+            };
+        }
+        var prairieKingCompletionGoal = ReadParameter(
+            queueItem,
+            "continuation.prairie_king_completion_goal");
+        if (string.Equals(optionId, "minigame.play_prairie_king", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(prairieKingCompletionGoal))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "prairie_king",
+                ["option_id"] = optionId,
+                ["prairie_king_completion_goal"] = prairieKingCompletionGoal
             };
         }
         var renovationId = ReadParameter(queueItem, "continuation.renovation_id");
@@ -412,7 +505,9 @@ public static class QueueReplanFilter
                 ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
                 ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
                 ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id"),
-                ["partnership_action_kind"] = ReadParameter(queueItem, "continuation.partnership_action_kind")
+                ["partnership_action_kind"] = ReadParameter(queueItem, "continuation.partnership_action_kind"),
+                ["retry_count"] = ReadParameter(queueItem, "continuation.retry_count"),
+                ["retry_game_time"] = ReadParameter(queueItem, "continuation.retry_game_time")
             };
         }
 
@@ -483,6 +578,76 @@ public static class QueueReplanFilter
             .Select(candidate => JsonNode.Parse(candidate!.ToJsonString()))
             .ToArray();
         return new JsonArray(filtered);
+    }
+
+    public static JsonArray FilterSuppressedContinuations(
+        JsonArray rankedCandidates,
+        IReadOnlyCollection<JsonObject> suppressedContinuations)
+    {
+        if (suppressedContinuations.Count == 0)
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
+        }
+
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate => candidate is not null &&
+                !suppressedContinuations.Any(continuation =>
+                    MatchesContinuation(candidate, continuation)))
+            .Select(candidate => JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
+    public static bool AddSuppressedContinuation(
+        ICollection<JsonObject> suppressedContinuations,
+        JsonObject? continuation)
+    {
+        var identity = ContinuationIdentity(continuation);
+        if (string.IsNullOrWhiteSpace(identity) ||
+            suppressedContinuations.Any(existing =>
+                string.Equals(
+                    ContinuationIdentity(existing),
+                    identity,
+                    StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        suppressedContinuations.Add(
+            JsonNode.Parse(continuation!.ToJsonString())!.AsObject());
+        return true;
+    }
+
+    private static string ContinuationIdentity(JsonObject? continuation)
+    {
+        if (continuation is null ||
+            string.IsNullOrWhiteSpace(ReadString(continuation, "kind")) ||
+            string.IsNullOrWhiteSpace(ReadString(continuation, "option_id")))
+        {
+            return string.Empty;
+        }
+
+        return string.Join(
+            "\n",
+            continuation
+                .Where(property => property.Value is JsonValue)
+                .OrderBy(property => property.Key, StringComparer.Ordinal)
+                .Select(property =>
+                    property.Key + "=" + property.Value!.ToJsonString()));
+    }
+
+    public static string SnapshotDayKey(JsonObject snapshot)
+    {
+        var time = snapshot["state"]?["time"]?.AsObject();
+        var year = ReadSnapshotField(time, "year");
+        var season = ReadSnapshotField(time, "season");
+        var day = ReadSnapshotField(time, "day");
+        return string.IsNullOrWhiteSpace(year) ||
+            string.IsNullOrWhiteSpace(season) ||
+            string.IsNullOrWhiteSpace(day)
+                ? string.Empty
+                : string.Join(":", year, season, day);
     }
 
     public static JsonArray FilterCandidateKind(
@@ -571,6 +736,31 @@ public static class QueueReplanFilter
         }
 
         var continuationKind = ReadString(continuation, "kind");
+        if (string.Equals(continuationKind, "mail", StringComparison.Ordinal))
+        {
+            if (!string.Equals(
+                    optionId,
+                    "executor.close_menu",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(queueItem, "target_runtime_type"),
+                    "LetterViewerMenu",
+                    StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(
+                    ReadParameter(queueItem, "mail_menu_identity_sha256")))
+            {
+                return false;
+            }
+
+            var expectedMenuIdentity = ReadString(
+                continuation,
+                "mail_menu_identity_sha256");
+            return string.IsNullOrWhiteSpace(expectedMenuIdentity) ||
+                string.Equals(
+                    ReadParameter(queueItem, "mail_menu_identity_sha256"),
+                    expectedMenuIdentity,
+                    StringComparison.Ordinal);
+        }
         if (string.Equals(continuationKind, "movie_theater", StringComparison.Ordinal))
         {
             return string.Equals(optionId, "executor.watch_movie", StringComparison.Ordinal) &&
@@ -626,6 +816,14 @@ public static class QueueReplanFilter
             return string.Equals(optionId, "executor.play_darts", StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "darts_limited_nut_dropped_before"), ReadString(continuation, "darts_limited_nut_dropped_before"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "darts_starting_dart_count"), ReadString(continuation, "darts_starting_dart_count"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "prairie_king", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.play_prairie_king", StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "prairie_king_completion_goal"),
+                    ReadString(continuation, "prairie_king_completion_goal"),
+                    StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "home_renovation", StringComparison.Ordinal))
         {
@@ -834,18 +1032,111 @@ public static class QueueReplanFilter
             string.Equals(actionKind, expectedActionKind, StringComparison.Ordinal);
     }
 
+    public static JsonObject RefreshAppliedObjectiveContinuation(
+        JsonObject? queueItem,
+        JsonObject continuation)
+    {
+        if (!string.Equals(
+                ReadString(continuation, "kind"),
+                "social",
+                StringComparison.Ordinal))
+        {
+            return continuation;
+        }
+
+        var refreshed = ReadSocialContinuation(queueItem);
+        if (refreshed is null ||
+            !string.Equals(
+                ReadString(refreshed, "option_id"),
+                ReadString(continuation, "option_id"),
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                ReadString(refreshed, "npc_name"),
+                ReadString(continuation, "npc_name"),
+                StringComparison.OrdinalIgnoreCase) ||
+            !OptionalContinuationIdentityMatches(
+                refreshed,
+                continuation,
+                "slot_index") ||
+            !OptionalContinuationIdentityMatches(
+                refreshed,
+                continuation,
+                "qualified_item_id") ||
+            !OptionalContinuationIdentityMatches(
+                refreshed,
+                continuation,
+                "partnership_action_kind"))
+        {
+            return continuation;
+        }
+
+        return refreshed;
+    }
+
+    private static bool OptionalContinuationIdentityMatches(
+        JsonObject refreshed,
+        JsonObject existing,
+        string propertyName)
+    {
+        var expected = ReadString(existing, propertyName);
+        return string.IsNullOrWhiteSpace(expected) ||
+            string.Equals(
+                ReadString(refreshed, propertyName),
+                expected,
+                StringComparison.Ordinal);
+    }
+
     public static QueueReplanDecision DecideAfterExecution(
         string executionStatus,
         bool continueAfterBlocked,
         bool useDailyPlan,
         bool hasExecutorOverride,
         bool afterSnapshotFresh,
-        bool canAttemptMoreItems)
+        bool canAttemptMoreItems,
+        bool requiresFreshSnapshotReplan,
+        bool objectiveContinuationCompleted = false)
     {
         var continuable = IsContinuableExecutionStatus(executionStatus);
         if (continuable)
         {
-            return new QueueReplanDecision(false, false, false, "continuable_execution");
+            if (objectiveContinuationCompleted)
+            {
+                return new QueueReplanDecision(
+                    false,
+                    true,
+                    false,
+                    "objective_continuation_completed_iteration_boundary");
+            }
+            if (!requiresFreshSnapshotReplan)
+            {
+                return new QueueReplanDecision(false, false, false, "continuable_execution");
+            }
+            if (!useDailyPlan || hasExecutorOverride)
+            {
+                return new QueueReplanDecision(
+                    false,
+                    false,
+                    false,
+                    "non_daily_plan_fresh_snapshot_replan_not_applicable");
+            }
+            if (!afterSnapshotFresh)
+            {
+                return new QueueReplanDecision(false, true, false, "stale_after_snapshot");
+            }
+            if (!canAttemptMoreItems)
+            {
+                return new QueueReplanDecision(
+                    false,
+                    true,
+                    false,
+                    "max_queue_item_attempts_reached");
+            }
+
+            return new QueueReplanDecision(
+                true,
+                false,
+                true,
+                "continuable_execution_requires_fresh_snapshot_replan");
         }
 
         if (!continueAfterBlocked)
@@ -869,6 +1160,46 @@ public static class QueueReplanFilter
         }
 
         return new QueueReplanDecision(true, false, true, "blocked_continue_after_fresh_after_snapshot");
+    }
+
+    public static bool RequiresFreshSnapshotReplan(JsonObject? queueItem)
+    {
+        if (queueItem?["normalized_command"]?["parameters"] is not JsonArray parameters)
+        {
+            return false;
+        }
+
+        foreach (var node in parameters)
+        {
+            if (node is not JsonObject parameter)
+            {
+                continue;
+            }
+
+            var name = ReadString(parameter, "name");
+            var value = ReadString(parameter, "value");
+            if ((string.Equals(
+                     name,
+                     "fresh_snapshot_replan_required",
+                     StringComparison.Ordinal) ||
+                 string.Equals(
+                     name,
+                     "compiler_context.fresh_snapshot_replan_required",
+                     StringComparison.Ordinal)) &&
+                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            if (string.Equals(name, "expected_effect", StringComparison.Ordinal) &&
+                value.Contains(
+                    "fresh_snapshot_replan_required=true",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static string SemanticQueueItemKey(JsonObject item)
@@ -912,12 +1243,63 @@ public static class QueueReplanFilter
             : string.Empty;
     }
 
+    private static string ReadSnapshotField(JsonObject? section, string fieldName)
+    {
+        if (section?[fieldName] is not JsonObject field || field["value"] is not JsonValue value)
+        {
+            return string.Empty;
+        }
+
+        return value.TryGetValue<string>(out var text)
+            ? text
+            : value.TryGetValue<int>(out var number)
+                ? number.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : string.Empty;
+    }
+
     private static bool MatchesContinuation(JsonObject candidate, JsonObject continuation)
     {
         var optionId = ReadString(candidate, "option_id");
         if (!string.Equals(optionId, ReadString(continuation, "option_id"), StringComparison.Ordinal))
         {
             return false;
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "mail", StringComparison.Ordinal))
+        {
+            if (string.Equals(
+                    ReadString(candidate, "kind"),
+                    "process_open_letter",
+                    StringComparison.Ordinal))
+            {
+                var expectedMenuIdentity = ReadString(
+                    continuation,
+                    "mail_menu_identity_sha256");
+                return string.IsNullOrWhiteSpace(expectedMenuIdentity) ||
+                    CandidateParameterMatchesContinuation(
+                        candidate,
+                        continuation,
+                        "mail_menu_identity_sha256");
+            }
+
+            var expectedMailId = ReadString(continuation, "mail_id");
+            if (string.IsNullOrWhiteSpace(expectedMailId))
+            {
+                return false;
+            }
+            var candidateMailId = ReadCandidateParameter(
+                candidate,
+                "continuation.mail_id");
+            if (string.IsNullOrWhiteSpace(candidateMailId))
+            {
+                candidateMailId = ReadCandidateParameter(
+                    candidate,
+                    "target_runtime_identity");
+            }
+            return string.Equals(
+                candidateMailId,
+                expectedMailId,
+                StringComparison.Ordinal);
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "home_renovation", StringComparison.Ordinal))
@@ -994,6 +1376,13 @@ public static class QueueReplanFilter
         {
             return CandidateParameterMatchesContinuation(candidate, continuation, "crane_selection_policy") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "crane_fee_gold");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "prairie_king", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(
+                candidate,
+                continuation,
+                "prairie_king_completion_goal");
         }
 
         if (string.Equals(

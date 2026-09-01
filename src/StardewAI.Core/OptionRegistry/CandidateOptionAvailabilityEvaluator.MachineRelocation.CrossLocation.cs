@@ -159,7 +159,7 @@ namespace StardewAI.Core.OptionRegistry
                 sourceLocationId,
                 targetLocationId,
                 routeCandidates);
-            var route = routePlan?.FirstConnectorCandidate;
+            var route = routePlan?.FirstActionCandidate;
             if (routePlan is null ||
                 route is null ||
                 !route.Available ||

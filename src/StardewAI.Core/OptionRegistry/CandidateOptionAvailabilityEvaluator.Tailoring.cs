@@ -38,13 +38,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     continue;
                 var plan = FindResolvedRoutePlan(snapshot, currentLocation, locationId,
                     RouteConnectorCandidates(snapshot, int.MaxValue).Where(value => value.Kind == "route_connector_tile").ToArray());
-                if (plan?.FirstConnectorCandidate is not null)
+                if (plan?.FirstActionCandidate is not null)
                 {
                     result.Add(CloneCandidate(
-                        plan.FirstConnectorCandidate,
+                        plan.FirstActionCandidate,
                         candidateId: "tailoring-route:" + ReadString(row, "tailoring_candidate_id") + ":" + currentLocation,
-                        expectedEffect: plan.FirstConnectorCandidate.ExpectedEffect + ";tailoring_target=" + ReadString(row, "tailoring_operation"),
-                        parameters: plan.FirstConnectorCandidate.Parameters.Concat(new[]
+                        expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";tailoring_target=" + ReadString(row, "tailoring_operation"),
+                        parameters: plan.FirstActionCandidate.Parameters.Concat(new[]
                         {
                             Parameter("continuation.option_id", "tailoring.sew_item"),
                             Parameter("continuation.tailoring_candidate_id", ReadString(row, "tailoring_candidate_id")),

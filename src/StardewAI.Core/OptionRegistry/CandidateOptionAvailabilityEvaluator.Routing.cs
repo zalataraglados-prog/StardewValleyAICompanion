@@ -281,8 +281,11 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<EventCandidate>();
             }
 
-            var clearCandidates = ClearObstacleCandidates(snapshot)
-                .Where(candidate => candidate.Available && candidate.TileX.HasValue && candidate.TileY.HasValue)
+            var allClearCandidates = ClearObstacleCandidates(snapshot)
+                .Where(candidate => candidate.TileX.HasValue && candidate.TileY.HasValue)
+                .ToArray();
+            var clearCandidates = allClearCandidates
+                .Where(candidate => candidate.Available)
                 .ToArray();
             if (clearCandidates.Length == 0)
             {
@@ -291,7 +294,11 @@ namespace StardewAI.Core.OptionRegistry
 
             return blockedRouteTargets
                 .SelectMany(route => clearCandidates
-                    .Where(clear => ClearCandidateRepairsRoute(snapshot, route, clear))
+                    .Where(clear => ClearCandidateRepairsRoute(
+                        snapshot,
+                        route,
+                        clear,
+                        allClearCandidates))
                     .Select(clear => new EventCandidate
                     {
                         CandidateId = "route-repair:" + route.CandidateId + ":" + clear.CandidateId,
@@ -346,7 +353,11 @@ namespace StardewAI.Core.OptionRegistry
                 ? ":arrival=" + targetX.Value + "," + targetY.Value
                 : string.Empty);
 
-        private static bool ClearCandidateRepairsRoute(SnapshotEnvelope snapshot, EventCandidate route, EventCandidate clear)
+        private static bool ClearCandidateRepairsRoute(
+            SnapshotEnvelope snapshot,
+            EventCandidate route,
+            EventCandidate clear,
+            IEnumerable<EventCandidate> allClearCandidates)
         {
             if (!route.TileX.HasValue || !route.TileY.HasValue || !clear.TileX.HasValue || !clear.TileY.HasValue)
             {
@@ -368,9 +379,170 @@ namespace StardewAI.Core.OptionRegistry
                 return false;
             }
 
+            var target = ResolveRouteRepairTargetTile(
+                route.TileX.Value,
+                route.TileY.Value,
+                width,
+                height,
+                ReadParameter(route.Parameters, "connector_kind"));
+            if (target is null)
+            {
+                return false;
+            }
+
             var blocked = ReadBlockedCollisionTileKeys(grid.Value);
-            blocked.Remove(TileKey(clear.TileX.Value, clear.TileY.Value));
-            return PathExists(startX, startY, route.TileX.Value, route.TileY.Value, width, height, blocked, ReadUnsupportedRouteActionTileKeys(snapshot));
+            var unsupported = ReadUnsupportedRouteActionTileKeys(snapshot);
+            var clearable = allClearCandidates
+                .Where(candidate => candidate.TileX.HasValue && candidate.TileY.HasValue)
+                .Select(candidate => TileKey(candidate.TileX!.Value, candidate.TileY!.Value))
+                .ToHashSet(StringComparer.Ordinal);
+            var clearKey = TileKey(clear.TileX.Value, clear.TileY.Value);
+            if (!blocked.Contains(clearKey) || !clearable.Contains(clearKey))
+            {
+                return false;
+            }
+
+            var before = MinimumRouteClearCount(
+                startX,
+                startY,
+                target.X,
+                target.Y,
+                width,
+                height,
+                blocked,
+                unsupported,
+                clearable);
+            if (before <= 0 || before == int.MaxValue)
+            {
+                return false;
+            }
+
+            blocked.Remove(clearKey);
+            var after = MinimumRouteClearCount(
+                startX,
+                startY,
+                target.X,
+                target.Y,
+                width,
+                height,
+                blocked,
+                unsupported,
+                clearable);
+            return after < before;
+        }
+
+        private static CandidateTile? ResolveRouteRepairTargetTile(
+            int targetX,
+            int targetY,
+            int width,
+            int height,
+            string connectorKind)
+        {
+            if (TileInBounds(targetX, targetY, width, height))
+            {
+                return new CandidateTile(targetX, targetY);
+            }
+            if (!string.Equals(connectorKind, "warp", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+            if (targetX < 0 && targetY >= 0 && targetY < height)
+            {
+                return new CandidateTile(0, targetY);
+            }
+            if (targetX >= width && targetY >= 0 && targetY < height)
+            {
+                return new CandidateTile(width - 1, targetY);
+            }
+            if (targetY < 0 && targetX >= 0 && targetX < width)
+            {
+                return new CandidateTile(targetX, 0);
+            }
+            if (targetY >= height && targetX >= 0 && targetX < width)
+            {
+                return new CandidateTile(targetX, height - 1);
+            }
+
+            return null;
+        }
+
+        private static int MinimumRouteClearCount(
+            int startX,
+            int startY,
+            int targetX,
+            int targetY,
+            int width,
+            int height,
+            HashSet<string> blocked,
+            HashSet<string> unsupported,
+            HashSet<string> clearable)
+        {
+            var startKey = TileKey(startX, startY);
+            var targetKey = TileKey(targetX, targetY);
+            if (!TileInBounds(startX, startY, width, height) ||
+                !TileInBounds(targetX, targetY, width, height) ||
+                unsupported.Contains(startKey) ||
+                unsupported.Contains(targetKey))
+            {
+                return int.MaxValue;
+            }
+
+            var distances = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                [startKey] = 0
+            };
+            var pending = new LinkedList<CandidateTile>();
+            pending.AddFirst(new CandidateTile(startX, startY));
+            while (pending.Count > 0)
+            {
+                var current = pending.First!.Value;
+                pending.RemoveFirst();
+                var currentKey = TileKey(current.X, current.Y);
+                var currentDistance = distances[currentKey];
+                if (current.X == targetX && current.Y == targetY)
+                {
+                    return currentDistance;
+                }
+
+                foreach (var next in AdjacentTiles(current.X, current.Y))
+                {
+                    if (!TileInBounds(next.X, next.Y, width, height))
+                    {
+                        continue;
+                    }
+
+                    var nextKey = TileKey(next.X, next.Y);
+                    if (unsupported.Contains(nextKey))
+                    {
+                        continue;
+                    }
+
+                    var blockedStep = blocked.Contains(nextKey);
+                    if (blockedStep && !clearable.Contains(nextKey))
+                    {
+                        continue;
+                    }
+
+                    var nextDistance = currentDistance + (blockedStep ? 1 : 0);
+                    if (distances.TryGetValue(nextKey, out var existing) &&
+                        existing <= nextDistance)
+                    {
+                        continue;
+                    }
+
+                    distances[nextKey] = nextDistance;
+                    if (blockedStep)
+                    {
+                        pending.AddLast(next);
+                    }
+                    else
+                    {
+                        pending.AddFirst(next);
+                    }
+                }
+            }
+
+            return int.MaxValue;
         }
 
         private static bool RouteBlockedByCollision(string reason)
@@ -432,7 +604,6 @@ namespace StardewAI.Core.OptionRegistry
                 !TileInBounds(targetX, targetY, width, height) ||
                 blockedTiles.Contains(startKey) ||
                 blockedTiles.Contains(targetKey) ||
-                extraBlockedTiles.Contains(startKey) ||
                 extraBlockedTiles.Contains(targetKey))
             {
                 return false;

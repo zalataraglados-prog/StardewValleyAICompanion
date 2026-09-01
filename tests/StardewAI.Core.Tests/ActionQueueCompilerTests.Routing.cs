@@ -152,6 +152,59 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompilePlanMoveRepairCarriesLongBfsDistanceIntoMovementLimitAndBudget()
+    {
+        var blockedTiles = string.Join(",", Enumerable.Range(0, 20)
+            .Where(x => x == 18)
+            .Select(x => "{\"tile_x\":" + x + ",\"tile_y\":0,\"collision_blocked\":true}"));
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[{"tile_x":18,"tile_y":0,"type":"Grass"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm","width":20,"height":1},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":20,"height":1,"notable_tiles":[BLOCKED_TILES]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """.Replace("BLOCKED_TILES", blockedTiles, StringComparison.Ordinal));
+        var plan = Plan(snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.move.long.repair",
+                Kind = "move_to_tile",
+                TargetLocation = "Farm",
+                TargetTileX = 19,
+                TargetTileY = 0,
+                EstimatedMinutes = 30
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal(3, queue.Items.Length);
+        Assert.Equal("executor.move_to_tile", queue.Items[0].OptionId);
+        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "17");
+        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "max_movement_tiles" && parameter.Value == "18");
+        Assert.Equal(240, Assert.Single(queue.Items[0].NormalizedCommand.Steps).EstimatedTicks);
+        Assert.Equal("executor.clear_obstacle", queue.Items[1].OptionId);
+    }
+
+    [Fact]
     public void CompilePlanMoveToTileUsesFractionalPlayerEnergyForRepairBudget()
     {
         var snapshot = Snapshot("""

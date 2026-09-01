@@ -1,5 +1,25 @@
 # StardewAI 当前工作
 
+## 2026-09-01 当前接续点：r24 单目标正式闭环通过，准备多日长训
+
+- 119 服务器已部署 `formal-r24-20260901`。运行 `train.server.20260901.r24` 在同一隔离存档上完成一个
+  邮件高层目标 episode，内部原生执行 `traverse_connector -> move_to_tile -> interact -> wait_ticks -> close_menu`；
+  五步全部 `applied/verified/fresh`，最后以 `objective_continuation_completed_iteration_boundary` 停止，
+  没有在同一外层迭代误跑第二个目标。
+- 训练单位已固定：外层 iteration 是模型级目标，不是机械动作数；机械动作完整保存在 execution episode。
+  每次 fresh replan 中被明确选中的高层 continuation 候选各形成一条策略轨迹，纯编译器展开的按键/寻路
+  原语不伪装成模型决策。r24 补齐三个邮件阶段的 `candidate_id` 后，本轮生成 5 条成功 Product 轨迹，
+  `effective_candidate_id_missing=0`。
+- 正式数据从 accepted 176 增至 181，rejected 仍为 0；train/validation/test 为 128/0/53，train pairs
+  为 3415。当前 checkpoint 是 `structured-policy-35eb3439e19036a75b9c628b`，SHA-256 为
+  `11f38de448370bb401278bd8cd32ca4faea1e42e67df3b5299e20394c53ef0f7`。
+- 低频观察下实测约 56.346 UPS，full snapshot 12 次、平均 1430.682 ms，未形成持续卡顿。游戏、Backend
+  和 Product Executor 仍运行，LiveTrainingLoop 已正常退出，因此现在不是后台长训状态。
+- 正式 Product 控制闭环已经成立并产生真实 checkpoint 更新，但“全量训练完成”仍未成立：尚未连续覆盖
+  完整游戏日、季节、年份和第三年爷爷 21 分目标，也没有足量 validation 数据。服务器仅约 5072 MiB 可用、
+  使用率 92%；下一步先扩容或迁移 `/state/formal-training-r18`，复核全量哈希后按有界、可恢复的多日批次
+  启动长训。当前 C# 线性 ranker 不需要 RTX 5070 8GB，GPU 留给后续神经模型阶段。
+
 ## 2026-09-01 当前接续点：EVD-326 正式训练编排与真实结构化更新
 
 - Product Executor 轨迹已从测试 Harness 版本解绑：正式回执写入 `executor=product_executor.v1`，清洗器可识别历史 Harness 校准数据，但 `StructuredPolicyTrainer` 与 checkpoint 只接受 Product 版本。当前权威轨迹 schema 是 `policy_decision_trajectory.v2`，旧文档中的 `.v1` 表述不得继续沿用。

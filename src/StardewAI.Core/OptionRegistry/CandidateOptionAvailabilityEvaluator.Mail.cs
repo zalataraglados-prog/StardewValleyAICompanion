@@ -51,7 +51,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
         if (!string.Equals(currentLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
         {
-            var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation, RouteConnectorCandidates(snapshot))?.FirstConnectorCandidate;
+            var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation, RouteConnectorCandidates(snapshot))?.FirstActionCandidate;
             if (route is null)
             {
                 reasons.Add("owned_mailbox_route_unavailable");
@@ -82,11 +82,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     GateReasons = route.GateReasons,
                     BlockReasons = routeReasons,
                     Parameters = route.Parameters
-                        .Concat(new[]
-                        {
-                            Parameter("continuation.option_id", "mail.process_letter"),
-                            Parameter("continuation.target_location", targetLocation)
-                        })
+                        .Concat(MailContinuationParameters(mailId, mailHash, targetLocation))
                         .Concat(identity)
                         .ToArray()
                 }
@@ -121,7 +117,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                         Parameter("mailbox_action_tile_x", actionX?.ToString() ?? string.Empty),
                         Parameter("mailbox_action_tile_y", actionY?.ToString() ?? string.Empty),
                         Parameter("max_movement_tiles", "128")
-                    }.Concat(identity).ToArray()
+                    }
+                    .Concat(MailContinuationParameters(mailId, mailHash, targetLocation))
+                    .Concat(identity)
+                    .ToArray()
                 }
             };
         }
@@ -151,7 +150,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     Parameter("stand_tile_y", standY?.ToString() ?? string.Empty),
                     Parameter("expected_action_type", "Mailbox"),
                     Parameter("interaction_kind", "map_action")
-                }.Concat(identity).ToArray()
+                }
+                .Concat(MailContinuationParameters(mailId, mailHash, targetLocation))
+                .Concat(identity)
+                .ToArray()
             }
         };
     }
@@ -167,8 +169,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         if (!string.Equals(ReadString(letter, "kind"), "letter_viewer", StringComparison.Ordinal)) reasons.Add("letter_viewer_state_kind_mismatch");
         if (ReadBool(letter, "is_mail") != true) reasons.Add("letter_viewer_is_not_mail");
         if (ReadBool(letter, "is_from_collection") == true) reasons.Add("mail_collection_view_not_processable");
-        if (ReadBool(letter, "can_receive_input") != true) reasons.Add("letter_viewer_input_not_ready");
-        if (ReadBool(letter, "ready_to_close") != true) reasons.Add("letter_viewer_not_ready_to_close");
+        var canReceiveInput = ReadBool(letter, "can_receive_input") == true;
+        var readyToClose = ReadBool(letter, "ready_to_close") == true;
         var title = ReadString(letter, "mail_title");
         var identity = ReadString(letter, "menu_identity_sha256");
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(identity)) reasons.Add("letter_viewer_identity_incomplete");
@@ -190,6 +192,36 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var page = ReadInt(letter, "page", -1);
         var pageCount = ReadInt(letter, "page_count", -1);
         if (page < 0 || pageCount < 1 || page >= pageCount) reasons.Add("letter_viewer_page_state_invalid");
+
+        if (reasons.Count == 0 && (!canReceiveInput || !readyToClose))
+        {
+            return new[]
+            {
+                new EventCandidate
+                {
+                    CandidateId = $"mail.process_letter:menu_wait:{title}:{identity}",
+                    Kind = "mail_input_wait",
+                    Available = true,
+                    LocationId = ReadStateFieldString(snapshot, "player", "location_id"),
+                    DisplayName = title,
+                    ExpectedEffect = "letter_viewer.can_receive_input=true;fresh_snapshot_replan_required=true",
+                    EstimatedTicks = 30,
+                    EnergyCost = 0,
+                    AvailabilityClass = "native_letter_viewer_input_settle_wait",
+                    Parameters = new[]
+                    {
+                        Parameter("retry_wait_ticks", "30"),
+                        Parameter("target_runtime_type", "LetterViewerMenu"),
+                        Parameter("target_runtime_identity", title),
+                        Parameter("mail_menu_identity_sha256", identity),
+                        Parameter("continuation.option_id", "mail.process_letter"),
+                        Parameter("continuation.mail_menu_identity_sha256", identity)
+                    }
+                }
+            };
+        }
+        if (!canReceiveInput) reasons.Add("letter_viewer_input_not_ready");
+        if (!readyToClose) reasons.Add("letter_viewer_not_ready_to_close");
 
         return new[]
         {
@@ -216,9 +248,25 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     Parameter("mail_attachment_slots_required", attachmentSlotsRequired.ToString()),
                     Parameter("expected_output_items_json", attachments),
                     Parameter("quest_id", ReadString(letter, "quest_id")),
-                    Parameter("quest_key", ReadString(letter, "special_order_id"))
+                    Parameter("quest_key", ReadString(letter, "special_order_id")),
+                    Parameter("continuation.option_id", "mail.process_letter"),
+                    Parameter("continuation.mail_menu_identity_sha256", identity)
                 }
             }
+        };
+    }
+
+    private static SmallModelActionParameter[] MailContinuationParameters(
+        string mailId,
+        string mailDataSha256,
+        string targetLocation)
+    {
+        return new[]
+        {
+            Parameter("continuation.option_id", "mail.process_letter"),
+            Parameter("continuation.mail_id", mailId),
+            Parameter("continuation.mail_data_sha256", mailDataSha256),
+            Parameter("continuation.target_location", targetLocation)
         };
     }
 

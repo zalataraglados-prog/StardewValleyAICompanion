@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Training
@@ -60,17 +64,25 @@ namespace StardewAI.Core.Training
             Process? productExecutorProcess = null;
             Process? gameProcess = null;
             Process? liveTrainingLoopProcess = null;
+            var ownsGameProcess = !string.Equals(
+                manifest.GameProcessOwnership,
+                "external",
+                StringComparison.Ordinal);
             try
             {
                 if (formalTraining)
                 {
                     productExecutorProcess = StartProductExecutorProcess(manifest);
                     manifest.ProductExecutorProcessId = productExecutorProcess.Id;
+                    WaitForProductExecutor(manifest, productExecutorProcess, TimeSpan.FromSeconds(60));
                 }
-                gameProcess = StartTrainingProcess(manifest);
+                gameProcess = ownsGameProcess
+                    ? StartTrainingProcess(manifest)
+                    : AttachTrainingProcess(manifest);
                 manifest.ProcessId = gameProcess.Id;
                 if (formalTraining)
                 {
+                    WaitForTrainingWorld(manifest, gameProcess, TimeSpan.FromSeconds(180));
                     liveTrainingLoopProcess = StartLiveTrainingLoopProcess(manifest);
                     manifest.LiveTrainingLoopProcessId = liveTrainingLoopProcess.Id;
                 }
@@ -81,7 +93,10 @@ namespace StardewAI.Core.Training
             catch (Exception ex) when (ex is InvalidOperationException || ex is System.ComponentModel.Win32Exception || ex is IOException)
             {
                 StopStartedProcess(liveTrainingLoopProcess);
-                StopStartedProcess(gameProcess);
+                if (ownsGameProcess)
+                    StopStartedProcess(gameProcess);
+                else
+                    gameProcess?.Dispose();
                 StopStartedProcess(productExecutorProcess);
                 manifest.Status = "blocked";
                 manifest.Audit.Notes = new[] { "process_start_failed: " + ex.Message };
@@ -147,7 +162,9 @@ namespace StardewAI.Core.Training
 
         private static TrainingRunManifest BuildManifest(TrainingLaunchRequest request, string rootPath)
         {
-            var runId = "train." + DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss") + "." + Guid.NewGuid().ToString("N").Substring(0, 8);
+            var runId = string.IsNullOrWhiteSpace(request.RunId)
+                ? "train." + DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss") + "." + Guid.NewGuid().ToString("N").Substring(0, 8)
+                : request.RunId.Trim();
             var mode = string.IsNullOrWhiteSpace(request.Mode) ? TrainingSessionMode.OfflineSmoke : request.Mode.Trim();
             var formalTraining = string.Equals(mode, TrainingSessionMode.FormalProductTraining, StringComparison.OrdinalIgnoreCase);
             var manifestPath = FullPathOrDefault(request.ManifestPath, Path.Combine(rootPath, "runs", runId, "training-run-manifest.json"));
@@ -185,6 +202,13 @@ namespace StardewAI.Core.Training
                 LiveTrainingLoopExecutablePath = FullPathOrEmpty(request.LiveTrainingLoopExecutablePath),
                 MaxAttempts = Math.Max(1, request.MaxAttempts),
                 RequiredVerifiedActions = Math.Max(0, request.RequiredVerifiedActions),
+                MinFreeSpaceMb = Math.Clamp(
+                    request.MinFreeSpaceMb,
+                    1024,
+                    1024 * 1024),
+                TargetExecutionMode = string.IsNullOrWhiteSpace(request.TargetExecutionMode)
+                    ? ExecutionTargetProfiles.TrainingSingleplayer
+                    : request.TargetExecutionMode.Trim(),
                 CompilerVersion = formalTraining ? PolicyTrajectoryVersionPins.Compiler : string.Empty,
                 ExecutorVersion = formalTraining ? PolicyTrajectoryVersionPins.ProductExecutor : string.Empty,
                 StructuredPolicyRequired = formalTraining,
@@ -195,7 +219,11 @@ namespace StardewAI.Core.Training
                 SaveSlot = request.SaveSlot?.Trim() ?? string.Empty,
                 BridgeUrl = request.BridgeUrl,
                 BackendUrl = request.BackendUrl,
-                GameLaunch = request.AllowGameLaunch ? "requested" : "disabled",
+                GameLaunch = request.AttachExistingGame
+                    ? "attach_requested"
+                    : request.AllowGameLaunch ? "requested" : "disabled",
+                GameProcessOwnership = request.AttachExistingGame ? "external" : "launcher",
+                ProcessId = request.AttachExistingGame ? request.ExistingGameProcessId : null,
                 Sound = request.SoundEnabled ? "enabled" : "disabled",
                 WindowStyle = string.IsNullOrWhiteSpace(request.WindowStyle) ? "minimized" : request.WindowStyle.Trim(),
                 ExecutableKind = ClassifyExecutable(gameExecutablePath),
@@ -216,14 +244,50 @@ namespace StardewAI.Core.Training
                 reasons.Add("training_mode_unsupported");
             }
 
+            if (!ExecutionTargetProfiles.IsSupported(manifest.TargetExecutionMode))
+            {
+                reasons.Add("training_target_execution_mode_unsupported");
+            }
+
+            if (!IsValidRunId(manifest.RunId))
+            {
+                reasons.Add("training_run_id_invalid");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.RunId) &&
+                !string.Equals(request.RunId.Trim(), manifest.RunId, StringComparison.Ordinal))
+            {
+                reasons.Add("training_run_id_does_not_match_prepared_manifest");
+            }
+
             if (request.SoundEnabled)
             {
                 reasons.Add("sound_must_be_disabled_for_background_training");
             }
 
-            if (realGameMode && requireLaunchPermission && !request.AllowGameLaunch)
+            var attachExistingGame = string.Equals(
+                manifest.GameProcessOwnership,
+                "external",
+                StringComparison.Ordinal);
+
+            if (attachExistingGame && !formalTraining)
+            {
+                reasons.Add("existing_game_attachment_requires_formal_training");
+            }
+
+            if (attachExistingGame && request.AllowGameLaunch)
+            {
+                reasons.Add("existing_game_attachment_disallows_game_launch");
+            }
+
+            if (realGameMode && requireLaunchPermission && !attachExistingGame && !request.AllowGameLaunch)
             {
                 reasons.Add("real_game_launch_requires_allow_game_launch_true");
+            }
+
+            if (attachExistingGame)
+            {
+                ValidateAttachedGameProcess(manifest, reasons);
             }
 
             if (realGameMode && string.IsNullOrWhiteSpace(manifest.GameExecutablePath))
@@ -399,6 +463,26 @@ namespace StardewAI.Core.Training
             return process;
         }
 
+        private static Process AttachTrainingProcess(TrainingRunManifest manifest)
+        {
+            if (!manifest.ProcessId.HasValue || manifest.ProcessId.Value <= 0)
+                throw new InvalidOperationException("attached_game_process_id_required");
+            try
+            {
+                var process = Process.GetProcessById(manifest.ProcessId.Value);
+                if (process.HasExited)
+                {
+                    process.Dispose();
+                    throw new InvalidOperationException("attached_game_process_not_alive");
+                }
+                return process;
+            }
+            catch (ArgumentException)
+            {
+                throw new InvalidOperationException("attached_game_process_not_alive");
+            }
+        }
+
         private static Process StartProductExecutorProcess(TrainingRunManifest manifest)
         {
             var startInfo = CreateToolStartInfo(manifest.ProductExecutorExecutablePath);
@@ -426,13 +510,101 @@ namespace StardewAI.Core.Training
                 "--save-isolation-path", manifest.SaveIsolationPath,
                 "--max-attempts", manifest.MaxAttempts.ToString(),
                 "--required-verified-actions", manifest.RequiredVerifiedActions.ToString(),
+                "--min-free-space-mb", Math.Max(
+                    1024,
+                    manifest.MinFreeSpaceMb).ToString(),
+                "--target-execution-mode", manifest.TargetExecutionMode,
                 "--policy-checkpoint-path", manifest.CheckpointPath,
                 "--artifact-retention-mode", "rolling",
+                "--continue-after-blocked-queue-items",
+                "--no-progress-backoff-ms", "5000",
+                "--no-progress-max-backoff-ms", "60000",
                 "--use-product-executor",
                 "--use-daily-plan",
                 "--require-structured-policy");
             return Process.Start(startInfo)
                 ?? throw new InvalidOperationException("failed_to_start_live_training_loop_process");
+        }
+
+        private static void WaitForProductExecutor(
+            TrainingRunManifest manifest,
+            Process process,
+            TimeSpan timeout)
+        {
+            WaitForHttpJson(
+                manifest.ProductExecutorUrl.TrimEnd('/') + "/health",
+                process,
+                timeout,
+                document =>
+                {
+                    var root = document.RootElement;
+                    return root.TryGetProperty("status", out var status) &&
+                        string.Equals(status.GetString(), "ready", StringComparison.Ordinal) &&
+                        root.TryGetProperty("product_executor_count", out var count) &&
+                        count.TryGetInt32(out var value) && value > 0;
+                },
+                "product_executor_startup_probe_failed");
+        }
+
+        private static void WaitForTrainingWorld(
+            TrainingRunManifest manifest,
+            Process process,
+            TimeSpan timeout)
+        {
+            WaitForHttpJson(
+                SnapshotUrl(manifest.BridgeUrl),
+                process,
+                timeout,
+                document => SnapshotMatchesTrainingRun(document.RootElement, manifest.RunId),
+                "training_world_startup_probe_failed");
+        }
+
+        private static void WaitForHttpJson(
+            string url,
+            Process process,
+            TimeSpan timeout,
+            Func<JsonDocument, bool> accept,
+            string failureCode)
+        {
+            var deadline = DateTimeOffset.UtcNow.Add(timeout);
+            string lastError = "not_ready";
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                if (process.HasExited)
+                    throw new InvalidOperationException(failureCode + ": process_exited");
+                try
+                {
+                    var json = client.GetStringAsync(url).GetAwaiter().GetResult();
+                    using var document = JsonDocument.Parse(json);
+                    if (accept(document))
+                        return;
+                    lastError = "response_not_ready";
+                }
+                catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+                {
+                    lastError = ex.GetType().Name;
+                }
+                Thread.Sleep(500);
+            }
+            throw new InvalidOperationException(failureCode + ": " + lastError);
+        }
+
+        private static bool SnapshotMatchesTrainingRun(JsonElement root, string runId)
+        {
+            if (!root.TryGetProperty("state", out var state) ||
+                !state.TryGetProperty("environment", out var environment) ||
+                !environment.TryGetProperty("training_mode", out var trainingMode) ||
+                !trainingMode.TryGetProperty("value", out var trainingModeValue) ||
+                !string.Equals(trainingModeValue.GetString(), "1", StringComparison.Ordinal) ||
+                !environment.TryGetProperty("training_run_id", out var trainingRunId) ||
+                !trainingRunId.TryGetProperty("value", out var trainingRunIdValue) ||
+                !string.Equals(trainingRunIdValue.GetString(), runId, StringComparison.Ordinal) ||
+                !state.TryGetProperty("identity", out var identity) ||
+                !identity.TryGetProperty("save_id", out var saveId) ||
+                !saveId.TryGetProperty("value", out var saveIdValue))
+                return false;
+            return !string.IsNullOrWhiteSpace(saveIdValue.GetString());
         }
 
         private static ProcessStartInfo CreateToolStartInfo(string executablePath)
@@ -465,7 +637,7 @@ namespace StardewAI.Core.Training
             var value = bridgeUrl.TrimEnd('/');
             return value.IndexOf("/api/v1/snapshot", StringComparison.OrdinalIgnoreCase) >= 0
                 ? value
-                : value + "/api/v1/snapshot?profile=full&fresh=1";
+                : value + "/api/v1/snapshot?profile=full";
         }
 
         private static void StopStartedProcess(Process? process)
@@ -533,7 +705,8 @@ namespace StardewAI.Core.Training
         private static string ClassifyExecutable(string gameExecutablePath)
         {
             var fileName = Path.GetFileName(gameExecutablePath);
-            if (string.Equals(fileName, "StardewModdingAPI.exe", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(fileName, "StardewModdingAPI.exe", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(fileName, "StardewModdingAPI", StringComparison.OrdinalIgnoreCase))
             {
                 return "smapi";
             }
@@ -558,6 +731,54 @@ namespace StardewAI.Core.Training
             string.Equals(mode, TrainingSessionMode.SimulatedTransition, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(mode, TrainingSessionMode.StardewWindowed, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(mode, TrainingSessionMode.FormalProductTraining, StringComparison.OrdinalIgnoreCase);
+
+        private static void ValidateAttachedGameProcess(
+            TrainingRunManifest manifest,
+            List<string> reasons)
+        {
+            if (!manifest.ProcessId.HasValue || manifest.ProcessId.Value <= 0)
+            {
+                reasons.Add("attached_game_process_id_required");
+                return;
+            }
+
+            try
+            {
+                using var process = Process.GetProcessById(manifest.ProcessId.Value);
+                if (process.HasExited)
+                {
+                    reasons.Add("attached_game_process_not_alive");
+                    return;
+                }
+
+                var actualExecutablePath = process.MainModule?.FileName;
+                if (string.IsNullOrWhiteSpace(actualExecutablePath) ||
+                    !string.Equals(
+                        Path.GetFullPath(actualExecutablePath),
+                        Path.GetFullPath(manifest.GameExecutablePath),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    reasons.Add("attached_game_process_executable_mismatch");
+                }
+            }
+            catch (Exception ex) when (
+                ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                reasons.Add("attached_game_process_not_alive");
+            }
+        }
+
+        private static bool IsValidRunId(string runId)
+        {
+            if (string.IsNullOrWhiteSpace(runId) || runId.Length > 128)
+                return false;
+            foreach (var value in runId)
+            {
+                if (!(char.IsLetterOrDigit(value) || value is '.' or '-' or '_'))
+                    return false;
+            }
+            return true;
+        }
 
         private static bool IsLoopbackHttpUrl(string value) =>
             Uri.TryCreate(value, UriKind.Absolute, out var uri) &&

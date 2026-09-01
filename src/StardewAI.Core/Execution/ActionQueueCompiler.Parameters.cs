@@ -203,7 +203,7 @@ namespace StardewAI.Core.Execution
                 var estimatedTicks = Math.Max(60, (pathTiles.Value + 1) * 60);
                 AddParameterIfMissing(parameters, "max_movement_tiles", Math.Max(1, pathTiles.Value + 1).ToString());
                 AddParameterIfMissing(parameters, "estimated_ticks", estimatedTicks.ToString());
-                AddParameterIfMissing(parameters, "estimated_minutes", Math.Max(1, (estimatedTicks + 59) / 60).ToString());
+                AddParameterIfMissing(parameters, "estimated_minutes", GameClockBudgetPolicy.TicksToGameMinutes(estimatedTicks).ToString());
             }
 
             AddParameterIfMissing(parameters, "compiler_context.route_connector_source", "locations.route_connectors");
@@ -289,7 +289,7 @@ namespace StardewAI.Core.Execution
             }
 
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (time < 2200)
+            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time))
             {
                 parameters.Add(Parameter("execution_option_id", "executor.wait_ticks"));
                 parameters.Add(Parameter("wait_ticks", "30"));
@@ -321,7 +321,7 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("expected_target_location", step.Edge.TargetLocation));
             parameters.Add(Parameter("max_movement_tiles", Math.Max(1, step.PathTiles + 1).ToString()));
             parameters.Add(Parameter("estimated_ticks", step.EstimatedTicks.ToString()));
-            parameters.Add(Parameter("estimated_minutes", Math.Max(1, (step.EstimatedTicks + 59) / 60).ToString()));
+            parameters.Add(Parameter("estimated_minutes", GameClockBudgetPolicy.TicksToGameMinutes(step.EstimatedTicks).ToString()));
             parameters.Add(Parameter("compiler_context.route_graph_source", "locations.route_graph"));
             parameters.Add(Parameter("compiler_context.route_connector_source", "locations.route_connectors"));
             parameters.Add(Parameter("compiler_context.route_gate_source", "locations.route_gate_context"));

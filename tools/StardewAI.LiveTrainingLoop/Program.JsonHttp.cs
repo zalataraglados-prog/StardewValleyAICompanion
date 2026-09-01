@@ -11,6 +11,43 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private static string SnapshotUrlForProfile(
+        string value,
+        string profile,
+        bool forceRefresh,
+        string? expectedStateHash = null,
+        long? expectedGameTick = null)
+    {
+        var uri = new Uri(value, UriKind.Absolute);
+        var query = uri.Query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(pair =>
+            {
+                var name = Uri.UnescapeDataString(pair.Split('=', 2)[0]);
+                return !string.Equals(name, "profile", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(name, "fresh", StringComparison.OrdinalIgnoreCase);
+            })
+            .Append("profile=" + Uri.EscapeDataString(profile))
+            .ToList();
+        if (forceRefresh)
+        {
+            query.Add("fresh=1");
+        }
+        else if (!string.IsNullOrWhiteSpace(expectedStateHash) &&
+                 expectedGameTick > 0)
+        {
+            query.Add("expected_state_hash=" + Uri.EscapeDataString(expectedStateHash));
+            query.Add("expected_game_tick=" + expectedGameTick.Value.ToString(
+                System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        var builder = new UriBuilder(uri)
+        {
+            Query = string.Join("&", query)
+        };
+        return builder.Uri.AbsoluteUri;
+    }
+
     private static string SnapshotIngestUrl(LiveTrainingOptions options)
     {
         var ingestUrl = options.BackendUrl + "/api/v1/snapshots";

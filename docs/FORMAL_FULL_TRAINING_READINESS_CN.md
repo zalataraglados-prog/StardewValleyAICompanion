@@ -1,5 +1,32 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-01 119 服务器 r24 正式闭环实证
+
+正式 Product 训练控制闭环已经开始产生真实更新，但全量长训尚未启动。服务器使用隔离槽位
+`StardewAIDebug_16564609768130219756`、发布 `formal-r24-20260901` 和运行
+`train.server.20260901.r24`，以 `max_attempts=1` 完成一个有界高层目标。这里的一轮是一个模型级目标
+episode，不是一个按键：模型选择“处理 landslideDone 邮件”，编译/执行层依次完成跨图、走到信箱、
+原生交互、LetterViewer 输入稳定等待和原生关信五个机械动作；每次 fresh snapshot 后只对同一类型化
+continuation 重规划，目标完成后以 `objective_continuation_completed_iteration_boundary` 结束本轮，
+不得在同一 episode 中误选第二个全局目标。
+
+r20-r24 的服务器证据把该边界逐层闭合：r20 暴露跨地图后沿用旧队列，r21 改为 fresh snapshot
+重规划；r22 为暂时不可输入的 `LetterViewerMenu` 增加严格绑定菜单身份的 30 tick 有界等待；r23 在
+目标 continuation 完成时结束外层 episode；r24 为打开信箱、菜单等待和关信阶段补齐 `candidate_id`
+来源。r24 最终为 `5/5 applied + verified + fresh`，形成 5 条互异且成功的 Product 策略轨迹，
+`effective_candidate_id_missing=0`。正式数据集由 176 增至 181 条接收、0 条拒收，分区为
+train 128 / validation 0 / test 53，训练比较对 3415；新 checkpoint 为
+`structured-policy-35eb3439e19036a75b9c628b`，SHA-256 为
+`11f38de448370bb401278bd8cd32ca4faea1e42e67df3b5299e20394c53ef0f7`。
+
+本轮后游戏保持运行，Backend 与 Product Executor 保持空闲，LiveTrainingLoop 正常退出。低频观察模式
+为 `STARDEWAI_OBSERVER_RENDER_INTERVAL_MS=1000`，实测约 56.346 UPS；12 次 full snapshot 平均
+1430.682 ms，没有形成持续卡顿。服务器当前仅约 5072 MiB 可用、磁盘使用率 92%，因此不得在现盘上
+启动无界长训。下一准入动作是扩容或迁移正式训练根并复核哈希，然后按可恢复的小批游戏日运行；每批必须
+同时验收 Product 原生回执、轨迹增量、dataset/checkpoint 哈希、磁盘门、游戏 UPS 和恢复探针。当前模型仍是
+`return_weighted_pairwise_linear_ranker.v1`，RTX 5070 8GB 对这一阶段不是必需资源；神经策略模型或
+QLoRA 替换属于积累足量、多分区长期轨迹后的后续阶段。
+
 ## 2026-09-01 EVD-327 Product bootstrap 与隔离存档绑定
 
 E 盘隔离副本 `StardewAIDebug_16564609768130219756` 已完成隐藏静音 Product bootstrap 校准。运行

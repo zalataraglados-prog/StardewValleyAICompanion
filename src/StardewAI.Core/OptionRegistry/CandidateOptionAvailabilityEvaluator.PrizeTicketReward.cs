@@ -96,13 +96,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null) return Array.Empty<EventCandidate>();
+        if (route?.FirstActionCandidate is null) return Array.Empty<EventCandidate>();
         return new[]
         {
-            CloneCandidate(route.FirstConnectorCandidate,
+            CloneCandidate(route.FirstActionCandidate,
                 candidateId: "prize-ticket-route:" + ReadString(projection, "stage") + ":" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";prize_ticket_reward_continuation=true",
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(PrizeTicketRewardContinuationParameters(projection)).ToArray(),
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";prize_ticket_reward_continuation=true",
+                parameters: route.FirstActionCandidate.Parameters.Concat(PrizeTicketRewardContinuationParameters(projection)).ToArray(),
                 availabilityClass: "prize_ticket_reward_rolling_route")
         };
     }

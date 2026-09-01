@@ -674,7 +674,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         return friendship.Points;
     }
 
-    private static object ReadOwnerServiceStatus(GameLocation location, object parsed)
+    internal static object ReadOwnerServiceStatus(GameLocation location, object parsed)
     {
         var ownerNpc = ReadStringProperty(parsed, "owner_npc");
         if (string.IsNullOrWhiteSpace(ownerNpc))
@@ -840,7 +840,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         };
     }
 
-    private static object? ParseShopAction(GameLocation location, string action, int tileX, int tileY)
+    internal static object? ParseShopAction(GameLocation location, string action, int tileX, int tileY)
     {
         var parts = action.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0)

@@ -776,14 +776,37 @@ public sealed partial class ModEntry : Mod
         }
 
         menu.exitThisMenu();
-        var verified = Game1.activeClickableMenu is null;
+        var controlReady = RestorePlayerControlAfterSafeMenuClose();
+        var verified = Game1.activeClickableMenu is null && controlReady;
         return CompletedCloseMenu(
             request,
             beforeOpen,
             beforeType,
             verified ? "applied" : "blocked",
             verified ? "verified" : "observed_mismatch",
-            verified ? new[] { "active_menu_closed" } : new[] { "active_menu_still_open" });
+            verified
+                ? new[] { "active_menu_closed", "player_control_ready" }
+                : Game1.activeClickableMenu is not null
+                    ? new[] { "active_menu_still_open" }
+                    : new[] { "player_control_not_restored_after_menu_close" });
+    }
+
+    private static bool RestorePlayerControlAfterSafeMenuClose()
+    {
+        if (Game1.activeClickableMenu is not null ||
+            Game1.dialogueUp ||
+            Game1.eventUp ||
+            Game1.freezeControls ||
+            Game1.isWarping ||
+            Game1.currentMinigame is not null ||
+            Game1.player.UsingTool)
+        {
+            return false;
+        }
+
+        // DialogueBox.closeDialogue restores this same terminal invariant.
+        Game1.player.forceCanMove();
+        return Game1.player.CanMove;
     }
 
     private TrainingExecutionResult ExecuteLevelUpMenu(
@@ -896,7 +919,7 @@ public sealed partial class ModEntry : Mod
         return !dialogueBox.isQuestion &&
             (dialogueBox.responses is null || dialogueBox.responses.Length == 0) &&
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
-            string.IsNullOrWhiteSpace(Game1.currentLocation?.lastQuestionKey) &&
+            !string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal) &&
             (!Game1.eventUp || allowEventDialogue) &&
             ((dialogueBox.characterDialogue is not null &&
                 !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name)) ||

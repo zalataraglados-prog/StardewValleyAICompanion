@@ -78,15 +78,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue).Where(candidate => candidate.Kind == "route_connector_tile").ToArray());
-        if (route?.FirstConnectorCandidate is null)
+        if (route?.FirstActionCandidate is null)
             return Array.Empty<EventCandidate>();
         return new[]
         {
             CloneCandidate(
-                route.FirstConnectorCandidate,
+                route.FirstActionCandidate,
                 candidateId: "darts-game-route:" + currentLocation,
-                expectedEffect: route.FirstConnectorCandidate.ExpectedEffect + ";darts_game_continuation=true",
-                parameters: route.FirstConnectorCandidate.Parameters.Concat(new[]
+                expectedEffect: route.FirstActionCandidate.ExpectedEffect + ";darts_game_continuation=true",
+                parameters: route.FirstActionCandidate.Parameters.Concat(new[]
                 {
                     Parameter("continuation.option_id", "minigame.play_darts"),
                     Parameter("continuation.darts_limited_nut_dropped_before", ReadInt(projection, "limited_nut_dropped_before").ToString(CultureInfo.InvariantCulture)),
