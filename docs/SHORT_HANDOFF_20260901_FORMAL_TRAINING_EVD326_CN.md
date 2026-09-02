@@ -27,8 +27,20 @@
 
 ## 迁移与服务器状态
 
-修正前训练根已迁移至 `I:\StardewAITrainingArchive\119.91.139.160\formal-training-r18-pre-queue-boundary-fix-20260901`。远端 910 个文件、本地 910 个文件，SHA-256 验证 910/910；远端源目录保留。服务器当前保留单个 SMAPI 游戏进程及 r29 Backend/Product 服务，没有运行 LiveTrainingLoop 长训。
+修正前训练根已迁移至 `I:\StardewAITrainingArchive\119.91.139.160\formal-training-r18-pre-queue-boundary-fix-20260901`。远端 910 个文件、本地 910 个文件，SHA-256 验证 910/910；远端源目录保留。2026-09-02 已部署 `formal-r30-20260902`，停止状态的 Compose 容器已重建并绑定 r30；游戏、Backend、Product Executor 和 LiveTrainingLoop 均未运行。
+
+## 实机暴露边界与长训前静态审计
+
+r20-r29 已把跨图后旧队列、暂不可输入菜单、continuation 越候选、候选来源缺失、制品无限增长、站位身份混入高层语义，以及 fresh recompile 误触发策略模型等问题前移为显式门禁。它们证明 rollout 能承担压力测试，但不表示跨日、跨季、跨年和 Companion 产品层不再有未知缺陷。
+
+完整静态条目以 `docs/FORMAL_TRAINING_BUG_FORECAST_20260901_CN.md` 为准，当前重点仍是：训练根迁移后空间门必须检查真实挂载盘；负长期回报不能被最低正权重掩盖；特征缺失不能伪装成真实零值；JSONL 崩溃尾行必须可恢复；全量重建成本需要跨季前 profiling；爷爷 21 分 terminal 的重评语义必须冻结；新增迭代制品必须自动纳入滚动保留。未经过运行复现的条目只能标记为 risk/static finding，不能冒充动态证据。
+
+从当前状态到 stable 1.0 的容量估计仍采用远端审计口径：连续 3-7 个游戏日约暴露 8-18 项，跨季再增加 10-25 项，跨年与爷爷 21 分再增加 12-30 项，Companion 长期记忆/语言/多人层约 20-50 项，RC 到 stable 约 15-35 项。区间存在重叠，中位总量约 60-120 个有意义缺陷；该数字用于容量规划，不是已确认 bug 数。
 
 ## 下一步与退出条件
 
 先在扩容或迁移正式训练根后做一次有界多外层迭代恢复验证，确认队列 lease 能跨外层循环续跑且每条队列只产生一次模型排序；随后启动可恢复的多日正式批次。每批必须同时满足：计划游戏日或 attempt 上限到达；无孤立 Product pending；所有入库高层候选有 verified/fresh 回执；dataset/checkpoint/manifest 哈希一致；策略调用计数不超过队列决策次数；UPS 和剩余磁盘不越线。达到跨季、跨年、第三年爷爷 21 分独立长跑前，不得宣称全量训练完成。
+
+## 文档口径
+
+当前代码与新文档统一使用 `policy_decision_trajectory.v2 / policy_features.v2 / action_queue.v1 / product_executor.v1`。r25 是四轮制品保留和首个非空 validation 的历史证据；r29 是当前队列级决策边界权威证据；r30 是停止状态的最新部署。旧 r8-r28 数字只能解释各自历史检查点，不得覆盖顶层 README、当前工作、训练 readiness、完全体路线和本短交接的最新结论。
