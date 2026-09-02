@@ -458,7 +458,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         .Replace("BLOCKED", blocked ? "true" : "false"));
     }
 
-    private static SnapshotEnvelope BuySnapshot(string entryOverride)
+    private static SnapshotEnvelope BuySnapshot(
+        string entryOverride,
+        int safetyTimer = 0)
     {
         return Snapshot("""
         {
@@ -482,10 +484,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "menus": {
             "active_menu": {"value":{"is_open":true,"type":"ShopMenu"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "shop_stock": {"value":{"kind":"shop_stock","read_only":false,"entry_count":1,"entries":[ENTRY]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "shop_stock": {"value":{"kind":"shop_stock","shop_id":"SeedShop","read_only":false,"safety_timer":SAFETY_TIMER,"entry_count":1,"entries":[ENTRY]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
-        """.Replace("ENTRY", entryOverride));
+        """
+        .Replace("ENTRY", entryOverride)
+        .Replace("SAFETY_TIMER", safetyTimer.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
     private static SnapshotEnvelope BuyPreviewSnapshot(

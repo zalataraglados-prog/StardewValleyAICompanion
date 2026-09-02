@@ -638,7 +638,9 @@ static partial class Program
         var aggregate = JsonNode.Parse((finalExecution ?? new JsonObject()).ToJsonString(JsonOptions))?.AsObject() ?? new JsonObject();
         aggregate["queue_execution_mode"] = "sequential_queue_items";
         aggregate["planned_item_count"] = originalPlannedItemCount;
-        aggregate["final_pending_item_count"] = queueItems.Length;
+        aggregate["final_pending_item_count"] = QueueReplanFilter.RemainingQueueItemCount(
+            queueItems.Length,
+            attemptedCount);
         aggregate["executed_item_count"] = attemptedCount;
         aggregate["dispatch_gate_replan_count"] = dispatchGateReplanCount;
         aggregate["max_queue_item_attempts"] = options.MaxQueueItemAttempts;

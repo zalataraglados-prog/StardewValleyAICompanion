@@ -4,6 +4,11 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static class QueueReplanFilter
 {
+    public static int RemainingQueueItemCount(int queueItemCount, int attemptedCount)
+    {
+        return Math.Max(0, queueItemCount - attemptedCount);
+    }
+
     private static readonly HashSet<string> TrainingEquivalentOptionIds = new(StringComparer.Ordinal)
     {
         "executor.play_junimo_kart",

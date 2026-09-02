@@ -183,6 +183,11 @@ namespace StardewAI.Core.OptionRegistry
                 "continuation.max_unit_price");
             var continuationParameters = PurchaseContinuationParameters(
                 boundParameters);
+            var safetyWaitTicks = ShopMenuSafetyWaitTicks(shopStock.Value);
+            var targetLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
             return entries.EnumerateArray()
                 .Select((entry, index) =>
                 {
@@ -214,7 +219,7 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add(
                             "shop_item_price_exceeds_purchase_continuation");
                     }
-                    return new EconomicCandidate
+                    var candidate = new EconomicCandidate
                     {
                         CandidateId = "buy:" + shopId + ":" +
                             ReadString(entry, "qualified_item_id") + ":" + index,
@@ -232,11 +237,37 @@ namespace StardewAI.Core.OptionRegistry
                         InfiniteStock = ReadBool(entry, "infinite_stock") == true,
                         BlockReasons = blockReasons
                             .Distinct(StringComparer.Ordinal)
-                            .ToArray(),
-                        Parameters = continuationParameters
+                            .ToArray()
                     };
+                    var objectiveContinuation = continuationParameters.Length > 0
+                        ? continuationParameters
+                        : PurchaseContinuationParameters(candidate, targetLocation);
+                    candidate.Parameters = safetyWaitTicks > 0
+                        ? objectiveContinuation
+                            .Append(Parameter(
+                                "runtime.shop_menu_safety_wait_ticks",
+                                safetyWaitTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)))
+                            .ToArray()
+                        : objectiveContinuation;
+                    return candidate;
                 })
                 .ToArray();
+        }
+
+        private static int ShopMenuSafetyWaitTicks(JsonElement shopStock)
+        {
+            const int approximateTickMilliseconds = 16;
+            const int readinessMarginTicks = 2;
+            const int maxWaitTicks = 600;
+            var safetyTimerMilliseconds = ReadInt(shopStock, "safety_timer");
+            if (safetyTimerMilliseconds <= 0)
+            {
+                return 0;
+            }
+
+            var timerTicks = (safetyTimerMilliseconds + approximateTickMilliseconds - 1) /
+                approximateTickMilliseconds;
+            return Math.Clamp(timerTicks + readinessMarginTicks, 1, maxWaitTicks);
         }
 
         private static EconomicCandidate[] BuyCandidatesFromShopPreview(SnapshotEnvelope snapshot)

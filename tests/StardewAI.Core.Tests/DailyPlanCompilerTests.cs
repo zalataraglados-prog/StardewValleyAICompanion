@@ -77,6 +77,46 @@ public sealed partial class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileTurnsShopSafetyTimerIntoMechanicalWaitBeforePurchase()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "buy:Joja:(O)482:0",
+            OptionId = "economy.buy_supplies",
+            Kind = "buy_shop_item",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            ShopId = "Joja",
+            QualifiedItemId = "(O)482",
+            Quantity = 1,
+            UnitPrice = 50,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "runtime.shop_menu_safety_wait_ticks", Value = "17" },
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "economy.buy_supplies" },
+                new SmallModelActionParameter { Name = "continuation.shop_id", Value = "Joja" },
+                new SmallModelActionParameter { Name = "continuation.qualified_item_id", Value = "(O)482" },
+                new SmallModelActionParameter { Name = "continuation.max_unit_price", Value = "50" },
+                new SmallModelActionParameter { Name = "continuation.quantity", Value = "1" }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.shop-safety");
+
+        Assert.Equal(
+            new[] { "wait_ticks", "buy_shop_item", "close_menu" },
+            plan.Steps.Select(step => step.Kind));
+        var wait = plan.Steps[0];
+        Assert.Equal(17, wait.WaitTicks);
+        Assert.Contains("fresh_snapshot_replan_required=true", wait.ExpectedEffects);
+        Assert.Contains(wait.Parameters, parameter =>
+            parameter.Name == "continuation.qualified_item_id" &&
+            parameter.Value == "(O)482");
+        Assert.Contains(wait.SafetyConstraints, constraint =>
+            constraint == "purchase_continuation_identity_preserved");
+    }
+
+    [Fact]
     public void CompileTurnsSellCandidateIntoExactNativeSaleStep()
     {
         var candidate = new PolicyEventCandidatePrediction

@@ -5,6 +5,20 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Theory]
+    [InlineData(9, 6, 3)]
+    [InlineData(4, 4, 0)]
+    [InlineData(2, 5, 0)]
+    public void RemainingQueueItemCountReportsOnlyUnattemptedItems(
+        int queueItemCount,
+        int attemptedCount,
+        int expected)
+    {
+        Assert.Equal(
+            expected,
+            QueueReplanFilter.RemainingQueueItemCount(queueItemCount, attemptedCount));
+    }
+
     [Fact]
     public void MechanicalContinuationNeverInvokesOrReplacesThePolicyDecision()
     {

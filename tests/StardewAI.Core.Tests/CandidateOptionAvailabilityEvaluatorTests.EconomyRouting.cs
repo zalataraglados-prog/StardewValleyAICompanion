@@ -46,6 +46,40 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void BuySuppliesProjectsBoundedMechanicalWaitWhileShopMenuSafetyTimerIsActive()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuySnapshot(entryOverride: """
+              {
+                "item_id":"472",
+                "qualified_item_id":"(O)472",
+                "price":20,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "can_buy_item":true,
+                "can_afford_one_with_currency":true,
+                "can_afford_one_with_trade_item":true,
+                "could_inventory_accept":true,
+                "executor_purchase_enabled":false,
+                "executor_block_reasons":["shop_menu_safety_timer_active"]
+              }
+            """, safetyTimer: 234), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.True(candidate.Available);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "runtime.shop_menu_safety_wait_ticks" &&
+            parameter.Value == "17");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.option_id" &&
+            parameter.Value == "economy.buy_supplies");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.qualified_item_id" &&
+            parameter.Value == "(O)472");
+    }
+
+    [Fact]
     public void BuySuppliesUsesPreviewToCompileOneRollingShopRouteBeforeMenuOpens()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

@@ -194,6 +194,44 @@ namespace StardewAI.Core.Training
                 return Array.Empty<SmallModelPlanStep>();
             }
 
+            var steps = new List<SmallModelPlanStep>();
+            var continuation = ShopObjectiveContinuation(candidate);
+            var safetyWaitTicks = CandidateInt(
+                candidate,
+                "runtime.shop_menu_safety_wait_ticks");
+            if (safetyWaitTicks is > 0)
+            {
+                var boundedWaitTicks = Math.Clamp(
+                    safetyWaitTicks.Value,
+                    1,
+                    MaxWaitTicksPerStep);
+                steps.Add(new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "wait_for_shop_menu_ready", 0),
+                    Kind = "wait_ticks",
+                    WaitTicks = boundedWaitTicks,
+                    EstimatedMinutes = TicksToMinutes(boundedWaitTicks),
+                    Preconditions = new[]
+                    {
+                        "shop_menu_open=true",
+                        "shop_menu_safety_timer_active=true",
+                        "candidate_id:" + candidate.CandidateId
+                    },
+                    ExpectedEffects = new[]
+                    {
+                        "shop_menu_safety_timer_elapsed=true",
+                        "fresh_snapshot_replan_required=true"
+                    },
+                    SafetyConstraints = new[]
+                    {
+                        "bounded_native_shop_menu_readiness_wait",
+                        "purchase_continuation_identity_preserved"
+                    },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan_same_purchase" },
+                    Parameters = continuation
+                });
+            }
+
             var parameters = new List<SmallModelActionParameter>
             {
                 Parameter("qualified_item_id", candidate.QualifiedItemId),
@@ -215,32 +253,31 @@ namespace StardewAI.Core.Training
             {
                 parameters.Add(Parameter("expected_shop_id", candidate.ShopId));
             }
-            parameters.AddRange(ShopObjectiveContinuation(candidate));
+            parameters.AddRange(continuation);
 
-            return new[]
+            var purchaseStepIndex = steps.Count;
+            steps.Add(new SmallModelPlanStep
             {
-                new SmallModelPlanStep
-                {
-                    StepId = StepId(candidate, "buy_shop_item", 0),
-                    Kind = "buy_shop_item",
-                    EstimatedMinutes = 1,
-                    Preconditions = new[] { "shop_menu_open=true", "candidate_id:" + candidate.CandidateId },
-                    ExpectedEffects = new[] { "player.inventory_count_increases", "player.money_decreases" },
-                    SafetyConstraints = new[] { "purchase_parameters_from_transparent_shop_stock", "quantity_one_safe_purchase_slice" },
-                    FailurePolicy = new[] { "close_menu_refresh_snapshot_and_replan" },
-                    Parameters = parameters.ToArray()
-                },
-                new SmallModelPlanStep
-                {
-                    StepId = StepId(candidate, "close_shop_menu", 1),
-                    Kind = "close_menu",
-                    EstimatedMinutes = 1,
-                    Preconditions = new[] { "shop_menu_open=true", "candidate_id:" + candidate.CandidateId, "purchase_attempt_completed=true" },
-                    ExpectedEffects = new[] { "menus.active_menu.is_open=false" },
-                    SafetyConstraints = new[] { "close_only_safe_whitelisted_menu", "post_purchase_menu_cleanup" },
-                    FailurePolicy = new[] { "refresh_snapshot_and_replan" }
-                }
-            };
+                StepId = StepId(candidate, "buy_shop_item", purchaseStepIndex),
+                Kind = "buy_shop_item",
+                EstimatedMinutes = 1,
+                Preconditions = new[] { "shop_menu_open=true", "candidate_id:" + candidate.CandidateId },
+                ExpectedEffects = new[] { "player.inventory_count_increases", "player.money_decreases" },
+                SafetyConstraints = new[] { "purchase_parameters_from_transparent_shop_stock", "quantity_one_safe_purchase_slice" },
+                FailurePolicy = new[] { "close_menu_refresh_snapshot_and_replan" },
+                Parameters = parameters.ToArray()
+            });
+            steps.Add(new SmallModelPlanStep
+            {
+                StepId = StepId(candidate, "close_shop_menu", purchaseStepIndex + 1),
+                Kind = "close_menu",
+                EstimatedMinutes = 1,
+                Preconditions = new[] { "shop_menu_open=true", "candidate_id:" + candidate.CandidateId, "purchase_attempt_completed=true" },
+                ExpectedEffects = new[] { "menus.active_menu.is_open=false" },
+                SafetyConstraints = new[] { "close_only_safe_whitelisted_menu", "post_purchase_menu_cleanup" },
+                FailurePolicy = new[] { "refresh_snapshot_and_replan" }
+            });
+            return steps;
         }
 
         private static SmallModelActionParameter[] ShopObjectiveContinuation(
