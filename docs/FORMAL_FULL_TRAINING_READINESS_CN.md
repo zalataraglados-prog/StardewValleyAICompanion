@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-02 运行证据强绑定准入
+
+正式训练不得把“存在 evidence id”视为 Runtime/Output 已验证。`native_object_execution.v2` 的当前准入同时要求：证据 ID 已登记、运行路径修订完全匹配、32 个源文件的规范化 SHA-256 未漂移、artifact/source/build identity 完整，以及 RuntimeTestHarness、Contracts、TransparentBridge 三份运行 DLL 的 SHA-256 与登记值一致。任一项未知、缺失或变化均 fail closed，必须重新构建并取得新的原生运行证据后才能恢复准入。
+
+首批强绑定范围是 #88 重跑的六个动作：`world.rotate_house_plant`、`world.play_singing_stone`、`farming.collect_slime_ball`、`animals.withdraw_feed_hopper_hay`、`animals.collect_auto_grabber_contents` 和 `movement.use_mini_obelisk`。其余历史域暂标记 `LegacyUnbound`，不能据此宣称全目录已完成强证据迁移；应按真实运行产物逐域补齐。CI 使用不依赖私有游戏 DLL 的 game-free governance profile 持续检查登记表、源码指纹、序列化追溯字段和原生对象机械约束，完整本地 Core/Backend/Release 回归仍作为合入门槛。
+
 ## 2026-09-01 r29 队列级决策边界修正
 
 正式训练的规范单位不是机械动作，也不是每次 fresh snapshot。策略模型一次排序并选择一条有序高层候选队列；该选择、原始排序、编译队列和候选顺序由 `SelectedQueueDecisionLease` 持有。运行时逐候选执行，并在每个候选边界从 fresh snapshot 重新物化候选、校验队列顺序以及累计时间/能量，再由 C# 编译器确定性展开。候选内部的寻路、移动、交互、等待和菜单 continuation 同样只进行确定性重编译。
