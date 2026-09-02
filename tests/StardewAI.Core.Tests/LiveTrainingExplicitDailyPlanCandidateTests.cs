@@ -111,7 +111,20 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
         Assert.True(
             source.Split("invocation_source = options.DailyPlanInvocationSource", StringSplitOptions.None).Length >= 3,
             "Initial and continuation candidates must both retain the invocation source.");
-        Assert.Contains("ContinuationRequestParameters(objectiveContinuation)", source, StringComparison.Ordinal);
+        var initialSelectionStart = source.IndexOf(
+            "BuildQueueFromDailyPlanAsync(",
+            StringComparison.Ordinal);
+        var selectedCandidateCompileStart = source.IndexOf(
+            "BuildQueueFromSelectedCandidateAsync(",
+            initialSelectionStart,
+            StringComparison.Ordinal);
+        Assert.True(initialSelectionStart >= 0);
+        Assert.True(selectedCandidateCompileStart > initialSelectionStart);
+        Assert.DoesNotContain(
+            "ContinuationRequestParameters(",
+            source[initialSelectionStart..selectedCandidateCompileStart],
+            StringComparison.Ordinal);
+        Assert.Contains("ContinuationRequestParameters(effectiveContinuation)", source, StringComparison.Ordinal);
         Assert.Contains("\"continuation.\" + property.Key", source, StringComparison.Ordinal);
         Assert.Contains("explicitCandidates.Length == 0", source, StringComparison.Ordinal);
     }

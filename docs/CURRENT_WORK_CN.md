@@ -1,5 +1,22 @@
 # StardewAI 当前工作
 
+## 2026-09-02 issue #89 运行证据新鲜度与 CI 修正
+
+- `native_object_execution.v2` 现由 `RuntimeEvidenceCatalogSource` 冻结运行路径修订、32 个源文件的规范化 SHA-256，以及六个 EVD-271/272/274/276/278/279 运行证据对应的 artifact/source/build identity 和三份精确 DLL SHA-256。未知证据、修订变化、源码漂移或 DLL 身份缺失一律按 stale 关闭 Runtime/Output 准入，不能再因 evidence id 非空而继承 `RuntimeVerified`。
+- 本轮只强绑定 #88 实际重跑的六个动作：旋转屋内植物、演奏 Singing Stone、收取 Slime Ball、从料斗取草、收取 Auto-Grabber、使用 Mini-Obelisk。其他历史动作暂为 `LegacyUnbound`，保留原行为但不冒充已完成强绑定；后续必须按实际运行产物逐域迁移。
+- capability 输出新增 `runtime_evidence_freshness`、`expected_runtime_path_revision`、`runtime_path_source_sha256` 和 `runtime_evidence_bindings`，供训练准入与审计直接追溯。
+- GitHub Actions 新增不依赖 Stardew 私有游戏 DLL 的 Core governance profile，覆盖原生对象机械治理和证据新鲜度测试。此次本机结果：governance `16/16`、Core `2252/2252`、Backend `171/171`、Release 构建 `0 warnings / 0 errors`。
+- issue #86 的 typed payload v2 经复核属于增量架构迁移，不是本轮阻断 bug；Transfer/Place/Craft/Quest 等对象化扩展仍按原计划推进，不与 #89 修复混写。服务器本轮只更新静态发布物，游戏、Backend、Product Executor 和训练循环均保持停止。
+
+## 2026-09-01 当前接续点：r29 有序高层队列边界闭环通过
+
+- 训练根已先迁移到 `I:\StardewAITrainingArchive\119.91.139.160\formal-training-r18-pre-queue-boundary-fix-20260901`；远端清单 910 个文件、本地 910 个文件，逐文件 SHA-256 验证 910/910，通过且远端源目录未改动。
+- 唯一有效决策边界现为：模型/策略排序器一次选择一条有序高层候选队列；运行时持有该队列及游标，依次在每个候选边界读取 fresh snapshot、重新物化并由 C# 确定性编译。候选内部的寻路、移动、交互、等待、关菜单等 continuation 也只做确定性重编译，不重新调用模型。
+- 只有整条队列完成，或当前候选因时间、能量、资源、身份漂移、阻塞或回执不确定而使队列失效时，才允许重新调用策略排序器。队列间先后关系在每个候选边界重新验证；失败候选不得计为完成，也不得越过 continuation 执行下一个候选。
+- 119 上 `formal-r29-20260901 / train.server.20260901.r29` 的有界证明为：1 次策略排序选择 4 个高层候选，执行 9 个机械动作；发生 3 次候选边界刷新和 5 次候选内部 continuation 刷新，均未调用策略模型。4 个高层候选各形成 1 条成功策略轨迹，最终 `selected_queue_decision_complete=true`，无跳候选、无阻塞入库。
+- r27/r28 是用于暴露错误边界的受控回归探针：分别发现了装箱站位被误纳入高层语义身份、以及 continuation 尚未结束却跨入下一候选的问题；两者均已在 r29 前修正，不得作为成功训练证据。下方 r24/r25 中“每次 fresh replan 形成独立策略轨迹”以及“每个外层 iteration 只能容纳一个高层目标”的解释已被本节取代，只保留为历史诊断记录。
+- 当前并非多日全量训练完成。服务器约剩 4.2 GB，继续长训前仍须扩容或迁移训练根；之后先做有界多外层迭代恢复验证，再启动可恢复的多日正式批次，并同时监控策略调用次数、候选边界编译次数、UPS、磁盘和 Product 回执。
+
 ## 2026-09-01 当前接续点：r25 四轮滚动证据通过
 
 - 正式训练请求与 `training_run_manifest.v2` 新增 `max_persisted_iterations`，默认并冻结为 4；launcher、

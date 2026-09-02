@@ -179,7 +179,9 @@ public sealed class RuntimeMachineCraftingExecutorTests
 
         Assert.Contains("ReadDispatchReadinessAsync(", execution);
         Assert.Contains("dispatchReadiness[\"ready\"]", execution);
-        Assert.Contains("BuildQueueFromDailyPlanAsync(", execution);
+        Assert.Contains("BuildQueueFromSelectedCandidateAsync(", execution);
+        Assert.DoesNotContain("BuildQueueFromDailyPlanAsync(", execution);
+        Assert.Contains("selected_queue_invalidated_at_dispatch_boundary", execution);
         Assert.Contains("/dispatch-readiness?stateHash=", readiness);
         Assert.Contains("\"executor.remove_machine\"", readiness);
         Assert.Contains("controller_dispatch_guard", readiness);

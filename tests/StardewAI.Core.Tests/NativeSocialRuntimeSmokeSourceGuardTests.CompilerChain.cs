@@ -198,7 +198,9 @@ public sealed partial class NativeSocialRuntimeSmokeSourceGuardTests
         var loopSource = LiveTrainingLoopSources.All;
 
         Assert.Contains("ranking-response-", loopSource, StringComparison.Ordinal);
-        Assert.Contains("replan-ranking-response-", loopSource, StringComparison.Ordinal);
+        Assert.Contains("continuation-refresh-evidence-", loopSource, StringComparison.Ordinal);
+        Assert.Contains("policy_model_invoked\"] = false", loopSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("replan-ranking-response-", loopSource, StringComparison.Ordinal);
         Assert.Contains("WriteAllTextAsync", loopSource, StringComparison.Ordinal);
         Assert.DoesNotContain("NextRankingIndex", loopSource, StringComparison.Ordinal);
         Assert.DoesNotContain("IncrementRankingIndex", loopSource, StringComparison.Ordinal);

@@ -1,5 +1,21 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-02 运行证据强绑定准入
+
+正式训练不得把“存在 evidence id”视为 Runtime/Output 已验证。`native_object_execution.v2` 的当前准入同时要求：证据 ID 已登记、运行路径修订完全匹配、32 个源文件的规范化 SHA-256 未漂移、artifact/source/build identity 完整，以及 RuntimeTestHarness、Contracts、TransparentBridge 三份运行 DLL 的 SHA-256 与登记值一致。任一项未知、缺失或变化均 fail closed，必须重新构建并取得新的原生运行证据后才能恢复准入。
+
+首批强绑定范围是 #88 重跑的六个动作：`world.rotate_house_plant`、`world.play_singing_stone`、`farming.collect_slime_ball`、`animals.withdraw_feed_hopper_hay`、`animals.collect_auto_grabber_contents` 和 `movement.use_mini_obelisk`。其余历史域暂标记 `LegacyUnbound`，不能据此宣称全目录已完成强证据迁移；应按真实运行产物逐域补齐。CI 使用不依赖私有游戏 DLL 的 game-free governance profile 持续检查登记表、源码指纹、序列化追溯字段和原生对象机械约束，完整本地 Core/Backend/Release 回归仍作为合入门槛。
+
+## 2026-09-01 r29 队列级决策边界修正
+
+正式训练的规范单位不是机械动作，也不是每次 fresh snapshot。策略模型一次排序并选择一条有序高层候选队列；该选择、原始排序、编译队列和候选顺序由 `SelectedQueueDecisionLease` 持有。运行时逐候选执行，并在每个候选边界从 fresh snapshot 重新物化候选、校验队列顺序以及累计时间/能量，再由 C# 编译器确定性展开。候选内部的寻路、移动、交互、等待和菜单 continuation 同样只进行确定性重编译。
+
+只有队列全部完成，或当前候选不可用、阻塞、身份漂移、回执不确定以及时间/能量预算失效导致整条队列失效时，才能重新调用策略模型。每个成功完成并验证的高层候选写入一条 `policy_decision_trajectory.v2`；机械原语不单独生成策略轨迹。已完成候选的轨迹可以在后续候选失效时保留，但失败候选不得计为完成。
+
+119 服务器 `formal-r29-20260901 / train.server.20260901.r29` 已证明该边界：1 个排序文件选择 4 个高层候选，随后执行 9 个机械动作；3 次候选边界刷新和 5 次候选内部 continuation 刷新均为本地确定性编译，`policy_model_invoked=false`；最终 4 条高层候选轨迹入库且 `selected_queue_decision_complete=true`。r24/r25 关于“一次 fresh replan 对应一条策略轨迹”或“一个外层 iteration 只能容纳一个高层目标”的历史解释由本节明确取代。
+
+迁移证据位于 `I:\StardewAITrainingArchive\119.91.139.160\formal-training-r18-pre-queue-boundary-fix-20260901`，远端与本地 910/910 文件 SHA-256 一致，远端源训练根未删除。当前仍不是多日全量训练完成；服务器约剩 4.2 GB，扩容或迁移训练根仍是长训硬门槛。
+
 ## 2026-09-01 119 服务器 r25 有界证据保留
 
 r25 将正式运行的诊断快照窗口从 LiveTrainingLoop 默认 64 轮改为 manifest 冻结的 4 轮。请求、

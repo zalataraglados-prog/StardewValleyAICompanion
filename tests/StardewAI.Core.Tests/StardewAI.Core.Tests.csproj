@@ -14,6 +14,10 @@
     <BundleExtraAssemblies>All</BundleExtraAssemblies>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(GameFreeGovernance)' == 'true'">
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
@@ -32,6 +36,16 @@
     <ProjectReference Include="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
     <ProjectReference Include="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GameFreeGovernance)' == 'true'">
+    <Compile Include="NativeObjectMechanicsGovernanceTests.cs" />
+    <Compile Include="RuntimeEvidenceFreshnessGovernanceTests.cs" />
+    <PackageReference Update="Pathoschild.Stardew.ModBuildConfig"
+                      ExcludeAssets="compile;runtime;build;buildTransitive;native;contentfiles;analyzers" />
+    <ProjectReference Remove="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
+    <ProjectReference Remove="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
+    <ProjectReference Remove="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
   </ItemGroup>
 
 </Project>

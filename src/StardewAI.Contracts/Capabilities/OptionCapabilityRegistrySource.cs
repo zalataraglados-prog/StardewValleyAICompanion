@@ -165,6 +165,19 @@ namespace StardewAI.Contracts.Capabilities
         [JsonPropertyName("runtime_evidence_ids")]
         public string[] RuntimeEvidenceIds { get; internal set; } = Array.Empty<string>();
 
+        [JsonPropertyName("runtime_evidence_freshness")]
+        public RuntimeEvidenceFreshnessStatus RuntimeEvidenceFreshness { get; internal set; }
+
+        [JsonPropertyName("expected_runtime_path_revision")]
+        public string ExpectedRuntimePathRevision { get; internal set; } = string.Empty;
+
+        [JsonPropertyName("runtime_path_source_sha256")]
+        public string RuntimePathSourceSha256 { get; internal set; } = string.Empty;
+
+        [JsonPropertyName("runtime_evidence_bindings")]
+        public RuntimeEvidenceBinding[] RuntimeEvidenceBindings { get; internal set; } =
+            Array.Empty<RuntimeEvidenceBinding>();
+
         [JsonPropertyName("output_evidence_ids")]
         public string[] OutputEvidenceIds { get; internal set; } = Array.Empty<string>();
 
@@ -200,6 +213,7 @@ namespace StardewAI.Contracts.Capabilities
             public string[] CompilerEvidenceIds { get; set; } = Array.Empty<string>();
             public string[] RuntimeEvidenceIds { get; set; } = Array.Empty<string>();
             public string[] OutputEvidenceIds { get; set; } = Array.Empty<string>();
+            public string RuntimePathRevision { get; set; } = string.Empty;
         }
 
         private sealed class CapabilitySeed
@@ -241,11 +255,11 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyDictionary<string, CapabilitySeed>(
                 new Dictionary<string, CapabilitySeed>(StringComparer.Ordinal)
                 {
-                    ["world.rotate_house_plant"] = NativeObjectSeed(
+                    ["world.rotate_house_plant"] = FreshNativeObjectSeed(
                         autonomous: false, playerCommandOnly: true,
                         "vanilla_all_eight_base_house_plant_visual_frames_empty_hand_native_location_object_interaction_double_call_edge_permanent_identity_and_selected_slot_receipt",
                         "EVD-271"),
-                    ["world.play_singing_stone"] = NativeObjectSeed(
+                    ["world.play_singing_stone"] = FreshNativeObjectSeed(
                         autonomous: false, playerCommandOnly: true,
                         "vanilla_exact_base_(BC)94_shared_rng_uniform_crystal_pitch_distribution_native_location_object_interaction_shake_timer_identity_and_selected_slot_receipt",
                         "EVD-274"),
@@ -261,19 +275,19 @@ namespace StardewAI.Contracts.Capabilities
                         autonomous: false, playerCommandOnly: true,
                         "vanilla_exact_base_(BC)239_root_location_native_aggregate_localized_report_native_delayed_dialogue_identity_and_selected_slot_receipt",
                         "EVD-280"),
-                    ["farming.collect_slime_ball"] = NativeObjectSeed(
+                    ["farming.collect_slime_ball"] = FreshNativeObjectSeed(
                         autonomous: true, playerCommandOnly: false,
                         "vanilla_exact_SlimeHutch_base_fragility_2_slime_ball_seeded_slime_and_petrified_slime_projection_native_location_action_object_removal_conserved_inventory_plus_debris_output_and_shared_pickup_handoff",
                         "EVD-272"),
-                    ["animals.withdraw_feed_hopper_hay"] = NativeObjectSeed(
+                    ["animals.withdraw_feed_hopper_hay"] = FreshNativeObjectSeed(
                         autonomous: true, playerCommandOnly: false,
                         "vanilla_exact_base_(BC)99_AnimalHouse_root_silo_animal_and_placed_hay_projection_native_location_action_exact_(O)178_inventory_transfer_conservation_identity_and_selected_slot_receipt",
                         "EVD-276"),
-                    ["animals.collect_auto_grabber_contents"] = NativeObjectSeed(
+                    ["animals.collect_auto_grabber_contents"] = FreshNativeObjectSeed(
                         autonomous: true, playerCommandOnly: false,
                         "vanilla_exact_base_(BC)165_native_held_Chest_inventory_capacity_projection_shared_object_movement_native_ItemGrabMenu_stack_transfer_conservation_remaining_contents_identity_and_selected_slot_receipt",
                         "EVD-278"),
-                    ["movement.use_mini_obelisk"] = NativeObjectCalibrationSeed(
+                    ["movement.use_mini_obelisk"] = FreshNativeObjectCalibrationSeed(
                         "vanilla_exact_base_(BC)238_native_first_two_pair_raw_object_order_farther_destination_down_left_right_up_landing_shared_object_movement_native_delayed_same_location_teleport_pair_identity_and_selected_slot_receipt",
                         "EVD-279")
                 });
@@ -1178,8 +1192,19 @@ namespace StardewAI.Contracts.Capabilities
                     compilerStatus != CapabilityCompilerStatus.Unbound &&
                     ((seed?.HarnessDispatch ?? HarnessDispatchIds.Contains(id)) ||
                      (seed?.InternalExecution ?? InternalHighLevelExecutionIds.Contains(id))));
-                var runtimeGate = Gate(evidence.RuntimeEvidenceIds, declared: false);
-                var outputGate = Gate(evidence.OutputEvidenceIds, declared: false);
+                var runtimeEvidenceFreshness = RuntimeEvidenceCatalogSource.EvaluateFreshness(
+                    evidence.RuntimeEvidenceIds,
+                    evidence.RuntimePathRevision,
+                    out var runtimeEvidenceBindings,
+                    out var runtimePathIdentity);
+                var runtimeGate = RuntimeGate(
+                    evidence.RuntimeEvidenceIds,
+                    evidence.RuntimePathRevision,
+                    runtimeEvidenceFreshness);
+                var outputGate = RuntimeGate(
+                    evidence.OutputEvidenceIds,
+                    evidence.RuntimePathRevision,
+                    runtimeEvidenceFreshness);
                 var exclusions = BuildTrainingExclusionReasons(
                     policyTrainingCandidate,
                     seed?.PlayerConfirmation ?? PlayerConfirmationIds.Contains(id),
@@ -1239,6 +1264,10 @@ namespace StardewAI.Contracts.Capabilities
                     CandidateEvidenceIds = evidence.CandidateEvidenceIds,
                     CompilerEvidenceIds = evidence.CompilerEvidenceIds,
                     RuntimeEvidenceIds = evidence.RuntimeEvidenceIds,
+                    RuntimeEvidenceFreshness = runtimeEvidenceFreshness,
+                    ExpectedRuntimePathRevision = evidence.RuntimePathRevision,
+                    RuntimePathSourceSha256 = runtimePathIdentity?.RuntimeSourceSha256 ?? string.Empty,
+                    RuntimeEvidenceBindings = runtimeEvidenceBindings,
                     OutputEvidenceIds = evidence.OutputEvidenceIds,
                     TrainingExclusionReasons = exclusions,
                     TrainingEvidenceScope = trainingEligible ? evidence.Scope : "not_admitted"
@@ -1299,7 +1328,26 @@ namespace StardewAI.Contracts.Capabilities
                 calibrationOnly: false,
                 evidence: VerifiedEvidence(scope, evidenceIds));
 
-        private static CapabilitySeed NativeObjectCalibrationSeed(
+        private static CapabilitySeed FreshNativeObjectSeed(
+            bool autonomous,
+            bool playerCommandOnly,
+            string scope,
+            params string[] evidenceIds) =>
+            new CapabilitySeed(
+                stepCompiler: true,
+                parameterCompiler: true,
+                harnessDispatch: true,
+                internalExecution: true,
+                autonomousCandidate: autonomous,
+                playerConfirmation: playerCommandOnly,
+                playerCommandOnly: playerCommandOnly,
+                calibrationOnly: false,
+                evidence: FreshVerifiedEvidence(
+                    scope,
+                    RuntimeEvidenceCatalogSource.NativeObjectRuntimePathRevision,
+                    evidenceIds));
+
+        private static CapabilitySeed FreshNativeObjectCalibrationSeed(
             string scope,
             params string[] evidenceIds) =>
             new CapabilitySeed(
@@ -1311,7 +1359,10 @@ namespace StardewAI.Contracts.Capabilities
                 playerConfirmation: false,
                 playerCommandOnly: false,
                 calibrationOnly: true,
-                evidence: VerifiedEvidence(scope, evidenceIds));
+                evidence: FreshVerifiedEvidence(
+                    scope,
+                    RuntimeEvidenceCatalogSource.NativeObjectRuntimePathRevision,
+                    evidenceIds));
 
         private static TrainingEvidence VerifiedEvidence(string scope, params string[] evidenceIds)
         {
@@ -1331,6 +1382,16 @@ namespace StardewAI.Contracts.Capabilities
             }
 
             return BoundedEvidence(scope, ids, ids, ids, ids, ids);
+        }
+
+        private static TrainingEvidence FreshVerifiedEvidence(
+            string scope,
+            string runtimePathRevision,
+            params string[] evidenceIds)
+        {
+            var evidence = VerifiedEvidence(scope, evidenceIds);
+            evidence.RuntimePathRevision = runtimePathRevision;
+            return evidence;
         }
 
         private static TrainingEvidence BoundedEvidence(
@@ -1373,6 +1434,20 @@ namespace StardewAI.Contracts.Capabilities
                 : declared
                     ? TrainingEvidenceGateStatus.DeclaredOnly
                     : TrainingEvidenceGateStatus.Missing;
+        }
+
+        private static TrainingEvidenceGateStatus RuntimeGate(
+            string[] evidenceIds,
+            string runtimePathRevision,
+            RuntimeEvidenceFreshnessStatus freshness)
+        {
+            if (evidenceIds.Length == 0)
+                return TrainingEvidenceGateStatus.Missing;
+            if (string.IsNullOrWhiteSpace(runtimePathRevision))
+                return TrainingEvidenceGateStatus.RuntimeVerified;
+            return freshness == RuntimeEvidenceFreshnessStatus.Current
+                ? TrainingEvidenceGateStatus.RuntimeVerified
+                : TrainingEvidenceGateStatus.Missing;
         }
 
         private static TrainingAdmissionExclusionReason[] BuildTrainingExclusionReasons(

@@ -33,6 +33,37 @@ public static class QueueReplanFilter
             .ToArray();
     }
 
+    public static int ReadAcceptedCandidateIndex(JsonObject? queueItem)
+    {
+        if (queueItem?["selected_queue_index"] is JsonValue explicitIndex &&
+            explicitIndex.TryGetValue<int>(out var selectedIndex) &&
+            selectedIndex >= 0)
+        {
+            return selectedIndex;
+        }
+
+        var compiledIndex = ReadParameter(
+            queueItem,
+            "budget.accepted_candidate_index");
+        return int.TryParse(compiledIndex, out var acceptedIndex) && acceptedIndex >= 0
+            ? acceptedIndex
+            : -1;
+    }
+
+    public static void StampSelectedQueueIndex(JsonObject queueItem, int selectedQueueIndex)
+    {
+        queueItem["selected_queue_index"] = selectedQueueIndex;
+    }
+
+    public static void StampSelectedQueueIdentity(
+        JsonObject queueItem,
+        string selectedCandidateId,
+        int selectedQueueIndex)
+    {
+        queueItem["selected_queue_candidate_id"] = selectedCandidateId;
+        StampSelectedQueueIndex(queueItem, selectedQueueIndex);
+    }
+
     public static bool ShouldReleaseUnavailableContinuation(
         JsonObject? continuation,
         JsonObject? ranking)
@@ -70,6 +101,32 @@ public static class QueueReplanFilter
                 StringComparison.Ordinal) &&
             TrainingEquivalentOptionIds.Contains(
                 ReadString(execution, "option_id"));
+    }
+
+    public static JsonObject? LastTrainingVerifiedCompletedSelectedCandidateStep(
+        JsonObject? aggregateExecution)
+    {
+        if (aggregateExecution?["step_results"] is not JsonArray steps)
+        {
+            return IsTrainingVerifiedExecution(aggregateExecution) &&
+                aggregateExecution?["selected_queue_candidate_completed"]?.GetValue<bool>() == true
+                    ? aggregateExecution
+                    : null;
+        }
+
+        return steps
+            .OfType<JsonObject>()
+            .GroupBy(
+                EffectiveDecisionArtifactTracker.ReadCandidateId,
+                StringComparer.Ordinal)
+            .Where(group =>
+                !string.IsNullOrWhiteSpace(group.Key) &&
+                group.Last()["selected_queue_candidate_completed"]?.GetValue<bool>() == true &&
+                group.All(step =>
+                    IsTrainingVerifiedExecution(step) &&
+                    step["after_snapshot_fresh"]?.GetValue<bool>() == true))
+            .Select(group => group.Last())
+            .LastOrDefault();
     }
 
     public static JsonObject? ReadSocialContinuation(JsonObject? queueItem)
@@ -1103,9 +1160,9 @@ public static class QueueReplanFilter
             {
                 return new QueueReplanDecision(
                     false,
-                    true,
                     false,
-                    "objective_continuation_completed_iteration_boundary");
+                    false,
+                    "selected_queue_candidate_completed_continue_in_order");
             }
             if (!requiresFreshSnapshotReplan)
             {
@@ -1490,15 +1547,7 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(
                     candidate,
                     continuation,
-                    "bin_tile_y") &&
-                CandidateParameterMatchesContinuation(
-                    candidate,
-                    continuation,
-                    "stand_tile_x") &&
-                CandidateParameterMatchesContinuation(
-                    candidate,
-                    continuation,
-                    "stand_tile_y");
+                    "bin_tile_y");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "machine", StringComparison.Ordinal))
@@ -1719,10 +1768,27 @@ public static class QueueReplanFilter
         return ReadString(parameter, "value");
     }
 
-    private static bool IsContinuableExecutionStatus(string status)
+    public static bool IsContinuableExecutionStatus(string status)
     {
         return string.Equals(status, "applied", StringComparison.Ordinal) ||
             string.Equals(status, "no_op", StringComparison.Ordinal);
+    }
+
+    public static bool CompletesSelectedQueueCandidate(
+        string executionStatus,
+        bool objectiveContinuationCompleted,
+        JsonObject? activeObjectiveContinuation,
+        string selectedCandidateId,
+        string nextCandidateId)
+    {
+        return IsContinuableExecutionStatus(executionStatus) &&
+            (objectiveContinuationCompleted ||
+             activeObjectiveContinuation is null &&
+             (string.IsNullOrWhiteSpace(nextCandidateId) ||
+              !string.Equals(
+                  nextCandidateId,
+                  selectedCandidateId,
+                  StringComparison.Ordinal)));
     }
 }
 

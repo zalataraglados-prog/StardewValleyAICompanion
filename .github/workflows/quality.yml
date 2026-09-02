@@ -22,5 +22,9 @@ jobs:
         run: dotnet build src/StardewAI.Core/StardewAI.Core.csproj --configuration Release --no-restore
       - name: Build live training loop
         run: dotnet build tools/StardewAI.LiveTrainingLoop/StardewAI.LiveTrainingLoop.csproj --configuration Release --no-restore
+      - name: Restore core governance tests
+        run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
+      - name: Test core governance
+        run: dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --configuration Release --no-restore -p:GameFreeGovernance=true
       - name: Test backend
         run: dotnet test tests/StardewAI.Backend.Tests/StardewAI.Backend.Tests.csproj --configuration Release
