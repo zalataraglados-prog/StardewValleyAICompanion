@@ -9,9 +9,10 @@ StardewAI 是一个面向《Stardew Valley》的分层 AI Companion / Agent 工�
 ```text
 透明真实事实
 → 预注册语义动作 / 候选
-→ 高层策略排序与长期规划
+→ 高层策略一次选择有序候选队列
+→ 候选边界 fresh 校验
 → 权限与硬约束门禁
-→ Action Compiler
+→ Action Compiler 确定性展开 / continuation
 → Product Executor / 原版具身执行
 → Before / After 事实验证
 → 轨迹、审计、重规划与训练
@@ -19,14 +20,14 @@ StardewAI 是一个面向《Stardew Valley》的分层 AI Companion / Agent 工�
 
 ## 当前状态
 
-截至 2026-09-01 r25 / `formal-r25-20260901`：
+截至 2026-09-02，公开 `main` 已进入 **r29 有序高层队列正式训练边界 + issue #89 运行证据强绑定** 阶段：
 
 - 228 registered actions
 - 230 semantic actions
 - 227 compiler-bound actions
 - 145 RuntimeTestHarness dispatch
 - 145 Product Executor dispatch
-- 151 five-gate validated actions
+- 151 five-gate validated actions（历史口径；运行证据强绑定正在逐域迁移）
 - 62 strategy-training allowlisted actions
 - 2 catalogued blocked semantics
 - native inventory baseline: 322 surfaces / 448 branches / 150 map tokens
@@ -41,25 +42,62 @@ StardewAI 是一个面向《Stardew Valley》的分层 AI Companion / Agent 工�
 
 ## 正式训练状态
 
-正式 Product 训练闭环已经在 119 服务器产生真实数据和新 checkpoint，不再只是测试 Harness、bootstrap 或“进程存在”。当前结构化策略模型是 C# `return_weighted_pairwise_linear_ranker.v1`：它只负责在完整透明状态下排序“现在应该做哪个高层候选”，不会学习 WASD、菜单像素、挥刀或逐帧机械动作。
+正式 Product 训练闭环已经在 119 服务器产生真实数据和 checkpoint 更新，不再只是测试 Harness、bootstrap 或“进程存在”。当前结构化策略模型是 C# `return_weighted_pairwise_linear_ranker.v1`，只负责高层候选排序；WASD、路径、菜单、工具使用、等待、交互和逐帧机械动作都留在确定性 C# 层。
 
-r25 的有界训练实证：
+### r29 的决策边界
 
-- 单个邮件高层目标 episode；
-- 原生机械链：跨图 → 走到信箱 → 交互 → 等待 LetterViewer 可输入 → 关闭信件；
-- 5/5 `applied + verified + fresh`；
-- 正式数据集 accepted 186 / rejected 0；
-- train / validation / test = 128 / 5 / 53；
-- train pairs = 3415；
-- checkpoint = `structured-policy-52c9f785cc6dcc46c02f94e7`。
+旧循环曾在每次 fresh snapshot 后重新进入策略排序入口，导致移动、交互、等待等机械 continuation 反复触发 `rank-options`。r29 已把规范边界修正为：
 
-当前已经证明“真实 Product 数据 → dataset rebuild → structured checkpoint 更新 → manifest/hash 更新”的闭环成立，但**连续多日、跨季、跨年和第三年 Grandpa 21 分长跑尚未完成**，因此不能把当前状态描述成“全量训练完成”。服务器当前磁盘约 92% 使用率，长训在扩容/迁移训练盘之前只允许有界批次。
+1. 模型/策略排序器一次选择一条**有序高层候选队列**；
+2. `SelectedQueueDecisionLease` 持有原始排序、候选顺序和游标；
+3. 每到一个候选边界，读取 fresh snapshot，重新验证时间、能量、资源、身份、先后关系和可执行性；
+4. 候选内部的寻路、移动、交互、等待、关菜单等 continuation 只由 C# 本地确定性重编译；
+5. 只有整条队列完成，或当前候选使剩余队列失效时，才重新调用策略模型；
+6. 机械原语不伪装成策略决策轨迹。
+
+119 服务器 `formal-r29-20260901 / train.server.20260901.r29` 的有界实证为：
+
+- 1 次策略排序选择 4 个高层候选；
+- 共执行 9 个机械动作；
+- 3 次候选边界刷新 + 5 次候选内部 continuation 刷新；
+- 上述 8 次刷新均 `policy_model_invoked=false`；
+- 4 个高层候选各形成 1 条成功策略轨迹；
+- 最终 `selected_queue_decision_complete=true`；
+- r27/r28 仅用于暴露站位身份与 continuation 跨候选问题，不作为成功训练证据。
+
+这意味着当前训练结构已经从“高频模型重规划”收敛为：
+
+> **低频高层策略决策 + 高频本地确定性闭环控制。**
+
+当前仍未完成连续多日、跨季、跨年和第三年 Grandpa 21 分长跑，因此不能描述为“全量训练完成”。服务器磁盘仍是下一轮长训的硬门槛；修正前训练根已迁移归档并完成 910/910 文件 SHA-256 校验。
+
+## 运行证据新鲜度
+
+issue #89 后，运行证据不再只凭“evidence id 非空”继承 `RuntimeVerified`。
+
+`native_object_execution.v2` 对首批六个重跑动作绑定：
+
+- 运行路径 revision；
+- 32 个相关源文件的规范化 SHA-256；
+- artifact / source / build identity；
+- RuntimeTestHarness、Contracts、TransparentBridge 三份运行 DLL 的精确 SHA-256。
+
+源码、revision、artifact 或 DLL 身份任一漂移都会把对应 Runtime/Output 准入按 stale 关闭。首批强绑定范围是：
+
+- `world.rotate_house_plant`
+- `world.play_singing_stone`
+- `farming.collect_slime_ball`
+- `animals.withdraw_feed_hopper_hay`
+- `animals.collect_auto_grabber_contents`
+- `movement.use_mini_obelisk`
+
+其他历史运行证据暂为 `LegacyUnbound`，保留历史事实，但不能冒充已经完成新鲜度强绑定。CI 已加入不依赖 Stardew 私有游戏 DLL 的 game-free governance profile；本地最新验证为 governance 16/16、Core 2252/2252、Backend 171/171、Release 0 warnings / 0 errors。
 
 ## 设计原则
 
 ### 1. 模型负责“做什么”，机械层负责“怎么做”
 
-策略模型只处理高层目标、目标对象、优先级、预算和取舍。坐标、路线、菜单、战斗微操、库存合法性、原版状态机、权限和回执由确定性 C# 层处理。
+策略模型只处理高层目标、目标对象、优先级、预算和取舍。坐标、路线、菜单、战斗微操、库存合法性、原版状态机、权限和回执由确定性 C# 层处理。fresh snapshot 用于候选边界验证和机械重编译，**不等于必须重新调用模型**。
 
 ### 2. 不直接修改游戏结果
 
@@ -75,6 +113,7 @@ registered
 → Harness dispatch
 → offline/source tests
 → runtime evidence
+→ runtime evidence freshness
 → runtime verified
 → Product Executor
 → training eligible
@@ -83,9 +122,9 @@ registered
 
 RuntimeTestHarness 只承担测试/证据职责，不能冒充产品执行器；当前正式训练只接受 `product_executor.v1` 的真实、fresh、verified Product 轨迹。
 
-### 4. 运行后必须重新观察
+### 4. 决策状态与执行状态分离
 
-重要动作要求 fresh snapshot 与 before/after receipt。跨地图、菜单状态变化、世界自然推进或玩家干预后必须允许重绑定和重规划，不能沿用已经失效的机械队列。
+策略模型选择队列时的 ranking/decision state 与后续各候选执行前的 fresh execution state 必须分别记录。保留队列中的后续候选不能被伪装成“模型在新的 fresh state 下重新选择了一次”。
 
 ### 5. 玩家命令与自主策略分离
 
@@ -100,13 +139,13 @@ RuntimeTestHarness 只承担测试/证据职责，不能冒充产品执行器；
 - `StardewAI.Backend`：ASP.NET Core API 与训练/控制入口。
 - `StardewAI.RuntimeTestHarness`：隔离 E3 运行验收与机械状态机证据。
 - `StardewAI.ProductExecutor`：正式产品授权、持久回执、at-most-once 分发和唯一原生状态机接入。
-- `StardewAI.LiveTrainingLoop`：正式 Product rollout、fresh replan、数据集与 checkpoint 更新。
+- `StardewAI.LiveTrainingLoop`：正式 Product rollout、队列 lease、fresh candidate-boundary validation、数据集与 checkpoint 更新。
 - `schemas/json`：版本化接口合同。
 - `docs`：架构、证据、训练准入、能力清单、交接和风险记录。
 
 ## 当前风险与主动审计
 
-正式长训现在承担“全系统压力测试”的作用。r20-r25 已连续暴露跨地图 stale queue、暂时不可输入菜单、episode 边界、训练 provenance 和制品增长等跨层问题。
+正式长训现在承担“全系统压力测试”的作用。r20-r29 已连续暴露跨地图 stale queue、暂时不可输入菜单、episode/continuation 边界、训练 provenance、重复策略调用、制品增长等跨层问题；issue #89 又进一步把“历史运行证据是否仍对应当前执行路径”纳入可机器验证的治理边界。
 
 主动静态审计、后续 bug 数量预测与优先处理项见：
 
