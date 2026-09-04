@@ -76,6 +76,18 @@ public sealed class DedicatedHostAiRuntimeGuardTests
             "deploy", "stardew-server", "compose.formal-training.yaml"));
 
         Assert.Contains(
+            "SMAPI_MODS_PATH: \"/data/vanilla-ai-mods\"",
+            compose,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "STARDEWAI_VANILLA_HOST_MODE: \"1\"",
+            compose,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "STARDEWAI_ENSURE_JOINABLE_CABIN: \"1\"",
+            compose,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "STARDEWAI_SUPPRESS_LOCAL_RENDER: \"${STARDEWAI_SUPPRESS_LOCAL_RENDER:-1}\"",
             compose,
             StringComparison.Ordinal);

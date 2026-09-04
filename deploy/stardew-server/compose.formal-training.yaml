@@ -3,10 +3,13 @@ services:
     volumes:
       - ./runtime/releases/${STARDEWAI_RELEASE_ID:?STARDEWAI_RELEASE_ID is required}/mods:/data/vanilla-ai-mods
       - ./runtime/releases/${STARDEWAI_RELEASE_ID:?STARDEWAI_RELEASE_ID is required}/app:/stardewai-app:ro
-      - ./runtime/releases/${STARDEWAI_RELEASE_ID:?STARDEWAI_RELEASE_ID is required}/mods/StardewAI.TransparentBridge:/data/game/Mods/StardewAI.TransparentBridge
-      - ./runtime/releases/${STARDEWAI_RELEASE_ID:?STARDEWAI_RELEASE_ID is required}/mods/StardewAI.RuntimeTestHarness:/data/game/Mods/StardewAI.RuntimeTestHarness
       - ./data/ai-state:/state
     environment:
+      # Formal evidence must load only the release allowlist. The normal Mods
+      # directory contains host automation which pauses and mutates the world.
+      SMAPI_MODS_PATH: "/data/vanilla-ai-mods"
+      STARDEWAI_VANILLA_HOST_MODE: "1"
+      STARDEWAI_ENSURE_JOINABLE_CABIN: "1"
       STARDEWAI_TRAINING_MODE: "1"
       STARDEWAI_FORMAL_RUN_ID: "${STARDEWAI_FORMAL_RUN_ID:?STARDEWAI_FORMAL_RUN_ID is required}"
       STARDEWAI_FORMAL_SAVE_SLOT: "${STARDEWAI_FORMAL_SAVE_SLOT:?STARDEWAI_FORMAL_SAVE_SLOT is required}"
