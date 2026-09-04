@@ -166,9 +166,7 @@ namespace StardewAI.Core.OptionRegistry
                     CandidateId = nativeSaveBoundaryRequired
                         ? "recovery:native_save_boundary"
                         : "recovery:sleep_immediately",
-                    Kind = nativeSaveBoundaryRequired
-                        ? "recovery_native_save_boundary"
-                        : "recovery_sleep_immediately",
+                    Kind = "recovery_sleep_immediately",
                     Available = sleepImmediatelyBlocks.Count == 0,
                     LocationId = currentLocationIsHome
                         ? homeLocation

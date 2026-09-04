@@ -41,7 +41,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
         var candidate = Assert.Single(option.EventCandidates);
         Assert.Equal("recovery:native_save_boundary", candidate.CandidateId);
-        Assert.Equal("recovery_native_save_boundary", candidate.Kind);
+        Assert.Equal("recovery_sleep_immediately", candidate.Kind);
         Assert.True(candidate.Available);
         Assert.Contains(
             candidate.Parameters,

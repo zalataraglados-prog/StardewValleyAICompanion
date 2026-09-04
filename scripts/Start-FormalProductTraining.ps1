@@ -11,7 +11,8 @@ param(
     [int] $MaxAttempts = 2000,
     [ValidateRange(1, 64)]
     [int] $MaxPersistedIterations = 4,
-    [int] $RequiredVerifiedActions = 0,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $RequiredVerifiedActions = 1,
     [ValidateRange(1, 128)]
     [int] $SaveBoundaryMaxAttempts = 16,
     [switch] $Launch
@@ -87,6 +88,10 @@ $backend = $null
 $launchResult = $null
 $keepBackend = $false
 try {
+    if ($RequiredVerifiedActions -gt $MaxAttempts) {
+        throw "RequiredVerifiedActions must not exceed MaxAttempts."
+    }
+
     $previousUrls = $env:ASPNETCORE_URLS
     try {
         $env:ASPNETCORE_URLS = $backendUrl

@@ -9,6 +9,7 @@ SAVE_SLOT="${STARDEWAI_FORMAL_SAVE_SLOT:?STARDEWAI_FORMAL_SAVE_SLOT is required}
 MIN_FREE_SPACE_MB="${STARDEWAI_FORMAL_MIN_FREE_SPACE_MB:-8192}"
 MAX_ATTEMPTS="${STARDEWAI_FORMAL_MAX_ATTEMPTS:-2000}"
 MAX_PERSISTED_ITERATIONS="${STARDEWAI_FORMAL_MAX_PERSISTED_ITERATIONS:-4}"
+REQUIRED_VERIFIED_ACTIONS="${STARDEWAI_FORMAL_REQUIRED_VERIFIED_ACTIONS:-1}"
 SAVE_BOUNDARY_MAX_ATTEMPTS="${STARDEWAI_FORMAL_SAVE_BOUNDARY_MAX_ATTEMPTS:-16}"
 BACKEND_URL="http://127.0.0.1:8795"
 PRODUCT_URL="http://127.0.0.1:8768"
@@ -54,6 +55,17 @@ case "$MAX_PERSISTED_ITERATIONS" in
 esac
 if [ "$MAX_PERSISTED_ITERATIONS" -lt 1 ] || [ "$MAX_PERSISTED_ITERATIONS" -gt 64 ]; then
   echo "formal maximum persisted iterations must be between 1 and 64" >&2
+  exit 2
+fi
+
+case "$REQUIRED_VERIFIED_ACTIONS" in
+  *[!0-9]*|'')
+    echo "invalid formal required verified actions" >&2
+    exit 2
+    ;;
+esac
+if [ "$REQUIRED_VERIFIED_ACTIONS" -lt 1 ] || [ "$REQUIRED_VERIFIED_ACTIONS" -gt "$MAX_ATTEMPTS" ]; then
+  echo "formal required verified actions must be between 1 and maximum attempts" >&2
   exit 2
 fi
 
@@ -132,7 +144,7 @@ cat >"$request_path" <<EOF
   "target_execution_mode": "dedicated_host_ai",
   "max_attempts": $MAX_ATTEMPTS,
   "max_persisted_iterations": $MAX_PERSISTED_ITERATIONS,
-  "required_verified_actions": 0,
+  "required_verified_actions": $REQUIRED_VERIFIED_ACTIONS,
   "require_native_save_boundary": true,
   "save_boundary_max_attempts": $SAVE_BOUNDARY_MAX_ATTEMPTS,
   "min_free_space_mb": $MIN_FREE_SPACE_MB,
