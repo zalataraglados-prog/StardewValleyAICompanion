@@ -706,6 +706,8 @@ if (trainingDataTransaction.CanonicalArtifactsUpdated &&
         "policy-dataset-manifest.json");
     var checkpointSha256 = StructuredPolicyCheckpointStore.HashFile(
         options.PolicyCheckpointPath);
+    var canonicalCheckpoint = new StructuredPolicyCheckpointStore().Load(
+        options.PolicyCheckpointPath);
     new FormalTrainingManifestStore().UpdateArtifacts(
         options.ManifestPath,
         options.RunId,
@@ -715,8 +717,11 @@ if (trainingDataTransaction.CanonicalArtifactsUpdated &&
     lastTrainingReport["checkpoint_path"] = Path.GetFullPath(
         options.PolicyCheckpointPath);
     lastTrainingReport["checkpoint_sha256"] = checkpointSha256;
+    lastTrainingReport["checkpoint_id"] = canonicalCheckpoint.CheckpointId;
     lastTrainingReport["dataset_manifest_path"] = Path.GetFullPath(
         canonicalDatasetManifestPath);
+    lastTrainingReport["dataset_manifest_sha256"] =
+        canonicalCheckpoint.Dataset.ManifestSha256;
 }
 
 var report = new LiveTrainingLoopReport

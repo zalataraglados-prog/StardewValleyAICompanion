@@ -1,3 +1,8 @@
+using System.Text;
+using System.Text.Json;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
+
 namespace StardewAI.LiveTrainingLoop;
 
 public sealed class FormalTrainingDataTransaction
@@ -66,14 +71,115 @@ public sealed class FormalTrainingDataTransaction
             return;
         }
 
-        PromoteTree(
-            Path.Combine(StagingRoot, "datasets"),
-            Path.Combine(options.Root, "datasets"));
-        PromoteFile(
-            options.EffectivePolicyCheckpointPath,
-            options.PolicyCheckpointPath);
+        var stagedDatasetRoot = Path.Combine(StagingRoot, "datasets");
+        var canonicalDatasetRoot = Path.Combine(options.Root, "datasets");
+        PromoteTree(stagedDatasetRoot, canonicalDatasetRoot);
+
+        var canonicalManifestPath = Path.Combine(
+            canonicalDatasetRoot,
+            "formal-policy",
+            "policy-dataset-manifest.json");
+        RebindDatasetManifest(
+            Path.Combine(stagedDatasetRoot, "formal-policy", "policy-dataset-manifest.json"),
+            canonicalManifestPath,
+            stagedDatasetRoot,
+            canonicalDatasetRoot);
+
+        var checkpointStore = new StructuredPolicyCheckpointStore();
+        var checkpoint = checkpointStore.Load(options.EffectivePolicyCheckpointPath);
+        checkpoint.Dataset.ManifestPath = Path.GetFullPath(canonicalManifestPath);
+        checkpoint.Dataset.ManifestSha256 = StructuredPolicyCheckpointStore.HashFile(canonicalManifestPath);
+        checkpoint.CheckpointId = StructuredPolicyTrainer.CreateCheckpointId(
+            checkpoint.Dataset.ManifestSha256,
+            checkpoint.Hyperparameters);
+        checkpointStore.Save(options.PolicyCheckpointPath, checkpoint);
         CanonicalArtifactsUpdated = true;
         Status = "committed_after_native_save_boundary";
+    }
+
+    private static void RebindDatasetManifest(
+        string stagedManifestPath,
+        string canonicalManifestPath,
+        string stagedDatasetRoot,
+        string canonicalDatasetRoot)
+    {
+        if (!File.Exists(stagedManifestPath))
+        {
+            throw new FileNotFoundException(
+                "Staged policy dataset manifest is unavailable.",
+                stagedManifestPath);
+        }
+
+        PolicyDatasetManifest manifest;
+        try
+        {
+            manifest = JsonSerializer.Deserialize<PolicyDatasetManifest>(
+                File.ReadAllText(stagedManifestPath),
+                JsonOptions)
+                ?? throw new InvalidOperationException("Staged policy dataset manifest is null.");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException("Staged policy dataset manifest JSON is invalid.", ex);
+        }
+
+        RebindDigest(manifest.Input, stagedDatasetRoot, canonicalDatasetRoot);
+        if (manifest.HorizonObservations is not null)
+            RebindDigest(manifest.HorizonObservations, stagedDatasetRoot, canonicalDatasetRoot);
+        RebindDigest(manifest.Cleaned, stagedDatasetRoot, canonicalDatasetRoot);
+        foreach (var partition in manifest.Partitions ?? Array.Empty<PolicyDatasetPartitionDigest>())
+            RebindDigest(partition, stagedDatasetRoot, canonicalDatasetRoot);
+
+        WriteJsonAtomically(canonicalManifestPath, manifest);
+    }
+
+    private static void RebindDigest(
+        PolicyDatasetFileDigest digest,
+        string stagedDatasetRoot,
+        string canonicalDatasetRoot)
+    {
+        if (digest is null || string.IsNullOrWhiteSpace(digest.Path))
+            throw new InvalidOperationException("Policy dataset manifest contains an empty artifact path.");
+
+        var fullPath = Path.GetFullPath(digest.Path);
+        var relative = Path.GetRelativePath(Path.GetFullPath(stagedDatasetRoot), fullPath);
+        if (relative == "." ||
+            relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
+            Path.IsPathRooted(relative))
+        {
+            var canonicalRelative = Path.GetRelativePath(
+                Path.GetFullPath(canonicalDatasetRoot),
+                fullPath);
+            if (canonicalRelative == "." ||
+                canonicalRelative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
+                Path.IsPathRooted(canonicalRelative))
+            {
+                throw new InvalidOperationException(
+                    "Policy dataset artifact path is outside the staged and canonical roots: " + fullPath);
+            }
+            relative = canonicalRelative;
+        }
+
+        digest.Path = Path.GetFullPath(Path.Combine(canonicalDatasetRoot, relative));
+    }
+
+    private static void WriteJsonAtomically(string path, PolicyDatasetManifest manifest)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var pending = path + ".pending." + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(
+                pending,
+                JsonSerializer.Serialize(manifest, IndentedJsonOptions),
+                new UTF8Encoding(false));
+            File.Move(pending, path, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(pending))
+                File.Delete(pending);
+        }
     }
 
     private static void CopyTreeIfPresent(string sourceRoot, string targetRoot)
@@ -130,4 +236,10 @@ public sealed class FormalTrainingDataTransaction
             }
         }
     }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
 }

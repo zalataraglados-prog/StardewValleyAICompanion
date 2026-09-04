@@ -65,8 +65,7 @@ public sealed class StructuredPolicyTrainer
         var manifestHash = StructuredPolicyCheckpointStore.HashFile(manifestPath);
         var checkpoint = new StructuredPolicyCheckpointEnvelope
         {
-            CheckpointId = "structured-policy-" + StructuredPolicyCheckpointStore.HashText(
-                manifestHash + "\n" + CanonicalHyperparameters(parameters)).Substring(0, 24),
+            CheckpointId = CreateCheckpointId(manifestHash, parameters),
             Dataset = new StructuredPolicyDatasetBinding
             {
                 ManifestPath = manifestPath,
@@ -273,6 +272,18 @@ public sealed class StructuredPolicyTrainer
         for (var index = 0; index < left.Length; index++)
             result += left[index] * right[index];
         return result;
+    }
+
+    public static string CreateCheckpointId(
+        string manifestSha256,
+        StructuredPolicyHyperparameters hyperparameters)
+    {
+        if (manifestSha256 is not { Length: 64 } ||
+            !manifestSha256.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F'))
+            throw new ArgumentException("Dataset manifest SHA-256 is invalid.", nameof(manifestSha256));
+        StructuredPolicyCheckpointStore.ValidateHyperparameters(hyperparameters);
+        return "structured-policy-" + StructuredPolicyCheckpointStore.HashText(
+            manifestSha256.ToLowerInvariant() + "\n" + CanonicalHyperparameters(hyperparameters)).Substring(0, 24);
     }
 
     private static string CanonicalHyperparameters(StructuredPolicyHyperparameters value) =>
