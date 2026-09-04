@@ -161,6 +161,9 @@ public sealed partial class NativeShippingSourceGuardTests
     public void SleepExecutorNonShippingMenuPostSleepFailsClosed()
     {
         var source = RuntimeHarnessSource;
+        Assert.Contains("menu is SaveGameMenu || Game1.game1.IsSaving || SaveGame.IsProcessing", source, StringComparison.Ordinal);
+        Assert.Contains("native_save_not_completed", source, StringComparison.Ordinal);
+        Assert.Contains("PostSleepWaitTicks > 1800", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_menu_not_closed", source, StringComparison.Ordinal);
         Assert.Contains("PostSleepWaitTicks", source, StringComparison.Ordinal);
         Assert.Contains("PostSleepWaitTicks > 600", source, StringComparison.Ordinal);

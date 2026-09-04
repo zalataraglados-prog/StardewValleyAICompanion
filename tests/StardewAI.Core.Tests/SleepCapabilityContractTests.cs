@@ -48,6 +48,11 @@ public sealed class SleepCapabilityContractTests
         Assert.Contains(".OrderBy(tile => tile == startTile ? 0 : 1)", source, StringComparison.Ordinal);
         Assert.Contains("NativeNewDayWorldStable(sleep)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.timeOfDay >= 600 && Game1.timeOfDay < 700", source, StringComparison.Ordinal);
+        Assert.Contains("sleep.SawNativeSaveCommit", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.newDaySync.hasSaved()", source, StringComparison.Ordinal);
+        Assert.Contains("!Game1.game1.IsSaving", source, StringComparison.Ordinal);
+        Assert.Contains("!SaveGame.IsProcessing", source, StringComparison.Ordinal);
+        Assert.Contains("native_save_committed", source, StringComparison.Ordinal);
         Assert.Contains("native_new_day_world_stable", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_world_not_stable", source, StringComparison.Ordinal);
     }

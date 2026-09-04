@@ -235,6 +235,12 @@ public sealed partial class ModEntry : Mod
 
         if (sleep.Stage == SleepStage.WaitForPostSleepStable)
         {
+            if (Game1.newDaySync.hasInstance() && Game1.newDaySync.hasSaved() &&
+                !Game1.game1.IsSaving && !SaveGame.IsProcessing)
+            {
+                sleep.SawNativeSaveCommit = true;
+            }
+
             var menu = Game1.activeClickableMenu;
             if (menu is null)
             {
@@ -262,8 +268,8 @@ public sealed partial class ModEntry : Mod
                     return;
                 }
                 var reasons = sleep.Mode == SleepMode.Tent
-                    ? new[] { "SleepTent_Yes_confirmed", "temporary_bed_flag_observed", "new_day_observed", "same_location_and_tile_wake_observed", "post_sleep_menu_closed", "temporary_bed_flag_reset", "tent_destroyed_overnight" }
-                    : new[] { "sleep_yes_confirmed", "new_day_observed", "post_sleep_menu_closed", "native_new_day_world_stable" };
+                    ? new[] { "SleepTent_Yes_confirmed", "temporary_bed_flag_observed", "new_day_observed", "native_save_committed", "same_location_and_tile_wake_observed", "post_sleep_menu_closed", "temporary_bed_flag_reset", "tent_destroyed_overnight" }
+                    : new[] { "sleep_yes_confirmed", "new_day_observed", "native_save_committed", "post_sleep_menu_closed", "native_new_day_world_stable" };
                 CompleteSleep(sleep, "verified", reasons);
                 return;
             }
@@ -271,6 +277,16 @@ public sealed partial class ModEntry : Mod
             if (menu is ShippingMenu shippingMenu)
             {
                 TickShipSummaryClosePhase(sleep, shippingMenu);
+                return;
+            }
+
+            if (menu is SaveGameMenu || Game1.game1.IsSaving || SaveGame.IsProcessing)
+            {
+                sleep.PostSleepWaitTicks++;
+                if (sleep.PostSleepWaitTicks > 1800)
+                {
+                    CompleteBlockedSleep(sleep, "native_save_not_completed");
+                }
                 return;
             }
 
@@ -579,7 +595,10 @@ public sealed partial class ModEntry : Mod
                 !location!.largeTerrainFeatures.Any(feature => feature.GetType() == typeof(Tent) && feature.Tile == anchor.ToVector2())
             : Utility.getHomeOfFarmer(Game1.player) is { } home &&
                 ReferenceEquals(location, home) && ReferenceEquals(Game1.player.currentLocation, home);
-        return expectedLocation && Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
+        return sleep.SawNativeSaveCommit &&
+            !Game1.game1.IsSaving &&
+            !SaveGame.IsProcessing &&
+            expectedLocation && Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
             Game1.timeOfDay >= 600 && Game1.timeOfDay < 700 &&
             !Game1.eventUp &&
             Game1.activeClickableMenu is null &&

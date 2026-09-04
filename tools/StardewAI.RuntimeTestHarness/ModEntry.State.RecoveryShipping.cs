@@ -76,6 +76,7 @@ public sealed partial class ModEntry : Mod
         public int ConfirmReadyWaitTicks { get; set; }
         public int PromptCloseWaitTicks { get; set; }
         public int PostSleepWaitTicks { get; set; }
+        public bool SawNativeSaveCommit { get; set; }
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; }
         public ShipSummaryClosePhase SummaryPhase { get; set; }
