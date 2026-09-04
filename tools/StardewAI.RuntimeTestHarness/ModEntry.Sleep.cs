@@ -242,6 +242,10 @@ public sealed partial class ModEntry : Mod
             }
 
             var menu = Game1.activeClickableMenu;
+            if (menu is not DialogueBox && sleep.PostSleepDialogueMenu is not null)
+            {
+                ResetPostSleepDialogueInput(sleep);
+            }
             if (menu is null)
             {
                 if (!NativeNewDayWorldStable(sleep))
@@ -268,15 +272,36 @@ public sealed partial class ModEntry : Mod
                     return;
                 }
                 var reasons = sleep.Mode == SleepMode.Tent
-                    ? new[] { "SleepTent_Yes_confirmed", "temporary_bed_flag_observed", "new_day_observed", "native_save_committed", "same_location_and_tile_wake_observed", "post_sleep_menu_closed", "temporary_bed_flag_reset", "tent_destroyed_overnight" }
-                    : new[] { "sleep_yes_confirmed", "new_day_observed", "native_save_committed", "post_sleep_menu_closed", "native_new_day_world_stable" };
-                CompleteSleep(sleep, "verified", reasons);
+                    ? new List<string> { "SleepTent_Yes_confirmed", "temporary_bed_flag_observed", "new_day_observed", "native_save_committed", "same_location_and_tile_wake_observed", "post_sleep_menu_closed", "temporary_bed_flag_reset", "tent_destroyed_overnight" }
+                    : new List<string> { "sleep_yes_confirmed", "new_day_observed", "native_save_committed", "post_sleep_menu_closed", "native_new_day_world_stable" };
+                if (sleep.SawPostSleepDialogue)
+                {
+                    reasons.Add("post_sleep_dialogue_advanced_natively");
+                }
+                CompleteSleep(sleep, "verified", reasons.ToArray());
                 return;
             }
 
             if (menu is ShippingMenu shippingMenu)
             {
                 TickShipSummaryClosePhase(sleep, shippingMenu);
+                return;
+            }
+
+            if (menu is DialogueBox postSleepDialogue)
+            {
+                if (!CanAdvancePostSleepDialogue(sleep, postSleepDialogue))
+                {
+                    CompleteBlockedSleep(
+                        sleep,
+                        "post_sleep_dialogue_unsafe:isQuestion=" + postSleepDialogue.isQuestion +
+                        ";responses=" + (postSleepDialogue.responses?.Length ?? 0) +
+                        ";eventUp=" + Game1.eventUp +
+                        ";characterDialogue=" + (postSleepDialogue.characterDialogue is not null));
+                    return;
+                }
+
+                TickPostSleepDialogue(sleep, postSleepDialogue);
                 return;
             }
 
@@ -375,6 +400,117 @@ public sealed partial class ModEntry : Mod
 
         TryApplySmapiButtonOverride(SButton.Y, pressed: false, out _);
         sleep.SleepConfirmHeld = false;
+    }
+
+    private void TickPostSleepDialogue(ActiveSleep sleep, DialogueBox dialogue)
+    {
+        sleep.PostSleepWaitTicks++;
+        if (sleep.PostSleepWaitTicks > 1800)
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_dialogue_not_closed");
+            return;
+        }
+
+        if (!ReferenceEquals(sleep.PostSleepDialogueMenu, dialogue))
+        {
+            ResetPostSleepDialogueInput(sleep);
+            sleep.PostSleepDialogueMenu = dialogue;
+            sleep.PostSleepDialoguePhase = PostSleepDialoguePhase.WaitReady;
+            sleep.PostSleepDialoguePhaseTicks = 0;
+            sleep.SawPostSleepDialogue = true;
+        }
+
+        switch (sleep.PostSleepDialoguePhase)
+        {
+            case PostSleepDialoguePhase.WaitReady:
+                if (dialogue.transitioning || dialogue.safetyTimer > 0)
+                {
+                    sleep.PostSleepDialoguePhaseTicks++;
+                    return;
+                }
+
+                sleep.PostSleepDialoguePhase = PostSleepDialoguePhase.Press;
+                sleep.PostSleepDialoguePhaseTicks = 0;
+                break;
+            case PostSleepDialoguePhase.Press:
+            case PostSleepDialoguePhase.Release:
+                break;
+            case PostSleepDialoguePhase.WaitEffect:
+                sleep.PostSleepDialoguePhaseTicks++;
+                if (!dialogue.transitioning && dialogue.safetyTimer <= 0 &&
+                    sleep.PostSleepDialoguePhaseTicks > 8)
+                {
+                    sleep.PostSleepDialoguePhase = PostSleepDialoguePhase.WaitReady;
+                    sleep.PostSleepDialoguePhaseTicks = 0;
+                }
+                break;
+        }
+    }
+
+    private void ApplyPostSleepDialogueInput(ActiveSleep sleep)
+    {
+        if (Game1.activeClickableMenu is not DialogueBox dialogue ||
+            !ReferenceEquals(dialogue, sleep.PostSleepDialogueMenu))
+        {
+            return;
+        }
+
+        if (sleep.PostSleepDialoguePhase == PostSleepDialoguePhase.Press)
+        {
+            if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
+            {
+                CompleteBlockedSleep(sleep, "post_sleep_dialogue_press_failed:" + pressReason);
+                return;
+            }
+
+            sleep.PostSleepDialogueButtonHeld = true;
+            sleep.PostSleepDialoguePhase = PostSleepDialoguePhase.Release;
+            return;
+        }
+
+        if (sleep.PostSleepDialoguePhase != PostSleepDialoguePhase.Release)
+        {
+            return;
+        }
+
+        if (!TryApplySmapiLeftButtonOverride(pressed: false, out var releaseReason))
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_dialogue_release_failed:" + releaseReason);
+            return;
+        }
+
+        sleep.PostSleepDialogueButtonHeld = false;
+        sleep.PostSleepDialoguePressAttempts++;
+        if (sleep.PostSleepDialoguePressAttempts > 32)
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_dialogue_press_budget_exhausted");
+            return;
+        }
+
+        sleep.PostSleepDialoguePhase = PostSleepDialoguePhase.WaitEffect;
+        sleep.PostSleepDialoguePhaseTicks = 0;
+    }
+
+    private void ResetPostSleepDialogueInput(ActiveSleep sleep)
+    {
+        if (sleep.PostSleepDialogueButtonHeld)
+        {
+            TryApplySmapiLeftButtonOverride(pressed: false, out _);
+        }
+
+        sleep.PostSleepDialogueButtonHeld = false;
+        sleep.PostSleepDialogueMenu = null;
+        sleep.PostSleepDialoguePhase = PostSleepDialoguePhase.None;
+        sleep.PostSleepDialoguePhaseTicks = 0;
+    }
+
+    private static bool CanAdvancePostSleepDialogue(ActiveSleep sleep, DialogueBox dialogue)
+    {
+        return Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
+            !dialogue.isQuestion &&
+            (dialogue.responses is null || dialogue.responses.Length == 0) &&
+            !Game1.eventUp &&
+            dialogue.characterDialogue is null;
     }
 
     private void TickShipSummaryClosePhase(ActiveSleep sleep, ShippingMenu shippingMenu)
@@ -608,14 +744,23 @@ public sealed partial class ModEntry : Mod
 
     private static bool SleepPromptOpen()
     {
-        return Game1.activeClickableMenu is DialogueBox && string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal);
+        return Game1.activeClickableMenu is DialogueBox dialogue &&
+            IsExactSleepPrompt(dialogue, "Sleep");
     }
 
     private static bool SleepPromptOpen(ActiveSleep sleep)
     {
         var expected = sleep.Mode == SleepMode.Tent ? "SleepTent" : "Sleep";
-        return Game1.activeClickableMenu is DialogueBox &&
-            string.Equals(Game1.currentLocation?.lastQuestionKey, expected, StringComparison.Ordinal);
+        return Game1.activeClickableMenu is DialogueBox dialogue &&
+            IsExactSleepPrompt(dialogue, expected);
+    }
+
+    private static bool IsExactSleepPrompt(DialogueBox dialogue, string expectedQuestionKey)
+    {
+        return dialogue.isQuestion &&
+            dialogue.responses is { Length: > 0 } &&
+            dialogue.responses.Any(response => string.Equals(response.responseKey, "Yes", StringComparison.Ordinal)) &&
+            string.Equals(Game1.currentLocation?.lastQuestionKey, expectedQuestionKey, StringComparison.Ordinal);
     }
 
     private static string SleepRequestedEffect(ActiveSleep sleep)

@@ -20,11 +20,14 @@ public sealed class SleepCapabilityContractTests
             "src", "StardewAI.TransparentBridge", "Adapters", "MenuReadAdapter.cs"));
         var sleepPromptContext = Slice(source, "private static object ReadSleepPromptContext", "private static object ReadIdentity");
 
-        Assert.Contains("promptOpen = menu is DialogueBox", sleepPromptContext, StringComparison.Ordinal);
+        Assert.Contains("promptOpen = menu is DialogueBox dialogueBox && IsExactSleepPrompt(dialogueBox, \"Sleep\")", sleepPromptContext, StringComparison.Ordinal);
         Assert.Contains("can_confirm_sleep = promptOpen", sleepPromptContext, StringComparison.Ordinal);
         Assert.Contains("confirm_executor_enabled = promptOpen", sleepPromptContext, StringComparison.Ordinal);
         Assert.Contains("confirm_action_key = \"Sleep_Yes\"", sleepPromptContext, StringComparison.Ordinal);
         Assert.DoesNotContain("sleep_confirm_executor_disabled", sleepPromptContext, StringComparison.Ordinal);
+
+        Assert.Contains("dialogueBox.isQuestion", source, StringComparison.Ordinal);
+        Assert.Contains("response.responseKey, \"Yes\"", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -53,6 +56,9 @@ public sealed class SleepCapabilityContractTests
         Assert.Contains("!Game1.game1.IsSaving", source, StringComparison.Ordinal);
         Assert.Contains("!SaveGame.IsProcessing", source, StringComparison.Ordinal);
         Assert.Contains("native_save_committed", source, StringComparison.Ordinal);
+        Assert.Contains("CanAdvancePostSleepDialogue", source, StringComparison.Ordinal);
+        Assert.Contains("post_sleep_dialogue_advanced_natively", source, StringComparison.Ordinal);
+        Assert.Contains("ApplyPostSleepDialogueInput", source, StringComparison.Ordinal);
         Assert.Contains("native_new_day_world_stable", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_world_not_stable", source, StringComparison.Ordinal);
     }

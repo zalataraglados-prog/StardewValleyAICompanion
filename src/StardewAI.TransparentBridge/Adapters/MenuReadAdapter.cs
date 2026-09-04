@@ -119,14 +119,16 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
         var type = menu.GetType();
         if (menu is DialogueBox dialogueBox)
         {
+            var isSleepPrompt = IsExactSleepPrompt(dialogueBox, "Sleep");
+            var isTentSleepPrompt = IsExactSleepPrompt(dialogueBox, "SleepTent");
             return new
             {
                 is_open = true,
                 type = type.Name,
                 full_type = type.FullName,
                 last_question_key = Game1.currentLocation?.lastQuestionKey,
-                is_sleep_prompt = string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal),
-                is_tent_sleep_prompt = string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal),
+                is_sleep_prompt = isSleepPrompt,
+                is_tent_sleep_prompt = isTentSleepPrompt,
                 event_up = (bool?)Game1.eventUp,
                 dialogue_is_question = (bool?)dialogueBox.isQuestion,
                 dialogue_response_count = (int?)dialogueBox.responses?.Length,
@@ -162,7 +164,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
     private static object ReadSleepPromptContext(IClickableMenu? menu)
     {
         var lastQuestionKey = Game1.currentLocation?.lastQuestionKey;
-        var promptOpen = menu is DialogueBox && string.Equals(lastQuestionKey, "Sleep", StringComparison.Ordinal);
+        var promptOpen = menu is DialogueBox dialogueBox && IsExactSleepPrompt(dialogueBox, "Sleep");
         return new
         {
             prompt_open = promptOpen,
@@ -180,7 +182,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
     private static object ReadTentSleepPromptContext(IClickableMenu? menu)
     {
         var lastQuestionKey = Game1.currentLocation?.lastQuestionKey;
-        var promptOpen = menu is DialogueBox && string.Equals(lastQuestionKey, "SleepTent", StringComparison.Ordinal);
+        var promptOpen = menu is DialogueBox dialogueBox && IsExactSleepPrompt(dialogueBox, "SleepTent");
         return new
         {
             prompt_open = promptOpen,
@@ -193,6 +195,14 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             confirm_action_key = "SleepTent_Yes",
             block_reason = promptOpen ? (string?)null : "tent_sleep_prompt_not_open"
         };
+    }
+
+    private static bool IsExactSleepPrompt(DialogueBox dialogueBox, string expectedQuestionKey)
+    {
+        return dialogueBox.isQuestion &&
+            dialogueBox.responses is { Length: > 0 } &&
+            dialogueBox.responses.Any(response => string.Equals(response.responseKey, "Yes", StringComparison.Ordinal)) &&
+            string.Equals(Game1.currentLocation?.lastQuestionKey, expectedQuestionKey, StringComparison.Ordinal);
     }
 
     private static object ReadIdentity(IClickableMenu menu)

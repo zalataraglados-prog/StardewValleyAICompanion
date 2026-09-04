@@ -170,6 +170,24 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
+    public void SleepExecutorAdvancesOnlySafePostSleepSystemDialogueThroughNativeInput()
+    {
+        var source = RuntimeHarnessSource;
+        var dialogueSlice = Slice(source, "private void TickPostSleepDialogue", "private void TickShipSummaryClosePhase");
+        Assert.Contains("CanAdvancePostSleepDialogue", source, StringComparison.Ordinal);
+        Assert.Contains("!dialogue.isQuestion", dialogueSlice, StringComparison.Ordinal);
+        Assert.Contains("dialogue.responses is null || dialogue.responses.Length == 0", dialogueSlice, StringComparison.Ordinal);
+        Assert.Contains("!Game1.eventUp", dialogueSlice, StringComparison.Ordinal);
+        Assert.Contains("dialogue.characterDialogue is null", dialogueSlice, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiLeftButtonOverride", dialogueSlice, StringComparison.Ordinal);
+        Assert.Contains("PostSleepDialoguePhase.Press", dialogueSlice, StringComparison.Ordinal);
+        Assert.Contains("PostSleepDialoguePhase.Release", dialogueSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("receiveLeftClick", dialogueSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.activeClickableMenu = null", dialogueSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("exitThisMenu", dialogueSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SleepExecutorCompleteSleepAndBlockedSleepReleaseLeftButton()
     {
         var source = RuntimeHarnessSource;

@@ -77,6 +77,12 @@ public sealed partial class ModEntry : Mod
         public int PromptCloseWaitTicks { get; set; }
         public int PostSleepWaitTicks { get; set; }
         public bool SawNativeSaveCommit { get; set; }
+        public bool SawPostSleepDialogue { get; set; }
+        public DialogueBox? PostSleepDialogueMenu { get; set; }
+        public PostSleepDialoguePhase PostSleepDialoguePhase { get; set; }
+        public int PostSleepDialoguePhaseTicks { get; set; }
+        public int PostSleepDialoguePressAttempts { get; set; }
+        public bool PostSleepDialogueButtonHeld { get; set; }
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; }
         public ShipSummaryClosePhase SummaryPhase { get; set; }
@@ -97,6 +103,15 @@ public sealed partial class ModEntry : Mod
         Press,
         Release,
         WaitClose
+    }
+
+    private enum PostSleepDialoguePhase
+    {
+        None,
+        WaitReady,
+        Press,
+        Release,
+        WaitEffect
     }
 
     private enum SleepStage

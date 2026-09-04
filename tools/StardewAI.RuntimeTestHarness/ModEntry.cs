@@ -2469,6 +2469,10 @@ public sealed partial class ModEntry : Mod
                 {
                     ApplyShipSummaryInput(activeSleep);
                 }
+                else if (menu is DialogueBox)
+                {
+                    ApplyPostSleepDialogueInput(activeSleep);
+                }
             }
 
             if (activeJunimoKart is not null && !ApplyJunimoKartInput(activeJunimoKart, out var junimoKartInputReason))
@@ -2536,9 +2540,13 @@ public sealed partial class ModEntry : Mod
             }
             if (sleepObj is not null && sleepObj.Stage == SleepStage.WaitForPostSleepStable)
             {
-                Monitor.Log($"Ship summary input dispatch failed once and was blocked: {ex}", LogLevel.Error);
+                var reason = Game1.activeClickableMenu is ShippingMenu
+                    ? "shipping_summary_input_dispatch_exception:"
+                    : "post_sleep_dialogue_input_dispatch_exception:";
+                Monitor.Log($"Post-sleep menu input dispatch failed once and was blocked: {ex}", LogLevel.Error);
                 ReleaseSmapiLeftButtonOverride();
-                CompleteBlockedSleep(sleepObj, "shipping_summary_input_dispatch_exception:" + ex.GetType().Name);
+                CompleteBlockedSleep(sleepObj, reason + ex.GetType().Name);
+                return;
             }
             var summaryClose = activeShippingSummaryClose;
             if (summaryClose is not null)
