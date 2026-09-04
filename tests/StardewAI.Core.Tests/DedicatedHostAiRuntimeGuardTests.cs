@@ -88,6 +88,10 @@ public sealed class DedicatedHostAiRuntimeGuardTests
             compose,
             StringComparison.Ordinal);
         Assert.Contains(
+            "STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE: \"true\"",
+            compose,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "STARDEWAI_SUPPRESS_LOCAL_RENDER: \"${STARDEWAI_SUPPRESS_LOCAL_RENDER:-1}\"",
             compose,
             StringComparison.Ordinal);
