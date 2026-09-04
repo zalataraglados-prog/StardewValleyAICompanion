@@ -75,6 +75,7 @@ public sealed class DedicatedHostAiRuntimeGuardTests
         var compose = File.ReadAllText(FindRepositoryFile(
             "deploy", "stardew-server", "compose.formal-training.yaml"));
 
+        Assert.Contains("depends_on: !reset {}", compose, StringComparison.Ordinal);
         Assert.Contains(
             "SMAPI_MODS_PATH: \"/data/vanilla-ai-mods\"",
             compose,

@@ -1,5 +1,6 @@
 services:
   server:
+    depends_on: !reset {}
     volumes:
       - ./runtime/releases/${STARDEWAI_RELEASE_ID:?STARDEWAI_RELEASE_ID is required}/mods:/data/vanilla-ai-mods
       - ./runtime/releases/${STARDEWAI_RELEASE_ID:?STARDEWAI_RELEASE_ID is required}/app:/stardewai-app:ro
