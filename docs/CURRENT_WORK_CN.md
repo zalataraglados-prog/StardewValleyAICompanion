@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-09-05 当前权威检查点：r34 round01
+
+- r33 round10 已从 Summer 4 推进到 Summer 5，完成 2 个 verified 主决策和 3 个原生存档边界迭代，事务正常提交；它证明 r33 修正后的 canonical 可以连续第三次进入下一轮。随后 `10b7722` 在不删减 full snapshot 字段的前提下，将同一 `SnapshotEnvelope` 的完整 route connector 候选构建结果缓存，并从缓存按调用上限截取。
+- 默认自主候选集合现在只有一个权威入口；显式目标候选（尤其 `exploration.visit_location`）、校准候选和玩家指令候选不会被空请求擅自纳入。`recovery.stabilize_day` 仅显式加入控制面边界，未写入训练轨迹。
+- 冷启动 Farm full snapshot 默认排序由约 227.9 秒降至 28.266 秒；119 上 `train.server.20260905.r34.plan01` 的室内首次排序为 1.918 秒、室外首次排序为 43.329 秒，随后边界排序为 145.6 毫秒和 9.7 毫秒。透明字段未裁剪，性能收益来自候选派生复用。
+- r34 使用 `formal-r34-10b7722-20260905`、并发 1，4 次迭代完成 2 个主决策和 2 个原生存档边界，产生 `mail.process_letter`、`economy.ship_items`、`mail.process_letter`、`farm.care_for_pets` 四条 applied 策略轨迹。Summer 5 → Summer 6；存档 SHA-256 从 `09bf903b36e1642339784f21a7331d309511280cb96abf458f7f7d8dca86c9a2` 变为 `08b6e014081653f6625ad57106624417e0e02ca5f5778d744a393911f7dc6a49`。
+- 事务状态为 `committed_after_native_save_boundary`；canonical 为 accepted 211 / rejected 0、train / validation / test = 153 / 5 / 53、4783 pairs。checkpoint / manifest SHA-256 为 `b33d54f66fdcbe304e5207043751a0a153dcd45d24064b299903b978d28bd010` / `103770377bdca5b4979bd196ae4756c93e080f8924bc1de136a9bd35cc07c738`，manifest 的 input、horizon、cleaned 和三分区摘要均已复核。
+- 完整制品归档在 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round01-20260905-041036`；远端/本机 189 / 189，缺失、额外、SHA-256 不一致均为 0。正式容器以 exit 0、OOM false 退出，只保留独立观察隧道。
+- 直接下一步：从 Summer 6 存档和当前 canonical 哈希创建 r34 round02 有界计划，继续真实 Product rollout。跨季、跨年、Grandpa 21 和 Companion 适配尚未验收，不得称为全量训练完成。
+
 ## 2026-09-02 issue #89 运行证据新鲜度与 CI 修正
 
 - `native_object_execution.v2` 现由 `RuntimeEvidenceCatalogSource` 冻结运行路径修订、32 个源文件的规范化 SHA-256，以及六个 EVD-271/272/274/276/278/279 运行证据对应的 artifact/source/build identity 和三份精确 DLL SHA-256。未知证据、修订变化、源码漂移或 DLL 身份缺失一律按 stale 关闭 Runtime/Output 准入，不能再因 evidence id 非空而继承 `RuntimeVerified`。

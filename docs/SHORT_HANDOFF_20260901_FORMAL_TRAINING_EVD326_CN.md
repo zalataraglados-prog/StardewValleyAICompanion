@@ -1,8 +1,8 @@
-# StardewAI r29 有序高层队列正式闭环短交接
+# StardewAI r34 有界正式训练短交接
 
 ## 当前结论
 
-队列级决策边界已经修正并在 119 服务器通过有界正式证明。现在不是“每个机械动作调用一次模型”，而是模型一次选择一条有序高层候选队列，C# 编译器和执行器逐候选完成全部机械动作。多日全量长训尚未开始。
+队列级决策边界已经修正，并已在 119 服务器连续跨日提交到 Summer 6。现在不是“每个机械动作调用一次模型”，而是模型一次选择一条有序高层候选队列，C# 编译器和执行器逐候选完成全部机械动作。r34 又消除了同一快照重复构建跨图候选的主要性能浪费；跨季、跨年与 Grandpa 21 全量长训尚未完成。
 
 ## 每次模型决策
 
@@ -62,3 +62,11 @@ round08 在 prepare 阶段发现 round07 的 canonical checkpoint 仍绑定 stag
 同版本工具对历史 canonical 做一次性重建后，200 条样本、0 rejection、142/5/53 与 4367 pairs 均保持不变。round09 随即通过 prepare，完成邮件与两个装箱高层轨迹；睡眠控制步没有调用模型。存档 Summer 3 → Summer 4，事务再次提交，canonical 变为 203 accepted、145/5/53、4547 pairs；checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`。
 
 round09 完整制品已归档到 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r33-round09-20260905-015829`，远端/本机 142 / 142 且三类差异均为 0；正式训练已停止。当前直接下一步是从 Summer 4 做连续有界批次，保持同一队列决策语义和每轮退出门。连续多日、跨季、跨年、Grandpa 21 与 Companion 产品层仍未完成。
+
+## 2026-09-05 接续更新：r34 round01
+
+r33 round10 已将存档从 Summer 4 提交到 Summer 5。`10b7722` 随后缓存同一快照的完整 route connector 候选，并统一默认自主候选入口；没有删减透明字段，也没有把 `exploration.visit_location` 等显式目标错误纳入空请求。`recovery.stabilize_day` 继续只作为控制面边界。
+
+r34 round01 从 Summer 5 推进到 Summer 6，完成 2 个主决策、2 个原生存档边界和 4 条 applied Product 策略轨迹。当前 canonical 为 211 accepted / 0 rejected、153/5/53、4783 pairs；checkpoint / manifest SHA-256 为 `b33d54f66fdcbe304e5207043751a0a153dcd45d24064b299903b978d28bd010` / `103770377bdca5b4979bd196ae4756c93e080f8924bc1de136a9bd35cc07c738`。室外首次排序降至 43.329 秒，随后同快照边界为 145.6/9.7 毫秒。
+
+归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round01-20260905-041036`，远端/本机 189 / 189，缺失、额外和摘要不一致均为 0。正式容器已正常停止。直接下一步是从 Summer 6 和当前 canonical 创建 r34 round02；每轮仍必须有退出条件、原生保存、事务提交、0 unresolved pending 与本机哈希归档。

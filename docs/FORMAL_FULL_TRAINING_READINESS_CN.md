@@ -1,5 +1,15 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-05 r34 候选性能门与连续批次结果
+
+`10b7722` 只复用由同一不可变快照派生出的 route connector 候选，不缓存跨快照事实，也不裁剪透明字段。默认自主候选由单一权威集合提供，显式目标、校准和玩家指令候选继续失败关闭；`recovery.stabilize_day` 只在控制面显式补入，不参与策略训练。game-free governance 18/18、Backend 172/172 和针对性缓存/候选边界测试通过；真实 119 运行继续承担游戏程序集相关验证。
+
+冷启动 Farm full snapshot 默认排序从约 227.9 秒降至 28.266 秒，119 室外首次排序为 43.329 秒，后续同快照边界排序为 145.6/9.7 毫秒。该结果解除“每次排序重复构建全部跨图连接候选”的 I/O/CPU 瓶颈，但不改变策略调用边界，也不代表可无界运行。
+
+`train.server.20260905.r34.plan01` 从 Summer 5 推进至 Summer 6，以 4 次迭代完成 2 个主决策、2 个原生存档边界和 4 条 applied Product 策略轨迹。事务为 `committed_after_native_save_boundary`，规范数据为 accepted 211 / rejected 0、153 / 5 / 53、4783 pairs；checkpoint / manifest SHA-256 为 `b33d54f66fdcbe304e5207043751a0a153dcd45d24064b299903b978d28bd010` / `103770377bdca5b4979bd196ae4756c93e080f8924bc1de136a9bd35cc07c738`。原生保存完成、存档哈希变化、六个数据摘要、0 unresolved Product pending 与正式容器正常退出均已复核。
+
+完整制品已归档到 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round01-20260905-041036`，远端/本机 189 / 189 且三类差异为 0。下一批继续沿用并发 1、静音后台、计划退出、失败不提升和逐轮归档；跨季、跨年、Grandpa 21 与 Companion 产品层仍是未完成准入。
+
 ## 2026-09-02 运行证据强绑定准入
 
 正式训练不得把“存在 evidence id”视为 Runtime/Output 已验证。`native_object_execution.v2` 的当前准入同时要求：证据 ID 已登记、运行路径修订完全匹配、32 个源文件的规范化 SHA-256 未漂移、artifact/source/build identity 完整，以及 RuntimeTestHarness、Contracts、TransparentBridge 三份运行 DLL 的 SHA-256 与登记值一致。任一项未知、缺失或变化均 fail closed，必须重新构建并取得新的原生运行证据后才能恢复准入。
