@@ -885,3 +885,14 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 完整证据已归档到 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r32-round07-20260905-011000`；远端与本机 146 / 146 文件逐一 SHA-256 一致。服务器上的正式训练、游戏与执行器进程随后已停止，既有观察隧道不属于训练进程。
 - round05/round06 均保持 `staged_not_committed`，没有更新 canonical：前者暴露保存完成判定过早，后者暴露 Summer 2 地震隔夜对话。它们是失败诊断证据，不得计为训练成功轮次。
 - 该结果只解除“正式事务无法跨原生存档边界提交”这一硬阻塞，不代表全量训练或完全体陪玩完成。下一步是以 Summer 3 存档和上述 canonical 哈希创建下一份有界计划，继续真实 Product rollout；每轮必须在退出前确认无未解决 Product pending、原生存档已持久化、数据集/checkpoint/manifest 哈希一致并完成本机归档。
+
+## 2026-09-05 当前权威检查点：r33 round09
+
+- round08 在执行动作前被 `formal_checkpoint_dataset_binding_mismatch` 拒绝。根因是 round07 把 staging 数据文件复制到了 canonical，但 manifest 和 checkpoint 内容中的绝对路径未重绑定；该轮未启动 Product Executor/训练循环，也未修改 canonical，7 个失败控制制品已完成本机 SHA-256 归档。
+- `7b1da8d` 修复事务提升：所有 manifest digest 路径必须位于 staging 或 canonical 数据根，提升后统一重绑定到 canonical；manifest 哈希、checkpoint ID/绑定和最终训练报告随之重算。新增回归直接证明提升后的产物满足下一轮绑定门。
+- 一次性 canonical 重建保持 200 accepted / 0 rejected、142 / 5 / 53 和 4367 pairs 不变；6 个 manifest 数据摘要逐一验证，修复证据 8 / 8 文件远端与本机哈希一致。
+- `train.server.20260905.r33.plan09` 随后直接通过 prepare，并以并发 1 完成 3 次迭代：同一高层队列的邮件与两个装箱候选形成 3 条 fresh/success 轨迹，睡眠边界不调用策略模型、不写控制面轨迹。
+- 原生存档从 Summer 3 推进到 Summer 4，SHA-256 从 `a4af6a79e6138085b07e7c63c7977fdc1c12e1bf34df28955c6a7614816af27b` 变为 `84872422a42380d669856693052cf58606273b58aed20566a9732c9751c69493`；日志明确记录一次无异常原生保存。
+- canonical 数据变为 accepted 203 / rejected 0、train / validation / test = 145 / 5 / 53、train pairs = 4547；checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`。
+- 完整归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r33-round09-20260905-015829`，远端/本机 142 / 142，三类差异均为 0。Core `2274/2274`、Backend `171/171`、Release 0 warnings / 0 errors；正式训练进程已停止。
+- 下一步是从 Summer 4 与当前 canonical 哈希开始连续有界批次，并观察队列失效、长期回报、JSONL 恢复和累计 I/O；在跨季、跨年、Grandpa 21 与 Companion 适配验收前仍不得宣称全量训练完成。

@@ -197,3 +197,9 @@ r29 当前已经实现候选边界校验，但该边界必须继续作为长训�
 ## 9. 当前结论
 
 动作语义分母已经不再是主风险。r29 已把一个高频、昂贵而且会污染策略语义的控制面错误从真实长跑现场前移成明确架构规则：**fresh snapshot 不等于 fresh policy decision**。下一阶段应继续让真实训练运行，把队列失效、长回报、数据恢复、证据新鲜度和长期性能问题逐步前移到静态/单元/短 E3 即可发现。
+
+## 10. 2026-09-05 动态闭合：FTB-010 canonical 路径残留
+
+round07 的事务复制了 staging 数据与 checkpoint，却保留了 `training-transaction` 绝对路径。round08 的下一轮 prepare 因 `formal_checkpoint_dataset_binding_mismatch` 在动作前失败关闭；该门避免了使用无法独立存续的 canonical checkpoint。
+
+`7b1da8d` 已在事务提交时重绑定 manifest 的 input/horizon/cleaned/partition 路径，重算 manifest SHA-256、checkpoint ID/绑定与最终报告身份，并增加“提升后可供下一轮使用”回归。round09 已从修复后的 canonical 直接通过 prepare、完成原生跨日并再次提交；6 个 manifest digest、0 unresolved Product pending 和 142 / 142 本机归档均通过。该问题标记为动态闭合，不再列为下一批阻塞项。

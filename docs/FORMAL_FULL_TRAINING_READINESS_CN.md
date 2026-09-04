@@ -700,3 +700,13 @@ required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结�
 round05 和 round06 分别因保存完成判定过早、隔夜地震系统对话未推进而失败，二者均保持 `staged_not_committed`，不能并入成功训练证据。现有结果证明单轮正式事务可以可靠提交，但不证明策略已经完成全量训练，也不覆盖连续多日、跨季、跨年、第三年 21 分和 Companion 人类适应层。
 
 下一准入阶段固定为可恢复的连续有界批次：从 Summer 3 的已提交存档和 canonical 哈希开始，每批只允许一个训练实例；达到计划日数或 attempt 上限即退出。成功退出必须同时满足主动作均有 fresh/verified Product 回执、无未解决 `*.pending.json`、原生存档哈希发生预期变化、事务已提交、canonical dataset/checkpoint/manifest 相互一致、全部制品归档并通过远端到本机 SHA-256 核对。任一门失败则保留 staged 诊断且不得推进基线。
+
+## 9. 2026-09-05 r33 连续事务准入结果
+
+round08 首次用 round07 的 canonical 产物准备下一轮时，被 `formal_checkpoint_dataset_binding_mismatch` 在动作执行前拒绝。动态证据证明提升逻辑只复制文件，却没有把 manifest/checkpoint 内的 staging 绝对路径改为 canonical 路径。该失败没有启动 Product 执行与训练循环，canonical 未被该轮推进。
+
+`7b1da8d` 将重绑定纳入事务提交本身：manifest 的 input、horizon、cleaned 和三分区路径必须位于受控根内并统一重绑定；canonical manifest SHA-256、checkpoint dataset binding、checkpoint ID 和最终报告身份一起更新。回归为 Core 2274/2274、Backend 171/171、Release 0 warnings / 0 errors。历史 canonical 经同一版本的 PolicyDataset/PolicyModel 工具重建，样本数、切分、pairs 与模型指标均未漂移，6 个 digest 全部通过。
+
+round09 随后证明下一轮 prepare 与提交均成立：3 个高层候选轨迹全部 fresh/success；原生睡眠控制步不调用策略模型；Summer 3 → Summer 4 且存档树 SHA-256 改变；事务为 `committed_after_native_save_boundary`。最终为 accepted 203 / rejected 0、145 / 5 / 53、4547 pairs，checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`，未解决 Product pending 为 0。
+
+该结果把“单轮可提交”提升为“提交结果可直接供下一轮使用”，允许进入连续有界批次；仍不等于跨季/跨年/Grandpa 21 全量长训通过。下一批必须继续维持并发 1、静音后台、失败不提升、原生保存、canonical 内部绑定验证和本机逐文件归档。

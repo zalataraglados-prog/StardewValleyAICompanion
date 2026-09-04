@@ -1,12 +1,12 @@
-# StardewAI 文档权威层级与维护状态（2026-09-02 r29）
+# StardewAI 文档权威层级与维护状态（2026-09-05 r33）
 
-本文解决仓库文档随着 EVD/rN 快速推进而产生的“历史段落仍存在，但容易被搜索引擎或 Agent 当作当前状态”问题。当前权威层已经从 r25 前移到 **r29 有序高层队列边界 + issue #89 运行证据新鲜度治理**。
+本文解决仓库文档随着 EVD/rN 快速推进而产生的“历史段落仍存在，但容易被搜索引擎或 Agent 当作当前状态”问题。当前权威层是 **r29 有序高层队列边界 + issue #89 运行证据新鲜度治理 + r33 可连续提交的原生跨日训练事务**。
 
 ## 1. 当前权威状态
 
 当前唯一顶层口径：
 
-- release/run：`formal-r29-20260901` / `train.server.20260901.r29`
+- 当前 release/run：`formal-r33-7b1da8d-20260905` / `train.server.20260905.r33.plan09`
 - registered / semantic / compiler-bound：228 / 230 / 227
 - Harness / Product Executor：145 / 145
 - five-gate 历史动作口径 / training allowlist：151 / 62；其中 runtime evidence freshness 正在按 #89 逐域强绑定迁移，不能把历史 151 自动解释成全部已完成新鲜度强绑定
@@ -16,18 +16,20 @@
 - compiler：`action_queue.v1`
 - executor：`product_executor.v1`
 - 当前策略边界：**一次模型排序选择一条有序高层候选队列；fresh snapshot 只在候选边界和 continuation 中做本地确定性校验/重编译，不自动重新调用模型**
-- r29 实证：1 次策略排序 / 4 个高层候选 / 9 个机械动作 / 3 次候选边界刷新 / 5 次 continuation 刷新 / 后 8 次刷新均 `policy_model_invoked=false` / 4 条高层策略轨迹
-- 当前结论：正式 Product 训练闭环和队列级决策边界均已有真实服务器证据；连续多日/跨季/跨年/Grandpa 21 长训尚未完成
-- 当前外部硬门：服务器磁盘仍不足以支持无界长训；修正前训练根已归档并完成 910/910 SHA-256 校验
+- r29 决策边界实证：1 次策略排序 / 4 个高层候选 / 9 个机械动作 / 3 次候选边界刷新 / 5 次 continuation 刷新 / 后 8 次刷新均 `policy_model_invoked=false` / 4 条高层策略轨迹
+- r33 连续事务实证：round08 在动作前失败关闭并暴露 staging 路径残留；`7b1da8d` 修复 canonical 重绑定；round09 从上一轮 canonical 直接准入，Summer 3 → Summer 4，再次完成原生存档和事务提交
+- 当前 canonical：203 accepted / 0 rejected，145 / 5 / 53，4547 pairs；checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`
+- 当前结论：正式 Product 训练、队列级决策边界、原生跨日事务及“提交产物直接供下一轮使用”均有真实服务器证据；连续多日批次/跨季/跨年/Grandpa 21 长训尚未完成
+- 当前运行边界：服务器正式训练进程已停止；磁盘只允许有退出条件的有界批次，不允许无界长训
 
 ## 2. 文档读取优先级
 
 后续 ChatGPT / Codex / 人工审计按下列顺序读取：
 
-1. `README.md` —— 对外当前状态、产品定位、r29 决策边界和 evidence freshness；
-2. `docs/CURRENT_WORK_CN.md` 顶部 —— 当前 issue #89 与 r29 时序接续；
-3. `docs/SHORT_HANDOFF_20260901_FORMAL_TRAINING_EVD326_CN.md` —— 当前已经更新为 r29 技术短交接，文件名保留历史 EVD326 仅为路径兼容；
-4. `docs/FORMAL_FULL_TRAINING_READINESS_CN.md` —— 当前训练准入、r29 队列边界与 #89 新鲜度门；
+1. `README.md` —— 对外当前状态、产品定位、r29 决策边界、evidence freshness 和 r33 连续事务；
+2. `docs/CURRENT_WORK_CN.md` 最新日期章节 —— 当前 r33 状态与直接下一步；
+3. `docs/SHORT_HANDOFF_20260901_FORMAL_TRAINING_EVD326_CN.md` —— 当前已经接续到 r33，文件名保留历史 EVD326 仅为路径兼容；
+4. `docs/FORMAL_FULL_TRAINING_READINESS_CN.md` —— 当前训练准入、r33 原生存档/canonical 事务与 #89 新鲜度门；
 5. `docs/FORMAL_TRAINING_BUG_FORECAST_20260901_CN.md` —— 主动静态审计、bug 预测与已闭合训练控制面问题；
 6. `docs/FULL_SYSTEM_COMPLETION_PLAN_CN.md` —— 完全体工程路线；顶部最新章节优先，旧 EVD 章节仅作历史；
 7. `docs/FUTURE_COMPANION_ARCHITECTURE_CN.md` —— 完全体产品不可返工约束；

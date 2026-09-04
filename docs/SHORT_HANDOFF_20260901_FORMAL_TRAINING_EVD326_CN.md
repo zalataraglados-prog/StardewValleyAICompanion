@@ -54,3 +54,11 @@ r32 已越过原生存档事务硬阻塞。部署时 `e0a6221` 要求真实 `new
 本机归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r32-round07-20260905-011000`；远端与本机均为 146 个文件，缺失、额外和 SHA-256 不一致均为 0。正式训练、游戏与执行器进程已停止；既有观察隧道仍独立运行。round05/round06 是未提交的失败诊断轮次，不得计入训练成果。
 
 直接下一步：以 Summer 3 存档和 r32 round07 canonical 哈希生成下一份有界计划，继续真实 Product rollout。不得回到动作逐条调用模型；不得跳过原生存档边界；不得在未解决 Product pending、事务未提交或归档哈希未核对时推进 canonical。当前是“第一轮完整事务成功”，不是“全量训练完成”。
+
+## 2026-09-05 接续更新：r33 round09
+
+round08 在 prepare 阶段发现 round07 的 canonical checkpoint 仍绑定 staging manifest 路径，因 `formal_checkpoint_dataset_binding_mismatch` 失败关闭；没有执行动作或推进 canonical。`7b1da8d` 已把 manifest 全部 digest 路径、manifest hash、checkpoint ID/绑定和最终报告身份的 canonical 重绑定纳入正式事务提交，并增加“提升后可直接进入下一轮”的回归。
+
+同版本工具对历史 canonical 做一次性重建后，200 条样本、0 rejection、142/5/53 与 4367 pairs 均保持不变。round09 随即通过 prepare，完成邮件与两个装箱高层轨迹；睡眠控制步没有调用模型。存档 Summer 3 → Summer 4，事务再次提交，canonical 变为 203 accepted、145/5/53、4547 pairs；checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`。
+
+round09 完整制品已归档到 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r33-round09-20260905-015829`，远端/本机 142 / 142 且三类差异均为 0；正式训练已停止。当前直接下一步是从 Summer 4 做连续有界批次，保持同一队列决策语义和每轮退出门。连续多日、跨季、跨年、Grandpa 21 与 Companion 产品层仍未完成。

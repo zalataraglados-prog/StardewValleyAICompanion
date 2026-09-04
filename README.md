@@ -20,7 +20,7 @@ StardewAI 是一个面向《Stardew Valley》的分层 AI Companion / Agent 工�
 
 ## 当前状态
 
-截至 2026-09-05，公开 `main` 已进入 **r32 原生跨日训练事务** 阶段；以下动作覆盖数沿用 r25 冻结基线，运行证据治理沿用 r29 / issue #89 强绑定口径：
+截至 2026-09-05，公开 `main` 已进入 **r33 可连续提交的原生跨日训练事务** 阶段；以下动作覆盖数沿用 r25 冻结基线，运行证据治理沿用 r29 / issue #89 强绑定口径：
 
 - 228 registered actions
 - 230 semantic actions
@@ -106,7 +106,20 @@ r32 round07（2026-09-05）的最新有界训练实证：
 - checkpoint SHA-256 = `4f937ec73f2a0f58bdac00ff9345fd4fbcc201010d627b53939a132357a2181f`；
 - 远端与本机归档逐文件校验为 146 / 146，缺失、额外、哈希不一致均为 0。
 
-当前已经证明“真实 Product 动作 → 原生跨日存档 → 事务提交 → dataset rebuild → structured checkpoint 与 manifest/hash 更新”的单轮闭环成立，但**连续多日、跨季、跨年和第三年 Grandpa 21 分长跑尚未完成**，因此不能把当前状态描述成“全量训练完成”。服务器上的正式训练进程已在证据抓取后停止；下一轮必须从已提交的 Summer 3 存档和 canonical 哈希继续，并继续使用有退出条件的有界计划。
+round07 首次证明“真实 Product 动作 → 原生跨日存档 → 事务提交 → dataset rebuild → structured checkpoint 与 manifest/hash 更新”的单轮闭环成立。下一轮 prepare 随即发现 canonical manifest/checkpoint 内仍保留 staging 绝对路径；round08 因 `formal_checkpoint_dataset_binding_mismatch` 在执行任何动作前失败关闭，canonical 未被该轮修改。
+
+### r33 的连续轮次证明
+
+`7b1da8d` 将事务提升改为：重绑定 manifest 内全部数据文件到 canonical 根，重算 manifest 哈希、checkpoint ID 与最终报告身份。一次性修复没有改变样本集合（200 accepted / 0 rejected、142/5/53、4367 pairs）。随后 `formal-r33-7b1da8d-20260905 / train.server.20260905.r33.plan09` 通过下一轮准入并完成：
+
+- 3 次外层迭代、1 次 Product 执行请求；同一有序高层队列形成 `mail.process_letter` 和两个 `economy.ship_items` 轨迹，均为 fresh/success；
+- 睡眠控制步 `policy_model_invoked=false`，未写入策略轨迹；
+- Summer 3 → Summer 4，存档树 SHA-256 从 `a4af6a79e6138085b07e7c63c7977fdc1c12e1bf34df28955c6a7614816af27b` 变为 `84872422a42380d669856693052cf58606273b58aed20566a9732c9751c69493`；
+- 正式数据集 accepted 203 / rejected 0，train / validation / test = 145 / 5 / 53，train pairs = 4547；
+- canonical checkpoint / manifest SHA-256 分别为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`；
+- 6 个 manifest 数据摘要全部验证，未解决 Product pending 为 0；远端与本机归档 142 / 142，缺失、额外、哈希不一致均为 0。
+
+这证明 canonical 产物可以直接进入下一轮并再次提交，但**连续多日批次、跨季、跨年和第三年 Grandpa 21 分长跑仍未完成**，不能描述为“全量训练完成”。服务器上的正式训练进程已停止；下一批仍须使用有退出条件的计划、并发 1、原生存档边界和逐文件本机归档。
 
 ## 设计原则
 
