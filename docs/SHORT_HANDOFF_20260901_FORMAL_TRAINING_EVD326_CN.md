@@ -70,3 +70,9 @@ r33 round10 已将存档从 Summer 4 提交到 Summer 5。`10b7722` 随后缓存
 r34 round01 从 Summer 5 推进到 Summer 6，完成 2 个主决策、2 个原生存档边界和 4 条 applied Product 策略轨迹。当前 canonical 为 211 accepted / 0 rejected、153/5/53、4783 pairs；checkpoint / manifest SHA-256 为 `b33d54f66fdcbe304e5207043751a0a153dcd45d24064b299903b978d28bd010` / `103770377bdca5b4979bd196ae4756c93e080f8924bc1de136a9bd35cc07c738`。室外首次排序降至 43.329 秒，随后同快照边界为 145.6/9.7 毫秒。
 
 归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round01-20260905-041036`，远端/本机 189 / 189，缺失、额外和摘要不一致均为 0。正式容器已正常停止。直接下一步是从 Summer 6 和当前 canonical 创建 r34 round02；每轮仍必须有退出条件、原生保存、事务提交、0 unresolved pending 与本机哈希归档。
+
+## 2026-09-05 接续更新：r34 round02
+
+round02 已从 Summer 6 连续提交到 Summer 7。2 个主决策产生邮件路线、打开邮件、照料宠物、收取树产品 4 条 applied 策略轨迹；fresh 后失效的社交尾项只记 skip 并触发重新规划，控制面睡眠仍没有训练轨迹。canonical 为 215 accepted / 0 rejected、157/5/53、4920 pairs；checkpoint / manifest SHA-256 为 `bc5369df5a47bfdf27d9a49b99cc4498b54a4cd4dc27bba1b02de907419c15a4` / `24b18a5bf0317e36f36398609b9e65c79a69f42bef73cee35b57191ae56ec653`。
+
+归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round02-20260905-043913`，远端/本机 170 / 170 且三类差异为 0。正式容器已正常停止，只保留观察隧道。当前唯一直接下一步是从 Summer 7 和上述 canonical 创建下一份有界 Product rollout；不得跳回旧存档或旧 checkpoint。

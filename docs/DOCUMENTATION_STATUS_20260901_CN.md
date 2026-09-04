@@ -6,7 +6,7 @@
 
 当前唯一顶层口径：
 
-- 当前 release/run：`formal-r34-10b7722-20260905` / `train.server.20260905.r34.plan01`
+- 当前 release/run：`formal-r34-10b7722-20260905` / `train.server.20260905.r34.plan02`
 - registered / semantic / compiler-bound：228 / 230 / 227
 - Harness / Product Executor：145 / 145
 - five-gate 历史动作口径 / training allowlist：151 / 62；其中 runtime evidence freshness 正在按 #89 逐域强绑定迁移，不能把历史 151 自动解释成全部已完成新鲜度强绑定
@@ -17,8 +17,8 @@
 - executor：`product_executor.v1`
 - 当前策略边界：**一次模型排序选择一条有序高层候选队列；fresh snapshot 只在候选边界和 continuation 中做本地确定性校验/重编译，不自动重新调用模型**
 - r29 决策边界实证：1 次策略排序 / 4 个高层候选 / 9 个机械动作 / 3 次候选边界刷新 / 5 次 continuation 刷新 / 后 8 次刷新均 `policy_model_invoked=false` / 4 条高层策略轨迹
-- r34 连续事务实证：round10 将 Summer 4 提交到 Summer 5；`10b7722` 在不裁剪透明字段的前提下缓存同一快照的 route connector 候选；round01 随后将 Summer 5 提交到 Summer 6，原生保存、事务提升和控制面/训练面隔离均成立
-- 当前 canonical：211 accepted / 0 rejected，153 / 5 / 53，4783 pairs；checkpoint / manifest SHA-256 为 `b33d54f66fdcbe304e5207043751a0a153dcd45d24064b299903b978d28bd010` / `103770377bdca5b4979bd196ae4756c93e080f8924bc1de136a9bd35cc07c738`
+- r34 连续事务实证：round10 将 Summer 4 提交到 Summer 5；`10b7722` 在不裁剪透明字段的前提下缓存同一快照的 route connector 候选；round01/02 随后连续提交到 Summer 6/7，原生保存、事务提升、失效队列重规划和控制面/训练面隔离均成立
+- 当前 canonical：215 accepted / 0 rejected，157 / 5 / 53，4920 pairs；checkpoint / manifest SHA-256 为 `bc5369df5a47bfdf27d9a49b99cc4498b54a4cd4dc27bba1b02de907419c15a4` / `24b18a5bf0317e36f36398609b9e65c79a69f42bef73cee35b57191ae56ec653`
 - 当前结论：正式 Product 训练、队列级决策边界、原生跨日事务、canonical 连续提交与透明候选性能优化均有真实服务器证据；跨季/跨年/Grandpa 21 长训尚未完成
 - 当前运行边界：服务器正式训练进程已停止；磁盘只允许有退出条件的有界批次，不允许无界长训
 
