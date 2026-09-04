@@ -305,6 +305,35 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.traverse_connector");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Farm");
+
+        snapshot.State["time"] = JsonSerializer.Deserialize<JsonElement>("""
+        {
+          "time": {"value":600,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+        }
+        """);
+        var nativeBoundaryOption = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[]
+                {
+                    Candidate(
+                        "recovery.stabilize_day",
+                        Parameter("control_plane.native_save_boundary", "true"))
+                },
+                includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        var nativeBoundaryCandidate = Assert.Single(nativeBoundaryOption.EventCandidates);
+        Assert.Equal("recovery:native_save_boundary", nativeBoundaryCandidate.CandidateId);
+        Assert.True(nativeBoundaryCandidate.Available);
+        Assert.Contains(
+            nativeBoundaryCandidate.Parameters,
+            parameter =>
+                parameter.Name == "execution_option_id" &&
+                parameter.Value == "executor.traverse_connector");
+        Assert.Single(
+            nativeBoundaryCandidate.Parameters,
+            parameter => parameter.Name == "control_plane.native_save_boundary");
     }
 
     [Fact]

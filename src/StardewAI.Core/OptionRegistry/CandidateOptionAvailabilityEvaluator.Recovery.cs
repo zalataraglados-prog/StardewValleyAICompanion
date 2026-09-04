@@ -141,14 +141,22 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    recoveryProbe = CompilerProbeItem(snapshot, RecoveryRouteProbeCandidate());
+                    recoveryProbe = CompilerProbeItem(
+                        snapshot,
+                        RecoveryRouteProbeCandidate(nativeSaveBoundaryRequired));
                     sleepImmediatelyBlocks.AddRange(CompilerProbeBlockingReasons(recoveryProbe));
                 }
 
                 var recoveryParameters = currentLocationIsHome
                     ? new[] { Parameter("execution_option_id", "executor.sleep") }
                     : recoveryProbe?.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
-                if (nativeSaveBoundaryRequired)
+                if (nativeSaveBoundaryRequired &&
+                    !string.Equals(
+                        ReadParameter(
+                            recoveryParameters,
+                            "control_plane.native_save_boundary"),
+                        "true",
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     recoveryParameters = recoveryParameters
                         .Append(Parameter(
@@ -238,7 +246,9 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    recoveryProbe = CompilerProbeItem(snapshot, RecoveryRouteProbeCandidate());
+                    recoveryProbe = CompilerProbeItem(
+                        snapshot,
+                        RecoveryRouteProbeCandidate(nativeSaveBoundaryRequired: false));
                     returnHomeBlocks.AddRange(CompilerProbeBlockingReasons(recoveryProbe));
                 }
 
@@ -311,12 +321,24 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static OptionAvailabilityCandidate RecoveryRouteProbeCandidate()
+        private static OptionAvailabilityCandidate RecoveryRouteProbeCandidate(
+            bool nativeSaveBoundaryRequired)
         {
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("compiler_context.recovery_route_probe", "true")
+            };
+            if (nativeSaveBoundaryRequired)
+            {
+                parameters.Add(Parameter(
+                    "control_plane.native_save_boundary",
+                    "true"));
+            }
+
             return new OptionAvailabilityCandidate
             {
                 OptionId = "recovery.stabilize_day",
-                Parameters = new[] { Parameter("compiler_context.recovery_route_probe", "true") }
+                Parameters = parameters.ToArray()
             };
         }
 

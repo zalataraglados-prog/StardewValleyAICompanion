@@ -103,6 +103,21 @@ public sealed class DedicatedHostAiRuntimeGuardTests
     }
 
     [Fact]
+    public void IdleClockFreezeWaitsForNativeMovementRelease()
+    {
+        var source = RuntimeHarnessSources.All;
+
+        Assert.Contains(
+            "executorMovementLease.Direction is null",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Game1.player.movementDirections.Count == 0",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void LightSnapshotsRejectMachineCraftingBeforeRecipeExpansion()
     {
         var source = File.ReadAllText(FindRepositoryFile(

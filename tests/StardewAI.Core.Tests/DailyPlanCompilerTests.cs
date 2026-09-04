@@ -1140,6 +1140,33 @@ public sealed partial class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileNativeSaveBoundaryRouteProbeEmitsRefreshWait()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "recovery:native_save_boundary",
+            OptionId = "recovery.stabilize_day",
+            Kind = "recovery_sleep_immediately",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "Backwoods",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.wait_ticks" },
+                new SmallModelActionParameter { Name = "wait_ticks", Value = "30" },
+                new SmallModelActionParameter { Name = "control_plane.native_save_boundary", Value = "true" }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.boundary.probe");
+
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", step.Kind);
+        Assert.Equal(30, step.WaitTicks);
+        Assert.Equal("accepted", Assert.Single(plan.CandidateAudit).Decision);
+    }
+
+    [Fact]
     public void CompileRecoveryResumeSleepPromptPreservesTypedMode()
     {
         var candidate = new PolicyEventCandidatePrediction

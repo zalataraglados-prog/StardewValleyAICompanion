@@ -33,6 +33,7 @@ namespace StardewAI.Core.Training
             {
                 "executor.sleep" => RecoverySleepSteps(candidate),
                 "executor.traverse_connector" => RecoveryRouteSteps(candidate),
+                "executor.wait_ticks" => RecoveryRefreshSteps(candidate),
                 _ => Array.Empty<SmallModelPlanStep>()
             };
         }
