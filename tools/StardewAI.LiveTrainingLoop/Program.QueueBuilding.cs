@@ -81,9 +81,9 @@ static partial class Program
         {
             goal_id = options.Goal,
             execution_mode = options.TargetExecutionMode,
-            policy_checkpoint_path = string.IsNullOrWhiteSpace(options.PolicyCheckpointPath)
+            policy_checkpoint_path = string.IsNullOrWhiteSpace(options.EffectivePolicyCheckpointPath)
                 ? null
-                : Path.GetFullPath(options.PolicyCheckpointPath),
+                : Path.GetFullPath(options.EffectivePolicyCheckpointPath),
             require_structured_policy = options.RequireStructuredPolicy,
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,

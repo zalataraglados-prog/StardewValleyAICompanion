@@ -58,6 +58,7 @@ public sealed class LiveTrainingOptions
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
     public string KnowledgeDictionaryVersion { get; set; } = PolicyTrajectoryVersionPins.KnowledgeDictionary;
     public string PolicyCheckpointPath { get; set; } = string.Empty;
+    public string TrainingDataRootOverride { get; set; } = string.Empty;
     public bool RequireStructuredPolicy { get; set; }
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
     public bool DailyPlanExplicitConfirmationGranted { get; set; }
@@ -96,9 +97,17 @@ public sealed class LiveTrainingOptions
                 ? string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId
                 : ArtifactRunId);
     public string SnapshotDir => Path.Combine(RunDir, "live-snapshots");
-    public string DatasetPath => Path.Combine(Root, "datasets", "live-training-feature-rows.jsonl");
-    public string PolicyTrajectoryDatasetPath => Path.Combine(Root, "datasets", "policy-decision-trajectories.jsonl");
-    public string PolicyHorizonObservationPath => Path.Combine(Root, "datasets", "policy-horizon-observations.jsonl");
+    public string TrainingDataRoot => string.IsNullOrWhiteSpace(TrainingDataRootOverride)
+        ? Root
+        : TrainingDataRootOverride;
+    public bool TrainingDataTransactionActive => !string.IsNullOrWhiteSpace(TrainingDataRootOverride);
+    public string DatasetPath => Path.Combine(TrainingDataRoot, "datasets", "live-training-feature-rows.jsonl");
+    public string PolicyTrajectoryDatasetPath => Path.Combine(TrainingDataRoot, "datasets", "policy-decision-trajectories.jsonl");
+    public string PolicyHorizonObservationPath => Path.Combine(TrainingDataRoot, "datasets", "policy-horizon-observations.jsonl");
+    public string StructuredPolicyDatasetRoot => Path.Combine(TrainingDataRoot, "datasets", "formal-policy");
+    public string EffectivePolicyCheckpointPath => TrainingDataTransactionActive
+        ? Path.Combine(TrainingDataRoot, "checkpoints", Path.GetFileName(PolicyCheckpointPath))
+        : PolicyCheckpointPath;
     public string ProgressLogPath => Path.Combine(Root, "logs", "live-training-progress.log");
     public string ReadyProbeUrl => BackendUrl + "/api/v1/training/session/ready-probe?manifest_path=" + Uri.EscapeDataString(ManifestPath);
 

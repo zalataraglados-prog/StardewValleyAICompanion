@@ -67,6 +67,15 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("native_save_boundary_verified")]
     public bool NativeSaveBoundaryVerified { get; set; }
 
+    [JsonPropertyName("training_data_transaction_status")]
+    public string TrainingDataTransactionStatus { get; set; } = "not_required";
+
+    [JsonPropertyName("training_data_transaction_path")]
+    public string TrainingDataTransactionPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("canonical_training_artifacts_updated")]
+    public bool CanonicalTrainingArtifactsUpdated { get; set; }
+
     [JsonPropertyName("native_save_boundary_initial_day_key")]
     public string NativeSaveBoundaryInitialDayKey { get; set; } = string.Empty;
 

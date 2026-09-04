@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 using StardewAI.LiveTrainingLoop;
 
 var options = LiveTrainingOptions.Parse(args);
@@ -15,6 +16,7 @@ Directory.CreateDirectory(options.RunDir);
 Directory.CreateDirectory(options.SnapshotDir);
 Directory.CreateDirectory(Path.GetDirectoryName(options.DatasetPath)!);
 Directory.CreateDirectory(Path.GetDirectoryName(options.ProgressLogPath)!);
+var trainingDataTransaction = FormalTrainingDataTransaction.Begin(options);
 
 using var http = new HttpClient
 {
@@ -693,6 +695,30 @@ if (!verifiedTargetMet)
     Environment.ExitCode = 2;
 }
 
+trainingDataTransaction.Complete(verifiedTargetMet);
+if (trainingDataTransaction.CanonicalArtifactsUpdated &&
+    lastTrainingReport is not null)
+{
+    var canonicalDatasetManifestPath = Path.Combine(
+        options.Root,
+        "datasets",
+        "formal-policy",
+        "policy-dataset-manifest.json");
+    var checkpointSha256 = StructuredPolicyCheckpointStore.HashFile(
+        options.PolicyCheckpointPath);
+    new FormalTrainingManifestStore().UpdateArtifacts(
+        options.ManifestPath,
+        options.RunId,
+        canonicalDatasetManifestPath,
+        options.PolicyCheckpointPath,
+        checkpointSha256);
+    lastTrainingReport["checkpoint_path"] = Path.GetFullPath(
+        options.PolicyCheckpointPath);
+    lastTrainingReport["checkpoint_sha256"] = checkpointSha256;
+    lastTrainingReport["dataset_manifest_path"] = Path.GetFullPath(
+        canonicalDatasetManifestPath);
+}
+
 var report = new LiveTrainingLoopReport
 {
     RunId = options.RunId,
@@ -713,6 +739,10 @@ var report = new LiveTrainingLoopReport
     NativeSaveBoundaryRequired = options.RequireNativeSaveBoundary,
     NativeSaveBoundaryAttemptsStarted = nativeSaveBoundaryAttemptsStarted,
     NativeSaveBoundaryVerified = nativeSaveBoundaryVerified,
+    TrainingDataTransactionStatus = trainingDataTransaction.Status,
+    TrainingDataTransactionPath = trainingDataTransaction.StagingRoot,
+    CanonicalTrainingArtifactsUpdated =
+        trainingDataTransaction.CanonicalArtifactsUpdated,
     NativeSaveBoundaryInitialDayKey = nativeSaveBoundaryInitialDayKey,
     NativeSaveBoundaryCurrentDayKey = nativeSaveBoundaryCurrentDayKey,
     NativeSaveBoundaryInitialSaveSha256 =

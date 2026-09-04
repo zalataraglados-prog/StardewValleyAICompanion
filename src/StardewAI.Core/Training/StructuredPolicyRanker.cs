@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Training;
@@ -38,6 +39,13 @@ public sealed class StructuredPolicyRanker
         {
             if (!admitted.Contains(candidate.OptionId))
             {
+                if (IsNativeSaveBoundary(candidate))
+                {
+                    candidate.ModelScore = null;
+                    candidate.PolicyModelSource = "control_plane.native_save_boundary";
+                    continue;
+                }
+
                 candidate.Available = false;
                 candidate.BlockReasons = (candidate.BlockReasons ?? Array.Empty<string>())
                     .Append(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason)
@@ -71,6 +79,13 @@ public sealed class StructuredPolicyRanker
             ordered[index].Rank = index + 1;
         return ordered;
     }
+
+    private static bool IsNativeSaveBoundary(PolicyEventCandidatePrediction candidate) =>
+        candidate.Available &&
+        string.Equals(candidate.OptionId, "recovery.stabilize_day", StringComparison.Ordinal) &&
+        (candidate.Parameters ?? Array.Empty<SmallModelActionParameter>()).Any(parameter =>
+            string.Equals(parameter.Name, "control_plane.native_save_boundary", StringComparison.Ordinal) &&
+            string.Equals(parameter.Value, "true", StringComparison.OrdinalIgnoreCase));
 
     public PolicyPredictionEnvelope Summarize(
         StructuredPolicyCheckpointEnvelope checkpoint,

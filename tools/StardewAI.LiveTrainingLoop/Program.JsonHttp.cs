@@ -97,7 +97,7 @@ static partial class Program
 
         if (options.RequireStructuredPolicy)
         {
-            var outputRoot = Path.Combine(options.Root, "datasets", "formal-policy");
+            var outputRoot = options.StructuredPolicyDatasetRoot;
             var horizonPath = File.Exists(options.PolicyHorizonObservationPath)
                 ? options.PolicyHorizonObservationPath
                 : null;
@@ -108,13 +108,16 @@ static partial class Program
                 options.KnowledgeDictionaryVersion);
             var training = new StructuredPolicyTrainer().Train(
                 dataset.ManifestPath,
-                options.PolicyCheckpointPath);
-            new FormalTrainingManifestStore().UpdateArtifacts(
-                options.ManifestPath,
-                options.RunId,
-                dataset.ManifestPath,
-                training.CheckpointPath,
-                training.CheckpointSha256);
+                options.EffectivePolicyCheckpointPath);
+            if (!options.TrainingDataTransactionActive)
+            {
+                new FormalTrainingManifestStore().UpdateArtifacts(
+                    options.ManifestPath,
+                    options.RunId,
+                    dataset.ManifestPath,
+                    training.CheckpointPath,
+                    training.CheckpointSha256);
+            }
             var structuredReport = JsonSerializer.SerializeToNode(new
             {
                 schema_version = "structured_policy_live_training.v1",

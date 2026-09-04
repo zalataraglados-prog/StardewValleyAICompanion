@@ -57,6 +57,65 @@ public sealed class StructuredPolicyTrainerTests
     }
 
     [Fact]
+    public void RankerPreservesExplicitNativeSaveBoundaryWithoutLearningFromIt()
+    {
+        var checkpoint = CheckpointForRanking();
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "recovery:native_save_boundary",
+            OptionId = "recovery.stabilize_day",
+            Kind = "recovery_sleep_immediately",
+            Available = true,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "control_plane.native_save_boundary",
+                    Value = "true"
+                }
+            }
+        };
+
+        var ranked = new StructuredPolicyRanker().Rank(
+            checkpoint,
+            Features(100),
+            new[] { candidate });
+
+        var preserved = Assert.Single(ranked);
+        Assert.True(preserved.Available);
+        Assert.Null(preserved.ModelScore);
+        Assert.Equal("control_plane.native_save_boundary", preserved.PolicyModelSource);
+        Assert.DoesNotContain(
+            PolicyTrainingAdmissionFilter.OptionNotAdmittedReason,
+            preserved.BlockReasons);
+        Assert.Empty(new StructuredPolicyRanker().Summarize(checkpoint, ranked).RankedOptions);
+    }
+
+    [Fact]
+    public void RankerStillRejectsOrdinaryRecoveryCandidate()
+    {
+        var checkpoint = CheckpointForRanking();
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "recovery:return_home",
+            OptionId = "recovery.stabilize_day",
+            Kind = "recovery_return_home",
+            Available = true
+        };
+
+        var rejected = Assert.Single(new StructuredPolicyRanker().Rank(
+            checkpoint,
+            Features(100),
+            new[] { candidate }));
+
+        Assert.False(rejected.Available);
+        Assert.Null(rejected.ModelScore);
+        Assert.Contains(
+            PolicyTrainingAdmissionFilter.OptionNotAdmittedReason,
+            rejected.BlockReasons);
+    }
+
+    [Fact]
     public void TrainerRejectsTamperedPartitionAndStoreRejectsStaleCheckpoint()
     {
         var root = TestRoot();
