@@ -20,7 +20,7 @@ StardewAI 是一个面向《Stardew Valley》的分层 AI Companion / Agent 工�
 
 ## 当前状态
 
-截至 2026-09-02，公开 `main` 已进入 **r29 有序高层队列正式训练边界 + issue #89 运行证据强绑定** 阶段：
+截至 2026-09-05，公开 `main` 已进入 **r32 原生跨日训练事务** 阶段；以下动作覆盖数沿用 r25 冻结基线，运行证据治理沿用 r29 / issue #89 强绑定口径：
 
 - 228 registered actions
 - 230 semantic actions
@@ -92,6 +92,21 @@ issue #89 后，运行证据不再只凭“evidence id 非空”继承 `RuntimeV
 - `movement.use_mini_obelisk`
 
 其他历史运行证据暂为 `LegacyUnbound`，保留历史事实，但不能冒充已经完成新鲜度强绑定。CI 已加入不依赖 Stardew 私有游戏 DLL 的 game-free governance profile；本地最新验证为 governance 16/16、Core 2252/2252、Backend 171/171、Release 0 warnings / 0 errors。
+
+### r32 的原生跨日事务
+
+r32 round07（2026-09-05）的最新有界训练实证：
+
+- 发布与代码：`formal-r32-af432ed-20260905` / 部署时 `af432ed`，远端整合后的公开 `main` 等价提交为 `d881555`；
+- 运行：`train.server.20260905.r32.plan07`，并发固定为 1；
+- 1 个主动作完成 `applied + verified + fresh`，随后通过原生睡眠、隔夜系统对话和 `SaveGame.Save()` 完成 Summer 2 → Summer 3；
+- 存档树 SHA-256 从 `7822c135afa09a355fbed3ce1462784d1551fdf8cfdf81ae4efebd95fcba31a3` 变为 `a4af6a79e6138085b07e7c63c7977fdc1c12e1bf34df28955c6a7614816af27b`；
+- 训练事务状态为 `committed_after_native_save_boundary`，正式数据集 accepted 200 / rejected 0；
+- train / validation / test = 142 / 5 / 53，train pairs = 4367；
+- checkpoint SHA-256 = `4f937ec73f2a0f58bdac00ff9345fd4fbcc201010d627b53939a132357a2181f`；
+- 远端与本机归档逐文件校验为 146 / 146，缺失、额外、哈希不一致均为 0。
+
+当前已经证明“真实 Product 动作 → 原生跨日存档 → 事务提交 → dataset rebuild → structured checkpoint 与 manifest/hash 更新”的单轮闭环成立，但**连续多日、跨季、跨年和第三年 Grandpa 21 分长跑尚未完成**，因此不能把当前状态描述成“全量训练完成”。服务器上的正式训练进程已在证据抓取后停止；下一轮必须从已提交的 Summer 3 存档和 canonical 哈希继续，并继续使用有退出条件的有界计划。
 
 ## 设计原则
 

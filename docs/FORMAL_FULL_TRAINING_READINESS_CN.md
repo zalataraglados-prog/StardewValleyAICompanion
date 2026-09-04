@@ -690,3 +690,13 @@ required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结�
 生产执行只复用共享 BFS 和一次地点级原生交互，不直接写贴图帧或调用对象级方法。透明桥、候选和运行时同时防守原生四向不可通行对象包围时会触发的 `performToolAction(null)` 破坏性前导分支。隐藏静音 E 盘矩阵对 0..7 全部通过，并验证永久 ID 与槽位不变。该项进入证据白名单但 `AutonomousCandidateEnabled=false`，普通日计划不会擅自改变玩家装饰。当前对账为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 allowlist / 53 catalogued blocked / 0 Product Executor`；下一切片是 `farming.collect_slime_ball`。
 
 生产执行只复用共享 BFS 和原生 `GameLocation.checkAction`，不直接施加 buff 或写日锁。隐藏静音 E 盘运行验证当天 `statue_of_blessings_1` 唯一回执和 `hasBeenBlessedByStatueToday=true`。最新 full 快照为 `130 required / 114 readable / 16 contextual / 0 blocking`；权威对账为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 allowlist / 54 catalogued blocked / 0 Product Executor`。该单项准入仍不解除 Product Executor、生产长 rollout、正式 manifest/checkpoint、独立存档评测和第三年 21 分长跑阻塞。
+
+## 8. 2026-09-05 r32 原生存档事务准入结果
+
+`train.server.20260905.r32.plan07` 是首个同时满足真实 Product 动作、原生跨日、原生存档完成、训练事务提交和 canonical 制品更新的 r32 有界轮次。发布固定为 `formal-r32-af432ed-20260905`，并发为 1；运行从 Summer 2 推进到 Summer 3，存档树 SHA-256 从 `7822c135afa09a355fbed3ce1462784d1551fdf8cfdf81ae4efebd95fcba31a3` 变为 `a4af6a79e6138085b07e7c63c7977fdc1c12e1bf34df28955c6a7614816af27b`。睡眠回执包含 `sleep_yes_confirmed`、`new_day_observed`、`native_save_committed`、`post_sleep_menu_closed`、`native_new_day_world_stable` 和 `post_sleep_dialogue_advanced_natively`。
+
+事务最终状态为 `committed_after_native_save_boundary`。正式数据集 accepted 200 / rejected 0，train / validation / test = 142 / 5 / 53，train pairs = 4367；canonical checkpoint SHA-256 为 `4f937ec73f2a0f58bdac00ff9345fd4fbcc201010d627b53939a132357a2181f`，dataset manifest SHA-256 为 `bfbeb9e5f943726a9e830e31bb6926724566e74e42505f1613159cef706d7a16`。运行、事务副本、canonical 数据、执行器诊断、精确存档和四项控制文件已经归档，本机与远端 146 个文件逐一校验一致。
+
+round05 和 round06 分别因保存完成判定过早、隔夜地震系统对话未推进而失败，二者均保持 `staged_not_committed`，不能并入成功训练证据。现有结果证明单轮正式事务可以可靠提交，但不证明策略已经完成全量训练，也不覆盖连续多日、跨季、跨年、第三年 21 分和 Companion 人类适应层。
+
+下一准入阶段固定为可恢复的连续有界批次：从 Summer 3 的已提交存档和 canonical 哈希开始，每批只允许一个训练实例；达到计划日数或 attempt 上限即退出。成功退出必须同时满足主动作均有 fresh/verified Product 回执、无未解决 `*.pending.json`、原生存档哈希发生预期变化、事务已提交、canonical dataset/checkpoint/manifest 相互一致、全部制品归档并通过远端到本机 SHA-256 核对。任一门失败则保留 staged 诊断且不得推进基线。

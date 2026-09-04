@@ -44,3 +44,13 @@ r20-r29 已把跨图后旧队列、暂不可输入菜单、continuation 越候�
 ## 文档口径
 
 当前代码与新文档统一使用 `policy_decision_trajectory.v2 / policy_features.v2 / action_queue.v1 / product_executor.v1`。r25 是四轮制品保留和首个非空 validation 的历史证据；r29 是当前队列级决策边界权威证据；r30 是停止状态的最新部署。旧 r8-r28 数字只能解释各自历史检查点，不得覆盖顶层 README、当前工作、训练 readiness、完全体路线和本短交接的最新结论。
+
+## 2026-09-05 接续更新：r32 round07
+
+r32 已越过原生存档事务硬阻塞。部署时 `e0a6221` 要求真实 `newDaySync.hasSaved` 后才允许结束睡眠，`af432ed` 修正 stale `lastQuestionKey=Sleep` 导致隔夜系统对话被误判为睡眠确认框，并通过原生输入推进 Summer 2 地震对话；远端整合后的公开 `main` 等价提交分别为 `bcc0bc0`、`d881555`。最终回归为 Core `2273/2273`、Backend `171/171`、Release 0 warnings / 0 errors。
+
+119 有界运行 `train.server.20260905.r32.plan07` 用 3 次迭代完成 1 个 verified 主动作和 2 次存档边界处理，Summer 2 → Summer 3；存档树 SHA-256 实际变化，事务状态为 `committed_after_native_save_boundary`，canonical checkpoint 更新为 `4f937ec73f2a0f58bdac00ff9345fd4fbcc201010d627b53939a132357a2181f`。正式数据集为 200 accepted / 0 rejected，142 / 5 / 53 split，4367 train pairs。
+
+本机归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r32-round07-20260905-011000`；远端与本机均为 146 个文件，缺失、额外和 SHA-256 不一致均为 0。正式训练、游戏与执行器进程已停止；既有观察隧道仍独立运行。round05/round06 是未提交的失败诊断轮次，不得计入训练成果。
+
+直接下一步：以 Summer 3 存档和 r32 round07 canonical 哈希生成下一份有界计划，继续真实 Product rollout。不得回到动作逐条调用模型；不得跳过原生存档边界；不得在未解决 Product pending、事务未提交或归档哈希未核对时推进 canonical。当前是“第一轮完整事务成功”，不是“全量训练完成”。

@@ -874,3 +874,14 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 当前 full 快照为 168 required / 151 带来源可读 / 17 场景性 / 0 blocking；KnowledgeCompiler 585/585、blocking 0；动作看板为 220 registered / 226 semantic / 219 compiler-bound / 141 harness dispatch / 143 five-gate / 58 training allowlist / 6 catalogued blocked / 0 Product Executor。
 - 最终回归为 Core 2162/2162、Backend 155/155、Release 0 warnings / 0 errors。原生分母保持 322 surfaces / 448 branches / 150 map tokens，三类阻塞均为 0；冻结指纹为 `d145570835f06f8ffb14460ce1107950a4aed243939ed60ee08c583bc17a97e9`。
 - 下一主切片固定为 `social.watch_movie`。先反编译锁定购票/邀请/放映/同伴反应/奖励与一次性状态，再判断哪些选择属于模型、哪些机械流程归既有社交/商店/菜单执行层。`minigame.play_junimo_kart` 继续暂缓；正式全量训练仍等待剩余动作、Product Executor 与长线验收。
+
+## 2026-09-05 当前权威检查点：r32 round07
+
+- 部署时提交 `e0a6221` 把跨日完成门改为必须观察到 `newDaySync.hasSaved` 且 `SaveGame.IsProcessing=false`；`af432ed` 修正透明桥把隔夜系统对话误报为睡眠确认框的问题，并仅用原生输入推进安全的非角色隔夜对话。远端整合后的公开 `main` 等价提交分别为 `bcc0bc0`、`d881555`。
+- Core `2273/2273`、Backend `171/171`、Release solution build 为 0 warnings / 0 errors。
+- 119 上的 `train.server.20260905.r32.plan07` 在并发 1 下完成 3 次外层迭代：1 次主动作 verified，2 次原生存档边界推进，Summer 2 → Summer 3；SMAPI 日志明确记录 `SaveGame.Save() completed without exceptions.`。
+- 存档树 SHA-256 从 `7822c135afa09a355fbed3ce1462784d1551fdf8cfdf81ae4efebd95fcba31a3` 变为 `a4af6a79e6138085b07e7c63c7977fdc1c12e1bf34df28955c6a7614816af27b`，训练事务为 `committed_after_native_save_boundary`，canonical 制品已更新。
+- 正式数据集为 accepted 200 / rejected 0，train / validation / test = 142 / 5 / 53，train pairs = 4367；checkpoint SHA-256 为 `4f937ec73f2a0f58bdac00ff9345fd4fbcc201010d627b53939a132357a2181f`。
+- 完整证据已归档到 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r32-round07-20260905-011000`；远端与本机 146 / 146 文件逐一 SHA-256 一致。服务器上的正式训练、游戏与执行器进程随后已停止，既有观察隧道不属于训练进程。
+- round05/round06 均保持 `staged_not_committed`，没有更新 canonical：前者暴露保存完成判定过早，后者暴露 Summer 2 地震隔夜对话。它们是失败诊断证据，不得计为训练成功轮次。
+- 该结果只解除“正式事务无法跨原生存档边界提交”这一硬阻塞，不代表全量训练或完全体陪玩完成。下一步是以 Summer 3 存档和上述 canonical 哈希创建下一份有界计划，继续真实 Product rollout；每轮必须在退出前确认无未解决 Product pending、原生存档已持久化、数据集/checkpoint/manifest 哈希一致并完成本机归档。
