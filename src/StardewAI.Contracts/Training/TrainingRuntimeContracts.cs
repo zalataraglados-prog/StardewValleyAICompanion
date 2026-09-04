@@ -61,6 +61,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_verified_actions")]
         public int RequiredVerifiedActions { get; set; }
 
+        [JsonPropertyName("require_native_save_boundary")]
+        public bool RequireNativeSaveBoundary { get; set; } = true;
+
+        [JsonPropertyName("save_boundary_max_attempts")]
+        public int SaveBoundaryMaxAttempts { get; set; } = 16;
+
         [JsonPropertyName("min_free_space_mb")]
         public int MinFreeSpaceMb { get; set; } = 8192;
 
@@ -162,6 +168,12 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("required_verified_actions")]
         public int RequiredVerifiedActions { get; set; }
+
+        [JsonPropertyName("require_native_save_boundary")]
+        public bool RequireNativeSaveBoundary { get; set; }
+
+        [JsonPropertyName("save_boundary_max_attempts")]
+        public int SaveBoundaryMaxAttempts { get; set; } = 16;
 
         [JsonPropertyName("min_free_space_mb")]
         public int MinFreeSpaceMb { get; set; } = 8192;

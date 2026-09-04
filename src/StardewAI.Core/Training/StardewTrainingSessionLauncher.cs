@@ -206,6 +206,11 @@ namespace StardewAI.Core.Training
                     1,
                     64),
                 RequiredVerifiedActions = Math.Max(0, request.RequiredVerifiedActions),
+                RequireNativeSaveBoundary = formalTraining && request.RequireNativeSaveBoundary,
+                SaveBoundaryMaxAttempts = Math.Clamp(
+                    request.SaveBoundaryMaxAttempts,
+                    1,
+                    128),
                 MinFreeSpaceMb = Math.Clamp(
                     request.MinFreeSpaceMb,
                     1024,
@@ -514,6 +519,8 @@ namespace StardewAI.Core.Training
                 "--save-isolation-path", manifest.SaveIsolationPath,
                 "--max-attempts", manifest.MaxAttempts.ToString(),
                 "--required-verified-actions", manifest.RequiredVerifiedActions.ToString(),
+                "--save-slot", manifest.SaveSlot,
+                "--save-boundary-max-attempts", manifest.SaveBoundaryMaxAttempts.ToString(),
                 "--min-free-space-mb", Math.Max(
                     1024,
                     manifest.MinFreeSpaceMb).ToString(),
@@ -527,6 +534,10 @@ namespace StardewAI.Core.Training
                 "--use-product-executor",
                 "--use-daily-plan",
                 "--require-structured-policy");
+            if (manifest.RequireNativeSaveBoundary)
+            {
+                startInfo.ArgumentList.Add("--require-native-save-boundary");
+            }
             return Process.Start(startInfo)
                 ?? throw new InvalidOperationException("failed_to_start_live_training_loop_process");
         }

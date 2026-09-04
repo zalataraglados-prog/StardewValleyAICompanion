@@ -238,7 +238,9 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("ReadQueueParameterInt(item, \"stand_tile_x\")", source);
         Assert.Contains("ReadQueueParameterInt(item, \"bobber_tile_x\")", source);
         Assert.Contains("--required-verified-actions", source);
-        Assert.Contains("attemptOrdinal <= options.MaxAttempts", source);
+        Assert.Contains("TrainingCompletionPolicy.Decide", source);
+        Assert.Contains("primaryAttemptsStarted", source);
+        Assert.Contains("nativeSaveBoundaryAttemptsStarted", source);
         Assert.Contains("--max-attempts", source);
         Assert.Contains("verifiedTargetMet ? \"ok\" : \"incomplete\"", source);
         Assert.Contains("Environment.ExitCode = 2", source);

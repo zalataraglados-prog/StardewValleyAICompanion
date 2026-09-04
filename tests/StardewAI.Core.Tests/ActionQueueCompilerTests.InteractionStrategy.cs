@@ -963,12 +963,12 @@ public sealed partial class ActionQueueCompilerTests
             : "[]"));
     }
 
-    private static SnapshotEnvelope SleepSnapshot(string activeObjectQualifiedId = "", bool sleepPromptOpen = false, bool activeMenuOpen = false, string activeMenuType = "none")
+    private static SnapshotEnvelope SleepSnapshot(string activeObjectQualifiedId = "", bool sleepPromptOpen = false, bool activeMenuOpen = false, string activeMenuType = "none", int time = 2300)
     {
         return Snapshot("""
         {
           "time": {
-            "time": {"value":2300,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "time": {"value":TIME,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "player": {
             "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -990,6 +990,7 @@ public sealed partial class ActionQueueCompilerTests
           }
         }
         """
+        .Replace("TIME", time.ToString())
         .Replace("ACTIVE_OBJECT", activeObjectQualifiedId)
         .Replace("ACTIVE_MENU_OPEN", activeMenuOpen ? "true" : "false")
         .Replace("ACTIVE_MENU_TYPE", activeMenuType)

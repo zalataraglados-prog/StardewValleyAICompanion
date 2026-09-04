@@ -9,6 +9,37 @@ namespace StardewAI.Core.Tests;
 public sealed partial class ActionQueueCompilerTests
 {
     [Fact]
+    public void NativeSaveBoundaryRecoveryCompilesMorningSleepInsteadOfRefreshWait()
+    {
+        var snapshot = SleepSnapshot(time: 600);
+        var action = Request(snapshot.StateHash, "recovery.stabilize_day");
+        action.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter
+            {
+                Name = "control_plane.native_save_boundary",
+                Value = "true"
+            }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(action, snapshot);
+
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("pending", item.Status);
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "execution_option_id" &&
+                parameter.Value == "executor.sleep");
+        Assert.Contains(
+            item.NormalizedCommand.Steps,
+            step => step.StepType == "step_onto_sleep_touch_tile");
+        Assert.DoesNotContain(
+            item.NormalizedCommand.Steps,
+            step => step.StepType == "refresh_plan_after_stabilization");
+    }
+
+    [Fact]
     public void CompileTurnsTerminalSleepPlanStepIntoCompilerOwnedSleepMacro()
     {
         var snapshot = SleepSnapshot();

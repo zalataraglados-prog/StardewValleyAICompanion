@@ -113,7 +113,8 @@ namespace StardewAI.Core.Training
                 "max_movement_tiles",
                 "estimated_ticks",
                 "estimated_minutes",
-                "compiler_context.remaining_connector_count"
+                "compiler_context.remaining_connector_count",
+                "control_plane.native_save_boundary"
             })
             {
                 var value = CandidateParameter(candidate, name);
@@ -172,7 +173,8 @@ namespace StardewAI.Core.Training
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = candidate.Parameters
                         .Where(parameter =>
-                            parameter.Name == "sleep_resume_mode")
+                            parameter.Name == "sleep_resume_mode" ||
+                            parameter.Name == "control_plane.native_save_boundary")
                         .ToArray()
                 }
             };

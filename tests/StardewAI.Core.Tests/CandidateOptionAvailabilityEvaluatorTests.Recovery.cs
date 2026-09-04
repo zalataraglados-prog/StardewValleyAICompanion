@@ -20,6 +20,42 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void NativeSaveBoundaryControlPlaneCanRequestImmediateSleepAtMorning()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                RecoverySnapshot(
+                    time: 600,
+                    menuOpen: false,
+                    currentLocationIsHome: true),
+                new[]
+                {
+                    Candidate(
+                        "recovery.stabilize_day",
+                        Parameter(
+                            "control_plane.native_save_boundary",
+                            "true"))
+                },
+                includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.Equal("recovery:native_save_boundary", candidate.CandidateId);
+        Assert.Equal("recovery_native_save_boundary", candidate.Kind);
+        Assert.True(candidate.Available);
+        Assert.Contains(
+            candidate.Parameters,
+            parameter =>
+                parameter.Name == "execution_option_id" &&
+                parameter.Value == "executor.sleep");
+        Assert.Contains(
+            candidate.Parameters,
+            parameter =>
+                parameter.Name == "control_plane.native_save_boundary" &&
+                parameter.Value == "true");
+    }
+
+    [Fact]
     public void AutonomousPlanningEvaluatesOnlyRecoveryAtTheDepartureBoundary()
     {
         var availability = new CandidateOptionAvailabilityEvaluator()

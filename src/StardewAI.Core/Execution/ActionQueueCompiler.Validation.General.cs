@@ -44,7 +44,8 @@ namespace StardewAI.Core.Execution
             }
 
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time))
+            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time) &&
+                !NativeSaveBoundaryRecoveryRequested(action))
             {
                 return Array.Empty<string>();
             }

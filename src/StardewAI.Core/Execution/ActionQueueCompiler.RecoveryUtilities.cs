@@ -19,7 +19,9 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
-        private static CompiledActionStep[] CompileRecoverySteps(SnapshotEnvelope snapshot)
+        private static CompiledActionStep[] CompileRecoverySteps(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
         {
             if (Infrastructure.SleepPromptResumeProjection.IsAvailable(
                     snapshot))
@@ -40,7 +42,8 @@ namespace StardewAI.Core.Execution
             }
 
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time))
+            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time) &&
+                !NativeSaveBoundaryRecoveryRequested(action))
             {
                 return new[] { Step("refresh_plan_after_stabilization", "planner", "urgent_risks_rechecked", 0) };
             }
@@ -72,6 +75,17 @@ namespace StardewAI.Core.Execution
                     expected,
                     routePlan.Step.EstimatedTicks)
             };
+        }
+
+        private static bool NativeSaveBoundaryRecoveryRequested(
+            SmallModelAction action)
+        {
+            return string.Equals(
+                ReadParameter(
+                    action,
+                    "control_plane.native_save_boundary"),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsMachineReady(JsonElement machine)

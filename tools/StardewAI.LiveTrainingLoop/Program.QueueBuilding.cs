@@ -56,18 +56,24 @@ static partial class Program
         HttpClient http,
         LiveTrainingOptions options,
         string stateHash,
-        IReadOnlyCollection<JsonObject> suppressedObjectiveContinuations)
+        IReadOnlyCollection<JsonObject> suppressedObjectiveContinuations,
+        IReadOnlyList<string>? candidateOptionIdsOverride = null,
+        IReadOnlyList<SmallModelActionParameter>? candidateParametersOverride = null)
     {
+        var candidateOptionIds = candidateOptionIdsOverride ??
+            options.DailyPlanCandidateOptionIds;
+        var candidateParameters = candidateParametersOverride ??
+            options.DailyPlanCandidateParameters;
         var explicitCandidates =
-            options.DailyPlanCandidateParameters.Count > 0
+            candidateParameters.Count > 0
                 ? new object[]
                 {
                     new
                     {
-                        option_id = options.DailyPlanCandidateOptionIds[0],
+                        option_id = candidateOptionIds[0],
                         explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
                         invocation_source = options.DailyPlanInvocationSource,
-                        parameters = options.DailyPlanCandidateParameters
+                        parameters = candidateParameters
                     }
                 }
                 : Array.Empty<object>();
@@ -82,7 +88,7 @@ static partial class Program
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
             candidate_option_ids = explicitCandidates.Length == 0
-                ? options.DailyPlanCandidateOptionIds
+                ? candidateOptionIds
                 : Array.Empty<string>(),
             candidates = explicitCandidates,
             include_blocked_options = false
@@ -184,6 +190,27 @@ static partial class Program
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
         var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
         return (response, plan, queue, ranking);
+    }
+
+    private static Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildNativeSaveBoundaryQueueAsync(
+        HttpClient http,
+        LiveTrainingOptions options,
+        string stateHash)
+    {
+        return BuildQueueFromDailyPlanAsync(
+            http,
+            options,
+            stateHash,
+            Array.Empty<JsonObject>(),
+            new[] { "recovery.stabilize_day" },
+            new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "control_plane.native_save_boundary",
+                    Value = "true"
+                }
+            });
     }
 
     private static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Evidence)> BuildQueueFromSelectedCandidateAsync(

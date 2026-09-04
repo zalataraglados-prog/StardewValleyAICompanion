@@ -289,7 +289,8 @@ namespace StardewAI.Core.Execution
             }
 
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time))
+            if (!GameClockBudgetPolicy.RecoveryWindowStarted(time) &&
+                !NativeSaveBoundaryRecoveryRequested(action))
             {
                 parameters.Add(Parameter("execution_option_id", "executor.wait_ticks"));
                 parameters.Add(Parameter("wait_ticks", "30"));

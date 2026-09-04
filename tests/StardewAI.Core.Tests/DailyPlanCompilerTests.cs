@@ -1122,13 +1122,20 @@ public sealed partial class DailyPlanCompilerTests
             EstimatedTicks = 120,
             Parameters = new[]
             {
-                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" }
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" },
+                new SmallModelActionParameter { Name = "control_plane.native_save_boundary", Value = "true" }
             }
         };
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
 
-        Assert.Equal("sleep", Assert.Single(plan.Steps).Kind);
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("sleep", step.Kind);
+        Assert.Contains(
+            step.Parameters,
+            parameter =>
+                parameter.Name == "control_plane.native_save_boundary" &&
+                parameter.Value == "true");
         Assert.Equal("accepted", Assert.Single(plan.CandidateAudit).Decision);
     }
 

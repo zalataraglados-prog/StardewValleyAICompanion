@@ -13,10 +13,18 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
-        private EventCandidate[] RecoveryCandidates(SnapshotEnvelope snapshot)
+        private EventCandidate[] RecoveryCandidates(
+            SnapshotEnvelope snapshot,
+            SmallModelActionParameter[] requestParameters)
         {
             var candidates = new List<EventCandidate>();
             var time = ReadStateFieldInt(snapshot, "time", "time");
+            var nativeSaveBoundaryRequired = string.Equals(
+                ReadParameter(
+                    requestParameters,
+                    "control_plane.native_save_boundary"),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
             if (ActiveMenuOpenForCandidate(snapshot))
             {
                 var closeMenuReasons = CloseMenuCandidateBlockReasons(snapshot);
@@ -83,7 +91,7 @@ namespace StardewAI.Core.OptionRegistry
                 });
             }
 
-            if (time >= 2400)
+            if (time >= 2400 || nativeSaveBoundaryRequired)
             {
                 var homeContext = ReadStateFieldValue(snapshot, "current_location", "home_context");
                 var homeLocation = homeContext.HasValue ? ReadString(homeContext.Value, "home_location_id") : string.Empty;
@@ -140,6 +148,14 @@ namespace StardewAI.Core.OptionRegistry
                 var recoveryParameters = currentLocationIsHome
                     ? new[] { Parameter("execution_option_id", "executor.sleep") }
                     : recoveryProbe?.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
+                if (nativeSaveBoundaryRequired)
+                {
+                    recoveryParameters = recoveryParameters
+                        .Append(Parameter(
+                            "control_plane.native_save_boundary",
+                            "true"))
+                        .ToArray();
+                }
                 var routeTileX = ReadParameterInt(recoveryParameters, "target_tile_x");
                 var routeTileY = ReadParameterInt(recoveryParameters, "target_tile_y");
                 var routeTargetLocation = ReadParameter(recoveryParameters, "expected_target_location");
@@ -147,8 +163,12 @@ namespace StardewAI.Core.OptionRegistry
                 var routeEstimatedTicks = ReadParameterInt(recoveryParameters, "estimated_ticks") ?? 0;
                 candidates.Add(new EventCandidate
                 {
-                    CandidateId = "recovery:sleep_immediately",
-                    Kind = "recovery_sleep_immediately",
+                    CandidateId = nativeSaveBoundaryRequired
+                        ? "recovery:native_save_boundary"
+                        : "recovery:sleep_immediately",
+                    Kind = nativeSaveBoundaryRequired
+                        ? "recovery_native_save_boundary"
+                        : "recovery_sleep_immediately",
                     Available = sleepImmediatelyBlocks.Count == 0,
                     LocationId = currentLocationIsHome
                         ? homeLocation

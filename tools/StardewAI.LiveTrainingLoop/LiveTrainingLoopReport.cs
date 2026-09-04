@@ -55,6 +55,30 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("required_verified_actions")]
     public int RequiredVerifiedActions { get; set; }
 
+    [JsonPropertyName("primary_attempts_started")]
+    public int PrimaryAttemptsStarted { get; set; }
+
+    [JsonPropertyName("native_save_boundary_required")]
+    public bool NativeSaveBoundaryRequired { get; set; }
+
+    [JsonPropertyName("native_save_boundary_attempts_started")]
+    public int NativeSaveBoundaryAttemptsStarted { get; set; }
+
+    [JsonPropertyName("native_save_boundary_verified")]
+    public bool NativeSaveBoundaryVerified { get; set; }
+
+    [JsonPropertyName("native_save_boundary_initial_day_key")]
+    public string NativeSaveBoundaryInitialDayKey { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_save_boundary_current_day_key")]
+    public string NativeSaveBoundaryCurrentDayKey { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_save_boundary_initial_save_sha256")]
+    public string NativeSaveBoundaryInitialSaveSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_save_boundary_current_save_sha256")]
+    public string NativeSaveBoundaryCurrentSaveSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("stop_reason")]
     public string StopReason { get; set; } = string.Empty;
 

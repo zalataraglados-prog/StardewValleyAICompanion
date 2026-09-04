@@ -20,9 +20,12 @@ public sealed class LiveTrainingOptions
     public string RunId { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-run-id.txt");
     public string ArtifactRunId { get; set; } = string.Empty;
     public string SaveIsolationPath { get; set; } = @"E:\StardewValleyAICompanion-runtime\saves";
+    public string SaveSlot { get; set; } = string.Empty;
     public string Goal { get; set; } = StardewAI.Contracts.Goals.GrandpaEvaluationGoalDefinition.StrategicGoal;
     public int MaxAttempts { get; set; } = 3;
     public int RequiredVerifiedActions { get; set; }
+    public bool RequireNativeSaveBoundary { get; set; }
+    public int SaveBoundaryMaxAttempts { get; set; } = 16;
     public int TrainEvery { get; set; } = 1;
     public bool SkipTraining { get; set; }
     public int SleepMs { get; set; } = 1000;
@@ -123,6 +126,18 @@ public sealed class LiveTrainingOptions
             throw new InvalidOperationException(
                 "formal_training_requires_prepared_manifest; use --skip-training only for bootstrap calibration data collection");
         }
+        if (RequireNativeSaveBoundary &&
+            (string.IsNullOrWhiteSpace(SaveIsolationPath) ||
+             string.IsNullOrWhiteSpace(SaveSlot)))
+        {
+            throw new InvalidOperationException(
+                "native_save_boundary_requires_save_isolation_path_and_slot");
+        }
+        if (RequireNativeSaveBoundary && !UseDailyPlan)
+        {
+            throw new InvalidOperationException(
+                "native_save_boundary_requires_daily_plan_execution");
+        }
     }
 
     public static LiveTrainingOptions Parse(string[] args)
@@ -163,6 +178,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--save-isolation-path" && i + 1 < args.Length)
             {
                 options.SaveIsolationPath = args[++i];
+            }
+            else if (current == "--save-slot" && i + 1 < args.Length)
+            {
+                options.SaveSlot = args[++i].Trim();
             }
             else if (current == "--target-execution-mode" && i + 1 < args.Length)
             {
@@ -211,6 +230,19 @@ public sealed class LiveTrainingOptions
             else if (current == "--required-verified-actions" && i + 1 < args.Length && int.TryParse(args[++i], out var requiredVerifiedActions))
             {
                 options.RequiredVerifiedActions = Math.Max(0, requiredVerifiedActions);
+            }
+            else if (current == "--require-native-save-boundary")
+            {
+                options.RequireNativeSaveBoundary = true;
+            }
+            else if (current == "--save-boundary-max-attempts" &&
+                i + 1 < args.Length &&
+                int.TryParse(args[++i], out var saveBoundaryMaxAttempts))
+            {
+                options.SaveBoundaryMaxAttempts = Math.Clamp(
+                    saveBoundaryMaxAttempts,
+                    1,
+                    128);
             }
             else if (current == "--train-every" && i + 1 < args.Length && int.TryParse(args[++i], out var trainEvery))
             {

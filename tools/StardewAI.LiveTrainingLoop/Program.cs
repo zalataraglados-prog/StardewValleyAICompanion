@@ -55,6 +55,22 @@ var nextArtifactIteration = NextArtifactIteration(options.SnapshotDir);
 var consecutiveErrors = 0;
 var lastErrorIteration = 0;
 var stopReason = string.Empty;
+var primaryAttemptsStarted = 0;
+var nativeSaveBoundaryAttemptsStarted = 0;
+var nativeSaveBoundaryPhaseStarted = false;
+var nativeSaveBoundaryVerified = false;
+var nativeSaveBoundaryInitialDayKey = string.Empty;
+var nativeSaveBoundaryCurrentDayKey = string.Empty;
+var initialSaveFingerprint = options.RequireNativeSaveBoundary
+    ? await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
+        options.SaveIsolationPath,
+        options.SaveSlot)
+    : null;
+var currentSaveFingerprint = initialSaveFingerprint;
+var hasExplicitPrimaryTarget =
+    options.RequiredVerifiedActions > 0 ||
+    options.StopAfterObjectiveComplete ||
+    options.StopAfterSocialObjectiveComplete;
 var noProgressBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
@@ -62,13 +78,56 @@ var unverifiedExecutionBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
 
-for (var attemptOrdinal = 1;
-    attemptOrdinal <= options.MaxAttempts &&
-    (options.RequiredVerifiedActions <= 0 || verifiedActions < options.RequiredVerifiedActions) &&
-    (!options.StopAfterObjectiveComplete || !objectiveCompleted) &&
-    (!options.StopAfterSocialObjectiveComplete || !socialObjectiveCompleted);
-    attemptOrdinal++)
+for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
+    var explicitPrimaryTargetMet =
+        (options.RequiredVerifiedActions <= 0 ||
+         verifiedActions >= options.RequiredVerifiedActions) &&
+        (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
+        (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
+    var phaseDecision = TrainingCompletionPolicy.Decide(
+        primaryAttemptsStarted,
+        options.MaxAttempts,
+        nativeSaveBoundaryAttemptsStarted,
+        options.SaveBoundaryMaxAttempts,
+        hasExplicitPrimaryTarget,
+        explicitPrimaryTargetMet,
+        options.RequireNativeSaveBoundary,
+        nativeSaveBoundaryVerified);
+    if (phaseDecision.Phase is LiveTrainingPhase.Complete or LiveTrainingPhase.Incomplete)
+    {
+        if (phaseDecision.Phase == LiveTrainingPhase.Incomplete &&
+            string.IsNullOrWhiteSpace(stopReason))
+        {
+            stopReason = phaseDecision.StopReason;
+        }
+        break;
+    }
+
+    var closingNativeSaveBoundary =
+        phaseDecision.Phase == LiveTrainingPhase.NativeSaveBoundary;
+    if (closingNativeSaveBoundary && !nativeSaveBoundaryPhaseStarted)
+    {
+        nativeSaveBoundaryPhaseStarted = true;
+        activeObjectiveContinuation = null;
+        leasedDecisionModelPlanPath = string.Empty;
+        leasedDecisionRankingPath = string.Empty;
+        leasedDecisionCompiledQueuePath = string.Empty;
+        leasedDecisionSnapshotPath = string.Empty;
+        leasedDecisionSourceStateHash = string.Empty;
+        leasedDecisionGoalId = string.Empty;
+        leasedSelectedCandidateId = string.Empty;
+        leasedSelectedQueueIndex = -1;
+        AppendProgress(
+            options,
+            "native_save_boundary_start",
+            attemptOrdinal,
+            lastStateHash,
+            lastQueueId,
+            "primary_attempts=" + primaryAttemptsStarted +
+            " verified_actions=" + verifiedActions);
+    }
+
     var iteration = nextArtifactIteration + attemptOrdinal - 1;
     try
     {
@@ -81,11 +140,62 @@ for (var attemptOrdinal = 1;
             break;
         }
         attemptsStarted++;
+        if (closingNativeSaveBoundary)
+        {
+            nativeSaveBoundaryAttemptsStarted++;
+        }
+        else
+        {
+            primaryAttemptsStarted++;
+        }
         var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
             ? await File.ReadAllTextAsync(options.SnapshotFile, Encoding.UTF8)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
+        if (options.RequireNativeSaveBoundary)
+        {
+            if (string.IsNullOrWhiteSpace(nativeSaveBoundaryInitialDayKey))
+            {
+                if (string.IsNullOrWhiteSpace(currentDayKey))
+                {
+                    throw new InvalidOperationException(
+                        "native_save_boundary_initial_day_key_unavailable");
+                }
+                nativeSaveBoundaryInitialDayKey = currentDayKey;
+            }
+            nativeSaveBoundaryCurrentDayKey = currentDayKey;
+        }
+        if (closingNativeSaveBoundary &&
+            !string.Equals(
+                nativeSaveBoundaryInitialDayKey,
+                nativeSaveBoundaryCurrentDayKey,
+                StringComparison.Ordinal))
+        {
+            currentSaveFingerprint = await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
+                options.SaveIsolationPath,
+                options.SaveSlot);
+            var observedBoundary = NativeSaveBoundaryVerifier.Evaluate(
+                nativeSaveBoundaryInitialDayKey,
+                nativeSaveBoundaryCurrentDayKey,
+                initialSaveFingerprint!,
+                currentSaveFingerprint);
+            nativeSaveBoundaryVerified = observedBoundary.Verified;
+            AppendProgress(
+                options,
+                nativeSaveBoundaryVerified
+                    ? "native_save_boundary_verified"
+                    : "native_save_boundary_waiting_for_durable_save",
+                iteration,
+                lastStateHash,
+                lastQueueId,
+                "day_advanced=" + observedBoundary.DayAdvanced +
+                " save_changed=" + observedBoundary.SaveChanged +
+                " initial_day=" + nativeSaveBoundaryInitialDayKey +
+                " current_day=" + nativeSaveBoundaryCurrentDayKey);
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+            continue;
+        }
         if (!string.IsNullOrWhiteSpace(currentDayKey) &&
             !string.Equals(currentDayKey, suppressionDayKey, StringComparison.Ordinal))
         {
@@ -176,6 +286,38 @@ for (var attemptOrdinal = 1;
             selectedCandidateId = selectedCandidate.CandidateId;
             selectedQueueIndex = selectedCandidate.QueueIndex;
             resumedSelectedQueueDecision = true;
+        }
+        else if (closingNativeSaveBoundary)
+        {
+            var saveBoundary = await BuildNativeSaveBoundaryQueueAsync(
+                http,
+                options,
+                lastStateHash);
+            modelPlanPath = Path.Combine(
+                options.SnapshotDir,
+                "native-save-boundary-plan-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(
+                modelPlanPath,
+                saveBoundary.Plan.ToJsonString(JsonOptions),
+                Encoding.UTF8);
+            var responsePath = Path.Combine(
+                options.SnapshotDir,
+                "native-save-boundary-response-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(
+                responsePath,
+                saveBoundary.Response.ToJsonString(JsonOptions),
+                Encoding.UTF8);
+            rankingPath = Path.Combine(
+                options.SnapshotDir,
+                "native-save-boundary-ranking-" + iteration.ToString("D4") + ".json");
+            await File.WriteAllTextAsync(
+                rankingPath,
+                saveBoundary.Ranking.ToJsonString(JsonOptions),
+                Encoding.UTF8);
+            dailyPlanRanking = saveBoundary.Ranking;
+            queue = saveBoundary.Queue;
+            decisionModelPlanPath = modelPlanPath;
+            decisionRankingPath = rankingPath;
         }
         else
         {
@@ -372,8 +514,10 @@ for (var attemptOrdinal = 1;
                 lastStateHash,
                 lastQueueId,
                 appendToDataset: !executionNoProgress.NoProgress);
-            objectiveCompleted = execution["objective_continuation_completed"]?.GetValue<bool>() == true;
-            socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
+            objectiveCompleted |= execution[
+                "objective_continuation_completed"]?.GetValue<bool>() == true;
+            socialObjectiveCompleted |= execution[
+                "social_objective_completed"]?.GetValue<bool>() == true;
             if (execution["completed_objective_continuations"] is JsonArray completedContinuations)
             {
                 foreach (var completedContinuation in completedContinuations
@@ -417,13 +561,17 @@ for (var attemptOrdinal = 1;
             }
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
-            var policyAppend = executionNoProgress.NoProgress
+            var policyAppend = executionNoProgress.NoProgress ||
+                closingNativeSaveBoundary
                 ? new PolicyTrajectoryAppendBatchResult()
                 : AppendPolicyDecisionTrajectories(options, iteration, execution, realAppend);
             rowsAppended = realAppend.RowCount;
             if (!executionNoProgress.NoProgress)
             {
-                verifiedActions++;
+                if (!closingNativeSaveBoundary)
+                {
+                    verifiedActions++;
+                }
                 AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " horizon_observations=" + horizonObservations + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=" + options.ExecutorFeedbackSource);
                 var train = options.RequireStructuredPolicy &&
                     policyAppend.AppendedCount == 0 &&
@@ -434,6 +582,44 @@ for (var attemptOrdinal = 1;
                 {
                     lastTrainingReport = train.TrainingReport;
                     lastPrediction = train.Prediction;
+                }
+                if (closingNativeSaveBoundary)
+                {
+                    var afterSnapshotPath = ReadString(
+                        execution,
+                        "after_snapshot_path");
+                    var afterSnapshot = string.IsNullOrWhiteSpace(afterSnapshotPath) ||
+                        !File.Exists(afterSnapshotPath)
+                            ? new JsonObject()
+                            : JsonNode.Parse(
+                                await File.ReadAllTextAsync(
+                                    afterSnapshotPath,
+                                    Encoding.UTF8))?.AsObject() ?? new JsonObject();
+                    nativeSaveBoundaryCurrentDayKey =
+                        QueueReplanFilter.SnapshotDayKey(afterSnapshot);
+                    currentSaveFingerprint = await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
+                        options.SaveIsolationPath,
+                        options.SaveSlot);
+                    var saveBoundaryObservation =
+                        NativeSaveBoundaryVerifier.Evaluate(
+                            nativeSaveBoundaryInitialDayKey,
+                            nativeSaveBoundaryCurrentDayKey,
+                            initialSaveFingerprint!,
+                            currentSaveFingerprint);
+                    nativeSaveBoundaryVerified =
+                        saveBoundaryObservation.Verified;
+                    AppendProgress(
+                        options,
+                        nativeSaveBoundaryVerified
+                            ? "native_save_boundary_verified"
+                            : "native_save_boundary_pending",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        "day_advanced=" + saveBoundaryObservation.DayAdvanced +
+                        " save_changed=" + saveBoundaryObservation.SaveChanged +
+                        " initial_day=" + nativeSaveBoundaryInitialDayKey +
+                        " current_day=" + nativeSaveBoundaryCurrentDayKey);
                 }
             }
             else
@@ -499,7 +685,8 @@ for (var attemptOrdinal = 1;
 var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
     (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
     (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
-    (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
+    (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
+    (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
 var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
 if (!verifiedTargetMet)
 {
@@ -516,12 +703,22 @@ var report = new LiveTrainingLoopReport
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,
-    Iterations = options.MaxAttempts,
+    Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
     AttemptsStarted = attemptsStarted,
     RowsAppended = rowsAppended,
     VerifiedActions = verifiedActions,
     RequiredVerifiedActions = options.RequiredVerifiedActions,
+    PrimaryAttemptsStarted = primaryAttemptsStarted,
+    NativeSaveBoundaryRequired = options.RequireNativeSaveBoundary,
+    NativeSaveBoundaryAttemptsStarted = nativeSaveBoundaryAttemptsStarted,
+    NativeSaveBoundaryVerified = nativeSaveBoundaryVerified,
+    NativeSaveBoundaryInitialDayKey = nativeSaveBoundaryInitialDayKey,
+    NativeSaveBoundaryCurrentDayKey = nativeSaveBoundaryCurrentDayKey,
+    NativeSaveBoundaryInitialSaveSha256 =
+        initialSaveFingerprint?.Sha256 ?? string.Empty,
+    NativeSaveBoundaryCurrentSaveSha256 =
+        currentSaveFingerprint?.Sha256 ?? string.Empty,
     StopReason = stopReason,
     ObjectiveCompleted = objectiveCompleted,
     ActiveObjectiveContinuation = activeObjectiveContinuation,
@@ -546,12 +743,16 @@ Console.WriteLine(JsonSerializer.Serialize(new
 {
     status = loopStatus,
     run_id = options.RunId,
-    iterations = options.MaxAttempts,
+    iterations = attemptsStarted,
     max_attempts = options.MaxAttempts,
     attempts_started = attemptsStarted,
     rows_appended = rowsAppended,
     verified_actions = verifiedActions,
     required_verified_actions = options.RequiredVerifiedActions,
+    primary_attempts_started = primaryAttemptsStarted,
+    native_save_boundary_required = options.RequireNativeSaveBoundary,
+    native_save_boundary_attempts_started = nativeSaveBoundaryAttemptsStarted,
+    native_save_boundary_verified = nativeSaveBoundaryVerified,
     stop_reason = stopReason,
     dataset_path = options.DatasetPath,
     report_path = reportPath,
@@ -579,7 +780,7 @@ static partial class Program
         int minimumDelayMs = 0)
     {
         var delayMs = Math.Max(options.SleepMs, minimumDelayMs);
-        if (delayMs > 0 && attemptOrdinal < options.MaxAttempts)
+        if (delayMs > 0)
         {
             await Task.Delay(delayMs);
         }

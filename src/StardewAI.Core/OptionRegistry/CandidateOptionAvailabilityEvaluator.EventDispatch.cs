@@ -55,7 +55,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["executor.plant_seed"] = (snapshot, _) => PlantSeedCandidates(snapshot),
                 ["exploration.visit_location"] = (snapshot, _) => RouteConnectorCandidates(snapshot),
                 ["executor.interact"] = (snapshot, _) => InteractEndpointCandidates(snapshot),
-                ["recovery.stabilize_day"] = (snapshot, _) => RecoveryCandidates(snapshot),
+                ["recovery.stabilize_day"] = RecoveryCandidates,
                 ["recovery.escape_object_trap"] = (snapshot, _) => ObjectTrapRecoveryCandidates(snapshot),
                 ["fishing.catch_fish"] = (snapshot, _) => FishingEventCandidateBuilder.Build(snapshot),
                 ["fishing.collect_crab_pots"] = (snapshot, _) => CrabPotCollectCandidates(snapshot),

@@ -12,6 +12,8 @@ param(
     [ValidateRange(1, 64)]
     [int] $MaxPersistedIterations = 4,
     [int] $RequiredVerifiedActions = 0,
+    [ValidateRange(1, 128)]
+    [int] $SaveBoundaryMaxAttempts = 16,
     [switch] $Launch
 )
 
@@ -112,6 +114,8 @@ try {
         max_attempts = $MaxAttempts
         max_persisted_iterations = $MaxPersistedIterations
         required_verified_actions = $RequiredVerifiedActions
+        require_native_save_boundary = $true
+        save_boundary_max_attempts = $SaveBoundaryMaxAttempts
         manifest_path = $manifestPath
         game_executable_path = $gameExecutable
         game_working_directory = $gameDirectory

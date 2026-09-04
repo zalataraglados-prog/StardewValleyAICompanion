@@ -59,6 +59,23 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
     }
 
     [Fact]
+    public void ParsesNativeSaveBoundaryControls()
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--require-native-save-boundary",
+            "--save-isolation-path", "test-saves",
+            "--save-slot", "Farm_123",
+            "--save-boundary-max-attempts", "7",
+            "--use-daily-plan"
+        });
+
+        Assert.True(options.RequireNativeSaveBoundary);
+        Assert.Equal("Farm_123", options.SaveSlot);
+        Assert.Equal(7, options.SaveBoundaryMaxAttempts);
+    }
+
+    [Fact]
     public void MainLoopUsesGenericObjectiveCompletionForExitAndReport()
     {
         var source = File.ReadAllText(FindRepositoryFile(
@@ -67,13 +84,14 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
             "Program.cs"));
 
         Assert.Contains(
-            "execution[\"objective_continuation_completed\"]",
+            "objectiveCompleted |= execution[",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "!options.StopAfterObjectiveComplete || !objectiveCompleted",
+            "\"objective_continuation_completed\"]",
             source,
             StringComparison.Ordinal);
+        Assert.Contains("TrainingCompletionPolicy.Decide", source, StringComparison.Ordinal);
         Assert.Contains(
             "ObjectiveCompleted = objectiveCompleted",
             source,
@@ -101,8 +119,8 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
             "StardewAI.LiveTrainingLoop",
             "Program.QueueBuilding.cs"));
 
-        Assert.Contains("options.DailyPlanCandidateParameters.Count > 0", source, StringComparison.Ordinal);
-        Assert.Contains("parameters = options.DailyPlanCandidateParameters", source, StringComparison.Ordinal);
+        Assert.Contains("candidateParameters.Count > 0", source, StringComparison.Ordinal);
+        Assert.Contains("parameters = candidateParameters", source, StringComparison.Ordinal);
         Assert.Contains("explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted", source, StringComparison.Ordinal);
         Assert.Contains("invocation_source = options.DailyPlanInvocationSource", source, StringComparison.Ordinal);
         Assert.True(
