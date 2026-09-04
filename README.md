@@ -129,7 +129,7 @@ round07 首次证明“真实 Product 动作 → 原生跨日存档 → 事务�
 
 这仍是连续有界训练证据，不是跨季、跨年、Grandpa 21 或 Companion 产品验收。直接下一步是从 Summer 6 和上述 canonical 哈希生成下一份有退出条件的计划，继续真实 Product rollout。
 
-`train.server.20260905.r34.plan02` 已继续完成 Summer 6 → Summer 7：2 个主决策产生邮件路线、打开邮件、照料宠物和收取树产品 4 条 applied 策略轨迹；fresh 快照上失效的社交队列尾项被拒绝并触发重新规划，没有误写成功轨迹。控制面边界仍无策略轨迹。canonical 更新为 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs；checkpoint / manifest SHA-256 为 `bc5369df5a47bfdf27d9a49b99cc4498b54a4cd4dc27bba1b02de907419c15a4` / `24b18a5bf0317e36f36398609b9e65c79a69f42bef73cee35b57191ae56ec653`。完整归档远端/本机 170 / 170 且三类差异为 0；下一轮起点为 Summer 7。
+`train.server.20260905.r34.plan02` 已继续完成 Summer 6 → Summer 7：2 个主决策产生完整处理两封邮件、照料宠物和收取树产品 4 条 applied 策略轨迹；fresh 快照上失效的社交队列尾项被拒绝并触发重新规划，没有误写成功轨迹。邮件候选 ID 记录进入时的 route/open 阶段，但 outcome 聚合同一 lease 内直到 `close_menu` 的完整 continuation，并非把机械步骤独立训练。控制面边界仍无策略轨迹。canonical 更新为 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs；checkpoint / manifest SHA-256 为 `bc5369df5a47bfdf27d9a49b99cc4498b54a4cd4dc27bba1b02de907419c15a4` / `24b18a5bf0317e36f36398609b9e65c79a69f42bef73cee35b57191ae56ec653`。完整归档远端/本机 170 / 170 且三类差异为 0；下一轮起点为 Summer 7。
 
 ## 设计原则
 

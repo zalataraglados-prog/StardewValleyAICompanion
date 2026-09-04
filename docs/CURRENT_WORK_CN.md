@@ -3,7 +3,7 @@
 ## 2026-09-05 当前权威检查点：r34 round02
 
 - `train.server.20260905.r34.plan02` 从 round01 已提交的 Summer 6 和 canonical 精确哈希直接准入；并发 1，5 次迭代包括 2 次主决策和 3 次原生保存边界尝试，最终进入 Summer 7。存档 SHA-256 从 `08b6e014081653f6625ad57106624417e0e02ca5f5778d744a393911f7dc6a49` 变为 `e967b3990b683b78a9b6bcad59fcfa0457907cf8e7f7b13ce5829c05bf54397a`。
-- 4 条新增策略轨迹依次为邮件路线、打开邮件、照料宠物和收取树产品，均为 applied。队列中 fresh 后不可用的社交尾项被拒绝并释放旧 lease，只记 `selected_queue_candidate_not_fully_verified` skip；没有伪造成功轨迹，`recovery.stabilize_day` 入库数仍为 0。
+- 4 条新增策略轨迹依次为完整处理两封邮件、照料宠物和收取树产品，均为 applied。邮件候选 ID 中的 route/open 只表示进入阶段；第一封邮件在同一 lease 内连续完成 `traverse_connector → move_to_tile → interact → wait_ticks → close_menu` 后才入库，不是机械步骤独立训练。队列中 fresh 后不可用的社交尾项被拒绝并释放旧 lease，只记 `selected_queue_candidate_not_fully_verified` skip；没有伪造成功轨迹，`recovery.stabilize_day` 入库数仍为 0。
 - 两次主排序耗时 2.412 秒和 43.828 秒；三次控制面边界中的后两次排序为 154.6 毫秒和 22.2 毫秒。没有回到 r33 的数分钟重复候选构建。
 - 事务为 `committed_after_native_save_boundary`；canonical 为 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs。checkpoint `structured-policy-bd3f223f2cdda380168406bc` 的 SHA-256 为 `bc5369df5a47bfdf27d9a49b99cc4498b54a4cd4dc27bba1b02de907419c15a4`，manifest SHA-256 为 `24b18a5bf0317e36f36398609b9e65c79a69f42bef73cee35b57191ae56ec653`；validation/test pair accuracy 为 1.0 / 0.96683。
 - 原生日志记录 `SaveGame.Save() completed without exceptions.`；unresolved Product pending 为 0，容器 exit 0、OOM false。完整归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round02-20260905-043913`，远端/本机 170 / 170，缺失、额外、SHA-256 不一致均为 0。
