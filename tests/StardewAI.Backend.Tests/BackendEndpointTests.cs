@@ -5,10 +5,13 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Strategy;
+using StardewAI.Core.Training;
 using Xunit;
 
 namespace StardewAI.Backend.Tests
@@ -451,6 +454,67 @@ namespace StardewAI.Backend.Tests
                 "policy_checkpoint_path",
                 await response.Content.ReadAsStringAsync(),
                 StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task StructuredPolicyDefaultsToAdmittedOptionsAndRecoveryBoundary()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync(
+                "/api/v1/snapshots",
+                SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(
+                await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement
+                .GetProperty("state_hash")
+                .GetString();
+            var checkpointPath = Path.Combine(
+                Path.GetTempPath(),
+                "stardewai-structured-policy-" + Guid.NewGuid().ToString("N") + ".json");
+
+            try
+            {
+                WriteMinimalStructuredPolicyCheckpoint(checkpointPath);
+                var response = await client.PostAsJsonAsync(
+                    "/api/v1/planner/baseline/rank-options",
+                    new
+                    {
+                        state_hash = stateHash,
+                        policy_checkpoint_path = checkpointPath,
+                        require_structured_policy = true,
+                        include_blocked_options = true
+                    });
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                using var json = JsonDocument.Parse(
+                    await response.Content.ReadAsStringAsync());
+                var actual = json.RootElement
+                    .GetProperty("availability")
+                    .GetProperty("options")
+                    .EnumerateArray()
+                    .Select(option => option.GetProperty("option_id").GetString()!)
+                    .OrderBy(optionId => optionId, StringComparer.Ordinal)
+                    .ToArray();
+                var expected = OptionCapabilityRegistrySource.TrainingAllowlist
+                    .Intersect(
+                        new StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator()
+                            .DefaultAutonomousRuntimeOptionIds(),
+                        StringComparer.Ordinal)
+                    .Append("recovery.stabilize_day")
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(optionId => optionId, StringComparer.Ordinal)
+                    .ToArray();
+
+                Assert.Equal(expected, actual);
+                Assert.Contains("recovery.stabilize_day", actual);
+                Assert.DoesNotContain("exploration.visit_location", actual);
+            }
+            finally
+            {
+                if (File.Exists(checkpointPath))
+                    File.Delete(checkpointPath);
+            }
         }
 
         [Fact]
@@ -1630,6 +1694,51 @@ namespace StardewAI.Backend.Tests
             Name = name,
             Value = value
         };
+
+        private static void WriteMinimalStructuredPolicyCheckpoint(string path)
+        {
+            const string digest =
+                "0000000000000000000000000000000000000000000000000000000000000000";
+            new StructuredPolicyCheckpointStore().Save(
+                path,
+                new StructuredPolicyCheckpointEnvelope
+                {
+                    CheckpointId = "structured-policy.backend-test",
+                    Dataset = new StructuredPolicyDatasetBinding
+                    {
+                        ManifestPath = path + ".manifest.json",
+                        ManifestSha256 = digest,
+                        CleanedSha256 = digest,
+                        TrainSha256 = digest,
+                        ValidationSha256 = digest,
+                        TestSha256 = digest
+                    },
+                    Versions = new PolicyDatasetVersionSet
+                    {
+                        FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
+                        CandidateVocabulary = OptionCapabilityRegistrySource.SchemaVersion,
+                        CapabilityRegistry = OptionCapabilityRegistrySource.SchemaVersion,
+                        KnowledgeDictionary = PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                        Compiler = PolicyTrajectoryVersionPins.Compiler,
+                        Executor = PolicyTrajectoryVersionPins.ProductExecutor,
+                        RowCount = 1
+                    },
+                    Model = new StructuredPolicyLinearModel
+                    {
+                        FeatureNames = new[] { "candidate.boolean:available" },
+                        FeatureMeans = new[] { 0d },
+                        FeatureScales = new[] { 1d },
+                        Weights = new[] { 0d }
+                    },
+                    Training = new StructuredPolicyTrainingSummary
+                    {
+                        TrainRows = 1,
+                        TrainPairs = 1,
+                        FeatureCount = 1,
+                        TrainPairAccuracy = 1
+                    }
+                });
+        }
 
         private sealed class InMemoryStrategyCommitmentRepository : IStrategyCommitmentRepository
         {

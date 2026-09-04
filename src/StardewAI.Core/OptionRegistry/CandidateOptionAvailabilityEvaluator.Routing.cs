@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -14,6 +15,28 @@ namespace StardewAI.Core.OptionRegistry
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
         private EventCandidate[] RouteConnectorCandidates(SnapshotEnvelope snapshot, int maxCandidates = 32)
+        {
+            var cache = routeConnectorCandidatesBySnapshot.GetValue(
+                snapshot,
+                _ => new RouteConnectorCandidateCache());
+            EventCandidate[] candidates;
+            lock (cache)
+            {
+                if (cache.Candidates is null)
+                {
+                    cache.Candidates = BuildRouteConnectorCandidates(snapshot);
+                    Interlocked.Increment(ref routeConnectorCandidateBuildCount);
+                }
+
+                candidates = cache.Candidates;
+            }
+
+            return candidates
+                .Take(Math.Max(1, maxCandidates))
+                .ToArray();
+        }
+
+        private EventCandidate[] BuildRouteConnectorCandidates(SnapshotEnvelope snapshot)
         {
             var routeConnectors = ReadStateFieldValue(snapshot, "locations", "route_connectors");
             if (!routeConnectors.HasValue ||
@@ -40,8 +63,12 @@ namespace StardewAI.Core.OptionRegistry
                 .Select(group => group.First())
                 .OrderBy(candidate => candidate.TileY ?? 0)
                 .ThenBy(candidate => candidate.TileX ?? 0)
-                .Take(Math.Max(1, maxCandidates))
                 .ToArray();
+        }
+
+        private sealed class RouteConnectorCandidateCache
+        {
+            public EventCandidate[]? Candidates { get; set; }
         }
 
         private EventCandidate RouteConnectorCandidate(SnapshotEnvelope snapshot, JsonElement connector, string locationId)

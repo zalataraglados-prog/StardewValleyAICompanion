@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GameFreeGovernance)' == 'true'">
+    <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="NativeObjectMechanicsGovernanceTests.cs" />
     <Compile Include="RuntimeEvidenceFreshnessGovernanceTests.cs" />
     <PackageReference Update="Pathoschild.Stardew.ModBuildConfig"

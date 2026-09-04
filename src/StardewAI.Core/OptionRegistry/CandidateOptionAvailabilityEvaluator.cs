@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -24,6 +26,10 @@ namespace StardewAI.Core.OptionRegistry
         private readonly Verifier.Verifier verifier;
         private readonly ActionQueueCompiler compiler;
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
+        private readonly ConditionalWeakTable<SnapshotEnvelope, RouteConnectorCandidateCache> routeConnectorCandidatesBySnapshot = new();
+        private int routeConnectorCandidateBuildCount;
+
+        internal int RouteConnectorCandidateBuildCount => Volatile.Read(ref routeConnectorCandidateBuildCount);
 
         public CandidateOptionAvailabilityEvaluator()
             : this(new OptionRegistry(), new Verifier.Verifier())
@@ -69,13 +75,23 @@ namespace StardewAI.Core.OptionRegistry
                 return Evaluate(snapshot, candidateOptionIds, commitmentLedger: commitmentLedger);
             }
 
-            var candidates = DefaultCandidates(includeExecutorCalibrationOptions: false)
-                .Append(new OptionAvailabilityCandidate { OptionId = "recovery.stabilize_day" })
-                .GroupBy(candidate => candidate.OptionId, StringComparer.Ordinal)
-                .Select(group => group.First())
-                .OrderBy(candidate => candidate.OptionId, StringComparer.Ordinal)
+            var candidates = DefaultAutonomousRuntimeOptionIds()
+                .Select(optionId => new OptionAvailabilityCandidate
+                {
+                    OptionId = optionId
+                })
                 .ToArray();
             return Evaluate(snapshot, candidates, commitmentLedger: commitmentLedger);
+        }
+
+        public string[] DefaultAutonomousRuntimeOptionIds()
+        {
+            return DefaultCandidates(includeExecutorCalibrationOptions: false)
+                .Select(candidate => candidate.OptionId)
+                .Append("recovery.stabilize_day")
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(optionId => optionId, StringComparer.Ordinal)
+                .ToArray();
         }
 
         public static bool RequiresExclusiveRecovery(SnapshotEnvelope snapshot)

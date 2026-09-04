@@ -641,7 +641,7 @@ app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest requ
     return Results.Ok(ranker.Rank(report, request.CandidateOptionIds));
 });
 
-app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, GrandpaDailySubgoalResolver goalResolver, IStrategyCommitmentRepository commitmentRepository, WorldModelProjector worldModelProjector, PolicyStateFeatureProjector stateFeatureProjector, StructuredPolicyCheckpointStore checkpointStore, StructuredPolicyRanker structuredRanker) =>
+app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, PolicyTrainingAdmissionFilter policyTrainingAdmissionFilter, GrandpaDailySubgoalResolver goalResolver, IStrategyCommitmentRepository commitmentRepository, WorldModelProjector worldModelProjector, PolicyStateFeatureProjector stateFeatureProjector, StructuredPolicyCheckpointStore checkpointStore, StructuredPolicyRanker structuredRanker) =>
 {
     var useStructuredPolicy = !string.IsNullOrWhiteSpace(request.PolicyCheckpointPath);
     if (request.RequireStructuredPolicy && !useStructuredPolicy)
@@ -675,6 +675,15 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
     }
 
     var commitmentLedger = commitmentRepository.Get(snapshot);
+    var autonomousCandidateOptionIds = useStructuredPolicy &&
+        request.CandidateOptionIds.Length == 0
+            ? policyTrainingAdmissionFilter.FilterOptionIds(
+                    availabilityEvaluator.DefaultAutonomousRuntimeOptionIds())
+                .Append("recovery.stabilize_day")
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(optionId => optionId, StringComparer.Ordinal)
+                .ToArray()
+            : request.CandidateOptionIds;
     var availability = CandidateOptionAvailabilityEvaluator.RequiresExclusiveRecovery(snapshot)
         ? availabilityEvaluator.Evaluate(
             snapshot,
@@ -684,7 +693,7 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
             ? availabilityEvaluator.Evaluate(snapshot, request.Candidates, commitmentLedger: commitmentLedger)
             : availabilityEvaluator.EvaluateForAutonomousRuntimePlanning(
                 snapshot,
-                request.CandidateOptionIds,
+                autonomousCandidateOptionIds,
                 commitmentLedger);
     var rankedCandidates = request.IncludeBlockedOptions
         ? availability.Options.Select(option => option.OptionId).ToArray()
