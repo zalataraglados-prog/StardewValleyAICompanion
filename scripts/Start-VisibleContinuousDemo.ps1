@@ -5,6 +5,7 @@ param(
     [string] $DemoRoot = "E:\StardewAIVisualDemo",
     [string] $SaveSlot = "",
     [string] $PolicyCheckpointPath = "I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r35-round01-20260905-120836\canonical-state\checkpoints\structured-policy-latest.json",
+    [string] $CandidateOptions = "mail.process_letter,farm.care_for_pets,farm.collect_machine_outputs,foraging.harvest_tree_product",
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
     [int] $StartupTimeoutSeconds = 300,
@@ -213,6 +214,9 @@ try {
         "--policy-checkpoint-path", $PolicyCheckpointPath,
         "--require-structured-policy"
     )
+    if (-not [string]::IsNullOrWhiteSpace($CandidateOptions)) {
+        $loopArguments += @("--daily-plan-candidate-options", $CandidateOptions)
+    }
 
     while (-not $game.HasExited) {
         if ($backend.HasExited) { throw "Demo backend exited unexpectedly." }

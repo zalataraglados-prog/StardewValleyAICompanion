@@ -83,6 +83,13 @@ public static class QueueReplanFilter
         return filter["selected_candidate_count"]?.GetValue<int>() == 0;
     }
 
+    public static bool ShouldResumeContinuationOnNextIteration(
+        JsonObject? continuation,
+        int refreshedItemCount)
+    {
+        return continuation is not null && refreshedItemCount == 0;
+    }
+
     public static bool IsTrainingVerifiedExecution(JsonObject? execution)
     {
         if (!string.Equals(

@@ -597,11 +597,17 @@ static partial class Program
                     execution["queue_replan_response_path"] = refreshResponsePath;
                     execution["queue_replan_queue_path"] = refreshQueuePath;
                     execution["queue_replan_evidence_path"] = refreshEvidencePath;
-                    if (refreshedItems.Length == 0)
+                    if (QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+                            activeObjectiveContinuation,
+                            refreshedItems.Length))
                     {
-                        execution["selected_queue_redecision_required"] = true;
+                        // A timed wait may remain the same semantic action until
+                        // the next clock boundary. Keep the selected task leased.
+                        queueItems = queueItems.Take(itemIndex + 1).ToArray();
+                        execution["selected_queue_redecision_required"] = false;
+                        execution["selected_queue_continuation_retry_next_iteration"] = true;
                         execution["queue_replan_stop_reason"] =
-                            "selected_queue_continuation_unavailable";
+                            "selected_queue_continuation_retry_next_iteration";
                     }
                 }
             }

@@ -156,6 +156,36 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.False(QueueReplanFilter.ShouldReleaseUnavailableContinuation(continuation, new JsonObject()));
     }
 
+    [Fact]
+    public void EmptySameIterationRefreshPreservesActiveContinuationLease()
+    {
+        var continuation = new JsonObject
+        {
+            ["option_id"] = "minigame.play_prairie_king"
+        };
+
+        Assert.True(QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+            continuation,
+            refreshedItemCount: 0));
+        Assert.False(QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+            continuation,
+            refreshedItemCount: 1));
+        Assert.False(QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+            null,
+            refreshedItemCount: 0));
+
+        var runtimeSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
+        Assert.Contains(
+            "selected_queue_continuation_retry_next_iteration",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "queueItems.Take(itemIndex + 1)",
+            runtimeSource,
+            StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("executor.move_to_tile", "verified", "applied", true)]
     [InlineData("executor.play_prairie_king", "simulated_equivalent", "applied", true)]
