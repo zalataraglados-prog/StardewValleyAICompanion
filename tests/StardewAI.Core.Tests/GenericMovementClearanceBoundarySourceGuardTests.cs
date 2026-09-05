@@ -23,6 +23,41 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
         Assert.Contains("return false;", clearance, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void GenericMovementRoutesAroundSoftObstaclesThenUsesNativePushThrough()
+    {
+        var movement = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.cs"));
+        var softObstacles = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.SoftObstacles.cs"));
+
+        Assert.Contains(
+            "TickTileMoveSoftObstacle(move, currentTile, nextTile)",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.SoftObstacleTicks == 1 || move.SoftObstacleTicks % 30 == 0",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReplanTileMove(move, avoidSoftObstacles: true)",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "StartMovingIfNeeded(move, direction)",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains("MovePlayerForTick()", softObstacles, StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_soft_obstacle_timeout",
+            softObstacles,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

@@ -403,19 +403,7 @@ public sealed partial class ModEntry : Mod
 
         if (IsTileOccupiedByCharacter(Game1.currentLocation, nextTile))
         {
-            StopAllMovement();
-            move.CurrentDirection = null;
-            move.SoftObstacleTicks++;
-            if (move.SoftObstacleTicks % 30 == 0)
-            {
-                ReplanTileMove(move, avoidSoftObstacles: true);
-            }
-
-            if (move.SoftObstacleTicks > 180)
-            {
-                CompleteBlockedMove(move, "movement_soft_obstacle_timeout");
-            }
-
+            TickTileMoveSoftObstacle(move, currentTile, nextTile);
             return;
         }
 
