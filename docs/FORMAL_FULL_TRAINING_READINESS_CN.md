@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-05 r34 round03 连续批次结果
+
+round03 从 Summer 7 和 round02 canonical 精确哈希通过 prepare，以并发 1 完成 2 个主决策和 2 个原生保存边界迭代。出货与邮件 approach 的机械回执均为 applied/verified，但 selected queue candidate 均未完整闭合，因此正确地产生 0 条新策略轨迹；控制面 return-home/sleep 也没有进入训练策略数据。执行特征从 220 增至 224，horizon 观测从 7 增至 8。
+
+原生存档推进到 Summer 8，事务为 `committed_after_native_save_boundary`，未解决 pending 为 0，正式容器 exit 0 / OOM false。canonical 仍为 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs；checkpoint / manifest SHA-256 更新为 `64283a58cb8e48eed06baffb1c8116a241033c26b00e792ec01807db537c345c` / `47ac7aaff2798f3546eea1e0a5772a524dc3d9ee959e4f0506136d7e3fb18a78`，checkpoint 精确绑定新 horizon 清单。train/validation/test pair accuracy 为 0.992276 / 1.0 / 0.96683；两次主排序为 2.427/45.624 秒，两个边界排序为 203.5/12.4 毫秒。
+
+完整制品位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round03-20260905-085309`，远端/本机 119 / 119，缺失、额外和摘要不一致为 0，存档树聚合摘要也独立复算一致。下一批只能从 Summer 8、存档摘要 `4bb3420051c550a5f8c371bec8867e3101ca155ad0c6a69a60ed9ae36ad7096f` 和上述 canonical 起步。
+
 ## 2026-09-05 r34 round02 连续批次结果
 
 round02 从 Summer 6 和 round01 canonical 精确哈希直接通过 prepare，2 个主决策生成 4 条 applied Product 策略轨迹。fresh 后不可用的社交队列尾项被失败关闭并触发重新规划，只留下 skip 诊断；控制面保存边界没有写策略轨迹。原生存档推进到 Summer 7，事务为 `committed_after_native_save_boundary`，未解决 pending 为 0，正式容器 exit 0 / OOM false。

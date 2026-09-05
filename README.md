@@ -131,6 +131,8 @@ round07 首次证明“真实 Product 动作 → 原生跨日存档 → 事务�
 
 `train.server.20260905.r34.plan02` 已继续完成 Summer 6 → Summer 7：2 个主决策产生完整处理两封邮件、照料宠物和收取树产品 4 条 applied 策略轨迹；fresh 快照上失效的社交队列尾项被拒绝并触发重新规划，没有误写成功轨迹。邮件候选 ID 记录进入时的 route/open 阶段，但 outcome 聚合同一 lease 内直到 `close_menu` 的完整 continuation，并非把机械步骤独立训练。控制面边界仍无策略轨迹。canonical 更新为 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs；checkpoint / manifest SHA-256 为 `bc5369df5a47bfdf27d9a49b99cc4498b54a4cd4dc27bba1b02de907419c15a4` / `24b18a5bf0317e36f36398609b9e65c79a69f42bef73cee35b57191ae56ec653`。完整归档远端/本机 170 / 170 且三类差异为 0；下一轮起点为 Summer 7。
 
+`train.server.20260905.r34.plan03` 已从 Summer 7 原生保存到 Summer 8：2 个主候选的机械动作均由 Product 回执验证，但出货候选和邮件 approach 候选都只执行到局部队列边界，因此失败关闭为 0 条新增策略轨迹；控制面 return-home/sleep 同样不进入策略训练。canonical 保持 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs，执行特征增至 224、horizon 观测增至 8；checkpoint / manifest SHA-256 为 `64283a58cb8e48eed06baffb1c8116a241033c26b00e792ec01807db537c345c` / `47ac7aaff2798f3546eea1e0a5772a524dc3d9ee959e4f0506136d7e3fb18a78`。完整归档远端/本机 119 / 119 且三类差异为 0；下一轮唯一合法起点为 Summer 8。
+
 ## 设计原则
 
 ### 1. 模型负责“做什么”，机械层负责“怎么做”
