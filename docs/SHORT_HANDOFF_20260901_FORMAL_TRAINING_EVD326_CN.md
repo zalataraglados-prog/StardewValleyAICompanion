@@ -82,3 +82,9 @@ round02 已从 Summer 6 连续提交到 Summer 7。2 个主决策产生完整处
 round03 已从 Summer 7 连续提交到 Summer 8。2 个主候选机械执行均 verified，但出货候选与邮件 approach 候选只完成局部队列边界，故新增策略轨迹为 0；这不是漏数，而是完整候选准入门按设计失败关闭。控制面回屋/睡眠也未污染策略数据。执行特征现为 224 行、horizon 观测 8 行，策略轨迹仍为 215 行。
 
 checkpoint / manifest SHA-256 为 `64283a58cb8e48eed06baffb1c8116a241033c26b00e792ec01807db537c345c` / `47ac7aaff2798f3546eea1e0a5772a524dc3d9ee959e4f0506136d7e3fb18a78`；存档树 SHA-256 为 `4bb3420051c550a5f8c371bec8867e3101ca155ad0c6a69a60ed9ae36ad7096f`。归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round03-20260905-085309`，远端/本机 119 / 119 且三类差异为 0。正式容器已停止；后续不得从早于 Summer 8 的状态接续。
+
+## 2026-09-05 接续更新：r34 round04
+
+round04 已从 Summer 8 连续提交到 Summer 9。两个 verified 主决策形成 3 条完整策略轨迹：处理 `fertilizers` 邮件、摸宠物、处理 `spring_19_1` 邮件；控制面轨迹为 0。canonical 为 accepted 218 / rejected 0、160/5/53、5011 pairs，执行特征 227 行、horizon 观测 8 行。
+
+checkpoint / manifest SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035` / `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`；存档树 SHA-256 为 `c542c7c9ed8192c2e26b19cc714c94e9589dad27ea586efe800e6208a6fa7756`。归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round04-20260905-111352`，远端/本机 172 / 172 且三类差异为 0。正式容器已停止；后续不得从早于 Summer 9 的状态接续。

@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-05 r34 round04 连续批次结果
+
+round04 从 Summer 8 和 round03 canonical 精确哈希通过 prepare，以并发 1 完成 2 个主决策和 3 个原生保存边界迭代。完整处理 `fertilizers` 邮件、每日摸宠物和完整处理 `spring_19_1` 邮件形成 3 条 applied 策略轨迹；未闭合队列尾项只记 skip，控制面 return-home/sleep 没有进入策略数据。执行特征从 224 增至 227，horizon 观测保持 8。
+
+原生存档推进到 Summer 9，事务为 `committed_after_native_save_boundary`，未解决 pending 为 0，正式容器 exit 0 / OOM false。canonical 为 accepted 218 / rejected 0、160 / 5 / 53、5011 pairs；checkpoint / manifest SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035` / `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`。train/validation/test pair accuracy 为 0.992217 / 1.0 / 0.965602；两次主排序为 2.228/82.095 秒，后两个边界排序为 138.9/9.5 毫秒。
+
+完整制品位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round04-20260905-111352`，远端/本机 172 / 172，缺失、额外和摘要不一致为 0，存档树聚合摘要也独立复算一致。下一批只能从 Summer 9、存档摘要 `c542c7c9ed8192c2e26b19cc714c94e9589dad27ea586efe800e6208a6fa7756` 和上述 canonical 起步。
+
 ## 2026-09-05 r34 round03 连续批次结果
 
 round03 从 Summer 7 和 round02 canonical 精确哈希通过 prepare，以并发 1 完成 2 个主决策和 2 个原生保存边界迭代。出货与邮件 approach 的机械回执均为 applied/verified，但 selected queue candidate 均未完整闭合，因此正确地产生 0 条新策略轨迹；控制面 return-home/sleep 也没有进入训练策略数据。执行特征从 220 增至 224，horizon 观测从 7 增至 8。

@@ -133,6 +133,8 @@ round07 首次证明“真实 Product 动作 → 原生跨日存档 → 事务�
 
 `train.server.20260905.r34.plan03` 已从 Summer 7 原生保存到 Summer 8：2 个主候选的机械动作均由 Product 回执验证，但出货候选和邮件 approach 候选都只执行到局部队列边界，因此失败关闭为 0 条新增策略轨迹；控制面 return-home/sleep 同样不进入策略训练。canonical 保持 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs，执行特征增至 224、horizon 观测增至 8；checkpoint / manifest SHA-256 为 `64283a58cb8e48eed06baffb1c8116a241033c26b00e792ec01807db537c345c` / `47ac7aaff2798f3546eea1e0a5772a524dc3d9ee959e4f0506136d7e3fb18a78`。完整归档远端/本机 119 / 119 且三类差异为 0；下一轮唯一合法起点为 Summer 8。
 
+`train.server.20260905.r34.plan04` 已继续完成 Summer 8 → Summer 9：2 个主决策形成完整处理 `fertilizers` 邮件、照料宠物和完整处理 `spring_19_1` 邮件 3 条 applied 策略轨迹；不完整队列尾项只记 skip，控制面边界仍不进入策略训练。canonical 更新为 accepted 218 / rejected 0、160 / 5 / 53、5011 pairs，执行特征增至 227；checkpoint / manifest SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035` / `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`。完整归档远端/本机 172 / 172 且三类差异为 0；下一轮唯一合法起点为 Summer 9。
+
 ## 设计原则
 
 ### 1. 模型负责“做什么”，机械层负责“怎么做”

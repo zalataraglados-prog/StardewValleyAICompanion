@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-09-05 当前权威检查点：r34 round04
+
+- `train.server.20260905.r34.plan04` 从 round03 已提交的 Summer 8、存档和 canonical 精确哈希准入；并发 1，5 次迭代包括 2 次主决策和 3 次原生保存边界尝试，最终进入 Summer 9。存档树 SHA-256 从 `4bb3420051c550a5f8c371bec8867e3101ca155ad0c6a69a60ed9ae36ad7096f` 变为 `c542c7c9ed8192c2e26b19cc714c94e9589dad27ea586efe800e6208a6fa7756`。
+- 新增 3 条完整策略轨迹：`mail.process_letter:route:fertilizers:FarmHouse:3,12`、每日摸宠物和 `mail.process_letter:open:spring_19_1`，最终 primitive 分别闭合到 `close_menu`、`pet_interact`、`close_menu`，均为 applied。另一个未完整闭合的队列尾项只记录 skip；`recovery:native_save_boundary` 的控制面回屋/睡眠仍为 0 条策略轨迹。
+- canonical 更新为 accepted 218 / rejected 0、160 / 5 / 53、5011 pairs；执行特征从 224 增至 227，horizon 观测保持 8。checkpoint `structured-policy-775fb64e3351349790e74543` 的 SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035`，manifest SHA-256 为 `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`；train/validation/test pair accuracy 为 0.992217 / 1.0 / 0.965602。
+- 两次主排序耗时 2.228 秒和 82.095 秒；三个控制面边界中的后两个排序为 138.9 毫秒和 9.5 毫秒。原生日志记录 `SaveGame.Save() completed without exceptions.` 及 `starting summer 9 Y1`；unresolved Product pending 为 0，正式容器 exit 0、OOM false。
+- 完整归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round04-20260905-111352`，远端/本机均为 172 个文件，缺失、额外、SHA-256 不一致均为 0；本机按源码算法重算的存档树摘要与报告一致。
+- 后续唯一合法起点是 Summer 9 存档与上述 canonical；跨季、跨年、Grandpa 21 和 Companion 产品验收仍未完成。
+
 ## 2026-09-05 当前权威检查点：r34 round03
 
 - `train.server.20260905.r34.plan03` 从 round02 已提交的 Summer 7、存档和 canonical 精确哈希准入；并发 1，4 次迭代包括 2 次主决策和 2 次原生保存边界尝试，最终进入 Summer 8。存档树 SHA-256 从 `e967b3990b683b78a9b6bcad59fcfa0457907cf8e7f7b13ce5829c05bf54397a` 变为 `4bb3420051c550a5f8c371bec8867e3101ca155ad0c6a69a60ed9ae36ad7096f`。
