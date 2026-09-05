@@ -20,7 +20,7 @@ StardewAI 是一个面向《Stardew Valley》的分层 AI Companion / Agent 工�
 
 ## 当前状态
 
-截至 2026-09-05，公开 `main` 已进入 **r34 可重复有界正式训练与透明候选缓存** 阶段；以下动作覆盖数沿用 r25 冻结基线，运行证据治理沿用 r29 / issue #89 强绑定口径：
+截至 2026-09-05，公开 `main` 已进入 **r35 可重复有界正式训练、透明候选缓存与动态角色避障修复** 阶段；以下动作覆盖数沿用 r25 冻结基线，运行证据治理沿用 r29 / issue #89 强绑定口径：
 
 - 228 registered actions
 - 230 semantic actions
@@ -134,6 +134,8 @@ round07 首次证明“真实 Product 动作 → 原生跨日存档 → 事务�
 `train.server.20260905.r34.plan03` 已从 Summer 7 原生保存到 Summer 8：2 个主候选的机械动作均由 Product 回执验证，但出货候选和邮件 approach 候选都只执行到局部队列边界，因此失败关闭为 0 条新增策略轨迹；控制面 return-home/sleep 同样不进入策略训练。canonical 保持 accepted 215 / rejected 0、157 / 5 / 53、4920 pairs，执行特征增至 224、horizon 观测增至 8；checkpoint / manifest SHA-256 为 `64283a58cb8e48eed06baffb1c8116a241033c26b00e792ec01807db537c345c` / `47ac7aaff2798f3546eea1e0a5772a524dc3d9ee959e4f0506136d7e3fb18a78`。完整归档远端/本机 119 / 119 且三类差异为 0；下一轮唯一合法起点为 Summer 8。
 
 `train.server.20260905.r34.plan04` 已继续完成 Summer 8 → Summer 9：2 个主决策形成完整处理 `fertilizers` 邮件、照料宠物和完整处理 `spring_19_1` 邮件 3 条 applied 策略轨迹；不完整队列尾项只记 skip，控制面边界仍不进入策略训练。canonical 更新为 accepted 218 / rejected 0、160 / 5 / 53、5011 pairs，执行特征增至 227；checkpoint / manifest SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035` / `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`。完整归档远端/本机 172 / 172 且三类差异为 0；下一轮唯一合法起点为 Summer 9。
+
+`train.server.20260905.r34.plan05` 随后在 Summer 9 暴露宠物堵住卧室窄路时通用移动只重规划、不发送原生方向输入的问题；该轮事务未提交，存档与 canonical 均保持不变。`20fff60` 在同一移动链中加入“先绕行、无路则原生推让、180 tick 后失败关闭”，`formal-r35-20fff60-20260905 / train.server.20260905.r35.plan01` 重跑后从 FarmHouse `(10,9)` 正常切换到 Farm，并完成 Summer 9 → Summer 10。新 canonical 为 accepted 221 / rejected 0、163 / 5 / 53、5094 pairs、230 条执行特征和 8 条 horizon 观测；checkpoint / manifest SHA-256 为 `dcb6ff2bc8dd28a223fcd0fe5a27c4a58215ff23084b6013a30f9299daac774b` / `dc7628a1add5a9db7247980bc7e19e4f671c93c3b0f51bcf12e4917e3085904b`。成功归档远端/本机 165 / 165 且哈希差异为 0；下一轮唯一合法起点为 Summer 10。
 
 ## 设计原则
 

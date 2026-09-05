@@ -1,12 +1,12 @@
-# StardewAI 文档权威层级与维护状态（2026-09-05 r34）
+# StardewAI 文档权威层级与维护状态（2026-09-05 r35）
 
-本文解决仓库文档随着 EVD/rN 快速推进而产生的“历史段落仍存在，但容易被搜索引擎或 Agent 当作当前状态”问题。当前权威层是 **r29 有序高层队列边界 + issue #89 运行证据新鲜度治理 + r34 透明候选缓存与连续有界原生跨日训练事务**。
+本文解决仓库文档随着 EVD/rN 快速推进而产生的“历史段落仍存在，但容易被搜索引擎或 Agent 当作当前状态”问题。当前权威层是 **r29 有序高层队列边界 + issue #89 运行证据新鲜度治理 + r34 透明候选缓存 + r35 动态角色避障与连续有界原生跨日训练事务**。
 
 ## 1. 当前权威状态
 
 当前唯一顶层口径：
 
-- 当前 release/run：`formal-r34-10b7722-20260905` / `train.server.20260905.r34.plan04`
+- 当前 release/run：`formal-r35-20fff60-20260905` / `train.server.20260905.r35.plan01`
 - registered / semantic / compiler-bound：228 / 230 / 227
 - Harness / Product Executor：145 / 145
 - five-gate 历史动作口径 / training allowlist：151 / 62；其中 runtime evidence freshness 正在按 #89 逐域强绑定迁移，不能把历史 151 自动解释成全部已完成新鲜度强绑定
@@ -17,10 +17,10 @@
 - executor：`product_executor.v1`
 - 当前策略边界：**一次模型排序选择一条有序高层候选队列；fresh snapshot 只在候选边界和 continuation 中做本地确定性校验/重编译，不自动重新调用模型**
 - r29 决策边界实证：1 次策略排序 / 4 个高层候选 / 9 个机械动作 / 3 次候选边界刷新 / 5 次 continuation 刷新 / 后 8 次刷新均 `policy_model_invoked=false` / 4 条高层策略轨迹
-- r34 连续事务实证：round10 将 Summer 4 提交到 Summer 5；`10b7722` 在不裁剪透明字段的前提下缓存同一快照的 route connector 候选；round01/02/03/04 随后连续提交到 Summer 6/7/8/9，原生保存、事务提升、不完整候选失败关闭和控制面/训练面隔离均成立
-- 当前 canonical：218 accepted / 0 rejected，160 / 5 / 53，5011 pairs，227 条执行特征、8 条 horizon 观测；checkpoint / manifest SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035` / `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`
+- 连续事务实证：r34 round10 将 Summer 4 提交到 Summer 5；`10b7722` 在不裁剪透明字段的前提下缓存同一快照的 route connector 候选；r34 round01/02/03/04 随后提交到 Summer 6/7/8/9。r34 round05 的宠物软障碍失败没有提升 canonical；`20fff60` 修复后，r35 round01 从同一 Summer 9 精确起点提交到 Summer 10
+- 当前 canonical：221 accepted / 0 rejected，163 / 5 / 53，5094 pairs，230 条执行特征、8 条 horizon 观测；checkpoint / manifest SHA-256 为 `dcb6ff2bc8dd28a223fcd0fe5a27c4a58215ff23084b6013a30f9299daac774b` / `dc7628a1add5a9db7247980bc7e19e4f671c93c3b0f51bcf12e4917e3085904b`
 - 当前结论：正式 Product 训练、队列级决策边界、原生跨日事务、canonical 连续提交与透明候选性能优化均有真实服务器证据；跨季/跨年/Grandpa 21 长训尚未完成
-- 当前运行边界：服务器正式训练进程已停止；磁盘只允许有退出条件的有界批次，不允许无界长训
+- 当前运行边界：服务器正式训练进程已停止；下一轮唯一合法起点为 Summer 10 和上述 canonical，磁盘只允许有退出条件的有界批次，不允许无界长训
 
 ## 2. 文档读取优先级
 

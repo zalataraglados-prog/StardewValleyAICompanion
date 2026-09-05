@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-09-05 当前权威检查点：r35 round01
+
+- `train.server.20260905.r34.plan05` 从 Summer 9 精确基线启动后，暴露了卧室窄通道中的真实执行缺陷：摸完宠物后，通用移动会为占路宠物反复规划不存在的替代路线，却不继续发送原生移动输入，最终六次命中 `movement_soft_obstacle_timeout`。该轮只有 1/2 个主动作验证，未进入跨日边界，事务保持 `staged_not_committed`；Summer 9 存档和五项 canonical 哈希均未改变，失败证据及 6 份执行器诊断已归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round05-failed-20260905-112856`，远端/本机 130 / 130 且哈希差异为 0。
+- `20fff604434584f966824e043360b1802647027d` 保留唯一通用移动链：动态角色阻挡时先按 soft-obstacle BFS 重规划；无替代路线时持续发送原生方向输入，让宠物/NPC 按游戏机制让路；180 tick 超时仍失败关闭。RuntimeTestHarness Release 构建 0 warning / 0 error，game-free governance 20/20；`formal-r35-20fff60-20260905` 的 367 项发布清单通过校验。
+- `train.server.20260905.r35.plan01` 从未改变的 Summer 9 基线重跑。日志记录角色从 FarmHouse `(10,9)` 开始移动并在 2 秒后原生切换到 Farm，旧软障碍超时未复现；5 次迭代完成 2 个 verified 主决策和 3 个原生保存边界尝试，进入 Summer 10。新增 3 条 applied 高层轨迹：每日摸宠物、完整处理 `passedOut3_Billed 8` 邮件、完整处理 `spring_23` 邮件；控制面回屋/睡眠仍为 0 条策略轨迹。
+- 事务为 `committed_after_native_save_boundary`，存档树 SHA-256 从 `c542c7c9ed8192c2e26b19cc714c94e9589dad27ea586efe800e6208a6fa7756` 变为 `19de382994da925d5a47707eb143a89f0710a38e89dec7374b4d217faaaf62d7`。canonical 更新为 accepted 221 / rejected 0、163 / 5 / 53、5094 pairs，执行特征 230 行、horizon 观测 8 行；checkpoint / manifest SHA-256 为 `dcb6ff2bc8dd28a223fcd0fe5a27c4a58215ff23084b6013a30f9299daac774b` / `dc7628a1add5a9db7247980bc7e19e4f671c93c3b0f51bcf12e4917e3085904b`。
+- unresolved Product pending 为 0，resolved 为 13；正式容器 `exit=0 / OOM=false`。完整成功归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r35-round01-20260905-120836`，远端/本机均为 165 个文件，SHA-256 不一致为 0。
+- 后续唯一合法起点是 Summer 10 存档与上述 canonical。服务器正式训练进程已停止；跨季、跨年、Grandpa 21 和 Companion 产品验收仍未完成。
+
 ## 2026-09-05 当前权威检查点：r34 round04
 
 - `train.server.20260905.r34.plan04` 从 round03 已提交的 Summer 8、存档和 canonical 精确哈希准入；并发 1，5 次迭代包括 2 次主决策和 3 次原生保存边界尝试，最终进入 Summer 9。存档树 SHA-256 从 `4bb3420051c550a5f8c371bec8867e3101ca155ad0c6a69a60ed9ae36ad7096f` 变为 `c542c7c9ed8192c2e26b19cc714c94e9589dad27ea586efe800e6208a6fa7756`。

@@ -1,5 +1,15 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-05 r35 round01 软障碍修复与连续批次结果
+
+r34 round05 从 Summer 9 精确起点运行时，摸宠物成功，但后续跨出 FarmHouse 的通用移动在宠物占据下一格时只反复尝试 soft-obstacle BFS，未发送原生移动输入。6 次主尝试后仍只有 1/2 verified，事务保持 `staged_not_committed`，没有进入存档边界，也没有提升 canonical。失败轮次和 6 份执行器诊断已按 130/130 文件完成双端 SHA-256 归档。
+
+`20fff604434584f966824e043360b1802647027d` 将动态角色阻挡统一为“先绕行、无路则原生推让、180 tick 后失败关闭”，没有新增第二套移动器，也没有同步修改角色坐标。RuntimeTestHarness Release 构建和 game-free governance 20/20 通过；发布 `formal-r35-20fff60-20260905` 的 367 项清单通过校验。r35 round01 的实机日志证明角色从 FarmHouse `(10,9)` 启动移动并原生切换到 Farm，旧超时未复现。
+
+`train.server.20260905.r35.plan01` 以并发 1、5 次迭代完成 2 个 verified 主决策和 3 个原生保存边界尝试，Summer 9 推进至 Summer 10。每日摸宠物、完整处理 `passedOut3_Billed 8` 与 `spring_23` 两封邮件形成 3 条 applied 高层策略轨迹；控制面 return-home/sleep 没有进入策略数据。事务为 `committed_after_native_save_boundary`，pending 0、resolved 13，容器 exit 0 / OOM false。
+
+canonical 为 accepted 221 / rejected 0、163 / 5 / 53、5094 pairs，执行特征 230 行、horizon 观测 8 行；checkpoint / manifest SHA-256 为 `dcb6ff2bc8dd28a223fcd0fe5a27c4a58215ff23084b6013a30f9299daac774b` / `dc7628a1add5a9db7247980bc7e19e4f671c93c3b0f51bcf12e4917e3085904b`。完整成功制品位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r35-round01-20260905-120836`，远端/本机 165 / 165 且摘要不一致为 0。下一批只能从 Summer 10、存档摘要 `19de382994da925d5a47707eb143a89f0710a38e89dec7374b4d217faaaf62d7` 和上述 canonical 起步。
+
 ## 2026-09-05 r34 round04 连续批次结果
 
 round04 从 Summer 8 和 round03 canonical 精确哈希通过 prepare，以并发 1 完成 2 个主决策和 3 个原生保存边界迭代。完整处理 `fertilizers` 邮件、每日摸宠物和完整处理 `spring_19_1` 邮件形成 3 条 applied 策略轨迹；未闭合队列尾项只记 skip，控制面 return-home/sleep 没有进入策略数据。执行特征从 224 增至 227，horizon 观测保持 8。

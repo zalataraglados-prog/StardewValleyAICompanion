@@ -1,8 +1,8 @@
-# StardewAI r34 有界正式训练短交接
+# StardewAI r35 有界正式训练短交接
 
 ## 当前结论
 
-队列级决策边界已经修正，并已在 119 服务器连续跨日提交到 Summer 6。现在不是“每个机械动作调用一次模型”，而是模型一次选择一条有序高层候选队列，C# 编译器和执行器逐候选完成全部机械动作。r34 又消除了同一快照重复构建跨图候选的主要性能浪费；跨季、跨年与 Grandpa 21 全量长训尚未完成。
+队列级决策边界已经修正，并已在 119 服务器连续跨日提交到 Summer 10。现在不是“每个机械动作调用一次模型”，而是模型一次选择一条有序高层候选队列，C# 编译器和执行器逐候选完成全部机械动作。r34 消除了同一快照重复构建跨图候选的主要性能浪费，r35 又闭合了宠物/NPC 阻挡窄路时的通用移动回退；跨季、跨年与 Grandpa 21 全量长训尚未完成。
 
 ## 每次模型决策
 
@@ -43,7 +43,7 @@ r20-r29 已把跨图后旧队列、暂不可输入菜单、continuation 越候�
 
 ## 文档口径
 
-当前代码与新文档统一使用 `policy_decision_trajectory.v2 / policy_features.v2 / action_queue.v1 / product_executor.v1`。r25 是四轮制品保留和首个非空 validation 的历史证据；r29 是当前队列级决策边界权威证据；r30 是停止状态的最新部署。旧 r8-r28 数字只能解释各自历史检查点，不得覆盖顶层 README、当前工作、训练 readiness、完全体路线和本短交接的最新结论。
+当前代码与新文档统一使用 `policy_decision_trajectory.v2 / policy_features.v2 / action_queue.v1 / product_executor.v1`。r25 是四轮制品保留和首个非空 validation 的历史证据；r29 是当前队列级决策边界权威证据；r35 round01 是停止状态的最新成功部署与运行。旧 r8-r34 数字只能解释各自历史检查点，不得覆盖顶层 README、当前工作、训练 readiness、完全体路线和本短交接的最新结论。
 
 ## 2026-09-05 接续更新：r32 round07
 
@@ -88,3 +88,11 @@ checkpoint / manifest SHA-256 为 `64283a58cb8e48eed06baffb1c8116a241033c26b00e7
 round04 已从 Summer 8 连续提交到 Summer 9。两个 verified 主决策形成 3 条完整策略轨迹：处理 `fertilizers` 邮件、摸宠物、处理 `spring_19_1` 邮件；控制面轨迹为 0。canonical 为 accepted 218 / rejected 0、160/5/53、5011 pairs，执行特征 227 行、horizon 观测 8 行。
 
 checkpoint / manifest SHA-256 为 `0b31d8084c6fcc728defd4ba916d8542b2e1efb13cbf97695f1db94a910b1035` / `0af71721588d0da1bd78cb72cfca6e3cd74e7545f2edb2726390d3d9b08cf96b`；存档树 SHA-256 为 `c542c7c9ed8192c2e26b19cc714c94e9589dad27ea586efe800e6208a6fa7756`。归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round04-20260905-111352`，远端/本机 172 / 172 且三类差异为 0。正式容器已停止；后续不得从早于 Summer 9 的状态接续。
+
+## 2026-09-05 接续更新：r35 round01
+
+r34 round05 从 Summer 9 启动后，摸宠物成功，但后续离开 FarmHouse 时宠物占据下一格，通用移动只重规划而没有继续发送原生方向输入。该轮 6 次主尝试后仅有 1/2 verified，未进入跨日边界，事务为 `staged_not_committed`；存档和 canonical 精确保持 round04。失败证据及 6 份 `movement_soft_obstacle_timeout` 诊断已归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round05-failed-20260905-112856`，远端/本机 130 / 130 且哈希差异为 0。
+
+`20fff604434584f966824e043360b1802647027d` 在唯一通用移动链内增加先绕行、无路则原生推让、180 tick 超时失败关闭。`formal-r35-20fff60-20260905 / train.server.20260905.r35.plan01` 从同一 Summer 9 精确基线重跑，角色从 FarmHouse `(10,9)` 正常切换到 Farm；5 次迭代完成 2 个 verified 主决策、3 个原生保存边界尝试和 3 条 applied 高层轨迹，进入 Summer 10。
+
+事务为 `committed_after_native_save_boundary`，pending 0、resolved 13，容器 exit 0 / OOM false。canonical 为 accepted 221 / rejected 0、163/5/53、5094 pairs，执行特征 230 行、horizon 观测 8 行；checkpoint / manifest SHA-256 为 `dcb6ff2bc8dd28a223fcd0fe5a27c4a58215ff23084b6013a30f9299daac774b` / `dc7628a1add5a9db7247980bc7e19e4f671c93c3b0f51bcf12e4917e3085904b`。成功归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r35-round01-20260905-120836`，远端/本机 165 / 165 且哈希差异为 0。下一轮只允许从 Summer 10、存档摘要 `19de382994da925d5a47707eb143a89f0710a38e89dec7374b4d217faaaf62d7` 与上述 canonical 接续。
