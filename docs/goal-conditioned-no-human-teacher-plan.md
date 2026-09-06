@@ -206,6 +206,13 @@ they do not require the RTX 5070 laptop. The 5070 8 GB node becomes useful in Sl
 sequence models, mixed precision, larger batches, and checkpoint comparisons. GPU compute is
 not a substitute for the missing goal-method graph or teacher correctness.
 
+The current `119` host may carry the remaining Slice 3 through Slice 6 game-runtime work only as
+single-concurrency, bounded jobs. Source edits, builds, regression tests, release assembly and
+evidence review remain local; the server receives only a manifest-locked release and a cloned save.
+The server is not a replacement for the Slice 7 GPU node. Multi-day server rollout must wait for
+content-addressed or delta snapshot storage because the current full-snapshot loop grows too quickly
+for the host's remaining disk.
+
 ## Execution status
 
 ### 2026-09-05: Slice 1 passed
@@ -491,6 +498,39 @@ blockers without weakening the product's normal confirmation policy.
   `39525AB21372EAA38465FDFD3B7C6CF085FE280A7AEA0C04A46AEE67F5EEAEB8` across both runs. Formal
   training remains disabled.
 
+### 2026-09-06: server bounded admission passed two objectives and one native day boundary
+
+- Releases `r41` through `r43` were assembled locally with complete file manifests and deployed as
+  immutable directories. Each run used writable run-local mod copies, a run-local cloned save,
+  hidden rendering, dummy audio, concurrency 1, finite child timeouts and `--skip-training`.
+- `r41` produced the first real server connector receipt and exposed a route-validation defect: the
+  compiler revalidated the first parallel graph edge instead of the explicit connector coordinates
+  selected by the planner. `ActionQueueCompiler` now validates the exact source, destination and
+  connector tile carried by the command.
+- `r42` passed that edge and then failed closed on Backwoods `TouchAction=asdlfkjg`. Locked 1.6.15
+  decompilation shows that tiles `(13,29)` through `(15,29)` remove those three map properties when
+  touched. Only a dry, single-player, after-day-3 visit from 19:20 through 20:19 has a 2.5% chance to
+  add mail `asdlkjfg1` and cosmetic sound/sprites. It is a pass-through incidental branch, not a
+  warp, door or movement blocker, so route branch coverage now classifies it as `covered_for_read`
+  while retaining the exact conditional side effect in the audit note.
+- `r43` (`friendship-teacher-admission-r43-20260906-171904`) passed the bounded scope. Robin changed
+  `362 -> 382` through 23 verified native primitives and Abigail changed `154 -> 174` through 17.
+  Both set `talked_to_today=false -> true`, produced one policy trajectory, and used the existing
+  dialogue recovery chain. The native boundary advanced Spring 18 to Spring 19 and audited 38 NPCs
+  plus 29 friendship rows with zero mismatch. Population friendship still changed by `-14`, while
+  two exact positive teacher receipts correctly counted as goal-directed progress.
+- The run used a persistent source save with identical before/after tree hash
+  `ad9a78a1b652d1557041d9d7f15b8f711ce082ecbe1c1894953cd2bbfad3dede`. The complete 519-file,
+  372,400,193-byte evidence tree was copied to local archival storage; server and local aggregate
+  SHA-256 both equal `28cb2d1fef494c17bbb5eb91b26570a0c5a11450ec11280331076b595cdac46d`.
+- The release archive SHA-256 is
+  `8e306afd325e60069dfe8ba2fa490f80bd7807527d5eac21ced1ca0217694b17`. Regression after the two
+  route corrections passed Core `2423/2423`, Backend `177/177`, KnowledgeCompiler `585/585` with
+  zero blocking factors, and the `228/151/62` option/runtime/training matrix.
+- Scope remains strict: `formal_training_started=false`. This clone did not present a Grandpa event,
+  so `storyEventAdvanceCount=0`; the server result does not close the Grandpa-event continuation
+  target. It proves two goal-conditioned social objectives and one audited native day transition.
+
 ## Server continuation policy
 
 The remaining bounded admission should run headlessly on the existing `119` test server so the
@@ -499,11 +539,12 @@ training rules.
 
 ### Observed server envelope
 
-The 2026-09-06 read-only probe reported 2 CPU cores, 3.6 GiB RAM, and 7.6 GiB free on a 59 GiB root
-filesystem. The online-judge containers share the host. Existing Stardew data occupies about 12 GiB
-under `/root/stardew-junimo`; all Stardew game containers are stopped. These values make the server
-suitable for concurrency-1, no-render bounded rollouts, but not for unbounded artifact retention or
-GPU model training.
+The first 2026-09-06 read-only probe reported 2 CPU cores, 3.6 GiB RAM, and 7.6 GiB free on a 59 GiB
+root filesystem. After retaining the immutable releases and `r43` evidence, about 5.7 GB remained;
+the online-judge containers stayed healthy and available memory returned to about 2.6 GiB after the
+run. Existing Stardew data occupies about 12 GiB under `/root/stardew-junimo`. These values make the
+server suitable for concurrency-1, no-render bounded rollouts, but not for unbounded artifact
+retention or GPU model training.
 
 ### Transfer and execution gates
 
@@ -528,19 +569,22 @@ GPU model training.
 
 ### Immediate server admission target
 
-The next server run is deliberately still not formal training. It must reproduce, in one isolated
-clone, all of the following:
+The admission is now split so a partial result cannot be mislabeled complete:
 
-- two fresh teacher labels and their exact native social receipts;
-- one native save boundary and zero friendship-transition mismatches;
-- one verified automatic Grandpa story-event receipt through the existing story executor;
-- a clean bounded exit with no remaining game/backend/coordinator process;
-- an unchanged persistent source save and a complete local copy of the hashed evidence.
+1. `r43` passed Stage A: two fresh teacher labels and exact native social receipts, one native save
+   boundary with zero friendship-transition mismatch, a clean bounded exit, an unchanged persistent
+   source save and a complete hash-matched local evidence copy.
+2. Stage B remains: use an isolated clone that actually presents the automatic Grandpa event, obtain
+   one verified receipt through the existing story executor, audit the resulting fresh snapshot, and
+   exit with the same process/save/evidence guarantees. A run where the event never appears cannot
+   satisfy this stage.
+3. Before any repeated-day or fresh-save ten-villager deadline run, replace repeated full snapshot
+   bodies with content-addressed immutable blobs plus per-step references, or an equivalently audited
+   delta format. The `r43` single-day tree already reached 372,400,193 bytes.
 
-Only after this result passes may the coordinator expand to repeated days and the fresh-save
-ten-villager deadline proof. Snapshot payload/caching work remains required before a multi-season
-rollout; moving to the server prevents desktop interference but does not excuse avoidable 0.4 GiB/day
-artifact growth or high-frequency policy calls.
+All remaining Stage B and optimized multi-day game rollouts should run on the server under these
+gates so the interactive workstation stays usable. This is still dataset/teacher admission, not
+formal model training; Slice 7 remains assigned to the RTX 5070 node.
 
 ## Review questions
 
@@ -553,3 +597,7 @@ Public review should focus on the following points before Slice 5/6 promotion:
   negative population net delta, the correct failure semantics?
 - Are story decisions sufficiently isolated from automatic event progress?
 - Are the server resource and evidence-transfer gates strict enough for a co-located workload?
+- Is classifying Backwoods `asdlfkjg` as pass-through `covered_for_read`, while exposing its exact
+  time/weather/player-count/random side effect, sufficiently conservative for route training?
+- Should content-addressed full-state blobs be mandatory before the first repeated-day server run,
+  or is an independently hash-audited delta representation preferable?
