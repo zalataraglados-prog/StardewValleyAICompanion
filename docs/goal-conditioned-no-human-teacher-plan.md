@@ -19,9 +19,12 @@ examples. Human recordings remain optional post-baseline calibration evidence on
 
 ## Fixed product target
 
-- Start from a new save and earn all 21 native Grandpa rule points by the initial Year 3,
+- Stage 1 starts from a new save and earns all 21 native Grandpa rule points by the initial Year 3,
   Spring 1 evaluation.
 - Four candles at 12 points are an intermediate milestone, never a planner stop condition.
+- Stage 2 warm-starts from the admitted Stage 1 checkpoint and reaches 100% on the native
+  Perfection tracker. Stage 2 is a separate goal condition and acceptance manifest; it must not
+  silently change the Stage 1 denominator or deadline.
 - Use the Community Center route. A Joja conversion cannot satisfy the full native
   Community Center score path.
 - Do not use glitches, item spawning, direct save edits, direct state mutation, coordinate
@@ -30,6 +33,13 @@ examples. Human recordings remain optional post-baseline calibration evidence on
   post-state verification paths. The teacher must not create a second executor.
 - Keep player-command-only and cosmetic actions outside autonomous candidates and policy
   training.
+
+The intended Stage 2 expansion is controlled rather than unsupervised. The Stage 1 model may
+propose routes for newly opened Perfection subgoals, and teacher relabeling may turn those visited
+states into new training data. New Perfection dependencies, fields, candidates, compiler bindings
+and native receipts must still be admitted before they can receive a positive label. This preserves
+the transferable farming, economy, routing, timing and resource-allocation policy learned for 21
+points without treating model confidence as evidence of a previously unknown rule.
 
 ## Evidence authority and conflict policy
 
@@ -561,6 +571,24 @@ complete. The model is still valuable for amortizing long-horizon search, choosi
 alternatives, and adapting to a player's preferences. It is not allowed to repair unknown teacher
 rules by guessing, and the current teacher is not yet complete enough to claim a 100% save.
 
+### 2026-09-06: Grandpa automatic event admission passed
+
+- The archived isolated source was independently parsed as Year 3, Spring 1 with event `558291`
+  absent from `eventsSeen`. Release `r45` correctly failed closed when the automatic event moved
+  from command 6 to command 7 between snapshot compilation and dispatch.
+- Release `r46` retained exact event ID, command index, raw command and projection-fingerprint
+  checks, but allowed a bounded fresh-snapshot recompile. The second dispatch completed the native
+  event through 19 dialogue clicks and produced exactly one verified
+  `executor.advance_story_event` receipt. The post-state had no active event and did not advance the
+  game day.
+- The server admission exited `bounded_evidence_complete` specifically because the configured
+  `558291` evidence count reached one. The source-save tree remained
+  `221d9c7d5f0cd3aa4406b6b81950b4e576b8048070249f1900c51f0a2e974ac5`; the complete 161-file
+  evidence tree was transferred locally and verified file-for-file. Formal training remained off.
+- The coordinator now stops its story child loop after the first verified action, avoiding unused
+  post-completion iterations. This optimization passed focused tests and does not weaken the native
+  executor's stale-command rejection.
+
 ## Server continuation policy
 
 The remaining bounded admission should run headlessly on the existing `119` test server so the
@@ -605,17 +633,17 @@ The admission is now split so a partial result cannot be mislabeled complete:
 1. `r43` passed Stage A: two fresh teacher labels and exact native social receipts, one native save
    boundary with zero friendship-transition mismatch, a clean bounded exit, an unchanged persistent
    source save and a complete hash-matched local evidence copy.
-2. Stage B remains: use an isolated clone that actually presents the automatic Grandpa event, obtain
-   one verified receipt through the existing story executor, audit the resulting fresh snapshot, and
-   exit with the same process/save/evidence guarantees. A run where the event never appears cannot
-   satisfy this stage.
+2. `r46` passed Stage B on a Year 3 Spring 1 isolated clone: event `558291` produced one verified
+   existing-story-executor receipt, a fresh inactive post-state, a clean bounded exit, an unchanged
+   source save and a complete hash-matched local evidence copy.
 3. `r44` passed the storage prerequisite with content-addressed immutable gzip blobs, per-step
    manifests and full read-time integrity checks. Repeated-day and fresh-save deadline runs may use
    this mode, but must retain the same disk reserve, source-save isolation and evidence-copy gates.
 
-All remaining Stage B and optimized multi-day game rollouts should run on the server under these
-gates so the interactive workstation stays usable. This is still dataset/teacher admission, not
-formal model training; Slice 7 remains assigned to the RTX 5070 node.
+Optimized multi-day game rollouts should run on the server under these gates so the interactive
+workstation stays usable. The next gate is full Stage 1 goal-method teacher coverage and a new-save
+21/21 curriculum rollout. This is still dataset/teacher admission, not formal model training;
+Slice 7 remains assigned to the RTX 5070 node.
 
 ## Review questions
 
