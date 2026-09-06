@@ -589,6 +589,28 @@ rules by guessing, and the current teacher is not yet complete enough to claim a
   post-completion iterations. This optimization passed focused tests and does not weaken the native
   executor's stale-command rejection.
 
+### 2026-09-06: Stage 1 to Stage 2 checkpoint continuation implemented
+
+- The structured policy trainer now accepts an optional initialization checkpoint. It preserves the
+  Stage 1 feature vocabulary, adds newly observed goal and candidate features, and converts inherited
+  weights to the new normalization scale while preserving candidate ordering before optimization.
+- The child checkpoint records the parent checkpoint ID and SHA-256 plus inherited and new feature
+  counts. The parent hash is part of the child checkpoint ID, so continuation cannot be confused with
+  a from-scratch run over the same dataset. Backend, model CLI, LiveTrainingLoop, and formal artifact
+  promotion all carry this provenance.
+- Stage 2 remains a controlled curriculum expansion. The learner may reuse Stage 1 farming, economy,
+  routing, timing and allocation weights, but it cannot positively label a new Perfection route until
+  its rule, dependency, transparent input, option, compiler binding and native receipt have passed the
+  existing gates.
+- This is architecture readiness, not a trained model. The current Stage 1 frontier remains 2/19
+  executable criteria, 12/19 pending dependency expansion, and 5/19 blocked by option governance.
+  Full 21-point teacher coverage and a new-save 21/21 rollout still precede formal Stage 1 training.
+- The skill-level direction now has typed routes for verified farming, fishing, foraging, mining and
+  exact skill-book XP plus deterministic crop maintenance. It remains pending because ordinary mine
+  transit only fights incidental threats; a generic combat-XP goal-level binding with a fresh native
+  XP receipt and the full fresh-save deadline proof are still required. Incidental combat is not
+  accepted as proof that all five unmodified skills can reach level 10.
+
 ## Server continuation policy
 
 The remaining bounded admission should run headlessly on the existing `119` test server so the
