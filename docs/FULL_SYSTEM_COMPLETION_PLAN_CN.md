@@ -1,5 +1,18 @@
 # StardewAI 完全体完成路线图
 
+## 2026-09-06 无真人教师与服务器续跑提案
+
+为避免现有策略把自己的遗漏选择反复当作正样本，项目已形成“权威目标依赖图 ->
+确定性教师 -> 既有候选/编译/产品执行链 -> fresh 回执 -> 学生模型”的修正方案。该方案不依赖
+真人演示，不新增第二套动作执行器，也不允许 learner 仅因执行了自己的选择就获得正标签。
+完整设计、证据状态、退出条件、服务器资源门和公开评审问题见
+[`goal-conditioned-no-human-teacher-plan.md`](goal-conditioned-no-human-teacher-plan.md)。
+
+当前本地实验已证明两个精确社交目标和一个原生跨日审计，但爷爷事件接续修复尚需服务器
+复验；正式训练仍保持关闭。119 测试服务器只允许并发 1、无渲染、克隆存档、有界准入，
+并须逐日哈希回传。迁移到服务器是为了不干扰交互电脑，不代表可以跳过版本、磁盘、性能、
+来源存档和剧情决策门。
+
 ## 2026-09-01 正式训练控制面修正（EVD-326）
 
 正式训练使用 `policy_decision_trajectory.v2 + action_queue.v1 + product_executor.v1` 的唯一版本组合。Harness 轨迹只保留校准用途，禁止进入结构化 checkpoint。两阶段启动必须先 prepare 并冻结 `training_run_manifest.v2`，再使用同一 manifest 拉起 Product Executor、SMAPI 游戏和 LiveTrainingLoop；不得在 launch 时生成第二个 run-id。

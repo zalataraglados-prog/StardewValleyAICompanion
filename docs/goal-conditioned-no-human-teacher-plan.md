@@ -1,0 +1,555 @@
+# Goal-Conditioned No-Human Teacher Plan
+
+Status: approved architecture correction, implementation started in an isolated detached
+worktree. This document is the continuity source for the correction. It does not promote
+the local experiment into the product repository or authorize formal training.
+
+## Why this correction exists
+
+The existing structured policy training path can treat the option selected by the current
+policy as the positive example. Long-horizon outcome weights change example strength, but a
+zero-return rollout is not automatically converted into the correct alternative action.
+This creates a self-reinforcing omission loop: if the current policy repeatedly selects pet
+care while omitting harvests, its own trajectories mostly teach that same selection.
+
+Human demonstrations would provide an independent bootstrap signal, but they are not
+available in the required quantity and must not become a prerequisite. The corrected design
+therefore uses an authoritative, deterministic teacher to generate and relabel strategy
+examples. Human recordings remain optional post-baseline calibration evidence only.
+
+## Fixed product target
+
+- Start from a new save and earn all 21 native Grandpa rule points by the initial Year 3,
+  Spring 1 evaluation.
+- Four candles at 12 points are an intermediate milestone, never a planner stop condition.
+- Use the Community Center route. A Joja conversion cannot satisfy the full native
+  Community Center score path.
+- Do not use glitches, item spawning, direct save edits, direct state mutation, coordinate
+  teleportation, or an LLM controlling primitive input.
+- Reuse the single existing candidate, daily-plan, ActionQueue, Product Executor, and fresh
+  post-state verification paths. The teacher must not create a second executor.
+- Keep player-command-only and cosmetic actions outside autonomous candidates and policy
+  training.
+
+## Evidence authority and conflict policy
+
+Truth order:
+
+1. Runtime-loaded content for the exact game version and active mod set.
+2. Decompiled methods and IL for executable semantics, formulas, conditions, and effects.
+3. Stardew Valley Wiki revisions for independent omission detection and corroboration.
+4. Versioned strategy, min-max, and speedrun guides for strategy hypotheses only.
+5. Isolated real-game rollouts for end-to-end proof.
+
+Wiki or guide text cannot create or override a runtime field or native rule. Every imported
+claim receives a stable claim ID, source URL/revision, native evidence reference, verdict,
+and executable implication. A disagreement is blocking until runtime/decompile evidence
+resolves it. For example, the Wiki describes total skill levels 30/50 while native Grandpa
+code checks `Farmer.Level >= 15/25`; the property conversion must be proven rather than
+assuming either wording is directly interchangeable.
+
+The locked `game-1.6.15-20260723T093543Z-linux-v24` profile is the current source. Its goal
+index contains 19 criteria totaling 21 points, 31 bundle records, 231 recipe outputs, and no
+goal-index blockers. Its authoritative dependency graph contains 35,335 nodes and 41,262
+edges. The historical v19 and current v24 goal-index payloads differ only in generation time,
+but all new outputs must still pin v24 explicitly.
+
+The immutable v24 source validation contains the historical warning
+`content_root_not_supplied`. Slice 1 closes that warning with a supplemental audit which
+rehashes all 3,550 XNB files against the isolated 1.6.15 Content directory and binds the
+result to the locked raw manifest. The immutable source artifact is not rewritten.
+
+Reviewed secondary sources:
+
+- https://stardewvalleywiki.com/Grandpa
+- https://stardewvalleywiki.com/Bundles
+- https://stardewvalleywiki.com/Fish
+- https://stardewvalleywiki.com/Crops
+- https://github.com/Zamiell/stardew-valley/blob/main/Min-Max_Guide.md
+
+The min-max guide is useful for opportunity-cost and route hypotheses, but it explicitly
+optimizes early money and omits friendship, museum, and most Community Center work. It is
+therefore not a complete teacher for the 21-point target.
+
+## Target hypergraph
+
+Required node classes:
+
+- score criterion and milestone;
+- inventory, quality, quantity, currency, and skill requirement;
+- capability, location, event, recipe, shop, building, and tool unlock;
+- crop, fish, forage, monster, artifact, machine, animal, social, and quest acquisition;
+- calendar, weather, clock, NPC schedule, construction, and processing window;
+- resource reservation, production capacity, route budget, and stochastic outcome;
+- model-level option, candidate kind, compiler binding, and runtime primitive.
+
+Required edge classes:
+
+- AND prerequisite;
+- OR acquisition alternative;
+- consumes, produces, preserves, and unlocks;
+- must-start-before, available-during, repeat-after, and finishes-after;
+- deterministic effect and stochastic distribution;
+- supports-score-criterion and compiles-to-option.
+
+Every edge carries exact provenance and a confidence/admission state. Missing edges remain
+typed blockers; they are never inferred from an example or silently skipped.
+
+`src/StardewAI.Core/Training/GrandpaDirectionCatalog.cs` is the sole source for direction,
+criterion, option, effective-goal, demand-family, label, and feedback mappings. The sample
+adapter, daily subgoal resolver, and isolated frontier generator all consume that same
+catalog. The experiment's `goal-method-expansion-overlay.v1.json` contains only unresolved
+dependency descriptions and authority claim IDs. It must never repeat production mappings;
+otherwise a later edit could silently create two incompatible goal-to-method systems.
+
+## Execution slices and exit conditions
+
+### Slice 1: Evidence freeze
+
+Generate and verify a machine-readable v24 evidence lock for the goal index, dependency
+graph, progression graph, option governance, runtime assembly identity, source validation,
+and Wiki registry. Rehash the isolated Content root.
+
+Exit: every locked hash matches, assembly identity is exact, source validation has zero
+blocking issues, the direct Content rehash closes `content_root_not_supplied`, and source
+drift fails closed.
+
+### Slice 2: Claim and conflict ledger
+
+Create a typed ledger for all 19 Grandpa criteria and every rule used by their acquisition
+paths. Record native evidence, runtime data, Wiki corroboration, guide hypotheses, verdict,
+and affected graph edges.
+
+Exit: every criterion has native plus runtime provenance and independent review; every
+disagreement is resolved or blocks downstream generation. Acquisition-rule claims are
+appended transactionally during Slice 3 and cannot enter the graph before passing this gate.
+
+### Slice 3: Complete reverse hypergraph
+
+Expand each criterion backward through all valid methods until each branch reaches an
+existing training-eligible option or an explicit implementation blocker. Initial domains
+are earnings, aggregate skills, museum completion, Skull Key, Community Center and ceremony,
+marriage plus house level 2, Rusty Key, Master Angler, Full Shipment, friendships, and pet
+love.
+
+Exit: 19/19 criteria have at least one complete executable route, all alternatives and
+calendar gates are represented, and no route terminates at an untyped prose instruction.
+
+### Slice 4: Feasible frontier and deadline propagation
+
+From a fresh state, propagate latest-start dates, seasonal windows, construction/processing
+lead time, reserve quantities, money, energy, route time, and opportunity cost. Generate
+mandatory-today, prepare-ahead, maintenance, strategic, opportunistic, and deferred sets.
+
+Exit: every unmet criterion produces an admitted method frontier or a machine-readable
+unsatisfiable proof. Upstream facts eliminate impossible candidates before compilation.
+
+### Slice 5: Hierarchical deterministic teacher
+
+Plan in four layers: 21-point target, season commitments, weekly resource commitments, and
+daily location bundles. Optimize lexicographically for target feasibility, irreversible
+deadlines, completion slack, resource/time efficiency, and only then style.
+
+Exit: the teacher never uses the existing policy score as a label, never bypasses hard
+constraints, and every selected model-level option compiles through the existing chain.
+
+### Slice 6: Autonomous teacher dataset
+
+Fork isolated save checkpoints, execute teacher plans in the real game, capture fresh
+before/after state, and retain verified outcomes. Generate counterfactual branches for close
+alternatives. Learner-visited states are relabeled by the teacher; learner selections are
+never accepted as positives merely because they were selected.
+
+Exit: every admitted row has source hashes, goal/method labels, complete candidate context,
+real execution receipts, a completed day boundary, and long-horizon return binding.
+
+### Slice 7: Curriculum training
+
+Train goal-to-method first, then method bundles, day plans, multi-day values, and recovery.
+Mechanical movement, combat, tool use, harvesting, menus, and interaction sequences remain
+compiler/executor responsibilities.
+
+Exit: held-out teacher states improve over the deterministic V0 reference without option
+vocabulary leakage or executor-calibration contamination.
+
+### Slice 8: Robustness and Year-3 evaluation
+
+Run fixed-seed regression, then unseen seeds across all supported farm maps and standard or
+remixed Community Center states. Track frame time and snapshot volume as acceptance metrics.
+
+Exit: unattended isolated runs reach exactly 21 verified points by the initial evaluation,
+with no missing fields, direct state writes, stuck action loops, duplicate execution paths,
+or snapshot-induced performance regression.
+
+### Slice 9: Promotion and later human adaptation
+
+Review the isolated implementation. Promote only reusable contracts and source after all
+gates pass. Keep datasets, checkpoints, recordings, binaries, and experiment reports in
+hash-locked local storage. Human-like pacing and preferences remain a reversible layer over
+the frozen strongest policy.
+
+Exit: the perfect baseline is independently reproducible and human adaptation can be turned
+off without changing its data or checkpoint.
+
+## Information leakage policy
+
+A privileged teacher may use simulator branches and future outcomes to estimate value, but
+must not teach an action that depends on information absent from the student feature set.
+For normal play, unknown RNG is marginalized across scenarios. If a highest-intelligence
+profile exposes a 100-day deterministic forecast, that forecast must be an explicit,
+versioned transparent input available at inference time.
+
+## Hardware boundary
+
+Slices 1 through 6 are data integrity, graph search, game execution, and dataset generation;
+they do not require the RTX 5070 laptop. The 5070 8 GB node becomes useful in Slice 7 for
+sequence models, mixed precision, larger batches, and checkpoint comparisons. GPU compute is
+not a substitute for the missing goal-method graph or teacher correctness.
+
+## Execution status
+
+### 2026-09-05: Slice 1 passed
+
+- Nine locked knowledge/raw artifacts match exact size and SHA-256.
+- The runtime assembly is Stardew Valley 1.6.15.24356 with MVID
+  `46c95350-5805-4442-8e93-61092d55e101`.
+- The isolated Content root matches 3,550/3,550 manifest entries, with zero missing,
+  unexpected, size-mismatched, or hash-mismatched XNB files.
+- The direct Content aggregate SHA-256 is
+  `8dac17912064d68256fa2299fc998de8622a8298417ac9de287920d7eb4c2b91`.
+- Machine report: `experiments/local-data/output/evidence-audit-v24.json`.
+
+### 2026-09-05: Slice 2 criterion contract passed
+
+- All 19/19 Grandpa criteria are covered by verified claims.
+- Seven decompile/runtime source files are hash-locked; unresolved claims and missing
+  criteria are both zero.
+- Native `Farmer.Level` is the sum of six base skill fields divided by two. Native
+  `gainExperience` rejects Luck skill index 5, so the five trainable vanilla skills at
+  totals 30/50 correspond to the score thresholds 15/25. Temporary buffs are excluded.
+- Runtime `Data/Bundles` has 31 records: 30 standard Community Center bundles plus
+  `Abandoned Joja Mart/36` (The Missing), which is a post-completion Movie Theater path.
+- Native `isLocationAccessible("CommunityCenter")` requires event `191393`; this is the
+  completed Community Center ceremony, not ordinary physical access to the building.
+- One early-money guide claim remains deliberately classified as a strategy hypothesis,
+  not a fact or teacher label.
+- Machine report: `experiments/local-data/output/claim-conflict-audit-v1.json`.
+
+Slice 3 is next: expand all 19 criteria backward to training-eligible options while adding
+and auditing each acquisition rule before it is admitted to the hypergraph.
+
+### 2026-09-05: Slice 3 root frontier established
+
+- The current source option matrix is rebuilt reproducibly in the isolated lab instead of
+  using the July v24 governance snapshot. Current counts are 228 registered options, 151
+  runtime-verified options, and 62 training-eligible options.
+- All 19 criteria bind to 11 explicit root methods and existing option IDs from the sole
+  production `GrandpaDirectionCatalog`. Unknown claims, option IDs, criteria, duplicate
+  criteria, or a missing/extra dependency overlay direction fail generation.
+- The sample adapter, daily subgoal resolver, and isolated V0 teacher no longer maintain
+  independent Grandpa mapping switches. Ambiguous unbound candidates receive no guessed
+  Grandpa direction; an explicit valid binding or a unique catalog match is required.
+- Two criteria currently have fully expanded, training-eligible frontiers:
+  `skull_key` through the existing `mining.obtain_skull_key` chain, and `pet_love` through
+  exact initial adoption, native event acceptance/naming, daily care and native day settlement.
+- Twelve criteria are connected but still have typed dependency-expansion work. This is
+  knowledge translation work, not evidence that their underlying actions are absent.
+- Five criteria are blocked by current product governance: museum donation affects two
+  criteria, Community Center donation affects two, and partnership plus farmhouse upgrade
+  affects one. Their native executors are runtime-verified but the high-level options remain
+  `EvaluationOnly` due explicit-confirmation policy.
+- `2/19` is therefore the count of complete goal routes, not an action implementation count.
+  It must never be reported as "only two actions exist."
+- The pet route locks the actual 1.6.15 cat/dog event keys. Their `d` precondition excludes
+  Monday, Tuesday, Thursday, Saturday and Sunday, leaving Wednesday/Friday from 06:00 through
+  09:30 after 1,000 cumulative earnings in sunny weather. Wiki Spring-only/Spring-20 fallback
+  prose is not admitted because the locked event keys and handlers do not contain it.
+- Daily petting grants capped +12. A watered assigned bowl grants capped +6 at the following
+  `Pet.dayUpdate`; current rain fills an outdoor bowl only after that morning's location and
+  character day updates, so it cannot be credited to the same settlement.
+- Hidden E-drive `EVD-322` now passes 3/3, including accepted pet adoption and native default
+  naming. The Chinese runtime script and English base script are tracked separately so
+  localization does not masquerade as source drift.
+- Machine report: `experiments/local-data/output/goal-method-frontier-v3.json`.
+
+### 2026-09-05: Slice 3 earnings route fact expansion passed
+
+- `earn_money` now has a typed 13-node reverse dependency graph over already admitted
+  acquisition, machine, sale, shipping, and native day-settlement options. All eight policy
+  dependency option IDs are currently training-eligible and the deterministic sleep owner is
+  runtime-verified.
+- Native `Farmer.Money`, `ShopMenu`, `Game1` new-day shipping, and `ShippingMenu` sources are
+  hash-locked. Current cash, settled `totalMoneyEarned`, and uncredited shipping-bin value are
+  separate state variables. Shop buyback is explicitly modeled as a cumulative-earnings
+  reversal, so sale/buyback cycling cannot become a teacher exploit.
+- Shipping-bin contents no longer collapse economically different stacks. The bridge groups
+  pending rows by qualified item, quality, and native unit price and exposes an exact pending
+  settlement total plus a completeness flag and next-day timing.
+- The source-backed mechanics and transparent inputs pass, but the route is not training-ready:
+  a seed-robust fresh-save Year-3 lower-bound proof, counterfactual reserve/opportunity-cost
+  labels, and a training-admitted crop-production branch remain explicit blockers.
+- The 1.6 min-max guide and Wiki fishing strategy can seed alternatives. They cannot become
+  deterministic route rules without isolated rollout evidence visible to the student.
+- Regression PASS: 19/19 criteria facts, 15/15 source locks, 228 current options, 151
+  runtime-verified, 62 training-eligible, and zero blocking knowledge-export issues.
+
+The next implementation slice expands the twelve pending routes from exact runtime
+assets, then introduces an isolated-training authorization contract for the five governance
+blockers without weakening the product's normal confirmation policy.
+
+### 2026-09-06: Slice 3 friendship route fact expansion passed
+
+- `raise_friendships` now has a typed nine-node dependency graph over the native Grandpa
+  population, ten-villager portfolio deficits, current access, exact talk/gift transitions,
+  ordered day settlement, deadline budget, and recurrence.
+- `npcs.grandpa_friendship_progress` is the only admitted Grandpa friendship score input. It
+  calls the same native `Utility.ForEachVillager` and
+  `getNumberOfFriendsWithinThisRange(player, 1975, 999999, false)` path; arbitrary persisted
+  `friendshipData` rows can no longer inflate the evaluator.
+- Current talk candidates carry the exact projected points before/delta/after and are excluded
+  after the daily talk or at zero gain. Gift candidates with zero/negative target gain or an
+  unresolved stochastic spouse-jealousy side effect are excluded upstream. The native social
+  executor rejects missing or mismatched deltas.
+- The Grandpa direction binder independently joins each talk/gift candidate back to exactly
+  one live `Utility.ForEachVillager` row. Nonmembers, event actors, already qualifying villagers,
+  missing rows, stale point values, nonpositive deltas, inconsistent after-values, and injected
+  `grandpa_friendship_*` evidence all fail closed. Accepted candidates carry compiler-owned
+  before/after deficits and remaining ten-villager portfolio slots without creating a second
+  social executor.
+- The locked day recurrence preserves source order: spouse/dating penalties happen first; an
+  additional ordinary `-2` may then apply using the post-penalty points; weekly reset/bonus is
+  later and positive modifiers still apply through `Farmer.changeFriendship`.
+- The bridge now publishes the exact relationship, gift-date, maximum-heart, friendship-book,
+  language and spouse inputs for that recurrence. The sole `FriendshipDayTransitionSimulator`
+  distinguishes requested penalties from applied deltas: native spouse multiplication truncates
+  `-20` to `-13` and a later `-2` to `-1` in the ordinary unclamped case. Eight consecutive native
+  cloned-save transitions now validate the projection; the simulator still neither executes sleep
+  nor authorizes a whole-route positive label by itself.
+- This route remains `in_progress`. Current loaded path timing and the pure future presence/
+  route/contact consumer contracts are complete, and `FutureSocialItineraryVerifier` validates a
+  supplied visit order. A future-date player-route/gate/traversability/final-approach/interaction-
+  eligibility evidence producer, ordered-proposal training binding, and a fresh-save ten-villager
+  deadline proof are still blockers. The arithmetic observation that 99 successful ordinary `+20` talk days reaches
+  1,980 is not an access or whole-goal feasibility proof.
+- The bridge now emits the exact mod-aware raw master-schedule catalog for the native Grandpa
+  villager population on explicit `social`/`full` snapshot profiles. Each entry and the complete
+  population catalog are SHA-256 bound, while ordinary high-frequency profiles remain unchanged.
+  `NpcFutureScheduleResolver` now closes native key precedence, `GOTO`, `NOT friendship`, `MAIL`,
+  rain alternatives, static accessibility replacement and static endpoint parsing as a pure Core
+  function. Hidden isolated current-state audits matched all 29 loaded native schedules with zero
+  mismatch on both ordinary winter 28 and Desert Festival day 2. The latter also matched both
+  loaded `aHHMM` entries from native adjacent-route pixels and the exact native time formula.
+  Follow-up `runtime-npc-arrival-timing-smoke-20260906-024215` verified all 137 loaded movement
+  rows. The pure presence resolver now excludes NPC transit intervals, and the route/contact
+  resolvers demand exact same-date player segment, gate, traversability and final-approach timing.
+  No producer supplies that complete future evidence yet, so seed-robust ten-villager routing
+  remains blocked and cannot emit positive labels.
+- The recurrence now has an eight-transition native cloned-save proof. The bridge exposes the
+  new-day date used by `updateFriendshipGifts`, and the pure simulator matched 39/39 unique NPCs and
+  all 31 existing friendship rows on every transition with zero mismatch. The controlled Linus row
+  covered weekly bonus, daily talk/gift reset, and ordinary not-talked decay. This closes recurrence
+  formula/runtime conformance, but not future contact feasibility or the ten-villager deadline proof.
+- Claim audit represents source-verified but not runtime-proven mechanics explicitly as
+  `native_verified_runtime_pending`. Such claims may constrain fail-closed implementation and
+  dependency expansion, but cannot cover a goal criterion or emit a positive training label.
+
+### 2026-09-06: Slice 3 current-date social frontier admitted
+
+- The current-date route evidence producer now consumes the complete live route graph, native
+  action-gate evidence and the locked movement calibration. On the isolated day-start snapshot it
+  resolved all 39 unique social NPC identities, emitted 92 exact talk contact windows, and left no
+  NPC or ranking-admission blocker.
+- Gift windows no longer represent an unbound promise. `SocialGiftInventoryBindingResolver` is the
+  sole inventory/taste binding path shared by the existing current social candidate builder and the
+  future contact frontier. A future gift opportunity carries an exact slot, item identity, quality,
+  stack, native taste and positive expected delta. A conclusively non-giftable inventory is an
+  upstream exclusion; missing evidence remains a hard block. The current fixture contains tools and
+  weapons only, so it correctly emits zero gift opportunities instead of 91 placeholders.
+- An unscheduled player spouse remains a live identity-tracking directive, not a fabricated all-day
+  fixed tile. The directive compiles through the existing social candidate, one-connector daily-plan
+  continuation and native executor chain. The isolated snapshot produced one Abigail talk intent
+  from `Farm` toward the currently observed `FarmHouse` target and requires fresh identity rebinding
+  after every connector and before interaction.
+- Route duration is explicitly conditional. The calibrated bound covers movement and connector
+  traversal only; unchanged collision/topology facts, native connector control, no unmodeled dialogue
+  delay, and continued NPC presence/eligibility are recorded as timing preconditions.
+- `current_social_contact_frontier.v2` is ready to supply current-date ranking inputs. It does not by
+  itself prove multi-day visit-order selection, gift acquisition, seed robustness, or the complete
+  ten-villager Year-3 deadline. Those remain the next friendship-route admission work.
+- Regression PASS: full Core `2378/2378`; focused social `90/90`; isolated bootstrap regression
+  `585/585` exports with zero blocking knowledge factors. Real snapshot output:
+  `experiments/local-data/output/current-social-contact-frontier.json`.
+
+### 2026-09-06: Slice 3 current-date ordered teacher action admitted
+
+- `CurrentSocialDayItineraryPlanner` now selects the fixed nine-NPC friendship-deficit
+  portfolio nearest the native 1,975-point threshold, recomputes exact route evidence after each
+  chosen stand tile/time, and emits only the prefix accepted by `FutureSocialItineraryVerifier`.
+  It makes no global-optimality claim.
+- The real isolated day-start snapshot produced seven verified visits ending at 21:46. Marnie,
+  Clint, Lewis, Emily, Jodi, Pam and Linus are admitted in order; Robin and Demetrius are recorded
+  as omitted rather than silently treated as feasible.
+- `CurrentSocialDayTeacherLabelBuilder` labels only the first action executable from the current
+  state. A cross-map connector is eligible only when its social option, continuation option, NPC
+  and target location agree and its exact friendship transition still joins one live native
+  Grandpa-population row.
+- The selected Marnie candidate binds to `raise_friendships`, compiles to one accepted daily-plan
+  step and then one pending `executor.traverse_connector` queue item through the existing
+  `DailyPlanCompiler` and sole `ActionQueueCompiler`. The other six visits are deferred itinerary
+  context and require fresh-snapshot replanning after every connector.
+- Regression PASS: full Core `2381/2381`; isolated bootstrap regression `585/585` exports,
+  228 current options, 151 runtime-verified options, 62 training-eligible options, and zero
+  blocking knowledge factors. Machine-readable outputs are
+  `experiments/local-data/output/current-social-day-itinerary.json` and
+  `experiments/local-data/output/current-social-day-teacher-label.json`.
+- The friendship route remains `in_progress`. Next admission work is a multi-day, cloned-save
+  teacher rollout that advances only after native receipts, then a fresh-save ten-villager
+  deadline proof. Gift acquisition and global route optimization remain separate improvements.
+
+### 2026-09-06: Slice 3 rolling native teacher transition admitted
+
+- The day-start projection and rolling projection now have separate owners. At 06:00 the existing
+  audited schedule selection/replay remains authoritative. After 06:00,
+  `NpcCurrentLoadedSchedulePresenceResolver` consumes the schedule already selected by the game and
+  derives remaining arrival windows with the decompiled adjacent-pixel timing formula. It does not
+  rerun morning schedule selection against a later snapshot.
+- Native facing is intentionally an integer, not a fabricated `0..3` enum. Decompiled
+  `NPC.parseMasterScheduleImpl` accepts the parsed integer directly; the live Demetrius sleep row
+  carried `11`. `_sleep` still makes the terminal window ineligible because exact social contact at
+  that endpoint is not established.
+- Dynamic spouse directives now accept legal current-day ten-minute timestamps, but compilation
+  requires `ObservedAtTime` to equal the fresh snapshot time. A stale live-position directive fails
+  closed instead of generating a route to an old tile.
+- In `runtime-native-social-smoke-20260906-130437`, the Marnie teacher action completed through 22
+  applied/verified primitive receipts over 17 loop iterations. The native talk changed friendship
+  `1416 -> 1436` and `TalkedToToday false -> true`; exactly one policy trajectory was emitted. The
+  resulting `DialogueBox` was closed by the ordinary
+  `recovery.stabilize_day -> executor.close_menu` planning/execution chain.
+- The fresh post-recovery snapshot was at 09:10 in `AnimalShop`. Rolling frontier v3 and teacher v2
+  excluded the completed Marnie talk and admitted Clint as the next candidate with one pending queue
+  item. The original smoke process had already completed all runtime actions but ended on an old
+  06:00-only validation contract; `summary.json` records this distinction and the offline
+  finalization against the preserved snapshot.
+- Regression PASS: full Core `2388/2388`; isolated bootstrap `585/585`, 228 current options, 151
+  runtime options, 62 training-eligible options and zero blocking knowledge factors. Formal
+  training remains paused.
+- Next admission work remains a cloned-save multi-day rollout controller: build one fresh teacher
+  label, execute one selected objective to a native receipt, mechanically recover menus, replan on
+  the same day, sleep only when no admitted action remains, and audit the native friendship day
+  transition. Only after that controller proves repeated clean transitions should a fresh-save
+  ten-villager deadline run begin.
+
+### 2026-09-06: Slice 4 multi-day controller policy admitted
+
+- `FriendshipTeacherRolloutPolicy` is now the sole phase/exit decision owner for the upcoming
+  runtime coordinator. The coordinator may call existing tools, but it must not duplicate candidate,
+  route, action expansion, menu handling, sleep or friendship-settlement logic.
+- The ordered phases are: build a label from the fresh snapshot; execute only its selected candidate;
+  require the native receipt; recover a blocking menu; rebuild on the same day; request a native save
+  boundary only after evidence-complete day exhaustion or the explicit per-day safety cap; audit the
+  exact friendship transition; then begin the next day from a fresh label.
+- Completion and failure are explicit. Ten qualifying villagers completes the loop. Deadline,
+  malformed state, failed native transition, unknown label blocker, or three no-progress days block
+  it. A verified post-sleep snapshot is audited before deadline failure is evaluated, so the final
+  native transition cannot be skipped merely because it crossed the configured boundary.
+- The day-exhaustion allowlist contains exactly
+  `current_social_itinerary_no_exact_nonqualifying_target` and
+  `current_social_itinerary_no_verified_first_visit`. Coverage gaps and compiler errors cannot be
+  converted into an early sleep. Focused policy tests pass `10/10`; full Core passes `2398/2398`.
+- Next implementation slice is the thin runtime coordinator and cloned-save launcher that consume
+  this policy and the existing LiveTrainingLoop/teacher-label/day-transition components. Its first
+  admission target is two teacher objectives plus one audited native day boundary, with formal
+  training still disabled.
+
+### 2026-09-06: thin coordinator reached the first native day boundary
+
+- The isolated coordinator reuses `CurrentSocialDayTeacherLabelBuilder`, `LiveTrainingLoop`, the
+  existing action compiler/runtime path, native save-boundary handling, and
+  `FriendshipDayTransitionSnapshotAuditor`. It does not post directly to the executor and always
+  passes `--skip-training` during this admission stage.
+- The preserved run `runtime-friendship-teacher-rollout-20260906-143527` completed two exact
+  teacher-selected objectives. Marnie changed from 1,416 to 1,436 friendship points and Clint from
+  354 to 374; both changed `talked_to_today` from false to true and each emitted exactly one
+  successful policy trajectory.
+- The same clone then crossed the native save boundary from total day 223 to 224. All 39 native NPC
+  rows and all 31 friendship rows matched the decompiled transition model with zero mismatch.
+- Population-wide friendship changed from the day-start sum 8,389 to 8,377 despite the two verified
+  target gains. Untalked-villager decay can therefore hide useful goal-directed work. The no-progress
+  guard must accept either positive net portfolio movement or at least one exact, positive,
+  teacher-selected objective receipt; it still records the net delta separately.
+- Year 3 Spring 1 opened native event `558291` from `Data/Events/FarmHouse`. The snapshot exposed
+  command 8, speaker Grandpa, `event_up=true`, and `boundary_kind=automatic_progress`. Treating this
+  as an ordinary closeable dialogue was wrong. The coordinator now delegates it to the sole existing
+  `story.advance_event -> executor.advance_story_event` chain and does not weaken ordinary menu-close
+  safety. Dialogue decisions, story minigames, and player-control boundaries remain fail-closed until
+  explicitly bound.
+- Focused coordinator/policy/report tests pass 30/30 and the social snapshot backend contract passes
+  5/5. A later local run, `runtime-friendship-teacher-rollout-20260906-150903`, was manually aborted
+  before objective completion because snapshot generation affected the interactive workstation. It
+  is interruption evidence only, not an admitted rollout.
+- The persistent source-save tree retained SHA-256
+  `39525AB21372EAA38465FDFD3B7C6CF085FE280A7AEA0C04A46AEE67F5EEAEB8` across both runs. Formal
+  training remains disabled.
+
+## Server continuation policy
+
+The remaining bounded admission should run headlessly on the existing `119` test server so the
+interactive workstation is not affected. This changes the execution location, not the evidence or
+training rules.
+
+### Observed server envelope
+
+The 2026-09-06 read-only probe reported 2 CPU cores, 3.6 GiB RAM, and 7.6 GiB free on a 59 GiB root
+filesystem. The online-judge containers share the host. Existing Stardew data occupies about 12 GiB
+under `/root/stardew-junimo`; all Stardew game containers are stopped. These values make the server
+suitable for concurrency-1, no-render bounded rollouts, but not for unbounded artifact retention or
+GPU model training.
+
+### Transfer and execution gates
+
+1. Build and test an immutable source bundle locally, record its Git revision plus a complete file
+   SHA-256 manifest, and transfer that exact bundle. Never run from an unrecorded dirty server tree.
+2. Verify the server game/runtime identity against the locked Stardew Valley 1.6.15 profile before
+   accepting any result. A different executable, content root, mod allowlist, or bridge schema blocks
+   the run.
+3. Copy the test save to a run-specific directory. Record the persistent source-save hash before and
+   after; only the clone may change.
+4. Keep concurrency at 1, rendering and audio disabled, HTTP services private, and child-process
+   timeouts finite. Give the rollout an explicit CPU/memory envelope so the online judge remains
+   healthy.
+5. Require at least 2 GiB free plus the measured artifact budget before launch. The current social
+   admission consumes roughly 0.4 GiB per attempted day because action snapshots still repeat static
+   route evidence. Stop before the reserve is crossed; never delete prior server data implicitly.
+6. After every native day boundary, close the transaction, hash the evidence, copy it back to local
+   archival storage, verify the copy, and only then permit the next plan. Server-local artifacts are
+   not the only copy.
+7. Stop on goal completion, deadline, source drift, nonzero transition mismatch, an unbound story
+   decision, repeated no-progress, storage pressure, child timeout, or online-judge health loss.
+
+### Immediate server admission target
+
+The next server run is deliberately still not formal training. It must reproduce, in one isolated
+clone, all of the following:
+
+- two fresh teacher labels and their exact native social receipts;
+- one native save boundary and zero friendship-transition mismatches;
+- one verified automatic Grandpa story-event receipt through the existing story executor;
+- a clean bounded exit with no remaining game/backend/coordinator process;
+- an unchanged persistent source save and a complete local copy of the hashed evidence.
+
+Only after this result passes may the coordinator expand to repeated days and the fresh-save
+ten-villager deadline proof. Snapshot payload/caching work remains required before a multi-season
+rollout; moving to the server prevents desktop interference but does not excuse avoidable 0.4 GiB/day
+artifact growth or high-frequency policy calls.
+
+## Review questions
+
+Public review should focus on the following points before Slice 5/6 promotion:
+
+- Does the deterministic teacher remain independent of learner scores at every label boundary?
+- Is every goal-to-method edge source-backed, and are unresolved alternatives represented as typed
+  blockers rather than omissions?
+- Is resetting the no-progress counter on an exact positive teacher receipt, while retaining a
+  negative population net delta, the correct failure semantics?
+- Are story decisions sufficiently isolated from automatic event progress?
+- Are the server resource and evidence-transfer gates strict enough for a co-located workload?
