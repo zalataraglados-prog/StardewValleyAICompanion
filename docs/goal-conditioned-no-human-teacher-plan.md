@@ -531,6 +531,36 @@ blockers without weakening the product's normal confirmation policy.
   so `storyEventAdvanceCount=0`; the server result does not close the Grandpa-event continuation
   target. It proves two goal-conditioned social objectives and one audited native day transition.
 
+### 2026-09-06: content-addressed snapshot storage admitted on the server
+
+- Release `r44` (`friendship-teacher-storage-r44-20260906-203436`) repeated the same bounded teacher
+  scope through the existing candidate, DailyPlan, compiler and native executor chain. It did not
+  introduce a second planner or executor. Robin again changed `362 -> 382` through 23 verified
+  primitives and Abigail `154 -> 174` through 17; both emitted one policy trajectory. The native
+  boundary advanced total days `17 -> 18`, audited 38 NPCs and 29 friendship rows with zero mismatch,
+  and the persistent source-save hash remained
+  `ad9a78a1b652d1557041d9d7f15b8f711ce082ecbe1c1894953cd2bbfad3dede`.
+- Every bulk before/after snapshot is now a small manifest whose immutable gzip blobs are addressed
+  by SHA-256. Chunking is by root property and by child property under `state`; each read verifies
+  compressed size, uncompressed size, chunk hash, reconstructed logical size and logical hash.
+  Ranking, queue and execution receipts remain ordinary auditable JSON.
+- Independent local verification covered 96 manifests, 2,400 chunk references and 1,013 unique
+  blobs with zero errors. The snapshots represented 315,482,766 logical bytes and occupied
+  10,181,914 bytes as manifests plus blobs, a 96.77% reduction. The complete 1,532-file evidence
+  tree was copied back and matched the server checksum list file-for-file.
+- Regression for this release passed Core `2430/2430`, Backend `177/177`, KnowledgeCompiler
+  `585/585` with zero blockers, the `228/151/62` option/runtime/training matrix, and the isolated
+  experiment regression. `formal_training_started=false` and `storyEventAdvanceCount=0` remain
+  explicit; storage admission is not model-training admission or Grandpa-event evidence.
+
+### Deterministic teacher versus the student model
+
+A complete authoritative teacher can produce a 100% save without a learned model once the full
+goal-method dependency graph, feasibility rules, native action chain and receipt verification are
+complete. The model is still valuable for amortizing long-horizon search, choosing human-like
+alternatives, and adapting to a player's preferences. It is not allowed to repair unknown teacher
+rules by guessing, and the current teacher is not yet complete enough to claim a 100% save.
+
 ## Server continuation policy
 
 The remaining bounded admission should run headlessly on the existing `119` test server so the
@@ -558,9 +588,10 @@ retention or GPU model training.
 4. Keep concurrency at 1, rendering and audio disabled, HTTP services private, and child-process
    timeouts finite. Give the rollout an explicit CPU/memory envelope so the online judge remains
    healthy.
-5. Require at least 2 GiB free plus the measured artifact budget before launch. The current social
-   admission consumes roughly 0.4 GiB per attempted day because action snapshots still repeat static
-   route evidence. Stop before the reserve is crossed; never delete prior server data implicitly.
+5. Require at least 2 GiB free plus the measured artifact budget before launch. `r44` reduced its
+   315,482,766 logical snapshot bytes to 10,181,914 physical manifest/blob bytes, but non-snapshot
+   logs, cloned saves and releases still count against the disk gate. Stop before the reserve is
+   crossed; never delete prior server data implicitly.
 6. After every native day boundary, close the transaction, hash the evidence, copy it back to local
    archival storage, verify the copy, and only then permit the next plan. Server-local artifacts are
    not the only copy.
@@ -578,9 +609,9 @@ The admission is now split so a partial result cannot be mislabeled complete:
    one verified receipt through the existing story executor, audit the resulting fresh snapshot, and
    exit with the same process/save/evidence guarantees. A run where the event never appears cannot
    satisfy this stage.
-3. Before any repeated-day or fresh-save ten-villager deadline run, replace repeated full snapshot
-   bodies with content-addressed immutable blobs plus per-step references, or an equivalently audited
-   delta format. The `r43` single-day tree already reached 372,400,193 bytes.
+3. `r44` passed the storage prerequisite with content-addressed immutable gzip blobs, per-step
+   manifests and full read-time integrity checks. Repeated-day and fresh-save deadline runs may use
+   this mode, but must retain the same disk reserve, source-save isolation and evidence-copy gates.
 
 All remaining Stage B and optimized multi-day game rollouts should run on the server under these
 gates so the interactive workstation stays usable. This is still dataset/teacher admission, not
