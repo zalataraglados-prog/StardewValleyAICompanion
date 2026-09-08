@@ -68,6 +68,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "Pan.beginUsing", "Pan.getPanItems", "Pan.DoFunction", "GameLocation.performOrePanTenMinuteUpdate" }),
             Assumption(
+                "obstacle_clearance",
+                new[] { "foraging.excavate_artifact_spots", "executor.clear_obstacle" },
+                new[] { "exact_clearable_identity", "required_tool_available", "energy_floor", "adjacent_reachable_tile", "menu_clear" },
+                new[] { "route_length", "native_tool_animation_ticks", "projected_output_receipt" },
+                Array.Empty<string>(),
+                new[] { "Tool.beginUsing", "Tool.tickUpdate", "Tool.DoFunction", "GameLocation.performToolAction", "GameLocation.digUpArtifactSpot" }),
+            Assumption(
                 "ginger_harvest",
                 new[] { "foraging.harvest_ginger", "executor.harvest_ginger" },
                 new[] { "exact_ginger_crop", "hoe_available", "energy_floor", "adjacent_reachable_tile", "menu_clear" },

@@ -559,6 +559,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one current spawned-object candidate selected", "native pickup handed to the mechanical executor" },
                 new[] { "block_unknown_spawned_object", "block_inventory_full", "block_unverified_route", "block_direct_object_mutation" }));
 
+            Register(Option("foraging.excavate_artifact_spots", "foraging", "Excavate one transparent native artifact spot",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "current_location.objects", "current_location.map", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact native (O)590 artifact spot selected", "exact projected native output retained without consuming RNG", "existing clear_obstacle_tile compiler and executor chain reused" },
+                new[] { "block_no_native_artifact_spot", "block_seed_spot_or_other_clearable", "block_missing_hoe", "block_insufficient_energy", "block_unverified_route", "block_projection_drift", "block_direct_object_or_rng_mutation" }));
+
             Register(Option("foraging.harvest_ginger", "foraging", "Hoe one transparent ginger forage crop",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

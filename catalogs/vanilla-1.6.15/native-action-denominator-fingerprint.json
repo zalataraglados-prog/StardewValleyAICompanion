@@ -2,13 +2,13 @@
   "schema_version": "stardewai.native_action_denominator_fingerprint.v1",
   "authority": "canonical identity digest over locked native surfaces, branches, effective map tokens, and semantic action IDs",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "e3b96d096204b39d3a4bad0982fc7f254efe093d74fcb2efddf000be3e777d5b",
+  "fingerprint_sha256": "2fdf185149e579f4b21ef136b711914b2f8d86c1f2d9170d6aa160572d607b66",
   "surface_count": 322,
   "branch_count": 448,
   "map_token_count": 150,
-  "semantic_action_count": 230,
+  "semantic_action_count": 231,
   "source_denominator_closed": true,
   "freeze_status": "frozen",
-  "approval_path": "I:\\StardewValleyAICompanion\\catalogs\\vanilla-1.6.15\\native-action-denominator-freeze.json",
+  "approval_path": "I:\\StardewAITrainingLab\\goal-conditioned-bootstrap-v1\\catalogs\\vanilla-1.6.15\\native-action-denominator-freeze.json",
   "mismatch_reasons": []
 }

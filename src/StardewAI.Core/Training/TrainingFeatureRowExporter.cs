@@ -245,6 +245,7 @@ namespace StardewAI.Core.Training
                 case "farm.collect_animal_products":
                 case "farm.care_for_pets":
                 case "foraging.pan_ore_spot":
+                case "foraging.excavate_artifact_spots":
                 case "foraging.harvest_ginger":
                 case "foraging.harvest_bushes":
                 case "foraging.clear_green_rain_bushes":

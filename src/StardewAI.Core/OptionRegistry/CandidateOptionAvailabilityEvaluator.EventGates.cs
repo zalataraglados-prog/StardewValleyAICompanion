@@ -135,6 +135,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_spawned_object_candidates");
             }
 
+            if (optionId == "foraging.excavate_artifact_spots")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_artifact_spot_candidates",
+                    "no_available_artifact_spot_candidates");
+            }
+
             if (optionId == "foraging.harvest_ginger")
             {
                 return EventCandidateAvailabilityReasons(

@@ -106,12 +106,18 @@ it never falls back to a legacy AI rollout.
   all 1,599 route occurrences across those four sets against the current option
   governance matrix. Unknown route kinds and stale catalog rows fail closed. The
   report distinguishes normally trainable options, isolated-clone teacher options,
-  runtime-only deterministic dependencies, primitive-only gaps, and a genuinely
-  missing option instead of treating every source as executable.
+  runtime-only deterministic dependencies, high-level options pending runtime
+  admission, primitive-only gaps, and genuinely missing options instead of treating
+  every source as executable.
 - The current exact result is 27/33 admitted route kinds. The six explicit gaps are
   location/object artifact spots, spring-onion harvesting, tree moss harvesting,
-  wild-tree chop drops, and wild-tree seed drops. A primitive becoming runtime-verified
-  cannot silently close a required high-level option gap.
+  wild-tree chop drops, and wild-tree seed drops. Both artifact-spot routes now lower
+  through `foraging.excavate_artifact_spots` into the existing
+  `clear_obstacle_tile -> executor.clear_obstacle` chain, with `(O)SeedSpot` and other
+  clearables excluded upstream. They remain blocked solely because no genuine hidden
+  native runtime receipt exists for the high-level chain; source guards are not runtime
+  evidence. A primitive becoming runtime-verified cannot silently admit its high-level
+  policy option.
 - This lowering is deliberately a terminal-transition join, not a fresh-save route
   proof. Calendar, unlock, facility, input-resource, calibrated travel-time, native
   outcome/retry, reservation, and fresh-receipt dependencies still have to be closed
