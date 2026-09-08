@@ -149,6 +149,7 @@ public sealed partial class ModEntry : Mod
     {
         config = helper.ReadConfig<HarnessConfig>();
         ApplyEnvironmentOverrides();
+        ApplyExternalNativeEvidenceIsolation();
         manualAutoCombatEnabled = string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal);
 
         if (string.IsNullOrWhiteSpace(config.SavesPath))
@@ -197,6 +198,17 @@ public sealed partial class ModEntry : Mod
             postfix: new HarmonyMethod(
                 typeof(ResourceClumpToolTracePatch),
                 nameof(ResourceClumpToolTracePatch.Postfix)));
+        harmony.Patch(
+            original: AccessTools.Method(
+                typeof(Tree),
+                nameof(Tree.performToolAction),
+                new[] { typeof(Tool), typeof(int), typeof(Vector2) }),
+            prefix: new HarmonyMethod(
+                typeof(TreeToolTracePatch),
+                nameof(TreeToolTracePatch.Prefix)),
+            postfix: new HarmonyMethod(
+                typeof(TreeToolTracePatch),
+                nameof(TreeToolTracePatch.Postfix)));
         if (IsVanillaAiHostMode() &&
             string.Equals(
                 Environment.GetEnvironmentVariable("STARDEWAI_SUPPRESS_LOCAL_RENDER"),

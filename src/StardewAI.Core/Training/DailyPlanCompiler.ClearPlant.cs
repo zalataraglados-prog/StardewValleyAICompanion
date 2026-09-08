@@ -67,7 +67,26 @@ namespace StardewAI.Core.Training
                 "artifact_spots_dug_expected_after",
                 "clear_terrain_feature_expected_after",
                 "defense_book_mail_before",
-                "defense_book_mail_expected_after"
+                "defense_book_mail_expected_after",
+                "clear_completion_mode",
+                "target_runtime_type",
+                "expected_tree_has_moss_before",
+                "expected_tree_has_moss_after",
+                "expected_tree_has_seed_before",
+                "expected_tree_has_seed_after",
+                "expected_tree_was_shaken_today_before",
+                "expected_tree_was_shaken_today_after",
+                "expected_tree_growth_stage_before",
+                "expected_tree_growth_stage_after",
+                "expected_tree_health_before",
+                "expected_tree_health_after",
+                "expected_moss_harvested_before",
+                "expected_moss_harvested_after",
+                "expected_foraging_experience_before",
+                "expected_foraging_experience_delta",
+                "expected_foraging_experience_after",
+                "moss_harvest_projection_status",
+                "moss_harvest_native_contract"
             })
             {
                 var value = ParseValue(candidate.ExpectedEffect, name + "=");

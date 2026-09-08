@@ -15,6 +15,8 @@ public sealed partial class ModEntry
             Tool tool,
             int toolSlotBefore,
             bool targetIsArtifactSpot,
+            bool targetIsTreeMoss,
+            StardewValley.TerrainFeatures.Tree? mossTree,
             ClearanceOutputItemExpectation[]? expectedOutputItems,
             Dictionary<ClearanceOutputItemKey, int>? outputItemMultisetBefore,
             string before,
@@ -35,6 +37,8 @@ public sealed partial class ModEntry
             Tool = tool;
             ToolSlotBefore = toolSlotBefore;
             TargetIsArtifactSpot = targetIsArtifactSpot;
+            TargetIsTreeMoss = targetIsTreeMoss;
+            MossTree = mossTree;
             ExpectedOutputItems = expectedOutputItems;
             OutputItemMultisetBefore = outputItemMultisetBefore;
             Before = before;
@@ -58,6 +62,8 @@ public sealed partial class ModEntry
         public Tool Tool { get; }
         public int ToolSlotBefore { get; }
         public bool TargetIsArtifactSpot { get; }
+        public bool TargetIsTreeMoss { get; }
+        public StardewValley.TerrainFeatures.Tree? MossTree { get; }
         public ClearanceOutputItemExpectation[]? ExpectedOutputItems { get; }
         public Dictionary<ClearanceOutputItemKey, int>? OutputItemMultisetBefore { get; }
         public string Before { get; }

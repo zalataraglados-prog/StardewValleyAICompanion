@@ -60,6 +60,7 @@ public sealed partial class CurrentLocationReadAdapter
             : ExpectedTreeAxeHits(tree, bestAxe.UpgradeLevel);
 
         var treeProduct = ProjectWildTreeProduct(tree);
+        var mossHarvest = ProjectTreeMossHarvest(tree);
 
         return new
         {
@@ -98,6 +99,28 @@ public sealed partial class CurrentLocationReadAdapter
             tree_product_restore_slot_index = treeProduct.RestoreSlotIndex,
             tree_product_projection_status = treeProduct.ProjectionStatus,
             tree_product_native_contract = WildTreeProductNativeContract,
+            moss_harvest_status = mossHarvest.Status,
+            moss_harvest_completion_mode = mossHarvest.CompletionMode,
+            moss_harvest_tool_slot_index = mossHarvest.ToolSlotIndex,
+            moss_harvest_required_tool_kind = mossHarvest.RequiredToolKind,
+            moss_harvest_quantity = mossHarvest.MossQuantity,
+            moss_harvest_output_items = mossHarvest.OutputItems,
+            moss_harvest_output_projection_status = mossHarvest.ProjectionStatus,
+            moss_harvest_moss_harvested_before = mossHarvest.MossHarvestedBefore,
+            moss_harvest_moss_harvested_after = mossHarvest.MossHarvestedAfter,
+            moss_harvest_foraging_experience_before = mossHarvest.ForagingExperienceBefore,
+            moss_harvest_foraging_experience_after = mossHarvest.ForagingExperienceAfter,
+            moss_harvest_growth_stage_before = mossHarvest.GrowthStageBefore,
+            moss_harvest_growth_stage_after = mossHarvest.GrowthStageAfter,
+            moss_harvest_health_before = mossHarvest.Health,
+            moss_harvest_health_after = mossHarvest.Health,
+            moss_harvest_has_moss_before = mossHarvest.HasMossBefore,
+            moss_harvest_has_moss_after = false,
+            moss_harvest_has_seed_before = mossHarvest.HasSeedBefore,
+            moss_harvest_has_seed_after = false,
+            moss_harvest_was_shaken_today_before = mossHarvest.WasShakenTodayBefore,
+            moss_harvest_was_shaken_today_after = true,
+            moss_harvest_native_contract = mossHarvest.NativeContract,
             tree_treatment_required_qualified_item_id = "(O)419",
             tree_treatment_native_allowed = tree.GetType() == typeof(Tree) && !tree.stopGrowingMoss.Value,
             tree_treatment_executor_status = tree.GetType() != typeof(Tree)

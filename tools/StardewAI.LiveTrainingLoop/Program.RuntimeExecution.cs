@@ -786,6 +786,17 @@ static partial class Program
         var wateringCanSlotIndex = ReadQueueParameterInt(item, "watering_can_slot_index");
         var toolSlotIndex = ReadQueueParameterInt(item, "tool_slot_index");
         var requiredToolKind = ReadQueueParameterString(item, "required_tool_kind");
+        var clearCompletionMode = ReadQueueParameterString(item, "clear_completion_mode");
+        var expectedTreeHasMossBefore = ReadNullableBoolQueueParameter(item, "expected_tree_has_moss_before");
+        var expectedTreeHasMossAfter = ReadNullableBoolQueueParameter(item, "expected_tree_has_moss_after");
+        var expectedTreeGrowthStageBefore = ReadQueueParameterInt(item, "expected_tree_growth_stage_before");
+        var expectedTreeGrowthStageAfter = ReadQueueParameterInt(item, "expected_tree_growth_stage_after");
+        var expectedTreeHealthBefore = ReadQueueParameterDouble(item, "expected_tree_health_before");
+        var expectedTreeHealthAfter = ReadQueueParameterDouble(item, "expected_tree_health_after");
+        var expectedMossHarvestedBefore = ReadQueueParameterLong(item, "expected_moss_harvested_before");
+        var expectedMossHarvestedAfter = ReadQueueParameterLong(item, "expected_moss_harvested_after");
+        var mossHarvestProjectionStatus = ReadQueueParameterString(item, "moss_harvest_projection_status");
+        var mossHarvestNativeContract = ReadQueueParameterString(item, "moss_harvest_native_contract");
         var panUpgradeLevel = ReadQueueParameterInt(item, "pan_upgrade_level");
         var panEnchantmentsJson = ReadQueueParameterString(item, "pan_enchantments_json");
         var clickPixelX = ReadQueueParameterInt(item, "click_pixel_x");
@@ -1339,6 +1350,17 @@ static partial class Program
             executionRequest.ToolSlotIndex = toolSlotIndex.Value;
         }
         executionRequest.RequiredToolKind = requiredToolKind;
+        executionRequest.ClearCompletionMode = clearCompletionMode;
+        executionRequest.ExpectedTreeHasMossBefore = expectedTreeHasMossBefore;
+        executionRequest.ExpectedTreeHasMossAfter = expectedTreeHasMossAfter;
+        executionRequest.ExpectedTreeGrowthStageBefore = expectedTreeGrowthStageBefore;
+        executionRequest.ExpectedTreeGrowthStageAfter = expectedTreeGrowthStageAfter;
+        executionRequest.ExpectedTreeHealthBefore = expectedTreeHealthBefore;
+        executionRequest.ExpectedTreeHealthAfter = expectedTreeHealthAfter;
+        executionRequest.ExpectedMossHarvestedBefore = expectedMossHarvestedBefore;
+        executionRequest.ExpectedMossHarvestedAfter = expectedMossHarvestedAfter;
+        executionRequest.MossHarvestProjectionStatus = mossHarvestProjectionStatus;
+        executionRequest.MossHarvestNativeContract = mossHarvestNativeContract;
         executionRequest.PanUpgradeLevel = panUpgradeLevel;
         executionRequest.PanEnchantmentsJson = panEnchantmentsJson;
         executionRequest.ClickPixelX = clickPixelX;

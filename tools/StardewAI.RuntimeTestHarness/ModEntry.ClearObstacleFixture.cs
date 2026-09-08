@@ -31,7 +31,7 @@ public sealed partial class ModEntry
             ? "grass"
             : request.RuleKey;
         if (fixtureKind is not (
-            "grass" or "twig" or "seed_spot" or "artifact_spot"))
+            "grass" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss"))
         {
             return BlockedWithPrimitive(
                 request,
@@ -72,6 +72,25 @@ public sealed partial class ModEntry
             location.terrainFeatures[tile] =
                 new Grass(Grass.springGrass, 4);
         }
+        else if (fixtureKind == "tree_moss")
+        {
+            var fixtureTree = new Tree("1", Tree.treeStage);
+            fixtureTree.health.Value = 10f;
+            fixtureTree.stump.Value = false;
+            fixtureTree.tapped.Value = false;
+            fixtureTree.falling.Value = false;
+            fixtureTree.destroy.Value = false;
+            fixtureTree.hasMoss.Value = true;
+            fixtureTree.hasSeed.Value = false;
+            fixtureTree.wasShakenToday.Value = false;
+            fixtureTree.maxShake = 0f;
+            location.terrainFeatures[tile] = fixtureTree;
+            EnsureClearObstacleFixtureTool("scythe");
+            var activeScythe = Game1.player.Items
+                .OfType<MeleeWeapon>()
+                .First(weapon => weapon.isScythe());
+            Game1.player.CurrentToolIndex = Game1.player.Items.IndexOf(activeScythe);
+        }
         else
         {
             var qualifiedItemId = fixtureKind switch
@@ -99,11 +118,13 @@ public sealed partial class ModEntry
         }
 
         var after = ObstacleLabel(location, target);
-        var verified = fixtureKind == "grass"
+        var verified = fixtureKind is "grass" or "tree_moss"
             ? location.terrainFeatures.TryGetValue(
                 tile,
                 out var feature) &&
-                feature is Grass
+                (fixtureKind == "grass"
+                    ? feature is Grass
+                    : feature is Tree observedTree && observedTree.hasMoss.Value && !observedTree.hasSeed.Value)
             : location.objects.TryGetValue(
                 tile,
                 out var observedObstacle) &&
@@ -180,19 +201,24 @@ public sealed partial class ModEntry
     private static void EnsureClearObstacleFixtureTool(
         string requiredToolKind)
     {
-        var hasTool = requiredToolKind == "axe"
-            ? Game1.player.Items.OfType<Axe>().Any()
-            : Game1.player.Items.OfType<Hoe>().Any();
+        var hasTool = requiredToolKind switch
+        {
+            "axe" => Game1.player.Items.OfType<Axe>().Any(),
+            "scythe" => Game1.player.Items.OfType<MeleeWeapon>().Any(weapon => weapon.isScythe()),
+            _ => Game1.player.Items.OfType<Hoe>().Any()
+        };
         if (hasTool)
         {
             return;
         }
 
         EnsureFixtureInventoryCapacity(Game1.player);
-        InstallFixtureItem(
-            Game1.player,
-            requiredToolKind == "axe"
-                ? new Axe()
-                : new Hoe());
+        var tool = requiredToolKind switch
+        {
+            "axe" => (Tool)new Axe(),
+            "scythe" => ItemRegistry.Create<Tool>("(W)47"),
+            _ => new Hoe()
+        };
+        InstallFixtureItem(Game1.player, tool);
     }
 }

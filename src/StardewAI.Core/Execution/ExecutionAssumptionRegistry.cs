@@ -103,6 +103,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "Tree.performUseAction", "Tree.shake", "Utility.tryRollMysteryBox", "Utility.trySpawnRareObject", "Data/WildTrees" }),
             Assumption(
+                "tree_moss_harvest",
+                new[] { "foraging.harvest_tree_moss", "executor.clear_obstacle" },
+                new[] { "exact_vanilla_tree", "mature_moss_ready", "seed_already_shaken", "exact_scythe", "native_shake_idle", "adjacent_interaction_tile", "menu_clear" },
+                new[] { "route_length", "native_scythe_animation_ticks", "deterministic_moss_quantity" },
+                Array.Empty<string>(),
+                new[] { "MeleeWeapon.DoFunction", "GameLocation.performToolAction", "Tree.performToolAction", "Tree.CreateMossItem", "Game1.createMultipleItemDebris", "Tree.shake", "Farmer.gainExperience" }),
+            Assumption(
                 "garbage_can_rummage",
                 new[] { "foraging.rummage_garbage", "executor.rummage_garbage" },
                 new[] { "exact_map_Garbage_action", "locked_Data_GarbageCans", "unchecked_today", "deterministic_prediction", "safe_or_no_npc_witness", "empty_toolbar_slot", "adjacent_interaction_tile", "menu_clear" },

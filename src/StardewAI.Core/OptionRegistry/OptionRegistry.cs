@@ -607,6 +607,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact mature untapped seed-bearing base Tree selected", "guaranteed output and complete native stochastic output domain preserved without consuming RNG", "native checkAction and Tree shake handed to the mechanical executor" },
                 new[] { "block_unready_or_seedless_tree", "block_custom_or_data_drifted_tree", "block_tapped_tree", "block_native_shake_in_progress", "block_empty_toolbar_slot_unavailable", "block_unverified_adjacent_route", "block_projection_drift", "block_direct_tree_rng_debris_inventory_or_skill_mutation" }));
 
+            Register(Option("foraging.harvest_tree_moss", "foraging", "Harvest moss from one transparent seedless wild Tree",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.skills_detail", "current_location.terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact mature moss-bearing base Tree with no pending seed selected", "deterministic moss quantity, foraging experience, mossHarvested stat and complete tree state transition preserved", "existing clear_obstacle native tool lifecycle reused with an exact scythe and moss-only completion mode" },
+                new[] { "block_tree_seed_must_be_shaken_first", "block_unready_or_mossless_tree", "block_custom_tree_runtime", "block_missing_scythe", "block_native_shake_in_progress", "block_unverified_adjacent_route", "block_projection_drift", "block_direct_tree_rng_debris_inventory_stat_or_skill_mutation" }));
+
             Register(Option("foraging.rummage_garbage", "foraging", "Rummage one transparent unchecked garbage can",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

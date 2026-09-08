@@ -8,7 +8,7 @@ param(
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
     [int] $MaxToolSwings = 8,
-    [ValidateSet("grass", "twig", "seed_spot", "artifact_spot")]
+    [ValidateSet("grass", "twig", "seed_spot", "artifact_spot", "tree_moss")]
     [string] $FixtureKind = "grass",
     [switch] $KeepGameRunning
 )
@@ -112,6 +112,16 @@ function Find-TargetObject {
         Select-Object -First 1
 }
 
+function Find-TargetTerrainFeature {
+    param($Snapshot)
+    return $Snapshot.state.current_location.terrain_features.value |
+        Where-Object {
+            [int]$_.tile_x -eq $TargetTileX -and
+            [int]$_.tile_y -eq $TargetTileY
+        } |
+        Select-Object -First 1
+}
+
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
@@ -150,6 +160,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL = $env:STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
 }
@@ -161,6 +172,7 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
 
@@ -193,15 +205,26 @@ try {
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
 
     $readySnapshot = Wait-WorldSnapshot -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -TimeoutSeconds 30
-    $targetObject = Find-TargetObject -Snapshot $readySnapshot
+    $targetObject = if ($FixtureKind -eq "tree_moss") {
+        Find-TargetTerrainFeature -Snapshot $readySnapshot
+    }
+    else {
+        Find-TargetObject -Snapshot $readySnapshot
+    }
     if ($FixtureKind -ne "grass") {
         if ($null -eq $targetObject) {
             Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ready-rejected.json") $readySnapshot
             throw "Fixture did not expose a transparent $FixtureKind object at $TargetTileX,$TargetTileY."
         }
-        if ([string]$targetObject.clear_obstacle_executor_status -ne "ready") {
+        $projectionStatus = if ($FixtureKind -eq "tree_moss") {
+            [string]$targetObject.moss_harvest_status
+        }
+        else {
+            [string]$targetObject.clear_obstacle_executor_status
+        }
+        if ($projectionStatus -ne "ready") {
             Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ready-rejected.json") $readySnapshot
-            throw "Transparent $FixtureKind projection is not ready: $($targetObject.clear_obstacle_executor_status)."
+            throw "Transparent $FixtureKind projection is not ready: $projectionStatus."
         }
     }
 
@@ -213,12 +236,40 @@ try {
     $clearRequest.created_at = [DateTimeOffset]::UtcNow.ToString("O")
     $clearRequest.target_location = [string]$readySnapshot.state.player.location_id.value
     if ($FixtureKind -ne "grass") {
-        $clearRequest.max_crops = [int]$targetObject.expected_tool_hits_to_clear
-        $clearRequest.tool_slot_index = [int]$targetObject.tool_slot_index
-        $clearRequest.required_tool_kind = [string]$targetObject.required_tool_kind
-        $clearRequest.clear_output_projection_status = [string]$targetObject.clear_output_projection_status
-        $clearRequest.clear_output_items_json = [string]$targetObject.clear_output_items_json
-        $clearRequest.expected_foraging_experience_delta = [int]$targetObject.harvest_experience_on_success_min
+        if ($FixtureKind -eq "tree_moss") {
+            $clearRequest.max_crops = 1
+            $clearRequest.clear_completion_mode = [string]$targetObject.moss_harvest_completion_mode
+            $clearRequest.target_runtime_type = [string]$targetObject.runtime_type
+            $clearRequest.tool_slot_index = [int]$targetObject.moss_harvest_tool_slot_index
+            $clearRequest.required_tool_kind = [string]$targetObject.moss_harvest_required_tool_kind
+            $clearRequest.clear_output_projection_status = "exact"
+            $clearRequest.clear_output_items_json = ConvertTo-Json -InputObject @($targetObject.moss_harvest_output_items) -Depth 16 -Compress
+            $clearRequest.expected_tree_has_moss_before = [bool]$targetObject.moss_harvest_has_moss_before
+            $clearRequest.expected_tree_has_moss_after = [bool]$targetObject.moss_harvest_has_moss_after
+            $clearRequest.expected_tree_has_seed_before = [bool]$targetObject.moss_harvest_has_seed_before
+            $clearRequest.expected_tree_has_seed_after = [bool]$targetObject.moss_harvest_has_seed_after
+            $clearRequest.expected_tree_was_shaken_today_before = [bool]$targetObject.moss_harvest_was_shaken_today_before
+            $clearRequest.expected_tree_was_shaken_today_after = [bool]$targetObject.moss_harvest_was_shaken_today_after
+            $clearRequest.expected_tree_growth_stage_before = [int]$targetObject.moss_harvest_growth_stage_before
+            $clearRequest.expected_tree_growth_stage_after = [int]$targetObject.moss_harvest_growth_stage_after
+            $clearRequest.expected_tree_health_before = [double]$targetObject.moss_harvest_health_before
+            $clearRequest.expected_tree_health_after = [double]$targetObject.moss_harvest_health_after
+            $clearRequest.expected_moss_harvested_before = [long]$targetObject.moss_harvest_moss_harvested_before
+            $clearRequest.expected_moss_harvested_after = [long]$targetObject.moss_harvest_moss_harvested_after
+            $clearRequest.expected_foraging_experience_before = [int]$targetObject.moss_harvest_foraging_experience_before
+            $clearRequest.expected_foraging_experience_delta = [int]$targetObject.moss_harvest_quantity
+            $clearRequest.expected_foraging_experience_after = [int]$targetObject.moss_harvest_foraging_experience_after
+            $clearRequest.moss_harvest_projection_status = [string]$targetObject.moss_harvest_output_projection_status
+            $clearRequest.moss_harvest_native_contract = [string]$targetObject.moss_harvest_native_contract
+        }
+        else {
+            $clearRequest.max_crops = [int]$targetObject.expected_tool_hits_to_clear
+            $clearRequest.tool_slot_index = [int]$targetObject.tool_slot_index
+            $clearRequest.required_tool_kind = [string]$targetObject.required_tool_kind
+            $clearRequest.clear_output_projection_status = [string]$targetObject.clear_output_projection_status
+            $clearRequest.clear_output_items_json = [string]$targetObject.clear_output_items_json
+            $clearRequest.expected_foraging_experience_delta = [int]$targetObject.harvest_experience_on_success_min
+        }
         if ($FixtureKind -in @("seed_spot", "artifact_spot")) {
             $clearRequest.artifact_spots_dug_before = [int]$targetObject.artifact_spots_dug_before
             $clearRequest.artifact_spots_dug_delta = [int]$targetObject.artifact_spots_dug_delta
@@ -231,10 +282,22 @@ try {
     $clearResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $clearRequest -TimeoutSeconds 120
 
     $afterSnapshot = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -Headers @{ "Accept" = "application/json" } -TimeoutSec 10
-    $targetObjectAfter = Find-TargetObject -Snapshot $afterSnapshot
+    $targetObjectAfter = if ($FixtureKind -eq "tree_moss") {
+        Find-TargetTerrainFeature -Snapshot $afterSnapshot
+    }
+    else {
+        Find-TargetObject -Snapshot $afterSnapshot
+    }
+
+    $targetPostconditionPassed = if ($FixtureKind -eq "tree_moss") {
+        $null -ne $targetObjectAfter -and -not [bool]$targetObjectAfter.has_moss
+    }
+    else {
+        $FixtureKind -eq "grass" -or $null -eq $targetObjectAfter
+    }
 
     $summary = [ordered]@{
-        status = if ($setupResult.status -eq "applied" -and $clearResult.status -eq "applied" -and $clearResult.primitive_verification_status -eq "verified" -and ($FixtureKind -eq "grass" -or $null -eq $targetObjectAfter)) { "passed" } else { "unexpected_result" }
+        status = if ($setupResult.status -eq "applied" -and $clearResult.status -eq "applied" -and $clearResult.primitive_verification_status -eq "verified" -and $targetPostconditionPassed) { "passed" } else { "unexpected_result" }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
@@ -245,7 +308,7 @@ try {
         target_tile = "$TargetTileX,$TargetTileY"
         fixture_kind = $FixtureKind
         target_qualified_item_id = if ($null -eq $targetObject) { "" } else { [string]$targetObject.qualified_item_id }
-        target_projection_status = if ($null -eq $targetObject) { "not_applicable" } else { [string]$targetObject.clear_obstacle_executor_status }
+        target_projection_status = if ($null -eq $targetObject) { "not_applicable" } elseif ($FixtureKind -eq "tree_moss") { [string]$targetObject.moss_harvest_status } else { [string]$targetObject.clear_obstacle_executor_status }
         target_present_after = $null -ne $targetObjectAfter
         executor_health = $executorHealth
         setup_status = $setupResult.status

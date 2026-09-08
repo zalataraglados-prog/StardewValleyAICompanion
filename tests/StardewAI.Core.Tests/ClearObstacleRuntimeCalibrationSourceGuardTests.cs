@@ -14,7 +14,7 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
             "private TrainingExecutionResult ExecuteSetupClearObstacle(",
             "private static void EnsureClearObstacleFixtureTool(");
 
-        Assert.Contains("\"grass\" or \"twig\" or \"seed_spot\" or \"artifact_spot\"", fixture, StringComparison.Ordinal);
+        Assert.Contains("\"grass\" or \"twig\" or \"seed_spot\" or \"artifact_spot\" or \"tree_moss\"", fixture, StringComparison.Ordinal);
         Assert.Contains("ItemRegistry.Create<StardewValley.Object>", fixture, StringComparison.Ordinal);
         Assert.Contains("\"twig\" => \"(O)294\"", fixture, StringComparison.Ordinal);
         Assert.Contains("\"seed_spot\" => \"(O)SeedSpot\"", fixture, StringComparison.Ordinal);
@@ -33,7 +33,9 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
             "StardewAI.RuntimeTestHarness",
             "ModEntry.MovementSleep.ObstacleClearance.cs");
 
-        Assert.Contains("var targetClearanceCompleted = targetIsArtifactSpot", source, StringComparison.Ordinal);
+        Assert.Contains("var targetClearanceCompleted = targetIsTreeMoss", source, StringComparison.Ordinal);
+        Assert.Contains("? TreeMossHarvestCompleted(active)", source, StringComparison.Ordinal);
+        Assert.Contains(": targetIsArtifactSpot", source, StringComparison.Ordinal);
         Assert.Contains("? !location.objects.ContainsKey(target.ToVector2())", source, StringComparison.Ordinal);
         Assert.Contains(": after == \"clear\";", source, StringComparison.Ordinal);
         Assert.Contains("targetTerrainFeatureAfter == expectedTerrainFeatureAfter", source, StringComparison.Ordinal);
@@ -50,13 +52,14 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
             "scripts",
             "Invoke-RuntimeClearObstacleSmoke.ps1");
 
-        Assert.Contains("ValidateSet(\"grass\", \"twig\", \"seed_spot\", \"artifact_spot\")", smoke, StringComparison.Ordinal);
+        Assert.Contains("ValidateSet(\"grass\", \"twig\", \"seed_spot\", \"artifact_spot\", \"tree_moss\")", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_obstacle_executor_status", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_output_items_json", smoke, StringComparison.Ordinal);
         Assert.Contains("tool_slot_index", smoke, StringComparison.Ordinal);
         Assert.Contains("artifact_spots_dug_expected_after", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_terrain_feature_expected_after", smoke, StringComparison.Ordinal);
         Assert.Contains("defense_book_mail_expected_after", smoke, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL", smoke, StringComparison.Ordinal);
     }
 
     private static string Slice(string source, string start, string end)

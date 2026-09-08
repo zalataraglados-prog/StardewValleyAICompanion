@@ -1,22 +1,22 @@
 {
   "schema_version": "goal_conditioned_current_option_input_lock.v1",
-  "base_commit": "46e0182479fcd8db03a8782b9a8395a90eaebdb2",
+  "base_commit": "02c6e13c23828f47a432312dd11f9d068a34f4d4",
   "generated_at_utc": "2026-09-05T00:00:00Z",
   "repository_sources": [
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
-      "bytes": 121520,
-      "sha256": "6ef89ce1e11434ee8c53b3d14a50fec57b5cee32d8840e51fd367cc933dc6793"
+      "bytes": 121958,
+      "sha256": "9cce32b88949089af2c352ebe471e2ba1f3b70f382f2bf06b9e1744d8525fbfc"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
-      "bytes": 218880,
-      "sha256": "9b3640edcb6d907abfce496c04474a21c66fa2ed4df1a1184661d0405a46cc74"
+      "bytes": 220046,
+      "sha256": "5e30b61ca1385def03db9580b500eff09c9cc95dec217e6ab7c3b20c7843cfa2"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
-      "bytes": 44771,
-      "sha256": "e7f787e8835a5c359dab0108fb82641799000a951585fef1f392aa9bbde90bed"
+      "bytes": 44870,
+      "sha256": "ba9d46ab1932dfda20f8920e24f57c6f220e496cc1dc0e02453f99a89aee91a6"
     },
     {
       "relative_path": "knowledge-artifacts.lock.json",
@@ -25,8 +25,8 @@
     },
     {
       "relative_path": "catalogs/vanilla-1.6.15/native-action-denominator-freeze.json",
-      "bytes": 7951,
-      "sha256": "a9f7b5de0bdc29bec89bd32d56ee4ece029f01c523eba23c2e7b08a0701e3c20"
+      "bytes": 8069,
+      "sha256": "e7f3c2f0a3a364293c13d9c44da9e16d74a4a82b8cf56159e04a366dd7eee36a"
     }
   ],
   "knowledge_sources": [
@@ -38,13 +38,13 @@
   ],
   "output_contract": {
     "schema_version": "stardewai.option_governance_matrix.v3",
-    "option_count": 230,
+    "option_count": 231,
     "goal_template_count": 2,
-    "composite_option_count": 86,
+    "composite_option_count": 87,
     "primitive_option_count": 142,
-    "training_eligible_count": 64,
-    "runtime_verified_count": 153,
-    "bytes": 831647,
-    "sha256": "6e6eb5a947ced3b23ff85972f94183001e80c114d1c511171495581103f533ee"
+    "training_eligible_count": 65,
+    "runtime_verified_count": 154,
+    "bytes": 835258,
+    "sha256": "21dc65fb3715224fe12d0bda2af2e891980a9eb903d8a2456176e16b064223b2"
   }
 }
