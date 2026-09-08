@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-09-08 Teacher / Student 收敛合同与当前禁入状态
+
+- issue #90 与 #91 内容完全重复；其中 Teacher bootstrap、DAgger 重标、native outcome 后期优化和运行时 Student 主决策的方向正确，已整理为唯一规范 `docs/TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。
+- 系统目标是可验收的工程收敛，不宣称神经策略的数学全局最优。有限 Teacher 必须同输入同输出并终止；Student 以独立 Teacher 分歧、learner-state 恢复、新存档 21/21、零硬约束违规和性能门冻结。
+- 当前并未收敛：Teacher 前沿为 2/19 executable、17/19 expansion pending。Master Angler 仅闭合当前日期的全 connector 路径和终端时间储备；未来日期、主动蟹笼容量、概率重试和真实跨日回执仍未完成。
+- 代码审计确认 `StructuredPolicyTrainer.BuildPairs` 仍以 `candidate.Selected` 选正例。正式全量训练继续禁用；旧 r24-r35 只保留为控制面、执行器、恢复和性能证据。后续必须先类型化 `teacher_preference`、`native_outcome`、`student_observation` 并实现 learner-state Teacher 重标。
+- 本块离线验证基线：Core `2467/2467`、KnowledgeCompiler `585/585` blocking 0、option matrix `228 registered / 62 training-eligible / 151 runtime-verified`，isolated full regression 和 Master Angler late-arrival/no-terminal-reserve 回归通过。没有启动游戏。
+
 ## 2026-09-05 当前权威检查点：r35 round01
 
 - `train.server.20260905.r34.plan05` 从 Summer 9 精确基线启动后，暴露了卧室窄通道中的真实执行缺陷：摸完宠物后，通用移动会为占路宠物反复规划不存在的替代路线，却不继续发送原生移动输入，最终六次命中 `movement_soft_obstacle_timeout`。该轮只有 1/2 个主动作验证，未进入跨日边界，事务保持 `staged_not_committed`；Summer 9 存档和五项 canonical 哈希均未改变，失败证据及 6 份执行器诊断已归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round05-failed-20260905-112856`，远端/本机 130 / 130 且哈希差异为 0。

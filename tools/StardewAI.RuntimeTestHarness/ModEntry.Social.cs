@@ -157,6 +157,25 @@ public sealed partial class ModEntry : Mod
         }
         var beforeSpouse = Game1.player.spouse ?? string.Empty;
 
+        int? expectedFriendshipDelta = null;
+        if (actionKind is "talk" or "gift")
+        {
+            if (!int.TryParse(request.SocialExpectedFriendshipDelta, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedExpectedDelta))
+            {
+                return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_expected_friendship_delta_required_or_malformed");
+            }
+            expectedFriendshipDelta = parsedExpectedDelta;
+        }
+        if (actionKind == "talk" && request.SocialExpectedTalkedToTodayBefore.HasValue &&
+            request.SocialExpectedTalkedToTodayBefore.Value != beforeTalkedToToday)
+        {
+            return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_talked_to_today_precondition_mismatch");
+        }
+        if (actionKind == "talk" && beforeTalkedToToday)
+        {
+            return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_talk_already_completed_today");
+        }
+
         int? beforeGiftStack = null;
         string beforeGiftItemId = string.Empty;
         int? beforeGiftQuality = null;
@@ -338,6 +357,8 @@ public sealed partial class ModEntry : Mod
 
         if (actionKind == "talk" && handled)
         {
+            var friendshipDeltaMatches = expectedFriendshipDelta.HasValue &&
+                afterPoints - beforePoints == expectedFriendshipDelta.Value;
             var hasTalkChange = afterTalkedToToday != beforeTalkedToToday;
             var hasDialogueChange = afterDialogueCount != beforeDialogueCount ||
                 !string.Equals(afterDialogueKey, beforeDialogueKey, StringComparison.Ordinal) ||
@@ -348,7 +369,7 @@ public sealed partial class ModEntry : Mod
                 afterMenuOpen != beforeMenuOpen ||
                 afterMenuType != beforeMenuType;
 
-            if (!socialTransitionObserved)
+            if (!socialTransitionObserved || !friendshipDeltaMatches)
             {
                 return BuildSocialInteractResult(request, handled, npcName,
                     beforeNpcLocation, afterNpcLocation,
@@ -371,8 +392,8 @@ public sealed partial class ModEntry : Mod
                     beforeGiftStack, afterGiftStack, beforeGiftItemId, afterGiftItemId,
                     beforeGiftQuality, afterGiftQuality, beforeGiftSlot, afterGiftSlot,
                     true, "blocked",
-                    "observed_mismatch", new[] { "native_handled_but_no_social_transition_observed" },
-                    "native_handled_but_no_social_transition_observed", "executor_calibration",
+                    "observed_mismatch", new[] { friendshipDeltaMatches ? "native_handled_but_no_social_transition_observed" : "social_friendship_delta_mismatch" },
+                    friendshipDeltaMatches ? "native_handled_but_no_social_transition_observed" : "social_friendship_delta_mismatch", "executor_calibration",
                     startedAt, completedAt, actualTicks);
             }
 
@@ -397,7 +418,7 @@ public sealed partial class ModEntry : Mod
                 beforeGiftStack, afterGiftStack, beforeGiftItemId, afterGiftItemId,
                 beforeGiftQuality, afterGiftQuality, beforeGiftSlot, afterGiftSlot,
                 true, "applied",
-                "verified", new[] { "native_talk_handled", "observable_social_transition" },
+                "verified", new[] { "native_talk_handled", "observable_social_transition", "exact_friendship_delta_verified" },
                 string.Empty, string.Empty,
                 startedAt, completedAt, actualTicks);
         }
@@ -546,7 +567,9 @@ public sealed partial class ModEntry : Mod
                     startedAt, completedAt, actualTicks);
             }
 
-            var verified = handled && itemConsumed && hasSocialEffect;
+            var friendshipDeltaMatches = expectedFriendshipDelta.HasValue &&
+                afterPoints - beforePoints == expectedFriendshipDelta.Value;
+            var verified = handled && itemConsumed && hasSocialEffect && friendshipDeltaMatches;
             return BuildSocialInteractResult(request, handled, npcName,
                 beforeNpcLocation, afterNpcLocation,
                 beforeNpcTile, afterNpcTile,
@@ -569,9 +592,9 @@ public sealed partial class ModEntry : Mod
                 beforeGiftQuality, afterGiftQuality, beforeGiftSlot, afterGiftSlot,
                 true, verified ? "applied" : "blocked",
                 verified ? "verified" : "observed_mismatch",
-                verified ? new[] { "native_gift_handled", "exact_one_item_consumed", "observable_social_effect" }
-                    : new[] { "native_gift_handled_but_incomplete_verification" },
-                verified ? string.Empty : "native_gift_handled_but_incomplete_verification",
+                verified ? new[] { "native_gift_handled", "exact_one_item_consumed", "observable_social_effect", "exact_friendship_delta_verified" }
+                    : new[] { friendshipDeltaMatches ? "native_gift_handled_but_incomplete_verification" : "social_friendship_delta_mismatch" },
+                verified ? string.Empty : friendshipDeltaMatches ? "native_gift_handled_but_incomplete_verification" : "social_friendship_delta_mismatch",
                 "executor_calibration",
                 startedAt, completedAt, actualTicks);
         }
@@ -945,6 +968,10 @@ public sealed partial class ModEntry : Mod
         {
             effect += ";slot=" + (request.SocialGiftSlotIndex?.ToString() ?? "missing") +
                 ";item=" + (string.IsNullOrWhiteSpace(request.SocialGiftQualifiedItemId) ? "missing" : request.SocialGiftQualifiedItemId);
+        }
+        if (kind is "talk" or "gift")
+        {
+            effect += ";expected_friendship_delta=" + (string.IsNullOrWhiteSpace(request.SocialExpectedFriendshipDelta) ? "missing" : request.SocialExpectedFriendshipDelta);
         }
         return effect;
     }

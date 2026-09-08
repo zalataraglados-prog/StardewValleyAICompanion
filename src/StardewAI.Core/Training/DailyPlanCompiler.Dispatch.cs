@@ -74,8 +74,8 @@ namespace StardewAI.Core.Training
                 ["economy.buy_supplies"] = new[] { "route_connector_tile", "interact_endpoint", "buy_shop_item" },
                 ["economy.sell_items"] = new[] { "route_connector_tile", "interact_endpoint", "sell_shop_item" },
                 ["economy.ship_items"] = new[] { "route_connector_tile", "ship_inventory_item_to_bin" },
-                ["fishing.catch_fish"] = new[] { "catch_fish" },
-                ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
+                ["fishing.catch_fish"] = new[] { "route_connector_tile", "catch_fish" },
+                ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["fishing.manage_fish_pond"] = new[] { "manage_fish_pond" },
                 ["housing.advance_farmhouse"] = new[] { "purchase_farmhouse_upgrade", "purchase_farmhouse_expansion" },
@@ -582,6 +582,22 @@ namespace StardewAI.Core.Training
                 return CollectCrabPotSteps(candidate);
             }
 
+            if (candidate.Kind == "load_crab_pot_bait" &&
+                OptionCandidateCompilerKinds["fishing.collect_crab_pots"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return LoadCrabPotBaitSteps(candidate);
+            }
+
+            if (candidate.Kind == "place_crab_pot" &&
+                OptionCandidateCompilerKinds["fishing.collect_crab_pots"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return PlaceCrabPotSteps(candidate);
+            }
+
             if ((candidate.Kind == "collect_fish_pond_output" || candidate.Kind == "complete_fish_pond_request") &&
                 OptionCandidateCompilerKinds["fishing.service_fish_ponds"].Contains(
                     candidate.Kind,
@@ -818,6 +834,7 @@ namespace StardewAI.Core.Training
             }
 
             if (candidate.Kind == "mining_reach_depth_plan_envelope" ||
+                candidate.Kind == "mining_combat_training_plan_envelope" ||
                 candidate.Kind == "mining_slay_monsters_plan_envelope" ||
                 candidate.Kind == "mining_collect_quest_resource_plan_envelope" ||
                 candidate.Kind == "mining_acquire_golden_scythe_plan_envelope" ||

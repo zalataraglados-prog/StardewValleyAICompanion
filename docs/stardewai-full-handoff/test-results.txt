@@ -4351,3 +4351,11 @@ Scope boundary:
 - Reconciliation PASS: 228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 145 Product Executor / 151 five-gate / 62 training allowlist / 2 catalogued blocked. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers; KnowledgeCompiler remains 585/585 blocking 0.
 - Final regression PASS: Core 2191/2191; Backend 162/162; full solution Release build 0 warnings / 0 errors.
 - Formal non-skip LiveTrainingLoop execution now requires Product Executor. Next gate is formal trajectory/checkpoint rebuild plus server deployment/recovery probe; no formal long training is claimed by this smoke.
+
+2026-09-08 EVD-333 Master Angler current-date full-route Teacher proof
+- Core regression PASS 2467/2467. KnowledgeCompiler export PASS 585/585 with zero blockers.
+- Isolated goal-conditioned bootstrap full regression PASS. The regenerated option matrix remains 228 registered / 62 training-eligible / 151 runtime-verified.
+- Current-date Teacher construction filters the exact missing-species denominator and legal source windows before route search, then requires complete date-bound route/gate evidence, a matching SHA-256-locked conservative movement calibration, all connector approach/transition costs, and terminal catch reserve.
+- The fresh candidate gate independently recomputes the remaining route. A topologically valid route that arrives too late, or has no terminal reserve, fails closed.
+- Review confirmed one Core timing authority and reuse of the existing connector/fishing compiler and executor paths. No game was started; future-date scheduling, proactive trap capacity, stochastic retries and fresh native receipts remain pending.
+- `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md` is now the current training interpretation. Existing selected-only behavior-cloning trajectories are not Teacher labels; formal training remains disabled.

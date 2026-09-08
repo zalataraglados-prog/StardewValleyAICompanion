@@ -1164,6 +1164,15 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("total_donatable_items")]
         public int TotalDonatableItems { get; set; }
 
+        [JsonPropertyName("missing_item_count")]
+        public int MissingItemCount { get; set; }
+
+        [JsonPropertyName("donatable_items")]
+        public MuseumCollectionItemProgressRef[] DonatableItems { get; set; } = System.Array.Empty<MuseumCollectionItemProgressRef>();
+
+        [JsonPropertyName("missing_item_ids")]
+        public string[] MissingItemIds { get; set; } = System.Array.Empty<string>();
+
         [JsonPropertyName("collection_complete")]
         public bool CollectionComplete { get; set; }
 
@@ -1229,6 +1238,24 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("donation_candidates")]
         public MuseumDonationCandidateRef[] DonationCandidates { get; set; } = new MuseumDonationCandidateRef[0];
+    }
+
+    public sealed class MuseumCollectionItemProgressRef
+    {
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("object_type")]
+        public string ObjectType { get; set; } = string.Empty;
+
+        [JsonPropertyName("donated")]
+        public bool Donated { get; set; }
     }
 
     public sealed class MuseumDonationCandidateRef
@@ -1685,5 +1712,50 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("shipped")]
         public bool Shipped { get; set; }
+    }
+
+    public sealed class FishCollectionProgressRef
+    {
+        [JsonPropertyName("eligible_species_count")]
+        public int EligibleSpeciesCount { get; set; }
+
+        [JsonPropertyName("caught_eligible_species_count")]
+        public int CaughtEligibleSpeciesCount { get; set; }
+
+        [JsonPropertyName("missing_species_count")]
+        public int MissingSpeciesCount { get; set; }
+
+        [JsonPropertyName("completion_ratio")]
+        public double CompletionRatio { get; set; }
+
+        [JsonPropertyName("complete")]
+        public bool Complete { get; set; }
+
+        [JsonPropertyName("items")]
+        public FishCollectionItemProgressRef[] Items { get; set; } = System.Array.Empty<FishCollectionItemProgressRef>();
+
+        [JsonPropertyName("missing_item_ids")]
+        public string[] MissingItemIds { get; set; } = System.Array.Empty<string>();
+    }
+
+    public sealed class FishCollectionItemProgressRef
+    {
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("caught")]
+        public bool Caught { get; set; }
+
+        [JsonPropertyName("caught_count")]
+        public int CaughtCount { get; set; }
+
+        [JsonPropertyName("max_size")]
+        public int MaxSize { get; set; }
     }
 }

@@ -527,13 +527,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "legal cast candidate selected", "catch attempt handed to the fishing executor" },
                 new[] { "block_unresolved_fishing_context", "block_illegal_cast_geometry", "block_inventory_full", "block_unobserved_catch_result" }));
 
-            Register(Option("fishing.collect_crab_pots", "fishing", "Collect one transparent ready crab pot",
+            Register(Option("fishing.collect_crab_pots", "fishing", "Service one transparent crab-pot lifecycle step",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
                 TrainingRoles.Mixed,
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
-                new[] { "one ready crab pot selected", "native checkAction handed to the mechanical executor" },
-                new[] { "block_unready_crab_pot", "block_inventory_full", "block_unverified_route", "block_incomplete_output_projection" }));
+                new[] { "one exact collection, bait-load, or missing-species placement step selected", "existing native crab-pot executor receives the bound step" },
+                new[] { "block_unready_crab_pot", "block_inventory_full", "block_unverified_route", "block_incomplete_output_projection", "block_no_missing_species_domain", "block_policy_authorization_missing" }));
 
             Register(Option("fishing.service_fish_ponds", "fishing", "Collect one ready fish-pond output or complete one ready pond request",
                 OptionBehaviorCategories.ParameterizedMechanical,

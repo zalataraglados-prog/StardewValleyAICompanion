@@ -58,22 +58,7 @@ namespace StardewAI.Core.Training
             }
 
             var factorMap = report.Factors.ToDictionary(factor => factor.Id, StringComparer.Ordinal);
-            var specs = new[]
-            {
-                Spec("earn_money", "economy", "Increase total money earned", "grandpa.money", new[] { "money_50000", "money_100000", "money_200000", "money_300000", "money_500000", "money_1000000" }),
-                Spec("complete_museum_collection", "world_progress", "Complete museum collection achievement", "grandpa.achievement.5", new[] { "achievement_complete_collection" }),
-                Spec("obtain_skull_key", "exploration", "Obtain Skull Key", "grandpa.skull_key", new[] { "skull_key" }),
-                Spec("complete_community_center", "world_progress", "Complete Community Center", "grandpa.community_center", new[] { "community_center_access_or_completion", "community_center_accessible_bonus" }),
-                Spec("marriage_and_house_upgrade", "social", "Marry or get roommate and upgrade farmhouse", "grandpa.marriage_house", new[] { "married_or_roommate_house_2" }),
-                Spec("obtain_rusty_key", "world_progress", "Obtain Rusty Key", "grandpa.rusty_key", new[] { "rusty_key" }),
-                Spec("complete_master_angler", "world_progress", "Complete Master Angler achievement", "grandpa.achievement.26", new[] { "achievement_master_angler" }),
-                Spec("complete_full_shipment", "economy", "Complete Full Shipment achievement", "grandpa.achievement.34", new[] { "achievement_full_shipment" }),
-                Spec("raise_friendships", "social", "Raise NPC friendships", "grandpa.friendships", new[] { "friendships_5", "friendships_10" }),
-                Spec("raise_skill_levels", "skills", "Raise total skill level", "grandpa.level", new[] { "player_level_15", "player_level_25" }),
-                Spec("earn_pet_love", "farm", "Earn pet love", "grandpa.pet_love", new[] { "pet_love" })
-            };
-
-            return specs
+            return GrandpaDirectionCatalog.Entries
                 .Select(spec => Direction(spec, factorMap, globalBlocked))
                 .Where(direction => direction.PotentialPoints > 0 || !direction.Known)
                 .OrderByDescending(direction => direction.PriorityScore)
@@ -81,9 +66,9 @@ namespace StardewAI.Core.Training
                 .ToArray();
         }
 
-        private static CandidateDirection Direction(DirectionSpec spec, IReadOnlyDictionary<string, GrandpaEvaluationFactor> factors, bool globalBlocked)
+        private static CandidateDirection Direction(GrandpaDirectionCatalogEntry spec, IReadOnlyDictionary<string, GrandpaEvaluationFactor> factors, bool globalBlocked)
         {
-            var related = spec.FactorIds
+            var related = spec.CriterionIds
                 .Where(factors.ContainsKey)
                 .Select(id => factors[id])
                 .ToArray();
@@ -103,7 +88,7 @@ namespace StardewAI.Core.Training
 
             return new CandidateDirection
             {
-                DirectionId = spec.Id,
+                DirectionId = spec.DirectionId,
                 Domain = spec.Domain,
                 Label = spec.Label,
                 RelatedFactorIds = related.Select(factor => factor.Id).ToArray(),
@@ -140,34 +125,10 @@ namespace StardewAI.Core.Training
 
         private static bool IsNonBlockingEvaluationContextFact(string path)
         {
-            return string.Equals(path, "player.active_object_qualified_id", StringComparison.Ordinal);
+            return path is
+                "player.active_object_qualified_id" or
+                "farm.grandpa_score";
         }
 
-        private static DirectionSpec Spec(string id, string domain, string label, string feedbackKey, string[] factorIds)
-        {
-            return new DirectionSpec(id, domain, label, feedbackKey, factorIds);
-        }
-
-        private sealed class DirectionSpec
-        {
-            public DirectionSpec(string id, string domain, string label, string feedbackKey, string[] factorIds)
-            {
-                Id = id;
-                Domain = domain;
-                Label = label;
-                FeedbackKey = feedbackKey;
-                FactorIds = factorIds;
-            }
-
-            public string Id { get; }
-
-            public string Domain { get; }
-
-            public string Label { get; }
-
-            public string FeedbackKey { get; }
-
-            public string[] FactorIds { get; }
-        }
     }
 }

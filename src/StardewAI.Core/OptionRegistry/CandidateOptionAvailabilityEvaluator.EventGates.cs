@@ -51,6 +51,16 @@ namespace StardewAI.Core.OptionRegistry
                 !string.IsNullOrWhiteSpace(ReadParameter(candidate.Parameters, "continuation.target_location"));
         }
 
+        private static bool IsMasterAnglerIntentCandidate(
+            OptionAvailabilityCandidate candidate)
+        {
+            return string.Equals(
+                    candidate.OptionId,
+                    "fishing.catch_fish",
+                    StringComparison.Ordinal) &&
+                HasMasterAnglerIntentParameters(candidate.Parameters);
+        }
+
         private static string[] EventCandidateGateBlockingReasons(string optionId, EventCandidate[] eventCandidates, bool hasBoundParameters)
         {
             if (optionId == "inventory.transfer_item")

@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
+using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
@@ -18,7 +19,9 @@ static partial class Program
         var afterSnapshotPath = ReadString(execution, "after_snapshot_path");
         if (string.IsNullOrWhiteSpace(afterSnapshotPath) || !File.Exists(afterSnapshotPath))
             return 0;
-        var afterSnapshot = JsonNode.Parse(File.ReadAllText(afterSnapshotPath))?.AsObject();
+        var afterSnapshot = JsonNode.Parse(
+            ContentAddressedJsonArtifactStore.ReadAllText(
+                afterSnapshotPath))?.AsObject();
         if (afterSnapshot is null)
             return 0;
 

@@ -14,6 +14,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate[] MiningReachDepthCandidates(SnapshotEnvelope snapshot, SmallModelActionParameter[] parameters)
     {
         var currentFloorCandidates = MiningReachDepthCandidateBuilder.Build(snapshot, parameters);
+        if (string.Equals(
+                ReadParameter(parameters, "skill_training_target_id"),
+                "combat",
+                StringComparison.Ordinal))
+            return currentFloorCandidates;
         var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
         var resources = ReadStateFieldValue(snapshot, "mining", "player_resources");
         if (!currentMine.HasValue || currentMine.Value.ValueKind != JsonValueKind.Object ||

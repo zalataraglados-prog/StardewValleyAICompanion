@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-08 当前有效覆盖：Teacher / Student 监督来源门
+
+本文下方 r24-r35 内容保留真实历史运行事实，但不得再据此宣称正式策略监督有效。当前规范见 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`：`teacher_preference`、`native_outcome`、`student_observation` 必须类型化分离；`candidate.Selected` 只能描述 Student 行为，不能自动成为正例。
+
+源码审计确认当前 `StructuredPolicyTrainer.BuildPairs` 仍以 selected candidate 构造正向 pair。因此启动、Product 回执、跨日事务、数据 manifest 和 checkpoint 即使全部成功，也只证明管线与执行闭环，不解除策略训练禁入。恢复正式全量训练前必须完成独立 Teacher 标签、learner-visited state 重标、候选集/decision-state 身份和三类来源的 dataset/trainer 回归。
+
+当前 Teacher 反向图为 2/19 executable、17/19 expansion pending。Master Angler 当前日期 route/time 叶已闭合；未来日期、主动蟹笼容量、概率重试与原生跨日回执仍是 blocker。系统可以按工程门槛收敛，但当前尚未收敛。
+
 ## 2026-09-05 r35 round01 软障碍修复与连续批次结果
 
 r34 round05 从 Summer 9 精确起点运行时，摸宠物成功，但后续跨出 FarmHouse 的通用移动在宠物占据下一格时只反复尝试 soft-obstacle BFS，未发送原生移动输入。6 次主尝试后仍只有 1/2 verified，事务保持 `staged_not_committed`，没有进入存档边界，也没有提升 canonical。失败轮次和 6 份执行器诊断已按 130/130 文件完成双端 SHA-256 归档。

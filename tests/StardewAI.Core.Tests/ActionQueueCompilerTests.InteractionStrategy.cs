@@ -418,6 +418,46 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileValidatesTheExplicitParallelConnectorInsteadOfTheFirstGraphEdge()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Backwoods","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":3,"height":2,"notable_tiles":[{"tile_x":2,"tile_y":0,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"unsupported_for_route_training_count":0,"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"warp","from_location":"Backwoods","from_x":2,"from_y":0,"target_location":"Mountain","target_x":0,"target_y":0,"resolved":true},
+              {"kind":"warp","from_location":"Backwoods","from_x":2,"from_y":1,"target_location":"Mountain","target_x":0,"target_y":0,"resolved":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "exploration.visit_location");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "target_location", Value = "Mountain" },
+            new SmallModelActionParameter { Name = "target_tile_x", Value = "2" },
+            new SmallModelActionParameter { Name = "target_tile_y", Value = "1" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.DoesNotContain(
+            "route_graph_start_connector_blocked_by_collision_grid",
+            queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
     public void CompileAddsRouteMapSummaryContextToVisitLocationPreview()
     {
         var snapshot = Snapshot("""

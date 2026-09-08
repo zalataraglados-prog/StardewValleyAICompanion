@@ -2,27 +2,49 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Characters;
 using StardewValley.Monsters;
+using StardewAI.TransparentBridge.State;
 using SObject = StardewValley.Object;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
-public sealed class NpcReadAdapter : ReadAdapterBase
+public sealed partial class NpcReadAdapter : ReadAdapterBase
 {
     public override string Domain => "npcs";
     public override int Priority => 40;
 
     public override StateAdapterResult Collect(long tick)
     {
+        var scheduleCatalogRequested = SnapshotProfileContext.IncludesNpcScheduleCatalog;
         if (!Context.IsWorldReady || Game1.currentLocation is null)
         {
-            return Section("npcs", new Dictionary<string, object>
+            var worldUnavailableFields = new Dictionary<string, object>
             {
                 ["positions"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters", tick, "vanilla_1_6_npc"),
                 ["friendships"] = Unavailable("world_not_ready", "Game1.player.friendshipData", tick, "vanilla_1_6_npc"),
+                ["grandpa_friendship_progress"] = Unavailable("world_not_ready", "Utility.ForEachVillager(includeEventActors:false) plus Utility.getNumberOfFriendsWithinThisRange(Game1.player, 1975, 999999, romanceOnly:false)", tick, "vanilla_1_6_npc"),
                 ["schedules"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].Schedule", tick, "vanilla_1_6_npc"),
                 ["social_interaction"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters social fields", tick, "vanilla_1_6_npc"),
                 ["gift_tastes"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].getGiftTasteForThisItem; transparent gift taste derivation unavailable", tick, "vanilla_1_6_npc")
-            }, new[] { "npcs.positions", "npcs.friendships", "npcs.schedules", "npcs.social_interaction", "npcs.gift_tastes" }, "unavailable");
+            };
+            var worldUnavailablePaths = new List<string>
+            {
+                "npcs.positions",
+                "npcs.friendships",
+                "npcs.grandpa_friendship_progress",
+                "npcs.schedules",
+                "npcs.social_interaction",
+                "npcs.gift_tastes"
+            };
+            if (scheduleCatalogRequested)
+            {
+                worldUnavailableFields["schedule_catalog"] = Unavailable(
+                    "world_not_ready",
+                    "Utility.ForEachVillager(includeEventActors:false)[].getMasterScheduleRawData with NPC.TryLoadSchedule selection contract",
+                    tick,
+                    "vanilla_1_6_npc_schedule_catalog");
+                worldUnavailablePaths.Add("npcs.schedule_catalog");
+            }
+            return Section("npcs", worldUnavailableFields, worldUnavailablePaths, "unavailable");
         }
 
         var allLoadedNpcs = CollectAllLoadedNpcs();
@@ -87,13 +109,24 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             ["friendships"] = friendships is null
                 ? (object)Unavailable("player_unavailable", "Game1.player.friendshipData", tick, "vanilla_1_6_npc")
                 : Field(friendships, "Game1.player.friendshipData.Pairs[].Key/Value Points/GiftsThisWeek/GiftsToday/TalkedToToday/Status/ProposalRejected/RoommateMarriage/LastGiftDate/WeddingDate/NextBirthingDate/Proposer", tick, "vanilla_1_6_npc"),
+            ["grandpa_friendship_progress"] = Game1.player is null
+                ? (object)Unavailable("player_unavailable", "Utility.ForEachVillager(includeEventActors:false) plus Utility.getNumberOfFriendsWithinThisRange(Game1.player, 1975, 999999, romanceOnly:false)", tick, "vanilla_1_6_npc")
+                : Field(ReadGrandpaFriendshipProgress(Game1.player), "Utility.ForEachVillager(includeEventActors:false) and Utility.getNumberOfFriendsWithinThisRange(Game1.player,1975,999999,false) define the Grandpa population/count; live NPC/Friendship/Farmer fields cover Farmer.resetFriendshipsForNewDay, updateFriendshipGifts and changeFriendship projection inputs", tick, "vanilla_1_6_npc"),
             ["schedules"] = Field(ReadLoadedSchedules(allLoadedNpcs), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].Schedule/ScheduleKey/followSchedule/ignoreScheduleToday", tick, "vanilla_1_6_npc"),
-            ["social_interaction"] = Field(ReadSocialInteractions(allLoadedNpcs), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters raw fields plus NPC.CanSocialize/CanReceiveGifts when runtime type uses vanilla non-overridden query paths", tick, "vanilla_1_6_npc"),
+            ["social_interaction"] = Field(ReadSocialInteractions(allLoadedNpcs, Game1.player), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): loaded NPC raw fields plus NPC.CanSocialize/CanReceiveGifts and exact NPC.grantConversationFriendship/Farmer.changeFriendship projected delta when runtime type uses supported vanilla query paths", tick, "vanilla_1_6_npc"),
             ["gift_tastes"] = Field(ReadGiftTastes(allLoadedNpcs, Game1.player), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].getGiftTasteForThisItem; NPC.getGiftTasteForThisItem(current owned Object items) for supported vanilla NPC query paths; expected delta only when Farmer.changeFriendship deterministic modifiers and cap are transparent", tick, "vanilla_1_6_npc")
         };
+        if (scheduleCatalogRequested)
+        {
+            fields["schedule_catalog"] = Field(
+                ReadGrandpaScheduleCatalog(),
+                "Utility.ForEachVillager(includeEventActors:false)[].getMasterScheduleRawData plus live inputs used by NPC.TryLoadSchedule; exact future branch requires explicit scenario inputs",
+                tick,
+                "vanilla_1_6_npc_schedule_catalog");
+        }
 
-        var unavailable = friendships is null
-            ? new[] { "npcs.friendships" }
+        var unavailable = friendships is null || Game1.player is null
+            ? new[] { "npcs.friendships", "npcs.grandpa_friendship_progress" }
             : Array.Empty<string>();
 
         return Section("npcs", fields, unavailable, unavailable.Length == 0 ? "complete" : "partial");
@@ -166,7 +199,9 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                             facing_direction = entry.Value.facingDirection,
                             end_behavior = entry.Value.endOfRouteBehavior,
                             end_message = entry.Value.endOfRouteMessage,
-                            route_count = entry.Value.route?.Count ?? 0
+                            route_count = entry.Value.route?.Count ?? 0,
+                            adjacent_route_pixel_distance = CountAdjacentScheduleRoutePixels(
+                                entry.Value.route)
                         })
                         .Cast<object>()
                         .ToArray()
@@ -175,7 +210,90 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             .ToArray();
     }
 
-    private static object[] ReadSocialInteractions(IEnumerable<NPC> npcs)
+    private static int CountAdjacentScheduleRoutePixels(
+        IEnumerable<Microsoft.Xna.Framework.Point>? route)
+    {
+        Microsoft.Xna.Framework.Point? previous = null;
+        var distance = 0;
+        if (route is null)
+            return distance;
+        foreach (var point in route)
+        {
+            if (previous.HasValue &&
+                Math.Abs(previous.Value.X - point.X) + Math.Abs(previous.Value.Y - point.Y) == 1)
+            {
+                distance = checked(distance + 64);
+            }
+            previous = point;
+        }
+        return distance;
+    }
+
+    private static object ReadGrandpaFriendshipProgress(Farmer player)
+    {
+        const int thresholdPoints = 1975;
+        const int maximumPoints = 999999;
+        var nextDate = new WorldDate(Game1.Date);
+        nextDate.TotalDays++;
+        var rows = new List<object>();
+          Utility.ForEachVillager(npc =>
+          {
+              var friendshipRowExists = player.friendshipData.TryGetValue(npc.Name, out var friendship);
+              var friendshipPoints = friendshipRowExists ? friendship!.Points : (int?)null;
+              rows.Add(new
+              {
+                  native_iteration_index = rows.Count,
+                  npc_name = npc.Name,
+                  runtime_type = npc.GetType().FullName,
+                  is_villager = npc.IsVillager,
+                  event_actor = npc.EventActor,
+                  is_child = npc is Child,
+                  friendship_row_exists = friendshipRowExists,
+                  friendship_points = friendshipPoints,
+                  qualifies = friendshipPoints.HasValue &&
+                      friendshipPoints.Value >= thresholdPoints &&
+                      friendshipPoints.Value <= maximumPoints,
+                  is_datably_flagged = npc.datable.Value,
+                  is_npc_married = npc.isMarried(),
+                  is_player_spouse = string.Equals(player.spouse, npc.Name, StringComparison.Ordinal),
+                  is_dating = friendshipRowExists && friendship!.IsDating(),
+                  is_divorced = friendshipRowExists && friendship!.IsDivorced(),
+                  talked_to_today = friendshipRowExists && friendship!.TalkedToToday,
+                  gifts_today = friendshipRowExists ? friendship!.GiftsToday : (int?)null,
+                  gifts_this_week = friendshipRowExists ? friendship!.GiftsThisWeek : (int?)null,
+                  last_gift_date_total_days = friendshipRowExists ? friendship!.LastGiftDate?.TotalDays : null,
+                  last_gift_date_total_sunday_weeks = friendshipRowExists ? friendship!.LastGiftDate?.TotalSundayWeeks : null,
+                  speaks_dwarvish = npc.SpeaksDwarvish(),
+                  maximum_hearts = Utility.GetMaximumHeartsForCharacter(npc)
+              });
+            return true;
+        }, includeEventActors: false);
+
+        var qualifyingCount = Utility.getNumberOfFriendsWithinThisRange(
+            player,
+            thresholdPoints,
+            maximumPoints,
+            romanceOnly: false);
+        return new
+        {
+            threshold_points = thresholdPoints,
+            maximum_points = maximumPoints,
+            romance_only = false,
+              eligible_villager_count = rows.Count,
+              qualifying_count = qualifyingCount,
+              eligible_villager_rows = rows.ToArray(),
+              current_total_days = Game1.Date.TotalDays,
+              current_total_sunday_weeks = Game1.Date.TotalSundayWeeks,
+              next_total_days = nextDate.TotalDays,
+              next_total_sunday_weeks = nextDate.TotalSundayWeeks,
+              player_has_friendship_book = player.stats.Get("Book_Friendship") != 0,
+              player_can_understand_dwarves = player.canUnderstandDwarves,
+              day_transition_inputs_status = "complete_live_native_fields",
+              projection_status = "complete_live_native_iteration"
+          };
+    }
+
+    private static object[] ReadSocialInteractions(IEnumerable<NPC> npcs, Farmer? player)
     {
         return npcs
             .Where(npc => npc is not null)
@@ -188,6 +306,11 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                 var giftTastePresent = Game1.NPCGiftTastes?.ContainsKey(npc.Name) == true;
                 var canSocialize = socialQuerySupported && npc.CanSocialize;
                 var canReceiveGifts = socialQuerySupported && npc.CanReceiveGifts();
+                Friendship? friendship = null;
+                var friendshipRowExists = player is not null && player.friendshipData.TryGetValue(npc.Name, out friendship);
+                var friendshipPoints = friendshipRowExists ? friendship!.Points : 0;
+                var talkedToToday = friendshipRowExists && friendship!.TalkedToToday;
+                var expectedTalkDelta = player is null ? null : ExpectedTalkDelta(npc, player, friendship, socialQuerySupported);
                 var npcCurrentLocation = npc.currentLocation;
                 var instanceLoaded = npcCurrentLocation is not null &&
                     npcCurrentLocation.characters.Any(c => ReferenceEquals(c, npc));
@@ -228,6 +351,13 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                     can_receive_gifts = canReceiveGifts,
                     can_receive_gifts_complete = socialQuerySupported,
                     can_receive_gifts_status = socialQuerySupported ? "complete_live_vanilla_query" : "unavailable_runtime_type_or_override_not_proven_pure",
+                    friendship_row_exists = friendshipRowExists,
+                    friendship_points = friendshipPoints,
+                    talked_to_today = talkedToToday,
+                    expected_talk_friendship_delta = expectedTalkDelta,
+                    expected_talk_friendship_delta_complete = expectedTalkDelta.HasValue,
+                    expected_talk_friendship_points_after = expectedTalkDelta.HasValue ? friendshipPoints + expectedTalkDelta.Value : (int?)null,
+                    expected_talk_friendship_status = expectedTalkDelta.HasValue ? "complete_live_vanilla_projection" : "unavailable_player_or_runtime_type_not_supported",
                     character_can_receive_gifts_data = data?.CanReceiveGifts,
                     birthday_season = npc.Birthday_Season,
                     birthday_day = npc.Birthday_Day,
@@ -238,6 +368,21 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             })
             .OrderBy(npc => npc.name, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static int? ExpectedTalkDelta(NPC npc, Farmer player, Friendship? friendship, bool socialQuerySupported)
+    {
+        if (!socialQuerySupported)
+        {
+            return null;
+        }
+        if (friendship?.TalkedToToday == true)
+        {
+            return 0;
+        }
+
+        var raw = player.hasBuff("statue_of_blessings_4") ? 60 : 20;
+        return ApplyFriendshipChange(npc, player, friendship?.Points ?? 0, raw);
     }
 
     private static object[] ReadGiftTastes(IEnumerable<NPC> npcs, Farmer? player)
@@ -323,19 +468,24 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             _ => (int)(20f * friendshipMultiplier)
         };
 
-        if (raw > 0 && npc.isDivorcedFrom(player))
-        {
-            raw = 0;
-        }
+        return ApplyFriendshipChange(npc, player, friendshipPoints, raw);
+    }
+
+    private static int ApplyFriendshipChange(NPC npc, Farmer player, int friendshipPoints, int raw)
+    {
         if (raw > 0 && player.stats.Get("Book_Friendship") != 0)
         {
             raw = (int)(raw * 1.1f);
         }
         if (raw > 0 && npc.SpeaksDwarvish() && !player.canUnderstandDwarves)
         {
-            raw = 0;
+            return 0;
         }
-        if (raw > 0 && npc.Equals(player.getSpouse()))
+        if (raw > 0 && npc.isDivorcedFrom(player))
+        {
+            return 0;
+        }
+        if (npc.Equals(player.getSpouse()))
         {
             raw = (int)(raw * 0.66f);
         }

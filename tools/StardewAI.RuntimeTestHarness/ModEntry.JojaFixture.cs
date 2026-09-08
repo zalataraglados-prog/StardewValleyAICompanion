@@ -142,7 +142,7 @@ public sealed partial class ModEntry
         return ExecutePrepareNativeSleepFixture(
             request,
             "debug_prepare_joja_settlement_sleep",
-            "isolated_joja_fixture_farmer_moved_to_native_sleep_stand");
+            "isolated_joja_fixture_native_entry_to_sleep_path_ready");
     }
 
     private static Point? FindJojaActionTile(JojaMart mart)

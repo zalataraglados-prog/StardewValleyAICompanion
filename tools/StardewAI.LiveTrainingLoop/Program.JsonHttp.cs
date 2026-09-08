@@ -108,7 +108,8 @@ static partial class Program
                 options.KnowledgeDictionaryVersion);
             var training = new StructuredPolicyTrainer().Train(
                 dataset.ManifestPath,
-                options.EffectivePolicyCheckpointPath);
+                options.EffectivePolicyCheckpointPath,
+                initializationCheckpointPath: options.PolicyInitializationCheckpointPath);
             if (!options.TrainingDataTransactionActive)
             {
                 new FormalTrainingManifestStore().UpdateArtifacts(
@@ -124,6 +125,9 @@ static partial class Program
                 checkpoint_id = training.Checkpoint.CheckpointId,
                 checkpoint_path = training.CheckpointPath,
                 checkpoint_sha256 = training.CheckpointSha256,
+                initialization_checkpoint_id = training.Checkpoint.Initialization?.CheckpointId,
+                inherited_feature_count = training.Checkpoint.Initialization?.InheritedFeatureCount ?? 0,
+                new_feature_count = training.Checkpoint.Initialization?.NewFeatureCount ?? training.Checkpoint.Model.FeatureNames.Length,
                 dataset_manifest_path = dataset.ManifestPath,
                 accepted_rows = dataset.Manifest.Counts.AcceptedRows,
                 rejected_rows = dataset.Manifest.Counts.RejectedRows,

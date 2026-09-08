@@ -10,11 +10,11 @@
 
 ## Direction Contract Evidence
 
-All 11 native Grandpa direction IDs from the adapter remain authoritative. The compiler validates direction identity and metadata exclusively against the live candidate set produced by `GrandpaTrainingSampleAdapter.BuildDirections()`. No static whitelist is duplicated in the compiler.
+All 11 native Grandpa direction IDs come from the sole production `GrandpaDirectionCatalog`. The adapter consumes that catalog, and the compiler validates direction identity and metadata against the live candidate set produced from it. No static whitelist or adapter-local direction table is duplicated in the compiler.
 
 Direction IDs: `complete_community_center`, `raise_friendships`, `complete_full_shipment`, `raise_skill_levels`, `marriage_and_house_upgrade`, `complete_master_angler`, `complete_museum_collection`, `obtain_rusty_key`, `obtain_skull_key`, `earn_money`, `earn_pet_love`.
 
-Reference: `GrandpaTrainingSampleAdapter.BuildDirections()` defines all 11 via `DirectionSpec`. The current coverage test verifies the adapter continues to cover all 11 IDs. Joja development remains a full-game route, but local `Utility.getGrandpaScore()` gives it no score factor.
+Reference: `GrandpaDirectionCatalog` defines all 11 directions and owns their criterion, option, effective-goal, demand-family, label, and feedback mappings. `GrandpaTrainingSampleAdapter.BuildDirections()` projects live factor state through those entries. Current coverage tests verify 19/19 criteria exactly once. Joja development remains a full-game route, but local `Utility.getGrandpaScore()` gives it no score factor.
 
 ## Test Coverage Evidence
 

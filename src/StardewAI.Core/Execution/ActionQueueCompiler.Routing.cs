@@ -9,6 +9,7 @@ using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 using StardewAI.Core.Verifier;
@@ -304,6 +305,31 @@ namespace StardewAI.Core.Execution
             if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object)
             {
                 return Array.Empty<string>();
+            }
+
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (targetX.HasValue && targetY.HasValue)
+            {
+                var selectedEdge = ReadResolvedRouteGraphEdges(graph.Value)
+                    .FirstOrDefault(edge =>
+                        string.Equals(
+                            edge.FromLocation,
+                            currentLocation,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(
+                            edge.TargetLocation,
+                            targetLocation,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        edge.FromX == targetX &&
+                        edge.FromY == targetY);
+                if (selectedEdge is not null)
+                {
+                    return ValidateRouteGraphStartSegment(
+                        action,
+                        snapshot,
+                        selectedEdge);
+                }
             }
 
             var path = FindResolvedRouteGraphPath(graph.Value, currentLocation, targetLocation);
@@ -714,39 +740,16 @@ namespace StardewAI.Core.Execution
             var unsupported = ReadUnsupportedRouteActionTiles(snapshot);
             var connectorTiles =
                 ReadCurrentRouteConnectorTileKeys(snapshot);
-            var standTiles = new List<SleepStandTile>();
             var standX = ReadNullableInt(connector, "stand_tile_x");
             var standY = ReadNullableInt(connector, "stand_tile_y");
-            if (standX.HasValue && standY.HasValue)
-            {
-                standTiles.Add(new SleepStandTile(standX.Value, standY.Value));
-            }
-            else if (edge.FromX!.Value < 0)
-            {
-                standTiles.Add(new SleepStandTile(0, Math.Clamp(edge.FromY!.Value, 0, height - 1)));
-            }
-            else if (edge.FromX.Value >= width)
-            {
-                standTiles.Add(new SleepStandTile(width - 1, Math.Clamp(edge.FromY!.Value, 0, height - 1)));
-            }
-            else if (edge.FromY!.Value < 0)
-            {
-                standTiles.Add(new SleepStandTile(Math.Clamp(edge.FromX.Value, 0, width - 1), 0));
-            }
-            else if (edge.FromY.Value >= height)
-            {
-                standTiles.Add(new SleepStandTile(Math.Clamp(edge.FromX.Value, 0, width - 1), height - 1));
-            }
-            else
-            {
-                standTiles.AddRange(new[]
-                {
-                    new SleepStandTile(edge.FromX.Value + 1, edge.FromY.Value),
-                    new SleepStandTile(edge.FromX.Value - 1, edge.FromY.Value),
-                    new SleepStandTile(edge.FromX.Value, edge.FromY.Value + 1),
-                    new SleepStandTile(edge.FromX.Value, edge.FromY.Value - 1)
-                });
-            }
+            var standTiles = RouteConnectorStandTileResolver.ResolveCandidates(
+                edge.Kind,
+                edge.FromX!.Value,
+                edge.FromY!.Value,
+                width,
+                height,
+                standX,
+                standY);
 
             return standTiles
                 .Where(tile =>

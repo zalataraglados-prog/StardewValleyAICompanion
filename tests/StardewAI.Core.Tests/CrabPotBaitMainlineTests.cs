@@ -2,9 +2,11 @@ using System.Text.Json;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -30,6 +32,35 @@ public sealed class CrabPotBaitMainlineTests
         Assert.Equal("Beach(12,10):slot2:(O)685", step.Target);
         Assert.Contains("owner=current_player", step.ExpectedEffect);
         Assert.Contains("stack_decreases=1", step.ExpectedEffect);
+    }
+
+    [Fact]
+    public void HighLevelLifecycleReusesNativeBaitPrimitiveAndPublishesProductionDomain()
+    {
+        var snapshot = Snapshot();
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "fishing.collect_crab_pots" });
+        var candidate = Assert.Single(Assert.Single(availability.Options)
+            .EventCandidates.Where(value => value.Available));
+
+        Assert.Equal("load_crab_pot_bait", candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "possible_qualified_item_ids_json" &&
+            parameter.Value == "[\"(O)372\",\"(O)715\"]");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "outcome_distribution_complete" &&
+            parameter.Value == "true");
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "goal.fishing.complete_master_angler");
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        Assert.Equal("load_crab_pot_bait", Assert.Single(plan.Steps).Kind);
+        var item = Assert.Single(
+            new ActionQueueCompiler().Compile(plan, snapshot).Items);
+        Assert.Equal("executor.load_crab_pot_bait", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
     }
 
     [Theory]
@@ -136,6 +167,8 @@ public sealed class CrabPotBaitMainlineTests
         {
           "player":{
             "location_id":{"value":"Beach","status":"available"},
+            "tile_x":{"value":11,"status":"available"},
+            "tile_y":{"value":10,"status":"available"},
             "inventory":{"value":[{"slot_index":2,"qualified_item_id":"(O)685","stack":STACK}],"status":"available"}
           },
           "current_location":{"objects":{"value":[{
@@ -146,6 +179,8 @@ public sealed class CrabPotBaitMainlineTests
             "crab_pot_owner_player_id_before_bait":OWNER_BEFORE,
             "crab_pot_expected_owner_player_id_after_bait":1234,
             "crab_pot_bait_load_native_contract":"NATIVE_CONTRACT",
+            "crab_pot_production_signature":"Beach|0.2|ocean|372,715",
+            "crab_pot_possible_qualified_item_ids":["(O)715","(O)372"],
             "crab_pot_bait_load_inventory_rows":[{
               "inventory_slot_index":2,"qualified_item_id":"(O)685","stack":STACK,"quality":0,"category":-21,
               "runtime_type":"StardewValley.Object","unit_state_sha256":"UNIT_STATE","native_probe_accepts":true,

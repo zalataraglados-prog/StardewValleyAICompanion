@@ -17,7 +17,10 @@ namespace StardewAI.Core.Training
 
             var steps = new List<SmallModelPlanStep>();
             var standTile = ParseCoordinate(candidate.ExpectedEffect, "move_to_adjacent=");
-            if (standTile.HasValue)
+            var routeDistance = CandidateInt(
+                candidate,
+                "route_distance_tiles");
+            if (standTile.HasValue && routeDistance != 0)
             {
                 steps.Add(new SmallModelPlanStep
                 {
@@ -84,7 +87,7 @@ namespace StardewAI.Core.Training
             steps.Add(
                 new SmallModelPlanStep
                 {
-                    StepId = StepId(candidate, "clear_obstacle", 1),
+                    StepId = StepId(candidate, "clear_obstacle", steps.Count),
                     Kind = "clear_obstacle",
                     TargetLocation = string.IsNullOrWhiteSpace(candidate.LocationId) ? "current_location" : candidate.LocationId,
                     TargetTileX = candidate.TileX,

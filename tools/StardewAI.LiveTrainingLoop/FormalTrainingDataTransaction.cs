@@ -91,7 +91,8 @@ public sealed class FormalTrainingDataTransaction
         checkpoint.Dataset.ManifestSha256 = StructuredPolicyCheckpointStore.HashFile(canonicalManifestPath);
         checkpoint.CheckpointId = StructuredPolicyTrainer.CreateCheckpointId(
             checkpoint.Dataset.ManifestSha256,
-            checkpoint.Hyperparameters);
+            checkpoint.Hyperparameters,
+            checkpoint.Initialization?.CheckpointSha256);
         checkpointStore.Save(options.PolicyCheckpointPath, checkpoint);
         CanonicalArtifactsUpdated = true;
         Status = "committed_after_native_save_boundary";

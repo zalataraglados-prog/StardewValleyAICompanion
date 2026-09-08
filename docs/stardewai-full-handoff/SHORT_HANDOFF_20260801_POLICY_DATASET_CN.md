@@ -1,5 +1,7 @@
 # StardewAI 正式策略数据集短交接（2026-08-01）
 
+> 2026-09-08 当前覆盖说明：本文描述的轨迹治理仍是历史基础，但不足以准入 Teacher/Student 训练。当前合同见 `../TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。后续数据集必须显式区分 `teacher_preference`、`native_outcome` 与 `student_observation`，并拒绝仅凭 `selected=true` 生成的正偏好。
+
 ## 已完成
 
 - `policy_decision_trajectory.v1` 的有效决策绑定由 EVD-198/EVD-199 保持不变。

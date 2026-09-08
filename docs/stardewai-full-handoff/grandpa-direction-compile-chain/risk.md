@@ -28,7 +28,7 @@
 
 - No new runtime, network, or game state mutation paths were added.
 - Static tests assert 25 behavioral invariants including tamper-resistance, strategic_goal validation, optional_minutes validation, and empty-plan-on-block.
-- The adapter's 11 native scoring directions are verified by coverage tests but are not used as an authority; the live candidate set is authoritative.
+- The production catalog's 11 native scoring directions and 19 criteria are verified by coverage tests. The adapter-derived live candidate set remains authoritative for current-state compiler validation.
 - All runtime validation commands are recorded as pending for the controller after user-play constraint is lifted.
 
 ## Executor Capability Reconciliation

@@ -41,7 +41,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindDirectionMetadataIsSourcedFromAdapterNotCatalog()
+    public void DirectionMetadataAndCriteriaAreSourcedFromUnifiedCatalog()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
@@ -60,6 +60,32 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Equal("Increase total money earned", result.DirectionLabel);
         Assert.Equal("grandpa.money", result.FeedbackKey);
         Assert.NotEmpty(result.RelatedFactorIds);
+
+        var catalog = GrandpaDirectionCatalog.Entries.Single(entry => entry.DirectionId == "earn_money");
+        Assert.Equal(catalog.Domain, result.DirectionDomain);
+        Assert.Equal(catalog.Label, result.DirectionLabel);
+        Assert.Equal(catalog.FeedbackKey, result.FeedbackKey);
+        Assert.Equal(catalog.CriterionIds.OrderBy(value => value), result.RelatedFactorIds.OrderBy(value => value));
+    }
+
+    [Fact]
+    public void UnifiedCatalogCoversEveryGrandpaCriterionExactlyOncePerDirection()
+    {
+        var criteria = GrandpaDirectionCatalog.Entries
+            .SelectMany(entry => entry.CriterionIds)
+            .ToArray();
+
+        Assert.Equal(19, criteria.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(19, criteria.Length);
+        Assert.All(GrandpaDirectionCatalog.Entries, entry =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(entry.Domain));
+            Assert.False(string.IsNullOrWhiteSpace(entry.Label));
+            Assert.False(string.IsNullOrWhiteSpace(entry.FeedbackKey));
+            Assert.False(string.IsNullOrWhiteSpace(entry.EffectiveGoalId));
+            Assert.False(string.IsNullOrWhiteSpace(entry.DemandFamily));
+            Assert.NotEmpty(entry.CriterionIds);
+        });
     }
 
     [Fact]
@@ -379,9 +405,11 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
           "world_progress": {
             "achievements": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "community_center": {"value":{"location_accessible":false,"completed":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "joja_membership": {"value":false,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "joja_membership": {"value":false,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "fish_collection_progress": {"value":{"eligible_species_count":2,"caught_eligible_species_count":1,"missing_species_count":1,"completion_ratio":0.5,"complete":false,"items":[{"item_id":"128","qualified_item_id":"(O)128","display_name":"Pufferfish","caught":true,"caught_count":1,"max_size":36},{"item_id":"136","qualified_item_id":"(O)136","display_name":"Largemouth Bass","caught":false,"caught_count":0,"max_size":0}],"missing_item_ids":["136"]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
+            "grandpa_friendship_progress": {"value":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"eligible_villager_count":1,"qualifying_count":0,"eligible_villager_rows":[{"native_iteration_index":0,"npc_name":"Abigail","runtime_type":"StardewValley.NPC","is_villager":true,"event_actor":false,"friendship_points":null,"qualifies":false}],"projection_status":"complete_live_native_iteration"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "friendships": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {
@@ -438,6 +466,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             "shipping_collection": {"value":{"status":"available"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
+            "grandpa_friendship_progress": {"value":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"qualifying_count":10,"projection_status":"complete_live_native_iteration"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "friendships": {"value":[{"npc":"A","points":2500},{"npc":"B","points":2500},{"npc":"C","points":2500},{"npc":"D","points":2500},{"npc":"E","points":2500},{"npc":"F","points":2500},{"npc":"G","points":2500},{"npc":"H","points":2500},{"npc":"I","points":2500},{"npc":"J","points":2500}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {

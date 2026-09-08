@@ -30,6 +30,13 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
             """,
             npcs: """
             {
+              "grandpa_friendship_progress": {
+                "threshold_points": 1975,
+                "maximum_points": 999999,
+                "romance_only": false,
+                "qualifying_count": 10,
+                "projection_status": "complete_live_native_iteration"
+              },
               "friendships": [
                 {"npc_name":"A","points":2000},
                 {"npc_name":"B","points":2000},
@@ -84,7 +91,7 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
             worldProgress: """
             {"achievements":[5],"community_center":{"location_accessible":false,"completed":true}}
             """,
-            npcs: """{"friendships":[]}""",
+            npcs: """{"grandpa_friendship_progress":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"qualifying_count":0,"projection_status":"complete_live_native_iteration"},"friendships":[]}""",
             quests: """{"mail_received":["petLoveMessage"]}""",
             game: """{"year":3}""",
             farm: """{"grandpa_score":4}"""));
@@ -115,7 +122,7 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
         const string player = """
         {"total_money_earned":0,"has_skull_key":false,"has_rusty_key":false,"married_or_roommate":false,"farmhouse_upgrade_level":0,"level":0,"active_object_qualified_id":null}
         """;
-        const string npcs = """{"friendships":[]}""";
+        const string npcs = """{"grandpa_friendship_progress":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"qualifying_count":0,"projection_status":"complete_live_native_iteration"},"friendships":[]}""";
         const string quests = """{"mail_received":[]}""";
         var withoutMembership = new GrandpaEvaluationGoalEvaluator().Evaluate(Model(
             player, """{"achievements":[],"community_center":{"location_accessible":false,"completed":false},"joja_membership":false}""", npcs, quests));
@@ -125,6 +132,53 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
         Assert.Equal(withoutMembership.CurrentScore, withMembership.CurrentScore);
         Assert.DoesNotContain(withMembership.Factors, factor => factor.Id.Contains("joja", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain("world_progress.joja_membership", withMembership.RequiredFactPaths);
+    }
+
+    [Fact]
+    public void FriendshipScoreUsesNativeVillagerProjectionInsteadOfRawFriendshipRows()
+    {
+        var model = Model(
+            player: "{}",
+            worldProgress: "{}",
+            npcs: """
+            {
+              "grandpa_friendship_progress": {
+                "threshold_points": 1975,
+                "maximum_points": 999999,
+                "romance_only": false,
+                "qualifying_count": 0,
+                "projection_status": "complete_live_native_iteration"
+              },
+              "friendships": [
+                {"npc_name":"Residual1","points":2500},{"npc_name":"Residual2","points":2500},
+                {"npc_name":"Residual3","points":2500},{"npc_name":"Residual4","points":2500},
+                {"npc_name":"Residual5","points":2500},{"npc_name":"Residual6","points":2500},
+                {"npc_name":"Residual7","points":2500},{"npc_name":"Residual8","points":2500},
+                {"npc_name":"Residual9","points":2500},{"npc_name":"Residual10","points":2500}
+              ]
+            }
+            """,
+            quests: "{}");
+
+        var report = new GrandpaEvaluationGoalEvaluator().Evaluate(model);
+
+        Assert.Contains(report.Factors, factor => factor.Id == "friendships_5" && factor.Known && factor.Points == 0);
+        Assert.Contains(report.Factors, factor => factor.Id == "friendships_10" && factor.Known && factor.Points == 0);
+    }
+
+    [Fact]
+    public void FriendshipScoreFailsClosedForMalformedNativeProjection()
+    {
+        var model = Model(
+            player: "{}",
+            worldProgress: "{}",
+            npcs: """{"grandpa_friendship_progress":{"threshold_points":1975,"qualifying_count":10,"projection_status":"complete_live_native_iteration"}}""",
+            quests: "{}");
+
+        var report = new GrandpaEvaluationGoalEvaluator().Evaluate(model);
+
+        Assert.Contains("npcs.grandpa_friendship_progress", report.MissingFactPaths);
+        Assert.Contains(report.Factors, factor => factor.Id == "friendships_10" && !factor.Known && factor.Points == 0);
     }
 
     private static WorldModelEnvelope Model(string player, string worldProgress, string npcs, string quests, string game = "{}", string farm = "{}")

@@ -6,6 +6,7 @@ using StardewValley.Buildings;
 using StardewValley.GameData.Shops;
 using StardewValley.Internal;
 using StardewValley.Locations;
+using StardewAI.TransparentBridge.State;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -16,9 +17,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
     public override StateAdapterResult Collect(long tick)
     {
+        var socialRouteEvidenceRequested =
+            SnapshotProfileContext.IncludesSocialFutureRouteDateEvidence;
         if (!Context.IsWorldReady)
         {
-            return Section("locations", new Dictionary<string, object>
+            var unavailableFields = new Dictionary<string, object>
             {
                 ["shops"] = Unavailable("world_not_ready", "DataLoader.Shops(Game1.content)", tick, "vanilla_1_6_shops"),
                 ["collision_grid"] = Unavailable("world_not_ready", "Game1.currentLocation.isCollidingPosition", tick, "vanilla_1_6_route"),
@@ -28,10 +31,31 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 ["route_action_branch_coverage"] = Unavailable("world_not_ready", "GameLocation performAction branch coverage audit", tick, "vanilla_1_6_route"),
                 ["route_graph"] = Unavailable("world_not_ready", "Game1.locations route graph preview", tick, "vanilla_1_6_route"),
                 ["route_map_summaries"] = Unavailable("world_not_ready", "Game1.locations route map summaries", tick, "vanilla_1_6_route")
-            }, new[] { "locations.shops", "locations.collision_grid", "locations.route_connectors", "locations.route_blockers", "locations.route_gate_context", "locations.route_action_branch_coverage", "locations.route_graph", "locations.route_map_summaries" }, "unavailable");
+            };
+            var unavailablePaths = new List<string>
+            {
+                "locations.shops",
+                "locations.collision_grid",
+                "locations.route_connectors",
+                "locations.route_blockers",
+                "locations.route_gate_context",
+                "locations.route_action_branch_coverage",
+                "locations.route_graph",
+                "locations.route_map_summaries"
+            };
+            if (socialRouteEvidenceRequested)
+            {
+                unavailableFields["social_route_date_evidence"] = Unavailable(
+                    "world_not_ready",
+                    "Game1.locations date-bound static native walkability and route action gates",
+                    tick,
+                    "vanilla_1_6_social_route_date_evidence");
+                unavailablePaths.Add("locations.social_route_date_evidence");
+            }
+            return Section("locations", unavailableFields, unavailablePaths, "unavailable");
         }
 
-        return Section("locations", new Dictionary<string, object>
+        var fields = new Dictionary<string, object>
         {
             ["shops"] = Field(ReadShopAccess(), "DataLoader.Shops(Game1.content); ShopBuilder.GetCurrentOwners; Utility.isFestivalDay; GameLocation.AreStoresClosedForFestival", tick, "vanilla_1_6_shops"),
             ["collision_grid"] = Field(ReadCollisionGrid(), "Game1.currentLocation.isCollidingPosition compressed current map grid", tick, "vanilla_1_6_route"),
@@ -41,7 +65,16 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             ["route_action_branch_coverage"] = Field(ReadRouteActionBranchCoverage(), "GameLocation performAction branch coverage audit for current map actions", tick, "vanilla_1_6_route"),
             ["route_graph"] = Field(ReadRouteGraph(), "Game1.locations warps/doors/action-warp route graph preview", tick, "vanilla_1_6_route"),
             ["route_map_summaries"] = Field(ReadRouteMapSummaries(), "Game1.locations map dimensions and route connector/action summaries", tick, "vanilla_1_6_route")
-        }, Array.Empty<string>(), "partial");
+        };
+        if (socialRouteEvidenceRequested)
+        {
+            fields["social_route_date_evidence"] = Field(
+                ReadSocialRouteDateEvidence(),
+                "Game1.Date/Game1.locations/GameLocation.IsTileBlockedBy excluding Characters and Farmers plus native route action gates",
+                tick,
+                "vanilla_1_6_social_route_date_evidence");
+        }
+        return Section("locations", fields, Array.Empty<string>(), "partial");
     }
 
     private static object ReadShopAccess()

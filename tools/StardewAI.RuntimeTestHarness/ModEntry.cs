@@ -1090,6 +1090,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_schedule_arrival_fixture")
+            {
+                pending.Completion.SetResult(ExecuteSetupScheduleArrivalFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_multiplayer_wallet")
             {
                 pending.Completion.SetResult(ExecuteSetupMultiplayerWalletFixture(pending.Request));
@@ -1257,6 +1263,13 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_partnership_fixture")
             {
                 pending.Completion.SetResult(ExecuteSetupPartnershipFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_friendship_transition_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupFriendshipTransitionFixture(pending.Request));
                 return;
             }
 

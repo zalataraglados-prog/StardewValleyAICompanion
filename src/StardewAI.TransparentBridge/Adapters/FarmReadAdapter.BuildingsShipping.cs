@@ -138,7 +138,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         var aggregateContents = ReadBinAggregateContents(binInventory);
         var contentsSignature = ComputeContentsSignature(aggregateContents);
         var contentsTotalCount = aggregateContents.Sum(c => c.count);
-        var contentsDistinctCount = aggregateContents.Length;
+        var contentsDistinctCount = aggregateContents
+            .Select(c => c.qualifiedItemId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+        var pendingSettlementValue = aggregateContents.Aggregate(
+            0,
+            (total, entry) => unchecked(total + entry.totalSellToStorePrice));
 
         return farm.buildings
             .OfType<ShippingBin>()
@@ -172,10 +178,17 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     {
                         item_id = c.itemId,
                         qualified_item_id = c.qualifiedItemId,
-                        count = c.count
+                        quality = c.quality,
+                        count = c.count,
+                        unit_sell_to_store_price = c.unitSellToStorePrice,
+                        total_sell_to_store_price = c.totalSellToStorePrice
                     }).ToArray(),
                     contents_total_count = contentsTotalCount,
                     contents_distinct_item_count = contentsDistinctCount,
+                    contents_distinct_settlement_variant_count = aggregateContents.Length,
+                    pending_settlement_value = pendingSettlementValue,
+                    pending_settlement_value_complete = true,
+                    pending_settlement_timing = "next_native_day_transition",
                     contents_signature = contentsSignature,
                     contents_truncated = false
                 };
@@ -285,13 +298,24 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
     {
         public readonly string itemId;
         public readonly string qualifiedItemId;
+        public readonly int quality;
         public readonly int count;
+        public readonly int unitSellToStorePrice;
+        public readonly int totalSellToStorePrice;
 
-        public BinContentEntry(string itemId, string qualifiedItemId, int count)
+        public BinContentEntry(
+            string itemId,
+            string qualifiedItemId,
+            int quality,
+            int count,
+            int unitSellToStorePrice)
         {
             this.itemId = itemId;
             this.qualifiedItemId = qualifiedItemId;
+            this.quality = quality;
             this.count = count;
+            this.unitSellToStorePrice = unitSellToStorePrice;
+            totalSellToStorePrice = unchecked(unitSellToStorePrice * count);
         }
     }
 
@@ -318,18 +342,39 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             if (obj is not Item stardewItem || stardewItem.Stack <= 0)
                 continue;
             var qId = stardewItem.QualifiedItemId ?? string.Empty;
-            if (dict.TryGetValue(qId, out var existing))
+            var quality = stardewItem.Quality;
+            var unitSellToStorePrice = stardewItem is StardewValley.Object shippedObject
+                ? shippedObject.sellToStorePrice(-1L)
+                : 0;
+            var settlementVariantKey = string.Join(
+                "\u001f",
+                qId,
+                quality,
+                unitSellToStorePrice);
+            if (dict.TryGetValue(settlementVariantKey, out var existing))
             {
-                dict[qId] = new BinContentEntry(existing.itemId, existing.qualifiedItemId, existing.count + stardewItem.Stack);
+                dict[settlementVariantKey] = new BinContentEntry(
+                    existing.itemId,
+                    existing.qualifiedItemId,
+                    existing.quality,
+                    existing.count + stardewItem.Stack,
+                    existing.unitSellToStorePrice);
             }
             else
             {
-                dict[qId] = new BinContentEntry(stardewItem.ItemId ?? string.Empty, qId, stardewItem.Stack);
+                dict[settlementVariantKey] = new BinContentEntry(
+                    stardewItem.ItemId ?? string.Empty,
+                    qId,
+                    quality,
+                    stardewItem.Stack,
+                    unitSellToStorePrice);
             }
         }
 
         return dict.Values
             .OrderBy(e => e.qualifiedItemId, StringComparer.Ordinal)
+            .ThenBy(e => e.quality)
+            .ThenBy(e => e.unitSellToStorePrice)
             .ThenBy(e => e.itemId, StringComparer.Ordinal)
             .ToArray();
     }
@@ -340,6 +385,10 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         foreach (var entry in contents)
         {
             sb.Append(entry.qualifiedItemId);
+            sb.Append('|');
+            sb.Append(entry.quality);
+            sb.Append('|');
+            sb.Append(entry.unitSellToStorePrice);
             sb.Append('|');
             sb.Append(entry.count);
             sb.Append('\n');

@@ -12,7 +12,7 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Training
 {
-    public sealed class GrandpaDirectionDailyCandidateBinding
+    public sealed partial class GrandpaDirectionDailyCandidateBinding
     {
         private readonly GrandpaTrainingSampleAdapter adapter;
         private readonly WorldModelProjector projector;
@@ -348,6 +348,28 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
+                var directionEvidenceParameters = Array.Empty<SmallModelActionParameter>();
+                if (string.Equals(request.DirectionId, "raise_friendships", StringComparison.Ordinal) &&
+                    !TryBuildFriendshipPortfolioEvidence(
+                        snapshot,
+                        candidate,
+                        out directionEvidenceParameters,
+                        out evidenceReason))
+                {
+                    rejectionDetails.Add("candidate_direction_evidence_rejected:" + candidate.CandidateId + ":" + evidenceReason);
+                    continue;
+                }
+                if (string.Equals(request.DirectionId, "complete_master_angler", StringComparison.Ordinal) &&
+                    !TryBuildMasterAnglerEvidence(
+                        snapshot,
+                        candidate,
+                        out directionEvidenceParameters,
+                        out evidenceReason))
+                {
+                    rejectionDetails.Add("candidate_direction_evidence_rejected:" + candidate.CandidateId + ":" + evidenceReason);
+                    continue;
+                }
+
                 var bound = CloneCandidate(candidate);
 
                 var expectedProvenance = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -387,6 +409,7 @@ namespace StardewAI.Core.Training
                 }
 
                 var extendedParams = new List<SmallModelActionParameter>(bound.Parameters ?? Array.Empty<SmallModelActionParameter>());
+                extendedParams.AddRange(directionEvidenceParameters);
 
                 if (provenanceNames.Contains("grandpa_direction_id"))
                 {

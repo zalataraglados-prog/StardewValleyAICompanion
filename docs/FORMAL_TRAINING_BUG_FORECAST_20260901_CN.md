@@ -2,6 +2,8 @@
 
 > 本文是风险与审计文件，不是运行时通过证明。所有条目必须区分：已由真实运行发现并闭合的问题、源码可直接证明的静态缺陷/风险、需要未来运行复现的高风险项，以及仅用于排期的数量预测。不得把预测数量当成已存在缺陷数量，也不得把静态审计直接写成 E3/runtime_verified。
 
+> 2026-09-08 当前覆盖：FTB-002 已升级为正式训练硬阻塞，而非可延后的 return 方向优化。`StructuredPolicyTrainer.BuildPairs` 仍以 `candidate.Selected` 决定正例，无法提供独立监督。正式训练必须等到 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md` 要求的 Teacher preference、native outcome、Student observation 三类来源完成类型化和 DAgger 重标后才能恢复。r24-r35 历史结果继续作为执行/控制证据，不自动成为新监督数据。
+
 ## 1. 当前基线
 
 当前训练运行权威基线为 r29 / `formal-r29-20260901`：
@@ -104,11 +106,11 @@ r29 当前已经实现候选边界校验，但该边界必须继续作为长训�
 
 ### FTB-002：负长期回报不会把已选动作变成负样本
 
-**级别：P1/P2 模型正确性**
+**级别：P0 正式训练准入 / P1 模型正确性**
 
 当前 pairwise trainer 的方向仍以“实际选择优于未选候选”为基础；若负 return 只降低权重而不反转监督方向，则战略上失败的选择仍可能被训练成正偏好。
 
-**要求：** 明确行为克隆 vs return-aware preference learning；若目标是后者，需要 signed advantage、pair reversal 或等价机制，并加入负回报回归。
+**要求：** 不再从 `selected` 推断偏好方向。新合同必须显式记录独立 Teacher 偏序、native outcome 和 Student observation；learner-visited state 由 Teacher 重标。signed advantage、pair reversal 或 outcome/value 学习只能消费可独立归因的结果，不能修饰自选正例后继续训练。
 
 ### FTB-003：策略特征完整性与 missingness 需要真实表达
 

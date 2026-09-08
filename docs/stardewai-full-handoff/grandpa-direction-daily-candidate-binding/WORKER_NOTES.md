@@ -2,6 +2,17 @@
 
 > Historical slice. Superseded by EVD-125/EVD-127: Joja development is implemented as a full-game route but is not a native Grandpa score direction; the current optimization target is all 21 native points.
 
+## 2026-09-05 Superseding Architecture Update
+
+- The catalog has 11 native Grandpa directions covering all 19 score criteria exactly once.
+- All 11 entries expose direct candidate binding; product training admission is governed
+  separately by the option matrix and explicit-confirmation policy.
+- The catalog is the sole source of direction metadata, criterion ownership, permitted
+  options, effective goals, and demand families. The adapter and daily resolver consume it.
+- Current isolated verification: focused direction tests 79/79 and full Core tests 2279/2279.
+- Counts and catalog/adapter authority statements in the dated 2026-07 sections below are
+  retained only as milestone history and are not current architecture.
+
 ## Summary
 
 Revised the grandpa direction daily candidate binding system per controller audit. This is a typed direction-to-daily-candidate binding system that decomposes validated `strategy.grandpa_progress` directions into concrete candidates passable to `DailyPlanCompiler`.
@@ -21,7 +32,7 @@ This section supersedes older statements below that describe both CC/Joja routes
 
 At this milestone, `complete_full_shipment` became the fourth direct direction. It binds only `economy.ship_items` / `ship_inventory_item_to_bin` candidates carrying exact typed full-shipment contribution evidence. The native compiler, executor, immediate receipt, and delayed `basicShipped` settlement recorder were implemented. At that time the remaining blocked count was eight. Focused Core 103/103, full Core 946/946, Backend 49/49, and E-drive isolated native shipping immediate smoke all passed.
 
-## 2026-07-18 Current Coverage
+## 2026-07-18 Historical Coverage
 
 The catalog now has nine direct directions and three fail-closed planned gaps. `obtain_skull_key`, `raise_skill_levels`, `earn_pet_love`, `complete_museum_collection`, and `obtain_rusty_key` were added after the historical milestone. Pet care and museum donation are static-complete but runtime-pending. Museum collection and Rusty Key progress intentionally share the same donation chain.
 
@@ -70,7 +81,7 @@ The catalog now has nine direct directions and three fail-closed planned gaps. `
 - Provenance parameters added once; existing provenance names on source candidates are preserved and not duplicated. Duplicate provenance names (second occurrence of the same name, even with matching values) reject with `candidate_provenance_duplicate`.
 - Does not convert long-horizon required minutes into daily `EstimatedTicks`. Does not claim factor completion or predict deltas.
 
-### 10. Verification History
+### 10. Historical Verification State
 - The 2026-07-17 focused binding/contribution suite passed 103/103; full Core passed 946/946; Backend passed 49/49. Later tested slices are recorded in `AUDIT.md`. The 2026-07-18 pet-care additions are static-only and were not built or run in this no-test work period.
 - Current test definitions cover:
   - Catalog: 12 entries, non-overlapping, policy-only (no score metadata), 9 direct-binding
@@ -104,14 +115,14 @@ The catalog now has nine direct directions and three fail-closed planned gaps. `
 - No catalog types (moved to Core)
 
 ### Core Catalog (`GrandpaDirectionCatalog.cs`)
-- **`GrandpaDirectionCatalogEntry`**: policy-only binding metadata
-- **`GrandpaDirectionCatalog`**: 12-entry static catalog with 9 direct and 3 blocked planned gaps
+- **`GrandpaDirectionCatalogEntry`**: unified score-direction and candidate-binding metadata
+- **`GrandpaDirectionCatalog`**: sole 11-entry catalog covering all 19 native score criteria
 
 ### Core Binder (`GrandpaDirectionDailyCandidateBinding.cs`)
 - Accepts `(request, snapshot?)` -- nullable for fail-closed test
 - Verifies state hash equality first on non-null snapshot
 - Rebuilds direction set from snapshot via adapter -> evaluator -> adapter pipeline
-- Sources all direction metadata from adapter output (not catalog)
+- Validates live direction state from adapter output; the adapter sources static metadata from the catalog
 - CC/Joja: unconditional block with unresolved route commitment
 - Non-direct: unconditional block as planned contract gap
 - Direct: filters by permitted option/kind + availability gates + block-reasons gate

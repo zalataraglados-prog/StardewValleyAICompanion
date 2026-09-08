@@ -25,8 +25,15 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("bridge_snapshot_url")]
     public string BridgeSnapshotUrl { get; set; } = string.Empty;
 
+    [JsonPropertyName("execution_snapshot_profile")]
+    public string ExecutionSnapshotProfile { get; set; } = string.Empty;
+
     [JsonPropertyName("snapshot_file")]
     public string SnapshotFile { get; set; } = string.Empty;
+
+    [JsonPropertyName("snapshot_artifact_mode")]
+    public string SnapshotArtifactMode { get; set; } =
+        ContentAddressedJsonArtifactStore.PlainMode;
 
     [JsonPropertyName("dataset_path")]
     public string DatasetPath { get; set; } = string.Empty;

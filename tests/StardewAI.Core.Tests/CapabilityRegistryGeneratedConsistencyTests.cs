@@ -235,7 +235,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "festival.play_strength_game" => "vanilla_fall16_free_exact_one_token_stardrop_top_up_live_buildings_540_x29_endpoint_single_native_click_predictive_maximum_power_exact_star_token_result_dialogue_and_cleanup_receipt",
                 "festival.spin_wheel" => "vanilla_fall16_stardrop_bounded_green_zero_luck_kelly_7_of_15_wager_exact_22_of_30_constructor_distribution_effective_LuckLevel_native_random_plus_or_minus_wager_and_cleanup_receipt",
                 "fishing.catch_fish" => "vanilla_current_or_resolved_route_exact_fishable_cast_native_max_power_stochastic_distribution_bobber_bar_or_special_no_minigame_receipt_and_idle_cleanup",
-                "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
+                "fishing.collect_crab_pots" => "vanilla_exact_crab_pot_native_collect_cycle_clear_missing_species_production_domain_placement_and_bait_lifecycle_receipts",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
                 "foraging.clear_green_rain_bushes" => "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
                 "foraging.collect_spawned_objects" => "vanilla_current_location_exact_base_spawned_object_ordinary_botanist_deterministic_gatherer_special_724519_and_farm_interior_native_pickup_matrix",
@@ -779,23 +779,25 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
-    public void CrabPotAdmissionRequiresExactBaseNativeLifecycleAndEvd209Tests()
+    public void CrabPotAdmissionRequiresExactNativeServiceLifecycleEvidence()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("fishing.collect_crab_pots");
 
         Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
         Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.False(declaration.AutonomousCandidateEnabled);
         Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
         Assert.True(DailyPlanCompiler.HasOptionCompiler("fishing.collect_crab_pots"));
         Assert.False(ActionQueueCompiler.HasStepCompiler("fishing.collect_crab_pots"));
-        Assert.Equal(new[] { "EVD-209" }, declaration.ReadEvidenceIds);
-        Assert.Equal(new[] { "EVD-209" }, declaration.CandidateEvidenceIds);
-        Assert.Equal(new[] { "EVD-209" }, declaration.CompilerEvidenceIds);
-        Assert.Equal(new[] { "EVD-209" }, declaration.RuntimeEvidenceIds);
-        Assert.Equal(new[] { "EVD-209" }, declaration.OutputEvidenceIds);
-        Assert.Contains("vanilla_current_location_exact_ready_base_crab_pot", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
-        Assert.Contains("book_double_inventory_receipt_fishing_xp_caught_fish", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
-        Assert.Contains("bait_and_ready_reset", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        var evidenceIds = new[] { "EVD-209", "EVD-257", "EVD-258" };
+        Assert.Equal(evidenceIds, declaration.ReadEvidenceIds);
+        Assert.Equal(evidenceIds, declaration.CandidateEvidenceIds);
+        Assert.Equal(evidenceIds, declaration.CompilerEvidenceIds);
+        Assert.Equal(evidenceIds, declaration.RuntimeEvidenceIds);
+        Assert.Equal(evidenceIds, declaration.OutputEvidenceIds);
+        Assert.Contains("native_collect_cycle_clear", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("missing_species_production_domain_placement", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("bait_lifecycle_receipts", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("executor.collect_crab_pot", OptionCapabilityRegistrySource.TrainingAllowlist);
     }

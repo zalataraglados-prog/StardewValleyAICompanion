@@ -139,6 +139,8 @@ namespace StardewAI.Core.Execution
                 "collect_auto_grabber_contents" => "animals.collect_auto_grabber_contents",
                 "use_mini_obelisk" => "movement.use_mini_obelisk",
                 "collect_crab_pot" => "executor.collect_crab_pot",
+                "load_crab_pot_bait" => "executor.load_crab_pot_bait",
+                "place_crab_pot" => "executor.place_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",
                 "complete_fish_pond_request" => "executor.complete_fish_pond_request",
                 "manage_fish_pond" => "fishing.manage_fish_pond",

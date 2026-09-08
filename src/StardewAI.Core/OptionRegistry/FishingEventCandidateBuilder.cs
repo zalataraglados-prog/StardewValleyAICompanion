@@ -11,7 +11,7 @@ namespace StardewAI.Core.OptionRegistry
 {
     internal static partial class FishingEventCandidateBuilder
     {
-        private const int EstimatedCatchTicks = 1800;
+        internal const int EstimatedCatchTicks = 1800;
 
         public static EventCandidate[] Build(SnapshotEnvelope snapshot)
         {

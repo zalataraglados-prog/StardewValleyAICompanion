@@ -27,7 +27,8 @@ public sealed class StructuredPolicyTrainer
     public StructuredPolicyTrainingResult Train(
         string datasetManifestPath,
         string checkpointPath,
-        StructuredPolicyHyperparameters? hyperparameters = null)
+        StructuredPolicyHyperparameters? hyperparameters = null,
+        string? initializationCheckpointPath = null)
     {
         var manifestPath = Path.GetFullPath(Required(datasetManifestPath, "Dataset manifest path"));
         if (!File.Exists(manifestPath))
@@ -53,10 +54,30 @@ public sealed class StructuredPolicyTrainer
         if (trainRows.Length == 0)
             throw new InvalidOperationException("Structured policy training partition is empty.");
 
-        var featureNames = StructuredPolicyFeatureEncoder.DiscoverFeatureNames(trainRows);
+        StructuredPolicyCheckpointEnvelope? initialization = null;
+        var initializationHash = string.Empty;
+        if (!string.IsNullOrWhiteSpace(initializationCheckpointPath))
+        {
+            var fullInitializationPath = Path.GetFullPath(initializationCheckpointPath);
+            if (!File.Exists(fullInitializationPath))
+                throw new FileNotFoundException("Structured policy initialization checkpoint does not exist.", fullInitializationPath);
+            initialization = checkpointStore.Load(fullInitializationPath);
+            initializationHash = StructuredPolicyCheckpointStore.HashFile(fullInitializationPath);
+            ValidateInitializationVersion(initialization.Versions, version);
+        }
+
+        var discoveredFeatureNames = StructuredPolicyFeatureEncoder.DiscoverFeatureNames(trainRows);
+        var featureNames = discoveredFeatureNames
+            .Concat(initialization?.Model.FeatureNames ?? Array.Empty<string>())
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
         if (featureNames.Length == 0)
             throw new InvalidOperationException("Structured policy feature vocabulary is empty.");
         var model = StructuredPolicyFeatureEncoder.FitModelShape(trainRows, featureNames);
+        var inheritedFeatureCount = initialization is null
+            ? 0
+            : StructuredPolicyFeatureEncoder.InitializeWeights(model, initialization.Model);
         var trainPairs = BuildPairs(trainRows, model);
         if (trainPairs.Count == 0)
             throw new InvalidOperationException("Structured policy training partition contains no admitted comparison pairs.");
@@ -65,7 +86,7 @@ public sealed class StructuredPolicyTrainer
         var manifestHash = StructuredPolicyCheckpointStore.HashFile(manifestPath);
         var checkpoint = new StructuredPolicyCheckpointEnvelope
         {
-            CheckpointId = CreateCheckpointId(manifestHash, parameters),
+            CheckpointId = CreateCheckpointId(manifestHash, parameters, initializationHash),
             Dataset = new StructuredPolicyDatasetBinding
             {
                 ManifestPath = manifestPath,
@@ -78,7 +99,17 @@ public sealed class StructuredPolicyTrainer
             Versions = CopyVersion(version),
             Hyperparameters = CopyHyperparameters(parameters),
             Model = model,
-            Training = BuildSummary(model, trainRows, validationRows, testRows, trainPairs)
+            Training = BuildSummary(model, trainRows, validationRows, testRows, trainPairs),
+            Initialization = initialization is null
+                ? null
+                : new StructuredPolicyInitializationBinding
+                {
+                    CheckpointId = initialization.CheckpointId,
+                    CheckpointSha256 = initializationHash,
+                    InheritedFeatureCount = inheritedFeatureCount,
+                    NewFeatureCount = featureNames.Length - inheritedFeatureCount,
+                    ScoreOrderPreservedBeforeOptimization = true
+                }
         };
         var fullCheckpointPath = Path.GetFullPath(Required(checkpointPath, "Checkpoint path"));
         var checkpointHash = checkpointStore.Save(fullCheckpointPath, checkpoint);
@@ -88,6 +119,19 @@ public sealed class StructuredPolicyTrainer
             CheckpointSha256 = checkpointHash,
             Checkpoint = checkpoint
         };
+    }
+
+    private static void ValidateInitializationVersion(
+        PolicyDatasetVersionSet initialization,
+        PolicyDatasetVersionSet current)
+    {
+        if (!string.Equals(initialization.FeatureSchema, current.FeatureSchema, StringComparison.Ordinal) ||
+            !string.Equals(initialization.CandidateVocabulary, current.CandidateVocabulary, StringComparison.Ordinal) ||
+            !string.Equals(initialization.CapabilityRegistry, current.CapabilityRegistry, StringComparison.Ordinal) ||
+            !string.Equals(initialization.KnowledgeDictionary, current.KnowledgeDictionary, StringComparison.Ordinal) ||
+            !string.Equals(initialization.Compiler, current.Compiler, StringComparison.Ordinal) ||
+            !string.Equals(initialization.Executor, current.Executor, StringComparison.Ordinal))
+            throw new InvalidOperationException("Structured policy initialization checkpoint version binding differs from the current dataset.");
     }
 
     private PolicyDatasetManifest ReadManifest(string path)
@@ -276,14 +320,21 @@ public sealed class StructuredPolicyTrainer
 
     public static string CreateCheckpointId(
         string manifestSha256,
-        StructuredPolicyHyperparameters hyperparameters)
+        StructuredPolicyHyperparameters hyperparameters,
+        string? initializationCheckpointSha256 = null)
     {
         if (manifestSha256 is not { Length: 64 } ||
             !manifestSha256.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F'))
             throw new ArgumentException("Dataset manifest SHA-256 is invalid.", nameof(manifestSha256));
         StructuredPolicyCheckpointStore.ValidateHyperparameters(hyperparameters);
+        var initializationHash = string.IsNullOrWhiteSpace(initializationCheckpointSha256)
+            ? "none"
+            : initializationCheckpointSha256.ToLowerInvariant();
+        if (initializationHash != "none" && !IsSha256(initializationHash))
+            throw new ArgumentException("Initialization checkpoint SHA-256 is invalid.", nameof(initializationCheckpointSha256));
         return "structured-policy-" + StructuredPolicyCheckpointStore.HashText(
-            manifestSha256.ToLowerInvariant() + "\n" + CanonicalHyperparameters(hyperparameters)).Substring(0, 24);
+            manifestSha256.ToLowerInvariant() + "\n" + initializationHash + "\n" +
+            CanonicalHyperparameters(hyperparameters)).Substring(0, 24);
     }
 
     private static string CanonicalHyperparameters(StructuredPolicyHyperparameters value) =>
@@ -314,6 +365,9 @@ public sealed class StructuredPolicyTrainer
     private static string Required(string value, string label) => string.IsNullOrWhiteSpace(value)
         ? throw new ArgumentException(label + " is required.")
         : value;
+
+    private static bool IsSha256(string value) => value is { Length: 64 } &&
+        value.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
 
     private sealed record TrainingPair(double[] Difference, double Weight);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

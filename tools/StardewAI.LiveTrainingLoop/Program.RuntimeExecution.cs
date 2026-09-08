@@ -316,7 +316,7 @@ static partial class Program
                 var latestTime = ReadInGameTime(latest.Snapshot);
                 if (latestTime >= GameClockBudgetPolicy.AutonomousRecoveryStartTime)
                 {
-                    latest = await ReadFullSnapshotAsync(
+                    latest = await ReadExecutionSnapshotAsync(
                         http,
                         options,
                         forceRefresh: true);
@@ -327,10 +327,10 @@ static partial class Program
                         options.SnapshotDir,
                         "before-snapshot-" + iteration.ToString("D4") +
                         recoverySuffix + ".json");
-                    await File.WriteAllTextAsync(
+                    await ContentAddressedJsonArtifactStore.WriteAsync(
                         recoverySnapshotPath,
                         latest.Json,
-                        Encoding.UTF8);
+                        options.SnapshotArtifactMode);
                     var ingest = await PostJsonStringAsync(
                         http,
                         SnapshotIngestUrl(options),
@@ -401,7 +401,10 @@ static partial class Program
             var itemSuffix = "-item-" + attemptedCount.ToString("D4");
             var executionPath = Path.Combine(options.SnapshotDir, "execution-" + iteration.ToString("D4") + itemSuffix + ".json");
             var afterPath = Path.Combine(options.SnapshotDir, "after-snapshot-" + iteration.ToString("D4") + itemSuffix + ".json");
-            await File.WriteAllTextAsync(afterPath, finalAfterJson, Encoding.UTF8);
+            await ContentAddressedJsonArtifactStore.WriteAsync(
+                afterPath,
+                finalAfterJson,
+                options.SnapshotArtifactMode);
             await PostJsonStringAsync(
                 http,
                 SnapshotIngestUrl(options),
@@ -454,7 +457,9 @@ static partial class Program
             if (QueueReplanFilter.CompletesObjectiveContinuation(
                     item,
                     continuationForCompletion,
-                    executionStatus))
+                    executionStatus,
+                    afterSnapshot.Snapshot,
+                    afterSnapshot.Fresh))
             {
                 if (string.IsNullOrWhiteSpace(objectiveContinuationKind) &&
                     string.Equals(ReadString(item, "option_id"), "executor.social_interact", StringComparison.Ordinal))
@@ -640,7 +645,10 @@ static partial class Program
             }
         }
 
-        await File.WriteAllTextAsync(aggregateAfterPath, finalAfterJson, Encoding.UTF8);
+        await ContentAddressedJsonArtifactStore.WriteAsync(
+            aggregateAfterPath,
+            finalAfterJson,
+            options.SnapshotArtifactMode);
         var aggregate = JsonNode.Parse((finalExecution ?? new JsonObject()).ToJsonString(JsonOptions))?.AsObject() ?? new JsonObject();
         aggregate["queue_execution_mode"] = "sequential_queue_items";
         aggregate["planned_item_count"] = originalPlannedItemCount;
@@ -974,7 +982,15 @@ static partial class Program
         var newlyAppearingNoteAreaIdsJson = ReadQueueParameterString(item, "newly_appearing_note_area_ids_json");
         var expectedStatIncrementsJson = ReadQueueParameterString(item, "expected_stat_increments_json");
         var expectedSkillId = ReadQueueParameterString(item, "expected_skill_id");
-        var expectedSkillExperienceDelta = ReadQueueParameterInt(item, "expected_skill_experience_delta");
+        if (string.IsNullOrWhiteSpace(expectedSkillId))
+        {
+            expectedSkillId = ReadQueueParameterString(
+                item,
+                "skill_experience_skill_id");
+        }
+        var expectedSkillExperienceDelta =
+            ReadQueueParameterInt(item, "expected_skill_experience_delta") ??
+            ReadQueueParameterInt(item, "expected_skill_experience");
         var expectedSkillExperienceDeltasJson = ReadQueueParameterString(item, "expected_skill_experience_deltas_json");
         var expectedMasteryExperienceDelta = ReadQueueParameterInt(item, "expected_mastery_experience_delta");
         var expectedStardropMaxStaminaDelta = ReadQueueParameterInt(item, "expected_stardrop_max_stamina_delta");

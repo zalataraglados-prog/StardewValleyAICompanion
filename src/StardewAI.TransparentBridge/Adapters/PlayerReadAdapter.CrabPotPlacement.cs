@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
 using StardewAI.TransparentBridge.State;
 using StardewValley;
@@ -237,6 +238,12 @@ public sealed partial class PlayerReadAdapter
                     owner_effective_junk_chance = active.OwnerEffectiveJunkChance,
                     catch_selection_mode = active.CatchSelectionMode,
                     native_order_catch_rows = active.CatchRows,
+                    conservative_serviced_probability_status =
+                        active.ConservativeServicedProbabilityStatus,
+                    conservative_serviced_outcome_rows =
+                        active.ConservativeServicedOutcomeRows,
+                    conservative_serviced_trash_probability =
+                        active.ConservativeServicedTrashProbability,
                     fallback_trash_qualified_item_ids = new[] { "(O)168", "(O)169", "(O)170", "(O)171", "(O)172" }
                 });
             }
@@ -245,7 +252,7 @@ public sealed partial class PlayerReadAdapter
         }
     }
 
-    private static CrabPotTileProductionContext ReadCrabPotTileProductionContext(
+    internal static CrabPotTileProductionContext ReadCrabPotTileProductionContext(
         GameLocation location,
         int x,
         int y,
@@ -265,6 +272,13 @@ public sealed partial class PlayerReadAdapter
         var selectionMode = player.professions.Contains(10)
             ? "mariner_uniform_over_native_eligible_rows"
             : "native_order_independent_chance_until_first_success_then_trash";
+        var conservativeOutcomes = BuildConservativeServicedOutcomeRows(
+            catchRows,
+            player.professions.Contains(10),
+            baseJunkChance);
+        var conservativeTrashProbability = Math.Max(
+            0d,
+            1d - conservativeOutcomes.Sum(row => row.SingleCycleProbability));
         var signature = (hasArea ? areaId : string.Empty) + "|" +
             baseJunkChance.ToString("R", CultureInfo.InvariantCulture) + "|" +
             string.Join(",", habitats) + "|" + string.Join(",", catchRows.Select(row => row.ItemId));
@@ -276,7 +290,48 @@ public sealed partial class PlayerReadAdapter
             baseJunkChance,
             player.professions.Contains(10) ? 0 : baseJunkChance,
             selectionMode,
-            catchRows);
+            catchRows,
+            catchRows.Length > 0
+                ? "complete_native_supported_bait_lower_bound"
+                : "unavailable_no_native_eligible_catch_rows",
+            conservativeOutcomes,
+            conservativeTrashProbability);
+    }
+
+    private static CrabPotServicedOutcomeRow[]
+        BuildConservativeServicedOutcomeRows(
+            CrabPotCatchRow[] catchRows,
+            bool hasMariner,
+            double baseJunkChance)
+    {
+        if (catchRows.Length == 0)
+            return Array.Empty<CrabPotServicedOutcomeRow>();
+        if (hasMariner)
+        {
+            var probability = 1d / catchRows.Length;
+            return catchRows.Select(row => new CrabPotServicedOutcomeRow(
+                row.NativeOrder,
+                row.ItemId,
+                row.QualifiedItemId,
+                row.BaseChance,
+                probability)).ToArray();
+        }
+
+        var remaining = 1d - Math.Clamp(baseJunkChance, 0d, 1d);
+        var result = new List<CrabPotServicedOutcomeRow>(catchRows.Length);
+        foreach (var row in catchRows)
+        {
+            var nativeRowChance = Math.Clamp(row.BaseChance, 0d, 1d);
+            var probability = remaining * nativeRowChance;
+            result.Add(new CrabPotServicedOutcomeRow(
+                row.NativeOrder,
+                row.ItemId,
+                row.QualifiedItemId,
+                row.BaseChance,
+                probability));
+            remaining *= 1d - nativeRowChance;
+        }
+        return result.ToArray();
     }
 
     private static CrabPotCatchRow? ReadCrabPotCatchRow(string itemId, string data, int nativeIndex, string[] habitats)
@@ -299,8 +354,19 @@ public sealed partial class PlayerReadAdapter
 
     private sealed record InventoryCrabPotRef(StardewValley.Object Item, int SlotIndex);
     private sealed record CrabPotPlacementLocationProjection(object Row, int StaticLegalTileCount);
-    private sealed record CrabPotCatchRow(int NativeOrder, string ItemId, string QualifiedItemId, double BaseChance, string[] HabitatTags);
-    private sealed record CrabPotTileProductionContext(
+    internal sealed record CrabPotCatchRow(
+        [property: JsonPropertyName("native_order")] int NativeOrder,
+        [property: JsonPropertyName("item_id")] string ItemId,
+        [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+        [property: JsonPropertyName("base_chance")] double BaseChance,
+        [property: JsonPropertyName("habitat_tags")] string[] HabitatTags);
+    internal sealed record CrabPotServicedOutcomeRow(
+        [property: JsonPropertyName("native_order")] int NativeOrder,
+        [property: JsonPropertyName("item_id")] string ItemId,
+        [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+        [property: JsonPropertyName("base_chance")] double BaseChance,
+        [property: JsonPropertyName("single_cycle_probability")] double SingleCycleProbability);
+    internal sealed record CrabPotTileProductionContext(
         string Signature,
         string FishAreaId,
         string FishAreaDisplayName,
@@ -308,5 +374,8 @@ public sealed partial class PlayerReadAdapter
         double BaseJunkChance,
         double OwnerEffectiveJunkChance,
         string CatchSelectionMode,
-        CrabPotCatchRow[] CatchRows);
+        CrabPotCatchRow[] CatchRows,
+        string ConservativeServicedProbabilityStatus,
+        CrabPotServicedOutcomeRow[] ConservativeServicedOutcomeRows,
+        double ConservativeServicedTrashProbability);
 }

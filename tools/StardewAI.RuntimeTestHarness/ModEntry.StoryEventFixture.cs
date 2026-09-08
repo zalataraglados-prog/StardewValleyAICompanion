@@ -22,6 +22,7 @@ public sealed partial class ModEntry
         {
             "automatic_fixture" => "EVD322Automatic",
             "choice_fixture" => "EVD322Choice",
+            "pet_adoption_naming_fixture" => "EVD322PetAdoption",
             "passive_minigame_fixture" => "EVD323Passive",
             "choice_minigame_fixture" => "EVD323Choice",
             _ => string.Empty
@@ -35,6 +36,7 @@ public sealed partial class ModEntry
         var body = profile switch
         {
             "choice_fixture" => "question EVD322Question \"Choose a branch#First#Second\"/message \"EVD-322 choice complete\"/end",
+            "pet_adoption_naming_fixture" => "catQuestion/message \"EVD-322 pet adoption complete\"/end",
             "passive_minigame_fixture" => "cutscene boardGame/pause 50/message \"EVD-323 passive complete\"/updateMinigame -2/pause 20000/end",
             "choice_minigame_fixture" => "cutscene boardGame/pause 50/question EVD323Question \"Choose a board branch#First#Second\"/updateMinigame -2/pause 20000/end",
             _ => "message \"EVD-322 automatic text\"/message \"EVD-322 automatic complete\"/end"

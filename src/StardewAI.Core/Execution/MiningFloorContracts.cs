@@ -38,6 +38,7 @@ namespace StardewAI.Core.Execution
         public const string CollectResourceOrArtifact = "collect_resource_or_artifact";
         public const string CollectMonsterDrop = "collect_monster_drop";
         public const string SlayNamedMonster = "slay_named_monster";
+        public const string TrainCombat = "train_combat";
         public const string AcquireGoldenScythe = "acquire_golden_scythe";
         public const string AcquireSkullKey = "acquire_skull_key";
     }

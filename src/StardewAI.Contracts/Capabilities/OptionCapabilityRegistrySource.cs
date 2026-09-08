@@ -383,7 +383,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
             "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets", "island.field_office_survey", "festival.manage_grange_display", "festival.play_strength_game", "minigame.play_darts", "minigame.play_prairie_king", "social.watch_movie", "story.advance_event", "story.advance_event_minigame",
-            "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
+            "strategy.grandpa_progress", "exploration.visit_location",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.claim_reward_chests", "mining.activate_calico_statue", "processing.crack_geode", "rewards.claim_pot_of_gold", "rewards.claim_adventure_guild_reward", "rewards.claim_prize_ticket", "skills.claim_mastery", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "mining.use_elevator", "quest.claim_reward", "mail.process_letter", "recovery.stabilize_day",
@@ -799,8 +799,10 @@ namespace StardewAI.Contracts.Capabilities
                         "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
                         "EVD-216"),
                     ["fishing.collect_crab_pots"] = VerifiedEvidence(
-                        "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
-                        "EVD-209"),
+                        "vanilla_exact_crab_pot_native_collect_cycle_clear_missing_species_production_domain_placement_and_bait_lifecycle_receipts",
+                        "EVD-209",
+                        "EVD-257",
+                        "EVD-258"),
                     ["fishing.service_fish_ponds"] = VerifiedEvidence(
                         "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
                         "EVD-210"),
@@ -1000,7 +1002,10 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("cook_recipe"),
                 SupportedCandidate("forge_item"),
                 SupportedCandidate("tailor_item"),
-                SupportedCandidate("collect_crab_pot"), SupportedCandidate("collect_fish_pond_output"),
+                SupportedCandidate("collect_crab_pot"),
+                SupportedCandidate("load_crab_pot_bait"),
+                SupportedCandidate("place_crab_pot"),
+                SupportedCandidate("collect_fish_pond_output"),
                 SupportedCandidate("collect_machine_output_tile"),
                 SupportedCandidate("collect_spawned_object"),
                 SupportedCandidate("complete_fish_pond_request"),
@@ -1046,6 +1051,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("name_hatched_animal"),
                 SupportedCandidate("mining_acquire_golden_scythe_plan_envelope"),
                 SupportedCandidate("mining_collect_quest_resource_plan_envelope"),
+                SupportedCandidate("mining_combat_training_plan_envelope"),
                 SupportedCandidate("mining_obtain_skull_key_plan_envelope"),
                 SupportedCandidate("mining_reach_depth_plan_envelope"),
                 SupportedCandidate("mining_slay_monsters_plan_envelope"), SupportedCandidate("pan_ore_spot"),

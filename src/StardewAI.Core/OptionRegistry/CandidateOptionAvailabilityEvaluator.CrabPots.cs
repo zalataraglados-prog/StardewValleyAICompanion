@@ -5,84 +5,113 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
 
 public sealed partial class CandidateOptionAvailabilityEvaluator
 {
-    private EventCandidate[] CrabPotCollectCandidates(SnapshotEnvelope snapshot)
+    private EventCandidate[] CrabPotCollectCandidates(
+        SnapshotEnvelope snapshot,
+        SmallModelActionParameter[] boundParameters)
     {
-        var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
-        if (!objects.HasValue || objects.Value.ValueKind != JsonValueKind.Array)
+        var candidates = CrabPotLifecycleCandidates(snapshot);
+        if (!HasMasterAnglerIntentParameters(boundParameters))
+            return candidates;
+
+        if (!TryNormalizeMasterAnglerIntent(
+                snapshot,
+                boundParameters,
+                out var intentParameters,
+                out var normalizationReason))
         {
-            return Array.Empty<EventCandidate>();
+            return new[]
+            {
+                BlockedMasterAnglerCrabPotCandidate(
+                    normalizationReason,
+                    intentParameters)
+            };
+        }
+        if (!MasterAnglerWindowIntentValidator.TryValidate(
+                snapshot,
+                intentParameters,
+                out var intent,
+                out var validationReason))
+        {
+            return new[]
+            {
+                BlockedMasterAnglerCrabPotCandidate(
+                    validationReason,
+                    intentParameters)
+            };
+        }
+        if (!string.Equals(intent.SourceKind, "crab_pot", StringComparison.Ordinal))
+        {
+            return new[]
+            {
+                BlockedMasterAnglerCrabPotCandidate(
+                    "master_angler_crab_pot_source_kind_mismatch",
+                    intentParameters)
+            };
         }
 
-        var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-        return objects.Value.EnumerateArray()
-            .Where(item => item.ValueKind == JsonValueKind.Object &&
-                !string.Equals(ReadString(item, "crab_pot_collect_status"), "not_applicable", StringComparison.Ordinal))
-            .Select(item =>
+        var continuation = MasterAnglerContinuationParameters(
+            "fishing.collect_crab_pots",
+            intentParameters);
+        var exact = candidates
+            .Where(candidate => candidate.Available &&
+                string.Equals(candidate.Kind, "collect_crab_pot", StringComparison.Ordinal) &&
+                string.Equals(
+                    candidate.QualifiedItemId,
+                    intent.TargetQualifiedItemId,
+                    StringComparison.Ordinal) &&
+                candidate.Parameters.Any(parameter =>
+                    parameter.Name == "expected_fish_collection_eligible" &&
+                    parameter.Value == "1"))
+            .Select(candidate => ApplyMasterAnglerTimeBudget(
+                snapshot,
+                CloneCandidate(
+                    candidate,
+                    candidateId: candidate.CandidateId +
+                        ":master-angler:" + intent.TargetQualifiedItemId,
+                    expectedEffect: candidate.ExpectedEffect +
+                        ";master_angler_target_qualified_item_id=" +
+                        intent.TargetQualifiedItemId +
+                        ";master_angler_runtime_terminal_validation_required=true",
+                    parameters: candidate.Parameters
+                        .Concat(intentParameters)
+                        .Concat(continuation)
+                        .ToArray(),
+                    availabilityClass: "master_angler_exact_ready_crab_pot"),
+                intent,
+                terminalReserveTicks: 0))
+            .ToArray();
+        return exact.Length > 0
+            ? exact
+            : new[]
             {
-                var x = ReadInt(item, "tile_x");
-                var y = ReadInt(item, "tile_y");
-                var stand = FindBestStandTile(snapshot, x, y);
-                var status = ReadString(item, "crab_pot_collect_status");
-                var outputQualifiedItemId = ReadString(item, "crab_pot_output_qualified_item_id");
-                var outputRuntimeType = ReadString(item, "crab_pot_output_runtime_type");
-                var outputHash = ReadString(item, "crab_pot_output_unit_state_sha256");
-                var outputStack = ReadInt(item, "crab_pot_output_stack_on_collect");
-                var outputItemsJson = ReadString(item, "crab_pot_expected_output_items_json");
-                var blockReasons = new List<string>();
-                if (!string.Equals(status, "ready", StringComparison.Ordinal))
-                {
-                    blockReasons.Add(string.IsNullOrWhiteSpace(status) ? "crab_pot_projection_unavailable" : status);
-                }
-                if (string.IsNullOrWhiteSpace(outputQualifiedItemId) || string.IsNullOrWhiteSpace(outputRuntimeType) ||
-                    outputHash.Length != 64 || outputStack <= 0)
-                {
-                    blockReasons.Add("crab_pot_output_identity_incomplete");
-                }
-                if (stand is null)
-                {
-                    blockReasons.Add("crab_pot_no_adjacent_stand_tile");
-                }
+                BlockedMasterAnglerCrabPotCandidate(
+                    "master_angler_no_exact_ready_crab_pot_output",
+                    intentParameters)
+            };
+    }
 
-                var typedParameters = stand is null
-                    ? Array.Empty<SmallModelActionParameter>()
-                    : CrabPotParameters(item, x, y, stand.X, stand.Y, outputQualifiedItemId, outputItemsJson);
-                if (stand is not null)
-                {
-                    blockReasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
-                    {
-                        OptionId = "executor.collect_crab_pot",
-                        Parameters = typedParameters
-                    }));
-                }
-
-                var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
-                return new EventCandidate
-                {
-                    CandidateId = "collect-crab-pot:" + locationId + ":" + x + "," + y + ":" + outputQualifiedItemId,
-                    Kind = "collect_crab_pot",
-                    Available = blockReasons.Count == 0,
-                    LocationId = locationId,
-                    TileX = x,
-                    TileY = y,
-                    ItemId = ReadString(item, "item_id"),
-                    QualifiedItemId = outputQualifiedItemId,
-                    Quantity = outputStack,
-                    ExpectedEffect = CrabPotExpectedEffect(item, stand, outputQualifiedItemId, outputItemsJson),
-                    EstimatedTicks = Math.Max(30, distance * 60 + 30),
-                    EnergyCost = 0,
-                    AvailabilityClass = "transparent_crab_pot_native_collect",
-                    BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
-                    Parameters = typedParameters
-                };
-            })
+    private static string[] CrabPotRangePossibleSpecies(JsonElement range)
+    {
+        if (range.ValueKind != JsonValueKind.Object ||
+            !range.TryGetProperty(
+                "native_order_catch_rows",
+                out var rows) || rows.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+        return rows.EnumerateArray()
+            .Where(value => value.ValueKind == JsonValueKind.Object)
+            .Select(value => ReadString(value, "qualified_item_id"))
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
             .ToArray();
     }
 
@@ -95,6 +124,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         string outputQualifiedItemId,
         string outputItemsJson)
     {
+        var productionPossible = ReadCrabPotStringArray(
+            item,
+            "crab_pot_possible_qualified_item_ids");
         return new[]
         {
             Parameter("target_tile_x", x.ToString()),
@@ -119,6 +151,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("expected_catch_size_min", ReadInt(item, "crab_pot_catch_size_min").ToString()),
             Parameter("expected_catch_size_max", ReadInt(item, "crab_pot_catch_size_max").ToString()),
             Parameter("catch_size_projection_status", ReadString(item, "crab_pot_catch_size_projection_status")),
+            Parameter(
+                "crab_pot_production_signature",
+                ReadString(item, "crab_pot_production_signature")),
+            Parameter(
+                "crab_pot_production_possible_qualified_item_ids_json",
+                JsonSerializer.Serialize(productionPossible)),
+            Parameter(
+                "crab_pot_production_domain_complete",
+                productionPossible.Length > 0 &&
+                !string.IsNullOrWhiteSpace(
+                    ReadString(item, "crab_pot_production_signature"))
+                    ? "true"
+                    : "false"),
             Parameter("max_movement_tiles", "512")
         };
     }
@@ -150,5 +195,44 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private static string BoolInt(JsonElement item, string property)
     {
         return ReadBool(item, property) == true ? "1" : "0";
+    }
+
+    private static string[] ReadCrabPotStringArray(
+        JsonElement source,
+        string property)
+    {
+        return source.ValueKind == JsonValueKind.Object &&
+            source.TryGetProperty(property, out var values) &&
+            values.ValueKind == JsonValueKind.Array
+                ? values.EnumerateArray()
+                    .Where(value => value.ValueKind == JsonValueKind.String)
+                    .Select(value => value.GetString() ?? string.Empty)
+                    .Where(value => value.Length > 0)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .ToArray()
+                : Array.Empty<string>();
+    }
+
+    private static EventCandidate BlockedMasterAnglerCrabPotCandidate(
+        string reason,
+        SmallModelActionParameter[] parameters)
+    {
+        return new EventCandidate
+        {
+            CandidateId = "master-angler:crab-pot:blocked",
+            Kind = "collect_crab_pot",
+            Available = false,
+            ExpectedEffect =
+                "master_angler_crab_pot_action_not_compiled;runtime_terminal_validation_required=true",
+            AvailabilityClass = "master_angler_fail_closed",
+            BlockReasons = new[]
+            {
+                string.IsNullOrWhiteSpace(reason)
+                    ? "master_angler_intent_validation_failed"
+                    : reason
+            },
+            Parameters = parameters
+        };
     }
 }

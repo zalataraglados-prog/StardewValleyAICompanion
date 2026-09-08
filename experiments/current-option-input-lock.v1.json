@@ -1,0 +1,50 @@
+{
+  "schema_version": "goal_conditioned_current_option_input_lock.v1",
+  "base_commit": "f0902d586647ac1f11fa34bf7c177f153a2a7043",
+  "generated_at_utc": "2026-09-05T00:00:00Z",
+  "repository_sources": [
+    {
+      "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
+      "bytes": 120601,
+      "sha256": "b8a5243133f9cfcddf6eaf499315ee801da305b7c537bf5473f0539f40cf1dce"
+    },
+    {
+      "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
+      "bytes": 216977,
+      "sha256": "dacb0dc4dc941fbb92eb39d81bb922b45e44a7f85112f18eeb1545fe601e3e10"
+    },
+    {
+      "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
+      "bytes": 44503,
+      "sha256": "b5eadcb13b0f75f16d7382710f7b680d90d8b6090cfec8a0ebd4a1b6b5bea82f"
+    },
+    {
+      "relative_path": "knowledge-artifacts.lock.json",
+      "bytes": 2423,
+      "sha256": "1814590ec919b8dc582e1743f4f18a1f609f4bc2ac5352bec55096fc213aa50e"
+    },
+    {
+      "relative_path": "catalogs/vanilla-1.6.15/native-action-denominator-freeze.json",
+      "bytes": 8129,
+      "sha256": "32ede9127e6dd7f936e1e0bf35b6768aa7bf4486113d8fa90e6e3aeb579a9b57"
+    }
+  ],
+  "knowledge_sources": [
+    {
+      "relative_path": "snapshots/current-live-full-snapshot.json",
+      "bytes": 12026007,
+      "sha256": "a6d2c4c293a91073e757fa6a25175967a56f2d2612c9f963e31c48cf0e85baa0"
+    }
+  ],
+  "output_contract": {
+    "schema_version": "stardewai.option_governance_matrix.v3",
+    "option_count": 228,
+    "goal_template_count": 2,
+    "composite_option_count": 84,
+    "primitive_option_count": 142,
+    "training_eligible_count": 62,
+    "runtime_verified_count": 151,
+    "bytes": 812810,
+    "sha256": "a0f848078c2bd67e26f7b125999d2e9e574c38d4eb6fbab99afe0a107c426751"
+  }
+}

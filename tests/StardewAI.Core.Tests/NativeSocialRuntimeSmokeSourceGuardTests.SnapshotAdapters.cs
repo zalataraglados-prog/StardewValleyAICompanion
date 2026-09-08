@@ -82,6 +82,10 @@ public sealed partial class NativeSocialRuntimeSmokeSourceGuardTests
 
         Assert.Contains("gift_tastes", source, StringComparison.Ordinal);
         Assert.Contains("getGiftTasteForThisItem", source, StringComparison.Ordinal);
+        Assert.Contains("grandpa_friendship_progress", source, StringComparison.Ordinal);
+        Assert.Contains("Utility.getNumberOfFriendsWithinThisRange", source, StringComparison.Ordinal);
+        Assert.Contains("expected_talk_friendship_delta", source, StringComparison.Ordinal);
+        Assert.Contains("ExpectedTalkDelta", source, StringComparison.Ordinal);
     }
 
     [Fact]

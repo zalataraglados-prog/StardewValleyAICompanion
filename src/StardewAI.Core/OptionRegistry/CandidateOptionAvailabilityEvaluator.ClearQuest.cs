@@ -178,6 +178,9 @@ namespace StardewAI.Core.OptionRegistry
             var distance = standTile is not null
                 ? Math.Abs(playerX - standTile.X) + Math.Abs(playerY - standTile.Y)
                 : 0;
+            probeParameters.Add(Parameter(
+                "route_distance_tiles",
+                distance.ToString()));
             var estimatedTicks = Math.Max(60, distance * 60 + ClearObstacleToolTicks(clearKind, maxToolSwings));
             var playerEnergy = ReadStateFieldValue(snapshot, "player", "energy");
             if (playerEnergy.HasValue &&

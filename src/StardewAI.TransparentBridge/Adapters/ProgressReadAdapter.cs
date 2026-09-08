@@ -110,6 +110,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             ["island_field_office"] = Field(ReadIslandFieldOffice(islandFieldOffice, actor, world), "IslandFieldOffice piecesDonated/restoration NetBools/uncollectedRewards/safariGuyMutex/map actions; FieldOfficeMenu native item-to-slot mapping and donatePiece rewards; survey answerDialogueAction; Farmer mail and team collectedNutTracker", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
             ["fish_collection"] = Field(ToSortedArrayDictionary(master?.fishCaught), "Game1.MasterPlayer.fishCaught", tick),
+            ["fish_collection_progress"] = Field(ReadFishCollectionProgress(master), "Game1.objectData; Game1.MasterPlayer.fishCaught; Utility.getFishCaughtPercent exact ObjectType=Fish and ExcludeFromFishingCollection=false denominator", tick),
             ["artifact_collection"] = Field(ToSortedArrayDictionary(master?.archaeologyFound), "Game1.MasterPlayer.archaeologyFound", tick),
             ["mineral_collection"] = Field(ToSortedDictionary(master?.mineralsFound), "Game1.MasterPlayer.mineralsFound", tick),
             ["cooking_recipes"] = Field(ToSortedDictionary(master?.cookingRecipes), "Game1.MasterPlayer.cookingRecipes", tick),
@@ -535,6 +536,12 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
 
         var donatedCount = museum.museumPieces.Count();
         var total = LibraryMuseum.totalArtifacts;
+        var collectionItems = ReadMuseumCollectionItems(museum);
+        var missingItemIds = collectionItems
+            .Where(item => !item.Donated)
+            .Select(item => item.ItemId)
+            .OrderBy(itemId => itemId, StringComparer.Ordinal)
+            .ToArray();
         var freeTiles = ReadFreeMuseumDonationTiles(museum);
         var guntherAction = ReadGuntherActionTile(museum);
         var mutex = typeof(LibraryMuseum)
@@ -587,6 +594,9 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                 .ToArray(),
             DonatedCount = donatedCount,
             TotalDonatableItems = total,
+            MissingItemCount = missingItemIds.Length,
+            DonatableItems = collectionItems,
+            MissingItemIds = missingItemIds,
             CollectionComplete = donatedCount >= total,
             CompleteCollectionAchievementReceived = Game1.player.achievements.Contains(5),
             FieldGuideQuestPresent = fieldGuideQuest is not null,

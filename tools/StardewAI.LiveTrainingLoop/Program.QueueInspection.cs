@@ -79,7 +79,7 @@ static partial class Program
         return (json, JsonNode.Parse(json)?.AsObject() ?? new JsonObject());
     }
 
-    private static async Task<(string Json, JsonObject Snapshot)> ReadFullSnapshotAsync(
+    private static async Task<(string Json, JsonObject Snapshot)> ReadExecutionSnapshotAsync(
         HttpClient http,
         LiveTrainingOptions options,
         bool forceRefresh,
@@ -88,7 +88,7 @@ static partial class Program
     {
         var json = await http.GetStringAsync(SnapshotUrlForProfile(
             options.BridgeSnapshotUrl,
-            "full",
+            options.ExecutionSnapshotProfile,
             forceRefresh,
             expectedStateHash,
             expectedGameTick));
@@ -105,7 +105,7 @@ static partial class Program
         var beforeTick = ReadLong(beforeSnapshot, "game_tick");
         var productAfterHash = ReadString(execution, "product_after_state_hash");
         var productAfterTick = ReadLong(execution, "product_after_game_tick");
-        var initial = await ReadFullSnapshotAsync(
+        var initial = await ReadExecutionSnapshotAsync(
             http,
             options,
             forceRefresh: false,
@@ -144,7 +144,7 @@ static partial class Program
             var clock = await ReadCurrentSnapshotAsync(http, options);
             if (ReadLong(clock.Snapshot, "game_tick") > beforeTick)
             {
-                var refreshed = await ReadFullSnapshotAsync(
+                var refreshed = await ReadExecutionSnapshotAsync(
                     http,
                     options,
                     forceRefresh: true);
@@ -505,7 +505,8 @@ static partial class Program
 
         try
         {
-            return JsonNode.Parse(File.ReadAllText(path, Encoding.UTF8))?.AsObject() ?? fallback;
+            return JsonNode.Parse(
+                ContentAddressedJsonArtifactStore.ReadAllText(path))?.AsObject() ?? fallback;
         }
         catch (JsonException)
         {

@@ -7,7 +7,8 @@ var options = PolicyModelOptions.Parse(args);
 var result = new StructuredPolicyTrainer().Train(
     options.DatasetManifestPath,
     options.CheckpointPath,
-    options.Hyperparameters);
+    options.Hyperparameters,
+    options.InitializationCheckpointPath);
 Console.WriteLine(JsonSerializer.Serialize(new
 {
     status = "ok",
@@ -25,6 +26,7 @@ internal sealed class PolicyModelOptions
     public string CheckpointPath { get; private set; } =
         @"E:\StardewAITraining\checkpoints\structured-policy-v1.json";
     public StructuredPolicyHyperparameters Hyperparameters { get; } = new();
+    public string InitializationCheckpointPath { get; private set; } = string.Empty;
 
     public static PolicyModelOptions Parse(string[] args)
     {
@@ -36,6 +38,8 @@ internal sealed class PolicyModelOptions
                 result.DatasetManifestPath = args[++index];
             else if (current == "--checkpoint" && index + 1 < args.Length)
                 result.CheckpointPath = args[++index];
+            else if (current == "--initialize-from-checkpoint" && index + 1 < args.Length)
+                result.InitializationCheckpointPath = args[++index];
             else if (current == "--epochs" && index + 1 < args.Length)
                 result.Hyperparameters.Epochs = ParseInt(args[++index], current);
             else if (current == "--learning-rate" && index + 1 < args.Length)

@@ -115,7 +115,9 @@ static partial class Program
                     continue;
                 }
 
-                var beforeSnapshot = JsonNode.Parse(File.ReadAllText(beforeSnapshotPath))?.AsObject()
+                var beforeSnapshot = JsonNode.Parse(
+                    ContentAddressedJsonArtifactStore.ReadAllText(
+                        beforeSnapshotPath))?.AsObject()
                     ?? throw new InvalidOperationException("before snapshot is empty");
                 var snapshotEnvelope = JsonSerializer.Deserialize<SnapshotEnvelope>(
                     beforeSnapshot.ToJsonString(JsonOptions),

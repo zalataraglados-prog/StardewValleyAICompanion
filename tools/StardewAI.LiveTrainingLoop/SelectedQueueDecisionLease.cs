@@ -98,13 +98,27 @@ public sealed class SelectedQueueDecisionLease
                         candidateId);
                 }
 
-                var firstItem = group.First().Item;
+                var objectiveContinuations = group
+                    .Select(row =>
+                        QueueReplanFilter.ReadObjectiveContinuation(row.Item))
+                    .Where(value => value is not null)
+                    .Cast<JsonObject>()
+                    .GroupBy(
+                        value => value.ToJsonString(),
+                        StringComparer.Ordinal)
+                    .Select(values => values.First())
+                    .ToArray();
+                if (objectiveContinuations.Length > 1)
+                {
+                    throw new InvalidOperationException(
+                        "selected queue index maps to multiple objective continuations");
+                }
                 return new SelectedQueueCandidateLock(
                     group.Key,
                     candidateId,
                     ReadString(matches[0], "option_id"),
                     Clone(matches[0]),
-                    CloneNullable(QueueReplanFilter.ReadObjectiveContinuation(firstItem)));
+                    CloneNullable(objectiveContinuations.SingleOrDefault()));
             })
             .ToArray();
 

@@ -30,7 +30,15 @@ public sealed partial class ModEntry : Mod
         ReleaseMovementIncidentalDialogueButton(move);
         StopAllMovement();
         activeTileMove = null;
-        move.Pending.Completion.SetResult(CompletedMove(move.Pending, move.StartTile, move.TargetTile, Game1.player.TilePoint, verificationStatus, verificationReasons));
+        move.Pending.Completion.SetResult(CompletedMove(
+            move.Pending,
+            move.StartTile,
+            move.TargetTile,
+            Game1.player.TilePoint,
+            verificationStatus,
+            verificationReasons,
+            move.Tick,
+            move.StartedAt));
     }
 
     private void CompleteBlockedMove(ActiveTileMove move, string reason)

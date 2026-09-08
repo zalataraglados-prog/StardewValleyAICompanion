@@ -74,6 +74,22 @@ public sealed class StructuredPolicyCheckpointStore
         if (checkpoint.Training is null || checkpoint.Audit is null)
             throw new InvalidOperationException("Structured policy checkpoint metadata is incomplete.");
         ValidateTrainingSummary(checkpoint.Training, checkpoint.Model.FeatureNames.Length);
+        ValidateInitialization(checkpoint.Initialization, checkpoint.Model.FeatureNames.Length);
+    }
+
+    private static void ValidateInitialization(
+        StructuredPolicyInitializationBinding? initialization,
+        int featureCount)
+    {
+        if (initialization is null)
+            return;
+        if (string.IsNullOrWhiteSpace(initialization.CheckpointId) ||
+            !IsSha256(initialization.CheckpointSha256) ||
+            initialization.InheritedFeatureCount <= 0 ||
+            initialization.NewFeatureCount < 0 ||
+            initialization.InheritedFeatureCount + initialization.NewFeatureCount != featureCount ||
+            !initialization.ScoreOrderPreservedBeforeOptimization)
+            throw new InvalidOperationException("Structured policy initialization binding is invalid.");
     }
 
     public static string HashFile(string path)

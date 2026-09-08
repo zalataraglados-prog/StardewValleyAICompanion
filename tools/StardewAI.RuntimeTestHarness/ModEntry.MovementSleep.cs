@@ -757,6 +757,7 @@ public sealed partial class ModEntry : Mod
             FeedbackAvailable = true,
             StartedAt = move.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            ActualTicks = move.Tick,
             PrimitiveKind = "traverse_connector",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = reasons.ToArray(),

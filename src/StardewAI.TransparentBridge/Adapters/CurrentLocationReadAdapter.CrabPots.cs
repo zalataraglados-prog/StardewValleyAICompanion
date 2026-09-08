@@ -94,6 +94,7 @@ public sealed partial class CurrentLocationReadAdapter
     }
 
     private static CrabPotHarvestProjection ReadCrabPotHarvest(
+        GameLocation location,
         Microsoft.Xna.Framework.Vector2 tile,
         StardewObject item,
         Farmer player)
@@ -102,19 +103,36 @@ public sealed partial class CurrentLocationReadAdapter
         {
             return CrabPotHarvestProjection.NotApplicable();
         }
+        var owner = Game1.GetPlayer(pot.owner.Value) ?? player;
+        var production = PlayerReadAdapter.ReadCrabPotTileProductionContext(
+            location,
+            (int)tile.X,
+            (int)tile.Y,
+            owner,
+            DataLoader.Fish(Game1.content));
         if (item.GetType() != typeof(CrabPot))
         {
-            return CrabPotHarvestProjection.Blocked("unsupported_crab_pot_runtime_type", pot);
+            return CrabPotHarvestProjection.Blocked(
+                "unsupported_crab_pot_runtime_type",
+                pot,
+                production: production);
         }
 
         var output = pot.heldObject.Value;
         if (pot.tileIndexToShow != 714 || !pot.readyForHarvest.Value)
         {
-            return CrabPotHarvestProjection.Blocked("crab_pot_not_ready", pot, output);
+            return CrabPotHarvestProjection.Blocked(
+                "crab_pot_not_ready",
+                pot,
+                output,
+                production);
         }
         if (output is null)
         {
-            return CrabPotHarvestProjection.Blocked("crab_pot_output_unavailable", pot);
+            return CrabPotHarvestProjection.Blocked(
+                "crab_pot_output_unavailable",
+                pot,
+                production: production);
         }
 
         var baseStack = Math.Max(1, output.Stack);
@@ -143,12 +161,9 @@ public sealed partial class CurrentLocationReadAdapter
         }
 
         var metadata = ItemRegistry.GetMetadata(output.QualifiedItemId);
-        var parsedData = metadata.GetParsedData();
-        var collectionEligible = hasFishData &&
-            metadata.Exists() &&
-            !ItemContextTagManager.HasBaseTag(metadata.QualifiedItemId, "trash_item") &&
-            metadata.QualifiedItemId != "(O)167" &&
-            (parsedData?.ObjectType == "Fish" || metadata.QualifiedItemId == "(O)372");
+        var collectionEligible = CrabPotProjectionSemantics.IsFishCollectionEligible(
+            output,
+            DataLoader.Fish(Game1.content));
         var caughtBefore = player.fishCaught.TryGetValue(metadata.QualifiedItemId, out var caught)
             ? caught
             : null;
@@ -188,7 +203,23 @@ public sealed partial class CurrentLocationReadAdapter
             FishCaughtMaxSizeBefore = caughtMaxBefore,
             CatchSizeMin = hasFishData ? catchSizeMin : 0,
             CatchSizeMax = hasFishData ? catchSizeMax : 0,
-            CatchSizeProjectionStatus = hasFishData ? "runtime_rng_observed" : "not_applicable"
+            CatchSizeProjectionStatus = hasFishData ? "runtime_rng_observed" : "not_applicable",
+            ProductionSignature = production.Signature,
+            FishAreaId = production.FishAreaId,
+            FishAreaDisplayName = production.FishAreaDisplayName,
+            HabitatTags = production.HabitatTags,
+            NativeOrderCatchRows = production.CatchRows,
+            ConservativeServicedProbabilityStatus =
+                production.ConservativeServicedProbabilityStatus,
+            ConservativeServicedOutcomeRows =
+                production.ConservativeServicedOutcomeRows,
+            ConservativeServicedTrashProbability =
+                production.ConservativeServicedTrashProbability,
+            PossibleQualifiedItemIds = production.CatchRows
+                .Select(row => row.QualifiedItemId)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray()
         };
     }
 
@@ -272,10 +303,27 @@ internal sealed record CrabPotHarvestProjection
     public int CatchSizeMin { get; init; }
     public int CatchSizeMax { get; init; }
     public string CatchSizeProjectionStatus { get; init; } = "not_applicable";
+    public string ProductionSignature { get; init; } = string.Empty;
+    public string FishAreaId { get; init; } = string.Empty;
+    public string FishAreaDisplayName { get; init; } = string.Empty;
+    public string[] HabitatTags { get; init; } = Array.Empty<string>();
+    public PlayerReadAdapter.CrabPotCatchRow[] NativeOrderCatchRows { get; init; } =
+        Array.Empty<PlayerReadAdapter.CrabPotCatchRow>();
+    public string ConservativeServicedProbabilityStatus { get; init; } =
+        "unavailable";
+    public PlayerReadAdapter.CrabPotServicedOutcomeRow[]
+        ConservativeServicedOutcomeRows { get; init; } =
+            Array.Empty<PlayerReadAdapter.CrabPotServicedOutcomeRow>();
+    public double ConservativeServicedTrashProbability { get; init; }
+    public string[] PossibleQualifiedItemIds { get; init; } = Array.Empty<string>();
 
     public static CrabPotHarvestProjection NotApplicable() => new();
 
-    public static CrabPotHarvestProjection Blocked(string status, CrabPot pot, StardewObject? output = null)
+    public static CrabPotHarvestProjection Blocked(
+        string status,
+        CrabPot pot,
+        StardewObject? output = null,
+        PlayerReadAdapter.CrabPotTileProductionContext? production = null)
     {
         ClearanceOutputItemProjection? outputState = null;
         if (output is not null)
@@ -298,7 +346,26 @@ internal sealed record CrabPotHarvestProjection
             OutputQualifiedItemId = outputState?.QualifiedItemId ?? string.Empty,
             OutputQuality = outputState?.Quality ?? 0,
             OutputUnitStateSha256 = outputState?.UnitStateSha256 ?? string.Empty,
-            OutputStackBefore = output?.Stack ?? 0
+            OutputStackBefore = output?.Stack ?? 0,
+            ProductionSignature = production?.Signature ?? string.Empty,
+            FishAreaId = production?.FishAreaId ?? string.Empty,
+            FishAreaDisplayName = production?.FishAreaDisplayName ?? string.Empty,
+            HabitatTags = production?.HabitatTags ?? Array.Empty<string>(),
+            NativeOrderCatchRows = production?.CatchRows ??
+                Array.Empty<PlayerReadAdapter.CrabPotCatchRow>(),
+            ConservativeServicedProbabilityStatus =
+                production?.ConservativeServicedProbabilityStatus ??
+                "unavailable_production_context",
+            ConservativeServicedOutcomeRows =
+                production?.ConservativeServicedOutcomeRows ??
+                Array.Empty<PlayerReadAdapter.CrabPotServicedOutcomeRow>(),
+            ConservativeServicedTrashProbability =
+                production?.ConservativeServicedTrashProbability ?? 0d,
+            PossibleQualifiedItemIds = production?.CatchRows
+                .Select(row => row.QualifiedItemId)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray() ?? Array.Empty<string>()
         };
     }
 }

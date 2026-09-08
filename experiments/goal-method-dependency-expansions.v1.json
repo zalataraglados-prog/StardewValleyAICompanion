@@ -1,0 +1,1061 @@
+{
+  "schema_version": "goal_method_dependency_expansions.v1",
+  "goal_id": "grandpa.maximum_21",
+  "policy": "Only typed reverse-route nodes live here. Direction ownership and direct candidate binding remain exclusively in GrandpaDirectionCatalog; unresolved prose remains exclusively in the expansion overlay.",
+  "directions": [
+    {
+      "direction_id": "earn_money",
+      "status": "in_progress",
+      "completion_node_id": "dependency.earn_money.total_money_earned_one_million",
+      "source_ids": [
+        "native.utility",
+        "native.farmer",
+        "native.shop_menu",
+        "native.shipping_menu",
+        "native.game1",
+        "runtime.goal_index"
+      ],
+      "blockers": [
+        "fresh-save seed-robust lower-bound schedule proving settled totalMoneyEarned reaches one million before the Year 3 evaluation",
+        "counterfactual opportunity-cost labels over acquisition processing sale shipping and reserve commitments",
+        "crop-production alternative remains excluded until farm.maintain_crops is training-eligible"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.earn_money.total_money_earned_one_million",
+          "kind": "terminal_fact",
+          "required_field_paths": ["player.total_money_earned"],
+          "rule": {
+            "path": "player.total_money_earned",
+            "operator": "greater_than_or_equal",
+            "value": 1000000,
+            "grandpa_points_at_terminal": 7
+          }
+        },
+        {
+          "id": "dependency.earn_money.settled_milestone_ladder",
+          "kind": "state_fact",
+          "required_field_paths": ["player.total_money_earned", "player.money"],
+          "rule": {
+            "scored_thresholds": [50000, 100000, 200000, 300000, 500000, 1000000],
+            "points": [1, 1, 1, 1, 1, 2],
+            "next_threshold": "minimum scored threshold strictly greater than player.total_money_earned",
+            "remaining_to_terminal": { "operator": "max", "arguments": [0, { "operator": "subtract", "arguments": [1000000, "player.total_money_earned"] }] },
+            "current_cash_is_not_cumulative_earnings": true
+          }
+        },
+        {
+          "id": "dependency.earn_money.reserve_safe_positive_inventory",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "world_progress.full_shipment_progress",
+            "quests.active_quests",
+            "quests.special_orders"
+          ],
+          "rule": {
+            "operator": "all",
+            "conditions": [
+              "candidate quantity is currently owned and positive",
+              "native sale or shipping payout is positive",
+              "protected_from_auto_sell is false and auto_sell_protection_reasons is empty",
+              "quantity remains after exact active task bundle collection crafting food health and full-shipment reservations",
+              "strategy explicitly authorizes this exact item and quantity"
+            ],
+            "missing_reservation_or_price_evidence": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.earn_money.acquire_fishable_inventory",
+          "kind": "policy_option_transition",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["catch_fish"],
+          "required_field_paths": [
+            "player.inventory",
+            "player.energy",
+            "time.time",
+            "fishing.location_context",
+            "fishing.fishable_tiles",
+            "fishing.rod_inventory",
+            "fishing.rod_contexts"
+          ],
+          "binding": {
+            "output": "observed native catch added to player.inventory",
+            "unknown_rng": "choose from exact current legal cast alternatives and train on observed receipt; never label a future fish identity as known"
+          }
+        },
+        {
+          "id": "dependency.earn_money.acquire_spawned_foraging_inventory",
+          "kind": "policy_option_transition",
+          "option_id": "foraging.collect_spawned_objects",
+          "candidate_kinds": ["collect_spawned_object"],
+          "required_field_paths": ["current_location.objects", "player.inventory", "player.inventory_capacity"],
+          "binding": {
+            "output": "one exact observed spawned object added through its native collection receipt",
+            "selection": "compare exact value time route and competing reservations"
+          }
+        },
+        {
+          "id": "dependency.earn_money.acquire_animal_product_inventory",
+          "kind": "policy_option_transition",
+          "option_id": "farm.collect_animal_products",
+          "candidate_kinds": ["collect_animal_product"],
+          "required_field_paths": ["farm.animals", "player.inventory", "player.inventory_capacity", "player.energy"],
+          "binding": {
+            "output": "one exact ready native animal product added to player.inventory",
+            "infrastructure_assumption": "none; candidate exists only for already owned ready animals"
+          }
+        },
+        {
+          "id": "dependency.earn_money.collect_ready_machine_output",
+          "kind": "policy_option_transition",
+          "option_id": "farm.collect_machine_outputs",
+          "candidate_kinds": ["collect_machine_output_tile"],
+          "required_field_paths": ["farm.machines", "player.inventory", "player.inventory_capacity"],
+          "binding": {
+            "output": "one exact ready machine output added to player.inventory",
+            "selection": "compare realized output value and downstream reservation before sale"
+          }
+        },
+        {
+          "id": "dependency.earn_money.establish_positive_machine_capacity",
+          "kind": "policy_option_transition",
+          "option_id": "farm.establish_supported_machine_capacity",
+          "candidate_kinds": ["craft_machine_item", "place_machine_item", "load_machine_input_tile"],
+          "required_field_paths": ["player.machine_crafting", "player.machine_placement", "farm.machines", "farm.material_inventory_graph"],
+          "binding": {
+            "goal_id": "goal.economy.earn_money",
+            "requirement": "current deterministic processable backlog has bounded positive net value after input and machine-material opportunity cost",
+            "speculative_future_inventory": "zero_support"
+          }
+        },
+        {
+          "id": "dependency.earn_money.load_positive_machine_input",
+          "kind": "policy_option_transition",
+          "option_id": "farm.load_supported_machine_input",
+          "candidate_kinds": ["load_machine_input_tile"],
+          "required_field_paths": ["farm.machines", "player.inventory", "farm.material_inventory_graph"],
+          "binding": {
+            "requirement": "exact placement-bound support intent and deterministic positive-net unreserved input",
+            "output_timing": "native machine processing completion"
+          }
+        },
+        {
+          "id": "dependency.earn_money.sell_at_shop_immediate_settlement",
+          "kind": "policy_option_transition",
+          "option_id": "economy.sell_items",
+          "candidate_kinds": ["sell_shop_item"],
+          "required_field_paths": ["player.inventory", "locations.shops", "menus.sell_context", "player.money", "player.total_money_earned"],
+          "binding": {
+            "payout": "floor(item.sellToStorePrice(-1) * active shop sellPercentage) times exact sold quantity",
+            "receipt": "native inventory decrease plus Money increase plus equal totalMoneyEarned increase",
+            "buyback_rule": "a later native buyback explicitly subtracts its price from totalMoneyEarned and is never an earnings exploit"
+          }
+        },
+        {
+          "id": "dependency.earn_money.deposit_shipping_pending_settlement",
+          "kind": "policy_option_transition",
+          "option_id": "economy.ship_items",
+          "candidate_kinds": ["ship_inventory_item_to_bin"],
+          "required_field_paths": ["player.inventory", "farm.shipping_bins", "locations.route_graph", "locations.route_connectors"],
+          "binding": {
+            "immediate_receipt": "exact inventory quantity decreases and matching completed Farm bin contents increase",
+            "immediate_money_delta": 0,
+            "settlement_state": "farm.shipping_bins pending_settlement_value remains uncredited until native day transition"
+          }
+        },
+        {
+          "id": "dependency.earn_money.native_shipping_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": ["recovery_sleep_immediately", "recovery_sleep_before_collapse", "recovery_resume_sleep_prompt"],
+          "required_field_paths": ["farm.shipping_bins", "player.money", "player.total_money_earned", "time.total_days"],
+          "rule": {
+            "execution_owner": "deterministic_day_compiler_not_policy_label",
+            "precondition": "terminal sleep remains legal after all required daily commitments",
+            "settlement": "Game1 new-day sums each shipped Object.sellToStorePrice(-1) times Stack and applies player.Money += aggregate",
+            "postcondition": "fresh player.total_money_earned equals prior settled value plus observed native credit, subject to any separately observed native negative buyback transition",
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.earn_money.revenue_portfolio_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "player.total_money_earned",
+            "player.money",
+            "player.inventory",
+            "farm.shipping_bins",
+            "farm.machines",
+            "time.total_days"
+          ],
+          "rule": {
+            "state_variables": [
+              "settled_total_money_earned",
+              "current_cash",
+              "pending_shipping_settlement_value",
+              "reserve_commitments",
+              "available_acquisition_alternatives",
+              "machine_backlog_and_capacity",
+              "remaining_game_minutes_before_year_3"
+            ],
+            "teacher_choice": "receding-horizon counterfactual search over exact currently legal alternatives",
+            "guide_role": "proposal_prior_only",
+            "unknown_rng": "marginalize or branch; never expose unavailable future outcomes to student features",
+            "continue_while": { "path": "player.total_money_earned", "operator": "less_than", "value": 1000000 },
+            "admission_requirement": "at least one fresh-save route family has a seed-robust time lower-bound proof before this expansion may become complete"
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.earn_money.acquire_fishable_inventory", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
+        { "from": "dependency.earn_money.acquire_spawned_foraging_inventory", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
+        { "from": "dependency.earn_money.acquire_animal_product_inventory", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
+        { "from": "dependency.earn_money.establish_positive_machine_capacity", "to": "dependency.earn_money.load_positive_machine_input", "kind": "enables" },
+        { "from": "dependency.earn_money.load_positive_machine_input", "to": "dependency.earn_money.collect_ready_machine_output", "kind": "delays_until_processing_complete" },
+        { "from": "dependency.earn_money.collect_ready_machine_output", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
+        { "from": "dependency.earn_money.reserve_safe_positive_inventory", "to": "dependency.earn_money.sell_at_shop_immediate_settlement", "kind": "authorizes_alternative" },
+        { "from": "dependency.earn_money.reserve_safe_positive_inventory", "to": "dependency.earn_money.deposit_shipping_pending_settlement", "kind": "authorizes_alternative" },
+        { "from": "dependency.earn_money.sell_at_shop_immediate_settlement", "to": "dependency.earn_money.settled_milestone_ladder", "kind": "advances_immediately" },
+        { "from": "dependency.earn_money.deposit_shipping_pending_settlement", "to": "dependency.earn_money.native_shipping_day_settlement", "kind": "requires_later_settlement" },
+        { "from": "dependency.earn_money.native_shipping_day_settlement", "to": "dependency.earn_money.settled_milestone_ladder", "kind": "advances_after_day_transition" },
+        { "from": "dependency.earn_money.settled_milestone_ladder", "to": "dependency.earn_money.total_money_earned_one_million", "kind": "terminates_at" },
+        { "from": "dependency.earn_money.settled_milestone_ladder", "to": "dependency.earn_money.revenue_portfolio_recurrence", "kind": "continues_below_terminal" },
+        { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.acquire_fishable_inventory", "kind": "reconsiders" },
+        { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.acquire_spawned_foraging_inventory", "kind": "reconsiders" },
+        { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.acquire_animal_product_inventory", "kind": "reconsiders" },
+        { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.establish_positive_machine_capacity", "kind": "reconsiders" }
+      ]
+    },
+    {
+      "direction_id": "complete_master_angler",
+      "status": "in_progress",
+      "completion_node_id": "dependency.complete_master_angler.all_native_species_caught",
+      "source_ids": [
+        "runtime_data_fish",
+        "runtime_data_locations",
+        "native_fish_completion_rule",
+        "native_mine_fishing_override_rule",
+        "native_crab_pot_output_rule",
+        "native_game_state_query_rule",
+        "runtime.goal_index"
+      ],
+      "blockers": [
+        "the source-complete Stage 1 static deadline index must be consumed by a target-date opportunity producer that resolves dynamic queries location unlock access route fishable tile rod equipment and the existing live spawn-rule candidate for every uncaught rod species",
+        "trap-fish recurrence still needs one compiler-owned high-level infrastructure intent that expands exact crafting placement baiting overnight settlement and collection without making primitives policy labels",
+        "fresh-save seed-robust completion proof must cover stochastic retries and preserve one legal opportunity before the initial Year 3 evaluation"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.complete_master_angler.all_native_species_caught",
+          "kind": "terminal_fact",
+          "required_field_paths": ["world_progress.fish_collection_progress"],
+          "rule": {
+            "native_denominator_count": 72,
+            "complete_when": "complete=true and caught_eligible_species_count=eligible_species_count and missing_species_count=0",
+            "achievement_id": 26,
+            "grandpa_points_at_terminal": 1,
+            "missing_or_inconsistent_denominator": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.native_denominator_and_missing_set",
+          "kind": "state_fact",
+          "required_field_paths": ["world_progress.fish_collection_progress"],
+          "rule": {
+            "identity_owner": "exact native eligible Data/Objects category -4 rows joined to Farmer.fishCaught",
+            "required_species_count": 72,
+            "selection": "all missing qualified item IDs",
+            "already_caught": "exclude_upstream"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.rod_species_partition",
+          "kind": "state_fact",
+          "required_field_paths": ["world_progress.fish_collection_progress", "fishing.spawn_rules", "fishing.special_catch_sources"],
+          "rule": {
+            "ordinary_or_location_override_species_count": 62,
+            "ordinary_location_rule_species_count": 60,
+            "mine_override_only_species": ["(O)158", "(O)161"],
+            "mine_override_alternative_species": ["(O)162"],
+            "mine_override_areas": { "(O)158": [0, 10], "(O)161": [40], "(O)162": [80] },
+            "source": "exact Data/Fish plus Data/Locations plus guarded MineShaft.getFish overrides",
+            "future_outcome_identity": "never_exposed_before_native_receipt"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.trap_species_partition",
+          "kind": "state_fact",
+          "required_field_paths": ["world_progress.fish_collection_progress", "current_location.objects"],
+          "rule": {
+            "trap_species_count": 10,
+            "classification": "Data/Fish field 1 equals trap",
+            "water_types": ["freshwater", "ocean"],
+            "collection_eligibility": "exact current ready CrabPot output must be a member of the native missing set"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.static_rod_opportunity_windows",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "time.year",
+            "time.season",
+            "time.day",
+            "time.time",
+            "time.weather"
+          ],
+          "rule": {
+            "artifact": "master-angler-opportunity-catalog-v1.json",
+            "source_partition": "60 primary Data/Locations species plus two mine-only species; Lava Eel also has a guarded mine-area-80 alternative",
+            "location_rule_count": 180,
+            "normalized_constraints": ["minimum_year", "maximum_year", "season", "clock", "weather"],
+            "native_year_semantics": "YEAR min [max] from guarded GameStateQuery.cs",
+            "status": "source_complete_static_calendar_complete",
+            "remaining_dynamic_gates": "festival passive-festival special-order and random predicates stay explicit until target-date evidence resolves"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.stage_one_deadline_window_index",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "time.total_days"
+          ],
+          "rule": {
+            "artifact": "master-angler-stage-one-window-index-v1.json",
+            "deadline_exclusive": "Year 3 Spring 1 / total_day 224",
+            "native_species_count": 72,
+            "source_windows": "all location-rule year-season spans plus four MineShaft area routes and ten Crab Pot recurrences",
+            "ranking_signal": "earliest remaining latest_static_total_day first",
+            "status": "static_window_coverage_complete_dynamic_execution_pending",
+            "training_label_eligible": false
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.current_legal_rod_attempt",
+          "kind": "policy_option_transition",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["catch_fish"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.inventory",
+            "player.energy",
+            "time.time",
+            "fishing.location_context",
+            "fishing.fishable_tiles",
+            "fishing.rod_inventory",
+            "fishing.rod_contexts",
+            "fishing.spawn_rules",
+            "fishing.special_catch_sources"
+          ],
+          "binding": {
+            "admit_when": "complete current legal outcome set intersects the exact native missing set",
+            "unknown_rng": "label the legal attempt and train only from fresh native receipt; never promise a species",
+            "already_caught_only_attempt": "exclude_upstream"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.current_ready_trap_collection",
+          "kind": "policy_option_transition",
+          "option_id": "fishing.collect_crab_pots",
+          "candidate_kinds": ["collect_crab_pot"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "current_location.objects",
+            "player.inventory",
+            "player.inventory_capacity",
+            "locations.collision_grid"
+          ],
+          "binding": {
+            "admit_when": "exact current ready output is native fish-collection eligible and belongs to the missing set",
+            "receipt": "native checkAction output plus fishCaught delta",
+            "garbage_or_already_caught_output": "exclude_upstream"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.trap_infrastructure_gate",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "player.inventory",
+            "player.crab_pot_placement",
+            "current_location.objects",
+            "locations.collision_grid",
+            "farm.material_inventory_graph"
+          ],
+          "rule": {
+            "requires": ["one native Crab Pot", "one native-accepted bait unit unless baitless profession applies", "one exact legal water tile", "one adjacent reachable stand tile"],
+            "location_choice": "cover every still-missing freshwater and ocean trap species with minimum bounded daily service cost",
+            "missing_projection": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.place_trap_infrastructure",
+          "kind": "deterministic_transition",
+          "option_id": "executor.place_crab_pot",
+          "candidate_kinds": ["place_crab_pot"],
+          "required_field_paths": ["player.inventory", "player.crab_pot_placement", "current_location.objects", "locations.collision_grid"],
+          "rule": {
+            "execution_owner": "compiler_owned_primitive_not_policy_label",
+            "native_contract": "CrabPot.IsValidCrabPotLocationTile plus native placementAction",
+            "postcondition": "one exact owned CrabPot exists and one inventory unit was consumed"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.load_trap_bait",
+          "kind": "deterministic_transition",
+          "option_id": "executor.load_crab_pot_bait",
+          "candidate_kinds": ["load_crab_pot_bait"],
+          "required_field_paths": ["player.inventory", "current_location.objects", "locations.collision_grid"],
+          "rule": {
+            "execution_owner": "compiler_owned_primitive_not_policy_label",
+            "native_contract": "CrabPot.performObjectDropInAction after exact native acceptance probe",
+            "postcondition": "exact bait identity is held by the target CrabPot"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.native_trap_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": ["recovery_sleep_immediately", "recovery_sleep_before_collapse", "recovery_resume_sleep_prompt"],
+          "required_field_paths": ["current_location.objects", "time.total_days"],
+          "rule": {
+            "execution_owner": "deterministic_day_compiler_not_policy_label",
+            "precondition": "all required daily commitments are complete and trap infrastructure is valid",
+            "result": "native CrabPot.DayUpdate chooses an output or junk from current water type and owner professions",
+            "postcondition": "fresh snapshot exposes exact ready output; no future output identity is leaked"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.acquisition_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": ["world_progress.fish_collection_progress", "time.total_days"],
+          "rule": {
+            "state_variables": ["native missing species set", "future legal rod opportunities", "trap water-type coverage", "stochastic retry reserve", "remaining time before Year 3 evaluation"],
+            "teacher_choice": "earliest-deadline-first over exact future opportunities, then shortest current legal attempt inside the same deadline class",
+            "after_each_attempt": "refresh snapshot and replan from observed native receipt",
+            "continue_while": { "path": "world_progress.fish_collection_progress.complete", "operator": "equals", "value": false }
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.complete_master_angler.native_denominator_and_missing_set", "to": "dependency.complete_master_angler.rod_species_partition", "kind": "partitions_missing_species" },
+        { "from": "dependency.complete_master_angler.native_denominator_and_missing_set", "to": "dependency.complete_master_angler.trap_species_partition", "kind": "partitions_missing_species" },
+        { "from": "dependency.complete_master_angler.rod_species_partition", "to": "dependency.complete_master_angler.static_rod_opportunity_windows", "kind": "normalizes_static_calendar" },
+        { "from": "dependency.complete_master_angler.static_rod_opportunity_windows", "to": "dependency.complete_master_angler.stage_one_deadline_window_index", "kind": "expands_before_deadline" },
+        { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "requires_target_date_resolution" },
+        { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
+        { "from": "dependency.complete_master_angler.trap_infrastructure_gate", "to": "dependency.complete_master_angler.place_trap_infrastructure", "kind": "expands_missing_placement" },
+        { "from": "dependency.complete_master_angler.place_trap_infrastructure", "to": "dependency.complete_master_angler.load_trap_bait", "kind": "enables" },
+        { "from": "dependency.complete_master_angler.load_trap_bait", "to": "dependency.complete_master_angler.native_trap_day_settlement", "kind": "delays_until" },
+        { "from": "dependency.complete_master_angler.native_trap_day_settlement", "to": "dependency.complete_master_angler.current_ready_trap_collection", "kind": "may_produce" },
+        { "from": "dependency.complete_master_angler.current_legal_rod_attempt", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "advances_after_native_receipt" },
+        { "from": "dependency.complete_master_angler.current_ready_trap_collection", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "advances_after_native_receipt" },
+        { "from": "dependency.complete_master_angler.acquisition_recurrence", "to": "dependency.complete_master_angler.native_denominator_and_missing_set", "kind": "recomputes" },
+        { "from": "dependency.complete_master_angler.acquisition_recurrence", "to": "dependency.complete_master_angler.all_native_species_caught", "kind": "terminates_at" }
+      ]
+    },
+    {
+      "direction_id": "raise_friendships",
+      "status": "in_progress",
+      "completion_node_id": "dependency.raise_friendships.ten_native_villagers_at_1975",
+      "source_ids": [
+        "native.utility",
+        "native.npc",
+        "native.farmer",
+        "native.friendship",
+        "runtime.goal_index"
+      ],
+      "blockers": [
+        "current native schedule selection and arrival timing plus the pure future presence/route/contact and ordered-itinerary consumer contracts are complete, but a future-date player route/gate/traversability/final-approach/interaction-eligibility evidence producer remains pending",
+        "fresh-save lower-bound proof must show ten eligible native villagers reach 1975 before Year 3 after travel time, missed windows, decay and competing 21-point obligations"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.raise_friendships.ten_native_villagers_at_1975",
+          "kind": "terminal_fact",
+          "required_field_paths": ["npcs.grandpa_friendship_progress"],
+          "rule": {
+            "projection_status": "complete_live_native_iteration",
+            "threshold_points": 1975,
+            "maximum_points": 999999,
+            "romance_only": false,
+            "qualifying_count": { "operator": "greater_than_or_equal", "value": 10 },
+            "grandpa_points_at_terminal": 2
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.native_eligible_population",
+          "kind": "state_fact",
+          "required_field_paths": ["npcs.grandpa_friendship_progress"],
+          "rule": {
+            "population_owner": "Utility.ForEachVillager(includeEventActors:false)",
+            "count_owner": "Utility.getNumberOfFriendsWithinThisRange(player,1975,999999,romanceOnly:false)",
+            "raw_friendship_rows_are_not_score_population": true,
+            "missing_or_malformed_projection": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.portfolio_deficits",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "npcs.grandpa_friendship_progress",
+            "npcs.friendships",
+            "npcs.social_interaction"
+          ],
+          "rule": {
+            "portfolio_size": 10,
+            "per_villager_deficit": { "operator": "max", "arguments": [0, { "operator": "subtract", "arguments": [1975, "eligible_villager.friendship_points"] }] },
+            "selection": "receding-horizon minimum completion cost over only native eligible rows, preserving already qualifying villagers",
+            "current_snapshot_binding": "exact candidate npc_name, friendship row presence, points before, positive delta and points after must match one non-event Utility.ForEachVillager row below 1975",
+            "compiler_evidence": [
+              "grandpa_friendship_native_population_member",
+              "grandpa_friendship_threshold_points",
+              "grandpa_friendship_deficit_before",
+              "grandpa_friendship_deficit_after",
+              "grandpa_friendship_portfolio_slots_remaining"
+            ],
+            "unknown_access_or_relationship_state": "exclude_from_positive_label"
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.current_access_gate",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "npcs.social_interaction",
+            "npcs.schedules",
+            "npcs.schedule_catalog",
+            "locations.route_graph",
+            "locations.route_connectors",
+            "locations.route_gate_context",
+            "time.time"
+          ],
+          "rule": {
+            "current_loaded_position": "exact",
+            "current_route": "exact rolling connector or same-map stand selection",
+            "future_schedule_catalog": "exact live raw Content entries with per-entry and whole-catalog SHA-256 on social/full snapshot profiles",
+            "future_schedule_projection": "current loaded native movement timing and pure presence/route/contact plus ordered-itinerary consumer validation are implemented; unavailable future-date player route, gate, traversability, final-approach or interaction-eligibility evidence fails closed",
+            "missing_future_window_effect": "blocks deadline proof but does not invent current-state candidates"
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.talk_once_today",
+          "kind": "policy_option_transition",
+          "option_id": "social.talk_npc",
+          "candidate_kinds": ["social_talk_current", "route_connector_tile", "route_gate_wait", "recovery_close_menu"],
+          "required_field_paths": [
+            "npcs.social_interaction",
+            "npcs.friendships",
+            "player.active_object_qualified_id",
+            "locations.collision_grid"
+          ],
+          "binding": {
+            "required_native_population_membership": "one exact non-event IsVillager row in npcs.grandpa_friendship_progress below 1975",
+            "required_projection": "expected_talk_friendship_delta_complete=true",
+            "required_delta": { "operator": "greater_than", "value": 0 },
+            "already_talked_today": "excluded_upstream",
+            "receipt": "native checkAction must produce the exact projected friendship delta and TalkedToToday transition"
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.give_positive_safe_gift",
+          "kind": "policy_option_transition",
+          "option_id": "social.gift_npc",
+          "candidate_kinds": ["social_gift_current", "route_connector_tile", "route_gate_wait", "recovery_close_menu"],
+          "required_field_paths": [
+            "npcs.social_interaction",
+            "npcs.friendships",
+            "npcs.gift_tastes",
+            "player.inventory",
+            "locations.collision_grid"
+          ],
+          "binding": {
+            "required_native_population_membership": "one exact non-event IsVillager row in npcs.grandpa_friendship_progress below 1975",
+            "required_projection": "expected_friendship_delta_complete=true",
+            "required_delta": { "operator": "greater_than", "value": 0 },
+            "daily_weekly_limits": "enforced_from_live friendship row with native spouse birthday and Stardrop Tea exceptions",
+            "stochastic_spouse_jealousy": "excluded_upstream",
+            "receipt": "native checkAction consumes exactly one item and applies the exact projected target friendship delta"
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.native_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": ["recovery_sleep_immediately", "recovery_sleep_before_collapse", "recovery_resume_sleep_prompt"],
+          "required_field_paths": ["npcs.friendships", "time.total_days"],
+          "rule": {
+            "execution_owner": "recovery.stabilize_day native sleep; FriendshipDayTransitionSimulator is the sole pure planning projection and never executes sleep",
+            "ordered_per_relationship_updates": [
+              "if spouse and not talked request changeFriendship(-20), else if dating and not talked and points below 2500 request changeFriendship(-8); changeFriendship applies its own spouse truncation and clamp",
+              "if talked reset TalkedToToday=false, else if current post-penalty points are below the applicable 2000 or 2500 cap request changeFriendship(-2), again through native spouse truncation and clamp"
+            ],
+            "ordered_gift_update": "after all relationship decay, reset GiftsToday on date change; on Sunday-week change apply changeFriendship(10) when GiftsThisWeek>=2, then reset GiftsThisWeek",
+            "change_friendship_modifiers": "Book_Friendship, Dwarvish comprehension, divorce rejection, spouse 0.66 truncation and native maximum-heart clamp apply in native order",
+            "transparent_projection": "npcs.grandpa_friendship_progress carries the exact per-row relationship, character, gift-date and modifier inputs with day_transition_inputs_status=complete_live_native_fields",
+            "projection_status": "exact_native_rule_projection_runtime_verified_eight_days_8x39_zero_mismatch",
+            "runtime_evidence": "runtime-friendship-multi-day-smoke-20260906-031553; eight consecutive native sleeps, 39 unique NPCs per transition, 31 friendship rows per transition, zero mismatch, weekly two-gift bonus and daily talk/gift reset covered",
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.deadline_budget",
+          "kind": "state_gate",
+          "required_field_paths": ["game.year", "game.season", "game.day", "time.time", "npcs.grandpa_friendship_progress"],
+          "rule": {
+            "deadline": "Year 3 initial evaluation",
+            "conservative_talk_only_arithmetic": "from zero, 99 successful ordinary +20 conversation days reach 1980 when each selected villager is talked to on every counted day",
+            "arithmetic_is_not_route_proof": true,
+            "admission_requirement": "prove access, travel and competing-goal feasibility for ten eligible villagers over the exact remaining calendar"
+          }
+        },
+        {
+          "id": "dependency.raise_friendships.portfolio_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "npcs.grandpa_friendship_progress",
+            "npcs.friendships",
+            "npcs.social_interaction",
+            "npcs.gift_tastes",
+            "time.total_days"
+          ],
+          "rule": {
+            "state_variables": [
+              "native_eligible_villager_rows",
+              "qualifying_count",
+              "per_villager_points_and_deficit",
+              "talked_to_today",
+              "gift_counters_and_last_gift_date",
+              "current_access_cost",
+              "remaining_days_before_evaluation"
+            ],
+            "teacher_choice": "maximize deadline-feasible portfolio deficit reduction per game minute while preserving already qualifying members and all competing hard commitments",
+            "continue_while": { "path": "npcs.grandpa_friendship_progress.qualifying_count", "operator": "less_than", "value": 10 },
+            "unknown_future_access": "NpcFuturePresenceWindowResolver removes transit only with complete native movement timing; FutureRouteAccessWindowResolver and NpcFutureContactWindowResolver additionally require same-date player segment, gate, traversability, approach, final-tile and interaction-eligibility evidence; FutureSocialItineraryVerifier validates a supplied visit order but does not choose that order",
+            "admission_requirement": "future-date player-route/gate/traversability/final-approach/interaction-eligibility evidence acquisition, candidate/teacher generation of ordered visit proposals, and a fresh-save deadline proof"
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.raise_friendships.native_eligible_population", "to": "dependency.raise_friendships.portfolio_deficits", "kind": "defines" },
+        { "from": "dependency.raise_friendships.current_access_gate", "to": "dependency.raise_friendships.talk_once_today", "kind": "gates" },
+        { "from": "dependency.raise_friendships.current_access_gate", "to": "dependency.raise_friendships.give_positive_safe_gift", "kind": "gates" },
+        { "from": "dependency.raise_friendships.portfolio_deficits", "to": "dependency.raise_friendships.talk_once_today", "kind": "prioritizes" },
+        { "from": "dependency.raise_friendships.portfolio_deficits", "to": "dependency.raise_friendships.give_positive_safe_gift", "kind": "prioritizes" },
+        { "from": "dependency.raise_friendships.talk_once_today", "to": "dependency.raise_friendships.portfolio_recurrence", "kind": "advances" },
+        { "from": "dependency.raise_friendships.give_positive_safe_gift", "to": "dependency.raise_friendships.portfolio_recurrence", "kind": "advances" },
+        { "from": "dependency.raise_friendships.native_day_settlement", "to": "dependency.raise_friendships.portfolio_recurrence", "kind": "updates" },
+        { "from": "dependency.raise_friendships.deadline_budget", "to": "dependency.raise_friendships.portfolio_recurrence", "kind": "constrains" },
+        { "from": "dependency.raise_friendships.portfolio_recurrence", "to": "dependency.raise_friendships.portfolio_deficits", "kind": "recomputes" },
+        { "from": "dependency.raise_friendships.portfolio_recurrence", "to": "dependency.raise_friendships.current_access_gate", "kind": "reconsiders" },
+        { "from": "dependency.raise_friendships.portfolio_recurrence", "to": "dependency.raise_friendships.native_day_settlement", "kind": "settles_at_terminal_sleep" },
+        { "from": "dependency.raise_friendships.portfolio_recurrence", "to": "dependency.raise_friendships.ten_native_villagers_at_1975", "kind": "terminates_at" }
+      ]
+    },
+    {
+      "direction_id": "raise_skill_levels",
+      "status": "in_progress",
+      "completion_node_id": "dependency.raise_skill_levels.native_scoring_level_25",
+      "source_ids": [
+        "native.utility",
+        "native.farmer",
+        "runtime.goal_index",
+        "runtime.rule_evidence"
+      ],
+      "blockers": [
+        "fresh-save deadline proof must budget exact per-skill XP deficits, acquisition prerequisites, travel, energy and competing 21-point obligations through five unmodified level-10 skills"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.raise_skill_levels.five_unmodified_skill_state",
+          "kind": "state_fact",
+          "required_field_paths": ["player.level", "player.skills_detail"],
+          "rule": {
+            "included_skill_ids": ["farming", "fishing", "foraging", "mining", "combat"],
+            "excluded_skill_ids": ["luck"],
+            "level_source": "player.skills_detail.skills[].unmodified_level",
+            "experience_source": "player.skills_detail.skills[].experience",
+            "temporary_buffs_count": false,
+            "profession_or_mastery_count": false,
+            "native_scoring_formula": "floor((farming+fishing+foraging+mining+combat+luck)/2)",
+            "vanilla_luck_level": 0
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.native_xp_threshold_ladder",
+          "kind": "state_fact",
+          "required_field_paths": ["player.skills_detail"],
+          "rule": {
+            "level_source": "Farmer.GetUnmodifiedSkillLevel",
+            "next_threshold_source": "Farmer.getBaseExperienceForLevel",
+            "per_skill_cap": 10,
+            "teacher_deficit": "sum exact nonnegative experience_to_next_level recurrences until each target unmodified level",
+            "unknown_or_modded_threshold": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.native_scoring_level_15",
+          "kind": "state_fact",
+          "required_field_paths": ["player.level", "player.skills_detail"],
+          "rule": {
+            "path": "player.level",
+            "operator": "greater_than_or_equal",
+            "value": 15,
+            "equivalent_five_skill_sum": 30,
+            "grandpa_points_at_terminal": 1
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.native_scoring_level_25",
+          "kind": "terminal_fact",
+          "required_field_paths": ["player.level", "player.skills_detail"],
+          "rule": {
+            "path": "player.level",
+            "operator": "greater_than_or_equal",
+            "value": 25,
+            "equivalent_five_skill_sum": 50,
+            "required_unmodified_levels": {
+              "farming": 10,
+              "fishing": 10,
+              "foraging": 10,
+              "mining": 10,
+              "combat": 10
+            },
+            "cumulative_grandpa_points_at_terminal": 2
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.acquire_farming_xp_from_animals",
+          "kind": "policy_option_transition",
+          "option_id": "farm.collect_animal_products",
+          "candidate_kinds": ["collect_animal_product"],
+          "required_field_paths": ["player.skills_detail", "farm.animals", "player.inventory", "player.energy"],
+          "binding": {
+            "skill_id": "farming",
+            "positive_evidence": "candidate skill_experience_* fields plus fresh native farming experience delta",
+            "prerequisites": "owned ready base animal and exact native tool or collection path",
+            "missing_or_nonpositive_evidence": "exclude_from_skill_teacher"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.maintain_crops_for_farming_xp",
+          "kind": "deterministic_transition",
+          "option_id": "farm.maintain_crops",
+          "candidate_kinds": ["harvest_crop_tile", "harvest_giant_crop_tile"],
+          "required_field_paths": ["player.skills_detail", "farm.crops", "player.energy", "time.time"],
+          "rule": {
+            "execution_owner": "mandatory_crop_maintenance_compiler_not_policy_label",
+            "positive_evidence": "candidate skill_experience_* fields plus fresh native farming experience delta",
+            "planting_and_watering_without_harvest": "no_immediate_farming_xp_label",
+            "missing_or_nonpositive_evidence": "exclude_from_skill_teacher"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.acquire_fishing_xp",
+          "kind": "policy_option_transition",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["catch_fish"],
+          "required_field_paths": ["player.skills_detail", "fishing.location_context", "fishing.fishable_tiles", "fishing.rod_contexts"],
+          "binding": {
+            "skill_id": "fishing",
+            "positive_evidence": "exact legal cast candidate and fresh native fishing experience delta",
+            "unknown_catch_rng": "branch_or_observe_without_future_identity_leakage"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.acquire_foraging_xp",
+          "kind": "policy_option_transition",
+          "option_id": "foraging.harvest_ginger",
+          "candidate_kinds": ["harvest_ginger"],
+          "required_field_paths": ["player.skills_detail", "current_location.terrain_features", "player.energy"],
+          "binding": {
+            "skill_id": "foraging",
+            "positive_evidence": "exact native ginger hoe branch and fresh foraging experience delta",
+            "alternative_foraging_options": "other permitted candidates may compete only when their own complete positive skill-experience evidence is present"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.acquire_mining_xp",
+          "kind": "policy_option_transition",
+          "option_id": "mining.reach_depth",
+          "candidate_kinds": ["mining_reach_depth_plan_envelope"],
+          "required_field_paths": ["player.skills_detail", "mining.current_mine", "mining.objects", "mining.tiles", "mining.player_resources"],
+          "binding": {
+            "skill_id": "mining",
+            "positive_evidence": "only rolling floor steps with complete positive mining-experience evidence may label this skill method",
+            "combat_side_effect": "fresh combat XP may be observed but is not a guaranteed combat-training label",
+            "fresh_snapshot_replan_after_each_step": true
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.read_exact_xp_book",
+          "kind": "policy_option_transition",
+          "option_id": "skills.read_books",
+          "candidate_kinds": ["read_inventory_book"],
+          "required_field_paths": ["player.skills_detail", "player.book_candidates", "player.inventory"],
+          "binding": {
+            "positive_evidence": "exact expected_skill_experience_deltas_json and fresh matching native deltas",
+            "random_or_unknown_book_effect": "not_a_teacher_label",
+            "mastery_experience": "excluded_from_base_skill_score"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.acquire_combat_xp",
+          "kind": "policy_option_transition",
+          "option_id": "mining.reach_depth",
+          "candidate_kinds": ["mining_combat_training_plan_envelope"],
+          "required_field_paths": ["player.skills_detail", "mining.current_mine", "mining.monsters", "mining.tiles", "mining.objects", "mining.player_resources"],
+          "binding": {
+            "skill_id": "combat",
+            "required_parameters": {
+              "skill_training_target_id": "combat",
+              "target_location_family": "ordinary_mines"
+            },
+            "target_selection": "nearest legal exact native monster defeat with complete positive combat-XP projection",
+            "no_monster_step": "reuse ordinary-mine descent clear and pickup progression then refresh snapshot without fabricating combat XP",
+            "reuse": "MiningFloorStepPlanner plus executor.combat_monster; no second combat planner or executor",
+            "teacher_receipt": "fresh native combat experience delta at least the selected monster ExperienceGained projection plus target defeat",
+            "fresh_snapshot_replan_after_each_step": true,
+            "other_dungeon_families": "excluded"
+          }
+        },
+        {
+          "id": "dependency.raise_skill_levels.skill_portfolio_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": ["player.level", "player.skills_detail", "time.total_days", "time.time"],
+          "rule": {
+            "state_variables": [
+              "five_unmodified_levels",
+              "five_exact_experience_values",
+              "per_skill_experience_to_next_level",
+              "currently_legal_positive_xp_candidates",
+              "candidate_time_energy_and_resource_cost",
+              "remaining_days_before_initial_year_3_evaluation"
+            ],
+            "teacher_choice": "minimize deadline risk and exact remaining XP cost while preserving higher-priority daily commitments",
+            "continue_while": {"path": "player.level", "operator": "less_than", "value": 25},
+            "recompute_after_every_native_receipt": true,
+            "admission_requirement": "all five skills have a guaranteed admitted acquisition route and a fresh-save deadline proof"
+          }
+        }
+      ],
+      "edges": [
+        {"from": "dependency.raise_skill_levels.five_unmodified_skill_state", "to": "dependency.raise_skill_levels.native_xp_threshold_ladder", "kind": "defines_deficits"},
+        {"from": "dependency.raise_skill_levels.native_xp_threshold_ladder", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "supplies_exact_deficits"},
+        {"from": "dependency.raise_skill_levels.acquire_farming_xp_from_animals", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_farming"},
+        {"from": "dependency.raise_skill_levels.maintain_crops_for_farming_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_farming"},
+        {"from": "dependency.raise_skill_levels.acquire_fishing_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_fishing"},
+        {"from": "dependency.raise_skill_levels.acquire_foraging_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_foraging"},
+        {"from": "dependency.raise_skill_levels.acquire_mining_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_mining"},
+        {"from": "dependency.raise_skill_levels.read_exact_xp_book", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_exact_skills"},
+        {"from": "dependency.raise_skill_levels.acquire_combat_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_combat"},
+        {"from": "dependency.raise_skill_levels.skill_portfolio_recurrence", "to": "dependency.raise_skill_levels.native_scoring_level_15", "kind": "crosses_milestone"},
+        {"from": "dependency.raise_skill_levels.native_scoring_level_15", "to": "dependency.raise_skill_levels.native_scoring_level_25", "kind": "precedes"},
+        {"from": "dependency.raise_skill_levels.skill_portfolio_recurrence", "to": "dependency.raise_skill_levels.native_scoring_level_25", "kind": "terminates_at"}
+      ]
+    },
+    {
+      "direction_id": "earn_pet_love",
+      "status": "complete",
+      "completion_node_id": "dependency.earn_pet_love.pet_love_mail_received",
+      "source_ids": [
+        "native.pet",
+        "native.event",
+        "native.preconditions",
+        "native.game1",
+        "runtime.farm_events",
+        "runtime.rule_evidence",
+        "runtime.goal_index"
+      ],
+      "blockers": [],
+      "nodes": [
+        {
+          "id": "dependency.earn_pet_love.pet_love_mail_received",
+          "kind": "terminal_fact",
+          "required_field_paths": ["quests.mail_received"],
+          "rule": {
+            "operator": "contains",
+            "path": "quests.mail_received",
+            "value": "petLoveMessage"
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.initial_pet_present",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "farm.initial_pet_adoption.has_initial_pet",
+            "farm.pets"
+          ],
+          "rule": {
+            "operator": "equals",
+            "path": "farm.initial_pet_adoption.has_initial_pet",
+            "value": true
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.initial_adoption_event_gate",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "farm.initial_pet_adoption",
+            "player.total_money_earned",
+            "time.time",
+            "time.total_days",
+            "time.weather"
+          ],
+          "rule": {
+            "operator": "all",
+            "conditions": [
+              { "path": "farm.initial_pet_adoption.projection_status", "operator": "equals", "value": "complete_locked_base_1.6.15" },
+              { "path": "farm.initial_pet_adoption.event_seen", "operator": "equals", "value": false },
+              { "path": "farm.initial_pet_adoption.is_master_game", "operator": "equals", "value": true },
+              { "path": "farm.initial_pet_adoption.missing_matching_pet_precondition_met", "operator": "equals", "value": true },
+              { "path": "player.total_money_earned", "operator": "greater_than_or_equal", "value": 1000 },
+              { "path": "time.time", "operator": "between_inclusive", "value": [600, 930] },
+              { "path": "farm.initial_pet_adoption.current_day_of_week", "operator": "in", "value": ["Wednesday", "Friday"] },
+              { "path": "farm.initial_pet_adoption.farm_is_raining", "operator": "equals", "value": false }
+            ],
+            "explicitly_absent_conditions": ["season", "spring_day_20_money_bypass"]
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.enter_farm_event_window",
+          "kind": "deterministic_transition",
+          "required_field_paths": [
+            "farm.initial_pet_adoption.event_preconditions_met_now",
+            "player.location_id",
+            "locations.collision_grid",
+            "locations.route_action_branch_coverage"
+          ],
+          "rule": {
+            "trigger": "enter_location",
+            "target_location_id_path": "farm.initial_pet_adoption.trigger_location_id",
+            "preserve_time_window": [600, 930],
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.progress_initial_adoption_event",
+          "kind": "policy_option_transition",
+          "option_id": "story.advance_event",
+          "candidate_kinds": ["advance_story_event_automatic"],
+          "required_field_paths": ["player.story_event"],
+          "binding": {
+            "all": [
+              { "parameter": "story_event_id", "operator": "in", "value": ["1590166", "897405"] },
+              { "parameter": "story_event_boundary_kind", "operator": "equals", "value": "automatic_progress" }
+            ],
+            "stop_at": "fresh_dialogue_decision"
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.accept_and_name_initial_pet",
+          "kind": "policy_option_transition",
+          "option_id": "story.advance_event",
+          "candidate_kinds": ["advance_story_event_choice"],
+          "required_field_paths": ["player.story_event", "menus.active_menu"],
+          "binding": {
+            "all": [
+              { "parameter": "story_event_id", "operator": "in", "value": ["1590166", "897405"] },
+              { "parameter": "story_event_question_key", "operator": "equals", "value": "pet" },
+              { "parameter": "story_event_response_index", "operator": "equals", "value": 0 }
+            ],
+            "naming_policy": "submit_nonempty_native_default_through_NamingMenu",
+            "expected_effect": "farm.initial_pet_adoption.has_initial_pet=true"
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.daily_pet_interaction",
+          "kind": "policy_option_transition",
+          "option_id": "farm.care_for_pets",
+          "candidate_kinds": ["pet_daily_interaction"],
+          "required_field_paths": ["farm.pets", "quests.mail_received"],
+          "binding": {
+            "all": [
+              { "parameter": "pet_love_progress_delta", "operator": "greater_than", "value": 0 },
+              { "parameter": "target_runtime_identity", "operator": "guid", "value": true }
+            ],
+            "friendship_update": {
+              "operator": "min",
+              "arguments": [1000, { "operator": "add", "arguments": ["friendship_before", 12] }]
+            },
+            "frequency": "once_per_pet_per_player_total_day"
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.fill_assigned_pet_bowl",
+          "kind": "policy_option_transition",
+          "option_id": "farm.care_for_pets",
+          "candidate_kinds": ["fill_pet_bowl"],
+          "required_field_paths": ["farm.pet_bowls", "player.inventory", "player.energy"],
+          "binding": {
+            "all": [
+              { "parameter": "pet_love_progress_delta", "operator": "equals", "value": 6 },
+              { "parameter": "delayed_settlement", "operator": "equals", "value": "Pet.dayUpdate consumes watered=true and applies min(1000,friendship+6)" }
+            ],
+            "immediate_effect": "assigned_bowl.watered=true",
+            "friendship_effect_timing": "next_Pet.dayUpdate"
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.native_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": [
+            "recovery_sleep_immediately",
+            "recovery_sleep_before_collapse",
+            "recovery_resume_sleep_prompt"
+          ],
+          "required_field_paths": [
+            "farm.pets",
+            "farm.pet_bowls",
+            "time.total_days",
+            "time.weather"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_day_compiler_not_policy_label",
+            "ordered_updates": [
+              "GameLocation.DayUpdate",
+              "Pet.dayUpdate",
+              "outdoor_rain_sets_current_day_bowl_watered"
+            ],
+            "pet_day_update": {
+              "assigned_bowl_watered": { "operator": "min", "arguments": [1000, { "operator": "add", "arguments": ["friendship_after_daily_actions", 6] }] },
+              "assigned_bowl_dry": "friendship_after_daily_actions",
+              "no_assigned_bowl": { "operator": "subtract", "arguments": ["friendship_after_daily_actions", 10] }
+            },
+            "rain_effect": "sets_bowl_watered_after_this_mornings_pet_settlement_for_a_later_day_update",
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.earn_pet_love.daily_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": ["farm.pets", "farm.pet_bowls", "quests.mail_received"],
+          "rule": {
+            "state_variables": ["friendship", "petted_today", "assigned_bowl_present", "assigned_bowl_watered", "petLoveMessage_received"],
+            "day_order": ["settle_previous_bowl", "apply_current_rain_fill", "pet_once", "ensure_current_bowl_watered", "terminal_sleep"],
+            "continue_while": { "path": "quests.mail_received", "operator": "not_contains", "value": "petLoveMessage" },
+            "upper_bound_from_zero_with_daily_pet_and_assigned_bowl": {
+              "pet_action_days": 56,
+              "derivation": "minimum_N_satisfying_12*N+6*(N-1)>=1000"
+            },
+            "mail_settlement": "friendship_visible_change_to_at_least_1000_calls_GrantLoveMailIfNecessary"
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.earn_pet_love.initial_adoption_event_gate", "to": "dependency.earn_pet_love.enter_farm_event_window", "kind": "enables" },
+        { "from": "dependency.earn_pet_love.enter_farm_event_window", "to": "dependency.earn_pet_love.progress_initial_adoption_event", "kind": "triggers" },
+        { "from": "dependency.earn_pet_love.progress_initial_adoption_event", "to": "dependency.earn_pet_love.accept_and_name_initial_pet", "kind": "reaches_decision" },
+        { "from": "dependency.earn_pet_love.accept_and_name_initial_pet", "to": "dependency.earn_pet_love.initial_pet_present", "kind": "produces" },
+        { "from": "dependency.earn_pet_love.initial_pet_present", "to": "dependency.earn_pet_love.daily_pet_interaction", "kind": "enables" },
+        { "from": "dependency.earn_pet_love.initial_pet_present", "to": "dependency.earn_pet_love.fill_assigned_pet_bowl", "kind": "enables" },
+        { "from": "dependency.earn_pet_love.daily_pet_interaction", "to": "dependency.earn_pet_love.daily_recurrence", "kind": "advances" },
+        { "from": "dependency.earn_pet_love.fill_assigned_pet_bowl", "to": "dependency.earn_pet_love.native_day_settlement", "kind": "delays_effect_until" },
+        { "from": "dependency.earn_pet_love.native_day_settlement", "to": "dependency.earn_pet_love.daily_recurrence", "kind": "advances" },
+        { "from": "dependency.earn_pet_love.daily_recurrence", "to": "dependency.earn_pet_love.pet_love_mail_received", "kind": "terminates_at" }
+      ]
+    }
+  ]
+}

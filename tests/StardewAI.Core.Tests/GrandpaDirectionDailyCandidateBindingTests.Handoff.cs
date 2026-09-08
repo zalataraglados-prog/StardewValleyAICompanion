@@ -73,7 +73,11 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             Parameters = new[]
             {
                 Parameter("npc_name", "Abigail"),
-                Parameter("qualified_item_id", "(O)66")
+                Parameter("qualified_item_id", "(O)66"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "80"),
+                Parameter("expected_friendship_points_after", "80")
             }
         };
 
@@ -184,7 +188,12 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             Available = true,
             AllowedNow = true,
             AllowedToday = true,
-            TimelineStatus = "ready_now"
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("outcome_distribution_complete", "true"),
+                Parameter("possible_qualified_item_ids_json", "[\"(O)136\"]")
+            }
         };
 
         var binding = new GrandpaDirectionDailyCandidateBinding();
@@ -203,7 +212,9 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             DirectionId = "complete_master_angler",
             RankedCandidates = new[] { fishCandidate }
         }, snapshot);
-        Assert.Equal("ready", anglerResult.BindingStatus);
+        Assert.True(
+            anglerResult.BindingStatus == "ready",
+            string.Join(";", anglerResult.BlockReasons));
     }
 
     [Fact]

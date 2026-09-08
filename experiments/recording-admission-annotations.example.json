@@ -1,0 +1,38 @@
+{
+  "schema_version": "recording_admission_annotations.v1",
+  "goal_id": "grandpa.maximum_21",
+  "target_score": 21,
+  "save_id": "replace-after-review",
+  "year": 1,
+  "season": "spring",
+  "day": 1,
+  "start_time": 600,
+  "end_time": 2200,
+  "active_criterion_ids": [],
+  "state_features": {
+    "numeric": [],
+    "categorical": [],
+    "boolean": []
+  },
+  "segments": [
+    {
+      "sequence": 1,
+      "bundle_id": "farm-morning",
+      "method_id": "method.day.maintain_production",
+      "option_id": "farm.maintain_crops",
+      "candidate_kind": "water_crop",
+      "candidate_id": "replace-with-observed-candidate-id",
+      "location_id": "Farm",
+      "start_snapshot": "snapshots/replace-start.json",
+      "end_snapshot": "snapshots/replace-end.json",
+      "verified": false,
+      "semantic_confidence": 0,
+      "observed_effects": {}
+    }
+  ],
+  "status": "pending_review",
+  "day_boundary_verified": false,
+  "goal_progress_before": null,
+  "goal_progress_after": null,
+  "terminal_goal_complete": false
+}

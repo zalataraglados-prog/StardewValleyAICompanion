@@ -36,6 +36,7 @@
     <ProjectReference Include="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
     <ProjectReference Include="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
+    <ProjectReference Include="..\..\tools\StardewAI.FriendshipTeacherRollout\StardewAI.FriendshipTeacherRollout.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GameFreeGovernance)' == 'true'">
@@ -48,6 +49,7 @@
     <ProjectReference Remove="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
     <ProjectReference Remove="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
     <ProjectReference Remove="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
+    <ProjectReference Remove="..\..\tools\StardewAI.FriendshipTeacherRollout\StardewAI.FriendshipTeacherRollout.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,6 +2,12 @@
 
 This slice does not start Stardew Valley. It creates the safety and readiness boundary required before real transparent training can begin.
 
+Process-launch readiness is not policy-data readiness. The authoritative policy gate is
+[`TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`](TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md).
+Even when every launcher check below passes, formal training remains blocked while the
+trainer infers a positive label from `candidate.Selected` or a row lacks explicit Teacher,
+native-outcome, and Student-observation provenance.
+
 ## Current Stage
 
 - `POST /api/v1/training/session/prepare` writes a `training_run_manifest.v1`.
@@ -28,6 +34,8 @@ This stage is complete when:
 - The ready probe becomes ready after the bridge posts a valid transparent snapshot.
 - Manifest-bound ready probe requires the snapshot run id to match the manifest run id.
 - Tests cover all conditions above.
+- Policy training separately proves typed supervision provenance and rejects selected-only
+  behavior rows; launcher success cannot waive this gate.
 
 ## Next Stage
 

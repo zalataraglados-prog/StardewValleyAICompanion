@@ -32,7 +32,14 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<EventCandidate>();
             }
 
-            var targetDepth = ReadIntParameter(parameters, "target_depth");
+            var skillTrainingTarget =
+                ReadParameter(parameters, "skill_training_target_id");
+            var trainCombat = string.Equals(
+                skillTrainingTarget,
+                "combat",
+                StringComparison.Ordinal);
+            var targetDepth = ReadIntParameter(parameters, "target_depth") ??
+                (trainCombat ? 120 : null);
             var targetFamily = ReadParameter(parameters, "target_location_family");
             var latestExitTime = ReadIntParameter(parameters, "latest_exit_time");
             var minReserveHealth = ReadIntParameter(parameters, "minimum_reserve_health");
@@ -55,6 +62,17 @@ namespace StardewAI.Core.OptionRegistry
             var currentFamily = ReadString(currentMine.Value, "mine_kind");
             var deepestMineLevel = ReadIntOptional(resources.Value, "deepest_mine_level");
             var blocks = ValidateTarget(currentDepth, currentFamily, targetDepth, targetFamily).ToList();
+            var targetSkillLevel = ReadIntParameter(
+                    parameters,
+                    "target_skill_level") ??
+                10;
+            var combatSkill = trainCombat
+                ? ReadSkill(snapshot, "combat")
+                : null;
+            blocks.AddRange(ValidateSkillTraining(
+                snapshot,
+                parameters,
+                currentFamily));
             if (!MiningResourcePreservationPolicies.IsSupported(
                     resourcePreservationPolicy))
             {
@@ -65,13 +83,29 @@ namespace StardewAI.Core.OptionRegistry
             var elevatorStart = ElevatorStartFor(currentDepth, targetDepth, currentFamily, deepestMineLevel);
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
-                Kind = MiningObjectiveKinds.ReachDepth,
+                Kind = trainCombat
+                    ? MiningObjectiveKinds.TrainCombat
+                    : MiningObjectiveKinds.ReachDepth,
                 MinimumReserveHealth = minReserveHealth ?? 0,
                 MinimumReserveEnergy = minReserveEnergy,
                 LatestExitTime = latestExitTime,
                 TargetDepth = targetDepth,
                 ResourcePreservationPolicy = resourcePreservationPolicy
             });
+            if (trainCombat &&
+                (floorStep.StepKind is MiningFloorStepKinds.CombatMonster or
+                    MiningFloorStepKinds.ShootMonster) &&
+                (floorStep.ExpectedSkillExperience is null or <= 0 ||
+                    !string.Equals(
+                        floorStep.SkillExperienceSkillId,
+                        "combat",
+                        StringComparison.Ordinal) ||
+                    string.IsNullOrWhiteSpace(
+                        floorStep.SkillExperienceCondition)))
+            {
+                blocks.Add(
+                    "combat_training_target_experience_projection_incomplete");
+            }
             var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
             if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
             {
@@ -91,11 +125,23 @@ namespace StardewAI.Core.OptionRegistry
             {
                 new EventCandidate
                 {
-                    CandidateId = "mining:reach_depth:" + (targetDepth?.ToString() ?? "missing"),
-                    Kind = "mining_reach_depth_plan_envelope",
+                    CandidateId = trainCombat
+                        ? "mining:train_combat:" +
+                            currentDepth + ":" + targetSkillLevel
+                        : "mining:reach_depth:" +
+                            (targetDepth?.ToString() ?? "missing"),
+                    Kind = trainCombat
+                        ? "mining_combat_training_plan_envelope"
+                        : "mining_reach_depth_plan_envelope",
                     Available = available,
                     LocationId = ReadString(currentMine.Value, "location_id"),
-                    ExpectedEffect = "current_depth=" + currentDepth + ";target_depth=" + (targetDepth?.ToString() ?? "missing") + ";rolling_floor_step=" + floorStep.StepKind + ";execution_option_id=" + executionOptionId,
+                    ExpectedEffect = "current_depth=" + currentDepth +
+                        ";target_depth=" +
+                        (targetDepth?.ToString() ?? "missing") +
+                        ";skill_training_target_id=" +
+                        (trainCombat ? "combat" : "none") +
+                        ";rolling_floor_step=" + floorStep.StepKind +
+                        ";execution_option_id=" + executionOptionId,
                     EstimatedTicks = -1,
                     EnergyCost = -1,
                     AvailabilityClass = available ? "available_rolling_horizon_floor_step" : "blocked_current_floor_step",
@@ -106,6 +152,25 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("elevator_start_depth", elevatorStart?.ToString() ?? string.Empty),
                         Parameter("target_depth", targetDepth?.ToString() ?? string.Empty),
                         Parameter("target_location_family", string.IsNullOrWhiteSpace(targetFamily) ? currentFamily : targetFamily),
+                        Parameter(
+                            "skill_training_target_id",
+                            trainCombat ? "combat" : string.Empty),
+                        Parameter(
+                            "target_skill_level",
+                            trainCombat
+                                ? targetSkillLevel.ToString()
+                                : string.Empty),
+                        Parameter(
+                            "current_skill_level",
+                            combatSkill?.Level.ToString() ?? string.Empty),
+                        Parameter(
+                            "current_skill_experience",
+                            combatSkill?.Experience.ToString() ??
+                                string.Empty),
+                        Parameter(
+                            "experience_to_next_level",
+                            combatSkill?.ExperienceToNextLevel
+                                ?.ToString() ?? string.Empty),
                         Parameter("latest_exit_time", latestExitTime?.ToString() ?? string.Empty),
                         Parameter("minimum_reserve_health", minReserveHealth?.ToString() ?? string.Empty),
                         Parameter("minimum_reserve_energy", minReserveEnergy?.ToString() ?? string.Empty),
@@ -118,6 +183,99 @@ namespace StardewAI.Core.OptionRegistry
                     }.Concat(executionParameters).ToArray()
                 }
             };
+        }
+
+        public static string[] ValidateSkillTraining(
+            SnapshotEnvelope snapshot,
+            SmallModelActionParameter[] parameters,
+            string currentFamily)
+        {
+            var skillTrainingTarget =
+                ReadParameter(parameters, "skill_training_target_id");
+            if (string.IsNullOrWhiteSpace(skillTrainingTarget))
+            {
+                return Array.Empty<string>();
+            }
+            if (!string.Equals(
+                    skillTrainingTarget,
+                    "combat",
+                    StringComparison.Ordinal))
+            {
+                return new[]
+                {
+                    "unsupported_skill_training_target:" +
+                    skillTrainingTarget
+                };
+            }
+
+            var reasons = new List<string>();
+            if (!string.Equals(
+                    currentFamily,
+                    "ordinary_mines",
+                    StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    "combat_training_requires_ordinary_mines");
+            }
+
+            var combatSkill = ReadSkill(snapshot, "combat");
+            var targetSkillLevel = ReadIntParameter(
+                    parameters,
+                    "target_skill_level") ??
+                10;
+            if (combatSkill is null)
+            {
+                reasons.Add(
+                    "player_combat_skill_detail_unavailable");
+            }
+            else if (targetSkillLevel is < 1 or > 10)
+            {
+                reasons.Add(
+                    "combat_training_target_level_out_of_range");
+            }
+            else if (combatSkill.Value.Level >= targetSkillLevel)
+            {
+                reasons.Add(
+                    "combat_training_target_level_already_reached");
+            }
+
+            return reasons.ToArray();
+        }
+
+        private static (
+            int Level,
+            int Experience,
+            int? ExperienceToNextLevel)? ReadSkill(
+                SnapshotEnvelope snapshot,
+                string skillId)
+        {
+            var details = ReadStateFieldValue(
+                snapshot,
+                "player",
+                "skills_detail");
+            if (!details.HasValue ||
+                details.Value.ValueKind != JsonValueKind.Object ||
+                !details.Value.TryGetProperty("skills", out var skills) ||
+                skills.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var matches = skills.EnumerateArray()
+                .Where(skill => string.Equals(
+                    ReadString(skill, "skill_id"),
+                    skillId,
+                    StringComparison.Ordinal))
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                return null;
+            }
+
+            return (
+                ReadInt(matches[0], "unmodified_level"),
+                ReadInt(matches[0], "experience"),
+                ReadIntOptional(matches[0], "experience_to_next_level"));
         }
 
         public static string[] MissingMiningGroups(SnapshotEnvelope snapshot)

@@ -14,7 +14,7 @@ public sealed partial class SocialTransparentPlanningTests
     [Fact]
     public void RemoteNpcWithoutTransparentRouteIsBlockedForTalk()
     {
-        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"friendship_row_exists\":true,\"friendship_points\":250,\"talked_to_today\":false,\"expected_talk_friendship_delta\":20,\"expected_talk_friendship_delta_complete\":true,\"expected_talk_friendship_points_after\":270,\"is_birthday\":false,\"current_route_window_complete\":true}]";
         var snapshot = CompleteSocialSnapshot(socialInteractionValue: remoteSocial);
 
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "social.talk_npc" });
@@ -30,7 +30,7 @@ public sealed partial class SocialTransparentPlanningTests
     [Fact]
     public void RemoteNpcWithoutTransparentRouteIsBlockedForGift()
     {
-        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"friendship_row_exists\":true,\"friendship_points\":250,\"talked_to_today\":false,\"expected_talk_friendship_delta\":20,\"expected_talk_friendship_delta_complete\":true,\"expected_talk_friendship_points_after\":270,\"is_birthday\":false,\"current_route_window_complete\":true}]";
         var snapshot = CompleteSocialSnapshot(socialInteractionValue: remoteSocial);
 
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "social.gift_npc" });
@@ -46,7 +46,7 @@ public sealed partial class SocialTransparentPlanningTests
     [Fact]
     public void RemoteTalkCandidateCompilesOneTransparentConnectorThenReplans()
     {
-        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"friendship_row_exists\":true,\"friendship_points\":250,\"talked_to_today\":false,\"expected_talk_friendship_delta\":20,\"expected_talk_friendship_delta_complete\":true,\"expected_talk_friendship_points_after\":270,\"is_birthday\":false,\"current_route_window_complete\":true}]";
         var snapshot = CompleteSocialSnapshot(
             socialInteractionValue: remoteSocial,
             collisionValue: "{\"location_id\":\"Town\",\"width\":20,\"height\":20,\"notable_tiles\":[]}",
@@ -63,11 +63,17 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Equal("Town", candidate.LocationId);
         Assert.Equal(12, candidate.TileX);
         Assert.Equal(10, candidate.TileY);
+        Assert.True(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.option_id" && parameter.Value == "social.talk_npc");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.target_location" && parameter.Value == "SeedShop");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "social_route.remaining_connector_count" && parameter.Value == "2");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "social_route.future_schedule_projection" && parameter.Value == "not_used");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "npc_name" && parameter.Value == "Abigail");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "friendship_points_before" && parameter.Value == "250");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_friendship_delta" && parameter.Value == "20");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_friendship_points_after" && parameter.Value == "270");
         Assert.DoesNotContain(candidate.Parameters, parameter => parameter.Name == "stand_tile_x" && !string.IsNullOrWhiteSpace(parameter.Value));
 
         var plan = new StardewAI.Core.Training.DailyPlanCompiler().Compile(
@@ -306,7 +312,7 @@ public sealed partial class SocialTransparentPlanningTests
     [Fact]
     public void RemoteTalkPrefersExecutableFirstConnectorOverShorterUnavailableRoute()
     {
-        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"friendship_row_exists\":true,\"friendship_points\":250,\"talked_to_today\":false,\"expected_talk_friendship_delta\":20,\"expected_talk_friendship_delta_complete\":true,\"expected_talk_friendship_points_after\":270,\"is_birthday\":false,\"current_route_window_complete\":true}]";
         var snapshot = CompleteSocialSnapshot(
             socialInteractionValue: remoteSocial,
             collisionValue: "{\"location_id\":\"Town\",\"width\":20,\"height\":20,\"notable_tiles\":[]}",
@@ -342,6 +348,8 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.option_id" && parameter.Value == "social.gift_npc");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.slot_index" && parameter.Value == "0");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.qualified_item_id" && parameter.Value == "(O)66");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "friendship_points_before" && parameter.Value == "250");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_friendship_delta" && parameter.Value == "80");
     }
 
     [Fact]
@@ -429,7 +437,7 @@ public sealed partial class SocialTransparentPlanningTests
         bool playerEngaged = false,
         int farmhouseUpgradeLevel = 0)
     {
-        socialInteractionValue ??= "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"Town\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        socialInteractionValue ??= "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"Town\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"friendship_row_exists\":true,\"friendship_points\":250,\"talked_to_today\":false,\"expected_talk_friendship_delta\":20,\"expected_talk_friendship_delta_complete\":true,\"expected_talk_friendship_points_after\":270,\"is_birthday\":false,\"current_route_window_complete\":true}]";
         friendshipValue ??= "[{\"npc_name\":\"Abigail\",\"points\":250,\"heart_level\":1,\"gifts_this_week\":0,\"gifts_today\":0,\"talked_to_today\":false,\"is_divorced\":false}]";
         inventoryValue ??= "[{\"slot_index\":0,\"item_id\":\"66\",\"qualified_item_id\":\"(O)66\",\"display_name\":\"Amethyst\",\"stack\":1,\"quality\":0,\"maximum_stack_size\":999,\"is_object\":true,\"object_quest_item\":false,\"object_big_craftable\":false,\"is_furniture\":false,\"is_wallpaper\":false,\"protected_from_auto_sell\":false,\"can_be_given_as_gift\":true,\"base_tag_not_giftable\":false,\"context_tags\":[],\"is_empty\":false}]";
         giftTasteField ??= "{\"value\":[{\"npc_name\":\"Abigail\",\"slot_index\":0,\"qualified_item_id\":\"(O)66\",\"quality\":0,\"taste\":\"love\",\"expected_friendship_delta\":\"80\",\"expected_friendship_delta_complete\":true,\"complete\":true}],\"status\":\"available\",\"source\":{\"kind\":\"test\",\"path\":\"test\"},\"adapter\":\"test\",\"read_at_tick\":1,\"confidence\":1}";

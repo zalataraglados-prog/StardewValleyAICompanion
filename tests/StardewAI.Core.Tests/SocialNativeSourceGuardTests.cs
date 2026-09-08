@@ -55,6 +55,19 @@ public sealed class SocialNativeSourceGuardTests
     }
 
     [Fact]
+    public void SocialExecutorFailsClosedOnMissingOrMismatchedFriendshipDelta()
+    {
+        var source = RuntimeHarnessSources.All;
+        var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
+
+        Assert.Contains("SocialExpectedFriendshipDelta", socialSource, StringComparison.Ordinal);
+        Assert.Contains("social_expected_friendship_delta_required_or_malformed", socialSource, StringComparison.Ordinal);
+        Assert.Contains("afterPoints - beforePoints == expectedFriendshipDelta.Value", socialSource, StringComparison.Ordinal);
+        Assert.Contains("social_friendship_delta_mismatch", socialSource, StringComparison.Ordinal);
+        Assert.Contains("social_talk_already_completed_today", socialSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SocialExecutorRecordsFacingAfterCheckAction()
     {
         var source = RuntimeHarnessSources.All;

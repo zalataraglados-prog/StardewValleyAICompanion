@@ -595,7 +595,8 @@ app.MapPost("/api/v1/training/structured/train", (
         return Results.Ok(trainer.Train(
             request.DatasetManifestPath,
             request.CheckpointPath,
-            request.Hyperparameters));
+            request.Hyperparameters,
+            request.InitializationCheckpointPath));
     }
     catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException)
     {
@@ -1143,6 +1144,22 @@ public static class SnapshotValidator
         "modded_state"
     };
 
+    private static readonly string[] SocialRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "current_location",
+        "locations",
+        "npcs",
+        "quests",
+        "world_progress"
+    };
+
     public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
         Stream rawPayload,
         CancellationToken cancellationToken = default,
@@ -1272,6 +1289,15 @@ public static class SnapshotValidator
         if (string.Equals(profile, "daily", StringComparison.OrdinalIgnoreCase))
         {
             return DailyRequiredDomains;
+        }
+
+        if (string.Equals(profile, "social", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                profile,
+                "social_future",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return SocialRequiredDomains;
         }
 
         errors.Add("unsupported snapshot profile: " + profile);

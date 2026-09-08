@@ -74,6 +74,21 @@ function Get-ReachableAdjacentDistance {
     return $null
 }
 
+function Get-ReachableCombatCandidate {
+    param($Snapshot)
+    $playerX = [int]$Snapshot.state.mining.tiles.value.player_tile.tile_x
+    $playerY = [int]$Snapshot.state.mining.tiles.value.player_tile.tile_y
+    $collision = $Snapshot.state.mining.tiles.value.collision_context
+    $candidates = @($Snapshot.state.mining.monsters.value | Where-Object {
+        $_.melee_damage_semantics.can_defeat_with_available_melee_weapon -ne $false -and
+        @($_.melee_attack_projections | Where-Object { $_.duration_status -eq "exact_active_melee_phase_excluding_movement" }).Count -gt 0
+    } | ForEach-Object {
+        $distance = Get-ReachableAdjacentDistance -Collision $collision -StartX $playerX -StartY $playerY -TargetX ([int]$_.tile_x) -TargetY ([int]$_.tile_y)
+        if ($null -ne $distance) { [pscustomobject]@{ Monster = $_; Distance = [int]$distance } }
+    })
+    return @($candidates | Sort-Object Distance, @{ Expression = { [int]$_.Monster.health } }, @{ Expression = { [string]$_.Monster.runtime_identity } }) | Select-Object -First 1
+}
+
 function Wait-JsonHealth {
     param([string] $Url, [int] $TimeoutSeconds)
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -169,7 +184,7 @@ function Assert-MiningSnapshot {
         throw "Mining snapshot has $breakableStoneCount breakable stones, expected at least $RequiredBreakableStoneCount."
     }
     foreach ($monster in @($mining.monsters.value)) {
-        foreach ($property in @("runtime_identity", "runtime_type", "health", "resilience", "miss_chance", "is_invincible", "invincible_countdown_ms", "is_glider", "ignore_damage_line_of_sight")) {
+        foreach ($property in @("runtime_identity", "runtime_type", "health", "resilience", "miss_chance", "is_invincible", "invincible_countdown_ms", "is_glider", "ignore_damage_line_of_sight", "combat_experience_on_defeat", "combat_experience_condition")) {
             if ($null -eq $monster.$property) { throw "Mining monster row omitted combat field '$property'." }
         }
     }
@@ -524,20 +539,40 @@ try {
     $combatResult = $null
     $combatTarget = $null
     $combatTargetRemoved = $null
+    $combatExpectedExperience = $null
+    $combatObservedExperienceDelta = $null
     if ($CombatOneMonster) {
-        $playerX = [int]$snapshot.state.mining.tiles.value.player_tile.tile_x
-        $playerY = [int]$snapshot.state.mining.tiles.value.player_tile.tile_y
-        $collision = $snapshot.state.mining.tiles.value.collision_context
-        $combatCandidates = @($snapshot.state.mining.monsters.value | Where-Object {
-            $_.melee_damage_semantics.can_defeat_with_available_melee_weapon -ne $false -and
-            @($_.melee_attack_projections | Where-Object { $_.duration_status -eq "exact_active_melee_phase_excluding_movement" }).Count -gt 0
-        } | ForEach-Object {
-            $distance = Get-ReachableAdjacentDistance -Collision $collision -StartX $playerX -StartY $playerY -TargetX ([int]$_.tile_x) -TargetY ([int]$_.tile_y)
-            if ($null -ne $distance) { [pscustomobject]@{ Monster = $_; Distance = [int]$distance } }
-        })
-        $combatCandidate = @($combatCandidates | Sort-Object Distance, @{ Expression = { [int]$_.Monster.health } }, @{ Expression = { [string]$_.Monster.runtime_identity } }) | Select-Object -First 1
+        $combatCandidate = Get-ReachableCombatCandidate -Snapshot $snapshot
+        if ($null -eq $combatCandidate) {
+            $fixtureRequest = [ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "runtime-mining-snapshot-smoke"
+                queue_item_id = "runtime-mining-snapshot-smoke.setup-melee-combat"
+                before_state_hash = $snapshot.state_hash
+                option_id = "debug.setup_mining_combat_fixture"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $savesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at = [DateTimeOffset]::UtcNow.ToString("O")
+                target_name = "melee"
+            }
+            $fixtureResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $fixtureRequest -TimeoutSeconds 60
+            Write-JsonFile (Join-Path $runDirectory "setup-melee-combat-result.json") $fixtureResult
+            if ($fixtureResult.status -ne "applied" -or $fixtureResult.primitive_verification_status -ne "verified") {
+                throw "Melee combat fixture setup failed: status=$($fixtureResult.status); reasons=$(@($fixtureResult.block_reasons) -join ',')"
+            }
+            $snapshot = Wait-MiningSnapshot -Url $miningSnapshotUrl -ExpectedMineLevel $MineLevel -TimeoutSeconds 30
+            Assert-MiningSnapshot -Snapshot $snapshot -ExpectedMineLevel $MineLevel -RequiredBreakableStoneCount 0
+            $combatCandidate = Get-ReachableCombatCandidate -Snapshot $snapshot
+        }
         $combatTarget = if ($null -ne $combatCandidate) { $combatCandidate.Monster } else { $null }
         if ($null -eq $combatTarget) { throw "No collision-reachable monster was available for the native combat smoke." }
+        $combatExpectedExperience = [int]$combatTarget.combat_experience_on_defeat
+        if ($combatExpectedExperience -le 0 -or [string]::IsNullOrWhiteSpace([string]$combatTarget.combat_experience_condition)) {
+            throw "Selected combat target omitted a positive exact native combat experience projection."
+        }
         if (@($snapshot.state.mining.player_resources.value.weapon_slots | Where-Object { -not $_.is_scythe }).Count -eq 0) {
             throw "No non-scythe melee weapon was available for the native combat smoke."
         }
@@ -567,6 +602,8 @@ try {
             max_movement_tiles = 512
             combat_weapon_slot_index = [int]$combatProjection.slot_index
             combat_intent = "target_defeat"
+            expected_skill_id = "combat"
+            expected_skill_experience_delta = $combatExpectedExperience
             required_weapon_enchantment_runtime_type = [string]$combatTarget.melee_damage_semantics.required_weapon_enchantment_runtime_type
         }
         # The executor's hard combat ceiling is 120 seconds; keep transport timeout later so its typed failure is retained.
@@ -580,6 +617,24 @@ try {
         }
         if ([int]$combatResult.combat_attack_count -le 0 -or [int]$combatResult.combat_hit_count -le 0) {
             throw "Native combat lifecycle did not record positive attack and hit counts."
+        }
+        $combatExperienceReason = [regex]::Match(
+            (@($combatResult.primitive_verification_reasons) -join ";"),
+            "(?:^|;)native_combat_experience_delta=(\d+)(?:;|$)")
+        if (-not $combatExperienceReason.Success) {
+            throw "Native combat lifecycle omitted its typed combat experience receipt."
+        }
+        $combatExperienceFact = @($combatResult.changed_facts | Where-Object {
+            [string]$_.path -eq "player.skills.combat.experience"
+        }) | Select-Object -First 1
+        if ($null -eq $combatExperienceFact) {
+            throw "Native combat lifecycle omitted the combat experience changed fact."
+        }
+        $combatObservedExperienceDelta =
+            [int]$combatExperienceFact.after - [int]$combatExperienceFact.before
+        if ($combatObservedExperienceDelta -lt $combatExpectedExperience -or
+            $combatObservedExperienceDelta -ne [int]$combatExperienceReason.Groups[1].Value) {
+            throw "Native combat experience receipt mismatched: expected_minimum=$combatExpectedExperience; fact_delta=$combatObservedExperienceDelta; reason_delta=$($combatExperienceReason.Groups[1].Value)."
         }
         $combatHealth = @($combatResult.combat_target_health_sequence)
         if ($combatHealth.Count -lt 2 -or [int]$combatHealth[-1] -gt 0) {
@@ -653,6 +708,8 @@ try {
         combat_projected_weapon_slot = if ($null -ne $combatProjection) { [int]$combatProjection.slot_index } else { $null }
         combat_projected_expected_attacks = if ($null -ne $combatProjection) { [double]$combatProjection.expected_attacks_to_defeat } else { $null }
         combat_projected_active_duration_ms = if ($null -ne $combatProjection) { [double]$combatProjection.expected_active_damage_duration_ms } else { $null }
+        combat_expected_experience = $combatExpectedExperience
+        combat_observed_experience_delta = $combatObservedExperienceDelta
         combat_status = if ($null -ne $combatResult) { [string]$combatResult.status } else { "not_requested" }
         combat_verification = if ($null -ne $combatResult) { [string]$combatResult.primitive_verification_status } else { "not_requested" }
         combat_attack_count = if ($null -ne $combatResult) { [int]$combatResult.combat_attack_count } else { $null }

@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using StardewValley;
 using StardewValley.Buildings;
@@ -9,10 +11,143 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
+    private const string CatInitialAdoptionEventId = "1590166";
+    private const string DogInitialAdoptionEventId = "897405";
+    private const string CatInitialAdoptionEventKey =
+        "1590166/m 1000/t 600 930/d Mon Tue Thu Sat Sun/w sunny/h cat/H";
+    private const string DogInitialAdoptionEventKey =
+        "897405/m 1000/t 600 930/d Mon Tue Thu Sat Sun/w sunny/h dog/H";
+    private const string CatInitialAdoptionScriptSha256 =
+        "62bc4fb3c7e3759c533967acad1459a5ca1769305665d08490d2be7f89d9482f";
+    private const string DogInitialAdoptionScriptSha256 =
+        "30427c975b09bc5504262a21ad6d384a99c81cfb5a4437bf7a11daeff1798508";
+
     private static readonly JsonSerializerOptions PetSpawnDataJsonOptions = new()
     {
         IncludeFields = true
     };
+
+    private static object ReadInitialPetAdoption(Farm farm)
+    {
+        var player = Game1.player;
+        var petType = player.whichPetType?.Trim().ToLowerInvariant() ?? string.Empty;
+        var eventId = petType switch
+        {
+            "cat" => CatInitialAdoptionEventId,
+            "dog" => DogInitialAdoptionEventId,
+            _ => string.Empty
+        };
+        var expectedKey = petType switch
+        {
+            "cat" => CatInitialAdoptionEventKey,
+            "dog" => DogInitialAdoptionEventKey,
+            _ => string.Empty
+        };
+        var expectedScriptSha256 = petType switch
+        {
+            "cat" => CatInitialAdoptionScriptSha256,
+            "dog" => DogInitialAdoptionScriptSha256,
+            _ => string.Empty
+        };
+        var farmEvents = Game1.content.Load<Dictionary<string, string>>("Data\\Events\\Farm");
+        var baseEnglishFarmEvents = Game1.content.Load<Dictionary<string, string>>(
+            "Data\\Events\\Farm",
+            LocalizedContentManager.LanguageCode.en);
+        var eventEntry = farmEvents
+            .Where(entry => Event.SplitPreconditions(entry.Key).FirstOrDefault() == eventId)
+            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .FirstOrDefault();
+        var baseEnglishEventEntry = baseEnglishFarmEvents
+            .Where(entry => Event.SplitPreconditions(entry.Key).FirstOrDefault() == eventId)
+            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .FirstOrDefault();
+        var eventKey = eventEntry.Key ?? string.Empty;
+        var eventScript = eventEntry.Value ?? string.Empty;
+        var scriptSha256 = eventScript.Length == 0 ? string.Empty : PetAdoptionSha256(eventScript);
+        var baseEnglishEventKey = baseEnglishEventEntry.Key ?? string.Empty;
+        var baseEnglishEventScript = baseEnglishEventEntry.Value ?? string.Empty;
+        var baseEnglishScriptSha256 = baseEnglishEventScript.Length == 0
+            ? string.Empty
+            : PetAdoptionSha256(baseEnglishEventScript);
+        var supportedPetType = petType is "cat" or "dog";
+        var eventAssetLocked = supportedPetType &&
+            eventId.Length > 0 &&
+            eventKey == expectedKey &&
+            baseEnglishEventKey == expectedKey &&
+            baseEnglishScriptSha256 == expectedScriptSha256;
+        var hasPet = player.hasPet();
+        var eventSeen = eventId.Length > 0 && player.eventsSeen.Contains(eventId);
+        var activeEventId = Game1.CurrentEvent?.id ?? string.Empty;
+        var activeAdoptionEvent = activeEventId == eventId;
+        var eligibleDay = Game1.Date.DayOfWeek is DayOfWeek.Wednesday or DayOfWeek.Friday;
+        var eligibleTime = Game1.timeOfDay is >= 600 and <= 930;
+        var sunnyAtFarm = !farm.IsRainingHere();
+        var earnedEnough = player.totalMoneyEarned >= 1000;
+        var missingMatchingPet = !hasPet && petType is "cat" or "dog";
+        var host = Game1.IsMasterGame;
+        var preconditionsMet = eventAssetLocked && !eventSeen && earnedEnough && eligibleTime &&
+            eligibleDay && sunnyAtFarm && missingMatchingPet && host;
+        var status = !supportedPetType
+            ? "unsupported_selected_pet_type"
+            : hasPet
+                ? "initial_pet_present"
+                : activeAdoptionEvent
+                    ? "initial_adoption_event_active"
+                    : eventSeen
+                        ? "initial_adoption_event_consumed_without_pet"
+                        : !eventAssetLocked
+                            ? "base_event_asset_missing_or_modified"
+                            : preconditionsMet
+                                ? "ready_on_next_farm_entry"
+                                : "waiting_for_event_preconditions";
+
+        return new
+        {
+            schema_version = "initial_pet_adoption.v1",
+            projection_status = eventAssetLocked
+                ? "complete_locked_base_1.6.15"
+                : "blocked_base_event_asset_missing_or_modified",
+            event_id = eventId,
+            event_key = eventKey,
+            event_key_matches_locked_base = eventKey == expectedKey,
+            event_script_sha256 = scriptSha256,
+            event_script_language = LocalizedContentManager.CurrentLanguageCode.ToString(),
+            event_script_is_localized = scriptSha256 != baseEnglishScriptSha256,
+            base_english_event_key = baseEnglishEventKey,
+            base_english_event_key_matches_locked_base = baseEnglishEventKey == expectedKey,
+            base_english_event_script_sha256 = baseEnglishScriptSha256,
+            base_english_event_script_matches_locked_base = baseEnglishScriptSha256 == expectedScriptSha256,
+            event_source_asset = "Data/Events/Farm",
+            selected_pet_type = petType,
+            selected_pet_type_supported = supportedPetType,
+            has_initial_pet = hasPet,
+            event_seen = eventSeen,
+            event_active = activeAdoptionEvent,
+            is_master_game = host,
+            total_money_earned = player.totalMoneyEarned,
+            required_total_money_earned = 1000,
+            earned_money_precondition_met = earnedEnough,
+            current_time = Game1.timeOfDay,
+            allowed_time_start = 600,
+            allowed_time_end = 930,
+            time_precondition_met = eligibleTime,
+            current_day_of_week = Game1.Date.DayOfWeek.ToString(),
+            allowed_days_of_week = new[] { "Wednesday", "Friday" },
+            excluded_days_from_native_d_precondition = new[] { "Monday", "Tuesday", "Thursday", "Saturday", "Sunday" },
+            day_precondition_met = eligibleDay,
+            farm_is_raining = farm.IsRainingHere(),
+            sunny_precondition_met = sunnyAtFarm,
+            missing_matching_pet_precondition_met = missingMatchingPet,
+            trigger_location_id = farm.NameOrUniqueName,
+            requires_farm_entry = true,
+            event_preconditions_met_now = preconditionsMet,
+            accepted_response_question_key = "pet",
+            accepted_response_index = 0,
+            accepted_response_opens_native_naming_menu = true,
+            rejection_consumes_initial_event = true,
+            status
+        };
+    }
 
     private static object[] ReadPets()
     {
@@ -223,7 +358,7 @@ public sealed partial class FarmReadAdapter
                         projectedAfterFillAndDayUpdate.HasValue && projectedAfterFillAndDayUpdate.Value >= Pet.maxFriendship,
                     delayed_settlement = "Pet.dayUpdate consumes watered=true and applies min(1000,friendship+6)",
                     current_location_raining = entry.Location.IsRainingHere(),
-                    rain_fill_rule = "new_day_outdoor_rain_sets_watered_before_location_day_updates",
+                    rain_fill_rule = "current_rain_sets_outdoor_bowl_watered_after_location_and_character_day_updates_for_the_next_Pet.dayUpdate",
                     watering_can_slot_index = canEntry?.index,
                     watering_can_runtime_type = can?.GetType().FullName ?? string.Empty,
                     watering_can_upgrade_level = can?.UpgradeLevel,
@@ -259,5 +394,10 @@ public sealed partial class FarmReadAdapter
             }
         }
         return null;
+    }
+
+    private static string PetAdoptionSha256(string value)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
     }
 }

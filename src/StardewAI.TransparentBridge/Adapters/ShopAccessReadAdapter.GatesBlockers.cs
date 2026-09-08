@@ -107,6 +107,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 action,
                 condition,
                 condition_met = string.IsNullOrWhiteSpace(condition) ? (bool?)null : GameStateQuery.CheckConditions(condition, location),
+                allowed_on_capture_date = (bool?)null,
                 locked_message_present = !string.IsNullOrWhiteSpace(location.doesTileHaveProperty(x, y, "LockedDoorMessage", "Buildings")),
                 allowed_now = string.IsNullOrWhiteSpace(condition) ? (bool?)null : GameStateQuery.CheckConditions(condition, location),
                 unresolved_reason = (string?)null
@@ -118,10 +119,32 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return ReadLockedDoorWarpGate(location, x, y, action, sourceProperty, parts);
         }
 
-        if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase))
+        if (IsDirectWarpActionBranch(parts[0]))
         {
-            var touchAction = string.Equals(sourceProperty, "Back.TouchAction", StringComparison.OrdinalIgnoreCase);
+            var standardWarp = string.Equals(
+                parts[0],
+                "Warp",
+                StringComparison.OrdinalIgnoreCase);
+            var touchAction = standardWarp && string.Equals(
+                sourceProperty,
+                "Back.TouchAction",
+                StringComparison.OrdinalIgnoreCase);
             var mailRequired = touchAction ? Part(parts, 4) : null;
+            var genderRequirement = string.Equals(
+                    parts[0],
+                    "WarpMensLocker",
+                    StringComparison.OrdinalIgnoreCase)
+                ? "male"
+                : string.Equals(
+                    parts[0],
+                    "WarpWomensLocker",
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "female"
+                    : null;
+            var genderRequirementMet = genderRequirement is null ||
+                (genderRequirement == "male" && Game1.player?.IsMale == true) ||
+                (genderRequirement == "female" && Game1.player?.IsMale == false);
+            var parsed = parts.Length >= 4;
             return new
             {
                 kind = "warp_action",
@@ -134,8 +157,45 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 target_y = touchAction ? ParseIntPart(parts, 3) : ParseIntPart(parts, 2),
                 mail_required = mailRequired,
                 mail_requirement_met = string.IsNullOrWhiteSpace(mailRequired) ? (bool?)null : Game1.player?.mailReceived.Contains(mailRequired),
-                allowed_now = touchAction && !string.IsNullOrWhiteSpace(mailRequired) ? Game1.player?.mailReceived.Contains(mailRequired) : (parts.Length >= 4 ? (bool?)true : null),
-                unresolved_reason = parts.Length >= 4 ? (string?)null : "warp_action_parse_failed"
+                gender_requirement = genderRequirement,
+                gender_requirement_met = genderRequirement is null
+                    ? (bool?)null
+                    : genderRequirementMet,
+                allowed_on_capture_date = parsed && genderRequirementMet &&
+                    (string.IsNullOrWhiteSpace(mailRequired) ||
+                     Game1.player?.mailReceived.Contains(mailRequired) == true),
+                allowed_now = parsed && genderRequirementMet &&
+                    (string.IsNullOrWhiteSpace(mailRequired) ||
+                     Game1.player?.mailReceived.Contains(mailRequired) == true),
+                unresolved_reason = parsed ? (string?)null : "warp_action_parse_failed"
+            };
+        }
+
+        if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
+        {
+            var opened = Game1.player?.mailReceived.Contains("OpenedSewer") == true;
+            var hasRustyKey = Game1.player?.hasRustyKey == true;
+            return new
+            {
+                kind = "warp_action",
+                tile_x = x,
+                tile_y = y,
+                source_property = sourceProperty,
+                action,
+                target_location = "Sewer",
+                target_x = 16,
+                target_y = 11,
+                mail_required = "OpenedSewer",
+                mail_requirement_met = opened,
+                rusty_key_available = hasRustyKey,
+                required_action_count = opened ? 1 : hasRustyKey ? 2 : (int?)null,
+                allowed_on_capture_date = opened,
+                allowed_now = opened,
+                unresolved_reason = opened
+                    ? (string?)null
+                    : hasRustyKey
+                        ? "enter_sewer_unlock_interaction_required"
+                        : "enter_sewer_rusty_key_missing"
             };
         }
 
@@ -148,6 +208,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 tile_y = y,
                 source_property = sourceProperty,
                 action,
+                allowed_on_capture_date = (bool?)null,
                 allowed_now = (bool?)null,
                 unresolved_reason = "door_action_npc_specific_logic_not_resolved"
             };
@@ -183,6 +244,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             && !string.Equals(locationName, "AdventureGuild", StringComparison.OrdinalIgnoreCase);
         var parsed = targetX.HasValue && targetY.HasValue && !string.IsNullOrWhiteSpace(locationName) && openTime.HasValue && closeTime.HasValue;
         var allowed = parsed && !festivalClosed && !seedShopWednesdayClosed && ((timeAllowed && friendshipAllowed) || greenRainOverride);
+        var allowedOnCaptureDate = parsed &&
+            !festivalClosed &&
+            !seedShopWednesdayClosed &&
+            (friendshipAllowed || greenRainOverride);
+        var timeUnrestrictedOnCaptureDate = hasTownKey || greenRainOverride;
 
         return new
         {
@@ -197,6 +263,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             open_time = openTime,
             effective_open_time = effectiveOpenTime,
             close_time = closeTime,
+            effective_close_time = closeTime,
             npc_name = npcName,
             min_friendship = minFriendship,
             friendship_points = friendPoints,
@@ -206,6 +273,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             time_allowed = timeAllowed,
             friendship_allowed = friendshipAllowed,
             green_rain_override = greenRainOverride,
+            allowed_on_capture_date = allowedOnCaptureDate,
+            time_unrestricted_on_capture_date = timeUnrestrictedOnCaptureDate,
             allowed_now = allowed,
             unresolved_reason = parsed ? (string?)null : "locked_door_warp_parse_failed"
         };

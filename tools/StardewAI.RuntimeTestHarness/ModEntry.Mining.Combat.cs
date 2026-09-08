@@ -47,6 +47,25 @@ public sealed partial class ModEntry : Mod
                 "combat_intent_unsupported"));
             return;
         }
+        if ((!string.IsNullOrWhiteSpace(request.ExpectedSkillId) ||
+                request.ExpectedSkillExperienceDelta.HasValue) &&
+            (!string.Equals(
+                    request.ExpectedSkillId,
+                    "combat",
+                    StringComparison.Ordinal) ||
+                request.ExpectedSkillExperienceDelta is null or <= 0))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "combat_monster",
+                "native_combat_experience_receipt",
+                "expected_skill_id=" + request.ExpectedSkillId +
+                    ";expected_skill_experience_delta=" +
+                    (request.ExpectedSkillExperienceDelta?.ToString() ??
+                        "missing"),
+                "combat_experience_expectation_incomplete"));
+            return;
+        }
         var requested = "target_monster.terminal_state=" + terminalState +
             ";native_input=Farmer.FireTool;combat_intent=" + combatIntent;
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
@@ -821,11 +840,31 @@ public sealed partial class ModEntry : Mod
         RecordCombatHealth(active);
         var request = active.Pending.Request;
         var damageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        var combatExperienceAfter =
+            Game1.player.experiencePoints[Farmer.combatSkill];
+        var combatExperienceDelta =
+            combatExperienceAfter - active.CombatExperienceBefore;
+        var combatExperienceVerified =
+            string.IsNullOrWhiteSpace(request.ExpectedSkillId) ||
+            (string.Equals(
+                    request.ExpectedSkillId,
+                    "combat",
+                    StringComparison.Ordinal) &&
+                request.ExpectedSkillExperienceDelta.HasValue &&
+                request.ExpectedSkillExperienceDelta.Value > 0 &&
+                combatExperienceDelta >=
+                    request.ExpectedSkillExperienceDelta.Value);
         var inventoryAfter = InventoryStackSignature();
         var changedFacts = active.Pending.ChangedFacts.Concat(new[]
         {
             new SimulatedFactChange { Path = "mining.monsters[target].health", Before = active.TargetHealthBefore.ToString(), After = active.Target.Health.ToString() },
-            new SimulatedFactChange { Path = "player.health", Before = active.PlayerHealthBefore.ToString(), After = Game1.player.health.ToString() }
+            new SimulatedFactChange { Path = "player.health", Before = active.PlayerHealthBefore.ToString(), After = Game1.player.health.ToString() },
+            new SimulatedFactChange
+            {
+                Path = "player.skills.combat.experience",
+                Before = active.CombatExperienceBefore.ToString(),
+                After = combatExperienceAfter.ToString()
+            }
         }).ToList();
         if (!string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal))
         {
@@ -849,10 +888,25 @@ public sealed partial class ModEntry : Mod
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "combat_monster",
-            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationStatus = combatExperienceVerified
+                ? "verified"
+                : "observed_mismatch",
             PrimitiveVerificationReasons = (damageTaken == 0
                 ? new[] { terminalVerificationReason, "player_health_unchanged" }
                 : new[] { terminalVerificationReason, "player_damage_observed=" + damageTaken })
+                .Concat(combatExperienceVerified
+                    ? new[]
+                    {
+                        "native_combat_experience_delta=" +
+                        combatExperienceDelta
+                    }
+                    : new[]
+                    {
+                        "native_combat_experience_mismatch:expected_minimum=" +
+                        (request.ExpectedSkillExperienceDelta?.ToString() ??
+                            "missing") +
+                        ";actual=" + combatExperienceDelta
+                    })
                 .Concat(string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal)
                     ? Array.Empty<string>()
                     : new[] { "natural_incidental_pickup_observed" })
@@ -930,6 +984,9 @@ public sealed partial class ModEntry : Mod
             ";target_health=" + active.Target.Health +
             ";player_health=" + Game1.player.health +
             ";combat_intent=" + active.CombatIntent +
+            ";combat_experience_delta=" +
+            (Game1.player.experiencePoints[Farmer.combatSkill] -
+                active.CombatExperienceBefore) +
             ";attacks=" + active.AttackCount +
             ";hits=" + active.HitCount;
     }

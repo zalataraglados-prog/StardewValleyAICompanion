@@ -119,15 +119,14 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                var mapped = Map(direction.DirectionId);
                 return Detailed(
                     new PlanningGoalResolution
                     {
                         Status = "resolved",
                         RequestedGoalId = requested,
-                        EffectiveGoalId = mapped.EffectiveGoalId,
+                        EffectiveGoalId = catalog.EffectiveGoalId,
                         DirectionId = direction.DirectionId,
-                        DemandFamily = mapped.DemandFamily,
+                        DemandFamily = catalog.DemandFamily,
                         Reason =
                             "current_snapshot_and_candidate_binding_ready",
                         SourceStateHash = snapshot.StateHash,
@@ -261,52 +260,6 @@ namespace StardewAI.Core.Training
                 StringComparison.Ordinal);
         }
 
-        private static GoalMapping Map(string directionId)
-        {
-            return directionId switch
-            {
-                "earn_money" => new(
-                    "goal.economy.earn_money",
-                    "economy"),
-                "complete_full_shipment" => new(
-                    "goal.economy.complete_full_shipment",
-                    "economy"),
-                "obtain_skull_key" => new(
-                    "goal.combat_progress.obtain_skull_key",
-                    "combat_progress"),
-                "raise_friendships" => new(
-                    "goal.social.raise_friendships",
-                    "social"),
-                "complete_master_angler" => new(
-                    "goal.fishing.complete_master_angler",
-                    "fishing"),
-                "raise_skill_levels" => new(
-                    "goal.skills.raise_skill_levels",
-                    "skills"),
-                "complete_museum_collection" => new(
-                    "goal.world_progress.complete_museum_collection",
-                    "world_progress"),
-                "obtain_rusty_key" => new(
-                    "goal.world_progress.obtain_rusty_key",
-                    "world_progress"),
-                "complete_community_center" => new(
-                    "goal.world_progress.complete_community_center",
-                    "world_progress"),
-                "marriage_and_house_upgrade" => new(
-                    "goal.social.marriage_and_house_upgrade",
-                    "social"),
-                "earn_pet_love" => new(
-                    "goal.farm.earn_pet_love",
-                    "farm"),
-                _ => new(
-                    GrandpaEvaluationGoalDefinition.GoalId,
-                    "unsupported")
-            };
-        }
-
-        private sealed record GoalMapping(
-            string EffectiveGoalId,
-            string DemandFamily);
     }
 
     public sealed class GrandpaDailySubgoalResolution

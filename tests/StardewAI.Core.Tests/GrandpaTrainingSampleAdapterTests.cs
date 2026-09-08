@@ -84,6 +84,30 @@ public sealed class GrandpaTrainingSampleAdapterTests
     }
 
     [Fact]
+    public void BuildDoesNotBlockDirectionsWhenOnlyRecordedCandleContextIsMissing()
+    {
+        var report = new GrandpaEvaluationGoalReport
+        {
+            TargetMet = false,
+            MissingFactPaths = new[] { "farm.grandpa_score" },
+            Factors = new[]
+            {
+                Factor("friendships_5", "social", known: true, satisfied: false, maxPoints: 1)
+            }
+        };
+
+        var sample = new GrandpaTrainingSampleAdapter().Build(
+            new WorldModelEnvelope(),
+            report);
+
+        Assert.False(sample.PlannerState.Blocked);
+        Assert.Contains("farm.grandpa_score", sample.PlannerState.MissingFactPaths);
+        Assert.Contains(sample.CandidateDirections, direction =>
+            direction.DirectionId == "raise_friendships" &&
+            !direction.Blocked);
+    }
+
+    [Fact]
     public void StrategyFeatureRowsEnterPolicyTraining()
     {
         var model = new WorldModelEnvelope

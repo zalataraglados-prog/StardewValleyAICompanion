@@ -389,7 +389,8 @@ namespace StardewAI.Core.OptionRegistry
                 WaitCost = routeCandidate?.WaitCost,
                 GateReasons = routeCandidate?.GateReasons ?? Array.Empty<string>(),
                 BlockReasons = reasons,
-                Parameters = routeParameters
+                Parameters = socialCandidate.Parameters
+                    .Concat(routeParameters)
                     .Concat(continuationParameters)
                     .ToArray()
             };
