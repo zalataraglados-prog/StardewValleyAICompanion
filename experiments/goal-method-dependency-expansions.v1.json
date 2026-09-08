@@ -1670,7 +1670,7 @@
         "authoritative_dependency_graph"
       ],
       "blockers": [
-        "close native_spring_onion_harvest and native_tree_moss_harvest group gaps, then bind exact one-unit reservation and live route bounds; artifact spots are admitted by EVD-334",
+        "close native_tree_moss_harvest group gap, then bind exact one-unit reservation and live route bounds; artifact spots and native_spring_onion_harvest are admitted by EVD-334/EVD-335",
         "prove completed-day native shipping settlement and achievement 34 receipt for all 154 requirements before the Year 3 evaluation"
       ],
       "nodes": [

@@ -143,6 +143,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_artifact_spot_candidates");
             }
 
+            if (optionId == "foraging.harvest_spring_onions")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_spring_onion_harvest_candidates",
+                    "no_available_spring_onion_harvest_candidates");
+            }
+
             if (optionId == "foraging.harvest_ginger")
             {
                 return EventCandidateAvailabilityReasons(

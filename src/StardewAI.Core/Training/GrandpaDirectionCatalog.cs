@@ -175,6 +175,7 @@ namespace StardewAI.Core.Training
                     "skills.read_books",
                     "farm.collect_animal_products",
                     "foraging.collect_spawned_objects",
+                    "foraging.harvest_spring_onions",
                     "foraging.harvest_ginger",
                     "foraging.harvest_bushes",
                     "foraging.clear_green_rain_bushes",

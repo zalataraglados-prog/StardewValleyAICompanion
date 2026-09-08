@@ -1,9 +1,9 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "2fdf185149e579f4b21ef136b711914b2f8d86c1f2d9170d6aa160572d607b66",
-  "action_count": 231,
-  "registered_option_spec_count": 229,
+  "denominator_fingerprint_sha256": "12004bae73794c56134af70688f79c83637b60e4b62afd7def9b0d79c227dfcf",
+  "action_count": 232,
+  "registered_option_spec_count": 230,
   "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -1557,6 +1557,15 @@
     },
     {
       "action_id": "foraging.harvest_ginger",
+      "domain": "foraging",
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "foraging.harvest_spring_onions",
       "domain": "foraging",
       "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.strategy_orchestration",

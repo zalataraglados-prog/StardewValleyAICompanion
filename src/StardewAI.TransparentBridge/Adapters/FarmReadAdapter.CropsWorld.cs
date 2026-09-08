@@ -81,6 +81,32 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         }
     }
 
+    private static string ReadCropHarvestItemId(Crop crop)
+    {
+        if (crop.GetType() == typeof(Crop) &&
+            crop.forageCrop.Value &&
+            string.Equals(crop.whichForageCrop.Value, Crop.forageCrop_springOnionID, StringComparison.Ordinal))
+        {
+            return "399";
+        }
+
+        return crop.indexOfHarvest.Value;
+    }
+
+    private static string ReadCropHarvestItemProjectionStatus(Crop crop)
+    {
+        if (crop.GetType() == typeof(Crop) &&
+            crop.forageCrop.Value &&
+            string.Equals(crop.whichForageCrop.Value, Crop.forageCrop_springOnionID, StringComparison.Ordinal))
+        {
+            return "exact_from_decompiled_native_spring_onion_branch";
+        }
+
+        return string.IsNullOrWhiteSpace(crop.indexOfHarvest.Value)
+            ? "unavailable_no_live_harvest_item_id"
+            : "exact_from_live_index_of_harvest";
+    }
+
     internal static object[] ReadCrops(GameLocation location)
     {
         return ReadCropDirtRows(location)
@@ -92,15 +118,17 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var cropData = crop.GetData();
                 var experience = ReadCropHarvestExperience(crop);
                 var readyForHarvest = dirt.readyForHarvest();
-                var harvestItem = ReadHarvestItemProjection(crop.indexOfHarvest.Value);
+                var harvestItemId = ReadCropHarvestItemId(crop);
+                var harvestItem = ReadHarvestItemProjection(harvestItemId);
                 return new
                 {
                     location_id = location.NameOrUniqueName,
                     tile_x = (int)row.Tile.X,
                     tile_y = (int)row.Tile.Y,
                     is_garden_pot = row.IsGardenPot,
-                    harvest_item_id = crop.indexOfHarvest.Value,
-                    harvest_item_qualified_id = QualifyObjectId(crop.indexOfHarvest.Value),
+                    harvest_item_id = harvestItemId,
+                    harvest_item_qualified_id = QualifyObjectId(harvestItemId),
+                    harvest_item_projection_status = ReadCropHarvestItemProjectionStatus(crop),
                     harvest_item_category = harvestItem.Category,
                     harvest_context_tags = harvestItem.ContextTags,
                     phase_days = crop.phaseDays.ToArray(),

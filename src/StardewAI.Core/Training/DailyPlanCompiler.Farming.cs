@@ -86,6 +86,10 @@ namespace StardewAI.Core.Training
             {
                 parameters.Add(Parameter("harvest_method", harvestMethod));
             }
+            AddExpectedEffectParameter(parameters, candidate.ExpectedEffect, "harvest_item_qualified_id");
+            AddExpectedEffectParameter(parameters, candidate.ExpectedEffect, "harvest_item_projection_status");
+            AddExpectedEffectParameter(parameters, candidate.ExpectedEffect, "forage_crop");
+            AddExpectedEffectParameter(parameters, candidate.ExpectedEffect, "forage_crop_id");
             AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
 
             return new[]
@@ -163,6 +167,19 @@ namespace StardewAI.Core.Training
                 {
                     parameters.Add(Parameter(name, value));
                 }
+            }
+        }
+
+        private static void AddExpectedEffectParameter(
+            ICollection<SmallModelActionParameter> parameters,
+            string expectedEffect,
+            string name)
+        {
+            var value = ParseValue(expectedEffect, name + "=");
+            if (!string.IsNullOrWhiteSpace(value) &&
+                !parameters.Any(parameter => parameter.Name == name))
+            {
+                parameters.Add(Parameter(name, value));
             }
         }
 

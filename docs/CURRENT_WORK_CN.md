@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-09-08 当前权威检查点：EVD-335
+
+- `foraging.harvest_spring_onions` 已闭合读、候选、编译、原生运行和输出五门。它只接受当前已加载地图中原版基类 `Crop` 的 `forageCrop=true / whichForageCrop=1`，并复用唯一 `harvest_crop_tile -> executor.harvest_crop` 生产链；普通作物、姜和自定义作物不会进入该候选。
+- 本步真实运行发现并修复了透明桥缺口：原生春葱的 `indexOfHarvest` 为空，`Crop.harvest` 才按觅食 ID 动态创建 `(O)399`。桥现在只对精确原版春葱发布 `harvest_item_projection_status=exact_from_decompiled_native_spring_onion_branch`，未知分支继续失败关闭；必需事实门也已授权该专用 adapter。
+- 隐藏静音 E 盘隔离运行 `artifacts/runtime-spring-onion-daily-plan/runtime-spring-onion-daily-plan-20260908-233958/summary.json` 通过：DailyPlan 选择 `harvest:Farm:64,15`，原生执行 `applied/verified`，库存 `(O)399` 为 `0 -> 1`，Foraging XP 为 `19376 -> 19379`，目标作物被移除且状态哈希变化。运行使用 `--skip-training`，不得作为正式 Teacher 轨迹。
+- 权威生成结果为 `230 registered / 232 semantic / 229 compiler-bound / 153 runtime-verified / 64 training-eligible / 145 Product Executor / 2 catalogued blocked`；获取路由为 `30/33 admitted / 3 blocked / 1599 occurrences`。剩余路由是树苔、砍野树产物和砍野树种子掉落，后两者共享同一个高层砍树获取缺口。
+- Teacher 前沿仍为 `2/19 executable / 17/19 dependency pending / 0 missing graph / 0 governance blocked`，所以正式全量训练仍禁入。直接下一步是闭合 `native_tree_moss_harvest` 的单一高层选项，并复用已验证的野树交互/收获内核，不创建第二套树木执行系统。
+
 ## 2026-09-08 当前权威检查点：EVD-334
 
 - `foraging.excavate_artifact_spots` 已用 E 盘隔离存档完成隐藏静音高层运行验收。唯一 `(O)590` 候选从 `foraging.excavate_artifact_spots` 经 DailyPlan 降为 `clear_obstacle_tile -> executor.clear_obstacle`，没有新增第二套挖掘执行器。

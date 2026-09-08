@@ -330,6 +330,50 @@ namespace StardewAI.Core.Execution
                 reasons.Add("harvest_crop_not_ready_by_transparent_farm_state");
             }
 
+            var crop = targetX.HasValue && targetY.HasValue
+                ? HarvestCropAt(snapshot, targetX.Value, targetY.Value)
+                : null;
+            var expectedQualifiedItemId = ReadParameter(action, "harvest_item_qualified_id");
+            if (crop.HasValue &&
+                !string.IsNullOrWhiteSpace(expectedQualifiedItemId) &&
+                !string.Equals(
+                    ReadString(crop.Value, "harvest_item_qualified_id"),
+                    expectedQualifiedItemId,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("harvest_crop_item_identity_drifted");
+            }
+
+            var expectedItemProjectionStatus = ReadParameter(action, "harvest_item_projection_status");
+            if (crop.HasValue &&
+                !string.IsNullOrWhiteSpace(expectedItemProjectionStatus) &&
+                !string.Equals(
+                    ReadString(crop.Value, "harvest_item_projection_status"),
+                    expectedItemProjectionStatus,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("harvest_crop_item_projection_drifted");
+            }
+
+            var expectedForageCrop = ReadParameter(action, "forage_crop");
+            if (crop.HasValue &&
+                bool.TryParse(expectedForageCrop, out var expectedForageCropValue) &&
+                ReadBool(crop.Value, "forage_crop") != expectedForageCropValue)
+            {
+                reasons.Add("harvest_crop_forage_identity_drifted");
+            }
+
+            var expectedForageCropId = ReadParameter(action, "forage_crop_id");
+            if (crop.HasValue &&
+                !string.IsNullOrWhiteSpace(expectedForageCropId) &&
+                !string.Equals(
+                    ReadString(crop.Value, "forage_crop_id"),
+                    expectedForageCropId,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("harvest_crop_forage_identity_drifted");
+            }
+
             if (targetX.HasValue &&
                 targetY.HasValue &&
                 HarvestCropUsesGrab(action, snapshot, targetX.Value, targetY.Value) &&

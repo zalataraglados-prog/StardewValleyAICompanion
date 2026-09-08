@@ -83,6 +83,7 @@ namespace StardewAI.Core.Training
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },
                 ["foraging.collect_spawned_objects"] = new[] { "collect_spawned_object" },
                 ["foraging.excavate_artifact_spots"] = new[] { "clear_obstacle_tile" },
+                ["foraging.harvest_spring_onions"] = new[] { "harvest_crop_tile" },
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_fruit_tree"] = new[] { "harvest_fruit_tree" },
                 ["foraging.harvest_tree_product"] = new[] { "harvest_tree_product" },

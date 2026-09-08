@@ -132,7 +132,7 @@ namespace StardewAI.Core.Execution
                 new[] { "PathFindController", "GameLocation.isCollidingPosition", "GameLocation.warps" }),
             Assumption(
                 "crop_farming",
-                new[] { "farm.maintain_crops" },
+                new[] { "farm.maintain_crops", "foraging.harvest_spring_onions", "executor.harvest_crop" },
                 new[] { "energy_floor", "tool_available", "tile_reachable", "inventory_capacity" },
                 new[] { "crop_quality", "extra_harvest", "mixed_seed_crop", "fertilizer_effect" },
                 new[] { "missed_tile", "wrong_tool_timing", "slow_watering_micro" },

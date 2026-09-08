@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-08 EVD-335 春葱高层准入
+
+`foraging.harvest_spring_onions` 已完成五门闭环。锁定的 1.6.15 程序集确认 `Crop.forageCrop_springOnionID == "1"`，原生 `Crop.harvest` 在该分支动态创建 `(O)399` 并增加 3 点 Foraging XP；它不依赖普通作物的 `indexOfHarvest`。透明桥据此只对精确原版基类春葱发布产物身份及精确投影状态，未知觅食 ID、自定义作物、姜和普通作物均不借用本证据。
+
+隐藏静音隔离运行 `runtime-spring-onion-daily-plan-20260908-233958` 从高层候选经既有 `harvest_crop_tile -> executor.harvest_crop` 单链完成原生收获，验证 `(O)399` 库存增加、Foraging XP 精确 `+3`、作物移除和 fresh changed state hash。运行使用 `--skip-training`，只构成 EVD-335 五门证据，不是正式策略样本。
+
+权威对账现为 `230 registered / 232 semantic / 229 compiler-bound / 153 five-gate / 64 training allowlist / 145 Product Executor / 2 catalogued blocked`。1599 条获取来源仍完整，路由为 `30/33 admitted / 3 blocked`；剩余树苔和共享的野树砍伐获取缺口仍需闭合。Teacher 总体仍为 `2/19 executable`，正式全量训练继续禁用。下一切片固定为 `native_tree_moss_harvest`。
+
 ## 2026-09-08 EVD-334 古物点高层准入
 
 `foraging.excavate_artifact_spots` 已闭合读、候选、编译、原生运行和输出五门。隐藏静音隔离运行选择唯一原版 `(O)590`，经 DailyPlan 和既有 `clear_obstacle_tile -> executor.clear_obstacle` 单链执行原生 Hoe；输出 unit-state 集合、Foraging XP、`ArtifactSpotsDug`、地形、邮件状态、对象移除与 fresh state hash 全部吻合。`(O)SeedSpot`、其他清障对象、自定义地点重载和未透明的全局 RNG 分支继续失败关闭。

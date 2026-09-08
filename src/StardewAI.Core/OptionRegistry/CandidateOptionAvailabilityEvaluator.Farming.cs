@@ -579,6 +579,28 @@ namespace StardewAI.Core.OptionRegistry
 
         private static EventCandidate[] HarvestCropCandidates(SnapshotEnvelope snapshot)
         {
+            return HarvestCropCandidates(snapshot, _ => true);
+        }
+
+        private static EventCandidate[] SpringOnionHarvestCandidates(SnapshotEnvelope snapshot)
+        {
+            return HarvestCropCandidates(snapshot, crop =>
+                ReadBool(crop, "forage_crop") == true &&
+                string.Equals(ReadString(crop, "forage_crop_id"), "1", StringComparison.Ordinal) &&
+                string.Equals(ReadString(crop, "harvest_item_id"), "399", StringComparison.Ordinal) &&
+                string.Equals(ReadString(crop, "harvest_item_qualified_id"), "(O)399", StringComparison.Ordinal) &&
+                string.Equals(ReadString(crop, "harvest_item_projection_status"), "exact_from_decompiled_native_spring_onion_branch", StringComparison.Ordinal) &&
+                string.Equals(ReadString(crop, "harvest_method"), "Grab", StringComparison.Ordinal) &&
+                string.Equals(ReadString(crop, "harvest_experience_skill_id"), "foraging", StringComparison.Ordinal) &&
+                NullableReadInt(crop, "harvest_experience_on_success_min") == 3 &&
+                NullableReadInt(crop, "harvest_experience_on_success_max") == 3 &&
+                string.Equals(ReadString(crop, "harvest_experience_projection_status"), "exact_from_decompiled_native_harvest", StringComparison.Ordinal));
+        }
+
+        private static EventCandidate[] HarvestCropCandidates(
+            SnapshotEnvelope snapshot,
+            Func<JsonElement, bool> sourcePredicate)
+        {
             var crops = CurrentLocationCropArray(snapshot);
             if (!crops.HasValue || crops.Value.ValueKind != JsonValueKind.Array)
             {
@@ -587,13 +609,17 @@ namespace StardewAI.Core.OptionRegistry
 
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
             return crops.Value.EnumerateArray()
-                .Where(crop => crop.ValueKind == JsonValueKind.Object && ReadBool(crop, "ready_for_harvest") == true)
+                .Where(crop =>
+                    crop.ValueKind == JsonValueKind.Object &&
+                    ReadBool(crop, "ready_for_harvest") == true &&
+                    sourcePredicate(crop))
                 .Select(crop =>
                 {
                     var x = ReadInt(crop, "tile_x");
                     var y = ReadInt(crop, "tile_y");
                     var harvestItemId = ReadString(crop, "harvest_item_id");
                     var harvestQualifiedItemId = ReadString(crop, "harvest_item_qualified_id");
+                    var harvestItemProjectionStatus = ReadString(crop, "harvest_item_projection_status");
                     var harvestItemCategory = ReadInt(crop, "harvest_item_category");
                     var harvestMethod = ReadString(crop, "harvest_method");
                     var skillId = ReadString(crop, "harvest_experience_skill_id");
@@ -601,10 +627,15 @@ namespace StardewAI.Core.OptionRegistry
                     var skillMaximum = NullableReadInt(crop, "harvest_experience_on_success_max");
                     var skillCondition = ReadString(crop, "harvest_experience_condition");
                     var skillStatus = ReadString(crop, "harvest_experience_projection_status");
+                    var forageCrop = ReadBool(crop, "forage_crop") == true;
+                    var forageCropId = ReadString(crop, "forage_crop_id");
                     var effect = "current_location.crops[" + x + "," + y + "].ready_for_harvest=false" +
                         (!string.IsNullOrWhiteSpace(harvestItemId) ? ";harvest_item_id=" + harvestItemId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestQualifiedItemId) ? ";harvest_item_qualified_id=" + harvestQualifiedItemId : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(harvestItemProjectionStatus) ? ";harvest_item_projection_status=" + harvestItemProjectionStatus : string.Empty) +
                         ";harvest_item_category=" + harvestItemCategory +
+                        ";forage_crop=" + forageCrop.ToString().ToLowerInvariant() +
+                        (!string.IsNullOrWhiteSpace(forageCropId) ? ";forage_crop_id=" + forageCropId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestMethod) ? ";harvest_method=" + harvestMethod : string.Empty) +
                         (!string.IsNullOrWhiteSpace(skillId) ? ";skill_experience_skill_id=" + skillId : string.Empty) +
                         (skillMinimum.HasValue ? ";skill_experience_on_success_min=" + skillMinimum.Value : string.Empty) +
@@ -636,7 +667,10 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter("skill_experience_projection_status", skillStatus),
                             Parameter("harvest_method", harvestMethod),
                             Parameter("harvest_item_qualified_id", harvestQualifiedItemId),
+                            Parameter("harvest_item_projection_status", harvestItemProjectionStatus),
                             Parameter("harvest_item_category", harvestItemCategory.ToString()),
+                            Parameter("forage_crop", forageCrop.ToString().ToLowerInvariant()),
+                            Parameter("forage_crop_id", forageCropId),
                             Parameter("harvest_context_tags_json", JsonSerializer.Serialize(ReadStringArray(crop, "harvest_context_tags")))
                         }
                     };

@@ -303,6 +303,7 @@ public sealed partial class ModEntry : Mod
 
         var started = DateTimeOffset.UtcNow.ToString("O");
         var seedId = string.IsNullOrWhiteSpace(request.SeedId) ? "472" : PlantSeedId(request);
+        var springOnionFixture = string.Equals(request.RuleKey, "spring_onion", StringComparison.Ordinal);
         var farm = Game1.getFarm();
         Game1.currentSeason = "spring";
         Game1.dayOfMonth = 1;
@@ -314,11 +315,19 @@ public sealed partial class ModEntry : Mod
             farm.objects.Remove(tile);
         }
 
-        var dirt = new HoeDirt(0, farm)
+        var crop = springOnionFixture
+            ? new Crop(
+                forageCrop: true,
+                Crop.forageCrop_springOnionID,
+                request.TargetTileX.Value,
+                request.TargetTileY.Value,
+                farm)
+            : new Crop(seedId, request.TargetTileX.Value, request.TargetTileY.Value, farm);
+        if (!springOnionFixture)
         {
-            crop = new Crop(seedId, request.TargetTileX.Value, request.TargetTileY.Value, farm)
-        };
-        dirt.crop.growCompletely();
+            crop.growCompletely();
+        }
+        var dirt = new HoeDirt(0, farm) { crop = crop };
         farm.terrainFeatures[tile] = dirt;
         if (request.DebugFillInventory)
         {
@@ -331,6 +340,11 @@ public sealed partial class ModEntry : Mod
             afterFeature is HoeDirt afterDirt &&
             afterDirt.crop is not null &&
             afterDirt.readyForHarvest() &&
+            (!springOnionFixture ||
+                afterDirt.crop.GetType() == typeof(Crop) &&
+                afterDirt.crop.forageCrop.Value &&
+                afterDirt.crop.whichForageCrop.Value == Crop.forageCrop_springOnionID &&
+                afterDirt.crop.GetHarvestMethod() == HarvestMethod.Grab) &&
             (!request.DebugFillInventory || !CanInventoryAcceptHarvest(afterDirt.crop));
 
         return new TrainingExecutionResult
@@ -347,10 +361,21 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "debug_setup_harvest_crop_target",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { request.DebugFillInventory ? "isolated_runtime_fixture_crop_ready_for_harvest_inventory_full" : "isolated_runtime_fixture_crop_ready_for_harvest" }
+                ? new[]
+                {
+                    springOnionFixture
+                        ? "isolated_runtime_fixture_native_spring_onion_ready_for_harvest"
+                        : request.DebugFillInventory
+                            ? "isolated_runtime_fixture_crop_ready_for_harvest_inventory_full"
+                            : "isolated_runtime_fixture_crop_ready_for_harvest"
+                }
                 : new[] { "fixture_crop_not_ready_for_harvest" },
-            RequestedEffect = "farm.crops[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].ready_for_harvest=true",
-            ObservedEffect = HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value),
+            RequestedEffect = "farm.crops[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].ready_for_harvest=true;fixture=" + (springOnionFixture ? "spring_onion" : "seed:" + seedId),
+            ObservedEffect = HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value) +
+                ";runtime_type=" + dirt.crop.GetType().FullName +
+                ";forage_crop=" + dirt.crop.forageCrop.Value +
+                ";forage_crop_id=" + dirt.crop.whichForageCrop.Value +
+                ";harvest_item_id=" + dirt.crop.indexOfHarvest.Value,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_crop_not_ready_for_harvest" },
             ChangedFacts = verified
                 ? new[]

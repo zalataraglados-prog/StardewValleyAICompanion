@@ -54,7 +54,7 @@ namespace StardewAI.Core.Tests
                     "festival.play_slingshot_game",
                     "festival.play_strength_game",
                     "festival.spin_wheel",
-                    "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.excavate_artifact_spots", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_ginger", "foraging.harvest_tree_product", "foraging.pan_ore_spot", "foraging.rummage_garbage",
+                    "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.excavate_artifact_spots", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_ginger", "foraging.harvest_spring_onions", "foraging.harvest_tree_product", "foraging.pan_ore_spot", "foraging.rummage_garbage",
                     "inventory.transfer_item",
                     "island.field_office_survey",
                     "mail.process_letter",

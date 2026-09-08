@@ -109,14 +109,20 @@ it never falls back to a legacy AI rollout.
   runtime-only deterministic dependencies, high-level options pending runtime
   admission, primitive-only gaps, and genuinely missing options instead of treating
   every source as executable.
-- The current exact result is 29/33 admitted route kinds. The four explicit gaps are
-  spring-onion harvesting, tree moss harvesting, wild-tree chop drops, and wild-tree
-  seed drops. Both artifact-spot routes lower through the single
+- The current exact result is 30/33 admitted route kinds. The three explicit gaps are
+  tree moss harvesting, wild-tree chop drops, and wild-tree seed drops; both wild-tree
+  gaps share one missing high-level chop-acquisition option. Both artifact-spot routes lower through the single
   `foraging.excavate_artifact_spots -> clear_obstacle_tile -> executor.clear_obstacle`
   chain, with `(O)SeedSpot` and other clearables excluded upstream. EVD-334 verifies that
   exact high-level chain through hidden native Hoe execution, projected outputs, skill
   experience, durable counters and a fresh post-action snapshot. The existing primitive
   evidence was not used as a substitute for this high-level receipt.
+- EVD-335 lowers `native_spring_onion_harvest` through the single
+  `foraging.harvest_spring_onions -> harvest_crop_tile -> executor.harvest_crop` chain.
+  The bridge derives `(O)399` only for exact base forage crop ID `1`, because the native
+  crop keeps `indexOfHarvest` empty and creates the item inside `Crop.harvest`. Hidden
+  runtime evidence verifies inventory, exact `+3` Foraging XP, crop removal and a fresh
+  state hash; ordinary crops, ginger and custom crops remain outside this evidence scope.
 - This lowering is deliberately a terminal-transition join, not a fresh-save route
   proof. Calendar, unlock, facility, input-resource, calibrated travel-time, native
   outcome/retry, reservation, and fresh-receipt dependencies still have to be closed

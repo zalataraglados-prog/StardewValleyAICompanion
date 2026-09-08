@@ -63,6 +63,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["fishing.manage_fish_pond"] = FishPondManagementCandidates,
                 ["foraging.collect_spawned_objects"] = (snapshot, _) => SpawnedObjectForagingCandidates(snapshot),
                 ["foraging.excavate_artifact_spots"] = (snapshot, _) => ArtifactSpotExcavationCandidates(snapshot),
+                ["foraging.harvest_spring_onions"] = (snapshot, _) => SpringOnionHarvestCandidates(snapshot),
                 ["foraging.harvest_ginger"] = (snapshot, _) => GingerHarvestCandidates(snapshot),
                 ["foraging.harvest_bushes"] = (snapshot, _) => BushHarvestCandidates(snapshot),
                 ["foraging.harvest_fruit_tree"] = (snapshot, _) => FruitTreeHarvestCandidates(snapshot),
