@@ -157,8 +157,8 @@ if ([int]$acquisitionLowering.requirement_set_count -ne 4 -or
     [int]$acquisitionLowering.route_occurrence_count -ne 1599 -or
     [int]$acquisitionLowering.observed_route_kind_count -ne 33 -or
     [int]$acquisitionLowering.classified_route_kind_count -ne 33 -or
-    [int]$acquisitionLowering.admitted_route_kind_count -ne 27 -or
-    [int]$acquisitionLowering.blocked_route_kind_count -ne 6 -or
+    [int]$acquisitionLowering.admitted_route_kind_count -ne 29 -or
+    [int]$acquisitionLowering.blocked_route_kind_count -ne 4 -or
     @($acquisitionLowering.unknown_route_kinds).Count -ne 0 -or
     @($acquisitionLowering.unobserved_catalog_route_kinds).Count -ne 0 -or
     @('full_shipment', 'master_angler', 'museum_collection', 'community_center_standard' |
@@ -166,8 +166,6 @@ if ([int]$acquisitionLowering.requirement_set_count -ne 4 -or
     throw 'Acquisition route lowering denominator or exact catalog coverage drifted.'
 }
 $expectedAcquisitionGaps = @(
-    'native_location_artifact_spot',
-    'native_object_artifact_spot_chance',
     'native_spring_onion_harvest',
     'native_tree_moss_harvest',
     'native_wild_tree_chop_drop',

@@ -207,3 +207,7 @@ EVD-331 supersedes the day-start-only limitation in the `npcs.grandpa_friendship
 ## 2026-09-08 Master Angler current-date route/time supersession
 
 EVD-333 replaces the earlier topological-only Master Angler precheck. Current-date Teacher intents now require full date-bound route evidence, all connector approaches/transitions, a matching conservative movement calibration and terminal catch reserve. Core recomputes the remaining route at every fresh candidate boundary; a path which exists but arrives too late is unavailable. The same route and fishing compilers/executors remain the only runtime owners. Future-date scheduling, proactive trap capacity, stochastic retries and fresh native receipts are still blocking and this proof does not authorize formal training.
+
+## 2026-09-08 artifact-spot high-level admission
+
+EVD-334 adds the missing high-level receipt above the existing EVD-189 `executor.clear_obstacle` primitive. Exact base `(O)590` rows now flow through `foraging.excavate_artifact_spots -> clear_obstacle_tile -> executor.clear_obstacle`; `(O)SeedSpot`, other clearables, unreviewed location overrides and global-RNG secret-note branches remain excluded. The hidden isolated run verified projected output unit states, Foraging XP, `ArtifactSpotsDug`, terrain/mail effects, target removal and a fresh changed snapshot. This admits the current loaded artifact-spot option but does not prove a calendar-complete or seed-robust museum, bundle or Full Shipment route.

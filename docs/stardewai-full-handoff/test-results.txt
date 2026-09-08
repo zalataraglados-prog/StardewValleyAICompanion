@@ -4359,3 +4359,12 @@ Scope boundary:
 - The fresh candidate gate independently recomputes the remaining route. A topologically valid route that arrives too late, or has no terminal reserve, fails closed.
 - Review confirmed one Core timing authority and reuse of the existing connector/fishing compiler and executor paths. No game was started; future-date scheduling, proactive trap capacity, stochastic retries and fresh native receipts remain pending.
 - `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md` is now the current training interpretation. Existing selected-only behavior-cloning trajectories are not Teacher labels; formal training remains disabled.
+
+2026-09-08 EVD-334 native artifact-spot high-level chain
+- Hidden/silent isolated E-drive PASS: `artifacts/runtime-artifact-spot-daily-plan/runtime-artifact-spot-daily-plan-20260908-214925/summary.json`.
+- The only selected high-level candidate was `foraging.excavate_artifact_spots` / `clear:Farm:64,15:artifact_spot`; DailyPlan compiled it through the existing `clear_obstacle_tile -> executor.clear_obstacle` chain.
+- Native Hoe execution was applied/verified. The exact projected `(O)382` and `(O)Book_Defense` outputs, Foraging XP, object removal and fresh changed state hash matched; `(O)SeedSpot` and unrelated clearables stayed outside the candidate.
+- The loop ran with `--skip-training`, so the emitted calibration row is not formal Teacher data. Final full regression and regenerated option/route counts are recorded after the admission update.
+- Focused Core PASS 5/5; focused Backend PASS 32/32. KnowledgeCompiler exported 585/585 with zero blockers; isolated goal-conditioned bootstrap regression PASS.
+- Final reconciliation: 229 registered / 228 compiler-bound / 152 five-gate / 63 training allowlist / 145 Product Executor / 2 catalogued blocked. Acquisition lowering is 29/33 admitted, 4 blocked, across all 1,599 route occurrences.
+- Final full verification: Core PASS 2469/2469; Backend PASS 177/177; full solution Release build PASS with 0 warnings / 0 errors.

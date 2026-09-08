@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-08 EVD-334 古物点高层准入
+
+`foraging.excavate_artifact_spots` 已闭合读、候选、编译、原生运行和输出五门。隐藏静音隔离运行选择唯一原版 `(O)590`，经 DailyPlan 和既有 `clear_obstacle_tile -> executor.clear_obstacle` 单链执行原生 Hoe；输出 unit-state 集合、Foraging XP、`ArtifactSpotsDug`、地形、邮件状态、对象移除与 fresh state hash 全部吻合。`(O)SeedSpot`、其他清障对象、自定义地点重载和未透明的全局 RNG 分支继续失败关闭。
+
+权威对账现为 `229 registered / 228 compiler-bound / 152 five-gate / 63 training allowlist / 145 Product Executor / 2 catalogued blocked`。四个收集分母的 1599 条获取来源仍完整，路由种类从 `27/33` 提升到 `29/33`；剩余缺口固定为春葱、树苔、砍野树产物及砍野树种子掉落。Teacher criterion 总体仍为 `2/19 executable`，所以该准入不等于可以恢复正式全量训练。下一切片为 `native_spring_onion_harvest` 的高层选项与既有 `executor.harvest_crop` 单链闭环。
+
 ## 2026-09-08 当前有效覆盖：Teacher / Student 监督来源门
 
 本文下方 r24-r35 内容保留真实历史运行事实，但不得再据此宣称正式策略监督有效。当前规范见 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`：`teacher_preference`、`native_outcome`、`student_observation` 必须类型化分离；`candidate.Selected` 只能描述 Student 行为，不能自动成为正例。

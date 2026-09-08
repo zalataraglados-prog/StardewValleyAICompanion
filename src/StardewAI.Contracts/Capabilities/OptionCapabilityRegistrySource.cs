@@ -812,6 +812,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["foraging.collect_spawned_objects"] = VerifiedEvidence(
                         "vanilla_current_location_exact_base_spawned_object_ordinary_botanist_deterministic_gatherer_special_724519_and_farm_interior_native_pickup_matrix",
                         "EVD-211"),
+                    ["foraging.excavate_artifact_spots"] = VerifiedEvidence(
+                        "vanilla_current_location_exact_base_(O)590_artifact_spot_high_level_candidate_daily_plan_clear_obstacle_native_hoe_exact_output_experience_stat_terrain_mail_and_fresh_snapshot_receipt",
+                        "EVD-334"),
                     ["foraging.clear_green_rain_bushes"] = VerifiedEvidence(
                         "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
                         "EVD-212"),

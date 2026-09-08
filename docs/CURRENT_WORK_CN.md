@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-09-08 当前权威检查点：EVD-334
+
+- `foraging.excavate_artifact_spots` 已用 E 盘隔离存档完成隐藏静音高层运行验收。唯一 `(O)590` 候选从 `foraging.excavate_artifact_spots` 经 DailyPlan 降为 `clear_obstacle_tile -> executor.clear_obstacle`，没有新增第二套挖掘执行器。
+- 原生 Hoe 回执验证目标移除、完整输出 unit-state 集合、`+15` Foraging XP、`ArtifactSpotsDug`、地形与 Defense Book 邮件状态，并取得新鲜且变化后的快照哈希。`(O)SeedSpot` 与其他可清理物仍在上游排除；运行使用 `--skip-training`，夹具校准行不得冒充正式 Teacher 数据。
+- 权威生成结果为 `229 registered / 152 runtime-verified / 63 training-eligible`；获取路由为 `29/33 admitted / 4 blocked / 1599 occurrences`。剩余四类是春葱收获、树苔收获、砍野树产物和砍野树种子掉落。
+- Teacher 前沿仍为 `2/19 executable / 17/19 dependency pending / 0 missing graph / 0 governance blocked`。本步消除了多个终局共享的获取叶缺口，但尚未完成相应日历、解锁、资源、路线、保留量、概率重试和新存档期限证明，因此正式全量训练仍禁入。
+- 直接下一步：为 `native_spring_onion_harvest` 注册并闭合单一高层采集选项，复用现有 `executor.harvest_crop`，不得把机械原语直接作为 Teacher 输出。
+
 ## 2026-09-08 Teacher / Student 收敛合同与当前禁入状态
 
 - issue #90 与 #91 内容完全重复；其中 Teacher bootstrap、DAgger 重标、native outcome 后期优化和运行时 Student 主决策的方向正确，已整理为唯一规范 `docs/TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。

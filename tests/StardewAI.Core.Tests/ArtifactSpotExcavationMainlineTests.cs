@@ -42,7 +42,7 @@ public sealed class ArtifactSpotExcavationMainlineTests
     }
 
     [Fact]
-    public void CapabilityRemainsClosedUntilRealRuntimeEvidenceExists()
+    public void CapabilityIsAdmittedByTheVerifiedHighLevelNativeRuntimeChain()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired(
             "foraging.excavate_artifact_spots");
@@ -52,11 +52,14 @@ public sealed class ArtifactSpotExcavationMainlineTests
         Assert.True(declaration.AutonomousCandidateEnabled);
         Assert.True(DailyPlanCompiler.HasOptionCompiler(declaration.OptionId));
         Assert.False(ActionQueueCompiler.HasStepCompiler(declaration.OptionId));
-        Assert.Equal(OptionRuntimeStatus.RegisteredOnly, declaration.RuntimeEvidenceStatus);
-        Assert.Equal(
-            OptionTrainingEligibility.BlockedPendingRuntimeEvidence,
-            declaration.TrainingEligibility);
-        Assert.DoesNotContain(
+        Assert.Equal(OptionRuntimeStatus.RuntimeVerified, declaration.RuntimeEvidenceStatus);
+        Assert.Equal(OptionTrainingEligibility.Eligible, declaration.TrainingEligibility);
+        Assert.Equal(new[] { "EVD-334" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-334" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-334" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-334" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-334" }, declaration.OutputEvidenceIds);
+        Assert.Contains(
             declaration.OptionId,
             OptionCapabilityRegistrySource.TrainingAllowlist);
     }
