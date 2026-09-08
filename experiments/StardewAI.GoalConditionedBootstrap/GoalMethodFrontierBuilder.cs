@@ -11,6 +11,8 @@ public static partial class GoalMethodFrontierBuilder
         string dependencyExpansionPath,
         string isolatedTrainingAuthorizationPath,
         string requirementInventoryPath,
+        string acquisitionLoweringPath,
+        string acquisitionLoweringCatalogPath,
         string knowledgePath,
         string optionMatrixPath,
         string claimLedgerPath,
@@ -21,6 +23,9 @@ public static partial class GoalMethodFrontierBuilder
         var authorizationFullPath = Path.GetFullPath(
             isolatedTrainingAuthorizationPath);
         var requirementInventoryFullPath = Path.GetFullPath(requirementInventoryPath);
+        var acquisitionLoweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
+        var acquisitionLoweringCatalogFullPath = Path.GetFullPath(
+            acquisitionLoweringCatalogPath);
         var optionFullPath = Path.GetFullPath(optionMatrixPath);
         var ledgerFullPath = Path.GetFullPath(claimLedgerPath);
         var catalogSourceFullPath = Path.GetFullPath(directionCatalogSourcePath);
@@ -34,6 +39,13 @@ public static partial class GoalMethodFrontierBuilder
                 authorizationFullPath,
                 knowledge.GoalId,
                 options);
+        var acquisitionLowering = LoadAcquisitionLowering(
+            acquisitionLoweringFullPath,
+            acquisitionLoweringCatalogFullPath,
+            requirementInventoryFullPath,
+            optionFullPath,
+            authorizationFullPath,
+            requirementInventory);
         var claimLedger = LoadClaimLedger(ledgerFullPath);
         var verifiedDependencySourceIds = claimLedger.VerifiedSourceIds
             .Concat(requirementInventory.SourceEvidence.Select(source => source.SourceId))
@@ -248,6 +260,7 @@ public static partial class GoalMethodFrontierBuilder
 
         AddRequirementInventoryGraph(
             requirementInventory,
+            acquisitionLowering,
             catalogEntries,
             nodes,
             edges);
@@ -308,6 +321,13 @@ public static partial class GoalMethodFrontierBuilder
                 ContentInventoryVerifier.HashFile(authorizationFullPath),
             RequirementInventorySha256 =
                 ContentInventoryVerifier.HashFile(requirementInventoryFullPath),
+            AcquisitionRouteLoweringSha256 =
+                ContentInventoryVerifier.HashFile(acquisitionLoweringFullPath),
+            AcquisitionRouteLoweringCatalogSha256 =
+                ContentInventoryVerifier.HashFile(acquisitionLoweringCatalogFullPath),
+            AcquisitionRouteKindCount = acquisitionLowering.ObservedRouteKindCount,
+            AcquisitionRouteAdmittedKindCount = acquisitionLowering.AdmittedRouteKindCount,
+            AcquisitionRouteBlockedKindCount = acquisitionLowering.BlockedRouteKindCount,
             RequirementDenominatorGroupCount = requirementInventory.RequirementSets
                 .Sum(set => set.RequiredGroupCount),
             RequirementRouteCoveredGroupCount = requirementInventory.RequirementSets
@@ -377,6 +397,7 @@ public static partial class GoalMethodFrontierBuilder
 
     private static void AddRequirementInventoryGraph(
         AuthoritativeRequirementInventoryReport inventory,
+        AcquisitionRouteOptionLoweringReport acquisitionLowering,
         IReadOnlyList<GrandpaDirectionCatalogEntry> catalogEntries,
         ICollection<GoalMethodHypergraphNode> nodes,
         ICollection<GoalMethodHypergraphEdge> edges)
@@ -388,11 +409,14 @@ public static partial class GoalMethodFrontierBuilder
             ["museum_collection"] = "complete_museum_collection",
             ["community_center_standard"] = "complete_community_center"
         };
+        var loweringSets = acquisitionLowering.RequirementSets
+            .ToDictionary(set => set.RequirementSetId, StringComparer.Ordinal);
         foreach (var set in inventory.RequirementSets)
         {
             Require(directionBySet.TryGetValue(set.RequirementSetId, out var directionId),
                 "Requirement inventory contains an unknown set: " + set.RequirementSetId);
             var methodId = catalogEntries.Single(entry => entry.DirectionId == directionId).BindingRuleId;
+            var loweringSet = loweringSets[set.RequirementSetId];
             var setNodeId = "requirement_set:" + set.RequirementSetId;
             nodes.Add(new(setNodeId, "authoritative_requirement_set", new Dictionary<string, object?>
             {
@@ -400,6 +424,8 @@ public static partial class GoalMethodFrontierBuilder
                 ["required_group_count"] = set.RequiredGroupCount,
                 ["route_covered_group_count"] = set.RouteCoveredGroupCount,
                 ["acquisition_routes_complete"] = set.AcquisitionRoutesComplete,
+                ["runtime_admitted_group_count"] = loweringSet.RuntimeAdmittedGroupCount,
+                ["teacher_admitted_group_count"] = loweringSet.TeacherAdmittedGroupCount,
                 ["transparent_state_path"] = set.TransparentStatePath
             }));
             edges.Add(new(setNodeId, methodId, "defines_method_denominator"));
@@ -415,6 +441,60 @@ public static partial class GoalMethodFrontierBuilder
                 edges.Add(new(group.RequirementId, setNodeId, "belongs_to_requirement_set"));
             }
         }
+    }
+
+    private static AcquisitionRouteOptionLoweringReport LoadAcquisitionLowering(
+        string path,
+        string catalogPath,
+        string requirementInventoryPath,
+        string optionMatrixPath,
+        string authorizationPath,
+        AuthoritativeRequirementInventoryReport inventory)
+    {
+        var report = JsonSerializer.Deserialize<AcquisitionRouteOptionLoweringReport>(
+            File.ReadAllText(path),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            ?? throw new InvalidDataException("Acquisition route lowering report is null.");
+        Require(report.SchemaVersion == "acquisition_route_option_lowering.v1",
+            "Unsupported acquisition route lowering schema.");
+        Require(report.GoalId == inventory.GoalId,
+            "Acquisition route lowering goal does not match the requirement inventory.");
+        Require(report.RequirementInventorySha256 ==
+                    ContentInventoryVerifier.HashFile(requirementInventoryPath) &&
+                report.LoweringCatalogSha256 == ContentInventoryVerifier.HashFile(catalogPath) &&
+                report.OptionMatrixSha256 == ContentInventoryVerifier.HashFile(optionMatrixPath) &&
+                report.IsolatedTrainingAuthorizationSha256 ==
+                    ContentInventoryVerifier.HashFile(authorizationPath),
+            "Acquisition route lowering input identity drifted.");
+        Require(report.RequirementSetCount == inventory.RequirementSets.Length &&
+                report.RequirementGroupCount == inventory.RequirementSets.Sum(set => set.RequiredGroupCount),
+            "Acquisition route lowering requirement counts drifted.");
+        Require(report.ObservedRouteKindCount == report.ClassifiedRouteKindCount &&
+                report.ObservedRouteKindCount == report.RouteKinds.Length &&
+                report.UnknownRouteKinds.Length == 0 &&
+                report.UnobservedCatalogRouteKinds.Length == 0,
+            "Acquisition route lowering does not classify every exact route kind.");
+        Require(report.AdmittedRouteKindCount + report.BlockedRouteKindCount ==
+                report.ObservedRouteKindCount,
+            "Acquisition route lowering admission counts do not reconcile.");
+        var reportSets = report.RequirementSets.ToDictionary(
+            set => set.RequirementSetId,
+            StringComparer.Ordinal);
+        Require(reportSets.Count == report.RequirementSets.Length &&
+                reportSets.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(
+                    inventory.RequirementSets.Select(set => set.RequirementSetId)),
+            "Acquisition route lowering requirement sets drifted.");
+        foreach (var set in inventory.RequirementSets)
+        {
+            var reportSet = reportSets[set.RequirementSetId];
+            Require(reportSet.RequiredGroupCount == set.RequiredGroupCount &&
+                    reportSet.Groups.Length == set.Groups.Length &&
+                    reportSet.Groups.Select(group => group.RequirementId)
+                        .ToHashSet(StringComparer.Ordinal)
+                        .SetEquals(set.Groups.Select(group => group.RequirementId)),
+                "Acquisition route lowering set rows drifted: " + set.RequirementSetId);
+        }
+        return report;
     }
 
     private static IsolatedTrainingAuthorization LoadIsolatedTrainingAuthorization(
@@ -821,6 +901,16 @@ public sealed class GoalMethodFrontierReport
         string.Empty;
     [JsonPropertyName("requirement_inventory_sha256")]
     public string RequirementInventorySha256 { get; set; } = string.Empty;
+    [JsonPropertyName("acquisition_route_lowering_sha256")]
+    public string AcquisitionRouteLoweringSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("acquisition_route_lowering_catalog_sha256")]
+    public string AcquisitionRouteLoweringCatalogSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("acquisition_route_kind_count")]
+    public int AcquisitionRouteKindCount { get; set; }
+    [JsonPropertyName("acquisition_route_admitted_kind_count")]
+    public int AcquisitionRouteAdmittedKindCount { get; set; }
+    [JsonPropertyName("acquisition_route_blocked_kind_count")]
+    public int AcquisitionRouteBlockedKindCount { get; set; }
     [JsonPropertyName("requirement_denominator_group_count")]
     public int RequirementDenominatorGroupCount { get; set; }
     [JsonPropertyName("requirement_route_covered_group_count")]

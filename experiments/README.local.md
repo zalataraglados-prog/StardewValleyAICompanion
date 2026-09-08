@@ -102,6 +102,20 @@ it never falls back to a legacy AI rollout.
   denominator and first-source omission detection; it does not yet prove the
   calendar, unlock, resource, candidate, compiler, or native-receipt chain for each
   source and therefore does not authorize training by itself.
+- `acquisition-route-option-lowering-v1.json` now classifies all 33 route kinds and
+  all 1,599 route occurrences across those four sets against the current option
+  governance matrix. Unknown route kinds and stale catalog rows fail closed. The
+  report distinguishes normally trainable options, isolated-clone teacher options,
+  runtime-only deterministic dependencies, primitive-only gaps, and a genuinely
+  missing option instead of treating every source as executable.
+- The current exact result is 27/33 admitted route kinds. The six explicit gaps are
+  location/object artifact spots, spring-onion harvesting, tree moss harvesting,
+  wild-tree chop drops, and wild-tree seed drops. A primitive becoming runtime-verified
+  cannot silently close a required high-level option gap.
+- This lowering is deliberately a terminal-transition join, not a fresh-save route
+  proof. Calendar, unlock, facility, input-resource, calibrated travel-time, native
+  outcome/retry, reservation, and fresh-receipt dependencies still have to be closed
+  before a route can supervise formal training.
 - The transparent bridge publishes the exact live fish and museum collection rows,
   including missing IDs. Static catalogs are cached by the live `Data/Objects`
   instance while per-save completion remains fresh on every snapshot.
@@ -150,9 +164,10 @@ it never falls back to a legacy AI rollout.
 
 ## Authority gates
 
-`Run-Regression.ps1` first verifies the evidence lock and claim ledger, generates the
-authoritative requirement inventory, then runs the reproducible current option-matrix
-build, goal-method frontier generation, and bootstrap regression. Any source drift,
+`Run-Regression.ps1` first verifies the evidence lock and claim ledger, rebuilds the
+current option matrix, then generates the authoritative requirement inventory, its
+exact route-to-option lowering, the goal-method frontier, and the bootstrap regression.
+Any source drift,
 denominator mismatch, unknown option binding, or unresolved factual claim fails before
 teacher output is generated. Every requirement-inventory source is rehashed when the
 frontier is built.

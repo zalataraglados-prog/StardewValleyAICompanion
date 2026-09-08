@@ -25,6 +25,7 @@ $isolatedTrainingAuthorization = Join-Path $PSScriptRoot 'isolated-training-auth
 $directionCatalogSource = Join-Path $root 'src\StardewAI.Core\Training\GrandpaDirectionCatalog.cs'
 $optionMatrix = Join-Path $PSScriptRoot 'local-data\current-knowledge\option-governance-matrix.json'
 $authoritativeGraph = Join-Path $PSScriptRoot 'local-data\current-knowledge\authoritative-dependency-graph.json'
+$acquisitionLoweringCatalog = Join-Path $PSScriptRoot 'acquisition-route-option-lowering.v1.json'
 
 dotnet build $bootstrap --no-restore
 if ($LASTEXITCODE -ne 0) { throw 'Bootstrap build failed.' }
@@ -141,11 +142,51 @@ if ($masterAnglerWindows.status -ne 'complete_static_windows_dynamic_execution_p
     $lavaEelMineWindows.Count -ne 1) {
     throw 'Master Angler Stage 1 static deadline windows are incomplete.'
 }
+$acquisitionLoweringPath = Join-Path $output 'acquisition-route-option-lowering-v1.json'
+dotnet run --project $bootstrap --no-build -- build-acquisition-route-lowering `
+    --requirement-inventory $requirementInventoryPath `
+    --catalog $acquisitionLoweringCatalog `
+    --option-matrix $optionMatrix `
+    --isolated-training-authorization $isolatedTrainingAuthorization `
+    --output $acquisitionLoweringPath
+if ($LASTEXITCODE -ne 0) { throw 'Acquisition route option lowering failed.' }
+$acquisitionLowering = Get-Content -LiteralPath $acquisitionLoweringPath -Raw | ConvertFrom-Json
+$acquisitionSetIds = @($acquisitionLowering.requirement_sets | ForEach-Object requirement_set_id)
+if ([int]$acquisitionLowering.requirement_set_count -ne 4 -or
+    [int]$acquisitionLowering.requirement_group_count -ne 351 -or
+    [int]$acquisitionLowering.route_occurrence_count -ne 1599 -or
+    [int]$acquisitionLowering.observed_route_kind_count -ne 33 -or
+    [int]$acquisitionLowering.classified_route_kind_count -ne 33 -or
+    [int]$acquisitionLowering.admitted_route_kind_count -ne 27 -or
+    [int]$acquisitionLowering.blocked_route_kind_count -ne 6 -or
+    @($acquisitionLowering.unknown_route_kinds).Count -ne 0 -or
+    @($acquisitionLowering.unobserved_catalog_route_kinds).Count -ne 0 -or
+    @('full_shipment', 'master_angler', 'museum_collection', 'community_center_standard' |
+        Where-Object { $_ -notin $acquisitionSetIds }).Count -ne 0) {
+    throw 'Acquisition route lowering denominator or exact catalog coverage drifted.'
+}
+$expectedAcquisitionGaps = @(
+    'native_location_artifact_spot',
+    'native_object_artifact_spot_chance',
+    'native_spring_onion_harvest',
+    'native_tree_moss_harvest',
+    'native_wild_tree_chop_drop',
+    'native_wild_tree_seed_drop'
+)
+$actualAcquisitionGaps = @($acquisitionLowering.route_kinds |
+    Where-Object { -not [bool]$_.teacher_admission_ready } |
+    ForEach-Object route_kind |
+    Sort-Object)
+if (@(Compare-Object $expectedAcquisitionGaps $actualAcquisitionGaps).Count -ne 0) {
+    throw 'Acquisition route lowering gap identity drifted.'
+}
 dotnet run --project $bootstrap --no-build -- build-goal-method-graph `
     --expansion $frontierExpansion `
     --dependencies $frontierDependencies `
     --isolated-training-authorization $isolatedTrainingAuthorization `
     --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --acquisition-lowering-catalog $acquisitionLoweringCatalog `
     --knowledge $Knowledge `
     --option-matrix $optionMatrix `
     --claim-ledger $claimLedger `
