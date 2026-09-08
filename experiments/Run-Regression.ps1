@@ -159,6 +159,26 @@ if ([int]$frontier.governance_blocked_criterion_count -ne 0 -or
     @($frontier.isolated_teacher_authorized_option_ids).Count -ne 4) {
     throw 'Isolated-training authorization did not close the expected governance-only frontier blockers.'
 }
+$breadth = $frontier.breadth_coverage
+$breadthClassTotal = [int]$breadth.executable_route_criterion_count +
+    [int]$breadth.dependency_graph_pending_criterion_count +
+    [int]$breadth.missing_dependency_graph_criterion_count +
+    [int]$breadth.governance_blocked_criterion_count
+$knownBreadthBlockerIds = @($breadth.blocker_clusters | ForEach-Object blocker_id)
+$unresolvedBreadthRows = @($breadth.criteria | Where-Object route_class -ne 'executable_route')
+$danglingBreadthBlockerIds = @($unresolvedBreadthRows | ForEach-Object blocker_ids |
+    Where-Object { $_ -notin $knownBreadthBlockerIds } | Select-Object -Unique)
+$invalidSharedDependencies = @($breadth.shared_dependency_clusters |
+    Where-Object { @($_.direction_ids).Count -lt 2 })
+if (-not [bool]$breadth.all_criteria_classified -or
+    [int]$breadth.classified_criterion_count -ne [int]$frontier.criterion_count -or
+    @($breadth.criteria).Count -ne [int]$frontier.criterion_count -or
+    $breadthClassTotal -ne [int]$frontier.criterion_count -or
+    @($unresolvedBreadthRows | Where-Object { @($_.blocker_ids).Count -eq 0 }).Count -ne 0 -or
+    $danglingBreadthBlockerIds.Count -ne 0 -or
+    $invalidSharedDependencies.Count -ne 0) {
+    throw 'Goal-method breadth classification is incomplete or internally inconsistent.'
+}
 dotnet run --project $bootstrap --no-build -- self-test `
     --knowledge $Knowledge `
     --ranking $Ranking `

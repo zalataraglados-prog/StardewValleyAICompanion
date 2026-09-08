@@ -4,7 +4,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class GoalMethodFrontierBuilder
+public static partial class GoalMethodFrontierBuilder
 {
     public static GoalMethodFrontierReport Build(
         string expansionPath,
@@ -282,6 +282,13 @@ public static class GoalMethodFrontierBuilder
                 methods.Select(method => method.MethodId).ToArray(),
                 status);
         }).ToArray();
+        var breadthCoverage = BuildBreadthCoverage(
+            criteriaRows,
+            methodRows,
+            overlays,
+            dependencyExpansions,
+            options,
+            isolatedTrainingAuthorization.OptionIds);
 
         return new GoalMethodFrontierReport
         {
@@ -317,6 +324,7 @@ public static class GoalMethodFrontierBuilder
             ExecutableCriterionCount = criteriaRows.Count(value => value.Status == "executable_frontier"),
             GovernanceBlockedCriterionCount = criteriaRows.Count(value => value.Status == "blocked_by_option_governance"),
             ExpansionPendingCriterionCount = criteriaRows.Count(value => value.Status == "pending_dependency_expansion"),
+            BreadthCoverage = breadthCoverage,
             Criteria = criteriaRows,
             Methods = methodRows.ToArray(),
             Nodes = nodes.GroupBy(value => value.Id, StringComparer.Ordinal).Select(value => value.First()).ToArray(),
@@ -818,6 +826,8 @@ public sealed class GoalMethodFrontierReport
     public int GovernanceBlockedCriterionCount { get; set; }
     [JsonPropertyName("expansion_pending_criterion_count")]
     public int ExpansionPendingCriterionCount { get; set; }
+    [JsonPropertyName("breadth_coverage")]
+    public GoalMethodBreadthCoverage BreadthCoverage { get; set; } = new();
     [JsonPropertyName("criteria")]
     public GoalCriterionFrontier[] Criteria { get; set; } = Array.Empty<GoalCriterionFrontier>();
     [JsonPropertyName("methods")]

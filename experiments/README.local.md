@@ -139,8 +139,9 @@ it never falls back to a legacy AI rollout.
 - This mechanism does not make Perfection self-authorizing. New goal rules, dependency routes,
   candidates, compiler bindings, transparent fields, and native receipts still require separate
   admission before teacher labels may be generated.
-- The current Stage 1 frontier is still incomplete: 2/19 criteria are executable
-  frontiers and 17/19 await dependency expansion. Four normally confirmation-gated
+- The current Stage 1 frontier is still incomplete: 2/19 criteria are executable,
+  11/19 have typed dependency graphs still pending closure, and 6/19 still lack a
+  dependency graph. Four normally confirmation-gated
   options have isolated teacher authorization, so governance blockers are now zero;
   this does not bypass runtime receipts or make an incompletely expanded route valid.
 - Native combat XP evidence covers all six skill indices, including the rejected Luck
@@ -174,6 +175,13 @@ compiler-owned transitions need runtime verification and never become model labe
 complete multi-step route is `earn_pet_love`: exact initial-adoption event gate, native event
 acceptance and naming, daily pet/bowl care, and native day settlement.
 The current graph report is `local-data/output/goal-method-frontier-v3.json`.
+Its `breadth_coverage` section classifies every criterion exactly once, gives every
+non-executable criterion a resolvable typed blocker ID, and clusters policy or
+deterministic option dependencies reused by multiple directions. Regression rejects
+missing classifications, dangling blocker references, and false shared clusters. The
+current shared leaves are `recovery.stabilize_day`, `fishing.catch_fish`, and
+`farm.collect_animal_products`; they must be improved once and reused rather than
+reimplemented per Grandpa direction.
 The current requirement report is
 `local-data/output/authoritative-requirement-inventory-v1.json`. The next admission
 slice continues expanding each known source through calendar, unlock, facility, resource,
