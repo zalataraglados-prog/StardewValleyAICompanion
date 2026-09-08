@@ -1056,6 +1056,757 @@
         { "from": "dependency.earn_pet_love.native_day_settlement", "to": "dependency.earn_pet_love.daily_recurrence", "kind": "advances" },
         { "from": "dependency.earn_pet_love.daily_recurrence", "to": "dependency.earn_pet_love.pet_love_mail_received", "kind": "terminates_at" }
       ]
+    },
+    {
+      "direction_id": "complete_museum_collection",
+      "status": "in_progress",
+      "completion_node_id": "dependency.complete_museum_collection.achievement_received",
+      "source_ids": [
+        "native.utility",
+        "runtime.goal_index",
+        "native_museum_rule",
+        "runtime_data_objects",
+        "authoritative_dependency_graph"
+      ],
+      "blockers": [
+        "lower every authoritative museum acquisition-route kind to an existing eligible high-level option with current-state time and probability bounds",
+        "prove one shared duplicate and reservation policy preserves active tasks crafting full-shipment and Rusty Key commitments",
+        "produce a fresh-save seed-robust schedule that completes all 95 native museum requirements before the Year 3 evaluation"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.complete_museum_collection.achievement_received",
+          "kind": "terminal_fact",
+          "required_field_paths": [
+            "world_progress.achievements",
+            "world_progress.museum"
+          ],
+          "rule": {
+            "all": [
+              { "path": "world_progress.achievements", "operator": "contains", "value": "5" },
+              { "path": "world_progress.museum.collection_complete", "operator": "equals", "value": true }
+            ]
+          }
+        },
+        {
+          "id": "dependency.complete_museum_collection.authoritative_requirement_set",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "world_progress.museum",
+            "player.inventory"
+          ],
+          "rule": {
+            "requirement_set_id": "museum_collection",
+            "required_group_count": 95,
+            "selection": "all_required",
+            "current_missing_ids_path": "world_progress.museum.missing_item_ids",
+            "denominator_source": "authoritative_goal_requirement_inventory.v1"
+          }
+        },
+        {
+          "id": "dependency.complete_museum_collection.reserve_missing_item",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "world_progress.museum",
+            "world_progress.full_shipment_progress",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "quests.active_quests",
+            "quests.special_orders"
+          ],
+          "rule": {
+            "operator": "all",
+            "conditions": [
+              "item is a currently missing native museum requirement",
+              "one exact owned copy remains after active task crafting and full-shipment reservations",
+              "the selected copy is not already represented by a museum piece"
+            ],
+            "unknown_reservation_evidence": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.complete_museum_collection.acquire_missing_item",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.museum",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "time.total_days",
+            "time.time"
+          ],
+          "shared_dependency_family": "museum_item_acquisition_and_reservation",
+          "rule": {
+            "input": "one missing requirement and its complete authoritative acquisition_routes array",
+            "teacher_choice": "minimum expected completion time among exact currently or prospectively legal routes",
+            "unknown_rng": "branch or reserve retries; never label an unavailable future outcome as known",
+            "output": "one fresh observed unreserved copy in player inventory"
+          }
+        },
+        {
+          "id": "dependency.complete_museum_collection.donate_missing_item",
+          "kind": "policy_option_transition",
+          "option_id": "museum.donate_items",
+          "candidate_kinds": ["donate_museum_item"],
+          "required_field_paths": [
+            "world_progress.museum",
+            "player.inventory",
+            "locations.collision_grid",
+            "menus.active_menu"
+          ],
+          "binding": {
+            "required_progress": "expected_donated_count_after equals expected_donated_count_before plus one",
+            "identity": "exact missing item inventory slot and qualified item ID",
+            "receipt": "fresh museum piece plus inventory decrement and any native projected reward actions"
+          }
+        },
+        {
+          "id": "dependency.complete_museum_collection.donation_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.museum",
+            "world_progress.achievements",
+            "player.inventory",
+            "time.total_days"
+          ],
+          "rule": {
+            "continue_while": { "path": "world_progress.museum.collection_complete", "operator": "equals", "value": false },
+            "iteration": [
+              "refresh native missing requirement set",
+              "select or acquire one reserve-safe copy",
+              "donate through the existing native menu executor",
+              "verify fresh receipt before selecting the next requirement"
+            ]
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.complete_museum_collection.authoritative_requirement_set", "to": "dependency.complete_museum_collection.acquire_missing_item", "kind": "selects_missing_requirement" },
+        { "from": "dependency.complete_museum_collection.acquire_missing_item", "to": "dependency.complete_museum_collection.reserve_missing_item", "kind": "may_produce" },
+        { "from": "dependency.complete_museum_collection.reserve_missing_item", "to": "dependency.complete_museum_collection.donate_missing_item", "kind": "authorizes" },
+        { "from": "dependency.complete_museum_collection.donate_missing_item", "to": "dependency.complete_museum_collection.donation_recurrence", "kind": "advances" },
+        { "from": "dependency.complete_museum_collection.donation_recurrence", "to": "dependency.complete_museum_collection.acquire_missing_item", "kind": "continues_below_terminal" },
+        { "from": "dependency.complete_museum_collection.donation_recurrence", "to": "dependency.complete_museum_collection.achievement_received", "kind": "terminates_at" }
+      ]
+    },
+    {
+      "direction_id": "obtain_rusty_key",
+      "status": "in_progress",
+      "completion_node_id": "dependency.obtain_rusty_key.has_rusty_key",
+      "source_ids": [
+        "native.utility",
+        "native.event",
+        "runtime.goal_index",
+        "native_museum_rule",
+        "runtime_data_objects",
+        "authoritative_dependency_graph"
+      ],
+      "blockers": [
+        "reuse the museum acquisition and reservation chain to select a minimum-time 60-donation portfolio without consuming protected items",
+        "prove the projected museum60 reward action native key-delivery event trigger and fresh hasRustyKey receipt before the Year 3 evaluation"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.obtain_rusty_key.has_rusty_key",
+          "kind": "terminal_fact",
+          "required_field_paths": ["player.has_rusty_key", "world_progress.museum"],
+          "rule": { "path": "player.has_rusty_key", "operator": "equals", "value": true }
+        },
+        {
+          "id": "dependency.obtain_rusty_key.donation_threshold",
+          "kind": "state_fact",
+          "required_field_paths": ["world_progress.museum"],
+          "rule": {
+            "threshold_path": "world_progress.museum.rusty_key_donation_threshold",
+            "progress_path": "world_progress.museum.donated_count",
+            "reward_id_path": "world_progress.museum.rusty_key_reward_id",
+            "reward_action_path": "world_progress.museum.rusty_key_reward_action"
+          }
+        },
+        {
+          "id": "dependency.obtain_rusty_key.acquire_reserve_safe_museum_item",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.museum",
+            "world_progress.full_shipment_progress",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "quests.active_quests",
+            "quests.special_orders"
+          ],
+          "shared_dependency_family": "museum_item_acquisition_and_reservation",
+          "rule": {
+            "target": "minimum-time set of distinct missing museum items sufficient to reach the live rusty-key donation threshold",
+            "reservation": "preserve active tasks crafting full-shipment and remaining museum commitments",
+            "unknown_route_or_outcome": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.obtain_rusty_key.donate_threshold_item",
+          "kind": "policy_option_transition",
+          "option_id": "museum.donate_items",
+          "candidate_kinds": ["donate_museum_item"],
+          "required_field_paths": [
+            "world_progress.museum",
+            "player.inventory",
+            "locations.collision_grid",
+            "menus.active_menu"
+          ],
+          "binding": {
+            "progress": "one exact positive donation below or at the live threshold",
+            "threshold_receipt": "reaches_rusty_key_threshold and projected reward action equals the fresh native museum row",
+            "shared_executor": "museum.donate_items"
+          }
+        },
+        {
+          "id": "dependency.obtain_rusty_key.native_key_event",
+          "kind": "policy_option_transition",
+          "option_id": "story.advance_event",
+          "candidate_kinds": ["advance_story_event_automatic"],
+          "required_field_paths": [
+            "world_progress.museum",
+            "player.story_event",
+            "player.has_rusty_key"
+          ],
+          "binding": {
+            "precondition": "fresh native event candidate is attributable to the museum60 prerequisite",
+            "execution": "normal event input only",
+            "receipt": "player.has_rusty_key changes to true through the native RustyKey event command"
+          }
+        },
+        {
+          "id": "dependency.obtain_rusty_key.threshold_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": ["world_progress.museum", "player.has_rusty_key", "time.total_days"],
+          "rule": {
+            "before_threshold": "repeat shared museum acquisition reservation and donation",
+            "after_threshold": "wait for and progress only the fresh attributable native key event",
+            "continue_while": { "path": "player.has_rusty_key", "operator": "equals", "value": false }
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.obtain_rusty_key.donation_threshold", "to": "dependency.obtain_rusty_key.acquire_reserve_safe_museum_item", "kind": "bounds" },
+        { "from": "dependency.obtain_rusty_key.acquire_reserve_safe_museum_item", "to": "dependency.obtain_rusty_key.donate_threshold_item", "kind": "enables" },
+        { "from": "dependency.obtain_rusty_key.donate_threshold_item", "to": "dependency.obtain_rusty_key.threshold_recurrence", "kind": "advances" },
+        { "from": "dependency.obtain_rusty_key.threshold_recurrence", "to": "dependency.obtain_rusty_key.acquire_reserve_safe_museum_item", "kind": "continues_below_threshold" },
+        { "from": "dependency.obtain_rusty_key.threshold_recurrence", "to": "dependency.obtain_rusty_key.native_key_event", "kind": "enables_after_threshold" },
+        { "from": "dependency.obtain_rusty_key.native_key_event", "to": "dependency.obtain_rusty_key.has_rusty_key", "kind": "settles" }
+      ]
+    },
+    {
+      "direction_id": "complete_community_center",
+      "status": "in_progress",
+      "completion_node_id": "dependency.complete_community_center.native_completion",
+      "source_ids": [
+        "native.utility",
+        "native.game1",
+        "native.event",
+        "native.preconditions",
+        "native.junimo_note_menu",
+        "runtime.goal_index",
+        "runtime.bundles",
+        "runtime_data_objects",
+        "authoritative_dependency_graph"
+      ],
+      "blockers": [
+        "prove the native Community Center unlock and Junimo-text event chain then bind the active standard or remixed bundle denominator instead of assuming the locked standard inventory is the live save",
+        "lower every selected bundle ingredient acquisition route through season weather clock quality facility and reservation constraints",
+        "prove all room rewards pending mail and native completion ceremony settlement through fresh receipts before the Year 3 evaluation"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.complete_community_center.native_completion",
+          "kind": "terminal_fact",
+          "required_field_paths": ["world_progress.community_center"],
+          "rule": {
+            "all": [
+              { "path": "world_progress.community_center.location_accessible", "operator": "equals", "value": true },
+              { "path": "world_progress.community_center.community_center_complete_native", "operator": "equals", "value": true }
+            ]
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.unlock_bundle_interface",
+          "kind": "policy_option_transition",
+          "option_id": "story.advance_event",
+          "candidate_kinds": ["advance_story_event_automatic", "advance_story_event_choice"],
+          "required_field_paths": [
+            "world_progress.community_center",
+            "player.story_event",
+            "time.total_days",
+            "time.time"
+          ],
+          "binding": {
+            "precondition": "fresh native event candidate is attributable to the Community Center unlock or Junimo-text chain",
+            "execution": "normal event and dialogue input only",
+            "receipt": "fresh live bundle rows become readable for the selected route"
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.active_bundle_denominator",
+          "kind": "state_fact",
+          "required_field_paths": ["world_progress.community_center"],
+          "rule": {
+            "route_state_path": "world_progress.community_center.route_state",
+            "live_rows_path": "world_progress.community_center.bundle_rows",
+            "locked_standard_reference_set": "community_center_standard",
+            "selection": "live bundle rows are authoritative; the locked standard set is validation evidence only when identities match"
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.reserve_bundle_ingredient",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "world_progress.community_center",
+            "world_progress.full_shipment_progress",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "quests.active_quests",
+            "quests.special_orders"
+          ],
+          "rule": {
+            "operator": "all",
+            "conditions": [
+              "ingredient advances one currently incomplete live bundle slot",
+              "amount and minimum quality satisfy the fresh live row",
+              "exact quantity remains after higher-priority and cross-goal reservations"
+            ],
+            "unknown_evidence": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.acquire_bundle_ingredient",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.community_center",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "time.season",
+            "time.weather",
+            "time.time",
+            "time.total_days"
+          ],
+          "rule": {
+            "input": "one selected missing live bundle alternative",
+            "teacher_choice": "minimum deadline-safe route after quality season weather facility and competing-reservation gates",
+            "standard_route_source": "authoritative_goal_requirement_inventory.v1",
+            "remixed_route_source": "fresh live bundle rows plus authoritative acquisition graph"
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.donate_bundle_ingredient",
+          "kind": "policy_option_transition",
+          "option_id": "community_center.donate_bundle_items",
+          "candidate_kinds": ["donate_community_center_item"],
+          "required_field_paths": [
+            "world_progress.community_center",
+            "player.inventory",
+            "locations.collision_grid",
+            "menus.active_menu"
+          ],
+          "binding": {
+            "identity": "exact bundle data key ingredient index inventory slot item amount and quality",
+            "receipt": "fresh ingredient completion bundle completion area completion reward and pending-mail projection",
+            "route_gate": "community_center_locked or undecided only"
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.native_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": [
+            "recovery_sleep_immediately",
+            "recovery_sleep_before_collapse",
+            "recovery_resume_sleep_prompt"
+          ],
+          "required_field_paths": ["world_progress.community_center", "time.total_days"],
+          "rule": {
+            "execution_owner": "deterministic_day_compiler_not_policy_label",
+            "purpose": "settle native pending room mail and completion state after required daily commitments",
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.completion_event",
+          "kind": "policy_option_transition",
+          "option_id": "story.advance_event",
+          "candidate_kinds": ["advance_story_event_automatic", "advance_story_event_choice"],
+          "required_field_paths": ["world_progress.community_center", "player.story_event"],
+          "binding": {
+            "precondition": "fresh native event is attributable to the completed Community Center route",
+            "execution": "normal event input only",
+            "receipt": "fresh native completion and accessibility fields"
+          }
+        },
+        {
+          "id": "dependency.complete_community_center.bundle_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": ["world_progress.community_center", "player.inventory", "time.total_days"],
+          "rule": {
+            "continue_while": { "path": "world_progress.community_center.community_center_complete_native", "operator": "equals", "value": false },
+            "iteration": [
+              "refresh live denominator and route commitment",
+              "select or acquire one reserve-safe ingredient",
+              "donate through the existing native menu executor",
+              "settle native day or event boundaries only when required"
+            ]
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.complete_community_center.unlock_bundle_interface", "to": "dependency.complete_community_center.active_bundle_denominator", "kind": "may_enable" },
+        { "from": "dependency.complete_community_center.active_bundle_denominator", "to": "dependency.complete_community_center.acquire_bundle_ingredient", "kind": "selects_missing_requirement" },
+        { "from": "dependency.complete_community_center.acquire_bundle_ingredient", "to": "dependency.complete_community_center.reserve_bundle_ingredient", "kind": "may_produce" },
+        { "from": "dependency.complete_community_center.reserve_bundle_ingredient", "to": "dependency.complete_community_center.donate_bundle_ingredient", "kind": "authorizes" },
+        { "from": "dependency.complete_community_center.donate_bundle_ingredient", "to": "dependency.complete_community_center.bundle_recurrence", "kind": "advances" },
+        { "from": "dependency.complete_community_center.bundle_recurrence", "to": "dependency.complete_community_center.acquire_bundle_ingredient", "kind": "continues_below_terminal" },
+        { "from": "dependency.complete_community_center.bundle_recurrence", "to": "dependency.complete_community_center.native_day_settlement", "kind": "may_require" },
+        { "from": "dependency.complete_community_center.native_day_settlement", "to": "dependency.complete_community_center.completion_event", "kind": "may_enable" },
+        { "from": "dependency.complete_community_center.completion_event", "to": "dependency.complete_community_center.native_completion", "kind": "settles" }
+      ]
+    },
+    {
+      "direction_id": "marriage_and_house_upgrade",
+      "status": "in_progress",
+      "completion_node_id": "dependency.marriage_and_house_upgrade.joint_terminal",
+      "source_ids": [
+        "native.utility",
+        "native.npc",
+        "native.friendship",
+        "native.game1",
+        "native.event",
+        "runtime.goal_index"
+      ],
+      "blockers": [
+        "choose a legal partner route and prove the complete talk gift decay and missed-window friendship schedule",
+        "lower bouquet Mermaid Pendant or Void Ghost Pendant acquisition plus proposal weather access and native wedding gates",
+        "schedule both native farmhouse upgrades from live price material and construction rows without violating competing 21-point commitments",
+        "prove the partnership and farmhouse level-two branches settle together before the Year 3 evaluation"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.marriage_and_house_upgrade.joint_terminal",
+          "kind": "terminal_fact",
+          "required_field_paths": ["player.married_or_roommate", "player.farmhouse_upgrade_level"],
+          "rule": {
+            "all": [
+              { "path": "player.married_or_roommate", "operator": "equals", "value": true },
+              { "path": "player.farmhouse_upgrade_level", "operator": "greater_than_or_equal", "value": 2 }
+            ]
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.house_state",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "player.farmhouse_upgrade_level",
+            "player.days_until_farmhouse_upgrade",
+            "world_progress.marriage_house",
+            "player.money",
+            "farm.material_inventory_graph"
+          ],
+          "rule": {
+            "live_upgrade_row_path": "world_progress.marriage_house.house_upgrade",
+            "target_level": 2,
+            "price_material_and_construction_time": "read only from the fresh native row"
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.purchase_house_upgrade",
+          "kind": "policy_option_transition",
+          "option_id": "housing.advance_farmhouse",
+          "candidate_kinds": ["purchase_farmhouse_upgrade"],
+          "required_field_paths": [
+            "world_progress.marriage_house",
+            "player.money",
+            "farm.material_inventory_graph",
+            "locations.collision_grid",
+            "menus.active_menu"
+          ],
+          "binding": {
+            "target": "exact next native farmhouse upgrade not above level two",
+            "receipt": "money and materials consumed plus days_until_farmhouse_upgrade set by native Carpenter flow"
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.raise_partner_friendship",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "npcs.friendships",
+            "npcs.schedules",
+            "npcs.social_interaction",
+            "player.inventory",
+            "time.total_days",
+            "time.time"
+          ],
+          "rule": {
+            "candidate_options": ["social.talk_npc", "social.gift_npc"],
+            "teacher_choice": "one legal target route minimizing friendship completion time under daily weekly birthday decay and missed-window evidence",
+            "unknown_future_presence": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.talk_partner",
+          "kind": "policy_option_transition",
+          "option_id": "social.talk_npc",
+          "candidate_kinds": ["social_talk_current"],
+          "required_field_paths": ["npcs.friendships", "npcs.social_interaction", "npcs.schedules"],
+          "binding": { "purpose": "advance the selected legal partner route through a fresh positive friendship projection" }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.gift_partner",
+          "kind": "policy_option_transition",
+          "option_id": "social.gift_npc",
+          "candidate_kinds": ["social_gift_current"],
+          "required_field_paths": ["npcs.friendships", "npcs.social_interaction", "npcs.schedules", "player.inventory"],
+          "binding": { "purpose": "advance the selected legal partner route with an exact reserve-safe gift and fresh friendship projection" }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.acquire_partnership_item",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "player.inventory",
+            "player.farmhouse_upgrade_level",
+            "npcs.friendships",
+            "locations.shops",
+            "time.weather",
+            "time.total_days"
+          ],
+          "rule": {
+            "target": "the exact next legal relationship item for bouquet marriage proposal or Krobus roommate proposal",
+            "identity_and_source": "fresh inventory context tags and native shop or world access evidence",
+            "unknown_availability": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.advance_partnership",
+          "kind": "policy_option_transition",
+          "option_id": "social.advance_partnership",
+          "candidate_kinds": [
+            "partnership_bouquet_current",
+            "partnership_propose_marriage_current",
+            "partnership_propose_roommate_current"
+          ],
+          "required_field_paths": [
+            "player.inventory",
+            "player.married_or_roommate",
+            "player.engaged",
+            "player.farmhouse_upgrade_level",
+            "npcs.friendships",
+            "npcs.social_interaction"
+          ],
+          "binding": {
+            "choice": "only the next fresh legal transition for the selected route",
+            "receipt": "native dating engagement wedding schedule or roommate state"
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.native_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": [
+            "recovery_sleep_immediately",
+            "recovery_sleep_before_collapse",
+            "recovery_resume_sleep_prompt"
+          ],
+          "required_field_paths": [
+            "player.days_until_farmhouse_upgrade",
+            "player.engaged",
+            "player.married_or_roommate",
+            "world_progress.marriage_house",
+            "time.total_days"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_day_compiler_not_policy_label",
+            "settles": ["native farmhouse construction countdown", "native scheduled wedding or roommate transition"],
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.marriage_and_house_upgrade.joint_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "player.married_or_roommate",
+            "player.engaged",
+            "player.farmhouse_upgrade_level",
+            "player.days_until_farmhouse_upgrade",
+            "npcs.friendships",
+            "time.total_days"
+          ],
+          "rule": {
+            "branches": ["farmhouse_level_two", "married_or_roommate"],
+            "teacher_choice": "interleave both branches with other 21-point commitments by deadline slack and opportunity cost",
+            "continue_while": "either terminal branch remains false"
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.marriage_and_house_upgrade.house_state", "to": "dependency.marriage_and_house_upgrade.purchase_house_upgrade", "kind": "selects_next_upgrade" },
+        { "from": "dependency.marriage_and_house_upgrade.purchase_house_upgrade", "to": "dependency.marriage_and_house_upgrade.native_day_settlement", "kind": "requires_construction_settlement" },
+        { "from": "dependency.marriage_and_house_upgrade.raise_partner_friendship", "to": "dependency.marriage_and_house_upgrade.talk_partner", "kind": "may_select" },
+        { "from": "dependency.marriage_and_house_upgrade.raise_partner_friendship", "to": "dependency.marriage_and_house_upgrade.gift_partner", "kind": "may_select" },
+        { "from": "dependency.marriage_and_house_upgrade.talk_partner", "to": "dependency.marriage_and_house_upgrade.raise_partner_friendship", "kind": "advances" },
+        { "from": "dependency.marriage_and_house_upgrade.gift_partner", "to": "dependency.marriage_and_house_upgrade.raise_partner_friendship", "kind": "advances" },
+        { "from": "dependency.marriage_and_house_upgrade.raise_partner_friendship", "to": "dependency.marriage_and_house_upgrade.acquire_partnership_item", "kind": "enables_at_threshold" },
+        { "from": "dependency.marriage_and_house_upgrade.acquire_partnership_item", "to": "dependency.marriage_and_house_upgrade.advance_partnership", "kind": "enables" },
+        { "from": "dependency.marriage_and_house_upgrade.advance_partnership", "to": "dependency.marriage_and_house_upgrade.native_day_settlement", "kind": "may_require_wedding_settlement" },
+        { "from": "dependency.marriage_and_house_upgrade.native_day_settlement", "to": "dependency.marriage_and_house_upgrade.joint_recurrence", "kind": "advances" },
+        { "from": "dependency.marriage_and_house_upgrade.joint_recurrence", "to": "dependency.marriage_and_house_upgrade.house_state", "kind": "continues_house_branch" },
+        { "from": "dependency.marriage_and_house_upgrade.joint_recurrence", "to": "dependency.marriage_and_house_upgrade.raise_partner_friendship", "kind": "continues_partnership_branch" },
+        { "from": "dependency.marriage_and_house_upgrade.joint_recurrence", "to": "dependency.marriage_and_house_upgrade.joint_terminal", "kind": "terminates_at" }
+      ]
+    },
+    {
+      "direction_id": "complete_full_shipment",
+      "status": "in_progress",
+      "completion_node_id": "dependency.complete_full_shipment.achievement_received",
+      "source_ids": [
+        "native.utility",
+        "native.shipping_menu",
+        "native.game1",
+        "runtime.goal_index",
+        "native_shipping_rule",
+        "runtime_data_objects",
+        "authoritative_dependency_graph"
+      ],
+      "blockers": [
+        "lower every authoritative missing-shipment acquisition route to an existing eligible high-level option with exact one-unit reservation",
+        "prove completed-day native shipping settlement and achievement 34 receipt for all 154 requirements before the Year 3 evaluation"
+      ],
+      "nodes": [
+        {
+          "id": "dependency.complete_full_shipment.achievement_received",
+          "kind": "terminal_fact",
+          "required_field_paths": ["world_progress.achievements", "world_progress.full_shipment_progress"],
+          "rule": {
+            "all": [
+              { "path": "world_progress.achievements", "operator": "contains", "value": "34" },
+              { "path": "world_progress.full_shipment_progress.complete", "operator": "equals", "value": true }
+            ]
+          }
+        },
+        {
+          "id": "dependency.complete_full_shipment.authoritative_requirement_set",
+          "kind": "state_fact",
+          "required_field_paths": ["world_progress.full_shipment_progress", "player.inventory"],
+          "rule": {
+            "requirement_set_id": "full_shipment",
+            "required_group_count": 154,
+            "selection": "all_required",
+            "current_missing_ids_path": "world_progress.full_shipment_progress.missing_item_ids",
+            "denominator_source": "authoritative_goal_requirement_inventory.v1"
+          }
+        },
+        {
+          "id": "dependency.complete_full_shipment.reserve_one_missing_item",
+          "kind": "state_gate",
+          "required_field_paths": [
+            "world_progress.full_shipment_progress",
+            "world_progress.museum",
+            "world_progress.community_center",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "quests.active_quests",
+            "quests.special_orders"
+          ],
+          "rule": {
+            "operator": "all",
+            "conditions": [
+              "item is one currently missing native shipment requirement",
+              "exactly one reserve-safe unit is selected",
+              "task bundle museum crafting and machine-input commitments remain satisfiable"
+            ],
+            "unknown_reservation_evidence": "fail_closed"
+          }
+        },
+        {
+          "id": "dependency.complete_full_shipment.acquire_missing_item",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.full_shipment_progress",
+            "player.inventory",
+            "farm.material_inventory_graph",
+            "time.total_days",
+            "time.time"
+          ],
+          "rule": {
+            "input": "one missing requirement and its complete authoritative acquisition_routes array",
+            "teacher_choice": "minimum deadline-safe route after cross-goal reservation and opportunity cost",
+            "unknown_rng": "branch or reserve retries; never label an unavailable future outcome as known",
+            "output": "one fresh observed reserve-safe copy in player inventory"
+          }
+        },
+        {
+          "id": "dependency.complete_full_shipment.deposit_missing_item",
+          "kind": "policy_option_transition",
+          "option_id": "economy.ship_items",
+          "candidate_kinds": ["ship_inventory_item_to_bin"],
+          "required_field_paths": [
+            "world_progress.full_shipment_progress",
+            "player.inventory",
+            "farm.shipping_bins",
+            "locations.route_graph",
+            "locations.route_connectors"
+          ],
+          "binding": {
+            "quantity": 1,
+            "required_evidence": "fresh FullShipmentKnown FullShipmentEligible not-already-shipped and contributes flags",
+            "immediate_receipt": "inventory decrement plus completed shipping-bin content increase",
+            "immediate_completion_credit": false
+          }
+        },
+        {
+          "id": "dependency.complete_full_shipment.native_shipping_day_settlement",
+          "kind": "deterministic_transition",
+          "option_id": "recovery.stabilize_day",
+          "candidate_kinds": [
+            "recovery_sleep_immediately",
+            "recovery_sleep_before_collapse",
+            "recovery_resume_sleep_prompt"
+          ],
+          "required_field_paths": [
+            "farm.shipping_bins",
+            "world_progress.full_shipment_progress",
+            "world_progress.achievements",
+            "time.total_days"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_day_compiler_not_policy_label",
+            "precondition": "terminal sleep remains legal after all required daily commitments",
+            "receipt": "fresh shipped collection count completion ratio and achievement state",
+            "refresh_snapshot_after_transition": true
+          }
+        },
+        {
+          "id": "dependency.complete_full_shipment.shipment_recurrence",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.full_shipment_progress",
+            "world_progress.achievements",
+            "player.inventory",
+            "farm.shipping_bins",
+            "time.total_days"
+          ],
+          "rule": {
+            "continue_while": { "path": "world_progress.full_shipment_progress.complete", "operator": "equals", "value": false },
+            "iteration": [
+              "refresh native missing requirement set",
+              "select or acquire one reserve-safe unit",
+              "deposit through the existing shipping executor",
+              "settle and verify through a native day transition"
+            ]
+          }
+        }
+      ],
+      "edges": [
+        { "from": "dependency.complete_full_shipment.authoritative_requirement_set", "to": "dependency.complete_full_shipment.acquire_missing_item", "kind": "selects_missing_requirement" },
+        { "from": "dependency.complete_full_shipment.acquire_missing_item", "to": "dependency.complete_full_shipment.reserve_one_missing_item", "kind": "may_produce" },
+        { "from": "dependency.complete_full_shipment.reserve_one_missing_item", "to": "dependency.complete_full_shipment.deposit_missing_item", "kind": "authorizes" },
+        { "from": "dependency.complete_full_shipment.deposit_missing_item", "to": "dependency.complete_full_shipment.native_shipping_day_settlement", "kind": "requires_later_settlement" },
+        { "from": "dependency.complete_full_shipment.native_shipping_day_settlement", "to": "dependency.complete_full_shipment.shipment_recurrence", "kind": "advances" },
+        { "from": "dependency.complete_full_shipment.shipment_recurrence", "to": "dependency.complete_full_shipment.acquire_missing_item", "kind": "continues_below_terminal" },
+        { "from": "dependency.complete_full_shipment.shipment_recurrence", "to": "dependency.complete_full_shipment.achievement_received", "kind": "terminates_at" }
+      ]
     }
   ]
 }

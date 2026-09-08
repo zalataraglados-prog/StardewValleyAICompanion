@@ -170,13 +170,20 @@ $danglingBreadthBlockerIds = @($unresolvedBreadthRows | ForEach-Object blocker_i
     Where-Object { $_ -notin $knownBreadthBlockerIds } | Select-Object -Unique)
 $invalidSharedDependencies = @($breadth.shared_dependency_clusters |
     Where-Object { @($_.direction_ids).Count -lt 2 })
+$museumAcquisitionFamily = @($breadth.shared_dependency_clusters |
+    Where-Object dependency_id -eq 'museum_item_acquisition_and_reservation')
 if (-not [bool]$breadth.all_criteria_classified -or
     [int]$breadth.classified_criterion_count -ne [int]$frontier.criterion_count -or
     @($breadth.criteria).Count -ne [int]$frontier.criterion_count -or
     $breadthClassTotal -ne [int]$frontier.criterion_count -or
     @($unresolvedBreadthRows | Where-Object { @($_.blocker_ids).Count -eq 0 }).Count -ne 0 -or
+    [int]$breadth.missing_dependency_graph_criterion_count -ne 0 -or
     $danglingBreadthBlockerIds.Count -ne 0 -or
-    $invalidSharedDependencies.Count -ne 0) {
+    $invalidSharedDependencies.Count -ne 0 -or
+    $museumAcquisitionFamily.Count -ne 1 -or
+    @($museumAcquisitionFamily[0].direction_ids).Count -ne 2 -or
+    'complete_museum_collection' -notin $museumAcquisitionFamily[0].direction_ids -or
+    'obtain_rusty_key' -notin $museumAcquisitionFamily[0].direction_ids) {
     throw 'Goal-method breadth classification is incomplete or internally inconsistent.'
 }
 dotnet run --project $bootstrap --no-build -- self-test `

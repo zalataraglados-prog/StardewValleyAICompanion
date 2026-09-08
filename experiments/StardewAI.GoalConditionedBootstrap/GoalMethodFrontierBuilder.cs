@@ -96,6 +96,11 @@ public static partial class GoalMethodFrontierBuilder
             var permittedOptions = direction.PermittedOptionIds.Distinct(StringComparer.Ordinal).ToArray();
             var overlay = overlays[direction.DirectionId];
             dependencyExpansions.TryGetValue(direction.DirectionId, out var dependencyExpansion);
+            Require(dependencyExpansion is null || overlay.UnexpandedRequirements.Length == 0,
+                "Direction copies dependency blockers into both overlay and graph: " +
+                direction.DirectionId);
+            var unexpandedRequirements = dependencyExpansion?.Blockers ??
+                overlay.UnexpandedRequirements;
 
             Require(criteria.Length == direction.CriterionIds.Length,
                 "Direction contains duplicate criteria: " + direction.DirectionId);
@@ -189,7 +194,7 @@ public static partial class GoalMethodFrontierBuilder
                              isolatedTeacherAuthorizedOptions.Length == 0 ||
                          !dependencyPolicyComplete || !deterministicDependencyComplete
                 ? "blocked_by_option_governance"
-                : overlay.UnexpandedRequirements.Length > 0 || !dependencyComplete
+                : unexpandedRequirements.Length > 0 || !dependencyComplete
                     ? "pending_dependency_expansion"
                     : "executable_frontier";
 
@@ -210,7 +215,7 @@ public static partial class GoalMethodFrontierBuilder
                 policyDependencyOptions,
                 eligibleDependencyOptions,
                 deterministicDependencyOptions,
-                overlay.UnexpandedRequirements,
+                unexpandedRequirements,
                 overlay.ClaimIds,
                 blockers,
                 status));
@@ -227,7 +232,7 @@ public static partial class GoalMethodFrontierBuilder
             }));
             foreach (var optionId in permittedOptions)
                 edges.Add(new(optionId, methodId, "permitted_by_direction"));
-            foreach (var requirement in overlay.UnexpandedRequirements)
+            foreach (var requirement in unexpandedRequirements)
             {
                 var blockerId = "unexpanded:" + StableId(methodId + ":" + requirement);
                 nodes.Add(new(blockerId, "unexpanded_requirement", new Dictionary<string, object?>
@@ -579,6 +584,9 @@ public static partial class GoalMethodFrontierBuilder
         if (expansion.Status == "complete")
             Require(expansion.Blockers.Length == 0,
                 "Complete dependency expansion still has blockers: " + expansion.DirectionId);
+        else
+            Require(expansion.Blockers.Length > 0,
+                "In-progress dependency expansion has no blockers: " + expansion.DirectionId);
         Require(expansion.SourceIds.Length > 0,
             "Dependency expansion has no locked sources: " + expansion.DirectionId);
         foreach (var sourceId in expansion.SourceIds)
@@ -637,6 +645,22 @@ public static partial class GoalMethodFrontierBuilder
                 $"Dependency edge leaves its local graph: {edge.From}->{edge.To}.");
             graphEdges.Add(new GoalMethodHypergraphEdge(edge.From, edge.To, edge.Kind));
         }
+        var reachesCompletion = new HashSet<string>(StringComparer.Ordinal)
+        {
+            expansion.CompletionNodeId
+        };
+        int previousCount;
+        do
+        {
+            previousCount = reachesCompletion.Count;
+            foreach (var edge in expansion.Edges.Where(edge => reachesCompletion.Contains(edge.To)))
+                reachesCompletion.Add(edge.From);
+        }
+        while (reachesCompletion.Count > previousCount);
+        Require(reachesCompletion.SetEquals(localNodeIds),
+            "Dependency expansion has nodes with no route to completion: " +
+            expansion.DirectionId + ":" +
+            string.Join(",", localNodeIds.Except(reachesCompletion).Order(StringComparer.Ordinal)));
         graphEdges.Add(new GoalMethodHypergraphEdge(
             expansion.CompletionNodeId,
             methodId,

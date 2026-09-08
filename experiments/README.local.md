@@ -139,9 +139,9 @@ it never falls back to a legacy AI rollout.
 - This mechanism does not make Perfection self-authorizing. New goal rules, dependency routes,
   candidates, compiler bindings, transparent fields, and native receipts still require separate
   admission before teacher labels may be generated.
-- The current Stage 1 frontier is still incomplete: 2/19 criteria are executable,
-  11/19 have typed dependency graphs still pending closure, and 6/19 still lack a
-  dependency graph. Four normally confirmation-gated
+- The current Stage 1 frontier is still incomplete: 2/19 criteria are executable and
+  17/19 have typed dependency graphs still pending closure; no criterion lacks a graph.
+  Four normally confirmation-gated
   options have isolated teacher authorization, so governance blockers are now zero;
   this does not bypass runtime receipts or make an incompletely expanded route valid.
 - Native combat XP evidence covers all six skill indices, including the rejected Luck
@@ -166,11 +166,13 @@ The goal-method frontier does not maintain a second direction catalog. Direction
 criterion ownership, permitted option IDs, effective goals, and demand families come only
 from `src/StardewAI.Core/Training/GrandpaDirectionCatalog.cs`, which is also consumed by the
 production sample adapter and daily subgoal resolver. The local
-`goal-method-expansion-overlay.v1.json` stores only unresolved dependency descriptions and
-verified claim IDs. Regression requires exact one-to-one direction coverage and hashes both
-sources, so either production drift or experimental drift fails closed.
-`goal-method-dependency-expansions.v1.json` separately stores typed reverse-route nodes and
-edges. Policy-option nodes must reference training-eligible options, while deterministic
+`goal-method-expansion-overlay.v1.json` stores verified claim IDs and only pre-graph blocker
+descriptions for a direction that does not yet have a dependency graph. Once a graph exists,
+its blockers come solely from `goal-method-dependency-expansions.v1.json`; they are not copied
+back into the overlay. Regression requires exact one-to-one direction coverage and hashes both
+sources, so either production drift or experimental drift fails closed. The dependency file
+also stores typed reverse-route nodes and edges. Policy-option nodes must reference
+training-eligible options, while deterministic
 compiler-owned transitions need runtime verification and never become model labels. The first
 complete multi-step route is `earn_pet_love`: exact initial-adoption event gate, native event
 acceptance and naming, daily pet/bowl care, and native day settlement.
@@ -179,9 +181,11 @@ Its `breadth_coverage` section classifies every criterion exactly once, gives ev
 non-executable criterion a resolvable typed blocker ID, and clusters policy or
 deterministic option dependencies reused by multiple directions. Regression rejects
 missing classifications, dangling blocker references, and false shared clusters. The
-current shared leaves are `recovery.stabilize_day`, `fishing.catch_fish`, and
-`farm.collect_animal_products`; they must be improved once and reused rather than
-reimplemented per Grandpa direction.
+shared leaves include `recovery.stabilize_day`, `fishing.catch_fish`,
+`farm.collect_animal_products`, and the other reused option IDs in the generated report.
+Museum completion and Rusty Key additionally share the typed
+`museum_item_acquisition_and_reservation` family. Shared dependencies must be improved
+once and reused rather than reimplemented per Grandpa direction.
 The current requirement report is
 `local-data/output/authoritative-requirement-inventory-v1.json`. The next admission
 slice continues expanding each known source through calendar, unlock, facility, resource,

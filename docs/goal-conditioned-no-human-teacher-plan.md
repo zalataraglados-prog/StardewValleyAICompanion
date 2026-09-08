@@ -617,8 +617,9 @@ rules by guessing, and the current teacher is not yet complete enough to claim a
   its rule, dependency, transparent input, option, compiler binding and native receipt have passed the
   existing gates.
 - This is architecture readiness, not a trained model. The current Stage 1 frontier remains 2/19
-  executable criteria, 12/19 pending dependency expansion, and 5/19 blocked by option governance.
-  Full 21-point teacher coverage and a new-save 21/21 rollout still precede formal Stage 1 training.
+  executable criteria and 17/19 pending dependency closure, with zero missing dependency graphs and
+  zero option-governance-blocked criteria. Full 21-point teacher coverage and a new-save 21/21
+  rollout still precede formal Stage 1 training.
 - The skill-level direction now has typed routes for verified farming, fishing, foraging, mining and
   exact skill-book XP plus deterministic crop maintenance. It remains pending because ordinary mine
   transit only fights incidental threats; a generic combat-XP goal-level binding with a fresh native

@@ -1,15 +1,11 @@
 {
   "schema_version": "goal_method_expansion_overlay.v1",
   "goal_id": "grandpa.maximum_21",
-  "policy": "This overlay contains only unresolved dependency expansion and authority claims. Direction, criterion, option, goal and demand mappings come exclusively from GrandpaDirectionCatalog.",
+  "policy": "This overlay contains authority claims and pre-graph blocker descriptions only. Directions with dependency graphs own their blockers in goal-method-dependency-expansions.v1.json. Direction, criterion, option, goal and demand mappings come exclusively from GrandpaDirectionCatalog.",
   "directions": [
     {
       "direction_id": "earn_money",
-      "unexpanded_requirements": [
-        "fresh-save seed-robust lower-bound schedule proving settled totalMoneyEarned reaches one million before the Year 3 evaluation",
-        "counterfactual opportunity-cost labels over acquisition processing sale shipping and reserve commitments",
-        "crop-production alternative remains excluded until farm.maintain_crops is training-eligible"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.earnings_thresholds",
         "economy.money_setter_contract",
@@ -20,10 +16,7 @@
     },
     {
       "direction_id": "complete_museum_collection",
-      "unexpanded_requirements": [
-        "artifact and mineral acquisition alternatives",
-        "duplicate and reservation policy"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.complete_collection_achievement"
       ]
@@ -37,11 +30,7 @@
     },
     {
       "direction_id": "complete_community_center",
-      "unexpanded_requirements": [
-        "standard versus remixed bundle selection",
-        "season weather clock and quality windows",
-        "room completion and event 191393 ceremony settlement"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.community_center_route_required",
         "community_center.bundle_scope_30_vs_31"
@@ -49,52 +38,35 @@
     },
     {
       "direction_id": "marriage_and_house_upgrade",
-      "unexpanded_requirements": [
-        "partner choice and heart schedule",
-        "bouquet pendant rain and wedding gates",
-        "two farmhouse upgrade money material and construction windows"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.marriage_and_house"
       ]
     },
     {
       "direction_id": "obtain_rusty_key",
-      "unexpanded_requirements": [
-        "minimum-cost artifact and mineral acquisition portfolio",
-        "key delivery event settlement"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.rusty_key"
       ]
     },
     {
       "direction_id": "complete_master_angler",
-      "unexpanded_requirements": [
-        "future opportunity producer must resolve date weather clock location access route fishable tile rod and exact native condition evidence for every uncaught rod species",
-        "trap-fish recurrence needs one compiler-owned high-level infrastructure intent over existing placement bait settlement and collection primitives",
-        "fresh-save seed-robust completion proof must reserve stochastic retries before the initial Year 3 evaluation"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.master_angler"
       ]
     },
     {
       "direction_id": "complete_full_shipment",
-      "unexpanded_requirements": [
-        "one-unit reservation and acquisition route for every requirement reported unresolved by the authoritative requirement inventory",
-        "completed-day shipping settlement"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.full_shipment"
       ]
     },
     {
       "direction_id": "raise_friendships",
-      "unexpanded_requirements": [
-        "future-date player route/gate/traversability/final-approach/interaction-eligibility evidence producer plus candidate/teacher generation of ordered visit proposals for the completed itinerary verifier",
-        "fresh-save deadline proof with travel missed windows decay and competing 21-point obligations"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.friendship_thresholds",
         "friendship.grandpa_population_contract",
@@ -104,9 +76,7 @@
     },
     {
       "direction_id": "raise_skill_levels",
-      "unexpanded_requirements": [
-        "fresh-save deadline proof must budget exact per-skill XP deficits, acquisition prerequisites, travel, energy and competing 21-point obligations through five unmodified level-10 skills"
-      ],
+      "unexpanded_requirements": [],
       "claim_ids": [
         "grandpa.skill_level_translation"
       ]

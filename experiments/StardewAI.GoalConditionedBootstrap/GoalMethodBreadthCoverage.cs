@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -100,7 +101,7 @@ public static partial class GoalMethodFrontierBuilder
                     .ToArray()));
         }
 
-        var sharedDependencies = dependencyExpansions.Values
+        var sharedOptionDependencies = dependencyExpansions.Values
             .SelectMany(expansion => expansion.Nodes
                 .Where(node => node.Kind is "policy_option_transition" or "deterministic_transition")
                 .Where(node => !string.IsNullOrWhiteSpace(node.OptionId))
@@ -125,6 +126,7 @@ public static partial class GoalMethodFrontierBuilder
                     "dependency.shared." + group.Key.Kind + "." + StableId(group.Key.OptionId),
                     group.Key.Kind,
                     group.Key.OptionId,
+                    group.Key.OptionId,
                     directionIds,
                     methods.Where(method => directionIds.Contains(method.DirectionId, StringComparer.Ordinal))
                         .SelectMany(method => method.CriterionIds)
@@ -136,6 +138,37 @@ public static partial class GoalMethodFrontierBuilder
             .Where(value => value.DirectionIds.Length > 1)
             .OrderBy(value => value.DependencyKind, StringComparer.Ordinal)
             .ThenBy(value => value.OptionId, StringComparer.Ordinal)
+            .ToArray();
+        var sharedDependencyFamilies = dependencyExpansions.Values
+            .SelectMany(expansion => expansion.Nodes.Select(node =>
+                (expansion.DirectionId, FamilyId: SharedDependencyFamily(node))))
+            .Where(value => !string.IsNullOrWhiteSpace(value.FamilyId))
+            .GroupBy(value => value.FamilyId, StringComparer.Ordinal)
+            .Select(group =>
+            {
+                var directionIds = group.Select(value => value.DirectionId)
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal)
+                    .ToArray();
+                return new GoalMethodSharedDependencyCluster(
+                    "dependency.shared.family." + StableId(group.Key),
+                    "shared_dependency_family",
+                    group.Key,
+                    string.Empty,
+                    directionIds,
+                    methods.Where(method => directionIds.Contains(method.DirectionId, StringComparer.Ordinal))
+                        .SelectMany(method => method.CriterionIds)
+                        .Distinct(StringComparer.Ordinal)
+                        .Order(StringComparer.Ordinal)
+                        .ToArray(),
+                    "expansion_pending");
+            })
+            .Where(value => value.DirectionIds.Length > 1)
+            .ToArray();
+        var sharedDependencies = sharedOptionDependencies
+            .Concat(sharedDependencyFamilies)
+            .OrderBy(value => value.DependencyKind, StringComparer.Ordinal)
+            .ThenBy(value => value.DependencyId, StringComparer.Ordinal)
             .ToArray();
 
         Require(criterionRows.Length == criteria.Length,
@@ -160,6 +193,17 @@ public static partial class GoalMethodFrontierBuilder
             BlockerClusters = blockerClusters.ToArray(),
             SharedDependencyClusters = sharedDependencies
         };
+    }
+
+    private static string SharedDependencyFamily(DirectionDependencyNode node)
+    {
+        if (!node.Attributes.TryGetValue("shared_dependency_family", out var value) ||
+            value is not JsonElement element ||
+            element.ValueKind != JsonValueKind.String)
+        {
+            return string.Empty;
+        }
+        return element.GetString()?.Trim() ?? string.Empty;
     }
 }
 
@@ -207,6 +251,7 @@ public sealed record GoalMethodTypedBlockerCluster(
 public sealed record GoalMethodSharedDependencyCluster(
     [property: JsonPropertyName("cluster_id")] string ClusterId,
     [property: JsonPropertyName("dependency_kind")] string DependencyKind,
+    [property: JsonPropertyName("dependency_id")] string DependencyId,
     [property: JsonPropertyName("option_id")] string OptionId,
     [property: JsonPropertyName("direction_ids")] string[] DirectionIds,
     [property: JsonPropertyName("criterion_ids")] string[] CriterionIds,
