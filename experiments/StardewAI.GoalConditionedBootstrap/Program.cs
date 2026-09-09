@@ -48,6 +48,9 @@ try
         case "build-acquisition-route-lowering":
             BuildAcquisitionRouteLowering(options);
             break;
+        case "build-current-full-shipment-teacher-frontier":
+            BuildCurrentFullShipmentTeacherFrontier(options);
+            break;
         case "build-master-angler-opportunity-catalog":
             BuildMasterAnglerOpportunityCatalog(options);
             break;
@@ -80,7 +83,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, or self-test.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-current-full-shipment-teacher-frontier, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, or self-test.");
     }
 }
 catch (Exception ex)
@@ -283,6 +286,16 @@ static void BuildAcquisitionRouteLowering(Arguments options)
         options.Required("catalog"),
         options.Required("option-matrix"),
         options.Required("isolated-training-authorization"));
+    Write(options.Required("output"), report);
+}
+
+static void BuildCurrentFullShipmentTeacherFrontier(Arguments options)
+{
+    var report = CurrentFullShipmentTeacherFrontierBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("ranking"),
+        options.Required("snapshot"));
     Write(options.Required("output"), report);
 }
 
