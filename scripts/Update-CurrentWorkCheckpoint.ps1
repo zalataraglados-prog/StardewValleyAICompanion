@@ -83,8 +83,18 @@ else {
 }
 
 if ($Check) {
-    if (-not [string]::Equals($document, $expected, [System.StringComparison]::Ordinal)) {
-        throw "CURRENT_WORK_CN.md generated checkpoint is stale. Run scripts/Update-CurrentWorkCheckpoint.ps1."
+    $normalizedDocument = $document.Replace("`r`n", "`n").Replace("`r", "`n")
+    $normalizedExpected = $expected.Replace("`r`n", "`n").Replace("`r", "`n")
+    if (-not [string]::Equals($normalizedDocument, $normalizedExpected, [System.StringComparison]::Ordinal)) {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $actualHash = [Convert]::ToHexString($sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($normalizedDocument))).ToLowerInvariant()
+            $expectedHash = [Convert]::ToHexString($sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($normalizedExpected))).ToLowerInvariant()
+        }
+        finally {
+            $sha256.Dispose()
+        }
+        throw "CURRENT_WORK_CN.md generated checkpoint is stale: actual=$actualHash/$($normalizedDocument.Length);expected=$expectedHash/$($normalizedExpected.Length). Run scripts/Update-CurrentWorkCheckpoint.ps1."
     }
     Write-Output "PASS: current work checkpoint matches $($dashboard.latest_evidence_id) at $sourceCommit"
     exit 0
