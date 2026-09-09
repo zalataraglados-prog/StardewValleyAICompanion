@@ -51,6 +51,9 @@ try
         case "build-current-full-shipment-teacher-frontier":
             BuildCurrentFullShipmentTeacherFrontier(options);
             break;
+        case "build-current-collection-teacher-frontier":
+            BuildCurrentCollectionTeacherFrontier(options);
+            break;
         case "build-master-angler-opportunity-catalog":
             BuildMasterAnglerOpportunityCatalog(options);
             break;
@@ -81,9 +84,12 @@ try
         case "self-test":
             SelfTest(options);
             break;
+        case "self-test-current-collection":
+            SelfTestCurrentCollection(options);
+            break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-current-full-shipment-teacher-frontier, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, or self-test.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
     }
 }
 catch (Exception ex)
@@ -299,6 +305,16 @@ static void BuildCurrentFullShipmentTeacherFrontier(Arguments options)
     Write(options.Required("output"), report);
 }
 
+static void BuildCurrentCollectionTeacherFrontier(Arguments options)
+{
+    var report = CurrentCollectionTeacherFrontierBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("ranking"),
+        options.Required("snapshot"));
+    Write(options.Required("output"), report);
+}
+
 static void BuildMasterAnglerOpportunityCatalog(Arguments options)
 {
     var report = MasterAnglerOpportunityCatalogBuilder.Build(
@@ -439,6 +455,9 @@ static void Retrieve(Arguments options)
 
 static void SelfTest(Arguments options)
     => BootstrapSelfTest.Run(options);
+
+static void SelfTestCurrentCollection(Arguments options)
+    => BootstrapSelfTest.RunCurrentCollection(options.Required("output-root"));
 
 static void Write(string path, object value)
 {
