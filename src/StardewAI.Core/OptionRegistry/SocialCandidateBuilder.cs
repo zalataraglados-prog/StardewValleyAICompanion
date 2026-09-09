@@ -276,6 +276,27 @@ namespace StardewAI.Core.OptionRegistry
                 reasons.Add("social_npc_identity_missing");
             }
 
+            var expectedDeltaComplete = TryReadBool(npc, "expected_talk_friendship_delta_complete", out var deltaComplete) && deltaComplete;
+            var expectedDeltaKnown = TryReadInt(npc, "expected_talk_friendship_delta", out var expectedDelta);
+            var friendshipPointsKnown = TryReadInt(npc, "friendship_points", out var friendshipPoints);
+            var expectedPointsAfterKnown = TryReadInt(npc, "expected_talk_friendship_points_after", out var expectedPointsAfter);
+            var talkedToTodayKnown = TryReadBool(npc, "talked_to_today", out var talkedToToday);
+            if (!expectedDeltaComplete || !expectedDeltaKnown || !friendshipPointsKnown || !expectedPointsAfterKnown || !talkedToTodayKnown)
+            {
+                reasons.Add("social_talk_friendship_projection_incomplete");
+            }
+            else
+            {
+                if (talkedToToday)
+                {
+                    reasons.Add("social_talk_already_completed_today");
+                }
+                if (expectedDelta <= 0)
+                {
+                    reasons.Add("social_talk_no_positive_friendship_delta");
+                }
+            }
+
             var tileX = ReadInt(npc, "tile_x");
             var tileY = ReadInt(npc, "tile_y");
             var npcLocationId = ReadString(npc, "location_id") ?? "";
@@ -295,7 +316,7 @@ namespace StardewAI.Core.OptionRegistry
                 LocationId = ReadString(npc, "location_id"),
                 TileX = standTile.Tile?.X,
                 TileY = standTile.Tile?.Y,
-                ExpectedEffect = "native_social_talk_target=" + npcName + ";executor_required=social_native_executor.v1;estimated_duration_ticks=" + estimatedTicks + ";duration_estimate_status=planner_budget_assumption_pending_runtime_calibration",
+                ExpectedEffect = "native_social_talk_target=" + npcName + ";expected_friendship_delta=" + (expectedDeltaKnown ? expectedDelta : 0) + ";executor_required=social_native_executor.v1;estimated_duration_ticks=" + estimatedTicks + ";duration_estimate_status=planner_budget_assumption_pending_runtime_calibration",
                 AvailabilityClass = reasons.Count == 0 ? "current_state_complete" : "current_state_blocked_with_diagnostics",
                 BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
                 Parameters = new[]
@@ -309,7 +330,11 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("route_distance_tiles", standTile.RouteDistance.ToString(System.Globalization.CultureInfo.InvariantCulture)),
                     Parameter("route_distance_ticks", routeDistanceTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)),
                     Parameter("native_interaction_planner_budget_ticks", plannerBudgetTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                    Parameter("expected_talked_to_today_before", FriendshipBool(snapshot, npcName, "talked_to_today").ToString().ToLowerInvariant()),
+                    Parameter("friendship_row_exists_before", ReadBool(npc, "friendship_row_exists").ToString().ToLowerInvariant()),
+                    Parameter("friendship_points_before", friendshipPointsKnown ? friendshipPoints.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty),
+                    Parameter("expected_friendship_delta", expectedDeltaKnown ? expectedDelta.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty),
+                    Parameter("expected_friendship_points_after", expectedPointsAfterKnown ? expectedPointsAfter.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty),
+                    Parameter("expected_talked_to_today_before", talkedToTodayKnown ? talkedToToday.ToString().ToLowerInvariant() : string.Empty),
                     Parameter("schedule_loaded_for_evidential_provenance", ReadBool(npc, "schedule_loaded").ToString().ToLowerInvariant()),
                     Parameter("social_legality_evidence", "npcs.social_interaction")
                 }
@@ -324,63 +349,19 @@ namespace StardewAI.Core.OptionRegistry
             {
                 baseReasons.Add("social_npc_identity_missing");
             }
-
-            var friendship = Friendship(snapshot, npcName);
-            var giftLimitExempt = string.Equals(ReadStateFieldString(snapshot, "player", "spouse"), npcName, StringComparison.Ordinal) ||
-                ReadBool(npc, "is_child") ||
-                ReadBool(npc, "is_birthday");
-            if (friendship.HasValue)
+            var resolution = new SocialGiftInventoryBindingResolver().Resolve(
+                snapshot,
+                npcName);
+            foreach (var binding in resolution.Bindings)
             {
-                if (ReadBool(friendship.Value, "is_divorced"))
-                {
-                    baseReasons.Add("social_gift_divorced_rejected");
-                }
-            }
-
-            var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
-            if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
-            {
-                yield break;
-            }
-
-            foreach (var item in inventory.Value.EnumerateArray())
-            {
-                if (item.ValueKind != JsonValueKind.Object || ReadBool(item, "is_empty"))
-                {
-                    continue;
-                }
-
-                var reasons = new List<string>(baseReasons);
-                AddItemBlockReasons(item, reasons);
-                var qualifiedItemId = ReadString(item, "qualified_item_id");
-                var isStardropTea = string.Equals(qualifiedItemId, "(O)StardropTea", StringComparison.OrdinalIgnoreCase);
-                if (friendship.HasValue)
-                {
-                    if (ReadInt(friendship.Value, "gifts_today") >= 1 && !isStardropTea)
-                    {
-                        reasons.Add("social_gift_daily_limit_exhausted");
-                    }
-                    if (ReadInt(friendship.Value, "gifts_this_week") >= 2 && !giftLimitExempt && !isStardropTea)
-                    {
-                        reasons.Add("social_gift_weekly_limit_exhausted");
-                    }
-                }
-                if (HasDumpedDialogueEvent(snapshot))
-                {
-                    reasons.Add("social_gift_dumped_dialogue_rejection");
-                }
-                if (ReadStateFieldBool(snapshot, "time", "is_green_rain") && ReadStateFieldInt(snapshot, "time", "year") == 1 && !ReadBool(friendship, "is_married"))
+                var reasons = new List<string>(baseReasons.Concat(
+                    binding.BlockReasons));
+                var friendship = Friendship(snapshot, npcName);
+                if (ReadStateFieldBool(snapshot, "time", "is_green_rain") &&
+                    ReadStateFieldInt(snapshot, "time", "year") == 1 &&
+                    !ReadBool(friendship, "is_married"))
                 {
                     reasons.Add("social_gift_green_rain_year_one_rejection");
-                }
-                var taste = GiftTaste(snapshot, npcName, ReadInt(item, "slot_index"), ReadString(item, "qualified_item_id"), ReadInt(item, "quality"));
-                if (!taste.HasValue)
-                {
-                    reasons.Add("social_gift_taste_incomplete");
-                }
-                else if (!ReadBool(taste.Value, "expected_friendship_delta_complete"))
-                {
-                    reasons.Add("social_gift_delta_incomplete");
                 }
 
                 var tileX = ReadInt(npc, "tile_x");
@@ -388,14 +369,14 @@ namespace StardewAI.Core.OptionRegistry
                 var npcLocationId = ReadString(npc, "location_id") ?? "";
                 var standTile = SelectReachableStandTile(snapshot, tileX, tileY, npcLocationId);
                 reasons.AddRange(standTile.BlockReasons);
-                var slotIndex = ReadInt(item, "slot_index");
+                var slotIndex = binding.SlotIndex;
                 var hasValidStand = standTile.RouteDistance >= 0;
                 var routeDistanceTicks = hasValidStand ? standTile.RouteDistance * 12 : -1;
                 var plannerBudgetTicks = 120;
                 var estimatedTicks = hasValidStand ? routeDistanceTicks + plannerBudgetTicks : -1;
                 yield return new EventCandidate
                 {
-                    CandidateId = "social:gift:" + npcName + ":slot:" + slotIndex + ":" + qualifiedItemId,
+                    CandidateId = "social:gift:" + npcName + ":slot:" + slotIndex + ":" + binding.QualifiedItemId,
                     Kind = "social_gift_current",
                     Available = reasons.Count == 0,
                     EstimatedTicks = estimatedTicks,
@@ -403,25 +384,27 @@ namespace StardewAI.Core.OptionRegistry
                     LocationId = ReadString(npc, "location_id"),
                     TileX = standTile.Tile?.X,
                     TileY = standTile.Tile?.Y,
-                    QualifiedItemId = qualifiedItemId,
-                    ItemId = ReadString(item, "item_id"),
+                    QualifiedItemId = binding.QualifiedItemId,
+                    ItemId = binding.ItemId,
                     SlotIndex = slotIndex,
                     Quantity = 1,
-                    ExpectedEffect = "native_social_gift_target=" + npcName + ";slot=" + slotIndex + ";item=" + qualifiedItemId + ";executor_required=social_native_executor.v1;estimated_duration_ticks=" + estimatedTicks + ";duration_estimate_status=planner_budget_assumption_pending_runtime_calibration",
+                    ExpectedEffect = "native_social_gift_target=" + npcName + ";slot=" + slotIndex + ";item=" + binding.QualifiedItemId + ";executor_required=social_native_executor.v1;estimated_duration_ticks=" + estimatedTicks + ";duration_estimate_status=planner_budget_assumption_pending_runtime_calibration",
                     AvailabilityClass = reasons.Count == 0 ? "current_state_complete" : "current_state_blocked_with_diagnostics",
                     BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
                     Parameters = new[]
                     {
                         Parameter("npc_name", npcName),
                         Parameter("slot_index", slotIndex.ToString()),
-                        Parameter("qualified_item_id", qualifiedItemId),
-                        Parameter("item_quality", ReadInt(item, "quality").ToString()),
-                        Parameter("item_stack_before", ReadInt(item, "stack").ToString()),
-                        Parameter("gift_taste", taste.HasValue ? ReadString(taste.Value, "taste") : string.Empty),
-                        Parameter("expected_friendship_delta", taste.HasValue ? ReadString(taste.Value, "expected_friendship_delta") : string.Empty),
+                        Parameter("qualified_item_id", binding.QualifiedItemId),
+                        Parameter("item_quality", binding.Quality.ToString()),
+                        Parameter("item_stack_before", binding.StackBefore.ToString()),
+                        Parameter("gift_taste", binding.GiftTaste),
+                        Parameter("expected_friendship_delta", binding.ExpectedFriendshipDelta?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty),
+                        Parameter("friendship_points_before", binding.FriendshipPointsBefore.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                        Parameter("expected_friendship_points_after", binding.ExpectedFriendshipPointsAfter?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty),
                         Parameter("friendship_row_exists_before", friendship.HasValue.ToString().ToLowerInvariant()),
-                        Parameter("gift_updates_normal_limits", (!isStardropTea).ToString().ToLowerInvariant()),
-                        Parameter("gift_side_effect_risk", GiftSideEffectRisk(snapshot, npc, npcName, isStardropTea)),
+                        Parameter("gift_updates_normal_limits", binding.GiftUpdatesNormalLimits.ToString().ToLowerInvariant()),
+                        Parameter("gift_side_effect_risk", binding.GiftSideEffectRisk),
                         Parameter("schedule_loaded_for_evidential_provenance", ReadBool(npc, "schedule_loaded").ToString().ToLowerInvariant()),
                         Parameter("target_location", ReadString(npc, "location_id")),
                         Parameter("npc_tile_x", tileX.ToString()),
@@ -508,63 +491,6 @@ namespace StardewAI.Core.OptionRegistry
             }
         }
 
-        private static void AddItemBlockReasons(JsonElement item, List<string> reasons)
-        {
-            if (!ReadBool(item, "is_object"))
-            {
-                reasons.Add("social_gift_item_not_object");
-            }
-            if (ReadInt(item, "stack") <= 0)
-            {
-                reasons.Add("social_gift_item_stack_empty");
-            }
-            if (ReadBool(item, "protected_from_auto_sell"))
-            {
-                reasons.Add("social_gift_protected_item");
-            }
-            if (ReadBool(item, "object_quest_item") || string.Equals(ReadString(item, "object_type"), "Quest", StringComparison.OrdinalIgnoreCase))
-            {
-                reasons.Add("social_gift_quest_delivery_ambiguous");
-            }
-            if (ReadBool(item, "object_big_craftable") || ReadBool(item, "is_furniture") || ReadBool(item, "is_wallpaper"))
-            {
-                reasons.Add("social_gift_item_not_giftable_shape");
-            }
-            if (!item.TryGetProperty("can_be_given_as_gift", out var canGift) || canGift.ValueKind != JsonValueKind.True && canGift.ValueKind != JsonValueKind.False)
-            {
-                reasons.Add("social_gift_item_can_be_given_missing_or_malformed");
-            }
-            else if (canGift.ValueKind == JsonValueKind.False)
-            {
-                reasons.Add("social_gift_item_can_be_given_false");
-            }
-            if (!item.TryGetProperty("base_tag_not_giftable", out var baseNotGiftable) || baseNotGiftable.ValueKind != JsonValueKind.True && baseNotGiftable.ValueKind != JsonValueKind.False)
-            {
-                reasons.Add("social_gift_item_base_tag_not_giftable_missing_or_malformed");
-            }
-            else if (baseNotGiftable.ValueKind == JsonValueKind.True)
-            {
-                reasons.Add("social_gift_item_base_tag_not_giftable");
-            }
-            if (ReadBool(item, "special_item"))
-            {
-                reasons.Add("social_gift_special_item_branch_unsupported");
-            }
-            if (!item.TryGetProperty("context_tags", out var contextTags) || contextTags.ValueKind != JsonValueKind.Array)
-            {
-                reasons.Add("social_gift_context_tags_incomplete");
-            }
-            var qualifiedItemId = ReadString(item, "qualified_item_id");
-            if (qualifiedItemId is "(O)233" or "(O)897" or "(O)71" or "(O)864" or "(O)865" or "(O)866" or "(O)867" or "(O)868" or "(O)869" or "(O)870" or "(O)809" or "(O)458" or "(O)277" or "(O)460")
-            {
-                reasons.Add("social_gift_special_switch_item_branch_unsupported");
-            }
-            if (HasContextTagPrefix(item, "propose_roommate_"))
-            {
-                reasons.Add("social_gift_roommate_proposal_context_branch_unsupported");
-            }
-        }
-
         private static bool HasContextTagPrefix(JsonElement item, string prefix)
         {
             if (!item.TryGetProperty("context_tags", out var tags) || tags.ValueKind != JsonValueKind.Array)
@@ -581,17 +507,6 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return false;
-        }
-
-        private static string GiftSideEffectRisk(SnapshotEnvelope snapshot, JsonElement npc, string npcName, bool isStardropTea)
-        {
-            var spouse = ReadStateFieldString(snapshot, "player", "spouse");
-            if (isStardropTea || string.IsNullOrWhiteSpace(spouse) || string.Equals(spouse, npcName, StringComparison.Ordinal) || !ReadBool(npc, "is_datably_flagged"))
-            {
-                return "none_identified_from_transparent_branch";
-            }
-
-            return "spouse_jealousy_stochastic_side_effect_possible_not_in_target_delta";
         }
 
         private static bool ParametersMatch(EventCandidate candidate, SmallModelAction action)
@@ -642,55 +557,6 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return null;
-        }
-
-        private static bool FriendshipBool(SnapshotEnvelope snapshot, string npcName, string property)
-        {
-            var friendship = Friendship(snapshot, npcName);
-            return friendship.HasValue && ReadBool(friendship.Value, property);
-        }
-
-        private static JsonElement? GiftTaste(SnapshotEnvelope snapshot, string npcName, int slotIndex, string qualifiedItemId, int quality)
-        {
-            var tastes = ReadStateFieldValue(snapshot, "npcs", "gift_tastes");
-            if (!tastes.HasValue || tastes.Value.ValueKind != JsonValueKind.Array)
-            {
-                return null;
-            }
-
-            foreach (var taste in tastes.Value.EnumerateArray())
-            {
-                if (taste.ValueKind == JsonValueKind.Object &&
-                    string.Equals(ReadString(taste, "npc_name"), npcName, StringComparison.OrdinalIgnoreCase) &&
-                    ReadInt(taste, "slot_index") == slotIndex &&
-                    string.Equals(ReadString(taste, "qualified_item_id"), qualifiedItemId, StringComparison.OrdinalIgnoreCase) &&
-                    ReadInt(taste, "quality") == quality &&
-                    ReadBool(taste, "complete"))
-                {
-                    return taste;
-                }
-            }
-
-            return null;
-        }
-
-        private static bool HasDumpedDialogueEvent(SnapshotEnvelope snapshot)
-        {
-            var events = ReadStateFieldValue(snapshot, "player", "active_dialogue_events");
-            if (!events.HasValue || events.Value.ValueKind != JsonValueKind.Array)
-            {
-                return true;
-            }
-
-            foreach (var item in events.Value.EnumerateArray())
-            {
-                if (item.ValueKind == JsonValueKind.String && (item.GetString() ?? string.Empty).Contains("dumped", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static StandTileSelection SelectReachableStandTile(SnapshotEnvelope snapshot, int targetX, int targetY, string npcLocationId)
@@ -968,6 +834,16 @@ namespace StardewAI.Core.OptionRegistry
                 return true;
             }
             result = false;
+            return false;
+        }
+
+        private static bool TryReadInt(JsonElement item, string property, out int result)
+        {
+            if (item.TryGetProperty(property, out var value) && value.TryGetInt32(out result))
+            {
+                return true;
+            }
+            result = 0;
             return false;
         }
 

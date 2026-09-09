@@ -158,6 +158,7 @@ namespace StardewAI.Core.OptionRegistry
             var notes = new List<string>();
             var compilerProbe = IsUnboundSocialCandidate(candidate) ||
                 IsSocialContinuationCandidate(candidate) ||
+                IsMasterAnglerIntentCandidate(candidate) ||
                 IsPurchaseContinuationCandidate(candidate) ||
                 IsSaleContinuationCandidate(candidate)
                 ? new CompilerProbeResult()

@@ -809,7 +809,15 @@ public sealed partial class ModEntry : Mod
         return "time.day=" + Game1.dayOfMonth + ";time.time=" + Game1.timeOfDay + ";location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";active_menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
     }
 
-    private TrainingExecutionResult CompletedMove(PendingExecution pending, Point startTile, Point targetTile, Point observedTile, string verificationStatus, string[] verificationReasons)
+    private TrainingExecutionResult CompletedMove(
+        PendingExecution pending,
+        Point startTile,
+        Point targetTile,
+        Point observedTile,
+        string verificationStatus,
+        string[] verificationReasons,
+        int actualTicks = 0,
+        string? startedAt = null)
     {
         var request = pending.Request;
         return new TrainingExecutionResult
@@ -821,8 +829,9 @@ public sealed partial class ModEntry : Mod
             OptionId = request.OptionId,
             Status = verificationStatus == "verified" ? "applied" : "blocked",
             FeedbackAvailable = true,
-            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            StartedAt = startedAt ?? DateTimeOffset.UtcNow.ToString("O"),
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            ActualTicks = actualTicks,
             PrimitiveKind = "move_to_tile",
             PrimitiveVerificationStatus = verificationStatus,
             PrimitiveVerificationReasons = verificationReasons,

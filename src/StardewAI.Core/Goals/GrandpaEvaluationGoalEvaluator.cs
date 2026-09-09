@@ -19,7 +19,7 @@ namespace StardewAI.Core.Goals
             "player.level",
             "world_progress.achievements",
             "world_progress.community_center",
-            "npcs.friendships",
+            "npcs.grandpa_friendship_progress",
             "quests.mail_received",
             "game.year",
             "farm.grandpa_score",
@@ -154,9 +154,9 @@ namespace StardewAI.Core.Goals
 
         private static void AddFriendshipFactors(WorldModelEnvelope model, List<GrandpaEvaluationFactor> factors)
         {
-            var count = CountFriendsAtOrAbove(model, 1975);
-            AddCountThreshold(factors, "friendships_5", "At least 5 friends with >= 1975 friendship points", "npcs.friendships", count, 5, 1, "Utility.getNumberOfFriendsWithinThisRange(Game1.player, 1975, 999999) >= 5");
-            AddCountThreshold(factors, "friendships_10", "At least 10 friends with >= 1975 friendship points", "npcs.friendships", count, 10, 1, "Utility.getNumberOfFriendsWithinThisRange(Game1.player, 1975, 999999) >= 10");
+            var count = ReadGrandpaFriendshipQualifyingCount(model);
+            AddCountThreshold(factors, "friendships_5", "At least 5 friends with >= 1975 friendship points", "npcs.grandpa_friendship_progress", count, 5, 1, "Utility.getNumberOfFriendsWithinThisRange(Game1.player, 1975, 999999) >= 5");
+            AddCountThreshold(factors, "friendships_10", "At least 10 friends with >= 1975 friendship points", "npcs.grandpa_friendship_progress", count, 10, 1, "Utility.getNumberOfFriendsWithinThisRange(Game1.player, 1975, 999999) >= 10");
         }
 
         private static void AddLevelFactors(WorldModelEnvelope model, List<GrandpaEvaluationFactor> factors)
@@ -256,26 +256,37 @@ namespace StardewAI.Core.Goals
                 _ => null
             };
 
-            return section is not null && parts.Length == 2 && section.ContainsKey(parts[1]);
+            if (section is null || parts.Length != 2 || !section.ContainsKey(parts[1]))
+            {
+                return false;
+            }
+
+            return path != "npcs.grandpa_friendship_progress" || ReadGrandpaFriendshipQualifyingCount(model).HasValue;
         }
 
-        private static int? CountFriendsAtOrAbove(WorldModelEnvelope model, int points)
+        private static int? ReadGrandpaFriendshipQualifyingCount(WorldModelEnvelope model)
         {
-            if (!model.Facts.Npcs.TryGetValue("friendships", out var friendships) || friendships.ValueKind != JsonValueKind.Array)
+            if (!model.Facts.Npcs.TryGetValue("grandpa_friendship_progress", out var progress) ||
+                progress.ValueKind != JsonValueKind.Object ||
+                !progress.TryGetProperty("threshold_points", out var threshold) ||
+                !threshold.TryGetInt32(out var thresholdPoints) ||
+                thresholdPoints != 1975 ||
+                !progress.TryGetProperty("maximum_points", out var maximum) ||
+                !maximum.TryGetInt32(out var maximumPoints) ||
+                maximumPoints != 999999 ||
+                !progress.TryGetProperty("romance_only", out var romanceOnly) ||
+                romanceOnly.ValueKind != JsonValueKind.False ||
+                !progress.TryGetProperty("projection_status", out var status) ||
+                status.ValueKind != JsonValueKind.String ||
+                !string.Equals(status.GetString(), "complete_live_native_iteration", StringComparison.Ordinal) ||
+                !progress.TryGetProperty("qualifying_count", out var count) ||
+                !count.TryGetInt32(out var qualifyingCount) ||
+                qualifyingCount < 0)
             {
                 return null;
             }
 
-            var count = 0;
-            foreach (var friendship in friendships.EnumerateArray())
-            {
-                if (friendship.TryGetProperty("points", out var value) && value.TryGetInt32(out var current) && current >= points)
-                {
-                    count++;
-                }
-            }
-
-            return count;
+            return qualifyingCount;
         }
 
         private static JsonElement? ReadObject(IReadOnlyDictionary<string, JsonElement> section, string key)

@@ -1,0 +1,24 @@
+{
+  "schema_version": "stardewai.npc_schedule_grammar_contract.v1",
+  "game_version": "1.6.15",
+  "source_manifest_sha256": "01d34627beebe89911edc5b94cf5c4f609875b840d3e6310e4ea2120b2d0618b",
+  "decompiled_npc_relative_path": "StardewValley/StardewValley/NPC.cs",
+  "decompiled_npc_sha256": "e3714e8715604026ad10382c39cc5d5945598df99fbcff453343d8e18b52394f",
+  "expected": {
+    "asset_count": 33,
+    "entry_count": 421,
+    "segment_count": 1714,
+    "first_goto_count": 50,
+    "first_not_count": 15,
+    "first_mail_count": 12,
+    "first_endpoint_count": 338,
+    "replacement_entry_count": 6,
+    "all_goto_segment_count": 71,
+    "arrival_time_segment_count": 12,
+    "bed_segment_count": 69,
+    "same_map_segment_count": 12
+  },
+  "unsupported_exact_projection": [
+    "aHHMM requires the native path length before departure time can be resolved"
+  ]
+}

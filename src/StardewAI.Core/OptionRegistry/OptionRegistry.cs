@@ -527,13 +527,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "legal cast candidate selected", "catch attempt handed to the fishing executor" },
                 new[] { "block_unresolved_fishing_context", "block_illegal_cast_geometry", "block_inventory_full", "block_unobserved_catch_result" }));
 
-            Register(Option("fishing.collect_crab_pots", "fishing", "Collect one transparent ready crab pot",
+            Register(Option("fishing.collect_crab_pots", "fishing", "Service one transparent crab-pot lifecycle step",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
                 TrainingRoles.Mixed,
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
-                new[] { "one ready crab pot selected", "native checkAction handed to the mechanical executor" },
-                new[] { "block_unready_crab_pot", "block_inventory_full", "block_unverified_route", "block_incomplete_output_projection" }));
+                new[] { "one exact collection, bait-load, or missing-species placement step selected", "existing native crab-pot executor receives the bound step" },
+                new[] { "block_unready_crab_pot", "block_inventory_full", "block_unverified_route", "block_incomplete_output_projection", "block_no_missing_species_domain", "block_policy_authorization_missing" }));
 
             Register(Option("fishing.service_fish_ponds", "fishing", "Collect one ready fish-pond output or complete one ready pond request",
                 OptionBehaviorCategories.ParameterizedMechanical,
@@ -558,6 +558,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
                 new[] { "one current spawned-object candidate selected", "native pickup handed to the mechanical executor" },
                 new[] { "block_unknown_spawned_object", "block_inventory_full", "block_unverified_route", "block_direct_object_mutation" }));
+
+            Register(Option("foraging.excavate_artifact_spots", "foraging", "Excavate one transparent native artifact spot",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "current_location.objects", "current_location.map", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact native (O)590 artifact spot selected", "exact projected native output retained without consuming RNG", "existing clear_obstacle_tile compiler and executor chain reused" },
+                new[] { "block_no_native_artifact_spot", "block_seed_spot_or_other_clearable", "block_missing_hoe", "block_insufficient_energy", "block_unverified_route", "block_projection_drift", "block_direct_object_or_rng_mutation" }));
+
+            Register(Option("foraging.harvest_spring_onions", "foraging", "Harvest one transparent native spring onion crop",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "current_location.crops", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact ready base forage crop 1 yielding (O)399 selected", "existing harvest_crop_tile compiler and executor chain reused", "native inventory, Foraging XP and crop-removal receipt retained" },
+                new[] { "block_no_ready_native_spring_onion", "block_other_crop_or_forage_crop", "block_inventory_full", "block_unverified_route", "block_projection_drift", "block_direct_crop_inventory_skill_or_rng_mutation" }));
 
             Register(Option("foraging.harvest_ginger", "foraging", "Hoe one transparent ginger forage crop",
                 OptionBehaviorCategories.ParameterizedMechanical,
@@ -590,6 +606,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "player.skills_detail", "current_location.terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
                 new[] { "one exact mature untapped seed-bearing base Tree selected", "guaranteed output and complete native stochastic output domain preserved without consuming RNG", "native checkAction and Tree shake handed to the mechanical executor" },
                 new[] { "block_unready_or_seedless_tree", "block_custom_or_data_drifted_tree", "block_tapped_tree", "block_native_shake_in_progress", "block_empty_toolbar_slot_unavailable", "block_unverified_adjacent_route", "block_projection_drift", "block_direct_tree_rng_debris_inventory_or_skill_mutation" }));
+
+            Register(Option("foraging.harvest_tree_moss", "foraging", "Harvest moss from one transparent seedless wild Tree",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.skills_detail", "current_location.terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact mature moss-bearing base Tree with no pending seed selected", "deterministic moss quantity, foraging experience, mossHarvested stat and complete tree state transition preserved", "existing clear_obstacle native tool lifecycle reused with an exact scythe and moss-only completion mode" },
+                new[] { "block_tree_seed_must_be_shaken_first", "block_unready_or_mossless_tree", "block_custom_tree_runtime", "block_missing_scythe", "block_native_shake_in_progress", "block_unverified_adjacent_route", "block_projection_drift", "block_direct_tree_rng_debris_inventory_stat_or_skill_mutation" }));
 
             Register(Option("foraging.rummage_garbage", "foraging", "Rummage one transparent unchecked garbage can",
                 OptionBehaviorCategories.ParameterizedMechanical,

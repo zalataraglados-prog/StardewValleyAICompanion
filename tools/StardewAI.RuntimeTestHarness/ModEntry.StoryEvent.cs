@@ -126,7 +126,7 @@ public sealed partial class ModEntry
         }
         if (menu is NamingMenu namingMenu)
         {
-            if (!string.Equals(ReadStoryEventCommandName(currentEvent), "animalNaming", StringComparison.Ordinal))
+            if (!IsBoundStoryEventNamingMenu(active, currentEvent))
             {
                 CompleteStoryEventBlocked(active, "story_event_unbound_naming_menu");
                 return;
@@ -364,5 +364,18 @@ public sealed partial class ModEntry
             return string.Empty;
         var args = ArgUtility.SplitBySpaceQuoteAware(raw);
         return args.Length == 0 ? string.Empty : args[0];
+    }
+
+    private static bool IsBoundStoryEventNamingMenu(ActiveStoryEvent active, Event currentEvent)
+    {
+        var command = ReadStoryEventCommandName(currentEvent);
+        if (string.Equals(command, "animalNaming", StringComparison.Ordinal))
+            return true;
+
+        var request = active.Pending.Request;
+        return string.Equals(command, "catQuestion", StringComparison.Ordinal) &&
+            active.BoundResponseConsumed &&
+            string.Equals(request.StoryEventQuestionKey, "pet", StringComparison.Ordinal) &&
+            request.StoryEventResponseIndex == 0;
     }
 }

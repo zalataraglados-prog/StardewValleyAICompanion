@@ -14,4 +14,13 @@ public static class SnapshotProfileContext
 
     public static bool IncludesPersistentMaterialInventoryGraph =>
         Current is "daily" or "training_machine" or "fishing" or "full";
+
+    public static bool IncludesNpcScheduleCatalog =>
+        Current is "social" or "social_future" or "full";
+
+    public static bool IncludesSocialFutureRouteDateEvidence =>
+        Current is "social_future" or "full";
+
+    public static bool IncludesCrabPotNetwork =>
+        Current is "daily" or "fishing" or "full";
 }

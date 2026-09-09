@@ -151,6 +151,8 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
             var estimatedTicks = ReadParameterInt(normalizedParameters, "estimated_ticks") ?? 0;
             var gateTimeline = ReadRouteGateTimeline(snapshot, x, y);
+            var unwindowedAllowed = !gateTimeline.HasValue &&
+                blockReasons.Length == 0;
             var expectedEffect = "player.tile=" + x + "," + y +
                 ";route_source_location=" + locationId +
                 ";route_connector=" + kind +
@@ -183,8 +185,8 @@ namespace StardewAI.Core.OptionRegistry
                 EstimatedTicks = estimatedTicks,
                 EnergyCost = 0,
                 AvailabilityClass = gateTimeline.HasValue ? "windowed_route_connector" : "state_gated_route_connector",
-                AllowedNow = gateTimeline?.AllowedNow,
-                AllowedToday = gateTimeline?.AllowedToday,
+                AllowedNow = gateTimeline?.AllowedNow ?? unwindowedAllowed,
+                AllowedToday = gateTimeline?.AllowedToday ?? unwindowedAllowed,
                 NextOpenTime = gateTimeline?.NextOpenTime,
                 EffectiveOpenTime = gateTimeline?.EffectiveOpenTime,
                 ClosesAt = gateTimeline?.ClosesAt,

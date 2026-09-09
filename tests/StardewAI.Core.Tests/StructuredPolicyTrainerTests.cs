@@ -35,6 +35,88 @@ public sealed class StructuredPolicyTrainerTests
     }
 
     [Fact]
+    public void LaterGoalCanWarmStartCheckpointAndExtendFeatureVocabulary()
+    {
+        var root = TestRoot();
+        var trainer = new StructuredPolicyTrainer();
+        var stageOneInput = Path.Combine(root, "stage-one.jsonl");
+        WriteLines(stageOneInput, Enumerable.Range(1, 28)
+            .Select(day => Serialize(Row(day, day % 2 == 0 ? 10000 : 100))));
+        var stageOneDataset = new PolicyTrajectoryDatasetBuilder().Build(
+            stageOneInput,
+            Path.Combine(root, "stage-one-dataset"));
+        var stageOnePath = Path.Combine(root, "stage-one-checkpoint.json");
+        var stageOne = trainer.Train(stageOneDataset.ManifestPath, stageOnePath);
+
+        var stageTwoInput = Path.Combine(root, "stage-two.jsonl");
+        WriteLines(stageTwoInput, Enumerable.Range(1, 28)
+            .Select(day => Serialize(Row(
+                day,
+                day % 2 == 0 ? 10000 : 100,
+                "perfection.native_100"))));
+        var stageTwoDataset = new PolicyTrajectoryDatasetBuilder().Build(
+            stageTwoInput,
+            Path.Combine(root, "stage-two-dataset"));
+        var stageTwo = trainer.Train(
+            stageTwoDataset.ManifestPath,
+            Path.Combine(root, "stage-two-checkpoint.json"),
+            initializationCheckpointPath: stageOnePath);
+
+        Assert.NotNull(stageTwo.Checkpoint.Initialization);
+        Assert.Equal(stageOne.Checkpoint.CheckpointId, stageTwo.Checkpoint.Initialization!.CheckpointId);
+        Assert.Equal(stageOne.CheckpointSha256, stageTwo.Checkpoint.Initialization.CheckpointSha256);
+        Assert.Equal(
+            stageOne.Checkpoint.Model.FeatureNames.Length,
+            stageTwo.Checkpoint.Initialization.InheritedFeatureCount);
+        Assert.True(stageTwo.Checkpoint.Initialization.NewFeatureCount > 0);
+        Assert.True(stageTwo.Checkpoint.Initialization.ScoreOrderPreservedBeforeOptimization);
+        Assert.All(stageOne.Checkpoint.Model.FeatureNames, feature =>
+            Assert.Contains(feature, stageTwo.Checkpoint.Model.FeatureNames));
+        Assert.Contains(
+            "state.categorical:goal.id=perfection.native_100",
+            stageTwo.Checkpoint.Model.FeatureNames);
+        Assert.NotEqual(stageOne.Checkpoint.CheckpointId, stageTwo.Checkpoint.CheckpointId);
+        new StructuredPolicyCheckpointStore().Validate(stageTwo.Checkpoint);
+    }
+
+    [Fact]
+    public void WeightRebasePreservesCandidateOrderAcrossNewNormalization()
+    {
+        var source = new StructuredPolicyLinearModel
+        {
+            FeatureNames = new[]
+            {
+                "candidate.categorical:option_id=social.gift_npc",
+                "candidate.categorical:option_id=social.talk_npc"
+            },
+            FeatureMeans = new[] { 0.5, 0.5 },
+            FeatureScales = new[] { 0.25, 0.5 },
+            Weights = new[] { 2d, -1d }
+        };
+        var target = new StructuredPolicyLinearModel
+        {
+            FeatureNames = source.FeatureNames,
+            FeatureMeans = new[] { 0.25, 0.75 },
+            FeatureScales = new[] { 0.5, 0.25 },
+            Weights = new double[2]
+        };
+
+        var inherited = StructuredPolicyFeatureEncoder.InitializeWeights(target, source);
+        var candidates = Candidates();
+        var sourceOrder = new StructuredPolicyRanker().Rank(
+            CheckpointWithModel(source),
+            Features(100),
+            candidates).Select(value => value.OptionId).ToArray();
+        var targetOrder = new StructuredPolicyRanker().Rank(
+            CheckpointWithModel(target),
+            Features(100),
+            candidates).Select(value => value.OptionId).ToArray();
+
+        Assert.Equal(2, inherited);
+        Assert.Equal(sourceOrder, targetOrder);
+    }
+
+    [Fact]
     public void RankerCannotPromoteNonAdmittedCandidate()
     {
         var checkpoint = CheckpointForRanking();
@@ -144,10 +226,12 @@ public sealed class StructuredPolicyTrainerTests
         var options = LiveTrainingOptions.Parse(new[]
         {
             "--require-structured-policy",
-            "--policy-checkpoint-path", @"E:\model.json"
+            "--policy-checkpoint-path", @"E:\model.json",
+            "--policy-initialization-checkpoint-path", @"E:\grandpa-21.json"
         });
         Assert.True(options.RequireStructuredPolicy);
         Assert.Equal(@"E:\model.json", options.PolicyCheckpointPath);
+        Assert.Equal(@"E:\grandpa-21.json", options.PolicyInitializationCheckpointPath);
     }
 
     private static string Best(StructuredPolicyCheckpointEnvelope checkpoint, FeatureVector features) =>
@@ -165,7 +249,10 @@ public sealed class StructuredPolicyTrainerTests
             Path.Combine(root, "checkpoint.json")).Checkpoint;
     }
 
-    private static PolicyDecisionTrajectoryEnvelope Row(int day, double money)
+    private static PolicyDecisionTrajectoryEnvelope Row(
+        int day,
+        double money,
+        string? goalId = null)
     {
         var selected = money > 1000 ? "gift" : "talk";
         var stateHash = "state." + day;
@@ -180,7 +267,7 @@ public sealed class StructuredPolicyTrainerTests
                 Day = day,
                 Time = 900
             },
-            Features(money),
+            Features(money, goalId),
             Versions(),
             stateHash,
             new AvailabilityAwarePolicyPredictionEnvelope { RankedEventCandidates = Candidates() },
@@ -230,12 +317,52 @@ public sealed class StructuredPolicyTrainerTests
         }
     };
 
-    private static FeatureVector Features(double money) => new()
+    private static FeatureVector Features(double money, string? goalId = null) => new()
     {
         Numeric = new[] { new NumericFeature { Name = "player.money", Value = money } },
-        Categorical = new[] { new CategoricalFeature { Name = "game.season", Value = "spring" } },
+        Categorical = string.IsNullOrWhiteSpace(goalId)
+            ? new[] { new CategoricalFeature { Name = "game.season", Value = "spring" } }
+            : new[]
+            {
+                new CategoricalFeature { Name = "game.season", Value = "spring" },
+                new CategoricalFeature { Name = "goal.id", Value = goalId }
+            },
         Boolean = new[] { new BooleanFeature { Name = "planner_inputs.blocked", Value = false } }
     };
+
+    private static StructuredPolicyCheckpointEnvelope CheckpointWithModel(
+        StructuredPolicyLinearModel model) => new()
+    {
+        CheckpointId = "test-checkpoint",
+        Dataset = new StructuredPolicyDatasetBinding
+        {
+            ManifestPath = "test-manifest.json",
+            ManifestSha256 = Hash('a'),
+            CleanedSha256 = Hash('b'),
+            TrainSha256 = Hash('c'),
+            ValidationSha256 = Hash('d'),
+            TestSha256 = Hash('e')
+        },
+        Versions = new PolicyDatasetVersionSet
+        {
+            FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
+            CandidateVocabulary = "capability_registry.v3",
+            CapabilityRegistry = "capability_registry.v3",
+            KnowledgeDictionary = PolicyTrajectoryVersionPins.KnowledgeDictionary,
+            Compiler = PolicyTrajectoryVersionPins.Compiler,
+            Executor = PolicyTrajectoryVersionPins.ProductExecutor
+        },
+        Model = model,
+        Training = new StructuredPolicyTrainingSummary
+        {
+            TrainRows = 1,
+            TrainPairs = 1,
+            FeatureCount = model.FeatureNames.Length,
+            TrainPairAccuracy = 1
+        }
+    };
+
+    private static string Hash(char value) => new(value, 64);
 
     private static PolicyTrajectoryVersions Versions() => new()
     {

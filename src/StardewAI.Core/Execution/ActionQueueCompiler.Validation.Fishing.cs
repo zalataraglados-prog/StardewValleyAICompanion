@@ -169,11 +169,21 @@ namespace StardewAI.Core.Execution
             }
 
             var reasons = new List<string>(MiningReachDepthCandidateBuilder.MissingMiningGroups(snapshot));
-            var targetDepth = ReadIntParameter(action, "target_depth");
+            var trainCombat = string.Equals(
+                ReadParameter(action, "skill_training_target_id"),
+                "combat",
+                StringComparison.Ordinal);
+            var targetDepth = ReadIntParameter(action, "target_depth") ??
+                (trainCombat ? 120 : null);
             var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
             var currentDepth = currentMine.HasValue ? ReadInt(currentMine.Value, "mine_level") : 0;
             var currentFamily = currentMine.HasValue ? ReadString(currentMine.Value, "mine_kind") : string.Empty;
             reasons.AddRange(MiningReachDepthCandidateBuilder.ValidateTarget(currentDepth, currentFamily, targetDepth, ReadParameter(action, "target_location_family")));
+            reasons.AddRange(
+                MiningReachDepthCandidateBuilder.ValidateSkillTraining(
+                    snapshot,
+                    action.Parameters,
+                    currentFamily));
             var resourcePreservationPolicy =
                 ReadParameter(action, "resource_preservation_policy") ??
                 MiningResourcePreservationPolicies.PreserveStaircases;
@@ -187,7 +197,9 @@ namespace StardewAI.Core.Execution
 
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
-                Kind = MiningObjectiveKinds.ReachDepth,
+                Kind = trainCombat
+                    ? MiningObjectiveKinds.TrainCombat
+                    : MiningObjectiveKinds.ReachDepth,
                 MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0,
                 MinimumReserveEnergy = ReadIntParameter(action, "minimum_reserve_energy"),
                 LatestExitTime = ReadIntParameter(action, "latest_exit_time"),

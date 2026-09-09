@@ -649,7 +649,11 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             Parameters = new[]
             {
                 Parameter("npc_name", "Abigail"),
-                Parameter("npc_location", "Farm")
+                Parameter("npc_location", "Farm"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20")
             }
         };
 
@@ -671,10 +675,152 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             p.Name == "grandpa_direction_id" && p.Value == "raise_friendships");
         Assert.Contains(bound.Parameters, p =>
             p.Name == "grandpa_binding_rule_id" && p.Value == "grandpa.direct.raise_friendships");
+        Assert.Contains(bound.Parameters, p =>
+            p.Name == "grandpa_friendship_native_population_member" && p.Value == "true");
+        Assert.Contains(bound.Parameters, p =>
+            p.Name == "grandpa_friendship_deficit_before" && p.Value == "1975");
+        Assert.Contains(bound.Parameters, p =>
+            p.Name == "grandpa_friendship_deficit_after" && p.Value == "1955");
     }
 
     [Fact]
-    public void BindRaiseFriendshipsDoesNotPromiseFriendshipPoints()
+    public void BindAcceptsOrdinaryMineCombatTrainingWithExactNativeExperience()
+    {
+        var snapshot = GrandpaSnapshot();
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(
+            new GrandpaDirectionBindingRequest
+            {
+                StateHash = snapshot.StateHash,
+                DirectionId = "raise_skill_levels",
+                RankedCandidates = new[]
+                {
+                    new PolicyEventCandidatePrediction
+                    {
+                        CandidateId = "mining:train_combat:40:10",
+                        OptionId = "mining.reach_depth",
+                        Kind =
+                            "mining_combat_training_plan_envelope",
+                        Available = true,
+                        AllowedNow = true,
+                        AllowedToday = true,
+                        TimelineStatus = "ready_now",
+                        Parameters = new[]
+                        {
+                            Parameter(
+                                "skill_training_target_id",
+                                "combat"),
+                            Parameter(
+                                "skill_experience_skill_id",
+                                "combat"),
+                            Parameter(
+                                "skill_experience_on_success_min",
+                                "3"),
+                            Parameter(
+                                "skill_experience_on_success_max",
+                                "3"),
+                            Parameter(
+                                "skill_experience_condition",
+                                "native_monster_death_attributed_to_player"),
+                            Parameter(
+                                "skill_experience_projection_status",
+                                "exact_for_native_monster_defeat")
+                        }
+                    }
+                }
+            },
+            snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        var candidate = Assert.Single(result.BoundCandidates);
+        Assert.Equal(
+            "mining_combat_training_plan_envelope",
+            candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "grandpa_direction_id" &&
+            parameter.Value == "raise_skill_levels");
+    }
+
+    [Fact]
+    public void BindRaiseFriendshipsBindsExactRollingRouteContinuation()
+    {
+        var snapshot = GrandpaSnapshot();
+        var routeCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social:talk:Abigail:route:Farm:40,65",
+            OptionId = "social.talk_npc",
+            Kind = "route_connector_tile",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Abigail"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20"),
+                Parameter("continuation.option_id", "social.talk_npc"),
+                Parameter("continuation.npc_name", "Abigail"),
+                Parameter("continuation.target_location", "SeedShop")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(
+            new GrandpaDirectionBindingRequest
+            {
+                StateHash = snapshot.StateHash,
+                DirectionId = "raise_friendships",
+                RankedCandidates = new[] { routeCandidate }
+            },
+            snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal(routeCandidate.CandidateId, Assert.Single(result.BoundCandidates).CandidateId);
+    }
+
+    [Fact]
+    public void BindRaiseFriendshipsRejectsMismatchedRollingRouteContinuation()
+    {
+        var snapshot = GrandpaSnapshot();
+        var routeCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social:talk:Abigail:route:Farm:40,65",
+            OptionId = "social.talk_npc",
+            Kind = "route_connector_tile",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Abigail"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20"),
+                Parameter("continuation.option_id", "social.talk_npc"),
+                Parameter("continuation.npc_name", "Marnie"),
+                Parameter("continuation.target_location", "SeedShop")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(
+            new GrandpaDirectionBindingRequest
+            {
+                StateHash = snapshot.StateHash,
+                DirectionId = "raise_friendships",
+                RankedCandidates = new[] { routeCandidate }
+            },
+            snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains(result.BlockReasons, reason =>
+            reason.Contains("friendship_route_continuation_npc_mismatch", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void BindRaiseFriendshipsRejectsCandidateWithoutExactTransitionEvidence()
     {
         var snapshot = GrandpaSnapshot();
         var socialCandidate = new PolicyEventCandidatePrediction
@@ -700,10 +846,44 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             RankedCandidates = new[] { socialCandidate }
         }, snapshot);
 
-        Assert.Equal("ready", result.BindingStatus);
-        var bound = result.BoundCandidates[0];
-        Assert.DoesNotContain(bound.Parameters, p =>
-            p.Name.Contains("friendship_points") || p.Name.Contains("friendship_delta"));
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains(result.BlockReasons, reason =>
+            reason.Contains("friendship_transition_evidence_missing_or_invalid", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void BindRaiseFriendshipsRejectsNpcOutsideNativeGrandpaPopulation()
+    {
+        var snapshot = GrandpaSnapshot();
+        var socialCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Sebastian:Farm",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Sebastian"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "raise_friendships",
+            RankedCandidates = new[] { socialCandidate }
+        }, snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains(result.BlockReasons, reason =>
+            reason.Contains("friendship_target_not_in_native_grandpa_population", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -729,7 +909,8 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             Parameters = new[]
             {
                 Parameter("rule_key", "mountain_largemouth_spring"),
-                Parameter("outcome_distribution_complete", "true")
+                Parameter("outcome_distribution_complete", "true"),
+                Parameter("possible_qualified_item_ids_json", "[\"(O)136\"]")
             }
         };
 
@@ -749,6 +930,8 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Equal(1, bound.Rank);
         Assert.Contains(bound.Parameters, p =>
             p.Name == "grandpa_direction_id" && p.Value == "complete_master_angler");
+        Assert.Contains(bound.Parameters, p =>
+            p.Name == "master_angler_target_qualified_item_ids_json" && p.Value == "[\"(O)136\"]");
     }
 
     [Fact]
@@ -766,7 +949,9 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             TimelineStatus = "ready_now",
             Parameters = new[]
             {
-                Parameter("rule_key", "mountain_spring")
+                Parameter("rule_key", "mountain_spring"),
+                Parameter("outcome_distribution_complete", "true"),
+                Parameter("possible_qualified_item_ids_json", "[\"(O)136\"]")
             }
         };
 
@@ -782,6 +967,173 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         var bound = result.BoundCandidates[0];
         Assert.DoesNotContain(bound.Parameters, p =>
             p.Name.Contains("achievement") || p.Name.Contains("master_angler_complete"));
+    }
+
+    [Fact]
+    public void BindCompleteMasterAnglerReusesExactReadyCrabPotCollectionCandidate()
+    {
+        var snapshot = GrandpaSnapshot();
+        var crabPotCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "collect-crab-pot:Farm:12,8:(O)136",
+            OptionId = "fishing.collect_crab_pots",
+            Kind = "collect_crab_pot",
+            Rank = 1,
+            Score = 0.4,
+            Available = true,
+            LocationId = "Farm",
+            TileX = 12,
+            TileY = 8,
+            QualifiedItemId = "(O)136",
+            Quantity = 1,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("expected_fish_collection_eligible", "1"),
+                Parameter("qualified_item_id", "(O)136")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "complete_master_angler",
+            RankedCandidates = new[] { crabPotCandidate }
+        }, snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        var bound = Assert.Single(result.BoundCandidates);
+        Assert.Equal("fishing.collect_crab_pots", bound.OptionId);
+        Assert.Equal("collect_crab_pot", bound.Kind);
+        Assert.Contains(bound.Parameters, parameter =>
+            parameter.Name == "master_angler_target_qualified_item_ids_json" &&
+            parameter.Value == "[\"(O)136\"]");
+        Assert.Contains(bound.Parameters, parameter =>
+            parameter.Name == "master_angler_acquisition_kind" &&
+            parameter.Value == "collect_crab_pot");
+    }
+
+    [Fact]
+    public void BindCompleteMasterAnglerAllowsCrabPotCycleClearWithoutClaimingCurrentOutput()
+    {
+        var snapshot = GrandpaSnapshot();
+        var crabPotCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "collect-crab-pot:Beach:22,10:(O)168",
+            OptionId = "fishing.collect_crab_pots",
+            Kind = "collect_crab_pot",
+            Rank = 1,
+            Score = 0.4,
+            Available = true,
+            LocationId = "Beach",
+            TileX = 22,
+            TileY = 10,
+            QualifiedItemId = "(O)168",
+            Quantity = 1,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("expected_fish_collection_eligible", "0"),
+                Parameter("qualified_item_id", "(O)168"),
+                Parameter("crab_pot_production_domain_complete", "true"),
+                Parameter(
+                    "crab_pot_production_possible_qualified_item_ids_json",
+                    "[\"(O)136\",\"(O)715\"]")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(
+            new GrandpaDirectionBindingRequest
+            {
+                StateHash = snapshot.StateHash,
+                DirectionId = "complete_master_angler",
+                RankedCandidates = new[] { crabPotCandidate }
+            },
+            snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        var bound = Assert.Single(result.BoundCandidates);
+        Assert.Contains(bound.Parameters, parameter =>
+            parameter.Name == "master_angler_target_qualified_item_ids_json" &&
+            parameter.Value == "[\"(O)136\"]");
+        Assert.Contains(bound.Parameters, parameter =>
+            parameter.Name == "master_angler_progress_evidence_status" &&
+            parameter.Value ==
+                "crab_pot_cycle_clear_for_missing_species_domain");
+        Assert.Contains(bound.Parameters, parameter =>
+            parameter.Name == "master_angler_acquisition_kind" &&
+            parameter.Value == "collect_crab_pot_cycle_clear");
+        Assert.DoesNotContain(bound.Parameters, parameter =>
+            parameter.Name == "master_angler_catch_completed");
+    }
+
+    [Fact]
+    public void BindCompleteMasterAnglerRejectsCrabPotOutputWithoutNativeCollectionEligibility()
+    {
+        var snapshot = GrandpaSnapshot();
+        var crabPotCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "collect-crab-pot:Farm:12,8:(O)136",
+            OptionId = "fishing.collect_crab_pots",
+            Kind = "collect_crab_pot",
+            Available = true,
+            QualifiedItemId = "(O)136",
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("expected_fish_collection_eligible", "0"),
+                Parameter("qualified_item_id", "(O)136")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "complete_master_angler",
+            RankedCandidates = new[] { crabPotCandidate }
+        }, snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains(result.BlockReasons, reason =>
+            reason.Contains("master_angler_crab_pot_output_not_collection_eligible", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void BindCompleteMasterAnglerRejectsAttemptWhoseOnlyOutcomeWasAlreadyCaught()
+    {
+        var snapshot = GrandpaSnapshot();
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "catch_fish:Beach:Pufferfish",
+            OptionId = "fishing.catch_fish",
+            Kind = "catch_fish",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("outcome_distribution_complete", "true"),
+                Parameter("possible_qualified_item_ids_json", "[\"(O)128\"]")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "complete_master_angler",
+            RankedCandidates = new[] { candidate }
+        }, snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains(result.BlockReasons, reason =>
+            reason.Contains("master_angler_candidate_contains_no_missing_species", StringComparison.Ordinal));
     }
 
     private static PolicyEventCandidatePrediction MuseumDonationCandidate(

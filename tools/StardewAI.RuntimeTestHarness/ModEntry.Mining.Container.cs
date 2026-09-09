@@ -159,7 +159,9 @@ public sealed partial class ModEntry : Mod
 
         var fixtureKind = string.Equals(request.TargetName, "explosive_ammo", StringComparison.Ordinal)
             ? "explosive_ammo"
-            : "mummy_chain";
+            : string.Equals(request.TargetName, "melee", StringComparison.Ordinal)
+                ? "melee"
+                : "mummy_chain";
         var target = FindMiningCombatFixtureTarget(
             mine,
             requireClearProjectilePath: fixtureKind == "explosive_ammo",
@@ -210,11 +212,19 @@ public sealed partial class ModEntry : Mod
                 };
             }
         }
-        else
+        else if (fixtureKind == "mummy_chain")
         {
             targetMonster = new Mummy(target.Value.ToVector2() * Game1.tileSize);
             weaponSlot = InstallFixtureItem(Game1.player, new MeleeWeapon("9"));
             consumableSlot = InstallFixtureItem(Game1.player, new StardewValley.Object("286", 20));
+        }
+        else
+        {
+            targetMonster = new GreenSlime(
+                target.Value.ToVector2() * Game1.tileSize,
+                mine.mineLevel);
+            weaponSlot = InstallFixtureItem(Game1.player, new MeleeWeapon("9"));
+            consumableSlot = weaponSlot;
         }
         targetMonster.Speed = 0;
         targetMonster.moveTowardPlayerThreshold.Value = -1;

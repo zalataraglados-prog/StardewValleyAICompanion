@@ -59,6 +59,25 @@ internal static class StructuredPolicyFeatureEncoder
         };
     }
 
+    public static int InitializeWeights(
+        StructuredPolicyLinearModel target,
+        StructuredPolicyLinearModel source)
+    {
+        var sourceIndexes = source.FeatureNames
+            .Select((name, index) => new { name, index })
+            .ToDictionary(value => value.name, value => value.index, StringComparer.Ordinal);
+        var inherited = 0;
+        for (var targetIndex = 0; targetIndex < target.FeatureNames.Length; targetIndex++)
+        {
+            if (!sourceIndexes.TryGetValue(target.FeatureNames[targetIndex], out var sourceIndex))
+                continue;
+            target.Weights[targetIndex] = source.Weights[sourceIndex] *
+                target.FeatureScales[targetIndex] / source.FeatureScales[sourceIndex];
+            inherited++;
+        }
+        return inherited;
+    }
+
     public static double[] Encode(
         FeatureVector state,
         PolicyTrajectoryCandidate candidate,

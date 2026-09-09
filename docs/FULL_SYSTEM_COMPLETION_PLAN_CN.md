@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-09-08 Teacher / Student 收敛覆盖
+
+当前训练解释统一服从 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。有限 Teacher 负责独立偏序、DAgger 重标和评测，Student 负责最终运行时高层决策；Planner/Compiler/Executor 的现有唯一链保持不变。`teacher_preference`、`native_outcome`、`student_observation` 必须分离，任何 `selected=true` 都不能自行成为正例。
+
+因此下方历史“checkpoint 已更新”只证明当时的 Product、事务、数据和训练管线能够运行，不证明监督方向正确。当前正式全量训练继续禁用：反向图仍为 2/19 executable、17/19 pending，且现有 `StructuredPolicyTrainer.BuildPairs` 尚未迁移到独立监督来源。Stage 1 先冻结新存档 Year 3 Spring 1 原版 21/21 最强基线；玩家偏好、协作和拟人节奏只在基线后以可关闭适配层加入。
+
 ## 2026-09-06 无真人教师与服务器续跑提案
 
 为避免现有策略把自己的遗漏选择反复当作正样本，项目已形成“权威目标依赖图 ->

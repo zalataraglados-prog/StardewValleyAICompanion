@@ -391,7 +391,9 @@ namespace StardewAI.Core.Execution
                     Blocked("no_reachable_target_resource_or_artifact_source");
             }
 
-            if (objective.Kind is MiningObjectiveKinds.ReachDepth or MiningObjectiveKinds.AcquireSkullKey)
+            if (objective.Kind is MiningObjectiveKinds.ReachDepth or
+                MiningObjectiveKinds.TrainCombat or
+                MiningObjectiveKinds.AcquireSkullKey)
             {
                 var reward = SelectMineRewardChest(rewardChests, search, grid);
                 if (reward is not null)
@@ -414,6 +416,32 @@ namespace StardewAI.Core.Execution
                         return rewardThreat;
                     }
                     return reward;
+                }
+            }
+
+            if (objective.Kind == MiningObjectiveKinds.TrainCombat)
+            {
+                if (!string.Equals(
+                        currentMineKind,
+                        "ordinary_mines",
+                        StringComparison.Ordinal))
+                {
+                    return Blocked(
+                        "combat_training_requires_ordinary_mines");
+                }
+
+                var combatTrainingTarget = SelectMonster(
+                    monsters,
+                    search,
+                    grid,
+                    "combat_training_target_reachable",
+                    movementTileDurationMs: movementTileDurationMs,
+                    bombFinisherAvailable: bombFinisherAvailable,
+                    requireMelee: true);
+                if (combatTrainingTarget is not null)
+                {
+                    combatTrainingTarget.RestoreSlotIndex = restoreSlot;
+                    return combatTrainingTarget;
                 }
             }
 

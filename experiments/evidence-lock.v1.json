@@ -1,0 +1,80 @@
+{
+  "schema_version": "goal_conditioned_teacher_evidence_lock.v1",
+  "profile": "game-1.6.15-20260723T093543Z-linux-v24",
+  "game_version": "1.6.15",
+  "source_manifest": {
+    "relative_path": "raw/game-1.6.15-20260723T093543Z/manifest.json",
+    "bytes": 1195654,
+    "sha256": "01d34627beebe89911edc5b94cf5c4f609875b840d3e6310e4ea2120b2d0618b",
+    "expected_content_files": 3550
+  },
+  "artifacts": [
+    {
+      "file": "build-manifest.json",
+      "bytes": 4236,
+      "sha256": "f9d4d8bc67ee2580cc909d0f15470819a5627f24a69e14b73419fe27e9c1c997"
+    },
+    {
+      "file": "goal-dependency-index.json",
+      "bytes": 340635,
+      "sha256": "ec035e79d979d2477a57e0755b2a7613f4f78c1eae59741fba5f17ce127022db"
+    },
+    {
+      "file": "authoritative-dependency-graph.json",
+      "bytes": 31127871,
+      "sha256": "ff1d766cd7737b8b888f148cd6573b6cbf051470de86ba685c9023ec573a13da"
+    },
+    {
+      "file": "runtime-assembly-identity.json",
+      "bytes": 1653,
+      "sha256": "375a7bce34d11cfff11134f30b56be2a1c005f8e0e54a2eefb3ebd0bd6f21c36"
+    },
+    {
+      "file": "source-validation.json",
+      "bytes": 823,
+      "sha256": "a2badf42111cac7915d7b8f16e2205906391626bfa93ef684c4c1abdd6769fe8"
+    },
+    {
+      "file": "wiki-verification-registry.json",
+      "bytes": 4446,
+      "sha256": "dd685fab4044e03d7b45d024b56d2d394dd3bd52f57c3a65f8371542e5d3d569"
+    },
+    {
+      "file": "progression-dependency-index.json",
+      "bytes": 12004315,
+      "sha256": "41cd7ff3a2c0a5476bb12a2758ceff137823b2f65d0725a6ac185d529d9b985b"
+    },
+    {
+      "file": "option-governance-matrix.json",
+      "bytes": 244218,
+      "sha256": "72275dabf5247ea2c9a1a4713e14d150645227a2da0b7f5b7be3f1411a3ca76e"
+    }
+  ],
+  "runtime_assembly": {
+    "assembly_name": "Stardew Valley",
+    "assembly_version": "1.6.15.24356",
+    "module_version_id": "46c95350-5805-4442-8e93-61092d55e101",
+    "bytes": 6268416,
+    "sha256": "f3e97f01d3fd2b1e6094fc8d2b59950aa6cb9d6cd1bf1b39d72d58edda8aad12"
+  },
+  "goal_contract": {
+    "goal_id": "grandpa.maximum_21",
+    "target_score": 21,
+    "criterion_count": 19,
+    "bundle_count": 31,
+    "recipe_output_count": 231
+  },
+  "graph_contract": {
+    "schema_version": "stardewai.authoritative_dependency_graph.v1",
+    "node_count": 35335,
+    "edge_count": 41262
+  },
+  "required_wiki_source_ids": [
+    "grandpa_evaluation",
+    "shop_schedules",
+    "event_data_format",
+    "festival_data_format",
+    "recipe_data_format",
+    "game_state_queries"
+  ]
+}

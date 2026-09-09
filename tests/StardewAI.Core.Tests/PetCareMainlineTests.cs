@@ -25,6 +25,55 @@ public sealed class PetCareMainlineTests
     private const string PetId = "11111111-2222-3333-4444-555555555555";
 
     [Fact]
+    public void InitialPetAdoptionProjectionLocksTheExactNativeEventAndRainSettlementOrder()
+    {
+        var farmSource = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "FarmReadAdapter.cs"));
+        var petSource = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "FarmReadAdapter.Pets.cs"));
+
+        Assert.Contains("[\"initial_pet_adoption\"]", farmSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "1590166/m 1000/t 600 930/d Mon Tue Thu Sat Sun/w sunny/h cat/H",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "897405/m 1000/t 600 930/d Mon Tue Thu Sat Sun/w sunny/h dog/H",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "62bc4fb3c7e3759c533967acad1459a5ca1769305665d08490d2be7f89d9482f",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "30427c975b09bc5504262a21ad6d384a99c81cfb5a4437bf7a11daeff1798508",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.Contains("DayOfWeek.Wednesday or DayOfWeek.Friday", petSource, StringComparison.Ordinal);
+        Assert.Contains("player.totalMoneyEarned >= 1000", petSource, StringComparison.Ordinal);
+        Assert.Contains("player.eventsSeen.Contains(eventId)", petSource, StringComparison.Ordinal);
+        Assert.Contains("var supportedPetType = petType is \"cat\" or \"dog\"", petSource, StringComparison.Ordinal);
+        Assert.Contains("var eventAssetLocked = supportedPetType", petSource, StringComparison.Ordinal);
+        Assert.Contains("LocalizedContentManager.LanguageCode.en", petSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "base_english_event_script_matches_locked_base = baseEnglishScriptSha256 == expectedScriptSha256",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "event_script_is_localized = scriptSha256 != baseEnglishScriptSha256",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_rain_sets_outdoor_bowl_watered_after_location_and_character_day_updates_for_the_next_Pet.dayUpdate",
+            petSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "new_day_outdoor_rain_sets_watered_before_location_day_updates",
+            petSource,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MaximumFriendshipPetStillFlowsForNativeGiftOpportunity()
     {
         var snapshot = Snapshot(PetStateJson());

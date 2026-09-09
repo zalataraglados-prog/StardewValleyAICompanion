@@ -20,6 +20,9 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
+        private const string TreeMossHarvestNativeContract =
+            "MeleeWeapon(scythe) native tool lifecycle -> Tree.performToolAction -> Tree.CreateMossItem -> Game1.createMultipleItemDebris(Item.Stack=1 side effect) -> Tree.shake -> growthStage=11, seedless exact base Tree, no direct tree, RNG, debris, inventory, stat, or skill mutation";
+
         private static string[] ValidateMovementPlan(SmallModelAction action)
         {
             if (action.OptionId != "executor.move_to_tile")
@@ -62,20 +65,27 @@ namespace StardewAI.Core.Execution
                 if (target.ValueKind == JsonValueKind.Object &&
                     ReadString(target, "type").EndsWith(".Tree", StringComparison.Ordinal))
                 {
-                    var status = ReadString(target, "tree_clear_executor_status");
-                    if (!string.Equals(status, "ready", StringComparison.Ordinal))
+                    if (string.Equals(ReadParameter(action, "clear_completion_mode"), "tree_moss_removed", StringComparison.Ordinal))
                     {
-                        reasons.Add(string.IsNullOrWhiteSpace(status) ? "tree_clear_projection_unavailable" : status);
+                        reasons.AddRange(ValidateTreeMossClearPlan(action, snapshot, target));
                     }
-                    var expectedHits = NullableReadInt(target, "expected_axe_hits_to_clear");
-                    var maximumHits = ReadIntParameter(action, "max_tool_swings");
-                    if (!expectedHits.HasValue)
+                    else
                     {
-                        reasons.Add("tree_clear_expected_hits_unavailable");
-                    }
-                    else if (!maximumHits.HasValue || maximumHits.Value < expectedHits.Value)
-                    {
-                        reasons.Add("tree_clear_tool_swing_budget_insufficient");
+                        var status = ReadString(target, "tree_clear_executor_status");
+                        if (!string.Equals(status, "ready", StringComparison.Ordinal))
+                        {
+                            reasons.Add(string.IsNullOrWhiteSpace(status) ? "tree_clear_projection_unavailable" : status);
+                        }
+                        var expectedHits = NullableReadInt(target, "expected_axe_hits_to_clear");
+                        var maximumHits = ReadIntParameter(action, "max_tool_swings");
+                        if (!expectedHits.HasValue)
+                        {
+                            reasons.Add("tree_clear_expected_hits_unavailable");
+                        }
+                        else if (!maximumHits.HasValue || maximumHits.Value < expectedHits.Value)
+                        {
+                            reasons.Add("tree_clear_tool_swing_budget_insufficient");
+                        }
                     }
                 }
 
@@ -138,6 +148,86 @@ namespace StardewAI.Core.Execution
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateTreeMossClearPlan(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            JsonElement target)
+        {
+            var reasons = new List<string>();
+            var expectedOutputs = target.TryGetProperty("moss_harvest_output_items", out var outputs)
+                ? JsonSerializer.Serialize(outputs)
+                : string.Empty;
+            var expectedHealthBefore = NullableReadDouble(target, "moss_harvest_health_before");
+            var expectedHealthAfter = NullableReadDouble(target, "moss_harvest_health_after");
+            if (!string.Equals(ReadStateFieldString(snapshot, "player", "location_id"), ReadParameter(action, "target_location"), StringComparison.OrdinalIgnoreCase))
+            {
+                reasons.Add("tree_moss_target_location_mismatch");
+            }
+            if (ReadString(target, "moss_harvest_status") != "ready" ||
+                ReadString(target, "moss_harvest_completion_mode") != "tree_moss_removed")
+            {
+                reasons.Add("tree_moss_not_ready_by_transparent_state");
+            }
+            if (ReadParameter(action, "target_runtime_type") != "StardewValley.TerrainFeatures.Tree" ||
+                ReadParameter(action, "moss_harvest_projection_status") != "exact_seedless_native_scythe_moss_branch" ||
+                ReadString(target, "moss_harvest_output_projection_status") != "exact_seedless_native_scythe_moss_branch" ||
+                ReadParameter(action, "moss_harvest_native_contract") != TreeMossHarvestNativeContract ||
+                ReadString(target, "moss_harvest_native_contract") != TreeMossHarvestNativeContract)
+            {
+                reasons.Add("tree_moss_native_contract_incomplete");
+            }
+            if (ReadIntParameter(action, "max_tool_swings") != 1 ||
+                ReadIntParameter(action, "tool_slot_index") != NullableReadInt(target, "moss_harvest_tool_slot_index") ||
+                ReadParameter(action, "required_tool_kind") != "scythe" ||
+                ReadString(target, "moss_harvest_required_tool_kind") != "scythe")
+            {
+                reasons.Add("tree_moss_tool_projection_drifted");
+            }
+            if (ReadParameter(action, "clear_output_projection_status") != "exact" ||
+                string.IsNullOrWhiteSpace(expectedOutputs) ||
+                !FruitTreeJsonEquivalent(ReadParameter(action, "clear_output_items_json") ?? string.Empty, expectedOutputs))
+            {
+                reasons.Add("tree_moss_output_projection_drifted");
+            }
+            if (ReadBoolParameter(action, "expected_tree_has_moss_before") != true ||
+                ReadBoolParameter(action, "expected_tree_has_moss_after") != false ||
+                ReadBoolParameter(action, "expected_tree_has_seed_before") != false ||
+                ReadBoolParameter(action, "expected_tree_has_seed_after") != false ||
+                ReadBoolParameter(action, "expected_tree_was_shaken_today_before") != ReadBool(target, "moss_harvest_was_shaken_today_before") ||
+                ReadBoolParameter(action, "expected_tree_was_shaken_today_after") != true ||
+                ReadIntParameter(action, "expected_tree_growth_stage_before") != NullableReadInt(target, "moss_harvest_growth_stage_before") ||
+                ReadIntParameter(action, "expected_tree_growth_stage_after") != NullableReadInt(target, "moss_harvest_growth_stage_after") ||
+                ReadDoubleParameter(action, "expected_tree_health_before") != expectedHealthBefore ||
+                ReadDoubleParameter(action, "expected_tree_health_after") != expectedHealthAfter)
+            {
+                reasons.Add("tree_moss_tree_state_projection_drifted");
+            }
+            if (ReadLongActionParameter(action, "expected_moss_harvested_before") != ReadTreeMossLong(target, "moss_harvest_moss_harvested_before") ||
+                ReadLongActionParameter(action, "expected_moss_harvested_after") != ReadTreeMossLong(target, "moss_harvest_moss_harvested_after") ||
+                ReadIntParameter(action, "expected_foraging_experience_before") != NullableReadInt(target, "moss_harvest_foraging_experience_before") ||
+                ReadIntParameter(action, "expected_foraging_experience_delta") != NullableReadInt(target, "moss_harvest_quantity") ||
+                ReadIntParameter(action, "expected_foraging_experience_after") != NullableReadInt(target, "moss_harvest_foraging_experience_after"))
+            {
+                reasons.Add("tree_moss_stat_or_experience_projection_drifted");
+            }
+            return reasons.ToArray();
+        }
+
+        private static long? ReadLongActionParameter(SmallModelAction action, string name)
+        {
+            return long.TryParse(ReadParameter(action, name), out var value) ? value : null;
+        }
+
+        private static long? ReadTreeMossLong(JsonElement element, string property)
+        {
+            return element.ValueKind == JsonValueKind.Object &&
+                element.TryGetProperty(property, out var value) &&
+                value.ValueKind == JsonValueKind.Number &&
+                value.TryGetInt64(out var parsed)
+                    ? parsed
+                    : null;
         }
 
         private static string[] ValidateFarmResourceClumpPlan(SmallModelAction action, SnapshotEnvelope snapshot)
@@ -328,6 +418,50 @@ namespace StardewAI.Core.Execution
                 !HarvestCropReadyAt(snapshot, targetX.Value, targetY.Value))
             {
                 reasons.Add("harvest_crop_not_ready_by_transparent_farm_state");
+            }
+
+            var crop = targetX.HasValue && targetY.HasValue
+                ? HarvestCropAt(snapshot, targetX.Value, targetY.Value)
+                : null;
+            var expectedQualifiedItemId = ReadParameter(action, "harvest_item_qualified_id");
+            if (crop.HasValue &&
+                !string.IsNullOrWhiteSpace(expectedQualifiedItemId) &&
+                !string.Equals(
+                    ReadString(crop.Value, "harvest_item_qualified_id"),
+                    expectedQualifiedItemId,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("harvest_crop_item_identity_drifted");
+            }
+
+            var expectedItemProjectionStatus = ReadParameter(action, "harvest_item_projection_status");
+            if (crop.HasValue &&
+                !string.IsNullOrWhiteSpace(expectedItemProjectionStatus) &&
+                !string.Equals(
+                    ReadString(crop.Value, "harvest_item_projection_status"),
+                    expectedItemProjectionStatus,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("harvest_crop_item_projection_drifted");
+            }
+
+            var expectedForageCrop = ReadParameter(action, "forage_crop");
+            if (crop.HasValue &&
+                bool.TryParse(expectedForageCrop, out var expectedForageCropValue) &&
+                ReadBool(crop.Value, "forage_crop") != expectedForageCropValue)
+            {
+                reasons.Add("harvest_crop_forage_identity_drifted");
+            }
+
+            var expectedForageCropId = ReadParameter(action, "forage_crop_id");
+            if (crop.HasValue &&
+                !string.IsNullOrWhiteSpace(expectedForageCropId) &&
+                !string.Equals(
+                    ReadString(crop.Value, "forage_crop_id"),
+                    expectedForageCropId,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("harvest_crop_forage_identity_drifted");
             }
 
             if (targetX.HasValue &&

@@ -194,9 +194,14 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return null;
         }
 
-        if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase))
+        if (IsDirectWarpActionBranch(parts[0]))
         {
-            var touchAction = string.Equals(action.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase);
+            var touchAction =
+                string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    action.source_property,
+                    "Back.TouchAction",
+                    StringComparison.OrdinalIgnoreCase);
             var targetLocation = touchAction ? Part(parts, 1) : Part(parts, 3);
             var targetX = touchAction ? ParseIntPart(parts, 2) : ParseIntPart(parts, 1);
             var targetY = touchAction ? ParseIntPart(parts, 3) : ParseIntPart(parts, 2);
@@ -214,6 +219,27 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 raw_action = action.raw_action,
                 resolved,
                 unresolved_reason = resolved ? (string?)null : "action_warp_target_not_resolved"
+            };
+        }
+
+        if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
+        {
+            var resolved = locationNames.Contains("Sewer");
+            return new
+            {
+                kind = "action_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = "Sewer",
+                target_x = 16,
+                target_y = 11,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                resolved,
+                unresolved_reason = resolved
+                    ? (string?)null
+                    : "enter_sewer_target_not_loaded"
             };
         }
 
@@ -407,6 +433,9 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         return branch switch
         {
             "Warp" => "covered_for_read",
+            "WarpMensLocker" => "covered_for_read",
+            "WarpWomensLocker" => "covered_for_read",
+            "EnterSewer" => "covered_for_read",
             "LockedDoorWarp" => "covered_for_read",
             "ConditionalDoor" => "covered_for_read",
             "Door" => "covered_for_read",
@@ -420,6 +449,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "AdventureGuild" => "covered_for_read",
             "adventureGuild" => "covered_for_read",
             "AdventureShop" => "covered_for_read",
+            "asdlfkjg" => "covered_for_read",
             null or "" => "unsupported_for_route_training",
             _ => "unsupported_for_route_training"
         };
@@ -430,6 +460,10 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         return branch switch
         {
             "Warp" => "read-side target/mail gate preview exists where Stardew action format exposes it",
+            "WarpMensLocker" or "WarpWomensLocker" =>
+                "read-side target and native player-gender gate preview exists",
+            "EnterSewer" =>
+                "read-side OpenedSewer/RustyKey state and native Sewer 16,11 target preview exists",
             "LockedDoorWarp" => "read-side time/festival/key/friendship gate preview exists",
             "ConditionalDoor" => "read-side GameStateQuery gate preview exists",
             "Door" => "door branch is recognized but NPC-specific hardcoded details may still block execution",
@@ -442,6 +476,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "AnimalShop" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
             "AdventureGuild" or "adventureGuild" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
             "AdventureShop" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
+            "asdlfkjg" => "Backwoods native pass-through trigger removes its three TouchAction tiles; from 19:20 through 20:19 in dry single-player after day 3 it also has a native 2.5 percent secret-mail and cosmetic-event branch",
             _ => "branch not route-transparent; route/shop-opening training must block on this action"
         };
     }
@@ -459,6 +494,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             || string.Equals(branch, "adventureGuild", StringComparison.OrdinalIgnoreCase)
             || string.Equals(branch, "AdventureShop", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static bool IsDirectWarpActionBranch(string? branch) =>
+        string.Equals(branch, "Warp", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(branch, "WarpMensLocker", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(branch, "WarpWomensLocker", StringComparison.OrdinalIgnoreCase);
 
     private sealed record MapActionRow(int tile_x, int tile_y, string source_property, string raw_action, string? branch);
 

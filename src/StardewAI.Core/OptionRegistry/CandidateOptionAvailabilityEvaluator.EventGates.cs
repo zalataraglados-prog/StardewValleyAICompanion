@@ -51,6 +51,16 @@ namespace StardewAI.Core.OptionRegistry
                 !string.IsNullOrWhiteSpace(ReadParameter(candidate.Parameters, "continuation.target_location"));
         }
 
+        private static bool IsMasterAnglerIntentCandidate(
+            OptionAvailabilityCandidate candidate)
+        {
+            return string.Equals(
+                    candidate.OptionId,
+                    "fishing.catch_fish",
+                    StringComparison.Ordinal) &&
+                HasMasterAnglerIntentParameters(candidate.Parameters);
+        }
+
         private static string[] EventCandidateGateBlockingReasons(string optionId, EventCandidate[] eventCandidates, bool hasBoundParameters)
         {
             if (optionId == "inventory.transfer_item")
@@ -123,6 +133,22 @@ namespace StardewAI.Core.OptionRegistry
                     eventCandidates,
                     "no_spawned_object_candidates",
                     "no_available_spawned_object_candidates");
+            }
+
+            if (optionId == "foraging.excavate_artifact_spots")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_artifact_spot_candidates",
+                    "no_available_artifact_spot_candidates");
+            }
+
+            if (optionId == "foraging.harvest_spring_onions")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_spring_onion_harvest_candidates",
+                    "no_available_spring_onion_harvest_candidates");
             }
 
             if (optionId == "foraging.harvest_ginger")

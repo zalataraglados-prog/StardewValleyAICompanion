@@ -1,5 +1,12 @@
 # Worker Notes
 
+## 2026-09-05 Superseding Architecture Note
+
+`GrandpaDirectionCatalog` is now the sole authority for all 11 native score directions and
+their 19 criteria. The adapter projects current factor state through that catalog; the live
+candidate set remains the compiler's fresh-state validation surface. There is no adapter-local
+`DirectionSpec` table.
+
 ## 2026-07-14 Grandpa Direction Compile Chain (Controller Audit Remediation)
 
 - Scope: bounded static-only StardewAI slice. Fixed controller-audit-identified defects in the compile chain; did not add new features.
@@ -16,7 +23,7 @@
 
 4. Strategy validation is computed once in `CompileAction` via a tuple return from `ValidateStrategyPlan`. If strategy validation or any global stale-state/compiler validation blocks the item, `NormalizedCommand.StrategyPlan` is empty. No partially invalid step with -1/default values is ever emitted.
 
-5. Removed the static direction whitelist (`IsKnownGrandpaDirectionId`) as an authority. The adapter's live candidate set is the sole authoritative source. The current adapter defines 11 native Grandpa scoring directions; Joja development is intentionally not one of them.
+5. Removed the static direction whitelist (`IsKnownGrandpaDirectionId`) as an authority. The adapter's live candidate set is the fresh validation surface. The current production catalog defines 11 native Grandpa scoring directions; Joja development is intentionally not one of them.
 
 6. Preserved the useful classifier placeholder removal and `MockSmallModelPolicy` no-fallback behavior. Made no-eligible tests deterministic: `PolicyFailsClosedWhenTargetAlreadyComplete` uses a target-complete snapshot where the adapter returns zero directions.
 

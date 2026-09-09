@@ -13,7 +13,10 @@ public sealed class LiveTrainingOptions
     public string Root { get; set; } = @"E:\StardewAITraining";
     public string BackendUrl { get; set; } = "http://localhost:5108";
     public string BridgeSnapshotUrl { get; set; } = "http://127.0.0.1:8765/api/v1/snapshot";
+    public string ExecutionSnapshotProfile { get; set; } = "full";
     public string SnapshotFile { get; set; } = string.Empty;
+    public string SnapshotArtifactMode { get; set; } =
+        ContentAddressedJsonArtifactStore.PlainMode;
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public int ExecutorTimeoutSeconds { get; set; } = 600;
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
@@ -58,6 +61,7 @@ public sealed class LiveTrainingOptions
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
     public string KnowledgeDictionaryVersion { get; set; } = PolicyTrajectoryVersionPins.KnowledgeDictionary;
     public string PolicyCheckpointPath { get; set; } = string.Empty;
+    public string PolicyInitializationCheckpointPath { get; set; } = string.Empty;
     public string TrainingDataRootOverride { get; set; } = string.Empty;
     public bool RequireStructuredPolicy { get; set; }
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
@@ -167,9 +171,29 @@ public sealed class LiveTrainingOptions
             {
                 options.BridgeSnapshotUrl = args[++i];
             }
+            else if (current == "--execution-snapshot-profile" && i + 1 < args.Length)
+            {
+                options.ExecutionSnapshotProfile = args[++i].Trim();
+                if (string.IsNullOrWhiteSpace(options.ExecutionSnapshotProfile))
+                {
+                    throw new ArgumentException(
+                        "--execution-snapshot-profile cannot be empty.");
+                }
+            }
             else if (current == "--snapshot-file" && i + 1 < args.Length)
             {
                 options.SnapshotFile = args[++i];
+            }
+            else if (current == "--snapshot-artifact-mode" && i + 1 < args.Length)
+            {
+                var value = args[++i].Trim();
+                if (!ContentAddressedJsonArtifactStore.IsSupportedMode(value))
+                {
+                    throw new ArgumentException(
+                        "--snapshot-artifact-mode must be plain or " +
+                        "content_addressed_gzip, not '" + value + "'.");
+                }
+                options.SnapshotArtifactMode = value;
             }
             else if (current == "--executor-url" && i + 1 < args.Length)
             {
@@ -223,6 +247,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--policy-checkpoint-path" && i + 1 < args.Length)
             {
                 options.PolicyCheckpointPath = args[++i];
+            }
+            else if (current == "--policy-initialization-checkpoint-path" && i + 1 < args.Length)
+            {
+                options.PolicyInitializationCheckpointPath = args[++i];
             }
             else if (current == "--require-structured-policy")
             {

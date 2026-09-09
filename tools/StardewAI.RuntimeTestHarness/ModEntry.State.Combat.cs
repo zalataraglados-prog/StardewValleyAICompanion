@@ -221,6 +221,8 @@ public sealed partial class ModEntry : Mod
             TargetName = target.Name;
             TargetHealthBefore = target.Health;
             PlayerHealthBefore = Game1.player.health;
+            CombatExperienceBefore =
+                Game1.player.experiencePoints[Farmer.combatSkill];
             MaxAttacks = maxAttacks;
             MaxMovementTiles = maxMovementTiles;
             ManualMovement = manualMovement;
@@ -248,6 +250,7 @@ public sealed partial class ModEntry : Mod
         public string TargetName { get; private set; }
         public int TargetHealthBefore { get; private set; }
         public int PlayerHealthBefore { get; }
+        public int CombatExperienceBefore { get; }
         public int MaxAttacks { get; }
         public int MaxMovementTiles { get; }
         public bool ManualMovement { get; }

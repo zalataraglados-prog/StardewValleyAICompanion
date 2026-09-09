@@ -71,7 +71,8 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains(".TakeWhile(item => item is not null && IsExecutableQueueItem(item))", inspection, StringComparison.Ordinal);
         Assert.DoesNotContain(".Where(item => item is not null && IsExecutableQueueItem(item))", inspection, StringComparison.Ordinal);
         Assert.Contains("\"clock\"", inspection, StringComparison.Ordinal);
-        Assert.Contains("ReadFullSnapshotAsync", inspection, StringComparison.Ordinal);
+        Assert.Contains("ReadExecutionSnapshotAsync", inspection, StringComparison.Ordinal);
+        Assert.Contains("options.ExecutionSnapshotProfile", inspection, StringComparison.Ordinal);
         Assert.Contains("forceRefresh: false", inspection, StringComparison.Ordinal);
         Assert.Contains("product_after_snapshot_cache_match", inspection, StringComparison.Ordinal);
         Assert.Contains("product_after_state_hash", inspection, StringComparison.Ordinal);

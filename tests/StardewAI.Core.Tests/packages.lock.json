@@ -1040,6 +1040,13 @@
           "System.Text.Json": "[8.0.5, )"
         }
       },
+      "stardewai.friendshipteacherrollout": {
+        "type": "Project",
+        "dependencies": {
+          "StardewAI.Contracts": "[1.0.0, )",
+          "StardewAI.Core": "[1.0.0, )"
+        }
+      },
       "stardewai.livetrainingloop": {
         "type": "Project",
         "dependencies": {

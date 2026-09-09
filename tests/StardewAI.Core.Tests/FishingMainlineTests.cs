@@ -52,14 +52,13 @@ public sealed class FishingMainlineTests
         Assert.StartsWith("distribution:", ParameterValue(candidate.Parameters, "rule_key"), StringComparison.Ordinal);
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, snapshot.StateHash);
-        Assert.Equal(new[] { "move_to_tile", "catch_fish" }, plan.Steps.Select(step => step.Kind).ToArray());
-        AssertParameter(plan.Steps[0].Parameters, "max_movement_tiles", "1");
-        AssertParameter(plan.Steps[1].Parameters, "bobber_tile_x", "5");
-        Assert.Contains("no_forced_catch_result", plan.Steps[1].SafetyConstraints);
+        var catchPlanStep = Assert.Single(plan.Steps);
+        Assert.Equal("catch_fish", catchPlanStep.Kind);
+        AssertParameter(catchPlanStep.Parameters, "bobber_tile_x", "5");
+        Assert.Contains("no_forced_catch_result", catchPlanStep.SafetyConstraints);
 
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         Assert.Equal("pending", queue.Status);
-        AssertParameter(queue.Items[0].NormalizedCommand.Parameters, "max_movement_tiles", "1");
         var catchItem = Assert.Single(queue.Items.Where(item => item.OptionId == "executor.catch_fish"));
         Assert.Empty(catchItem.BlockingReasons);
         AssertParameter(catchItem.NormalizedCommand.Parameters, "expected_qualified_item_id", string.Empty);

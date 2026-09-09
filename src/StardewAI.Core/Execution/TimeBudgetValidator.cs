@@ -187,6 +187,12 @@ namespace StardewAI.Core.Execution
                 case "foraging.pan_ore_spot":
                 case "executor.pan_ore_spot":
                     return EstimateCompiledSteps(item, "native_pan_steps.v1");
+                case "foraging.excavate_artifact_spots":
+                case "executor.clear_obstacle":
+                    return EstimateCompiledSteps(item, "native_clear_obstacle_steps.v1");
+                case "foraging.harvest_spring_onions":
+                case "executor.harvest_crop":
+                    return EstimateCompiledSteps(item, "native_crop_harvest_steps.v1");
                 case "foraging.harvest_ginger":
                 case "executor.harvest_ginger":
                     return EstimateCompiledSteps(item, "native_ginger_hoe_steps.v1");
@@ -199,6 +205,8 @@ namespace StardewAI.Core.Execution
                 case "foraging.harvest_tree_product":
                 case "executor.harvest_tree_product":
                     return EstimateCompiledSteps(item, "native_wild_tree_product_shake_steps.v1");
+                case "foraging.harvest_tree_moss":
+                    return EstimateCompiledSteps(item, "native_tree_moss_scythe_steps.v1");
                 case "foraging.rummage_garbage":
                 case "executor.rummage_garbage":
                     return EstimateCompiledSteps(item, "native_garbage_can_rummage_steps.v1");
@@ -380,6 +388,16 @@ namespace StardewAI.Core.Execution
                 return assumptionRegistry.GetRequired("panning");
             }
 
+            if (item.OptionId is "foraging.excavate_artifact_spots" or "executor.clear_obstacle")
+            {
+                return assumptionRegistry.GetRequired("obstacle_clearance");
+            }
+
+            if (item.OptionId is "foraging.harvest_spring_onions" or "executor.harvest_crop")
+            {
+                return assumptionRegistry.GetRequired("crop_farming");
+            }
+
             if (item.OptionId is "foraging.harvest_ginger" or "executor.harvest_ginger")
             {
                 return assumptionRegistry.GetRequired("ginger_harvest");
@@ -398,6 +416,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "foraging.harvest_tree_product" or "executor.harvest_tree_product")
             {
                 return assumptionRegistry.GetRequired("wild_tree_product_harvest");
+            }
+
+            if (item.OptionId is "foraging.harvest_tree_moss")
+            {
+                return assumptionRegistry.GetRequired("tree_moss_harvest");
             }
 
             if (item.OptionId is "foraging.rummage_garbage" or "executor.rummage_garbage")

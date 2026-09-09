@@ -912,7 +912,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(62, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(65, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "processing.crack_geode");
@@ -1589,6 +1589,7 @@ namespace StardewAI.Backend.Tests
               "npcs": {
                 "positions": {{FieldJson("[]", raw: true)}},
                 "friendships": {{FieldJson("[{\"npc_name\":\"A\",\"points\":2000},{\"npc_name\":\"B\",\"points\":2000},{\"npc_name\":\"C\",\"points\":2000},{\"npc_name\":\"D\",\"points\":2000},{\"npc_name\":\"E\",\"points\":2000},{\"npc_name\":\"F\",\"points\":2000},{\"npc_name\":\"G\",\"points\":2000},{\"npc_name\":\"H\",\"points\":2000},{\"npc_name\":\"I\",\"points\":2000},{\"npc_name\":\"J\",\"points\":2000}]", raw: true)}},
+                "grandpa_friendship_progress": {{FieldJson("{\"threshold_points\":1975,\"maximum_points\":999999,\"romance_only\":false,\"projection_status\":\"complete_live_native_iteration\",\"qualifying_count\":10}", raw: true)}},
                 "schedules": {{UnavailableFieldJson("npc_schedules_unavailable_without_complete_read_only_decompile_proof")}}
               },
               "quests": {

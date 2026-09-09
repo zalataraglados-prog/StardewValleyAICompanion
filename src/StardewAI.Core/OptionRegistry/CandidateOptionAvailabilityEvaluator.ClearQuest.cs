@@ -14,7 +14,23 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
+        private EventCandidate[] ArtifactSpotExcavationCandidates(SnapshotEnvelope snapshot)
+        {
+            return ClearObstacleCandidates(
+                snapshot,
+                static (clearKind, sourceId) =>
+                    string.Equals(clearKind, "artifact_spot", StringComparison.Ordinal) &&
+                    string.Equals(sourceId, "(O)590", StringComparison.Ordinal));
+        }
+
         private EventCandidate[] ClearObstacleCandidates(SnapshotEnvelope snapshot)
+        {
+            return ClearObstacleCandidates(snapshot, static (_, _) => true);
+        }
+
+        private EventCandidate[] ClearObstacleCandidates(
+            SnapshotEnvelope snapshot,
+            Func<string, string, bool> includeSource)
         {
             var candidates = new List<EventCandidate>();
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
@@ -37,6 +53,10 @@ namespace StardewAI.Core.OptionRegistry
                     {
                         continue;
                     }
+                    if (!includeSource(clearKind, qualifiedId))
+                    {
+                        continue;
+                    }
 
                     candidates.Add(ClearObstacleCandidate(snapshot, locationId, playerX, playerY, x, y, clearKind, qualifiedId, item));
                 }
@@ -50,6 +70,10 @@ namespace StardewAI.Core.OptionRegistry
                     var type = ReadString(feature, "type");
                     var clearKind = ClearableTerrainFeatureKind(type);
                     if (string.IsNullOrWhiteSpace(clearKind))
+                    {
+                        continue;
+                    }
+                    if (!includeSource(clearKind, type))
                     {
                         continue;
                     }
@@ -178,6 +202,9 @@ namespace StardewAI.Core.OptionRegistry
             var distance = standTile is not null
                 ? Math.Abs(playerX - standTile.X) + Math.Abs(playerY - standTile.Y)
                 : 0;
+            probeParameters.Add(Parameter(
+                "route_distance_tiles",
+                distance.ToString()));
             var estimatedTicks = Math.Max(60, distance * 60 + ClearObstacleToolTicks(clearKind, maxToolSwings));
             var playerEnergy = ReadStateFieldValue(snapshot, "player", "energy");
             if (playerEnergy.HasValue &&

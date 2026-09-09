@@ -155,7 +155,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     {
         var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
         var clearance = ReadObjectClearance(location, tile, item, player);
-        var crabPot = ReadCrabPotHarvest(tile, item, player);
+        var crabPot = ReadCrabPotHarvest(location, tile, item, player);
         var crabPotBaitLoad = ReadCrabPotBaitLoad(item, player);
         var fence = ReadFenceState(item);
         var sign = ReadSignState(location, tile, item, player);
@@ -268,6 +268,19 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             crab_pot_catch_size_min = crabPot.CatchSizeMin,
             crab_pot_catch_size_max = crabPot.CatchSizeMax,
             crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus,
+            crab_pot_production_signature = crabPot.ProductionSignature,
+            crab_pot_fish_area_id = crabPot.FishAreaId,
+            crab_pot_fish_area_display_name = crabPot.FishAreaDisplayName,
+            crab_pot_habitat_tags = crabPot.HabitatTags,
+            crab_pot_native_order_catch_rows = crabPot.NativeOrderCatchRows,
+            crab_pot_conservative_serviced_probability_status =
+                crabPot.ConservativeServicedProbabilityStatus,
+            crab_pot_conservative_serviced_outcome_rows =
+                crabPot.ConservativeServicedOutcomeRows,
+            crab_pot_conservative_serviced_trash_probability =
+                crabPot.ConservativeServicedTrashProbability,
+            crab_pot_possible_qualified_item_ids =
+                crabPot.PossibleQualifiedItemIds,
             fence_state = fence,
             sign_state = sign,
             house_plant_rotation = housePlantRotation,

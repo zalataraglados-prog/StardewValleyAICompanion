@@ -151,7 +151,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             primaryAttemptsStarted++;
         }
         var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
-            ? await File.ReadAllTextAsync(options.SnapshotFile, Encoding.UTF8)
+            ? await ContentAddressedJsonArtifactStore.ReadAllTextAsync(
+                options.SnapshotFile)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
@@ -219,7 +220,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         var snapshotJson = beforeSnapshot.ToJsonString(JsonlOptions);
         var snapshotPath = Path.Combine(options.SnapshotDir, "before-snapshot-" + iteration.ToString("D4") + ".json");
-        await File.WriteAllTextAsync(snapshotPath, snapshotJson, Encoding.UTF8);
+        await ContentAddressedJsonArtifactStore.WriteAsync(
+            snapshotPath,
+            snapshotJson,
+            options.SnapshotArtifactMode);
         persistedIterationCount++;
 
     var ingest = await PostJsonStringAsync(
@@ -594,9 +598,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         !File.Exists(afterSnapshotPath)
                             ? new JsonObject()
                             : JsonNode.Parse(
-                                await File.ReadAllTextAsync(
-                                    afterSnapshotPath,
-                                    Encoding.UTF8))?.AsObject() ?? new JsonObject();
+                                await ContentAddressedJsonArtifactStore.ReadAllTextAsync(
+                                    afterSnapshotPath))?.AsObject() ?? new JsonObject();
                     nativeSaveBoundaryCurrentDayKey =
                         QueueReplanFilter.SnapshotDayKey(afterSnapshot);
                     currentSaveFingerprint = await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
@@ -730,7 +733,9 @@ var report = new LiveTrainingLoopReport
     ManifestPath = options.ManifestPath,
     BackendUrl = options.BackendUrl,
     BridgeSnapshotUrl = options.BridgeSnapshotUrl,
+    ExecutionSnapshotProfile = options.ExecutionSnapshotProfile,
     SnapshotFile = options.SnapshotFile,
+    SnapshotArtifactMode = options.SnapshotArtifactMode,
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,

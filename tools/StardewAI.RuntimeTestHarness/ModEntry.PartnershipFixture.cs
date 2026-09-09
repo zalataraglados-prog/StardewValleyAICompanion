@@ -175,7 +175,7 @@ public sealed partial class ModEntry
         return ExecutePrepareNativeSleepFixture(
             request,
             "debug_prepare_partnership_sleep",
-            "isolated_fixture_farmer_moved_to_native_sleep_stand");
+            "isolated_fixture_native_entry_to_sleep_path_ready");
     }
 
     private TrainingExecutionResult ExecutePrepareNativeSleepFixture(
@@ -189,23 +189,51 @@ public sealed partial class ModEntry
             return Blocked(request, reasons.ToArray());
         }
 
-        Game1.activeClickableMenu = null;
-        Game1.dialogueUp = false;
         var home = Utility.getHomeOfFarmer(Game1.player);
         Game1.currentLocation = home;
         Game1.player.currentLocation = home;
-        Game1.player.UsingTool = false;
-        Game1.player.canMove = true;
         home.resetForPlayerEntry();
-        var target = ResolveHomeSleepTarget(Game1.player.TilePoint, out var targetReason);
+        Game1.exitActiveMenu();
+        Game1.dialogueUp = false;
+        Game1.currentSpeaker = null;
+        Game1.eventUp = false;
+        Game1.eventOver = false;
+        Game1.currentMinigame = null;
+        home.currentEvent = null;
+        StopAllMovement();
+        Game1.freezeControls = false;
+        Game1.player.controller = null;
+        Game1.player.freezePause = 0;
+        Game1.player.UsingTool = false;
+        Game1.player.forceCanMove();
+        var preparationTile = home.getEntryLocation();
+        var target = ResolveHomeSleepTarget(preparationTile, out var targetReason);
         if (target is null)
         {
             return BlockedWithPrimitive(request, primitiveKind,
-                "player.at_sleep_stand=true", SleepObservedEffect(), targetReason);
+                "player.native_sleep_path=ready", SleepObservedEffect(), targetReason);
         }
 
-        Game1.player.Position = target.StandTile.ToVector2() * Game1.tileSize;
-        Game1.player.faceDirection(DirectionTo(target.StandTile, target.BedTile));
+        var path = TryBuildTilePath(
+            home,
+            preparationTile,
+            target.StandTile,
+            512,
+            out var pathReason,
+            avoidSoftObstacles: false,
+            allowRemovableObstacles: false);
+        if (path is null || path.Count == 0)
+        {
+            return BlockedWithPrimitive(
+                request,
+                primitiveKind,
+                "player.native_sleep_path=ready",
+                SleepObservedEffect(),
+                path is null ? pathReason : "sleep_fixture_nonempty_native_path_required");
+        }
+
+        Game1.player.Position = preparationTile.ToVector2() * Game1.tileSize;
+        Game1.player.faceDirection(DirectionTo(preparationTile, path[0]));
         return new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -220,8 +248,14 @@ public sealed partial class ModEntry
             PrimitiveKind = primitiveKind,
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = new[] { verificationReason },
-            RequestedEffect = "player.at_sleep_stand=true",
-            ObservedEffect = SleepObservedEffect()
+            RequestedEffect = "player.native_sleep_path=ready",
+            ObservedEffect = SleepObservedEffect() +
+                ";entry_tile=" + preparationTile.X + "," + preparationTile.Y +
+                ";stand_tile=" + target.StandTile.X + "," + target.StandTile.Y +
+                ";path_tiles=" + path.Count +
+                ";freeze_controls=" + Game1.freezeControls.ToString().ToLowerInvariant() +
+                ";can_move=" + Game1.player.canMove.ToString().ToLowerInvariant() +
+                ";controller=" + (Game1.player.controller is null ? "none" : "present")
         };
     }
 

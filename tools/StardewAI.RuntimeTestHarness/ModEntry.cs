@@ -149,6 +149,7 @@ public sealed partial class ModEntry : Mod
     {
         config = helper.ReadConfig<HarnessConfig>();
         ApplyEnvironmentOverrides();
+        ApplyExternalNativeEvidenceIsolation();
         manualAutoCombatEnabled = string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal);
 
         if (string.IsNullOrWhiteSpace(config.SavesPath))
@@ -197,6 +198,17 @@ public sealed partial class ModEntry : Mod
             postfix: new HarmonyMethod(
                 typeof(ResourceClumpToolTracePatch),
                 nameof(ResourceClumpToolTracePatch.Postfix)));
+        harmony.Patch(
+            original: AccessTools.Method(
+                typeof(Tree),
+                nameof(Tree.performToolAction),
+                new[] { typeof(Tool), typeof(int), typeof(Vector2) }),
+            prefix: new HarmonyMethod(
+                typeof(TreeToolTracePatch),
+                nameof(TreeToolTracePatch.Prefix)),
+            postfix: new HarmonyMethod(
+                typeof(TreeToolTracePatch),
+                nameof(TreeToolTracePatch.Postfix)));
         if (IsVanillaAiHostMode() &&
             string.Equals(
                 Environment.GetEnvironmentVariable("STARDEWAI_SUPPRESS_LOCAL_RENDER"),
@@ -1090,6 +1102,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_schedule_arrival_fixture")
+            {
+                pending.Completion.SetResult(ExecuteSetupScheduleArrivalFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_multiplayer_wallet")
             {
                 pending.Completion.SetResult(ExecuteSetupMultiplayerWalletFixture(pending.Request));
@@ -1257,6 +1275,13 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_partnership_fixture")
             {
                 pending.Completion.SetResult(ExecuteSetupPartnershipFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_friendship_transition_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupFriendshipTransitionFixture(pending.Request));
                 return;
             }
 

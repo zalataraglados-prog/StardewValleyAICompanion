@@ -24,9 +24,10 @@ namespace StardewAI.Core.Training
             }
 
             var routeDistance = CandidateInt(candidate, "route_distance_tiles") ?? 0;
-            return new[]
+            var steps = new List<SmallModelPlanStep>();
+            if (routeDistance > 0)
             {
-                new SmallModelPlanStep
+                steps.Add(new SmallModelPlanStep
                 {
                     StepId = StepId(candidate, "move_to_fishing_stand", 0),
                     Kind = "move_to_tile",
@@ -42,10 +43,11 @@ namespace StardewAI.Core.Training
                     {
                         Parameter("max_movement_tiles", Math.Max(1, routeDistance).ToString(System.Globalization.CultureInfo.InvariantCulture))
                     }
-                },
-                new SmallModelPlanStep
+                });
+            }
+            steps.Add(new SmallModelPlanStep
                 {
-                    StepId = StepId(candidate, "catch_fish", 1),
+                    StepId = StepId(candidate, "catch_fish", steps.Count),
                     Kind = "catch_fish",
                     TargetLocation = candidate.LocationId,
                     TargetTileX = candidate.TileX,
@@ -66,8 +68,8 @@ namespace StardewAI.Core.Training
                     },
                     FailurePolicy = new[] { "cancel_safely_refresh_snapshot_and_replan" },
                     Parameters = candidate.Parameters
-                }
-            };
+                });
+            return steps;
         }
 
         private static IEnumerable<SmallModelPlanStep> InteractEndpointSteps(PolicyEventCandidatePrediction candidate)

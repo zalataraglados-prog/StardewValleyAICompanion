@@ -31,6 +31,8 @@ StardewAI 的终点不是“最会赚钱、最会下矿的自动化 Agent”，�
 - `PlayerCommandOnly` / delegated skill 不应因为“AI 会执行”就混入自主策略训练。染色、明确装饰命令、破坏性请求、真实完美小游戏代打等可以在核心训练之后独立补齐。
 - 引擎选择保持可插拔；不同大小或供应商模型共享同一输入字段、候选 option 和结果记录合同。
 - 不依赖大模型的简单量化沟通协议必须保留，供调试、低成本运行和无网络降级使用。
+- Teacher 只在训练期提供独立偏序、DAgger 重标、benchmark 与少量高风险 fallback；Student 才是最终运行时高层主决策器。Hard constraints、Teacher preference、native outcome 和 Student observation 必须分栏，不能把 Student 自己选中的动作自动写成正例。
+- 单人 21 分最强基线不携带玩家偏好或协作分工。基线冻结后，Companion 适配数据才引入 `player_intent`、`player_preferences`、`cooperation_state` 和资源归属；关闭适配层必须恢复同一基线。
 
 ## 长期记忆边界
 

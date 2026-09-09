@@ -6,16 +6,18 @@ param(
     [string] $OutputDirectory = "artifacts\runtime-native-social-smoke",
     [int] $BackendPort = 5158,
     [int] $StartupTimeoutSeconds = 120,
+    [string] $RouteTimingCalibration = "artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
     [switch] $ProductionRouteOnly,
     [switch] $ProductionPursuitOnly,
     [switch] $ProductionGiftPursuitOnly,
+    [switch] $TeacherLabelPursuitOnly,
     [switch] $KeepGameRunning
 )
 
 $ErrorActionPreference = "Stop"
 
-if (@($ProductionRouteOnly, $ProductionPursuitOnly, $ProductionGiftPursuitOnly).Where({ $_ }).Count -gt 1) {
-    throw "ProductionRouteOnly, ProductionPursuitOnly, and ProductionGiftPursuitOnly are mutually exclusive."
+if (@($ProductionRouteOnly, $ProductionPursuitOnly, $ProductionGiftPursuitOnly, $TeacherLabelPursuitOnly).Where({ $_ }).Count -gt 1) {
+    throw "ProductionRouteOnly, ProductionPursuitOnly, ProductionGiftPursuitOnly, and TeacherLabelPursuitOnly are mutually exclusive."
 }
 
 function Write-JsonFile {
@@ -1070,6 +1072,20 @@ function Verify-ProductionSocialPursuitArtifacts {
     if ($routeApplied -lt 1) { throw "Production social pursuit did not verify any connector traversal" }
     if ($socialApplied -ne 1) { throw "Production social pursuit expected one verified social interaction, found $socialApplied" }
 
+    $receiptNpc = [string]$verifiedSocialResult.social_npc_name
+    if ([string]::IsNullOrWhiteSpace($receiptNpc)) {
+        throw "Production social pursuit receipt omitted the NPC identity"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($lockedNpc) -and
+        -not [string]::Equals($lockedNpc, $receiptNpc, [StringComparison]::Ordinal)) {
+        throw "Social pursuit continuation NPC '$lockedNpc' differs from receipt NPC '$receiptNpc'"
+    }
+    $lockedNpc = $receiptNpc
+    $selectedCandidateId = [string]$verifiedSocialResult.effective_selected_candidate_id
+    if ([string]::IsNullOrWhiteSpace($selectedCandidateId)) {
+        throw "Production social pursuit receipt omitted the selected candidate identity"
+    }
+
     if ($RequireSingleItemGiftConsumed) {
         if ($null -eq $verifiedSocialResult) {
             throw "Production gift pursuit is missing its verified social result"
@@ -1097,6 +1113,7 @@ function Verify-ProductionSocialPursuitArtifacts {
     return [PSCustomObject]@{
         Verified = $true
         NpcName = $lockedNpc
+        SelectedCandidateId = $selectedCandidateId
         RouteStepsApplied = $routeApplied
         WaitStepsApplied = $waitApplied
         SocialInteractionsApplied = $socialApplied
@@ -1107,6 +1124,143 @@ function Verify-ProductionSocialPursuitArtifacts {
         Iterations = [int]$report.attempts_started
         FinalLocation = Get-SnapshotString $finalSnapshot "player" "location_id"
         FinalSnapshot = $finalSnapshot
+    }
+}
+
+function Get-SaveFingerprint {
+    param([Parameter(Mandatory = $true)] [string] $Path)
+
+    $root = [System.IO.Path]::GetFullPath($Path).TrimEnd('\') + '\'
+    $lines = Get-ChildItem -LiteralPath $Path -File -Recurse |
+        Sort-Object FullName |
+        ForEach-Object {
+            $fullPath = [System.IO.Path]::GetFullPath($_.FullName)
+            if (-not $fullPath.StartsWith(
+                    $root,
+                    [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Save fingerprint escaped source root: $fullPath"
+            }
+            $relativePath = $fullPath.Substring($root.Length)
+            $hash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash
+            $relativePath + "|" + $hash
+        }
+    $payload = [System.Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return [BitConverter]::ToString(
+            $sha256.ComputeHash($payload)).Replace("-", "")
+    }
+    finally {
+        $sha256.Dispose()
+    }
+}
+
+function Invoke-TeacherDialogueRecovery {
+    param(
+        [Parameter(Mandatory = $true)] [string] $ProjectRoot,
+        [Parameter(Mandatory = $true)] [string] $BackendUrl,
+        [Parameter(Mandatory = $true)] [string] $SnapshotUrl,
+        [Parameter(Mandatory = $true)] [string] $ExecutorUrl,
+        [Parameter(Mandatory = $true)] [string] $SavesPath,
+        [Parameter(Mandatory = $true)] [string] $RunId,
+        [Parameter(Mandatory = $true)] [string] $RunDirectory
+    )
+
+    $loopRoot = Join-Path $RunDirectory "teacher-dialogue-recovery-loop"
+    $loopProject = Join-Path $ProjectRoot `
+        "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+    dotnet run --no-restore --project $loopProject -- `
+        --root $loopRoot `
+        --backend-url $BackendUrl `
+        --bridge-snapshot-url $SnapshotUrl `
+        --executor-url $ExecutorUrl `
+        --no-manifest `
+        --run-id $RunId `
+        --save-isolation-path $SavesPath `
+        --iterations 1 `
+        --sleep-ms 0 `
+        --skip-training `
+        --use-daily-plan `
+        --daily-plan-max-candidates 1 `
+        --daily-plan-candidate-options "recovery.stabilize_day" `
+        --after-snapshot-wait-ms 1000 `
+        --continue-after-blocked-queue-items | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "Teacher dialogue recovery returned exit code $LASTEXITCODE."
+    }
+
+    $loopRunRoot = Join-Path $loopRoot (Join-Path "runs" $RunId)
+    $snapshotDir = Join-Path $loopRunRoot "live-snapshots"
+    $reportPath = Join-Path $loopRunRoot "live-training-loop-report.json"
+    $queuePath = Join-Path $snapshotDir "compiled-queue-0001.json"
+    $executionPath = Join-Path $snapshotDir "execution-0001.json"
+    foreach ($path in @($reportPath, $queuePath, $executionPath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Teacher dialogue recovery artifact missing: $path"
+        }
+    }
+
+    $closeOptionId = "executor.close_menu"
+    $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
+    $queueItems = @($queue.items | Where-Object {
+        $_.option_id -eq $closeOptionId
+    })
+    if ($queueItems.Count -ne 1 -or $queueItems[0].status -ne "pending") {
+        throw "Teacher dialogue recovery did not compile one pending close_menu item."
+    }
+    $execution = Get-Content -LiteralPath $executionPath -Raw |
+        ConvertFrom-Json
+    $results = @($execution.step_results | Where-Object {
+        $_.option_id -eq $closeOptionId
+    })
+    if ($results.Count -ne 1 -or
+        $results[0].status -ne "applied" -or
+        $results[0].primitive_verification_status -ne "verified" -or
+        $results[0].dialogue_native_handled -ne $true) {
+        throw "Teacher dialogue recovery close_menu receipt was not verified."
+    }
+
+    $rawAfter = Invoke-RawJsonGet -Url $SnapshotUrl
+    $after = $rawAfter | ConvertFrom-Json
+    $activeMenu = Get-SnapshotObject $after "menus" "active_menu"
+    $movement = Get-SnapshotObject $after "player" `
+        "movement_timing_context"
+    if ($null -eq $activeMenu -or
+        $activeMenu.is_open -ne $false -or
+        $null -eq $movement -or
+        $movement.route_timing_ready_now -ne $true) {
+        throw "Teacher dialogue recovery did not restore an idle movable state."
+    }
+
+    $afterPath = Join-Path $RunDirectory `
+        "teacher-dialogue-recovery-after-snapshot.json"
+    Set-Content -LiteralPath $afterPath -Value $rawAfter -Encoding utf8
+    Copy-Item -LiteralPath $reportPath -Destination (Join-Path `
+        $RunDirectory "teacher-dialogue-recovery-report.json") -Force
+    Copy-Item -LiteralPath $queuePath -Destination (Join-Path `
+        $RunDirectory "teacher-dialogue-recovery-queue.json") -Force
+    Copy-Item -LiteralPath $executionPath -Destination (Join-Path `
+        $RunDirectory "teacher-dialogue-recovery-execution.json") -Force
+    $evidence = [ordered]@{
+        verified = $true
+        executor_option = $closeOptionId
+        candidate_option_id = "recovery.stabilize_day"
+        dialogue_native_handled = $results[0].dialogue_native_handled
+        dialogue_press_attempts = $results[0].dialogue_press_attempts
+        dialogue_advance_ticks = $results[0].dialogue_advance_ticks
+        menu_type_before = $results[0].dialogue_menu_type_before
+        menu_type_after = $results[0].dialogue_menu_type_after
+        route_timing_ready_after =
+            $movement.route_timing_ready_now
+        after_snapshot_path = $afterPath
+    }
+    Write-JsonFile (Join-Path $RunDirectory `
+        "teacher-dialogue-recovery-verification.json") $evidence
+    return [PSCustomObject]@{
+        Verified = $true
+        AfterSnapshotPath = $afterPath
+        AfterSnapshot = $after
+        Evidence = $evidence
     }
 }
 
@@ -1356,7 +1510,7 @@ $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
 $backendUrl = "http://127.0.0.1:$BackendPort"
-$snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full"
+$snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=true"
 $executorUrl = "http://127.0.0.1:8767"
 
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) {
@@ -1383,6 +1537,7 @@ $slotPath = Join-Path $savesPath $SaveSlot
 if (-not (Test-Path -LiteralPath $slotPath -PathType Container)) {
     throw "Isolated save slot not found: $slotPath"
 }
+$sourceSaveFingerprintBefore = Get-SaveFingerprint -Path $slotPath
 
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
 $routeCandidateLoopRoot = Join-Path $runDirectory "production-route-loop"
@@ -1420,6 +1575,7 @@ $previousEnv = @{
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
     STARDEWAI_TRAINING_OUTPUT_DIR = $env:STARDEWAI_TRAINING_OUTPUT_DIR
+    STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE = $env:STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
     ASPNETCORE_URLS = $env:ASPNETCORE_URLS
@@ -1434,6 +1590,7 @@ try {
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:STARDEWAI_TRAINING_OUTPUT_DIR = $trainingOutputDirectory
+    $env:STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE = "true"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $env:ASPNETCORE_URLS = $backendUrl
@@ -1505,6 +1662,197 @@ try {
 
     $ingestResult = Invoke-RawJsonPostStrict -Url "$backendUrl/api/v1/snapshots" -Json $rawBeforeSnapshot -ErrorArtifactPath (Join-Path $runDirectory "snapshot-ingest-error.json")
     Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ingested.json") $ingestResult
+
+    if ($TeacherLabelPursuitOnly) {
+        $calibrationPath = if ([System.IO.Path]::IsPathRooted($RouteTimingCalibration)) {
+            $RouteTimingCalibration
+        }
+        else {
+            Join-Path $ProjectRoot $RouteTimingCalibration
+        }
+        if (-not (Test-Path -LiteralPath $calibrationPath -PathType Leaf)) {
+            throw "Route timing calibration not found: $calibrationPath"
+        }
+        $bootstrapProject = Join-Path $ProjectRoot `
+            "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
+        $teacherLabelPath = Join-Path $runDirectory "current-social-day-teacher-label.json"
+        dotnet build $bootstrapProject --no-restore --nologo `
+            "-p:GamePath=$runtimeGameDir" | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Goal-conditioned bootstrap build failed with exit code $LASTEXITCODE."
+        }
+        dotnet run --project $bootstrapProject --no-build -- `
+            build-current-social-teacher-label `
+            --snapshot (Join-Path $runDirectory "raw-snapshot-before.json") `
+            --calibration $calibrationPath `
+            --output $teacherLabelPath | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Current social teacher label was not admitted."
+        }
+        $teacherLabel = Get-Content -LiteralPath $teacherLabelPath -Raw |
+            ConvertFrom-Json
+        if ($teacherLabel.status -ne "ready" -or
+            $teacherLabel.trainingLabelEligible -ne $true -or
+            $teacherLabel.compiledQueue.status -ne "pending") {
+            throw "Current social teacher label is not ready and compiled."
+        }
+        $teacherCandidateId = [string]$teacherLabel.selectedCandidate.candidate_id
+        $teacherNpcName = [string](@($teacherLabel.selectedCandidate.parameters |
+            Where-Object { $_.name -eq "npc_name" })[0].value)
+        if ([string]::IsNullOrWhiteSpace($teacherCandidateId) -or
+            [string]::IsNullOrWhiteSpace($teacherNpcName)) {
+            throw "Current social teacher label omitted candidate or NPC identity."
+        }
+
+        dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
+            --root $routeCandidateLoopRoot `
+            --backend-url $backendUrl `
+            --bridge-snapshot-url $snapshotUrl `
+            --executor-url $executorUrl `
+            --no-manifest `
+            --run-id $RunId `
+            --save-isolation-path $savesPath `
+            --max-attempts 64 `
+            --sleep-ms 0 `
+            --skip-training `
+            --use-daily-plan `
+            --daily-plan-max-candidates 1 `
+            --daily-plan-candidate-options "social.talk_npc" `
+            --daily-plan-candidate-id $teacherCandidateId `
+            --after-snapshot-wait-ms 1000 `
+            --continue-after-blocked-queue-items `
+            --stop-after-social-objective-complete
+        if ($LASTEXITCODE -ne 0) {
+            throw "Teacher-selected social pursuit returned exit code $LASTEXITCODE."
+        }
+
+        $teacherPursuitEvidence = Verify-ProductionSocialPursuitArtifacts `
+            -LoopRoot $routeCandidateLoopRoot `
+            -RunId $RunId `
+            -RunDirectory $runDirectory
+        if (-not [string]::Equals(
+                $teacherPursuitEvidence.NpcName,
+                $teacherNpcName,
+                [StringComparison]::Ordinal)) {
+            throw "Teacher-selected NPC mismatch: expected '$teacherNpcName', observed '$($teacherPursuitEvidence.NpcName)'."
+        }
+        if (-not [string]::Equals(
+                $teacherPursuitEvidence.SelectedCandidateId,
+                $teacherCandidateId,
+                [StringComparison]::Ordinal)) {
+            throw "Teacher-selected candidate mismatch: expected '$teacherCandidateId', observed '$($teacherPursuitEvidence.SelectedCandidateId)'."
+        }
+        Write-JsonFile (Join-Path $runDirectory "teacher-pursuit-verification.json") `
+            $teacherPursuitEvidence
+
+        $policyTrajectoryPath = Join-Path $routeCandidateLoopRoot `
+            "datasets\policy-decision-trajectories.jsonl"
+        $policyTrajectoryLines = if (Test-Path -LiteralPath $policyTrajectoryPath -PathType Leaf) {
+            @(Get-Content -LiteralPath $policyTrajectoryPath |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        }
+        else {
+            @()
+        }
+        if ($policyTrajectoryLines.Count -ne 1) {
+            throw "Teacher pursuit expected exactly one policy trajectory, found $($policyTrajectoryLines.Count)."
+        }
+        $policyTrajectory = $policyTrajectoryLines[0] | ConvertFrom-Json
+        if (-not [string]::Equals(
+                [string]$policyTrajectory.selection.candidate_id,
+                $teacherCandidateId,
+                [StringComparison]::Ordinal) -or
+            [string]$policyTrajectory.outcome.primitive_option_id -ne
+                "executor.social_interact" -or
+            $policyTrajectory.outcome.success -ne $true) {
+            throw "Teacher pursuit policy trajectory did not preserve the selected candidate and verified terminal social action."
+        }
+
+        $finalSnapshotPath = Join-Path $runDirectory `
+            "production-pursuit-final-snapshot.json"
+        $finalActiveMenu = Get-SnapshotObject `
+            $teacherPursuitEvidence.FinalSnapshot `
+            "menus" `
+            "active_menu"
+        $rollingSnapshotPath = $finalSnapshotPath
+        $dialogueRecoveryApplied = $false
+        if ($null -ne $finalActiveMenu -and
+            $finalActiveMenu.is_open -eq $true) {
+            $dialogueRecovery = Invoke-TeacherDialogueRecovery `
+                -ProjectRoot $ProjectRoot `
+                -BackendUrl $backendUrl `
+                -SnapshotUrl $snapshotUrl `
+                -ExecutorUrl $executorUrl `
+                -SavesPath $savesPath `
+                -RunId $RunId `
+                -RunDirectory $runDirectory
+            $rollingSnapshotPath = $dialogueRecovery.AfterSnapshotPath
+            $dialogueRecoveryApplied = $true
+        }
+        $nextTeacherLabelPath = Join-Path $runDirectory `
+            "next-current-social-day-teacher-label.json"
+        dotnet run --project $bootstrapProject --no-build -- `
+            build-current-social-teacher-label `
+            --snapshot $rollingSnapshotPath `
+            --calibration $calibrationPath `
+            --output $nextTeacherLabelPath | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Next current-state social teacher label was not admitted."
+        }
+        $nextTeacherLabel = Get-Content -LiteralPath $nextTeacherLabelPath -Raw |
+            ConvertFrom-Json
+        $nextNpcName = [string](@($nextTeacherLabel.selectedCandidate.parameters |
+            Where-Object { $_.name -eq "npc_name" })[0].value)
+        if ($nextTeacherLabel.status -ne "ready" -or
+            $nextTeacherLabel.trainingLabelEligible -ne $true -or
+            $nextTeacherLabel.compiledQueue.status -ne "pending" -or
+            [int]$nextTeacherLabel.itinerary.planningStartTime -le 600 -or
+            [string]::IsNullOrWhiteSpace($nextNpcName) -or
+            [string]::Equals(
+                $nextNpcName,
+                $teacherNpcName,
+                [StringComparison]::Ordinal)) {
+            throw "Next current-state social teacher label did not prove rolling replanning."
+        }
+        $sourceSaveFingerprintAfter = Get-SaveFingerprint -Path $slotPath
+        if ($sourceSaveFingerprintAfter -ne $sourceSaveFingerprintBefore) {
+            throw "Teacher pursuit changed the persistent source-save tree."
+        }
+        $teacherSummary = [ordered]@{
+            status = "passed"
+            run_id = $RunId
+            save_slot = $SaveSlot
+            teacher_label_schema = [string]$teacherLabel.schemaVersion
+            teacher_candidate_id = $teacherCandidateId
+            teacher_npc_name = $teacherNpcName
+            next_teacher_npc_name = $nextNpcName
+            next_teacher_planning_start_time =
+                [int]$nextTeacherLabel.itinerary.planningStartTime
+            next_teacher_candidate_id =
+                [string]$nextTeacherLabel.selectedCandidate.candidate_id
+            dialogue_recovery_applied = $dialogueRecoveryApplied
+            teacher_direction_id = [string]$teacherLabel.directionBinding.direction_id
+            teacher_plan_step_count = @($teacherLabel.compiledPlan.steps).Count
+            teacher_queue_item_count = @($teacherLabel.compiledQueue.items).Count
+            production_social_pursuit_verified = $teacherPursuitEvidence.Verified
+            connector_steps_applied = $teacherPursuitEvidence.RouteStepsApplied
+            wait_steps_applied = $teacherPursuitEvidence.WaitStepsApplied
+            social_interactions_applied = $teacherPursuitEvidence.SocialInteractionsApplied
+            policy_trajectory_count = $policyTrajectoryLines.Count
+            policy_trajectory_terminal_option =
+                [string]$policyTrajectory.outcome.primitive_option_id
+            source_save_tree_sha256_before = $sourceSaveFingerprintBefore
+            source_save_tree_sha256_after = $sourceSaveFingerprintAfter
+            formal_training_started = $false
+            iterations = $teacherPursuitEvidence.Iterations
+            final_location = $teacherPursuitEvidence.FinalLocation
+            scope = "teacher_selected_current_state_multi_connector_native_talk_receipt"
+            artifacts_dir = $runDirectory
+        }
+        Write-JsonFile (Join-Path $runDirectory "summary.json") $teacherSummary
+        $teacherSummary | ConvertTo-Json -Depth 32
+        return
+    }
 
     if ($ProductionGiftPursuitOnly) {
         dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `

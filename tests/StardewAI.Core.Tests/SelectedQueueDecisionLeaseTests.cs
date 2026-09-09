@@ -27,6 +27,23 @@ public sealed class SelectedQueueDecisionLeaseTests
     }
 
     [Fact]
+    public void FindsTypedContinuationOnLaterMechanicalStep()
+    {
+        var lease = SelectedQueueDecisionLease.Create(
+            Queue(
+                Item("mail.process:route", 0, new JsonArray()),
+                Item("mail.process:route", 0, MailContinuation())),
+            Ranking(Candidate(
+                "mail.process:route",
+                "mail.process_letter")));
+
+        var selected = Assert.Single(lease.Candidates);
+        Assert.Equal(
+            "mail",
+            selected.ObjectiveContinuation!["kind"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void TypedContinuationRebindsRouteCandidateToFreshApproachStage()
     {
         var selected = new SelectedQueueCandidateLock(

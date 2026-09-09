@@ -1,0 +1,94 @@
+{
+  "schema_version": "goal_method_expansion_overlay.v1",
+  "goal_id": "grandpa.maximum_21",
+  "policy": "This overlay contains authority claims and pre-graph blocker descriptions only. Directions with dependency graphs own their blockers in goal-method-dependency-expansions.v1.json. Direction, criterion, option, goal and demand mappings come exclusively from GrandpaDirectionCatalog.",
+  "directions": [
+    {
+      "direction_id": "earn_money",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.earnings_thresholds",
+        "economy.money_setter_contract",
+        "economy.shop_sale_and_buyback_contract",
+        "economy.shipping_settlement_contract",
+        "strategy.early_money_minmax_route"
+      ]
+    },
+    {
+      "direction_id": "complete_museum_collection",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.complete_collection_achievement"
+      ]
+    },
+    {
+      "direction_id": "obtain_skull_key",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.skull_key"
+      ]
+    },
+    {
+      "direction_id": "complete_community_center",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.community_center_route_required",
+        "community_center.bundle_scope_30_vs_31"
+      ]
+    },
+    {
+      "direction_id": "marriage_and_house_upgrade",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.marriage_and_house"
+      ]
+    },
+    {
+      "direction_id": "obtain_rusty_key",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.rusty_key"
+      ]
+    },
+    {
+      "direction_id": "complete_master_angler",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.master_angler"
+      ]
+    },
+    {
+      "direction_id": "complete_full_shipment",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.full_shipment"
+      ]
+    },
+    {
+      "direction_id": "raise_friendships",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.friendship_thresholds",
+        "friendship.grandpa_population_contract",
+        "friendship.daily_gain_decay_contract",
+        "friendship.gift_contract"
+      ]
+    },
+    {
+      "direction_id": "raise_skill_levels",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.skill_level_translation"
+      ]
+    },
+    {
+      "direction_id": "earn_pet_love",
+      "unexpanded_requirements": [],
+      "claim_ids": [
+        "grandpa.pet_love",
+        "pet.initial_adoption_contract",
+        "pet.friendship_and_bowl_contract"
+      ]
+    }
+  ]
+}

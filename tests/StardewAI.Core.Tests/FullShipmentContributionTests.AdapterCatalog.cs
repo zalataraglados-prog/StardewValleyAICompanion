@@ -49,6 +49,13 @@ public sealed partial class FullShipmentContributionTests
         Assert.Contains("contents_signature", source);
         Assert.Contains("contents_total_count", source);
         Assert.Contains("contents_distinct_item_count", source);
+        Assert.Contains("contents_distinct_settlement_variant_count", source);
+        Assert.Contains("pending_settlement_value", source);
+        Assert.Contains("pending_settlement_value_complete", source);
+        Assert.Contains("unit_sell_to_store_price", source);
+        Assert.Contains("total_sell_to_store_price", source);
+        Assert.Contains("stardewItem.Quality", source);
+        Assert.Contains("sellToStorePrice(-1L)", source);
         Assert.Contains("contents_truncated", source);
         Assert.Contains("SHA256", source);
         Assert.Contains("ComputeContentsSignature", source);

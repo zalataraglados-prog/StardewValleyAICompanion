@@ -132,6 +132,13 @@ try {
     $process = Start-Process -FilePath $smapiExe -WorkingDirectory $gameDir -WindowStyle Hidden -PassThru
     Wait-Json "http://127.0.0.1:8767/health" 60 | Out-Null
     $loaded = Wait-StorySnapshot 180 { param($snapshot, $story) -not [bool]$story.active }
+    $initialPetAdoption = $loaded.state.farm.initial_pet_adoption
+    if ($initialPetAdoption.status -notin @("available", "derived") -or
+        [string]$initialPetAdoption.value.projection_status -ne "complete_locked_base_1.6.15" -or
+        -not [bool]$initialPetAdoption.value.event_key_matches_locked_base -or
+        -not [bool]$initialPetAdoption.value.base_english_event_script_matches_locked_base) {
+        throw "Initial pet adoption projection is not locked to base 1.6.15: $($initialPetAdoption | ConvertTo-Json -Depth 32 -Compress)"
+    }
 
     $setupAutomatic = New-BaseRequest $loaded "debug.setup_story_event" "setup-automatic"
     $setupAutomatic.story_event_boundary_kind = "automatic_fixture"
@@ -177,23 +184,60 @@ try {
         param($snapshot, $story) -not [bool]$story.active -and [string]$story.event_id -eq ""
     }
 
+    $petCountBefore = @($choiceAfter.state.farm.pets.value).Count
+    $setupPetAdoption = New-BaseRequest $choiceAfter "debug.setup_story_event" "setup-pet-adoption"
+    $setupPetAdoption.story_event_boundary_kind = "pet_adoption_naming_fixture"
+    $setupPetAdoptionResult = Invoke-JsonPost $executorUrl $setupPetAdoption
+    if ($setupPetAdoptionResult.status -ne "applied" -or $setupPetAdoptionResult.primitive_verification_status -ne "verified") {
+        throw "Pet adoption story fixture setup failed: $($setupPetAdoptionResult | ConvertTo-Json -Depth 32 -Compress)"
+    }
+    $petAdoptionBefore = Wait-StorySnapshot 30 {
+        param($snapshot, $story)
+        [bool]$story.active -and [string]$story.event_id -eq "EVD322PetAdoption" -and
+            [string]$story.boundary_kind -eq "dialogue_decision" -and
+            [string]$story.dialogue_question_key -eq "pet" -and
+            @($story.dialogue_responses).Count -eq 2
+    }
+    $petAdoptionBefore | ConvertTo-Json -Depth 96 |
+        Set-Content -LiteralPath (Join-Path $artifactDirectory "pet-adoption-before.json") -Encoding utf8
+    $petAdoptionRequest = New-StoryRequest $petAdoptionBefore "pet-adoption" 0
+    $petAdoptionResult = Invoke-JsonPost $executorUrl $petAdoptionRequest 180
+    $petAdoptionResult | ConvertTo-Json -Depth 64 |
+        Set-Content -LiteralPath (Join-Path $artifactDirectory "pet-adoption-result.json") -Encoding utf8
+    $petAdoptionAfter = Wait-StorySnapshot 30 {
+        param($snapshot, $story)
+        -not [bool]$story.active -and [string]$story.event_id -eq "" -and
+            @($snapshot.state.farm.pets.value).Count -eq ($petCountBefore + 1)
+    }
+
     $cases = @(
         [ordered]@{ name = "automatic"; result = $automaticResult },
-        [ordered]@{ name = "choice_second_response"; result = $choiceResult }
+        [ordered]@{ name = "choice_second_response"; result = $choiceResult },
+        [ordered]@{ name = "pet_adoption_accept_and_native_default_name"; result = $petAdoptionResult }
     )
     $passedCases = @($cases | Where-Object {
         $_.result.status -eq "applied" -and
         $_.result.primitive_verification_status -eq "verified" -and
         [string]$_.result.observed_effect -match "boundary=event_completed"
     }).Count
-    $passed = $passedCases -eq 2 -and -not [bool]$choiceAfter.state.player.story_event.value.active
+    $passed = $passedCases -eq 3 -and
+        -not [bool]$petAdoptionAfter.state.player.story_event.value.active -and
+        @($petAdoptionAfter.state.farm.pets.value).Count -eq ($petCountBefore + 1)
     $summary = [ordered]@{
         status = if ($passed) { "passed" } else { "failed" }
         evidence_id = "EVD-322"
         run_id = $RunId
         save_slot = $SaveSlot
-        expected_case_count = 2
+        expected_case_count = 3
         passed_case_count = $passedCases
+        initial_pet_adoption_projection = [ordered]@{
+            status = [string]$initialPetAdoption.value.projection_status
+            event_id = [string]$initialPetAdoption.value.event_id
+            event_key_matches_locked_base = [bool]$initialPetAdoption.value.event_key_matches_locked_base
+            base_english_event_script_matches_locked_base = [bool]$initialPetAdoption.value.base_english_event_script_matches_locked_base
+            runtime_language = [string]$initialPetAdoption.value.event_script_language
+            runtime_script_is_localized = [bool]$initialPetAdoption.value.event_script_is_localized
+        }
         cases = @($cases | ForEach-Object {
             [ordered]@{
                 name = $_.name

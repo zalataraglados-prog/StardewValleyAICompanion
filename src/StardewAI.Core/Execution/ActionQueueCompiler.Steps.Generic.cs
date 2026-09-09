@@ -222,7 +222,7 @@ namespace StardewAI.Core.Execution
                 RequestedSlotIndex = ReadIntParameter(action, "slot_index"),
                 RequestedQualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty,
                 LiveLegalityEvidence = evidence
-                    .Where(parameter => parameter.Name is "npc_name" or "slot_index" or "qualified_item_id" or "item_quality" or "item_stack_before" or "gift_taste" or "friendship_row_exists_before" or "gift_updates_normal_limits" or "gift_side_effect_risk" or "expected_talked_to_today_before" or "social_legality_evidence")
+                    .Where(parameter => parameter.Name is "npc_name" or "slot_index" or "qualified_item_id" or "item_quality" or "item_stack_before" or "gift_taste" or "friendship_row_exists_before" or "friendship_points_before" or "gift_updates_normal_limits" or "gift_side_effect_risk" or "expected_talked_to_today_before" or "social_legality_evidence")
                     .ToArray(),
                 TimeRouteConstraints = evidence
                     .Where(parameter => parameter.Name is "target_location" or "npc_tile_x" or "npc_tile_y" or "stand_tile_x" or "stand_tile_y" or "route_distance_tiles" or "route_distance_ticks" or "native_interaction_planner_budget_ticks")
@@ -233,7 +233,7 @@ namespace StardewAI.Core.Execution
                     })
                     .ToArray(),
                 ExpectedDeterministicOutcome = evidence
-                    .Where(parameter => parameter.Name is "expected_friendship_delta" or "item_stack_before" or "expected_talked_to_today_before")
+                    .Where(parameter => parameter.Name is "expected_friendship_delta" or "expected_friendship_points_after" or "item_stack_before" or "expected_talked_to_today_before")
                     .Concat(new[]
                     {
                         Parameter("result_verified_at_runtime", "true"),

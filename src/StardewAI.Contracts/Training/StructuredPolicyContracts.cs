@@ -17,6 +17,9 @@ public sealed class StructuredPolicyTrainingRequest
     [JsonPropertyName("checkpoint_path")]
     public string CheckpointPath { get; set; } = string.Empty;
 
+    [JsonPropertyName("initialization_checkpoint_path")]
+    public string InitializationCheckpointPath { get; set; } = string.Empty;
+
     [JsonPropertyName("hyperparameters")]
     public StructuredPolicyHyperparameters Hyperparameters { get; set; } = new();
 }
@@ -47,8 +50,29 @@ public sealed class StructuredPolicyCheckpointEnvelope
     [JsonPropertyName("training")]
     public StructuredPolicyTrainingSummary Training { get; set; } = new();
 
+    [JsonPropertyName("initialization")]
+    public StructuredPolicyInitializationBinding? Initialization { get; set; }
+
     [JsonPropertyName("audit")]
     public StructuredPolicyCheckpointAudit Audit { get; set; } = new();
+}
+
+public sealed class StructuredPolicyInitializationBinding
+{
+    [JsonPropertyName("checkpoint_id")]
+    public string CheckpointId { get; set; } = string.Empty;
+
+    [JsonPropertyName("checkpoint_sha256")]
+    public string CheckpointSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("inherited_feature_count")]
+    public int InheritedFeatureCount { get; set; }
+
+    [JsonPropertyName("new_feature_count")]
+    public int NewFeatureCount { get; set; }
+
+    [JsonPropertyName("score_order_preserved_before_optimization")]
+    public bool ScoreOrderPreservedBeforeOptimization { get; set; }
 }
 
 public sealed class StructuredPolicyDatasetBinding

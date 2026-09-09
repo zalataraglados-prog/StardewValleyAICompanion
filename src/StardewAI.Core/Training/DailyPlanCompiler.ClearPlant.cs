@@ -17,7 +17,10 @@ namespace StardewAI.Core.Training
 
             var steps = new List<SmallModelPlanStep>();
             var standTile = ParseCoordinate(candidate.ExpectedEffect, "move_to_adjacent=");
-            if (standTile.HasValue)
+            var routeDistance = CandidateInt(
+                candidate,
+                "route_distance_tiles");
+            if (standTile.HasValue && routeDistance != 0)
             {
                 steps.Add(new SmallModelPlanStep
                 {
@@ -64,7 +67,26 @@ namespace StardewAI.Core.Training
                 "artifact_spots_dug_expected_after",
                 "clear_terrain_feature_expected_after",
                 "defense_book_mail_before",
-                "defense_book_mail_expected_after"
+                "defense_book_mail_expected_after",
+                "clear_completion_mode",
+                "target_runtime_type",
+                "expected_tree_has_moss_before",
+                "expected_tree_has_moss_after",
+                "expected_tree_has_seed_before",
+                "expected_tree_has_seed_after",
+                "expected_tree_was_shaken_today_before",
+                "expected_tree_was_shaken_today_after",
+                "expected_tree_growth_stage_before",
+                "expected_tree_growth_stage_after",
+                "expected_tree_health_before",
+                "expected_tree_health_after",
+                "expected_moss_harvested_before",
+                "expected_moss_harvested_after",
+                "expected_foraging_experience_before",
+                "expected_foraging_experience_delta",
+                "expected_foraging_experience_after",
+                "moss_harvest_projection_status",
+                "moss_harvest_native_contract"
             })
             {
                 var value = ParseValue(candidate.ExpectedEffect, name + "=");
@@ -84,7 +106,7 @@ namespace StardewAI.Core.Training
             steps.Add(
                 new SmallModelPlanStep
                 {
-                    StepId = StepId(candidate, "clear_obstacle", 1),
+                    StepId = StepId(candidate, "clear_obstacle", steps.Count),
                     Kind = "clear_obstacle",
                     TargetLocation = string.IsNullOrWhiteSpace(candidate.LocationId) ? "current_location" : candidate.LocationId,
                     TargetTileX = candidate.TileX,

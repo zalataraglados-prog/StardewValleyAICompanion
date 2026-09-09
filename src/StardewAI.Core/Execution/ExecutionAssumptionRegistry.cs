@@ -68,6 +68,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "Pan.beginUsing", "Pan.getPanItems", "Pan.DoFunction", "GameLocation.performOrePanTenMinuteUpdate" }),
             Assumption(
+                "obstacle_clearance",
+                new[] { "foraging.excavate_artifact_spots", "executor.clear_obstacle" },
+                new[] { "exact_clearable_identity", "required_tool_available", "energy_floor", "adjacent_reachable_tile", "menu_clear" },
+                new[] { "route_length", "native_tool_animation_ticks", "projected_output_receipt" },
+                Array.Empty<string>(),
+                new[] { "Tool.beginUsing", "Tool.tickUpdate", "Tool.DoFunction", "GameLocation.performToolAction", "GameLocation.digUpArtifactSpot" }),
+            Assumption(
                 "ginger_harvest",
                 new[] { "foraging.harvest_ginger", "executor.harvest_ginger" },
                 new[] { "exact_ginger_crop", "hoe_available", "energy_floor", "adjacent_reachable_tile", "menu_clear" },
@@ -95,6 +102,13 @@ namespace StardewAI.Core.Execution
                 new[] { "route_length", "native_shake_and_debris_settlement_ticks", "complete_stochastic_output_domain" },
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "Tree.performUseAction", "Tree.shake", "Utility.tryRollMysteryBox", "Utility.trySpawnRareObject", "Data/WildTrees" }),
+            Assumption(
+                "tree_moss_harvest",
+                new[] { "foraging.harvest_tree_moss", "executor.clear_obstacle" },
+                new[] { "exact_vanilla_tree", "mature_moss_ready", "seed_already_shaken", "exact_scythe", "native_shake_idle", "adjacent_interaction_tile", "menu_clear" },
+                new[] { "route_length", "native_scythe_animation_ticks", "deterministic_moss_quantity" },
+                Array.Empty<string>(),
+                new[] { "MeleeWeapon.DoFunction", "GameLocation.performToolAction", "Tree.performToolAction", "Tree.CreateMossItem", "Game1.createMultipleItemDebris", "Tree.shake", "Farmer.gainExperience" }),
             Assumption(
                 "garbage_can_rummage",
                 new[] { "foraging.rummage_garbage", "executor.rummage_garbage" },
@@ -125,7 +139,7 @@ namespace StardewAI.Core.Execution
                 new[] { "PathFindController", "GameLocation.isCollidingPosition", "GameLocation.warps" }),
             Assumption(
                 "crop_farming",
-                new[] { "farm.maintain_crops" },
+                new[] { "farm.maintain_crops", "foraging.harvest_spring_onions", "executor.harvest_crop" },
                 new[] { "energy_floor", "tool_available", "tile_reachable", "inventory_capacity" },
                 new[] { "crop_quality", "extra_harvest", "mixed_seed_crop", "fertilizer_effect" },
                 new[] { "missed_tile", "wrong_tool_timing", "slow_watering_micro" },

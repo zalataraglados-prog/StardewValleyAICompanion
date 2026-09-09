@@ -132,6 +132,39 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_tool_kind")]
         public string RequiredToolKind { get; set; } = string.Empty;
 
+        [JsonPropertyName("clear_completion_mode")]
+        public string ClearCompletionMode { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_tree_has_moss_before")]
+        public bool? ExpectedTreeHasMossBefore { get; set; }
+
+        [JsonPropertyName("expected_tree_has_moss_after")]
+        public bool? ExpectedTreeHasMossAfter { get; set; }
+
+        [JsonPropertyName("expected_tree_growth_stage_before")]
+        public int? ExpectedTreeGrowthStageBefore { get; set; }
+
+        [JsonPropertyName("expected_tree_growth_stage_after")]
+        public int? ExpectedTreeGrowthStageAfter { get; set; }
+
+        [JsonPropertyName("expected_tree_health_before")]
+        public double? ExpectedTreeHealthBefore { get; set; }
+
+        [JsonPropertyName("expected_tree_health_after")]
+        public double? ExpectedTreeHealthAfter { get; set; }
+
+        [JsonPropertyName("expected_moss_harvested_before")]
+        public long? ExpectedMossHarvestedBefore { get; set; }
+
+        [JsonPropertyName("expected_moss_harvested_after")]
+        public long? ExpectedMossHarvestedAfter { get; set; }
+
+        [JsonPropertyName("moss_harvest_projection_status")]
+        public string MossHarvestProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("moss_harvest_native_contract")]
+        public string MossHarvestNativeContract { get; set; } = string.Empty;
+
         [JsonPropertyName("pan_upgrade_level")]
         public int? PanUpgradeLevel { get; set; }
 

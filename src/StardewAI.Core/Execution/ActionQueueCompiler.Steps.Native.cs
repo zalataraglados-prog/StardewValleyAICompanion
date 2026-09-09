@@ -60,12 +60,16 @@ namespace StardewAI.Core.Execution
             }
 
             var maxSwings = Math.Clamp(ReadIntParameter(action, "max_tool_swings") ?? 8, 1, 64);
+            var completionMode = ReadParameter(action, "clear_completion_mode");
+            var expectedEffect = string.Equals(completionMode, "tree_moss_removed", StringComparison.Ordinal)
+                ? "current_location.terrain_features[" + x.Value + "," + y.Value + "].has_moss=false;tree_present=true"
+                : "current_location.obstacle[" + x.Value + "," + y.Value + "]=clear_or_blocked";
             return new[]
             {
                 Step(
                     "clear_obstacle",
                     "current_location(" + x.Value + "," + y.Value + ")",
-                    "current_location.obstacle[" + x.Value + "," + y.Value + "]=clear_or_blocked",
+                    expectedEffect,
                     maxSwings * 60)
             };
         }

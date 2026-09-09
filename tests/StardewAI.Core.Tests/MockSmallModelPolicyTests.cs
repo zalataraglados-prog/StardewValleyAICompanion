@@ -118,6 +118,7 @@ public sealed class MockSmallModelPolicyTests
             "joja_membership": {"value":false,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
+            "grandpa_friendship_progress": {"value":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"eligible_villager_count":0,"qualifying_count":0,"eligible_villager_rows":[],"projection_status":"complete_live_native_iteration"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "friendships": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {

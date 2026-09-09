@@ -120,6 +120,10 @@ public sealed class StoryEventMainlineTests
         Assert.Contains("dialogue.performHoverAction", runtime, StringComparison.Ordinal);
         Assert.Contains("dialogue.receiveLeftClick", runtime, StringComparison.Ordinal);
         Assert.Contains("namingMenu.receiveLeftClick", runtime, StringComparison.Ordinal);
+        Assert.Contains("IsBoundStoryEventNamingMenu", runtime, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(command, \"catQuestion\"", runtime, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(request.StoryEventQuestionKey, \"pet\"", runtime, StringComparison.Ordinal);
+        Assert.Contains("request.StoryEventResponseIndex == 0", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("skipEvent(", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("CurrentCommand =", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("eventsSeen.Add", runtime, StringComparison.Ordinal);

@@ -728,6 +728,7 @@ public sealed class GrandpaDirectionCompileChainTests
             "joja_membership": {"value":false,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
+            "grandpa_friendship_progress": {"value":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"qualifying_count":0,"projection_status":"complete_live_native_iteration"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "friendships": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {
@@ -782,6 +783,7 @@ public sealed class GrandpaDirectionCompileChainTests
             "joja_membership": {"value":true,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
+            "grandpa_friendship_progress": {"value":{"threshold_points":1975,"maximum_points":999999,"romance_only":false,"qualifying_count":10,"projection_status":"complete_live_native_iteration"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "friendships": {"value":[{"npc":"A","points":2500},{"npc":"B","points":2500},{"npc":"C","points":2500},{"npc":"D","points":2500},{"npc":"E","points":2500},{"npc":"F","points":2500},{"npc":"G","points":2500},{"npc":"H","points":2500},{"npc":"I","points":2500},{"npc":"J","points":2500}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {

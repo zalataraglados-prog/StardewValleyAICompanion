@@ -1,0 +1,39 @@
+{
+  "schema_version": "goal_conditioned_isolated_training_authorization.v1",
+  "goal_id": "grandpa.maximum_21",
+  "execution_mode": "training_singleplayer",
+  "save_scope": "run_local_cloned_save_only",
+  "source_save_integrity": "sha256_tree_before_equals_after",
+  "formal_training_allowed": false,
+  "production_governance_unchanged": true,
+  "options": [
+    {
+      "option_id": "museum.donate_items",
+      "required_training_eligibility": "EvaluationOnly",
+      "required_runtime_status": "RuntimeVerified",
+      "required_sole_exclusion_reason": "ExplicitPlayerConfirmationRequired",
+      "authorization_scope": "deterministic_teacher_label_on_isolated_clone_only"
+    },
+    {
+      "option_id": "community_center.donate_bundle_items",
+      "required_training_eligibility": "EvaluationOnly",
+      "required_runtime_status": "RuntimeVerified",
+      "required_sole_exclusion_reason": "ExplicitPlayerConfirmationRequired",
+      "authorization_scope": "deterministic_teacher_label_on_isolated_clone_only"
+    },
+    {
+      "option_id": "housing.advance_farmhouse",
+      "required_training_eligibility": "EvaluationOnly",
+      "required_runtime_status": "RuntimeVerified",
+      "required_sole_exclusion_reason": "ExplicitPlayerConfirmationRequired",
+      "authorization_scope": "deterministic_teacher_label_on_isolated_clone_only"
+    },
+    {
+      "option_id": "social.advance_partnership",
+      "required_training_eligibility": "EvaluationOnly",
+      "required_runtime_status": "RuntimeVerified",
+      "required_sole_exclusion_reason": "ExplicitPlayerConfirmationRequired",
+      "authorization_scope": "deterministic_teacher_label_on_isolated_clone_only"
+    }
+  ]
+}

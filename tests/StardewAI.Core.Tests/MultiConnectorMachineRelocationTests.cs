@@ -32,7 +32,8 @@ public sealed class MultiConnectorMachineRelocationTests
                 Assert.Equal("Farm", first.FromLocationId);
                 Assert.Equal("FarmHouse", first.TargetLocationId);
                 Assert.Equal("building_door", first.Kind);
-                Assert.Equal(360, first.EstimatedTicks);
+                Assert.Equal(7, first.ApproachDistanceTiles);
+                Assert.Equal(480, first.EstimatedTicks);
             },
             second =>
             {
@@ -43,7 +44,7 @@ public sealed class MultiConnectorMachineRelocationTests
                 Assert.Equal(3120, second.EstimatedTicks);
             });
         Assert.Equal(
-            3480,
+            3600,
             int.Parse(Parameter(
                 candidate,
                 "relocation_route_estimated_ticks")));

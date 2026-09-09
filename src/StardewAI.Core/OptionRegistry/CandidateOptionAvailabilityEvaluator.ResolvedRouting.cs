@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -28,46 +29,20 @@ namespace StardewAI.Core.OptionRegistry
             EventCandidate[] routeCandidates)
         {
             var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
-            if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object ||
-                !graph.Value.TryGetProperty("edges", out var edgesElement) || edgesElement.ValueKind != JsonValueKind.Array ||
+            if (!graph.HasValue ||
                 string.IsNullOrWhiteSpace(startLocation) || string.IsNullOrWhiteSpace(targetLocation))
             {
                 return null;
             }
-
-            var edges = edgesElement.EnumerateArray()
-                .Where(edge => edge.ValueKind == JsonValueKind.Object && ReadBool(edge, "resolved") == true)
-                .Select(edge => new ResolvedRouteEdge(
-                    ReadString(edge, "kind").ToLowerInvariant(), ReadString(edge, "from_location"), ReadString(edge, "target_location"),
-                    ReadNullableInt(edge, "from_x"), ReadNullableInt(edge, "from_y"), ReadNullableInt(edge, "target_x"), ReadNullableInt(edge, "target_y")))
-                .Where(edge => !string.IsNullOrWhiteSpace(edge.Kind) && !string.IsNullOrWhiteSpace(edge.FromLocation) &&
-                    !string.IsNullOrWhiteSpace(edge.TargetLocation) && edge.FromX.HasValue && edge.FromY.HasValue)
-                .ToArray();
-            var adjacency = edges
-                .GroupBy(edge => edge.FromLocation, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group
-                    .OrderBy(edge => edge.TargetLocation, StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(edge => edge.Kind, StringComparer.Ordinal)
-                    .ThenBy(edge => edge.FromY)
-                    .ThenBy(edge => edge.FromX)
-                    .ToArray(), StringComparer.OrdinalIgnoreCase);
-            if (!adjacency.TryGetValue(startLocation, out var firstEdges))
-            {
+            if (!TransparentRouteGraphResolver.TryCreate(graph.Value, out var resolver))
                 return null;
-            }
 
             var plans = new List<ResolvedRoutePlan>();
-            foreach (var firstEdge in firstEdges)
+            foreach (var path in resolver.FindShortestPathsByFirstEdge(startLocation, targetLocation))
             {
-                var tail = FindShortestResolvedRouteTail(
-                    adjacency,
-                    firstEdge.TargetLocation,
-                    targetLocation,
-                    startLocation);
-                if (tail is null)
-                {
+                if (path.Length == 0)
                     continue;
-                }
+                var firstEdge = path[0];
 
                 var firstConnectorCandidate = routeCandidates.FirstOrDefault(candidate =>
                     candidate.TileX == firstEdge.FromX && candidate.TileY == firstEdge.FromY &&
@@ -75,7 +50,7 @@ namespace StardewAI.Core.OptionRegistry
                     string.Equals(ReadParameter(candidate.Parameters, "expected_target_location"), firstEdge.TargetLocation, StringComparison.OrdinalIgnoreCase) &&
                     ArrivalMatches(candidate.Parameters, firstEdge.TargetX, firstEdge.TargetY));
                 plans.Add(new ResolvedRoutePlan(
-                    new[] { firstEdge }.Concat(tail).ToArray(),
+                    path,
                     firstConnectorCandidate,
                     FirstRouteActionCandidate(routeCandidates, firstConnectorCandidate)));
             }
@@ -117,49 +92,6 @@ namespace StardewAI.Core.OptionRegistry
                 .ThenBy(candidate => candidate.TileY)
                 .ThenBy(candidate => candidate.TileX)
                 .FirstOrDefault() ?? firstConnectorCandidate;
-        }
-
-        private static ResolvedRouteEdge[]? FindShortestResolvedRouteTail(
-            IReadOnlyDictionary<string, ResolvedRouteEdge[]> adjacency,
-            string startLocation,
-            string targetLocation,
-            string routeOrigin)
-        {
-            if (string.Equals(startLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
-            {
-                return Array.Empty<ResolvedRouteEdge>();
-            }
-
-            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                startLocation,
-                routeOrigin
-            };
-            var queue = new Queue<(string Location, ResolvedRouteEdge[] Path)>();
-            queue.Enqueue((startLocation, Array.Empty<ResolvedRouteEdge>()));
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (!adjacency.TryGetValue(current.Location, out var outgoing))
-                {
-                    continue;
-                }
-
-                foreach (var edge in outgoing)
-                {
-                    var path = current.Path.Concat(new[] { edge }).ToArray();
-                    if (string.Equals(edge.TargetLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return path;
-                    }
-                    if (visited.Add(edge.TargetLocation))
-                    {
-                        queue.Enqueue((edge.TargetLocation, path));
-                    }
-                }
-            }
-
-            return null;
         }
 
         private static ResolvedRoutePlan?
@@ -208,7 +140,7 @@ namespace StardewAI.Core.OptionRegistry
                 return null;
             }
 
-            var path = new List<ResolvedRouteEdge>();
+            var path = new List<TransparentRouteEdge>();
             for (var index = 0; index < suffix.Length; index++)
             {
                 var segment = suffix[index];
@@ -244,7 +176,7 @@ namespace StardewAI.Core.OptionRegistry
                     return null;
                 }
 
-                path.Add(new ResolvedRouteEdge(
+                path.Add(new TransparentRouteEdge(
                     segment.Kind,
                     segment.FromLocationId,
                     segment.TargetLocationId,
@@ -284,7 +216,7 @@ namespace StardewAI.Core.OptionRegistry
         private sealed class ResolvedRoutePlan
         {
             public ResolvedRoutePlan(
-                ResolvedRouteEdge[] path,
+                TransparentRouteEdge[] path,
                 EventCandidate? firstConnectorCandidate,
                 EventCandidate? firstActionCandidate)
             {
@@ -293,31 +225,10 @@ namespace StardewAI.Core.OptionRegistry
                 FirstActionCandidate = firstActionCandidate;
             }
 
-            public ResolvedRouteEdge[] Path { get; }
+            public TransparentRouteEdge[] Path { get; }
             public EventCandidate? FirstConnectorCandidate { get; }
             public EventCandidate? FirstActionCandidate { get; }
         }
 
-        private sealed class ResolvedRouteEdge
-        {
-            public ResolvedRouteEdge(string kind, string fromLocation, string targetLocation, int? fromX, int? fromY, int? targetX, int? targetY)
-            {
-                Kind = kind;
-                FromLocation = fromLocation;
-                TargetLocation = targetLocation;
-                FromX = fromX;
-                FromY = fromY;
-                TargetX = targetX;
-                TargetY = targetY;
-            }
-
-            public string Kind { get; }
-            public string FromLocation { get; }
-            public string TargetLocation { get; }
-            public int? FromX { get; }
-            public int? FromY { get; }
-            public int? TargetX { get; }
-            public int? TargetY { get; }
-        }
     }
 }

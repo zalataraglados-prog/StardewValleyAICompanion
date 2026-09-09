@@ -223,6 +223,25 @@ namespace StardewAI.Core.Execution
         private static SmallModelActionParameter[] BuildMiningReachDepthParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var parameters = new List<SmallModelActionParameter>(action.Parameters);
+            var trainCombat = string.Equals(
+                ReadParameter(action, "skill_training_target_id"),
+                "combat",
+                StringComparison.Ordinal);
+            if (trainCombat)
+            {
+                AddParameterIfMissing(
+                    parameters,
+                    "target_depth",
+                    "120");
+                AddParameterIfMissing(
+                    parameters,
+                    "target_skill_level",
+                    "10");
+                AddParameterIfMissing(
+                    parameters,
+                    "target_location_family",
+                    "ordinary_mines");
+            }
             var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
             var currentDepth = currentMine.HasValue && currentMine.Value.ValueKind == JsonValueKind.Object
                 ? ReadInt(currentMine.Value, "mine_level")
@@ -245,15 +264,18 @@ namespace StardewAI.Core.Execution
                 parameters.Add(Parameter("current_mine_kind", family));
             }
 
-            var elevatorStart = MiningReachDepthCandidateBuilder.ElevatorStartFor(currentDepth, ReadIntParameter(action, "target_depth"), family, deepestMineLevel);
+            var targetDepth = ReadIntParameter(parameters, "target_depth");
+            var elevatorStart = MiningReachDepthCandidateBuilder.ElevatorStartFor(currentDepth, targetDepth, family, deepestMineLevel);
             parameters.Add(Parameter("elevator_start_depth", elevatorStart?.ToString() ?? string.Empty));
             var objective = new MiningFloorObjective
             {
-                Kind = MiningObjectiveKinds.ReachDepth,
+                Kind = trainCombat
+                    ? MiningObjectiveKinds.TrainCombat
+                    : MiningObjectiveKinds.ReachDepth,
                 MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0,
                 MinimumReserveEnergy = ReadIntParameter(action, "minimum_reserve_energy"),
                 LatestExitTime = ReadIntParameter(action, "latest_exit_time"),
-                TargetDepth = ReadIntParameter(action, "target_depth"),
+                TargetDepth = targetDepth,
                 ResourcePreservationPolicy =
                     ReadParameter(
                         action,

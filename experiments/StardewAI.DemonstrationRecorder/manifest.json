@@ -1,0 +1,10 @@
+{
+  "Name": "StardewAI Demonstration Recorder (Isolated Lab)",
+  "Author": "StardewAI",
+  "Version": "0.1.0",
+  "Description": "Read-only goal-conditioned human demonstration recorder for the isolated training lab.",
+  "UniqueID": "StardewAI.DemonstrationRecorder",
+  "EntryDll": "StardewAI.DemonstrationRecorder.dll",
+  "MinimumApiVersion": "4.3.2",
+  "UpdateKeys": []
+}

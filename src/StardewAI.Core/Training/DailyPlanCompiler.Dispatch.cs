@@ -74,17 +74,20 @@ namespace StardewAI.Core.Training
                 ["economy.buy_supplies"] = new[] { "route_connector_tile", "interact_endpoint", "buy_shop_item" },
                 ["economy.sell_items"] = new[] { "route_connector_tile", "interact_endpoint", "sell_shop_item" },
                 ["economy.ship_items"] = new[] { "route_connector_tile", "ship_inventory_item_to_bin" },
-                ["fishing.catch_fish"] = new[] { "catch_fish" },
-                ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
+                ["fishing.catch_fish"] = new[] { "route_connector_tile", "catch_fish" },
+                ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["fishing.manage_fish_pond"] = new[] { "manage_fish_pond" },
                 ["housing.advance_farmhouse"] = new[] { "purchase_farmhouse_upgrade", "purchase_farmhouse_expansion" },
                 ["housing.renovate"] = new[] { "route_connector_tile", "renovate_home" },
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },
                 ["foraging.collect_spawned_objects"] = new[] { "collect_spawned_object" },
+                ["foraging.excavate_artifact_spots"] = new[] { "clear_obstacle_tile" },
+                ["foraging.harvest_spring_onions"] = new[] { "harvest_crop_tile" },
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_fruit_tree"] = new[] { "harvest_fruit_tree" },
                 ["foraging.harvest_tree_product"] = new[] { "harvest_tree_product" },
+                ["foraging.harvest_tree_moss"] = new[] { "clear_obstacle_tile" },
                 ["foraging.rummage_garbage"] = new[] { "rummage_garbage" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
@@ -582,6 +585,22 @@ namespace StardewAI.Core.Training
                 return CollectCrabPotSteps(candidate);
             }
 
+            if (candidate.Kind == "load_crab_pot_bait" &&
+                OptionCandidateCompilerKinds["fishing.collect_crab_pots"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return LoadCrabPotBaitSteps(candidate);
+            }
+
+            if (candidate.Kind == "place_crab_pot" &&
+                OptionCandidateCompilerKinds["fishing.collect_crab_pots"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return PlaceCrabPotSteps(candidate);
+            }
+
             if ((candidate.Kind == "collect_fish_pond_output" || candidate.Kind == "complete_fish_pond_request") &&
                 OptionCandidateCompilerKinds["fishing.service_fish_ponds"].Contains(
                     candidate.Kind,
@@ -818,6 +837,7 @@ namespace StardewAI.Core.Training
             }
 
             if (candidate.Kind == "mining_reach_depth_plan_envelope" ||
+                candidate.Kind == "mining_combat_training_plan_envelope" ||
                 candidate.Kind == "mining_slay_monsters_plan_envelope" ||
                 candidate.Kind == "mining_collect_quest_resource_plan_envelope" ||
                 candidate.Kind == "mining_acquire_golden_scythe_plan_envelope" ||

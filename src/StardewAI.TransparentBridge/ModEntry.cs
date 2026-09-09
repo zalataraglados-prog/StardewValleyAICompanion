@@ -416,16 +416,8 @@ public sealed partial class ModEntry : Mod
 
     private static bool IsSnapshotFresh(SnapshotEnvelope snapshot, long currentGameTick)
     {
-        if (snapshot.State.TryGetValue("player", out var playerElement) &&
-            playerElement.TryGetProperty("location_id", out var locationElement) &&
-            locationElement.TryGetProperty("value", out var valueElement) &&
-            valueElement.ValueKind == JsonValueKind.String &&
-            !string.IsNullOrWhiteSpace(valueElement.GetString()))
-        {
-            return currentGameTick - snapshot.GameTick <= SnapshotProfileMaxAgeTicks;
-        }
-
-        return currentGameTick - snapshot.GameTick <= SnapshotProfileMaxAgeTicks;
+        return currentGameTick >= snapshot.GameTick &&
+            currentGameTick - snapshot.GameTick <= SnapshotProfileMaxAgeTicks;
     }
 
     private void ProcessPendingSnapshotRequests()
@@ -676,7 +668,7 @@ public sealed partial class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "daily" or "clock" or "identity" or "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "clock" or "identity" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static bool SnapshotForceRefresh(HttpListenerRequest request)
@@ -706,15 +698,21 @@ public sealed partial class ModEntry : Mod
             "unavailable_fields"
         };
 
-        if (profile is "daily" or "route" or "shop" or "machine")
+        if (profile is "daily" or "route" or "shop" or "social" or "social_future" or "machine")
         {
             domains.Add("current_location");
             domains.Add("locations");
         }
 
-        if (profile is "route" or "shop")
+        if (profile is "route" or "shop" or "social" or "social_future")
         {
             domains.Add("npcs");
+        }
+
+        if (profile is "social" or "social_future")
+        {
+            domains.Add("quests_progress");
+            domains.Add("world_progress");
         }
 
         if (profile is "machine")

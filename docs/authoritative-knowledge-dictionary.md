@@ -422,6 +422,148 @@ admissible.
 
 ## Remaining derivation stages
 
+## Goal-conditioned teacher consumer
+
+The dictionary's next strategic consumer is the no-human deterministic teacher documented in
+[`goal-conditioned-no-human-teacher-plan.md`](goal-conditioned-no-human-teacher-plan.md).
+Its supervision provenance and operational convergence rules are normative in
+[`TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`](TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md).
+This change is required because policy-selected rollout labels can reinforce missing methods;
+the target must instead be expanded backward through authoritative dependencies and relabeled
+by a teacher independent of the learner's selection.
+
+Dictionary facts and hard masks are not training labels. A Student-selected option is only
+behavioral observation; it becomes a preference example only through an independently
+versioned Teacher comparison. Native before/after results remain a separate outcome channel.
+This separation prevents a complete dictionary from accidentally legitimizing a
+self-reinforcing policy dataset.
+
+The teacher may consume only version-locked runtime/decompile facts and independently reviewed
+secondary claims. Strategy guides can propose alternatives or opportunity-cost hypotheses but
+cannot create facts or executable edges. Every required method must terminate at the existing
+candidate/compiler/executor chain or at an explicit blocker. Human demonstrations are optional
+post-baseline calibration data, not a training prerequisite.
+
+Goal-direction ownership is not copied into the dictionary or experiment. The production
+`GrandpaDirectionCatalog` is the sole mapping from score criteria to directions, permitted
+options, effective goals, and demand families. Dictionary-derived dependency expansion is a
+separate overlay keyed only by direction ID, preventing parallel planners from drifting apart.
+
+The isolated consumer now separates unresolved prose in
+`goal-method-expansion-overlay.v1.json` from executable typed routes in
+`goal-method-dependency-expansions.v1.json`. Its first complete multi-step route is
+`earn_pet_love`. It binds the exact locked `Data/Events/Farm` cat/dog keys, native
+`story.advance_event` response zero plus `NamingMenu`, existing `farm.care_for_pets`
+branches, deterministic `recovery.stabilize_day`, and terminal `petLoveMessage`.
+
+For this route, the locked 1.6.15 runtime and decompile override secondary prose: the event
+gate is host, no matching pet, cumulative earnings at least 1,000, Farm entry from 06:00
+through 09:30, Wednesday or Friday, and no rain. No season or Spring-20 bypass is present.
+Petting applies capped +12 once per pet/player day. A watered assigned bowl applies capped
++6 at the next `Pet.dayUpdate`; current rain fills outdoor bowls after that morning's pet
+settlement. From zero friendship, daily petting plus an assigned watered bowl therefore has
+the conservative action-day upper bound `min N: 12*N + 6*(N-1) >= 1000`, or 56 days.
+
+The full event-script lock uses the decoded English value read by the game API. The immutable
+v24 `runtime-rule-evidence` also retains a hash of the JSON-escaped token; those are distinct
+representations and must not be compared as if they were the same byte stream. The active
+localized event remains independently bound by the live story-event projection fingerprint.
+
+The `earn_money` reverse route is now typed but intentionally remains `in_progress`.
+Locked 1.6.15 source establishes three separate facts: any positive `Farmer.Money` delta adds
+the same amount to shared `totalMoneyEarned`; an ordinary spend does not reduce that total;
+and `ShopMenu.BuyBuybackItem` is a special negative transition which explicitly reverses the
+buyback price from cumulative earnings. A shop sale settles immediately through `Money`,
+whereas a shipping-bin deposit changes inventory and bin contents only. The host credits the
+native `sellToStorePrice(-1L) * Stack` aggregate during the following day transition.
+
+To keep that delayed state visible, `farm.shipping_bins[].contents[]` now retains separate
+settlement variants by qualified item ID, quality, and native unit sell price. Each completed
+bin view exposes the exact `pending_settlement_value`, a completeness flag, settlement timing,
+and an economic contents signature. Multiple physical shipping-bin endpoints can expose the
+same scoped inventory; consumers must identify the shared/personal `bin_scope` and must not
+sum duplicate endpoint views.
+
+The verified route graph connects current fishing, spawned forage, ready animal products,
+ready machine outputs, positive-net machine capacity, exact shop sales, exact shipping, and
+native day settlement. It may not be marked complete until all three conditions hold: a
+fresh-save seed-robust schedule proves one million settled earnings before Year 3; isolated
+counterfactual rollouts produce reserve-aware opportunity-cost labels; and the crop-production
+alternative is training-eligible. Wiki and min-max guides are proposal priors only, never hard
+facts or positive labels.
+
+The `raise_friendships` reverse route is also typed but remains `in_progress`. Grandpa's
+friendship population is not the raw save dictionary: native `Utility.ForEachVillager` excludes
+event actors and retains `IsVillager` instances, then
+`getNumberOfFriendsWithinThisRange(player, 1975, 999999, false)` counts qualifying nullable
+relationships. The bridge exposes that exact live projection as
+`npcs.grandpa_friendship_progress`, and the score evaluator fails closed without it.
+
+For loaded supported NPCs, `npcs.social_interaction[]` now exposes friendship row presence,
+points, `TalkedToToday`, and the exact current talk points before/delta/after after statue,
+friendship-book, Dwarvish, divorce, spouse, and maximum-heart rules. Talk candidates already
+completed today or yielding no positive gain are removed upstream. Ordinary gift candidates
+likewise require a complete positive target delta and reject the unresolved stochastic spouse
+jealousy branch. The social runtime independently verifies the planned delta after native
+`checkAction`.
+
+Cross-day friendship logic remains a distinct deterministic transition. The source order requests
+spouse `-20` or dating `-8`, then may request an additional ordinary `-2` when the post-penalty
+points remain below the relevant cap. Every request passes through `Farmer.changeFriendship`:
+for a spouse, `-20` normally truncates to `-13` and `-2` to `-1`; positive weekly bonuses also
+apply friendship-book, language, divorce, spouse and maximum-heart rules in native order. Gift
+counter reset and the weekly two-gift bonus occur afterward. The bridge now includes every one of
+these recurrence inputs on the exact Grandpa population row, and the sole
+`FriendshipDayTransitionSimulator` projects them without executing sleep. The transition date is
+the new day's date, exposed separately as `next_total_days` and `next_total_sunday_weeks`; using
+the pre-sleep date for gift reset is incorrect. Hidden cloned-save runtime
+`runtime-friendship-multi-day-smoke-20260906-031553` matched eight consecutive native sleeps,
+39/39 unique NPCs and 31/31 existing friendship rows on every transition with zero mismatch. The
+controlled Linus row covered the weekly two-gift bonus, `TalkedToToday`/`GiftsToday` reset, and
+ordinary not-talked decay. This proves recurrence conformance, not ten-villager deadline feasibility.
+The bridge emits the live mod-aware raw schedule catalog only on explicit `social`/`full`
+profiles, with per-entry and whole-catalog hashes. `NpcFutureScheduleResolver` follows the native
+selection order and resolves `GOTO`, `NOT friendship`, `MAIL`, rain alternatives, static location
+replacements, scheduled departure times, and endpoint destinations without mutating game state.
+`Exact` does not by itself mean the NPC has arrived. Static future projections retain exact key,
+departure and endpoint identity but leave travel timing unresolved when native path evidence is
+absent; `aHHMM` commands fail closed entirely in that case. With complete date/key/ordinal/target-
+bound native route pixels, every ordinary and arrival-form movement receives an exact arrival time.
+`NpcFuturePresenceWindowResolver` then removes transit intervals, while
+`FutureRouteAccessWindowResolver` and `NpcFutureContactWindowResolver` require same-date player
+route, gate, traversability, final-approach timing and interaction-eligibility evidence before a
+contact window can exist. `FutureSocialItineraryVerifier` validates a supplied visit order against
+those exact windows without choosing an order. The consumer contracts are complete, but future-date
+player-route evidence acquisition, ordered-proposal generation, and training integration remain
+fail closed. Hidden current-state runtime
+`runtime-npc-schedule-projection-smoke-20260906-021045` matched all 29 loaded native schedules.
+Spring 16 fixture `runtime-npc-arrival-timing-smoke-20260906-024215` matched another 29/29, all
+137 loaded movement segments and both loaded `aHHMM` entries by binding native adjacent-route
+pixels to schedule key, ordinal and exact target, then reproducing native integer division,
+rounding and previous-time clamping. Current loaded travel timing is exact with that evidence;
+future-date evidence production and a fresh-save ten-villager deadline proof remain explicit
+blockers rather than inferred facts.
+
+The current Grandpa friendship binding is stricter than the reusable social action surface.
+For `raise_friendships`, every talk or gift candidate must join by exact NPC name to one row in
+`npcs.grandpa_friendship_progress.eligible_villager_rows`, and that row must be a non-event
+villager below 1,975 points. Friendship-row presence, points before, positive expected delta,
+and points after must agree between the candidate and the native population projection. The
+binder, not the small model, derives the before/after deficit and number of remaining portfolio
+slots. This prevents valid social actions toward irrelevant or already complete targets from
+becoming Grandpa-progress labels.
+
+Mechanics with locked native evidence but no completed runtime proof use the ledger verdict
+`native_verified_runtime_pending`. They may narrow implementation and keep unknown branches
+fail-closed; they do not satisfy criteria or authorize positive labels. The eight-day friendship
+recurrence is no longer in this class; future routing and whole-deadline feasibility remain there
+until isolated runtime evidence is recorded.
+
+The current teacher evidence freeze targets
+`game-1.6.15-20260723T093543Z-linux-v24`. Its existing source validation warning
+`content_root_not_supplied` must be removed by an isolated 3,550-XNB rehash before formal
+teacher data is admitted.
+
 The exporter output remains immutable source material. The remaining compiler stages are:
 
 - classify branch predicates, formula return values, mutation meaning, random branches, and

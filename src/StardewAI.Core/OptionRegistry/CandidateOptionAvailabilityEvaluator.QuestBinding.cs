@@ -1064,7 +1064,9 @@ namespace StardewAI.Core.OptionRegistry
             SmallModelActionParameter[]? parameters = null,
             bool? available = null,
             string? availabilityClass = null,
-            string[]? blockReasons = null)
+            string[]? blockReasons = null,
+            bool? allowedNow = null,
+            bool? allowedToday = null)
         {
             return new EventCandidate
             {
@@ -1086,8 +1088,8 @@ namespace StardewAI.Core.OptionRegistry
                 EstimatedTicks = source.EstimatedTicks,
                 EnergyCost = source.EnergyCost,
                 AvailabilityClass = availabilityClass ?? source.AvailabilityClass,
-                AllowedNow = source.AllowedNow,
-                AllowedToday = source.AllowedToday,
+                AllowedNow = allowedNow ?? source.AllowedNow,
+                AllowedToday = allowedToday ?? source.AllowedToday,
                 NextOpenTime = source.NextOpenTime,
                 EffectiveOpenTime = source.EffectiveOpenTime,
                 ClosesAt = source.ClosesAt,

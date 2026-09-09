@@ -4,6 +4,12 @@ Status: approved architecture correction, implementation started in an isolated 
 worktree. This document is the continuity source for the correction. It does not promote
 the local experiment into the product repository or authorize formal training.
 
+The normative Teacher/Student supervision and convergence rules are in
+[`TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`](TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md).
+In particular, `selected=true` is an observed Student action, not an admissible positive
+label. Historical behavior-cloning runs remain execution/control evidence only until the
+typed supervision-source contract and independent Teacher relabel path are implemented.
+
 ## Why this correction exists
 
 The existing structured policy training path can treat the option selected by the current
@@ -172,6 +178,9 @@ never accepted as positives merely because they were selected.
 
 Exit: every admitted row has source hashes, goal/method labels, complete candidate context,
 real execution receipts, a completed day boundary, and long-horizon return binding.
+Teacher preference, native outcome and Student behavior must be stored as three explicit
+provenance classes. The dataset builder must reject rows which infer preference from the
+Student's selected flag.
 
 ### Slice 7: Curriculum training
 
@@ -181,6 +190,11 @@ compiler/executor responsibilities.
 
 Exit: held-out teacher states improve over the deterministic V0 reference without option
 vocabulary leakage or executor-calibration contamination.
+
+This is operational convergence, not a global-optimum proof. Freeze thresholds for held-out
+Teacher disagreement, learner-state recovery, native 21/21 success, hard-rule violations and
+runtime performance before evaluating a candidate checkpoint; do not tune the thresholds on
+the same evaluation run.
 
 ### Slice 8: Robustness and Year-3 evaluation
 
@@ -603,8 +617,9 @@ rules by guessing, and the current teacher is not yet complete enough to claim a
   its rule, dependency, transparent input, option, compiler binding and native receipt have passed the
   existing gates.
 - This is architecture readiness, not a trained model. The current Stage 1 frontier remains 2/19
-  executable criteria, 12/19 pending dependency expansion, and 5/19 blocked by option governance.
-  Full 21-point teacher coverage and a new-save 21/21 rollout still precede formal Stage 1 training.
+  executable criteria and 17/19 pending dependency closure, with zero missing dependency graphs and
+  zero option-governance-blocked criteria. Full 21-point teacher coverage and a new-save 21/21
+  rollout still precede formal Stage 1 training.
 - The skill-level direction now has typed routes for verified farming, fishing, foraging, mining and
   exact skill-book XP plus deterministic crop maintenance. It remains pending because ordinary mine
   transit only fights incidental threats; a generic combat-XP goal-level binding with a fresh native
@@ -667,6 +682,146 @@ workstation stays usable. The next gate is full Stage 1 goal-method teacher cove
 21/21 curriculum rollout. This is still dataset/teacher admission, not formal model training;
 Slice 7 remains assigned to the RTX 5070 node.
 
+### 2026-09-07: Exact collection denominators and missing-outcome binding admitted
+
+- Stage 1 remains a fresh-save native Grandpa `21/21` run by the initial Year 3 Spring 1
+  evaluation. Stage 2 warm-starts from the admitted Stage 1 checkpoint and targets the native
+  Perfection tracker at `100%`; Stage 2 complexity cannot weaken the Stage 1 admission gate.
+- `AuthoritativeRequirementInventoryBuilder` now derives the four Stage 1 collection sets from
+  runtime exports and exact decompiled predicates. Vanilla 1.6.15 contains 154 Full Shipment
+  objects, 72 Master Angler fish, 95 museum-donatable items, and 30 standard Community Center
+  bundles. The post-Community-Center Missing Bundle is supplemental.
+- The generated inventory is source-path and SHA-256 bound. It contains 351 requirement groups,
+  and all 351 now have at least one identity-safe native acquisition source. Structured runtime
+  sources cover crops, fish, shops, machines, animals, fruit/wild trees, forage, artifact spots,
+  geodes, fish ponds and monster drops; exact decompiled guards cover the remaining native special
+  branches. Status is `complete` with zero unresolved first-source groups.
+- Source completeness is not executable-route completeness. Every selected source still requires
+  its calendar, unlock, location, facility, resource, stochastic fallback, candidate, compiler and
+  fresh native receipt dependencies before it may supervise the model.
+- Identity-unsafe graph edges are rejected. In particular, a numeric object ID cannot be joined
+  to a big-craftable recipe output with the same numeric ID. This reduces apparent route coverage
+  instead of silently training against the wrong item.
+- The transparent bridge publishes exact live fish and museum denominators, item rows, completion
+  counts, and missing IDs. The static `Data/Objects` classification is cached by the live content
+  dictionary instance, while save-specific completion is recomputed on every snapshot to avoid
+  both stale state and repeated full-catalog scanning.
+- The Master Angler binder now requires a complete candidate outcome distribution and admits
+  `catch_fish` only when at least one possible qualified item intersects the current native missing
+  set. A candidate containing only already-caught fish is excluded upstream and cannot reinforce a
+  useless fishing loop.
+- Existing runtime admission also includes exact combat XP coverage for all six native skill
+  indices, a bounded friendship teacher rollout, and the native Grandpa event `558291`. Four
+  confirmation-gated product options have isolated teacher-only authorization; governance blockers
+  are zero without changing normal player confirmation policy.
+- Current frontier accounting remains 2 executable criteria, 17 pending dependency expansions, and
+  0 governance-blocked criteria. Formal training remains disabled. The next Slice 3 work expands the
+  now-complete first-source inventory through executable dependencies, beginning with future fish
+  season/weather/time/location/access scheduling and shared acquisition-source-to-option bindings,
+  then admits fresh native receipts.
+
+### 2026-09-07: Master Angler source partition and dual acquisition binding admitted
+
+- `Data/Fish` requirement rows are no longer accepted as acquisition actions by themselves. The
+  exact 72-species denominator now remains fully source-covered through 60 `Data/Locations` rod
+  species, two guarded `MineShaft.getFish` overrides (`(O)158` and `(O)161`), and ten guarded
+  `CrabPot.DayUpdate` trap species. All source files are path- and SHA-256-bound.
+- `master-angler-opportunity-catalog-v1.json` records every species' raw time, season, weather and
+  fishing-level constraint, every matching location rule, both mine areas, and both trap water
+  classes. Its hard partition is `60 + 2 + 10 = 72`, with zero unresolved species.
+- The catalog also normalizes all 180 matching `Data/Locations` rules into native minimum/maximum
+  year, season, clock and weather constraints. `GameStateQuery.cs` is a separately hashed source
+  and regression guard: native `YEAR 2` means year 2 or later, not only year 2. There are zero
+  unparsed rules and zero impossible static intersections. Fifteen rules retain festival, special
+  order or random predicates as explicit dynamic gates; the catalog never assumes those gates pass.
+- A decompile-wide override audit now requires exactly five native `getFish` overrides. Farm only
+  redirects to another location table, IslandLocation and IslandSouthEast inject walnuts, Railroad
+  injects Caroline's Necklace, and MineShaft directly injects collection fish. The MineShaft set is
+  four area routes: Stonefish at areas 0/10, Ice Pip at 40, and Lava Eel at 80. Lava Eel keeps both
+  its Caldera location rules and this mine alternative; source alternatives do not duplicate the
+  72-species denominator.
+- `master-angler-stage-one-window-index-v1.json` expands the catalog through the initial Year 3
+  evaluation boundary (`total_day < 224`). All 72 species have at least one static window; the
+  index contains 1031 year-season/source spans and exposes each species' earliest and latest static
+  day for deadline-first teacher ranking. It deliberately remains ineligible as a training label
+  until target-date dynamic conditions, unlock/access, route/tile, equipment, live candidate and
+  fresh native receipt evidence resolve.
+- `complete_master_angler` now reuses both existing policy options: `fishing.catch_fish` for a
+  complete legal cast distribution and `fishing.collect_crab_pots` for one exact ready output. Both
+  must intersect the fresh native missing-species set. Crab-pot garbage, non-collection outputs and
+  already-caught species remain upstream exclusions.
+- Trap placement, bait loading and day settlement are represented only as dependencies on the
+  existing `executor.place_crab_pot`, `executor.load_crab_pot_bait`, and
+  `recovery.stabilize_day` paths. They are compiler-owned transitions, not policy labels and not a
+  second executor.
+- The source catalog does not assert future accessibility. Remaining blockers are a date/weather/
+  clock/location/access/route/tile/equipment condition producer, one high-level trap-infrastructure
+  intent which expands the existing mechanical primitives, and a fresh-save stochastic deadline
+  proof. Frontier accounting therefore correctly remains 2 executable, 17 pending, 0 governance
+  blocked; formal training remains disabled.
+- Regression PASS: Core `2446/2446`; isolated bootstrap full regression; 585/585 exports; 351/351
+  first acquisition sources; 72/72 Master Angler opportunity sources; 180/180 normalized location
+  calendars; 72/72 Stage 1 deadline windows; 0 unresolved source or calendar rows.
+
+### 2026-09-07: Master Angler crab-pot lifecycle, capacity and rolling clock gate
+
+- The Master Angler trap branch now reuses one mechanical lifecycle: route to a persistent pot,
+  collect a ready output, load bait when required, route to a legal water tile, place an exact
+  inventory pot, and wait for native day settlement. These are dependency actions beneath the
+  high-level goal; they are not extra policy labels or a second executor.
+- `player.crab_pot_network` publishes the loaded global network rather than only current-location
+  objects. Planning can therefore service a remote pot or suppress a redundant placement without
+  pretending the pot is local. Exact placement is rebound from a fresh snapshot after routing.
+- The locked vanilla `CrabPot.DayUpdate` implementation is SHA-256 bound as
+  `A7ABEA39D49F8E3631843BF5047C3273E56CD74265AD8D310BE13A1D45AFA363`.
+  Mariner outcomes use the native uniform eligible-row branch. The ordinary branch preserves
+  native row order, junk gate, first-success semantics and fallback trash. The bridge exposes a
+  conservative per-serviced-cycle distribution; special bait improvements are not overstated.
+- Nested trap-row DTO fields now carry explicit snake-case JSON names. This closes a real bridge/
+  Core contract bug that fixture-only tests had hidden by already supplying snake-case JSON.
+- Placement capacity is stochastic rather than binary. For this Stage 1 direction, the planner
+  combines all exact existing-pot miss probabilities over the remaining serviceable cycles before
+  the exclusive `total_day = 224` deadline and suppresses extra capacity only at a `0.95` success
+  threshold. Missing probability evidence, zero remaining cycles, and incomplete identities fail
+  closed. Stage 2 must inject its own target horizon instead of inheriting this Stage 1 constant.
+- At this checkpoint, a rolling current-step clock gate rejected a catch, ready-pot collection or
+  route whose current action plus the terminal fishing reserve could not fit before the
+  authoritative opportunity closed. The complete multi-edge proof was added in the 2026-09-08
+  follow-up below.
+- Crab-pot candidate ownership is split by concern into service, placement, routing and capacity
+  partials. Shared lifecycle helpers have one implementation; no duplicate executor path was added.
+- Regression PASS at this checkpoint: full Core `2461/2461`; TransparentBridge and isolated bootstrap builds have
+  `0` warnings and `0` errors; isolated knowledge regression exports `585/585` with `0` blockers.
+  The regenerated option matrix is reproducibly locked at 228 options, 62 training-eligible and
+  151 runtime-verified entries.
+- Runtime game evidence has not been collected for this slice. Formal training remains disabled.
+
+### 2026-09-08: Master Angler current-date full-route Teacher proof and review
+
+- The deterministic Teacher now starts from the exact native 72-species missing set, filters the
+  authoritative current-date source windows, and only then batches route searches for the remaining
+  relevant target locations. It no longer searches every catalog location on every call.
+- Every remote intent consumes the full-profile route graph, date-bound static walkability and gate
+  evidence, current player tile/time, game version, and a SHA-256-locked conservative movement
+  calibration. The proof accumulates every connector approach and transition through the target map.
+  The terminal fishing candidate is still rebound from a fresh snapshot after the final transition.
+- Window admission now reserves terminal catch time from the later of source-window opening and
+  conservative route arrival. A route that is topologically valid but arrives too late produces no
+  Teacher candidate. The candidate gate independently recomputes the full remaining route after each
+  fresh snapshot and uses `max(current_action, remaining_route) + terminal_reserve`.
+- The older topological-only Master Angler precheck was removed. Route feasibility and timing have one
+  Core authority; this added no action compiler or runtime executor implementation.
+- Review split route-location contracts, search results, calibration artifact loading, window-index
+  parsing, runtime source matching, and experiment snapshot parsing into focused partials. No duplicate
+  Master Angler lifecycle or second execution path remains in the reviewed slice.
+- Regression PASS: Core `2467/2467`; isolated knowledge exports `585/585` with zero blockers; current
+  option matrix remains locked at 228 registered, 62 training-eligible and 151 runtime-verified; the
+  full isolated regression and Master Angler late-arrival self-test pass.
+- This closes only the current-date Master Angler route/time leaf inside Slice 3/4. The 19-criterion
+  reverse hypergraph is not complete. Formal training remains disabled pending future-date scheduling,
+  a fresh full-profile global crab-pot network/probability snapshot, proactive trap-capacity lifecycle
+  proof, and fresh native terminal/overnight receipts.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
@@ -682,3 +837,5 @@ Public review should focus on the following points before Slice 5/6 promotion:
   time/weather/player-count/random side effect, sufficiently conservative for route training?
 - Should content-addressed full-state blobs be mandatory before the first repeated-day server run,
   or is an independently hash-audited delta representation preferable?
+- Does every formal row carry an independent Teacher preference or separately attributable native
+  outcome instead of deriving the positive label from the Student's selected flag?

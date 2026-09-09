@@ -1,5 +1,29 @@
 # StardewAI 当前工作
 
+## 2026-09-08 当前权威检查点：EVD-335
+
+- `foraging.harvest_spring_onions` 已闭合读、候选、编译、原生运行和输出五门。它只接受当前已加载地图中原版基类 `Crop` 的 `forageCrop=true / whichForageCrop=1`，并复用唯一 `harvest_crop_tile -> executor.harvest_crop` 生产链；普通作物、姜和自定义作物不会进入该候选。
+- 本步真实运行发现并修复了透明桥缺口：原生春葱的 `indexOfHarvest` 为空，`Crop.harvest` 才按觅食 ID 动态创建 `(O)399`。桥现在只对精确原版春葱发布 `harvest_item_projection_status=exact_from_decompiled_native_spring_onion_branch`，未知分支继续失败关闭；必需事实门也已授权该专用 adapter。
+- 隐藏静音 E 盘隔离运行 `artifacts/runtime-spring-onion-daily-plan/runtime-spring-onion-daily-plan-20260908-233958/summary.json` 通过：DailyPlan 选择 `harvest:Farm:64,15`，原生执行 `applied/verified`，库存 `(O)399` 为 `0 -> 1`，Foraging XP 为 `19376 -> 19379`，目标作物被移除且状态哈希变化。运行使用 `--skip-training`，不得作为正式 Teacher 轨迹。
+- 权威生成结果为 `230 registered / 232 semantic / 229 compiler-bound / 153 runtime-verified / 64 training-eligible / 145 Product Executor / 2 catalogued blocked`；获取路由为 `30/33 admitted / 3 blocked / 1599 occurrences`。剩余路由是树苔、砍野树产物和砍野树种子掉落，后两者共享同一个高层砍树获取缺口。
+- Teacher 前沿仍为 `2/19 executable / 17/19 dependency pending / 0 missing graph / 0 governance blocked`，所以正式全量训练仍禁入。直接下一步是闭合 `native_tree_moss_harvest` 的单一高层选项，并复用已验证的野树交互/收获内核，不创建第二套树木执行系统。
+
+## 2026-09-08 当前权威检查点：EVD-334
+
+- `foraging.excavate_artifact_spots` 已用 E 盘隔离存档完成隐藏静音高层运行验收。唯一 `(O)590` 候选从 `foraging.excavate_artifact_spots` 经 DailyPlan 降为 `clear_obstacle_tile -> executor.clear_obstacle`，没有新增第二套挖掘执行器。
+- 原生 Hoe 回执验证目标移除、完整输出 unit-state 集合、`+15` Foraging XP、`ArtifactSpotsDug`、地形与 Defense Book 邮件状态，并取得新鲜且变化后的快照哈希。`(O)SeedSpot` 与其他可清理物仍在上游排除；运行使用 `--skip-training`，夹具校准行不得冒充正式 Teacher 数据。
+- 权威生成结果为 `229 registered / 152 runtime-verified / 63 training-eligible`；获取路由为 `29/33 admitted / 4 blocked / 1599 occurrences`。剩余四类是春葱收获、树苔收获、砍野树产物和砍野树种子掉落。
+- Teacher 前沿仍为 `2/19 executable / 17/19 dependency pending / 0 missing graph / 0 governance blocked`。本步消除了多个终局共享的获取叶缺口，但尚未完成相应日历、解锁、资源、路线、保留量、概率重试和新存档期限证明，因此正式全量训练仍禁入。
+- 直接下一步：为 `native_spring_onion_harvest` 注册并闭合单一高层采集选项，复用现有 `executor.harvest_crop`，不得把机械原语直接作为 Teacher 输出。
+
+## 2026-09-08 Teacher / Student 收敛合同与当前禁入状态
+
+- issue #90 与 #91 内容完全重复；其中 Teacher bootstrap、DAgger 重标、native outcome 后期优化和运行时 Student 主决策的方向正确，已整理为唯一规范 `docs/TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。
+- 系统目标是可验收的工程收敛，不宣称神经策略的数学全局最优。有限 Teacher 必须同输入同输出并终止；Student 以独立 Teacher 分歧、learner-state 恢复、新存档 21/21、零硬约束违规和性能门冻结。
+- 当前并未收敛：Teacher 前沿为 2/19 executable、17/19 expansion pending，但 19/19 已具有可执行叶或类型化依赖图，不再有缺图 criterion。Master Angler 仅闭合当前日期的全 connector 路径和终端时间储备；未来日期、主动蟹笼容量、概率重试和真实跨日回执仍未完成。
+- 代码审计确认 `StructuredPolicyTrainer.BuildPairs` 仍以 `candidate.Selected` 选正例。正式全量训练继续禁用；旧 r24-r35 只保留为控制面、执行器、恢复和性能证据。后续必须先类型化 `teacher_preference`、`native_outcome`、`student_observation` 并实现 learner-state Teacher 重标。
+- 本块离线验证基线：Core `2467/2467`、KnowledgeCompiler `585/585` blocking 0、option matrix `228 registered / 62 training-eligible / 151 runtime-verified`，isolated full regression 和 Master Angler late-arrival/no-terminal-reserve 回归通过。没有启动游戏。
+
 ## 2026-09-05 当前权威检查点：r35 round01
 
 - `train.server.20260905.r34.plan05` 从 Summer 9 精确基线启动后，暴露了卧室窄通道中的真实执行缺陷：摸完宠物后，通用移动会为占路宠物反复规划不存在的替代路线，却不继续发送原生移动输入，最终六次命中 `movement_soft_obstacle_timeout`。该轮只有 1/2 个主动作验证，未进入跨日边界，事务保持 `staged_not_committed`；Summer 9 存档和五项 canonical 哈希均未改变，失败证据及 6 份执行器诊断已归档为 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r34-round05-failed-20260905-112856`，远端/本机 130 / 130 且哈希差异为 0。

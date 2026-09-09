@@ -1,0 +1,392 @@
+{
+  "schema_version": "goal_method_claim_conflict_ledger.v1",
+  "goal_id": "grandpa.maximum_21",
+  "authority_policy": "runtime content and exact-build decompile decide facts; wiki corroborates; guides propose strategies only",
+  "status": "criterion_contract_complete_route_rules_append_during_expansion",
+  "source_locks": [
+    {
+      "source_id": "native.utility",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Utility.cs",
+      "sha256": "2e1d3cfff6566cb6e83998dd5d241bef0895ce308165c727c92580e6edc39d89"
+    },
+    {
+      "source_id": "native.farmer",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Farmer.cs",
+      "sha256": "1075e453ac3766bef8660ee71ceb64f4443a820586d75678d79e6af0958a924f"
+    },
+    {
+      "source_id": "native.npc",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/NPC.cs",
+      "sha256": "e3714e8715604026ad10382c39cc5d5945598df99fbcff453343d8e18b52394f"
+    },
+    {
+      "source_id": "native.friendship",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Friendship.cs",
+      "sha256": "70acc34743db7c7fb5d4622e6939833a2e50c66526f39d6ce0ac6cdf3396effd"
+    },
+    {
+      "source_id": "native.shop_menu",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Menus/ShopMenu.cs",
+      "sha256": "14e4b0f2fed4fec017d3ce8c8a820d272cf32a611d3432bd1998919b9950be1a"
+    },
+    {
+      "source_id": "native.shipping_menu",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Menus/ShippingMenu.cs",
+      "sha256": "97209524586aba5ddc9683b6359cf4c30b5d2c9b533160a258fc78465e336ee6"
+    },
+    {
+      "source_id": "native.junimo_note_menu",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Menus/JunimoNoteMenu.cs",
+      "sha256": "fb09b738a1458cd516357aac85d9d4e0ef09b8b28d53e6ca05ea9c395f2ff653"
+    },
+    {
+      "source_id": "native.game1",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Game1.cs",
+      "sha256": "649e67138d678846bc0b2f7b7ebcdba6e9ab89239a617480a45d9175707a421b"
+    },
+    {
+      "source_id": "native.pet",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Characters/Pet.cs",
+      "sha256": "4122f0b30d6658163c8fcaffc2bf801c163b1a47c835088a7756c577db82ef3c"
+    },
+    {
+      "source_id": "native.event",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Event.cs",
+      "sha256": "0c25786903a1703bacc88b87c2cc1189b388196c51aebb1ddeb9c98bd09b53c8"
+    },
+    {
+      "source_id": "native.preconditions",
+      "root_kind": "decompile",
+      "relative_path": "StardewValley/StardewValley/Preconditions.cs",
+      "sha256": "5d6334db206c11376cea921865eaf30117a64b4d374e2ef6f0b17a648771df37"
+    },
+    {
+      "source_id": "runtime.goal_index",
+      "root_kind": "knowledge",
+      "relative_path": "derived/game-1.6.15-20260723T093543Z-linux-v24/goal-dependency-index.json",
+      "sha256": "ec035e79d979d2477a57e0755b2a7613f4f78c1eae59741fba5f17ce127022db"
+    },
+    {
+      "source_id": "runtime.bundles",
+      "root_kind": "knowledge",
+      "relative_path": "raw/game-1.6.15-20260723T093543Z/Data_Bundles-9195e750255f.json",
+      "sha256": "427d44badfda4156a4961336a461d365d029b1e9da5e439e745ad885934e910e"
+    },
+    {
+      "source_id": "runtime.farm_events",
+      "root_kind": "knowledge",
+      "relative_path": "raw/game-1.6.15-20260723T093543Z/Data_Events_Farm-6bce93d79365.json",
+      "sha256": "32275d26734f4b04c88cc3e2414ec64eb831d0ea2a0094fa1c7eebc21f993dc3"
+    },
+    {
+      "source_id": "runtime.rule_evidence",
+      "root_kind": "knowledge",
+      "relative_path": "derived/game-1.6.15-20260723T093543Z-linux-v24/runtime-rule-evidence.json",
+      "sha256": "f8b9d053b960c09ffe53fc4faaaba247a9eb5aa93fc108fd0010c255a5cd6ede"
+    },
+    {
+      "source_id": "runtime.friendship_multi_day_smoke",
+      "root_kind": "knowledge",
+      "relative_path": "snapshots/runtime-friendship-multi-day-smoke-20260906-031553-summary.json",
+      "sha256": "e413e11df559b9a6b2782b2233b55c469e47ab8a7408cbb884750fac9d50e7f7"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "grandpa.initial_evaluation_and_maximum",
+      "criterion_ids": [],
+      "subject": "the initial evaluation is the Year 3 opening farm event and the native maximum is 21 points",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index", "runtime.farm_events"],
+      "native_evidence": "Utility.getGrandpaScore/getGrandpaCandlesFromScore; Data/Events/Farm key 2146991/y 3 invokes grandpaCandles",
+      "runtime_evidence": "goal-dependency-index.json grandpa_goal targetScore=21 and 19 criteria",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "planner target is 21; the 12-point four-candle state does not terminate planning"
+    },
+    {
+      "claim_id": "grandpa.earnings_thresholds",
+      "criterion_ids": ["money_50000", "money_100000", "money_200000", "money_300000", "money_500000", "money_1000000"],
+      "subject": "total earnings thresholds award 1 point at 50k, 100k, 200k, 300k, and 500k, plus 2 points at 1m",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6561-6584",
+      "runtime_evidence": "goal-dependency-index.json money criteria",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "teacher preserves cumulative totalMoneyEarned milestones and targets the 1m terminal threshold"
+    },
+    {
+      "claim_id": "economy.money_setter_contract",
+      "criterion_ids": [],
+      "subject": "every positive change through the controlling farmer Money setter adds the same delta to shared totalMoneyEarned, while ordinary spending does not subtract from that cumulative total",
+      "native_source_ids": ["native.farmer"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Farmer.Money lines 1936-1959 records the prior balance, assigns the new balance, and only when value is greater adds value-minus-prior to totalMoneyEarned; Farmer.totalMoneyEarned lines 1227-1262 is backed by the team value",
+      "runtime_evidence": "goal-dependency-index uses player.total_money_earned rather than current player.money for every Grandpa earnings criterion",
+      "wiki_evidence": "https://stardewvalleywiki.com/Grandpa",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "teacher state and terminal checks use settled totalMoneyEarned; current cash is a separate feasibility constraint for purchases and cannot substitute for cumulative earnings"
+    },
+    {
+      "claim_id": "economy.shop_sale_and_buyback_contract",
+      "criterion_ids": [],
+      "subject": "a native shop sale credits the accepted stack at sellToStorePrice times the shop sell percentage through Money, while buying that sold item back explicitly reverses the credited amount in totalMoneyEarned",
+      "native_source_ids": ["native.shop_menu", "native.farmer"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "ShopMenu inventory sale branches at lines 1047-1048 and 1609-1612 call chargePlayer with a negative price; chargePlayer money currency subtracts its argument from Money. BuyBuybackItem lines 1167-1174 explicitly subtracts price from totalMoneyEarned and IndividualMoneyEarned when applicable",
+      "runtime_evidence": "the locked goal index establishes totalMoneyEarned as the scored state; current EVD-220 separately runtime-verifies one exact native shop sale but does not authorize a buyback loop",
+      "wiki_evidence": "https://stardewvalleywiki.com/Shops",
+      "guide_evidence": [],
+      "verdict": "verified_scope_difference",
+      "downstream_effect": "shop revenue is credited only after the native sale receipt; sold-item buyback is a negative cumulative-earnings transition and must never be used as an income exploit"
+    },
+    {
+      "claim_id": "economy.shipping_settlement_contract",
+      "criterion_ids": [],
+      "subject": "shipping-bin deposit only transfers inventory immediately; the next-day host settlement prices each shipped object and then credits the aggregate through Money",
+      "native_source_ids": ["native.game1", "native.farmer", "native.shipping_menu"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Game1 new-day lines 8940-8973 reads the shipping bin, computes Object.sellToStorePrice(-1L) times Stack, invokes special-order shipment callbacks, then applies player.Money += aggregate. ShippingMenu.parseItems separately records shipped collections and summary values after settlement",
+      "runtime_evidence": "the locked goal index establishes settled totalMoneyEarned as the score fact; current EVD-221 verifies immediate one-item bin receipt and deliberately separates delayed shipping collection settlement",
+      "wiki_evidence": "https://stardewvalleywiki.com/Shipping",
+      "guide_evidence": [],
+      "verdict": "verified_scope_difference",
+      "downstream_effect": "bin contents remain pending revenue until a verified native day transition; deposit receipt, money settlement, and shipped-collection bookkeeping are distinct observations"
+    },
+    {
+      "claim_id": "grandpa.complete_collection_achievement",
+      "criterion_ids": ["achievement_complete_collection"],
+      "subject": "achievement ID 5 awards one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6585-6588",
+      "runtime_evidence": "goal-dependency-index.json achievement_complete_collection",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "reverse expansion must provide an executable museum completion route"
+    },
+    {
+      "claim_id": "grandpa.skull_key",
+      "criterion_ids": ["skull_key"],
+      "subject": "holding the Skull Key awards one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6589-6592",
+      "runtime_evidence": "goal-dependency-index.json skull_key",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "reverse expansion must reach ordinary mine floor 120 and claim its chest"
+    },
+    {
+      "claim_id": "grandpa.community_center_route_required",
+      "criterion_ids": ["community_center_access_or_completion", "community_center_accessible_bonus"],
+      "subject": "all 21 points require retaining Community Center accessibility and completing its route",
+      "native_source_ids": ["native.utility", "native.game1"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6593-6601; Game1.isLocationAccessible returns true for CommunityCenter only after event 191393",
+      "runtime_evidence": "goal-dependency-index.json community_center criteria",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "Joja membership is infeasible for grandpa.maximum_21 and must be excluded upstream"
+    },
+    {
+      "claim_id": "grandpa.marriage_and_house",
+      "criterion_ids": ["married_or_roommate_house_2"],
+      "subject": "marriage or roommate status and farmhouse upgrade level at least 2 jointly award one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6602-6605",
+      "runtime_evidence": "goal-dependency-index.json married_or_roommate_house_2",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "social and farmhouse-upgrade methods are an AND commitment, not interchangeable points"
+    },
+    {
+      "claim_id": "grandpa.rusty_key",
+      "criterion_ids": ["rusty_key"],
+      "subject": "holding the Rusty Key awards one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6606-6609",
+      "runtime_evidence": "goal-dependency-index.json rusty_key",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "reverse expansion must satisfy the museum donation unlock path"
+    },
+    {
+      "claim_id": "grandpa.master_angler",
+      "criterion_ids": ["achievement_master_angler"],
+      "subject": "achievement ID 26 awards one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6610-6613",
+      "runtime_evidence": "goal-dependency-index.json achievement_master_angler",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "reverse expansion must cover every required fish and its availability window"
+    },
+    {
+      "claim_id": "grandpa.full_shipment",
+      "criterion_ids": ["achievement_full_shipment"],
+      "subject": "achievement ID 34 awards one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6614-6617",
+      "runtime_evidence": "goal-dependency-index.json achievement_full_shipment",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "reverse expansion must cover each required shipped item and preserve one shippable unit"
+    },
+    {
+      "claim_id": "grandpa.friendship_thresholds",
+      "criterion_ids": ["friendships_5", "friendships_10"],
+      "subject": "five and ten eligible relationships at 1975 or more friendship points each award one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6618-6626",
+      "runtime_evidence": "goal-dependency-index.json friendships_5/friendships_10",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "teacher must maintain ten eligible NPC relationships at the native threshold"
+    },
+    {
+      "claim_id": "friendship.grandpa_population_contract",
+      "criterion_ids": ["friendships_5", "friendships_10"],
+      "subject": "Grandpa counts only the live non-event IsVillager instances visited by Utility.ForEachVillager whose nullable relationship points are between 1975 and 999999 inclusive",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.ForEachVillager lines 454-467 excludes EventActor by default and filters character.IsVillager; getNumberOfFriendsWithinThisRange lines 1426-1438 calls tryGetFriendshipLevelForNPC and applies the inclusive range; getGrandpaScore lines 6618-6626 uses 1975..999999 and thresholds 5/10",
+      "runtime_evidence": "goal-dependency-index.json fixes the two Grandpa friendship criteria; the bridge now exposes the same native iteration and direct native count as npcs.grandpa_friendship_progress",
+      "wiki_evidence": "https://wiki.stardewvalley.net/Grandpa",
+      "guide_evidence": [],
+      "verdict": "verified_scope_difference",
+      "downstream_effect": "raw save friendshipData rows are not a valid score population; evaluator and teacher must consume the fail-closed native projection"
+    },
+    {
+      "claim_id": "friendship.daily_gain_decay_contract",
+      "criterion_ids": ["friendships_5", "friendships_10"],
+      "subject": "one eligible conversation per NPC and day applies a projected native friendship change, while the next-day reset requests ordered spouse or dating penalties plus the ordinary minus-two branch when its cap permits, routes each request through native changeFriendship modifiers and clamping, then resets weekly gift counters and may request a ten-point bonus",
+      "native_source_ids": ["native.npc", "native.farmer", "native.friendship"],
+      "runtime_source_ids": ["runtime.friendship_multi_day_smoke"],
+      "native_evidence": "NPC.grantConversationFriendship lines 2953-2968 marks TalkedToToday and requests 20 or 60 with the statue buff; Farmer.changeFriendship lines 5872-5915 applies Book_Friendship, Dwarvish, divorce, spouse and maximum-heart rules; Farmer.resetFriendshipsForNewDay/updateFriendshipGifts lines 4216-4274 applies the ordered decay/reset/weekly-bonus sequence",
+      "runtime_evidence": "runtime-friendship-multi-day-smoke-20260906-031553 matched eight consecutive native day transitions across 39 unique NPCs and 31 friendship rows per transition with zero mismatch; the controlled Linus row covered the weekly two-gift bonus, TalkedToToday/GiftsToday reset and ordinary not-talked decay; single interaction runtime independently rejects planned-versus-observed point deltas",
+      "wiki_evidence": "https://stardewvalleywiki.com/Friendship",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "the sole pure FriendshipDayTransitionSimulator may project the exact source rule from complete transparent inputs, including spouse truncation, but the teacher may not label a deadline schedule complete until actual future-date contact evidence and fresh-save ten-villager deadline feasibility are proven"
+    },
+    {
+      "claim_id": "friendship.gift_contract",
+      "criterion_ids": ["friendships_5", "friendships_10"],
+      "subject": "ordinary gifts derive target friendship change from native taste, quality, birthday and Farmer change modifiers, with daily and weekly counters and possible stochastic spouse jealousy outside the target-only delta",
+      "native_source_ids": ["native.npc", "native.farmer", "native.friendship"],
+      "runtime_source_ids": [],
+      "native_evidence": "NPC.receiveGift lines 4981-5063 applies quality 1/1.1/1.25/1.5, birthday multiplier 8 and taste bases 250/80/45/20/-20/-40 before Farmer.changeFriendship; NPC.checkAction lines 2393-2411 enforces daily receipt and contains the spouse-jealousy branch",
+      "runtime_evidence": "native social executor records item, counters and points before/after and now requires exact target friendship delta; stochastic spouse-jealousy candidates fail closed upstream",
+      "wiki_evidence": "https://stardewvalleywiki.com/Friendship",
+      "guide_evidence": [],
+      "verdict": "native_verified_runtime_pending",
+      "downstream_effect": "friendship training admits only complete positive target deltas with no unresolved spouse-jealousy side effect"
+    },
+    {
+      "claim_id": "grandpa.skill_level_translation",
+      "criterion_ids": ["player_level_15", "player_level_25"],
+      "subject": "Wiki total skill levels 30/50 correspond to native Farmer.Level thresholds 15/25 in vanilla",
+      "native_source_ids": ["native.utility", "native.farmer"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Farmer.Level sums six base skill fields and divides by two; Farmer.gainExperience rejects skill index 5, so vanilla Luck remains zero; Utility.getGrandpaScore checks 15/25",
+      "runtime_evidence": "goal-dependency-index.json player_level_15/player_level_25",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "teacher targets a five-trainable-skill base-level sum of 30 then 50; temporary buffs do not count"
+    },
+    {
+      "claim_id": "grandpa.pet_love",
+      "criterion_ids": ["pet_love"],
+      "subject": "receipt of petLoveMessage awards one point",
+      "native_source_ids": ["native.utility"],
+      "runtime_source_ids": ["runtime.goal_index"],
+      "native_evidence": "Utility.getGrandpaScore lines 6636-6639",
+      "runtime_evidence": "goal-dependency-index.json pet_love",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Grandpa&oldid=182923",
+      "guide_evidence": [],
+      "verdict": "verified",
+      "downstream_effect": "pet care remains a bounded maintenance obligation rather than a dominant day objective"
+    },
+    {
+      "claim_id": "pet.initial_adoption_contract",
+      "criterion_ids": [],
+      "subject": "the locked 1.6.15 initial cat or dog route requires host, no matching pet, cumulative earnings 1000, Farm entry from 06:00 through 09:30, sunny weather, and Wednesday or Friday; accepting response zero opens native naming and creates the pet",
+      "native_source_ids": ["native.preconditions", "native.event"],
+      "runtime_source_ids": ["runtime.farm_events", "runtime.rule_evidence"],
+      "native_evidence": "Preconditions EarnedMoney/Time/NotDayOfWeek/Weather/MissingPet/IsHost aliases m/t/d/w/h/H; Event.CatQuestion, answerDialogueAction pet branch, namePet and hostActionNamePet",
+      "runtime_evidence": "Data/Events/Farm keys 1590166 and 897405 contain m 1000, t 600 930, d Mon Tue Thu Sat Sun, w sunny, h cat or dog, H and execute catQuestion. The locked raw asset decodes to game-API script SHA-256 values 62bc4fb3c7e3759c533967acad1459a5ca1769305665d08490d2be7f89d9482f and 30427c975b09bc5504262a21ad6d384a99c81cfb5a4437bf7a11daeff1798508; runtime-rule-evidence separately locks the JSON-token encodings.",
+      "wiki_evidence": "https://stardewvalleywiki.com/Animals",
+      "guide_evidence": [],
+      "verdict": "verified_scope_difference",
+      "downstream_effect": "fresh-save planning must preserve a Farm-entry event window and bind pet response index zero; the Wiki Spring-only and Spring-20 fallback prose is not admitted because neither condition exists in the locked runtime event keys or precondition handlers"
+    },
+    {
+      "claim_id": "pet.friendship_and_bowl_contract",
+      "criterion_ids": [],
+      "subject": "native petting grants capped plus 12 once per pet and player day, a watered assigned bowl grants capped plus 6 at the next Pet.dayUpdate, no assigned bowl subtracts 10, and reaching 1000 issues petLoveMessage",
+      "native_source_ids": ["native.pet", "native.game1"],
+      "runtime_source_ids": ["runtime.goal_index", "runtime.rule_evidence"],
+      "native_evidence": "Pet.checkAction lines 702-728; Pet.dayUpdate lines 482-517; GrantLoveMailIfNecessary lines 522-548; Game1 new-day lines 9318-9333 run location and character updates before lines 9375-9387 fill outdoor bowls for current rain",
+      "runtime_evidence": "goal-dependency-index locks petLoveMessage as the score fact; current option evidence EVD-223 verifies native +12 and delayed +6 branches while runtime-rule-evidence fixes the exact build",
+      "wiki_evidence": "https://stardewvalleywiki.com/Animals",
+      "guide_evidence": [],
+      "verdict": "verified_scope_difference",
+      "downstream_effect": "the recurrence uses live bowl state and native update order; rain fills the bowl after that morning's Pet.dayUpdate for a later settlement and is not modeled as an immediate same-transition plus 6"
+    },
+    {
+      "claim_id": "community_center.bundle_scope_30_vs_31",
+      "criterion_ids": ["community_center_access_or_completion", "community_center_accessible_bonus"],
+      "subject": "the runtime asset has 30 standard Community Center bundles plus one post-completion Missing Bundle",
+      "native_source_ids": ["native.junimo_note_menu"],
+      "runtime_source_ids": ["runtime.goal_index", "runtime.bundles"],
+      "native_evidence": "JunimoNoteMenu selects area 6 only after abandonedJojaMartAccessible and before ccMovieTheater",
+      "runtime_evidence": "Data/Bundles has 31 records; the sole extra record is Abandoned Joja Mart/36 named The Missing",
+      "wiki_evidence": "https://stardewvalleywiki.com/mediawiki/index.php?title=Bundles&oldid=193528",
+      "guide_evidence": [],
+      "verdict": "verified_scope_difference",
+      "downstream_effect": "the 30 standard bundles are Community Center obligations; The Missing is optional post-completion content for the 21-point target"
+    },
+    {
+      "claim_id": "strategy.early_money_minmax_route",
+      "criterion_ids": ["money_50000", "money_100000", "money_200000", "money_300000", "money_500000", "money_1000000"],
+      "subject": "early fishing, mine progression, and processing capacity can accelerate earnings",
+      "native_source_ids": [],
+      "runtime_source_ids": [],
+      "native_evidence": "none; strategy claim only",
+      "runtime_evidence": "must be evaluated by counterfactual isolated rollouts",
+      "wiki_evidence": "https://stardewvalleywiki.com/Fish",
+      "guide_evidence": ["https://github.com/Zamiell/stardew-valley/blob/main/Min-Max_Guide.md"],
+      "verdict": "strategy_hypothesis_only",
+      "downstream_effect": "may seed teacher alternatives but cannot become a hard rule or positive label without rollout evidence"
+    }
+  ]
+}

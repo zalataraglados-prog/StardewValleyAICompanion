@@ -31,6 +31,24 @@ public static class QueueReplanFilter
         "customization_hair_hue", "customization_hair_saturation", "customization_hair_value"
     };
 
+    private static readonly string[] MasterAnglerContinuationNames =
+    {
+        "master_angler_target_qualified_item_id",
+        "master_angler_target_location",
+        "master_angler_source_kind",
+        "master_angler_source_key",
+        "master_angler_window_first_total_day",
+        "master_angler_window_last_total_day",
+        "master_angler_target_total_day",
+        "master_angler_effective_start_time",
+        "master_angler_last_cast_time_exclusive",
+        "master_angler_stage_one_deadline_total_day_exclusive",
+        "master_angler_window_index_path",
+        "master_angler_window_index_sha256",
+        "master_angler_validation_status",
+        "master_angler_runtime_terminal_validation_required"
+    };
+
     public static JsonObject[] FilterUnattempted(JsonObject[] queueItems, ISet<string> attemptedSemanticKeys)
     {
         return queueItems
@@ -152,6 +170,31 @@ public static class QueueReplanFilter
     public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
     {
         var optionId = ReadParameter(queueItem, "continuation.option_id");
+        var masterAnglerTarget = ReadParameter(
+            queueItem,
+            "continuation.master_angler_target_qualified_item_id");
+        if ((string.Equals(optionId, "fishing.catch_fish", StringComparison.Ordinal) ||
+             string.Equals(optionId, "fishing.collect_crab_pots", StringComparison.Ordinal)) &&
+            !string.IsNullOrWhiteSpace(masterAnglerTarget))
+        {
+            var result = new JsonObject
+            {
+                ["kind"] = "master_angler",
+                ["option_id"] = optionId
+            };
+            foreach (var name in MasterAnglerContinuationNames)
+            {
+                var value = ReadParameter(
+                    queueItem,
+                    "continuation." + name);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return null;
+                }
+                result[name] = value;
+            }
+            return result;
+        }
         if (string.Equals(optionId, "mail.process_letter", StringComparison.Ordinal))
         {
             var mailId = ReadParameter(queueItem, "continuation.mail_id");
@@ -791,6 +834,41 @@ public static class QueueReplanFilter
             CompletesObjectiveContinuation(queueItem, continuation, executionStatus);
     }
 
+    public static bool CompletesObjectiveContinuation(
+        JsonObject? queueItem,
+        JsonObject? continuation,
+        string executionStatus,
+        JsonObject? afterSnapshot,
+        bool afterSnapshotFresh)
+    {
+        if (!string.Equals(
+                ReadString(continuation, "kind"),
+                "master_angler",
+                StringComparison.Ordinal))
+        {
+            return CompletesObjectiveContinuation(
+                queueItem,
+                continuation,
+                executionStatus);
+        }
+
+        return afterSnapshotFresh &&
+            string.Equals(executionStatus, "applied", StringComparison.Ordinal) &&
+            (string.Equals(
+                 ReadString(queueItem, "option_id"),
+                 "executor.catch_fish",
+                 StringComparison.Ordinal) ||
+             string.Equals(
+                 ReadString(queueItem, "option_id"),
+                 "executor.collect_crab_pot",
+                 StringComparison.Ordinal)) &&
+            HasExactCaughtMasterAnglerTarget(
+                afterSnapshot,
+                ReadString(
+                    continuation,
+                    "master_angler_target_qualified_item_id"));
+    }
+
     public static bool CompletesObjectiveContinuation(JsonObject? queueItem, JsonObject? continuation, string executionStatus)
     {
         if (!string.Equals(executionStatus, "applied", StringComparison.Ordinal) || queueItem is null)
@@ -1105,6 +1183,24 @@ public static class QueueReplanFilter
         JsonObject? queueItem,
         JsonObject continuation)
     {
+        if (string.Equals(
+                ReadString(continuation, "kind"),
+                "master_angler",
+                StringComparison.Ordinal))
+        {
+            var refreshedMasterAngler = ReadObjectiveContinuation(queueItem);
+            return refreshedMasterAngler is not null &&
+                string.Equals(
+                    ReadString(refreshedMasterAngler, "kind"),
+                    "master_angler",
+                    StringComparison.Ordinal) &&
+                MasterAnglerContinuationsHaveSameStableIdentity(
+                    refreshedMasterAngler,
+                    continuation)
+                    ? refreshedMasterAngler
+                    : continuation;
+        }
+
         if (!string.Equals(
                 ReadString(continuation, "kind"),
                 "social",
@@ -1140,6 +1236,120 @@ public static class QueueReplanFilter
         }
 
         return refreshed;
+    }
+
+    private static bool MasterAnglerContinuationsHaveSameStableIdentity(
+        JsonObject first,
+        JsonObject second)
+    {
+        return string.Equals(
+                ReadString(first, "option_id"),
+                ReadString(second, "option_id"),
+                StringComparison.Ordinal) &&
+            MasterAnglerContinuationNames
+                .Where(name => !string.Equals(
+                    name,
+                    "master_angler_effective_start_time",
+                    StringComparison.Ordinal))
+                .All(name => string.Equals(
+                    ReadString(first, name),
+                    ReadString(second, name),
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasExactCaughtMasterAnglerTarget(
+        JsonObject? snapshot,
+        string targetQualifiedItemId)
+    {
+        if (string.IsNullOrWhiteSpace(targetQualifiedItemId) ||
+            snapshot?["state"] is not JsonObject state ||
+            state["world_progress"] is not JsonObject worldProgress ||
+            worldProgress["fish_collection_progress"] is not JsonObject field ||
+            field["value"] is not JsonObject progress ||
+            ReadIntNode(progress, "eligible_species_count") != 72 ||
+            progress["items"] is not JsonArray items ||
+            items.Count != 72 ||
+            progress["missing_item_ids"] is not JsonArray missingItemIds)
+        {
+            return false;
+        }
+
+        var seenItemIds = new HashSet<string>(StringComparer.Ordinal);
+        var seenQualifiedItemIds = new HashSet<string>(StringComparer.Ordinal);
+        var expectedMissingItemIds = new HashSet<string>(StringComparer.Ordinal);
+        var targetCaught = false;
+        var caughtCount = 0;
+        foreach (var node in items)
+        {
+            if (node is not JsonObject item ||
+                !TryReadBooleanNode(item, "caught", out var caught))
+            {
+                return false;
+            }
+            var itemId = ReadString(item, "item_id");
+            var qualifiedItemId = ReadString(item, "qualified_item_id");
+            if (string.IsNullOrWhiteSpace(itemId) ||
+                string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                !seenItemIds.Add(itemId) ||
+                !seenQualifiedItemIds.Add(qualifiedItemId))
+            {
+                return false;
+            }
+            if (caught)
+            {
+                caughtCount++;
+                if (string.Equals(
+                        qualifiedItemId,
+                        targetQualifiedItemId,
+                        StringComparison.Ordinal))
+                {
+                    targetCaught = true;
+                }
+            }
+            else
+            {
+                expectedMissingItemIds.Add(itemId);
+            }
+        }
+
+        var actualMissingItemIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var node in missingItemIds)
+        {
+            if (node is not JsonValue value ||
+                !value.TryGetValue<string>(out var itemId) ||
+                string.IsNullOrWhiteSpace(itemId) ||
+                !actualMissingItemIds.Add(itemId))
+            {
+                return false;
+            }
+        }
+
+        return targetCaught &&
+            caughtCount == ReadIntNode(
+                progress,
+                "caught_eligible_species_count") &&
+            expectedMissingItemIds.Count == ReadIntNode(
+                progress,
+                "missing_species_count") &&
+            expectedMissingItemIds.SetEquals(actualMissingItemIds);
+    }
+
+    private static int ReadIntNode(JsonObject source, string name)
+    {
+        return source[name] is JsonValue value &&
+            value.TryGetValue<int>(out var result)
+                ? result
+                : -1;
+    }
+
+    private static bool TryReadBooleanNode(
+        JsonObject source,
+        string name,
+        out bool result)
+    {
+        result = false;
+        return source[name] is JsonValue value &&
+            value.TryGetValue<bool>(out result);
     }
 
     private static bool OptionalContinuationIdentityMatches(
@@ -1332,6 +1542,25 @@ public static class QueueReplanFilter
         if (!string.Equals(optionId, ReadString(continuation, "option_id"), StringComparison.Ordinal))
         {
             return false;
+        }
+
+        if (string.Equals(
+                ReadString(continuation, "kind"),
+                "master_angler",
+                StringComparison.Ordinal))
+        {
+            var kind = ReadString(candidate, "kind");
+            var expectedOption = ReadString(continuation, "option_id");
+            var allowedKind = string.Equals(
+                    expectedOption,
+                    "fishing.collect_crab_pots",
+                    StringComparison.Ordinal)
+                ? kind == "collect_crab_pot"
+                : kind is "route_connector_tile" or
+                    "clear_obstacle_tile" or
+                    "catch_fish";
+            return allowedKind &&
+                MasterAnglerStableIdentityMatches(candidate, continuation);
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "mail", StringComparison.Ordinal))
@@ -1750,6 +1979,21 @@ public static class QueueReplanFilter
             actual = directValue?.ToString() ?? string.Empty;
         }
         return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool MasterAnglerStableIdentityMatches(
+        JsonObject candidate,
+        JsonObject continuation)
+    {
+        return MasterAnglerContinuationNames
+            .Where(name => !string.Equals(
+                name,
+                "master_angler_effective_start_time",
+                StringComparison.Ordinal))
+            .All(name => CandidateParameterMatchesContinuation(
+                candidate,
+                continuation,
+                name));
     }
 
     private static string ReadCandidateParameter(JsonObject candidate, string name)
