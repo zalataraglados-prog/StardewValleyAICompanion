@@ -109,12 +109,38 @@ public static class AcquisitionRouteOptionLoweringBuilder
         {
             var groups = set.Groups.Select(group =>
             {
-                var runtimeAlternatives = group.Alternatives.Count(alternative =>
-                    alternative.AcquisitionRoutes.Any(route =>
-                        routeRowsByKind[route.Kind].RuntimeAdmissionReady));
-                var teacherAlternatives = group.Alternatives.Count(alternative =>
-                    alternative.AcquisitionRoutes.Any(route =>
-                        routeRowsByKind[route.Kind].TeacherAdmissionReady));
+                var alternatives = group.Alternatives.Select(alternative =>
+                {
+                    var routes = alternative.AcquisitionRoutes.Select(route =>
+                    {
+                        var lowering = routeRowsByKind[route.Kind];
+                        return new AcquisitionRequirementRouteLowering(
+                            route.Kind,
+                            route.SourceId,
+                            route.SourceAsset,
+                            route.SourcePath,
+                            lowering.SupervisionMode,
+                            lowering.UncertaintyMode,
+                            lowering.EndpointOptions.Select(option => option.OptionId).ToArray(),
+                            lowering.SupportingOptions.Select(option => option.OptionId).ToArray(),
+                            lowering.RuntimeAdmissionReady,
+                            lowering.TeacherAdmissionReady);
+                    }).ToArray();
+                    return new AcquisitionRequirementAlternativeLowering(
+                        alternative.ItemId,
+                        alternative.QualifiedItemId,
+                        alternative.DisplayName,
+                        alternative.MatchKind,
+                        alternative.Amount,
+                        alternative.MinimumQuality,
+                        routes.Any(route => route.RuntimeAdmissionReady),
+                        routes.Any(route => route.TeacherAdmissionReady),
+                        routes);
+                }).ToArray();
+                var runtimeAlternatives = alternatives.Count(alternative =>
+                    alternative.RuntimeAdmissionReady);
+                var teacherAlternatives = alternatives.Count(alternative =>
+                    alternative.TeacherAdmissionReady);
                 var blockedKinds = group.Alternatives
                     .SelectMany(alternative => alternative.AcquisitionRoutes)
                     .Select(route => route.Kind)
@@ -129,7 +155,8 @@ public static class AcquisitionRouteOptionLoweringBuilder
                     teacherAlternatives,
                     runtimeAlternatives >= group.RequiredAlternativeCount,
                     teacherAlternatives >= group.RequiredAlternativeCount,
-                    blockedKinds);
+                    blockedKinds,
+                    alternatives);
             }).ToArray();
             return new AcquisitionRequirementSetLowering(
                 set.RequirementSetId,

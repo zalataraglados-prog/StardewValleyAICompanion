@@ -173,6 +173,27 @@ $actualAcquisitionGaps = @($acquisitionLowering.route_kinds |
 if (@(Compare-Object $expectedAcquisitionGaps $actualAcquisitionGaps).Count -ne 0) {
     throw 'Acquisition route lowering gap identity drifted.'
 }
+$loweredAlternatives = @($acquisitionLowering.requirement_sets |
+    ForEach-Object { @($_.groups) } |
+    ForEach-Object { @($_.alternatives) })
+$loweredRoutes = @($loweredAlternatives | ForEach-Object { @($_.routes) })
+$unusableAlternatives = @($loweredAlternatives | Where-Object {
+    -not [bool]$_.teacher_admission_ready -or
+    @($_.routes | Where-Object { [bool]$_.teacher_admission_ready }).Count -eq 0
+})
+$unboundRoutes = @($loweredRoutes | Where-Object {
+    [string]::IsNullOrWhiteSpace([string]$_.route_kind) -or
+    [string]::IsNullOrWhiteSpace([string]$_.source_id) -or
+    [string]::IsNullOrWhiteSpace([string]$_.source_asset) -or
+    [string]::IsNullOrWhiteSpace([string]$_.source_path) -or
+    @($_.endpoint_option_ids).Count -eq 0
+})
+if ($loweredAlternatives.Count -ne 450 -or
+    $loweredRoutes.Count -ne [int]$acquisitionLowering.route_occurrence_count -or
+    $unusableAlternatives.Count -ne 0 -or
+    $unboundRoutes.Count -ne 0) {
+    throw 'Per-requirement acquisition route lowering is incomplete.'
+}
 dotnet run --project $bootstrap --no-build -- build-goal-method-graph `
     --expansion $frontierExpansion `
     --dependencies $frontierDependencies `
@@ -192,6 +213,32 @@ $frontier = Get-Content -LiteralPath `
 if ([int]$frontier.governance_blocked_criterion_count -ne 0 -or
     @($frontier.isolated_teacher_authorized_option_ids).Count -ne 4) {
     throw 'Isolated-training authorization did not close the expected governance-only frontier blockers.'
+}
+$collectionMethods = @($frontier.methods | Where-Object {
+    @($_.requirement_set_readiness).Count -gt 0
+})
+$expectedCollectionDirections = @(
+    'complete_community_center',
+    'complete_full_shipment',
+    'complete_master_angler',
+    'complete_museum_collection'
+)
+$actualCollectionDirections = @($collectionMethods | ForEach-Object direction_id | Sort-Object)
+$invalidCollectionReadiness = @($collectionMethods | Where-Object {
+    @($_.requirement_set_readiness).Count -ne 1 -or
+    -not [bool]$_.requirement_set_readiness[0].acquisition_admission_ready -or
+    [int]$_.requirement_set_readiness[0].required_group_count -ne
+        [int]$_.requirement_set_readiness[0].teacher_admitted_group_count
+})
+$alternativeGraphNodes = @($frontier.nodes | Where-Object kind -eq 'authoritative_requirement_alternative')
+$routeGraphNodes = @($frontier.nodes | Where-Object kind -eq 'authoritative_acquisition_route')
+if (@(Compare-Object $expectedCollectionDirections $actualCollectionDirections).Count -ne 0 -or
+    $invalidCollectionReadiness.Count -ne 0 -or
+    $alternativeGraphNodes.Count -ne $loweredAlternatives.Count -or
+    $routeGraphNodes.Count -ne $loweredRoutes.Count -or
+    @($frontier.edges | Where-Object kind -eq 'lowers_acquisition_route').Count -ne
+        $loweredRoutes.Count) {
+    throw 'Goal-method graph did not preserve the per-requirement acquisition bindings.'
 }
 $breadth = $frontier.breadth_coverage
 $breadthClassTotal = [int]$breadth.executable_route_criterion_count +

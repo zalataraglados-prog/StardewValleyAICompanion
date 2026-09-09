@@ -5,28 +5,33 @@
   "repository_sources": [
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
-      "bytes": 122398,
-      "sha256": "53b13e223c6c5b31ffa53de37343a63cd023340479ee739e084e37ecff76fd74"
+      "normalization": "utf8_lf",
+      "bytes": 120830,
+      "sha256": "c2eecf2f01a6c31cd86a96990878aac189fed99725da8772ebd0c2678bb81922"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
-      "bytes": 221327,
-      "sha256": "8f47f7c2f26e81626ad6de93a2c21ab63567170b0ea37b3c82b367455cb879b9"
+      "normalization": "utf8_lf",
+      "bytes": 219326,
+      "sha256": "6ea717096118f4eaad4e73ecc9190eda01fde6936c5cd54d5327a72a2c2783de"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
-      "bytes": 44975,
-      "sha256": "6eb3a46c31e42ff5bb2b73a5290146ac687b7adeb816ccb71a1d285fde2dec51"
+      "normalization": "utf8_lf",
+      "bytes": 44388,
+      "sha256": "0de61ecaf6a10ba1f32cc1eefaa8a3a64acf42be7455b13e37e10c6460e9fd72"
     },
     {
       "relative_path": "knowledge-artifacts.lock.json",
-      "bytes": 2422,
-      "sha256": "03b55a4cefb3665b176f1d1997f41cd749b35cc3b07c3ac9aec0e0845a7480ba"
+      "normalization": "utf8_lf",
+      "bytes": 2361,
+      "sha256": "c288d1141f163cea808608936032ee4ba8a1d842bc64e648acbc9477a8c3487b"
     },
     {
       "relative_path": "catalogs/vanilla-1.6.15/native-action-denominator-freeze.json",
-      "bytes": 9323,
-      "sha256": "a7adb1843f0f0b442fd6bc497d03beacd2b7ec967e29748456d3d2ee8ff8e960"
+      "normalization": "utf8_lf",
+      "bytes": 9318,
+      "sha256": "7a6f11cac559f8af9fdfec14d34bb6ded467f0365aeced19ac22e06d267baf57"
     }
   ],
   "knowledge_sources": [
