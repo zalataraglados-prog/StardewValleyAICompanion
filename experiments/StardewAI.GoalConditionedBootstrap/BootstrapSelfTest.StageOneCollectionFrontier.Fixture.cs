@@ -1,3 +1,6 @@
+using System.Text.Json;
+using StardewAI.Contracts.Training;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
@@ -51,7 +54,11 @@ internal static partial class BootstrapSelfTest
     private static void WriteStageOneCollectionSnapshot(
         string path,
         string stateHash,
-        StageOneFishFixture[] fish)
+        StageOneFishFixture[] fish,
+        long gameTick = 1,
+        string playerLocation = "Farm",
+        int playerTileX = 1,
+        int playerTileY = 5)
     {
         var fishRows = fish.Select((value, index) => new
         {
@@ -62,20 +69,50 @@ internal static partial class BootstrapSelfTest
         Write(path, new
         {
             schema_version = "snapshot.v1",
+            bridge_version = "self-test",
             game_version = "1.6.15",
+            smapi_version = "4.0.0",
+            installed_mods = Array.Empty<object>(),
+            save_id = NativeField("fixture-save", "self-test"),
+            player_id = NativeField("fixture-player", "self-test"),
+            game_tick = gameTick,
+            in_game_time = NativeField(800, "self-test"),
+            real_timestamp = "2026-09-10T00:00:00Z",
             state_hash = stateHash,
+            completeness = "full",
+            unavailable_fields = Array.Empty<string>(),
             state = new
             {
+                identity = new
+                {
+                    save_id = NativeField("fixture-save", "self-test"),
+                    player_id = NativeField("fixture-player", "self-test")
+                },
                 time = new
                 {
+                    year = Field(1),
+                    season = Field("spring"),
+                    day = Field(6),
                     total_days = Field(5),
-                    time = Field(800)
+                    time = Field(800),
+                    weather = Field("sun")
                 },
                 player = new
                 {
-                    location_id = NativeField("Farm", "vanilla_1_6"),
-                    tile_x = NativeField(1, "vanilla_1_6"),
-                    tile_y = NativeField(5, "vanilla_1_6"),
+                    location_id = NativeField(playerLocation, "vanilla_1_6"),
+                    tile_x = NativeField(playerTileX, "vanilla_1_6"),
+                    tile_y = NativeField(playerTileY, "vanilla_1_6"),
+                    money = Field(500),
+                    energy = Field(270d),
+                    max_energy = Field(270d),
+                    health = Field(100),
+                    max_health = Field(100),
+                    level = Field(0),
+                    total_money_earned = Field(0),
+                    farmhouse_upgrade_level = Field(0),
+                    current_tool = Field(string.Empty),
+                    current_item_qualified_id = Field(string.Empty),
+                    inventory = Field(Array.Empty<object>()),
                     skills_detail = Field(new
                     {
                         skills = new[]
@@ -164,6 +201,19 @@ internal static partial class BootstrapSelfTest
                 {
                     objects = Field(Array.Empty<object>())
                 },
+                farm = new
+                {
+                    crops = Field(Array.Empty<object>()),
+                    shipping_bins = Field(Array.Empty<object>())
+                },
+                menus = new
+                {
+                    active_menu = Field("none")
+                },
+                transport = new
+                {
+                    event_stream_websocket = Field("available")
+                },
                 world_progress = new
                 {
                     full_shipment_progress = new
@@ -248,6 +298,50 @@ internal static partial class BootstrapSelfTest
         read_at_tick = 1,
         confidence = 1
     };
+
+    private static PlanExecutionEpisodeEnvelope StageOneRouteReceipt(
+        CurrentStageOneCollectionTeacherPreferenceLabel preference,
+        string runId,
+        string afterStateHash,
+        long afterGameTick,
+        string beforeSnapshotPath,
+        string afterSnapshotPath)
+    {
+        var item = preference.CompiledQueue!.Items.Single();
+        return new PlanExecutionEpisodeEnvelope
+        {
+            EpisodeId = "fixture-route-receipt",
+            RunId = runId,
+            SourceStateHash = preference.SourceStateHash,
+            AfterStateHash = afterStateHash,
+            StateHashChanged = true,
+            BeforeGameTick = 1,
+            AfterGameTick = afterGameTick,
+            AfterSnapshotFresh = true,
+            BeforeSnapshotPath = beforeSnapshotPath,
+            AfterSnapshotPath = afterSnapshotPath,
+            QueueId = preference.CompiledQueue.QueueId,
+            OptionId = item.OptionId,
+            Status = "applied",
+            Success = true,
+            Reward = 1,
+            TrainingRole = "strategy_value",
+            EffectiveQueueItem = JsonSerializer.SerializeToElement(
+                item,
+                JsonDefaults.Options),
+            PrimitiveKind = item.NormalizedCommand.Steps.Single().StepType,
+            PrimitiveVerificationStatus = "verified",
+            ChangedFacts = JsonSerializer.SerializeToElement(new[]
+            {
+                new
+                {
+                    path = "player.location_id",
+                    before = "Farm",
+                    after = "Town"
+                }
+            }, JsonDefaults.Options)
+        };
+    }
 
     private sealed record StageOneFishFixture(
         string ItemId,

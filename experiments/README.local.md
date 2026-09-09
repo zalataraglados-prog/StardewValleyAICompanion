@@ -238,6 +238,17 @@ candidates remain counterfactual alternatives rather than negative examples. Thi
 for the selected action. Future scheduling and the remaining long-horizon 19-criterion proofs also still
 block formal training.
 
+`build-current-stage-one-collection-teacher-receipt` closes that first receipt slice for one pending
+primitive. It requires the persisted `--preference` artifact that was actually executed, all five source
+artifacts, a `plan_execution_episode.v1` receipt and a fresh after snapshot. It recomputes and audits the
+Teacher semantics but preserves the original queue ID, verifies every credited requirement transition,
+and emits an existing `policy_decision_trajectory.v2` row with structured Teacher provenance. Another
+queue or primitive, a missing or changed effective queue item, a stale tick/hash, a non-verified native
+outcome, a successful receipt without exact requirement progress, or a multi-primitive queue fails
+closed. This artifact still reports
+`formal_training_authorized=false`; the next step is isolated real Product rollout integration, not
+unrestricted training.
+
 ## Hardware
 
 The recorder, semanticizer, retriever, deterministic teacher, regression suite,

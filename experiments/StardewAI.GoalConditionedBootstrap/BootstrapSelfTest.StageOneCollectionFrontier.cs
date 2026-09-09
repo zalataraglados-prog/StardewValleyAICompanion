@@ -1,4 +1,7 @@
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -19,6 +22,9 @@ internal static partial class BootstrapSelfTest
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var intentsPath = Path.Combine(root, "master-angler-intents.json");
         var rankingPath = Path.Combine(root, "ranking.json");
+        var preferencePath = Path.Combine(root, "teacher-preference.json");
+        var afterSnapshotPath = Path.Combine(root, "after-snapshot.json");
+        var receiptPath = Path.Combine(root, "execution-receipt.json");
         const string stateHash = "stage-one-collection-frontier-state";
 
         var fish = Enumerable.Range(0, 72)
@@ -333,6 +339,241 @@ internal static partial class BootstrapSelfTest
                 preference.CompiledQueue?.Status == "pending" &&
                 preference.CompiledQueue.Items.Length == 1,
             "Independent current collection Teacher preference did not select and compile the authoritative deadline candidate.");
+        Write(preferencePath, preference);
+
+        const string teacherRunId = "fixture-teacher-receipt-run";
+        const string afterStateHash =
+            "stage-one-collection-frontier-after-route-state";
+        WriteStageOneCollectionSnapshot(
+            afterSnapshotPath,
+            afterStateHash,
+            fish,
+            gameTick: 2,
+            playerLocation: "Town",
+            playerTileX: 1,
+            playerTileY: 5);
+        Write(
+            receiptPath,
+            StageOneRouteReceipt(
+                preference,
+                teacherRunId,
+                afterStateHash,
+                2,
+                snapshotPath,
+                afterSnapshotPath));
+        var receiptAdmission =
+            CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath,
+                preferencePath,
+                receiptPath,
+                afterSnapshotPath,
+                "fixture-teacher-trajectory",
+                teacherRunId,
+                PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(receiptAdmission.Status == "ready" &&
+                receiptAdmission.TeacherTrainingRowEligible &&
+                !receiptAdmission.FormalTrainingAuthorized &&
+                receiptAdmission.VerifiedRequirementTransitions.Length == 1 &&
+                receiptAdmission.VerifiedRequirementTransitions[0].Verified &&
+                receiptAdmission.TrainingRow?.Candidates.Length == 2 &&
+                receiptAdmission.TrainingRow.Candidates.All(candidate =>
+                    candidate.Available &&
+                    candidate.Score == 0 &&
+                    candidate.SourceCandidate.ModelScore is null) &&
+                receiptAdmission.TrainingRow.Audit.TeacherSupervision is { } teacherSupervision &&
+                teacherSupervision.SelectedCandidateId ==
+                    "master-angler-route" &&
+                teacherSupervision.RequirementTransitions.Length == 1,
+            "A fresh exact route receipt did not produce a standalone Teacher-supervised policy row.");
+        var teacherDatasetPath = Path.Combine(root, "teacher-receipt.jsonl");
+        WriteJsonl(
+            teacherDatasetPath,
+            new[] { receiptAdmission.TrainingRow! });
+        var dataset = new PolicyTrajectoryDatasetBuilder().Build(
+            teacherDatasetPath,
+            Path.Combine(root, "teacher-receipt-dataset"),
+            expectedKnowledgeDictionary:
+                PolicyTrajectoryVersionPins.KnowledgeDictionary);
+        Require(dataset.Manifest.Counts.AcceptedRows == 1 &&
+                dataset.Manifest.Counts.RejectedRows == 0,
+            "The canonical policy dataset rejected an exact Teacher-supervised receipt row.");
+        var tamperedTeacherRow = JsonSerializer.Deserialize<
+            PolicyDecisionTrajectoryEnvelope>(
+            JsonSerializer.Serialize(
+                receiptAdmission.TrainingRow,
+                JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        tamperedTeacherRow.TrajectoryId = "fixture-tampered-teacher-evidence";
+        tamperedTeacherRow.Audit.TeacherSupervision!.AfterSnapshotSha256 =
+            "not-a-sha256";
+        var tamperedDatasetPath = Path.Combine(
+            root,
+            "tampered-teacher-receipt.jsonl");
+        WriteJsonl(
+            tamperedDatasetPath,
+            new[] { tamperedTeacherRow, receiptAdmission.TrainingRow! });
+        var tamperedDataset = new PolicyTrajectoryDatasetBuilder().Build(
+            tamperedDatasetPath,
+            Path.Combine(root, "tampered-teacher-receipt-dataset"),
+            expectedKnowledgeDictionary:
+                PolicyTrajectoryVersionPins.KnowledgeDictionary);
+        Require(tamperedDataset.Manifest.Counts.AcceptedRows == 1 &&
+                tamperedDataset.Manifest.Counts.RejectedRows == 1 &&
+                tamperedDataset.Manifest.Rejections.Any(value =>
+                    value.Reason == "teacher_supervision_invalid" &&
+                    value.Count == 1),
+            "The canonical policy dataset accepted tampered Teacher provenance.");
+
+        var uppercaseHashPreference = JsonSerializer.Deserialize<
+            CurrentStageOneCollectionTeacherPreferenceLabel>(
+            JsonSerializer.Serialize(preference, JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        var hashCharacters = uppercaseHashPreference
+            .RequirementInventorySha256.ToCharArray();
+        var letterIndex = Array.FindIndex(hashCharacters, char.IsLetter);
+        Require(letterIndex >= 0,
+            "The fixture SHA-256 unexpectedly contains no hexadecimal letters.");
+        hashCharacters[letterIndex] = char.ToUpperInvariant(
+            hashCharacters[letterIndex]);
+        uppercaseHashPreference.RequirementInventorySha256 =
+            new string(hashCharacters);
+        var uppercaseHashPreferencePath = Path.Combine(
+            root,
+            "uppercase-hash-preference.json");
+        Write(uppercaseHashPreferencePath, uppercaseHashPreference);
+        var uppercaseHashAdmission =
+            CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath,
+                uppercaseHashPreferencePath,
+                receiptPath,
+                afterSnapshotPath,
+                "fixture-uppercase-hash",
+                teacherRunId,
+                PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(uppercaseHashAdmission.Status ==
+                    "blocked_teacher_preference_not_ready" &&
+                uppercaseHashAdmission.BlockingReasons.Contains(
+                    "teacher_preference_source_hash_mismatch",
+                    StringComparer.Ordinal),
+            "A non-canonical Teacher source hash was admitted.");
+
+        WriteStageOneCollectionSnapshot(
+            afterSnapshotPath,
+            "stage-one-collection-no-route-transition",
+            fish,
+            gameTick: 2,
+            playerLocation: "Farm",
+            playerTileX: 3,
+            playerTileY: 5);
+        Write(
+            receiptPath,
+            StageOneRouteReceipt(
+                preference,
+                teacherRunId,
+                "stage-one-collection-no-route-transition",
+                2,
+                snapshotPath,
+                afterSnapshotPath));
+        var noTransition =
+            CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath,
+                preferencePath,
+                receiptPath,
+                afterSnapshotPath,
+                "fixture-no-transition",
+                teacherRunId,
+                PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(noTransition.Status ==
+                    "blocked_exact_requirement_transition_missing" &&
+                !noTransition.TeacherTrainingRowEligible &&
+                noTransition.TrainingRow is null,
+            "A successful receipt without the credited route transition emitted a training row.");
+
+        WriteStageOneCollectionSnapshot(
+            afterSnapshotPath,
+            afterStateHash,
+            fish,
+            gameTick: 2,
+            playerLocation: "Town",
+            playerTileX: 1,
+            playerTileY: 5);
+        var mismatchedReceipt = StageOneRouteReceipt(
+            preference,
+            teacherRunId,
+            afterStateHash,
+            2,
+            snapshotPath,
+            afterSnapshotPath);
+        mismatchedReceipt.QueueId = "wrong-queue";
+        Write(receiptPath, mismatchedReceipt);
+        var wrongQueue =
+            CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath,
+                preferencePath,
+                receiptPath,
+                afterSnapshotPath,
+                "fixture-wrong-queue",
+                teacherRunId,
+                PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(wrongQueue.Status == "blocked_execution_receipt_not_exact" &&
+                wrongQueue.BlockingReasons.Contains(
+                    "execution_receipt_queue_id_mismatch",
+                    StringComparer.Ordinal),
+            "A receipt from another compiled queue was admitted.");
+
+        var mismatchedPrimitiveReceipt = StageOneRouteReceipt(
+            preference,
+            teacherRunId,
+            afterStateHash,
+            2,
+            snapshotPath,
+            afterSnapshotPath);
+        mismatchedPrimitiveReceipt.PrimitiveKind = "move_to_tile";
+        mismatchedPrimitiveReceipt.EffectiveQueueItem = null;
+        Write(receiptPath, mismatchedPrimitiveReceipt);
+        var wrongPrimitive =
+            CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath,
+                preferencePath,
+                receiptPath,
+                afterSnapshotPath,
+                "fixture-wrong-primitive",
+                teacherRunId,
+                PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(wrongPrimitive.Status ==
+                    "blocked_execution_receipt_not_exact" &&
+                wrongPrimitive.BlockingReasons.Contains(
+                    "execution_receipt_primitive_kind_mismatch",
+                    StringComparer.Ordinal) &&
+                wrongPrimitive.BlockingReasons.Contains(
+                    "execution_receipt_effective_queue_item_mismatch",
+                    StringComparer.Ordinal),
+            "A receipt for another primitive or without its effective queue item was admitted.");
 
         sharedCandidate.Rank = 1;
         sharedCandidate.Score = 1_000_000;

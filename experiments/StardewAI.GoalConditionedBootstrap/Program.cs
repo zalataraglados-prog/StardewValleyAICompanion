@@ -63,6 +63,9 @@ try
         case "build-current-stage-one-collection-teacher-preference":
             BuildCurrentStageOneCollectionTeacherPreference(options);
             break;
+        case "build-current-stage-one-collection-teacher-receipt":
+            BuildCurrentStageOneCollectionTeacherReceipt(options);
+            break;
         case "build-master-angler-opportunity-catalog":
             BuildMasterAnglerOpportunityCatalog(options);
             break;
@@ -98,7 +101,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
     }
 }
 catch (Exception ex)
@@ -354,6 +357,24 @@ static void BuildCurrentStageOneCollectionTeacherPreference(Arguments options)
         options.Required("ranking"),
         options.Required("snapshot"),
         options.Required("master-angler-target-date-intents"));
+    Write(options.Required("output"), report);
+}
+
+static void BuildCurrentStageOneCollectionTeacherReceipt(Arguments options)
+{
+    var report = CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("ranking"),
+        options.Required("before-snapshot"),
+        options.Required("master-angler-target-date-intents"),
+        options.Required("preference"),
+        options.Required("execution-receipt"),
+        options.Required("after-snapshot"),
+        options.Required("trajectory-id"),
+        options.Required("run-id"),
+        options.Required("knowledge-dictionary-version"),
+        options.Required("executor-version"));
     Write(options.Required("output"), report);
 }
 

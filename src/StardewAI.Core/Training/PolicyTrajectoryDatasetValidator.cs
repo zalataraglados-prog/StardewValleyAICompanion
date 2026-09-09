@@ -92,6 +92,9 @@ internal sealed class PolicyTrajectoryDatasetValidator
             !NullableFinite(row.Returns.Year) ||
             !NullableFinite(row.Returns.Grandpa21))
             return "long_return_invalid";
+        if (row.Audit?.TeacherSupervision is { } teacher &&
+            !ValidTeacherSupervision(row, teacher))
+            return "teacher_supervision_invalid";
 
         return null;
     }
@@ -143,6 +146,60 @@ internal sealed class PolicyTrajectoryDatasetValidator
     private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
 
     private static bool NullableFinite(double? value) => !value.HasValue || Finite(value.Value);
+
+    private static bool ValidTeacherSupervision(
+        PolicyDecisionTrajectoryEnvelope row,
+        PolicyTrajectoryTeacherSupervision teacher)
+    {
+        var hashes = new[]
+        {
+            teacher.PreferenceArtifactSha256,
+            teacher.RequirementInventorySha256,
+            teacher.AcquisitionLoweringSha256,
+            teacher.SourceRankingSha256,
+            teacher.BeforeSnapshotSha256,
+            teacher.ExecutionReceiptSha256,
+            teacher.AfterSnapshotSha256
+        };
+        return string.Equals(
+                teacher.SchemaVersion,
+                "policy_teacher_supervision.v1",
+                StringComparison.Ordinal) &&
+            string.Equals(
+                teacher.ProvenanceClass,
+                "independent_deterministic_teacher_preference",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(teacher.SelectionPolicyId) &&
+            hashes.All(IsSha256) &&
+            string.Equals(
+                teacher.SelectedCandidateId,
+                row.Selection.CandidateId,
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(teacher.SelectedQueueItemId) &&
+            string.Equals(
+                teacher.UnavailableCandidateSemantics,
+                "defer_without_negative_label",
+                StringComparison.Ordinal) &&
+            teacher.RequirementTransitions is { Length: > 0 } &&
+            teacher.RequirementTransitions.All(value =>
+                value is not null &&
+                value.Verified &&
+                !string.IsNullOrWhiteSpace(value.RequirementSetId) &&
+                !string.IsNullOrWhiteSpace(value.RequirementId) &&
+                value.AlternativeIndex >= 0 &&
+                !string.IsNullOrWhiteSpace(value.BindingKind) &&
+                !string.IsNullOrWhiteSpace(value.TransitionKind) &&
+                !string.IsNullOrWhiteSpace(value.BeforeValue) &&
+                !string.IsNullOrWhiteSpace(value.AfterValue) &&
+                !string.Equals(
+                    value.BeforeValue,
+                    value.AfterValue,
+                    StringComparison.Ordinal));
+    }
+
+    private static bool IsSha256(string value) =>
+        value is { Length: 64 } && value.All(character =>
+            character is >= '0' and <= '9' or >= 'a' and <= 'f');
 
     private static bool ValidStateFeatures(FeatureVector features)
     {
