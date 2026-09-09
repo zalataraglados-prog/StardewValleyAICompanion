@@ -888,6 +888,34 @@ Slice 7 remains assigned to the RTX 5070 node.
   formal-training gate do not change. Next, Master Angler's existing date-window intent is joined into the
   same current-requirement frontier and the four collection sets receive one selection contract.
 
+### 2026-09-09: Four-set current collection candidate contract admitted
+
+- `CurrentMasterAnglerTeacherFrontierBuilder` now joins the exact native 72-fish progress denominator,
+  the authoritative requirement inventory and acquisition lowering, the same-state current candidate
+  ranking, and the existing target-date intents. The snapshot, inventory, lowering, ranking, intent,
+  window-index, opportunity-catalog and route-timing-calibration hashes are all retained and checked.
+  Stale state or copied intent artifacts fail closed.
+- Core owns one `MasterAnglerCurrentCandidateMatcher`. Route connectors, terminal catches and ready
+  crab-pot collections must carry the exact target intent, conservative remaining-route plus terminal
+  reserve marker, and exact possible-result identity. A crab-pot candidate for a different fish cannot
+  acquire a label merely by attaching valid intent metadata.
+- `CurrentStageOneCollectionTeacherFrontierBuilder` unifies Full Shipment, Master Angler, Museum
+  Collection and the standard Community Center into one current candidate-membership contract. One
+  physical candidate appears once and receives every exact requirement credit it can advance; Community
+  Center OR bundles retain their remaining-slot limit. Unavailable requirements remain deferred and do
+  not become negative examples.
+- This contract deliberately does not select a preferred candidate. It exposes no learner rank or score,
+  emits no negative labels, and records `teacher_preference_label_eligible=false`. Candidate membership
+  is necessary input to the next Teacher step, not evidence that formal training is ready.
+- The typed four-set fixture, focused current-collection self-test, full isolated bootstrap regression,
+  Core game-free tests and Backend tests pass. The historical r36 snapshot is correctly rejected for
+  Master Angler because it predates the required per-fish transparent denominator; no current label is
+  fabricated from that aggregate-only evidence.
+- The 2/19 executable criterion frontier and formal-training gate remain unchanged. The next slice is a
+  deterministic, learner-independent preference query over this unified current candidate set. Native
+  receipts, future-date scheduling and the remaining long-horizon criterion proofs still follow before
+  formal full training.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

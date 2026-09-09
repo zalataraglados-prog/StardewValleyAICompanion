@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-09 四收集集合统一实时候选合同
+
+- 新增 `CurrentMasterAnglerTeacherFrontierBuilder`，把原生 72 种鱼的逐项完成态、权威需求库存、逐项获取降层、同状态候选排名和既有目标日期意图做严格连接。快照、库存、降层、排名、意图、窗口索引、机会目录和路线计时校准均保留 SHA-256 并交叉校验；旧状态或复制错配的意图失败关闭。
+- Master Angler 当前候选统一经过 Core 的 `MasterAnglerCurrentCandidateMatcher`。路线连接、终端钓鱼和已就绪蟹笼必须携带精确目标意图、完整剩余路线加终端预留标记以及精确可能产物。错误鱼种的蟹笼候选不能仅靠附加合法意图参数获得绑定。
+- 新增唯一 `CurrentStageOneCollectionTeacherFrontierBuilder`，统一 Full Shipment、Master Angler、Museum Collection 和标准 Community Center。一个实际候选只出现一次，但可同时获得它确实推进的所有需求 credit；社区中心 OR Bundle 保留剩余槽位上限。当前不可用需求继续 deferred，不生成负样本。
+- 该产物只证明“候选属于当前可教集合”，还没有选出 Teacher 偏好。统一选择合同不读取 learner 排名或分数，不生成负标签，并明确记录 `teacher_preference_label_eligible=false`。因此总前沿仍为 `2/19 executable / 17/19 pending`，正式训练仍未解禁。
+- 四集合结构化 fixture、聚焦 self-test、完整隔离 bootstrap 回归、Core game-free 测试和 Backend 测试均通过。历史 r36 快照缺少逐鱼透明分母，Master Angler 分支被正确拒绝，没有伪造标签。
+- 固定下一步：在这个统一当前候选集合上实现与 learner 无关的确定性 Teacher 偏好查询；随后仍需原生回执、未来日期调度和其余长期目标证明，才能开放正式全量训练。
+
 ## 2026-09-09 博物馆与标准社区中心实时 Teacher 前沿
 
 - 新增唯一 `CurrentCollectionTeacherFrontierBuilder`，复用 Full Shipment 已验证的当前候选门控、精确 `qualified_item_id` 绑定和权威获取端点证据。输入仍绑定需求库存、获取降层、同状态排名和实时快照四份 SHA-256；排名与快照 `state_hash` 不一致时失败关闭。
