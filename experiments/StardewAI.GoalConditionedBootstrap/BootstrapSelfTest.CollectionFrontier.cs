@@ -11,6 +11,7 @@ internal static partial class BootstrapSelfTest
         var fullPath = Path.GetFullPath(outputRoot);
         VerifyCurrentFullShipmentTeacherFrontier(fullPath);
         VerifyCurrentCollectionTeacherFrontier(fullPath);
+        VerifyCurrentStageOneCollectionTeacherFrontier(fullPath);
     }
 
     private static void VerifyCurrentCollectionTeacherFrontier(

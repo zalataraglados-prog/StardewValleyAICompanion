@@ -40,10 +40,10 @@ namespace StardewAI.Core.Training
             if (hasWindowIntent)
             {
                 if (denominator != 72 ||
-                    !MasterAnglerWindowIntentValidator.TryValidate(
+                    !MasterAnglerCurrentCandidateMatcher.TryMatch(
                         snapshot,
-                        candidate.Parameters,
-                        out var intent,
+                        candidate,
+                        out var candidateMatch,
                         out rejectionReason))
                 {
                     rejectionReason = denominator != 72
@@ -51,31 +51,6 @@ namespace StardewAI.Core.Training
                         : rejectionReason;
                     return false;
                 }
-                if (candidate.Kind is not (
-                        "route_connector_tile" or
-                        "clear_obstacle_tile" or
-                        "catch_fish" or
-                        "collect_crab_pot"))
-                {
-                    rejectionReason =
-                        "master_angler_window_intent_candidate_kind_invalid";
-                    return false;
-                }
-                if (candidate.Kind == "catch_fish")
-                {
-                    var runtimePossible = CandidatePossibleFish(
-                        candidate,
-                        out var runtimeProjectionComplete);
-                    if (!runtimeProjectionComplete ||
-                        !runtimePossible.Contains(
-                            intent.TargetQualifiedItemId))
-                    {
-                        rejectionReason =
-                            "master_angler_runtime_attempt_does_not_include_intent_target";
-                        return false;
-                    }
-                }
-
                 evidence = new[]
                 {
                     Parameter(
@@ -88,7 +63,7 @@ namespace StardewAI.Core.Training
                         "master_angler_target_qualified_item_ids_json",
                         JsonSerializer.Serialize(new[]
                         {
-                            intent.TargetQualifiedItemId
+                            candidateMatch.Intent.TargetQualifiedItemId
                         })),
                     Parameter(
                         "master_angler_progress_evidence_status",
@@ -100,8 +75,9 @@ namespace StardewAI.Core.Training
                 return true;
             }
 
-            var possible = CandidatePossibleFish(candidate, out var projectionComplete);
-            if (!projectionComplete || possible.Count == 0)
+            if (!MasterAnglerCurrentCandidateMatcher.TryReadCompletePossibleFish(
+                    candidate,
+                    out var possible))
             {
                 rejectionReason = "master_angler_candidate_outcome_projection_incomplete";
                 return false;
@@ -275,56 +251,5 @@ namespace StardewAI.Core.Training
                 missingQualifiedItemIds.Count == missingCount;
         }
 
-        private static HashSet<string> CandidatePossibleFish(
-            PolicyEventCandidatePrediction candidate,
-            out bool projectionComplete)
-        {
-            var result = new HashSet<string>(StringComparer.Ordinal);
-            if (!string.IsNullOrWhiteSpace(candidate.QualifiedItemId))
-            {
-                result.Add(candidate.QualifiedItemId);
-                projectionComplete = true;
-                return result;
-            }
-            if (!string.IsNullOrWhiteSpace(candidate.ItemId))
-                result.Add(candidate.ItemId.StartsWith("(O)", StringComparison.Ordinal) ? candidate.ItemId : "(O)" + candidate.ItemId);
-            if (TryReadUniqueParameter(candidate, "expected_qualified_item_id", out var expected) &&
-                !string.IsNullOrWhiteSpace(expected))
-            {
-                result.Add(expected);
-            }
-            var hasDistribution = TryReadUniqueParameter(candidate, "outcome_distribution_complete", out var completeText) &&
-                bool.TryParse(completeText, out var complete) && complete;
-            if (TryReadUniqueParameter(candidate, "possible_qualified_item_ids_json", out var json))
-            {
-                try
-                {
-                    using var document = JsonDocument.Parse(json);
-                    if (document.RootElement.ValueKind != JsonValueKind.Array)
-                    {
-                        projectionComplete = false;
-                        return result;
-                    }
-                    foreach (var value in document.RootElement.EnumerateArray())
-                    {
-                        var itemId = value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-                        if (string.IsNullOrWhiteSpace(itemId))
-                        {
-                            projectionComplete = false;
-                            return result;
-                        }
-                        result.Add(itemId);
-                    }
-                }
-                catch (JsonException)
-                {
-                    projectionComplete = false;
-                    return result;
-                }
-            }
-            projectionComplete = result.Count > 0 &&
-                (!string.IsNullOrWhiteSpace(candidate.QualifiedItemId) || hasDistribution);
-            return result;
-        }
     }
 }

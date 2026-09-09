@@ -64,6 +64,7 @@ internal static partial class BootstrapSelfTest
         VerifyMasterAnglerFullRouteIntent(outputRoot);
         VerifyCurrentFullShipmentTeacherFrontier(outputRoot);
         VerifyCurrentCollectionTeacherFrontier(outputRoot);
+        VerifyCurrentStageOneCollectionTeacherFrontier(outputRoot);
 
         var guidedPlan = new TeacherPlanBuilder(24).Build(ranking, knowledge, HarvestGuide(knowledge));
         Require(guidedPlan.Audit.UsesExpertDemonstrationGuidance &&
@@ -95,6 +96,7 @@ internal static partial class BootstrapSelfTest
             expert_guidance_reached_teacher_plan = guidedPlan.Audit.UsesExpertDemonstrationGuidance,
             master_angler_full_route_timing_verified = true,
             current_full_shipment_teacher_frontier_verified = true,
+            current_stage_one_collection_teacher_frontier_verified = true,
             all_goal_methods_from_unified_catalog = true,
             teacher_plan_path = planPath
         });

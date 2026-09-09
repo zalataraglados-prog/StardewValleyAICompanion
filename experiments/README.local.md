@@ -221,12 +221,16 @@ Museum completion and Rusty Key additionally share the typed
 `museum_item_acquisition_and_reservation` family. Shared dependencies must be improved
 once and reused rather than reimplemented per Grandpa direction.
 The current requirement report is
-`local-data/output/authoritative-requirement-inventory-v1.json`. The next admission
-slice continues expanding each known source through calendar, unlock, facility, resource,
-candidate, compiler, and fresh native receipt dependencies. Master Angler's current-date
-multi-connector timing proof is complete; future season, weather, access, trap-capacity and
-receipt scheduling are not. Formal training must remain disabled until the complete 19-criterion
-routes pass regression.
+`local-data/output/authoritative-requirement-inventory-v1.json`. Current candidate membership
+for Full Shipment, Master Angler, Museum Collection, and the standard Community Center can be
+built with `build-current-stage-one-collection-teacher-frontier`. The command hash-binds the
+authoritative inventory and acquisition lowering to one transparent snapshot, its same-state
+candidate ranking, and Master Angler's date-window intents. A physical candidate is emitted once
+with every exact requirement credit it can advance; unavailable requirements are deferred rather
+than converted to negatives. This report is not a Teacher preference label: it does not use learner
+ranks or scores and records `teacher_preference_label_eligible=false`. The next admission slice
+selects a deterministic learner-independent preference from this set. Future scheduling, native
+receipts, and the remaining long-horizon 19-criterion proofs still block formal training.
 
 ## Hardware
 
