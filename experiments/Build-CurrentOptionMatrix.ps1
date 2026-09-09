@@ -25,9 +25,28 @@ function Assert-LockedFile {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Locked source is missing: $path"
     }
-    $item = Get-Item -LiteralPath $path
-    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
-    if ($item.Length -ne [long]$Descriptor.bytes -or $hash -ne [string]$Descriptor.sha256) {
+    $normalization = [string]$Descriptor.normalization
+    if ([string]::IsNullOrWhiteSpace($normalization)) {
+        $bytes = (Get-Item -LiteralPath $path).Length
+        $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+    }
+    elseif ($normalization -eq 'utf8_lf') {
+        $text = [System.IO.File]::ReadAllText($path)
+        $text = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+        $content = [System.Text.UTF8Encoding]::new($false).GetBytes($text)
+        $bytes = $content.Length
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $hash = ([System.BitConverter]::ToString($sha.ComputeHash($content))).Replace('-', '').ToLowerInvariant()
+        }
+        finally {
+            $sha.Dispose()
+        }
+    }
+    else {
+        throw "Unsupported locked source normalization: $normalization"
+    }
+    if ($bytes -ne [long]$Descriptor.bytes -or $hash -ne [string]$Descriptor.sha256) {
         throw "Locked source drifted: $path"
     }
 }

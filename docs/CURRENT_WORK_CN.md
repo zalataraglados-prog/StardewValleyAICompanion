@@ -11,6 +11,24 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-09 Teacher 逐需求获取绑定
+
+- 获取降层不再只报告 `33/33` 路线种类总数。现有唯一
+  `AcquisitionRouteOptionLoweringBuilder` 为 4 个 Stage 1 收集分母、351 个需求组、450 个
+  具体备选物品保留全部 1599 条权威来源，并逐条绑定 supervision/uncertainty、端点高层选项、
+  支持选项及 Teacher/runtime 准入状态。
+- Goal-Method 超图直接消费同一报告，形成
+  `existing_high_level_option -> authoritative_acquisition_route ->
+  authoritative_requirement_alternative -> authoritative_requirement -> requirement_set -> root method`
+  的可追溯链。四个收集方向均显示自己的分母和准入计数，不能再用全局 33 类路线替代逐物品证明。
+- `complete_full_shipment` 中声称树苔路线缺失的旧阻塞已删除；树苔、野树、春葱和文物点都由当前
+  获取报告按具体物品绑定。剩余阻塞准确限定为实时日历/解锁/资源/路线时间/概率重试与一件预留，
+  以及 154 项跨日结算和第三年前完成证明。
+- 本切片没有把 `2/19` 改写为更高数字。它闭合的是 Teacher 从“缺少哪件物品”定位到现有高层
+  获取动作所需的静态连接；跨日/跨季调度和原生新存档证明仍未完成，正式训练继续禁入。
+- `current-option-input-lock.v1.json` 的仓库文本源改为显式 `utf8_lf` 规范化哈希，修复新检出工作树
+  因 CRLF 与历史混合换行产生的假漂移。外部知识和反编译输入仍保持原始字节锁。
+
 ## 2026-09-08 当前权威检查点：EVD-335
 
 - `foraging.harvest_spring_onions` 已闭合读、候选、编译、原生运行和输出五门。它只接受当前已加载地图中原版基类 `Crop` 的 `forageCrop=true / whichForageCrop=1`，并复用唯一 `harvest_crop_tile -> executor.harvest_crop` 生产链；普通作物、姜和自定义作物不会进入该候选。

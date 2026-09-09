@@ -201,12 +201,19 @@ public static partial class GoalMethodFrontierBuilder
                 policyDependencyOptions.Length;
             var deterministicDependencyComplete = deterministicDependencyOptions.All(optionId =>
                 options[optionId].RuntimeStatus is "RuntimeVerified" or "LongDurationVerified");
+            var requirementSetReadiness = BuildRequirementSetReadiness(
+                direction.DirectionId,
+                requirementInventory,
+                acquisitionLowering);
+            var requirementAcquisitionComplete = requirementSetReadiness.All(value =>
+                value.AcquisitionAdmissionReady);
             var status = !direction.DirectBindingEnabled ||
                          eligibleOptions.Length +
                              isolatedTeacherAuthorizedOptions.Length == 0 ||
                          !dependencyPolicyComplete || !deterministicDependencyComplete
                 ? "blocked_by_option_governance"
-                : unexpandedRequirements.Length > 0 || !dependencyComplete
+                : unexpandedRequirements.Length > 0 || !dependencyComplete ||
+                  !requirementAcquisitionComplete
                     ? "pending_dependency_expansion"
                     : "executable_frontier";
 
@@ -227,6 +234,7 @@ public static partial class GoalMethodFrontierBuilder
                 policyDependencyOptions,
                 eligibleDependencyOptions,
                 deterministicDependencyOptions,
+                requirementSetReadiness,
                 unexpandedRequirements,
                 overlay.ClaimIds,
                 blockers,
@@ -395,54 +403,6 @@ public static partial class GoalMethodFrontierBuilder
         return report;
     }
 
-    private static void AddRequirementInventoryGraph(
-        AuthoritativeRequirementInventoryReport inventory,
-        AcquisitionRouteOptionLoweringReport acquisitionLowering,
-        IReadOnlyList<GrandpaDirectionCatalogEntry> catalogEntries,
-        ICollection<GoalMethodHypergraphNode> nodes,
-        ICollection<GoalMethodHypergraphEdge> edges)
-    {
-        var directionBySet = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["full_shipment"] = "complete_full_shipment",
-            ["master_angler"] = "complete_master_angler",
-            ["museum_collection"] = "complete_museum_collection",
-            ["community_center_standard"] = "complete_community_center"
-        };
-        var loweringSets = acquisitionLowering.RequirementSets
-            .ToDictionary(set => set.RequirementSetId, StringComparer.Ordinal);
-        foreach (var set in inventory.RequirementSets)
-        {
-            Require(directionBySet.TryGetValue(set.RequirementSetId, out var directionId),
-                "Requirement inventory contains an unknown set: " + set.RequirementSetId);
-            var methodId = catalogEntries.Single(entry => entry.DirectionId == directionId).BindingRuleId;
-            var loweringSet = loweringSets[set.RequirementSetId];
-            var setNodeId = "requirement_set:" + set.RequirementSetId;
-            nodes.Add(new(setNodeId, "authoritative_requirement_set", new Dictionary<string, object?>
-            {
-                ["criterion_id"] = set.CriterionId,
-                ["required_group_count"] = set.RequiredGroupCount,
-                ["route_covered_group_count"] = set.RouteCoveredGroupCount,
-                ["acquisition_routes_complete"] = set.AcquisitionRoutesComplete,
-                ["runtime_admitted_group_count"] = loweringSet.RuntimeAdmittedGroupCount,
-                ["teacher_admitted_group_count"] = loweringSet.TeacherAdmittedGroupCount,
-                ["transparent_state_path"] = set.TransparentStatePath
-            }));
-            edges.Add(new(setNodeId, methodId, "defines_method_denominator"));
-            foreach (var group in set.Groups)
-            {
-                nodes.Add(new(group.RequirementId, "authoritative_requirement", new Dictionary<string, object?>
-                {
-                    ["selection_rule"] = group.SelectionRule,
-                    ["required_alternative_count"] = group.RequiredAlternativeCount,
-                    ["route_covered"] = group.RouteCovered,
-                    ["transparent_completion_path"] = group.TransparentCompletionPath
-                }));
-                edges.Add(new(group.RequirementId, setNodeId, "belongs_to_requirement_set"));
-            }
-        }
-    }
-
     private static AcquisitionRouteOptionLoweringReport LoadAcquisitionLowering(
         string path,
         string catalogPath,
@@ -493,6 +453,43 @@ public static partial class GoalMethodFrontierBuilder
                         .ToHashSet(StringComparer.Ordinal)
                         .SetEquals(set.Groups.Select(group => group.RequirementId)),
                 "Acquisition route lowering set rows drifted: " + set.RequirementSetId);
+            var reportGroups = reportSet.Groups.ToDictionary(
+                group => group.RequirementId,
+                StringComparer.Ordinal);
+            foreach (var group in set.Groups)
+            {
+                var reportGroup = reportGroups[group.RequirementId];
+                Require(reportGroup.RequiredAlternativeCount == group.RequiredAlternativeCount &&
+                        reportGroup.Alternatives.Length == group.Alternatives.Length,
+                    "Acquisition route lowering alternatives drifted: " + group.RequirementId);
+                for (var index = 0; index < group.Alternatives.Length; index++)
+                {
+                    var expected = group.Alternatives[index];
+                    var actual = reportGroup.Alternatives[index];
+                    Require(actual.ItemId == expected.ItemId &&
+                            actual.QualifiedItemId == expected.QualifiedItemId &&
+                            actual.MatchKind == expected.MatchKind &&
+                            actual.Amount == expected.Amount &&
+                            actual.MinimumQuality == expected.MinimumQuality &&
+                            actual.Routes.Length == expected.AcquisitionRoutes.Length,
+                        "Acquisition route lowering alternative identity drifted: " +
+                        group.RequirementId + ":" + index);
+                    for (var routeIndex = 0;
+                         routeIndex < expected.AcquisitionRoutes.Length;
+                         routeIndex++)
+                    {
+                        var expectedRoute = expected.AcquisitionRoutes[routeIndex];
+                        var actualRoute = actual.Routes[routeIndex];
+                        Require(actualRoute.RouteKind == expectedRoute.Kind &&
+                                actualRoute.SourceId == expectedRoute.SourceId &&
+                                actualRoute.SourceAsset == expectedRoute.SourceAsset &&
+                                actualRoute.SourcePath == expectedRoute.SourcePath &&
+                                actualRoute.EndpointOptionIds.Length > 0,
+                            "Acquisition route lowering source identity drifted: " +
+                            group.RequirementId + ":" + index + ":" + routeIndex);
+                    }
+                }
+            }
         }
         return report;
     }
@@ -974,10 +971,19 @@ public sealed record GoalMethodFrontierMethod(
     [property: JsonPropertyName("dependency_option_ids")] string[] DependencyOptionIds,
     [property: JsonPropertyName("eligible_dependency_option_ids")] string[] EligibleDependencyOptionIds,
     [property: JsonPropertyName("deterministic_dependency_option_ids")] string[] DeterministicDependencyOptionIds,
+    [property: JsonPropertyName("requirement_set_readiness")] GoalMethodRequirementSetReadiness[] RequirementSetReadiness,
     [property: JsonPropertyName("unexpanded_requirements")] string[] UnexpandedRequirements,
     [property: JsonPropertyName("claim_ids")] string[] ClaimIds,
     [property: JsonPropertyName("option_blockers")] GoalMethodOptionBlocker[] OptionBlockers,
     [property: JsonPropertyName("status")] string Status);
+
+public sealed record GoalMethodRequirementSetReadiness(
+    [property: JsonPropertyName("requirement_set_id")] string RequirementSetId,
+    [property: JsonPropertyName("required_group_count")] int RequiredGroupCount,
+    [property: JsonPropertyName("route_covered_group_count")] int RouteCoveredGroupCount,
+    [property: JsonPropertyName("runtime_admitted_group_count")] int RuntimeAdmittedGroupCount,
+    [property: JsonPropertyName("teacher_admitted_group_count")] int TeacherAdmittedGroupCount,
+    [property: JsonPropertyName("acquisition_admission_ready")] bool AcquisitionAdmissionReady);
 
 public sealed record GoalMethodOptionBlocker(
     [property: JsonPropertyName("option_id")] string OptionId,

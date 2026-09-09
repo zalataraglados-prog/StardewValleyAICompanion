@@ -142,4 +142,28 @@ public sealed record AcquisitionRequirementGroupLowering(
     [property: JsonPropertyName("teacher_admitted_alternative_count")] int TeacherAdmittedAlternativeCount,
     [property: JsonPropertyName("runtime_admission_ready")] bool RuntimeAdmissionReady,
     [property: JsonPropertyName("teacher_admission_ready")] bool TeacherAdmissionReady,
-    [property: JsonPropertyName("blocked_route_kinds")] string[] BlockedRouteKinds);
+    [property: JsonPropertyName("blocked_route_kinds")] string[] BlockedRouteKinds,
+    [property: JsonPropertyName("alternatives")] AcquisitionRequirementAlternativeLowering[] Alternatives);
+
+public sealed record AcquisitionRequirementAlternativeLowering(
+    [property: JsonPropertyName("item_id")] string ItemId,
+    [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("display_name")] string DisplayName,
+    [property: JsonPropertyName("match_kind")] string MatchKind,
+    [property: JsonPropertyName("amount")] int Amount,
+    [property: JsonPropertyName("minimum_quality")] int MinimumQuality,
+    [property: JsonPropertyName("runtime_admission_ready")] bool RuntimeAdmissionReady,
+    [property: JsonPropertyName("teacher_admission_ready")] bool TeacherAdmissionReady,
+    [property: JsonPropertyName("routes")] AcquisitionRequirementRouteLowering[] Routes);
+
+public sealed record AcquisitionRequirementRouteLowering(
+    [property: JsonPropertyName("route_kind")] string RouteKind,
+    [property: JsonPropertyName("source_id")] string SourceId,
+    [property: JsonPropertyName("source_asset")] string SourceAsset,
+    [property: JsonPropertyName("source_path")] string SourcePath,
+    [property: JsonPropertyName("supervision_mode")] string SupervisionMode,
+    [property: JsonPropertyName("uncertainty_mode")] string UncertaintyMode,
+    [property: JsonPropertyName("endpoint_option_ids")] string[] EndpointOptionIds,
+    [property: JsonPropertyName("supporting_option_ids")] string[] SupportingOptionIds,
+    [property: JsonPropertyName("runtime_admission_ready")] bool RuntimeAdmissionReady,
+    [property: JsonPropertyName("teacher_admission_ready")] bool TeacherAdmissionReady);

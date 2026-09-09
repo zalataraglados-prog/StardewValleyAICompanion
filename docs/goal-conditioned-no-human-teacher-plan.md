@@ -822,6 +822,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   a fresh full-profile global crab-pot network/probability snapshot, proactive trap-capacity lifecycle
   proof, and fresh native terminal/overnight receipts.
 
+### 2026-09-09: Per-requirement acquisition bindings entered the Teacher graph
+
+- The acquisition report now retains all 450 exact alternatives and all 1,599 authoritative route
+  occurrences beneath the four Stage 1 collection denominators. Each occurrence preserves item and
+  source identity, supervision and uncertainty mode, endpoint high-level options, supporting options,
+  and independent runtime/Teacher admission state.
+- The same report is consumed by the sole Goal-Method frontier builder. Existing high-level options
+  now connect through typed acquisition-route and alternative nodes to each exact requirement and its
+  owning root method. This is the missing static bridge required for a future Teacher to choose a route
+  for a specific unmet item; no second planner or executor was introduced.
+- All four collection directions expose per-set readiness. Full Shipment is 154/154, Master Angler is
+  72/72, Museum Collection is 95/95, and the standard Community Center inventory is 30/30 for terminal
+  acquisition lowering. This means every authoritative acquisition route has an admitted implementation;
+  it does not prove that every route is currently feasible or deadline-safe.
+- The stale Full Shipment blocker claiming that tree moss was missing has been removed. Remaining work
+  is dynamic: live calendar/unlock/resource/route-time/probability/retry and cross-goal reservation
+  binding, followed by native day-settlement and fresh-save completion proof.
+- Frontier accounting intentionally remains 2/19 executable and 17/19 dependency-pending. Promoting a
+  criterion now requires its long-horizon proof; static acquisition completeness cannot silently change
+  the criterion status.
+- Repository input locks now hash explicitly normalized UTF-8/LF text for tracked source files. This
+  removes false drift caused by Git checkout line-ending conversion without weakening raw-byte locks for
+  external knowledge and decompile artifacts.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
