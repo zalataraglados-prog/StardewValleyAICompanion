@@ -73,9 +73,9 @@ internal static partial class BootstrapSelfTest
                 },
                 player = new
                 {
-                    location_id = Field("Farm"),
-                    tile_x = Field(1),
-                    tile_y = Field(5),
+                    location_id = NativeField("Farm", "vanilla_1_6"),
+                    tile_x = NativeField(1, "vanilla_1_6"),
+                    tile_y = NativeField(5, "vanilla_1_6"),
                     skills_detail = Field(new
                     {
                         skills = new[]
@@ -97,6 +97,34 @@ internal static partial class BootstrapSelfTest
                 },
                 locations = new
                 {
+                    collision_grid = NativeField(new
+                    {
+                        location_id = "Farm",
+                        width = 5,
+                        height = 10,
+                        notable_tiles = Array.Empty<object>()
+                    }, "vanilla_1_6_route"),
+                    route_action_branch_coverage = NativeField(new
+                    {
+                        rows = Array.Empty<object>()
+                    }, "vanilla_1_6_route"),
+                    route_connectors = NativeField(new
+                    {
+                        location_id = "Farm",
+                        connectors = new[]
+                        {
+                            new
+                            {
+                                kind = "building_door",
+                                tile_x = 2,
+                                tile_y = 4,
+                                target_location = "Town",
+                                target_x = 1,
+                                target_y = 5,
+                                resolved = true
+                            }
+                        }
+                    }, "vanilla_1_6_route"),
                     route_graph = Field(new
                     {
                         edges = new object[]
@@ -210,6 +238,16 @@ internal static partial class BootstrapSelfTest
             }
         });
     }
+
+    private static object NativeField(object value, string adapter) => new
+    {
+        value,
+        status = "available",
+        source = new { kind = "game_object", path = "self-test" },
+        adapter,
+        read_at_tick = 1,
+        confidence = 1
+    };
 
     private sealed record StageOneFishFixture(
         string ItemId,

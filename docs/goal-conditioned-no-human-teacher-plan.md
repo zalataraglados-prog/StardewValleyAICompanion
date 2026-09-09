@@ -916,6 +916,29 @@ Slice 7 remains assigned to the RTX 5070 node.
   receipts, future-date scheduling and the remaining long-horizon criterion proofs still follow before
   formal full training.
 
+### 2026-09-10: Independent current collection Teacher preference admitted
+
+- `CurrentStageOneCollectionTeacherPreferenceBuilder` rebuilds the four-set current frontier from the
+  hash-bound requirement inventory, acquisition lowering, same-state candidate ranking, transparent
+  snapshot and Master Angler target-date intents. It rejects state, goal, denominator, candidate-credit,
+  selection-group or source-hash drift before evaluating a preference.
+- The fixed lexicographic Teacher policy uses only authoritative current-day deadline evidence, deadline
+  slack and cutoff time, terminal requirement transitions, exact cross-set and cross-requirement credits,
+  candidate scarcity, deterministic execution time and deterministic energy. Learner rank, policy score,
+  model score and expected reward are never read as preference criteria and are cleared before compilation.
+- Candidate IDs provide stable report ordering only. If the top candidates have the same authoritative
+  vector, the query fails closed with `blocked_authoritatively_tied_top_candidates`; it does not convert an
+  arbitrary identifier order into supervision. Requirements absent from the current candidate set remain
+  deferred, and non-selected eligible candidates are counterfactual alternatives rather than binary negatives.
+- The selected choice must pass the existing `DailyPlanCompiler -> ActionQueueCompiler` chain against the
+  same transparent snapshot. A blocked plan or queue prevents label eligibility. The typed regression proves
+  selection is invariant under reversed learner scores, proves exact ties are refused, and proves the selected
+  action reaches one pending queue item through the existing compiler path.
+- This is a current-state preference label only. It keeps `formal_training_authorized=false` and does not
+  change the 2/19 executable criterion frontier. The next slice binds a selected preference to a fresh native
+  before/after receipt and emits a training row only after the exact credited requirement transition is
+  verified. Future-date scheduling and the remaining long-horizon criterion proofs still follow.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

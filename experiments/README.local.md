@@ -227,10 +227,16 @@ built with `build-current-stage-one-collection-teacher-frontier`. The command ha
 authoritative inventory and acquisition lowering to one transparent snapshot, its same-state
 candidate ranking, and Master Angler's date-window intents. A physical candidate is emitted once
 with every exact requirement credit it can advance; unavailable requirements are deferred rather
-than converted to negatives. This report is not a Teacher preference label: it does not use learner
-ranks or scores and records `teacher_preference_label_eligible=false`. The next admission slice
-selects a deterministic learner-independent preference from this set. Future scheduling, native
-receipts, and the remaining long-horizon 19-criterion proofs still block formal training.
+than converted to negatives. `build-current-stage-one-collection-teacher-preference` rebuilds that
+membership and applies a fixed learner-independent lexicographic policy over authoritative deadline,
+terminal-transition, exact shared-credit, scarcity, deterministic-time and energy evidence. Learner
+rank, score, model score and expected reward cannot decide the label and are cleared before the
+selected candidate enters the existing daily-plan and action-queue compilers. An exact top tie, an
+incomplete transparent denominator or a blocked compiled queue fails closed. Non-selected current
+candidates remain counterfactual alternatives rather than negative examples. This report still records
+`formal_training_authorized=false`: the next admission slice requires a fresh native before/after receipt
+for the selected action. Future scheduling and the remaining long-horizon 19-criterion proofs also still
+block formal training.
 
 ## Hardware
 

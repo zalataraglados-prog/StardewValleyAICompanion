@@ -210,6 +210,13 @@ internal static partial class BootstrapSelfTest
                 "(O)24",
                 99,
                 1);
+        sharedCandidate.LocationId = "Farm";
+        sharedCandidate.TileX = 4;
+        sharedCandidate.TileY = 5;
+        sharedCandidate.EstimatedTicks = 60;
+        sharedCandidate.Score = 9000;
+        sharedCandidate.ModelScore = 8000;
+        sharedCandidate.ExpectedReward = 7000;
         var routeCandidate = CollectionCandidate(
                 "master-angler-route",
                 "fishing.catch_fish",
@@ -223,9 +230,21 @@ internal static partial class BootstrapSelfTest
                     Parameter("continuation.option_id", "fishing.catch_fish"),
                     Parameter(
                         "master_angler_time_budget_status",
-                        "conservative_full_remaining_connector_path_and_terminal_reserve")
+                        "conservative_full_remaining_connector_path_and_terminal_reserve"),
+                    Parameter("connector_kind", "building_door"),
+                    Parameter("expected_target_location", "Town"),
+                    Parameter("expected_arrival_tile_x", "1"),
+                    Parameter("expected_arrival_tile_y", "5"),
+                    Parameter("estimated_minutes", "2")
                 }).ToArray());
         routeCandidate.AvailabilityClass = "master_angler_rolling_route";
+        routeCandidate.LocationId = "Farm";
+        routeCandidate.TileX = 2;
+        routeCandidate.TileY = 4;
+        routeCandidate.EstimatedTicks = 120;
+        routeCandidate.Score = -9000;
+        routeCandidate.ModelScore = -8000;
+        routeCandidate.ExpectedReward = -7000;
         var wrongCrabCandidate = CollectionCandidate(
                 "wrong-crab-output",
                 "fishing.collect_crab_pots",
@@ -289,6 +308,96 @@ internal static partial class BootstrapSelfTest
                 result.SelectionContract.SelectionGroups.All(value =>
                     value.MaximumSelectedCandidateCountThisDecision is 0 or 1),
             "Unified collection selection cardinality drifted.");
+
+        var preference =
+            CurrentStageOneCollectionTeacherPreferenceBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath);
+        Require(preference.Status == "ready" &&
+                preference.TeacherPreferenceLabelEligible &&
+                !preference.FormalTrainingAuthorized &&
+                !preference.UsesLearnerRankOrScore &&
+                !preference.EmitsNegativeLabelsForUnavailableRoutes &&
+                preference.SelectedCandidate?.CandidateId ==
+                    "master-angler-route" &&
+                preference.SelectedCandidate.SelectionReason ==
+                    "authoritative_current_day_deadline" &&
+                preference.PairwisePreferences.Length == 1 &&
+                preference.PairwisePreferences[0]
+                    .FirstDifferingAuthoritativeCriterion ==
+                    "authoritative_current_day_deadline" &&
+                preference.CompiledPlan?.Steps.Length == 1 &&
+                preference.CompiledQueue?.Status == "pending" &&
+                preference.CompiledQueue.Items.Length == 1,
+            "Independent current collection Teacher preference did not select and compile the authoritative deadline candidate.");
+
+        sharedCandidate.Rank = 1;
+        sharedCandidate.Score = 1_000_000;
+        sharedCandidate.ModelScore = 1_000_000;
+        sharedCandidate.ExpectedReward = 1_000_000;
+        routeCandidate.Rank = 1000;
+        routeCandidate.Score = -1_000_000;
+        routeCandidate.ModelScore = -1_000_000;
+        routeCandidate.ExpectedReward = -1_000_000;
+        Write(rankingPath, CollectionRanking(
+            stateHash,
+            sharedCandidate,
+            routeCandidate,
+            wrongCrabCandidate));
+        var learnerSignalInvariant =
+            CurrentStageOneCollectionTeacherPreferenceBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath);
+        Require(learnerSignalInvariant.Status == "ready" &&
+                learnerSignalInvariant.SelectedCandidate?.CandidateId ==
+                    "master-angler-route" &&
+                learnerSignalInvariant.CompiledPlan?.Steps.Length == 1 &&
+                learnerSignalInvariant.CompiledQueue?.Items.Length == 1,
+            "Learner rank or score changed the deterministic Teacher preference.");
+
+        var tieA = CollectionCandidate(
+            "tied-parsnip-a",
+            "farm.maintain_crops",
+            "harvest_crop_tile",
+            "24",
+            "(O)24",
+            1,
+            1);
+        var tieB = CollectionCandidate(
+            "tied-parsnip-b",
+            "farm.maintain_crops",
+            "harvest_crop_tile",
+            "24",
+            "(O)24",
+            2,
+            1);
+        foreach (var candidate in new[] { tieA, tieB })
+        {
+            candidate.LocationId = "Farm";
+            candidate.TileX = 4;
+            candidate.TileY = 5;
+            candidate.EstimatedTicks = 60;
+        }
+        Write(rankingPath, CollectionRanking(stateHash, tieA, tieB));
+        var tiedPreference =
+            CurrentStageOneCollectionTeacherPreferenceBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                intentsPath);
+        Require(tiedPreference.Status ==
+                    "blocked_authoritatively_tied_top_candidates" &&
+                !tiedPreference.TeacherPreferenceLabelEligible &&
+                tiedPreference.SelectedCandidate is null &&
+                tiedPreference.BlockingReasons.Length == 1,
+            "An arbitrary candidate ID was used to manufacture a Teacher preference tie-break.");
 
         intents.SourceStateHash = "stale-master-angler-intent-state";
         Write(intentsPath, intents);
