@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-10 四收集集合确定性 Teacher 偏好
+
+- 新增唯一 `CurrentStageOneCollectionTeacherPreferenceBuilder`。它从需求库存、获取降层、同状态候选排名、透明快照和 Master Angler 目标日期意图重新构建四集合当前候选前沿，并逐一核对状态、目标、分母、候选 credit、选择组和五份输入 SHA-256；任一漂移均失败关闭。
+- 固定字典序只使用权威当日截止、截止余量和时刻、终端需求转移、跨集合与逐需求精确 credit、候选稀缺度、确定性耗时和体力。Teacher 不读取 learner 的 rank、score、model score 或 expected reward；选中候选进入既有 `DailyPlanCompiler -> ActionQueueCompiler` 前，这些学习器信号会被清零。
+- 候选 ID 只稳定报告顺序，不负责打破监督平局。两个最高候选的权威向量完全相同时返回 `blocked_authoritatively_tied_top_candidates`，不会按 ID 伪造偏好。当前不可用需求继续 deferred，未选中的当前可用候选只作为反事实比较项，不生成二元负标签。
+- 结构化回归已证明：故意反转 learner 分数不会改变选择；精确平局会被拒绝；当日截止的 Master Angler 路线可经原有日计划和动作队列编译为一个 pending 项。测试夹具使用与透明桥同构的原生字段来源、碰撞网格和连接器，没有放宽生产执行门槛。
+- 当前只形成单状态偏好标签，仍明确 `formal_training_authorized=false`，总前沿保持 `2/19 executable / 17/19 pending`。固定下一步是把选中偏好绑定到 fresh 原生动作前后回执，只有精确 credited requirement 转移验证成功才生成训练行；之后仍需未来日期调度和剩余长期目标证明。
+
 ## 2026-09-09 四收集集合统一实时候选合同
 
 - 新增 `CurrentMasterAnglerTeacherFrontierBuilder`，把原生 72 种鱼的逐项完成态、权威需求库存、逐项获取降层、同状态候选排名和既有目标日期意图做严格连接。快照、库存、降层、排名、意图、窗口索引、机会目录和路线计时校准均保留 SHA-256 并交叉校验；旧状态或复制错配的意图失败关闭。

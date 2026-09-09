@@ -97,6 +97,7 @@ internal static partial class BootstrapSelfTest
             master_angler_full_route_timing_verified = true,
             current_full_shipment_teacher_frontier_verified = true,
             current_stage_one_collection_teacher_frontier_verified = true,
+            current_stage_one_collection_teacher_preference_verified = true,
             all_goal_methods_from_unified_catalog = true,
             teacher_plan_path = planPath
         });
