@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-09 全出货实时 Teacher 前沿
+
+- 新增唯一 `CurrentFullShipmentTeacherFrontierBuilder`，把实时快照、同状态排名、154 项权威需求库存和逐需求获取降层做严格交集。输入文件均记录 SHA-256，排名 `state_hash` 必须与快照完全一致；透明进度的分母、逐项身份、已出货计数、缺失列表、完成标志和比例必须彼此一致，否则失败关闭。
+- 正标签只有两种：带完整原生 Full Shipment 贡献字段的当前出货候选，或产物 `qualified_item_id` 精确匹配缺失物品且 option 是该物品权威获取路线端点的当前候选。已完成物品、同 option 的错误产物、被门控候选和没有精确依赖绑定的 supporting option 均不得进入。
+- 没有当前候选的需求被标为 deferred，不生成负标签。真实 r36 快照验证为 `154 required / 6 completed / 148 missing / 0 current exact binding`，因此报告正确保持 `training_label_eligible=false`，没有把候选池暂时未出现的 148 项错误训练成负例。
+- 该切片只闭合 Full Shipment 的“实时缺项 -> 当前具体动作”证据边界，没有改变总前沿 `2/19 executable / 17/19 pending`，也没有启动正式训练。下一步复用相同接口扩展博物馆与标准社区中心：增加多备选、数量、品质及预留语义的类型化完成适配器，再接 Master Angler 已有的日期窗口意图。
+
 ## 2026-09-09 Teacher 逐需求获取绑定
 
 - 获取降层不再只报告 `33/33` 路线种类总数。现有唯一

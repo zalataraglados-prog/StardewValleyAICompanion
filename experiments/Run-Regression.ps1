@@ -5,6 +5,7 @@ param(
     [string]$ContentRoot = 'E:\StardewValleyAICompanion-runtime\Stardew Valley\Content',
     [string]$DecompileRoot = 'I:\StardewValleyAICompanion-decompile-linux-server-1.6.15',
     [string]$Ranking = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\run\live-snapshots\ranking-response-0002.json',
+    [string]$FullShipmentSnapshot = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\run\live-snapshots\before-snapshot-0002.json',
     [string]$Legacy = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\canonical-state\datasets\policy-decision-trajectories.jsonl',
     [string]$SocialSnapshot = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-social-future-evidence-smoke\runtime-social-future-evidence-smoke-20260906-053142\social-future-snapshot.json',
     [string]$RouteTimingCalibration = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json'
@@ -193,6 +194,25 @@ if ($loweredAlternatives.Count -ne 450 -or
     $unusableAlternatives.Count -ne 0 -or
     $unboundRoutes.Count -ne 0) {
     throw 'Per-requirement acquisition route lowering is incomplete.'
+}
+$currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
+dotnet run --project $bootstrap --no-build -- build-current-full-shipment-teacher-frontier `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --ranking $Ranking `
+    --snapshot $FullShipmentSnapshot `
+    --output $currentFullShipmentFrontierPath
+if ($LASTEXITCODE -ne 0) { throw 'Current Full Shipment Teacher frontier generation failed.' }
+$currentFullShipmentFrontier = Get-Content -LiteralPath $currentFullShipmentFrontierPath -Raw |
+    ConvertFrom-Json
+if ($currentFullShipmentFrontier.status -ne 'no_current_matching_candidate' -or
+    [int]$currentFullShipmentFrontier.required_group_count -ne 154 -or
+    [int]$currentFullShipmentFrontier.completed_group_count -ne 6 -or
+    [int]$currentFullShipmentFrontier.missing_group_count -ne 148 -or
+    [int]$currentFullShipmentFrontier.current_candidate_binding_count -ne 0 -or
+    [bool]$currentFullShipmentFrontier.training_label_eligible -or
+    [bool]$currentFullShipmentFrontier.emits_negative_labels_for_unavailable_routes) {
+    throw 'Current Full Shipment Teacher frontier fail-closed regression failed.'
 }
 dotnet run --project $bootstrap --no-build -- build-goal-method-graph `
     --expansion $frontierExpansion `

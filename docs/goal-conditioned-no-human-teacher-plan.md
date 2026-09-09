@@ -846,6 +846,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   removes false drift caused by Git checkout line-ending conversion without weakening raw-byte locks for
   external knowledge and decompile artifacts.
 
+### 2026-09-09: Live Full Shipment requirement frontier admitted
+
+- `CurrentFullShipmentTeacherFrontierBuilder` now intersects one fresh transparent snapshot, its exact
+  same-state ranked candidates, the 154-item authoritative denominator, and the per-item acquisition
+  lowering. All four source files are SHA-256 recorded; state-hash or denominator drift fails closed.
+- The live Full Shipment aggregate is not trusted in isolation. Item identities, shipped flags and counts,
+  missing IDs, aggregate counts, completion state, and ratio must agree with one another and with the
+  authoritative inventory before any label can be emitted.
+- A positive label requires either complete native Full Shipment contribution flags for the exact missing
+  item, or an exact candidate output identity on an admitted endpoint of that item's authoritative route.
+  Completed items, same-option/different-output candidates, blocked candidates, and unbound supporting
+  options are excluded.
+- A missing requirement with no current exact candidate is deferred and emits no negative label. The real
+  r36 fixture contains 154 requirements, 6 completed and 148 missing, but no exact current candidate; the
+  report therefore remains label-ineligible instead of manufacturing 148 negative examples.
+- This closes the first dynamic static-graph-to-live-candidate join. It does not raise the overall 2/19
+  frontier or authorize formal training. The next slice applies the same contract to museum and standard
+  Community Center requirements, where OR alternatives, quantities, qualities and reservation semantics
+  require typed adapters, then joins the existing Master Angler date-window intent.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

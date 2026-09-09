@@ -62,6 +62,7 @@ internal static partial class BootstrapSelfTest
             "Legacy AI rollout leaked into expert retrieval.");
 
         VerifyMasterAnglerFullRouteIntent(outputRoot);
+        VerifyCurrentFullShipmentTeacherFrontier(outputRoot);
 
         var guidedPlan = new TeacherPlanBuilder(24).Build(ranking, knowledge, HarvestGuide(knowledge));
         Require(guidedPlan.Audit.UsesExpertDemonstrationGuidance &&
@@ -92,6 +93,7 @@ internal static partial class BootstrapSelfTest
             tampered_recording_rejected = true,
             expert_guidance_reached_teacher_plan = guidedPlan.Audit.UsesExpertDemonstrationGuidance,
             master_angler_full_route_timing_verified = true,
+            current_full_shipment_teacher_frontier_verified = true,
             all_goal_methods_from_unified_catalog = true,
             teacher_plan_path = planPath
         });

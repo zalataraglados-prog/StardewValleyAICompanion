@@ -128,6 +128,12 @@ it never falls back to a legacy AI rollout.
   proof. Calendar, unlock, facility, input-resource, calibrated travel-time, native
   outcome/retry, reservation, and fresh-receipt dependencies still have to be closed
   before a route can supervise formal training.
+- `build-current-full-shipment-teacher-frontier` performs the first live requirement join. It
+  requires a fresh snapshot and same-state ranking, validates the complete 154-item transparent
+  denominator, and emits positive bindings only for exact missing-item completion or admitted
+  acquisition endpoint candidates. Requirements absent from the current candidate pool are
+  deferred and never emitted as negative labels. The real r36 fixture has 6 completed and 148
+  missing requirements but no current exact candidate, so it correctly remains label-ineligible.
 - The transparent bridge publishes the exact live fish and museum collection rows,
   including missing IDs. Static catalogs are cached by the live `Data/Objects`
   instance while per-save completion remains fresh on every snapshot.
@@ -178,7 +184,8 @@ it never falls back to a legacy AI rollout.
 
 `Run-Regression.ps1` first verifies the evidence lock and claim ledger, rebuilds the
 current option matrix, then generates the authoritative requirement inventory, its
-exact route-to-option lowering, the goal-method frontier, and the bootstrap regression.
+exact route-to-option lowering, the same-state live Full Shipment Teacher frontier, the
+goal-method frontier, and the bootstrap regression.
 Any source drift,
 denominator mismatch, unknown option binding, or unresolved factual claim fails before
 teacher output is generated. Every requirement-inventory source is rehashed when the
