@@ -24,7 +24,8 @@ foreach ($path in @($DashboardPath, $ReconciliationPath, $DocumentPath)) {
     }
 }
 
-$dashboard = Get-Content -LiteralPath $DashboardPath -Raw -Encoding utf8 | ConvertFrom-Json
+$dashboardJson = Get-Content -LiteralPath $DashboardPath -Raw -Encoding utf8
+$dashboard = $dashboardJson | ConvertFrom-Json
 $reconciliation = Get-Content -LiteralPath $ReconciliationPath -Raw -Encoding utf8 | ConvertFrom-Json
 if ($dashboard.schema_version -ne "stardewai.action_progress_dashboard.v2") {
     throw "Unsupported dashboard schema: $($dashboard.schema_version)"
@@ -32,6 +33,13 @@ if ($dashboard.schema_version -ne "stardewai.action_progress_dashboard.v2") {
 if ($reconciliation.schema_version -ne "stardewai.action_implementation_reconciliation.v1") {
     throw "Unsupported reconciliation schema: $($reconciliation.schema_version)"
 }
+$generatedAtMatch = [regex]::Match(
+    $dashboardJson,
+    '"generated_at_utc"\s*:\s*"(?<value>[^"]+)"')
+if (-not $generatedAtMatch.Success) {
+    throw "Dashboard generated_at_utc is missing."
+}
+$generatedAtUtc = $generatedAtMatch.Groups['value'].Value.Replace('\u002B', '+').Replace('\u002b', '+')
 
 $sourceCommit = [string]$dashboard.catalog_source_commit_sha
 if ($sourceCommit -notmatch '^[0-9a-f]{40}$') {
@@ -56,7 +64,7 @@ $block = @(
     "## Machine-generated current checkpoint"
     ""
     ('- Source commit: `{0}` (generation input; must be an ancestor of current HEAD)' -f $sourceCommit)
-    ('- Latest evidence: `{0}`; generated at: `{1}`' -f $dashboard.latest_evidence_id, $dashboard.generated_at_utc)
+    ('- Latest evidence: `{0}`; generated at: `{1}`' -f $dashboard.latest_evidence_id, $generatedAtUtc)
     ('- Catalog: `{0} registered / {1} semantic / {2} compiler-bound / {3} five-gate / {4} training-allowlist`' -f $dashboard.registered_option_count, $dashboard.semantic_action_catalog_count, $dashboard.compiler_bound_count, $dashboard.five_gate_evidence_closed_count, $dashboard.training_allowlist_count)
     ('- Execution: `{0} product-executor / {1} catalogued-blocked`' -f $dashboard.product_executor_count, $dashboard.catalogued_blocked_action_count)
     ('- Native evidence: `{0} surfaces / {1} branches / {2} map tokens`; fingerprint: `{3}`' -f $dashboard.native_surface_count, $dashboard.native_branch_count, $dashboard.native_map_interaction_token_count, $dashboard.native_action_surface_fingerprint_sha256)
