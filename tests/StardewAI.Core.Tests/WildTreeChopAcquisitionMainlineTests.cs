@@ -110,6 +110,8 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         var root = FindRepositoryRoot();
         var clearance = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.ObstacleClearance.cs"));
         var chop = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.cs"));
+        var verification = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.Verification.cs"));
+        var terrain = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "CurrentLocationReadAdapter.TerrainExperience.cs"));
         var smoke = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeClearObstacleSmoke.ps1"));
 
         Assert.Contains("ValidateWildTreeChopExecutionRequest", clearance, StringComparison.Ordinal);
@@ -128,6 +130,9 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         Assert.Contains("Game1.IsMultiplayer ? 4 : 5 + deterministicExtra", bridge, StringComparison.Ordinal);
         Assert.Contains("row.MaxStack >= row.MinStack", bridge, StringComparison.Ordinal);
         Assert.Contains("row.QualityModifiers is null", bridge, StringComparison.Ordinal);
+        Assert.Contains("axe.GetType() == typeof(Axe)", terrain, StringComparison.Ordinal);
+        Assert.Contains("OrderBy(row => row.Key, StringComparer.Ordinal)", verification, StringComparison.Ordinal);
+        Assert.Contains("row.Value.ToString(CultureInfo.InvariantCulture)", verification, StringComparison.Ordinal);
         var fixture = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.ClearObstacleFixture.cs"));
         Assert.Contains("\"pine_professions\" => \"3\"", fixture, StringComparison.Ordinal);
         Assert.Contains("Game1.player.professions.Add(14)", fixture, StringComparison.Ordinal);

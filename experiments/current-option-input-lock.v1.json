@@ -25,8 +25,8 @@
     },
     {
       "relative_path": "catalogs/vanilla-1.6.15/native-action-denominator-freeze.json",
-      "bytes": 9012,
-      "sha256": "4456d57c93403333e156d43b29cf73431d443f6767f71c428217ad309ab629d5"
+      "bytes": 9323,
+      "sha256": "a7adb1843f0f0b442fd6bc497d03beacd2b7ec967e29748456d3d2ee8ff8e960"
     }
   ],
   "knowledge_sources": [

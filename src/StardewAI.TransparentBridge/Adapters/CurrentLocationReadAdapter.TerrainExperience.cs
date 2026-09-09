@@ -50,7 +50,7 @@ public sealed partial class CurrentLocationReadAdapter
 
         var bestAxeEntry = Game1.player.Items
             .Select((item, index) => new { Item = item, Index = index })
-            .Where(entry => entry.Item is Axe)
+            .Where(entry => entry.Item is Axe axe && axe.GetType() == typeof(Axe))
             .OrderByDescending(entry => ((Axe)entry.Item!).UpgradeLevel)
             .FirstOrDefault();
         var bestAxe = bestAxeEntry?.Item as Axe;

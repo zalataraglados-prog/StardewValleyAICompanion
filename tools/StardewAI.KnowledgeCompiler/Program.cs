@@ -14,6 +14,7 @@ namespace StardewAI.KnowledgeCompiler;
 internal static class Program
 {
     private static readonly string GeneratedAtUtc = ResolveGeneratedAtUtc();
+    private static readonly string CatalogSourceCommitSha = ResolveCatalogSourceCommitSha();
 
     public static int Main(string[] args)
     {
@@ -370,19 +371,28 @@ internal static class Program
                 block_reason = row.BlockReason,
                 native_runtime_types = row.NativeRuntimeTypes
             })).OrderBy(row => row.action_id, StringComparer.Ordinal).ToArray();
-            var nativeDenominatorSourceClosed = blockingNativeSurfaces.Length == 0 &&
+            var nativeActionSurfaceClosed = blockingNativeSurfaces.Length == 0 &&
                 blockingNativeBranches.Length == 0 &&
-                blockingNativeMapInteractions.Length == 0 &&
+                blockingNativeMapInteractions.Length == 0;
+            var planningSemanticCatalogClosed =
                 missingSemanticActionIds.Length == 0 &&
                 pendingCatalogWithoutSurface.Length == 0;
-            var denominatorFingerprint = ActionDenominatorFingerprintBuilder.Build(
+            var nativeActionSurfaceFingerprint = NativeActionSurfaceFingerprintBuilder.Build(
                 manifest.GameVersion,
                 nativeActionSurfaces,
                 nativeActionBranches,
-                nativeMapInteractions,
-                semanticActionRows.Select(row => row.action_id));
-            var denominatorFreeze = ActionDenominatorFingerprintBuilder.VerifyApproval(
-                denominatorFingerprint,
+                nativeMapInteractions);
+            var planningSemanticCatalogFingerprint = PlanningSemanticCatalogFingerprintBuilder.Build(
+                semanticActionRows.Select(row => new PlanningSemanticActionIdentity(
+                    row.action_id,
+                    row.domain,
+                    row.semantic_kind,
+                    row.primary_engine_id,
+                    row.catalog_status,
+                    row.block_reason,
+                    row.native_runtime_types)));
+            var denominatorFreeze = NativeActionSurfaceFingerprintBuilder.VerifyApproval(
+                nativeActionSurfaceFingerprint,
                 actionDenominatorFreezePath);
             if (!string.IsNullOrWhiteSpace(actionDenominatorFreezePath) &&
                 denominatorFreeze.Status != "frozen")
@@ -396,30 +406,35 @@ internal static class Program
             }
             Write(outputRoot, "native-action-denominator-fingerprint.json", new
             {
-                schema_version = "stardewai.native_action_denominator_fingerprint.v1",
-                authority = "canonical identity digest over locked native surfaces, branches, effective map tokens, and semantic action IDs",
-                game_version = denominatorFingerprint.GameVersion,
-                fingerprint_sha256 = denominatorFingerprint.Sha256,
-                surface_count = denominatorFingerprint.SurfaceCount,
-                branch_count = denominatorFingerprint.BranchCount,
-                map_token_count = denominatorFingerprint.MapTokenCount,
-                semantic_action_count = denominatorFingerprint.SemanticActionCount,
-                source_denominator_closed = nativeDenominatorSourceClosed,
+                schema_version = "stardewai.native_action_denominator_fingerprint.v2",
+                authority = "canonical identity digest over locked native surfaces, branches, and effective map tokens; planning semantic IDs and implementation mappings are excluded",
+                fingerprint_scope = "native_game_action_evidence_only",
+                game_version = nativeActionSurfaceFingerprint.GameVersion,
+                fingerprint_sha256 = nativeActionSurfaceFingerprint.Sha256,
+                surface_count = nativeActionSurfaceFingerprint.SurfaceCount,
+                branch_count = nativeActionSurfaceFingerprint.BranchCount,
+                map_token_count = nativeActionSurfaceFingerprint.MapTokenCount,
+                source_denominator_closed = nativeActionSurfaceClosed,
                 freeze_status = denominatorFreeze.Status,
                 approval_path = denominatorFreeze.ApprovalPath,
                 mismatch_reasons = denominatorFreeze.MismatchReasons
             });
             Write(outputRoot, "semantic-action-catalog.json", new
             {
-                schema_version = "stardewai.semantic_action_catalog.v1",
-                denominator_status = nativeDenominatorSourceClosed &&
+                schema_version = "stardewai.semantic_action_catalog.v2",
+                catalog_status = planningSemanticCatalogClosed
+                    ? "planning_semantic_catalog_complete"
+                    : "planning_semantic_catalog_open",
+                native_action_denominator_status = nativeActionSurfaceClosed &&
                     denominatorFreeze.Status == "frozen"
                     ? "native_action_denominator_frozen"
-                    : nativeDenominatorSourceClosed
+                    : nativeActionSurfaceClosed
                         ? "provisional_native_surface_denominator_closed"
                     : "provisional_native_surface_denominator_open",
-                denominator_fingerprint_sha256 = denominatorFingerprint.Sha256,
-                action_count = semanticActionRows.Length,
+                native_action_surface_fingerprint_sha256 = nativeActionSurfaceFingerprint.Sha256,
+                planning_semantic_catalog_fingerprint_schema = "stardewai.planning_semantic_catalog_fingerprint.v1",
+                planning_semantic_catalog_fingerprint_sha256 = planningSemanticCatalogFingerprint.Sha256,
+                action_count = planningSemanticCatalogFingerprint.ActionCount,
                 registered_option_spec_count = optionRows.Length,
                 catalogued_blocked_count = PendingSemanticActionCatalog.All.Count,
                 uncatalogued_native_action_count = missingSemanticActionIds.Length,
@@ -498,15 +513,22 @@ internal static class Program
                 row.OutputTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified);
             Write(outputRoot, "action-progress-dashboard.json", new
             {
-                schema_version = "stardewai.action_progress_dashboard.v1",
+                schema_version = "stardewai.action_progress_dashboard.v2",
                 generated_at_utc = GeneratedAtUtc,
-                semantic_denominator_status = nativeDenominatorSourceClosed &&
+                catalog_source_commit_sha = CatalogSourceCommitSha,
+                latest_evidence_id = denominatorFreeze.LatestEvidenceId,
+                native_action_denominator_status = nativeActionSurfaceClosed &&
                     denominatorFreeze.Status == "frozen"
                     ? "native_action_denominator_frozen"
-                    : nativeDenominatorSourceClosed
+                    : nativeActionSurfaceClosed
                         ? "native_surfaces_classified_semantic_denominator_pending_freeze"
                     : "not_frozen_native_surfaces_or_registrations_pending",
-                native_action_denominator_fingerprint_sha256 = denominatorFingerprint.Sha256,
+                native_action_surface_fingerprint_sha256 = nativeActionSurfaceFingerprint.Sha256,
+                planning_semantic_catalog_status = planningSemanticCatalogClosed
+                    ? "planning_semantic_catalog_complete"
+                    : "planning_semantic_catalog_open",
+                planning_semantic_catalog_fingerprint_schema = "stardewai.planning_semantic_catalog_fingerprint.v1",
+                planning_semantic_catalog_fingerprint_sha256 = planningSemanticCatalogFingerprint.Sha256,
                 registered_option_count = optionRows.Length,
                 semantic_action_catalog_count = semanticActionRows.Length,
                 catalogued_blocked_action_count = PendingSemanticActionCatalog.All.Count,
@@ -1193,6 +1215,14 @@ internal static class Program
             return DateTimeOffset.FromUnixTimeSeconds(epochSeconds).ToString("O", CultureInfo.InvariantCulture);
 
         return DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+    }
+
+    private static string ResolveCatalogSourceCommitSha()
+    {
+        var value = Environment.GetEnvironmentVariable("STARDEWAI_CATALOG_SOURCE_COMMIT_SHA")?.Trim();
+        return value is { Length: 40 } && value.All(Uri.IsHexDigit)
+            ? value.ToLowerInvariant()
+            : "unbound";
     }
 
     private static int ValidateSnapshotSchemaOnly(

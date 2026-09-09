@@ -13,6 +13,8 @@ jobs:
       CI: "true"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
@@ -22,9 +24,24 @@ jobs:
         run: dotnet build src/StardewAI.Core/StardewAI.Core.csproj --configuration Release --no-restore
       - name: Build live training loop
         run: dotnet build tools/StardewAI.LiveTrainingLoop/StardewAI.LiveTrainingLoop.csproj --configuration Release --no-restore
+      - name: Restore knowledge compiler
+        run: dotnet restore tools/StardewAI.KnowledgeCompiler/StardewAI.KnowledgeCompiler.csproj --locked-mode
+      - name: Build knowledge compiler
+        run: dotnet build tools/StardewAI.KnowledgeCompiler/StardewAI.KnowledgeCompiler.csproj --configuration Release --no-restore
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance
         run: dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --configuration Release --no-restore -p:GameFreeGovernance=true
       - name: Test backend
         run: dotnet test tests/StardewAI.Backend.Tests/StardewAI.Backend.Tests.csproj --configuration Release
+      - name: Verify generated current checkpoint
+        shell: pwsh
+        run: ./scripts/Update-CurrentWorkCheckpoint.ps1 -Check
+      - name: Check whitespace
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "pull_request") {
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          } else {
+            git diff --check HEAD^ HEAD
+          }
