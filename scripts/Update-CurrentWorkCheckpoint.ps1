@@ -49,6 +49,8 @@ if ([int]$dashboard.registered_option_count -ne [int]$reconciliation.registered_
 
 $beginMarker = "<!-- BEGIN GENERATED CURRENT CHECKPOINT -->"
 $endMarker = "<!-- END GENERATED CURRENT CHECKPOINT -->"
+$document = Get-Content -LiteralPath $DocumentPath -Raw -Encoding utf8
+$newline = if ($document.Contains("`r`n")) { "`r`n" } else { "`n" }
 $block = @(
     $beginMarker
     "## Machine-generated current checkpoint"
@@ -60,9 +62,8 @@ $block = @(
     ('- Native evidence: `{0} surfaces / {1} branches / {2} map tokens`; fingerprint: `{3}`' -f $dashboard.native_surface_count, $dashboard.native_branch_count, $dashboard.native_map_interaction_token_count, $dashboard.native_action_surface_fingerprint_sha256)
     ('- Planning catalog: `{0}`; `{1}`; fingerprint: `{2}`' -f $dashboard.planning_semantic_catalog_status, $dashboard.planning_semantic_catalog_fingerprint_schema, $dashboard.planning_semantic_catalog_fingerprint_sha256)
     $endMarker
-) -join "`n"
+) -join $newline
 
-$document = Get-Content -LiteralPath $DocumentPath -Raw -Encoding utf8
 $escapedBegin = [regex]::Escape($beginMarker)
 $escapedEnd = [regex]::Escape($endMarker)
 $pattern = "(?s)$escapedBegin.*?$escapedEnd"
@@ -78,7 +79,7 @@ else {
     if ($headingEnd -lt 0) {
         throw "Current work document has no heading boundary."
     }
-    $expected = $document.Insert($headingEnd + 1, "`n$block`n")
+    $expected = $document.Insert($headingEnd + 1, "$newline$block$newline")
 }
 
 if ($Check) {
