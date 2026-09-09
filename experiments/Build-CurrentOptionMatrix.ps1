@@ -40,8 +40,13 @@ foreach ($source in $lock.knowledge_sources) {
 }
 
 $head = (& git -C $projectRoot rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0 -or $head -ne [string]$lock.base_commit) {
-    throw "Base commit drifted: expected=$($lock.base_commit);actual=$head"
+if ($LASTEXITCODE -ne 0) {
+    throw 'Current repository HEAD is unavailable.'
+}
+$baseCommit = [string]$lock.base_commit
+& git -C $projectRoot merge-base --is-ancestor $baseCommit $head
+if ($LASTEXITCODE -ne 0) {
+    throw "Locked base commit is not an ancestor of HEAD: base=$baseCommit;head=$head"
 }
 
 $project = Join-Path $projectRoot 'tools\StardewAI.KnowledgeCompiler\StardewAI.KnowledgeCompiler.csproj'

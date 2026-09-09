@@ -6,8 +6,8 @@ param(
     [string]$DecompileRoot = 'I:\StardewValleyAICompanion-decompile-linux-server-1.6.15',
     [string]$Ranking = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\run\live-snapshots\ranking-response-0002.json',
     [string]$Legacy = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\canonical-state\datasets\policy-decision-trajectories.jsonl',
-    [string]$SocialSnapshot = (Join-Path $PSScriptRoot '..\artifacts\runtime-social-future-evidence-smoke\runtime-social-future-evidence-smoke-20260906-053142\social-future-snapshot.json'),
-    [string]$RouteTimingCalibration = (Join-Path $PSScriptRoot '..\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json')
+    [string]$SocialSnapshot = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-social-future-evidence-smoke\runtime-social-future-evidence-smoke-20260906-053142\social-future-snapshot.json',
+    [string]$RouteTimingCalibration = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -157,18 +157,15 @@ if ([int]$acquisitionLowering.requirement_set_count -ne 4 -or
     [int]$acquisitionLowering.route_occurrence_count -ne 1599 -or
     [int]$acquisitionLowering.observed_route_kind_count -ne 33 -or
     [int]$acquisitionLowering.classified_route_kind_count -ne 33 -or
-    [int]$acquisitionLowering.admitted_route_kind_count -ne 31 -or
-    [int]$acquisitionLowering.blocked_route_kind_count -ne 2 -or
+    [int]$acquisitionLowering.admitted_route_kind_count -ne 33 -or
+    [int]$acquisitionLowering.blocked_route_kind_count -ne 0 -or
     @($acquisitionLowering.unknown_route_kinds).Count -ne 0 -or
     @($acquisitionLowering.unobserved_catalog_route_kinds).Count -ne 0 -or
     @('full_shipment', 'master_angler', 'museum_collection', 'community_center_standard' |
         Where-Object { $_ -notin $acquisitionSetIds }).Count -ne 0) {
     throw 'Acquisition route lowering denominator or exact catalog coverage drifted.'
 }
-$expectedAcquisitionGaps = @(
-    'native_wild_tree_chop_drop',
-    'native_wild_tree_seed_drop'
-)
+$expectedAcquisitionGaps = @()
 $actualAcquisitionGaps = @($acquisitionLowering.route_kinds |
     Where-Object { -not [bool]$_.teacher_admission_ready } |
     ForEach-Object route_kind |

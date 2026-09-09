@@ -52,7 +52,7 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
             "scripts",
             "Invoke-RuntimeClearObstacleSmoke.ps1");
 
-        Assert.Contains("ValidateSet(\"grass\", \"twig\", \"seed_spot\", \"artifact_spot\", \"tree_moss\")", smoke, StringComparison.Ordinal);
+        Assert.Contains("ValidateSet(\"grass\", \"twig\", \"seed_spot\", \"artifact_spot\", \"tree_moss\", \"tree_chop\")", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_obstacle_executor_status", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_output_items_json", smoke, StringComparison.Ordinal);
         Assert.Contains("tool_slot_index", smoke, StringComparison.Ordinal);

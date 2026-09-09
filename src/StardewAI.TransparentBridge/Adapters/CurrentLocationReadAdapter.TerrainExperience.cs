@@ -48,9 +48,12 @@ public sealed partial class CurrentLocationReadAdapter
             };
         }
 
-        var bestAxe = Game1.player.Items.OfType<Axe>()
-            .OrderByDescending(axe => axe.UpgradeLevel)
+        var bestAxeEntry = Game1.player.Items
+            .Select((item, index) => new { Item = item, Index = index })
+            .Where(entry => entry.Item is Axe)
+            .OrderByDescending(entry => ((Axe)entry.Item!).UpgradeLevel)
             .FirstOrDefault();
+        var bestAxe = bestAxeEntry?.Item as Axe;
         var mossExperience = tree.hasMoss.Value ? ProjectMossStack() : 0;
         var foragingExperience = tree.growthStage.Value >= 5
             ? (tree.stump.Value ? 2 : 16) + mossExperience
@@ -61,6 +64,7 @@ public sealed partial class CurrentLocationReadAdapter
 
         var treeProduct = ProjectWildTreeProduct(tree);
         var mossHarvest = ProjectTreeMossHarvest(tree);
+        var wildTreeChop = ProjectWildTreeChop(tile, tree, bestAxeEntry?.Index, bestAxe, expectedHits);
 
         return new
         {
@@ -121,6 +125,30 @@ public sealed partial class CurrentLocationReadAdapter
             moss_harvest_was_shaken_today_before = mossHarvest.WasShakenTodayBefore,
             moss_harvest_was_shaken_today_after = true,
             moss_harvest_native_contract = mossHarvest.NativeContract,
+            tree_chop_acquisition_status = wildTreeChop.Status,
+            tree_chop_data_contract_status = wildTreeChop.DataContractStatus,
+            tree_chop_protection_status = wildTreeChop.ProtectionStatus,
+            tree_chop_completion_mode = "wild_tree_removed",
+            tree_chop_tool_slot_index = wildTreeChop.AxeSlotIndex,
+            tree_chop_required_tool_kind = "axe",
+            tree_chop_axe_qualified_item_id = wildTreeChop.AxeQualifiedItemId,
+            tree_chop_axe_upgrade_level = wildTreeChop.AxeUpgradeLevel,
+            tree_chop_axe_is_efficient = wildTreeChop.AxeIsEfficient,
+            tree_chop_expected_tool_swings = wildTreeChop.ExpectedHits,
+            tree_chop_energy_per_swing = wildTreeChop.EnergyPerSwing,
+            tree_chop_energy_cost = wildTreeChop.EnergyCost,
+            tree_chop_guaranteed_minimum_outputs = wildTreeChop.GuaranteedMinimumOutputs,
+            tree_chop_optional_output_domain = wildTreeChop.OptionalOutputDomain,
+            tree_chop_output_distribution_status = wildTreeChop.OutputDistributionStatus,
+            tree_chop_projection_status = wildTreeChop.ProjectionStatus,
+            tree_chop_foraging_experience_before = wildTreeChop.ForagingExperienceBefore,
+            tree_chop_foraging_experience_delta = wildTreeChop.ForagingExperienceDelta,
+            tree_chop_foraging_experience_after = wildTreeChop.ForagingExperienceAfter,
+            tree_chop_trees_chopped_before = wildTreeChop.TreesChoppedBefore,
+            tree_chop_trees_chopped_delta = wildTreeChop.TreesChoppedDelta,
+            tree_chop_trees_chopped_after = wildTreeChop.TreesChoppedAfter,
+            tree_chop_expected_tree_present_after = false,
+            tree_chop_native_contract = WildTreeChopNativeContract,
             tree_treatment_required_qualified_item_id = "(O)419",
             tree_treatment_native_allowed = tree.GetType() == typeof(Tree) && !tree.stopGrowingMoss.Value,
             tree_treatment_executor_status = tree.GetType() != typeof(Tree)

@@ -103,6 +103,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "Tree.performUseAction", "Tree.shake", "Utility.tryRollMysteryBox", "Utility.trySpawnRareObject", "Data/WildTrees" }),
             Assumption(
+                "wild_tree_chop_acquisition",
+                new[] { "foraging.chop_wild_tree", "executor.clear_obstacle" },
+                new[] { "exact_vanilla_tree", "locked_base_wild_tree_data", "mature_seedless_mossless_untapped", "native_town_tree_unprotected", "exact_axe_and_hit_budget", "adjacent_reachable_tile", "menu_clear" },
+                new[] { "route_length", "native_axe_animation_and_tree_fall_settlement_ticks", "complete_stochastic_output_domain" },
+                Array.Empty<string>(),
+                new[] { "Axe.DoFunction", "GameLocation.performToolAction", "Tree.performToolAction", "Tree.performTreeFall", "Tree.tickUpdate", "Utility.tryRollMysteryBox", "Utility.trySpawnRareObject", "Data/WildTrees" }),
+            Assumption(
                 "tree_moss_harvest",
                 new[] { "foraging.harvest_tree_moss", "executor.clear_obstacle" },
                 new[] { "exact_vanilla_tree", "mature_moss_ready", "seed_already_shaken", "exact_scythe", "native_shake_idle", "adjacent_interaction_tile", "menu_clear" },

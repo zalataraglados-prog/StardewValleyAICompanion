@@ -31,7 +31,7 @@ public sealed partial class ModEntry
             ? "grass"
             : request.RuleKey;
         if (fixtureKind is not (
-            "grass" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss"))
+            "grass" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss" or "tree_chop"))
         {
             return BlockedWithPrimitive(
                 request,
@@ -39,6 +39,19 @@ public sealed partial class ModEntry
                 "current_location.obstacle[target]=native_fixture",
                 "rule_key=" + fixtureKind,
                 "setup_clear_obstacle_rule_key_invalid");
+        }
+        var wildTreeProfile = string.IsNullOrWhiteSpace(request.FixtureWildTreeChopProfile)
+            ? "ordinary"
+            : request.FixtureWildTreeChopProfile;
+        if (fixtureKind == "tree_chop" && wildTreeProfile is not (
+            "ordinary" or "pine_professions" or "mushroom" or "mahogany" or "fern" or "mystic"))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_clear_obstacle",
+                "current_location.terrain_features[target]=wild_tree",
+                "fixture_wild_tree_chop_profile=" + wildTreeProfile,
+                "fixture_wild_tree_chop_profile_unknown");
         }
 
         var target = new Point(
@@ -72,24 +85,40 @@ public sealed partial class ModEntry
             location.terrainFeatures[tile] =
                 new Grass(Grass.springGrass, 4);
         }
-        else if (fixtureKind == "tree_moss")
+        else if (fixtureKind is "tree_moss" or "tree_chop")
         {
-            var fixtureTree = new Tree("1", Tree.treeStage);
+            var treeType = fixtureKind == "tree_chop"
+                ? wildTreeProfile switch
+                {
+                    "pine_professions" => "3",
+                    "mushroom" => "7",
+                    "mahogany" => "8",
+                    "fern" => "12",
+                    "mystic" => "13",
+                    _ => "1"
+                }
+                : "1";
+            var fixtureTree = new Tree(treeType, Tree.treeStage);
             fixtureTree.health.Value = 10f;
             fixtureTree.stump.Value = false;
             fixtureTree.tapped.Value = false;
             fixtureTree.falling.Value = false;
             fixtureTree.destroy.Value = false;
-            fixtureTree.hasMoss.Value = true;
+            fixtureTree.hasMoss.Value = fixtureKind == "tree_moss";
             fixtureTree.hasSeed.Value = false;
             fixtureTree.wasShakenToday.Value = false;
             fixtureTree.maxShake = 0f;
             location.terrainFeatures[tile] = fixtureTree;
-            EnsureClearObstacleFixtureTool("scythe");
-            var activeScythe = Game1.player.Items
-                .OfType<MeleeWeapon>()
-                .First(weapon => weapon.isScythe());
-            Game1.player.CurrentToolIndex = Game1.player.Items.IndexOf(activeScythe);
+            if (wildTreeProfile == "pine_professions")
+            {
+                if (!Game1.player.professions.Contains(12)) Game1.player.professions.Add(12);
+                if (!Game1.player.professions.Contains(14)) Game1.player.professions.Add(14);
+            }
+            EnsureClearObstacleFixtureTool(fixtureKind == "tree_moss" ? "scythe" : "axe");
+            Tool fixtureTool = fixtureKind == "tree_moss"
+                ? Game1.player.Items.OfType<MeleeWeapon>().First(weapon => weapon.isScythe())
+                : Game1.player.Items.OfType<Axe>().First();
+            Game1.player.CurrentToolIndex = Game1.player.Items.IndexOf(fixtureTool);
         }
         else
         {
@@ -118,13 +147,15 @@ public sealed partial class ModEntry
         }
 
         var after = ObstacleLabel(location, target);
-        var verified = fixtureKind is "grass" or "tree_moss"
+        var verified = fixtureKind is "grass" or "tree_moss" or "tree_chop"
             ? location.terrainFeatures.TryGetValue(
                 tile,
                 out var feature) &&
                 (fixtureKind == "grass"
                     ? feature is Grass
-                    : feature is Tree observedTree && observedTree.hasMoss.Value && !observedTree.hasSeed.Value)
+                    : feature is Tree observedTree &&
+                        !observedTree.hasSeed.Value &&
+                        observedTree.hasMoss.Value == (fixtureKind == "tree_moss"))
             : location.objects.TryGetValue(
                 tile,
                 out var observedObstacle) &&

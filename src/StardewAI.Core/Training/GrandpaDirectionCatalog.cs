@@ -178,6 +178,7 @@ namespace StardewAI.Core.Training
                     "foraging.harvest_spring_onions",
                     "foraging.harvest_ginger",
                     "foraging.harvest_bushes",
+                    "foraging.chop_wild_tree",
                     "foraging.harvest_tree_moss",
                     "foraging.clear_green_rain_bushes",
                     "foraging.pan_ore_spot",

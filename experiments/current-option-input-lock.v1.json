@@ -1,32 +1,32 @@
 {
   "schema_version": "goal_conditioned_current_option_input_lock.v1",
-  "base_commit": "02c6e13c23828f47a432312dd11f9d068a34f4d4",
+  "base_commit": "f0073cca81d324029586c33c985aa5d4336070b3",
   "generated_at_utc": "2026-09-05T00:00:00Z",
   "repository_sources": [
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
-      "bytes": 121958,
-      "sha256": "9cce32b88949089af2c352ebe471e2ba1f3b70f382f2bf06b9e1744d8525fbfc"
+      "bytes": 122398,
+      "sha256": "53b13e223c6c5b31ffa53de37343a63cd023340479ee739e084e37ecff76fd74"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
-      "bytes": 220046,
-      "sha256": "5e30b61ca1385def03db9580b500eff09c9cc95dec217e6ab7c3b20c7843cfa2"
+      "bytes": 221327,
+      "sha256": "8f47f7c2f26e81626ad6de93a2c21ab63567170b0ea37b3c82b367455cb879b9"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
-      "bytes": 44870,
-      "sha256": "ba9d46ab1932dfda20f8920e24f57c6f220e496cc1dc0e02453f99a89aee91a6"
+      "bytes": 44975,
+      "sha256": "6eb3a46c31e42ff5bb2b73a5290146ac687b7adeb816ccb71a1d285fde2dec51"
     },
     {
       "relative_path": "knowledge-artifacts.lock.json",
-      "bytes": 2423,
-      "sha256": "1814590ec919b8dc582e1743f4f18a1f609f4bc2ac5352bec55096fc213aa50e"
+      "bytes": 2422,
+      "sha256": "03b55a4cefb3665b176f1d1997f41cd749b35cc3b07c3ac9aec0e0845a7480ba"
     },
     {
       "relative_path": "catalogs/vanilla-1.6.15/native-action-denominator-freeze.json",
-      "bytes": 8069,
-      "sha256": "e7f3c2f0a3a364293c13d9c44da9e16d74a4a82b8cf56159e04a366dd7eee36a"
+      "bytes": 9012,
+      "sha256": "4456d57c93403333e156d43b29cf73431d443f6767f71c428217ad309ab629d5"
     }
   ],
   "knowledge_sources": [
@@ -38,13 +38,13 @@
   ],
   "output_contract": {
     "schema_version": "stardewai.option_governance_matrix.v3",
-    "option_count": 231,
+    "option_count": 232,
     "goal_template_count": 2,
-    "composite_option_count": 87,
+    "composite_option_count": 88,
     "primitive_option_count": 142,
-    "training_eligible_count": 65,
-    "runtime_verified_count": 154,
-    "bytes": 835258,
-    "sha256": "21dc65fb3715224fe12d0bda2af2e891980a9eb903d8a2456176e16b064223b2"
+    "training_eligible_count": 66,
+    "runtime_verified_count": 155,
+    "bytes": 838860,
+    "sha256": "beadc44922316b4387893364d96771fde511efb8266e67519766eba6824ff133"
   }
 }

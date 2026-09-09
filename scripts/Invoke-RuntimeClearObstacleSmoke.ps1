@@ -8,8 +8,10 @@ param(
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
     [int] $MaxToolSwings = 8,
-    [ValidateSet("grass", "twig", "seed_spot", "artifact_spot", "tree_moss")]
+    [ValidateSet("grass", "twig", "seed_spot", "artifact_spot", "tree_moss", "tree_chop")]
     [string] $FixtureKind = "grass",
+    [ValidateSet("ordinary", "pine_professions", "mushroom", "mahogany", "fern", "mystic")]
+    [string] $WildTreeChopProfile = "ordinary",
     [switch] $KeepGameRunning
 )
 
@@ -202,10 +204,13 @@ try {
     $setupRequest.request_nonce = [guid]::NewGuid().ToString("N")
     $setupRequest.created_at = [DateTimeOffset]::UtcNow.ToString("O")
     $setupRequest.rule_key = $FixtureKind
+    if ($FixtureKind -eq "tree_chop") {
+        $setupRequest.fixture_wild_tree_chop_profile = $WildTreeChopProfile
+    }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
 
     $readySnapshot = Wait-WorldSnapshot -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -TimeoutSeconds 30
-    $targetObject = if ($FixtureKind -eq "tree_moss") {
+    $targetObject = if ($FixtureKind -in @("tree_moss", "tree_chop")) {
         Find-TargetTerrainFeature -Snapshot $readySnapshot
     }
     else {
@@ -218,6 +223,9 @@ try {
         }
         $projectionStatus = if ($FixtureKind -eq "tree_moss") {
             [string]$targetObject.moss_harvest_status
+        }
+        elseif ($FixtureKind -eq "tree_chop") {
+            [string]$targetObject.tree_chop_acquisition_status
         }
         else {
             [string]$targetObject.clear_obstacle_executor_status
@@ -262,6 +270,32 @@ try {
             $clearRequest.moss_harvest_projection_status = [string]$targetObject.moss_harvest_output_projection_status
             $clearRequest.moss_harvest_native_contract = [string]$targetObject.moss_harvest_native_contract
         }
+        elseif ($FixtureKind -eq "tree_chop") {
+            $clearRequest.max_crops = [int]$targetObject.tree_chop_expected_tool_swings
+            $clearRequest.clear_completion_mode = [string]$targetObject.tree_chop_completion_mode
+            $clearRequest.target_runtime_type = [string]$targetObject.runtime_type
+            $clearRequest.tool_slot_index = [int]$targetObject.tree_chop_tool_slot_index
+            $clearRequest.required_tool_kind = [string]$targetObject.tree_chop_required_tool_kind
+            $clearRequest.tree_chop_tree_type = [string]$targetObject.tree_type
+            $clearRequest.tree_chop_data_contract_status = [string]$targetObject.tree_chop_data_contract_status
+            $clearRequest.tree_chop_protection_status = [string]$targetObject.tree_chop_protection_status
+            $clearRequest.tree_chop_projection_status = [string]$targetObject.tree_chop_projection_status
+            $clearRequest.tree_chop_output_domain_contract = [string]$targetObject.tree_chop_output_distribution_status
+            $clearRequest.tree_chop_guaranteed_minimum_outputs_json = ConvertTo-Json -InputObject @($targetObject.tree_chop_guaranteed_minimum_outputs) -Depth 16 -Compress
+            $clearRequest.tree_chop_output_domain_json = ConvertTo-Json -InputObject @($targetObject.tree_chop_optional_output_domain) -Depth 16 -Compress
+            $clearRequest.tree_chop_native_contract = [string]$targetObject.tree_chop_native_contract
+            $clearRequest.expected_tree_has_moss_before = [bool]$targetObject.has_moss
+            $clearRequest.expected_tree_has_seed_before = [bool]$targetObject.has_seed
+            $clearRequest.expected_tree_growth_stage_before = [int]$targetObject.growth_stage
+            $clearRequest.expected_tree_health_before = [double]$targetObject.health
+            $clearRequest.expected_tree_present_after = [bool]$targetObject.tree_chop_expected_tree_present_after
+            $clearRequest.expected_foraging_experience_before = [int]$targetObject.tree_chop_foraging_experience_before
+            $clearRequest.expected_foraging_experience_delta = [int]$targetObject.tree_chop_foraging_experience_delta
+            $clearRequest.expected_foraging_experience_after = [int]$targetObject.tree_chop_foraging_experience_after
+            $clearRequest.expected_trees_chopped_before = [long]$targetObject.tree_chop_trees_chopped_before
+            $clearRequest.expected_trees_chopped_delta = [long]$targetObject.tree_chop_trees_chopped_delta
+            $clearRequest.expected_trees_chopped_after = [long]$targetObject.tree_chop_trees_chopped_after
+        }
         else {
             $clearRequest.max_crops = [int]$targetObject.expected_tool_hits_to_clear
             $clearRequest.tool_slot_index = [int]$targetObject.tool_slot_index
@@ -282,7 +316,7 @@ try {
     $clearResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $clearRequest -TimeoutSeconds 120
 
     $afterSnapshot = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -Headers @{ "Accept" = "application/json" } -TimeoutSec 10
-    $targetObjectAfter = if ($FixtureKind -eq "tree_moss") {
+    $targetObjectAfter = if ($FixtureKind -in @("tree_moss", "tree_chop")) {
         Find-TargetTerrainFeature -Snapshot $afterSnapshot
     }
     else {
@@ -291,6 +325,9 @@ try {
 
     $targetPostconditionPassed = if ($FixtureKind -eq "tree_moss") {
         $null -ne $targetObjectAfter -and -not [bool]$targetObjectAfter.has_moss
+    }
+    elseif ($FixtureKind -eq "tree_chop") {
+        $null -eq $targetObjectAfter
     }
     else {
         $FixtureKind -eq "grass" -or $null -eq $targetObjectAfter
@@ -308,7 +345,7 @@ try {
         target_tile = "$TargetTileX,$TargetTileY"
         fixture_kind = $FixtureKind
         target_qualified_item_id = if ($null -eq $targetObject) { "" } else { [string]$targetObject.qualified_item_id }
-        target_projection_status = if ($null -eq $targetObject) { "not_applicable" } elseif ($FixtureKind -eq "tree_moss") { [string]$targetObject.moss_harvest_status } else { [string]$targetObject.clear_obstacle_executor_status }
+        target_projection_status = if ($null -eq $targetObject) { "not_applicable" } elseif ($FixtureKind -eq "tree_moss") { [string]$targetObject.moss_harvest_status } elseif ($FixtureKind -eq "tree_chop") { [string]$targetObject.tree_chop_acquisition_status } else { [string]$targetObject.clear_obstacle_executor_status }
         target_present_after = $null -ne $targetObjectAfter
         executor_health = $executorHealth
         setup_status = $setupResult.status

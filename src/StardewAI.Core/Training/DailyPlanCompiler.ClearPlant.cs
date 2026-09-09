@@ -86,10 +86,26 @@ namespace StardewAI.Core.Training
                 "expected_foraging_experience_delta",
                 "expected_foraging_experience_after",
                 "moss_harvest_projection_status",
-                "moss_harvest_native_contract"
+                "moss_harvest_native_contract",
+                "tree_chop_tree_type",
+                "tree_chop_data_contract_status",
+                "tree_chop_protection_status",
+                "tree_chop_projection_status",
+                "tree_chop_output_domain_contract",
+                "tree_chop_guaranteed_minimum_outputs_json",
+                "tree_chop_output_domain_json",
+                "tree_chop_native_contract",
+                "expected_tree_present_after",
+                "expected_trees_chopped_before",
+                "expected_trees_chopped_delta",
+                "expected_trees_chopped_after"
             })
             {
-                var value = ParseValue(candidate.ExpectedEffect, name + "=");
+                var value = CandidateParameter(candidate, name);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    value = ParseValue(candidate.ExpectedEffect, name + "=");
+                }
                 if (!string.IsNullOrWhiteSpace(value))
                 {
                     parameters.Add(Parameter(name, value));
