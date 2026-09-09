@@ -57,7 +57,10 @@ public sealed partial class ModEntry
         return new WildTreeChopVerification(
             string.IsNullOrEmpty(reason),
             string.IsNullOrEmpty(reason) ? "verified" : reason,
-            string.Join(",", deltas.Where(row => row.Value != 0).OrderBy(row => row.Key).Select(row => row.Key + "=" + row.Value)),
+            string.Join(",", deltas
+                .Where(row => row.Value != 0)
+                .OrderBy(row => row.Key, StringComparer.Ordinal)
+                .Select(row => row.Key + "=" + row.Value.ToString(CultureInfo.InvariantCulture))),
             changes.ToArray());
     }
 

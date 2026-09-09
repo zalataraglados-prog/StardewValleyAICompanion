@@ -183,8 +183,16 @@ public sealed class OptionImplementationCatalogTests
         Assert.Equal(expected, actual);
         Assert.Equal(expected.Length, root.GetProperty("action_count").GetInt32());
         Assert.Equal(
+            "planning_semantic_catalog_complete",
+            root.GetProperty("catalog_status").GetString());
+        Assert.Equal(
             "native_action_denominator_frozen",
-            root.GetProperty("denominator_status").GetString());
+            root.GetProperty("native_action_denominator_status").GetString());
+        Assert.Equal(
+            "stardewai.planning_semantic_catalog_fingerprint.v1",
+            root.GetProperty("planning_semantic_catalog_fingerprint_schema").GetString());
+        Assert.Equal(64, root.GetProperty("planning_semantic_catalog_fingerprint_sha256").GetString()!.Length);
+        Assert.Equal(64, root.GetProperty("native_action_surface_fingerprint_sha256").GetString()!.Length);
         Assert.Equal(0, root.GetProperty("uncatalogued_native_action_count").GetInt32());
         Assert.Equal(0, root.GetProperty("pending_catalog_without_surface_count").GetInt32());
     }
@@ -199,6 +207,11 @@ public sealed class OptionImplementationCatalogTests
         var actual = fingerprint.RootElement;
         var expected = approval.RootElement;
 
+        Assert.Equal("stardewai.native_action_denominator_fingerprint.v2", actual.GetProperty("schema_version").GetString());
+        Assert.Equal("stardewai.native_action_denominator_freeze.v2", expected.GetProperty("schema_version").GetString());
+        Assert.Equal("native_game_action_evidence_only", actual.GetProperty("fingerprint_scope").GetString());
+        Assert.False(actual.TryGetProperty("semantic_action_count", out _));
+        Assert.False(expected.TryGetProperty("semantic_action_count", out _));
         Assert.Equal("frozen", actual.GetProperty("freeze_status").GetString());
         Assert.Equal(
             expected.GetProperty("fingerprint_sha256").GetString(),
@@ -206,7 +219,33 @@ public sealed class OptionImplementationCatalogTests
         Assert.Equal(expected.GetProperty("surface_count").GetInt32(), actual.GetProperty("surface_count").GetInt32());
         Assert.Equal(expected.GetProperty("branch_count").GetInt32(), actual.GetProperty("branch_count").GetInt32());
         Assert.Equal(expected.GetProperty("map_token_count").GetInt32(), actual.GetProperty("map_token_count").GetInt32());
-        Assert.Equal(expected.GetProperty("semantic_action_count").GetInt32(), actual.GetProperty("semantic_action_count").GetInt32());
+
+        using var semantic = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "semantic-action-catalog.json")));
+        using var dashboard = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "action-progress-dashboard.json")));
+        Assert.Equal(
+            actual.GetProperty("fingerprint_sha256").GetString(),
+            semantic.RootElement.GetProperty("native_action_surface_fingerprint_sha256").GetString());
+        Assert.Equal(
+            actual.GetProperty("fingerprint_sha256").GetString(),
+            dashboard.RootElement.GetProperty("native_action_surface_fingerprint_sha256").GetString());
+        Assert.Equal(
+            semantic.RootElement.GetProperty("planning_semantic_catalog_fingerprint_sha256").GetString(),
+            dashboard.RootElement.GetProperty("planning_semantic_catalog_fingerprint_sha256").GetString());
+    }
+
+    [Fact]
+    public void Native_action_identity_excludes_planning_and_implementation_mappings()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.KnowledgeCompiler", "ActionDenominatorFingerprintBuilder.cs"));
+
+        Assert.Contains("stardewai.native_action_surface.v1", source, StringComparison.Ordinal);
+        Assert.Contains("stardewai.planning_semantic_catalog.v1", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("row.MappedOptionIds", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("row.MappedActionIds", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("semanticActionIds", source, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryFile(params string[] parts)

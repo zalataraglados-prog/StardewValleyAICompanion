@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+<!-- BEGIN GENERATED CURRENT CHECKPOINT -->
+## Machine-generated current checkpoint
+
+- Source commit: `c7bf7a4ffaaaf1e90d94b4541323c6eddbbe6ad2` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-09-09T05:18:53.6884680+00:00`
+- Catalog: `232 registered / 234 semantic / 231 compiler-bound / 155 five-gate / 66 training-allowlist`
+- Execution: `145 product-executor / 2 catalogued-blocked`
+- Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
+- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
+<!-- END GENERATED CURRENT CHECKPOINT -->
+
 ## 2026-09-08 当前权威检查点：EVD-335
 
 - `foraging.harvest_spring_onions` 已闭合读、候选、编译、原生运行和输出五门。它只接受当前已加载地图中原版基类 `Crop` 的 `forageCrop=true / whichForageCrop=1`，并复用唯一 `harvest_crop_tile -> executor.harvest_crop` 生产链；普通作物、姜和自定义作物不会进入该候选。

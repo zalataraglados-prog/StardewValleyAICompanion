@@ -36,6 +36,10 @@ if (-not $explicitSnapshot) {
     }
 }
 $runtimeRoot = Join-Path $KnowledgeRoot "runtime-binaries\linux-server-1.6.15-20260719"
+$catalogSourceCommit = (& git -C $projectRoot rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $catalogSourceCommit -notmatch '^[0-9a-fA-F]{40}$') {
+    throw "Unable to resolve the catalog source commit."
+}
 
 if (-not $NoBuild) {
     & dotnet build $compilerProject --no-restore "-p:GamePath=$GamePath" --verbosity minimal
@@ -56,8 +60,18 @@ if (Test-Path -LiteralPath $denominatorFreeze -PathType Leaf) {
     $compilerArguments += @("--action-denominator-freeze", $denominatorFreeze)
 }
 
-& dotnet run --project $compilerProject --no-build -- @compilerArguments
-$compilerExitCode = $LASTEXITCODE
+$previousCatalogSourceCommit = $env:STARDEWAI_CATALOG_SOURCE_COMMIT_SHA
+try {
+    $env:STARDEWAI_CATALOG_SOURCE_COMMIT_SHA = $catalogSourceCommit
+    & dotnet run --project $compilerProject --no-build -- @compilerArguments
+    $compilerExitCode = $LASTEXITCODE
+}
+finally {
+    $env:STARDEWAI_CATALOG_SOURCE_COMMIT_SHA = $previousCatalogSourceCommit
+}
+if ($compilerExitCode -ne 0) {
+    throw "KnowledgeCompiler rejected action catalog generation with exit code $compilerExitCode."
+}
 
 $files = @(
     "native-action-denominator-fingerprint.json",
@@ -75,6 +89,11 @@ foreach ($file in $files) {
         throw "KnowledgeCompiler did not produce required action catalog file: $source"
     }
     Copy-Item -LiteralPath $source -Destination (Join-Path $catalogRoot $file) -Force
+}
+
+& (Join-Path $PSScriptRoot "Update-CurrentWorkCheckpoint.ps1")
+if ($LASTEXITCODE -ne 0) {
+    throw "Current work checkpoint update failed with exit code $LASTEXITCODE."
 }
 
 Write-Host "Action reconciliation used snapshot schema $snapshot."
