@@ -11,12 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-09 博物馆与标准社区中心实时 Teacher 前沿
+
+- 新增唯一 `CurrentCollectionTeacherFrontierBuilder`，复用 Full Shipment 已验证的当前候选门控、精确 `qualified_item_id` 绑定和权威获取端点证据。输入仍绑定需求库存、获取降层、同状态排名和实时快照四份 SHA-256；排名与快照 `state_hash` 不一致时失败关闭。
+- 博物馆适配器要求 95 项 `donatable_items` 与权威分母逐项一致，并交叉检查 `donated_count`、`missing_item_count`、`missing_item_ids` 和 `collection_complete`。正标签只来自精确原生捐赠投影或对应缺件的权威获取端点。只有旧聚合计数、没有逐项分母的历史快照会把博物馆集合单独标为 blocked，不会猜测 95 项完成态。
+- 标准社区中心适配器按 30 个权威 `bundle_data_key` 对齐运行时 Bundle 行，逐槽验证 OR 选择数、物品身份、数量、最低品质和完成位。每个未完成 Bundle 都公开 `remaining_slot_count`；物品备选要求“达到数量与最低品质前保留、随后原生捐赠”，金库要求“保留资金、随后原生付款”，不会把一个 OR Bundle 的全部备选误教成同时采购。
+- 直接捐赠标签必须同时证明 Bundle、ingredient index、数量、品质、库存前后量和完成投影。获取标签必须有精确产物、正数量、权威 endpoint；最低品质大于 0 时还必须有一致的精确品质参数。未知品质、低品质和没有原生付款投影的金库候选均 deferred，不生成负标签。
+- 结构化回归得到 4 种合法绑定：博物馆捐赠、博物馆获取、Bundle 捐赠、高品质 Bundle 获取；不完整品质与金库伪候选均被排除。真实 r36 为 `museum blocked (legacy per-item denominator absent) / community center 30 observed / 0 current binding`，准确保持不可训练。下一步把现有 Master Angler 日期窗口意图接入同一实时需求前沿，并统一四个收集集合的候选选择合同；正式训练仍未解禁。
+
 ## 2026-09-09 全出货实时 Teacher 前沿
 
 - 新增唯一 `CurrentFullShipmentTeacherFrontierBuilder`，把实时快照、同状态排名、154 项权威需求库存和逐需求获取降层做严格交集。输入文件均记录 SHA-256，排名 `state_hash` 必须与快照完全一致；透明进度的分母、逐项身份、已出货计数、缺失列表、完成标志和比例必须彼此一致，否则失败关闭。
 - 正标签只有两种：带完整原生 Full Shipment 贡献字段的当前出货候选，或产物 `qualified_item_id` 精确匹配缺失物品且 option 是该物品权威获取路线端点的当前候选。已完成物品、同 option 的错误产物、被门控候选和没有精确依赖绑定的 supporting option 均不得进入。
 - 没有当前候选的需求被标为 deferred，不生成负标签。真实 r36 快照验证为 `154 required / 6 completed / 148 missing / 0 current exact binding`，因此报告正确保持 `training_label_eligible=false`，没有把候选池暂时未出现的 148 项错误训练成负例。
-- 该切片只闭合 Full Shipment 的“实时缺项 -> 当前具体动作”证据边界，没有改变总前沿 `2/19 executable / 17/19 pending`，也没有启动正式训练。下一步复用相同接口扩展博物馆与标准社区中心：增加多备选、数量、品质及预留语义的类型化完成适配器，再接 Master Angler 已有的日期窗口意图。
+- 该切片只闭合 Full Shipment 的“实时缺项 -> 当前具体动作”证据边界，没有改变总前沿 `2/19 executable / 17/19 pending`，也没有启动正式训练。博物馆与标准社区中心的同类实时适配现已由后续切片完成；当前下一步是接入 Master Angler 已有的日期窗口意图。
 
 ## 2026-09-09 Teacher 逐需求获取绑定
 

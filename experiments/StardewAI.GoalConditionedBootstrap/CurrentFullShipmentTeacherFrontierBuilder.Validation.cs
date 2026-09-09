@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -59,8 +58,12 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
         }
         foreach (var item in items.EnumerateArray())
         {
-            var itemId = RequiredString(item, "item_id");
-            var qualifiedItemId = RequiredString(item, "qualified_item_id");
+            var itemId = CurrentTeacherFrontierSupport.RequiredString(
+                item,
+                "item_id");
+            var qualifiedItemId = CurrentTeacherFrontierSupport.RequiredString(
+                item,
+                "qualified_item_id");
             if (!item.TryGetProperty("current_shipped_count", out var count) ||
                 !count.TryGetInt32(out var shippedCount) || shippedCount < 0 ||
                 !item.TryGetProperty("shipped", out var shippedValue) ||
@@ -113,30 +116,6 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                 "Live full_shipment_progress identities do not match the authoritative requirement inventory.");
         }
         return result;
-    }
-
-    private static void ValidateAuthority(
-        string inventoryPath,
-        AuthoritativeRequirementInventoryReport inventory,
-        AcquisitionRouteOptionLoweringReport lowering)
-    {
-        if (!inventory.DenominatorComplete ||
-            !inventory.AcquisitionRoutesComplete ||
-            !string.Equals(inventory.Status, "complete", StringComparison.Ordinal))
-        {
-            throw new InvalidDataException(
-                "Authoritative requirement inventory is not complete.");
-        }
-        if (!string.Equals(lowering.Status, "complete", StringComparison.Ordinal) ||
-            !string.Equals(lowering.GoalId, inventory.GoalId, StringComparison.Ordinal) ||
-            !string.Equals(
-                lowering.RequirementInventorySha256,
-                HashFile(inventoryPath),
-                StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidDataException(
-                "Acquisition lowering is incomplete or does not bind the supplied requirement inventory.");
-        }
     }
 
     private static void ValidateSets(
@@ -193,39 +172,4 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
         }
     }
 
-    private static TSet SingleSet<TSet>(
-        IEnumerable<TSet> sets,
-        Func<TSet, string> id,
-        string source)
-    {
-        var matches = sets.Where(value =>
-                string.Equals(id(value), RequirementSetId, StringComparison.Ordinal))
-            .ToArray();
-        return matches.Length == 1
-            ? matches[0]
-            : throw new InvalidDataException(
-                $"Expected exactly one {RequirementSetId} set in {source}.");
-    }
-
-    private static T Read<T>(string path, string label) =>
-        JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonDefaults.Options)
-        ?? throw new InvalidDataException(label + " is null.");
-
-    private static string RequiredString(JsonElement value, string property)
-    {
-        if (!value.TryGetProperty(property, out var propertyValue) ||
-            propertyValue.ValueKind != JsonValueKind.String ||
-            string.IsNullOrWhiteSpace(propertyValue.GetString()))
-        {
-            throw new InvalidDataException(
-                $"Snapshot property {property} is missing.");
-        }
-        return propertyValue.GetString()!;
-    }
-
-    private static string HashFile(string path)
-    {
-        using var stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
-    }
 }

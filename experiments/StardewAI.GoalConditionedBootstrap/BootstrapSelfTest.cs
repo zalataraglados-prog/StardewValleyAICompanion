@@ -63,6 +63,7 @@ internal static partial class BootstrapSelfTest
 
         VerifyMasterAnglerFullRouteIntent(outputRoot);
         VerifyCurrentFullShipmentTeacherFrontier(outputRoot);
+        VerifyCurrentCollectionTeacherFrontier(outputRoot);
 
         var guidedPlan = new TeacherPlanBuilder(24).Build(ranking, knowledge, HarvestGuide(knowledge));
         Require(guidedPlan.Audit.UsesExpertDemonstrationGuidance &&

@@ -862,9 +862,31 @@ Slice 7 remains assigned to the RTX 5070 node.
   r36 fixture contains 154 requirements, 6 completed and 148 missing, but no exact current candidate; the
   report therefore remains label-ineligible instead of manufacturing 148 negative examples.
 - This closes the first dynamic static-graph-to-live-candidate join. It does not raise the overall 2/19
-  frontier or authorize formal training. The next slice applies the same contract to museum and standard
-  Community Center requirements, where OR alternatives, quantities, qualities and reservation semantics
-  require typed adapters, then joins the existing Master Angler date-window intent.
+  frontier or authorize formal training. The museum and standard Community Center slice described below
+  now applies the same contract; the next slice joins the existing Master Angler date-window intent.
+
+### 2026-09-09: Live museum and standard Community Center frontiers admitted
+
+- `CurrentCollectionTeacherFrontierBuilder` consumes the same four hash-bound inputs as the Full Shipment
+  frontier. Museum completion is trusted only when all 95 `donatable_items` rows, missing IDs and aggregate
+  counts agree with the authoritative denominator. Aggregate-only historical snapshots block the museum
+  set without blocking independently valid Community Center evidence.
+- The 30 standard Community Center requirement groups are joined by exact `bundle_data_key`. Every runtime
+  ingredient must match authoritative identity, quantity, minimum quality and completion position. OR
+  bundles retain their required-slot count and remaining-slot count, so alternatives are candidate choices
+  rather than instructions to acquire every listed item.
+- Direct donation labels require exact native inventory and completion projections. Acquisition labels need
+  an exact qualified output, positive quantity and admitted authoritative endpoint; requirements above
+  quality zero additionally require an exact, consistent output-quality parameter. Unknown or insufficient
+  quality is deferred. Item reservations remain explicit until native donation, while money bundles expose
+  a distinct reserve-until-native-payment contract.
+- The typed fixture admits museum donation/acquisition and Bundle donation/high-quality acquisition while
+  rejecting unknown quality, low quality and an unproven Vault payment. The real r36 snapshot correctly
+  blocks only its legacy museum aggregate, observes all 30 standard bundles and emits no labels because its
+  current candidate pool has no exact match. No unavailable route becomes a negative training example.
+- This is a dynamic evidence adapter, not a long-horizon completion proof, so the 2/19 criterion frontier and
+  formal-training gate do not change. Next, Master Angler's existing date-window intent is joined into the
+  same current-requirement frontier and the four collection sets receive one selection contract.
 
 ## Review questions
 

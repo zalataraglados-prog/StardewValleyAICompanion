@@ -17,30 +17,38 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
         var rankingFullPath = Path.GetFullPath(rankingPath);
         var snapshotFullPath = Path.GetFullPath(snapshotPath);
-        var inventory = Read<AuthoritativeRequirementInventoryReport>(
+        var inventory = CurrentTeacherFrontierSupport.Read<AuthoritativeRequirementInventoryReport>(
             inventoryFullPath,
             "Authoritative requirement inventory");
-        var lowering = Read<AcquisitionRouteOptionLoweringReport>(
+        var lowering = CurrentTeacherFrontierSupport.Read<AcquisitionRouteOptionLoweringReport>(
             loweringFullPath,
             "Acquisition route lowering");
-        var ranking = Read<AvailabilityAwarePolicyPredictionEnvelope>(
+        var ranking = CurrentTeacherFrontierSupport.Read<AvailabilityAwarePolicyPredictionEnvelope>(
             rankingFullPath,
             "Availability-aware ranking");
         using var snapshot = JsonDocument.Parse(File.ReadAllText(snapshotFullPath));
 
-        ValidateAuthority(inventoryFullPath, inventory, lowering);
-        var inventorySet = SingleSet(
+        CurrentTeacherFrontierSupport.ValidateAuthority(
+            inventoryFullPath,
+            inventory,
+            lowering,
+            "Full Shipment frontier");
+        var inventorySet = CurrentTeacherFrontierSupport.SingleSet(
             inventory.RequirementSets,
             value => value.RequirementSetId,
+            RequirementSetId,
             "requirement inventory");
-        var loweringSet = SingleSet(
+        var loweringSet = CurrentTeacherFrontierSupport.SingleSet(
             lowering.RequirementSets,
             value => value.RequirementSetId,
+            RequirementSetId,
             "acquisition lowering");
         ValidateSets(inventorySet, loweringSet);
 
         var snapshotRoot = snapshot.RootElement;
-        var sourceStateHash = RequiredString(snapshotRoot, "state_hash");
+        var sourceStateHash = CurrentTeacherFrontierSupport.RequiredString(
+            snapshotRoot,
+            "state_hash");
         if (!string.Equals(
                 sourceStateHash,
                 ranking.Availability.StateHash,
@@ -51,19 +59,7 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
         }
 
         var progress = ReadFullShipmentProgress(snapshotRoot, inventorySet);
-        var candidates = (ranking.RankedEventCandidates ??
-                Array.Empty<PolicyEventCandidatePrediction>())
-            .Where(IsCurrentCandidate)
-            .OrderBy(value => value.Rank)
-            .ThenBy(value => value.CandidateId, StringComparer.Ordinal)
-            .ToArray();
-        if (candidates.Any(value => string.IsNullOrWhiteSpace(value.CandidateId)) ||
-            candidates.GroupBy(value => value.CandidateId, StringComparer.Ordinal)
-                .Any(group => group.Count() != 1))
-        {
-            throw new InvalidDataException(
-                "Current ranked candidates require unique non-empty candidate IDs.");
-        }
+        var candidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(ranking);
         var bindings = BuildBindings(loweringSet, progress, candidates);
         var bindingsByRequirement = bindings
             .GroupBy(value => value.RequirementId, StringComparer.Ordinal)
@@ -138,10 +134,12 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
             Status = status,
             GoalId = inventory.GoalId,
             SourceStateHash = sourceStateHash,
-            RequirementInventorySha256 = HashFile(inventoryFullPath),
-            AcquisitionLoweringSha256 = HashFile(loweringFullPath),
-            RankingSha256 = HashFile(rankingFullPath),
-            SnapshotSha256 = HashFile(snapshotFullPath),
+            RequirementInventorySha256 = CurrentTeacherFrontierSupport.HashFile(
+                inventoryFullPath),
+            AcquisitionLoweringSha256 = CurrentTeacherFrontierSupport.HashFile(
+                loweringFullPath),
+            RankingSha256 = CurrentTeacherFrontierSupport.HashFile(rankingFullPath),
+            SnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(snapshotFullPath),
             RequiredGroupCount = requirements.Length,
             CompletedGroupCount = requirements.Length - missing,
             MissingGroupCount = missing,
@@ -176,19 +174,11 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                     continue;
                 }
 
-                foreach (var candidate in candidates)
+                foreach (var match in CurrentTeacherFrontierSupport.ExactItemCandidates(
+                             alternative.QualifiedItemId,
+                             candidates))
                 {
-                    if (!TryReadExactOutputIdentity(
-                            candidate,
-                            out var candidateQualifiedItemId,
-                            out var identityEvidence) ||
-                        !string.Equals(
-                            candidateQualifiedItemId,
-                            alternative.QualifiedItemId,
-                            StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
+                    var candidate = match.Candidate;
 
                     var directCompletion =
                         candidate.FullShipmentKnown == true &&
@@ -196,20 +186,9 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                         candidate.FullShipmentAlreadyShipped == false &&
                         candidate.FullShipmentCurrentShippedCount == 0 &&
                         candidate.FullShipmentContributes == true;
-                    var routes = alternative.Routes
-                        .Where(value => value.TeacherAdmissionReady)
-                        .Where(value => value.EndpointOptionIds.Contains(
-                            candidate.OptionId,
-                            StringComparer.Ordinal))
-                        .Select(value => new CurrentRequirementRouteEvidence(
-                            value.RouteKind,
-                            value.SourceId,
-                            value.SourceAsset,
-                            value.SourcePath))
-                        .Distinct()
-                        .OrderBy(value => value.RouteKind, StringComparer.Ordinal)
-                        .ThenBy(value => value.SourceId, StringComparer.Ordinal)
-                        .ToArray();
+                    var routes = CurrentTeacherFrontierSupport.AdmittedEndpointRoutes(
+                        alternative,
+                        candidate.OptionId);
                     if (!directCompletion && routes.Length == 0)
                         continue;
 
@@ -225,8 +204,8 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                             ? "native_full_shipment_completion"
                             : "authoritative_acquisition_endpoint",
                         directCompletion
-                            ? identityEvidence + "+native_full_shipment_contribution_flags"
-                            : identityEvidence,
+                            ? match.IdentityEvidence + "+native_full_shipment_contribution_flags"
+                            : match.IdentityEvidence,
                         routes));
                 }
             }
@@ -237,27 +216,5 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
             .ThenBy(value => value.CandidateId, StringComparer.Ordinal)
             .ToArray();
     }
-
-    private static bool TryReadExactOutputIdentity(
-        PolicyEventCandidatePrediction candidate,
-        out string qualifiedItemId,
-        out string evidence)
-    {
-        qualifiedItemId = candidate.QualifiedItemId?.Trim() ?? string.Empty;
-        if (qualifiedItemId.Length > 0)
-        {
-            evidence = "candidate.qualified_item_id";
-            return true;
-        }
-
-        evidence = string.Empty;
-        return false;
-    }
-
-    private static bool IsCurrentCandidate(PolicyEventCandidatePrediction value) =>
-        value.Available &&
-        value.AllowedToday != false &&
-        !string.Equals(value.TimelineStatus, "blocked", StringComparison.Ordinal) &&
-        (value.BlockReasons?.Length ?? 0) == 0;
 
 }
