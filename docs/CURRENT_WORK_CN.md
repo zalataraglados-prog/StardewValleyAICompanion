@@ -3,8 +3,8 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `c7bf7a4ffaaaf1e90d94b4541323c6eddbbe6ad2` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-09-09T05:18:53.6884680+00:00`
+- Source commit: `ce0f75cffdde58a631495528a585fcd49cd950a1` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-09-09T05:28:15.6502272+00:00`
 - Catalog: `232 registered / 234 semantic / 231 compiler-bound / 155 five-gate / 66 training-allowlist`
 - Execution: `145 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`

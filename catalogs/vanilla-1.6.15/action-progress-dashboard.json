@@ -1,7 +1,7 @@
 {
   "schema_version": "stardewai.action_progress_dashboard.v2",
-  "generated_at_utc": "2026-09-09T05:18:53.6884680\u002B00:00",
-  "catalog_source_commit_sha": "c7bf7a4ffaaaf1e90d94b4541323c6eddbbe6ad2",
+  "generated_at_utc": "2026-09-09T05:28:15.6502272\u002B00:00",
+  "catalog_source_commit_sha": "ce0f75cffdde58a631495528a585fcd49cd950a1",
   "latest_evidence_id": "EVD-338",
   "native_action_denominator_status": "native_action_denominator_frozen",
   "native_action_surface_fingerprint_sha256": "a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e",
