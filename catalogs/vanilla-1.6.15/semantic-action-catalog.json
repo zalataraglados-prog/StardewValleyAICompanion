@@ -1,9 +1,9 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "0f0a25f7179484e28d15c02dc16ef34ae60de1a364afb0f86c5c861c77abedcb",
-  "action_count": 233,
-  "registered_option_spec_count": 231,
+  "denominator_fingerprint_sha256": "0dca41d6a19a450bc892c53d44df910442aff6d8ec9ad50fb357a6db30caafce",
+  "action_count": 234,
+  "registered_option_spec_count": 232,
   "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -1504,6 +1504,15 @@
     {
       "action_id": "fishing.service_fish_ponds",
       "domain": "fishing",
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "foraging.chop_wild_tree",
+      "domain": "foraging",
       "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.strategy_orchestration",
       "catalog_status": "registered_option_spec",

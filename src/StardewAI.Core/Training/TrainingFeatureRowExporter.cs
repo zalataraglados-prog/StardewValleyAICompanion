@@ -249,6 +249,7 @@ namespace StardewAI.Core.Training
                 case "foraging.harvest_spring_onions":
                 case "foraging.harvest_ginger":
                 case "foraging.harvest_bushes":
+                case "foraging.chop_wild_tree":
                 case "foraging.harvest_tree_moss":
                 case "foraging.clear_green_rain_bushes":
                 case "mining.claim_reward_chests":

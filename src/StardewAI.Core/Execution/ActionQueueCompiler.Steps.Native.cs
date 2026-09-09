@@ -63,6 +63,8 @@ namespace StardewAI.Core.Execution
             var completionMode = ReadParameter(action, "clear_completion_mode");
             var expectedEffect = string.Equals(completionMode, "tree_moss_removed", StringComparison.Ordinal)
                 ? "current_location.terrain_features[" + x.Value + "," + y.Value + "].has_moss=false;tree_present=true"
+                : string.Equals(completionMode, "wild_tree_removed", StringComparison.Ordinal)
+                    ? "current_location.terrain_features[" + x.Value + "," + y.Value + "].present=false;native_tree_fall_settled=true"
                 : "current_location.obstacle[" + x.Value + "," + y.Value + "]=clear_or_blocked";
             return new[]
             {

@@ -83,13 +83,19 @@ public sealed partial class ModEntry : Mod
         var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var targetIsTreeMoss = string.Equals(request.ClearCompletionMode, "tree_moss_removed", StringComparison.Ordinal);
+        var targetIsWildTreeChop = string.Equals(request.ClearCompletionMode, "wild_tree_removed", StringComparison.Ordinal);
         var mossTree = targetIsTreeMoss && location.terrainFeatures.TryGetValue(target.ToVector2(), out var mossFeature)
             ? mossFeature as Tree
             : null;
+        var wildTree = targetIsWildTreeChop && location.terrainFeatures.TryGetValue(target.ToVector2(), out var wildTreeFeature)
+            ? wildTreeFeature as Tree
+            : null;
         var requested = targetIsTreeMoss
             ? "current_location.terrain_features[" + target.X + "," + target.Y + "].has_moss=false;tree_present=true"
+            : targetIsWildTreeChop
+                ? "current_location.terrain_features[" + target.X + "," + target.Y + "].present=false;native_tree_fall_settled=true"
             : "current_location.obstacle[" + target.X + "," + target.Y + "]=clear";
-        if (!targetIsTreeMoss && !CanClearRouteObstacles(location) && !IsExplicitPortableSkillClearanceObject(location, target))
+        if (!targetIsTreeMoss && !targetIsWildTreeChop && !CanClearRouteObstacles(location) && !IsExplicitPortableSkillClearanceObject(location, target))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_location_not_whitelisted"));
             return;
@@ -136,7 +142,11 @@ public sealed partial class ModEntry : Mod
             if (request.ToolSlotIndex.Value < 0 ||
                 request.ToolSlotIndex.Value >= Game1.player.Items.Count ||
                 Game1.player.Items[request.ToolSlotIndex.Value] is not Tool requestedTool ||
-                !(targetIsTreeMoss ? CanToolHarvestTreeMoss(mossTree, requestedTool) : CanToolClearTarget(location, target, requestedTool)))
+                !(targetIsTreeMoss
+                    ? CanToolHarvestTreeMoss(mossTree, requestedTool)
+                    : targetIsWildTreeChop
+                        ? requestedTool is Axe && CanToolClearTarget(location, target, requestedTool)
+                        : CanToolClearTarget(location, target, requestedTool)))
             {
                 pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_tool_slot_drifted"));
                 return;
@@ -160,6 +170,22 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), projectedStateDrift));
             return;
         }
+        WildTreeChopExecutionState? wildTreeChop = null;
+        if (targetIsWildTreeChop)
+        {
+            var wildTreeRequestReason = ValidateWildTreeChopExecutionRequest(
+                request,
+                location,
+                target,
+                wildTree,
+                tool,
+                out wildTreeChop);
+            if (wildTreeRequestReason is not null)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), wildTreeRequestReason));
+                return;
+            }
+        }
         var expectedOutputItems = TryParseClearanceOutputItems(request.ClearOutputItemsJson, out var parsedOutputItems)
             ? parsedOutputItems
             : null;
@@ -180,7 +206,7 @@ public sealed partial class ModEntry : Mod
         var before = ObstacleLabel(location, target);
         var staminaBefore = Game1.player.Stamina;
         var beforeForagingExperience = Game1.player.experiencePoints[Farmer.foragingSkill];
-        var expectedForagingExperience = targetIsTreeMoss
+        var expectedForagingExperience = targetIsTreeMoss || targetIsWildTreeChop
             ? request.ExpectedForagingExperienceDelta
             : ProjectedClearanceForagingExperience(location, target);
         var outputProjection = ProjectedClearanceOutput(location, target);
@@ -193,9 +219,9 @@ public sealed partial class ModEntry : Mod
         var artifactSpotsDugBefore = Game1.player.stats.Get("ArtifactSpotsDug");
         var defenseBookMailBefore = Game1.player.mailReceived.Contains("DefenseBookDropped");
         var targetTerrainFeatureBefore = ClearanceTerrainFeatureLabel(location, target);
-        if (targetIsTreeMoss)
+        if (targetIsTreeMoss || targetIsWildTreeChop)
         {
-            TreeToolTracePatch.Begin(location, mossTree!);
+            TreeToolTracePatch.Begin(location, targetIsTreeMoss ? mossTree! : wildTree!);
         }
         activeClearObstacle = new ActiveClearObstacle(
             pending,
@@ -206,6 +232,7 @@ public sealed partial class ModEntry : Mod
             targetIsArtifactSpot,
             targetIsTreeMoss,
             mossTree,
+            wildTreeChop,
             expectedOutputItems,
             outputItemMultisetBefore,
             before,
@@ -265,11 +292,17 @@ public sealed partial class ModEntry : Mod
         var currentLabel = ObstacleLabel(active.Location, active.Target);
         var targetCleared = active.TargetIsTreeMoss
             ? TreeMossHarvestCompleted(active)
+            : active.WildTreeChop is not null
+            ? WildTreeChopCompleted(active)
             : active.TargetIsArtifactSpot
             ? !active.Location.objects.ContainsKey(active.Target.ToVector2())
             : currentLabel == "clear";
         if (active.Lifecycle.Phase == NativeToolActionPhase.Ready)
         {
+            if (active.WildTreeChop is not null && WildTreeChopWaitingForFall(active))
+            {
+                return;
+            }
             if (targetCleared)
             {
                 CompleteClearObstacle(
@@ -320,6 +353,8 @@ public sealed partial class ModEntry : Mod
                 active.Lifecycle.Reset();
                 if (active.TargetIsTreeMoss
                         ? TreeMossHarvestCompleted(active)
+                        : active.WildTreeChop is not null
+                        ? WildTreeChopCompleted(active)
                         : active.TargetIsArtifactSpot
                         ? !active.Location.objects.ContainsKey(
                             active.Target.ToVector2())
@@ -361,6 +396,7 @@ public sealed partial class ModEntry : Mod
         var toolSlotBefore = active.ToolSlotBefore;
         var targetIsArtifactSpot = active.TargetIsArtifactSpot;
         var targetIsTreeMoss = active.TargetIsTreeMoss;
+        var targetIsWildTreeChop = active.WildTreeChop is not null;
         var mossTree = active.MossTree;
         var expectedOutputItems = active.ExpectedOutputItems;
         var outputItemMultisetBefore = active.OutputItemMultisetBefore;
@@ -375,12 +411,18 @@ public sealed partial class ModEntry : Mod
         var defenseBookMailBefore = active.DefenseBookMailBefore;
         var targetTerrainFeatureBefore = active.TargetTerrainFeatureBefore;
         var observedLabels = active.ObservedLabels;
-        var treeToolTrace = targetIsTreeMoss && mossTree is not null
-            ? TreeToolTracePatch.Complete(mossTree)
+        var tracedTree = targetIsTreeMoss ? mossTree : active.WildTreeChop?.Tree;
+        var treeToolTrace = tracedTree is not null
+            ? TreeToolTracePatch.Complete(tracedTree)
             : Array.Empty<string>();
+        var wildTreeChopVerification = targetIsWildTreeChop
+            ? VerifyWildTreeChop(active, treeToolTrace)
+            : null;
         var started = active.StartedAt;
         var requested = targetIsTreeMoss
             ? "current_location.terrain_features[" + target.X + "," + target.Y + "].has_moss=false;tree_present=true"
+            : targetIsWildTreeChop
+                ? "current_location.terrain_features[" + target.X + "," + target.Y + "].present=false;native_tree_fall_settled=true"
             : "current_location.obstacle[" + target.X + "," + target.Y + "]=clear";
         var after = ObstacleLabel(location, target);
         var foragingExperienceAfter = Game1.player.experiencePoints[Farmer.foragingSkill];
@@ -423,6 +465,8 @@ public sealed partial class ModEntry : Mod
             (!expectedDefenseBookMailAfter.HasValue || defenseBookMailAfter == expectedDefenseBookMailAfter.Value);
         var targetClearanceCompleted = targetIsTreeMoss
             ? TreeMossHarvestCompleted(active)
+            : targetIsWildTreeChop
+            ? WildTreeChopCompleted(active)
             : targetIsArtifactSpot
             ? !location.objects.ContainsKey(target.ToVector2())
             : after == "clear";
@@ -441,7 +485,8 @@ public sealed partial class ModEntry : Mod
             (!expectedForagingExperience.HasValue || foragingExperienceDelta == expectedForagingExperience.Value) &&
             projectedOutputMatched &&
             mossStateMatched &&
-            nativeTreeToolTraceMatched;
+            nativeTreeToolTraceMatched &&
+            (wildTreeChopVerification?.Verified ?? true);
         var verificationFailureReason = forcedBlockReason ??
             (!targetClearanceCompleted
             ? "target_obstacle_still_present"
@@ -453,6 +498,8 @@ public sealed partial class ModEntry : Mod
                         ? "tree_moss_projected_state_mismatch"
                     : !nativeTreeToolTraceMatched
                         ? "tree_moss_native_tool_trace_mismatch"
+                    : wildTreeChopVerification is not null && !wildTreeChopVerification.Verified
+                        ? wildTreeChopVerification.Reason
                     : "projected_clear_output_mismatch");
         var changedFacts = new List<SimulatedFactChange>
         {
@@ -616,6 +663,10 @@ public sealed partial class ModEntry : Mod
                 }
             });
         }
+        if (wildTreeChopVerification is not null)
+        {
+            changedFacts.AddRange(wildTreeChopVerification.ChangedFacts);
+        }
         if (toolSlotBefore != Game1.player.CurrentToolIndex)
         {
             changedFacts.Add(new SimulatedFactChange
@@ -647,6 +698,8 @@ public sealed partial class ModEntry : Mod
             PrimitiveVerificationReasons = verified
                 ? targetIsTreeMoss
                     ? new[] { "tree_moss_removed_and_tree_preserved", "tool=" + tool.GetType().Name, "native_tree_tool_trace_matched=true", "projected_foraging_experience_matched=true", "projected_output_matched=true" }
+                    : targetIsWildTreeChop
+                        ? new[] { "wild_tree_trunk_stump_and_fall_settlement_completed", "tool=" + tool.GetType().Name, "native_tree_tool_trace_matched=true", "projected_foraging_experience_matched=true", "trees_chopped_stat_matched=true", "complete_output_domain_matched=true" }
                     : new[] { "target_obstacle_cleared", "tool=" + tool.GetType().Name, "projected_foraging_experience_matched=" + (expectedForagingExperience.HasValue ? "true" : "not_projected"), "projected_output_matched=" + (expectedOutputItems is null && outputProjection is null ? "not_projected" : "true") }
                 : new[] { verificationFailureReason, "tool=" + tool.GetType().Name },
             RequestedEffect = requested,
@@ -662,6 +715,7 @@ public sealed partial class ModEntry : Mod
                 ";artifact_spots_dug_delta=" + artifactSpotsDugDelta +
                 ";target_terrain_feature_after=" + targetTerrainFeatureAfter +
                 ";defense_book_mail_after=" + defenseBookMailAfter.ToString().ToLowerInvariant() +
+                ";wild_tree_chop_output_deltas=" + (wildTreeChopVerification?.OutputDeltas ?? "not_applicable") +
                 ";tree_tool_trace=" + string.Join(",", treeToolTrace),
             BlockReasons = verified ? Array.Empty<string>() : new[] { verificationFailureReason },
             ChangedFacts = changedFacts.ToArray()

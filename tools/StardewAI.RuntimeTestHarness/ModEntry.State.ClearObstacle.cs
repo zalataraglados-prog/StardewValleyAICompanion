@@ -17,6 +17,7 @@ public sealed partial class ModEntry
             bool targetIsArtifactSpot,
             bool targetIsTreeMoss,
             StardewValley.TerrainFeatures.Tree? mossTree,
+            WildTreeChopExecutionState? wildTreeChop,
             ClearanceOutputItemExpectation[]? expectedOutputItems,
             Dictionary<ClearanceOutputItemKey, int>? outputItemMultisetBefore,
             string before,
@@ -39,6 +40,7 @@ public sealed partial class ModEntry
             TargetIsArtifactSpot = targetIsArtifactSpot;
             TargetIsTreeMoss = targetIsTreeMoss;
             MossTree = mossTree;
+            WildTreeChop = wildTreeChop;
             ExpectedOutputItems = expectedOutputItems;
             OutputItemMultisetBefore = outputItemMultisetBefore;
             Before = before;
@@ -64,6 +66,7 @@ public sealed partial class ModEntry
         public bool TargetIsArtifactSpot { get; }
         public bool TargetIsTreeMoss { get; }
         public StardewValley.TerrainFeatures.Tree? MossTree { get; }
+        public WildTreeChopExecutionState? WildTreeChop { get; }
         public ClearanceOutputItemExpectation[]? ExpectedOutputItems { get; }
         public Dictionary<ClearanceOutputItemKey, int>? OutputItemMultisetBefore { get; }
         public string Before { get; }

@@ -286,6 +286,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("foraging.harvest_bushes", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.harvest_fruit_tree", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.harvest_tree_product", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("foraging.chop_wild_tree", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.harvest_tree_moss", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.rummage_garbage", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.clear_green_rain_bushes", C, R1, None, NoConfirm, Actor, Inventory, Allowed),

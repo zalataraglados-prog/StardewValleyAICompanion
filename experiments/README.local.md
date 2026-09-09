@@ -109,9 +109,10 @@ it never falls back to a legacy AI rollout.
   runtime-only deterministic dependencies, high-level options pending runtime
   admission, primitive-only gaps, and genuinely missing options instead of treating
   every source as executable.
-- The current exact result is 30/33 admitted route kinds. The three explicit gaps are
-  tree moss harvesting, wild-tree chop drops, and wild-tree seed drops; both wild-tree
-  gaps share one missing high-level chop-acquisition option. Both artifact-spot routes lower through the single
+- The current exact result is 33/33 admitted route kinds. Wild-tree chop drops lower through
+  `foraging.chop_wild_tree -> clear_obstacle_tile -> executor.clear_obstacle`; the Fall
+  hazelnut row in `Data/WildTrees.SeedDropItems` lowers through the existing native tree-shake
+  option rather than chopping. Both artifact-spot routes lower through the single
   `foraging.excavate_artifact_spots -> clear_obstacle_tile -> executor.clear_obstacle`
   chain, with `(O)SeedSpot` and other clearables excluded upstream. EVD-334 verifies that
   exact high-level chain through hidden native Hoe execution, projected outputs, skill

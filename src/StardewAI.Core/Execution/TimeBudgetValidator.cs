@@ -205,6 +205,8 @@ namespace StardewAI.Core.Execution
                 case "foraging.harvest_tree_product":
                 case "executor.harvest_tree_product":
                     return EstimateCompiledSteps(item, "native_wild_tree_product_shake_steps.v1");
+                case "foraging.chop_wild_tree":
+                    return EstimateCompiledSteps(item, "native_wild_tree_axe_fall_steps.v1");
                 case "foraging.harvest_tree_moss":
                     return EstimateCompiledSteps(item, "native_tree_moss_scythe_steps.v1");
                 case "foraging.rummage_garbage":
@@ -416,6 +418,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "foraging.harvest_tree_product" or "executor.harvest_tree_product")
             {
                 return assumptionRegistry.GetRequired("wild_tree_product_harvest");
+            }
+
+            if (item.OptionId is "foraging.chop_wild_tree")
+            {
+                return assumptionRegistry.GetRequired("wild_tree_chop_acquisition");
             }
 
             if (item.OptionId is "foraging.harvest_tree_moss")

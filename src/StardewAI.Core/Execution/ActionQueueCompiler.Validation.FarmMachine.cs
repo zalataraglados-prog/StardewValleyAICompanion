@@ -65,7 +65,11 @@ namespace StardewAI.Core.Execution
                 if (target.ValueKind == JsonValueKind.Object &&
                     ReadString(target, "type").EndsWith(".Tree", StringComparison.Ordinal))
                 {
-                    if (string.Equals(ReadParameter(action, "clear_completion_mode"), "tree_moss_removed", StringComparison.Ordinal))
+                    if (string.Equals(ReadParameter(action, "clear_completion_mode"), "wild_tree_removed", StringComparison.Ordinal))
+                    {
+                        reasons.AddRange(ValidateWildTreeChopPlan(action, snapshot, target));
+                    }
+                    else if (string.Equals(ReadParameter(action, "clear_completion_mode"), "tree_moss_removed", StringComparison.Ordinal))
                     {
                         reasons.AddRange(ValidateTreeMossClearPlan(action, snapshot, target));
                     }
