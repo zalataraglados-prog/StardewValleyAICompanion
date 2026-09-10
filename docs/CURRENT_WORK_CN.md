@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-10 四收集集合 fresh 回执训练行准入
+
+- 新增唯一 `CurrentStageOneCollectionTeacherReceiptBuilder`。调用方必须先落盘实际执行的 Teacher 偏好制品，再把同一制品的单个 pending 队列项、原生 `plan_execution_episode.v1` 回执和 fresh 后快照送入准入器；不得重新生成 queue ID 后拿新队列匹配旧回执。
+- 偏好制品的五份源 SHA-256 必须仍与需求库存、获取降层、候选排名、前快照和 Master Angler 意图一致。准入器会重新计算 Teacher 选择与编译语义，核对选择、完整当前候选成员、顺序和去除随机 ID 后的队列内容；因此既保留实际执行 queue ID，也不信任可篡改的中间 JSON。
+- 回执门严格绑定 run、queue、primitive option、唯一机械 step 的 primitive kind、前后 state hash、前后 tick、`applied/success/verified/fresh`、非空 changed facts 和完整 effective queue item。当前切片只接收恰好一个 pending 原语；多原语高层动作在拥有可靠的整队列完成回执前继续失败关闭。
+- 每个 selected candidate credit 都必须由 fresh 后状态逐项证明：精确库存增加、原生 Full Shipment 完成或“库存减少并进入下一日原生结算”的 shipping-bin 增量、博物馆捐赠、Community Center 精确 ingredient 完成、鱼类收集完成，或 Master Angler 精确路线端点抵达。任一 credit 未变化都不生成训练行。
+- 成功结果复用 `policy_decision_trajectory.v2`，只保留 Teacher 当前可用候选，清零 learner rank/score/model score/expected reward，并在 `audit.teacher_supervision` 中记录偏好、源输入、回执、后快照 SHA-256 及逐 credit 转移。既有数据集构建器已接收该行；错 queue 和“成功但需求未变”均被回归拒绝。
+- 本切片仍明确 `formal_training_authorized=false`，总前沿仍为 `2/19 executable / 17/19 pending`。固定下一步是把该准入器接入隔离的四集合 Teacher Product rollout，持久化同一偏好制品并取得第一条真实游戏回执训练行；之后再扩展可靠的多原语整候选回执、未来日期调度和其余长期目标证明。
+
 ## 2026-09-10 四收集集合确定性 Teacher 偏好
 
 - 新增唯一 `CurrentStageOneCollectionTeacherPreferenceBuilder`。它从需求库存、获取降层、同状态候选排名、透明快照和 Master Angler 目标日期意图重新构建四集合当前候选前沿，并逐一核对状态、目标、分母、候选 credit、选择组和五份输入 SHA-256；任一漂移均失败关闭。

@@ -236,6 +236,87 @@ public sealed class PolicyTrajectoryAudit
 
     [JsonPropertyName("policy")]
     public string Policy { get; set; } = "Every decision preserves the complete candidate set; only one evidence-admitted selected option may label a policy trajectory, while non-admitted candidates remain explicit negatives.";
+
+    [JsonPropertyName("teacher_supervision")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PolicyTrajectoryTeacherSupervision? TeacherSupervision { get; set; }
+}
+
+public sealed class PolicyTrajectoryTeacherSupervision
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } = "policy_teacher_supervision.v1";
+
+    [JsonPropertyName("provenance_class")]
+    public string ProvenanceClass { get; set; } = string.Empty;
+
+    [JsonPropertyName("selection_policy_id")]
+    public string SelectionPolicyId { get; set; } = string.Empty;
+
+    [JsonPropertyName("preference_artifact_sha256")]
+    public string PreferenceArtifactSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("requirement_inventory_sha256")]
+    public string RequirementInventorySha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("acquisition_lowering_sha256")]
+    public string AcquisitionLoweringSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_ranking_sha256")]
+    public string SourceRankingSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("before_snapshot_sha256")]
+    public string BeforeSnapshotSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("execution_receipt_sha256")]
+    public string ExecutionReceiptSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_snapshot_sha256")]
+    public string AfterSnapshotSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("selected_candidate_id")]
+    public string SelectedCandidateId { get; set; } = string.Empty;
+
+    [JsonPropertyName("selected_queue_item_id")]
+    public string SelectedQueueItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("requirement_transitions")]
+    public PolicyTeacherRequirementTransition[] RequirementTransitions { get; set; } =
+        Array.Empty<PolicyTeacherRequirementTransition>();
+
+    [JsonPropertyName("unavailable_candidate_semantics")]
+    public string UnavailableCandidateSemantics { get; set; } =
+        "defer_without_negative_label";
+}
+
+public sealed class PolicyTeacherRequirementTransition
+{
+    [JsonPropertyName("requirement_set_id")]
+    public string RequirementSetId { get; set; } = string.Empty;
+
+    [JsonPropertyName("requirement_id")]
+    public string RequirementId { get; set; } = string.Empty;
+
+    [JsonPropertyName("alternative_index")]
+    public int AlternativeIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("binding_kind")]
+    public string BindingKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("transition_kind")]
+    public string TransitionKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("before_value")]
+    public string BeforeValue { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_value")]
+    public string AfterValue { get; set; } = string.Empty;
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
 }
 
 public sealed class PolicyTrajectoryAppendResult

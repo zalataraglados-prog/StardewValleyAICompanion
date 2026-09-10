@@ -939,6 +939,29 @@ Slice 7 remains assigned to the RTX 5070 node.
   before/after receipt and emits a training row only after the exact credited requirement transition is
   verified. Future-date scheduling and the remaining long-horizon criterion proofs still follow.
 
+### 2026-09-10: Fresh current collection receipt admission
+
+- `CurrentStageOneCollectionTeacherReceiptBuilder` consumes the exact persisted Teacher preference
+  artifact that supplied the executed queue. It recomputes the preference from the five hash-bound
+  authority inputs and compares the selected candidate, complete current membership, Teacher order and
+  compiled command semantics while preserving the original random queue identity for receipt binding.
+- Admission currently requires exactly one pending queue item containing exactly one mechanical step. The
+  native episode must bind the run, queue, primitive option and kind, full effective queue item,
+  before/after state hashes and ticks, and must be applied, successful, verified, fresh, reason-free and
+  supported by non-empty changed facts. A receipt from another queue or primitive fails closed.
+- Every requirement credit on the selected candidate must independently change in the fresh after state.
+  The verifier covers exact inventory acquisition, pending or settled Full Shipment, museum donation,
+  exact Community Center ingredient completion, native fish collection and an exact Master Angler route
+  endpoint. A generic successful executor status cannot substitute for requirement progress.
+- The admitted row reuses `policy_decision_trajectory.v2`. It contains only the complete Teacher-current
+  candidate set, clears all learner ranking signals and carries structured Teacher provenance plus all
+  source/receipt hashes and verified transitions in `audit.teacher_supervision`. The canonical dataset
+  validator checks this optional evidence whenever present.
+- This closes the first single-state, single-primitive preference-to-outcome admission path. It does not
+  authorize formal training: the next slice integrates this builder into an isolated real Product rollout
+  and captures the first native row from the persisted preference artifact. Multi-primitive candidate
+  completion, future-date scheduling and the remaining 17 Stage 1 criteria remain fail-closed work.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
