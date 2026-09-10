@@ -55,6 +55,12 @@ public sealed class CommunityCenterTransparencyTests
         Assert.Contains("world.BundleData", source, StringComparison.Ordinal);
         Assert.Contains("world.BundleData.Count", source, StringComparison.Ordinal);
         Assert.Contains("world.Bundles.Pairs", source, StringComparison.Ordinal);
+        Assert.Contains("CompleteBundleCount = bundleRows.Count", source, StringComparison.Ordinal);
+        Assert.Contains("row.Complete", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "world.Bundles.Pairs.Count(pair => pair.Value.All",
+            source,
+            StringComparison.Ordinal);
         Assert.Contains("IsValidItemForThisIngredientDescription", source, StringComparison.Ordinal);
         Assert.Contains("getNotePosition", source, StringComparison.Ordinal);
         Assert.Contains("HasPendingMail(master, \"JojaMember\")", source, StringComparison.Ordinal);

@@ -26,6 +26,19 @@ namespace StardewAI.Core.Execution
                 : action.Parameters;
         }
 
+        private static SmallModelActionParameter[] BuildMoveToTileParameters(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
+        {
+            var parameters = new List<SmallModelActionParameter>(action.Parameters);
+            AddParameterIfMissing(parameters, "max_movement_tiles", "512");
+            AddParameterIfMissing(
+                parameters,
+                "compiler_context.current_map_collision_source",
+                "locations.collision_grid");
+            return parameters.ToArray();
+        }
+
         private static SmallModelActionParameter[] BuildSocialParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var parameters = new List<SmallModelActionParameter>(action.Parameters)

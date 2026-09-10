@@ -245,9 +245,12 @@ Teacher semantics but preserves the original queue ID, verifies every credited r
 and emits an existing `policy_decision_trajectory.v2` row with structured Teacher provenance. Another
 queue or primitive, a missing or changed effective queue item, a stale tick/hash, a non-verified native
 outcome, a successful receipt without exact requirement progress, or a multi-primitive queue fails
-closed. This artifact still reports
-`formal_training_authorized=false`; the next step is isolated real Product rollout integration, not
-unrestricted training.
+closed. `Invoke-CurrentStageOneCollectionTeacherProductRollout.ps1` now integrates that admission path with
+an isolated hidden Product run. The first preserved run selected `farm.collect_machine_outputs`, compiled
+and verified native Raisins collection, emitted one `policy_decision_trajectory.v2` row, and passed the
+canonical dataset validator with `1` accepted and `0` rejected rows. The artifact still reports
+`formal_training_authorized=false`; the next step is bounded repeated whole-candidate rollout plus
+multi-primitive receipt admission, not unrestricted training.
 
 ## Hardware
 

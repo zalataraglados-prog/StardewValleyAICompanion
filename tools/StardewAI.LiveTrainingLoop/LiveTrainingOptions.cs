@@ -49,6 +49,9 @@ public sealed class LiveTrainingOptions
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
     public bool UseParameterizedAction { get; set; }
+    public string TeacherPreferencePath { get; set; } = string.Empty;
+    public bool UseTeacherPreferenceQueue =>
+        !string.IsNullOrWhiteSpace(TeacherPreferencePath);
     public string ActionOptionId { get; set; } = string.Empty;
     public List<SmallModelActionParameter> ActionParameters { get; } = new();
     public bool ContinueAfterBlockedQueueItems { get; set; }
@@ -380,6 +383,10 @@ public sealed class LiveTrainingOptions
             {
                 options.UseParameterizedAction = true;
             }
+            else if (current == "--teacher-preference" && i + 1 < args.Length)
+            {
+                options.TeacherPreferencePath = args[++i];
+            }
             else if (current == "--action-option-id" && i + 1 < args.Length)
             {
                 options.ActionOptionId = args[++i];
@@ -517,7 +524,51 @@ public sealed class LiveTrainingOptions
                 "--daily-plan-candidate-options value.");
         }
 
+        options.ValidateTeacherPreferenceMode();
+
         return options;
+    }
+
+    public void ValidateTeacherPreferenceMode()
+    {
+        if (!UseTeacherPreferenceQueue)
+            return;
+
+        var incompatibleQueueSourceCount = new[]
+        {
+            UseDailyPlan,
+            UseParameterizedAction,
+            UsePlanOutput,
+            !string.IsNullOrWhiteSpace(ExecutorOptionId)
+        }.Count(value => value);
+        if (incompatibleQueueSourceCount > 0)
+        {
+            throw new ArgumentException(
+                "--teacher-preference cannot be combined with a planner, " +
+                "parameterized action, plan output, or executor option override.");
+        }
+        if (!SkipTraining || !UseProductExecutor || !RequireExecutorFeedback)
+        {
+            throw new ArgumentException(
+                "--teacher-preference requires --skip-training, " +
+                "--use-product-executor, and executor feedback.");
+        }
+        if (MaxAttempts != 1 || RequiredVerifiedActions != 1)
+        {
+            throw new ArgumentException(
+                "--teacher-preference requires --max-attempts 1 and " +
+                "--required-verified-actions 1.");
+        }
+        if (RequireNativeSaveBoundary ||
+            !string.Equals(
+                TargetExecutionMode,
+                ExecutionTargetProfiles.TrainingSingleplayer,
+                StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "--teacher-preference only supports one isolated " +
+                "training_singleplayer evidence action without a save boundary.");
+        }
     }
 
     private static string ReadTextOrEmpty(string path)

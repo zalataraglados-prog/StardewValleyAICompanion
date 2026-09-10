@@ -188,7 +188,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? pending.Request.MaxCrops, 1, 512);
+        var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? 512, 1, 512);
         var path = TryBuildTilePath(
             Game1.currentLocation,
             startTile,

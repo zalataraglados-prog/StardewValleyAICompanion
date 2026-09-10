@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-11 首条四收集 Teacher Product 真实轨迹
+
+- 新增隔离、隐藏、静音的 `Invoke-CurrentStageOneCollectionTeacherProductRollout.ps1`。它从 E 盘源存档复制运行专用存档，只加载 TransparentBridge 与 RuntimeTestHarness，依次生成 fresh 全量快照、同状态候选排名、Master Angler 当前日期意图、独立 Teacher 偏好，并通过既有 Product Executor 执行偏好内嵌的精确队列；运行全过程保持 `--skip-training`。
+- `TeacherPreferenceQueueLoader` 只接收 `training_singleplayer` 下恰好一个 pending 队列项和一个机械原语，严格核对状态哈希、actor、偏好、编译计划、来源 step 与队列。高层候选允许经唯一 `DailyPlanCompiler -> ActionQueueCompiler` 降为其执行器原语，但任意脱离所选编译 step 的替换队列都会在执行前被拒绝。
+- 真实运行暴露并修复两项执行边界错误：独立移动不再把 `MaxCrops=16` 误当路线长度上限，`executor.move_to_tile` 显式携带 512 格上限；相邻机器候选不再生成零距离移动。Community Center 已完成 Bundle 计数也改为使用原生 required-slot 完成语义，而不是错误要求所有备选 ingredient 同时完成。
+- 完整回归 `stage-one-collection-teacher-20260911-014412` 一次通过：原生碰撞移动实际走 41 格抵达 Dehydrator，随后 `executor.collect_machine_output` 收取 `(O)Raisins`；Product 请求哈希与执行前 fresh 哈希一致，回执为 `applied/verified`，并验证机器输出、库存及经验投影。
+- 回执准入确认 `full_shipment:item:Raisins` 为精确库存 `0 -> 1`，生成首条 `policy_decision_trajectory.v2` Teacher 轨迹。标准 PolicyDataset 验证为 `1 input / 1 accepted / 0 rejected / 0 conflicts`。正向 primitive verification reasons 作为证据保留；只有 block/failure reasons 才拒绝准入。
+- 本切片仍明确 `formal_training_started=false`，没有把单条证据混入正式训练组件。下一步是建立有界重复采集控制器：优先支持同一候选的多原语整队列回执，在每个原语后 fresh 重绑定并仅在完整候选需求转移成功时写一条 Teacher 轨迹；随后扩大四收集候选种类与日期覆盖，再进入其余 17 个长期目标证明。
+
 ## 2026-09-10 四收集集合 fresh 回执训练行准入
 
 - 新增唯一 `CurrentStageOneCollectionTeacherReceiptBuilder`。调用方必须先落盘实际执行的 Teacher 偏好制品，再把同一制品的单个 pending 队列项、原生 `plan_execution_episode.v1` 回执和 fresh 后快照送入准入器；不得重新生成 queue ID 后拿新队列匹配旧回执。

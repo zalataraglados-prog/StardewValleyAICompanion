@@ -137,6 +137,10 @@ namespace StardewAI.Core.OptionRegistry
                     }
 
                     var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
+                    var movementEffect = standTile.Tile is null || distance == 0
+                        ? string.Empty
+                        : "move_to_adjacent=" + standTile.Tile.X + "," +
+                            standTile.Tile.Y + ";";
                     var anvilLoadoutEffect =
                         anvilLoadout.Supported
                             ? AnvilLoadoutExpectedEffect(
@@ -183,7 +187,7 @@ namespace StardewAI.Core.OptionRegistry
                         LocationId = machineLocation,
                         TileX = x,
                         TileY = y,
-                        ExpectedEffect = (standTile.Tile is null ? string.Empty : "move_to_adjacent=" + standTile.Tile.X + "," + standTile.Tile.Y + ";") +
+                        ExpectedEffect = movementEffect +
                             MachineStatePath(machineLocation, x, y) + ".minutes_until_ready>0_or_ready=true" +
                             ";input_slot_index=" + slotIndex +
                             (!string.IsNullOrWhiteSpace(qualifiedItemId) ? ";qualified_item_id=" + qualifiedItemId : string.Empty) +

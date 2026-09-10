@@ -84,6 +84,10 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("compiled_action_steps", item.NormalizedCommand.CommandType);
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_tile_x" && parameter.Value == "41");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_tile_y" && parameter.Value == "23");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "max_movement_tiles" && parameter.Value == "512");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "compiler_context.current_map_collision_source" &&
+            parameter.Value == "locations.collision_grid");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "estimated_minutes" && parameter.Value == "1");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "precondition" && parameter.Value == "world_ready");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "expected_effect" && parameter.Value == "player_reaches_target_tile_or_blocked");
