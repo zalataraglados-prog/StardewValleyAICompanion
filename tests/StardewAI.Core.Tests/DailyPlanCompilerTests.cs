@@ -618,6 +618,35 @@ public sealed partial class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileOmitsMachineMoveWhenCandidateIsAlreadyAdjacent()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "machine-output:Farm:64,15:(O)388",
+            Kind = "collect_machine_output_tile",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "Farm",
+            TileX = 64,
+            TileY = 15,
+            QualifiedItemId = "(O)388",
+            Quantity = 1,
+            ExpectedEffect =
+                "farm.machines[Farm:64,15].held_item=null;" +
+                "qualified_item_id=(O)388;output_stack=1",
+            EstimatedTicks = 90,
+            Available = true
+        };
+
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { candidate },
+            "state.1");
+
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("collect_machine_output", step.Kind);
+    }
+
+    [Fact]
     public void CompileTurnsMachineInputCandidateIntoMoveThenLoadSteps()
     {
         var candidate = new PolicyEventCandidatePrediction

@@ -164,7 +164,12 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             AreasComplete = Enumerable.Range(0, communityCenter.areasComplete.Count)
                 .Select(index => communityCenter.areasComplete[index])
                 .ToArray(),
-            CompleteBundleCount = world.Bundles.Pairs.Count(pair => pair.Value.All(value => value)),
+            CompleteBundleCount = bundleRows.Count(row =>
+                string.Equals(
+                    row.ProjectionStatus,
+                    "exact",
+                    StringComparison.Ordinal) &&
+                row.Complete),
             CompletedAreaMailFlags = areaFlags
                 .Where(flag => master.mailReceived.Contains(flag))
                 .OrderBy(flag => flag, StringComparer.Ordinal)

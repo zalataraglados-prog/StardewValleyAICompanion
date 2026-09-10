@@ -305,7 +305,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal(64, candidate.TileX);
         Assert.Equal(15, candidate.TileY);
         Assert.Equal("(O)388", candidate.QualifiedItemId);
-        Assert.Contains("move_to_adjacent=63,15", candidate.ExpectedEffect);
+        Assert.DoesNotContain("move_to_adjacent=", candidate.ExpectedEffect);
         Assert.Contains("farm.machines[Farm:64,15].held_item=null", candidate.ExpectedEffect);
         Assert.Contains("output_sale_price=20", candidate.ExpectedEffect);
         Assert.Contains("output_total_value=20", candidate.ExpectedEffect);

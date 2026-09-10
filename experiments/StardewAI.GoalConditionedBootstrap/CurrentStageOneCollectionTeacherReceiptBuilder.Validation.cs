@@ -226,9 +226,10 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 StringComparison.Ordinal))
             reasons.Add("execution_receipt_primitive_not_verified");
         if ((receipt.BlockReasons?.Length ?? 0) > 0 ||
-            (receipt.PrimitiveVerificationReasons?.Length ?? 0) > 0 ||
             !string.IsNullOrWhiteSpace(receipt.FailureAttribution))
-            reasons.Add("execution_receipt_contains_block_or_verification_reasons");
+            reasons.Add("execution_receipt_contains_block_or_failure_reasons");
+        if ((receipt.PrimitiveVerificationReasons?.Length ?? 0) == 0)
+            reasons.Add("execution_receipt_primitive_verification_reasons_missing");
         if (receipt.ChangedFacts.ValueKind != JsonValueKind.Array ||
             receipt.ChangedFacts.GetArrayLength() == 0)
             reasons.Add("execution_receipt_changed_facts_missing");

@@ -327,7 +327,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> ParameterCompilerIds = Set(
             "mining.activate_calico_statue", "executor.activate_calico_statue", "multiplayer.manage_wallet", "executor.manage_multiplayer_wallet", "multiplayer.send_chat", "executor.send_multiplayer_chat", "social.emote", "executor.perform_emote", "player.choose_bobber", "executor.choose_bobber_style", "player.choose_jukebox_track", "executor.choose_jukebox_track", "player.customize", "executor.customize_player", "processing.crack_geode", "executor.crack_geode", "quest.cancel", "executor.cancel_quest", "rewards.claim_adventure_guild_reward", "executor.claim_adventure_guild_reward", "rewards.claim_prize_ticket", "executor.claim_prize_ticket", "skills.claim_mastery", "executor.claim_mastery",
-            "exploration.visit_location", "executor.traverse_connector",
+            "exploration.visit_location", "executor.move_to_tile", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
             "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "fishing.manage_fish_pond", "housing.renovate", "executor.renovate_home", "executor.buy_shop_item",

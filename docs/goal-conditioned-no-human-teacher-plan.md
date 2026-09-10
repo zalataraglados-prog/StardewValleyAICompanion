@@ -947,8 +947,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   compiled command semantics while preserving the original random queue identity for receipt binding.
 - Admission currently requires exactly one pending queue item containing exactly one mechanical step. The
   native episode must bind the run, queue, primitive option and kind, full effective queue item,
-  before/after state hashes and ticks, and must be applied, successful, verified, fresh, reason-free and
-  supported by non-empty changed facts. A receipt from another queue or primitive fails closed.
+  before/after state hashes and ticks, and must be applied, successful, verified, fresh, free of block or
+  failure reasons, supported by positive primitive-verification reasons, and supported by non-empty changed
+  facts. A receipt from another queue or primitive fails closed.
 - Every requirement credit on the selected candidate must independently change in the fresh after state.
   The verifier covers exact inventory acquisition, pending or settled Full Shipment, museum donation,
   exact Community Center ingredient completion, native fish collection and an exact Master Angler route
@@ -958,9 +959,25 @@ Slice 7 remains assigned to the RTX 5070 node.
   source/receipt hashes and verified transitions in `audit.teacher_supervision`. The canonical dataset
   validator checks this optional evidence whenever present.
 - This closes the first single-state, single-primitive preference-to-outcome admission path. It does not
-  authorize formal training: the next slice integrates this builder into an isolated real Product rollout
-  and captures the first native row from the persisted preference artifact. Multi-primitive candidate
-  completion, future-date scheduling and the remaining 17 Stage 1 criteria remain fail-closed work.
+  authorize formal training. Multi-primitive candidate completion, future-date scheduling and the remaining
+  17 Stage 1 criteria remain fail-closed work.
+
+### 2026-09-11: First isolated current collection Product row admitted
+
+- `Invoke-CurrentStageOneCollectionTeacherProductRollout.ps1` now performs the bounded real rollout in an
+  isolated save copy with hidden, silent game processes. It creates a fresh transparent snapshot, ranks the
+  complete current collection frontier, persists the deterministic Teacher preference and executes the
+  exact compiled one-item queue through `LiveTrainingLoop` in Product mode.
+- The first admitted run used a collision-checked 41-tile Product preposition, regenerated all authority
+  artifacts at the resulting state, and then natively executed the selected `farm.collect_machine_outputs`
+  candidate as `executor.collect_machine_output`. The verified transition was Full Shipment Raisins with
+  exact inventory quantity `0 -> 1`.
+- The emitted `policy_decision_trajectory.v2` row passed the canonical dataset validator as `1` input,
+  `1` accepted, `0` rejected, `0` duplicate and `0` conflict. The script now performs that validation itself
+  and fails closed unless exactly one row is accepted.
+- This proves the bounded current-state Teacher-to-compiler-to-Product-to-receipt-to-dataset path; it does
+  not start formal training. The next slice repeats whole-candidate rollouts and extends receipt admission
+  to candidates whose existing compiler lowers them into multiple ordered primitives.
 
 ## Review questions
 

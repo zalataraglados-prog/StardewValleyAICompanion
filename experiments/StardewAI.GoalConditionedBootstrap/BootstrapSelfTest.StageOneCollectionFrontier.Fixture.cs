@@ -331,6 +331,10 @@ internal static partial class BootstrapSelfTest
                 JsonDefaults.Options),
             PrimitiveKind = item.NormalizedCommand.Steps.Single().StepType,
             PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[]
+            {
+                "native_route_transition_verified"
+            },
             ChangedFacts = JsonSerializer.SerializeToElement(new[]
             {
                 new

@@ -3,6 +3,24 @@ namespace StardewAI.Core.Tests;
 public sealed class GenericMovementClearanceBoundarySourceGuardTests
 {
     [Fact]
+    public void GenericMovementDoesNotReuseCropBatchLimitAsRouteLimit()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.cs"));
+
+        Assert.Contains(
+            "pending.Request.MaxMovementTiles ?? 512",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "pending.Request.MaxMovementTiles ?? pending.Request.MaxCrops",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GenericMovementNeverPlansThroughAnObstacleThatRequiresASeparatePrimitive()
     {
         var movement = File.ReadAllText(FindRepositoryFile(

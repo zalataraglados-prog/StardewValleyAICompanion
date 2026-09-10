@@ -178,6 +178,7 @@ namespace StardewAI.Core.Execution
         private static readonly IReadOnlyDictionary<string, ActionParameterCompiler> ActionParameterCompilers =
             new Dictionary<string, ActionParameterCompiler>(StringComparer.Ordinal)
             {
+                ["executor.move_to_tile"] = BuildMoveToTileParameters,
                 ["exploration.visit_location"] = BuildRoutePreviewParameters,
                 ["executor.traverse_connector"] = BuildTraverseConnectorParameters,
                 ["executor.select_safe_item_slot"] = BuildSelectSafeItemSlotParameters,

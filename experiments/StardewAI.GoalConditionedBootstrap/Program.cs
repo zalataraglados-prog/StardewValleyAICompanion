@@ -376,6 +376,16 @@ static void BuildCurrentStageOneCollectionTeacherReceipt(Arguments options)
         options.Required("knowledge-dictionary-version"),
         options.Required("executor-version"));
     Write(options.Required("output"), report);
+    if (options.Optional("dataset-output") is { } datasetOutput)
+    {
+        if (!report.TeacherTrainingRowEligible || report.TrainingRow is null)
+        {
+            throw new InvalidDataException(
+                "Teacher receipt is not eligible for dataset output: " +
+                string.Join(",", report.BlockingReasons));
+        }
+        WriteJsonl(datasetOutput, new[] { report.TrainingRow });
+    }
 }
 
 static void BuildMasterAnglerOpportunityCatalog(Arguments options)
