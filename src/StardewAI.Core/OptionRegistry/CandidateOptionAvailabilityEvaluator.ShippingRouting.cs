@@ -131,13 +131,13 @@ namespace StardewAI.Core.OptionRegistry
             var standY = ReadParameterInt(physical.Parameters, "route_stand_tile_y");
             var atStand = standX.HasValue && standY.HasValue &&
                 playerX == standX.Value && playerY == standY.Value;
-            var stage = atStand ? "deposit" : "approach";
+            var stage = atStand ? "deposit" : "move_then_deposit";
             return CloneCandidate(
                 physical,
                 candidateId: physical.CandidateId + ":" + stage,
                 expectedEffect: physical.ExpectedEffect +
                     ";shipping_stage=" + stage +
-                    ";fresh_snapshot_after_stage=true",
+                    ";fresh_snapshot_rebind_between_primitives=true",
                 parameters: physical.Parameters
                     .Concat(ShippingContinuationParameters(physical))
                     .Concat(new[]
@@ -145,7 +145,7 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("shipping_stage", stage),
                         Parameter(
                             "shipping_route.snapshot_policy",
-                            "fresh_snapshot_after_each_connector_and_bin_approach")
+                            "fresh_snapshot_after_each_connector_and_between_bounded_queue_items")
                     })
                     .ToArray());
         }

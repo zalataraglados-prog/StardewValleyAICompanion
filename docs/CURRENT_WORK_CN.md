@@ -13,12 +13,14 @@
 
 ## 2026-09-11 有界多原语 Teacher 重复闭环
 
+- 出货终端的“接近/投放”已收拢：同在农场但不处于出货箱站位时，`economy.ship_items` 现在一次编译为 `move_to_tile -> ship_inventory_item_to_bin`，两个原语共享精确物品 continuation，并只在原语之间 fresh 重绑定状态哈希。跨地图部分仍保持每次一个已解析连接器、抵达农场后再 fresh 编译上述本地有界队列，未把未来地图坐标提前绑定到旧快照。
+- 隐藏、静音、隔离实测 `bounded-shipping-candidate-queue-20260911-221453` 连续执行 2 个 episode：第一轮机器收取按两原语完成；第二轮同一 `economy.ship_items` 候选按 `move_to_tile -> ship_inventory_item_to_bin` 完成，`queue_item_count=2`、回执 `ready`、需求转移 `1`，两轮均接纳。规范数据集为 `2 accepted / 0 rejected`，`formal_training_started=false`。
 - `TeacherPreferenceQueueLoader` 现在接收 `1..8` 个有序 pending 队列项，仍要求每项恰好一个机械原语，并逐项核对所选 candidate、编译计划 step、来源 action、actor、执行模式和原始状态哈希；重复 queue-item/plan-step ID、越界队列或语义漂移均在派发前失败关闭。
 - 运行器复用唯一的顺序队列执行链，不新增第二套执行器。每个后续原语派发前只把持久化命令的 `state_hash` 重绑定到上一原语的 fresh 后状态，其他命令语义保持不变；整队列回执记录原始编译哈希、逐步有效哈希、tick、changed facts、原语验证结果和严格的前后哈希链，且只有最后一步可以标记本次固定 Teacher 候选完成。
 - `CurrentStageOneCollectionTeacherReceiptBuilder` 新增 `queue_execution_receipt.v1` 准入。它要求队列 ID、项顺序、原语、有效命令、逐步哈希/tick 链、fresh 状态和正向原生验证全部吻合，并在完整候选的权威 requirement credit 确实变化后才生成一条 `policy_decision_trajectory.v2`；旧单原语 `plan_execution_episode.v1` 路径继续兼容。
 - 隐藏、静音、隔离实测 `bounded-stage-one-collection-teacher-20260911-211944` 连续执行 3 个 episode：第一轮同一 `farm.collect_machine_outputs` 候选按 `move_to_tile -> collect_machine_output` 两步收取 Raisins 并接纳；第二轮仅接近出货箱，需求未变化，因此保留执行证据但不写训练行；第三轮原生投放出货箱后才接纳。规范数据集结果为 `2 input / 2 accepted / 0 rejected / 0 duplicate / 0 conflict`。
 - 控制器每次最多执行 16 个 episode，每个 episode 都从新的透明状态重新生成完整候选与独立 Teacher 偏好。中间 continuation 不会被误标为成功，真正的证据合同错误则立即停止。当前仍为 `formal_training_started=false`。
-- 固定下一步：把四收集路径中仍拆成“接近/终端”多个候选的 continuation 收拢为可 fresh 重绑定的单个有界候选队列，优先覆盖出货、捐赠和路线后交互；随后扩展跨日期候选与日历/解锁/资源约束，再进入其余 17 个长期目标证明。
+- 固定下一步：按同一边界处理博物馆与社区中心捐赠。目标地图内的站位移动与原生捐赠应形成一个有界候选队列；跨地图只允许执行当前快照可验证的首个连接器，抵达后 fresh 生成本地队列，不得把目标地图碰撞坐标编入旧快照。完成捐赠回执验证后，再扩展跨日期候选与日历/解锁/资源约束，进入其余 17 个长期目标证明。
 
 ## 2026-09-11 首条四收集 Teacher Product 真实轨迹
 

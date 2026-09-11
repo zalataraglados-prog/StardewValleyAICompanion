@@ -106,7 +106,7 @@ public sealed partial class FullShipmentContributionTests
     }
 
     [Fact]
-    public void ShippingApproachCompilesOnlyMovementAndCarriesExactContinuation()
+    public void ShippingAwayFromBinCompilesBoundedMoveThenDepositQueue()
     {
         var snapshot = BuildSnapshot(
             Inventory(
@@ -122,7 +122,7 @@ public sealed partial class FullShipmentContributionTests
                 .EventCandidates);
 
         Assert.Contains(candidate.Parameters,
-            parameter => parameter.Name == "shipping_stage" && parameter.Value == "approach");
+            parameter => parameter.Name == "shipping_stage" && parameter.Value == "move_then_deposit");
         Assert.Contains(candidate.Parameters,
             parameter => parameter.Name == "continuation.expected_unit_price" && parameter.Value == "19");
         Assert.Equal(19, candidate.UnitPrice);
@@ -146,11 +146,27 @@ public sealed partial class FullShipmentContributionTests
             snapshot.StateHash,
             maxCandidates: 1);
 
-        var move = Assert.Single(plan.Steps);
+        Assert.Equal(2, plan.Steps.Length);
+        var move = plan.Steps[0];
         Assert.Equal("move_to_tile", move.Kind);
+        var deposit = plan.Steps[1];
+        Assert.Equal("ship_inventory_item_to_bin", deposit.Kind);
         Assert.Contains(move.Parameters,
             parameter => parameter.Name == "continuation.option_id" &&
                 parameter.Value == "economy.ship_items");
+        Assert.Contains(deposit.Parameters,
+            parameter => parameter.Name == "continuation.option_id" &&
+                parameter.Value == "economy.ship_items");
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal(
+            new[] { "executor.move_to_tile", "executor.ship_inventory_item_to_bin" },
+            queue.Items.Select(item => item.OptionId));
+        Assert.All(queue.Items, item =>
+            Assert.Contains(item.NormalizedCommand.Parameters,
+                parameter => parameter.Name == "continuation.qualified_item_id" &&
+                    parameter.Value == "(O)24"));
     }
 
     [Fact]

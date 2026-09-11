@@ -1003,6 +1003,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   queue, beginning with shipping, donation and route-then-interact paths. Future-date scheduling and the
   remaining 17 Stage 1 criteria remain subsequent fail-closed work.
 
+### 2026-09-11: Bounded local shipping candidate admitted
+
+- A same-map `economy.ship_items` candidate away from the shipping-bin stand now compiles once into
+  `executor.move_to_tile -> executor.ship_inventory_item_to_bin`. Both persisted items retain the exact
+  shipping continuation identity, and the existing Teacher queue runner only rebinds the second command's
+  state hash to the first command's fresh verified after-state.
+- Cross-map travel remains deliberately rolling: only the first connector that is valid in the current
+  snapshot is compiled. On arrival at the Farm, a fresh snapshot produces the bounded local move-plus-deposit
+  queue. No target-map collision coordinate is precompiled against a source-map snapshot.
+- Hidden, silent, isolated run `bounded-shipping-candidate-queue-20260911-221453` admitted two consecutive
+  two-item queues: machine-output collection, then local shipping approach plus native deposit. Both had one
+  verified requirement transition; the canonical dataset accepted `2` rows and rejected `0`. Formal training
+  remains disabled.
+- The next slice applies this boundary to Museum and Community Center donation: rolling cross-map connectors,
+  followed by one freshly compiled target-map stand-move plus native donation queue and exact collection
+  credit receipt. Future-date scheduling and the remaining 17 Stage 1 criteria follow that proof.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

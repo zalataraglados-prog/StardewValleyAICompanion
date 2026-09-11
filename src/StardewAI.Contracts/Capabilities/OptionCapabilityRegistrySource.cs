@@ -635,7 +635,7 @@ namespace StardewAI.Contracts.Capabilities
                         runtimeEvidenceIds: new[] { "EVD-220" },
                         outputEvidenceIds: new[] { "EVD-220" }),
                     ["economy.ship_items"] = BoundedEvidence(
-                        "vanilla_one_explicitly_authorized_unprotected_positive_shipping_payout_item_rolling_resolved_route_exact_bin_approach_native_single_item_deposit_immediate_inventory_bin_receipt_and_delayed_day_settlement",
+                        "vanilla_one_explicitly_authorized_unprotected_positive_shipping_payout_item_rolling_resolved_cross_map_route_bounded_local_bin_approach_plus_native_single_item_deposit_immediate_inventory_bin_receipt_and_delayed_day_settlement",
                         readEvidenceIds: new[] { "EVD-018", "EVD-020", "EVD-022", "EVD-024", "EVD-221" },
                         candidateEvidenceIds: new[] { "EVD-038", "EVD-221" },
                         compilerEvidenceIds: new[] { "EVD-221" },

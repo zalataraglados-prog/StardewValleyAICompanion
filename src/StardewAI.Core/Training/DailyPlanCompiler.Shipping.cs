@@ -48,11 +48,6 @@ namespace StardewAI.Core.Training
                 });
             }
 
-            if (string.Equals(shippingStage, "approach", StringComparison.Ordinal))
-            {
-                return steps;
-            }
-
             var binTile = ParseCoordinate(candidate.ExpectedEffect, "shipping_bin_tile=");
             var parameters = new List<SmallModelActionParameter>();
             if (!string.IsNullOrWhiteSpace(slotIndexStr))
