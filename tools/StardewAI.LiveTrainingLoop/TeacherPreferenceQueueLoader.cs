@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.LiveTrainingLoop;
 
@@ -49,14 +50,23 @@ public static class TeacherPreferenceQueueLoader
         ValidateActor(queue["actor"] as JsonObject, executionMode, reasons,
             "precompiled_queue_actor_mismatch");
 
-        if (queue["items"] is not JsonArray items || items.Count != 1 ||
-            items[0] is not JsonObject item)
+        if (queue["items"] is not JsonArray items ||
+            items.Count is < 1 or > TeacherEvidenceRolloutLimits.MaxQueueItems ||
+            items.Any(node => node is not JsonObject))
         {
-            reasons.Add("precompiled_queue_requires_exactly_one_item");
+            reasons.Add("precompiled_queue_item_count_out_of_bounds");
         }
         else
         {
-            ValidateItem(item, currentStateHash, executionMode, reasons);
+            foreach (var item in items.OfType<JsonObject>())
+                ValidateItem(item, currentStateHash, executionMode, reasons);
+            if (items.OfType<JsonObject>()
+                    .Select(item => ReadString(item, "queue_item_id"))
+                    .Distinct(StringComparer.Ordinal)
+                    .Count() != items.Count)
+            {
+                reasons.Add("precompiled_queue_item_ids_not_unique");
+            }
         }
 
         if (reasons.Count > 0)
@@ -157,39 +167,52 @@ public static class TeacherPreferenceQueueLoader
         }
 
         if (plan["steps"] is not JsonArray planSteps ||
-            planSteps.Count != 1 ||
-            planSteps[0] is not JsonObject planStep ||
             queue["items"] is not JsonArray queueItems ||
-            queueItems.Count != 1 ||
-            queueItems[0] is not JsonObject queueItem)
+            planSteps.Count is < 1 or >
+                TeacherEvidenceRolloutLimits.MaxQueueItems ||
+            planSteps.Count != queueItems.Count ||
+            planSteps.Any(node => node is not JsonObject) ||
+            queueItems.Any(node => node is not JsonObject))
         {
-            reasons.Add("teacher_preference_single_compiled_step_required");
+            reasons.Add("teacher_preference_compiled_step_count_mismatch");
         }
         else
         {
-            RequireEqual(
-                queueItem,
-                "source_action_id",
-                ReadString(planStep, "step_id"),
-                reasons,
-                "teacher_preference_queue_source_step_mismatch");
-            var command = queueItem["normalized_command"] as JsonObject;
-            var planStepKind = command?["parameters"] is JsonArray parameters
-                ? parameters.OfType<JsonObject>()
-                    .Where(value => string.Equals(
-                        ReadString(value, "name"),
-                        "plan_step_kind",
-                        StringComparison.Ordinal))
-                    .Select(value => ReadString(value, "value"))
-                    .SingleOrDefault() ?? string.Empty
-                : string.Empty;
-            if (!string.Equals(
-                    planStepKind,
-                    ReadString(planStep, "kind"),
-                    StringComparison.Ordinal))
+            if (planSteps.OfType<JsonObject>()
+                    .Select(step => ReadString(step, "step_id"))
+                    .Distinct(StringComparer.Ordinal)
+                    .Count() != planSteps.Count)
             {
-                reasons.Add(
-                    "teacher_preference_queue_plan_step_kind_mismatch");
+                reasons.Add("teacher_preference_plan_step_ids_not_unique");
+            }
+            for (var index = 0; index < planSteps.Count; index++)
+            {
+                var planStep = planSteps[index]!.AsObject();
+                var queueItem = queueItems[index]!.AsObject();
+                RequireEqual(
+                    queueItem,
+                    "source_action_id",
+                    ReadString(planStep, "step_id"),
+                    reasons,
+                    "teacher_preference_queue_source_step_mismatch");
+                var command = queueItem["normalized_command"] as JsonObject;
+                var planStepKind = ReadParameter(command, "plan_step_kind");
+                if (!string.Equals(
+                        planStepKind,
+                        ReadString(planStep, "kind"),
+                        StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        "teacher_preference_queue_plan_step_kind_mismatch");
+                }
+                if (!string.Equals(
+                        ReadCandidateId(command),
+                        selectedCandidateId,
+                        StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        "teacher_preference_queue_candidate_binding_mismatch");
+                }
             }
         }
 
@@ -199,6 +222,23 @@ public static class TeacherPreferenceQueueLoader
                 ";",
                 reasons.Distinct(StringComparer.Ordinal)));
         }
+    }
+
+    public static JsonObject RebindQueueItemToState(
+        JsonObject item,
+        string currentStateHash)
+    {
+        if (string.IsNullOrWhiteSpace(currentStateHash))
+            throw new ArgumentException("Current state hash is required.",
+                nameof(currentStateHash));
+        var rebound = JsonNode.Parse(item.ToJsonString())?.AsObject() ??
+            throw new InvalidDataException(
+                "teacher_preference_queue_item_clone_failed");
+        if (rebound["normalized_command"] is not JsonObject command)
+            throw new InvalidDataException(
+                "precompiled_queue_normalized_command_missing");
+        command["state_hash"] = currentStateHash;
+        return rebound;
     }
 
     private static void ValidateItem(
@@ -297,6 +337,33 @@ public static class TeacherPreferenceQueueLoader
         {
             reasons.Add(reason);
         }
+    }
+
+    private static string ReadParameter(JsonObject? command, string name) =>
+        command?["parameters"] is JsonArray parameters
+            ? parameters.OfType<JsonObject>()
+                .Where(value => string.Equals(
+                    ReadString(value, "name"),
+                    name,
+                    StringComparison.Ordinal))
+                .Select(value => ReadString(value, "value"))
+                .SingleOrDefault() ?? string.Empty
+            : string.Empty;
+
+    private static string ReadCandidateId(JsonObject? command)
+    {
+        const string prefix = "candidate_id:";
+        if (command?["parameters"] is not JsonArray parameters)
+            return string.Empty;
+        return parameters.OfType<JsonObject>()
+            .Where(value => string.Equals(
+                ReadString(value, "name"),
+                "precondition",
+                StringComparison.Ordinal))
+            .Select(value => ReadString(value, "value"))
+            .Where(value => value.StartsWith(prefix, StringComparison.Ordinal))
+            .Select(value => value[prefix.Length..])
+            .SingleOrDefault() ?? string.Empty;
     }
 
     private static string ReadString(JsonObject? value, string property) =>

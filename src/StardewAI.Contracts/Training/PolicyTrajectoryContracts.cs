@@ -280,6 +280,12 @@ public sealed class PolicyTrajectoryTeacherSupervision
     [JsonPropertyName("selected_queue_item_id")]
     public string SelectedQueueItemId { get; set; } = string.Empty;
 
+    [JsonPropertyName("selected_queue_item_ids")]
+    public string[] SelectedQueueItemIds { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("primitive_option_ids")]
+    public string[] PrimitiveOptionIds { get; set; } = Array.Empty<string>();
+
     [JsonPropertyName("requirement_transitions")]
     public PolicyTeacherRequirementTransition[] RequirementTransitions { get; set; } =
         Array.Empty<PolicyTeacherRequirementTransition>();

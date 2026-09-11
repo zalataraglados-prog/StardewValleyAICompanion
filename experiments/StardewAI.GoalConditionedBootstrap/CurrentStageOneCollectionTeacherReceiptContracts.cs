@@ -42,5 +42,5 @@ public sealed class CurrentStageOneCollectionTeacherReceiptAdmission
 
     [JsonPropertyName("scope")]
     public string Scope { get; set; } =
-        "single_pending_primitive_with_fresh_exact_collection_transition";
+        "bounded_ordered_candidate_queue_with_fresh_exact_collection_transition";
 }

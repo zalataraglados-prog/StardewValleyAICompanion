@@ -12,15 +12,15 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         SnapshotEnvelope after)
     {
         var selected = preference.SelectedCandidate!;
-        var queueItem = preference.CompiledQueue!.Items.Single();
+        var queueItems = preference.CompiledQueue!.Items;
         return selected.RequirementCredits
-            .Select(credit => VerifyTransition(credit, queueItem, before, after))
+            .Select(credit => VerifyTransition(credit, queueItems, before, after))
             .ToArray();
     }
 
     private static PolicyTeacherRequirementTransition VerifyTransition(
         CurrentCollectionRequirementCredit credit,
-        ActionQueueItem queueItem,
+        ActionQueueItem[] queueItems,
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
@@ -57,7 +57,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 "native_collection_false_to_true"),
             "authoritative_window_rolling_route_step" => VerifyRouteStep(
                 credit,
-                queueItem,
+                queueItems.LastOrDefault(item => !string.IsNullOrWhiteSpace(
+                    ReadParameter(item, "expected_target_location"))),
                 before,
                 after),
             _ => Transition(
@@ -195,10 +196,19 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
 
     private static PolicyTeacherRequirementTransition VerifyRouteStep(
         CurrentCollectionRequirementCredit credit,
-        ActionQueueItem queueItem,
+        ActionQueueItem? queueItem,
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
+        if (queueItem is null)
+        {
+            return Transition(
+                credit,
+                "route_endpoint_evidence_missing",
+                "unavailable",
+                "unavailable",
+                false);
+        }
         var expectedLocation = ReadParameter(
             queueItem,
             "expected_target_location");

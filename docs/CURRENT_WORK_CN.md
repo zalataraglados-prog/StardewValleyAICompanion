@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-11 有界多原语 Teacher 重复闭环
+
+- `TeacherPreferenceQueueLoader` 现在接收 `1..8` 个有序 pending 队列项，仍要求每项恰好一个机械原语，并逐项核对所选 candidate、编译计划 step、来源 action、actor、执行模式和原始状态哈希；重复 queue-item/plan-step ID、越界队列或语义漂移均在派发前失败关闭。
+- 运行器复用唯一的顺序队列执行链，不新增第二套执行器。每个后续原语派发前只把持久化命令的 `state_hash` 重绑定到上一原语的 fresh 后状态，其他命令语义保持不变；整队列回执记录原始编译哈希、逐步有效哈希、tick、changed facts、原语验证结果和严格的前后哈希链，且只有最后一步可以标记本次固定 Teacher 候选完成。
+- `CurrentStageOneCollectionTeacherReceiptBuilder` 新增 `queue_execution_receipt.v1` 准入。它要求队列 ID、项顺序、原语、有效命令、逐步哈希/tick 链、fresh 状态和正向原生验证全部吻合，并在完整候选的权威 requirement credit 确实变化后才生成一条 `policy_decision_trajectory.v2`；旧单原语 `plan_execution_episode.v1` 路径继续兼容。
+- 隐藏、静音、隔离实测 `bounded-stage-one-collection-teacher-20260911-211944` 连续执行 3 个 episode：第一轮同一 `farm.collect_machine_outputs` 候选按 `move_to_tile -> collect_machine_output` 两步收取 Raisins 并接纳；第二轮仅接近出货箱，需求未变化，因此保留执行证据但不写训练行；第三轮原生投放出货箱后才接纳。规范数据集结果为 `2 input / 2 accepted / 0 rejected / 0 duplicate / 0 conflict`。
+- 控制器每次最多执行 16 个 episode，每个 episode 都从新的透明状态重新生成完整候选与独立 Teacher 偏好。中间 continuation 不会被误标为成功，真正的证据合同错误则立即停止。当前仍为 `formal_training_started=false`。
+- 固定下一步：把四收集路径中仍拆成“接近/终端”多个候选的 continuation 收拢为可 fresh 重绑定的单个有界候选队列，优先覆盖出货、捐赠和路线后交互；随后扩展跨日期候选与日历/解锁/资源约束，再进入其余 17 个长期目标证明。
+
 ## 2026-09-11 首条四收集 Teacher Product 真实轨迹
 
 - 新增隔离、隐藏、静音的 `Invoke-CurrentStageOneCollectionTeacherProductRollout.ps1`。它从 E 盘源存档复制运行专用存档，只加载 TransparentBridge 与 RuntimeTestHarness，依次生成 fresh 全量快照、同状态候选排名、Master Angler 当前日期意图、独立 Teacher 偏好，并通过既有 Product Executor 执行偏好内嵌的精确队列；运行全过程保持 `--skip-training`。

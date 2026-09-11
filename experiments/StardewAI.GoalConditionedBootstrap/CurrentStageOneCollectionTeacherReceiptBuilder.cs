@@ -1,6 +1,7 @@
 using System.Text.Json;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
@@ -75,20 +76,46 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             beforeFullPath,
             "Before snapshot");
-        var receipt = CurrentTeacherFrontierSupport.Read<
-            PlanExecutionEpisodeEnvelope>(
-            receiptFullPath,
-            "Execution receipt");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             afterFullPath,
             "After snapshot");
-        var receiptReasons = ValidateReceipt(
-            preference,
-            before,
-            receipt,
-            after,
-            runId,
-            executorVersion);
+        var receiptSchema = ReadReceiptSchema(receiptFullPath);
+        PlanExecutionEpisodeEnvelope receipt;
+        string[] receiptReasons;
+        if (string.Equals(
+                receiptSchema,
+                "queue_execution_receipt.v1",
+                StringComparison.Ordinal))
+        {
+            var queueReceipt = CurrentTeacherFrontierSupport.Read<
+                QueueExecutionReceiptEnvelope>(
+                receiptFullPath,
+                "Queue execution receipt");
+            receiptReasons = ValidateQueueReceipt(
+                preference,
+                before,
+                queueReceipt,
+                after,
+                runId,
+                executorVersion);
+            receipt = receiptReasons.Length == 0
+                ? BuildAggregateReceipt(queueReceipt)
+                : new PlanExecutionEpisodeEnvelope();
+        }
+        else
+        {
+            receipt = CurrentTeacherFrontierSupport.Read<
+                PlanExecutionEpisodeEnvelope>(
+                receiptFullPath,
+                "Execution receipt");
+            receiptReasons = ValidateReceipt(
+                preference,
+                before,
+                receipt,
+                after,
+                runId,
+                executorVersion);
+        }
         if (receiptReasons.Length > 0)
         {
             result.Status = "blocked_execution_receipt_not_exact";
@@ -149,8 +176,13 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             ExecutionReceiptSha256 = result.ExecutionReceiptSha256,
             AfterSnapshotSha256 = result.AfterSnapshotSha256,
             SelectedCandidateId = selectedCandidate.CandidateId,
-            SelectedQueueItemId = compiledQueue.Items.Single()
-                .QueueItemId,
+            SelectedQueueItemId = compiledQueue.Items[0].QueueItemId,
+            SelectedQueueItemIds = compiledQueue.Items
+                .Select(value => value.QueueItemId)
+                .ToArray(),
+            PrimitiveOptionIds = compiledQueue.Items
+                .Select(value => value.OptionId)
+                .ToArray(),
             RequirementTransitions = transitions,
             UnavailableCandidateSemantics = preference.CandidateMembership
                 .SelectionContract.UnavailableCandidateSemantics
@@ -160,6 +192,62 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         result.VerifiedRequirementTransitions = transitions;
         result.TrainingRow = row;
         return result;
+    }
+
+    private static string ReadReceiptSchema(string path)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        return document.RootElement.TryGetProperty(
+                "schema_version",
+                out var schema) &&
+            schema.ValueKind == JsonValueKind.String
+                ? schema.GetString() ?? string.Empty
+                : string.Empty;
+    }
+
+    private static PlanExecutionEpisodeEnvelope BuildAggregateReceipt(
+        QueueExecutionReceiptEnvelope receipt)
+    {
+        var steps = receipt.StepResults;
+        var finalStep = steps[^1];
+        var changedFacts = steps
+            .Where(value => value.ChangedFacts.ValueKind ==
+                JsonValueKind.Array)
+            .SelectMany(value => value.ChangedFacts.EnumerateArray())
+            .Select(value => value.Clone())
+            .ToArray();
+        return new PlanExecutionEpisodeEnvelope
+        {
+            EpisodeId = "teacher-candidate." + receipt.QueueId,
+            RunId = receipt.RunId,
+            SourceStateHash = receipt.SourceStateHash,
+            AfterStateHash = receipt.AfterStateHash,
+            StateHashChanged = !string.Equals(
+                receipt.SourceStateHash,
+                receipt.AfterStateHash,
+                StringComparison.Ordinal),
+            BeforeGameTick = receipt.BeforeGameTick,
+            AfterGameTick = receipt.AfterGameTick,
+            AfterSnapshotFresh = receipt.AfterSnapshotFresh,
+            QueueId = receipt.QueueId,
+            OptionId = finalStep.OptionId,
+            Status = receipt.Status,
+            Success = receipt.Success,
+            Reward = 0,
+            TrainingRole = TrainingRoles.StrategyValue,
+            FailureAttribution = string.Empty,
+            BlockReasons = receipt.BlockReasons ?? Array.Empty<string>(),
+            EffectiveQueueItem = finalStep.EffectiveQueueItem,
+            PrimitiveKind = "ordered_candidate_queue",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = steps
+                .SelectMany(value => value.PrimitiveVerificationReasons)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
+            ChangedFacts = JsonSerializer.SerializeToElement(
+                changedFacts,
+                JsonDefaults.Options)
+        };
     }
 
     private static AvailabilityAwarePolicyPredictionEnvelope BuildTeacherDecision(

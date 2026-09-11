@@ -98,6 +98,7 @@ static partial class Program
         var finalAfterJson = beforeSnapshot.ToJsonString(JsonOptions);
         JsonObject? finalExecution = null;
         JsonObject finalAfterSnapshot = beforeSnapshot;
+        var originalQueueId = queueId;
         var attemptedCount = 0;
         var dispatchGateReplanCount = 0;
         var attemptedSemanticKeys = new HashSet<string>(StringComparer.Ordinal);
@@ -352,6 +353,17 @@ static partial class Program
                 }
             }
 
+            var compiledCommandStateHash = ReadString(
+                item["normalized_command"] as JsonObject,
+                "state_hash");
+            if (options.UseTeacherPreferenceQueue)
+            {
+                item = TeacherPreferenceQueueLoader.RebindQueueItemToState(
+                    item,
+                    currentStateHash);
+                queueItems[itemIndex] = item;
+            }
+
             dispatchReadiness ??= await ReadDispatchReadinessAsync(
                 http,
                 options,
@@ -418,6 +430,9 @@ static partial class Program
             execution["effective_queue_id"] = executionRequest.QueueId;
             execution["effective_queue_item"] = JsonNode.Parse(item.ToJsonString(JsonOptions));
             execution["effective_before_state_hash"] = effectiveStateHash;
+            execution["compiled_command_state_hash"] = compiledCommandStateHash;
+            execution["teacher_preference_state_rebound"] =
+                options.UseTeacherPreferenceQueue;
             execution["effective_before_snapshot_path"] = currentBeforeSnapshotPath;
             effectiveDecisionArtifacts.Stamp(execution);
             execution["mechanical_compiled_queue_path"] = ReadString(
@@ -627,8 +642,14 @@ static partial class Program
                 : null;
             var nextCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(
                 nextItem);
-            var selectedCandidateCompleted =
-                QueueReplanFilter.CompletesSelectedQueueCandidate(
+            var selectedCandidateCompleted = options.UseTeacherPreferenceQueue
+                ? string.Equals(
+                        executionStatus,
+                        "applied",
+                        StringComparison.Ordinal) &&
+                    itemIndex == originalPlannedItemCount - 1 &&
+                    attemptedCount == originalPlannedItemCount
+                : QueueReplanFilter.CompletesSelectedQueueCandidate(
                     executionStatus,
                     completedContinuationThisStep,
                     activeObjectiveContinuation,
@@ -665,6 +686,43 @@ static partial class Program
         aggregate["before_game_tick"] = ReadLong(beforeSnapshot, "game_tick");
         aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
+        if (options.UseTeacherPreferenceQueue)
+        {
+            var receiptSteps = stepResults.OfType<JsonObject>().ToArray();
+            var completionMarkerExact = receiptSteps.Length > 0 &&
+                receiptSteps[^1]["selected_queue_candidate_completed"]?
+                    .GetValue<bool>() == true &&
+                receiptSteps.Take(receiptSteps.Length - 1).All(step =>
+                    step["selected_queue_candidate_completed"]?
+                        .GetValue<bool>() != true);
+            var allStepsApplied =
+                receiptSteps.Length == originalPlannedItemCount &&
+                receiptSteps.All(step => string.Equals(
+                    ReadString(step, "status"),
+                    "applied",
+                    StringComparison.Ordinal));
+            var allSnapshotsFresh = receiptSteps.Length > 0 &&
+                receiptSteps.All(step =>
+                    step["after_snapshot_fresh"]?.GetValue<bool>() == true);
+            aggregate["schema_version"] = "queue_execution_receipt.v1";
+            aggregate["run_id"] = options.RunId;
+            aggregate["queue_id"] = originalQueueId;
+            aggregate["source_state_hash"] = stateHash;
+            aggregate["after_snapshot_fresh"] = allSnapshotsFresh;
+            aggregate["selected_candidate_id"] = selectedCandidateId;
+            aggregate["selected_candidate_completed"] = completionMarkerExact;
+            aggregate["status"] = allStepsApplied && completionMarkerExact
+                ? "applied"
+                : "blocked";
+            aggregate["success"] = allStepsApplied &&
+                allSnapshotsFresh &&
+                completionMarkerExact;
+            aggregate["block_reasons"] = new JsonArray(receiptSteps
+                .SelectMany(step => ReadArrayStrings(step, "block_reasons"))
+                .Distinct(StringComparer.Ordinal)
+                .Select(reason => JsonValue.Create(reason))
+                .ToArray());
+        }
         aggregate["source"] = options.ExecutorFeedbackSource;
         aggregate["objective_continuation_completed"] = objectiveContinuationCompleted;
         aggregate["completed_objective_continuations"] = completedObjectiveContinuations;

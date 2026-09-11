@@ -559,6 +559,14 @@ public sealed class LiveTrainingOptions
                 "--teacher-preference requires --max-attempts 1 and " +
                 "--required-verified-actions 1.");
         }
+        if (MaxQueueItemAttempts is < 1 or >
+            TeacherEvidenceRolloutLimits.MaxQueueItems)
+        {
+            throw new ArgumentException(
+                "--teacher-preference requires --max-queue-item-attempts " +
+                "between 1 and " +
+                TeacherEvidenceRolloutLimits.MaxQueueItems + ".");
+        }
         if (RequireNativeSaveBoundary ||
             !string.Equals(
                 TargetExecutionMode,
