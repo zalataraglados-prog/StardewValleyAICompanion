@@ -49,6 +49,96 @@ public sealed class TeacherPreferenceQueueLoaderTests
     }
 
     [Fact]
+    public async Task LoadsBoundedOrderedQueueAndRebindsOnlyCommandState()
+    {
+        var preference = Preference();
+        var planSteps = preference["compiled_plan"]!["steps"]!.AsArray();
+        planSteps.Add(new JsonObject
+        {
+            ["step_id"] = "action.teacher.2",
+            ["kind"] = "collect"
+        });
+        var second = JsonNode.Parse(
+            preference["compiled_queue"]!["items"]![0]!.ToJsonString())!
+            .AsObject();
+        second["queue_item_id"] = "queue.teacher.1.item.2";
+        second["source_action_id"] = "action.teacher.2";
+        second["normalized_command"]!["parameters"]![1]!["value"] =
+            "collect";
+        second["normalized_command"]!["steps"]![0]!["step_type"] =
+            "collect";
+        preference["compiled_queue"]!["items"]!.AsArray().Add(second);
+        var path = TemporaryPreferencePath(preference);
+        try
+        {
+            var queue = await TeacherPreferenceQueueLoader.LoadAsync(
+                path,
+                "hash.current",
+                "training_singleplayer");
+
+            Assert.Equal(2, queue["items"]!.AsArray().Count);
+            var original = queue["items"]![1]!.AsObject();
+            var rebound = TeacherPreferenceQueueLoader.RebindQueueItemToState(
+                original,
+                "hash.after.move");
+            Assert.Equal(
+                "hash.current",
+                original["normalized_command"]!["state_hash"]!
+                    .GetValue<string>());
+            Assert.Equal(
+                "hash.after.move",
+                rebound["normalized_command"]!["state_hash"]!
+                    .GetValue<string>());
+            Assert.Equal(
+                original["queue_item_id"]!.GetValue<string>(),
+                rebound["queue_item_id"]!.GetValue<string>());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void RejectsQueueBeyondTeacherEvidenceBound()
+    {
+        var queue = Queue();
+        for (var index = 2; index <= 9; index++)
+        {
+            var item = JsonNode.Parse(queue["items"]![0]!.ToJsonString())!
+                .AsObject();
+            item["queue_item_id"] = "queue.teacher.1.item." + index;
+            queue["items"]!.AsArray().Add(item);
+        }
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            TeacherPreferenceQueueLoader.Validate(
+                queue,
+                "hash.current",
+                "training_singleplayer"));
+
+        Assert.Contains(
+            "precompiled_queue_item_count_out_of_bounds",
+            error.Message);
+    }
+
+    [Fact]
+    public void RejectsDuplicateQueueItemIdentity()
+    {
+        var queue = Queue();
+        queue["items"]!.AsArray().Add(JsonNode.Parse(
+            queue["items"]![0]!.ToJsonString()));
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            TeacherPreferenceQueueLoader.Validate(
+                queue,
+                "hash.current",
+                "training_singleplayer"));
+
+        Assert.Contains("precompiled_queue_item_ids_not_unique", error.Message);
+    }
+
+    [Fact]
     public async Task RejectsQueueThatDoesNotComeFromSelectedCompiledStep()
     {
         var preference = Preference();
@@ -119,7 +209,8 @@ public sealed class TeacherPreferenceQueueLoaderTests
             "--skip-training",
             "--use-product-executor",
             "--max-attempts", "1",
-            "--required-verified-actions", "1"
+            "--required-verified-actions", "1",
+            "--max-queue-item-attempts", "8"
         });
         Assert.True(valid.UseTeacherPreferenceQueue);
 
@@ -131,7 +222,8 @@ public sealed class TeacherPreferenceQueueLoaderTests
                 "--use-product-executor",
                 "--use-daily-plan",
                 "--max-attempts", "1",
-                "--required-verified-actions", "1"
+                "--required-verified-actions", "1",
+                "--max-queue-item-attempts", "8"
             }));
         Assert.Contains("cannot be combined", error.Message);
     }
@@ -219,6 +311,11 @@ public sealed class TeacherPreferenceQueueLoaderTests
                     ["actor"] = Actor(),
                     ["parameters"] = new JsonArray
                     {
+                        new JsonObject
+                        {
+                            ["name"] = "precondition",
+                            ["value"] = "candidate_id:candidate.teacher.1"
+                        },
                         new JsonObject
                         {
                             ["name"] = "plan_step_kind",

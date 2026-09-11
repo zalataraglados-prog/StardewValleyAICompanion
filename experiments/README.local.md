@@ -238,19 +238,24 @@ candidates remain counterfactual alternatives rather than negative examples. Thi
 for the selected action. Future scheduling and the remaining long-horizon 19-criterion proofs also still
 block formal training.
 
-`build-current-stage-one-collection-teacher-receipt` closes that first receipt slice for one pending
-primitive. It requires the persisted `--preference` artifact that was actually executed, all five source
-artifacts, a `plan_execution_episode.v1` receipt and a fresh after snapshot. It recomputes and audits the
-Teacher semantics but preserves the original queue ID, verifies every credited requirement transition,
-and emits an existing `policy_decision_trajectory.v2` row with structured Teacher provenance. Another
-queue or primitive, a missing or changed effective queue item, a stale tick/hash, a non-verified native
-outcome, a successful receipt without exact requirement progress, or a multi-primitive queue fails
-closed. `Invoke-CurrentStageOneCollectionTeacherProductRollout.ps1` now integrates that admission path with
-an isolated hidden Product run. The first preserved run selected `farm.collect_machine_outputs`, compiled
-and verified native Raisins collection, emitted one `policy_decision_trajectory.v2` row, and passed the
-canonical dataset validator with `1` accepted and `0` rejected rows. The artifact still reports
-`formal_training_authorized=false`; the next step is bounded repeated whole-candidate rollout plus
-multi-primitive receipt admission, not unrestricted training.
+`build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
+receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted
+`--preference` artifact that was actually executed and all five source artifacts, recomputes the Teacher
+semantics, preserves the original queue identity, and verifies every item, primitive, effective command,
+fresh state/tick boundary and hash-chain transition. Only the last item may complete the fixed candidate,
+and every credited requirement must then be proven from the fresh after snapshot before an existing
+`policy_decision_trajectory.v2` row is emitted.
+
+`Invoke-CurrentStageOneCollectionTeacherProductRollout.ps1` runs up to 16 state-dependent episodes in one
+hidden, silent, isolated game process. Each episode regenerates the complete current candidate set and an
+independent Teacher preference. Applied continuation steps without requirement progress remain unlabelled;
+contract failures still stop immediately. The preserved run
+`bounded-stage-one-collection-teacher-20260911-211944` executed machine collection as
+`move_to_tile -> collect_machine_output`, withheld a row for shipping-bin approach, and admitted the
+subsequent native deposit. Its canonical dataset has `2` accepted, `0` rejected, `0` duplicate and `0`
+conflicting rows. `formal_training_authorized=false` remains explicit; the next step is to collapse the
+remaining collection approach/terminal continuations into bounded whole-candidate queues before expanding
+future-date coverage.
 
 ## Hardware
 

@@ -175,7 +175,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
                 teacher.SelectedCandidateId,
                 row.Selection.CandidateId,
                 StringComparison.Ordinal) &&
-            !string.IsNullOrWhiteSpace(teacher.SelectedQueueItemId) &&
+            ValidTeacherQueueEvidence(teacher) &&
             string.Equals(
                 teacher.UnavailableCandidateSemantics,
                 "defer_without_negative_label",
@@ -195,6 +195,31 @@ internal sealed class PolicyTrajectoryDatasetValidator
                     value.BeforeValue,
                     value.AfterValue,
                     StringComparison.Ordinal));
+    }
+
+    private static bool ValidTeacherQueueEvidence(
+        PolicyTrajectoryTeacherSupervision teacher)
+    {
+        if (string.IsNullOrWhiteSpace(teacher.SelectedQueueItemId))
+            return false;
+
+        var queueItemIds = teacher.SelectedQueueItemIds ?? Array.Empty<string>();
+        var primitiveOptionIds = teacher.PrimitiveOptionIds ??
+            Array.Empty<string>();
+        if (queueItemIds.Length == 0 && primitiveOptionIds.Length == 0)
+            return true;
+
+        return queueItemIds.Length is > 0 and <=
+                TeacherEvidenceRolloutLimits.MaxQueueItems &&
+            primitiveOptionIds.Length == queueItemIds.Length &&
+            string.Equals(
+                teacher.SelectedQueueItemId,
+                queueItemIds[0],
+                StringComparison.Ordinal) &&
+            queueItemIds.All(value => !string.IsNullOrWhiteSpace(value)) &&
+            queueItemIds.Distinct(StringComparer.Ordinal).Count() ==
+                queueItemIds.Length &&
+            primitiveOptionIds.All(value => !string.IsNullOrWhiteSpace(value));
     }
 
     private static bool IsSha256(string value) =>

@@ -979,6 +979,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   not start formal training. The next slice repeats whole-candidate rollouts and extends receipt admission
   to candidates whose existing compiler lowers them into multiple ordered primitives.
 
+### 2026-09-11: Bounded multi-primitive Teacher rollout admitted
+
+- Teacher queues are now bounded to `1..8` ordered items, with one mechanical primitive per item. The
+  persisted plan-to-item mapping, selected-candidate precondition, actor, mode, item identity and original
+  command state hash are checked before dispatch. Duplicate identities and semantic substitutions fail
+  closed.
+- The existing sequential executor is the sole execution path. After each primitive it obtains the fresh
+  after snapshot and rebinds only the next normalized command's `state_hash`; it does not rerank, call the
+  learner or mutate the remaining command semantics. `queue_execution_receipt.v1` preserves the original
+  compile hash and the effective per-step hash/tick chain, native verification, changed facts and exact
+  final completion marker.
+- Receipt admission requires every planned item to execute in order and only the final item to complete
+  the fixed Teacher candidate. A successful mechanical step without an authoritative requirement-credit
+  transition is retained as execution evidence but emits no policy row. Any receipt identity, freshness,
+  ordering, command, native verification or hash-chain error stops the rollout.
+- The hidden isolated run `bounded-stage-one-collection-teacher-20260911-211944` executed three successive
+  state-dependent episodes. It admitted the two-primitive Raisins machine collection, correctly withheld
+  a label for the shipping-bin approach, then admitted the native shipping deposit. The canonical dataset
+  accepted both emitted rows with zero rejection, duplicate or conflicting duplicate.
+- Formal training remains disabled. The next implementation slice collapses collection continuations that
+  are still exposed as separate approach/terminal candidates into one bounded, fresh-rebound candidate
+  queue, beginning with shipping, donation and route-then-interact paths. Future-date scheduling and the
+  remaining 17 Stage 1 criteria remain subsequent fail-closed work.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

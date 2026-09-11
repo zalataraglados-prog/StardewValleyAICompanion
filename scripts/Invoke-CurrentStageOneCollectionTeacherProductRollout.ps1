@@ -20,6 +20,8 @@ param(
     [string] $Goal = "grandpa_max_score_year3",
     [string] $KnowledgeDictionaryVersion =
         "game-1.6.15-20260723T093543Z-linux-v24",
+    [ValidateRange(1, 16)]
+    [int] $MaxEpisodes = 4,
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
     [int] $StartupTimeoutSeconds = 180
@@ -35,6 +37,13 @@ function Write-Utf8Json([string] $Path, [string] $Json) {
     [IO.File]::WriteAllText(
         $Path,
         $Json,
+        [Text.UTF8Encoding]::new($false))
+}
+
+function Add-Utf8JsonLine([string] $Path, [string] $Json) {
+    [IO.File]::AppendAllText(
+        $Path,
+        $Json.Trim() + [Environment]::NewLine,
         [Text.UTF8Encoding]::new($false))
 }
 
@@ -149,11 +158,6 @@ function New-TeacherPreferenceArtifacts(
     )
     $preference = Get-Content -LiteralPath $preferencePath -Raw |
         ConvertFrom-Json
-    if ($preference.status -ne "ready" -or
-        -not [bool]$preference.teacher_preference_label_eligible) {
-        throw "Teacher preference is not dispatchable: " +
-            (@($preference.blocking_reasons) -join ",")
-    }
     return [pscustomobject]@{
         StateHash = $stateHash
         BeforeSnapshotPath = $beforeSnapshotPath
@@ -162,11 +166,6 @@ function New-TeacherPreferenceArtifacts(
         PreferencePath = $preferencePath
         Preference = $preference
     }
-}
-
-function Get-QueueParameter($Item, [string] $Name) {
-    return [string](@($Item.normalized_command.parameters |
-        Where-Object name -eq $Name | Select-Object -First 1).value)
 }
 
 $savesFullPath = [IO.Path]::GetFullPath($SavesPath)
@@ -208,7 +207,6 @@ if ($null -ne (Get-Process -Name "StardewModdingAPI" `
 }
 
 $artifactDirectory = Join-Path ([IO.Path]::GetFullPath($OutputRoot)) $RunId
-$trainingRoot = Join-Path $artifactDirectory "training"
 $journalRoot = Join-Path $artifactDirectory "product-journal"
 New-Item -ItemType Directory -Path $artifactDirectory | Out-Null
 $isolatedSavesPath = Join-Path $artifactDirectory "isolated-saves"
@@ -328,66 +326,27 @@ try {
             "game.stderr.log") -PassThru
     Wait-Json "http://127.0.0.1:8767/health" `
         $StartupTimeoutSeconds | Out-Null
-    $teacher = New-TeacherPreferenceArtifacts `
-        -Suffix "" `
-        -SnapshotUrl $snapshotUrl `
-        -BackendUrl $backendUrl `
-        -ArtifactDirectory $artifactDirectory `
-        -TrainingRoot $trainingRoot `
-        -GoalId $Goal `
-        -RequirementInventoryPath $RequirementInventory `
-        -AcquisitionLoweringPath $AcquisitionLowering `
-        -MasterAnglerWindowsPath $MasterAnglerWindows `
-        -RouteTimingCalibrationPath $RouteTimingCalibration `
-        -TimeoutSeconds $StartupTimeoutSeconds
-    $preference = $teacher.Preference
-    $queueItems = @($preference.compiled_queue.items)
-    if ($queueItems.Count -ne 1) {
-        $first = $queueItems | Select-Object -First 1
-        $targetX = Get-QueueParameter $first "target_tile_x"
-        $targetY = Get-QueueParameter $first "target_tile_y"
-        if ($queueItems.Count -ne 2 -or
-            $first.option_id -ne "executor.move_to_tile" -or
-            [string]::IsNullOrWhiteSpace($targetX) -or
-            [string]::IsNullOrWhiteSpace($targetY)) {
-            throw "Teacher preference cannot be reduced to one native receipt by one positioning action."
-        }
-
-        $prepositionRoot = Join-Path $artifactDirectory `
-            "preposition-training"
-        $prepositionArguments = @(
-            $loopDll,
-            "--root", $prepositionRoot,
-            "--backend-url", $backendUrl,
-            "--bridge-snapshot-url", $snapshotUrl,
-            "--executor-url", $productUrl,
-            "--use-product-executor",
-            "--no-manifest",
-            "--run-id", $RunId,
-            "--save-isolation-path", $isolatedSavesPath,
-            "--max-attempts", "1",
-            "--required-verified-actions", "1",
-            "--skip-training",
-            "--use-plan-output",
-            "--target-tile-x", $targetX,
-            "--target-tile-y", $targetY,
-            "--sleep-ms", "0",
-            "--after-snapshot-wait-ms", "500"
-        )
-        $prepositionOutput = & dotnet $prepositionArguments
-        $prepositionOutput | Set-Content -LiteralPath `
-            (Join-Path $artifactDirectory "preposition.stdout.log") `
-            -Encoding utf8
-        if ($LASTEXITCODE -ne 0) {
-            throw "Teacher preposition action failed with exit code $LASTEXITCODE."
-        }
-
+    $teacherDatasetPath = Join-Path $artifactDirectory `
+        "teacher-policy-decision-trajectories.jsonl"
+    $episodeSummaries = @()
+    $admittedEpisodeCount = 0
+    $firstSourceStateHash = ""
+    $stopReason = "max_episodes_reached"
+    for ($episodeOrdinal = 1;
+         $episodeOrdinal -le $MaxEpisodes;
+         $episodeOrdinal++) {
+        $episodeName = "episode-" + $episodeOrdinal.ToString("D4")
+        $episodeDirectory = Join-Path $artifactDirectory $episodeName
+        $episodeTrainingRoot = Join-Path $episodeDirectory "training"
+        New-Item -ItemType Directory -Force -Path $episodeDirectory |
+            Out-Null
+        $suffix = "-" + $episodeName
         $teacher = New-TeacherPreferenceArtifacts `
-            -Suffix "-positioned" `
+            -Suffix $suffix `
             -SnapshotUrl $snapshotUrl `
             -BackendUrl $backendUrl `
             -ArtifactDirectory $artifactDirectory `
-            -TrainingRoot $trainingRoot `
+            -TrainingRoot $episodeTrainingRoot `
             -GoalId $Goal `
             -RequirementInventoryPath $RequirementInventory `
             -AcquisitionLoweringPath $AcquisitionLowering `
@@ -395,77 +354,128 @@ try {
             -RouteTimingCalibrationPath $RouteTimingCalibration `
             -TimeoutSeconds $StartupTimeoutSeconds
         $preference = $teacher.Preference
+        if ($preference.status -ne "ready" -or
+            -not [bool]$preference.teacher_preference_label_eligible) {
+            $stopReason = "teacher_preference_not_dispatchable:" +
+                [string]$preference.status + ":" +
+                (@($preference.blocking_reasons) -join ",")
+            break
+        }
+
         $queueItems = @($preference.compiled_queue.items)
-        if ($queueItems.Count -ne 1) {
-            throw "Positioned Teacher preference still does not contain exactly one queue item."
+        if ($queueItems.Count -lt 1 -or $queueItems.Count -gt 8) {
+            throw "Teacher queue item count is outside the 1..8 evidence bound."
+        }
+        if ([string]::IsNullOrWhiteSpace($firstSourceStateHash)) {
+            $firstSourceStateHash = $teacher.StateHash
+        }
+
+        $loopArguments = @(
+            $loopDll,
+            "--root", $episodeTrainingRoot,
+            "--backend-url", $backendUrl,
+            "--bridge-snapshot-url", $snapshotUrl,
+            "--snapshot-file", $teacher.BeforeSnapshotPath,
+            "--executor-url", $productUrl,
+            "--use-product-executor",
+            "--no-manifest",
+            "--run-id", $RunId,
+            "--save-isolation-path", $isolatedSavesPath,
+            "--max-attempts", "1",
+            "--required-verified-actions", "1",
+            "--max-queue-item-attempts", "8",
+            "--skip-training",
+            "--teacher-preference", $teacher.PreferencePath,
+            "--sleep-ms", "0",
+            "--after-snapshot-wait-ms", "500"
+        )
+        $loopOutput = & dotnet $loopArguments
+        $loopOutput | Set-Content -LiteralPath (Join-Path `
+            $episodeDirectory "loop.stdout.log") -Encoding utf8
+        if ($LASTEXITCODE -ne 0) {
+            throw "Teacher Product rollout $episodeName failed with exit code $LASTEXITCODE."
+        }
+
+        $snapshotDirectory = Join-Path $episodeTrainingRoot `
+            "runs\$RunId\live-snapshots"
+        $executionReceiptPath = Join-Path $snapshotDirectory `
+            "execution-0001.json"
+        $afterSnapshotPath = Join-Path $snapshotDirectory `
+            "after-snapshot-0001.json"
+        foreach ($path in @($executionReceiptPath, $afterSnapshotPath)) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                throw "Teacher rollout evidence was not produced: $path"
+            }
+        }
+
+        $admissionPath = Join-Path $episodeDirectory `
+            "teacher-receipt-admission.json"
+        $episodeDatasetPath = Join-Path $episodeDirectory `
+            "teacher-policy-decision-trajectory.jsonl"
+        $admissionArguments = @(
+            "build-current-stage-one-collection-teacher-receipt",
+            "--requirement-inventory", $RequirementInventory,
+            "--acquisition-lowering", $AcquisitionLowering,
+            "--ranking", $teacher.RankingPath,
+            "--before-snapshot", $teacher.BeforeSnapshotPath,
+            "--master-angler-target-date-intents", $teacher.IntentsPath,
+            "--preference", $teacher.PreferencePath,
+            "--execution-receipt", $executionReceiptPath,
+            "--after-snapshot", $afterSnapshotPath,
+            "--trajectory-id", ("teacher." + $RunId + "." + $episodeName),
+            "--run-id", $RunId,
+            "--knowledge-dictionary-version", $KnowledgeDictionaryVersion,
+            "--executor-version", "product_executor.v1",
+            "--output", $admissionPath
+        )
+        Invoke-Bootstrap $admissionArguments
+        $admission = Get-Content -LiteralPath $admissionPath -Raw |
+            ConvertFrom-Json
+        $teacherRowAdmitted = $admission.status -eq "ready" -and
+            [bool]$admission.teacher_training_row_eligible
+        if ($teacherRowAdmitted) {
+            Invoke-Bootstrap @($admissionArguments + @(
+                "--dataset-output", $episodeDatasetPath
+            ))
+            if (-not (Test-Path -LiteralPath $episodeDatasetPath `
+                    -PathType Leaf)) {
+                throw "Admitted Teacher row was not written for $episodeName."
+            }
+            Add-Utf8JsonLine $teacherDatasetPath `
+                (Get-Content -LiteralPath $episodeDatasetPath -Raw)
+            $admittedEpisodeCount++
+        } elseif ($admission.status -ne
+                "blocked_exact_requirement_transition_missing") {
+            throw "Teacher receipt admission failed for $episodeName with " +
+                "status $($admission.status)."
+        }
+        $queueReceipt = Get-Content -LiteralPath $executionReceiptPath -Raw |
+            ConvertFrom-Json
+        $episodeSummaries += [pscustomobject]@{
+            episode_ordinal = $episodeOrdinal
+            source_state_hash = $teacher.StateHash
+            after_state_hash = [string]$queueReceipt.after_state_hash
+            selected_candidate_id = `
+                [string]$preference.selected_candidate.candidate_id
+            selected_option_id = `
+                [string]$preference.selected_candidate.option_id
+            queue_id = [string]$preference.compiled_queue.queue_id
+            queue_item_count = $queueItems.Count
+            primitive_option_ids = @($queueItems | ForEach-Object {
+                [string]$_.option_id
+            })
+            verified_requirement_transition_count = `
+                @($admission.verified_requirement_transitions).Count
+            receipt_status = [string]$admission.status
+            teacher_row_admitted = $teacherRowAdmitted
         }
     }
-    $stateHash = $teacher.StateHash
-    $beforeSnapshotPath = $teacher.BeforeSnapshotPath
-    $rankingPath = $teacher.RankingPath
-    $intentsPath = $teacher.IntentsPath
-    $preferencePath = $teacher.PreferencePath
 
-    $loopArguments = @(
-        $loopDll,
-        "--root", $trainingRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--snapshot-file", $beforeSnapshotPath,
-        "--executor-url", $productUrl,
-        "--use-product-executor",
-        "--no-manifest",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--max-attempts", "1",
-        "--required-verified-actions", "1",
-        "--skip-training",
-        "--teacher-preference", $preferencePath,
-        "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "500"
-    )
-    $loopOutput = & dotnet $loopArguments
-    $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory `
-        "loop.stdout.log") -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Teacher Product rollout failed with exit code $LASTEXITCODE."
+    if ($admittedEpisodeCount -eq 0) {
+        throw "No Teacher Product row was admitted across " +
+            "$($episodeSummaries.Count) executed episodes: $stopReason"
     }
 
-    $snapshotDirectory = Join-Path $trainingRoot `
-        "runs\$RunId\live-snapshots"
-    $executionReceiptPath = Join-Path $snapshotDirectory `
-        "plan-execution-episode-0001.json"
-    $afterSnapshotPath = Join-Path $snapshotDirectory `
-        "after-snapshot-0001.json"
-    foreach ($path in @($executionReceiptPath, $afterSnapshotPath)) {
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "Teacher rollout evidence was not produced: $path"
-        }
-    }
-
-    $admissionPath = Join-Path $artifactDirectory `
-        "teacher-receipt-admission.json"
-    $teacherDatasetPath = Join-Path $artifactDirectory `
-        "teacher-policy-decision-trajectories.jsonl"
-    Invoke-Bootstrap @(
-        "build-current-stage-one-collection-teacher-receipt",
-        "--requirement-inventory", $RequirementInventory,
-        "--acquisition-lowering", $AcquisitionLowering,
-        "--ranking", $rankingPath,
-        "--before-snapshot", $beforeSnapshotPath,
-        "--master-angler-target-date-intents", $intentsPath,
-        "--preference", $preferencePath,
-        "--execution-receipt", $executionReceiptPath,
-        "--after-snapshot", $afterSnapshotPath,
-        "--trajectory-id", ("teacher." + $RunId),
-        "--run-id", $RunId,
-        "--knowledge-dictionary-version", $KnowledgeDictionaryVersion,
-        "--executor-version", "product_executor.v1",
-        "--output", $admissionPath,
-        "--dataset-output", $teacherDatasetPath
-    )
-    $admission = Get-Content -LiteralPath $admissionPath -Raw |
-        ConvertFrom-Json
     $validatedDatasetRoot = Join-Path $artifactDirectory `
         "validated-policy-dataset"
     $datasetValidationOutput = & dotnet $policyDatasetDll `
@@ -483,26 +493,26 @@ try {
         "policy-dataset-manifest.json"
     $datasetManifest = Get-Content -LiteralPath $datasetManifestPath -Raw |
         ConvertFrom-Json
-    if ([int]$datasetManifest.counts.accepted_rows -ne 1 -or
-        [int]$datasetManifest.counts.rejected_rows -ne 0) {
-        throw "Teacher policy dataset did not admit exactly one clean row."
+    if ([int]$datasetManifest.counts.accepted_rows -ne
+            $admittedEpisodeCount -or
+        [int]$datasetManifest.counts.rejected_rows -ne 0 -or
+        [int]$datasetManifest.counts.duplicate_rows -ne 0 -or
+        [int]$datasetManifest.counts.conflicting_duplicate_rows -ne 0) {
+        throw "Teacher policy dataset did not admit every bounded episode cleanly."
     }
     $summary = [ordered]@{
         schema_version = `
-            "stardewai.current_stage_one_collection_teacher_product_rollout.v1"
-        status = if ($admission.status -eq "ready") { "passed" } else { "blocked" }
+            "stardewai.current_stage_one_collection_teacher_product_rollout.v2"
+        status = "passed"
         run_id = $RunId
         source_save_path = $saveFile
         isolated_save_root = $isolatedSavesPath
-        source_state_hash = $stateHash
-        selected_candidate_id = [string]$preference.selected_candidate.candidate_id
-        selected_option_id = [string]$preference.selected_candidate.option_id
-        queue_id = [string]$preference.compiled_queue.queue_id
-        receipt_status = [string]$admission.status
-        verified_requirement_transition_count = `
-            @($admission.verified_requirement_transitions).Count
-        teacher_training_row_eligible = `
-            [bool]$admission.teacher_training_row_eligible
+        first_source_state_hash = $firstSourceStateHash
+        requested_max_episodes = $MaxEpisodes
+        executed_episode_count = $episodeSummaries.Count
+        admitted_episode_count = $admittedEpisodeCount
+        stop_reason = $stopReason
+        episodes = $episodeSummaries
         teacher_dataset_path = $teacherDatasetPath
         validated_dataset_manifest_path = $datasetManifestPath
         validated_dataset_accepted_rows = `
