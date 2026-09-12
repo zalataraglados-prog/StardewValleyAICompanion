@@ -467,6 +467,92 @@ if ($targetDateCalendar.status -ne `
     @($targetDateEligibleRoutes | Where-Object route_kind -eq 'sells').Count -ne 93) {
     throw 'Acquisition route target-date calendar-axis regression failed.'
 }
+$snapshotForUnlock = Get-Content -LiteralPath $FullShipmentSnapshot -Raw |
+    ConvertFrom-Json
+$unlockTargetTotalDay =
+    [int]$snapshotForUnlock.state.time.total_days.value
+$unlockTargetDateCalendarPath = Join-Path $output `
+    'acquisition-route-target-date-calendar-snapshot-day-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-acquisition-route-target-date-calendar `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $routeCalendarResolutionPath `
+    --target-total-day $unlockTargetTotalDay `
+    --output $unlockTargetDateCalendarPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Snapshot-date calendar resolution failed.'
+}
+$targetDateUnlockPath = Join-Path $output `
+    'acquisition-route-target-date-unlock-state-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-acquisition-route-target-date-unlock-state `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $routeCalendarResolutionPath `
+    --target-date-calendar $unlockTargetDateCalendarPath `
+    --snapshot $FullShipmentSnapshot `
+    --output $targetDateUnlockPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Acquisition route target-date unlock-state resolution failed.'
+}
+$targetDateUnlock = Get-Content -LiteralPath $targetDateUnlockPath -Raw |
+    ConvertFrom-Json
+$unlockRoutes = @($targetDateUnlock.routes)
+$unlockBlockedRoutes = @($unlockRoutes | Where-Object {
+    $_.unlock_axis_status -eq 'blocked_unlock_evidence'
+})
+$unlockTargetDateCalendar = Get-Content `
+    -LiteralPath $unlockTargetDateCalendarPath -Raw | ConvertFrom-Json
+$calendarRouteById = @{}
+foreach ($calendarRoute in @($unlockTargetDateCalendar.routes)) {
+    $calendarRouteById[[string]$calendarRoute.route_occurrence_id] = $calendarRoute
+}
+$unlockProjectionDrift = @($unlockRoutes | Where-Object {
+    $sourceRoute = $calendarRouteById[[string]$_.route_occurrence_id]
+    $null -eq $sourceRoute -or
+    [string]$_.source_resolution_status -ne
+        [string]$sourceRoute.source_resolution_status -or
+    (ConvertTo-Json -InputObject @($_.matching_windows) -Depth 20 -Compress) -ne
+        (ConvertTo-Json -InputObject @($sourceRoute.matching_windows) `
+            -Depth 20 -Compress)
+})
+$unlockStaticWindowShapeDrift = @($unlockRoutes | Where-Object {
+    if ([bool]$_.static_window_matches_target_date) {
+        return @($_.matching_windows).Count -eq 0
+    }
+    return @($_.matching_windows).Count -ne 0
+})
+if ($targetDateUnlock.status -ne 'partial_target_date_unlock_axis_blocks' -or
+    -not [bool]$targetDateUnlock.route_occurrence_inventory_complete -or
+    [bool]$targetDateUnlock.unlock_axis_resolution_complete -or
+    [bool]$targetDateUnlock.training_label_eligible -or
+    [int]$targetDateUnlock.target_total_day -ne 37 -or
+    [int]$targetDateUnlock.route_occurrence_count -ne 1599 -or
+    [int]$targetDateUnlock.unlock_axis_resolved_count -ne 680 -or
+    [int]$targetDateUnlock.unlock_state_match_count -ne 489 -or
+    [int]$targetDateUnlock.unlock_state_miss_count -ne 0 -or
+    [int]$targetDateUnlock.static_window_miss_count -ne 191 -or
+    [int]$targetDateUnlock.blocked_upstream_calendar_count -ne 910 -or
+    [int]$targetDateUnlock.blocked_unlock_evidence_count -ne 9 -or
+    [int]$targetDateUnlock.pending_calendar_condition_count -ne 6 -or
+    [int]$targetDateUnlock.pending_stochastic_condition_count -ne 1 -or
+    [int]$targetDateUnlock.pending_resource_condition_count -ne 1 -or
+    [int]$targetDateUnlock.pending_location_condition_count -ne 0 -or
+    [int]$targetDateUnlock.unsupported_condition_count -ne 0 -or
+    $unlockRoutes.Count -ne 1599 -or
+    @($unlockRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or
+    $unlockProjectionDrift.Count -ne 0 -or
+    $unlockStaticWindowShapeDrift.Count -ne 0 -or
+    $unlockBlockedRoutes.Count -ne 9 -or
+    @($unlockBlockedRoutes | Where-Object {
+        @($_.blocking_reasons) -notcontains `
+            'game_state_query_unlock_state_missing'
+    }).Count -ne 0) {
+    throw 'Acquisition route target-date unlock-state regression failed.'
+}
 $currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
 dotnet run --project $bootstrap --no-build -- build-current-full-shipment-teacher-frontier `
     --requirement-inventory $requirementInventoryPath `

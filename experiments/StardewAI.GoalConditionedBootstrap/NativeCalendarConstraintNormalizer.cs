@@ -6,19 +6,19 @@ internal static class NativeCalendarConstraintNormalizer
 {
     private static readonly HashSet<string> DynamicPredicateNames = new(StringComparer.Ordinal)
     {
-        "!IS_FESTIVAL_DAY",
-        "!PLAYER_HAS_ITEM",
-        "!PLAYER_HAS_MAIL",
-        "!PLAYER_LOCATION_NAME",
-        "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE",
         "DAYS_PLAYED",
         "IS_FESTIVAL_DAY",
         "IS_ISLAND_NORTH_BRIDGE_FIXED",
         "IS_PASSIVE_FESTIVAL_OPEN",
         "PLAYER_HAS_MAIL",
+        "PLAYER_HAS_ITEM",
+        "PLAYER_LOCATION_NAME",
         "PLAYER_SPECIAL_ORDER_ACTIVE",
         "PLAYER_SPECIAL_ORDER_RULE_ACTIVE",
-        "RANDOM"
+        "PLAYER_STAT",
+        "RANDOM",
+        "SYNCED_CHOICE",
+        "SYNCED_RANDOM"
     };
 
     public static string[] AllSeasons =>
@@ -84,7 +84,10 @@ internal static class NativeCalendarConstraintNormalizer
             {
                 weather.IntersectWith(tokens.Skip(2).Select(NormalizeWeatherMode));
             }
-            else if (tokens.Length > 0 && DynamicPredicateNames.Contains(tokens[0]))
+            else if (tokens.Length > 0 && DynamicPredicateNames.Contains(
+                         tokens[0].StartsWith('!')
+                             ? tokens[0][1..]
+                             : tokens[0]))
             {
                 dynamicConditions.Add(clause);
             }

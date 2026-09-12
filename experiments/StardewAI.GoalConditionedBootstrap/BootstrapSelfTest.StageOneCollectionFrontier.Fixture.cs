@@ -58,7 +58,8 @@ internal static partial class BootstrapSelfTest
         long gameTick = 1,
         string playerLocation = "Farm",
         int playerTileX = 1,
-        int playerTileY = 5)
+        int playerTileY = 5,
+        int totalDays = 5)
     {
         var fishRows = fish.Select((value, index) => new
         {
@@ -90,10 +91,11 @@ internal static partial class BootstrapSelfTest
                 },
                 time = new
                 {
-                    year = Field(1),
-                    season = Field("spring"),
-                    day = Field(6),
-                    total_days = Field(5),
+                    year = Field(totalDays / 112 + 1),
+                    season = Field(new[] { "spring", "summer", "fall", "winter" }
+                        [(totalDays % 112) / 28]),
+                    day = Field(totalDays % 28 + 1),
+                    total_days = Field(totalDays),
                     time = Field(800),
                     weather = Field("sun")
                 },
@@ -216,6 +218,41 @@ internal static partial class BootstrapSelfTest
                 },
                 world_progress = new
                 {
+                    game_state_query_unlock_state = NativeField(new
+                    {
+                        current_player_id = "100",
+                        host_player_id = "200",
+                        target_player_resolution_status =
+                            "source_context_required",
+                        players = new[]
+                        {
+                            UnlockPlayer(
+                                "100",
+                                isCurrent: true,
+                                isHost: false,
+                                new[]
+                                {
+                                    "fixtureGate", "anyGate", "allGate"
+                                },
+                                new[] { "pendingGate%&NL&%" },
+                                new Dictionary<string, long>
+                                {
+                                    ["Book_Woodcutting"] = 1
+                                }),
+                            UnlockPlayer(
+                                "200",
+                                isCurrent: false,
+                                isHost: true,
+                                new[]
+                                {
+                                    "hostGate", "anyGate", "allGate"
+                                },
+                                Array.Empty<string>(),
+                                new Dictionary<string, long>())
+                        },
+                        island_north_bridge_fixed = true,
+                        island_north_bridge_state_available = true
+                    }, "vanilla_1_6_15_gsq_unlock"),
                     full_shipment_progress = new
                     {
                         status = "available",
@@ -298,6 +335,26 @@ internal static partial class BootstrapSelfTest
         read_at_tick = 1,
         confidence = 1
     };
+
+    private static object UnlockPlayer(
+        string playerId,
+        bool isCurrent,
+        bool isHost,
+        string[] mailReceived,
+        string[] mailForTomorrow,
+        Dictionary<string, long> stats) =>
+        new
+        {
+            player_id = playerId,
+            is_current = isCurrent,
+            is_host = isHost,
+            mail_received = mailReceived,
+            mail_for_tomorrow = mailForTomorrow,
+            mailbox = Array.Empty<string>(),
+            stats,
+            active_special_order_ids = new[] { "Gunther" },
+            active_special_order_rules = Array.Empty<string>()
+        };
 
     private static PlanExecutionEpisodeEnvelope StageOneRouteReceipt(
         CurrentStageOneCollectionTeacherPreferenceLabel preference,

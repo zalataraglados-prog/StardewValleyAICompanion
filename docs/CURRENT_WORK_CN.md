@@ -11,12 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期解锁状态轴求值
+
+- 透明桥新增轻量 `world_progress.game_state_query_unlock_state`。它一次性读取 `Game1.getAllFarmers()` 中每位玩家的精确 ID、Current/Host 身份、三类邮件集合、完整 `Stats.Values`，以及该玩家队伍中仍为 `InProgress` 的特别订单 ID 和逗号拆分后的特别规则；同时读取 `IslandNorth.bridgeFixed`。字段来源逐项绑定锁定 1.6.15 的 `GameStateQuery.WithPlayer`、`PLAYER_HAS_MAIL`、`PLAYER_SPECIAL_ORDER_ACTIVE`、`PLAYER_SPECIAL_ORDER_RULE_ACTIVE`、`PLAYER_STAT` 与 `IS_ISLAND_NORTH_BRIDGE_FIXED` 反编译分支。该读取只遍历小型集合，不加载地图资产或生成全量世界快照副本。
+- 新增 `acquisition_route_target_date_unlock_state.v1` 与 `build-acquisition-route-target-date-unlock-state`。构建器会从同一组权威输入重新编译目标日日历报告并逐字段比较，再要求透明快照的 `game_version` 和 `time.total_days` 与目标日一致。Current、Host、Any、All 和已存在的数值玩家 ID 按原生选择规则求值；Target 因来源调用上下文未被制品携带而明确阻塞，不会默认冒充 Current。
+- 解锁轴只接收上述五类已反编译谓词。`IS_FESTIVAL_DAY`/`IS_PASSIVE_FESTIVAL_OPEN`/`DAYS_PLAYED` 仍归日历动态条件，`RANDOM`/`SYNCED_*` 归随机轴，`PLAYER_HAS_ITEM` 归资源轴，玩家地点谓词归位置轴；未知条件阻塞。邮件 `Any` 额外保留原生 `mailForTomorrow` 的 `%&NL&%` 后缀语义，玩家统计缺失键按原生 `Stats.Get` 返回 0，特别订单只认可 `InProgress` 行和精确逗号规则。每条结果继续无损携带上游 `source_resolution_status` 和命中的完整时间、天气及动态条件窗口，后续轴不需要回读或猜测另一份报告。
+- 锁定 1.6.15 的旧归档快照（夏 10，`target_total_day=37`）实跑仍保留 `1599` 条 occurrence：`910` 条上游来源阻塞，`191` 条静态窗口不命中，`498` 条命中。命中项中 `489` 条无需解锁事实即可继续，`9` 条因旧快照尚无新桥字段而明确阻塞；另保留 6 个动态日历条件、1 个随机条件和 1 个资源条件，未知条件为 0。没有把旧快照中的零散相似字段拼成伪证据。
+- fixture 已验证不同 Current/Host 玩家、Any/All/数值 ID、邮件类型与延迟邮件后缀、否定特别订单规则、统计包含区间、姜岛桥、Target 阻塞、缺字段按路线失败关闭、跨日快照拒绝和上游制品篡改拒绝。TransparentBridge 与 GoalConditionedBootstrap Release 均为 `0 warning / 0 error`，组合自测通过；未启动游戏或训练。下一固定切片先闭合仍保留的目标日动态节日日历条件，再进入 `location_route`，不得跳过这些残余条件。
+
 ## 2026-09-13 显式目标日期日历轴求值
 
 - 新增 `acquisition_route_target_date_calendar.v1` 和 `build-acquisition-route-target-date-calendar`。输入为权威需求库存、路线 lowering、Master Angler 窗口、静态来源报告与显式 `target_total_day`；构建时重新运行静态来源编译并按完整类型化内容比对报告，任何中间制品篡改、来源哈希漂移、窗口结构错误或超出第三年爷爷评估前的日期都会失败关闭。
 - 每个 occurrence 只会得到三种日历轴结果：静态窗口命中目标日、静态窗口不命中目标日、上游静态来源未解析。字段明确命名为 `static_window_matches_target_date`，不得解释为完整候选可用；命中的原始时段、天气、随机标志、位置要求和动态条件原样保留，其他 11 个依赖轴没有被隐式满足。
 - 锁定 1.6.15 的春 1 日（`target_total_day=0`）实跑保留全部 `1599` 个 occurrence：`689` 条日历轴可判定，其中 `451` 条静态窗口命中、`238` 条不命中；`910` 条因来源解析器尚未覆盖而明确阻塞。15 条命中路线仍带动态条件。总报告保持 `training_label_eligible=false`，下游不得据此单轴结果发放标签。
-- 聚焦 fixture 同时验证第一年春 1 日命中与第二年同日受 `!YEAR 2` 排除、包含式原生时间上界、动态条件保留、静态报告篡改拒绝和日期越界拒绝。Release 构建与聚焦自测通过；未启动游戏或训练。下一固定切片是显式目标日的 `unlock_state` 轴，不回头复制日历或来源系统。
+- 聚焦 fixture 同时验证第一年春 1 日命中与第二年同日受 `!YEAR 2` 排除、包含式原生时间上界、动态条件保留、静态报告篡改拒绝和日期越界拒绝。Release 构建与聚焦自测通过；未启动游戏或训练。后续 `unlock_state` 轴已在上节实现；这里的 `calendar_axis_resolved` 只表示静态窗口可判定，仍携带的节日类动态条件必须在目标日快照上继续求值。
 
 ## 2026-09-13 Data/Shops 库存与访问来源解析
 
