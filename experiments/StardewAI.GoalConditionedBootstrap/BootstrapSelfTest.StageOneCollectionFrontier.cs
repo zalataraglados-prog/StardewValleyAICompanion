@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
@@ -18,6 +19,7 @@ internal static partial class BootstrapSelfTest
         var loweringPath = Path.Combine(root, "lowering.json");
         var catalogPath = Path.Combine(root, "master-angler-catalog.json");
         var windowsPath = Path.Combine(root, "master-angler-windows.json");
+        var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var intentsPath = Path.Combine(root, "master-angler-intents.json");
@@ -34,7 +36,7 @@ internal static partial class BootstrapSelfTest
                 index == 0 ? "Sunfish" : "Test Fish " + index))
             .ToArray();
         var masterAlternatives = fish
-            .Select(value => CollectionAlternative(
+            .Select((value, index) => CollectionAlternative(
                 value.ItemId,
                 value.QualifiedItemId,
                 value.DisplayName,
@@ -42,7 +44,7 @@ internal static partial class BootstrapSelfTest
                 1,
                 0,
                 "native_location_fish_spawn",
-                value.ItemId == "145" ? "Beach:0" : "fixture:" + value.ItemId))
+                value.ItemId == "145" ? "Beach:0" : "fixture:" + index))
             .ToArray();
         var masterGroups = fish.Zip(masterAlternatives)
             .Select(value => CollectionRequirementGroup(
@@ -89,7 +91,7 @@ internal static partial class BootstrapSelfTest
         });
 
         var masterLoweredGroups = fish
-            .Select(value => CollectionLoweredGroup(
+            .Select((value, index) => CollectionLoweredGroup(
                     "master_angler:item:" + value.ItemId,
                     1,
                     CollectionLoweredAlternative(
@@ -100,7 +102,7 @@ internal static partial class BootstrapSelfTest
                         1,
                         0,
                         "native_location_fish_spawn",
-                        value.ItemId == "145" ? "Beach:0" : "fixture:" + value.ItemId,
+                        value.ItemId == "145" ? "Beach:0" : "fixture:" + index,
                         "fishing.catch_fish")))
             .ToArray();
         Write(loweringPath, new
@@ -150,58 +152,121 @@ internal static partial class BootstrapSelfTest
             static_calendar_constraint_complete = true,
             requirement_inventory_path = Path.GetFullPath(inventoryPath),
             requirement_inventory_sha256 = HashFile(inventoryPath),
-            species = fish.Select(value => new
+            species = fish.Select((value, index) => new
             {
                 item_id = value.ItemId,
                 qualified_item_id = value.QualifiedItemId,
-                display_name = value.DisplayName
+                display_name = value.DisplayName,
+                acquisition_class = "rod_location_rule",
+                route_status = "source_complete",
+                fish_data = new
+                {
+                    parse_status = "parsed",
+                    minimum_fishing_level = 0
+                },
+                location_rules = new[]
+                {
+                    new
+                    {
+                        location_id = index == 0 ? "Beach" : "fixture",
+                        rule_index = index,
+                        rule_id = "fixture-rule-" + index,
+                        minimum_fishing_level = 0,
+                        ignore_fish_data_requirements = false,
+                        calendar = new
+                        {
+                            parse_status = "complete",
+                            minimum_year = 1,
+                            maximum_year = (int?)null,
+                            seasons = new[] { index == 0 ? "spring" : "winter" },
+                            time_windows = new[]
+                            {
+                                new { start_time = 600, end_time = 2600 }
+                            },
+                            weather_modes = new[] { "sun" },
+                            dynamic_conditions = Array.Empty<string>(),
+                            unparsed_conditions = Array.Empty<string>(),
+                            static_calendar_possible = true
+                        }
+                    }
+                },
+                mine_overrides = Array.Empty<object>()
             }).ToArray(),
             unresolved_species_ids = Array.Empty<string>(),
             unresolved_calendar_rule_ids = Array.Empty<string>()
         });
-        var windowSpecies = fish.Select((value, index) => new
+        Write(
+            windowsPath,
+            MasterAnglerStageOneWindowIndexBuilder.Build(catalogPath, 3));
+        var routeCalendar = AcquisitionRouteCalendarResolutionBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath);
+        Write(routeCalendarPath, routeCalendar);
+        var resolvedSunfishRoute = routeCalendar.Routes.Single(route =>
+            route.RequirementSetId == "master_angler" &&
+            route.QualifiedItemId == "(O)145");
+        Require(routeCalendar.Status == "partial_static_sources_explicitly_blocked" &&
+                routeCalendar.RouteOccurrenceInventoryComplete &&
+                !routeCalendar.StaticCalendarSourceResolutionComplete &&
+                !routeCalendar.TrainingLabelEligible &&
+                routeCalendar.RouteOccurrenceCount == 75 &&
+                routeCalendar.ResolvedStaticSourceCount == 72 &&
+                routeCalendar.BlockedStaticSourceCount == 3 &&
+                resolvedSunfishRoute.Status ==
+                    "resolved_static_source_window_target_date_pending" &&
+                resolvedSunfishRoute.EvidenceClass ==
+                    "master_angler_location_rule_window" &&
+                resolvedSunfishRoute.CalendarWindows.Length == 2 &&
+                resolvedSunfishRoute.CalendarWindows[0].SourceKey == "Beach:0",
+            "Authoritative route calendar source resolution drifted.");
+
+        var tamperedWindowsPath = Path.Combine(root, "tampered-master-angler-windows.json");
+        var tamperedWindows = JsonNode.Parse(File.ReadAllText(windowsPath))!.AsObject();
+        tamperedWindows["catalog_sha256"] = new string('0', 64);
+        File.WriteAllText(
+            tamperedWindowsPath,
+            tamperedWindows.ToJsonString(JsonDefaults.Options));
+        var tamperedCalendarSourceRejected = false;
+        try
         {
-            qualified_item_id = value.QualifiedItemId,
-            display_name = value.DisplayName,
-            acquisition_class = "rod_location_rule",
-            windows = index == 0
-                ? new object[]
-                {
-                    new
-                    {
-                        source_kind = "location_rule",
-                        source_key = "Beach:0",
-                        location_id = "Beach",
-                        first_total_day = 0,
-                        last_total_day = 27,
-                        time_windows = new[] { new { start_time = 600, end_time = 2600 } },
-                        weather_modes = new[] { "sun" },
-                        dynamic_conditions = Array.Empty<string>(),
-                        minimum_fishing_level = 0,
-                        require_magic_bait = false,
-                        training_rod_allowed = true
-                    }
-                }
-                : Array.Empty<object>()
-        }).ToArray();
-        Write(windowsPath, new
+            _ = AcquisitionRouteCalendarResolutionBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                tamperedWindowsPath);
+        }
+        catch (InvalidDataException)
         {
-            schema_version = "master_angler_stage_one_window_index.v1",
-            status = "complete_static_windows_dynamic_execution_pending",
-            goal_id = "goal.grandpa_21",
-            game_version = "1.6.15",
-            catalog_path = Path.GetFullPath(catalogPath),
-            catalog_sha256 = HashFile(catalogPath),
-            deadline_year = 3,
-            deadline_season = "spring",
-            deadline_day_of_month = 1,
-            deadline_total_day_exclusive = 224,
-            native_denominator_count = 72,
-            static_window_coverage_complete = true,
-            training_label_eligible = false,
-            species = windowSpecies,
-            unresolved_species_ids = Array.Empty<string>()
-        });
+            tamperedCalendarSourceRejected = true;
+        }
+        Require(tamperedCalendarSourceRejected,
+            "A tampered calendar source chain did not fail closed.");
+
+        var tamperedWindowContentPath = Path.Combine(
+            root,
+            "tampered-master-angler-window-content.json");
+        var tamperedWindowContent = JsonNode.Parse(File.ReadAllText(windowsPath))!
+            .AsObject();
+        tamperedWindowContent["species"]![0]!["windows"]![0]!["source_key"] =
+            "Beach:999";
+        File.WriteAllText(
+            tamperedWindowContentPath,
+            tamperedWindowContent.ToJsonString(JsonDefaults.Options));
+        var tamperedWindowContentRejected = false;
+        try
+        {
+            _ = AcquisitionRouteCalendarResolutionBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                tamperedWindowContentPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedWindowContentRejected = true;
+        }
+        Require(tamperedWindowContentRejected,
+            "Tampered compiled calendar windows did not fail closed.");
+
         Write(calibrationPath, StageOneRouteTimingCalibration());
         WriteStageOneCollectionSnapshot(snapshotPath, stateHash, fish);
 
