@@ -1238,7 +1238,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   conditions. Focused tests cover distinct Current/Host players, Any/All/numeric selection, mail modes, negation,
   inclusive stat ranges, bridge state, missing evidence, cross-day rejection and artifact tampering.
 - This stage remains `training_label_eligible=false`. The next fixed slice resolves residual target-date festival
-  conditions from exact runtime/decompile evidence; only then does the chain proceed to `location_route`.
+  conditions from exact runtime/decompile evidence; that slice is now implemented below.
+
+### 2026-09-13: explicit target-date festival-state axis
+
+- `acquisition_route_target_date_festival_state.v1` deterministically rebuilds and compares the preceding unlock
+  artifact from the same authoritative inputs and same snapshot. Route rows contain the complete typed
+  `upstream_route`, so source, window and unlock evidence are preserved by composition rather than copied again.
+- The compact `world_progress.game_state_query_calendar_state` field projects exact current total day, time and
+  `Game1.stats.DaysPlayed`, all loaded `Data/Festivals/FestivalDates` keys, active passive-festival IDs, and the loaded
+  passive-festival season/day/start-time/condition catalog. It scans no maps and invokes no mutating or random code.
+- The evaluator follows the locked 1.6.15 handlers for `DAYS_PLAYED`, location-independent `IS_FESTIVAL_DAY` including
+  offsets, and `IS_PASSIVE_FESTIVAL_OPEN` including the inclusive start-time edge. Normal GSQ negation is supported.
+  Location-scoped ordinary-festival forms remain explicitly blocked until the festival location catalog and any
+  Here/Target call context are projected; none occur in the authoritative 1,599-route inventory.
+- The archived day-37 snapshot retains all 1,599 occurrences: 919 inherit upstream blocks, 191 are static-window
+  misses, 483 continue through this axis, and the exact six Trout Derby, SquidFest or ordinary-festival rows block
+  because the archive predates the new bridge field. Unknown conditions remain zero. The fixture resolves all three
+  predicate families at the passive-festival opening boundary and proves offset, negation, missing-field, unsupported
+  context and upstream-tamper behavior.
+- This remains `training_label_eligible=false`. The next fixed slice is `location_route`; stochastic and resource
+  predicates continue to their independently owned axes.
 
 ## Review questions
 

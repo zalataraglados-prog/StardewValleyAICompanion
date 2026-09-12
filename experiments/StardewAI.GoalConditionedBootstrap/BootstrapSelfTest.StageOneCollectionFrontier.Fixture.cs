@@ -59,7 +59,8 @@ internal static partial class BootstrapSelfTest
         string playerLocation = "Farm",
         int playerTileX = 1,
         int playerTileY = 5,
-        int totalDays = 5)
+        int totalDays = 5,
+        int timeOfDay = 800)
     {
         var fishRows = fish.Select((value, index) => new
         {
@@ -77,7 +78,7 @@ internal static partial class BootstrapSelfTest
             save_id = NativeField("fixture-save", "self-test"),
             player_id = NativeField("fixture-player", "self-test"),
             game_tick = gameTick,
-            in_game_time = NativeField(800, "self-test"),
+            in_game_time = NativeField(timeOfDay, "self-test"),
             real_timestamp = "2026-09-10T00:00:00Z",
             state_hash = stateHash,
             completeness = "full",
@@ -96,7 +97,7 @@ internal static partial class BootstrapSelfTest
                         [(totalDays % 112) / 28]),
                     day = Field(totalDays % 28 + 1),
                     total_days = Field(totalDays),
-                    time = Field(800),
+                    time = Field(timeOfDay),
                     weather = Field("sun")
                 },
                 player = new
@@ -218,6 +219,28 @@ internal static partial class BootstrapSelfTest
                 },
                 world_progress = new
                 {
+                    game_state_query_calendar_state = NativeField(new
+                    {
+                        current_total_day = totalDays,
+                        time_of_day = timeOfDay,
+                        days_played = totalDays + 1,
+                        festival_date_keys = new[] { "spring13" },
+                        active_passive_festival_ids = new[] { "FixtureFest" },
+                        passive_festivals = new[]
+                        {
+                            new
+                            {
+                                festival_id = "FixtureFest",
+                                season = "spring",
+                                start_day = 1,
+                                end_day = 2,
+                                start_time = 700,
+                                condition = string.Empty
+                            }
+                        },
+                        festival_location_context_resolution_status =
+                            "not_projected"
+                    }, "vanilla_1_6_15_gsq_calendar"),
                     game_state_query_unlock_state = NativeField(new
                     {
                         current_player_id = "100",
