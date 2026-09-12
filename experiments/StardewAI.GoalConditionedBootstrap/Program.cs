@@ -48,6 +48,9 @@ try
         case "build-acquisition-route-lowering":
             BuildAcquisitionRouteLowering(options);
             break;
+        case "build-acquisition-route-calendar-resolution":
+            BuildAcquisitionRouteCalendarResolution(options);
+            break;
         case "build-current-full-shipment-teacher-frontier":
             BuildCurrentFullShipmentTeacherFrontier(options);
             break;
@@ -101,7 +104,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
     }
 }
 catch (Exception ex)
@@ -305,6 +308,17 @@ static void BuildAcquisitionRouteLowering(Arguments options)
         options.Required("option-matrix"),
         options.Required("isolated-training-authorization"));
     Write(options.Required("output"), report);
+}
+
+static void BuildAcquisitionRouteCalendarResolution(Arguments options)
+{
+    var report = AcquisitionRouteCalendarResolutionBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete)
+        Environment.ExitCode = 2;
 }
 
 static void BuildCurrentFullShipmentTeacherFrontier(Arguments options)

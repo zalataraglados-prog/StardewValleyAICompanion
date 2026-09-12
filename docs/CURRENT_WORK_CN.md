@@ -19,6 +19,15 @@
 - 离线验证已通过：GoalConditionedBootstrap Release 构建 `0 warning / 0 error`，四收集组合自测通过（包含删去一个轴后必须抛出 `InvalidDataException` 的负例），Core game-free `33/33`，Backend `188/188`。未启动游戏，未写正式训练数据，`formal_training_started=false`。
 - 固定下一步是实现逐路线、逐轴的动态证据解析，首先闭合 `calendar_window`，随后按解锁、资源/预算/预留、加工与随机重试、日内时间体力和 fresh 终态回执依次接入。只有 12/12 轴对某个候选均得到 `satisfied`、有证据的 `not_applicable` 或显式 `blocked`，该未来日期候选才可进入 Teacher 选择。
 
+## 2026-09-13 获取路线日历来源解析第一批
+
+- 新增哈希绑定的 `acquisition_route_calendar_resolution.v1`，它逐条保留 requirement set、requirement、alternative、route 索引、物品和原始 source identity，并同时绑定需求库存、获取降层、Master Angler 窗口索引及机会目录。窗口还会从已验真的 catalog 确定性重编译并逐字段比较；任一旧降层、错库存、错窗口内容或被篡改的 catalog 哈希都会失败关闭。
+- 没有新写第二套钓鱼日历：首批直接复用既有的反编译/运行时数据链 `MasterAnglerOpportunityCatalog -> MasterAnglerStageOneWindowIndex`，精确连接 `native_location_fish_spawn`、`native_mine_fishing_override` 和 `native_crab_pot_output`。窗口保留年份、季节、时段、天气、动态条件、地点、矿区、装备限制和随机结果标记。
+- 锁定 1.6.15 全量制品实跑结果为 `1599 routes / 264 resolved static sources / 1335 explicit blocks`。已解析部分为蟹笼 `20`、地点钓鱼 `241`、矿井钓鱼覆盖 `3`；所有 resolved 行都至少携带一个精确窗口。
+- 实跑额外识别出 `8` 条同属 `native_location_fish_spawn`、但目标物品不在 72 种鱼分母中的路线（例如钓点的木头、石头等非鱼产物）。它们没有套用任意鱼种窗口，而是保留为 `blocked_authoritative_fish_window_not_found`；总回归锁定这 8 个 occurrence identity，防止以后静默遗漏或误接。
+- 当前报告状态仍为 `partial_static_sources_explicitly_blocked`，且每个已解析行仍标记 `target_date_pending`。静态来源窗口不等于某个目标日的动态条件已满足，更不等于其余 11 个依赖轴已满足；`training_label_eligible=false`，正式训练仍未启动。
+- 离线验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`，四收集组合自测及篡改哈希负例通过，Core game-free `33/33`，Backend `188/188`。下一批先把 Data/Locations 的非鱼钓点、采集物和蚯蚓点共用日历条件抽成单一原生条件解析器，再接作物季节/生长期和商店库存条件，避免按 route kind 复制解析逻辑。
+
 ## 2026-09-13 博物馆与社区中心捐赠滚动路线
 
 - `museum.donate_items` 与 `community_center.donate_bundle_items` 在目标建筑之外时，现按透明 `route_graph` 只发布当前地图可验证的首个 `route_connector_tile`；连接器携带精确物品、库存槽位以及博物馆/Bundle 身份。常规 daily-plan 可在 fresh 快照后锁定同一机械 continuation 续编；Teacher product 则把该连接器作为独立监督步骤，由外层 controller 在下一 episode 从 fresh 全量状态重建候选并选择终态捐赠。

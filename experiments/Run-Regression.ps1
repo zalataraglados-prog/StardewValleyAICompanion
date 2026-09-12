@@ -226,6 +226,57 @@ if ($loweredAlternatives.Count -ne 450 -or
     $unboundRoutes.Count -ne 0) {
     throw 'Per-requirement acquisition route lowering is incomplete.'
 }
+$routeCalendarResolutionPath = Join-Path $output 'acquisition-route-calendar-resolution-v1.json'
+dotnet run --project $bootstrap --no-build -- build-acquisition-route-calendar-resolution `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --output $routeCalendarResolutionPath
+if ($LASTEXITCODE -ne 0) { throw 'Acquisition route calendar resolution failed.' }
+$routeCalendarResolution = Get-Content -LiteralPath $routeCalendarResolutionPath -Raw |
+    ConvertFrom-Json
+$calendarSupportedRouteKinds = @(
+    'native_crab_pot_output',
+    'native_location_fish_spawn',
+    'native_mine_fishing_override'
+)
+$calendarSupportedRoutes = @($loweredRoutes | Where-Object {
+    $_.route_kind -in $calendarSupportedRouteKinds
+})
+$resolvedCalendarRoutes = @($routeCalendarResolution.routes | Where-Object {
+    $_.status -eq 'resolved_static_source_window_target_date_pending'
+})
+$blockedSupportedCalendarRoutes = @($routeCalendarResolution.routes | Where-Object {
+    $_.route_kind -in $calendarSupportedRouteKinds -and
+    $_.status -ne 'resolved_static_source_window_target_date_pending'
+})
+$expectedBlockedSupportedCalendarRouteIds = @(
+    'community_center_standard:community_center:bundle:Crafts Room/17:0:6',
+    'community_center_standard:community_center:bundle:Crafts Room/17:1:6',
+    'community_center_standard:community_center:bundle:Crafts Room/17:2:19',
+    'full_shipment:full_shipment:item:308:0:1',
+    'full_shipment:full_shipment:item:388:0:6',
+    'full_shipment:full_shipment:item:390:0:19',
+    'full_shipment:full_shipment:item:393:0:1',
+    'museum_collection:museum_collection:item:103:0:1'
+)
+if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_blocked' -or
+    -not [bool]$routeCalendarResolution.route_occurrence_inventory_complete -or
+    [bool]$routeCalendarResolution.static_calendar_source_resolution_complete -or
+    [bool]$routeCalendarResolution.training_label_eligible -or
+    [int]$routeCalendarResolution.route_occurrence_count -ne $loweredRoutes.Count -or
+    [int]$routeCalendarResolution.resolved_static_source_count -ne 264 -or
+    [int]$routeCalendarResolution.blocked_static_source_count -ne 1335 -or
+    $calendarSupportedRoutes.Count -ne 272 -or
+    $resolvedCalendarRoutes.Count -ne 264 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        @($_.calendar_windows).Count -eq 0
+    }).Count -ne 0 -or
+    $blockedSupportedCalendarRoutes.Count -ne 8 -or
+    @(Compare-Object $expectedBlockedSupportedCalendarRouteIds `
+        @($blockedSupportedCalendarRoutes.route_occurrence_id)).Count -ne 0) {
+    throw 'Acquisition route calendar source resolution regression failed.'
+}
 $currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
 dotnet run --project $bootstrap --no-build -- build-current-full-shipment-teacher-frontier `
     --requirement-inventory $requirementInventoryPath `

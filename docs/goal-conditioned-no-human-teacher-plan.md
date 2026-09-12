@@ -1084,6 +1084,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   satisfied, evidence-backed not-applicable or blocked result. The remaining axes are then resolved in the
   declared order before any future-day Teacher candidate can become eligible.
 
+### 2026-09-13: First acquisition-route calendar source resolution
+
+- `acquisition_route_calendar_resolution.v1` preserves every exact requirement-route occurrence identity and
+  hash-binds the requirement inventory, acquisition lowering, Master Angler window index and its opportunity
+  catalog. It deterministically recompiles the window index from the verified catalog and compares the typed
+  result, so stale lowering, modified window content or a tampered catalog chain fails before emission.
+- The first resolver reuses the existing decompile-backed Master Angler calendar pipeline for location fishing,
+  MineShaft fishing overrides and crab pots. It does not introduce a parallel fish calendar implementation.
+  Each resolved occurrence carries the exact source windows including date range, season, clock, weather,
+  dynamic conditions, location or mine area, equipment restrictions and stochastic markers.
+- The exact 1.6.15 run retained all `1,599` occurrences: `264` have authoritative static source windows and
+  `1,335` remain explicit blocks. The resolved set is `20` crab-pot, `241` location-fishing and `3` mine-override
+  occurrences, all with at least one window.
+- Eight additional `native_location_fish_spawn` occurrences produce non-Master-Angler items from fishing rows.
+  They intentionally remain `blocked_authoritative_fish_window_not_found`; the regression locks their exact
+  occurrence identities instead of borrowing an unrelated species window.
+- This is a partial static-source report, not target-date eligibility. Resolved rows remain
+  `target_date_pending`, all other route kinds remain parser-blocked, and training eligibility is false. The
+  next slice generalizes one native calendar-condition parser for Data/Locations forage, artifact and non-fish
+  fishing rows, then adds crop and shop conditions without duplicating per-route parsing logic.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
