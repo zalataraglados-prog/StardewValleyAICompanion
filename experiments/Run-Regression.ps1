@@ -237,6 +237,7 @@ $routeCalendarResolution = Get-Content -LiteralPath $routeCalendarResolutionPath
     ConvertFrom-Json
 $calendarSupportedRouteKinds = @(
     'harvests_as',
+    'sells',
     'native_crab_pot_output',
     'native_location_artifact_spot',
     'native_location_fish_spawn',
@@ -261,8 +262,23 @@ $cropGrowthEvidence = @($requirementInventory.source_evidence |
     Where-Object source_id -eq 'native_crop_growth_rule')
 $cropPlantingEvidence = @($requirementInventory.source_evidence |
     Where-Object source_id -eq 'native_crop_planting_rule')
+$shopDataEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'runtime_data_shops')
+$shopAccessEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'access_constraint_index')
+$shopStockEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_shop_stock_rule')
+$shopOpenEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_shop_open_rule')
+$shopPurchaseEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_shop_purchase_rule')
+$nativeGameStateQueryEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_game_state_query_rule')
 $resolvedCropRoutes = @($resolvedCalendarRoutes | Where-Object {
     $_.route_kind -eq 'harvests_as'
+})
+$resolvedShopRoutes = @($resolvedCalendarRoutes | Where-Object {
+    $_.route_kind -eq 'sells'
 })
 $wildSeedCropRoutes = @($resolvedCropRoutes | Where-Object {
     [bool]$_.crop_source.stochastic_outcome
@@ -292,6 +308,23 @@ $invalidWildSeedCropRoutes = @($wildSeedCropRoutes | Where-Object {
         @($_.crop_source.possible_harvest_qualified_item_ids)).Count -ne 0 -or
     @($_.calendar_windows | Where-Object { -not [bool]$_.stochastic_outcome }).Count -ne 0
 })
+$invalidShopRoutes = @($resolvedShopRoutes | Where-Object {
+    $null -eq $_.shop_source -or
+    $_.source_id -ne ('shop:' + [string]$_.shop_source.shop_id) -or
+    $_.qualified_item_id -ne $_.shop_source.data_item_qualified_id -or
+    [int]$_.shop_source.stock_row_index -lt 0 -or
+    [string]$_.shop_source.source_row_sha256 -notmatch '^[0-9a-f]{64}$' -or
+    -not [bool]$_.shop_source.native_condition_handlers_complete -or
+    -not [bool]$_.shop_source.requires_location_access_resolution -or
+    -not [bool]$_.shop_source.requires_live_stock_receipt -or
+    @($_.calendar_windows).Count -eq 0 -or
+    @($_.calendar_windows | Where-Object {
+        $_.source_kind -ne 'shop_stock_rule' -or
+        $_.required_location_capability -ne 'shop_access' -or
+        -not [bool]$_.requires_location_access_evidence -or
+        -not [bool]$_.requires_existing_live_candidate_match
+    }).Count -ne 0
+})
 if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_blocked' -or
     -not [bool]$routeCalendarResolution.route_occurrence_inventory_complete -or
     [bool]$routeCalendarResolution.static_calendar_source_resolution_complete -or
@@ -300,21 +333,58 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $cropDataEvidence.Count -ne 1 -or
     $cropGrowthEvidence.Count -ne 1 -or
     $cropPlantingEvidence.Count -ne 1 -or
+    $shopDataEvidence.Count -ne 1 -or
+    $shopAccessEvidence.Count -ne 1 -or
+    $shopStockEvidence.Count -ne 1 -or
+    $shopOpenEvidence.Count -ne 1 -or
+    $shopPurchaseEvidence.Count -ne 1 -or
+    $nativeGameStateQueryEvidence.Count -ne 1 -or
     $routeCalendarResolution.location_data_sha256 -ne $locationDataEvidence[0].sha256 -or
     $routeCalendarResolution.crop_data_sha256 -ne $cropDataEvidence[0].sha256 -or
     $routeCalendarResolution.native_crop_growth_source_sha256 -ne `
         $cropGrowthEvidence[0].sha256 -or
     $routeCalendarResolution.native_crop_planting_source_sha256 -ne `
         $cropPlantingEvidence[0].sha256 -or
+    $routeCalendarResolution.shop_data_sha256 -ne $shopDataEvidence[0].sha256 -or
+    $routeCalendarResolution.access_constraint_index_sha256 -ne `
+        $shopAccessEvidence[0].sha256 -or
+    $routeCalendarResolution.native_shop_stock_source_sha256 -ne `
+        $shopStockEvidence[0].sha256 -or
+    $routeCalendarResolution.native_shop_open_source_sha256 -ne `
+        $shopOpenEvidence[0].sha256 -or
+    $routeCalendarResolution.native_shop_purchase_source_sha256 -ne `
+        $shopPurchaseEvidence[0].sha256 -or
+    $routeCalendarResolution.native_game_state_query_source_sha256 -ne `
+        $nativeGameStateQueryEvidence[0].sha256 -or
     [int]$routeCalendarResolution.route_occurrence_count -ne $loweredRoutes.Count -or
-    [int]$routeCalendarResolution.resolved_static_source_count -ne 580 -or
-    [int]$routeCalendarResolution.blocked_static_source_count -ne 1019 -or
-    $calendarSupportedRoutes.Count -ne 580 -or
-    $resolvedCalendarRoutes.Count -ne 580 -or
+    [int]$routeCalendarResolution.resolved_static_source_count -ne 689 -or
+    [int]$routeCalendarResolution.blocked_static_source_count -ne 910 -or
+    $calendarSupportedRoutes.Count -ne 689 -or
+    $resolvedCalendarRoutes.Count -ne 689 -or
     $resolvedCropRoutes.Count -ne 75 -or
     $wildSeedCropRoutes.Count -ne 8 -or
     $invalidCropRoutes.Count -ne 0 -or
     $invalidWildSeedCropRoutes.Count -ne 0 -or
+    $resolvedShopRoutes.Count -ne 109 -or
+    $invalidShopRoutes.Count -ne 0 -or
+    @($resolvedShopRoutes | Where-Object {
+        [int]$_.shop_source.available_stock -ge 0
+    }).Count -ne 69 -or
+    @($resolvedShopRoutes | Where-Object {
+        $null -ne $_.shop_source.trade_item_id
+    }).Count -ne 68 -or
+    @($resolvedShopRoutes | Where-Object {
+        [bool]$_.shop_source.is_recipe
+    }).Count -ne 1 -or
+    @($resolvedShopRoutes | Where-Object {
+        @($_.calendar_windows | Where-Object stochastic_outcome).Count -gt 0
+    }).Count -ne 2 -or
+    @($resolvedShopRoutes | Where-Object {
+        @($_.shop_source.interaction_endpoints).Count -gt 0
+    }).Count -ne 27 -or
+    @($resolvedShopRoutes | Where-Object {
+        @($_.shop_source.door_windows).Count -gt 0
+    }).Count -ne 22 -or
     @($resolvedCalendarRoutes | Where-Object {
         $_.evidence_class -eq 'runtime_location_artifact_spot_window'
     }).Count -ne 68 -or

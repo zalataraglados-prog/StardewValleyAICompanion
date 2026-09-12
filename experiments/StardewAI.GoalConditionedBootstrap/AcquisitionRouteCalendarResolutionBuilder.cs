@@ -7,6 +7,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     private static readonly HashSet<string> SupportedRouteKinds = new(StringComparer.Ordinal)
     {
         "harvests_as",
+        "sells",
         "native_crab_pot_output",
         "native_location_artifact_spot",
         "native_location_fish_spawn",
@@ -52,8 +53,36 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             inventory,
             "native_crop_planting_rule",
             "Native crop planting rule");
+        var shopEvidence = VerifyEvidence(
+            inventory,
+            "runtime_data_shops",
+            "Runtime Data/Shops");
+        var accessConstraintEvidence = VerifyEvidence(
+            inventory,
+            "access_constraint_index",
+            "Access constraint index");
+        var shopStockEvidence = VerifyEvidence(
+            inventory,
+            "native_shop_stock_rule",
+            "Native shop stock rule");
+        var shopOpenEvidence = VerifyEvidence(
+            inventory,
+            "native_shop_open_rule",
+            "Native shop open rule");
+        var shopPurchaseEvidence = VerifyEvidence(
+            inventory,
+            "native_shop_purchase_rule",
+            "Native shop purchase rule");
+        var gameStateQueryEvidence = VerifyEvidence(
+            inventory,
+            "native_game_state_query_rule",
+            "Native game-state query rule");
         var locations = ReadPayloadEvidence(locationEvidence, "Runtime Data/Locations");
         var crops = ReadPayloadEvidence(cropEvidence, "Runtime Data/Crops");
+        var shops = ReadPayloadEvidence(shopEvidence, "Runtime Data/Shops");
+        var accessConstraints = ReadRootEvidence(
+            accessConstraintEvidence,
+            "Access constraint index");
 
         var windows = CurrentTeacherFrontierSupport.Read<MasterAnglerStageOneWindowIndex>(
             windowFullPath,
@@ -126,6 +155,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             windowSpecies,
             locations,
             crops,
+            shops,
+            accessConstraints,
             windows.DeadlineTotalDayExclusive);
         var expectedRouteCount = lowering.RequirementSets
             .SelectMany(set => set.Groups)
@@ -156,8 +187,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 CurrentTeacherFrontierSupport.HashFile(catalogFullPath),
             LocationDataSha256 = locationEvidence.Sha256,
             CropDataSha256 = cropEvidence.Sha256,
+            ShopDataSha256 = shopEvidence.Sha256,
+            AccessConstraintIndexSha256 = accessConstraintEvidence.Sha256,
             NativeCropGrowthSourceSha256 = cropGrowthEvidence.Sha256,
             NativeCropPlantingSourceSha256 = cropPlantingEvidence.Sha256,
+            NativeShopStockSourceSha256 = shopStockEvidence.Sha256,
+            NativeShopOpenSourceSha256 = shopOpenEvidence.Sha256,
+            NativeShopPurchaseSourceSha256 = shopPurchaseEvidence.Sha256,
+            NativeGameStateQuerySourceSha256 = gameStateQueryEvidence.Sha256,
             DeadlineTotalDayExclusive = windows.DeadlineTotalDayExclusive,
             RouteOccurrenceCount = routes.Length,
             ResolvedStaticSourceCount = resolvedCount,

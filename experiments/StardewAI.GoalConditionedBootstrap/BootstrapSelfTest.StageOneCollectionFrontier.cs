@@ -21,8 +21,14 @@ internal static partial class BootstrapSelfTest
         var windowsPath = Path.Combine(root, "master-angler-windows.json");
         var locationsPath = Path.Combine(root, "data-locations.json");
         var cropsPath = Path.Combine(root, "data-crops.json");
+        var shopsPath = Path.Combine(root, "data-shops.json");
+        var accessConstraintPath = Path.Combine(root, "access-constraint-index.json");
         var cropGrowthSourcePath = Path.Combine(root, "Crop.cs");
         var cropPlantingSourcePath = Path.Combine(root, "HoeDirt.cs");
+        var shopStockSourcePath = Path.Combine(root, "ShopBuilder.cs");
+        var shopOpenSourcePath = Path.Combine(root, "Utility.cs");
+        var shopPurchaseSourcePath = Path.Combine(root, "ShopMenu.cs");
+        var gameStateQuerySourcePath = Path.Combine(root, "GameStateQuery.cs");
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
@@ -95,8 +101,138 @@ internal static partial class BootstrapSelfTest
                 }
             }
         });
+        const string fixtureShopCondition =
+            "!YEAR 2, DAY_OF_WEEK Monday, TIME 700 1800, " +
+            "SYNCED_RANDOM day fixture 0.25";
+        Write(shopsPath, new
+        {
+            payload = new Dictionary<string, object>
+            {
+                ["FixtureShop"] = new Dictionary<string, object?>
+                {
+                    ["Currency"] = 0,
+                    ["ApplyProfitMargins"] = null,
+                    ["PriceModifiers"] = Array.Empty<object>(),
+                    ["Owners"] = new object[]
+                    {
+                        new Dictionary<string, object?>
+                        {
+                            ["Id"] = "FixtureOwner",
+                            ["Name"] = "FixtureOwner",
+                            ["Type"] = 0,
+                            ["Condition"] = null
+                        }
+                    },
+                    ["Items"] = new object[]
+                    {
+                        new Dictionary<string, object?>
+                        {
+                            ["Id"] = "fixture-parsnip",
+                            ["ItemId"] = "(O)24",
+                            ["RandomItemId"] = null,
+                            ["Price"] = 0,
+                            ["AvailableStock"] = 1,
+                            ["AvailableStockLimit"] = 1,
+                            ["TradeItemId"] = "(O)388",
+                            ["TradeItemAmount"] = 5,
+                            ["IsRecipe"] = false,
+                            ["Condition"] = fixtureShopCondition,
+                            ["PerItemCondition"] = null,
+                            ["AvoidRepeat"] = false,
+                            ["UseObjectDataPrice"] = false,
+                            ["ApplyProfitMargins"] = null,
+                            ["IgnoreShopPriceModifiers"] = true,
+                            ["PriceModifiers"] = null,
+                            ["AvailableStockModifiers"] = null,
+                            ["MaxItems"] = null,
+                            ["ActionsOnPurchase"] = new[] { "AddMail fixtureBought" }
+                        }
+                    }
+                }
+            }
+        });
+        Write(accessConstraintPath, new
+        {
+            schema_version = "stardewai.access_constraint_index.v1",
+            authority = "fixture exact native access index",
+            semantic_limit = "fixture target-date state remains pending",
+            summary = new { blockingIssueCount = 0 },
+            shops = new[]
+            {
+                new
+                {
+                    shopId = "FixtureShop",
+                    owners = new[]
+                    {
+                        new
+                        {
+                            id = "FixtureOwner",
+                            name = "FixtureOwner",
+                            type = 0,
+                            condition = (string?)null
+                        }
+                    },
+                    stock = new[]
+                    {
+                        new
+                        {
+                            id = "fixture-parsnip",
+                            itemId = "(O)24",
+                            condition = fixtureShopCondition,
+                            perItemCondition = (string?)null,
+                            parsedCondition = new
+                            {
+                                clauses = new[]
+                                {
+                                    NativeConditionClause("YEAR"),
+                                    NativeConditionClause("DAY_OF_WEEK"),
+                                    NativeConditionClause("TIME"),
+                                    NativeConditionClause("SYNCED_RANDOM")
+                                }
+                            },
+                            parsedPerItemCondition = (object?)null
+                        }
+                    }
+                }
+            },
+            shop_endpoints = new[]
+            {
+                new
+                {
+                    mapAsset = "Maps/FixtureShop",
+                    layer = "Buildings",
+                    x = 4,
+                    y = 18,
+                    shopId = "FixtureShop",
+                    handlerKey = "Shop",
+                    rawAction = "Shop FixtureShop",
+                    resolution = "exact_fixture_mapping"
+                }
+            },
+            door_windows = new[]
+            {
+                new
+                {
+                    mapAsset = "Maps/Town",
+                    x = 10,
+                    y = 12,
+                    destinationLocation = "FixtureShop",
+                    destinationX = 4,
+                    destinationY = 19,
+                    openTime = 900,
+                    closeTime = 1700,
+                    requiredNpc = (string?)null,
+                    minimumFriendship = 0,
+                    rawAction = "LockedDoorWarp 4 19 FixtureShop 900 1700"
+                }
+            }
+        });
         File.WriteAllText(cropGrowthSourcePath, "fixture Crop source");
         File.WriteAllText(cropPlantingSourcePath, "fixture HoeDirt source");
+        File.WriteAllText(shopStockSourcePath, "fixture ShopBuilder source");
+        File.WriteAllText(shopOpenSourcePath, "fixture Utility source");
+        File.WriteAllText(shopPurchaseSourcePath, "fixture ShopMenu source");
+        File.WriteAllText(gameStateQuerySourcePath, "fixture GameStateQuery source");
         Write(inventoryPath, new
         {
             schema_version = "authoritative_goal_requirement_inventory.v1",
@@ -123,6 +259,20 @@ internal static partial class BootstrapSelfTest
                 },
                 new
                 {
+                    source_id = "runtime_data_shops",
+                    path = Path.GetFullPath(shopsPath),
+                    sha256 = HashFile(shopsPath),
+                    authority = "runtime DataLoader.Shops export"
+                },
+                new
+                {
+                    source_id = "access_constraint_index",
+                    path = Path.GetFullPath(accessConstraintPath),
+                    sha256 = HashFile(accessConstraintPath),
+                    authority = "compiled shop access fixture"
+                },
+                new
+                {
                     source_id = "native_crop_growth_rule",
                     path = Path.GetFullPath(cropGrowthSourcePath),
                     sha256 = HashFile(cropGrowthSourcePath),
@@ -134,6 +284,34 @@ internal static partial class BootstrapSelfTest
                     path = Path.GetFullPath(cropPlantingSourcePath),
                     sha256 = HashFile(cropPlantingSourcePath),
                     authority = "decompiled HoeDirt planting and speed branches"
+                },
+                new
+                {
+                    source_id = "native_shop_stock_rule",
+                    path = Path.GetFullPath(shopStockSourcePath),
+                    sha256 = HashFile(shopStockSourcePath),
+                    authority = "decompiled ShopBuilder fixture"
+                },
+                new
+                {
+                    source_id = "native_shop_open_rule",
+                    path = Path.GetFullPath(shopOpenSourcePath),
+                    sha256 = HashFile(shopOpenSourcePath),
+                    authority = "decompiled shop opening fixture"
+                },
+                new
+                {
+                    source_id = "native_shop_purchase_rule",
+                    path = Path.GetFullPath(shopPurchaseSourcePath),
+                    sha256 = HashFile(shopPurchaseSourcePath),
+                    authority = "decompiled shop purchase fixture"
+                },
+                new
+                {
+                    source_id = "native_game_state_query_rule",
+                    path = Path.GetFullPath(gameStateQuerySourcePath),
+                    sha256 = HashFile(gameStateQuerySourcePath),
+                    authority = "decompiled calendar query fixture"
                 }
             },
             requirement_sets = new object[]
@@ -161,7 +339,7 @@ internal static partial class BootstrapSelfTest
                         1,
                         CollectionAlternative(
                             "24", "(O)24", "Parsnip", "item_id", 1, 0,
-                            "harvests_as", "crop:472")))
+                            "harvests_as", "crop:472", includeFixtureShopRoute: true)))
             }
         });
 
@@ -213,7 +391,8 @@ internal static partial class BootstrapSelfTest
                         "community_center:bundle:Pantry/5", 1,
                         CollectionLoweredAlternative(
                             "24", "(O)24", "Parsnip", "item_id", 1, 0,
-                            "harvests_as", "crop:472", "farm.maintain_crops")))
+                            "harvests_as", "crop:472", "farm.maintain_crops",
+                            includeFixtureShopRoute: true)))
             }
         });
 
@@ -288,18 +467,32 @@ internal static partial class BootstrapSelfTest
         var resolvedCropRoute = routeCalendar.Routes.Single(route =>
             route.RequirementSetId == "full_shipment" &&
             route.QualifiedItemId == "(O)24");
+        var resolvedShopRoute = routeCalendar.Routes.Single(route =>
+            route.RequirementId == "community_center:bundle:Pantry/5" &&
+            route.RouteKind == "sells");
         Require(routeCalendar.Status == "complete_static_sources_target_date_pending" &&
                 routeCalendar.RouteOccurrenceInventoryComplete &&
                 routeCalendar.StaticCalendarSourceResolutionComplete &&
                 !routeCalendar.TrainingLabelEligible &&
-                routeCalendar.RouteOccurrenceCount == 75 &&
-                routeCalendar.ResolvedStaticSourceCount == 75 &&
+                routeCalendar.RouteOccurrenceCount == 76 &&
+                routeCalendar.ResolvedStaticSourceCount == 76 &&
                 routeCalendar.BlockedStaticSourceCount == 0 &&
                 routeCalendar.CropDataSha256 == HashFile(cropsPath) &&
                 routeCalendar.NativeCropGrowthSourceSha256 ==
                     HashFile(cropGrowthSourcePath) &&
                 routeCalendar.NativeCropPlantingSourceSha256 ==
                     HashFile(cropPlantingSourcePath) &&
+                routeCalendar.ShopDataSha256 == HashFile(shopsPath) &&
+                routeCalendar.AccessConstraintIndexSha256 ==
+                    HashFile(accessConstraintPath) &&
+                routeCalendar.NativeShopStockSourceSha256 ==
+                    HashFile(shopStockSourcePath) &&
+                routeCalendar.NativeShopOpenSourceSha256 ==
+                    HashFile(shopOpenSourcePath) &&
+                routeCalendar.NativeShopPurchaseSourceSha256 ==
+                    HashFile(shopPurchaseSourcePath) &&
+                routeCalendar.NativeGameStateQuerySourceSha256 ==
+                    HashFile(gameStateQuerySourcePath) &&
                 resolvedSunfishRoute.Status ==
                     "resolved_static_source_window_target_date_pending" &&
                 resolvedSunfishRoute.EvidenceClass ==
@@ -347,7 +540,41 @@ internal static partial class BootstrapSelfTest
                     window.RequiredLocationCapability is null) == 2 &&
                 resolvedCropRoute.CalendarWindows.Count(window =>
                     window.SourceKind == "crop_season_ignored_location" &&
-                    window.RequiredLocationCapability == "seeds_ignore_seasons") == 6,
+                    window.RequiredLocationCapability == "seeds_ignore_seasons") == 6 &&
+                resolvedShopRoute.Status ==
+                    "resolved_static_source_window_target_date_pending" &&
+                resolvedShopRoute.EvidenceClass ==
+                    "runtime_shop_stock_calendar_projection" &&
+                resolvedShopRoute.CalendarWindows.Length == 16 &&
+                resolvedShopRoute.CalendarWindows.All(window =>
+                    window.Year == 1 &&
+                    window.FirstTotalDay == window.LastTotalDay &&
+                    window.TimeWindows.Length == 1 &&
+                    window.TimeWindows[0].StartTime == 700 &&
+                    window.TimeWindows[0].EndTime == 1810 &&
+                    window.RequiredLocationCapability == "shop_access" &&
+                    window.StochasticOutcome &&
+                    window.DynamicConditions.SequenceEqual(new[]
+                    {
+                        "SYNCED_RANDOM day fixture 0.25"
+                    })) &&
+                resolvedShopRoute.ShopSource is not null &&
+                resolvedShopRoute.ShopSource.ShopId == "FixtureShop" &&
+                resolvedShopRoute.ShopSource.StockRowIndex == 0 &&
+                resolvedShopRoute.ShopSource.DataItemQualifiedId == "(O)24" &&
+                resolvedShopRoute.ShopSource.AvailableStock == 1 &&
+                resolvedShopRoute.ShopSource.AvailableStockLimit == 1 &&
+                resolvedShopRoute.ShopSource.TradeItemId == "(O)388" &&
+                resolvedShopRoute.ShopSource.TradeItemAmount == 5 &&
+                resolvedShopRoute.ShopSource.ActionsOnPurchase.SequenceEqual(
+                    new[] { "AddMail fixtureBought" }) &&
+                resolvedShopRoute.ShopSource.NativeConditionHandlersComplete &&
+                resolvedShopRoute.ShopSource.RequiresStockModifierResolution &&
+                resolvedShopRoute.ShopSource.RequiresOwnerScheduleResolution &&
+                resolvedShopRoute.ShopSource.InteractionEndpoints.Length == 1 &&
+                resolvedShopRoute.ShopSource.DoorWindows.Length == 1 &&
+                resolvedShopRoute.ShopSource.DoorWindows[0].OpenTime == 900 &&
+                resolvedShopRoute.ShopSource.DoorWindows[0].CloseTime == 1700,
             "Authoritative route calendar source resolution drifted.");
 
         var originalCropEvidence = File.ReadAllText(cropsPath);
@@ -370,6 +597,48 @@ internal static partial class BootstrapSelfTest
         }
         Require(staleCropEvidenceRejected,
             "Stale runtime Data/Crops evidence did not fail closed.");
+
+        var originalShopEvidence = File.ReadAllText(shopsPath);
+        var staleShopEvidenceRejected = false;
+        try
+        {
+            File.AppendAllText(shopsPath, " ");
+            _ = AcquisitionRouteCalendarResolutionBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath);
+        }
+        catch (InvalidDataException)
+        {
+            staleShopEvidenceRejected = true;
+        }
+        finally
+        {
+            File.WriteAllText(shopsPath, originalShopEvidence);
+        }
+        Require(staleShopEvidenceRejected,
+            "Stale runtime Data/Shops evidence did not fail closed.");
+
+        var originalAccessEvidence = File.ReadAllText(accessConstraintPath);
+        var staleAccessEvidenceRejected = false;
+        try
+        {
+            File.AppendAllText(accessConstraintPath, " ");
+            _ = AcquisitionRouteCalendarResolutionBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath);
+        }
+        catch (InvalidDataException)
+        {
+            staleAccessEvidenceRejected = true;
+        }
+        finally
+        {
+            File.WriteAllText(accessConstraintPath, originalAccessEvidence);
+        }
+        Require(staleAccessEvidenceRejected,
+            "Stale access constraint evidence did not fail closed.");
 
         var unknownCalendar = NativeCalendarConstraintNormalizer.Normalize(
             NativeCalendarConstraintNormalizer.AllSeasons,

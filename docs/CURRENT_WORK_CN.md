@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 Data/Shops 库存与访问来源解析
+
+- 权威需求库存新增并哈希绑定唯一 `runtime_data_shops`、`access_constraint_index`、`native_shop_stock_rule`、`native_shop_open_rule` 与 `native_shop_purchase_rule`。构建时核对锁定 1.6.15 的 `ShopBuilder.GetShopStock/CheckItemCondition/GetBasePrice`、`Utility.TryOpenShopMenu`、`ShopMenu` 扣款/交换/配方/同步库存/购买动作分支，以及原生 `GameStateQuery` 日期谓词；证据缺失、哈希漂移或源码标志漂移均失败关闭。
+- `sells` 必须按精确 `shop:<shop id> / Data/Shops / payload.<shop id>.Items[<row>]` 绑定，并再次与权威访问索引的同一库存行及原生条件处理器核对。每条来源保留货币类型、价格、有限库存模式、交换物、配方、利润率/价格/库存修饰器需求、购买副作用、店主条件、地图柜台端点和可关联的门禁时间；完整原行由来源路径、文件哈希和行哈希共同固定。
+- 商店日期投影按反编译语义求值 `SEASON`、`YEAR`（含否定）、`DAY_OF_WEEK`、`DAY_OF_MONTH` 与 `TIME`；玩家状态、同步选择和同步随机等条件原样留作目标日动态谓词。库存行的日期窗口不等于商店当日可进入：节日地图、店主在岗、NPC 日程、地图变化、实时剩余库存、价格/交换资源和原生菜单回执仍由下游轴逐项求值，所有行继续是 `target_date_pending`，`training_label_eligible=false`。
+- 锁定 1.6.15 实跑保留全部 `1599` 个 occurrence，结果从 `580 resolved / 1019 blocked` 提升为 `689 resolved / 910 blocked`。`109/109 sells` 全部解析，覆盖 32 个商店；其中 68 条交换购买、69 条有限库存、1 条配方、2 条同步随机来源，原生条件处理器缺口和空窗口均为 0。27 条目标路线带直接柜台端点，22 条还能关联基础地图门禁；其余节日/动态入口明确留在位置访问轴，未被猜测补齐。
+- 商店实现已拆为路由绑定、日历投影和访问证据三个文件；组合自测覆盖星期、否定年份、动态随机、交换/库存、端点/门禁以及 Data/Shops 与访问索引篡改失败关闭。Release 构建和精确数据制品已通过，`Run-Regression.ps1` 的新计数/字段断言与语法已更新。未启动游戏或正式训练。下一固定切片进入目标日期日历轴求值，不再继续添加静态来源家族。
+
 ## 2026-09-13 Data/Crops 日历来源与生长约束
 
 - 权威需求库存现在新增并哈希绑定唯一 `runtime_data_crops`、`native_crop_growth_rule` 与 `native_crop_planting_rule`。构建阶段同时检查锁定 1.6.15 `Crop.IsInSeason`、`Crop.DaysInPhase/RegrowDays`、野生种子随机分支，以及 `HoeDirt` 的季节许可和生长加速分支；缺文件、哈希漂移或源码标志漂移均失败关闭。

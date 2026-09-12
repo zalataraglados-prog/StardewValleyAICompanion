@@ -359,7 +359,8 @@ internal static partial class BootstrapSelfTest
         int amount,
         int minimumQuality,
         string routeKind,
-        string sourceId) => new
+        string sourceId,
+        bool includeFixtureShopRoute = false) => new
     {
         item_id = itemId,
         qualified_item_id = qualifiedItemId,
@@ -367,16 +368,21 @@ internal static partial class BootstrapSelfTest
         match_kind = matchKind,
         amount,
         minimum_quality = minimumQuality,
-        acquisition_routes = new[]
-        {
-            new
-            {
-                kind = routeKind,
-                source_id = sourceId,
-                source_asset = RouteSourceAsset(routeKind),
-                source_path = RouteSourcePath(routeKind, sourceId)
-            }
-        }
+        acquisition_routes = new[] { CollectionAcquisitionRoute(routeKind, sourceId) }
+            .Concat(includeFixtureShopRoute
+                ? new[] { CollectionAcquisitionRoute("sells", "shop:FixtureShop") }
+                : Array.Empty<object>())
+            .ToArray()
+    };
+
+    private static object CollectionAcquisitionRoute(
+        string routeKind,
+        string sourceId) => new
+    {
+        kind = routeKind,
+        source_id = sourceId,
+        source_asset = RouteSourceAsset(routeKind),
+        source_path = RouteSourcePath(routeKind, sourceId)
     };
 
     private static object CollectionLoweredGroup(
@@ -403,7 +409,8 @@ internal static partial class BootstrapSelfTest
         int minimumQuality,
         string routeKind,
         string sourceId,
-        string endpointOptionId) => new
+        string endpointOptionId,
+        bool includeFixtureShopRoute = false) => new
     {
         item_id = itemId,
         qualified_item_id = qualifiedItemId,
@@ -413,36 +420,63 @@ internal static partial class BootstrapSelfTest
         minimum_quality = minimumQuality,
         runtime_admission_ready = true,
         teacher_admission_ready = true,
-        routes = new[]
-        {
-            new
-            {
-                route_kind = routeKind,
-                source_id = sourceId,
-                source_asset = RouteSourceAsset(routeKind),
-                source_path = RouteSourcePath(routeKind, sourceId),
-                supervision_mode = "deterministic_dependency",
-                uncertainty_mode = routeKind == "harvests_as"
-                    ? "source_resolved_downstream"
-                    : "deterministic_fresh_receipt",
-                required_downstream_dependency_axes =
-                    StageOneCollectionRouteDependencyAxes.Required,
-                endpoint_option_ids = new[] { endpointOptionId },
-                supporting_option_ids = Array.Empty<string>(),
-                runtime_admission_ready = true,
-                teacher_admission_ready = true
-            }
-        }
+        routes = new[] { CollectionLoweredRoute(routeKind, sourceId, endpointOptionId) }
+            .Concat(includeFixtureShopRoute
+                ? new[]
+                {
+                    CollectionLoweredRoute(
+                        "sells", "shop:FixtureShop", "economy.buy_supplies")
+                }
+                : Array.Empty<object>())
+            .ToArray()
     };
 
-    private static string RouteSourceAsset(string routeKind) =>
-        routeKind == "harvests_as" ? "Data/Crops" : "fixture";
+    private static object CollectionLoweredRoute(
+        string routeKind,
+        string sourceId,
+        string endpointOptionId) => new
+    {
+        route_kind = routeKind,
+        source_id = sourceId,
+        source_asset = RouteSourceAsset(routeKind),
+        source_path = RouteSourcePath(routeKind, sourceId),
+        supervision_mode = "deterministic_dependency",
+        uncertainty_mode = routeKind == "harvests_as"
+            ? "source_resolved_downstream"
+            : "deterministic_fresh_receipt",
+        required_downstream_dependency_axes =
+            StageOneCollectionRouteDependencyAxes.Required,
+        endpoint_option_ids = new[] { endpointOptionId },
+        supporting_option_ids = Array.Empty<string>(),
+        runtime_admission_ready = true,
+        teacher_admission_ready = true
+    };
+
+    private static string RouteSourceAsset(string routeKind) => routeKind switch
+    {
+        "harvests_as" => "Data/Crops",
+        "sells" => "Data/Shops",
+        _ => "fixture"
+    };
 
     private static string RouteSourcePath(string routeKind, string sourceId) =>
-        routeKind == "harvests_as" &&
-        sourceId.StartsWith("crop:", StringComparison.Ordinal)
-            ? "payload." + sourceId["crop:".Length..] + ".HarvestItemId"
-            : "fixture.path";
+        routeKind switch
+        {
+            "harvests_as" when sourceId.StartsWith("crop:", StringComparison.Ordinal) =>
+                "payload." + sourceId["crop:".Length..] + ".HarvestItemId",
+            "sells" when sourceId == "shop:FixtureShop" =>
+                "payload.FixtureShop.Items[0]",
+            _ => "fixture.path"
+        };
+
+    private static object NativeConditionClause(string canonicalKey) => new
+    {
+        error = (string?)null,
+        handler = new
+        {
+            canonicalKey
+        }
+    };
 
     private static AvailabilityAwarePolicyPredictionEnvelope CollectionRanking(
         string stateHash,

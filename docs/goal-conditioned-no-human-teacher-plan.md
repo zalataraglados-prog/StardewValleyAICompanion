@@ -1166,6 +1166,35 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The next fixed slice resolves shop stock/opening/native condition sources. After that, target-date resolution
   composes calendar sources with the remaining dependency axes before any future-day candidate is admitted.
 
+### 2026-09-13: Data/Shops stock and access source resolution
+
+- The authoritative requirement inventory now hash-binds the exact runtime `Data/Shops` export, the compiled
+  `access-constraint-index.json`, and locked decompiled `ShopBuilder`, `Utility.TryOpenShopMenu`, `ShopMenu`, and
+  `GameStateQuery` sources. Guards cover stock construction, item queries, row conditions, Pierre's stock-list
+  exception, price and quantity modifiers, finite/synchronized stock, owner selection, closed messages, currency
+  charging, barter consumption, recipe learning and purchase actions. Missing or stale evidence fails closed.
+- Every `sells` occurrence must match its exact `shop:<id>`, `Data/Shops`, and stock-row path, then match that same
+  row in the access index with a native handler for every condition clause. The typed result preserves source-row
+  identity/hash, shop currency, price, barter item/count, finite-stock mode, recipe flag, relevant modifiers,
+  purchase actions, owners, static interaction endpoints, and base-map door windows associated with those endpoint
+  maps. Runtime stock and menu receipts are still mandatory.
+- `SEASON`, native range-style `YEAR` including negation, `DAY_OF_WEEK`, `DAY_OF_MONTH`, and `TIME` are projected
+  over the pre-Grandpa deadline. Other natively recognized clauses remain exact dynamic predicates rather than
+  being guessed. In the current 109 target rows those include player book state, synchronized choice, and
+  synchronized random availability. Festival/event entry, owner presence and schedules, dynamic maps, live stock,
+  affordability and barter resources remain target-date dependency work even when a stock row has an all-day
+  static source window.
+- The locked 1.6.15 rebuild preserves all `1,599` route occurrences and resolves `689`; `910` remain explicit
+  parser blocks. All `109` shop occurrences resolve across 32 shops: 68 barter rows, 69 finite-stock rows, one
+  recipe row, and two stochastic-availability rows. Native-handler gaps and empty windows are zero. Twenty-seven
+  occurrences have exact counter endpoints and 22 additionally join to base-map door windows; absent dynamic or
+  festival endpoints stay explicit downstream access obligations.
+- Shop code is split into route/source binding, calendar projection, and access-evidence modules. Focused four-set
+  tests cover weekday and negated-year semantics, dynamic predicate retention, barter/stock/action facts,
+  endpoint/door joins, and stale shop/access evidence rejection. Release build and exact artifact validation pass;
+  no game or formal training was started. The next fixed slice consumes an explicit target date and resolves only
+  the calendar axis, leaving the other 11 axes independent and fail closed.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

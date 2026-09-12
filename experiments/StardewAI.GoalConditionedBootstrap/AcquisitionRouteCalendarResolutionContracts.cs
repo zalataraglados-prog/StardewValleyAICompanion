@@ -34,11 +34,29 @@ public sealed class AcquisitionRouteCalendarResolutionReport
     [JsonPropertyName("crop_data_sha256")]
     public string CropDataSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("shop_data_sha256")]
+    public string ShopDataSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("access_constraint_index_sha256")]
+    public string AccessConstraintIndexSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("native_crop_growth_source_sha256")]
     public string NativeCropGrowthSourceSha256 { get; set; } = string.Empty;
 
     [JsonPropertyName("native_crop_planting_source_sha256")]
     public string NativeCropPlantingSourceSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_shop_stock_source_sha256")]
+    public string NativeShopStockSourceSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_shop_open_source_sha256")]
+    public string NativeShopOpenSourceSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_shop_purchase_source_sha256")]
+    public string NativeShopPurchaseSourceSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_game_state_query_source_sha256")]
+    public string NativeGameStateQuerySourceSha256 { get; set; } = string.Empty;
 
     [JsonPropertyName("deadline_total_day_exclusive")]
     public int DeadlineTotalDayExclusive { get; set; }
@@ -73,7 +91,7 @@ public sealed class AcquisitionRouteCalendarResolutionReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative calendar window. Crop source resolution preserves native growth, watering, paddy, location-rule and possible-output facts but does not resolve their target-date dependencies. Static source resolution does not satisfy target-date dynamic predicates or any other dependency axis.";
+        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative source row and calendar projection. Crop source resolution preserves native growth facts. Shop source resolution preserves native stock, price, trade, condition, owner, endpoint and door facts. Neither projection proves target-date availability, location access, live stock, resource affordability, or any other downstream dependency axis.";
 }
 
 public sealed record AcquisitionRouteCalendarResolution(
@@ -94,7 +112,10 @@ public sealed record AcquisitionRouteCalendarResolution(
     [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons,
     [property: JsonPropertyName("crop_source")]
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    AcquisitionCropSourceEvidence? CropSource = null);
+    AcquisitionCropSourceEvidence? CropSource = null,
+    [property: JsonPropertyName("shop_source")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    AcquisitionShopSourceEvidence? ShopSource = null);
 
 public sealed record AcquisitionCropSourceEvidence(
     [property: JsonPropertyName("seed_item_id")] string SeedItemId,

@@ -34,4 +34,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             label + " payload is unavailable.");
         return payload.Clone();
     }
+
+    private static JsonElement ReadRootEvidence(
+        RequirementSourceEvidence evidence,
+        string label)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(evidence.Path));
+        Require(document.RootElement.ValueKind == JsonValueKind.Object,
+            label + " root is unavailable.");
+        return document.RootElement.Clone();
+    }
 }

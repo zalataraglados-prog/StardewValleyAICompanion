@@ -12,6 +12,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         IReadOnlyDictionary<string, MasterAnglerStageOneSpeciesWindow> windowSpecies,
         JsonElement locations,
         JsonElement crops,
+        JsonElement shops,
+        JsonElement accessConstraints,
         int deadlineTotalDayExclusive)
     {
         var result = new List<AcquisitionRouteCalendarResolution>();
@@ -35,6 +37,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             windowSpecies,
                             locations,
                             crops,
+                            shops,
+                            accessConstraints,
                             deadlineTotalDayExclusive);
                         var occurrenceId = string.Join(
                             ":",
@@ -58,7 +62,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             resolution.EvidenceClass,
                             resolution.Windows,
                             resolution.BlockingReasons,
-                            resolution.CropSource));
+                            resolution.CropSource,
+                            resolution.ShopSource));
                     }
                 }
             }
@@ -72,6 +77,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         IReadOnlyDictionary<string, MasterAnglerStageOneSpeciesWindow> speciesById,
         JsonElement locations,
         JsonElement crops,
+        JsonElement shops,
+        JsonElement accessConstraints,
         int deadlineTotalDayExclusive)
     {
         if (route.RouteKind == "harvests_as")
@@ -80,6 +87,16 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 qualifiedItemId,
                 route,
                 crops,
+                deadlineTotalDayExclusive);
+        }
+
+        if (route.RouteKind == "sells")
+        {
+            return ResolveShopWindows(
+                qualifiedItemId,
+                route,
+                shops,
+                accessConstraints,
                 deadlineTotalDayExclusive);
         }
 
@@ -178,5 +195,6 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         string EvidenceClass,
         AuthoritativeCalendarSourceWindow[] Windows,
         string[] BlockingReasons,
-        AcquisitionCropSourceEvidence? CropSource = null);
+        AcquisitionCropSourceEvidence? CropSource = null,
+        AcquisitionShopSourceEvidence? ShopSource = null);
 }

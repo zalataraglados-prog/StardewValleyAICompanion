@@ -36,6 +36,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var gameVersion = RequiredString(manifest, "gameVersion");
         var objectsPath = ResolveExport(rawRoot, manifest, "Data/Objects");
         var cropsPath = ResolveExport(rawRoot, manifest, "Data/Crops");
+        var shopsPath = ResolveExport(rawRoot, manifest, "Data/Shops");
         var fishPath = ResolveExport(rawRoot, manifest, "Data/Fish");
         var locationsPath = ResolveExport(rawRoot, manifest, "Data/Locations");
         var farmAnimalsPath = ResolveExport(rawRoot, manifest, "Data/FarmAnimals");
@@ -70,6 +71,16 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var islandFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "IslandLocation.cs");
         var islandSouthEastFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "IslandSouthEast.cs");
         var railroadFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "Railroad.cs");
+        var shopBuilderSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Internal", "ShopBuilder.cs");
+        var shopMenuSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Menus", "ShopMenu.cs");
+        var accessConstraintIndexPath = Path.Combine(
+            Path.GetDirectoryName(graphFullPath)!,
+            "access-constraint-index.json");
+        if (!File.Exists(accessConstraintIndexPath))
+        {
+            throw new InvalidDataException(
+                "Authoritative access constraint index is missing beside the dependency graph.");
+        }
 
         GuardNativeSources(objectSourcePath, utilitySourcePath, museumSourcePath);
         GuardStructuredAcquisitionSources(
@@ -91,6 +102,11 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             gameLocationSourcePath,
             wildTreeSourcePath);
         GuardCropPlanningSources(cropSourcePath, hoeDirtSourcePath);
+        GuardShopPlanningSources(
+            shopBuilderSourcePath,
+            utilitySourcePath,
+            shopMenuSourcePath,
+            gameStateQuerySourcePath);
         GuardFishingAcquisitionSources(
             decompileFullPath,
             mineShaftSourcePath,
@@ -160,6 +176,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("raw_manifest", manifestFullPath, "runtime export manifest"),
                 Evidence("runtime_data_objects", objectsPath, "runtime DataLoader.Objects export"),
                 Evidence("runtime_data_crops", cropsPath, "runtime DataLoader.Crops export"),
+                Evidence("runtime_data_shops", shopsPath, "runtime DataLoader.Shops export"),
                 Evidence("runtime_data_fish", fishPath, "runtime DataLoader.Fish export"),
                 Evidence("runtime_data_locations", locationsPath, "runtime DataLoader.Locations export"),
                 Evidence("runtime_data_farm_animals", farmAnimalsPath, "runtime DataLoader.FarmAnimals export"),
@@ -170,6 +187,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("runtime_data_monsters", monstersPath, "runtime DataLoader.Monsters export"),
                 Evidence("goal_dependency_index", goalFullPath, "compiled native bundle and Grandpa rules"),
                 Evidence("authoritative_dependency_graph", graphFullPath, "compiled runtime acquisition identity edges"),
+                Evidence("access_constraint_index", accessConstraintIndexPath, "compiled runtime shops, native conditions, map endpoints, door windows, and NPC schedules"),
                 Evidence("native_shipping_rule", objectSourcePath, "decompiled Object.isPotentialBasicShipped"),
                 Evidence("native_fish_completion_rule", utilitySourcePath, "decompiled Utility.getFishCaughtPercent"),
                 Evidence("native_museum_rule", museumSourcePath, "decompiled LibraryMuseum.IsItemSuitableForDonation"),
@@ -186,6 +204,9 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("native_forage_crop_rule", cropSourcePath, "decompiled Crop forage harvest branches"),
                 Evidence("native_crop_growth_rule", cropSourcePath, "decompiled Crop season and growth branches"),
                 Evidence("native_crop_planting_rule", hoeDirtSourcePath, "decompiled HoeDirt planting and speed branches"),
+                Evidence("native_shop_stock_rule", shopBuilderSourcePath, "decompiled ShopBuilder stock, condition, price, trade, and synchronized quantity branches"),
+                Evidence("native_shop_open_rule", utilitySourcePath, "decompiled Utility.TryOpenShopMenu owner and closed-state branches"),
+                Evidence("native_shop_purchase_rule", shopMenuSourcePath, "decompiled ShopMenu purchase, charge, trade, recipe, stock, and action branches"),
                 Evidence("native_mine_buried_item_rule", mineShaftSourcePath, "decompiled MineShaft.checkForBuriedItem"),
                 Evidence("native_mine_fishing_override_rule", mineShaftSourcePath, "decompiled MineShaft.getFish"),
                 Evidence("native_crab_pot_output_rule", crabPotSourcePath, "decompiled CrabPot.DayUpdate"),
