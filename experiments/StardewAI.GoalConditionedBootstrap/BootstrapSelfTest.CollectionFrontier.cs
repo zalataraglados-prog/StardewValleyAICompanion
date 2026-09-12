@@ -373,8 +373,8 @@ internal static partial class BootstrapSelfTest
             {
                 kind = routeKind,
                 source_id = sourceId,
-                source_asset = "fixture",
-                source_path = "fixture.path"
+                source_asset = RouteSourceAsset(routeKind),
+                source_path = RouteSourcePath(routeKind, sourceId)
             }
         }
     };
@@ -419,10 +419,12 @@ internal static partial class BootstrapSelfTest
             {
                 route_kind = routeKind,
                 source_id = sourceId,
-                source_asset = "fixture",
-                source_path = "fixture.path",
+                source_asset = RouteSourceAsset(routeKind),
+                source_path = RouteSourcePath(routeKind, sourceId),
                 supervision_mode = "deterministic_dependency",
-                uncertainty_mode = "deterministic_fresh_receipt",
+                uncertainty_mode = routeKind == "harvests_as"
+                    ? "source_resolved_downstream"
+                    : "deterministic_fresh_receipt",
                 required_downstream_dependency_axes =
                     StageOneCollectionRouteDependencyAxes.Required,
                 endpoint_option_ids = new[] { endpointOptionId },
@@ -432,6 +434,15 @@ internal static partial class BootstrapSelfTest
             }
         }
     };
+
+    private static string RouteSourceAsset(string routeKind) =>
+        routeKind == "harvests_as" ? "Data/Crops" : "fixture";
+
+    private static string RouteSourcePath(string routeKind, string sourceId) =>
+        routeKind == "harvests_as" &&
+        sourceId.StartsWith("crop:", StringComparison.Ordinal)
+            ? "payload." + sourceId["crop:".Length..] + ".HarvestItemId"
+            : "fixture.path";
 
     private static AvailabilityAwarePolicyPredictionEnvelope CollectionRanking(
         string stateHash,

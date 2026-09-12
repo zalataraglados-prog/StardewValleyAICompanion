@@ -20,6 +20,9 @@ internal static partial class BootstrapSelfTest
         var catalogPath = Path.Combine(root, "master-angler-catalog.json");
         var windowsPath = Path.Combine(root, "master-angler-windows.json");
         var locationsPath = Path.Combine(root, "data-locations.json");
+        var cropsPath = Path.Combine(root, "data-crops.json");
+        var cropGrowthSourcePath = Path.Combine(root, "Crop.cs");
+        var cropPlantingSourcePath = Path.Combine(root, "HoeDirt.cs");
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
@@ -74,6 +77,26 @@ internal static partial class BootstrapSelfTest
                 }
             }
         });
+        Write(cropsPath, new
+        {
+            payload = new Dictionary<string, object>
+            {
+                ["472"] = new Dictionary<string, object?>
+                {
+                    ["Seasons"] = new[] { 0 },
+                    ["DaysInPhase"] = new[] { 1, 1, 1, 1 },
+                    ["RegrowDays"] = -1,
+                    ["IsPaddyCrop"] = false,
+                    ["NeedsWatering"] = true,
+                    ["PlantableLocationRules"] = null,
+                    ["HarvestItemId"] = "24",
+                    ["Texture"] = @"TileSheets\crops",
+                    ["SpriteIndex"] = 0
+                }
+            }
+        });
+        File.WriteAllText(cropGrowthSourcePath, "fixture Crop source");
+        File.WriteAllText(cropPlantingSourcePath, "fixture HoeDirt source");
         Write(inventoryPath, new
         {
             schema_version = "authoritative_goal_requirement_inventory.v1",
@@ -90,6 +113,27 @@ internal static partial class BootstrapSelfTest
                     path = Path.GetFullPath(locationsPath),
                     sha256 = HashFile(locationsPath),
                     authority = "runtime DataLoader.Locations export"
+                },
+                new
+                {
+                    source_id = "runtime_data_crops",
+                    path = Path.GetFullPath(cropsPath),
+                    sha256 = HashFile(cropsPath),
+                    authority = "runtime DataLoader.Crops export"
+                },
+                new
+                {
+                    source_id = "native_crop_growth_rule",
+                    path = Path.GetFullPath(cropGrowthSourcePath),
+                    sha256 = HashFile(cropGrowthSourcePath),
+                    authority = "decompiled Crop season and growth branches"
+                },
+                new
+                {
+                    source_id = "native_crop_planting_rule",
+                    path = Path.GetFullPath(cropPlantingSourcePath),
+                    sha256 = HashFile(cropPlantingSourcePath),
+                    authority = "decompiled HoeDirt planting and speed branches"
                 }
             },
             requirement_sets = new object[]
@@ -241,13 +285,21 @@ internal static partial class BootstrapSelfTest
         var resolvedArtifactRoute = routeCalendar.Routes.Single(route =>
             route.RequirementSetId == "museum_collection" &&
             route.QualifiedItemId == "(O)96");
-        Require(routeCalendar.Status == "partial_static_sources_explicitly_blocked" &&
+        var resolvedCropRoute = routeCalendar.Routes.Single(route =>
+            route.RequirementSetId == "full_shipment" &&
+            route.QualifiedItemId == "(O)24");
+        Require(routeCalendar.Status == "complete_static_sources_target_date_pending" &&
                 routeCalendar.RouteOccurrenceInventoryComplete &&
-                !routeCalendar.StaticCalendarSourceResolutionComplete &&
+                routeCalendar.StaticCalendarSourceResolutionComplete &&
                 !routeCalendar.TrainingLabelEligible &&
                 routeCalendar.RouteOccurrenceCount == 75 &&
-                routeCalendar.ResolvedStaticSourceCount == 73 &&
-                routeCalendar.BlockedStaticSourceCount == 2 &&
+                routeCalendar.ResolvedStaticSourceCount == 75 &&
+                routeCalendar.BlockedStaticSourceCount == 0 &&
+                routeCalendar.CropDataSha256 == HashFile(cropsPath) &&
+                routeCalendar.NativeCropGrowthSourceSha256 ==
+                    HashFile(cropGrowthSourcePath) &&
+                routeCalendar.NativeCropPlantingSourceSha256 ==
+                    HashFile(cropPlantingSourcePath) &&
                 resolvedSunfishRoute.Status ==
                     "resolved_static_source_window_target_date_pending" &&
                 resolvedSunfishRoute.EvidenceClass ==
@@ -270,8 +322,54 @@ internal static partial class BootstrapSelfTest
                     {
                         "PLAYER_HAS_MAIL Current fixtureGate",
                         "RANDOM 0.4"
-                    })),
+                    })) &&
+                resolvedCropRoute.Status ==
+                    "resolved_static_source_window_target_date_pending" &&
+                resolvedCropRoute.EvidenceClass ==
+                    "runtime_crop_native_season_window" &&
+                resolvedCropRoute.CropSource is not null &&
+                resolvedCropRoute.CropSource.SeedItemId == "472" &&
+                resolvedCropRoute.CropSource.DataHarvestQualifiedItemId == "(O)24" &&
+                resolvedCropRoute.CropSource.PossibleHarvestQualifiedItemIds
+                    .SequenceEqual(new[] { "(O)24" }) &&
+                resolvedCropRoute.CropSource.NativeSeasons
+                    .SequenceEqual(new[] { "spring" }) &&
+                resolvedCropRoute.CropSource.DaysInPhase
+                    .SequenceEqual(new[] { 1, 1, 1, 1 }) &&
+                resolvedCropRoute.CropSource.BaseGrowthDays == 4 &&
+                resolvedCropRoute.CropSource.RegrowDays == -1 &&
+                resolvedCropRoute.CropSource.NeedsWatering &&
+                !resolvedCropRoute.CropSource.IsPaddyCrop &&
+                !resolvedCropRoute.CropSource.StochasticOutcome &&
+                resolvedCropRoute.CalendarWindows.Count(window =>
+                    window.SourceKind == "crop_native_season" &&
+                    window.Season == "spring" &&
+                    window.RequiredLocationCapability is null) == 2 &&
+                resolvedCropRoute.CalendarWindows.Count(window =>
+                    window.SourceKind == "crop_season_ignored_location" &&
+                    window.RequiredLocationCapability == "seeds_ignore_seasons") == 6,
             "Authoritative route calendar source resolution drifted.");
+
+        var originalCropEvidence = File.ReadAllText(cropsPath);
+        var staleCropEvidenceRejected = false;
+        try
+        {
+            File.AppendAllText(cropsPath, " ");
+            _ = AcquisitionRouteCalendarResolutionBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath);
+        }
+        catch (InvalidDataException)
+        {
+            staleCropEvidenceRejected = true;
+        }
+        finally
+        {
+            File.WriteAllText(cropsPath, originalCropEvidence);
+        }
+        Require(staleCropEvidenceRejected,
+            "Stale runtime Data/Crops evidence did not fail closed.");
 
         var unknownCalendar = NativeCalendarConstraintNormalizer.Normalize(
             NativeCalendarConstraintNormalizer.AllSeasons,

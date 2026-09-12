@@ -1132,6 +1132,40 @@ Slice 7 remains assigned to the RTX 5070 node.
   processing lead time must remain an independently evidenced `processing_lead_time` result; a valid source
   season alone must never authorize a Teacher candidate.
 
+### 2026-09-13: Data/Crops calendar source and growth constraints
+
+- The authoritative requirement inventory now hash-binds exactly one runtime `Data/Crops` export plus the
+  locked `Crop` growth/season source and `HoeDirt` planting/speed source. Source guards bind
+  `IsInSeason`, `SeedsIgnoreSeasonsHere`, `DaysInPhase`, `RegrowDays`, wild-seed output selection, planting
+  season checks and speed-increase distribution. Missing evidence, stale hashes, malformed crop rows or
+  source-identity drift fail closed.
+- Every `harvests_as` occurrence must bind exact `crop:<seed id>`, `Data/Crops` and
+  `payload.<seed id>.HarvestItemId` identities. Its typed source record preserves native seasons, every phase
+  duration, base first-harvest duration, regrow duration, watering and paddy requirements, native planting
+  location rules, texture/sprite identity and the complete known output domain. Native-season windows and
+  out-of-season `seeds_ignore_seasons` location-capability windows are distinct, so a greenhouse or Island
+  override cannot be silently generalized to an ordinary outdoor tile.
+- Spring, summer, fall and winter wild-seed crops `495..498` are cross-checked through their runtime
+  `TileSheets\\crops`/sprite-23 identity and the decompiled season-specific random-output branches. Their full
+  output domains remain stochastic in every window. The route-kind lowering now uses
+  `source_resolved_downstream` instead of claiming that every crop harvest is deterministic.
+- This slice does not turn a legal planting season into a harvest promise. Fertilizer, Agriculturist, paddy
+  acceleration, actual watering history, seed and tile resources, location access, planting rules and the
+  requested first-harvest or regrow date remain independently evaluated dependency axes. The static report
+  continues to emit `target_date_pending` and cannot produce a formal Teacher label.
+- The locked 1.6.15 rebuild preserves all `1,599` route occurrences and resolves `580`; `1,019` remain explicit
+  parser blocks. All `75` crop occurrences resolve, including `8` stochastic wild-seed occurrences. Focused
+  four-set tests, stale-crop-evidence rejection, exact artifact validation, Release build, all 33 game-free Core
+  tests and all 188 Backend tests pass. No game or training process was started. The full regression script's
+  assertions and syntax are updated, but its execution remains independently blocked by the pre-existing
+  `OptionCapabilityRegistrySource.cs` input-lock drift, which this slice does not overwrite.
+- `acquisition_routes_complete` continues to mean every required item has at least one authoritative route; it
+  is not a claim that every optional alternative route has already been enumerated. The wild-seed output domain
+  is losslessly preserved here, while expanding all reverse graph alternatives remains a separate dictionary
+  completeness task and must not be inferred from the current occurrence count.
+- The next fixed slice resolves shop stock/opening/native condition sources. After that, target-date resolution
+  composes calendar sources with the remaining dependency axes before any future-day candidate is admitted.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

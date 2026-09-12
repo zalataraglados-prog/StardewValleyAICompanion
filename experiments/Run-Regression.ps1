@@ -236,6 +236,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Acquisition route calendar resolution failed.'
 $routeCalendarResolution = Get-Content -LiteralPath $routeCalendarResolutionPath -Raw |
     ConvertFrom-Json
 $calendarSupportedRouteKinds = @(
+    'harvests_as',
     'native_crab_pot_output',
     'native_location_artifact_spot',
     'native_location_fish_spawn',
@@ -254,17 +255,66 @@ $blockedSupportedCalendarRoutes = @($routeCalendarResolution.routes | Where-Obje
 })
 $locationDataEvidence = @($requirementInventory.source_evidence |
     Where-Object source_id -eq 'runtime_data_locations')
+$cropDataEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'runtime_data_crops')
+$cropGrowthEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_crop_growth_rule')
+$cropPlantingEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_crop_planting_rule')
+$resolvedCropRoutes = @($resolvedCalendarRoutes | Where-Object {
+    $_.route_kind -eq 'harvests_as'
+})
+$wildSeedCropRoutes = @($resolvedCropRoutes | Where-Object {
+    [bool]$_.crop_source.stochastic_outcome
+})
+$invalidCropRoutes = @($resolvedCropRoutes | Where-Object {
+    $null -eq $_.crop_source -or
+    [int]$_.crop_source.base_growth_days -le 0 -or
+    @($_.crop_source.native_seasons).Count -eq 0 -or
+    @($_.crop_source.possible_harvest_qualified_item_ids).Count -eq 0 -or
+    $_.qualified_item_id -notin @($_.crop_source.possible_harvest_qualified_item_ids) -or
+    @($_.calendar_windows | Where-Object source_kind -eq 'crop_native_season').Count -eq 0 -or
+    @($_.calendar_windows | Where-Object {
+        $_.source_kind -eq 'crop_season_ignored_location' -and
+        $_.required_location_capability -ne 'seeds_ignore_seasons'
+    }).Count -ne 0
+})
+$expectedWildSeedOutputDomains = @{
+    'crop:495' = @('(O)16', '(O)18', '(O)20', '(O)22')
+    'crop:496' = @('(O)396', '(O)398', '(O)402')
+    'crop:497' = @('(O)404', '(O)406', '(O)408', '(O)410')
+    'crop:498' = @('(O)412', '(O)414', '(O)416', '(O)418')
+}
+$invalidWildSeedCropRoutes = @($wildSeedCropRoutes | Where-Object {
+    -not $expectedWildSeedOutputDomains.ContainsKey([string]$_.source_id) -or
+    @(Compare-Object `
+        $expectedWildSeedOutputDomains[[string]$_.source_id] `
+        @($_.crop_source.possible_harvest_qualified_item_ids)).Count -ne 0 -or
+    @($_.calendar_windows | Where-Object { -not [bool]$_.stochastic_outcome }).Count -ne 0
+})
 if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_blocked' -or
     -not [bool]$routeCalendarResolution.route_occurrence_inventory_complete -or
     [bool]$routeCalendarResolution.static_calendar_source_resolution_complete -or
     [bool]$routeCalendarResolution.training_label_eligible -or
     $locationDataEvidence.Count -ne 1 -or
+    $cropDataEvidence.Count -ne 1 -or
+    $cropGrowthEvidence.Count -ne 1 -or
+    $cropPlantingEvidence.Count -ne 1 -or
     $routeCalendarResolution.location_data_sha256 -ne $locationDataEvidence[0].sha256 -or
+    $routeCalendarResolution.crop_data_sha256 -ne $cropDataEvidence[0].sha256 -or
+    $routeCalendarResolution.native_crop_growth_source_sha256 -ne `
+        $cropGrowthEvidence[0].sha256 -or
+    $routeCalendarResolution.native_crop_planting_source_sha256 -ne `
+        $cropPlantingEvidence[0].sha256 -or
     [int]$routeCalendarResolution.route_occurrence_count -ne $loweredRoutes.Count -or
-    [int]$routeCalendarResolution.resolved_static_source_count -ne 505 -or
-    [int]$routeCalendarResolution.blocked_static_source_count -ne 1094 -or
-    $calendarSupportedRoutes.Count -ne 505 -or
-    $resolvedCalendarRoutes.Count -ne 505 -or
+    [int]$routeCalendarResolution.resolved_static_source_count -ne 580 -or
+    [int]$routeCalendarResolution.blocked_static_source_count -ne 1019 -or
+    $calendarSupportedRoutes.Count -ne 580 -or
+    $resolvedCalendarRoutes.Count -ne 580 -or
+    $resolvedCropRoutes.Count -ne 75 -or
+    $wildSeedCropRoutes.Count -ne 8 -or
+    $invalidCropRoutes.Count -ne 0 -or
+    $invalidWildSeedCropRoutes.Count -ne 0 -or
     @($resolvedCalendarRoutes | Where-Object {
         $_.evidence_class -eq 'runtime_location_artifact_spot_window'
     }).Count -ne 68 -or

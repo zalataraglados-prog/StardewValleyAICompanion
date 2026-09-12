@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 Data/Crops 日历来源与生长约束
+
+- 权威需求库存现在新增并哈希绑定唯一 `runtime_data_crops`、`native_crop_growth_rule` 与 `native_crop_planting_rule`。构建阶段同时检查锁定 1.6.15 `Crop.IsInSeason`、`Crop.DaysInPhase/RegrowDays`、野生种子随机分支，以及 `HoeDirt` 的季节许可和生长加速分支；缺文件、哈希漂移或源码标志漂移均失败关闭。
+- `harvests_as` 按精确 `crop:<seed id> / Data/Crops / payload.<id>.HarvestItemId` 绑定。每条解析结果保留原生季节、逐阶段天数、基础首收天数、再生周期、浇水、稻田、纹理/精灵、种植地点规则和可能产物全集。正常季节生成 `crop_native_season` 窗口；非正常季节只生成要求地点实时证明 `seeds_ignore_seasons` 的窗口，不能把温室/姜岛许可外推到任意地块。
+- 春夏秋冬野生种子 `495..498` 依据运行时行的 `TileSheets\\crops / SpriteIndex 23` 与反编译随机分支双重核对，公开完整可能产物域并标记 `stochastic_outcome=true`。`harvests_as` lowering 因此改为 `source_resolved_downstream`，不再把所有作物错误归为确定性 fresh receipt。
+- 季节窗口只解决 `calendar_window` 的静态来源部分。肥料、农学家、稻田加速、实际浇水连续性、种子/地块/地点解锁、目标日首收或再生波次仍分别属于生长提前量和其他依赖轴；这些事实虽然已完整携带，尚未被求值，所有行继续是 `target_date_pending`，`training_label_eligible=false`。
+- 锁定数据实跑保留全部 `1599` 个 occurrence，结果由 `505 resolved / 1094 blocked` 前进到 `580 resolved / 1019 blocked`；新增的 `75` 条均为真实作物路线，其中 `8` 条为野生种子随机来源。四集合自测、作物证据篡改负例、真实制品约束检查、GoalConditionedBootstrap Release、Core game-free `33/33` 和 Backend `188/188` 均通过；未启动游戏或训练。
+- `Run-Regression.ps1` 已更新新计数和作物域断言且语法检查通过；完整脚本在本次逻辑执行前被既有 `OptionCapabilityRegistrySource.cs` 输入锁漂移拦截，工作树中的该文件未被本分支修改，本切片不擅自刷新无关权威锁。下一固定切片解析商店库存、开放与条件来源；随后才进入逐目标日期的动态依赖求值。
+
 ## 2026-09-13 Data/Locations 日历来源解析
 
 - 把 Master Angler 原有日历归一化逻辑抽成唯一 `NativeCalendarConstraintNormalizer`，Master Angler 与 Data/Locations 路线共同使用。原有 72 种鱼机会目录重建哈希保持 `fab38278265ca6019e8962b4cdfe4ff58897ae1dd7aa05de7ea7baff40c7fbcb`，没有形成第二套鱼类条件系统。

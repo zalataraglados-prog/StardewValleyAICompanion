@@ -31,6 +31,15 @@ public sealed class AcquisitionRouteCalendarResolutionReport
     [JsonPropertyName("location_data_sha256")]
     public string LocationDataSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("crop_data_sha256")]
+    public string CropDataSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_crop_growth_source_sha256")]
+    public string NativeCropGrowthSourceSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_crop_planting_source_sha256")]
+    public string NativeCropPlantingSourceSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("deadline_total_day_exclusive")]
     public int DeadlineTotalDayExclusive { get; set; }
 
@@ -64,7 +73,7 @@ public sealed class AcquisitionRouteCalendarResolutionReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative calendar window. Static source resolution does not satisfy target-date dynamic predicates or any other dependency axis.";
+        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative calendar window. Crop source resolution preserves native growth, watering, paddy, location-rule and possible-output facts but does not resolve their target-date dependencies. Static source resolution does not satisfy target-date dynamic predicates or any other dependency axis.";
 }
 
 public sealed record AcquisitionRouteCalendarResolution(
@@ -81,5 +90,34 @@ public sealed record AcquisitionRouteCalendarResolution(
     [property: JsonPropertyName("source_path")] string SourcePath,
     [property: JsonPropertyName("status")] string Status,
     [property: JsonPropertyName("evidence_class")] string EvidenceClass,
-    [property: JsonPropertyName("calendar_windows")] MasterAnglerStageOneSourceWindow[] CalendarWindows,
-    [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons);
+    [property: JsonPropertyName("calendar_windows")] AuthoritativeCalendarSourceWindow[] CalendarWindows,
+    [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons,
+    [property: JsonPropertyName("crop_source")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    AcquisitionCropSourceEvidence? CropSource = null);
+
+public sealed record AcquisitionCropSourceEvidence(
+    [property: JsonPropertyName("seed_item_id")] string SeedItemId,
+    [property: JsonPropertyName("data_harvest_qualified_item_id")] string DataHarvestQualifiedItemId,
+    [property: JsonPropertyName("possible_harvest_qualified_item_ids")] string[] PossibleHarvestQualifiedItemIds,
+    [property: JsonPropertyName("native_seasons")] string[] NativeSeasons,
+    [property: JsonPropertyName("days_in_phase")] int[] DaysInPhase,
+    [property: JsonPropertyName("base_growth_days")] int BaseGrowthDays,
+    [property: JsonPropertyName("regrow_days")] int RegrowDays,
+    [property: JsonPropertyName("needs_watering")] bool NeedsWatering,
+    [property: JsonPropertyName("is_paddy_crop")] bool IsPaddyCrop,
+    [property: JsonPropertyName("stochastic_outcome")] bool StochasticOutcome,
+    [property: JsonPropertyName("texture")] string Texture,
+    [property: JsonPropertyName("sprite_index")] int SpriteIndex,
+    [property: JsonPropertyName("plantable_location_rules")] AcquisitionCropPlantableLocationRule[] PlantableLocationRules,
+    [property: JsonPropertyName("requires_growth_modifier_resolution")] bool RequiresGrowthModifierResolution,
+    [property: JsonPropertyName("requires_watering_schedule_evidence")] bool RequiresWateringScheduleEvidence,
+    [property: JsonPropertyName("requires_paddy_adjacency_evidence")] bool RequiresPaddyAdjacencyEvidence,
+    [property: JsonPropertyName("requires_location_rule_resolution")] bool RequiresLocationRuleResolution);
+
+public sealed record AcquisitionCropPlantableLocationRule(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("condition")] string? Condition,
+    [property: JsonPropertyName("planted_in")] int PlantedIn,
+    [property: JsonPropertyName("result")] int Result,
+    [property: JsonPropertyName("denied_message")] string? DeniedMessage);
