@@ -1017,8 +1017,33 @@ Slice 7 remains assigned to the RTX 5070 node.
   verified requirement transition; the canonical dataset accepted `2` rows and rejected `0`. Formal training
   remains disabled.
 - The next slice applies this boundary to Museum and Community Center donation: rolling cross-map connectors,
-  followed by one freshly compiled target-map stand-move plus native donation queue and exact collection
-  credit receipt. Future-date scheduling and the remaining 17 Stage 1 criteria follow that proof.
+  followed by one freshly compiled existing native donation primitive and an exact collection receipt. The
+  donation primitives already own target-map BFS, endpoint interaction and the native menu lifecycle, so a
+  separate target-map stand-move would duplicate execution logic. Future-date scheduling and the remaining
+  17 Stage 1 criteria follow that proof.
+
+### 2026-09-13: Typed rolling donation routes admitted before runtime proof
+
+- Outside the target building, `museum.donate_items` and
+  `community_center.donate_bundle_items` expose only the first connector verified by the current transparent
+  route graph. The continuation locks the exact inventory item and slot; Community Center also locks the
+  bundle key, ingredient index, required stack and item quality.
+- A normal daily-plan run may keep that mechanical continuation leased across a fresh snapshot. The Teacher
+  product path instead records the connector as one independently verified supervision episode; its outer
+  controller rebuilds the complete ranking and Teacher preference from the fresh state for the following
+  episode, where the native terminal donation carries terminal-transition priority.
+- The current collection Teacher frontier admits those candidates as
+  `authoritative_collection_rolling_route_step`. This is explicitly an intermediate route transition, not a
+  collection completion. A receipt must prove the declared connector endpoint was reached; final Museum or
+  Community Center credit still requires the exact native collection state to change from incomplete to
+  complete.
+- Negative inventory slots, insufficient quality and mismatched typed continuation data fail closed before
+  selection. The existing donation primitives remain the sole owners of target-map pathing and native menu
+  execution; no second local movement/donation implementation was introduced.
+- Focused candidate and continuation tests, the current-collection bootstrap self-test, all 32 game-free Core
+  tests and all 188 Backend tests pass. Formal training remains disabled. The next acceptance gate is a hidden,
+  silent, isolated real-game run proving connector execution, fresh continuation recompilation, native
+  donation and the exact terminal state transition for both donation surfaces.
 
 ## Review questions
 

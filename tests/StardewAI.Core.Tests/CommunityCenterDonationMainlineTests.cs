@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
@@ -60,6 +61,34 @@ public sealed class CommunityCenterDonationMainlineTests
 
         Assert.Equal("blocked", queue.Status);
         Assert.Contains("community_center_donation_projection_drifted", Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void RemoteDonationUsesOneFreshConnectorAndLocksExactBundleIngredient()
+    {
+        var snapshot = RemoteSnapshot(Snapshot(completedBefore: 1));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "community_center.donate_bundle_items" }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("route_connector_tile", candidate.Kind);
+        Assert.Equal("Town", candidate.LocationId);
+        Assert.Equal("(O)24", candidate.QualifiedItemId);
+        AssertParameter(candidate.Parameters, "continuation.option_id", "community_center.donate_bundle_items");
+        AssertParameter(candidate.Parameters, "continuation.bundle_data_key", "Pantry/0");
+        AssertParameter(candidate.Parameters, "continuation.bundle_ingredient_index", "1");
+        AssertParameter(candidate.Parameters, "continuation.qualified_item_id", "(O)24");
+        AssertParameter(candidate.Parameters, "continuation.expected_item_quality", "0");
+        AssertParameter(candidate.Parameters, "continuation.required_stack", "1");
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
+            snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var routeItem = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", routeItem.OptionId);
+
     }
 
     private static SnapshotEnvelope Snapshot(int completedBefore)
@@ -158,6 +187,64 @@ public sealed class CommunityCenterDonationMainlineTests
             State = state
         };
     }
+
+    private static SnapshotEnvelope RemoteSnapshot(SnapshotEnvelope snapshot)
+    {
+        var root = JsonSerializer.SerializeToNode(snapshot.State, JsonOptions)!.AsObject();
+        root["player"]!["location_id"]!["value"] = "Town";
+        root["player"]!["tile_x"]!["value"] = 9;
+        root["player"]!["tile_y"]!["value"] = 10;
+        root["player"]!.AsObject()["energy"] = FieldNode(270);
+        root["time"] = new JsonObject { ["time"] = FieldNode(900) };
+        root["world_progress"]!["community_center"]!["value"]!["community_center_is_current_location"] = false;
+        root["world_progress"]!["community_center"]!["value"]!["bundle_rows"]![0]!["donation_candidates"]![0]!["action_status"] =
+            "community_center_not_current_location";
+        var locations = root["locations"]!.AsObject();
+        locations["collision_grid"]!["value"]!["location_id"] = "Town";
+        locations["route_graph"] = FieldNode(new
+        {
+            status = "complete",
+            edges = new[]
+            {
+                new
+                {
+                    kind = "warp", from_location = "Town", from_x = 10, from_y = 10,
+                    target_location = "CommunityCenter", target_x = 32, target_y = 23,
+                    resolved = true
+                }
+            }
+        });
+        locations["route_connectors"] = FieldNode(new
+        {
+            location_id = "Town",
+            connectors = new[]
+            {
+                new
+                {
+                    kind = "warp", tile_x = 10, tile_y = 10,
+                    target_location = "CommunityCenter", target_x = 32, target_y = 23,
+                    resolved = true
+                }
+            }
+        });
+        locations["route_action_branch_coverage"] = FieldNode(new { rows = Array.Empty<object>() });
+        var state = root.Deserialize<Dictionary<string, JsonElement>>(JsonOptions)!;
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state), GameTick = snapshot.GameTick,
+            RealTimestamp = snapshot.RealTimestamp, Completeness = snapshot.Completeness, State = state
+        };
+    }
+
+    private static JsonNode FieldNode(object value) => JsonSerializer.SerializeToNode(new
+    {
+        value,
+        status = "available",
+        source = new { kind = "game_object", path = "test" },
+        adapter = "test",
+        read_at_tick = 1,
+        confidence = 1
+    }, JsonOptions)!;
 
     [Fact]
     public void RuntimeUsesOnlyNativeJunimoNoteLifecycleForProgressMutation()

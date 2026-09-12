@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 博物馆与社区中心捐赠滚动路线
+
+- `museum.donate_items` 与 `community_center.donate_bundle_items` 在目标建筑之外时，现按透明 `route_graph` 只发布当前地图可验证的首个 `route_connector_tile`；连接器携带精确物品、库存槽位以及博物馆/Bundle 身份。常规 daily-plan 可在 fresh 快照后锁定同一机械 continuation 续编；Teacher product 则把该连接器作为独立监督步骤，由外层 controller 在下一 episode 从 fresh 全量状态重建候选并选择终态捐赠。
+- 社区中心 continuation 额外固定 `bundle_data_key`、ingredient 索引、需求数量和最低品质证据。Teacher frontier 只接纳身份、槽位、数量、品质均一致的路线步骤；负槽位、低品质或被篡改的 continuation 在上游失败关闭。
+- 路线步骤使用 `authoritative_collection_rolling_route_step`，只证明声明的连接器端点确实抵达，不冒充捐赠完成。博物馆与社区中心的最终正样本仍分别要求逐项 `donated=false -> true` 和精确 Bundle ingredient `false -> true`。
+- 目标地图内不新增独立站位动作：既有 `executor.donate_museum_item` 与 `executor.donate_community_center_item` 已负责本地 BFS、交互端点和原生菜单生命周期。这样避免与既有原生执行器形成两套实现，也不会把目标地图坐标提前绑定到来源地图快照。
+- 当前结构化候选、续程锁定、Teacher frontier/self-test、Core game-free 32 项与 Backend 188 项回归均通过；正式训练仍未解禁。下一步是在隔离、隐藏、静音游戏实例中组合验证“远程连接器 -> fresh 重编译 -> 原生捐赠 -> 精确状态转移”，之后再进入跨日期调度。
+
 ## 2026-09-11 有界多原语 Teacher 重复闭环
 
 - 出货终端的“接近/投放”已收拢：同在农场但不处于出货箱站位时，`economy.ship_items` 现在一次编译为 `move_to_tile -> ship_inventory_item_to_bin`，两个原语共享精确物品 continuation，并只在原语之间 fresh 重绑定状态哈希。跨地图部分仍保持每次一个已解析连接器、抵达农场后再 fresh 编译上述本地有界队列，未把未来地图坐标提前绑定到旧快照。
@@ -20,7 +28,7 @@
 - `CurrentStageOneCollectionTeacherReceiptBuilder` 新增 `queue_execution_receipt.v1` 准入。它要求队列 ID、项顺序、原语、有效命令、逐步哈希/tick 链、fresh 状态和正向原生验证全部吻合，并在完整候选的权威 requirement credit 确实变化后才生成一条 `policy_decision_trajectory.v2`；旧单原语 `plan_execution_episode.v1` 路径继续兼容。
 - 隐藏、静音、隔离实测 `bounded-stage-one-collection-teacher-20260911-211944` 连续执行 3 个 episode：第一轮同一 `farm.collect_machine_outputs` 候选按 `move_to_tile -> collect_machine_output` 两步收取 Raisins 并接纳；第二轮仅接近出货箱，需求未变化，因此保留执行证据但不写训练行；第三轮原生投放出货箱后才接纳。规范数据集结果为 `2 input / 2 accepted / 0 rejected / 0 duplicate / 0 conflict`。
 - 控制器每次最多执行 16 个 episode，每个 episode 都从新的透明状态重新生成完整候选与独立 Teacher 偏好。中间 continuation 不会被误标为成功，真正的证据合同错误则立即停止。当前仍为 `formal_training_started=false`。
-- 固定下一步：按同一边界处理博物馆与社区中心捐赠。目标地图内的站位移动与原生捐赠应形成一个有界候选队列；跨地图只允许执行当前快照可验证的首个连接器，抵达后 fresh 生成本地队列，不得把目标地图碰撞坐标编入旧快照。完成捐赠回执验证后，再扩展跨日期候选与日历/解锁/资源约束，进入其余 17 个长期目标证明。
+- 固定下一步：在隔离真实游戏中验证博物馆与社区中心的远程滚动捐赠。跨地图只允许执行当前快照可验证的首个连接器；抵达目标地图后 fresh 续编既有原生捐赠 primitive，由该 primitive 自己完成本地 BFS 与菜单生命周期，不再生成重复的独立站位动作。完成捐赠回执验证后，再扩展跨日期候选与日历/解锁/资源约束，进入其余 17 个长期目标证明。
 
 ## 2026-09-11 首条四收集 Teacher Product 真实轨迹
 

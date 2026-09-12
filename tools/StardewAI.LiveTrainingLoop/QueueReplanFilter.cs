@@ -293,6 +293,61 @@ public static class QueueReplanFilter
                 ["confirm_donation"] = "true"
             };
         }
+        var museumSlot = ReadParameter(queueItem, "continuation.inventory_slot_index");
+        var museumItem = ReadParameter(queueItem, "continuation.qualified_item_id");
+        if (string.Equals(optionId, "museum.donate_items", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(museumSlot) &&
+            !string.IsNullOrWhiteSpace(museumItem))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "museum_donation",
+                ["option_id"] = optionId,
+                ["inventory_slot_index"] = museumSlot,
+                ["qualified_item_id"] = museumItem
+            };
+        }
+        var communityBundleKey = ReadParameter(
+            queueItem,
+            "continuation.bundle_data_key");
+        var communityIngredient = ReadParameter(
+            queueItem,
+            "continuation.bundle_ingredient_index");
+        var communitySlot = ReadParameter(
+            queueItem,
+            "continuation.inventory_slot_index");
+        var communityItem = ReadParameter(
+            queueItem,
+            "continuation.qualified_item_id");
+        var communityQuality = ReadParameter(
+            queueItem,
+            "continuation.expected_item_quality");
+        var communityRequiredStack = ReadParameter(
+            queueItem,
+            "continuation.required_stack");
+        if (string.Equals(
+                optionId,
+                "community_center.donate_bundle_items",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(communityBundleKey) &&
+            !string.IsNullOrWhiteSpace(communityIngredient) &&
+            !string.IsNullOrWhiteSpace(communitySlot) &&
+            !string.IsNullOrWhiteSpace(communityItem) &&
+            !string.IsNullOrWhiteSpace(communityQuality) &&
+            !string.IsNullOrWhiteSpace(communityRequiredStack))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "community_center_donation",
+                ["option_id"] = optionId,
+                ["bundle_data_key"] = communityBundleKey,
+                ["bundle_ingredient_index"] = communityIngredient,
+                ["inventory_slot_index"] = communitySlot,
+                ["qualified_item_id"] = communityItem,
+                ["expected_item_quality"] = communityQuality,
+                ["required_stack"] = communityRequiredStack
+            };
+        }
         var fieldOfficeSurveyKind = ReadParameter(queueItem, "continuation.survey_kind");
         var fieldOfficeSurveyAnswer = ReadParameter(queueItem, "continuation.answer");
         if (string.Equals(optionId, "island.field_office_survey", StringComparison.Ordinal) &&
@@ -933,6 +988,22 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "inventory_slot_index"), ReadString(continuation, "inventory_slot_index"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "target_piece_index"), ReadString(continuation, "target_piece_index"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "museum_donation", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.donate_museum_item", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "inventory_slot_index"), ReadString(continuation, "inventory_slot_index"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "community_center_donation", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.donate_community_center_item", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bundle_data_key"), ReadString(continuation, "bundle_data_key"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bundle_ingredient_index"), ReadString(continuation, "bundle_ingredient_index"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "inventory_slot_index"), ReadString(continuation, "inventory_slot_index"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "expected_item_quality"), ReadString(continuation, "expected_item_quality"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "required_stack"), ReadString(continuation, "required_stack"), StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "field_office_survey", StringComparison.Ordinal))
         {
@@ -1653,6 +1724,22 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "target_piece_index") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_donation");
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "museum_donation", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "inventory_slot_index") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id");
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "community_center_donation", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "bundle_data_key") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "bundle_ingredient_index") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "inventory_slot_index") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "expected_item_quality") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "required_stack");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_survey", StringComparison.Ordinal))

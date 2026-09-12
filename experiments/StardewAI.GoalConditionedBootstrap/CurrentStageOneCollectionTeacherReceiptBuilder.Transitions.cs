@@ -61,6 +61,12 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                     ReadParameter(item, "expected_target_location"))),
                 before,
                 after),
+            "authoritative_collection_rolling_route_step" => VerifyRouteStep(
+                credit,
+                queueItems.LastOrDefault(item => !string.IsNullOrWhiteSpace(
+                    ReadParameter(item, "expected_target_location"))),
+                before,
+                after),
             _ => Transition(
                 credit,
                 "unsupported_binding_kind",

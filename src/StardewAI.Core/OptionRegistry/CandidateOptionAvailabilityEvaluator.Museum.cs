@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
@@ -23,6 +24,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
         var museumRow = museum.Value;
         var locationId = ReadString(museumRow, "museum_location_id");
+        var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+        if (ReadBool(museumRow, "museum_is_current_location") != true)
+        {
+            return MuseumDonationRouteCandidates(
+                snapshot,
+                museumRow,
+                candidates,
+                currentLocation,
+                locationId);
+        }
+
         var actionX = NullableReadInt(museumRow, "gunther_action_tile_x");
         var actionY = NullableReadInt(museumRow, "gunther_action_tile_y");
         var donationX = NullableReadInt(museumRow, "free_donation_tile_x");
@@ -90,6 +102,95 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     AllowedNow = reasons.Count == 0,
                     BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
                     Parameters = parameters
+                };
+            })
+            .ToArray();
+    }
+
+    private EventCandidate[] MuseumDonationRouteCandidates(
+        SnapshotEnvelope snapshot,
+        JsonElement museum,
+        JsonElement candidates,
+        string currentLocation,
+        string targetLocation)
+    {
+        var route = FindResolvedRoutePlan(
+            snapshot,
+            currentLocation,
+            targetLocation,
+            RouteConnectorCandidates(snapshot, int.MaxValue)
+                .Where(candidate => candidate.Kind == "route_connector_tile")
+                .ToArray());
+        var connector = route?.FirstActionCandidate;
+
+        return candidates.EnumerateArray()
+            .Where(candidate => candidate.ValueKind == JsonValueKind.Object)
+            .Select(candidate =>
+            {
+                var reasons = new List<string>();
+                if (ReadString(candidate, "action_status") !=
+                    "museum_not_current_location")
+                {
+                    reasons.Add("museum_remote_donation_projection_unavailable");
+                }
+                if (ReadString(candidate, "reward_projection_status") != "ready")
+                {
+                    reasons.Add("museum_reward_projection_not_verified");
+                }
+                if (ReadBool(museum, "museum_mutex_locked") == true)
+                {
+                    reasons.Add("museum_mutex_locked");
+                }
+                var slot = ReadInt(candidate, "slot_index");
+                var before = ReadInt(candidate, "donated_count_before");
+                if (slot < 0 || ReadInt(candidate, "donated_count_after") != before + 1)
+                {
+                    reasons.Add("museum_donation_candidate_typed_projection_invalid");
+                }
+                reasons.AddRange(connector?.BlockReasons ??
+                    new[] { "museum_cross_map_route_unavailable" });
+                var continuation = new[]
+                {
+                    Parameter("continuation.option_id", "museum.donate_items"),
+                    Parameter("continuation.target_location", targetLocation),
+                    Parameter("continuation.inventory_slot_index", slot.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("continuation.item_id", ReadString(candidate, "item_id")),
+                    Parameter("continuation.qualified_item_id", ReadString(candidate, "qualified_item_id"))
+                };
+                var distinctReasons = reasons.Distinct(StringComparer.Ordinal).ToArray();
+                return new EventCandidate
+                {
+                    CandidateId = "museum-donate-route:" + slot + ":" +
+                        ReadString(candidate, "qualified_item_id") + ":" + currentLocation,
+                    Kind = "route_connector_tile",
+                    Available = connector is not null && connector.Available && distinctReasons.Length == 0,
+                    LocationId = currentLocation,
+                    TileX = connector?.TileX,
+                    TileY = connector?.TileY,
+                    ExpectedEffect = (connector?.ExpectedEffect ?? string.Empty) +
+                        ";museum_target_item=" + ReadString(candidate, "qualified_item_id") +
+                        ";one_connector_then_fresh_snapshot=true",
+                    ItemId = ReadString(candidate, "item_id"),
+                    QualifiedItemId = ReadString(candidate, "qualified_item_id"),
+                    DisplayName = ReadString(candidate, "display_name"),
+                    SlotIndex = slot,
+                    Quantity = 1,
+                    EstimatedTicks = connector?.EstimatedTicks ?? -1,
+                    EnergyCost = connector?.EnergyCost ?? 0,
+                    AvailabilityClass = connector is null
+                        ? "museum_donation_route_blocked"
+                        : "museum_donation_rolling_route",
+                    AllowedNow = connector?.AllowedNow,
+                    AllowedToday = connector?.AllowedToday,
+                    NextOpenTime = connector?.NextOpenTime,
+                    EffectiveOpenTime = connector?.EffectiveOpenTime,
+                    ClosesAt = connector?.ClosesAt,
+                    WaitCost = connector?.WaitCost,
+                    GateReasons = connector?.GateReasons ?? Array.Empty<string>(),
+                    BlockReasons = distinctReasons,
+                    Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
+                        .Concat(continuation)
+                        .ToArray()
                 };
             })
             .ToArray();
