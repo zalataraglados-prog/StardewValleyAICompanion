@@ -32,6 +32,7 @@ internal static partial class BootstrapSelfTest
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
         var targetDateCalendarPath = Path.Combine(root, "target-date-calendar.json");
         var targetDateUnlockPath = Path.Combine(root, "target-date-unlock.json");
+        var targetDateFestivalPath = Path.Combine(root, "target-date-festival.json");
         var targetDateUnlockSnapshotPath = Path.Combine(
             root,
             "target-date-unlock-snapshot.json");
@@ -41,6 +42,18 @@ internal static partial class BootstrapSelfTest
         var mismatchedUnlockDateSnapshotPath = Path.Combine(
             root,
             "mismatched-unlock-date-snapshot.json");
+        var missingCalendarStateSnapshotPath = Path.Combine(
+            root,
+            "missing-calendar-state-snapshot.json");
+        var missingCalendarStateUnlockPath = Path.Combine(
+            root,
+            "missing-calendar-state-unlock.json");
+        var mismatchedCalendarTimeSnapshotPath = Path.Combine(
+            root,
+            "mismatched-calendar-time-snapshot.json");
+        var tamperedTargetDateUnlockPath = Path.Combine(
+            root,
+            "tampered-target-date-unlock.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var intentsPath = Path.Combine(root, "master-angler-intents.json");
@@ -114,6 +127,9 @@ internal static partial class BootstrapSelfTest
         });
         const string fixtureShopCondition =
             "!YEAR 2, DAY_OF_WEEK Monday, TIME 700 1800, " +
+            "!IS_FESTIVAL_DAY, " +
+            "IS_PASSIVE_FESTIVAL_OPEN FixtureFest, " +
+            "DAYS_PLAYED 1 1, " +
             "PLAYER_HAS_MAIL Current fixtureGate, " +
             "PLAYER_HAS_MAIL Host hostGate, " +
             "PLAYER_SPECIAL_ORDER_ACTIVE Current Gunther, " +
@@ -573,6 +589,9 @@ internal static partial class BootstrapSelfTest
                     window.StochasticOutcome &&
                     window.DynamicConditions.SequenceEqual(new[]
                     {
+                        "!IS_FESTIVAL_DAY",
+                        "IS_PASSIVE_FESTIVAL_OPEN FixtureFest",
+                        "DAYS_PLAYED 1 1",
                         "PLAYER_HAS_MAIL Current fixtureGate",
                         "PLAYER_HAS_MAIL Host hostGate",
                         "PLAYER_SPECIAL_ORDER_ACTIVE Current Gunther",
@@ -633,8 +652,11 @@ internal static partial class BootstrapSelfTest
                 targetDateShop.MatchingWindows[0].TimeWindows[0].EndTime == 1810 &&
                 targetDateShop.PendingDynamicConditions.SequenceEqual(new[]
                 {
+                    "!IS_FESTIVAL_DAY",
                     "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY",
+                    "DAYS_PLAYED 1 1",
                     "IS_ISLAND_NORTH_BRIDGE_FIXED",
+                    "IS_PASSIVE_FESTIVAL_OPEN FixtureFest",
                     "PLAYER_HAS_MAIL Current fixtureGate",
                     "PLAYER_HAS_MAIL Host hostGate",
                     "PLAYER_SPECIAL_ORDER_ACTIVE Current Gunther",
@@ -647,7 +669,8 @@ internal static partial class BootstrapSelfTest
             targetDateUnlockSnapshotPath,
             "target-date-unlock-state",
             fish,
-            totalDays: 0);
+            totalDays: 0,
+            timeOfDay: 700);
         var targetDateUnlock = AcquisitionRouteTargetDateUnlockBuilder.Build(
             inventoryPath,
             loweringPath,
@@ -672,6 +695,7 @@ internal static partial class BootstrapSelfTest
                 targetDateUnlock.StaticWindowMissCount == 72 &&
                 targetDateUnlock.BlockedUpstreamCalendarCount == 0 &&
                 targetDateUnlock.BlockedUnlockEvidenceCount == 0 &&
+                targetDateUnlock.PendingCalendarConditionCount == 3 &&
                 targetDateUnlock.PendingStochasticConditionCount == 1 &&
                 targetDateUnlock.UnsupportedConditionCount == 0 &&
                 targetDateUnlockShop.UnlockAxisResolved &&
@@ -715,6 +739,15 @@ internal static partial class BootstrapSelfTest
                     .ConditionMatches == true &&
                 evaluator.Evaluate("PLAYER_STAT Current Book_Woodcutting 2")
                     .ConditionMatches == false &&
+                evaluator.Evaluate(
+                        "PLAYER_HAS_MAIL Current fixtureGate Received ignored")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate(
+                        "PLAYER_STAT Current Book_Woodcutting 1 1 ignored")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate(
+                        "IS_ISLAND_NORTH_BRIDGE_FIXED ignored")
+                    .ConditionMatches == true &&
                 evaluator.Evaluate("PLAYER_HAS_MAIL Target fixtureGate")
                     .Status == "blocked" &&
                 evaluator.Evaluate("PLAYER_HAS_MAIL Target fixtureGate")
@@ -722,7 +755,160 @@ internal static partial class BootstrapSelfTest
                 evaluator.Evaluate("!!PLAYER_HAS_MAIL Current fixtureGate")
                     .Status == "blocked",
                 "Native Current/Host/Any/All/numeric player selection drifted.");
+
+            var calendarState = AcquisitionCalendarSnapshotState.Read(
+                unlockSnapshot.RootElement);
+            var calendarEvaluator = new AcquisitionCalendarConditionEvaluator(
+                calendarState);
+            Require(
+                calendarEvaluator.Evaluate("DAYS_PLAYED 1 1 ignored")
+                    .ConditionMatches == true &&
+                calendarEvaluator.Evaluate("IS_FESTIVAL_DAY")
+                    .ConditionMatches == false &&
+                calendarEvaluator.Evaluate("!IS_FESTIVAL_DAY")
+                    .ConditionMatches == true &&
+                calendarEvaluator.Evaluate("IS_FESTIVAL_DAY any 12")
+                    .ConditionMatches == true &&
+                calendarEvaluator.Evaluate("IS_FESTIVAL_DAY Here")
+                    .Status == "blocked" &&
+                calendarEvaluator.Evaluate(
+                        "IS_PASSIVE_FESTIVAL_OPEN FixtureFest ignored")
+                    .ConditionMatches == true &&
+                calendarEvaluator.Evaluate(
+                        "IS_PASSIVE_FESTIVAL_OPEN MissingFestival")
+                    .ConditionMatches == false &&
+                calendarEvaluator.Evaluate("!!IS_FESTIVAL_DAY")
+                    .Status == "blocked",
+                "Native target-date calendar condition semantics drifted.");
         }
+
+        var mismatchedCalendarTimeSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        mismatchedCalendarTimeSnapshot["state"]!["world_progress"]!
+            ["game_state_query_calendar_state"]!["value"]!["time_of_day"] = 600;
+        File.WriteAllText(
+            mismatchedCalendarTimeSnapshotPath,
+            mismatchedCalendarTimeSnapshot.ToJsonString(JsonDefaults.Options));
+        var mismatchedCalendarTimeRejected = false;
+        try
+        {
+            using var mismatchedCalendarTimeDocument = JsonDocument.Parse(
+                File.ReadAllText(mismatchedCalendarTimeSnapshotPath));
+            _ = AcquisitionCalendarSnapshotState.Read(
+                mismatchedCalendarTimeDocument.RootElement);
+        }
+        catch (InvalidDataException)
+        {
+            mismatchedCalendarTimeRejected = true;
+        }
+        Require(mismatchedCalendarTimeRejected,
+            "Calendar bridge time drift did not fail closed.");
+
+        var targetDateFestival =
+            AcquisitionRouteTargetDateFestivalBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateUnlockSnapshotPath);
+        Write(targetDateFestivalPath, targetDateFestival);
+        var targetDateFestivalShop = targetDateFestival.Routes.Single(route =>
+            route.UpstreamRoute.RequirementId ==
+                "community_center:bundle:Pantry/5" &&
+            route.UpstreamRoute.RouteKind == "sells");
+        var sourceUnlockShopJson = JsonSerializer.Serialize(
+            targetDateUnlockShop,
+            JsonDefaults.Options);
+        var carriedUnlockShopJson = JsonSerializer.Serialize(
+            targetDateFestivalShop.UpstreamRoute,
+            JsonDefaults.Options);
+        Require(targetDateFestival.Status ==
+                    "complete_target_date_festival_axis_downstream_pending" &&
+                targetDateFestival.RouteOccurrenceInventoryComplete &&
+                targetDateFestival.CalendarConditionAxisResolutionComplete &&
+                !targetDateFestival.TrainingLabelEligible &&
+                targetDateFestival.TargetTotalDay == 0 &&
+                targetDateFestival.RouteOccurrenceCount == 76 &&
+                targetDateFestival.CalendarConditionAxisResolvedCount == 76 &&
+                targetDateFestival.CalendarConditionMatchCount == 4 &&
+                targetDateFestival.CalendarConditionMissCount == 0 &&
+                targetDateFestival.NotApplicableStaticWindowCount == 72 &&
+                targetDateFestival.NotApplicableUnlockStateCount == 0 &&
+                targetDateFestival.BlockedUpstreamCount == 0 &&
+                targetDateFestival.BlockedCalendarEvidenceCount == 0 &&
+                targetDateFestival.PendingStochasticConditionCount == 1 &&
+                targetDateFestivalShop.CalendarConditionAxisResolved &&
+                targetDateFestivalShop.CalendarConditionsMatchTargetDate == true &&
+                carriedUnlockShopJson == sourceUnlockShopJson &&
+                targetDateFestivalShop.CalendarConditionEvaluations.Length == 3 &&
+                targetDateFestivalShop.CalendarConditionEvaluations.All(value =>
+                    value.Status == "resolved_match" &&
+                    value.ConditionMatches == true),
+            "Explicit target-date festival-state axis resolution drifted.");
+
+        var missingCalendarSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        missingCalendarSnapshot["state"]!["world_progress"]!.AsObject()
+            .Remove("game_state_query_calendar_state");
+        File.WriteAllText(
+            missingCalendarStateSnapshotPath,
+            missingCalendarSnapshot.ToJsonString(JsonDefaults.Options));
+        var missingCalendarUnlock = AcquisitionRouteTargetDateUnlockBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingCalendarStateSnapshotPath);
+        Write(missingCalendarStateUnlockPath, missingCalendarUnlock);
+        var missingCalendarReport =
+            AcquisitionRouteTargetDateFestivalBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                missingCalendarStateUnlockPath,
+                missingCalendarStateSnapshotPath);
+        Require(missingCalendarReport.Status ==
+                    "partial_target_date_festival_axis_blocks" &&
+                !missingCalendarReport.CalendarConditionAxisResolutionComplete &&
+                missingCalendarReport.CalendarConditionAxisResolvedCount == 75 &&
+                missingCalendarReport.CalendarConditionMatchCount == 3 &&
+                missingCalendarReport.BlockedCalendarEvidenceCount == 1 &&
+                missingCalendarReport.Routes.Single(route =>
+                    route.UpstreamRoute.RequirementId ==
+                        "community_center:bundle:Pantry/5" &&
+                    route.UpstreamRoute.RouteKind == "sells").BlockingReasons
+                    .Contains("game_state_query_calendar_state_missing"),
+            "Missing transparent calendar state did not fail closed per route.");
+
+        var tamperedTargetDateUnlock = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockPath))!.AsObject();
+        tamperedTargetDateUnlock["routes"]![0]!["source_id"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDateUnlockPath,
+            tamperedTargetDateUnlock.ToJsonString(JsonDefaults.Options));
+        var tamperedTargetDateUnlockRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateFestivalBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                tamperedTargetDateUnlockPath,
+                targetDateUnlockSnapshotPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedTargetDateUnlockRejected = true;
+        }
+        Require(tamperedTargetDateUnlockRejected,
+            "A tampered target-date unlock report did not fail closed.");
 
         var missingUnlockSnapshot = JsonNode.Parse(
             File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();

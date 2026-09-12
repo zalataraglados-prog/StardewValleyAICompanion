@@ -553,6 +553,65 @@ if ($targetDateUnlock.status -ne 'partial_target_date_unlock_axis_blocks' -or
     }).Count -ne 0) {
     throw 'Acquisition route target-date unlock-state regression failed.'
 }
+$targetDateFestivalPath = Join-Path $output `
+    'acquisition-route-target-date-festival-state-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-acquisition-route-target-date-festival-state `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $routeCalendarResolutionPath `
+    --target-date-calendar $unlockTargetDateCalendarPath `
+    --target-date-unlock $targetDateUnlockPath `
+    --snapshot $FullShipmentSnapshot `
+    --output $targetDateFestivalPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Acquisition route target-date festival-state resolution failed.'
+}
+$targetDateFestival = Get-Content -LiteralPath $targetDateFestivalPath -Raw |
+    ConvertFrom-Json
+$festivalRoutes = @($targetDateFestival.routes)
+$festivalBlockedRoutes = @($festivalRoutes | Where-Object {
+    $_.calendar_condition_axis_status -eq 'blocked_calendar_evidence'
+})
+$unlockRouteById = @{}
+foreach ($unlockRoute in $unlockRoutes) {
+    $unlockRouteById[[string]$unlockRoute.route_occurrence_id] = $unlockRoute
+}
+$festivalProjectionDrift = @($festivalRoutes | Where-Object {
+    $sourceRoute = $unlockRouteById[[string]$_.route_occurrence_id]
+    $null -eq $sourceRoute -or
+    (ConvertTo-Json -InputObject $_.upstream_route -Depth 30 -Compress) -ne
+        (ConvertTo-Json -InputObject $sourceRoute -Depth 30 -Compress)
+})
+if ($targetDateFestival.status -ne `
+        'partial_target_date_festival_axis_blocks' -or
+    -not [bool]$targetDateFestival.route_occurrence_inventory_complete -or
+    [bool]$targetDateFestival.calendar_condition_axis_resolution_complete -or
+    [bool]$targetDateFestival.training_label_eligible -or
+    [int]$targetDateFestival.target_total_day -ne 37 -or
+    [int]$targetDateFestival.route_occurrence_count -ne 1599 -or
+    [int]$targetDateFestival.calendar_condition_axis_resolved_count -ne 674 -or
+    [int]$targetDateFestival.calendar_condition_match_count -ne 483 -or
+    [int]$targetDateFestival.calendar_condition_miss_count -ne 0 -or
+    [int]$targetDateFestival.not_applicable_static_window_count -ne 191 -or
+    [int]$targetDateFestival.not_applicable_unlock_state_count -ne 0 -or
+    [int]$targetDateFestival.blocked_upstream_count -ne 919 -or
+    [int]$targetDateFestival.blocked_calendar_evidence_count -ne 6 -or
+    [int]$targetDateFestival.pending_stochastic_condition_count -ne 1 -or
+    [int]$targetDateFestival.pending_resource_condition_count -ne 1 -or
+    [int]$targetDateFestival.pending_location_condition_count -ne 0 -or
+    [int]$targetDateFestival.unsupported_condition_count -ne 0 -or
+    $festivalRoutes.Count -ne 1599 -or
+    @($festivalRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or
+    $festivalProjectionDrift.Count -ne 0 -or
+    $festivalBlockedRoutes.Count -ne 6 -or
+    @($festivalBlockedRoutes | Where-Object {
+        @($_.blocking_reasons) -notcontains `
+            'game_state_query_calendar_state_missing'
+    }).Count -ne 0) {
+    throw 'Acquisition route target-date festival-state regression failed.'
+}
 $currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
 dotnet run --project $bootstrap --no-build -- build-current-full-shipment-teacher-frontier `
     --requirement-inventory $requirementInventoryPath `

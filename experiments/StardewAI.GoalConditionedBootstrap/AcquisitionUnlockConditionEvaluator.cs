@@ -65,9 +65,9 @@ internal sealed class AcquisitionUnlockConditionEvaluator
         return name switch
         {
             "IS_ISLAND_NORTH_BRIDGE_FIXED" =>
-                EvaluateIslandBridge(condition, tokens, negated),
+                EvaluateIslandBridge(condition, negated),
             "PLAYER_HAS_MAIL" => EvaluatePlayerPredicate(
-                condition, tokens, negated, 3, 4, EvaluateMail),
+                condition, tokens, negated, 3, int.MaxValue, EvaluateMail),
             "PLAYER_SPECIAL_ORDER_ACTIVE" => EvaluatePlayerPredicate(
                 condition, tokens, negated, 3, int.MaxValue,
                 (player, values) => values.Any(player.ActiveSpecialOrderIds.Contains)),
@@ -75,7 +75,7 @@ internal sealed class AcquisitionUnlockConditionEvaluator
                 condition, tokens, negated, 3, int.MaxValue,
                 (player, values) => values.Any(player.ActiveSpecialOrderRules.Contains)),
             "PLAYER_STAT" => EvaluatePlayerPredicate(
-                condition, tokens, negated, 4, 5, EvaluateStat),
+                condition, tokens, negated, 4, int.MaxValue, EvaluateStat),
             _ => Blocked(condition, name, negated, PlayerSelector(tokens),
                 "unsupported_unlock_predicate")
         };
@@ -83,12 +83,8 @@ internal sealed class AcquisitionUnlockConditionEvaluator
 
     private AcquisitionUnlockConditionEvaluation EvaluateIslandBridge(
         string condition,
-        string[] tokens,
         bool negated)
     {
-        if (tokens.Length != 1)
-            return Blocked(condition, PredicateName(condition), negated,
-                string.Empty, "invalid_island_bridge_condition_arguments");
         if (!state.IslandNorthBridgeFixed.HasValue)
             return Blocked(condition, "IS_ISLAND_NORTH_BRIDGE_FIXED", negated,
                 string.Empty, "island_north_bridge_state_unavailable");
@@ -145,10 +141,10 @@ internal sealed class AcquisitionUnlockConditionEvaluator
         UnlockPlayerState player,
         string[] values)
     {
-        if (values.Length is not (1 or 2))
+        if (values.Length < 1)
             return null;
         var mailId = values[0];
-        var type = values.Length == 2
+        var type = values.Length > 1
             ? values[1].ToLowerInvariant()
             : "any";
         return type switch
@@ -168,16 +164,16 @@ internal sealed class AcquisitionUnlockConditionEvaluator
         UnlockPlayerState player,
         string[] values)
     {
-        if (values.Length is not (2 or 3) ||
+        if (values.Length < 2 ||
             !int.TryParse(values[1], NumberStyles.Integer,
                 CultureInfo.InvariantCulture, out var minimum) ||
-            (values.Length == 3 && !int.TryParse(values[2],
+            (values.Length > 2 && !int.TryParse(values[2],
                 NumberStyles.Integer, CultureInfo.InvariantCulture,
                 out _)))
         {
             return null;
         }
-        var maximum = values.Length == 3
+        var maximum = values.Length > 2
             ? int.Parse(values[2], CultureInfo.InvariantCulture)
             : int.MaxValue;
         var value = player.Stats.TryGetValue(values[0], out var stat)

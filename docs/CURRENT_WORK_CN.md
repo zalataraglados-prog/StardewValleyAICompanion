@@ -11,13 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期节日状态轴求值
+
+- 透明桥新增轻量 `world_progress.game_state_query_calendar_state`：实时读取 `Game1.stats.DaysPlayed`、当前总日数与时间、`Data/Festivals/FestivalDates` 的完整日期键、当前活动的被动节日 ID，以及 `Data/PassiveFestivals` 中每个条目的季节、起止日、开始时间与原始条件。它只遍历两个小型已加载数据表，不读取地图或执行节日逻辑。带地点上下文的普通节日形式仍明确标为 `not_projected`；当前权威 1599 条路线没有这种形式。
+- 新增 `acquisition_route_target_date_festival_state.v1` 与 `build-acquisition-route-target-date-festival-state`。该阶段从同一原始输入和同一快照重新编译并逐字段比较上游解锁报告，随后按 1.6.15 反编译实现 `DAYS_PLAYED`、`IS_FESTIVAL_DAY` 和 `IS_PASSIVE_FESTIVAL_OPEN`，包括单重否定、普通节日日期偏移、被动节日开始时间的包含式边界，以及各原生处理器对尾随参数的真实行为。非法双重否定、缺字段和未投影地点上下文均失败关闭。
+- 新报告不再复制一遍逐步膨胀的路线字段，而是把完整强类型 `upstream_route` 嵌入每条结果；fixture 和总回归均做逐对象 JSON 等值检查，避免后续轴再次丢失来源、窗口或解锁证据。锁定第 37 天的旧归档快照实跑保留全部 `1599` 条路线：`919` 条继承上游阻塞，`191` 条静态窗口不适用，`483` 条节日轴无需额外事实即可继续，剩余 `6` 条正是 Trout Derby、SquidFest 和普通节日条件，因旧快照早于新桥字段而明确阻塞。未知条件仍为 0，训练授权仍为 false。
+- 聚焦 fixture 在被动节日开始时刻边界验证三类条件全部命中，并覆盖日期偏移、否定、地点上下文阻塞、缺字段逐路线封闭和上游制品篡改拒绝。GoalConditionedBootstrap 与 TransparentBridge Release 构建通过，未启动游戏或训练。下一固定切片进入 `location_route`；随机与资源条件继续由各自轴持有。
+
 ## 2026-09-13 显式目标日期解锁状态轴求值
 
 - 透明桥新增轻量 `world_progress.game_state_query_unlock_state`。它一次性读取 `Game1.getAllFarmers()` 中每位玩家的精确 ID、Current/Host 身份、三类邮件集合、完整 `Stats.Values`，以及该玩家队伍中仍为 `InProgress` 的特别订单 ID 和逗号拆分后的特别规则；同时读取 `IslandNorth.bridgeFixed`。字段来源逐项绑定锁定 1.6.15 的 `GameStateQuery.WithPlayer`、`PLAYER_HAS_MAIL`、`PLAYER_SPECIAL_ORDER_ACTIVE`、`PLAYER_SPECIAL_ORDER_RULE_ACTIVE`、`PLAYER_STAT` 与 `IS_ISLAND_NORTH_BRIDGE_FIXED` 反编译分支。该读取只遍历小型集合，不加载地图资产或生成全量世界快照副本。
 - 新增 `acquisition_route_target_date_unlock_state.v1` 与 `build-acquisition-route-target-date-unlock-state`。构建器会从同一组权威输入重新编译目标日日历报告并逐字段比较，再要求透明快照的 `game_version` 和 `time.total_days` 与目标日一致。Current、Host、Any、All 和已存在的数值玩家 ID 按原生选择规则求值；Target 因来源调用上下文未被制品携带而明确阻塞，不会默认冒充 Current。
 - 解锁轴只接收上述五类已反编译谓词。`IS_FESTIVAL_DAY`/`IS_PASSIVE_FESTIVAL_OPEN`/`DAYS_PLAYED` 仍归日历动态条件，`RANDOM`/`SYNCED_*` 归随机轴，`PLAYER_HAS_ITEM` 归资源轴，玩家地点谓词归位置轴；未知条件阻塞。邮件 `Any` 额外保留原生 `mailForTomorrow` 的 `%&NL&%` 后缀语义，玩家统计缺失键按原生 `Stats.Get` 返回 0，特别订单只认可 `InProgress` 行和精确逗号规则。每条结果继续无损携带上游 `source_resolution_status` 和命中的完整时间、天气及动态条件窗口，后续轴不需要回读或猜测另一份报告。
 - 锁定 1.6.15 的旧归档快照（夏 10，`target_total_day=37`）实跑仍保留 `1599` 条 occurrence：`910` 条上游来源阻塞，`191` 条静态窗口不命中，`498` 条命中。命中项中 `489` 条无需解锁事实即可继续，`9` 条因旧快照尚无新桥字段而明确阻塞；另保留 6 个动态日历条件、1 个随机条件和 1 个资源条件，未知条件为 0。没有把旧快照中的零散相似字段拼成伪证据。
-- fixture 已验证不同 Current/Host 玩家、Any/All/数值 ID、邮件类型与延迟邮件后缀、否定特别订单规则、统计包含区间、姜岛桥、Target 阻塞、缺字段按路线失败关闭、跨日快照拒绝和上游制品篡改拒绝。TransparentBridge 与 GoalConditionedBootstrap Release 均为 `0 warning / 0 error`，组合自测通过；未启动游戏或训练。下一固定切片先闭合仍保留的目标日动态节日日历条件，再进入 `location_route`，不得跳过这些残余条件。
+- fixture 已验证不同 Current/Host 玩家、Any/All/数值 ID、邮件类型与延迟邮件后缀、否定特别订单规则、统计包含区间、姜岛桥、Target 阻塞、缺字段按路线失败关闭、跨日快照拒绝和上游制品篡改拒绝。TransparentBridge 与 GoalConditionedBootstrap Release 均为 `0 warning / 0 error`，组合自测通过；未启动游戏或训练。其后续动态节日日历条件已由上节独立闭合，解锁轴本身不越权消费其他轴。
 
 ## 2026-09-13 显式目标日期日历轴求值
 

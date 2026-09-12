@@ -31,7 +31,7 @@ public static partial class AcquisitionRouteTargetDateUnlockBuilder
         using var snapshotDocument = JsonDocument.Parse(
             File.ReadAllText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
-        var stateHash = ValidateSnapshot(
+        var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             snapshot,
             source.GameVersion,
             source.TargetTotalDay);
