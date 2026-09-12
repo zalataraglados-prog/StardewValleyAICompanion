@@ -92,7 +92,24 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 continue;
             }
 
-            if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
+            if (IsCommunityCenterWarpAction(parts[0]))
+            {
+                connectors.Add(new
+                {
+                    kind = "action_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = CommunityCenterWarpTargetLocation,
+                    target_x = (int?)CommunityCenterWarpTargetX,
+                    target_y = (int?)CommunityCenterWarpTargetY,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    open = (bool?)null,
+                    resolved = true,
+                    unresolved_reason = (string?)null
+                });
+            }
+            else if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
             {
                 var touchAction = string.Equals(actionRow.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase);
                 var targetLocation = touchAction ? Part(parts, 1) : Part(parts, 3);

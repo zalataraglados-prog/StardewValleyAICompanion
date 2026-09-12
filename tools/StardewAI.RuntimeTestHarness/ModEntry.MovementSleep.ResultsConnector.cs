@@ -101,7 +101,16 @@ public sealed partial class ModEntry : Mod
     private static bool IsConnectorActionTypeWhitelisted(string actionType)
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsActionWarpConnectorActionType(string actionType)
+    {
+        return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ValidateConnectorTarget(TrainingExecutionRequest request, Point connectorTile)
@@ -139,23 +148,44 @@ public sealed partial class ModEntry : Mod
             var layer = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal) ? "Back" : "Buildings";
             var rawAction = Game1.currentLocation.doesTileHaveProperty(connectorTile.X, connectorTile.Y, sourceProperty, layer);
             var parts = rawAction?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            if (parts.Length < 4)
+            if (parts.Length == 0)
             {
                 return "connector_action_source_missing_or_unparseable";
             }
 
             var touchAction = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal);
-            var expectedBranch = string.Equals(request.ConnectorKind, "locked_door_warp", StringComparison.OrdinalIgnoreCase)
-                ? "LockedDoorWarp"
-                : "Warp";
-            if (!string.Equals(parts[0], expectedBranch, StringComparison.OrdinalIgnoreCase))
+            var actionTypeMatches = string.Equals(request.ConnectorKind, "locked_door_warp", StringComparison.OrdinalIgnoreCase)
+                ? string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase)
+                : touchAction
+                    ? string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase)
+                    : IsActionWarpConnectorActionType(parts[0]);
+            if (!actionTypeMatches)
             {
                 return "connector_action_type_mismatch";
             }
 
-            targetLocation = touchAction ? parts[1] : parts[3];
-            targetX = ParseIntPart(parts, touchAction ? 2 : 1);
-            targetY = ParseIntPart(parts, touchAction ? 3 : 2);
+            if (string.Equals(parts[0], "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase))
+            {
+                targetLocation = "CommunityCenter";
+                targetX = 32;
+                targetY = 23;
+            }
+            else if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
+            {
+                targetLocation = "Sewer";
+                targetX = 16;
+                targetY = 11;
+            }
+            else
+            {
+                if (parts.Length < 4)
+                {
+                    return "connector_action_source_missing_or_unparseable";
+                }
+                targetLocation = touchAction ? parts[1] : parts[3];
+                targetX = ParseIntPart(parts, touchAction ? 2 : 1);
+                targetY = ParseIntPart(parts, touchAction ? 3 : 2);
+            }
         }
 
         if (!string.Equals(targetLocation, request.ExpectedTargetLocation, StringComparison.OrdinalIgnoreCase))

@@ -119,6 +119,30 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return ReadLockedDoorWarpGate(location, x, y, action, sourceProperty, parts);
         }
 
+        if (IsCommunityCenterWarpAction(parts[0]))
+        {
+            var communityCenterDoorUnlocked = IsCommunityCenterDoorUnlocked();
+            return new
+            {
+                kind = "warp_action",
+                tile_x = x,
+                tile_y = y,
+                source_property = sourceProperty,
+                action,
+                target_location = CommunityCenterWarpTargetLocation,
+                target_x = CommunityCenterWarpTargetX,
+                target_y = CommunityCenterWarpTargetY,
+                mail_any_of = new[] { "ccDoorUnlock", "JojaMember" },
+                cc_door_unlock_received = Game1.MasterPlayer?.mailReceived.Contains("ccDoorUnlock") == true,
+                joja_member_received = Game1.MasterPlayer?.mailReceived.Contains("JojaMember") == true,
+                allowed_on_capture_date = communityCenterDoorUnlocked,
+                allowed_now = communityCenterDoorUnlocked,
+                unresolved_reason = communityCenterDoorUnlocked
+                    ? (string?)null
+                    : "community_center_door_unlock_mail_missing"
+            };
+        }
+
         if (IsDirectWarpActionBranch(parts[0]))
         {
             var standardWarp = string.Equals(

@@ -17,7 +17,8 @@
 - 社区中心 continuation 额外固定 `bundle_data_key`、ingredient 索引、需求数量和最低品质证据。Teacher frontier 只接纳身份、槽位、数量、品质均一致的路线步骤；负槽位、低品质或被篡改的 continuation 在上游失败关闭。
 - 路线步骤使用 `authoritative_collection_rolling_route_step`，只证明声明的连接器端点确实抵达，不冒充捐赠完成。博物馆与社区中心的最终正样本仍分别要求逐项 `donated=false -> true` 和精确 Bundle ingredient `false -> true`。
 - 目标地图内不新增独立站位动作：既有 `executor.donate_museum_item` 与 `executor.donate_community_center_item` 已负责本地 BFS、交互端点和原生菜单生命周期。这样避免与既有原生执行器形成两套实现，也不会把目标地图坐标提前绑定到来源地图快照。
-- 当前结构化候选、续程锁定、Teacher frontier/self-test、Core game-free 32 项与 Backend 188 项回归均通过；正式训练仍未解禁。下一步是在隔离、隐藏、静音游戏实例中组合验证“远程连接器 -> fresh 重编译 -> 原生捐赠 -> 精确状态转移”，之后再进入跨日期调度。
+- 结构化候选、续程锁定与 Teacher frontier 已通过隔离真实运行验收。隐藏、静音 E 盘运行 `runtime-collection-donation-routes-20260913-011522` 为 2/2：博物馆和社区中心均从 Town 的真实透明连接器出发，在 fresh 状态下续编既有原生捐赠器，连接器与终端原语全部 `applied/verified`，continuation 完成且精确终态变化成立。该运行使用 `--skip-training`，正式训练仍未解禁。
+- 实测同时修正了原生 `WarpCommunityCenter` 特殊入口：透明桥现在按锁定版反编译公开 `CommunityCenter (32,23)` 目标和 `Game1.MasterPlayer` 的 `ccDoorUnlock || JojaMember` 门禁；执行器只通过原生 `GameLocation.checkAction` 触发，不直接传送。下一步固定为跨日期调度，把日历、解锁、资源/库存预留和机会窗口接入同一 Teacher 依赖链。
 
 ## 2026-09-11 有界多原语 Teacher 重复闭环
 
