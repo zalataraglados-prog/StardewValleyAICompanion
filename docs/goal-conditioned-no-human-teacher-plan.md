@@ -1045,6 +1045,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   silent, isolated real-game run proving connector execution, fresh continuation recompilation, native
   donation and the exact terminal state transition for both donation surfaces.
 
+### 2026-09-13: Rolling donation route runtime gate closed
+
+- Hidden, silent, isolated run `runtime-collection-donation-routes-20260913-011522` passed both Museum and
+  Community Center cases. Each normal daily-plan episode selected the exact Town route candidate, executed
+  one verified connector, freshly continued into the existing native donation primitive, and verified the
+  exact terminal collection-state transition. Both continuations completed; formal training remained off.
+- The run exposed a real transparency omission instead of bypassing it: Town uses the hardcoded native
+  `WarpCommunityCenter` action rather than an argument-bearing ordinary `Warp`. Locked 1.6.15 code fixes its
+  destination at `CommunityCenter (32,23)` and gates native entry on `Game1.MasterPlayer` receiving either
+  `ccDoorUnlock` or `JojaMember`. Route graph, current connector and action-gate projections now share that
+  exact contract.
+- Connector execution still performs collision-checked movement followed by native
+  `GameLocation.checkAction`; no direct coordinate warp or duplicate donation state machine was added. The
+  existing `EnterSewer` hardcoded action is also accepted by the same declared `action_warp` runtime family,
+  aligning the executor with the transparent route scope it already advertised.
+- This closes the real-game gate for current-date rolling Museum and Community Center donations. It does not
+  prove future availability or authorize formal training. The next slice is cross-date scheduling: join
+  calendar, unlock, inventory/resource reservation and opportunity windows into the authoritative Teacher
+  dependency chain before a future-day action can be selected.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

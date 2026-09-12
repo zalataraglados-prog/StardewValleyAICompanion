@@ -82,16 +82,29 @@ public sealed partial class ModEntry
         {
             return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "gunther_endpoint=missing", "museum_fixture_gunther_endpoint_missing");
         }
-        Game1.currentLocation = museum;
-        Game1.player.currentLocation = museum;
-        Game1.player.Position = standTile.Value.ToVector2() * Game1.tileSize;
+        if (!MoveCollectionDonationFixtureFarmer(
+                request,
+                museum,
+                standTile.Value,
+                out var fixtureLocation,
+                out var fixtureStand,
+                out var fixtureMoveReason))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_museum_donation",
+                "museum.fixture=ready",
+                "source_location=unavailable",
+                fixtureMoveReason);
+        }
         Game1.player.forceCanMove();
         Game1.player.CurrentToolIndex = slot;
 
         var quest = Game1.player.questLog.FirstOrDefault(row => row.id.Value == "24");
         var verified = museum.museumPieces.Count() == request.ExpectedDonatedCountBefore.Value &&
             Game1.player.Items[slot]?.QualifiedItemId == targetQualifiedId && Game1.player.Items[slot]?.Stack == 2 &&
-            ReferenceEquals(Game1.currentLocation, museum) && Game1.player.TilePoint == standTile.Value &&
+            ReferenceEquals(Game1.currentLocation, fixtureLocation) &&
+            Game1.player.TilePoint == fixtureStand &&
             (quest is not null) == (request.FieldGuideQuestPresentBefore == true) &&
             museum.isTileSuitableForMuseumPiece(donationTiles[request.ExpectedDonatedCountBefore.Value].X, donationTiles[request.ExpectedDonatedCountBefore.Value].Y);
         return new TrainingExecutionResult
@@ -109,10 +122,10 @@ public sealed partial class ModEntry
                 ? new[] { "isolated_museum_fixture_installed", "donated_count=" + request.ExpectedDonatedCountBefore.Value, "quest24_present=" + (quest is not null).ToString().ToLowerInvariant() }
                 : new[] { "museum_fixture_projection_mismatch" },
             RequestedEffect = "museum.fixture=ready",
-            ObservedEffect = "donated_count=" + museum.museumPieces.Count() + ";slot=" + slot + ";location=" + museum.NameOrUniqueName,
-            TargetLocation = museum.NameOrUniqueName,
-            TargetTileX = actionTile.Value.X,
-            TargetTileY = actionTile.Value.Y,
+            ObservedEffect = "donated_count=" + museum.museumPieces.Count() + ";slot=" + slot + ";location=" + fixtureLocation.NameOrUniqueName,
+            TargetLocation = fixtureLocation.NameOrUniqueName,
+            TargetTileX = fixtureStand.X,
+            TargetTileY = fixtureStand.Y,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "museum_fixture_projection_mismatch" }
         };
     }

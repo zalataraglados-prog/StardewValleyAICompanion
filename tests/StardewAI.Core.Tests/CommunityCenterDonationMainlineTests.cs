@@ -208,7 +208,7 @@ public sealed class CommunityCenterDonationMainlineTests
             {
                 new
                 {
-                    kind = "warp", from_location = "Town", from_x = 10, from_y = 10,
+                    kind = "action_warp", from_location = "Town", from_x = 10, from_y = 10,
                     target_location = "CommunityCenter", target_x = 32, target_y = 23,
                     resolved = true
                 }
@@ -221,10 +221,19 @@ public sealed class CommunityCenterDonationMainlineTests
             {
                 new
                 {
-                    kind = "warp", tile_x = 10, tile_y = 10,
+                    kind = "action_warp", tile_x = 10, tile_y = 10,
                     target_location = "CommunityCenter", target_x = 32, target_y = 23,
+                    source_property = "Buildings.Action", action = "WarpCommunityCenter",
                     resolved = true
                 }
+            }
+        });
+        locations["route_gate_context"] = FieldNode(new
+        {
+            location_id = "Town",
+            action_gates = new[]
+            {
+                new { tile_x = 10, tile_y = 10, allowed_now = true }
             }
         });
         locations["route_action_branch_coverage"] = FieldNode(new { rows = Array.Empty<object>() });
@@ -263,6 +272,32 @@ public sealed class CommunityCenterDonationMainlineTests
         Assert.DoesNotContain("bundles.FieldDict", source, StringComparison.Ordinal);
         Assert.DoesNotContain("ConsumeStack", source, StringComparison.Ordinal);
         Assert.DoesNotContain("mailReceived.Add", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CommunityCenterRouteUsesTheNativeHardcodedDoorContractEndToEnd()
+    {
+        var bridgeContract = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.CommunityCenterWarp.cs"));
+        var routeGraph = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.RouteGraph.cs"));
+        var connectors = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.Connectors.cs"));
+        var gates = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.GatesBlockers.cs"));
+        var runtime = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.ResultsConnector.cs"));
+
+        Assert.Contains("WarpCommunityCenter", bridgeContract, StringComparison.Ordinal);
+        Assert.Contains("CommunityCenterWarpTargetLocation = \"CommunityCenter\"", bridgeContract, StringComparison.Ordinal);
+        Assert.Contains("CommunityCenterWarpTargetX = 32", bridgeContract, StringComparison.Ordinal);
+        Assert.Contains("CommunityCenterWarpTargetY = 23", bridgeContract, StringComparison.Ordinal);
+        Assert.Contains("Game1.MasterPlayer?.mailReceived.Contains(\"ccDoorUnlock\")", bridgeContract, StringComparison.Ordinal);
+        Assert.Contains("Game1.MasterPlayer?.mailReceived.Contains(\"JojaMember\")", bridgeContract, StringComparison.Ordinal);
+        Assert.Contains("IsCommunityCenterWarpAction(parts[0])", routeGraph, StringComparison.Ordinal);
+        Assert.Contains("IsCommunityCenterWarpAction(parts[0])", connectors, StringComparison.Ordinal);
+        Assert.Contains("IsCommunityCenterWarpAction(parts[0])", gates, StringComparison.Ordinal);
+        Assert.Contains("WarpCommunityCenter", runtime, StringComparison.Ordinal);
     }
 
     private static void AssertParameter(

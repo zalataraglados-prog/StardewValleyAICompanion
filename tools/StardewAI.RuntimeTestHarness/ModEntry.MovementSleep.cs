@@ -685,7 +685,7 @@ public sealed partial class ModEntry : Mod
             }
 
             if (string.Equals(kind, "action_warp", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase))
+                !IsActionWarpConnectorActionType(actionType))
             {
                 CompleteBlockedMove(move, "connector_action_type_mismatch");
                 return true;

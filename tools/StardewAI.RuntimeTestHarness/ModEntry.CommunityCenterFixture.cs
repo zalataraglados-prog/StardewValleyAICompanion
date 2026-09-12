@@ -122,6 +122,7 @@ public sealed partial class ModEntry
             }
         }
         Game1.player.mailReceived.Add("canReadJunimoText");
+        Game1.MasterPlayer.mailReceived.Add("ccDoorUnlock");
 
         if (!communityCenter.isJunimoNoteAtArea(target.AreaId))
         {
@@ -138,16 +139,29 @@ public sealed partial class ModEntry
         }
 
         Game1.player.Items[slot] = ItemRegistry.Create(target.QualifiedItemId, target.RequiredStack + 2, target.Quality);
-        Game1.currentLocation = communityCenter;
-        Game1.player.currentLocation = communityCenter;
-        Game1.player.Position = standTile.Value.ToVector2() * Game1.tileSize;
+        if (!MoveCollectionDonationFixtureFarmer(
+                request,
+                communityCenter,
+                standTile.Value,
+                out var fixtureLocation,
+                out var fixtureStand,
+                out var fixtureMoveReason))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_community_center_donation",
+                "community_center.fixture=ready",
+                "source_location=unavailable",
+                fixtureMoveReason);
+        }
         Game1.player.forceCanMove();
         Game1.player.CurrentToolIndex = slot;
 
         var installedItem = Game1.player.Items[slot];
         var verified = installedItem is not null && installedItem.QualifiedItemId == target.QualifiedItemId &&
             installedItem.Stack == target.RequiredStack + 2 && !communityCenter.bundles[target.BundleId][target.IngredientIndex] &&
-            ReferenceEquals(Game1.currentLocation, communityCenter) && Game1.player.TilePoint == standTile.Value;
+            ReferenceEquals(Game1.currentLocation, fixtureLocation) &&
+            Game1.player.TilePoint == fixtureStand;
         return new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -163,10 +177,10 @@ public sealed partial class ModEntry
                 ? new[] { "dynamic_live_BundleData_fixture_installed", "case=" + request.CommunityCenterFixtureCase, "bundle=" + target.BundleId, "area=" + target.AreaId, "ingredient=" + target.IngredientIndex }
                 : new[] { "community_center_fixture_projection_mismatch" },
             RequestedEffect = "community_center.fixture=ready",
-            ObservedEffect = "case=" + request.CommunityCenterFixtureCase + ";bundle=" + target.BundleId + ";area=" + target.AreaId + ";slot=" + slot,
-            TargetLocation = communityCenter.NameOrUniqueName,
-            TargetTileX = interactionTile.Value.X,
-            TargetTileY = interactionTile.Value.Y,
+            ObservedEffect = "case=" + request.CommunityCenterFixtureCase + ";bundle=" + target.BundleId + ";area=" + target.AreaId + ";slot=" + slot + ";location=" + fixtureLocation.NameOrUniqueName,
+            TargetLocation = fixtureLocation.NameOrUniqueName,
+            TargetTileX = fixtureStand.X,
+            TargetTileY = fixtureStand.Y,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "community_center_fixture_projection_mismatch" }
         };
     }

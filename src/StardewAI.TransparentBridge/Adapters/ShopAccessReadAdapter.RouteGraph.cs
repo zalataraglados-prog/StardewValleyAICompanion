@@ -194,6 +194,25 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return null;
         }
 
+        if (IsCommunityCenterWarpAction(parts[0]))
+        {
+            var resolved = locationNames.Contains(CommunityCenterWarpTargetLocation);
+            return new
+            {
+                kind = "action_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = CommunityCenterWarpTargetLocation,
+                target_x = (int?)CommunityCenterWarpTargetX,
+                target_y = (int?)CommunityCenterWarpTargetY,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                resolved,
+                unresolved_reason = resolved ? (string?)null : "community_center_target_not_loaded"
+            };
+        }
+
         if (IsDirectWarpActionBranch(parts[0]))
         {
             var touchAction =
@@ -435,6 +454,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Warp" => "covered_for_read",
             "WarpMensLocker" => "covered_for_read",
             "WarpWomensLocker" => "covered_for_read",
+            "WarpCommunityCenter" => "covered_for_read",
             "EnterSewer" => "covered_for_read",
             "LockedDoorWarp" => "covered_for_read",
             "ConditionalDoor" => "covered_for_read",
@@ -462,6 +482,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Warp" => "read-side target/mail gate preview exists where Stardew action format exposes it",
             "WarpMensLocker" or "WarpWomensLocker" =>
                 "read-side target and native player-gender gate preview exists",
+            "WarpCommunityCenter" =>
+                "read-side native CommunityCenter 32,23 target and MasterPlayer ccDoorUnlock-or-JojaMember gate preview exists",
             "EnterSewer" =>
                 "read-side OpenedSewer/RustyKey state and native Sewer 16,11 target preview exists",
             "LockedDoorWarp" => "read-side time/festival/key/friendship gate preview exists",
