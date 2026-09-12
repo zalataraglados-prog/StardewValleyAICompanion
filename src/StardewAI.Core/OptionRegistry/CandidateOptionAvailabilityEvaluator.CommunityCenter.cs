@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
@@ -25,6 +26,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var canReadJunimoText = ReadBool(progressRow, "can_read_junimo_text") == true;
         var rowCountExact = ReadInt(progressRow, "bundle_data_row_count") == ReadInt(progressRow, "projected_bundle_row_count") &&
             ReadInt(progressRow, "unavailable_bundle_row_count") == 0;
+        var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+        if (ReadBool(progressRow, "community_center_is_current_location") != true)
+        {
+            return CommunityCenterDonationRouteCandidates(
+                snapshot,
+                progressRow,
+                bundles,
+                currentLocation,
+                routeState,
+                canReadJunimoText,
+                rowCountExact);
+        }
+
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         var result = new List<EventCandidate>();
@@ -89,17 +103,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     : 0;
                 var completesBundle = ReadBool(candidate, "completes_bundle") == true;
                 var expectedAfter = completesBundle ? ingredientCount : before + 1;
-                if (slot < 0 || ingredientIndex < 0 || requiredSlots < 1 || ingredientCount < requiredSlots || after != expectedAfter ||
-                    ReadInt(candidate, "required_stack") < 1 || ReadInt(candidate, "stack_after") != ReadInt(candidate, "stack_before") - ReadInt(candidate, "required_stack") ||
-                    ReadInt(candidate, "inventory_item_total_before") < ReadInt(candidate, "stack_before") ||
-                    ReadInt(candidate, "inventory_item_total_after") != ReadInt(candidate, "inventory_item_total_before") - ReadInt(candidate, "required_stack") ||
-                    ReadBool(candidate, "expected_bundle_reward_available_after") != (ReadBool(bundle, "reward_available") == true || completesBundle) ||
-                    ReadInt(candidate, "expected_complete_bundle_count_after") < ReadInt(progressRow, "complete_bundle_count") ||
-                    ReadBool(candidate, "completes_area") != (ReadBool(bundle, "area_complete") != true && ReadBool(candidate, "expected_area_complete_after") == true) ||
-                    ReadBool(candidate, "expected_area_completion_mail_pending_after") !=
-                        (ReadBool(bundle, "area_completion_mail_pending") == true || ReadBool(candidate, "completes_area") == true) ||
-                    ReadBool(candidate, "expected_bulletin_thank_you_pending_after") !=
-                        (ReadBool(bundle, "bulletin_thank_you_pending") == true || ReadBool(candidate, "completes_area") == true && ReadInt(bundle, "area_id") == 5))
+                if (!CommunityCenterDonationProjectionIsValid(
+                        progressRow,
+                        bundle,
+                        candidate,
+                        slot,
+                        ingredientIndex,
+                        requiredSlots,
+                        ingredientCount,
+                        after,
+                        expectedAfter,
+                        completesBundle))
                 {
                     reasons.Add("community_center_donation_candidate_typed_projection_invalid");
                 }
@@ -131,6 +145,184 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
         return result.ToArray();
     }
+
+    private EventCandidate[] CommunityCenterDonationRouteCandidates(
+        SnapshotEnvelope snapshot,
+        JsonElement progress,
+        JsonElement bundles,
+        string currentLocation,
+        string routeState,
+        bool canReadJunimoText,
+        bool rowCountExact)
+    {
+        var route = FindResolvedRoutePlan(
+            snapshot,
+            currentLocation,
+            "CommunityCenter",
+            RouteConnectorCandidates(snapshot, int.MaxValue)
+                .Where(candidate => candidate.Kind == "route_connector_tile")
+                .ToArray());
+        var connector = route?.FirstActionCandidate;
+        var result = new List<EventCandidate>();
+        foreach (var bundle in bundles.EnumerateArray()
+                     .Where(row => row.ValueKind == JsonValueKind.Object))
+        {
+            if (!bundle.TryGetProperty("donation_candidates", out var candidates) ||
+                candidates.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var candidate in candidates.EnumerateArray()
+                         .Where(row => row.ValueKind == JsonValueKind.Object))
+            {
+                var reasons = new List<string>();
+                if (ReadString(candidate, "action_status") !=
+                    "community_center_not_current_location")
+                {
+                    reasons.Add("community_center_remote_donation_projection_unavailable");
+                }
+                if (routeState is not ("undecided" or "community_center_locked"))
+                {
+                    reasons.Add(routeState == "conflicting_irreversible_flags"
+                        ? "community_center_route_state_conflict"
+                        : "community_center_route_locked_out_by_joja");
+                }
+                if (!rowCountExact)
+                {
+                    reasons.Add("community_center_bundle_projection_incomplete");
+                }
+                if (!canReadJunimoText)
+                {
+                    reasons.Add("community_center_junimo_text_not_readable");
+                }
+                if (ReadString(bundle, "projection_status") != "exact" ||
+                    !NullableReadInt(bundle, "note_tile_x").HasValue ||
+                    !NullableReadInt(bundle, "note_tile_y").HasValue ||
+                    !NullableReadInt(bundle, "interaction_tile_x").HasValue ||
+                    !NullableReadInt(bundle, "interaction_tile_y").HasValue)
+                {
+                    reasons.Add("community_center_bundle_endpoint_unavailable");
+                }
+
+                var slot = ReadInt(candidate, "inventory_slot_index");
+                var ingredientIndex = ReadInt(candidate, "ingredient_index");
+                var requiredSlots = ReadInt(bundle, "required_slot_count");
+                var ingredientCount = bundle.TryGetProperty("ingredients", out var ingredients) &&
+                    ingredients.ValueKind == JsonValueKind.Array
+                        ? ingredients.GetArrayLength()
+                        : 0;
+                var completesBundle = ReadBool(candidate, "completes_bundle") == true;
+                var after = ReadInt(candidate, "completed_ingredient_count_after");
+                var expectedAfter = completesBundle
+                    ? ingredientCount
+                    : ReadInt(candidate, "completed_ingredient_count_before") + 1;
+                if (!CommunityCenterDonationProjectionIsValid(
+                        progress,
+                        bundle,
+                        candidate,
+                        slot,
+                        ingredientIndex,
+                        requiredSlots,
+                        ingredientCount,
+                        after,
+                        expectedAfter,
+                        completesBundle))
+                {
+                    reasons.Add("community_center_donation_candidate_typed_projection_invalid");
+                }
+                reasons.AddRange(connector?.BlockReasons ??
+                    new[] { "community_center_cross_map_route_unavailable" });
+
+                var qualifiedItemId = ReadString(candidate, "qualified_item_id");
+                var continuation = new[]
+                {
+                    Parameter("continuation.option_id", "community_center.donate_bundle_items"),
+                    Parameter("continuation.target_location", "CommunityCenter"),
+                    Parameter("continuation.bundle_data_key", ReadString(bundle, "bundle_data_key")),
+                    Parameter("continuation.bundle_id", ReadInt(bundle, "bundle_id").ToString(CultureInfo.InvariantCulture)),
+                    Parameter("continuation.bundle_ingredient_index", ingredientIndex.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("continuation.inventory_slot_index", slot.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("continuation.item_id", ReadString(candidate, "item_id")),
+                    Parameter("continuation.qualified_item_id", qualifiedItemId),
+                    Parameter("continuation.expected_item_quality", ReadInt(candidate, "quality").ToString(CultureInfo.InvariantCulture)),
+                    Parameter("continuation.required_stack", ReadInt(candidate, "required_stack").ToString(CultureInfo.InvariantCulture))
+                };
+                var distinctReasons = reasons.Distinct(StringComparer.Ordinal).ToArray();
+                result.Add(new EventCandidate
+                {
+                    CandidateId = "community-center-donate-route:" +
+                        ReadInt(bundle, "bundle_id") + ":" + ingredientIndex + ":" + slot + ":" + currentLocation,
+                    Kind = "route_connector_tile",
+                    Available = connector is not null && connector.Available && distinctReasons.Length == 0,
+                    LocationId = currentLocation,
+                    TileX = connector?.TileX,
+                    TileY = connector?.TileY,
+                    ExpectedEffect = (connector?.ExpectedEffect ?? string.Empty) +
+                        ";community_center_target_bundle=" + ReadInt(bundle, "bundle_id") +
+                        ";community_center_target_item=" + qualifiedItemId +
+                        ";one_connector_then_fresh_snapshot=true",
+                    ItemId = ReadString(candidate, "item_id"),
+                    QualifiedItemId = qualifiedItemId,
+                    SlotIndex = slot,
+                    Quantity = ReadInt(candidate, "required_stack"),
+                    EstimatedTicks = connector?.EstimatedTicks ?? -1,
+                    EnergyCost = connector?.EnergyCost ?? 0,
+                    AvailabilityClass = connector is null
+                        ? "community_center_donation_route_blocked"
+                        : "community_center_donation_rolling_route",
+                    AllowedNow = connector?.AllowedNow,
+                    AllowedToday = connector?.AllowedToday,
+                    NextOpenTime = connector?.NextOpenTime,
+                    EffectiveOpenTime = connector?.EffectiveOpenTime,
+                    ClosesAt = connector?.ClosesAt,
+                    WaitCost = connector?.WaitCost,
+                    GateReasons = connector?.GateReasons ?? Array.Empty<string>(),
+                    BlockReasons = distinctReasons,
+                    Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
+                        .Concat(continuation)
+                        .ToArray()
+                });
+            }
+        }
+        return result.ToArray();
+    }
+
+    private static bool CommunityCenterDonationProjectionIsValid(
+        JsonElement progress,
+        JsonElement bundle,
+        JsonElement candidate,
+        int slot,
+        int ingredientIndex,
+        int requiredSlots,
+        int ingredientCount,
+        int after,
+        int expectedAfter,
+        bool completesBundle) =>
+        slot >= 0 &&
+        ingredientIndex >= 0 &&
+        requiredSlots >= 1 &&
+        ingredientCount >= requiredSlots &&
+        after == expectedAfter &&
+        ReadInt(candidate, "required_stack") >= 1 &&
+        ReadInt(candidate, "stack_after") ==
+            ReadInt(candidate, "stack_before") - ReadInt(candidate, "required_stack") &&
+        ReadInt(candidate, "inventory_item_total_before") >= ReadInt(candidate, "stack_before") &&
+        ReadInt(candidate, "inventory_item_total_after") ==
+            ReadInt(candidate, "inventory_item_total_before") - ReadInt(candidate, "required_stack") &&
+        ReadBool(candidate, "expected_bundle_reward_available_after") ==
+            (ReadBool(bundle, "reward_available") == true || completesBundle) &&
+        ReadInt(candidate, "expected_complete_bundle_count_after") >=
+            ReadInt(progress, "complete_bundle_count") &&
+        ReadBool(candidate, "completes_area") ==
+            (ReadBool(bundle, "area_complete") != true &&
+             ReadBool(candidate, "expected_area_complete_after") == true) &&
+        ReadBool(candidate, "expected_area_completion_mail_pending_after") ==
+            (ReadBool(bundle, "area_completion_mail_pending") == true ||
+             ReadBool(candidate, "completes_area") == true) &&
+        ReadBool(candidate, "expected_bulletin_thank_you_pending_after") ==
+            (ReadBool(bundle, "bulletin_thank_you_pending") == true ||
+             ReadBool(candidate, "completes_area") == true && ReadInt(bundle, "area_id") == 5);
 
     private static SmallModelActionParameter[] CommunityCenterDonationParameters(
         JsonElement progress,

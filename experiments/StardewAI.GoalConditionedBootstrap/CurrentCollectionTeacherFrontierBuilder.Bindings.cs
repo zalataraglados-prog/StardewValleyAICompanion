@@ -28,6 +28,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                      candidates))
         {
             var candidate = match.Candidate;
+            var routeStep = IsExactMuseumDonationRoute(
+                candidate,
+                alternative,
+                group.Alternatives.Single().Amount,
+                out var routeEvidence);
             var directCompletion = IsExactMuseumDonation(
                 candidate,
                 setProgress.AggregateCompletedCount,
@@ -37,7 +42,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             var routes = CurrentTeacherFrontierSupport.AdmittedEndpointRoutes(
                 alternative,
                 candidate.OptionId);
-            if (!directCompletion &&
+            if (!routeStep &&
+                !directCompletion &&
                 (routes.Length == 0 || candidate.Quantity <= 0))
             {
                 continue;
@@ -53,21 +59,29 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 candidate.OptionId,
                 candidate.Kind,
                 candidate.Rank,
-                directCompletion
-                    ? "native_museum_donation_completion"
-                    : "authoritative_acquisition_endpoint",
+                routeStep
+                    ? "authoritative_collection_rolling_route_step"
+                    : directCompletion
+                        ? "native_museum_donation_completion"
+                        : "authoritative_acquisition_endpoint",
                 alternative.Amount,
                 alternative.MinimumQuality,
                 candidate.Quantity,
                 null,
                 progress.RemainingSlotCount,
-                directCompletion
-                    ? "native_donation_consumes_exact_projected_inventory"
-                    : "reserve_exact_item_until_native_museum_donation",
-                match.IdentityEvidence + (directCompletion
-                    ? "+" + directEvidence
-                    : "+candidate.quantity"),
-                routes));
+                routeStep
+                    ? "preserve_exact_item_and_slot_through_rolling_route_until_native_museum_donation"
+                    : directCompletion
+                        ? "native_donation_consumes_exact_projected_inventory"
+                        : "reserve_exact_item_until_native_museum_donation",
+                match.IdentityEvidence + (routeStep
+                    ? "+" + routeEvidence
+                    : directCompletion
+                        ? "+" + directEvidence
+                        : "+candidate.quantity"),
+                routeStep
+                    ? Array.Empty<CurrentRequirementRouteEvidence>()
+                    : routes));
         }
         return OrderedBindings(result);
     }
@@ -133,6 +147,35 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                          candidates))
             {
                 var candidate = match.Candidate;
+                if (IsExactCommunityCenterDonationRoute(
+                        candidate,
+                        progress,
+                        alternative,
+                        index,
+                        out var routeQuality,
+                        out var routeEvidence))
+                {
+                    result.Add(new CurrentCollectionCandidateBinding(
+                        requirementSetId,
+                        group.RequirementId,
+                        index,
+                        alternative.ItemId,
+                        alternative.QualifiedItemId,
+                        candidate.CandidateId,
+                        candidate.OptionId,
+                        candidate.Kind,
+                        candidate.Rank,
+                        "authoritative_collection_rolling_route_step",
+                        alternative.Amount,
+                        alternative.MinimumQuality,
+                        candidate.Quantity,
+                        routeQuality,
+                        progress.RemainingSlotCount,
+                        "preserve_exact_item_quantity_quality_and_slot_through_rolling_route_until_native_bundle_donation",
+                        match.IdentityEvidence + "+" + routeEvidence,
+                        Array.Empty<CurrentRequirementRouteEvidence>()));
+                    continue;
+                }
                 if (string.Equals(
                         candidate.Kind,
                         "donate_community_center_item",
@@ -185,6 +228,118 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             }
         }
         return OrderedBindings(result);
+    }
+
+    private static bool IsExactMuseumDonationRoute(
+        PolicyEventCandidatePrediction candidate,
+        AcquisitionRequirementAlternativeLowering alternative,
+        int requiredQuantity,
+        out string evidence)
+    {
+        evidence = string.Empty;
+        if (!string.Equals(
+                candidate.OptionId,
+                "museum.donate_items",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                candidate.Kind,
+                "route_connector_tile",
+                StringComparison.Ordinal) ||
+            candidate.Quantity != requiredQuantity ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.option_id",
+                "museum.donate_items") ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.target_location",
+                "ArchaeologyHouse") ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.item_id",
+                alternative.ItemId) ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.qualified_item_id",
+                alternative.QualifiedItemId) ||
+            !CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
+                candidate,
+                "continuation.inventory_slot_index",
+                out var slot) ||
+            slot < 0)
+        {
+            return false;
+        }
+
+        evidence =
+            "exact_museum_route_continuation+exact_inventory_slot_and_item";
+        return true;
+    }
+
+    private static bool IsExactCommunityCenterDonationRoute(
+        PolicyEventCandidatePrediction candidate,
+        CurrentCollectionRequirementProgress progress,
+        AcquisitionRequirementAlternativeLowering alternative,
+        int alternativeIndex,
+        out int candidateQuality,
+        out string evidence)
+    {
+        candidateQuality = 0;
+        evidence = string.Empty;
+        if (!string.Equals(
+                candidate.OptionId,
+                "community_center.donate_bundle_items",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                candidate.Kind,
+                "route_connector_tile",
+                StringComparison.Ordinal) ||
+            candidate.Quantity != alternative.Amount ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.option_id",
+                "community_center.donate_bundle_items") ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.target_location",
+                "CommunityCenter") ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.bundle_data_key",
+                progress.RuntimeKey) ||
+            !ReadIntParameterEquals(
+                candidate,
+                "continuation.bundle_ingredient_index",
+                alternativeIndex) ||
+            !ReadIntParameterEquals(
+                candidate,
+                "continuation.required_stack",
+                alternative.Amount) ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.item_id",
+                alternative.ItemId) ||
+            !ReadParameterEquals(
+                candidate,
+                "continuation.qualified_item_id",
+                alternative.QualifiedItemId) ||
+            !CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
+                candidate,
+                "continuation.inventory_slot_index",
+                out var slot) ||
+            slot < 0 ||
+            !CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
+                candidate,
+                "continuation.expected_item_quality",
+                out candidateQuality) ||
+            candidateQuality < alternative.MinimumQuality)
+        {
+            return false;
+        }
+
+        evidence =
+            "exact_bundle_route_continuation+exact_inventory_slot_item_quantity_and_quality";
+        return true;
     }
 
     private static bool IsExactMuseumDonation(

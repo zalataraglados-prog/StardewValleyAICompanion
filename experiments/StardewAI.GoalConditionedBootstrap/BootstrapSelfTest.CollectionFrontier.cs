@@ -161,8 +161,24 @@ internal static partial class BootstrapSelfTest
                 "museum-acquire", "processing.crack_geode", "process_geode",
                 "96", "(O)96", 2, 1),
             CollectionCandidate(
+                "museum-route", "museum.donate_items", "route_connector_tile",
+                "96", "(O)96", 3, 1,
+                Parameter("continuation.option_id", "museum.donate_items"),
+                Parameter("continuation.target_location", "ArchaeologyHouse"),
+                Parameter("continuation.inventory_slot_index", "4"),
+                Parameter("continuation.item_id", "96"),
+                Parameter("continuation.qualified_item_id", "(O)96")),
+            CollectionCandidate(
+                "museum-route-wrong-slot", "museum.donate_items",
+                "route_connector_tile", "96", "(O)96", 4, 1,
+                Parameter("continuation.option_id", "museum.donate_items"),
+                Parameter("continuation.target_location", "ArchaeologyHouse"),
+                Parameter("continuation.inventory_slot_index", "-1"),
+                Parameter("continuation.item_id", "96"),
+                Parameter("continuation.qualified_item_id", "(O)96")),
+            CollectionCandidate(
                 "bundle-direct", "community_center.donate_bundle_items",
-                "donate_community_center_item", "24", "(O)24", 3, 5,
+                "donate_community_center_item", "24", "(O)24", 5, 5,
                 Parameter("bundle_data_key", "Pantry/5"),
                 Parameter("bundle_ingredient_index", "0"),
                 Parameter("required_stack", "5"),
@@ -175,19 +191,44 @@ internal static partial class BootstrapSelfTest
                 Parameter("expected_bundle_completed_count_after", "2"),
                 Parameter("expected_bundle_complete_after", "true")),
             CollectionCandidate(
+                "bundle-route", "community_center.donate_bundle_items",
+                "route_connector_tile", "24", "(O)24", 6, 5,
+                Parameter("continuation.option_id", "community_center.donate_bundle_items"),
+                Parameter("continuation.target_location", "CommunityCenter"),
+                Parameter("continuation.bundle_data_key", "Pantry/5"),
+                Parameter("continuation.bundle_ingredient_index", "0"),
+                Parameter("continuation.inventory_slot_index", "6"),
+                Parameter("continuation.item_id", "24"),
+                Parameter("continuation.qualified_item_id", "(O)24"),
+                Parameter("continuation.expected_item_quality", "2"),
+                Parameter("continuation.required_stack", "5")),
+            CollectionCandidate(
+                "bundle-route-low-quality",
+                "community_center.donate_bundle_items",
+                "route_connector_tile", "24", "(O)24", 7, 5,
+                Parameter("continuation.option_id", "community_center.donate_bundle_items"),
+                Parameter("continuation.target_location", "CommunityCenter"),
+                Parameter("continuation.bundle_data_key", "Pantry/5"),
+                Parameter("continuation.bundle_ingredient_index", "0"),
+                Parameter("continuation.inventory_slot_index", "6"),
+                Parameter("continuation.item_id", "24"),
+                Parameter("continuation.qualified_item_id", "(O)24"),
+                Parameter("continuation.expected_item_quality", "1"),
+                Parameter("continuation.required_stack", "5")),
+            CollectionCandidate(
                 "bundle-acquire-quality", "farm.maintain_crops",
-                "harvest_crop_tile", "188", "(O)188", 4, 1,
+                "harvest_crop_tile", "188", "(O)188", 8, 1,
                 Parameter("expected_output_quality", "2")),
             CollectionCandidate(
                 "bundle-acquire-unknown-quality", "farm.maintain_crops",
-                "harvest_crop_tile", "188", "(O)188", 5, 1),
+                "harvest_crop_tile", "188", "(O)188", 9, 1),
             CollectionCandidate(
                 "bundle-acquire-low-quality", "farm.maintain_crops",
-                "harvest_crop_tile", "188", "(O)188", 6, 1,
+                "harvest_crop_tile", "188", "(O)188", 10, 1,
                 Parameter("expected_output_quality", "1")),
             CollectionCandidate(
                 "vault-unproven", "community_center.donate_bundle_items",
-                "donate_community_center_item", "-1", "", 7, 2500)));
+                "donate_community_center_item", "-1", "", 11, 2500)));
 
         var result = CurrentCollectionTeacherFrontierBuilder.Build(
             inventoryPath,
@@ -210,10 +251,14 @@ internal static partial class BootstrapSelfTest
                 communityCenter.MissingGroupCount == 2 &&
                 communityCenter.MatchedMissingGroupCount == 1,
             "Community Center OR-bundle frontier drifted.");
-        Require(result.CandidateBindings.Length == 4 &&
+        Require(result.CandidateBindings.Length == 6 &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "museum-direct" &&
                     value.BindingKind == "native_museum_donation_completion") &&
+                result.CandidateBindings.Any(value =>
+                    value.CandidateId == "museum-route" &&
+                    value.BindingKind ==
+                        "authoritative_collection_rolling_route_step") &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "museum-acquire" &&
                     value.BindingKind == "authoritative_acquisition_endpoint") &&
@@ -223,10 +268,17 @@ internal static partial class BootstrapSelfTest
                     value.MinimumQuality == 2 &&
                     value.RemainingSlotCount == 1) &&
                 result.CandidateBindings.Any(value =>
+                    value.CandidateId == "bundle-route" &&
+                    value.BindingKind ==
+                        "authoritative_collection_rolling_route_step" &&
+                    value.CandidateQuality == 2) &&
+                result.CandidateBindings.Any(value =>
                     value.CandidateId == "bundle-acquire-quality" &&
                     value.CandidateQuality == 2),
             "Exact museum or quantity-quality Bundle bindings drifted.");
         Require(!result.CandidateBindings.Any(value => value.CandidateId is
+                    "museum-route-wrong-slot" or
+                    "bundle-route-low-quality" or
                     "bundle-acquire-unknown-quality" or
                     "bundle-acquire-low-quality" or
                     "vault-unproven") &&
