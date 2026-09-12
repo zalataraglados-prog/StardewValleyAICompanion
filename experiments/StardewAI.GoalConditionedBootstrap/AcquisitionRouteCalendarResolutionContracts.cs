@@ -28,6 +28,9 @@ public sealed class AcquisitionRouteCalendarResolutionReport
     [JsonPropertyName("master_angler_opportunity_catalog_sha256")]
     public string MasterAnglerOpportunityCatalogSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("location_data_sha256")]
+    public string LocationDataSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("deadline_total_day_exclusive")]
     public int DeadlineTotalDayExclusive { get; set; }
 

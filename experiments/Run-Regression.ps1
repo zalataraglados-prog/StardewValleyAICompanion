@@ -237,7 +237,9 @@ $routeCalendarResolution = Get-Content -LiteralPath $routeCalendarResolutionPath
     ConvertFrom-Json
 $calendarSupportedRouteKinds = @(
     'native_crab_pot_output',
+    'native_location_artifact_spot',
     'native_location_fish_spawn',
+    'native_location_forage_spawn',
     'native_mine_fishing_override'
 )
 $calendarSupportedRoutes = @($loweredRoutes | Where-Object {
@@ -250,31 +252,32 @@ $blockedSupportedCalendarRoutes = @($routeCalendarResolution.routes | Where-Obje
     $_.route_kind -in $calendarSupportedRouteKinds -and
     $_.status -ne 'resolved_static_source_window_target_date_pending'
 })
-$expectedBlockedSupportedCalendarRouteIds = @(
-    'community_center_standard:community_center:bundle:Crafts Room/17:0:6',
-    'community_center_standard:community_center:bundle:Crafts Room/17:1:6',
-    'community_center_standard:community_center:bundle:Crafts Room/17:2:19',
-    'full_shipment:full_shipment:item:308:0:1',
-    'full_shipment:full_shipment:item:388:0:6',
-    'full_shipment:full_shipment:item:390:0:19',
-    'full_shipment:full_shipment:item:393:0:1',
-    'museum_collection:museum_collection:item:103:0:1'
-)
+$locationDataEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'runtime_data_locations')
 if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_blocked' -or
     -not [bool]$routeCalendarResolution.route_occurrence_inventory_complete -or
     [bool]$routeCalendarResolution.static_calendar_source_resolution_complete -or
     [bool]$routeCalendarResolution.training_label_eligible -or
+    $locationDataEvidence.Count -ne 1 -or
+    $routeCalendarResolution.location_data_sha256 -ne $locationDataEvidence[0].sha256 -or
     [int]$routeCalendarResolution.route_occurrence_count -ne $loweredRoutes.Count -or
-    [int]$routeCalendarResolution.resolved_static_source_count -ne 264 -or
-    [int]$routeCalendarResolution.blocked_static_source_count -ne 1335 -or
-    $calendarSupportedRoutes.Count -ne 272 -or
-    $resolvedCalendarRoutes.Count -ne 264 -or
+    [int]$routeCalendarResolution.resolved_static_source_count -ne 505 -or
+    [int]$routeCalendarResolution.blocked_static_source_count -ne 1094 -or
+    $calendarSupportedRoutes.Count -ne 505 -or
+    $resolvedCalendarRoutes.Count -ne 505 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.evidence_class -eq 'runtime_location_artifact_spot_window'
+    }).Count -ne 68 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.evidence_class -eq 'runtime_location_forage_window'
+    }).Count -ne 165 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.evidence_class -eq 'runtime_location_nonfish_fishing_window'
+    }).Count -ne 8 -or
     @($resolvedCalendarRoutes | Where-Object {
         @($_.calendar_windows).Count -eq 0
     }).Count -ne 0 -or
-    $blockedSupportedCalendarRoutes.Count -ne 8 -or
-    @(Compare-Object $expectedBlockedSupportedCalendarRouteIds `
-        @($blockedSupportedCalendarRoutes.route_occurrence_id)).Count -ne 0) {
+    $blockedSupportedCalendarRoutes.Count -ne 0) {
     throw 'Acquisition route calendar source resolution regression failed.'
 }
 $currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
