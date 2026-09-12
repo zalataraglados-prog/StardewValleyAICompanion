@@ -118,6 +118,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             ["achievements"] = Field(master?.achievements.OrderBy(id => id).ToArray(), "Game1.MasterPlayer.achievements", tick),
             ["perfection"] = Field(ReadPerfection(world), "StardewValley.Utility.percentGameComplete(); Game1.netWorldState.Value.PerfectionWaivers", tick),
             ["golden_walnuts"] = Field(ReadGoldenWalnuts(world), "Game1.netWorldState.Value.GoldenWalnuts/GoldenWalnutsFound", tick),
+            ["game_state_query_unlock_state"] = Field(ReadGameStateQueryUnlockState(), "Game1.getAllFarmers; Game1.player/MasterPlayer; Farmer mail collections and Stats.Values; FarmerTeam active SpecialOrder quest keys/rules; IslandNorth.bridgeFixed; GameStateQuery.WithPlayer/PLAYER_HAS_MAIL/PLAYER_SPECIAL_ORDER_ACTIVE/PLAYER_SPECIAL_ORDER_RULE_ACTIVE/PLAYER_STAT/IS_ISLAND_NORTH_BRIDGE_FIXED", tick, "vanilla_1_6_15_gsq_unlock"),
             ["full_shipment_progress"] = Field(ReadFullShipmentProgress(master), "Game1.objectData raw parse; Game1.MasterPlayer.basicShipped; Object.isPotentialBasicShipped(itemId, category, objectType); category != -7 && category != -2", tick)
         };
 

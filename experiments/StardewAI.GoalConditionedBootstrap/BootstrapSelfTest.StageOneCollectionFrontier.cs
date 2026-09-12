@@ -31,6 +31,16 @@ internal static partial class BootstrapSelfTest
         var gameStateQuerySourcePath = Path.Combine(root, "GameStateQuery.cs");
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
         var targetDateCalendarPath = Path.Combine(root, "target-date-calendar.json");
+        var targetDateUnlockPath = Path.Combine(root, "target-date-unlock.json");
+        var targetDateUnlockSnapshotPath = Path.Combine(
+            root,
+            "target-date-unlock-snapshot.json");
+        var missingUnlockStateSnapshotPath = Path.Combine(
+            root,
+            "missing-unlock-state-snapshot.json");
+        var mismatchedUnlockDateSnapshotPath = Path.Combine(
+            root,
+            "mismatched-unlock-date-snapshot.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var intentsPath = Path.Combine(root, "master-angler-intents.json");
@@ -104,6 +114,12 @@ internal static partial class BootstrapSelfTest
         });
         const string fixtureShopCondition =
             "!YEAR 2, DAY_OF_WEEK Monday, TIME 700 1800, " +
+            "PLAYER_HAS_MAIL Current fixtureGate, " +
+            "PLAYER_HAS_MAIL Host hostGate, " +
+            "PLAYER_SPECIAL_ORDER_ACTIVE Current Gunther, " +
+            "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY, " +
+            "PLAYER_STAT Current Book_Woodcutting 1, " +
+            "IS_ISLAND_NORTH_BRIDGE_FIXED, " +
             "SYNCED_RANDOM day fixture 0.25";
         Write(shopsPath, new
         {
@@ -557,6 +573,12 @@ internal static partial class BootstrapSelfTest
                     window.StochasticOutcome &&
                     window.DynamicConditions.SequenceEqual(new[]
                     {
+                        "PLAYER_HAS_MAIL Current fixtureGate",
+                        "PLAYER_HAS_MAIL Host hostGate",
+                        "PLAYER_SPECIAL_ORDER_ACTIVE Current Gunther",
+                        "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY",
+                        "PLAYER_STAT Current Book_Woodcutting 1",
+                        "IS_ISLAND_NORTH_BRIDGE_FIXED",
                         "SYNCED_RANDOM day fixture 0.25"
                     })) &&
                 resolvedShopRoute.ShopSource is not null &&
@@ -611,9 +633,173 @@ internal static partial class BootstrapSelfTest
                 targetDateShop.MatchingWindows[0].TimeWindows[0].EndTime == 1810 &&
                 targetDateShop.PendingDynamicConditions.SequenceEqual(new[]
                 {
+                    "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY",
+                    "IS_ISLAND_NORTH_BRIDGE_FIXED",
+                    "PLAYER_HAS_MAIL Current fixtureGate",
+                    "PLAYER_HAS_MAIL Host hostGate",
+                    "PLAYER_SPECIAL_ORDER_ACTIVE Current Gunther",
+                    "PLAYER_STAT Current Book_Woodcutting 1",
                     "SYNCED_RANDOM day fixture 0.25"
                 }),
             "Explicit target-date calendar-axis resolution drifted.");
+
+        WriteStageOneCollectionSnapshot(
+            targetDateUnlockSnapshotPath,
+            "target-date-unlock-state",
+            fish,
+            totalDays: 0);
+        var targetDateUnlock = AcquisitionRouteTargetDateUnlockBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            targetDateUnlockSnapshotPath);
+        Write(targetDateUnlockPath, targetDateUnlock);
+        var targetDateUnlockShop = targetDateUnlock.Routes.Single(route =>
+            route.RequirementId == "community_center:bundle:Pantry/5" &&
+            route.RouteKind == "sells");
+        Require(targetDateUnlock.Status ==
+                    "complete_target_date_unlock_axis_downstream_pending" &&
+                targetDateUnlock.RouteOccurrenceInventoryComplete &&
+                targetDateUnlock.UnlockAxisResolutionComplete &&
+                !targetDateUnlock.TrainingLabelEligible &&
+                targetDateUnlock.TargetTotalDay == 0 &&
+                targetDateUnlock.RouteOccurrenceCount == 76 &&
+                targetDateUnlock.UnlockAxisResolvedCount == 76 &&
+                targetDateUnlock.UnlockStateMatchCount == 4 &&
+                targetDateUnlock.UnlockStateMissCount == 0 &&
+                targetDateUnlock.StaticWindowMissCount == 72 &&
+                targetDateUnlock.BlockedUpstreamCalendarCount == 0 &&
+                targetDateUnlock.BlockedUnlockEvidenceCount == 0 &&
+                targetDateUnlock.PendingStochasticConditionCount == 1 &&
+                targetDateUnlock.UnsupportedConditionCount == 0 &&
+                targetDateUnlockShop.UnlockAxisResolved &&
+                targetDateUnlockShop.UnlockStateMatchesTargetDate == true &&
+                targetDateUnlockShop.SourceResolutionStatus ==
+                    "resolved_static_source_window_target_date_pending" &&
+                targetDateUnlockShop.MatchingWindows.Length == 1 &&
+                targetDateUnlockShop.MatchingWindows[0].TimeWindows.Length == 1 &&
+                targetDateUnlockShop.MatchingWindows[0].TimeWindows[0]
+                    .StartTime == 700 &&
+                targetDateUnlockShop.MatchingWindows[0].TimeWindows[0]
+                    .EndTime == 1810 &&
+                targetDateUnlockShop.UnlockConditions.Length == 6 &&
+                targetDateUnlockShop.UnlockConditions.All(value =>
+                    value.Status == "resolved_match" &&
+                    value.ConditionMatches == true) &&
+                targetDateUnlockShop.PendingStochasticConditions
+                    .SequenceEqual(new[]
+                    {
+                        "SYNCED_RANDOM day fixture 0.25"
+                    }),
+            "Explicit target-date unlock-state axis resolution drifted.");
+
+        using (var unlockSnapshot = JsonDocument.Parse(
+                   File.ReadAllText(targetDateUnlockSnapshotPath)))
+        {
+            var evaluator = new AcquisitionUnlockConditionEvaluator(
+                unlockSnapshot.RootElement);
+            Require(
+                evaluator.Evaluate("PLAYER_HAS_MAIL Any anyGate")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate("PLAYER_HAS_MAIL All allGate")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate("PLAYER_HAS_MAIL 200 hostGate")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate("PLAYER_HAS_MAIL Current pendingGate")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate("PLAYER_HAS_MAIL Current pendingGate Tomorrow")
+                    .ConditionMatches == false &&
+                evaluator.Evaluate("PLAYER_STAT Host Book_Woodcutting 0 0")
+                    .ConditionMatches == true &&
+                evaluator.Evaluate("PLAYER_STAT Current Book_Woodcutting 2")
+                    .ConditionMatches == false &&
+                evaluator.Evaluate("PLAYER_HAS_MAIL Target fixtureGate")
+                    .Status == "blocked" &&
+                evaluator.Evaluate("PLAYER_HAS_MAIL Target fixtureGate")
+                    .BlockingReason == "target_player_context_unavailable" &&
+                evaluator.Evaluate("!!PLAYER_HAS_MAIL Current fixtureGate")
+                    .Status == "blocked",
+                "Native Current/Host/Any/All/numeric player selection drifted.");
+        }
+
+        var missingUnlockSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        missingUnlockSnapshot["state"]!["world_progress"]!.AsObject()
+            .Remove("game_state_query_unlock_state");
+        File.WriteAllText(
+            missingUnlockStateSnapshotPath,
+            missingUnlockSnapshot.ToJsonString(JsonDefaults.Options));
+        var missingUnlockReport =
+            AcquisitionRouteTargetDateUnlockBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                missingUnlockStateSnapshotPath);
+        Require(missingUnlockReport.Status ==
+                    "partial_target_date_unlock_axis_blocks" &&
+                !missingUnlockReport.UnlockAxisResolutionComplete &&
+                missingUnlockReport.BlockedUnlockEvidenceCount == 1 &&
+                missingUnlockReport.UnlockStateMatchCount == 3 &&
+                missingUnlockReport.Routes.Single(route =>
+                    route.RequirementId ==
+                        "community_center:bundle:Pantry/5" &&
+                    route.RouteKind == "sells").BlockingReasons.Contains(
+                        "game_state_query_unlock_state_missing"),
+            "Missing transparent unlock state did not fail closed per route.");
+
+        WriteStageOneCollectionSnapshot(
+            mismatchedUnlockDateSnapshotPath,
+            "mismatched-target-date-unlock-state",
+            fish,
+            totalDays: 1);
+        var mismatchedUnlockDateRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateUnlockBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                mismatchedUnlockDateSnapshotPath);
+        }
+        catch (InvalidDataException)
+        {
+            mismatchedUnlockDateRejected = true;
+        }
+        Require(mismatchedUnlockDateRejected,
+            "A snapshot from a different day did not fail closed.");
+
+        var tamperedTargetDatePath = Path.Combine(
+            root,
+            "tampered-target-date-calendar.json");
+        var tamperedTargetDate = JsonNode.Parse(
+            File.ReadAllText(targetDateCalendarPath))!.AsObject();
+        tamperedTargetDate["routes"]![0]!["source_id"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDatePath,
+            tamperedTargetDate.ToJsonString(JsonDefaults.Options));
+        var tamperedTargetDateRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateUnlockBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                tamperedTargetDatePath,
+                targetDateUnlockSnapshotPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedTargetDateRejected = true;
+        }
+        Require(tamperedTargetDateRejected,
+            "A tampered target-date calendar did not fail closed.");
 
         var secondYearCalendar = AcquisitionRouteTargetDateCalendarBuilder.Build(
             inventoryPath,

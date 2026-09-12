@@ -1212,8 +1212,33 @@ Slice 7 remains assigned to the RTX 5070 node.
   remain `training_label_eligible=false`.
 - The focused fixture proves first-year inclusion and second-year exclusion for `!YEAR 2`, native inclusive `TIME`
   maximum conversion into the internal right-open interval, dynamic-condition retention, tamper rejection and
-  deadline rejection. The next fixed slice resolves only `unlock_state` against the same explicit target date;
-  the remaining dependency axes stay independent and fail closed.
+  deadline rejection. The downstream `unlock_state` stage described below consumes this result; a resolved static
+  window is still not a claim that festival, unlock, route or resource conditions are satisfied.
+
+### 2026-09-13: explicit target-date unlock-state axis
+
+- `acquisition_route_target_date_unlock_state.v1` recompiles and compares the complete target-date calendar artifact,
+  then requires an exact-version transparent snapshot from that same `target_total_day`. The bridge adds one compact
+  `world_progress.game_state_query_unlock_state` field containing every farmer's stable ID, Current/Host flags, three
+  native mail collections, all `Stats.Values`, active special-order IDs/rules, and `IslandNorth.bridgeFixed`.
+- The evaluator implements only decompile-verified unlock predicates currently present in authoritative acquisition
+  sources: `PLAYER_HAS_MAIL`, `PLAYER_SPECIAL_ORDER_ACTIVE`, `PLAYER_SPECIAL_ORDER_RULE_ACTIVE`, `PLAYER_STAT`, and
+  `IS_ISLAND_NORTH_BRIDGE_FIXED`, including normal GSQ negation. Native Current, Host, Any, All and existing numeric-ID
+  selection is preserved. `Target` remains blocked until the source-call context is carried explicitly; it is never
+  silently treated as Current. Missing stat keys resolve to zero and pending-mail `%&NL&%` handling matches native code.
+- Predicate ownership is explicit. Festival/day predicates remain calendar work, `RANDOM` and `SYNCED_*` remain
+  stochastic work, `PLAYER_HAS_ITEM` remains resource work, and player-location checks remain route work. Unknown
+  predicates block the route. This prevents the unlock stage from consuming conditions owned by another dependency
+  axis or turning a partial result into a training label. Every result also carries the upstream
+  `source_resolution_status` and complete matching source windows losslessly, so later axes never reconstruct or
+  silently discard time, weather, source and pending-condition evidence.
+- The locked day-37 archived snapshot produces 1,599 rows: 910 upstream source blocks, 191 static misses, 489 routes
+  whose unlock state matches, and 9 routes blocked because that older snapshot lacks the new bridge field. It also
+  preserves six dynamic calendar conditions, one stochastic condition and one resource condition, with zero unknown
+  conditions. Focused tests cover distinct Current/Host players, Any/All/numeric selection, mail modes, negation,
+  inclusive stat ranges, bridge state, missing evidence, cross-day rejection and artifact tampering.
+- This stage remains `training_label_eligible=false`. The next fixed slice resolves residual target-date festival
+  conditions from exact runtime/decompile evidence; only then does the chain proceed to `location_route`.
 
 ## Review questions
 

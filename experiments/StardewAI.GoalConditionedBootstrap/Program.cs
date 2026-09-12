@@ -54,6 +54,9 @@ try
         case "build-acquisition-route-target-date-calendar":
             BuildAcquisitionRouteTargetDateCalendar(options);
             break;
+        case "build-acquisition-route-target-date-unlock-state":
+            BuildAcquisitionRouteTargetDateUnlockState(options);
+            break;
         case "build-current-full-shipment-teacher-frontier":
             BuildCurrentFullShipmentTeacherFrontier(options);
             break;
@@ -107,7 +110,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
     }
 }
 catch (Exception ex)
@@ -332,6 +335,20 @@ static void BuildAcquisitionRouteTargetDateCalendar(Arguments options)
         options.Required("master-angler-windows"),
         options.Required("calendar-resolution"),
         options.Int("target-total-day", -1));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteTargetDateUnlockState(Arguments options)
+{
+    var report = AcquisitionRouteTargetDateUnlockBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"),
+        options.Required("calendar-resolution"),
+        options.Required("target-date-calendar"),
+        options.Required("snapshot"));
     Write(options.Required("output"), report);
     if (!report.RouteOccurrenceInventoryComplete)
         Environment.ExitCode = 2;
