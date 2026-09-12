@@ -498,6 +498,43 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         RequireContains(hoeDirtSource, "int num3 = (int)Math.Ceiling((float)num * num2)", hoeDirtPath);
     }
 
+    private static void GuardShopPlanningSources(
+        string shopBuilderPath,
+        string utilityPath,
+        string shopMenuPath,
+        string gameStateQueryPath)
+    {
+        var builderSource = File.ReadAllText(shopBuilderPath);
+        RequireContains(builderSource, "GetShopStock(string shopId, ShopData shop)", shopBuilderPath);
+        RequireContains(builderSource, "CheckItemCondition(item2.Condition, applyPierreMissingStockList", shopBuilderPath);
+        RequireContains(builderSource, "ItemQueryResolver.TryResolve(item2, context", shopBuilderPath);
+        RequireContains(builderSource, "item3.OverrideShopAvailableStock ?? item2.AvailableStock", shopBuilderPath);
+        RequireContains(builderSource, "item3.OverrideTradeItemId ?? item2.TradeItemId", shopBuilderPath);
+        RequireContains(builderSource, "Utility.ApplyQuantityModifiers(value, shop.PriceModifiers", shopBuilderPath);
+        RequireContains(builderSource, "synchronizedShopStock.UpdateLocalStockWithSyncedQuanitities", shopBuilderPath);
+        RequireContains(builderSource, "public static bool CheckItemCondition", shopBuilderPath);
+        RequireContains(builderSource, "public static int GetBasePrice", shopBuilderPath);
+
+        var utilitySource = File.ReadAllText(utilityPath);
+        RequireContains(utilitySource, "TryOpenShopMenu(string shopId, string ownerName", utilityPath);
+        RequireContains(utilitySource, "TryOpenShopMenu(string shopId, GameLocation location", utilityPath);
+        RequireContains(utilitySource, "ShopBuilder.GetCurrentOwners(value).ToArray()", utilityPath);
+        RequireContains(utilitySource, "shopOwnerData.ClosedMessage", utilityPath);
+
+        var menuSource = File.ReadAllText(shopMenuPath);
+        RequireContains(menuSource, "itemStockInformation.Price * stockToBuy", shopMenuPath);
+        RequireContains(menuSource, "chargePlayer(Game1.player, currency, num)", shopMenuPath);
+        RequireContains(menuSource, "ConsumeTradeItem(text, num2)", shopMenuPath);
+        RequireContains(menuSource, "HandleSynchedItemPurchase(item, Game1.player, stockToBuy)", shopMenuPath);
+        RequireContains(menuSource, "TriggerActionManager.TryRunAction(item2", shopMenuPath);
+
+        var querySource = File.ReadAllText(gameStateQueryPath);
+        RequireContains(querySource, "public static bool DAY_OF_WEEK", gameStateQueryPath);
+        RequireContains(querySource, "public static bool DAY_OF_MONTH", gameStateQueryPath);
+        RequireContains(querySource, "public static bool SEASON", gameStateQueryPath);
+        RequireContains(querySource, "public static bool YEAR", gameStateQueryPath);
+    }
+
     private static void GuardFishingAcquisitionSources(
         string decompileRoot,
         string mineShaftPath,
