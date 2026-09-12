@@ -400,6 +400,73 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $blockedSupportedCalendarRoutes.Count -ne 0) {
     throw 'Acquisition route calendar source resolution regression failed.'
 }
+$targetDateCalendarPath = Join-Path $output `
+    'acquisition-route-target-date-calendar-day-0-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-acquisition-route-target-date-calendar `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $routeCalendarResolutionPath `
+    --target-total-day 0 `
+    --output $targetDateCalendarPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Acquisition route target-date calendar resolution failed.'
+}
+$targetDateCalendar = Get-Content -LiteralPath $targetDateCalendarPath -Raw |
+    ConvertFrom-Json
+$targetDateRoutes = @($targetDateCalendar.routes)
+$targetDateEligibleRoutes = @($targetDateRoutes | Where-Object {
+    [bool]$_.static_window_matches_target_date
+})
+$targetDateBlockedRoutes = @($targetDateRoutes | Where-Object {
+    -not [bool]$_.calendar_axis_resolved
+})
+$invalidTargetDateRoutes = @($targetDateRoutes | Where-Object {
+    ([bool]$_.calendar_axis_resolved -and
+        $_.source_resolution_status -ne
+            'resolved_static_source_window_target_date_pending') -or
+    ([bool]$_.static_window_matches_target_date -and
+        @($_.matching_windows).Count -eq 0) -or
+    (-not [bool]$_.static_window_matches_target_date -and
+        @($_.matching_windows).Count -ne 0)
+})
+$targetDateStaticHash = (Get-FileHash -LiteralPath $routeCalendarResolutionPath `
+    -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($targetDateCalendar.status -ne `
+        'partial_target_date_calendar_axis_source_blocks' -or
+    -not [bool]$targetDateCalendar.route_occurrence_inventory_complete -or
+    [bool]$targetDateCalendar.calendar_axis_resolution_complete -or
+    [bool]$targetDateCalendar.training_label_eligible -or
+    [int]$targetDateCalendar.target_total_day -ne 0 -or
+    [int]$targetDateCalendar.route_occurrence_count -ne 1599 -or
+    [int]$targetDateCalendar.calendar_axis_resolved_count -ne 689 -or
+    [int]$targetDateCalendar.static_window_match_count -ne 451 -or
+    [int]$targetDateCalendar.static_window_miss_count -ne 238 -or
+    [int]$targetDateCalendar.blocked_static_source_count -ne 910 -or
+    $targetDateRoutes.Count -ne 1599 -or
+    @($targetDateRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or
+    $targetDateCalendar.static_calendar_resolution_sha256 -ne `
+        $targetDateStaticHash -or
+    $invalidTargetDateRoutes.Count -ne 0 -or
+    @($targetDateBlockedRoutes | Where-Object {
+        @($_.blocking_reasons).Count -eq 0
+    }).Count -ne 0 -or
+    @($targetDateEligibleRoutes | Where-Object {
+        @($_.pending_dynamic_conditions).Count -gt 0
+    }).Count -ne 15 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq 'harvests_as').Count -ne 75 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_location_artifact_spot').Count -ne 64 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_location_fish_spawn').Count -ne 163 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_location_forage_spawn').Count -ne 53 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_mine_fishing_override').Count -ne 3 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq 'sells').Count -ne 93) {
+    throw 'Acquisition route target-date calendar-axis regression failed.'
+}
 $currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
 dotnet run --project $bootstrap --no-build -- build-current-full-shipment-teacher-frontier `
     --requirement-inventory $requirementInventoryPath `

@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期日历轴求值
+
+- 新增 `acquisition_route_target_date_calendar.v1` 和 `build-acquisition-route-target-date-calendar`。输入为权威需求库存、路线 lowering、Master Angler 窗口、静态来源报告与显式 `target_total_day`；构建时重新运行静态来源编译并按完整类型化内容比对报告，任何中间制品篡改、来源哈希漂移、窗口结构错误或超出第三年爷爷评估前的日期都会失败关闭。
+- 每个 occurrence 只会得到三种日历轴结果：静态窗口命中目标日、静态窗口不命中目标日、上游静态来源未解析。字段明确命名为 `static_window_matches_target_date`，不得解释为完整候选可用；命中的原始时段、天气、随机标志、位置要求和动态条件原样保留，其他 11 个依赖轴没有被隐式满足。
+- 锁定 1.6.15 的春 1 日（`target_total_day=0`）实跑保留全部 `1599` 个 occurrence：`689` 条日历轴可判定，其中 `451` 条静态窗口命中、`238` 条不命中；`910` 条因来源解析器尚未覆盖而明确阻塞。15 条命中路线仍带动态条件。总报告保持 `training_label_eligible=false`，下游不得据此单轴结果发放标签。
+- 聚焦 fixture 同时验证第一年春 1 日命中与第二年同日受 `!YEAR 2` 排除、包含式原生时间上界、动态条件保留、静态报告篡改拒绝和日期越界拒绝。Release 构建与聚焦自测通过；未启动游戏或训练。下一固定切片是显式目标日的 `unlock_state` 轴，不回头复制日历或来源系统。
+
 ## 2026-09-13 Data/Shops 库存与访问来源解析
 
 - 权威需求库存新增并哈希绑定唯一 `runtime_data_shops`、`access_constraint_index`、`native_shop_stock_rule`、`native_shop_open_rule` 与 `native_shop_purchase_rule`。构建时核对锁定 1.6.15 的 `ShopBuilder.GetShopStock/CheckItemCondition/GetBasePrice`、`Utility.TryOpenShopMenu`、`ShopMenu` 扣款/交换/配方/同步库存/购买动作分支，以及原生 `GameStateQuery` 日期谓词；证据缺失、哈希漂移或源码标志漂移均失败关闭。
