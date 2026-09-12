@@ -1195,6 +1195,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   no game or formal training was started. The next fixed slice consumes an explicit target date and resolves only
   the calendar axis, leaving the other 11 axes independent and fail closed.
 
+### 2026-09-13: explicit target-date calendar axis
+
+- `acquisition_route_target_date_calendar.v1` consumes the authoritative inventory, route lowering, Master Angler
+  window index, static source report, and one explicit `target_total_day`. It recompiles the entire static source
+  report from the locked evidence and requires equivalent complete typed JSON before evaluating the date, so a modified
+  intermediate report cannot silently change eligibility.
+- Each route occurrence is classified as a static-window match, a static-window miss, or an unresolved upstream
+  source. The boolean is deliberately named `static_window_matches_target_date`; it is not a general availability
+  flag. Matched native time windows, weather modes, dynamic predicates, stochastic markers and location obligations
+  remain attached. No unlock, access, capacity, resource, currency, reservation, lead-time, retry, daily-budget,
+  opportunity-cost or terminal-receipt fact is inferred.
+- For locked 1.6.15 Spring 1 (`target_total_day=0`), all 1,599 occurrences remain present. The calendar axis resolves
+  for the 689 supported sources: 451 match that date and 238 do not; the other 910 remain explicit source-parser
+  blocks. Fifteen matches still carry dynamic predicates. Both the aggregate and every downstream admission path
+  remain `training_label_eligible=false`.
+- The focused fixture proves first-year inclusion and second-year exclusion for `!YEAR 2`, native inclusive `TIME`
+  maximum conversion into the internal right-open interval, dynamic-condition retention, tamper rejection and
+  deadline rejection. The next fixed slice resolves only `unlock_state` against the same explicit target date;
+  the remaining dependency axes stay independent and fail closed.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

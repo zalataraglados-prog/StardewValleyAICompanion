@@ -30,6 +30,7 @@ internal static partial class BootstrapSelfTest
         var shopPurchaseSourcePath = Path.Combine(root, "ShopMenu.cs");
         var gameStateQuerySourcePath = Path.Combine(root, "GameStateQuery.cs");
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
+        var targetDateCalendarPath = Path.Combine(root, "target-date-calendar.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var intentsPath = Path.Combine(root, "master-angler-intents.json");
@@ -576,6 +577,104 @@ internal static partial class BootstrapSelfTest
                 resolvedShopRoute.ShopSource.DoorWindows[0].OpenTime == 900 &&
                 resolvedShopRoute.ShopSource.DoorWindows[0].CloseTime == 1700,
             "Authoritative route calendar source resolution drifted.");
+
+        var targetDateCalendar = AcquisitionRouteTargetDateCalendarBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            0);
+        Write(targetDateCalendarPath, targetDateCalendar);
+        var targetDateShop = targetDateCalendar.Routes.Single(route =>
+            route.RequirementId == "community_center:bundle:Pantry/5" &&
+            route.RouteKind == "sells");
+        Require(targetDateCalendar.Status ==
+                    "complete_target_date_calendar_axis_downstream_pending" &&
+                targetDateCalendar.RouteOccurrenceInventoryComplete &&
+                targetDateCalendar.CalendarAxisResolutionComplete &&
+                !targetDateCalendar.TrainingLabelEligible &&
+                targetDateCalendar.TargetTotalDay == 0 &&
+                targetDateCalendar.RouteOccurrenceCount == 76 &&
+                targetDateCalendar.CalendarAxisResolvedCount == 76 &&
+                targetDateCalendar.StaticWindowMatchCount == 4 &&
+                targetDateCalendar.StaticWindowMissCount == 72 &&
+                targetDateCalendar.BlockedStaticSourceCount == 0 &&
+                targetDateCalendar.StaticCalendarResolutionSha256 ==
+                    HashFile(routeCalendarPath) &&
+                targetDateShop.CalendarAxisResolved &&
+                targetDateShop.StaticWindowMatchesTargetDate &&
+                targetDateShop.CalendarAxisStatus ==
+                    "resolved_target_date_inside_static_window_downstream_pending" &&
+                targetDateShop.MatchingWindows.Length == 1 &&
+                targetDateShop.MatchingWindows[0].TimeWindows.Length == 1 &&
+                targetDateShop.MatchingWindows[0].TimeWindows[0].StartTime == 700 &&
+                targetDateShop.MatchingWindows[0].TimeWindows[0].EndTime == 1810 &&
+                targetDateShop.PendingDynamicConditions.SequenceEqual(new[]
+                {
+                    "SYNCED_RANDOM day fixture 0.25"
+                }),
+            "Explicit target-date calendar-axis resolution drifted.");
+
+        var secondYearCalendar = AcquisitionRouteTargetDateCalendarBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            112);
+        var secondYearShop = secondYearCalendar.Routes.Single(route =>
+            route.RequirementId == "community_center:bundle:Pantry/5" &&
+            route.RouteKind == "sells");
+        Require(secondYearCalendar.StaticWindowMatchCount == 4 &&
+                secondYearShop.CalendarAxisResolved &&
+                !secondYearShop.StaticWindowMatchesTargetDate &&
+                secondYearShop.CalendarAxisStatus ==
+                    "resolved_target_date_outside_static_window" &&
+                secondYearShop.MatchingWindows.Length == 0 &&
+                secondYearShop.PendingDynamicConditions.Length == 0,
+            "Negated shop year condition did not reject the second year.");
+
+        var tamperedRouteCalendarPath = Path.Combine(
+            root,
+            "tampered-route-calendar-resolution.json");
+        var tamperedRouteCalendar = JsonNode.Parse(
+            File.ReadAllText(routeCalendarPath))!.AsObject();
+        tamperedRouteCalendar["routes"]![0]!["source_id"] = "tampered";
+        File.WriteAllText(
+            tamperedRouteCalendarPath,
+            tamperedRouteCalendar.ToJsonString(JsonDefaults.Options));
+        var tamperedRouteCalendarRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateCalendarBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                tamperedRouteCalendarPath,
+                0);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedRouteCalendarRejected = true;
+        }
+        Require(tamperedRouteCalendarRejected,
+            "A tampered static calendar report did not fail closed.");
+
+        var outOfHorizonTargetRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateCalendarBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                routeCalendar.DeadlineTotalDayExclusive);
+        }
+        catch (InvalidDataException)
+        {
+            outOfHorizonTargetRejected = true;
+        }
+        Require(outOfHorizonTargetRejected,
+            "An out-of-horizon target date did not fail closed.");
 
         var originalCropEvidence = File.ReadAllText(cropsPath);
         var staleCropEvidenceRejected = false;
