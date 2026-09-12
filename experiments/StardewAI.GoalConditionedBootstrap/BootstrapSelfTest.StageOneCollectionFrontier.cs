@@ -109,6 +109,9 @@ internal static partial class BootstrapSelfTest
             status = "complete",
             goal_id = "goal.grandpa_21",
             requirement_inventory_sha256 = HashFile(inventoryPath),
+            dependency_axis_inventory_complete = true,
+            required_downstream_dependency_axes =
+                StageOneCollectionRouteDependencyAxes.Required,
             requirement_sets = new object[]
             {
                 LoweringSet(

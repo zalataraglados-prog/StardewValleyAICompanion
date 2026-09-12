@@ -121,6 +121,7 @@ public static class AcquisitionRouteOptionLoweringBuilder
                             route.SourcePath,
                             lowering.SupervisionMode,
                             lowering.UncertaintyMode,
+                            StageOneCollectionRouteDependencyAxes.Required.ToArray(),
                             lowering.EndpointOptions.Select(option => option.OptionId).ToArray(),
                             lowering.SupportingOptions.Select(option => option.OptionId).ToArray(),
                             lowering.RuntimeAdmissionReady,
@@ -166,6 +167,15 @@ public static class AcquisitionRouteOptionLoweringBuilder
                 groups);
         }).ToArray();
 
+        var dependencyAxisInventoryComplete = requirementSets
+            .SelectMany(set => set.Groups)
+            .SelectMany(group => group.Alternatives)
+            .SelectMany(alternative => alternative.Routes)
+            .All(route => StageOneCollectionRouteDependencyAxes.IsComplete(
+                route.RequiredDownstreamDependencyAxes));
+        Require(dependencyAxisInventoryComplete,
+            "Acquisition route dependency-axis inventory is incomplete.");
+
         return new AcquisitionRouteOptionLoweringReport
         {
             Status = routeRows.All(row => row.TeacherAdmissionReady)
@@ -180,6 +190,9 @@ public static class AcquisitionRouteOptionLoweringBuilder
             RequirementSetCount = requirementSets.Length,
             RequirementGroupCount = requirementSets.Sum(set => set.RequiredGroupCount),
             RouteOccurrenceCount = usages.Length,
+            DependencyAxisInventoryComplete = dependencyAxisInventoryComplete,
+            RequiredDownstreamDependencyAxes =
+                StageOneCollectionRouteDependencyAxes.Required.ToArray(),
             ObservedRouteKindCount = observedKinds.Length,
             ClassifiedRouteKindCount = routeRows.Length,
             AdmittedRouteKindCount = routeRows.Count(row => row.TeacherAdmissionReady),
@@ -248,6 +261,7 @@ public static class AcquisitionRouteOptionLoweringBuilder
             row.LoweringClass,
             row.SupervisionMode,
             row.UncertaintyMode,
+            StageOneCollectionRouteDependencyAxes.Required.ToArray(),
             usages.Length,
             usages.Select(usage => usage.RequirementId).Distinct(StringComparer.Ordinal).Count(),
             usages.Select(usage => usage.RequirementSetId).Distinct(StringComparer.Ordinal)

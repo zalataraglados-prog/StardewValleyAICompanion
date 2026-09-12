@@ -178,6 +178,30 @@ $loweredAlternatives = @($acquisitionLowering.requirement_sets |
     ForEach-Object { @($_.groups) } |
     ForEach-Object { @($_.alternatives) })
 $loweredRoutes = @($loweredAlternatives | ForEach-Object { @($_.routes) })
+$requiredDependencyAxes = @(
+    'calendar_window',
+    'unlock_state',
+    'location_route',
+    'facility_capacity',
+    'resource_inputs',
+    'currency_budget',
+    'inventory_reservation',
+    'processing_lead_time',
+    'stochastic_retry_budget',
+    'daily_time_energy_budget',
+    'opportunity_cost',
+    'fresh_terminal_receipt'
+)
+$incompleteDependencyRoutes = @($loweredRoutes | Where-Object {
+    @($_.required_downstream_dependency_axes).Count -ne $requiredDependencyAxes.Count -or
+    @(Compare-Object $requiredDependencyAxes `
+        @($_.required_downstream_dependency_axes)).Count -ne 0
+})
+$incompleteDependencyRouteKinds = @($acquisitionLowering.route_kinds | Where-Object {
+    @($_.required_downstream_dependency_axes).Count -ne $requiredDependencyAxes.Count -or
+    @(Compare-Object $requiredDependencyAxes `
+        @($_.required_downstream_dependency_axes)).Count -ne 0
+})
 $unusableAlternatives = @($loweredAlternatives | Where-Object {
     -not [bool]$_.teacher_admission_ready -or
     @($_.routes | Where-Object { [bool]$_.teacher_admission_ready }).Count -eq 0
@@ -191,6 +215,13 @@ $unboundRoutes = @($loweredRoutes | Where-Object {
 })
 if ($loweredAlternatives.Count -ne 450 -or
     $loweredRoutes.Count -ne [int]$acquisitionLowering.route_occurrence_count -or
+    -not [bool]$acquisitionLowering.dependency_axis_inventory_complete -or
+    @($acquisitionLowering.required_downstream_dependency_axes).Count -ne `
+        $requiredDependencyAxes.Count -or
+    @(Compare-Object $requiredDependencyAxes `
+        @($acquisitionLowering.required_downstream_dependency_axes)).Count -ne 0 -or
+    $incompleteDependencyRoutes.Count -ne 0 -or
+    $incompleteDependencyRouteKinds.Count -ne 0 -or
     $unusableAlternatives.Count -ne 0 -or
     $unboundRoutes.Count -ne 0) {
     throw 'Per-requirement acquisition route lowering is incomplete.'

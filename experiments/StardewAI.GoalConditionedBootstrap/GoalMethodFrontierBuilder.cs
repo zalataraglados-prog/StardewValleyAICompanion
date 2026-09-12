@@ -437,6 +437,13 @@ public static partial class GoalMethodFrontierBuilder
         Require(report.AdmittedRouteKindCount + report.BlockedRouteKindCount ==
                 report.ObservedRouteKindCount,
             "Acquisition route lowering admission counts do not reconcile.");
+        Require(report.DependencyAxisInventoryComplete &&
+                StageOneCollectionRouteDependencyAxes.IsComplete(
+                    report.RequiredDownstreamDependencyAxes) &&
+                report.RouteKinds.All(route =>
+                    StageOneCollectionRouteDependencyAxes.IsComplete(
+                        route.RequiredDownstreamDependencyAxes)),
+            "Acquisition route lowering dependency-axis inventory is incomplete.");
         var reportSets = report.RequirementSets.ToDictionary(
             set => set.RequirementSetId,
             StringComparer.Ordinal);
@@ -484,6 +491,8 @@ public static partial class GoalMethodFrontierBuilder
                                 actualRoute.SourceId == expectedRoute.SourceId &&
                                 actualRoute.SourceAsset == expectedRoute.SourceAsset &&
                                 actualRoute.SourcePath == expectedRoute.SourcePath &&
+                                StageOneCollectionRouteDependencyAxes.IsComplete(
+                                    actualRoute.RequiredDownstreamDependencyAxes) &&
                                 actualRoute.EndpointOptionIds.Length > 0,
                             "Acquisition route lowering source identity drifted: " +
                             group.RequirementId + ":" + index + ":" + routeIndex);
