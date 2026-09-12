@@ -35,6 +35,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var manifest = manifestDocument.RootElement;
         var gameVersion = RequiredString(manifest, "gameVersion");
         var objectsPath = ResolveExport(rawRoot, manifest, "Data/Objects");
+        var cropsPath = ResolveExport(rawRoot, manifest, "Data/Crops");
         var fishPath = ResolveExport(rawRoot, manifest, "Data/Fish");
         var locationsPath = ResolveExport(rawRoot, manifest, "Data/Locations");
         var farmAnimalsPath = ResolveExport(rawRoot, manifest, "Data/FarmAnimals");
@@ -56,6 +57,12 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var monsterSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Monsters", "Monster.cs");
         var bushSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "TerrainFeatures", "Bush.cs");
         var cropSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Crop.cs");
+        var hoeDirtSourcePath = Path.Combine(
+            decompileFullPath,
+            "StardewValley",
+            "StardewValley",
+            "TerrainFeatures",
+            "HoeDirt.cs");
         var mineShaftSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "MineShaft.cs");
         var crabPotSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Objects", "CrabPot.cs");
         var gameStateQuerySourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "GameStateQuery.cs");
@@ -83,6 +90,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             mineShaftSourcePath,
             gameLocationSourcePath,
             wildTreeSourcePath);
+        GuardCropPlanningSources(cropSourcePath, hoeDirtSourcePath);
         GuardFishingAcquisitionSources(
             decompileFullPath,
             mineShaftSourcePath,
@@ -151,6 +159,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             {
                 Evidence("raw_manifest", manifestFullPath, "runtime export manifest"),
                 Evidence("runtime_data_objects", objectsPath, "runtime DataLoader.Objects export"),
+                Evidence("runtime_data_crops", cropsPath, "runtime DataLoader.Crops export"),
                 Evidence("runtime_data_fish", fishPath, "runtime DataLoader.Fish export"),
                 Evidence("runtime_data_locations", locationsPath, "runtime DataLoader.Locations export"),
                 Evidence("runtime_data_farm_animals", farmAnimalsPath, "runtime DataLoader.FarmAnimals export"),
@@ -175,6 +184,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("native_monster_drop_rule", monsterSourcePath, "decompiled Monster.parseMonsterInfo drop parsing"),
                 Evidence("native_bush_produce_rule", bushSourcePath, "decompiled Bush.GetShakeOffItem"),
                 Evidence("native_forage_crop_rule", cropSourcePath, "decompiled Crop forage harvest branches"),
+                Evidence("native_crop_growth_rule", cropSourcePath, "decompiled Crop season and growth branches"),
+                Evidence("native_crop_planting_rule", hoeDirtSourcePath, "decompiled HoeDirt planting and speed branches"),
                 Evidence("native_mine_buried_item_rule", mineShaftSourcePath, "decompiled MineShaft.checkForBuriedItem"),
                 Evidence("native_mine_fishing_override_rule", mineShaftSourcePath, "decompiled MineShaft.getFish"),
                 Evidence("native_crab_pot_output_rule", crabPotSourcePath, "decompiled CrabPot.DayUpdate"),

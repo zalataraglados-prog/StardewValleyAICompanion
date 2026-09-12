@@ -189,7 +189,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
 
     private static MasterAnglerTargetDateIntent? BuildCandidate(
         MasterAnglerStageOneSpeciesWindow species,
-        MasterAnglerStageOneSourceWindow window,
+        AuthoritativeCalendarSourceWindow window,
         MasterAnglerStageOneWindowIndex index,
         string indexPath,
         string indexHash,

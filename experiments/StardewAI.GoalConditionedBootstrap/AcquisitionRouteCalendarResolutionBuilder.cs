@@ -6,6 +6,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
 {
     private static readonly HashSet<string> SupportedRouteKinds = new(StringComparer.Ordinal)
     {
+        "harvests_as",
         "native_crab_pot_output",
         "native_location_artifact_spot",
         "native_location_fish_spawn",
@@ -35,20 +36,24 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             lowering,
             "Acquisition route calendar resolution");
 
-        var locationEvidence = inventory.SourceEvidence.Where(evidence =>
-            evidence.SourceId == "runtime_data_locations").ToArray();
-        Require(locationEvidence.Length == 1 &&
-                File.Exists(locationEvidence[0].Path) &&
-                string.Equals(
-                    CurrentTeacherFrontierSupport.HashFile(locationEvidence[0].Path),
-                    locationEvidence[0].Sha256,
-                    StringComparison.OrdinalIgnoreCase),
-            "Runtime Data/Locations evidence is missing or stale.");
-        using var locationDocument = JsonDocument.Parse(
-            File.ReadAllText(locationEvidence[0].Path));
-        Require(locationDocument.RootElement.TryGetProperty("payload", out var locations) &&
-                locations.ValueKind == JsonValueKind.Object,
-            "Runtime Data/Locations payload is unavailable.");
+        var locationEvidence = VerifyEvidence(
+            inventory,
+            "runtime_data_locations",
+            "Runtime Data/Locations");
+        var cropEvidence = VerifyEvidence(
+            inventory,
+            "runtime_data_crops",
+            "Runtime Data/Crops");
+        var cropGrowthEvidence = VerifyEvidence(
+            inventory,
+            "native_crop_growth_rule",
+            "Native crop growth rule");
+        var cropPlantingEvidence = VerifyEvidence(
+            inventory,
+            "native_crop_planting_rule",
+            "Native crop planting rule");
+        var locations = ReadPayloadEvidence(locationEvidence, "Runtime Data/Locations");
+        var crops = ReadPayloadEvidence(cropEvidence, "Runtime Data/Crops");
 
         var windows = CurrentTeacherFrontierSupport.Read<MasterAnglerStageOneWindowIndex>(
             windowFullPath,
@@ -120,6 +125,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             lowering,
             windowSpecies,
             locations,
+            crops,
             windows.DeadlineTotalDayExclusive);
         var expectedRouteCount = lowering.RequirementSets
             .SelectMany(set => set.Groups)
@@ -148,7 +154,10 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 CurrentTeacherFrontierSupport.HashFile(windowFullPath),
             MasterAnglerOpportunityCatalogSha256 =
                 CurrentTeacherFrontierSupport.HashFile(catalogFullPath),
-            LocationDataSha256 = locationEvidence[0].Sha256,
+            LocationDataSha256 = locationEvidence.Sha256,
+            CropDataSha256 = cropEvidence.Sha256,
+            NativeCropGrowthSourceSha256 = cropGrowthEvidence.Sha256,
+            NativeCropPlantingSourceSha256 = cropPlantingEvidence.Sha256,
             DeadlineTotalDayExclusive = windows.DeadlineTotalDayExclusive,
             RouteOccurrenceCount = routes.Length,
             ResolvedStaticSourceCount = resolvedCount,

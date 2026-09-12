@@ -20,7 +20,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             return new CalendarSourceResolution(
                 "blocked_authoritative_location_row_not_found",
                 string.Empty,
-                Array.Empty<MasterAnglerStageOneSourceWindow>(),
+                Array.Empty<AuthoritativeCalendarSourceWindow>(),
                 new[] { "exact_location_route_source_identity_not_found" });
         }
 
@@ -30,7 +30,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             return new CalendarSourceResolution(
                 "blocked_unparsed_location_season",
                 string.Empty,
-                Array.Empty<MasterAnglerStageOneSourceWindow>(),
+                Array.Empty<AuthoritativeCalendarSourceWindow>(),
                 new[] { "location_row_season_value_is_not_supported" });
         }
         var calendar = NativeCalendarConstraintNormalizer.Normalize(
@@ -45,7 +45,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             return new CalendarSourceResolution(
                 "blocked_unparsed_location_calendar_condition",
                 string.Empty,
-                Array.Empty<MasterAnglerStageOneSourceWindow>(),
+                Array.Empty<AuthoritativeCalendarSourceWindow>(),
                 calendar.UnparsedConditions.Select(condition =>
                     "unparsed_native_condition:" + condition).ToArray());
         }
@@ -54,7 +54,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             return new CalendarSourceResolution(
                 "blocked_static_location_calendar_impossible",
                 string.Empty,
-                Array.Empty<MasterAnglerStageOneSourceWindow>(),
+                Array.Empty<AuthoritativeCalendarSourceWindow>(),
                 new[] { "location_calendar_has_no_static_window" });
         }
 
@@ -80,7 +80,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 new[] { "location_calendar_has_no_window_before_deadline" });
     }
 
-    private static MasterAnglerStageOneSourceWindow[] ExpandLocationWindows(
+    private static AuthoritativeCalendarSourceWindow[] ExpandLocationWindows(
         string routeKind,
         string sourceKey,
         string locationId,
@@ -89,7 +89,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         MasterAnglerCalendarConstraint calendar,
         int deadlineTotalDayExclusive)
     {
-        var result = new List<MasterAnglerStageOneSourceWindow>();
+        var result = new List<AuthoritativeCalendarSourceWindow>();
         var deadlineYear = ((deadlineTotalDayExclusive - 1) / 112) + 1;
         for (var year = Math.Max(1, calendar.MinimumYear);
              year <= deadlineYear;
@@ -105,7 +105,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     deadlineTotalDayExclusive - 1);
                 if (first >= deadlineTotalDayExclusive || last < first)
                     continue;
-                result.Add(new MasterAnglerStageOneSourceWindow
+                result.Add(new AuthoritativeCalendarSourceWindow
                 {
                     SourceKind = LocationSourceKind(routeKind),
                     SourceKey = sourceKey,

@@ -11,6 +11,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         AcquisitionRouteOptionLoweringReport lowering,
         IReadOnlyDictionary<string, MasterAnglerStageOneSpeciesWindow> windowSpecies,
         JsonElement locations,
+        JsonElement crops,
         int deadlineTotalDayExclusive)
     {
         var result = new List<AcquisitionRouteCalendarResolution>();
@@ -33,6 +34,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             route,
                             windowSpecies,
                             locations,
+                            crops,
                             deadlineTotalDayExclusive);
                         var occurrenceId = string.Join(
                             ":",
@@ -55,7 +57,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             resolution.Status,
                             resolution.EvidenceClass,
                             resolution.Windows,
-                            resolution.BlockingReasons));
+                            resolution.BlockingReasons,
+                            resolution.CropSource));
                     }
                 }
             }
@@ -68,8 +71,18 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         AcquisitionRequirementRouteLowering route,
         IReadOnlyDictionary<string, MasterAnglerStageOneSpeciesWindow> speciesById,
         JsonElement locations,
+        JsonElement crops,
         int deadlineTotalDayExclusive)
     {
+        if (route.RouteKind == "harvests_as")
+        {
+            return ResolveCropWindows(
+                qualifiedItemId,
+                route,
+                crops,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind is "native_crab_pot_output" or
             "native_location_fish_spawn" or
             "native_mine_fishing_override")
@@ -99,7 +112,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         return new CalendarSourceResolution(
             "blocked_pending_route_kind_calendar_parser",
             string.Empty,
-            Array.Empty<MasterAnglerStageOneSourceWindow>(),
+            Array.Empty<AuthoritativeCalendarSourceWindow>(),
             new[] { "route_kind_calendar_parser_not_implemented" });
     }
 
@@ -113,7 +126,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             return new CalendarSourceResolution(
                 "blocked_authoritative_fish_window_not_found",
                 string.Empty,
-                Array.Empty<MasterAnglerStageOneSourceWindow>(),
+                Array.Empty<AuthoritativeCalendarSourceWindow>(),
                 new[] { "target_is_not_in_master_angler_window_index" });
         }
 
@@ -163,6 +176,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     private sealed record CalendarSourceResolution(
         string Status,
         string EvidenceClass,
-        MasterAnglerStageOneSourceWindow[] Windows,
-        string[] BlockingReasons);
+        AuthoritativeCalendarSourceWindow[] Windows,
+        string[] BlockingReasons,
+        AcquisitionCropSourceEvidence? CropSource = null);
 }

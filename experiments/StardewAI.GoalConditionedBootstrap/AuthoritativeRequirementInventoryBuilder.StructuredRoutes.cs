@@ -466,6 +466,38 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         RequireContains(treeSource, "ItemRegistry.Create(\"(O)Moss\"", wildTreePath);
     }
 
+    private static void GuardCropPlanningSources(
+        string cropPath,
+        string hoeDirtPath)
+    {
+        var cropSource = File.ReadAllText(cropPath);
+        RequireContains(cropSource, "public bool IsInSeason(GameLocation location)", cropPath);
+        RequireContains(cropSource, "location.SeedsIgnoreSeasonsHere()", cropPath);
+        RequireContains(cropSource, "GetData()?.Seasons?.Contains(location.GetSeason())", cropPath);
+        RequireContains(cropSource, "phaseDays.AddRange(data.DaysInPhase)", cropPath);
+        RequireContains(cropSource, "data?.RegrowDays ?? (-1)", cropPath);
+        RequireContains(cropSource, "public virtual bool isWildSeedCrop()", cropPath);
+        RequireContains(cropSource, "case \"495\":", cropPath);
+        RequireContains(cropSource, "return getRandomWildCropForSeason(Season.Spring)", cropPath);
+        RequireContains(cropSource, "case \"496\":", cropPath);
+        RequireContains(cropSource, "return getRandomWildCropForSeason(Season.Summer)", cropPath);
+        RequireContains(cropSource, "case \"497\":", cropPath);
+        RequireContains(cropSource, "return getRandomWildCropForSeason(Season.Fall)", cropPath);
+        RequireContains(cropSource, "case \"498\":", cropPath);
+        RequireContains(cropSource, "return getRandomWildCropForSeason(Season.Winter)", cropPath);
+        RequireContains(cropSource, "Season.Spring => Game1.random.Choose(\"(O)16\"", cropPath);
+        RequireContains(cropSource, "Season.Summer => Game1.random.Choose(\"(O)396\"", cropPath);
+        RequireContains(cropSource, "Season.Fall => Game1.random.Choose(\"(O)404\"", cropPath);
+        RequireContains(cropSource, "Season.Winter => Game1.random.Choose(\"(O)412\"", cropPath);
+
+        var hoeDirtSource = File.ReadAllText(hoeDirtPath);
+        RequireContains(hoeDirtSource, "Crop.TryGetData(itemId, out var data)", hoeDirtPath);
+        RequireContains(hoeDirtSource, "location.SeedsIgnoreSeasonsHere()", hoeDirtPath);
+        RequireContains(hoeDirtSource, "data.Seasons?.Contains(season)", hoeDirtPath);
+        RequireContains(hoeDirtSource, "public void applySpeedIncreases(Farmer who)", hoeDirtPath);
+        RequireContains(hoeDirtSource, "int num3 = (int)Math.Ceiling((float)num * num2)", hoeDirtPath);
+    }
+
     private static void GuardFishingAcquisitionSources(
         string decompileRoot,
         string mineShaftPath,

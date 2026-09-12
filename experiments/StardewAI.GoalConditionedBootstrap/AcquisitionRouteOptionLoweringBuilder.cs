@@ -16,7 +16,9 @@ public static class AcquisitionRouteOptionLoweringBuilder
 
     private static readonly HashSet<string> UncertaintyModes = new(StringComparer.Ordinal)
     {
-        "deterministic_fresh_receipt", "native_outcome_domain_and_retry_bound"
+        "deterministic_fresh_receipt",
+        "native_outcome_domain_and_retry_bound",
+        "source_resolved_downstream"
     };
 
     public static AcquisitionRouteOptionLoweringReport Build(

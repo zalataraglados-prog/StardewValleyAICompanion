@@ -56,7 +56,7 @@ public static class MasterAnglerStageOneWindowIndexBuilder
         int deadlineYear,
         int deadlineTotalDay)
     {
-        var windows = new List<MasterAnglerStageOneSourceWindow>();
+        var windows = new List<AuthoritativeCalendarSourceWindow>();
         foreach (var rule in species.LocationRules)
         {
             for (var year = Math.Max(1, rule.Calendar.MinimumYear); year < deadlineYear; year++)
@@ -69,7 +69,7 @@ public static class MasterAnglerStageOneWindowIndexBuilder
                     var last = Math.Min(TotalDay(year, season, 28), deadlineTotalDay - 1);
                     if (first >= deadlineTotalDay || last < first)
                         continue;
-                    windows.Add(new MasterAnglerStageOneSourceWindow
+                    windows.Add(new AuthoritativeCalendarSourceWindow
                     {
                         SourceKind = "location_rule",
                         SourceKey = $"{rule.LocationId}:{rule.RuleIndex}",
@@ -97,7 +97,7 @@ public static class MasterAnglerStageOneWindowIndexBuilder
 
         foreach (var mine in species.MineOverrides)
         {
-            windows.Add(new MasterAnglerStageOneSourceWindow
+            windows.Add(new AuthoritativeCalendarSourceWindow
             {
                 SourceKind = "mine_override",
                 SourceKey = "MineShaft.getFish:area:" + mine.MineArea,
@@ -118,7 +118,7 @@ public static class MasterAnglerStageOneWindowIndexBuilder
 
         if (species.AcquisitionClass == "trap_crab_pot")
         {
-            windows.Add(new MasterAnglerStageOneSourceWindow
+            windows.Add(new AuthoritativeCalendarSourceWindow
             {
                 SourceKind = "crab_pot",
                 SourceKey = "CrabPot.DayUpdate:" + species.TrapWaterType,
