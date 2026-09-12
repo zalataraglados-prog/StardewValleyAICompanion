@@ -2,6 +2,35 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
+public static class StageOneCollectionRouteDependencyAxes
+{
+    private static readonly IReadOnlyList<string> Values = Array.AsReadOnly(new[]
+    {
+        "calendar_window",
+        "unlock_state",
+        "location_route",
+        "facility_capacity",
+        "resource_inputs",
+        "currency_budget",
+        "inventory_reservation",
+        "processing_lead_time",
+        "stochastic_retry_budget",
+        "daily_time_energy_budget",
+        "opportunity_cost",
+        "fresh_terminal_receipt"
+    });
+
+    public static IReadOnlyList<string> Required => Values;
+
+    public static bool IsComplete(IEnumerable<string>? axes)
+    {
+        var values = axes?.ToArray() ?? Array.Empty<string>();
+        return values.Length == Values.Count &&
+            values.Distinct(StringComparer.Ordinal).Count() == values.Length &&
+            values.ToHashSet(StringComparer.Ordinal).SetEquals(Values);
+    }
+}
+
 public sealed class AcquisitionRouteOptionLoweringCatalog
 {
     [JsonPropertyName("schema_version")]
@@ -74,6 +103,13 @@ public sealed class AcquisitionRouteOptionLoweringReport
     [JsonPropertyName("route_occurrence_count")]
     public int RouteOccurrenceCount { get; set; }
 
+    [JsonPropertyName("dependency_axis_inventory_complete")]
+    public bool DependencyAxisInventoryComplete { get; set; }
+
+    [JsonPropertyName("required_downstream_dependency_axes")]
+    public string[] RequiredDownstreamDependencyAxes { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("observed_route_kind_count")]
     public int ObservedRouteKindCount { get; set; }
 
@@ -109,6 +145,7 @@ public sealed record AcquisitionRouteKindLowering(
     [property: JsonPropertyName("lowering_class")] string LoweringClass,
     [property: JsonPropertyName("supervision_mode")] string SupervisionMode,
     [property: JsonPropertyName("uncertainty_mode")] string UncertaintyMode,
+    [property: JsonPropertyName("required_downstream_dependency_axes")] string[] RequiredDownstreamDependencyAxes,
     [property: JsonPropertyName("route_occurrence_count")] int RouteOccurrenceCount,
     [property: JsonPropertyName("requirement_group_count")] int RequirementGroupCount,
     [property: JsonPropertyName("requirement_set_ids")] string[] RequirementSetIds,
@@ -163,6 +200,7 @@ public sealed record AcquisitionRequirementRouteLowering(
     [property: JsonPropertyName("source_path")] string SourcePath,
     [property: JsonPropertyName("supervision_mode")] string SupervisionMode,
     [property: JsonPropertyName("uncertainty_mode")] string UncertaintyMode,
+    [property: JsonPropertyName("required_downstream_dependency_axes")] string[] RequiredDownstreamDependencyAxes,
     [property: JsonPropertyName("endpoint_option_ids")] string[] EndpointOptionIds,
     [property: JsonPropertyName("supporting_option_ids")] string[] SupportingOptionIds,
     [property: JsonPropertyName("runtime_admission_ready")] bool RuntimeAdmissionReady,

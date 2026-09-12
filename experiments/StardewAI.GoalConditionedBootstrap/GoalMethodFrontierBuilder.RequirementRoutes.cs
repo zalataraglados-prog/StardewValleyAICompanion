@@ -149,6 +149,10 @@ public static partial class GoalMethodFrontierBuilder
                 ["source_path"] = route.SourcePath,
                 ["supervision_mode"] = route.SupervisionMode,
                 ["uncertainty_mode"] = route.UncertaintyMode,
+                ["required_downstream_dependency_axes"] =
+                    route.RequiredDownstreamDependencyAxes,
+                ["dynamic_dependency_resolution_status"] =
+                    "pending_per_route_axis_evidence",
                 ["endpoint_option_ids"] = route.EndpointOptionIds,
                 ["supporting_option_ids"] = route.SupportingOptionIds,
                 ["runtime_admission_ready"] = route.RuntimeAdmissionReady,

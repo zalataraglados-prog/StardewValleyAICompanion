@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 跨日期依赖轴防遗漏门禁
+
+- 权威获取降层现在为每个 route kind 和每条 requirement route occurrence 固定列出同一组 12 个下游依赖轴：日历窗口、解锁状态、位置路线、设施容量、资源输入、货币预算、库存预留、加工提前量、随机重试预算、每日时间/体力预算、机会成本以及 fresh 终态回执。列表长度、唯一性或成员有任一偏差都会失败关闭。
+- `GoalMethodFrontierBuilder` 把这份清单写入每个 `authoritative_acquisition_route` 节点，并明确标记 `dynamic_dependency_resolution_status=pending_per_route_axis_evidence`。这只证明依赖类别没有被遗漏，不表示这些依赖已经按具体日期求值，也不允许把“字段存在”冒充“路线当前可行”。
+- 当前四收集 Teacher、全出货 Teacher 与统一目标前沿都拒绝旧的或被删轴的降层制品；总回归同时核对顶层、route kind 和全部 route occurrence，重复轴也不能绕过门禁。历史 `acquisition_route_option_lowering.v1` 若没有新清单会被视为 stale，必须从锁定权威输入重新生成。
+- 离线验证已通过：GoalConditionedBootstrap Release 构建 `0 warning / 0 error`，四收集组合自测通过（包含删去一个轴后必须抛出 `InvalidDataException` 的负例），Core game-free `33/33`，Backend `188/188`。未启动游戏，未写正式训练数据，`formal_training_started=false`。
+- 固定下一步是实现逐路线、逐轴的动态证据解析，首先闭合 `calendar_window`，随后按解锁、资源/预算/预留、加工与随机重试、日内时间体力和 fresh 终态回执依次接入。只有 12/12 轴对某个候选均得到 `satisfied`、有证据的 `not_applicable` 或显式 `blocked`，该未来日期候选才可进入 Teacher 选择。
+
 ## 2026-09-13 博物馆与社区中心捐赠滚动路线
 
 - `museum.donate_items` 与 `community_center.donate_bundle_items` 在目标建筑之外时，现按透明 `route_graph` 只发布当前地图可验证的首个 `route_connector_tile`；连接器携带精确物品、库存槽位以及博物馆/Bundle 身份。常规 daily-plan 可在 fresh 快照后锁定同一机械 continuation 续编；Teacher product 则把该连接器作为独立监督步骤，由外层 controller 在下一 episode 从 fresh 全量状态重建候选并选择终态捐赠。

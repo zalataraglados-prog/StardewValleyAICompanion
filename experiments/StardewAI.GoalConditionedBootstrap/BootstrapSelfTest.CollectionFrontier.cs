@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
@@ -95,6 +96,9 @@ internal static partial class BootstrapSelfTest
             status = "complete",
             goal_id = "goal.grandpa_21",
             requirement_inventory_sha256 = HashFile(inventoryPath),
+            dependency_axis_inventory_complete = true,
+            required_downstream_dependency_axes =
+                StageOneCollectionRouteDependencyAxes.Required,
             requirement_sets = new object[]
             {
                 new
@@ -285,6 +289,35 @@ internal static partial class BootstrapSelfTest
                 !result.EmitsNegativeLabelsForUnavailableRoutes,
             "An unproven quality/payment candidate leaked into collection labels.");
 
+        var incompleteLoweringPath = Path.Combine(
+            fixtureRoot,
+            "lowering-missing-dependency-axis.json");
+        var incompleteLowering = JsonNode.Parse(File.ReadAllText(loweringPath))!
+            .AsObject();
+        var routeAxes = incompleteLowering["requirement_sets"]![0]!["groups"]![0]!
+            ["alternatives"]![0]!["routes"]![0]!
+            ["required_downstream_dependency_axes"]!.AsArray();
+        routeAxes.RemoveAt(routeAxes.Count - 1);
+        File.WriteAllText(
+            incompleteLoweringPath,
+            incompleteLowering.ToJsonString(JsonDefaults.Options));
+        var incompleteAxesRejected = false;
+        try
+        {
+            _ = CurrentCollectionTeacherFrontierBuilder.Build(
+                inventoryPath,
+                incompleteLoweringPath,
+                rankingPath,
+                snapshotPath);
+        }
+        catch (InvalidDataException)
+        {
+            incompleteAxesRejected = true;
+        }
+
+        Require(incompleteAxesRejected,
+            "A collection route with a missing dependency axis did not fail closed.");
+
         WriteCollectionSnapshotFixture(
             snapshotPath,
             stateHash,
@@ -390,6 +423,8 @@ internal static partial class BootstrapSelfTest
                 source_path = "fixture.path",
                 supervision_mode = "deterministic_dependency",
                 uncertainty_mode = "deterministic_fresh_receipt",
+                required_downstream_dependency_axes =
+                    StageOneCollectionRouteDependencyAxes.Required,
                 endpoint_option_ids = new[] { endpointOptionId },
                 supporting_option_ids = Array.Empty<string>(),
                 runtime_admission_ready = true,

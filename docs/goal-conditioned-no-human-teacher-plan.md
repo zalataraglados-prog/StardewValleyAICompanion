@@ -1065,6 +1065,25 @@ Slice 7 remains assigned to the RTX 5070 node.
   calendar, unlock, inventory/resource reservation and opportunity windows into the authoritative Teacher
   dependency chain before a future-day action can be selected.
 
+### 2026-09-13: Cross-date dependency-axis inventory gate
+
+- Every authoritative acquisition route kind and every requirement-route occurrence now carries the same
+  exact 12-axis downstream inventory: calendar window, unlock state, location route, facility capacity,
+  resource inputs, currency budget, inventory reservation, processing lead time, stochastic retry budget,
+  daily time/energy budget, opportunity cost and fresh terminal receipt. Missing, extra or duplicate members
+  fail closed at lowering, frontier loading and current Teacher authority admission.
+- Each `authoritative_acquisition_route` frontier node exposes the inventory and remains explicitly
+  `pending_per_route_axis_evidence`. Inventory completeness is not dynamic feasibility: no route is admitted
+  for a future date merely because all dependency names are present.
+- The regression gate checks the top-level contract, every route-kind row and every route occurrence. Existing
+  v1 lowering artifacts without the required inventory are intentionally stale and must be regenerated from
+  the locked exact-version inputs. A negative self-test removes one axis from one route and verifies rejection.
+- Release build, the aggregate current-collection self-test, all 33 game-free Core tests and all 188 Backend
+  tests pass. No game or formal training run was started.
+- The next fixed slice resolves `calendar_window` per route from authoritative evidence, emitting an explicit
+  satisfied, evidence-backed not-applicable or blocked result. The remaining axes are then resolved in the
+  declared order before any future-day Teacher candidate can become eligible.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

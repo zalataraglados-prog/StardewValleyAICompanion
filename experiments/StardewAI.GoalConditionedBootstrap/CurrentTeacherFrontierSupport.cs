@@ -17,6 +17,15 @@ internal static class CurrentTeacherFrontierSupport
             !inventory.AcquisitionRoutesComplete ||
             !string.Equals(inventory.Status, "complete", StringComparison.Ordinal) ||
             !string.Equals(lowering.Status, "complete", StringComparison.Ordinal) ||
+            !lowering.DependencyAxisInventoryComplete ||
+            !StageOneCollectionRouteDependencyAxes.IsComplete(
+                lowering.RequiredDownstreamDependencyAxes) ||
+            lowering.RequirementSets
+                .SelectMany(set => set.Groups)
+                .SelectMany(group => group.Alternatives)
+                .SelectMany(alternative => alternative.Routes)
+                .Any(route => !StageOneCollectionRouteDependencyAxes.IsComplete(
+                    route.RequiredDownstreamDependencyAxes)) ||
             !string.Equals(lowering.GoalId, inventory.GoalId, StringComparison.Ordinal) ||
             !string.Equals(
                 lowering.RequirementInventorySha256,
