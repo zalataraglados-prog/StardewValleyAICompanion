@@ -1105,6 +1105,33 @@ Slice 7 remains assigned to the RTX 5070 node.
   next slice generalizes one native calendar-condition parser for Data/Locations forage, artifact and non-fish
   fishing rows, then adds crop and shop conditions without duplicating per-route parsing logic.
 
+### 2026-09-13: Data/Locations calendar source resolution
+
+- The former Master Angler calendar normalizer is now the single shared
+  `NativeCalendarConstraintNormalizer`. It statically intersects native `LOCATION_SEASON`, `SEASON`, `YEAR`,
+  `TIME` and `WEATHER` clauses. Predicates that the exact 1.6.15 Data/Locations payload requires target-date
+  state to answer remain verbatim dynamic conditions; an unknown predicate is preserved as unparsed and blocks
+  the route instead of being accepted or discarded.
+- Rebuilding the 72-species Master Angler opportunity catalog through the shared normalizer retained its exact
+  SHA-256, so this refactor did not create or alter a second fish-calendar interpretation. Master Angler fish
+  rows still resolve through the existing catalog/window index. Only the eight non-fish fishing-row outputs
+  fall through to their exact Data/Locations row.
+- Calendar resolution now hash-binds exactly one `runtime_data_locations` evidence file. Artifact spots,
+  forage spawns and non-fish fishing outputs bind by exact location, source-row index and route kind. Missing
+  evidence, stale hashes, source-identity drift, unsupported seasons, unparsed conditions, impossible static
+  domains and windows after the Stage 1 deadline all fail closed with explicit blockers.
+- The locked exact-version run preserves all `1,599` route occurrences and resolves `505`; `1,094` remain
+  explicit parser blocks across 28 route kinds. Resolved evidence comprises 20 crab-pot, 241 Master Angler
+  location, 3 mine override, 68 artifact-spot, 165 forage and 8 non-fish fishing occurrences. Every resolved
+  route has at least one source window, and no current exact Data/Locations clause is unknown.
+- Release build, aggregate current-collection self-test, all 33 game-free Core tests and all 188 Backend tests
+  pass. No game or formal-training process was started. These rows remain
+  `resolved_static_source_window_target_date_pending`: dynamic target-date checks and the other 11 dependency
+  axes are not satisfied by this report.
+- The next fixed slice resolves crop source seasons and growth timing, then shop stock conditions. Growth and
+  processing lead time must remain an independently evidenced `processing_lead_time` result; a valid source
+  season alone must never authorize a Teacher candidate.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

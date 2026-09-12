@@ -7,7 +7,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     private static readonly HashSet<string> SupportedRouteKinds = new(StringComparer.Ordinal)
     {
         "native_crab_pot_output",
+        "native_location_artifact_spot",
         "native_location_fish_spawn",
+        "native_location_forage_spawn",
         "native_mine_fishing_override"
     };
 
@@ -32,6 +34,21 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             inventory,
             lowering,
             "Acquisition route calendar resolution");
+
+        var locationEvidence = inventory.SourceEvidence.Where(evidence =>
+            evidence.SourceId == "runtime_data_locations").ToArray();
+        Require(locationEvidence.Length == 1 &&
+                File.Exists(locationEvidence[0].Path) &&
+                string.Equals(
+                    CurrentTeacherFrontierSupport.HashFile(locationEvidence[0].Path),
+                    locationEvidence[0].Sha256,
+                    StringComparison.OrdinalIgnoreCase),
+            "Runtime Data/Locations evidence is missing or stale.");
+        using var locationDocument = JsonDocument.Parse(
+            File.ReadAllText(locationEvidence[0].Path));
+        Require(locationDocument.RootElement.TryGetProperty("payload", out var locations) &&
+                locations.ValueKind == JsonValueKind.Object,
+            "Runtime Data/Locations payload is unavailable.");
 
         var windows = CurrentTeacherFrontierSupport.Read<MasterAnglerStageOneWindowIndex>(
             windowFullPath,
@@ -99,7 +116,11 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var windowSpecies = windows.Species.ToDictionary(
             species => species.QualifiedItemId,
             StringComparer.Ordinal);
-        var routes = BuildRoutes(lowering, windowSpecies);
+        var routes = BuildRoutes(
+            lowering,
+            windowSpecies,
+            locations,
+            windows.DeadlineTotalDayExclusive);
         var expectedRouteCount = lowering.RequirementSets
             .SelectMany(set => set.Groups)
             .SelectMany(group => group.Alternatives)
@@ -127,6 +148,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 CurrentTeacherFrontierSupport.HashFile(windowFullPath),
             MasterAnglerOpportunityCatalogSha256 =
                 CurrentTeacherFrontierSupport.HashFile(catalogFullPath),
+            LocationDataSha256 = locationEvidence[0].Sha256,
             DeadlineTotalDayExclusive = windows.DeadlineTotalDayExclusive,
             RouteOccurrenceCount = routes.Length,
             ResolvedStaticSourceCount = resolvedCount,

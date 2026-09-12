@@ -19,6 +19,7 @@ internal static partial class BootstrapSelfTest
         var loweringPath = Path.Combine(root, "lowering.json");
         var catalogPath = Path.Combine(root, "master-angler-catalog.json");
         var windowsPath = Path.Combine(root, "master-angler-windows.json");
+        var locationsPath = Path.Combine(root, "data-locations.json");
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
@@ -53,6 +54,26 @@ internal static partial class BootstrapSelfTest
                 1,
                 value.Second))
             .ToArray();
+        Write(locationsPath, new
+        {
+            payload = new Dictionary<string, object>
+            {
+                ["Town"] = new Dictionary<string, object>
+                {
+                    ["ArtifactSpots"] = new object[]
+                    {
+                        new Dictionary<string, object>
+                        {
+                            ["Id"] = "fixture-artifact-row",
+                            ["ItemId"] = "(O)96",
+                            ["Condition"] =
+                                "YEAR 2, TIME 0600 1800, WEATHER Here Rain Storm GreenRain, PLAYER_HAS_MAIL Current fixtureGate",
+                            ["PerItemCondition"] = "RANDOM 0.4"
+                        }
+                    }
+                }
+            }
+        });
         Write(inventoryPath, new
         {
             schema_version = "authoritative_goal_requirement_inventory.v1",
@@ -61,6 +82,16 @@ internal static partial class BootstrapSelfTest
             game_version = "1.6.15",
             denominator_complete = true,
             acquisition_routes_complete = true,
+            source_evidence = new[]
+            {
+                new
+                {
+                    source_id = "runtime_data_locations",
+                    path = Path.GetFullPath(locationsPath),
+                    sha256 = HashFile(locationsPath),
+                    authority = "runtime DataLoader.Locations export"
+                }
+            },
             requirement_sets = new object[]
             {
                 RequirementSet(
@@ -77,7 +108,7 @@ internal static partial class BootstrapSelfTest
                         "museum:item:96", "all_required", 1,
                         CollectionAlternative(
                             "96", "(O)96", "Dwarf Scroll I", "item_id", 1, 0,
-                            "native_geode_drop", "geode:535"))),
+                            "native_location_artifact_spot", "location:Town:0"))),
                 RequirementSet(
                     "community_center_standard",
                     CollectionRequirementGroup(
@@ -130,7 +161,8 @@ internal static partial class BootstrapSelfTest
                         "museum:item:96", 1,
                         CollectionLoweredAlternative(
                             "96", "(O)96", "Dwarf Scroll I", "item_id", 1, 0,
-                            "native_geode_drop", "geode:535", "processing.crack_geode"))),
+                            "native_location_artifact_spot", "location:Town:0",
+                            "foraging.excavate_artifact_spots"))),
                 LoweringSet(
                     "community_center_standard",
                     CollectionLoweredGroup(
@@ -206,20 +238,52 @@ internal static partial class BootstrapSelfTest
         var resolvedSunfishRoute = routeCalendar.Routes.Single(route =>
             route.RequirementSetId == "master_angler" &&
             route.QualifiedItemId == "(O)145");
+        var resolvedArtifactRoute = routeCalendar.Routes.Single(route =>
+            route.RequirementSetId == "museum_collection" &&
+            route.QualifiedItemId == "(O)96");
         Require(routeCalendar.Status == "partial_static_sources_explicitly_blocked" &&
                 routeCalendar.RouteOccurrenceInventoryComplete &&
                 !routeCalendar.StaticCalendarSourceResolutionComplete &&
                 !routeCalendar.TrainingLabelEligible &&
                 routeCalendar.RouteOccurrenceCount == 75 &&
-                routeCalendar.ResolvedStaticSourceCount == 72 &&
-                routeCalendar.BlockedStaticSourceCount == 3 &&
+                routeCalendar.ResolvedStaticSourceCount == 73 &&
+                routeCalendar.BlockedStaticSourceCount == 2 &&
                 resolvedSunfishRoute.Status ==
                     "resolved_static_source_window_target_date_pending" &&
                 resolvedSunfishRoute.EvidenceClass ==
                     "master_angler_location_rule_window" &&
                 resolvedSunfishRoute.CalendarWindows.Length == 2 &&
-                resolvedSunfishRoute.CalendarWindows[0].SourceKey == "Beach:0",
+                resolvedSunfishRoute.CalendarWindows[0].SourceKey == "Beach:0" &&
+                resolvedArtifactRoute.Status ==
+                    "resolved_static_source_window_target_date_pending" &&
+                resolvedArtifactRoute.EvidenceClass ==
+                    "runtime_location_artifact_spot_window" &&
+                resolvedArtifactRoute.CalendarWindows.Length == 4 &&
+                resolvedArtifactRoute.CalendarWindows.All(window =>
+                    window.Year == 2 &&
+                    window.TimeWindows.Length == 1 &&
+                    window.TimeWindows[0].StartTime == 600 &&
+                    window.TimeWindows[0].EndTime == 1800 &&
+                    window.WeatherModes.SequenceEqual(
+                        new[] { "green_rain", "rain", "storm" }) &&
+                    window.DynamicConditions.SequenceEqual(new[]
+                    {
+                        "PLAYER_HAS_MAIL Current fixtureGate",
+                        "RANDOM 0.4"
+                    })),
             "Authoritative route calendar source resolution drifted.");
+
+        var unknownCalendar = NativeCalendarConstraintNormalizer.Normalize(
+            NativeCalendarConstraintNormalizer.AllSeasons,
+            NativeCalendarConstraintNormalizer.AllDay,
+            NativeCalendarConstraintNormalizer.AllWeatherModes,
+            string.Empty,
+            "UNKNOWN_NATIVE_PREDICATE Current value");
+        Require(unknownCalendar.ParseStatus == "unparsed_dynamic_condition" &&
+                unknownCalendar.StaticCalendarPossible &&
+                unknownCalendar.UnparsedConditions.SequenceEqual(
+                    new[] { "UNKNOWN_NATIVE_PREDICATE Current value" }),
+            "Unknown native calendar predicates did not remain explicit.");
 
         var tamperedWindowsPath = Path.Combine(root, "tampered-master-angler-windows.json");
         var tamperedWindows = JsonNode.Parse(File.ReadAllText(windowsPath))!.AsObject();

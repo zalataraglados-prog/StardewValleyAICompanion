@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 Data/Locations 日历来源解析
+
+- 把 Master Angler 原有日历归一化逻辑抽成唯一 `NativeCalendarConstraintNormalizer`，Master Angler 与 Data/Locations 路线共同使用。原有 72 种鱼机会目录重建哈希保持 `fab38278265ca6019e8962b4cdfe4ff58897ae1dd7aa05de7ea7baff40c7fbcb`，没有形成第二套鱼类条件系统。
+- 新解析器静态求交 `LOCATION_SEASON`、`SEASON`、`YEAR`、`TIME`、`WEATHER`；当前 1.6.15 Data/Locations 中已知但必须在目标日实时判断的邮件、节日、特别订单、地点、已持物、桥梁、累计天数和 `RANDOM` 等谓词原样保留为 dynamic conditions。任何未来出现的未知谓词进入 `unparsed_conditions` 并阻塞路线，不能静默放行。
+- `acquisition_route_calendar_resolution.v1` 现在额外哈希绑定唯一 `runtime_data_locations` 证据，并按原始 `location/source row index` 精确连接考古点、地点采集和非鱼钓获。夹具刻意使用原始键名，大小写漂移、行号越界、未知条件、静态空窗口、过期窗口或证据哈希变化均失败关闭。
+- 锁定 1.6.15 实跑仍完整保留 `1599` 个路线 occurrence：`505 resolved / 1094 explicit blocks`。已解析组成是蟹笼 `20`、Master Angler 地点钓鱼 `241`、矿井钓鱼覆盖 `3`、考古点 `68`、地点采集 `165`、非鱼钓获 `8`；所有 resolved 行均有至少一个窗口，当前精确地点数据不存在未知条件阻塞。剩余 `28` 种 route kind 继续统一标记 `blocked_pending_route_kind_calendar_parser`。
+- 这批结果仍是 `resolved_static_source_window_target_date_pending`：动态谓词、目标日选择和其余 11 个依赖轴尚未求值，`training_label_eligible=false`，未启动游戏或正式训练。下一批先解析作物来源季节与生长期，再解析商店库存条件；生长/加工提前量仍归独立 `processing_lead_time` 轴，不能用来源季节替代。
+- 验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`，四收集组合自测（地点证据哈希、已知动态条件保留、未知条件阻塞及篡改负例）通过，Core game-free `33/33`，Backend `188/188`，`Run-Regression.ps1` 语法检查通过。
+
 ## 2026-09-13 跨日期依赖轴防遗漏门禁
 
 - 权威获取降层现在为每个 route kind 和每条 requirement route occurrence 固定列出同一组 12 个下游依赖轴：日历窗口、解锁状态、位置路线、设施容量、资源输入、货币预算、库存预留、加工提前量、随机重试预算、每日时间/体力预算、机会成本以及 fresh 终态回执。列表长度、唯一性或成员有任一偏差都会失败关闭。
