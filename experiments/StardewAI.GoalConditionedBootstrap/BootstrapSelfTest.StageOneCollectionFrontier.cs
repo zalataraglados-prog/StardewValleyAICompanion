@@ -35,6 +35,7 @@ internal static partial class BootstrapSelfTest
         var targetDateFestivalPath = Path.Combine(root, "target-date-festival.json");
         var targetDateLocationPath = Path.Combine(root, "target-date-location.json");
         var targetDateFacilityPath = Path.Combine(root, "target-date-facility.json");
+        var targetDateResourcePath = Path.Combine(root, "target-date-resource.json");
         var targetDateRouteCalibrationPath = Path.Combine(
             root,
             "target-date-route-timing.json");
@@ -65,6 +66,39 @@ internal static partial class BootstrapSelfTest
         var tamperedTargetDateLocationPath = Path.Combine(
             root,
             "tampered-target-date-location.json");
+        var tamperedTargetDateFacilityPath = Path.Combine(
+            root,
+            "tampered-target-date-facility.json");
+        var missingResourceSnapshotPath = Path.Combine(
+            root,
+            "missing-resource-evidence-snapshot.json");
+        var missingResourceUnlockPath = Path.Combine(
+            root,
+            "missing-resource-evidence-unlock.json");
+        var missingResourceFestivalPath = Path.Combine(
+            root,
+            "missing-resource-evidence-festival.json");
+        var missingResourceLocationPath = Path.Combine(
+            root,
+            "missing-resource-evidence-location.json");
+        var missingResourceFacilityPath = Path.Combine(
+            root,
+            "missing-resource-evidence-facility.json");
+        var insufficientSeedSnapshotPath = Path.Combine(
+            root,
+            "insufficient-seed-snapshot.json");
+        var insufficientSeedUnlockPath = Path.Combine(
+            root,
+            "insufficient-seed-unlock.json");
+        var insufficientSeedFestivalPath = Path.Combine(
+            root,
+            "insufficient-seed-festival.json");
+        var insufficientSeedLocationPath = Path.Combine(
+            root,
+            "insufficient-seed-location.json");
+        var insufficientSeedFacilityPath = Path.Combine(
+            root,
+            "insufficient-seed-facility.json");
         var missingFacilitySnapshotPath = Path.Combine(
             root,
             "missing-facility-evidence-snapshot.json");
@@ -1147,6 +1181,228 @@ internal static partial class BootstrapSelfTest
                         "Farm:prepared_crop_harvest_identity_unresolved")),
             "An unresolved occupied crop identity was treated as a capacity miss.");
 
+        var targetDateResource =
+            AcquisitionRouteTargetDateResourceBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        Write(targetDateResourcePath, targetDateResource);
+        var targetDateResourceCrop = targetDateResource.Routes.Single(route =>
+            route.RouteOccurrenceId ==
+                "full_shipment:full_shipment:item:24:0:0");
+        var targetDateResourceShop = targetDateResource.Routes.Single(route =>
+            route.RouteOccurrenceId ==
+                "community_center_standard:community_center:bundle:Pantry/5:0:1");
+        var targetDateResourceFish = targetDateResource.Routes.Single(route =>
+            route.RouteOccurrenceId ==
+                "master_angler:master_angler:item:145:0:0");
+        var sourceFacilityCrop = targetDateFacility.Routes.Single(route =>
+            route.RouteOccurrenceId == targetDateResourceCrop.RouteOccurrenceId);
+        Require(targetDateResource.Status ==
+                    "complete_target_date_resource_inputs_axis_downstream_pending" &&
+                targetDateResource.RouteOccurrenceInventoryComplete &&
+                targetDateResource.ResourceInputAxisResolutionComplete &&
+                !targetDateResource.TrainingLabelEligible &&
+                targetDateResource.TargetTotalDay == 0 &&
+                targetDateResource.StaticCalendarResolutionSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(routeCalendarPath) &&
+                targetDateResource.RouteOccurrenceCount == 76 &&
+                targetDateResource.ResourceInputAxisResolvedCount == 76 &&
+                targetDateResource.ResourceInputMatchCount == 4 &&
+                targetDateResource.ResourceInputMissCount == 0 &&
+                targetDateResource.ResourceInputNotRequiredCount == 1 &&
+                targetDateResource.NotApplicableUpstreamCount == 72 &&
+                targetDateResource.BlockedUpstreamCount == 0 &&
+                targetDateResource.BlockedResourceEvidenceCount == 0 &&
+                targetDateResourceCrop.ResourceRequirementKind ==
+                    "crop_seed_or_existing_crop" &&
+                targetDateResourceCrop.InputEvaluations.Single()
+                    .QualifiedItemId == "(O)472" &&
+                targetDateResourceCrop.InputEvaluations.Single()
+                    .AvailableQuantity == 1 &&
+                targetDateResourceShop.ResourceRequirementKind ==
+                    "shop_trade_item_or_currency_only" &&
+                targetDateResourceShop.InputEvaluations.Single()
+                    .QualifiedItemId == "(O)388" &&
+                targetDateResourceShop.InputEvaluations.Single()
+                    .RequiredQuantity == 5 &&
+                targetDateResourceShop.InputEvaluations.Single()
+                    .AvailableQuantity == 5 &&
+                targetDateResourceFish.ResourceInputAxisStatus ==
+                    "resolved_resource_inputs_not_required" &&
+                JsonSerializer.Serialize(
+                    targetDateResourceCrop.UpstreamRoute,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    sourceFacilityCrop,
+                    JsonDefaults.Options),
+            "Target-date resource-input axis resolution drifted.");
+
+        var tamperedTargetDateFacility = JsonNode.Parse(
+            File.ReadAllText(targetDateFacilityPath))!.AsObject();
+        tamperedTargetDateFacility["routes"]![0]!["upstream_route"]!
+            ["upstream_route"]!["upstream_route"]!["source_id"] =
+            "tampered";
+        File.WriteAllText(
+            tamperedTargetDateFacilityPath,
+            tamperedTargetDateFacility.ToJsonString(JsonDefaults.Options));
+        var tamperedTargetDateFacilityRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateResourceBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                tamperedTargetDateFacilityPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedTargetDateFacilityRejected = true;
+        }
+        Require(tamperedTargetDateFacilityRejected,
+            "A tampered target-date facility report was accepted.");
+
+        var missingResourceSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        missingResourceSnapshot["state"]!["farm"]!.AsObject()
+            .Remove("material_inventory_graph");
+        File.WriteAllText(
+            missingResourceSnapshotPath,
+            missingResourceSnapshot.ToJsonString(JsonDefaults.Options));
+        var missingResourceReport = BuildResourceFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingResourceSnapshotPath,
+            targetDateRouteCalibrationPath,
+            missingResourceUnlockPath,
+            missingResourceFestivalPath,
+            missingResourceLocationPath,
+            missingResourceFacilityPath);
+        Require(missingResourceReport.Status ==
+                    "partial_target_date_resource_inputs_axis_blocks" &&
+                missingResourceReport.RouteOccurrenceInventoryComplete &&
+                !missingResourceReport.ResourceInputAxisResolutionComplete &&
+                missingResourceReport.ResourceInputAxisResolvedCount == 73 &&
+                missingResourceReport.ResourceInputMatchCount == 1 &&
+                missingResourceReport.ResourceInputMissCount == 0 &&
+                missingResourceReport.ResourceInputNotRequiredCount == 1 &&
+                missingResourceReport.NotApplicableUpstreamCount == 72 &&
+                missingResourceReport.BlockedResourceEvidenceCount == 3 &&
+                missingResourceReport.Routes.Where(route =>
+                    route.ResourceInputAxisStatus ==
+                        "blocked_resource_input_evidence").All(route =>
+                    route.BlockingReasons.Contains(
+                        "material_inventory_graph_missing_or_unavailable")),
+            "Missing canonical material evidence did not fail closed per input route.");
+
+        var insufficientSeedSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        var insufficientSeedGraph = insufficientSeedSnapshot["state"]!["farm"]!
+            ["material_inventory_graph"]!["value"]!;
+        var insufficientSeedSlots = insufficientSeedGraph["inventory_nodes"]![0]!
+            ["slots"]!.AsArray();
+        insufficientSeedSlots.Remove(insufficientSeedSlots.Single(row =>
+            row!["qualified_item_id"]!.GetValue<string>() == "(O)472"));
+        var insufficientSeedQuantities = insufficientSeedGraph["quantity_rows"]!
+            .AsArray();
+        insufficientSeedQuantities.Remove(insufficientSeedQuantities.Single(row =>
+            row!["qualified_item_id"]!.GetValue<string>() == "(O)472"));
+        File.WriteAllText(
+            insufficientSeedSnapshotPath,
+            insufficientSeedSnapshot.ToJsonString(JsonDefaults.Options));
+        var insufficientSeedReport = BuildResourceFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            insufficientSeedSnapshotPath,
+            targetDateRouteCalibrationPath,
+            insufficientSeedUnlockPath,
+            insufficientSeedFestivalPath,
+            insufficientSeedLocationPath,
+            insufficientSeedFacilityPath);
+        Require(insufficientSeedReport.Status ==
+                    "complete_target_date_resource_inputs_axis_downstream_pending" &&
+                insufficientSeedReport.ResourceInputAxisResolutionComplete &&
+                insufficientSeedReport.ResourceInputAxisResolvedCount == 76 &&
+                insufficientSeedReport.ResourceInputMatchCount == 2 &&
+                insufficientSeedReport.ResourceInputMissCount == 2 &&
+                insufficientSeedReport.ResourceInputNotRequiredCount == 1 &&
+                insufficientSeedReport.BlockedResourceEvidenceCount == 0 &&
+                insufficientSeedReport.Routes.Where(route =>
+                    route.ResourceInputsMatchTargetDate == false).All(route =>
+                    route.ResourceRequirementKind ==
+                        "crop_seed_or_existing_crop" &&
+                    route.NonMatchingReasons.Contains(
+                        "required_resource_quantity_unavailable:(O)472")),
+            "An exact zero-seed fact was not retained as a resolved resource miss.");
+
+        var existingCropCapacity = insufficientSeedSnapshot["state"]!
+            ["locations"]!["social_route_date_evidence"]!["value"]!
+            ["locations"]!.AsArray()
+            .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
+            ["cultivation_capacity"]!.AsObject();
+        existingCropCapacity["total_prepared_soil_slot_count"] = 1;
+        existingCropCapacity["open_prepared_soil_slot_count"] = 0;
+        existingCropCapacity["occupied_crop_slot_count"] = 1;
+        existingCropCapacity["unresolved_harvest_item_slot_count"] = 0;
+        existingCropCapacity["occupied_harvest_items"] = new JsonArray(
+            new JsonObject
+            {
+                ["harvest_item_qualified_id"] = "(O)24",
+                ["is_garden_pot"] = false,
+                ["slot_count"] = 1
+            });
+        File.WriteAllText(
+            insufficientSeedSnapshotPath,
+            insufficientSeedSnapshot.ToJsonString(JsonDefaults.Options));
+        var existingCropReport = BuildResourceFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            insufficientSeedSnapshotPath,
+            targetDateRouteCalibrationPath,
+            insufficientSeedUnlockPath,
+            insufficientSeedFestivalPath,
+            insufficientSeedLocationPath,
+            insufficientSeedFacilityPath);
+        var existingCropRoutes = existingCropReport.Routes.Where(route =>
+                route.ResourceRequirementKind ==
+                    "crop_seed_or_existing_crop" &&
+                route.ResourceInputsMatchTargetDate == true)
+            .ToArray();
+        Require(existingCropReport.ResourceInputAxisResolutionComplete &&
+                existingCropReport.ResourceInputMatchCount == 4 &&
+                existingCropReport.ResourceInputMissCount == 0 &&
+                existingCropReport.ResourceInputNotRequiredCount == 3 &&
+                existingCropRoutes.Length == 2 &&
+                existingCropRoutes.All(route =>
+                    route.InputEvaluations.Single().InputKind ==
+                        "existing_target_crop" &&
+                    route.InputEvaluations.Single().RequiredQuantity == 0 &&
+                    route.InputEvaluations.Single().AvailableQuantity == 1),
+            "An existing target crop incorrectly required a new seed.");
+
         var tamperedTargetDateFestival = JsonNode.Parse(
             File.ReadAllText(targetDateFestivalPath))!.AsObject();
         tamperedTargetDateFestival["routes"]![0]!["upstream_route"]!
@@ -2115,6 +2371,46 @@ internal static partial class BootstrapSelfTest
             unlockOutputPath,
             festivalOutputPath,
             locationOutputPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+    }
+
+    private static AcquisitionRouteTargetDateResourceReport
+        BuildResourceFixtureChain(
+            string inventoryPath,
+            string loweringPath,
+            string windowsPath,
+            string routeCalendarPath,
+            string targetDateCalendarPath,
+            string snapshotPath,
+            string routeTimingCalibrationPath,
+            string unlockOutputPath,
+            string festivalOutputPath,
+            string locationOutputPath,
+            string facilityOutputPath)
+    {
+        var facility = BuildFacilityFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            snapshotPath,
+            routeTimingCalibrationPath,
+            unlockOutputPath,
+            festivalOutputPath,
+            locationOutputPath);
+        Write(facilityOutputPath, facility);
+        return AcquisitionRouteTargetDateResourceBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockOutputPath,
+            festivalOutputPath,
+            locationOutputPath,
+            facilityOutputPath,
             snapshotPath,
             routeTimingCalibrationPath);
     }

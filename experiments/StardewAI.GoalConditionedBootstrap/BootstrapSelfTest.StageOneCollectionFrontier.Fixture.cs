@@ -263,7 +263,84 @@ internal static partial class BootstrapSelfTest
                     farm_type = Field(0),
                     farm_type_key = Field("Standard"),
                     crops = Field(Array.Empty<object>()),
-                    shipping_bins = Field(Array.Empty<object>())
+                    shipping_bins = Field(Array.Empty<object>()),
+                    material_inventory_graph = Field(new
+                    {
+                        schema_version = "material_inventory_graph.v1",
+                        status = "available",
+                        player_id = 1,
+                        inventory_nodes = new[]
+                        {
+                            new
+                            {
+                                node_id = "player:1",
+                                inventory_kind = "player_inventory",
+                                supply_state = "available",
+                                actor_use_authorized = true,
+                                slots = new[]
+                                {
+                                    new
+                                    {
+                                        slot_index = 0,
+                                        qualified_item_id = "(O)472",
+                                        stack = 1
+                                    },
+                                    new
+                                    {
+                                        slot_index = 1,
+                                        qualified_item_id = "(O)388",
+                                        stack = 5
+                                    },
+                                    new
+                                    {
+                                        slot_index = 2,
+                                        qualified_item_id = "(T)BambooPole",
+                                        stack = 1
+                                    }
+                                }
+                            }
+                        },
+                        access_points = Array.Empty<object>(),
+                        workbench_links = Array.Empty<object>(),
+                        quantity_rows = new[]
+                        {
+                            new
+                            {
+                                qualified_item_id = "(O)388",
+                                quality = 0,
+                                available_quantity = 5,
+                                ready_output_quantity = 0,
+                                in_process_quantity = 0,
+                                restricted_quantity = 0,
+                                source_slot_count = 1
+                            },
+                            new
+                            {
+                                qualified_item_id = "(O)472",
+                                quality = 0,
+                                available_quantity = 1,
+                                ready_output_quantity = 0,
+                                in_process_quantity = 0,
+                                restricted_quantity = 0,
+                                source_slot_count = 1
+                            },
+                            new
+                            {
+                                qualified_item_id = "(T)BambooPole",
+                                quality = 0,
+                                available_quantity = 1,
+                                ready_output_quantity = 0,
+                                in_process_quantity = 0,
+                                restricted_quantity = 0,
+                                source_slot_count = 1
+                            }
+                        },
+                        physical_inventory_count = 1,
+                        access_point_count = 0,
+                        deduplicated_access_point_count = 0,
+                        default_shared_resource_policy =
+                            "deny_without_explicit_authorization"
+                    })
                 },
                 menus = new
                 {

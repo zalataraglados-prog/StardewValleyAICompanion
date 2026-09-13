@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期资源输入轴求值
+
+- 新增 `acquisition_route_target_date_resource_inputs.v1` 与 `build-acquisition-route-target-date-resource-inputs`。构建器从同一输入重新生成并逐对象核对设施容量报告，再按路线 occurrence 对齐静态来源；全部 `33` 种来源类型必须进入唯一资源分类，未知类型和奖励、机器、畜牧、鱼塘、晶球、配方等尚未绑定输入的来源逐条失败关闭。
+- 资源数量复用既有规范 `farm.material_inventory_graph.v1` 及 `MaterialSupplyProjection`，统计随身物品和获授权持久容器的立即可用节点，不另写一套背包/箱子汇总。材料图、鱼竿和蟹笼各自惰性读取并缓存，只有当天仍活动的对应路线才触达；共享或其他玩家资源继续默认不可花费，预留冲突仍由后续 `inventory_reservation` 轴持有。
+- 当前纵向闭合：现存目标作物不再要求新种子；只有开放已备耕地要求一枚精确种子；商店交易物在本轴检查而金币/其他原生货币留给下一轴；普通目标日钓鱼无需耗材，只有所有保留窗口都要求魔法鱼饵时才核对可装饵鱼竿与已装/散装 `(O)908`；蟹笼现成产物、已装饵或主人 Luremaster 可通过，空未服务蟹笼在完整原生饵候选域接入前阻塞。
+- 本轴只判定路线消耗或占用的输入。锄头、鱼竿、武器等可复用工具继续由既有候选/动作编译器 fresh 前置条件持有；设施建立、处理提前量、随机重试、时间体力和终端回执不在本轴内。这样不会把工具当作可消耗库存，也不会允许缺工具的动作通过执行门。
+- 聚焦 fixture 保留 `76/76`：72 条上游不适用，2 条作物由 `(O)472 x1` 满足，1 条商店交易由规范图中的 `(O)388 x5` 满足，1 条普通钓鱼明确无需耗材。删除材料图只阻塞这 3 条输入路线；删除种子形成 2 条确定 miss。第 223 天旧快照保留全部 1599 条路线，197 条上游不适用、1402 条继承阻塞、0 条猜测通过。训练授权仍为 false；下一固定轴是 `currency_budget`。
+
 ## 2026-09-13 显式目标日期设施容量轴求值
 
 - 新增 `acquisition_route_target_date_facility_capacity.v1` 与 `build-acquisition-route-target-date-facility-capacity`。它从同一权威输入、快照和移动校准重新生成并逐对象核对上游地点报告，全部 `33` 种来源类型必须进入唯一容量分类表；未知类型不能静默当作“不需要设施”。
