@@ -37,6 +37,8 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
         var evidence = inventory.SourceEvidence.ToDictionary(source => source.SourceId, StringComparer.Ordinal);
         var fishSource = RequiredEvidence(evidence, "runtime_data_fish");
         var locationsSource = RequiredEvidence(evidence, "runtime_data_locations");
+        var gameLocationSource = RequiredEvidence(evidence, "native_location_spawn_rules");
+        var spawnFishDataSource = RequiredEvidence(evidence, "native_fish_spawn_chance_rule");
         var mineSource = RequiredEvidence(evidence, "native_mine_fishing_override_rule");
         var crabPotSource = RequiredEvidence(evidence, "native_crab_pot_output_rule");
         var gameStateQuerySource = RequiredEvidence(evidence, "native_game_state_query_rule");
@@ -48,6 +50,8 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
         {
             fishSource,
             locationsSource,
+            gameLocationSource,
+            spawnFishDataSource,
             mineSource,
             crabPotSource,
             gameStateQuerySource,
@@ -64,6 +68,8 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
         }
 
         GuardNativeSources(
+            gameLocationSource.Path,
+            spawnFishDataSource.Path,
             mineSource.Path,
             crabPotSource.Path,
             gameStateQuerySource.Path,
@@ -90,6 +96,13 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
                            !rule.Calendar.StaticCalendarPossible)
             .Select(rule => rule.LocationId + ":" + rule.RuleIndex)
             .ToArray();
+        var locationRuleCount = rows.Sum(row => row.LocationRules.Length);
+        var unresolvedSpawnChanceInputRules = rows
+            .SelectMany(row => row.LocationRules)
+            .Where(rule => rule.SpawnChanceInputStatus !=
+                           "complete_static_spawn_chance_inputs_dynamic_context_pending")
+            .Select(rule => rule.LocationId + ":" + rule.RuleIndex)
+            .ToArray();
         var rodLocationCount = rows.Count(row => row.AcquisitionClass == "rod_location_rule");
         var mineOverrideCount = rows.Count(row => row.AcquisitionClass == "rod_mine_override");
         var mineOverrideSourceSpeciesCount = rows.Count(row => row.MineOverrides.Length > 0);
@@ -107,6 +120,11 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
         Require(unresolvedCalendarRules.Length == 0,
             "Master Angler static calendar constraints are unresolved: " +
             string.Join(",", unresolvedCalendarRules));
+        Require(locationRuleCount == 180,
+            "Expected exactly 180 matching native Master Angler location rules.");
+        Require(unresolvedSpawnChanceInputRules.Length == 0,
+            "Master Angler location-rule spawn chance inputs are unresolved: " +
+            string.Join(",", unresolvedSpawnChanceInputRules));
 
         return new MasterAnglerOpportunityCatalogReport
         {
@@ -121,13 +139,16 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
             TrapSpeciesCount = trapCount,
             SourceInventoryComplete = true,
             StaticCalendarConstraintComplete = true,
+            LocationRuleSpawnChanceInputCount = locationRuleCount,
+            LocationRuleSpawnChanceInputInventoryComplete = true,
             NativeGetFishOverrideFileCount = 5,
             RequirementInventoryPath = inventoryPath,
             RequirementInventorySha256 = ContentInventoryVerifier.HashFile(inventoryPath),
             SourceEvidence = nativeSources,
             Species = rows,
             UnresolvedSpeciesIds = unresolved,
-            UnresolvedCalendarRuleIds = unresolvedCalendarRules
+            UnresolvedCalendarRuleIds = unresolvedCalendarRules,
+            UnresolvedSpawnChanceInputRuleIds = unresolvedSpawnChanceInputRules
         };
     }
 
@@ -257,6 +278,8 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
                     var spawnSeason = ReadSeason(row, "Season");
                     var condition = String(row, "Condition");
                     var ignoreFishData = Bool(row, "IgnoreFishDataRequirements");
+                    var directItemId = String(row, "ItemId");
+                    var randomItemIds = StringArray(row, "RandomItemId");
                     result.Add(new MasterAnglerLocationRule
                     {
                         LocationId = location.Name,
@@ -265,6 +288,20 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
                         SpawnSeason = spawnSeason,
                         Condition = condition,
                         PerItemCondition = String(row, "PerItemCondition"),
+                        ItemId = directItemId,
+                        RandomItemIds = randomItemIds,
+                        ItemSelectionMode = ItemSelectionMode(directItemId, randomItemIds),
+                        SpawnChanceInputStatus =
+                            "complete_static_spawn_chance_inputs_dynamic_context_pending",
+                        BaseChance = RequiredDouble(row, "Chance"),
+                        ApplyDailyLuck = RequiredBool(row, "ApplyDailyLuck"),
+                        CuriosityLureBuff = RequiredDouble(row, "CuriosityLureBuff"),
+                        SpecificBaitBuff = RequiredDouble(row, "SpecificBaitBuff"),
+                        SpecificBaitMultiplier = RequiredDouble(row, "SpecificBaitMultiplier"),
+                        ChanceBoostPerLuckLevel = RequiredDouble(row, "ChanceBoostPerLuckLevel"),
+                        ChanceModifierMode = ChanceModifierMode(row),
+                        ChanceModifiers = ParseChanceModifiers(row),
+                        UseFishCaughtSeededRandom = RequiredBool(row, "UseFishCaughtSeededRandom"),
                         FishAreaId = String(row, "FishAreaId"),
                         MinimumFishingLevel = Int(row, "MinFishingLevel"),
                         MinimumDistanceFromShore = Int(row, "MinDistanceFromShore"),
@@ -363,6 +400,8 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
             : throw new InvalidDataException("Requirement evidence is missing: " + sourceId);
 
     private static void GuardNativeSources(
+        string gameLocationPath,
+        string spawnFishDataPath,
         string minePath,
         string crabPotPath,
         string gameStateQueryPath,
@@ -371,6 +410,7 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
         string islandSouthEastPath,
         string railroadPath)
     {
+        GuardFishingProbabilitySources(gameLocationPath, spawnFishDataPath);
         var mine = File.ReadAllText(minePath);
         RequireContains(mine, "public override Item getFish(", minePath);
         RequireContains(mine, "text = \"(O)158\"", minePath);

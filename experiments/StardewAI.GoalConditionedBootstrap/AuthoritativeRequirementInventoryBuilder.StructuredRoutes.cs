@@ -543,7 +543,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         string farmPath,
         string islandPath,
         string islandSouthEastPath,
-        string railroadPath)
+        string railroadPath,
+        string spawnFishDataPath)
     {
         var expectedOverrides = new[]
         {
@@ -614,5 +615,14 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var railroadSource = File.ReadAllText(railroadPath);
         RequireContains(railroadSource, "GameLocation.CAROLINES_NECKLACE_ITEM_QID", railroadPath);
         RequireContains(railroadSource, "return base.getFish(millisecondsAfterNibble", railroadPath);
+
+        var spawnFishDataSource = File.ReadAllText(spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "public float GetChance(", spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "float num = Chance;", spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "num += CuriosityLureBuff;", spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "num += (float)dailyLuck;", spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "num = applyModifiers(num, ChanceModifiers, ChanceModifierMode);", spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "num = num * SpecificBaitMultiplier + SpecificBaitBuff;", spawnFishDataPath);
+        RequireContains(spawnFishDataSource, "return num + ChanceBoostPerLuckLevel * (float)luckLevel;", spawnFishDataPath);
     }
 }

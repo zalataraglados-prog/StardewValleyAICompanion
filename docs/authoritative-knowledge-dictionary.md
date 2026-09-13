@@ -39,6 +39,14 @@ probability. Retry counts that increase consumables must be fed back through res
 atomic inventory-reservation validation before execution. Missing probability or reservation
 loopback evidence is a typed blocker and cannot produce a training label.
 
+The Master Angler opportunity catalog now hash-binds decompiled `SpawnFishData.GetChance` separately from
+`GameLocation.getFish` and preserves every static spawn-chance input for all 180 matching native location rules.
+For locked 1.6.15 this is 174 direct item selectors, six random selectors and 14 fish-caught-seeded rules, with no
+unresolved input. This inventory is deliberately narrower than terminal catch probability: a target tile must still
+combine Default and location rules, eligibility, randomized equal-precedence ordering, both targeted-bait passes,
+item-query resolution and generic fish-data acceptance. A matching-rule chance alone must never be used as retry
+probability.
+
 ## Export coverage
 
 `StardewAI.KnowledgeExporter` creates a versioned export directory containing:

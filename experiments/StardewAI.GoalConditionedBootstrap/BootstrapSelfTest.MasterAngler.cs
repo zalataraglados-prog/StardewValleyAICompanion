@@ -6,6 +6,33 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
+    private static void VerifyMasterAnglerChanceModifierParsing()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "ChanceModifiers": [
+                {
+                  "Id": "fixture",
+                  "Condition": "PLAYER_HAS_MAIL Current fixture",
+                  "Modification": 2,
+                  "Amount": 1.5,
+                  "RandomAmount": [0.25, 0.75]
+                }
+              ]
+            }
+            """);
+        var modifiers = MasterAnglerOpportunityCatalogBuilder.ParseChanceModifiers(
+            document.RootElement);
+        Require(
+            modifiers.Length == 1 &&
+            modifiers[0].Id == "fixture" &&
+            modifiers[0].Condition == "PLAYER_HAS_MAIL Current fixture" &&
+            modifiers[0].Modification == 2 &&
+            Math.Abs(modifiers[0].Amount - 1.5) < 0.000001 &&
+            modifiers[0].RandomAmount.SequenceEqual(new[] { 0.25, 0.75 }),
+            "Master Angler chance modifier inputs were not preserved losslessly.");
+    }
+
     private static void VerifyMasterAnglerFullRouteIntent(string outputRoot)
     {
         var root = Path.Combine(outputRoot, "master-angler-route-fixture");

@@ -19,6 +19,9 @@ internal static partial class BootstrapSelfTest
         var inventoryPath = Path.Combine(root, "requirements.json");
         var loweringPath = Path.Combine(root, "lowering.json");
         var catalogPath = Path.Combine(root, "master-angler-catalog.json");
+        var staleProbabilityCatalogPath = Path.Combine(
+            root,
+            "master-angler-catalog-missing-probability-inputs.json");
         var windowsPath = Path.Combine(root, "master-angler-windows.json");
         var locationsPath = Path.Combine(root, "data-locations.json");
         var cropsPath = Path.Combine(root, "data-crops.json");
@@ -588,6 +591,8 @@ internal static partial class BootstrapSelfTest
             native_denominator_count = 72,
             source_inventory_complete = true,
             static_calendar_constraint_complete = true,
+            location_rule_spawn_chance_input_count = 72,
+            location_rule_spawn_chance_input_inventory_complete = true,
             requirement_inventory_path = Path.GetFullPath(inventoryPath),
             requirement_inventory_sha256 = HashFile(inventoryPath),
             species = fish.Select((value, index) => new
@@ -609,6 +614,20 @@ internal static partial class BootstrapSelfTest
                         location_id = index == 0 ? "Beach" : "fixture",
                         rule_index = index,
                         rule_id = "fixture-rule-" + index,
+                        item_id = value.QualifiedItemId,
+                        random_item_ids = Array.Empty<string>(),
+                        item_selection_mode = "direct_item_id",
+                        spawn_chance_input_status =
+                            "complete_static_spawn_chance_inputs_dynamic_context_pending",
+                        base_chance = 1.0,
+                        apply_daily_luck = false,
+                        curiosity_lure_buff = -1.0,
+                        specific_bait_buff = 0.0,
+                        specific_bait_multiplier = 1.66,
+                        chance_boost_per_luck_level = 0.0,
+                        chance_modifier_mode = 0,
+                        chance_modifiers = Array.Empty<object>(),
+                        use_fish_caught_seeded_random = false,
                         minimum_fishing_level = 0,
                         ignore_fish_data_requirements = false,
                         calendar = new
@@ -631,8 +650,25 @@ internal static partial class BootstrapSelfTest
                 mine_overrides = Array.Empty<object>()
             }).ToArray(),
             unresolved_species_ids = Array.Empty<string>(),
-            unresolved_calendar_rule_ids = Array.Empty<string>()
+            unresolved_calendar_rule_ids = Array.Empty<string>(),
+            unresolved_spawn_chance_input_rule_ids = Array.Empty<string>()
         });
+        var staleProbabilityCatalog = JsonNode.Parse(File.ReadAllText(catalogPath))!;
+        staleProbabilityCatalog["location_rule_spawn_chance_input_inventory_complete"] = false;
+        Write(staleProbabilityCatalogPath, staleProbabilityCatalog);
+        var staleProbabilityCatalogRejected = false;
+        try
+        {
+            MasterAnglerStageOneWindowIndexBuilder.Build(
+                staleProbabilityCatalogPath,
+                3);
+        }
+        catch (InvalidDataException)
+        {
+            staleProbabilityCatalogRejected = true;
+        }
+        Require(staleProbabilityCatalogRejected,
+            "Master Angler window builder admitted a catalog without spawn-chance inputs.");
         Write(
             windowsPath,
             MasterAnglerStageOneWindowIndexBuilder.Build(catalogPath, 3));

@@ -16,6 +16,8 @@ public sealed class MasterAnglerOpportunityCatalogReport
     [JsonPropertyName("trap_species_count")] public int TrapSpeciesCount { get; set; }
     [JsonPropertyName("source_inventory_complete")] public bool SourceInventoryComplete { get; set; }
     [JsonPropertyName("static_calendar_constraint_complete")] public bool StaticCalendarConstraintComplete { get; set; }
+    [JsonPropertyName("location_rule_spawn_chance_input_count")] public int LocationRuleSpawnChanceInputCount { get; set; }
+    [JsonPropertyName("location_rule_spawn_chance_input_inventory_complete")] public bool LocationRuleSpawnChanceInputInventoryComplete { get; set; }
     [JsonPropertyName("native_get_fish_override_file_count")] public int NativeGetFishOverrideFileCount { get; set; }
     [JsonPropertyName("requirement_inventory_path")] public string RequirementInventoryPath { get; set; } = string.Empty;
     [JsonPropertyName("requirement_inventory_sha256")] public string RequirementInventorySha256 { get; set; } = string.Empty;
@@ -23,8 +25,9 @@ public sealed class MasterAnglerOpportunityCatalogReport
     [JsonPropertyName("species")] public MasterAnglerSpeciesOpportunity[] Species { get; set; } = Array.Empty<MasterAnglerSpeciesOpportunity>();
     [JsonPropertyName("unresolved_species_ids")] public string[] UnresolvedSpeciesIds { get; set; } = Array.Empty<string>();
     [JsonPropertyName("unresolved_calendar_rule_ids")] public string[] UnresolvedCalendarRuleIds { get; set; } = Array.Empty<string>();
+    [JsonPropertyName("unresolved_spawn_chance_input_rule_ids")] public string[] UnresolvedSpawnChanceInputRuleIds { get; set; } = Array.Empty<string>();
     [JsonPropertyName("admission_policy")] public string AdmissionPolicy { get; set; } =
-        "This proves exact source enumeration only. A species becomes a future teacher opportunity only after date, weather, clock, location access, route, tile, equipment and native condition evidence all resolve.";
+        "This proves exact source enumeration and lossless matching-rule spawn-chance inputs only. It does not prove terminal catch probability. A species becomes a future teacher opportunity only after date, weather, clock, location access, route, tile, equipment, competing-rule precedence, item resolution and native condition evidence all resolve.";
 }
 
 public sealed class MasterAnglerSpeciesOpportunity
@@ -79,6 +82,19 @@ public sealed class MasterAnglerLocationRule
     [JsonPropertyName("spawn_season")] public string SpawnSeason { get; set; } = string.Empty;
     [JsonPropertyName("condition")] public string Condition { get; set; } = string.Empty;
     [JsonPropertyName("per_item_condition")] public string PerItemCondition { get; set; } = string.Empty;
+    [JsonPropertyName("item_id")] public string ItemId { get; set; } = string.Empty;
+    [JsonPropertyName("random_item_ids")] public string[] RandomItemIds { get; set; } = Array.Empty<string>();
+    [JsonPropertyName("item_selection_mode")] public string ItemSelectionMode { get; set; } = string.Empty;
+    [JsonPropertyName("spawn_chance_input_status")] public string SpawnChanceInputStatus { get; set; } = string.Empty;
+    [JsonPropertyName("base_chance")] public double BaseChance { get; set; }
+    [JsonPropertyName("apply_daily_luck")] public bool ApplyDailyLuck { get; set; }
+    [JsonPropertyName("curiosity_lure_buff")] public double CuriosityLureBuff { get; set; }
+    [JsonPropertyName("specific_bait_buff")] public double SpecificBaitBuff { get; set; }
+    [JsonPropertyName("specific_bait_multiplier")] public double SpecificBaitMultiplier { get; set; }
+    [JsonPropertyName("chance_boost_per_luck_level")] public double ChanceBoostPerLuckLevel { get; set; }
+    [JsonPropertyName("chance_modifier_mode")] public int ChanceModifierMode { get; set; }
+    [JsonPropertyName("chance_modifiers")] public MasterAnglerChanceModifier[] ChanceModifiers { get; set; } = Array.Empty<MasterAnglerChanceModifier>();
+    [JsonPropertyName("use_fish_caught_seeded_random")] public bool UseFishCaughtSeededRandom { get; set; }
     [JsonPropertyName("fish_area_id")] public string FishAreaId { get; set; } = string.Empty;
     [JsonPropertyName("minimum_fishing_level")] public int MinimumFishingLevel { get; set; }
     [JsonPropertyName("minimum_distance_from_shore")] public int MinimumDistanceFromShore { get; set; }
@@ -89,6 +105,15 @@ public sealed class MasterAnglerLocationRule
     [JsonPropertyName("catch_limit")] public int CatchLimit { get; set; }
     [JsonPropertyName("precedence")] public int Precedence { get; set; }
     [JsonPropertyName("calendar")] public MasterAnglerCalendarConstraint Calendar { get; set; } = new();
+}
+
+public sealed class MasterAnglerChanceModifier
+{
+    [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+    [JsonPropertyName("condition")] public string Condition { get; set; } = string.Empty;
+    [JsonPropertyName("modification")] public int Modification { get; set; }
+    [JsonPropertyName("amount")] public double Amount { get; set; }
+    [JsonPropertyName("random_amount")] public double[] RandomAmount { get; set; } = Array.Empty<double>();
 }
 
 public sealed class MasterAnglerCalendarConstraint

@@ -71,6 +71,13 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var islandFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "IslandLocation.cs");
         var islandSouthEastFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "IslandSouthEast.cs");
         var railroadFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "Railroad.cs");
+        var spawnFishDataSourcePath = Path.Combine(
+            decompileFullPath,
+            "StardewValley.GameData",
+            "StardewValley",
+            "GameData",
+            "Locations",
+            "SpawnFishData.cs");
         var shopBuilderSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Internal", "ShopBuilder.cs");
         var shopMenuSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Menus", "ShopMenu.cs");
         var accessConstraintIndexPath = Path.Combine(
@@ -115,7 +122,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             farmFishingSourcePath,
             islandFishingSourcePath,
             islandSouthEastFishingSourcePath,
-            railroadFishingSourcePath);
+            railroadFishingSourcePath,
+            spawnFishDataSourcePath);
 
         using var objectsDocument = JsonDocument.Parse(File.ReadAllText(objectsPath));
         using var fishDocument = JsonDocument.Parse(File.ReadAllText(fishPath));
@@ -191,7 +199,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("native_shipping_rule", objectSourcePath, "decompiled Object.isPotentialBasicShipped"),
                 Evidence("native_fish_completion_rule", utilitySourcePath, "decompiled Utility.getFishCaughtPercent"),
                 Evidence("native_museum_rule", museumSourcePath, "decompiled LibraryMuseum.IsItemSuitableForDonation"),
-                Evidence("native_location_spawn_rules", gameLocationSourcePath, "decompiled forage and artifact-spot resolution"),
+                Evidence("native_location_spawn_rules", gameLocationSourcePath, "decompiled location spawn resolution and fishing rule ordering"),
                 Evidence("native_farm_animal_produce_rule", farmAnimalSourcePath, "decompiled FarmAnimal produce selection"),
                 Evidence("native_fruit_tree_produce_rule", fruitTreeSourcePath, "decompiled FruitTree fruit selection"),
                 Evidence("native_wild_tree_drop_rule", wildTreeSourcePath, "decompiled Tree drop and tapper selection"),
@@ -214,7 +222,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("native_farm_fishing_override_rule", farmFishingSourcePath, "decompiled Farm.getFish location redirect"),
                 Evidence("native_island_fishing_override_rule", islandFishingSourcePath, "decompiled IslandLocation.getFish walnut branch"),
                 Evidence("native_island_southeast_fishing_override_rule", islandSouthEastFishingSourcePath, "decompiled IslandSouthEast.getFish walnut branch"),
-                Evidence("native_railroad_fishing_override_rule", railroadFishingSourcePath, "decompiled Railroad.getFish necklace branch")
+                Evidence("native_railroad_fishing_override_rule", railroadFishingSourcePath, "decompiled Railroad.getFish necklace branch"),
+                Evidence("native_fish_spawn_chance_rule", spawnFishDataSourcePath, "decompiled SpawnFishData.GetChance inputs and formula")
             },
             RequirementSets = requirementSets,
             UnresolvedAcquisitionRequirementIds = unresolved

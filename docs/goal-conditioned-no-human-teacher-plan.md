@@ -1442,6 +1442,21 @@ Slice 7 remains assigned to the RTX 5070 node.
   tampering is rejected. Training authorization remains false. The next slice adds remote fishing rule/tile probability
   evidence, then exact multi-success retry math and reservation revalidation.
 
+### 2026-09-13: authoritative Master Angler spawn-chance input inventory
+
+- The requirement inventory now hash-binds a distinct `native_fish_spawn_chance_rule` source to decompiled
+  `SpawnFishData.GetChance`. Source guards lock the base chance, curiosity-lure, daily-luck, quantity-modifier,
+  targeted-bait and luck-level formula branches. The existing `native_location_spawn_rules` evidence also guards
+  the `GameLocation.getFish` precedence/random-order, two-pass, item-query and generic-fish acceptance call sites.
+- All 180 matching native Master Angler location rules now retain direct or random item selection plus every static
+  `GetChance` input. The locked 1.6.15 catalog contains 174 direct-selection rules, six random-selection rules and
+  14 fish-caught-seeded rules, with zero unresolved static inputs. A synthetic regression covers typed chance
+  modifiers because none of those 180 native matching rules currently contains one.
+- This is not terminal catch-probability closure. The next evaluator must construct the complete Default-plus-target-
+  location competing rule set for one target tile/context, apply precedence and randomized equal-precedence order,
+  both targeted-bait passes, item-query selection and `CheckGenericFishRequirements`. Until that exact or explicitly
+  conservative result exists, the stochastic retry axis remains blocked and formal training remains unauthorized.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

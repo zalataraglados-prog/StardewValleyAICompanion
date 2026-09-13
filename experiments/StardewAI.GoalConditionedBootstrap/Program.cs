@@ -629,7 +629,9 @@ static void BuildMasterAnglerOpportunityCatalog(Arguments options)
         options.Required("requirement-inventory"));
     Write(options.Required("output"), report);
     if (!report.SourceInventoryComplete || !report.StaticCalendarConstraintComplete ||
-        report.UnresolvedSpeciesIds.Length > 0 || report.UnresolvedCalendarRuleIds.Length > 0)
+        !report.LocationRuleSpawnChanceInputInventoryComplete ||
+        report.UnresolvedSpeciesIds.Length > 0 || report.UnresolvedCalendarRuleIds.Length > 0 ||
+        report.UnresolvedSpawnChanceInputRuleIds.Length > 0)
         Environment.ExitCode = 2;
 }
 
