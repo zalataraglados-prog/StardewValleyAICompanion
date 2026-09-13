@@ -36,6 +36,31 @@ internal static partial class BootstrapSelfTest
         var targetDateLocationPath = Path.Combine(root, "target-date-location.json");
         var targetDateFacilityPath = Path.Combine(root, "target-date-facility.json");
         var targetDateResourcePath = Path.Combine(root, "target-date-resource.json");
+        var targetDateCurrencyPath = Path.Combine(root, "target-date-currency.json");
+        var missingShopQuoteSnapshotPath = Path.Combine(
+            root,
+            "missing-shop-quote-snapshot.json");
+        var missingCurrencySnapshotPath = Path.Combine(
+            root,
+            "missing-currency-snapshot.json");
+        var insufficientCurrencySnapshotPath = Path.Combine(
+            root,
+            "insufficient-currency-snapshot.json");
+        var currencyVariantUnlockPath = Path.Combine(
+            root,
+            "currency-variant-unlock.json");
+        var currencyVariantFestivalPath = Path.Combine(
+            root,
+            "currency-variant-festival.json");
+        var currencyVariantLocationPath = Path.Combine(
+            root,
+            "currency-variant-location.json");
+        var currencyVariantFacilityPath = Path.Combine(
+            root,
+            "currency-variant-facility.json");
+        var currencyVariantResourcePath = Path.Combine(
+            root,
+            "currency-variant-resource.json");
         var targetDateRouteCalibrationPath = Path.Combine(
             root,
             "target-date-route-timing.json");
@@ -250,7 +275,7 @@ internal static partial class BootstrapSelfTest
                             ["Id"] = "fixture-parsnip",
                             ["ItemId"] = "(O)24",
                             ["RandomItemId"] = null,
-                            ["Price"] = 0,
+                            ["Price"] = 100,
                             ["AvailableStock"] = 1,
                             ["AvailableStockLimit"] = 1,
                             ["TradeItemId"] = "(O)388",
@@ -484,6 +509,7 @@ internal static partial class BootstrapSelfTest
             status = "complete",
             goal_id = "goal.grandpa_21",
             requirement_inventory_sha256 = HashFile(inventoryPath),
+            route_occurrence_count = 76,
             dependency_axis_inventory_complete = true,
             required_downstream_dependency_axes =
                 StageOneCollectionRouteDependencyAxes.Required,
@@ -1245,6 +1271,57 @@ internal static partial class BootstrapSelfTest
                     JsonDefaults.Options),
             "Target-date resource-input axis resolution drifted.");
 
+        var targetDateCurrency =
+            AcquisitionRouteTargetDateCurrencyBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        Write(targetDateCurrencyPath, targetDateCurrency);
+        var targetDateCurrencyShop = targetDateCurrency.Routes.Single(route =>
+            route.RouteOccurrenceId == targetDateResourceShop.RouteOccurrenceId);
+        Require(targetDateCurrency.Status ==
+                    "complete_target_date_currency_budget_axis_downstream_pending" &&
+                targetDateCurrency.RouteOccurrenceInventoryComplete &&
+                targetDateCurrency.CurrencyAxisResolutionComplete &&
+                !targetDateCurrency.TrainingLabelEligible &&
+                targetDateCurrency.RouteOccurrenceCount == 76 &&
+                targetDateCurrency.CurrencyAxisResolvedCount == 76 &&
+                targetDateCurrency.CurrencyBudgetMatchCount == 4 &&
+                targetDateCurrency.CurrencyBudgetMissCount == 0 &&
+                targetDateCurrency.CurrencyNotRequiredCount == 3 &&
+                targetDateCurrency.NotApplicableUpstreamCount == 72 &&
+                targetDateCurrency.BlockedUpstreamCount == 0 &&
+                targetDateCurrency.BlockedCurrencyEvidenceCount == 0 &&
+                targetDateCurrencyShop.CurrencyRequirementKind ==
+                    "current_native_shop_purchase_quote" &&
+                targetDateCurrencyShop.CurrencyEvaluation is not null &&
+                targetDateCurrencyShop.CurrencyEvaluation.CurrencyId == 0 &&
+                targetDateCurrencyShop.CurrencyEvaluation.CurrencyKey ==
+                    "money" &&
+                targetDateCurrencyShop.CurrencyEvaluation.RequiredAmount == 100 &&
+                targetDateCurrencyShop.CurrencyEvaluation.AvailableAmount == 500 &&
+                targetDateCurrencyShop.CurrencyEvaluation.PurchaseQuoteStatus ==
+                    "current_native_shop_quote_available" &&
+                targetDateCurrency.StaticCalendarResolutionSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(routeCalendarPath) &&
+                targetDateCurrency.AcquisitionLoweringSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(loweringPath) &&
+                JsonSerializer.Serialize(
+                    targetDateCurrencyShop.UpstreamRoute,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    targetDateResourceShop,
+                    JsonDefaults.Options),
+            "Target-date currency-budget axis resolution drifted.");
+
         var tamperedTargetDateFacility = JsonNode.Parse(
             File.ReadAllText(targetDateFacilityPath))!.AsObject();
         tamperedTargetDateFacility["routes"]![0]!["upstream_route"]!
@@ -1402,6 +1479,116 @@ internal static partial class BootstrapSelfTest
                     route.InputEvaluations.Single().RequiredQuantity == 0 &&
                     route.InputEvaluations.Single().AvailableQuantity == 1),
             "An existing target crop incorrectly required a new seed.");
+
+        var missingShopQuoteSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        missingShopQuoteSnapshot["state"]!["locations"]!.AsObject()
+            .Remove("shops");
+        File.WriteAllText(
+            missingShopQuoteSnapshotPath,
+            missingShopQuoteSnapshot.ToJsonString(JsonDefaults.Options));
+        var missingShopQuoteCurrency = BuildCurrencyFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingShopQuoteSnapshotPath,
+            targetDateRouteCalibrationPath,
+            currencyVariantUnlockPath,
+            currencyVariantFestivalPath,
+            currencyVariantLocationPath,
+            currencyVariantFacilityPath,
+            currencyVariantResourcePath);
+        Require(missingShopQuoteCurrency.Status ==
+                    "partial_target_date_currency_budget_axis_blocks" &&
+                missingShopQuoteCurrency.CurrencyAxisResolvedCount == 75 &&
+                missingShopQuoteCurrency.CurrencyBudgetMatchCount == 3 &&
+                missingShopQuoteCurrency.CurrencyBudgetMissCount == 0 &&
+                missingShopQuoteCurrency.CurrencyNotRequiredCount == 3 &&
+                missingShopQuoteCurrency.NotApplicableUpstreamCount == 72 &&
+                missingShopQuoteCurrency.BlockedUpstreamCount == 1 &&
+                missingShopQuoteCurrency.BlockedCurrencyEvidenceCount == 0 &&
+                missingShopQuoteCurrency.Routes.Single(route =>
+                    route.CurrencyAxisStatus ==
+                        "blocked_upstream_resource_input_axis")
+                    .BlockingReasons.Contains(
+                        "current_native_shop_quotes_missing_or_incomplete"),
+            "Missing native shop quotes did not block the exact shop chain.");
+
+        var missingCurrencySnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        missingCurrencySnapshot["state"]!["player"]!.AsObject()
+            .Remove("shop_currency_balances");
+        File.WriteAllText(
+            missingCurrencySnapshotPath,
+            missingCurrencySnapshot.ToJsonString(JsonDefaults.Options));
+        var missingCurrencyReport = BuildCurrencyFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingCurrencySnapshotPath,
+            targetDateRouteCalibrationPath,
+            currencyVariantUnlockPath,
+            currencyVariantFestivalPath,
+            currencyVariantLocationPath,
+            currencyVariantFacilityPath,
+            currencyVariantResourcePath);
+        Require(missingCurrencyReport.CurrencyAxisResolvedCount == 75 &&
+                missingCurrencyReport.CurrencyBudgetMatchCount == 3 &&
+                missingCurrencyReport.CurrencyNotRequiredCount == 3 &&
+                missingCurrencyReport.NotApplicableUpstreamCount == 72 &&
+                missingCurrencyReport.BlockedUpstreamCount == 0 &&
+                missingCurrencyReport.BlockedCurrencyEvidenceCount == 1 &&
+                missingCurrencyReport.Routes.Single(route =>
+                    route.CurrencyAxisStatus ==
+                        "blocked_currency_budget_evidence")
+                    .BlockingReasons.Contains(
+                        "shop_currency_balances_missing_or_incomplete"),
+            "Missing native currency balances did not fail closed per shop route.");
+
+        var insufficientCurrencySnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        insufficientCurrencySnapshot["state"]!["player"]!["money"]!["value"] =
+            50;
+        var currencyRows = insufficientCurrencySnapshot["state"]!["player"]!
+            ["shop_currency_balances"]!["value"]!["rows"]!.AsArray();
+        currencyRows.Single(row =>
+            row!["currency_id"]!.GetValue<int>() == 0)!["balance"] = 50;
+        File.WriteAllText(
+            insufficientCurrencySnapshotPath,
+            insufficientCurrencySnapshot.ToJsonString(JsonDefaults.Options));
+        var insufficientCurrencyReport = BuildCurrencyFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            insufficientCurrencySnapshotPath,
+            targetDateRouteCalibrationPath,
+            currencyVariantUnlockPath,
+            currencyVariantFestivalPath,
+            currencyVariantLocationPath,
+            currencyVariantFacilityPath,
+            currencyVariantResourcePath);
+        var insufficientCurrencyRoute = insufficientCurrencyReport.Routes
+            .Single(route => route.CurrencyBudgetMatchesTargetDate == false);
+        Require(insufficientCurrencyReport.CurrencyAxisResolutionComplete &&
+                insufficientCurrencyReport.CurrencyAxisResolvedCount == 76 &&
+                insufficientCurrencyReport.CurrencyBudgetMatchCount == 3 &&
+                insufficientCurrencyReport.CurrencyBudgetMissCount == 1 &&
+                insufficientCurrencyReport.CurrencyNotRequiredCount == 3 &&
+                insufficientCurrencyReport.BlockedCurrencyEvidenceCount == 0 &&
+                insufficientCurrencyRoute.CurrencyEvaluation is not null &&
+                insufficientCurrencyRoute.CurrencyEvaluation.RequiredAmount ==
+                    100 &&
+                insufficientCurrencyRoute.CurrencyEvaluation.AvailableAmount ==
+                    50 &&
+                insufficientCurrencyRoute.NonMatchingReasons.Contains(
+                    "required_currency_amount_unavailable:money"),
+            "An exact insufficient-money fact was not retained as a currency miss.");
 
         var tamperedTargetDateFestival = JsonNode.Parse(
             File.ReadAllText(targetDateFestivalPath))!.AsObject();
@@ -2411,6 +2598,49 @@ internal static partial class BootstrapSelfTest
             festivalOutputPath,
             locationOutputPath,
             facilityOutputPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+    }
+
+    private static AcquisitionRouteTargetDateCurrencyReport
+        BuildCurrencyFixtureChain(
+            string inventoryPath,
+            string loweringPath,
+            string windowsPath,
+            string routeCalendarPath,
+            string targetDateCalendarPath,
+            string snapshotPath,
+            string routeTimingCalibrationPath,
+            string unlockOutputPath,
+            string festivalOutputPath,
+            string locationOutputPath,
+            string facilityOutputPath,
+            string resourceOutputPath)
+    {
+        var resource = BuildResourceFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            snapshotPath,
+            routeTimingCalibrationPath,
+            unlockOutputPath,
+            festivalOutputPath,
+            locationOutputPath,
+            facilityOutputPath);
+        Write(resourceOutputPath, resource);
+        return AcquisitionRouteTargetDateCurrencyBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockOutputPath,
+            festivalOutputPath,
+            locationOutputPath,
+            facilityOutputPath,
+            resourceOutputPath,
             snapshotPath,
             routeTimingCalibrationPath);
     }
