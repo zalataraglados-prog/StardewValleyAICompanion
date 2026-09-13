@@ -65,6 +65,9 @@ internal static partial class BootstrapSelfTest
         var tamperedTargetDateProcessingPath = Path.Combine(
             root,
             "tampered-target-date-processing-lead-time.json");
+        var tamperedTargetDateFishingProbabilityPath = Path.Combine(
+            root,
+            "tampered-target-date-fishing-probability.json");
         var strategyLedgerPath = Path.Combine(root, "strategy-ledger.json");
         var materialReservedLedgerPath = Path.Combine(
             root,
@@ -1632,6 +1635,9 @@ internal static partial class BootstrapSelfTest
                 targetDateFishingRoute.ProbabilityAxisResolved &&
                 targetDateFishingRoute.PositiveProbabilityAvailable == true &&
                 targetDateFishingRoute.SingleAttemptProbabilityLowerBound == 0.2d &&
+                targetDateFishingRoute.IndependentRetryLowerBoundProven ==
+                    true &&
+                targetDateFishingRoute.RetryBlockingReasons.Length == 0 &&
                 targetDateFishingRoute.SelectedProjection is not null &&
                 targetDateFishingRoute.SelectedProjection.TargetLocationId ==
                     "Beach" &&
@@ -1648,7 +1654,8 @@ internal static partial class BootstrapSelfTest
             "Target-date fishing terminal probability is not deterministic.");
 
         AcquisitionRouteTargetDateStochasticRetryReport BuildStochasticRetry(
-            string processingPath) =>
+            string processingPath,
+            string? fishingProbabilityPath = null) =>
             AcquisitionRouteTargetDateStochasticRetryBuilder.Build(
                 inventoryPath,
                 loweringPath,
@@ -1663,6 +1670,8 @@ internal static partial class BootstrapSelfTest
                 targetDateCurrencyPath,
                 targetDateReservationPath,
                 processingPath,
+                fishingProbabilityPath ?? targetDateFishingProbabilityPath,
+                fishingForecastManifestPath,
                 strategyLedgerPath,
                 targetDateUnlockSnapshotPath,
                 targetDateRouteCalibrationPath);
@@ -1673,25 +1682,25 @@ internal static partial class BootstrapSelfTest
             route => route.RouteOccurrenceId ==
                 targetDateProcessingShop.RouteOccurrenceId);
         var targetDateStochasticFish = targetDateStochasticRetry.Routes.Single(
-            route => route.StochasticRetryAxisStatus ==
-                "blocked_stochastic_probability_evidence");
+            route => route.RetryBudgetKind ==
+                "independent_binomial_retry_budget");
         Require(targetDateStochasticRetry.Status ==
-                    "partial_target_date_stochastic_retry_budget_axis_blocks" &&
+                    "complete_target_date_stochastic_retry_budget_axis_downstream_pending" &&
                 targetDateStochasticRetry.RouteOccurrenceInventoryComplete &&
-                !targetDateStochasticRetry
+                targetDateStochasticRetry
                     .StochasticRetryAxisResolutionComplete &&
                 !targetDateStochasticRetry.TrainingLabelEligible &&
                 targetDateStochasticRetry.RouteOccurrenceCount == 76 &&
                 targetDateStochasticRetry
-                    .StochasticRetryAxisResolvedCount == 75 &&
-                targetDateStochasticRetry.StochasticRetryMatchCount == 1 &&
+                    .StochasticRetryAxisResolvedCount == 76 &&
+                targetDateStochasticRetry.StochasticRetryMatchCount == 2 &&
                 targetDateStochasticRetry
                     .StochasticRetryNotRequiredCount == 1 &&
                 targetDateStochasticRetry.MaterializedOutputCount == 0 &&
                 targetDateStochasticRetry.NotApplicableUpstreamCount == 74 &&
                 targetDateStochasticRetry.BlockedUpstreamCount == 0 &&
                 targetDateStochasticRetry
-                    .BlockedProbabilityEvidenceCount == 1 &&
+                    .BlockedProbabilityEvidenceCount == 0 &&
                 targetDateStochasticRetry.BlockedRetryReservationCount == 0 &&
                 targetDateStochasticRetry.TargetSuccessProbability ==
                     StardewAI.Core.Infrastructure.StochasticRetryPolicy
@@ -1707,9 +1716,20 @@ internal static partial class BootstrapSelfTest
                 targetDateStochasticShop.AdditionalRetryCount == 0 &&
                 targetDateStochasticFish.UncertaintyMode ==
                     "native_outcome_domain_and_retry_bound" &&
-                targetDateStochasticFish.BlockingReasons.Single() ==
-                    "target_location_terminal_probability_evidence_missing:" +
-                    "native_location_fish_spawn" &&
+                targetDateStochasticFish.StochasticRetryAxisStatus ==
+                    "resolved_independent_stochastic_retry_budget" &&
+                targetDateStochasticFish.StochasticRetryAxisResolved &&
+                targetDateStochasticFish
+                    .StochasticRetryBudgetMatchesTargetDate == true &&
+                targetDateStochasticFish.SingleAttemptSuccessProbability ==
+                    0.2d &&
+                targetDateStochasticFish.RequiredAttemptCount == 14 &&
+                targetDateStochasticFish.AdditionalRetryCount == 13 &&
+                !targetDateStochasticFish
+                    .RetryExpandsReservedConsumables &&
+                targetDateStochasticFish
+                    .RetryExpandedReservationRevalidated &&
+                targetDateStochasticFish.BlockingReasons.Length == 0 &&
                 JsonSerializer.Serialize(
                     targetDateStochasticShop.UpstreamRoute,
                     JsonDefaults.Options) == JsonSerializer.Serialize(
@@ -1745,6 +1765,31 @@ internal static partial class BootstrapSelfTest
         }
         Require(tamperedProcessingRejected,
             "Target-date processing artifact tampering was not rejected.");
+
+        File.Copy(
+            targetDateFishingProbabilityPath,
+            tamperedTargetDateFishingProbabilityPath,
+            overwrite: true);
+        var tamperedFishingProbability = JsonNode.Parse(File.ReadAllText(
+            tamperedTargetDateFishingProbabilityPath))!.AsObject();
+        tamperedFishingProbability["routes"]![0]![
+            "probability_axis_resolved"] = false;
+        File.WriteAllText(
+            tamperedTargetDateFishingProbabilityPath,
+            tamperedFishingProbability.ToJsonString(JsonDefaults.Options));
+        var tamperedFishingProbabilityRejected = false;
+        try
+        {
+            _ = BuildStochasticRetry(
+                targetDateProcessingPath,
+                tamperedTargetDateFishingProbabilityPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedFishingProbabilityRejected = true;
+        }
+        Require(tamperedFishingProbabilityRejected,
+            "Target-date fishing probability tampering was not rejected.");
 
         JsonElement CrabPotNetwork(
             bool ready,

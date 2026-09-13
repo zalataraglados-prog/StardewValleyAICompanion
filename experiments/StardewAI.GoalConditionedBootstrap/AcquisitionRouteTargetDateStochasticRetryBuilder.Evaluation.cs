@@ -10,10 +10,14 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         "source_resolved_downstream";
     private const string NativeRetryBound =
         "native_outcome_domain_and_retry_bound";
+    private const string NativeLocationFishSpawn =
+        "native_location_fish_spawn";
 
     private static AcquisitionRouteTargetDateStochasticRetry Evaluate(
         AcquisitionRouteTargetDateProcessing route,
-        AcquisitionRouteCalendarResolution staticRoute)
+        AcquisitionRouteCalendarResolution staticRoute,
+        AcquisitionRouteTargetDateFishingProbability fishingRoute,
+        string fishingProbabilityPath)
     {
         if (!route.ProcessingLeadTimeAxisResolved)
         {
@@ -92,6 +96,15 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 Array.Empty<string>());
         }
 
+        if (staticRoute.RouteKind == NativeLocationFishSpawn)
+        {
+            return EvaluateFishing(
+                route,
+                staticRoute,
+                fishingRoute,
+                fishingProbabilityPath);
+        }
+
         return Result(
             route,
             staticRoute.UncertaintyMode,
@@ -110,6 +123,110 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 "target_location_terminal_probability_evidence_missing:" +
                 staticRoute.RouteKind
             });
+    }
+
+    private static AcquisitionRouteTargetDateStochasticRetry EvaluateFishing(
+        AcquisitionRouteTargetDateProcessing route,
+        AcquisitionRouteCalendarResolution staticRoute,
+        AcquisitionRouteTargetDateFishingProbability fishingRoute,
+        string fishingProbabilityPath)
+    {
+        if (!fishingRoute.ProbabilityAxisResolved ||
+            !fishingRoute.SingleAttemptProbabilityLowerBound.HasValue)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "native_retry_budget_requires_exact_probability",
+                null,
+                null,
+                false,
+                false,
+                new[] { fishingProbabilityPath },
+                Array.Empty<string>(),
+                fishingRoute.BlockingReasons.Length > 0
+                    ? fishingRoute.BlockingReasons
+                    : new[] { "fishing_terminal_probability_unresolved" });
+        }
+
+        var probability = fishingRoute.SingleAttemptProbabilityLowerBound.Value;
+        if (fishingRoute.IndependentRetryLowerBoundProven != true)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "native_retry_budget_requires_independence",
+                probability,
+                null,
+                false,
+                false,
+                new[] { fishingProbabilityPath },
+                Array.Empty<string>(),
+                fishingRoute.RetryBlockingReasons.Length > 0
+                    ? fishingRoute.RetryBlockingReasons
+                    : new[] { "fishing_independent_retry_proof_missing" });
+        }
+
+        if (probability <= 0d)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "resolved_stochastic_probability_zero",
+                true,
+                false,
+                "independent_retry_probability_zero",
+                probability,
+                null,
+                false,
+                true,
+                new[] { fishingProbabilityPath },
+                new[] { "single_attempt_probability_lower_bound_zero" },
+                Array.Empty<string>());
+        }
+
+        var requiredAttempts =
+            StochasticRetryPolicy.RequiredIndependentAttemptCount(
+                staticRoute.RequiredAmount,
+                probability);
+        if (!requiredAttempts.HasValue)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "independent_retry_budget_exceeds_policy_limit",
+                probability,
+                null,
+                false,
+                false,
+                new[] { fishingProbabilityPath },
+                Array.Empty<string>(),
+                new[] { "independent_retry_attempt_limit_exceeded" });
+        }
+
+        return Result(
+            route,
+            staticRoute.UncertaintyMode,
+            "resolved_independent_stochastic_retry_budget",
+            true,
+            true,
+            "independent_binomial_retry_budget",
+            probability,
+            requiredAttempts.Value,
+            false,
+            true,
+            new[] { fishingProbabilityPath },
+            Array.Empty<string>(),
+            Array.Empty<string>());
     }
 
     private static bool CurrentOutputAlreadyMaterialized(
@@ -167,7 +284,9 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             singleAttemptProbability,
             requiredAttempts,
             requiredAttempts.HasValue
-                ? Math.Max(0, requiredAttempts.Value - 1)
+                ? Math.Max(
+                    0,
+                    requiredAttempts.Value - requirement.RequiredAmount)
                 : null,
             expandsReservedConsumables,
             expandedReservationRevalidated,

@@ -26,6 +26,7 @@ public sealed class FishingTerminalProbabilityEvaluatorTests
         Assert.Equal(new[] { "earlier" }, candidate.CompetitorRuleKeys);
         Assert.Equal(0.8d, candidate.PriorCompetitorNonReturnProbabilityLowerBound);
         Assert.Equal(0.05d, candidate.TargetReturnProbabilityLowerBound);
+        Assert.True(result.IndependentRetryLowerBoundProven);
     }
 
     [Fact]
@@ -67,6 +68,11 @@ public sealed class FishingTerminalProbabilityEvaluatorTests
 
         Assert.Equal(0d, failed.SingleAttemptProbabilityLowerBound);
         Assert.Equal(0.2d, passed.SingleAttemptProbabilityLowerBound!.Value, 10);
+        Assert.False(failed.IndependentRetryLowerBoundProven);
+        Assert.False(passed.IndependentRetryLowerBoundProven);
+        Assert.Contains(
+            "target_spawn_roll_not_independent:seeded-target",
+            passed.RetryBlockingReasons);
     }
 
     [Fact]
@@ -133,6 +139,28 @@ public sealed class FishingTerminalProbabilityEvaluatorTests
             result.BlockingReasons);
     }
 
+    [Fact]
+    public void MutablePrecedenceCompetitorBlocksRetryProofButNotFirstAttempt()
+    {
+        var competitor = Rule("mutable", 0, spawnChance: 0.2d) with
+        {
+            RetryContextStable = false
+        };
+        var result = FishingTerminalProbabilityEvaluator.Evaluate(Request(
+            competitor,
+            Rule("target", 1, true, 0.5d, 1d, 1d)));
+
+        Assert.True(result.Resolved);
+        Assert.Equal(
+            0.4d,
+            result.SingleAttemptProbabilityLowerBound.GetValueOrDefault(),
+            10);
+        Assert.False(result.IndependentRetryLowerBoundProven);
+        Assert.Contains(
+            "competitor_retry_context_not_stable:mutable",
+            result.RetryBlockingReasons);
+    }
+
     private static FishingTerminalProbabilityRequest Request(
         params FishingTerminalProbabilityRule[] rules) => new()
         {
@@ -158,6 +186,7 @@ public sealed class FishingTerminalProbabilityEvaluatorTests
             EligibleBeforeRandomRolls = true,
             ProducesTarget = producesTarget,
             OutputResolutionComplete = true,
+            RetryContextStable = true,
             SpawnRollKind = rollKind,
             SeededSpawnRollPassed = seededRollPassed,
             SpawnChance = spawnChance,

@@ -612,7 +612,14 @@ internal static partial class BootstrapSelfTest
                 spawn_rules = Field(new
                 {
                     inventory_complete = true,
-                    evaluation_context = new { fishing_level = 5 },
+                    evaluation_context = new
+                    {
+                        fishing_level = 5,
+                        base_fishing_level = 5,
+                        selected_bait_qualified_item_id = (string?)null,
+                        has_magic_bait = false,
+                        has_curiosity_lure = false
+                    },
                     rules = new[]
                     {
                         new
@@ -623,13 +630,17 @@ internal static partial class BootstrapSelfTest
                             random_item_ids = Array.Empty<string>(),
                             item_selection_mode = "item_id",
                             per_item_condition = (string?)null,
+                            condition = (string?)null,
                             condition_probability_resolved = true,
                             condition_met_for_probability = true,
                             player_position = (object?)null,
+                            min_fishing_level = 0,
                             blocking_reasons = Array.Empty<string>(),
                             eligible_fishable_tile_indices = new[] { 0 },
                             spawn_chance_probability_resolved = true,
                             use_fish_caught_seeded_random = false,
+                            catch_limit = -1,
+                            set_flag_on_catch = (string?)null,
                             effective_spawn_chance_preview = 0.5d,
                             outputs = new[]
                             {
