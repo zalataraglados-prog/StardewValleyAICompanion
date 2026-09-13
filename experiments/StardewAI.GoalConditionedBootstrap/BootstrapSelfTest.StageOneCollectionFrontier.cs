@@ -34,6 +34,7 @@ internal static partial class BootstrapSelfTest
         var targetDateUnlockPath = Path.Combine(root, "target-date-unlock.json");
         var targetDateFestivalPath = Path.Combine(root, "target-date-festival.json");
         var targetDateLocationPath = Path.Combine(root, "target-date-location.json");
+        var targetDateFacilityPath = Path.Combine(root, "target-date-facility.json");
         var targetDateRouteCalibrationPath = Path.Combine(
             root,
             "target-date-route-timing.json");
@@ -61,6 +62,33 @@ internal static partial class BootstrapSelfTest
         var tamperedTargetDateFestivalPath = Path.Combine(
             root,
             "tampered-target-date-festival.json");
+        var tamperedTargetDateLocationPath = Path.Combine(
+            root,
+            "tampered-target-date-location.json");
+        var missingFacilitySnapshotPath = Path.Combine(
+            root,
+            "missing-facility-evidence-snapshot.json");
+        var missingFacilityUnlockPath = Path.Combine(
+            root,
+            "missing-facility-evidence-unlock.json");
+        var missingFacilityFestivalPath = Path.Combine(
+            root,
+            "missing-facility-evidence-festival.json");
+        var missingFacilityLocationPath = Path.Combine(
+            root,
+            "missing-facility-evidence-location.json");
+        var zeroFacilitySnapshotPath = Path.Combine(
+            root,
+            "zero-facility-capacity-snapshot.json");
+        var zeroFacilityUnlockPath = Path.Combine(
+            root,
+            "zero-facility-capacity-unlock.json");
+        var zeroFacilityFestivalPath = Path.Combine(
+            root,
+            "zero-facility-capacity-festival.json");
+        var zeroFacilityLocationPath = Path.Combine(
+            root,
+            "zero-facility-capacity-location.json");
         var missingRouteSnapshotPath = Path.Combine(
             root,
             "missing-route-evidence-snapshot.json");
@@ -922,6 +950,202 @@ internal static partial class BootstrapSelfTest
                     .GuaranteedArrivalByTime == 902 &&
                 targetDateLocationShop.TargetEvaluations[0].Path.Length == 2,
             "Target-date location-route axis resolution drifted.");
+
+        var targetDateFacility =
+            AcquisitionRouteTargetDateFacilityBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        Write(targetDateFacilityPath, targetDateFacility);
+        var targetDateFacilityShop = targetDateFacility.Routes.Single(route =>
+            route.UpstreamRoute.UpstreamRoute.UpstreamRoute.RequirementId ==
+                "community_center:bundle:Pantry/5" &&
+            route.UpstreamRoute.UpstreamRoute.UpstreamRoute.RouteKind ==
+                "sells");
+        var targetDateFacilityCrops = targetDateFacility.Routes.Where(route =>
+                route.UpstreamRoute.UpstreamRoute.UpstreamRoute.RouteKind ==
+                    "harvests_as" &&
+                route.FacilityCapacityMatchesTargetDate == true)
+            .ToArray();
+        var sourceLocationShopJson = JsonSerializer.Serialize(
+            targetDateLocationShop,
+            JsonDefaults.Options);
+        var carriedLocationShopJson = JsonSerializer.Serialize(
+            targetDateFacilityShop.UpstreamRoute,
+            JsonDefaults.Options);
+        Require(targetDateFacility.Status ==
+                    "complete_target_date_facility_capacity_axis_downstream_pending" &&
+                targetDateFacility.RouteOccurrenceInventoryComplete &&
+                targetDateFacility.FacilityCapacityAxisResolutionComplete &&
+                !targetDateFacility.TrainingLabelEligible &&
+                targetDateFacility.TargetTotalDay == 0 &&
+                targetDateFacility.RouteOccurrenceCount == 76 &&
+                targetDateFacility.FacilityCapacityAxisResolvedCount == 76 &&
+                targetDateFacility.FacilityCapacityMatchCount == 4 &&
+                targetDateFacility.FacilityCapacityMissCount == 0 &&
+                targetDateFacility.FacilityCapacityNotRequiredCount == 2 &&
+                targetDateFacility.NotApplicableUpstreamCount == 72 &&
+                targetDateFacility.BlockedUpstreamCount == 0 &&
+                targetDateFacility.BlockedFacilityEvidenceCount == 0 &&
+                targetDateFacilityCrops.Length == 2 &&
+                targetDateFacilityCrops.All(route =>
+                    route.FacilityRequirementKind ==
+                        "prepared_cultivation_slot" &&
+                    route.TargetEvaluations.Single()
+                        .OpenPreparedSoilSlotCount == 1) &&
+                targetDateFacilityShop.FacilityCapacityAxisStatus ==
+                    "resolved_facility_capacity_not_required" &&
+                carriedLocationShopJson == sourceLocationShopJson,
+            "Target-date facility-capacity axis resolution drifted.");
+
+        var tamperedTargetDateLocation = JsonNode.Parse(
+            File.ReadAllText(targetDateLocationPath))!.AsObject();
+        tamperedTargetDateLocation["routes"]![0]!["upstream_route"]!
+            ["upstream_route"]!["source_id"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDateLocationPath,
+            tamperedTargetDateLocation.ToJsonString(JsonDefaults.Options));
+        var tamperedTargetDateLocationRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateFacilityBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                tamperedTargetDateLocationPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedTargetDateLocationRejected = true;
+        }
+        Require(tamperedTargetDateLocationRejected,
+            "A tampered target-date location report did not fail closed.");
+
+        var missingFacilitySnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        var missingFacilityFarm = missingFacilitySnapshot["state"]!
+            ["locations"]!["social_route_date_evidence"]!["value"]!
+            ["locations"]!.AsArray()
+            .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!;
+        missingFacilityFarm.AsObject().Remove("cultivation_capacity");
+        File.WriteAllText(
+            missingFacilitySnapshotPath,
+            missingFacilitySnapshot.ToJsonString(JsonDefaults.Options));
+        var missingFacilityReport = BuildFacilityFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingFacilitySnapshotPath,
+            targetDateRouteCalibrationPath,
+            missingFacilityUnlockPath,
+            missingFacilityFestivalPath,
+            missingFacilityLocationPath);
+        Require(missingFacilityReport.Status ==
+                    "partial_target_date_facility_capacity_axis_blocks" &&
+                missingFacilityReport.RouteOccurrenceInventoryComplete &&
+                !missingFacilityReport.FacilityCapacityAxisResolutionComplete &&
+                missingFacilityReport.FacilityCapacityAxisResolvedCount == 74 &&
+                missingFacilityReport.FacilityCapacityMatchCount == 2 &&
+                missingFacilityReport.FacilityCapacityMissCount == 0 &&
+                missingFacilityReport.FacilityCapacityNotRequiredCount == 2 &&
+                missingFacilityReport.NotApplicableUpstreamCount == 72 &&
+                missingFacilityReport.BlockedFacilityEvidenceCount == 2 &&
+                missingFacilityReport.Routes.Where(route =>
+                    route.FacilityCapacityAxisStatus ==
+                        "blocked_facility_capacity_evidence").All(route =>
+                    route.BlockingReasons.Contains(
+                        "Farm:prepared_cultivation_capacity_missing")),
+            "Missing prepared-soil capacity did not fail closed per crop route.");
+
+        var zeroFacilitySnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        var zeroFacilityCapacity = zeroFacilitySnapshot["state"]!
+            ["locations"]!["social_route_date_evidence"]!["value"]!
+            ["locations"]!.AsArray()
+            .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
+            ["cultivation_capacity"]!.AsObject();
+        zeroFacilityCapacity["total_prepared_soil_slot_count"] = 0;
+        zeroFacilityCapacity["open_prepared_soil_slot_count"] = 0;
+        File.WriteAllText(
+            zeroFacilitySnapshotPath,
+            zeroFacilitySnapshot.ToJsonString(JsonDefaults.Options));
+        var zeroFacilityReport = BuildFacilityFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            zeroFacilitySnapshotPath,
+            targetDateRouteCalibrationPath,
+            zeroFacilityUnlockPath,
+            zeroFacilityFestivalPath,
+            zeroFacilityLocationPath);
+        Require(zeroFacilityReport.Status ==
+                    "complete_target_date_facility_capacity_axis_downstream_pending" &&
+                zeroFacilityReport.FacilityCapacityAxisResolutionComplete &&
+                zeroFacilityReport.FacilityCapacityAxisResolvedCount == 76 &&
+                zeroFacilityReport.FacilityCapacityMatchCount == 2 &&
+                zeroFacilityReport.FacilityCapacityMissCount == 2 &&
+                zeroFacilityReport.FacilityCapacityNotRequiredCount == 2 &&
+                zeroFacilityReport.BlockedFacilityEvidenceCount == 0 &&
+                zeroFacilityReport.Routes.Where(route =>
+                    route.FacilityCapacityMatchesTargetDate == false).All(route =>
+                    route.FacilityCapacityAxisStatus ==
+                        "resolved_prepared_cultivation_capacity_miss" &&
+                    route.BlockingReasons.Length == 0),
+            "A complete zero-capacity fact was misclassified as missing evidence.");
+
+        zeroFacilityCapacity["total_prepared_soil_slot_count"] = 1;
+        zeroFacilityCapacity["occupied_crop_slot_count"] = 1;
+        zeroFacilityCapacity["unresolved_harvest_item_slot_count"] = 1;
+        zeroFacilityCapacity["occupied_harvest_items"] = new JsonArray(
+            new JsonObject
+            {
+                ["harvest_item_qualified_id"] = string.Empty,
+                ["is_garden_pot"] = false,
+                ["slot_count"] = 1
+            });
+        File.WriteAllText(
+            zeroFacilitySnapshotPath,
+            zeroFacilitySnapshot.ToJsonString(JsonDefaults.Options));
+        var unresolvedCropIdentityReport = BuildFacilityFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            zeroFacilitySnapshotPath,
+            targetDateRouteCalibrationPath,
+            zeroFacilityUnlockPath,
+            zeroFacilityFestivalPath,
+            zeroFacilityLocationPath);
+        Require(unresolvedCropIdentityReport.Status ==
+                    "partial_target_date_facility_capacity_axis_blocks" &&
+                unresolvedCropIdentityReport.FacilityCapacityAxisResolvedCount ==
+                    74 &&
+                unresolvedCropIdentityReport.FacilityCapacityMatchCount == 2 &&
+                unresolvedCropIdentityReport.BlockedFacilityEvidenceCount == 2 &&
+                unresolvedCropIdentityReport.Routes.Where(route =>
+                    route.FacilityCapacityAxisStatus ==
+                        "blocked_facility_capacity_evidence").All(route =>
+                    route.BlockingReasons.Contains(
+                        "Farm:prepared_crop_harvest_identity_unresolved")),
+            "An unresolved occupied crop identity was treated as a capacity miss.");
 
         var tamperedTargetDateFestival = JsonNode.Parse(
             File.ReadAllText(targetDateFestivalPath))!.AsObject();
@@ -1839,6 +2063,60 @@ internal static partial class BootstrapSelfTest
         }
         Require(staleIntentRejected,
             "A Master Angler intent from a different decision state was admitted.");
+    }
+
+    private static AcquisitionRouteTargetDateFacilityReport
+        BuildFacilityFixtureChain(
+            string inventoryPath,
+            string loweringPath,
+            string windowsPath,
+            string routeCalendarPath,
+            string targetDateCalendarPath,
+            string snapshotPath,
+            string routeTimingCalibrationPath,
+            string unlockOutputPath,
+            string festivalOutputPath,
+            string locationOutputPath)
+    {
+        var unlock = AcquisitionRouteTargetDateUnlockBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            snapshotPath);
+        Write(unlockOutputPath, unlock);
+        var festival = AcquisitionRouteTargetDateFestivalBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockOutputPath,
+            snapshotPath);
+        Write(festivalOutputPath, festival);
+        var location = AcquisitionRouteTargetDateLocationBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockOutputPath,
+            festivalOutputPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+        Write(locationOutputPath, location);
+        return AcquisitionRouteTargetDateFacilityBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockOutputPath,
+            festivalOutputPath,
+            locationOutputPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
     }
 
 }

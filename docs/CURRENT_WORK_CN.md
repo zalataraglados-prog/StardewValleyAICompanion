@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期设施容量轴求值
+
+- 新增 `acquisition_route_target_date_facility_capacity.v1` 与 `build-acquisition-route-target-date-facility-capacity`。它从同一权威输入、快照和移动校准重新生成并逐对象核对上游地点报告，全部 `33` 种来源类型必须进入唯一容量分类表；未知类型不能静默当作“不需要设施”。
+- 透明桥在已有低频 `social_route_date_evidence.v2` 每张地图行中加入紧凑 `prepared_cultivation_capacity.v1`：只遍历现有 HoeDirt 与无灌木花盆，完整记录开放槽、占用槽、花盆数和按收获物分组的占用槽。无法识别收获物身份的占用槽单独计数，既不冒充目标作物也不冒充确定空位。它不扫描或猜测尚未开垦的地块。
+- 当前能通过前四轴的来源中，钓鱼、地点采集和商店明确为容量轴不适用；蟹笼复用地点轴已经证明的实际放置网络；作物要求至少一个匹配目标地图拥有现存目标作物槽或开放的已准备耕地槽。开放槽只满足容量轴，不证明种子、浇水、生长期或目标日收获；这些仍归资源和 processing lead time 等后续轴。
+- 机器、鱼塘、动物、果树、树液采集与烹饪设施类已经显式分类为容量来源，但当前仍在更早的静态来源/地点轴阻塞。若其在相应原生绑定求值器完成前意外到达本轴，会逐条失败关闭，不会被“无设施要求”放行。
+- 聚焦 fixture 保留 `76/76` 条路线：72 条上游静态不适用，4 条活动来源容量均匹配，其中 2 条作物绑定 Farm 的 1 个开放耕地槽、2 条普通来源无需容量。删除 Farm 容量字段只阻塞 2 条作物路线；完整零容量则形成 2 条已解析 miss 而不是缺证据。第 223 天旧快照保留全部 1599 条路线：197 条上游静态不适用，1402 条继承地点轴及更早阻塞，0 条用旧字段猜测容量。训练授权仍为 false。
+- GoalConditionedBootstrap Release、TransparentBridge 真实程序集构建与聚焦自测通过，未启动游戏或训练。下一固定切片进入 `resource_inputs`；容量来源类仍须在更早来源/地点轴放行时补齐其精确原生绑定，不能由资源轴代偿。
+
 ## 2026-09-13 显式目标日期地点路线轴求值
 
 - 新增 `acquisition_route_target_date_location_route.v1` 与 `build-acquisition-route-target-date-location-route`。构建器会从同一组权威输入和同一快照重建并逐对象比较节日状态报告，再把当前适用来源绑定到目标地点，批量复用 Core 唯一的 `FutureRouteDateEvidenceProducer.ProduceLocationArrivals`。没有新增第二套路由或 BFS 实现。

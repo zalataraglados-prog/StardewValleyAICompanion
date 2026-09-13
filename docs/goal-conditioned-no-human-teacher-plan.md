@@ -1283,6 +1283,31 @@ Slice 7 remains assigned to the RTX 5070 node.
   resource, budget, reservation, lead-time, retry, daily-budget, opportunity-cost and fresh-receipt axes retain
   independent ownership.
 
+### 2026-09-13: explicit target-date facility-capacity axis
+
+- `acquisition_route_target_date_facility_capacity.v1` deterministically rebuilds and compares the complete
+  location-route artifact from the same authority inputs, snapshot and movement calibration. All 33 authoritative
+  route kinds belong to one exhaustive capacity classification; an unknown kind cannot default to no capacity.
+- The low-frequency all-location route projection now carries compact `prepared_cultivation_capacity.v1` rows. They
+  enumerate existing HoeDirt and empty-bush garden pots only, preserving open, occupied, pot and per-harvest-item
+  counts. Occupied slots whose live crop output identity is unavailable are counted separately and fail closed when
+  they could change a negative result. Potential untilled land is not scanned or inferred.
+- Among route kinds currently able to pass the preceding axes, ordinary fishing/location/shop sources explicitly do
+  not consume facility capacity, placed crab pots reuse the exact live network already proven by `location_route`,
+  and crop routes require an existing target-output crop or an open prepared-soil slot in at least one matched source
+  location. An open slot satisfies only capacity: seed/input, planting, watering, growth, target-date harvest and final
+  receipt remain independent axes.
+- Machine, pond, animal, fruit-tree, tapper and cooking-facility route kinds are classified as capacity-bearing but
+  remain blocked by earlier source/location stages today. If one reaches this stage before its locked facility binding
+  is implemented, it fails closed per route. This preserves the denominator without pretending those families are
+  facility-free.
+- The fixture retains 76/76 occurrences: 72 upstream static misses and four active capacity matches, including two
+  crop occurrences backed by one open Farm soil slot. Removing that field blocks only the two crop occurrences;
+  complete zero capacity yields two resolved misses. The archived day-223 snapshot retains all 1,599 rows as 197
+  upstream static misses and 1,402 inherited upstream blocks, with no capacity guessed from the older schema.
+- Training authorization remains false. The next fixed dependency axis is `resource_inputs`; capacity-bearing source
+  families must still receive their exact earlier source/location bindings when those upstream parsers are opened.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

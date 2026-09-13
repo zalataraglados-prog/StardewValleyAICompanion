@@ -243,7 +243,10 @@ internal static partial class BootstrapSelfTest
     private static object Location(
         string id,
         bool seedsIgnoreSeasonsHere = false,
-        object[]? actionGates = null) => new
+        object[]? actionGates = null,
+        int openPreparedSoilSlots = 0,
+        int occupiedPreparedSoilSlots = 0,
+        object[]? occupiedHarvestItems = null) => new
     {
         location_id = id,
         location_context_id = "Default",
@@ -260,6 +263,20 @@ internal static partial class BootstrapSelfTest
         unsupported_route_action_record_count = 0,
         unsupported_route_action_tile_count = 0,
         unsupported_route_action_tiles = Array.Empty<object>(),
+        cultivation_capacity = new
+        {
+            schema_version = "prepared_cultivation_capacity.v1",
+            projection_status =
+                "exact_current_snapshot_prepared_soil_slots",
+            total_prepared_soil_slot_count =
+                openPreparedSoilSlots + occupiedPreparedSoilSlots,
+            open_prepared_soil_slot_count = openPreparedSoilSlots,
+            occupied_crop_slot_count = occupiedPreparedSoilSlots,
+            unresolved_harvest_item_slot_count = 0,
+            garden_pot_slot_count = 0,
+            occupied_harvest_items =
+                occupiedHarvestItems ?? Array.Empty<object>()
+        },
         action_gates = actionGates ?? Array.Empty<object>()
     };
 }

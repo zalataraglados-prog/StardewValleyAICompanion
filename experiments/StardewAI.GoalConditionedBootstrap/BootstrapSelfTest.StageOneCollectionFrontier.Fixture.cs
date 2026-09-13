@@ -221,7 +221,7 @@ internal static partial class BootstrapSelfTest
                         location_count = 4,
                         locations = new[]
                         {
-                            Location("Farm"),
+                            Location("Farm", openPreparedSoilSlots: 1),
                             Location(
                                 "Town",
                                 actionGates: new object[]
