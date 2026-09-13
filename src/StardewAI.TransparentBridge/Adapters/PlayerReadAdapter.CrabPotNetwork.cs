@@ -133,6 +133,8 @@ public sealed partial class PlayerReadAdapter
             ready_state_consistent = readyStateConsistent,
             bait_qualified_item_id = pot.bait.Value?.QualifiedItemId ?? string.Empty,
             current_output_qualified_item_id = output?.QualifiedItemId ?? string.Empty,
+            current_output_stack = output?.Stack ?? 0,
+            current_output_quality = output?.Quality ?? 0,
             current_output_collection_eligible =
                 CrabPotProjectionSemantics.IsFishCollectionEligible(
                     output,

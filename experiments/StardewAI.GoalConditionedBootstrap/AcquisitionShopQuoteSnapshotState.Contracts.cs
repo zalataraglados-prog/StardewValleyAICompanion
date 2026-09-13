@@ -4,6 +4,8 @@ internal sealed record AcquisitionShopQuote(
     string ShopId,
     string StockId,
     string QualifiedItemId,
+    int OutputStack,
+    int OutputQuality,
     int CurrencyId,
     int Price,
     int Stock,

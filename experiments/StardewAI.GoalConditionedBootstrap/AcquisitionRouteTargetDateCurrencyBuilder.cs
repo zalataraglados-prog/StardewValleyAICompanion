@@ -47,12 +47,6 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
             staticPath,
             "Acquisition route static calendar resolution");
         var staticRoutes = ValidateStaticSource(staticSource, source);
-        var lowering = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRouteOptionLoweringReport>(
-            loweringFullPath,
-            "Acquisition route lowering");
-        var amounts = AcquisitionRouteAmountIndex.Build(lowering, source);
-
         using var snapshotDocument = JsonDocument.Parse(
             File.ReadAllText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
@@ -67,7 +61,6 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         var routes = source.Routes.Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
-                amounts[route.RouteOccurrenceId],
                 state))
             .ToArray();
 

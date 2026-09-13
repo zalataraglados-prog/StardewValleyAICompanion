@@ -54,7 +54,8 @@ The implementation chain is:
   Training authorization remains false. The following `facility_capacity` stage is now implemented for every route
   that can currently pass those upstream axes: all 33 source kinds have one exhaustive capacity classification;
   ordinary location/fishing/shop sources are explicitly capacity-free, exact placed crab pots reuse their location
-  proof, and crops require a target-map existing output crop or open prepared-soil slot. The bridge emits compact
+  proof, and crops require enough target-map existing output crops plus open prepared-soil slots to cover the full
+  amount under locked minimum yield. The bridge emits compact
   per-location prepared HoeDirt/garden-pot counts and keeps unresolved crop output identities separate. Missing crop
   capacity blocks, while complete zero capacity is a resolved miss. Machine, pond, animal, fruit-tree, tapper and
   cooking-facility kinds stay typed capacity-bearing and fail closed if they reach this stage before their earlier
@@ -64,9 +65,10 @@ The implementation chain is:
   compares the facility report, joins every occurrence to its exact static source, and reuses the canonical
   `material_inventory_graph.v1` plus `MaterialSupplyProjection` instead of inventing a player-inventory-only count.
   Material, rod and crab-pot fields are independently lazy-cached and are read only for a still-active route family.
-  Existing target crops need no new seed; open prepared soil needs one exact seed; shop barter items are checked here
-  while native currencies remain downstream; ordinary fishing consumes no required input, whereas all-magic-bait
-  windows require an attachable rod and attached or loose `(O)908`. Existing output, loaded bait or owner Luremaster
+  Existing target crops offset only their guaranteed minimum output; remaining slots each need one exact seed. Shop
+  barter and mandatory bait quantities scale with the full requirement while native currencies remain downstream;
+  ordinary fishing consumes no required input, whereas all-magic-bait windows require an attachable rod and enough
+  attached plus loose `(O)908`. Existing output, loaded bait or owner Luremaster
   satisfies a placed crab pot; an unserviced pot remains blocked until its exact native bait candidate domain is
   carried. All 33 source kinds have an explicit class, and still-unbound reward, machine, animal, pond, geode and
   recipe input families fail closed if they reach this axis. Reusable tools stay under the existing fresh candidate
@@ -79,9 +81,11 @@ The implementation chain is:
   resource artifact, joins exact lowering amounts, and evaluates every still-active occurrence against one
   same-snapshot purchase/payment quote. The bridge exposes the locked 1.6.15 native currency domain through one
   shared reader: 0 money, 1 star tokens, 2 club coins and 4 Qi gems. Shop routes bind shop ID, synchronized stock key
-  and qualified item identity to current price, currency, effective barter terms, stock and `CanBuyItem`; direct Vault
+  and qualified item identity to current output stack/quality, price, currency, effective barter terms, stock and
+  `CanBuyItem`. Purchase count is `ceil(required amount / output stack)`, and price, finite stock and barter quantity
+  scale together; direct Vault
   routes retain their exact 2500/5000/10000/25000 lowering amounts. Missing quote evidence blocks, while sold-out,
-  non-buyable or insufficient-balance states are resolved misses. The fixture retains 76/76 occurrences, four active
+  non-buyable, insufficient-quality or insufficient-balance states are resolved misses. The fixture retains 76/76 occurrences, four active
   matches, three no-currency routes and 72 upstream non-applicable rows; its missing-evidence and insufficient-money
   variants are independently asserted. The following `inventory_reservation` stage is now implemented as a read-only
   route claim producer over one explicit controller ledger. It subtracts other active material/currency reservations,
@@ -92,13 +96,16 @@ The implementation chain is:
   remains false. The following `processing_lead_time` stage is now implemented as a deterministic target-date
   production-readiness resolver. It rebuilds the complete reservation artifact and preserves every occurrence.
   Immediate shop, fishing and location interactions carry no production wait while their action duration and random
-  attempts remain in later axes. Crop routes bind locked `DaysInPhase` evidence to exact live per-tile crop state:
-  same-day new planting is a known miss, a harvest-ready crop is a match, and missing or contradictory live rows fail
-  closed. Ready crab-pot output is immediate; a serviced empty pot can only prove a next-morning attempt from native
+  attempts remain in later axes. Crop routes bind locked `DaysInPhase`, minimum yield/quality and exact live per-tile
+  crop state: same-day new planting is a known miss, and harvest-ready rows match only when their summed guaranteed
+  amount and quality satisfy the complete requirement; missing or contradictory live rows fail closed. Ready crab-pot
+  output is summed by exact stack and quality; a serviced empty pot can only prove a next-morning attempt from native
   `CrabPot.DayUpdate`. The remaining production families are explicitly classified and fail closed until their exact
   evaluators reach this frontier. The fixture resolves 76/76 occurrences as 72 upstream non-applicable, two immediate
-  matches and two crop timing misses. Training authorization remains false, and `stochastic_retry_budget` is the next
-  fixed dependency axis.
+  matches and two crop timing misses. All route artifacts now retain authoritative match kind, amount and minimum
+  quality from lowering onward. Training authorization remains false, and `stochastic_retry_budget` is the next fixed
+  dependency axis. Retry-expanded consumables must then pass final resource/currency/atomic-reservation validation;
+  a one-attempt claim set cannot authorize a multi-attempt plan.
 - **Product execution and formal-training boundary** - EVD-325 adds one loopback-only Product Executor in front of the 145 existing native dispatch state machines. It enforces product capability, non-debug action IDs, exact run/actor/mode/save-root binding, GUID nonce and request time; writes pending before dispatch and final after a fresh verified receipt; returns final receipts idempotently; rejects nonce conflicts; and never redispatches an orphaned pending receipt after restart. Full-world hash drift is recorded rather than treated as an automatic action failure because the live world changes while planning; each native state machine remains the sole action-level fresh precondition authority, and drift forces replanning. Formal LiveTrainingLoop runs now require this product endpoint, while the independent 62-option allowlist continues to own policy admission.
 - **Story-event and cinematic-minigame execution** - `player.story_event` exposes the active vanilla `Event` as a lossless command/response projection with explicit festival, minigame and player-control ownership boundaries. EVD-322 closes ordinary automatic and exact-response event progression, including the exact initial-pet `catQuestion -> response 0 -> NamingMenu` branch with nonempty native default naming. EVD-323 adds one separate `story.advance_event_minigame` owner: the bridge classifies all nine mapped native types and their live runtime state; five event cinematics plus `BoatJourney` are executable, `GrandpaStory` and `Intro` remain player-owned new-game setup, and unreachable base `TelescopeScene` remains an explicit deprecated compatibility placeholder. Runtime never calls `IMinigame.tick`, `forceQuit`, `skipEvent`, or writes event/minigame state; `Game1` owns progression, while the executor only forwards compiler-bound native input and verifies completion or a fresh boundary.
 - **Grandpa 21-point objective and farmhouse axis** - The strategic completion target is all 21 decompiled rule points; 12 points/four candles are a milestone only. `world_progress.marriage_house` keeps partnership, current farmhouse level, construction state, Carpenter availability, exact native cost tuple, direct score delta, and verified upgrade capabilities together. Levels 1-2 can satisfy the direct partnership/house score factor. Level 3 has zero direct Grandpa points, but the decompile verifies a new `Cellar`, cellar warps, Cask recipe, and an additional indoor object/machine location. The bridge projects Cellar map dimensions, static placeable unoccupied tiles, existing objects, and machine counts by qualified ID. The general machine chain now enumerates Farm, assigned FarmHouse, and assigned Cellar without row truncation, binds every row/candidate/queue/runtime request to `location_id`, uses same-map collision state only, and rolls remote work one transparent connector at a time before fresh replanning. Demand/throughput and route-cost utility remain before numeric level-3 ranking. Runtime purchase still uses only native Carpenter dialogue and performs no direct progress writes.

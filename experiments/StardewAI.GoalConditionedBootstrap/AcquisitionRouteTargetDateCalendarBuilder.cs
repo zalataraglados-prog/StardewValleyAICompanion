@@ -124,6 +124,9 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
             route.AlternativeIndex,
             route.RouteIndex,
             route.QualifiedItemId,
+            route.MatchKind,
+            route.RequiredAmount,
+            route.MinimumQuality,
             route.RouteKind,
             route.SourceId,
             route.Status,
@@ -156,6 +159,10 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
 
         foreach (var route in source.Routes)
         {
+            Require(!string.IsNullOrWhiteSpace(route.MatchKind) &&
+                    route.RequiredAmount > 0 &&
+                    route.MinimumQuality >= 0,
+                "A static route lost its requirement amount or quality contract.");
             if (route.Status != ResolvedSourceStatus)
             {
                 Require(route.CalendarWindows.Length == 0,

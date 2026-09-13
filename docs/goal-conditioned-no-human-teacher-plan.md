@@ -1294,15 +1294,15 @@ Slice 7 remains assigned to the RTX 5070 node.
   they could change a negative result. Potential untilled land is not scanned or inferred.
 - Among route kinds currently able to pass the preceding axes, ordinary fishing/location/shop sources explicitly do
   not consume facility capacity, placed crab pots reuse the exact live network already proven by `location_route`,
-  and crop routes require an existing target-output crop or an open prepared-soil slot in at least one matched source
-  location. An open slot satisfies only capacity: seed/input, planting, watering, growth, target-date harvest and final
-  receipt remain independent axes.
+  and crop routes require enough existing target-output crops plus open prepared-soil slots across matched source
+  locations to cover the full amount under the authoritative minimum harvest yield. An open slot satisfies only
+  capacity: seed/input, planting, watering, growth, target-date harvest and final receipt remain independent axes.
 - Machine, pond, animal, fruit-tree, tapper and cooking-facility route kinds are classified as capacity-bearing but
   remain blocked by earlier source/location stages today. If one reaches this stage before its locked facility binding
   is implemented, it fails closed per route. This preserves the denominator without pretending those families are
   facility-free.
 - The fixture retains 76/76 occurrences: 72 upstream static misses and four active capacity matches, including two
-  crop occurrences backed by one open Farm soil slot. Removing that field blocks only the two crop occurrences;
+  crop occurrences backed by two open Farm soil slots. Removing that field blocks only the two crop occurrences;
   complete zero capacity yields two resolved misses. The archived day-223 snapshot retains all 1,599 rows as 197
   upstream static misses and 1,402 inherited upstream blocks, with no capacity guessed from the older schema.
 - Training authorization remains false. The next fixed dependency axis is `resource_inputs`; capacity-bearing source
@@ -1318,7 +1318,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   duplicating global inventories; inaccessible/shared quantities remain excluded. Material, rod and crab-pot reads
   are independently lazy and cached, so only an active route of that family touches its field. Reservation
   competition is still owned by the later `inventory_reservation` axis.
-- A matched existing target crop needs no new seed. An open prepared-soil slot requires one exact `Data/Crops` seed.
+- Existing target crops offset demand only by their authoritative minimum harvest yield. Remaining output demand is
+  divided upward by that same minimum yield, and each required open prepared-soil slot requires one exact `Data/Crops`
+  seed.
   Shop barter items are checked here, but money and other native currencies remain under `currency_budget`. Ordinary
   target-date fishing requires no consumable; if every retained window requires Magic Bait, the snapshot must prove a
   bait-capable rod plus attached or loose `(O)908`. A placed crab pot with target output, loaded bait or owner
@@ -1327,9 +1329,9 @@ Slice 7 remains assigned to the RTX 5070 node.
 - Reusable tools are not counted as consumable resource quantities. Their ownership and exact live usability remain
   fresh candidate/compiler/runtime preconditions in the already implemented action stack. Facility establishment,
   lead time, retries, reservations, daily time/energy and terminal receipts remain separate axes.
-- The focused fixture retains 76/76 occurrences and resolves all four active routes: two exact seed routes, one
-  five-Wood barter route and one no-input fishing route. Removing the canonical graph blocks only the three actual
-  input routes; removing the seed produces two resolved misses. The archived day-223 snapshot remains 197 upstream
+- The focused fixture retains 76/76 occurrences and resolves all four active routes: one one-seed route, one two-seed
+  route, one ten-Wood barter route and one no-input fishing route. Removing the canonical graph blocks only the three
+  actual input routes; removing the seed produces two resolved misses. The archived day-223 snapshot remains 197 upstream
   non-applicable and 1,402 inherited blocks, with zero guessed resource matches.
 - Shop barter requirements use the exact current native `ShopBuilder` quote shared with the following currency stage,
   including item-query overrides. Static `Data/Shops` trade terms remain provenance and drift evidence, not a second
@@ -1346,11 +1348,13 @@ Slice 7 remains assigned to the RTX 5070 node.
   `4 Qi gems`; unsupported IDs fail closed. Shop purchase identity is `(shop_id, synced_key, qualified_item_id)` and
   its current `ShopBuilder` quote owns price, currency, stock, buyability and effective barter terms.
 - A missing or malformed complete quote/currency projection is missing evidence. A complete quote that is sold out,
-  not buyable or unaffordable is a resolved miss. `native_money_payment` reads its exact positive amount from lowering
-  and requires the money currency. No balance is inferred from future sales or unrelated candidate utility.
+  not buyable, below minimum output quality or unaffordable is a resolved miss. Purchases use
+  `ceil(required amount / native output stack)` operations and scale price, finite stock and barter count together.
+  `native_money_payment` reads its exact positive amount from lowering and requires the money currency. No balance is
+  inferred from future sales or unrelated candidate utility.
 - The focused fixture preserves 76/76 occurrences with four active matches, three currency-free routes and 72 upstream
   non-applicable routes. Removing the shop quote or currency field blocks only the affected purchase; 50 available
-  money against a 100 price produces one known miss. Training authorization remains false.
+  money against the scaled 200 total produces one known miss. Training authorization remains false.
 - This axis proves one route occurrence only. `inventory_reservation` is the next fixed axis and must prevent the same
   balance or material from satisfying multiple selected routes, while keeping future income distinct from current
   spendable state. Lead time, retries, daily budgets, opportunity cost and fresh terminal receipts remain downstream.
@@ -1386,20 +1390,39 @@ Slice 7 remains assigned to the RTX 5070 node.
 - This axis owns deterministic production waiting only. Immediate shop, fishing, geode, forage and other direct
   interactions require no processing delay, but their action duration remains downstream in `daily_time_energy_budget`
   and their random attempts remain downstream in `stochastic_retry_budget`.
-- Crop routes combine locked native `DaysInPhase` with exact per-tile `farm.crops` or loaded
+- Crop routes combine locked native `DaysInPhase`, minimum yield/quality bounds with exact per-tile `farm.crops` or loaded
   `current_location.crops`. A new planting retains its authoritative base duration but emits only the decompile-proven
   not-before-next-day lower bound because fertilizer, profession and paddy acceleration are not resolved at an open
   aggregate slot. This is sufficient to reject same-day output without inventing an exact maturity date. An existing
-  crop matches only when its live row is harvest-ready; missing rows, aggregate/detail count drift, non-exact harvest
-  identity or an inconsistent zero-day countdown fail closed. Dead or later-maturing crops are resolved misses.
+  crop matches only when its live row is harvest-ready and the summed proven output covers the complete amount and
+  minimum quality; missing rows, aggregate/detail count drift, non-exact harvest identity or an inconsistent zero-day
+  countdown fail closed. Dead or later-maturing crops are resolved misses.
 - Crab-pot routes require the complete persistent pot network. A consistent ready target output is immediate; a
   serviced empty pot only proves a next-morning production attempt under locked native `CrabPot.DayUpdate`, leaving
-  output probability to the retry axis. Machine, animal, pond, fruit-tree, solar-panel and tapper lead-time evaluators
+  output probability to the retry axis. Ready crab-pot outputs are summed by exact stack and quality. Machine, animal,
+  pond, fruit-tree, solar-panel and tapper lead-time evaluators
   remain explicit blockers until their upstream source/facility/input bindings are complete.
 - The focused fixture remains 76/76: 72 upstream non-applicable occurrences, two immediate matches and two known crop
   misses. A ready-crop variant produces four matches; removing the required live crop detail blocks only the two crop
   routes, and a tampered reservation artifact is rejected. Training authorization remains false. The next fixed axis
   is `stochastic_retry_budget`, followed by daily time/energy, opportunity cost and fresh terminal receipt.
+
+### 2026-09-13: authoritative route amount/quality retrofit
+
+- Every route occurrence now carries `match_kind`, positive `required_amount` and non-negative `minimum_quality` from
+  authoritative lowering through static calendar, target-date calendar, unlock and every nested downstream artifact.
+  Each join compares that contract back to the static source row. The former late currency-only amount lookup was
+  removed because it allowed facility, resource and processing stages to silently evaluate one ordinary item.
+- Locked `Data/Crops` fields now include minimum/maximum harvest stack, extra-harvest chance and minimum/maximum quality.
+  Facility capacity, seed demand and ready-crop output use only guaranteed minimum yield. Requirements above the static
+  minimum quality block until exact live per-tile harvest-quality projection exists. Native shop output stack/quality
+  and crab-pot output stack/quality are preserved and evaluated rather than inferred.
+- The focused amount-two fixture proves two crop slots, two seeds, ten barter items, 200 money, two finite-stock purchase
+  operations and two ready output units. This is an anti-hallucination contract repair, not new training evidence;
+  `training_label_eligible` remains false.
+- `stochastic_retry_budget` remains the next axis, but retry-expanded consumables cannot inherit a reservation made for
+  one baseline attempt. Its output must feed a final resource/currency/atomic-reservation validation before execution.
+  Any implementation that merely appends retry time after the present claim set is invalid.
 
 ## Review questions
 

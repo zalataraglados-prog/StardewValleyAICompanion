@@ -48,7 +48,6 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
     private static AcquisitionRouteTargetDateCurrency Evaluate(
         AcquisitionRouteTargetDateResource route,
         AcquisitionRouteCalendarResolution staticRoute,
-        AcquisitionRouteAmount amount,
         AcquisitionShopQuoteSnapshotState state)
     {
         if (!route.ResourceInputAxisResolved)
@@ -94,7 +93,10 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         {
             NoCurrency => NotRequired(route),
             ShopPurchase => EvaluateShop(route, staticRoute, state),
-            DirectMoneyPayment => EvaluateMoneyPayment(route, amount, state),
+            DirectMoneyPayment => EvaluateMoneyPayment(
+                route,
+                staticRoute,
+                state),
             _ => throw new InvalidDataException(
                 "Unknown currency requirement classification.")
         };
@@ -122,6 +124,9 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                     string.Empty,
                     null,
                     null,
+                    null,
+                    null,
+                    null,
                     "current_native_shop_quote_missing",
                     "resolved_currency_budget_miss",
                     new[] { "state.locations.shops.value.shops[]" }),
@@ -132,25 +137,41 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         if (quote.CurrencyId != source.Currency)
             return Blocked(route, ShopPurchase,
                 "current_native_shop_quote_currency_drifted");
-        if (!ResourceTermsMatchQuote(route, quote))
+        if (!ResourceTermsMatchQuote(route, staticRoute, quote))
             return Blocked(route, ShopPurchase,
                 "resource_axis_and_current_shop_quote_disagree");
 
         var balance = state.CurrencyBalance(quote.CurrencyId);
         if (!balance.EvidenceAvailable || !balance.Balance.HasValue)
             return Blocked(route, ShopPurchase, balance.BlockingReasons);
+        var requiredPurchaseCount = AcquisitionQuantityMath.DivideRoundUp(
+            staticRoute.RequiredAmount,
+            quote.OutputStack);
+        var requiredPrice = AcquisitionQuantityMath.Multiply(
+            quote.Price,
+            requiredPurchaseCount);
+        var requiredStock = requiredPurchaseCount;
+        var outputQualityMatches = AcquisitionOutputProof.CanGuaranteeQuality(
+            quote.OutputQuality,
+            staticRoute.MinimumQuality);
         var evaluation = new AcquisitionCurrencyEvaluation(
             quote.CurrencyId,
             balance.CurrencyKey,
-            quote.Price,
+            requiredPrice,
             balance.Balance,
+            quote.OutputStack,
+            quote.OutputQuality,
+            requiredPurchaseCount,
             !quote.CanBuyItem
                 ? "current_native_shop_item_not_buyable"
-                : !quote.InfiniteStock && quote.Stock <= 0
-                    ? "current_native_shop_item_out_of_stock"
-                    : "current_native_shop_quote_available",
-            balance.Balance >= quote.Price && quote.CanBuyItem &&
-                (quote.InfiniteStock || quote.Stock > 0)
+                : !outputQualityMatches
+                    ? "current_native_shop_output_quality_below_requirement"
+                    : !quote.InfiniteStock && quote.Stock < requiredStock
+                        ? "current_native_shop_item_out_of_stock"
+                        : "current_native_shop_quote_available",
+            balance.Balance >= requiredPrice && quote.CanBuyItem &&
+                outputQualityMatches &&
+                (quote.InfiniteStock || quote.Stock >= requiredStock)
                     ? "resolved_currency_budget_match"
                     : "resolved_currency_budget_miss",
             new[]
@@ -161,9 +182,11 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         var reasons = new List<string>();
         if (!quote.CanBuyItem)
             reasons.Add("current_native_shop_item_not_buyable");
-        if (!quote.InfiniteStock && quote.Stock <= 0)
+        if (!outputQualityMatches)
+            reasons.Add("current_native_shop_output_quality_below_requirement");
+        if (!quote.InfiniteStock && quote.Stock < requiredStock)
             reasons.Add("current_native_shop_item_out_of_stock");
-        if (balance.Balance < quote.Price)
+        if (balance.Balance < requiredPrice)
             reasons.Add("required_currency_amount_unavailable:" +
                 balance.CurrencyKey);
         return reasons.Count == 0
@@ -173,11 +196,13 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
 
     private static AcquisitionRouteTargetDateCurrency EvaluateMoneyPayment(
         AcquisitionRouteTargetDateResource route,
-        AcquisitionRouteAmount amount,
+        AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionShopQuoteSnapshotState state)
     {
-        if (amount.MatchKind != "money_payment" || amount.Amount <= 0 ||
-            amount.QualifiedItemId.Length != 0 || amount.SourceId != "money")
+        if (staticRoute.MatchKind != "money_payment" ||
+            staticRoute.RequiredAmount <= 0 ||
+            staticRoute.QualifiedItemId.Length != 0 ||
+            staticRoute.SourceId != "money")
         {
             return Blocked(route, DirectMoneyPayment,
                 "native_money_payment_lowering_contract_invalid");
@@ -188,10 +213,13 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         var evaluation = new AcquisitionCurrencyEvaluation(
             0,
             balance.CurrencyKey,
-            amount.Amount,
+            staticRoute.RequiredAmount,
             balance.Balance,
+            null,
+            null,
+            null,
             "not_applicable_direct_money_payment",
-            balance.Balance >= amount.Amount
+            balance.Balance >= staticRoute.RequiredAmount
                 ? "resolved_currency_budget_match"
                 : "resolved_currency_budget_miss",
             new[]
@@ -199,7 +227,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                 "acquisition_lowering.requirement_sets[].groups[].alternatives[].amount",
                 "state.player.shop_currency_balances.value.rows[]"
             });
-        return balance.Balance >= amount.Amount
+        return balance.Balance >= staticRoute.RequiredAmount
             ? ResolvedMatch(route, DirectMoneyPayment, evaluation)
             : ResolvedMiss(
                 route,
@@ -210,6 +238,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
 
     private static bool ResourceTermsMatchQuote(
         AcquisitionRouteTargetDateResource route,
+        AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionShopQuote quote)
     {
         if (quote.TradeItemQualifiedId is null)
@@ -223,6 +252,12 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
             route.InputEvaluations.Length == 1 &&
             route.InputEvaluations[0].QualifiedItemId ==
                 quote.TradeItemQualifiedId &&
-            route.InputEvaluations[0].RequiredQuantity == quote.TradeItemCount;
+            quote.TradeItemCount.HasValue &&
+            route.InputEvaluations[0].RequiredQuantity ==
+                AcquisitionQuantityMath.Multiply(
+                    quote.TradeItemCount.Value,
+                    AcquisitionQuantityMath.DivideRoundUp(
+                        staticRoute.RequiredAmount,
+                        quote.OutputStack));
     }
 }

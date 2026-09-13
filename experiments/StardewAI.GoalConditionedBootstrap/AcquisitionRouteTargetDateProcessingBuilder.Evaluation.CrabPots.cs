@@ -4,7 +4,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
 {
     private static AcquisitionRouteTargetDateProcessing EvaluateCrabPot(
         AcquisitionRouteTargetDateReservation route,
-        string targetItem,
+        AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionProcessingLeadTimeSnapshotState state,
         int targetTotalDay)
     {
@@ -13,7 +13,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             state.CrabPotNetwork,
             facility.TargetEvaluations.Select(target =>
                 target.TargetLocationId),
-            targetItem,
+            staticRoute.QualifiedItemId,
             targetTotalDay);
         if (!result.EvidenceAvailable)
         {
@@ -23,8 +23,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 result.Evaluations,
                 result.BlockingReasons);
         }
-        if (result.Evaluations.Any(value =>
-                value.OutputReadyOnTargetDate == true))
+        var provenReadyQuantity = AcquisitionOutputProof.ReadyQuantity(
+            result.Evaluations,
+            staticRoute.MinimumQuality);
+        if (provenReadyQuantity >= staticRoute.RequiredAmount)
         {
             return ResolvedMatch(
                 route,
@@ -35,6 +37,9 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             route,
             CrabPotProduction,
             result.Evaluations,
-            "crab_pot_output_not_ready_until_next_day");
+            provenReadyQuantity > 0
+                ? "crab_pot_ready_output_quantity_or_quality_shortfall:" +
+                    provenReadyQuantity + ":" + staticRoute.RequiredAmount
+                : "crab_pot_output_not_ready_until_next_day");
     }
 }

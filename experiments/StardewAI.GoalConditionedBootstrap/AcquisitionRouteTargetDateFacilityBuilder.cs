@@ -17,6 +17,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
         string routeTimingCalibrationPath)
     {
         var sourcePath = Path.GetFullPath(targetDateLocationPath);
+        var staticPath = Path.GetFullPath(staticCalendarResolutionPath);
         var snapshotFullPath = Path.GetFullPath(snapshotPath);
         var timingFullPath = Path.GetFullPath(routeTimingCalibrationPath);
         var source = CurrentTeacherFrontierSupport.Read<
@@ -37,6 +38,12 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             "Target-date location route drifted from deterministic source compilation.");
         ValidateSource(source);
 
+        var staticSource = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRouteCalendarResolutionReport>(
+            staticPath,
+            "Acquisition route static calendar resolution");
+        var staticRoutes = ValidateStaticSource(staticSource, source);
+
         using var snapshotDocument = JsonDocument.Parse(
             File.ReadAllText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
@@ -55,7 +62,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             source.TargetTotalDay,
             timingFullPath);
         var routes = source.Routes
-            .Select(route => Evaluate(route, state))
+            .Select(route => Evaluate(
+                route,
+                staticRoutes[route.RouteOccurrenceId],
+                state))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>
@@ -73,6 +83,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             GameVersion = source.GameVersion,
             TargetDateLocationSha256 =
                 CurrentTeacherFrontierSupport.HashFile(sourcePath),
+            StaticCalendarResolutionSha256 =
+                CurrentTeacherFrontierSupport.HashFile(staticPath),
             SnapshotSha256 =
                 CurrentTeacherFrontierSupport.HashFile(snapshotFullPath),
             SnapshotStateHash = stateHash,

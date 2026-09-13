@@ -227,9 +227,11 @@ internal static partial class BootstrapSelfTest
                                         {
                                             synced_key = "fixture-parsnip",
                                             qualified_item_id = "(O)24",
+                                            stack = 1,
+                                            quality = 1,
                                             currency = 0,
                                             price = 100,
-                                            stock = 1,
+                                            stock = 2,
                                             infinite_stock = false,
                                             can_buy_item = true,
                                             trade_item_qualified_id = "(O)388",
@@ -301,7 +303,7 @@ internal static partial class BootstrapSelfTest
                         location_count = 4,
                         locations = new[]
                         {
-                            Location("Farm", openPreparedSoilSlots: 1),
+                            Location("Farm", openPreparedSoilSlots: 2),
                             Location(
                                 "Town",
                                 actionGates: new object[]
@@ -363,13 +365,13 @@ internal static partial class BootstrapSelfTest
                                     {
                                         slot_index = 0,
                                         qualified_item_id = "(O)472",
-                                        stack = 1
+                                        stack = 2
                                     },
                                     new
                                     {
                                         slot_index = 1,
                                         qualified_item_id = "(O)388",
-                                        stack = 5
+                                        stack = 10
                                     },
                                     new
                                     {
@@ -388,7 +390,7 @@ internal static partial class BootstrapSelfTest
                             {
                                 qualified_item_id = "(O)388",
                                 quality = 0,
-                                available_quantity = 5,
+                                available_quantity = 10,
                                 ready_output_quantity = 0,
                                 in_process_quantity = 0,
                                 restricted_quantity = 0,
@@ -398,7 +400,7 @@ internal static partial class BootstrapSelfTest
                             {
                                 qualified_item_id = "(O)472",
                                 quality = 0,
-                                available_quantity = 1,
+                                available_quantity = 2,
                                 ready_output_quantity = 0,
                                 in_process_quantity = 0,
                                 restricted_quantity = 0,
@@ -553,7 +555,7 @@ internal static partial class BootstrapSelfTest
                                     "Pantry/5",
                                     5,
                                     1,
-                                    CollectionIngredient(0, "24", 1, 0, false))
+                                    CollectionIngredient(0, "24", 2, 1, false))
                             }
                         }
                     }

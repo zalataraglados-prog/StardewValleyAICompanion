@@ -90,11 +90,28 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
                 "current_output_qualified_item_id");
         if (ready && currentOutput == targetItem)
         {
+            if (!AcquisitionProcessingLeadTimeSnapshotState.TryReadInt(
+                    row,
+                    "current_output_stack",
+                    out var outputStack) ||
+                outputStack <= 0 ||
+                !AcquisitionProcessingLeadTimeSnapshotState.TryReadInt(
+                    row,
+                    "current_output_quality",
+                    out var outputQuality) ||
+                outputQuality < 0)
+            {
+                return BlockedEvaluation(
+                    locationId,
+                    "crab_pot_current_output_quantity_or_quality_missing");
+            }
             return Evaluation(
                 locationId,
                 "resolved_matching_crab_pot_output_ready",
                 0,
                 targetTotalDay,
+                outputStack,
+                outputQuality,
                 true);
         }
         var serviceStatus =
@@ -115,6 +132,8 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
                 "resolved_serviced_crab_pot_next_morning",
                 1,
                 checked(targetTotalDay + 1),
+                null,
+                null,
                 false)
             : BlockedEvaluation(
                 locationId,
@@ -143,6 +162,8 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
         string status,
         int leadDays,
         int earliestDay,
+        int? outputQuantity,
+        int? minimumQuality,
         bool ready) => new(
             locationId,
             "existing_crab_pot",
@@ -151,6 +172,8 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
             null,
             leadDays,
             earliestDay,
+            outputQuantity,
+            minimumQuality,
             ready,
             new[]
             {
@@ -166,6 +189,8 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
             "existing_crab_pot",
             "blocked_processing_lead_time_evidence",
             string.Empty,
+            null,
+            null,
             null,
             null,
             null,

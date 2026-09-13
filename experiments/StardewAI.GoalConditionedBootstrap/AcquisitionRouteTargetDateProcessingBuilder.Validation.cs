@@ -65,9 +65,14 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         {
             var staticRoute = staticSource.Routes.Single(value =>
                 value.RouteOccurrenceId == route.RouteOccurrenceId);
+            var requirement = RequirementRoute(route);
             Require(staticRoute.RouteKind == RouteKind(route) &&
-                    staticRoute.QualifiedItemId == QualifiedItemId(route),
-                "Static and reservation route identity disagrees: " +
+                    staticRoute.QualifiedItemId == QualifiedItemId(route) &&
+                    staticRoute.SourceId == requirement.SourceId &&
+                    staticRoute.MatchKind == requirement.MatchKind &&
+                    staticRoute.RequiredAmount == requirement.RequiredAmount &&
+                    staticRoute.MinimumQuality == requirement.MinimumQuality,
+                "Static and reservation route requirement disagrees: " +
                 route.RouteOccurrenceId);
         }
     }

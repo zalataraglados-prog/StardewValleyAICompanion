@@ -20,6 +20,9 @@ public sealed class AcquisitionRouteTargetDateFacilityReport
     [JsonPropertyName("target_date_location_sha256")]
     public string TargetDateLocationSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("static_calendar_resolution_sha256")]
+    public string StaticCalendarResolutionSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("snapshot_sha256")]
     public string SnapshotSha256 { get; set; } = string.Empty;
 
@@ -68,7 +71,7 @@ public sealed class AcquisitionRouteTargetDateFacilityReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The facility_capacity axis is evaluated only after an exact target-date source-location match. Routes without a capacity-bearing production facility are explicitly not-required. Crop routes require exact prepared-soil evidence in at least one matched target location; an existing crop producing the required item or an open prepared soil slot satisfies only this axis. Crab-pot routes reuse the exact placed-pot source already proven by location_route. Capacity-bearing route kinds that cannot yet reach this axis remain inherited upstream blocks, and any such kind reaching it without a locked evaluator fails closed. Inputs, construction, growth or processing lead time, stochastic output, daily budget, inventory receipt and final interaction remain independently owned; training authorization stays false.";
+        "The facility_capacity axis is evaluated only after an exact target-date source-location match. Routes without a capacity-bearing production facility are explicitly not-required. Crop routes bind authoritative minimum harvest stack and require enough exact existing-target-crop plus open prepared-soil slots across matched locations to cover the full route amount. Unresolved crop identities block only when they can change that conclusion. Crab-pot routes reuse the exact placed-pot source already proven by location_route. Capacity-bearing route kinds that cannot yet reach this axis remain inherited upstream blocks, and any such kind reaching it without a locked evaluator fails closed. Inputs, construction, growth or processing lead time, stochastic output, daily budget, inventory receipt and final interaction remain independently owned; training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateFacility(
@@ -94,6 +97,8 @@ public sealed record AcquisitionRouteTargetDateFacility(
 public sealed record AcquisitionFacilityTargetEvaluation(
     [property: JsonPropertyName("target_location_id")]
     string TargetLocationId,
+    [property: JsonPropertyName("required_crop_slot_count")]
+    int? RequiredCropSlotCount,
     [property: JsonPropertyName("status")]
     string Status,
     [property: JsonPropertyName("total_prepared_soil_slot_count")]

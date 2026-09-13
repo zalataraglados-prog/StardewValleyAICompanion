@@ -95,7 +95,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 targetTotalDay),
             CrabPotProduction => EvaluateCrabPot(
                 route,
-                staticRoute.QualifiedItemId,
+                staticRoute,
                 state,
                 targetTotalDay),
             _ => Blocked(
@@ -106,13 +106,16 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         };
     }
 
-    private static string RouteKind(
+    private static AcquisitionRouteTargetDateUnlock RequirementRoute(
         AcquisitionRouteTargetDateReservation route) =>
         route.UpstreamRoute.UpstreamRoute.UpstreamRoute.UpstreamRoute
-            .UpstreamRoute.UpstreamRoute.RouteKind;
+            .UpstreamRoute.UpstreamRoute;
+
+    private static string RouteKind(
+        AcquisitionRouteTargetDateReservation route) =>
+        RequirementRoute(route).RouteKind;
 
     private static string QualifiedItemId(
         AcquisitionRouteTargetDateReservation route) =>
-        route.UpstreamRoute.UpstreamRoute.UpstreamRoute.UpstreamRoute
-            .UpstreamRoute.UpstreamRoute.QualifiedItemId;
+        RequirementRoute(route).QualifiedItemId;
 }

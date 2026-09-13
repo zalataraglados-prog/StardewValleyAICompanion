@@ -258,6 +258,11 @@ internal static partial class BootstrapSelfTest
                     ["NeedsWatering"] = true,
                     ["PlantableLocationRules"] = null,
                     ["HarvestItemId"] = "24",
+                    ["HarvestMinStack"] = 1,
+                    ["HarvestMaxStack"] = 1,
+                    ["ExtraHarvestChance"] = 0d,
+                    ["HarvestMinQuality"] = 1,
+                    ["HarvestMaxQuality"] = null,
                     ["Texture"] = @"TileSheets\crops",
                     ["SpriteIndex"] = 0
                 }
@@ -302,8 +307,8 @@ internal static partial class BootstrapSelfTest
                             ["ItemId"] = "(O)24",
                             ["RandomItemId"] = null,
                             ["Price"] = 100,
-                            ["AvailableStock"] = 1,
-                            ["AvailableStockLimit"] = 1,
+                            ["AvailableStock"] = 2,
+                            ["AvailableStockLimit"] = 2,
                             ["TradeItemId"] = "(O)388",
                             ["TradeItemAmount"] = 5,
                             ["IsRecipe"] = false,
@@ -509,7 +514,7 @@ internal static partial class BootstrapSelfTest
                         "choose_at_least_required_slots",
                         1,
                         CollectionAlternative(
-                            "24", "(O)24", "Parsnip", "item_id", 1, 0,
+                            "24", "(O)24", "Parsnip", "item_id", 2, 1,
                             "harvests_as", "crop:472", includeFixtureShopRoute: true)))
             }
         });
@@ -562,7 +567,7 @@ internal static partial class BootstrapSelfTest
                     CollectionLoweredGroup(
                         "community_center:bundle:Pantry/5", 1,
                         CollectionLoweredAlternative(
-                            "24", "(O)24", "Parsnip", "item_id", 1, 0,
+                            "24", "(O)24", "Parsnip", "item_id", 2, 1,
                             "harvests_as", "crop:472", "farm.maintain_crops",
                             includeFixtureShopRoute: true)))
             }
@@ -697,6 +702,13 @@ internal static partial class BootstrapSelfTest
                 resolvedCropRoute.CropSource.DataHarvestQualifiedItemId == "(O)24" &&
                 resolvedCropRoute.CropSource.PossibleHarvestQualifiedItemIds
                     .SequenceEqual(new[] { "(O)24" }) &&
+                resolvedCropRoute.RequiredAmount == 1 &&
+                resolvedCropRoute.MinimumQuality == 0 &&
+                resolvedCropRoute.CropSource.HarvestMinStack == 1 &&
+                resolvedCropRoute.CropSource.HarvestMaxStack == 1 &&
+                resolvedCropRoute.CropSource.ExtraHarvestChance == 0d &&
+                resolvedCropRoute.CropSource.HarvestMinQuality == 1 &&
+                resolvedCropRoute.CropSource.HarvestMaxQuality is null &&
                 resolvedCropRoute.CropSource.NativeSeasons
                     .SequenceEqual(new[] { "spring" }) &&
                 resolvedCropRoute.CropSource.DaysInPhase
@@ -743,8 +755,8 @@ internal static partial class BootstrapSelfTest
                 resolvedShopRoute.ShopSource.ShopId == "FixtureShop" &&
                 resolvedShopRoute.ShopSource.StockRowIndex == 0 &&
                 resolvedShopRoute.ShopSource.DataItemQualifiedId == "(O)24" &&
-                resolvedShopRoute.ShopSource.AvailableStock == 1 &&
-                resolvedShopRoute.ShopSource.AvailableStockLimit == 1 &&
+                resolvedShopRoute.ShopSource.AvailableStock == 2 &&
+                resolvedShopRoute.ShopSource.AvailableStockLimit == 2 &&
                 resolvedShopRoute.ShopSource.TradeItemId == "(O)388" &&
                 resolvedShopRoute.ShopSource.TradeItemAmount == 5 &&
                 resolvedShopRoute.ShopSource.ActionsOnPurchase.SequenceEqual(
@@ -782,6 +794,9 @@ internal static partial class BootstrapSelfTest
                 targetDateCalendar.StaticCalendarResolutionSha256 ==
                     HashFile(routeCalendarPath) &&
                 targetDateShop.CalendarAxisResolved &&
+                targetDateShop.MatchKind == "item_id" &&
+                targetDateShop.RequiredAmount == 2 &&
+                targetDateShop.MinimumQuality == 1 &&
                 targetDateShop.StaticWindowMatchesTargetDate &&
                 targetDateShop.CalendarAxisStatus ==
                     "resolved_target_date_inside_static_window_downstream_pending" &&
@@ -838,6 +853,9 @@ internal static partial class BootstrapSelfTest
                 targetDateUnlock.PendingStochasticConditionCount == 1 &&
                 targetDateUnlock.UnsupportedConditionCount == 0 &&
                 targetDateUnlockShop.UnlockAxisResolved &&
+                targetDateUnlockShop.MatchKind == "item_id" &&
+                targetDateUnlockShop.RequiredAmount == 2 &&
+                targetDateUnlockShop.MinimumQuality == 1 &&
                 targetDateUnlockShop.UnlockStateMatchesTargetDate == true &&
                 targetDateUnlockShop.SourceResolutionStatus ==
                     "resolved_static_source_window_target_date_pending" &&
@@ -1072,6 +1090,8 @@ internal static partial class BootstrapSelfTest
                 targetDateFacility.FacilityCapacityAxisResolutionComplete &&
                 !targetDateFacility.TrainingLabelEligible &&
                 targetDateFacility.TargetTotalDay == 0 &&
+                targetDateFacility.StaticCalendarResolutionSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(routeCalendarPath) &&
                 targetDateFacility.RouteOccurrenceCount == 76 &&
                 targetDateFacility.FacilityCapacityAxisResolvedCount == 76 &&
                 targetDateFacility.FacilityCapacityMatchCount == 4 &&
@@ -1085,7 +1105,12 @@ internal static partial class BootstrapSelfTest
                     route.FacilityRequirementKind ==
                         "prepared_cultivation_slot" &&
                     route.TargetEvaluations.Single()
-                        .OpenPreparedSoilSlotCount == 1) &&
+                        .OpenPreparedSoilSlotCount == 2) &&
+                targetDateFacilityCrops.Select(route =>
+                        route.TargetEvaluations.Single()
+                            .RequiredCropSlotCount)
+                    .Order()
+                    .SequenceEqual(new int?[] { 1, 2 }) &&
                 targetDateFacilityShop.FacilityCapacityAxisStatus ==
                     "resolved_facility_capacity_not_required" &&
                 carriedLocationShopJson == sourceLocationShopJson,
@@ -1196,15 +1221,15 @@ internal static partial class BootstrapSelfTest
                     route.BlockingReasons.Length == 0),
             "A complete zero-capacity fact was misclassified as missing evidence.");
 
-        zeroFacilityCapacity["total_prepared_soil_slot_count"] = 1;
-        zeroFacilityCapacity["occupied_crop_slot_count"] = 1;
-        zeroFacilityCapacity["unresolved_harvest_item_slot_count"] = 1;
+        zeroFacilityCapacity["total_prepared_soil_slot_count"] = 2;
+        zeroFacilityCapacity["occupied_crop_slot_count"] = 2;
+        zeroFacilityCapacity["unresolved_harvest_item_slot_count"] = 2;
         zeroFacilityCapacity["occupied_harvest_items"] = new JsonArray(
             new JsonObject
             {
                 ["harvest_item_qualified_id"] = string.Empty,
                 ["is_garden_pot"] = false,
-                ["slot_count"] = 1
+                ["slot_count"] = 2
             });
         File.WriteAllText(
             zeroFacilitySnapshotPath,
@@ -1253,6 +1278,9 @@ internal static partial class BootstrapSelfTest
         var targetDateResourceShop = targetDateResource.Routes.Single(route =>
             route.RouteOccurrenceId ==
                 "community_center_standard:community_center:bundle:Pantry/5:0:1");
+        var targetDateResourceCommunityCrop = targetDateResource.Routes.Single(
+            route => route.RouteOccurrenceId ==
+                "community_center_standard:community_center:bundle:Pantry/5:0:0");
         var targetDateResourceFish = targetDateResource.Routes.Single(route =>
             route.RouteOccurrenceId ==
                 "master_angler:master_angler:item:145:0:0");
@@ -1279,15 +1307,21 @@ internal static partial class BootstrapSelfTest
                 targetDateResourceCrop.InputEvaluations.Single()
                     .QualifiedItemId == "(O)472" &&
                 targetDateResourceCrop.InputEvaluations.Single()
-                    .AvailableQuantity == 1 &&
+                    .RequiredQuantity == 1 &&
+                targetDateResourceCrop.InputEvaluations.Single()
+                    .AvailableQuantity == 2 &&
+                targetDateResourceCommunityCrop.InputEvaluations.Single()
+                    .RequiredQuantity == 2 &&
+                targetDateResourceCommunityCrop.InputEvaluations.Single()
+                    .AvailableQuantity == 2 &&
                 targetDateResourceShop.ResourceRequirementKind ==
                     "shop_trade_item_or_currency_only" &&
                 targetDateResourceShop.InputEvaluations.Single()
                     .QualifiedItemId == "(O)388" &&
                 targetDateResourceShop.InputEvaluations.Single()
-                    .RequiredQuantity == 5 &&
+                    .RequiredQuantity == 10 &&
                 targetDateResourceShop.InputEvaluations.Single()
-                    .AvailableQuantity == 5 &&
+                    .AvailableQuantity == 10 &&
                 targetDateResourceFish.ResourceInputAxisStatus ==
                     "resolved_resource_inputs_not_required" &&
                 JsonSerializer.Serialize(
@@ -1333,8 +1367,13 @@ internal static partial class BootstrapSelfTest
                 targetDateCurrencyShop.CurrencyEvaluation.CurrencyId == 0 &&
                 targetDateCurrencyShop.CurrencyEvaluation.CurrencyKey ==
                     "money" &&
-                targetDateCurrencyShop.CurrencyEvaluation.RequiredAmount == 100 &&
+                targetDateCurrencyShop.CurrencyEvaluation.RequiredAmount == 200 &&
                 targetDateCurrencyShop.CurrencyEvaluation.AvailableAmount == 500 &&
+                targetDateCurrencyShop.CurrencyEvaluation
+                    .OutputStackPerPurchase == 1 &&
+                targetDateCurrencyShop.CurrencyEvaluation.OutputQuality == 1 &&
+                targetDateCurrencyShop.CurrencyEvaluation
+                    .RequiredPurchaseCount == 2 &&
                 targetDateCurrencyShop.CurrencyEvaluation.PurchaseQuoteStatus ==
                     "current_native_shop_quote_available" &&
                 targetDateCurrency.StaticCalendarResolutionSha256 ==
@@ -1404,11 +1443,11 @@ internal static partial class BootstrapSelfTest
                 targetDateReservationShop.ClaimSet.MaterialClaims.Single()
                     .SlotIndex == 1 &&
                 targetDateReservationShop.ClaimSet.MaterialClaims.Single()
-                    .Quantity == 5 &&
+                    .Quantity == 10 &&
                 targetDateReservationShop.ClaimSet.CurrencyClaims.Single()
                     .CurrencyId == NativeShopCurrencies.Money &&
                 targetDateReservationShop.ClaimSet.CurrencyClaims.Single()
-                    .Amount == 100,
+                    .Amount == 200,
             "Target-date inventory-reservation axis resolution drifted.");
         Require(JsonSerializer.Serialize(
                     targetDateReservation,
@@ -1511,6 +1550,8 @@ internal static partial class BootstrapSelfTest
                     ready_state_consistent = readyStateConsistent,
                     ready_for_harvest = ready,
                     current_output_qualified_item_id = currentOutput,
+                    current_output_stack = currentOutput.Length > 0 ? 1 : 0,
+                    current_output_quality = 0,
                     service_status = serviceStatus,
                     bait_qualified_item_id = bait,
                     owner_has_luremaster = false,
@@ -1564,6 +1605,18 @@ internal static partial class BootstrapSelfTest
                 readyCrabPot.Evaluations.Single()
                     .OutputReadyOnTargetDate == true &&
                 readyCrabPot.Evaluations.Single()
+                    .ProvenOutputQuantityLowerBound == 1 &&
+                readyCrabPot.Evaluations.Single()
+                    .ProvenMinimumQuality == 0 &&
+                AcquisitionOutputProof.ReadyQuantity(
+                    readyCrabPot.Evaluations,
+                    0) == 1 &&
+                AcquisitionOutputProof.ReadyQuantity(
+                    readyCrabPot.Evaluations,
+                    1) == 0 &&
+                AcquisitionQuantityMath.DivideRoundUp(5, 2) == 3 &&
+                AcquisitionQuantityMath.Multiply(5, 2) == 10 &&
+                readyCrabPot.Evaluations.Single()
                     .ProvenLeadTimeDaysLowerBound == 0 &&
                 waitingCrabPot.EvidenceAvailable &&
                 waitingCrabPot.Evaluations.Single()
@@ -1585,16 +1638,16 @@ internal static partial class BootstrapSelfTest
             ["social_route_date_evidence"]!["value"]!["locations"]!.AsArray()
             .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
             ["cultivation_capacity"]!.AsObject();
-        readyCropCapacity["total_prepared_soil_slot_count"] = 1;
+        readyCropCapacity["total_prepared_soil_slot_count"] = 2;
         readyCropCapacity["open_prepared_soil_slot_count"] = 0;
-        readyCropCapacity["occupied_crop_slot_count"] = 1;
+        readyCropCapacity["occupied_crop_slot_count"] = 2;
         readyCropCapacity["unresolved_harvest_item_slot_count"] = 0;
         readyCropCapacity["occupied_harvest_items"] = new JsonArray(
             new JsonObject
             {
                 ["harvest_item_qualified_id"] = "(O)24",
                 ["is_garden_pot"] = false,
-                ["slot_count"] = 1
+                ["slot_count"] = 2
             });
         readyCropSnapshot["state"]!["farm"]!["crops"]!["value"] =
             new JsonArray(
@@ -1602,6 +1655,18 @@ internal static partial class BootstrapSelfTest
                 {
                     ["location_id"] = "Farm",
                     ["tile_x"] = 1,
+                    ["tile_y"] = 1,
+                    ["harvest_item_qualified_id"] = "(O)24",
+                    ["harvest_item_projection_status"] =
+                        "exact_from_live_index_of_harvest",
+                    ["dead"] = false,
+                    ["ready_for_harvest"] = true,
+                    ["days_until_next_harvest_if_watered"] = 0
+                },
+                new JsonObject
+                {
+                    ["location_id"] = "Farm",
+                    ["tile_x"] = 2,
                     ["tile_y"] = 1,
                     ["harvest_item_qualified_id"] = "(O)24",
                     ["harvest_item_projection_status"] =
@@ -1642,7 +1707,10 @@ internal static partial class BootstrapSelfTest
                         "crop_growth_or_ready_crop").All(route =>
                     route.ProcessingLeadTimeMatchesTargetDate == true &&
                     route.Evaluations.Single().Status ==
-                        "resolved_existing_crop_ready_on_target_date"),
+                        "resolved_existing_crop_ready_on_target_date" &&
+                    route.Evaluations.Single()
+                        .ProvenOutputQuantityLowerBound == 2 &&
+                    route.Evaluations.Single().ProvenMinimumQuality == 1),
             "A harvest-ready live crop did not satisfy same-day lead time.");
 
         var missingLiveCropSnapshot = JsonNode.Parse(
@@ -1763,7 +1831,7 @@ internal static partial class BootstrapSelfTest
                 materialConflict.NonMatchingReasons.Contains(
                     "unreserved_material_quantity_unavailable:(O)388"),
             "An active material reservation did not prevent cross-route spending.");
-        materialReservedLedger.MaterialReservations[0].Quantity = 6;
+        materialReservedLedger.MaterialReservations[0].Quantity = 11;
         Write(materialReservedLedgerPath, materialReservedLedger);
         var overbookedMaterialLedgerRejected = false;
         try
@@ -2048,16 +2116,16 @@ internal static partial class BootstrapSelfTest
             ["locations"]!.AsArray()
             .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
             ["cultivation_capacity"]!.AsObject();
-        existingCropCapacity["total_prepared_soil_slot_count"] = 1;
+        existingCropCapacity["total_prepared_soil_slot_count"] = 2;
         existingCropCapacity["open_prepared_soil_slot_count"] = 0;
-        existingCropCapacity["occupied_crop_slot_count"] = 1;
+        existingCropCapacity["occupied_crop_slot_count"] = 2;
         existingCropCapacity["unresolved_harvest_item_slot_count"] = 0;
         existingCropCapacity["occupied_harvest_items"] = new JsonArray(
             new JsonObject
             {
                 ["harvest_item_qualified_id"] = "(O)24",
                 ["is_garden_pot"] = false,
-                ["slot_count"] = 1
+                ["slot_count"] = 2
             });
         File.WriteAllText(
             insufficientSeedSnapshotPath,
@@ -2088,7 +2156,7 @@ internal static partial class BootstrapSelfTest
                     route.InputEvaluations.Single().InputKind ==
                         "existing_target_crop" &&
                     route.InputEvaluations.Single().RequiredQuantity == 0 &&
-                    route.InputEvaluations.Single().AvailableQuantity == 1),
+                    route.InputEvaluations.Single().AvailableQuantity == 2),
             "An existing target crop incorrectly required a new seed.");
 
         var missingShopQuoteSnapshot = JsonNode.Parse(
@@ -2194,7 +2262,7 @@ internal static partial class BootstrapSelfTest
                 insufficientCurrencyReport.BlockedCurrencyEvidenceCount == 0 &&
                 insufficientCurrencyRoute.CurrencyEvaluation is not null &&
                 insufficientCurrencyRoute.CurrencyEvaluation.RequiredAmount ==
-                    100 &&
+                    200 &&
                 insufficientCurrencyRoute.CurrencyEvaluation.AvailableAmount ==
                     50 &&
                 insufficientCurrencyRoute.NonMatchingReasons.Contains(
@@ -2674,7 +2742,8 @@ internal static partial class BootstrapSelfTest
                 "24",
                 "(O)24",
                 99,
-                1);
+                1,
+                Parameter("projected_harvest_quality", "1"));
         sharedCandidate.LocationId = "Farm";
         sharedCandidate.TileX = 4;
         sharedCandidate.TileY = 5;
