@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期地点路线轴求值
+
+- 新增 `acquisition_route_target_date_location_route.v1` 与 `build-acquisition-route-target-date-location-route`。构建器会从同一组权威输入和同一快照重建并逐对象比较节日状态报告，再把当前适用来源绑定到目标地点，批量复用 Core 唯一的 `FutureRouteDateEvidenceProducer.ProduceLocationArrivals`。没有新增第二套路由或 BFS 实现。
+- 地点绑定按来源保持原生身份：正常季节作物落到 `Farm`；反季节作物只接受实时 `SeedsIgnoreSeasonsHere()` 为真的地图；商店使用实时 `route_graph` 柜台端点，并只在静态地图资产名与实时地点 ID 精确相等时采用静态端点；蟹笼使用完整实时网络中的实际放置地点；`Default`、`Farm_<type>`、Data/Locations 精确地点和矿井覆盖分别按反编译规则处理。透明桥为此新增每张地图的 `location_context_id`、`seeds_ignore_seasons_here` 以及农场 `farm_type_key`，不从示例或地图名猜测。
+- 路由必须有同日全地图静态可行走证据、完整连接器门禁和版本化保守移动校准。保证到达时间必须早于至少一个来源时段结束；受天气限制的来源按目标地图的实时天气上下文求值。该轴只证明“能在来源窗口内到达来源地图”，不宣称随机来源已出现、鱼点可用、商店有货、资源足够、终端交互成功或物品已取得。
+- 聚焦 fixture 保留 `76/76` 条路线，目标日活动来源 `4/4` 匹配；锁门商店等待到 9:00 后于 9:02 到店。删去全地图路线证据后，72 条静态不适用路线仍保持已解析，4 条活动来源逐条阻断。第 223 天真实旧快照保留全部 1599 条路线：197 条静态窗口不适用、927 条继承上游阻断、475 条活动来源因旧快照缺路线日期证据和移动上下文而阻断，0 条被猜测放行。训练授权仍为 false。
+- GoalConditionedBootstrap Release 构建与地点路线聚焦自测通过，未启动游戏或训练。下一固定切片进入 `facility_capacity`；随机、资源、预算、提前量和 fresh 回执继续由各自依赖轴独立持有。
+
 ## 2026-09-13 显式目标日期节日状态轴求值
 
 - 透明桥新增轻量 `world_progress.game_state_query_calendar_state`：实时读取 `Game1.stats.DaysPlayed`、当前总日数与时间、`Data/Festivals/FestivalDates` 的完整日期键、当前活动的被动节日 ID，以及 `Data/PassiveFestivals` 中每个条目的季节、起止日、开始时间与原始条件。它只遍历两个小型已加载数据表，不读取地图或执行节日逻辑。带地点上下文的普通节日形式仍明确标为 `not_projected`；当前权威 1599 条路线没有这种形式。

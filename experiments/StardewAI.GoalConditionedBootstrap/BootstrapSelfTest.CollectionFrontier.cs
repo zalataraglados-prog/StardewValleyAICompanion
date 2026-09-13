@@ -15,6 +15,10 @@ internal static partial class BootstrapSelfTest
         VerifyCurrentStageOneCollectionTeacherFrontier(fullPath);
     }
 
+    public static void RunCurrentStageOneCollection(string outputRoot) =>
+        VerifyCurrentStageOneCollectionTeacherFrontier(
+            Path.GetFullPath(outputRoot));
+
     private static void VerifyCurrentCollectionTeacherFrontier(
         string outputRoot)
     {

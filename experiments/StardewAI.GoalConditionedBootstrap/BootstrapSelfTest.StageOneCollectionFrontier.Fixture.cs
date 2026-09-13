@@ -23,12 +23,12 @@ internal static partial class BootstrapSelfTest
         groups
     };
 
-    private static object StageOneRouteTimingCalibration() => new
+    private static object StageOneRouteTimingCalibration(int totalDays = 5) => new
     {
         schema_version = "stardewai.runtime_movement_timing_calibration.v1",
         status = "passed",
         game_version = "1.6.15",
-        capture_total_days = 5,
+        capture_total_days = totalDays,
         sample_count = 3,
         total_manhattan_tiles = 66,
         maximum_observed_game_minutes_per_tile = 0.29,
@@ -60,7 +60,8 @@ internal static partial class BootstrapSelfTest
         int playerTileX = 1,
         int playerTileY = 5,
         int totalDays = 5,
-        int timeOfDay = 800)
+        int timeOfDay = 800,
+        bool shopDoorAllowed = true)
     {
         var fishRows = fish.Select((value, index) => new
         {
@@ -98,7 +99,22 @@ internal static partial class BootstrapSelfTest
                     day = Field(totalDays % 28 + 1),
                     total_days = Field(totalDays),
                     time = Field(timeOfDay),
-                    weather = Field("sun")
+                    is_green_rain = Field(false),
+                    weather = Field("sun"),
+                    location_context_weather = Field(new[]
+                    {
+                        new
+                        {
+                            location_context_id = "Default",
+                            weather = "Sun",
+                            weather_for_tomorrow = "Sun",
+                            is_raining = false,
+                            is_snowing = false,
+                            is_lightning = false,
+                            is_debris_weather = false,
+                            is_green_rain = false
+                        }
+                    })
                 },
                 player = new
                 {
@@ -116,6 +132,13 @@ internal static partial class BootstrapSelfTest
                     current_tool = Field(string.Empty),
                     current_item_qualified_id = Field(string.Empty),
                     inventory = Field(Array.Empty<object>()),
+                    crab_pot_network = Field(new
+                    {
+                        schema_version = "crab_pot_network.v1",
+                        projection_status =
+                            "complete_crab_pots_across_loaded_persistent_locations",
+                        rows = Array.Empty<object>()
+                    }),
                     skills_detail = Field(new
                     {
                         skills = new[]
@@ -170,22 +193,53 @@ internal static partial class BootstrapSelfTest
                         edges = new object[]
                         {
                             Edge("Farm", 2, 4, "Town", 1, 5),
-                            Edge("Town", 3, 4, "Beach", 1, 5)
+                            Edge("Town", 3, 4, "Beach", 1, 5),
+                            Edge(
+                                "Town", 4, 4, "FixtureShop", 1, 5,
+                                "locked_door_warp"),
+                            new
+                            {
+                                kind = "shop_endpoint",
+                                from_location = "FixtureShop",
+                                from_x = 2,
+                                from_y = 4,
+                                target_location = (string?)null,
+                                target_x = (int?)null,
+                                target_y = (int?)null,
+                                shop_id = "FixtureShop",
+                                resolved = false
+                            }
                         }
                     }),
                     social_route_date_evidence = Field(new
                     {
                         schema_version = "social_route_date_evidence.v2",
-                        capture_total_days = 5,
+                        capture_total_days = totalDays,
                         all_location_static_walkability_complete = true,
                         projection_status =
                             "current_date_static_route_and_gate_evidence_complete_movement_timing_pending",
-                        location_count = 3,
+                        location_count = 4,
                         locations = new[]
                         {
                             Location("Farm"),
-                            Location("Town"),
-                            Location("Beach")
+                            Location(
+                                "Town",
+                                actionGates: new object[]
+                                {
+                                    new
+                                    {
+                                        kind = "locked_door_warp",
+                                        tile_x = 4,
+                                        tile_y = 4,
+                                        target_location = "FixtureShop",
+                                        allowed_on_capture_date = shopDoorAllowed,
+                                        time_unrestricted_on_capture_date = false,
+                                        effective_open_time = 900,
+                                        effective_close_time = 1700
+                                    }
+                                }),
+                            Location("Beach"),
+                            Location("FixtureShop")
                         }
                     })
                 },
@@ -206,6 +260,8 @@ internal static partial class BootstrapSelfTest
                 },
                 farm = new
                 {
+                    farm_type = Field(0),
+                    farm_type_key = Field("Standard"),
                     crops = Field(Array.Empty<object>()),
                     shipping_bins = Field(Array.Empty<object>())
                 },

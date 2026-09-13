@@ -1260,6 +1260,29 @@ Slice 7 remains assigned to the RTX 5070 node.
 - This remains `training_label_eligible=false`. The next fixed slice is `location_route`; stochastic and resource
   predicates continue to their independently owned axes.
 
+### 2026-09-13: explicit target-date location-route axis
+
+- `acquisition_route_target_date_location_route.v1` deterministically rebuilds and compares the preceding festival
+  artifact from the same authority inputs and same snapshot. Every row embeds its complete typed upstream route.
+- Target binding preserves native source identity. Native-season crops bind to `Farm`; season-independent crops only
+  bind to runtime maps whose exact `SeedsIgnoreSeasonsHere()` result is true; shops use matching live `shop_endpoint`
+  rows; crab pots use complete live exact placed locations; `Default`, `Farm_<type>`, exact Data/Locations keys and
+  mine fishing overrides follow the locked decompiled rules. The bridge adds per-map `location_context_id` and
+  `seeds_ignore_seasons_here`, plus the exact active `farm_type_key`, instead of inferring these facts from examples.
+- The stage batch-reuses the sole Core `FutureRouteDateEvidenceProducer.ProduceLocationArrivals`; it does not add a
+  second BFS or route system. Same-day all-map walkability, connector gates and versioned conservative movement
+  timing must be complete. Guaranteed arrival must precede a retained source-window end, while restricted weather is
+  evaluated in the target map's location context.
+- The result proves source-map arrival only. Random/live source appearance, fishable or terminal tile reachability,
+  shop stock, resources, final interaction and fresh native receipt remain downstream. The fixture preserves 76/76
+  occurrences and matches 4/4 active sources, including waiting until a locked shop opens at 9:00 and arriving at
+  9:02. Removing full-map route evidence blocks exactly the four active sources while leaving 72 static misses
+  resolved. A real day-223 archive preserves all 1,599 occurrences: 197 static misses, 927 inherited upstream blocks
+  and 475 activity rows blocked on missing route-date and movement-context evidence; no row is guessed available.
+- This remains `training_label_eligible=false`. The next fixed dependency axis is `facility_capacity`; stochastic,
+  resource, budget, reservation, lead-time, retry, daily-budget, opportunity-cost and fresh-receipt axes retain
+  independent ownership.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
