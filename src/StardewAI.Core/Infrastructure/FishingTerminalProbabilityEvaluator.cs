@@ -18,6 +18,7 @@ public sealed record FishingTerminalProbabilityRule
     public bool EligibleBeforeRandomRolls { get; init; }
     public bool ProducesTarget { get; init; }
     public bool OutputResolutionComplete { get; init; }
+    public bool RetryContextStable { get; init; }
     public FishingSpawnRollKind SpawnRollKind { get; init; }
     public bool? SeededSpawnRollPassed { get; init; }
     public double? SpawnChance { get; init; }
@@ -41,8 +42,10 @@ public sealed record FishingTerminalProbabilityCandidate
     public double? ProbabilityLowerBound { get; init; }
     public double? TargetReturnProbabilityLowerBound { get; init; }
     public double? PriorCompetitorNonReturnProbabilityLowerBound { get; init; }
+    public bool IndependentRetryLowerBoundProven { get; init; }
     public string[] CompetitorRuleKeys { get; init; } = Array.Empty<string>();
     public string[] BlockingReasons { get; init; } = Array.Empty<string>();
+    public string[] RetryBlockingReasons { get; init; } = Array.Empty<string>();
 }
 
 public sealed record FishingTerminalProbabilityResult
@@ -53,9 +56,11 @@ public sealed record FishingTerminalProbabilityResult
         "conservative_first_pass_lower_bound";
     public double? SingleAttemptProbabilityLowerBound { get; init; }
     public string? SelectedRuleKey { get; init; }
+    public bool IndependentRetryLowerBoundProven { get; init; }
     public FishingTerminalProbabilityCandidate[] Candidates { get; init; } =
         Array.Empty<FishingTerminalProbabilityCandidate>();
     public string[] BlockingReasons { get; init; } = Array.Empty<string>();
+    public string[] RetryBlockingReasons { get; init; } = Array.Empty<string>();
 }
 
 public static class FishingTerminalProbabilityEvaluator
@@ -91,6 +96,9 @@ public static class FishingTerminalProbabilityEvaluator
                 Resolved = true,
                 SingleAttemptProbabilityLowerBound = resolved.ProbabilityLowerBound,
                 SelectedRuleKey = resolved.RuleKey,
+                IndependentRetryLowerBoundProven =
+                    resolved.IndependentRetryLowerBoundProven,
+                RetryBlockingReasons = resolved.RetryBlockingReasons,
                 Candidates = candidates
             };
         }
@@ -144,6 +152,7 @@ public static class FishingTerminalProbabilityEvaluator
             .OrderBy(rule => rule.Precedence)
             .ThenBy(rule => rule.RuleKey, StringComparer.Ordinal)
             .ToArray();
+        var retryBlockers = RetryBlockingReasons(target, competitors);
         var noCompetitorReturnLowerBound = 1d;
         foreach (var competitor in competitors)
         {
@@ -158,10 +167,12 @@ public static class FishingTerminalProbabilityEvaluator
                 RuleKey = target.RuleKey,
                 Resolved = false,
                 CompetitorRuleKeys = competitors.Select(rule => rule.RuleKey).ToArray(),
+                IndependentRetryLowerBoundProven = retryBlockers.Length == 0,
                 BlockingReasons = blockers
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(reason => reason, StringComparer.Ordinal)
-                    .ToArray()
+                    .ToArray(),
+                RetryBlockingReasons = retryBlockers
             };
         }
 
@@ -177,8 +188,43 @@ public static class FishingTerminalProbabilityEvaluator
             TargetReturnProbabilityLowerBound = ClampProbability(targetReturnLowerBound),
             PriorCompetitorNonReturnProbabilityLowerBound =
                 ClampProbability(noCompetitorReturnLowerBound),
+            IndependentRetryLowerBoundProven = retryBlockers.Length == 0,
+            RetryBlockingReasons = retryBlockers,
             CompetitorRuleKeys = competitors.Select(rule => rule.RuleKey).ToArray()
         };
+    }
+
+    private static string[] RetryBlockingReasons(
+        FishingTerminalProbabilityRule target,
+        IReadOnlyList<FishingTerminalProbabilityRule> competitors)
+    {
+        var blockers = new List<string>();
+        AddRuleBlockers(target, "target");
+        foreach (var competitor in competitors)
+        {
+            AddRuleBlockers(competitor, "competitor");
+        }
+        return blockers.Distinct(StringComparer.Ordinal)
+            .OrderBy(reason => reason, StringComparer.Ordinal)
+            .ToArray();
+
+        void AddRuleBlockers(
+            FishingTerminalProbabilityRule rule,
+            string role)
+        {
+            if (!rule.EligibilityResolved)
+            {
+                blockers.Add($"{role}_retry_eligibility_unresolved:{rule.RuleKey}");
+            }
+            if (!rule.RetryContextStable)
+            {
+                blockers.Add($"{role}_retry_context_not_stable:{rule.RuleKey}");
+            }
+            if (rule.SpawnRollKind != FishingSpawnRollKind.IndependentRandom)
+            {
+                blockers.Add($"{role}_spawn_roll_not_independent:{rule.RuleKey}");
+            }
+        }
     }
 
     private static double? SpawnProbability(

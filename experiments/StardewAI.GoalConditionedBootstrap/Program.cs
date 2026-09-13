@@ -537,6 +537,8 @@ static void BuildAcquisitionRouteTargetDateStochasticRetryBudget(
         options.Required("target-date-currency"),
         options.Required("target-date-reservation"),
         options.Required("target-date-processing"),
+        options.Required("target-date-fishing-probability"),
+        options.Required("fishing-forecast-manifest"),
         options.Required("strategy-ledger"),
         options.Required("snapshot"),
         options.Required("route-timing-calibration"));

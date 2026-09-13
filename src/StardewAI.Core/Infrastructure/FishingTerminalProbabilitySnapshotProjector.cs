@@ -90,6 +90,19 @@ public static class FishingTerminalProbabilitySnapshotProjector
         var fishingLevel = TryObject(spawnRules, "evaluation_context", out var context)
             ? Int(context, "fishing_level")
             : null;
+        var baseFishingLevel = context.ValueKind == JsonValueKind.Object
+            ? Int(context, "base_fishing_level")
+            : null;
+        var repeatedCastEquipmentStable =
+            fishingLevel.HasValue &&
+            baseFishingLevel == fishingLevel &&
+            context.ValueKind == JsonValueKind.Object &&
+            context.TryGetProperty(
+                "selected_bait_qualified_item_id",
+                out var selectedBait) &&
+            selectedBait.ValueKind == JsonValueKind.Null &&
+            Bool(context, "has_magic_bait") == false &&
+            Bool(context, "has_curiosity_lure") == false;
         if (bobberX == int.MinValue || bobberY == int.MinValue ||
             waterDepth < 0)
         {
@@ -131,7 +144,9 @@ public static class FishingTerminalProbabilitySnapshotProjector
                 bobberTileIndex,
                 waterDepth,
                 standTileX,
-                standTileY))
+                standTileY,
+                fishingLevel.GetValueOrDefault(),
+                repeatedCastEquipmentStable))
             .ToArray();
         var probability = FishingTerminalProbabilityEvaluator.Evaluate(
             new FishingTerminalProbabilityRequest
@@ -166,7 +181,9 @@ public static class FishingTerminalProbabilitySnapshotProjector
         int bobberTileIndex,
         int waterDepth,
         int standTileX,
-        int standTileY)
+        int standTileY,
+        int fishingLevel,
+        bool repeatedCastEquipmentStable)
     {
         var ruleKey = String(rule, "rule_key");
         var conditionResolved = Bool(rule, "condition_probability_resolved") == true;
@@ -201,6 +218,17 @@ public static class FishingTerminalProbabilitySnapshotProjector
             rule,
             "spawn_chance_probability_resolved") == true;
         var seeded = Bool(rule, "use_fish_caught_seeded_random") == true;
+        var retryContextStable = repeatedCastEquipmentStable &&
+                                 string.IsNullOrWhiteSpace(
+                                     String(rule, "condition")) &&
+                                 string.IsNullOrWhiteSpace(
+                                     String(rule, "per_item_condition")) &&
+                                 Int(rule, "min_fishing_level") is int minimumLevel &&
+                                 minimumLevel <= fishingLevel &&
+                                 Int(rule, "catch_limit") == -1 &&
+                                 string.IsNullOrWhiteSpace(
+                                     String(rule, "set_flag_on_catch")) &&
+                                 !seeded;
 
         return new FishingTerminalProbabilityRule
         {
@@ -212,6 +240,7 @@ public static class FishingTerminalProbabilitySnapshotProjector
                                         eligibleTile && standAllowed,
             ProducesTarget = producesTarget,
             OutputResolutionComplete = outputProjection.Resolved,
+            RetryContextStable = retryContextStable,
             SpawnRollKind = seeded
                 ? FishingSpawnRollKind.DeterministicFishCaughtSeed
                 : FishingSpawnRollKind.IndependentRandom,

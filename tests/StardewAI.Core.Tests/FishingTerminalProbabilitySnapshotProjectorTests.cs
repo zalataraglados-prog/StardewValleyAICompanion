@@ -29,6 +29,7 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
         Assert.Equal(0.16d,
             result.Probability!.SingleAttemptProbabilityLowerBound!.Value,
             10);
+        Assert.True(result.Probability.IndependentRetryLowerBoundProven);
     }
 
     [Fact]
@@ -111,7 +112,58 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
             diagonalCast.BlockingReasons);
     }
 
-    private static string SnapshotJson(params object[] rules)
+    [Fact]
+    public void AttachedBaitKeepsFirstAttemptButBlocksIndependentRetryProof()
+    {
+        using var document = JsonDocument.Parse(SnapshotJsonWithBait(
+            new { qualified_item_id = "(O)685", stack = 5 },
+            5,
+            Rule("target", "145", 0, 0.5d, 0.4d)));
+
+        var result = FishingTerminalProbabilitySnapshotProjector.Project(
+            document.RootElement,
+            "Beach",
+            2,
+            "(O)145",
+            0,
+            1,
+            5);
+
+        Assert.True(result.Resolved);
+        Assert.Equal(0.2d,
+            result.Probability!.SingleAttemptProbabilityLowerBound!.Value,
+            10);
+        Assert.False(result.Probability.IndependentRetryLowerBoundProven);
+    }
+
+    [Fact]
+    public void TemporaryFishingLevelBuffBlocksIndependentRetryProof()
+    {
+        using var document = JsonDocument.Parse(SnapshotJsonWithBait(
+            null,
+            4,
+            Rule("target", "145", 0, 0.5d, 0.4d)));
+
+        var result = FishingTerminalProbabilitySnapshotProjector.Project(
+            document.RootElement,
+            "Beach",
+            2,
+            "(O)145",
+            0,
+            1,
+            5);
+
+        Assert.True(result.Resolved);
+        Assert.False(result.Probability!.IndependentRetryLowerBoundProven);
+    }
+
+    private static string SnapshotJson(params object[] rules) =>
+        SnapshotJsonWithBait(null, 5, rules);
+
+    private static string SnapshotJsonWithBait(
+        object? selectedBait,
+        int baseFishingLevel,
+        params object[] rules)
     {
         var fieldSource = new { kind = "game_object", path = "test" };
         object Field(object value) => new
@@ -150,7 +202,16 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
                     spawn_rules = Field(new
                     {
                         inventory_complete = true,
-                        evaluation_context = new { fishing_level = 5 },
+                        evaluation_context = new
+                        {
+                            fishing_level = 5,
+                            base_fishing_level = baseFishingLevel,
+                            selected_bait_qualified_item_id = selectedBait is null
+                                ? null
+                                : "(O)685",
+                            has_magic_bait = false,
+                            has_curiosity_lure = false
+                        },
                         rules
                     })
                 }
@@ -196,13 +257,17 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
             random_item_ids = selectors,
             item_selection_mode = random ? "random_item_id" : "item_id",
             per_item_condition = (string?)null,
+            condition = (string?)null,
             condition_probability_resolved = conditionResolved,
             condition_met_for_probability = conditionResolved ? true : (bool?)null,
             player_position = (object?)null,
+            min_fishing_level = 0,
             blocking_reasons = Array.Empty<string>(),
             eligible_fishable_tile_indices = new[] { 0 },
             spawn_chance_probability_resolved = true,
             use_fish_caught_seeded_random = false,
+            catch_limit = -1,
+            set_flag_on_catch = (string?)null,
             effective_spawn_chance_preview = spawnChance,
             outputs
         };

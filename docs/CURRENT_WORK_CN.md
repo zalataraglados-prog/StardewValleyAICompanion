@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-14 普通无饵钓鱼重试预算闭合
+
+- `fishing_forecast` 已成为按 `location_id + rod_slot_index` 隔离缓存的轻量透明快照。它只运行 world/fishing 必需读取器，不再连带扫描玩家全库存、菜单、农场、NPC 或全部地点；目标地点必须已经加载，错误地点、鱼竿槽位、跨存档/玩家/日期/时刻或超过 30 tick 的预测都会失败关闭。
+- 透明桥按锁定版反编译公式精确发布 `PreciseFishCaught * 859` 固定种子规则的本次通过/失败，并区分原生连续随机。Core 对指定落点、站位、完整 Default+地点规则、优先级、同级最坏顺序、随机物品选择和 `Data/Fish` 接受概率生成首轮保守下界；固定种子不能冒充可重复概率。
+- 重复抛竿另有独立证明：当前只放行明确无饵、无魔法鱼饵/好奇诱饵、无临时钓鱼等级加成，且目标及所有前置竞争规则均无可变条件、逐物品条件、捕获上限、捕获标志、未来等级解锁或固定种子的上下文。单次概率可读但重复性不成立时，随机预算轴仍阻塞。
+- `StochasticRetryPolicy` 以统一 95% 阈值计算多成功事件的最小二项重试次数，使用对数域下尾求和与有界二分；额外重试数已从错误的 `总尝试-1` 修正为 `总尝试-所需产物数`。聚焦 `(O)145` 路线以单次保守下界 0.2 得到 14 次总尝试、13 次额外尝试；因明确无饵，不扩大材料预留。
+- 76 条目标路线现为随机预算轴 `76/76` 已解析、2 条目标日匹配、0 概率阻塞，训练授权仍为 false。Core game-free `58/58`、Backend `194/194`、Bootstrap 全链自测、实验项目和真实程序集桥接构建均通过；处理报告或钓鱼概率报告被篡改都会被确定性重建拒绝。
+- 下一固定轴是 `daily_time_energy_budget`：必须把选中终端站位接入可达性、把 14 次尝试换算为同一鱼类开放窗口内的保守时间/体力预算，再进入机会成本和 fresh 终态回执。带饵重试、定向鱼饵第二轮以及固定种子跨捕获状态仍保持显式阻塞，不能在本轴偷放行。
+
 ## 2026-09-13 Master Angler 原生地点鱼概率输入目录
 
 - 权威需求清单新增独立的 `native_fish_spawn_chance_rule` 证据，哈希锁定反编译 `SpawnFishData.cs`，并逐段守卫 `GetChance` 的基础概率、好奇诱饵、每日运气、数量修正器、特定鱼饵和运气等级公式。原有 `native_location_spawn_rules` 证据同时明确覆盖 `GameLocation.getFish` 的规则排序与解析入口。

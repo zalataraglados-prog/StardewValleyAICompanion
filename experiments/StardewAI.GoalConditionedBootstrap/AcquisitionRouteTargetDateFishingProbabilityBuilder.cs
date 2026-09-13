@@ -191,6 +191,8 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
                                  projection.Probability?.SingleAttemptProbabilityLowerBound
                                      is not null)
             .OrderByDescending(projection =>
+                projection.Probability!.IndependentRetryLowerBoundProven)
+            .ThenByDescending(projection =>
                 projection.Probability!.SingleAttemptProbabilityLowerBound)
             .ThenBy(projection => projection.TargetLocationId, StringComparer.Ordinal)
             .ThenBy(projection => projection.RodSlotIndex)
@@ -284,6 +286,9 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
             resolved,
             positive,
             probability,
+            projection?.Probability?.IndependentRetryLowerBoundProven,
+            projection?.Probability?.RetryBlockingReasons ??
+                Array.Empty<string>(),
             projection,
             requestUrls,
             hashes ?? Array.Empty<string>(),

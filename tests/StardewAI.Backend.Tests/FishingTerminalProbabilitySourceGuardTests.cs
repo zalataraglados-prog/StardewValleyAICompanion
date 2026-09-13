@@ -15,6 +15,12 @@ public sealed class FishingTerminalProbabilitySourceGuardTests
         Assert.Contains("deterministic_fish_caught_seed", source);
         Assert.Contains("seeded_spawn_roll_passed", source);
         Assert.Contains("condition_probability_resolved", source);
+        Assert.Contains(
+            "selected_bait_qualified_item_id = bait?.QualifiedItemId",
+            source);
+        Assert.Contains("selected_bait_stack = bait?.Stack", source);
+        Assert.Contains("base_fishing_level = player.fishingLevel.Value", source);
+        Assert.Contains("fishing_level_buff", source);
         Assert.Contains("non_mutating_local_rng_preview_not_probability_evidence", source);
         Assert.Contains("GameStateQuery.Parse(condition)", source);
         Assert.Contains("string.Equals(key, \"RANDOM\"", source);

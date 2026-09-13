@@ -101,6 +101,10 @@ public sealed record AcquisitionRouteTargetDateFishingProbability(
     bool? PositiveProbabilityAvailable,
     [property: JsonPropertyName("single_attempt_probability_lower_bound")]
     double? SingleAttemptProbabilityLowerBound,
+    [property: JsonPropertyName("independent_retry_lower_bound_proven")]
+    bool? IndependentRetryLowerBoundProven,
+    [property: JsonPropertyName("retry_blocking_reasons")]
+    string[] RetryBlockingReasons,
     [property: JsonPropertyName("selected_projection")]
     FishingTerminalProbabilityProjectionResult? SelectedProjection,
     [property: JsonPropertyName("forecast_request_urls")]

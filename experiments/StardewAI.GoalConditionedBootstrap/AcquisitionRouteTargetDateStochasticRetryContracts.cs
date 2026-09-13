@@ -22,6 +22,13 @@ public sealed class AcquisitionRouteTargetDateStochasticRetryReport
     public string TargetDateProcessingLeadTimeSha256 { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("target_date_fishing_probability_sha256")]
+    public string TargetDateFishingProbabilitySha256 { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("fishing_forecast_manifest_sha256")]
+    public string FishingForecastManifestSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("static_calendar_resolution_sha256")]
     public string StaticCalendarResolutionSha256 { get; set; } = string.Empty;
 
@@ -80,7 +87,7 @@ public sealed class AcquisitionRouteTargetDateStochasticRetryReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The stochastic_retry_budget axis runs only after an exact processing-lead-time match. Deterministic receipts and source-resolved guaranteed outputs require no stochastic retry. An already materialized live output may also be collected without retry. Native stochastic routes require exact target-location, target-terminal probability evidence; unknown probability, outcome quantity, quality, independence, or condition context fails closed. A retry budget that increases consumables cannot authorize execution until its expanded demand is revalidated through resource, currency and atomic reservation ownership. Daily time and energy remain downstream, route selection is unchanged, and training authorization stays false.";
+        "The stochastic_retry_budget axis runs only after an exact processing-lead-time match. Deterministic receipts and source-resolved guaranteed outputs require no stochastic retry. An already materialized live output may also be collected without retry. Native stochastic routes require exact target-location, target-terminal probability evidence; unknown probability, outcome quantity, quality, independence, or condition context fails closed. A no-bait fishing projection may use the exact independent binomial lower-bound budget only when every selected-prefix rule proves stable repeated-cast context and independent native RNG. A retry budget that increases consumables cannot authorize execution until its expanded demand is revalidated through resource, currency and atomic reservation ownership. Daily time and energy remain downstream, route selection is unchanged, and training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateStochasticRetry(

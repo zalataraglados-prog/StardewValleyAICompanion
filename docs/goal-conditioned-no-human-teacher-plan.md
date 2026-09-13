@@ -1478,6 +1478,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   into stochastic retry budgeting only after an explicit repeatability proof; fixed-seed state must never be promoted
   to an IID retry model.
 
+### 2026-09-14: no-bait fishing retry budget closure
+
+- A first-pass probability now carries a separate repeatability proof. The proof requires an explicitly empty bait
+  slot, no Magic Bait or Curiosity Lure probability effect, no temporary Fishing-level buff, and an unchanged selected
+  rule prefix: every target or possible preceding competitor must have resolved eligibility, no mutable
+  condition/per-item condition, no catch limit or catch flag, no future minimum-level activation, and an independent
+  native RNG roll. A valid one-cast probability remains usable as evidence even when this stricter retry proof fails,
+  but it cannot be multiplied into repeated attempts.
+- `StochasticRetryPolicy.RequiredIndependentAttemptCount` owns the exact binomial lower-tail calculation for one or
+  more required successes at the shared 0.95 threshold. It uses log-space summation and a bounded binary search, so
+  large attempt limits do not allocate or iterate an attempts-by-output matrix. Zero probability, mathematical
+  certainty requests for a non-certain trial, and budgets above 100,000 attempts fail closed.
+- The stochastic artifact now deterministically rebuilds and hash-checks the fishing-probability artifact and its
+  forecast manifest before joining all route occurrences. The focused `(O)145` fixture requires 14 total casts for
+  one success at a conservative 0.2 single-cast lower bound; 13 are additional attempts. Because repeatability is
+  currently proven only for an empty bait slot, this route does not expand material reservations. For required output
+  quantities above one, additional retries are correctly `total attempts - required output quantity`, not
+  `total attempts - 1`.
+- The 76-route fixture now completes the stochastic axis with two matching routes, zero probability blockers and
+  training authorization still false. Stand reachability and preserving the same rule context across the resulting
+  action-time window remain owned by `daily_time_energy_budget`; opportunity cost and fresh terminal receipts remain
+  later axes. Baited retries stay blocked until per-cast consumption and expanded atomic reservation ownership are
+  implemented.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

@@ -273,9 +273,14 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                     ? "deferred_to_explicit_terminal_stand"
                     : "current_player_tile",
                 fishing_level = player.FishingLevel,
+                base_fishing_level = player.fishingLevel.Value,
+                fishing_level_buff =
+                    player.FishingLevel - player.fishingLevel.Value,
                 luck_level = player.LuckLevel,
                 daily_luck = player.DailyLuck,
                 selected_rod_qualified_item_id = selectedRod?.QualifiedItemId,
+                selected_bait_qualified_item_id = bait?.QualifiedItemId,
+                selected_bait_stack = bait?.Stack,
                 has_magic_bait = hasMagicBait,
                 has_curiosity_lure = hasCuriosityLure,
                 targeted_fish_qualified_item_id = targetedFishId,

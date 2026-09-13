@@ -123,4 +123,84 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 route.RouteOccurrenceId);
         }
     }
+
+    private static void ValidateFishingProbabilitySource(
+        AcquisitionRouteTargetDateFishingProbabilityReport fishingSource,
+        AcquisitionRouteTargetDateProcessingReport processingSource,
+        string processingPath,
+        string forecastManifestPath)
+    {
+        Require(fishingSource.SchemaVersion ==
+                    "acquisition_route_target_date_fishing_probability.v1" &&
+                fishingSource.RouteOccurrenceInventoryComplete &&
+                !fishingSource.TrainingLabelEligible &&
+                fishingSource.GoalId == processingSource.GoalId &&
+                fishingSource.GameVersion == processingSource.GameVersion &&
+                fishingSource.TargetTotalDay ==
+                    processingSource.TargetTotalDay &&
+                fishingSource.BaseSnapshotSha256 ==
+                    processingSource.SnapshotSha256 &&
+                fishingSource.BaseSnapshotStateHash ==
+                    processingSource.SnapshotStateHash &&
+                string.Equals(
+                    fishingSource.TargetDateProcessingLeadTimeSha256,
+                    CurrentTeacherFrontierSupport.HashFile(processingPath),
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    fishingSource.ForecastManifestSha256,
+                    CurrentTeacherFrontierSupport.HashFile(
+                        forecastManifestPath),
+                    StringComparison.OrdinalIgnoreCase) &&
+                fishingSource.RouteOccurrenceCount ==
+                    processingSource.RouteOccurrenceCount &&
+                fishingSource.Routes.Length ==
+                    fishingSource.RouteOccurrenceCount &&
+                fishingSource.Routes.Select(route => route.RouteOccurrenceId)
+                    .Distinct(StringComparer.Ordinal).Count() ==
+                    fishingSource.Routes.Length,
+            "Fishing probability metadata is incomplete for stochastic retry.");
+        Require(fishingSource.PositiveProbabilityCount ==
+                    fishingSource.Routes.Count(route =>
+                        route.RouteKind == "native_location_fish_spawn" &&
+                        !route.Status.StartsWith(
+                            "not_applicable_upstream_",
+                            StringComparison.Ordinal) &&
+                        route.PositiveProbabilityAvailable == true) &&
+                fishingSource.ZeroProbabilityCount ==
+                    fishingSource.Routes.Count(route =>
+                        route.RouteKind == "native_location_fish_spawn" &&
+                        !route.Status.StartsWith(
+                            "not_applicable_upstream_",
+                            StringComparison.Ordinal) &&
+                        route.ProbabilityAxisResolved &&
+                        route.PositiveProbabilityAvailable == false) &&
+                fishingSource.BlockedProbabilityCount ==
+                    fishingSource.Routes.Count(route =>
+                        route.RouteKind == "native_location_fish_spawn" &&
+                        !route.Status.StartsWith(
+                            "not_applicable_upstream_",
+                            StringComparison.Ordinal) &&
+                        !route.ProbabilityAxisResolved),
+            "Fishing probability counts drifted before stochastic retry.");
+
+        var processingRoutes = processingSource.Routes.ToDictionary(
+            route => route.RouteOccurrenceId,
+            StringComparer.Ordinal);
+        Require(processingRoutes.Keys.ToHashSet(StringComparer.Ordinal)
+                .SetEquals(fishingSource.Routes.Select(route =>
+                    route.RouteOccurrenceId)),
+            "Fishing probability and processing route inventories disagree.");
+        foreach (var fishingRoute in fishingSource.Routes)
+        {
+            var requirement = RequirementRoute(
+                processingRoutes[fishingRoute.RouteOccurrenceId]);
+            Require(fishingRoute.RouteKind == requirement.RouteKind &&
+                    fishingRoute.TargetQualifiedItemId ==
+                        requirement.QualifiedItemId &&
+                    fishingRoute.RequiredAmount == requirement.RequiredAmount &&
+                    fishingRoute.MinimumQuality == requirement.MinimumQuality,
+                "Fishing probability contract disagrees with processing route: " +
+                fishingRoute.RouteOccurrenceId);
+        }
+    }
 }

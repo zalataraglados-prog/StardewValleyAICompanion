@@ -19,11 +19,17 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         string targetDateCurrencyPath,
         string targetDateReservationPath,
         string targetDateProcessingPath,
+        string targetDateFishingProbabilityPath,
+        string fishingForecastManifestPath,
         string strategyLedgerPath,
         string snapshotPath,
         string routeTimingCalibrationPath)
     {
         var sourcePath = Path.GetFullPath(targetDateProcessingPath);
+        var fishingProbabilityPath = Path.GetFullPath(
+            targetDateFishingProbabilityPath);
+        var forecastManifestPath = Path.GetFullPath(
+            fishingForecastManifestPath);
         var staticPath = Path.GetFullPath(staticCalendarResolutionPath);
         var snapshotFullPath = Path.GetFullPath(snapshotPath);
         var source = CurrentTeacherFrontierSupport.Read<
@@ -50,6 +56,40 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             "Target-date processing lead time drifted from deterministic source compilation.");
         ValidateSource(source);
 
+        var fishingProbability = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRouteTargetDateFishingProbabilityReport>(
+            fishingProbabilityPath,
+            "Acquisition route target-date fishing probability");
+        var recomputedFishingProbability =
+            AcquisitionRouteTargetDateFishingProbabilityBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                targetDateReservationPath,
+                sourcePath,
+                strategyLedgerPath,
+                snapshotFullPath,
+                routeTimingCalibrationPath,
+                forecastManifestPath);
+        Require(EqualJson(fishingProbability, recomputedFishingProbability),
+            "Target-date fishing probability drifted from deterministic source compilation.");
+        ValidateFishingProbabilitySource(
+            fishingProbability,
+            source,
+            sourcePath,
+            forecastManifestPath);
+        var fishingRoutes = fishingProbability.Routes.ToDictionary(
+            route => route.RouteOccurrenceId,
+            StringComparer.Ordinal);
+
         var staticSource = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteCalendarResolutionReport>(
             staticPath,
@@ -60,7 +100,9 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             StringComparer.Ordinal);
         var routes = source.Routes.Select(route => Evaluate(
                 route,
-                staticRoutes[route.RouteOccurrenceId]))
+                staticRoutes[route.RouteOccurrenceId],
+                fishingRoutes[route.RouteOccurrenceId],
+                fishingProbabilityPath))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>
@@ -82,6 +124,12 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             GameVersion = source.GameVersion,
             TargetDateProcessingLeadTimeSha256 =
                 CurrentTeacherFrontierSupport.HashFile(sourcePath),
+            TargetDateFishingProbabilitySha256 =
+                CurrentTeacherFrontierSupport.HashFile(
+                    fishingProbabilityPath),
+            FishingForecastManifestSha256 =
+                CurrentTeacherFrontierSupport.HashFile(
+                    forecastManifestPath),
             StaticCalendarResolutionSha256 =
                 CurrentTeacherFrontierSupport.HashFile(staticPath),
             SnapshotSha256 = source.SnapshotSha256,
