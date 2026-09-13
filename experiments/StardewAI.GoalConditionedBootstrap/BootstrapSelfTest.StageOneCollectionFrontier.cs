@@ -41,6 +41,12 @@ internal static partial class BootstrapSelfTest
         var targetDateReservationPath = Path.Combine(
             root,
             "target-date-inventory-reservation.json");
+        var targetDateProcessingPath = Path.Combine(
+            root,
+            "target-date-processing-lead-time.json");
+        var tamperedTargetDateReservationPath = Path.Combine(
+            root,
+            "tampered-target-date-inventory-reservation.json");
         var strategyLedgerPath = Path.Combine(root, "strategy-ledger.json");
         var materialReservedLedgerPath = Path.Combine(
             root,
@@ -1410,6 +1416,308 @@ internal static partial class BootstrapSelfTest
                     BuildReservation(strategyLedgerPath),
                     JsonDefaults.Options),
             "Target-date reservation claims are not deterministic.");
+
+        AcquisitionRouteTargetDateProcessingReport BuildProcessing(
+            string reservationPath,
+            string ledgerPath,
+            string snapshotPath) =>
+            AcquisitionRouteTargetDateProcessingBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                reservationPath,
+                ledgerPath,
+                snapshotPath,
+                targetDateRouteCalibrationPath);
+        var targetDateProcessing = BuildProcessing(
+            targetDateReservationPath,
+            strategyLedgerPath,
+            targetDateUnlockSnapshotPath);
+        Write(targetDateProcessingPath, targetDateProcessing);
+        var targetDateProcessingCrops = targetDateProcessing.Routes.Where(
+                route => route.ProcessingLeadTimeRequirementKind ==
+                    "crop_growth_or_ready_crop")
+            .ToArray();
+        var targetDateProcessingShop = targetDateProcessing.Routes.Single(
+            route => route.RouteOccurrenceId ==
+                targetDateCurrencyShop.RouteOccurrenceId);
+        Require(targetDateProcessing.Status ==
+                    "complete_target_date_processing_lead_time_axis_downstream_pending" &&
+                targetDateProcessing.RouteOccurrenceInventoryComplete &&
+                targetDateProcessing
+                    .ProcessingLeadTimeAxisResolutionComplete &&
+                !targetDateProcessing.TrainingLabelEligible &&
+                targetDateProcessing.RouteOccurrenceCount == 76 &&
+                targetDateProcessing.ProcessingLeadTimeAxisResolvedCount == 76 &&
+                targetDateProcessing.ProcessingLeadTimeMatchCount == 2 &&
+                targetDateProcessing.ProcessingLeadTimeMissCount == 2 &&
+                targetDateProcessing.ProcessingLeadTimeNotRequiredCount == 2 &&
+                targetDateProcessing.NotApplicableUpstreamCount == 72 &&
+                targetDateProcessing.BlockedUpstreamCount == 0 &&
+                targetDateProcessing.BlockedProcessingEvidenceCount == 0 &&
+                targetDateProcessingCrops.Length == 2 &&
+                targetDateProcessingCrops.All(route =>
+                    route.ProcessingLeadTimeMatchesTargetDate == false &&
+                    route.Evaluations.Single().ProductionStateKind ==
+                        "new_crop_from_seed" &&
+                    route.Evaluations.Single().AuthoritativeBaseGrowthDays == 4 &&
+                    route.Evaluations.Single()
+                        .ProvenLeadTimeDaysLowerBound == 1 &&
+                    route.Evaluations.Single()
+                        .ProvenNotBeforeTotalDay == 1) &&
+                targetDateProcessingShop.ProcessingLeadTimeAxisStatus ==
+                    "resolved_processing_lead_time_not_required" &&
+                JsonSerializer.Serialize(
+                    targetDateProcessingShop.UpstreamRoute,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    targetDateReservationShop,
+                    JsonDefaults.Options),
+            "Target-date processing-lead-time axis resolution drifted.");
+        Require(JsonSerializer.Serialize(
+                    targetDateProcessing,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    BuildProcessing(
+                        targetDateReservationPath,
+                        strategyLedgerPath,
+                        targetDateUnlockSnapshotPath),
+                    JsonDefaults.Options),
+            "Target-date processing-lead-time resolution is not deterministic.");
+
+        JsonElement CrabPotNetwork(
+            bool ready,
+            bool readyStateConsistent,
+            string currentOutput,
+            string serviceStatus,
+            string bait) => JsonSerializer.SerializeToElement(new
+        {
+            schema_version = "crab_pot_network.v1",
+            projection_status =
+                "complete_crab_pots_across_loaded_persistent_locations",
+            rows = new[]
+            {
+                new
+                {
+                    location_id = "Beach",
+                    exact_base_crab_pot = true,
+                    production_domain_complete = true,
+                    ready_state_consistent = readyStateConsistent,
+                    ready_for_harvest = ready,
+                    current_output_qualified_item_id = currentOutput,
+                    service_status = serviceStatus,
+                    bait_qualified_item_id = bait,
+                    owner_has_luremaster = false,
+                    possible_qualified_item_ids = new[] { "(O)715" }
+                }
+            }
+        }, JsonDefaults.Options);
+        var readyCrabPot = AcquisitionCrabPotLeadTimeEvaluator.Evaluate(
+            CrabPotNetwork(
+                ready: true,
+                readyStateConsistent: true,
+                currentOutput: "(O)715",
+                serviceStatus: "ready_for_collection",
+                bait: string.Empty),
+            new[] { "Beach" },
+            "(O)715",
+            0);
+        var waitingCrabPot = AcquisitionCrabPotLeadTimeEvaluator.Evaluate(
+            CrabPotNetwork(
+                ready: false,
+                readyStateConsistent: true,
+                currentOutput: string.Empty,
+                serviceStatus: "producing_or_waiting",
+                bait: "(O)685"),
+            new[] { "Beach" },
+            "(O)715",
+            0);
+        var inconsistentCrabPot =
+            AcquisitionCrabPotLeadTimeEvaluator.Evaluate(
+                CrabPotNetwork(
+                    ready: true,
+                    readyStateConsistent: false,
+                    currentOutput: "(O)715",
+                    serviceStatus: "ready_for_collection",
+                    bait: string.Empty),
+                new[] { "Beach" },
+                "(O)715",
+                0);
+        var inconsistentServiceCrabPot =
+            AcquisitionCrabPotLeadTimeEvaluator.Evaluate(
+                CrabPotNetwork(
+                    ready: false,
+                    readyStateConsistent: true,
+                    currentOutput: string.Empty,
+                    serviceStatus: "bait_required",
+                    bait: "(O)685"),
+                new[] { "Beach" },
+                "(O)715",
+                0);
+        Require(readyCrabPot.EvidenceAvailable &&
+                readyCrabPot.Evaluations.Single()
+                    .OutputReadyOnTargetDate == true &&
+                readyCrabPot.Evaluations.Single()
+                    .ProvenLeadTimeDaysLowerBound == 0 &&
+                waitingCrabPot.EvidenceAvailable &&
+                waitingCrabPot.Evaluations.Single()
+                    .OutputReadyOnTargetDate == false &&
+                waitingCrabPot.Evaluations.Single()
+                    .ProvenNotBeforeTotalDay == 1 &&
+                !inconsistentCrabPot.EvidenceAvailable &&
+                inconsistentCrabPot.BlockingReasons.Contains(
+                    "crab_pot_runtime_row_invalid_or_incomplete") &&
+                !inconsistentServiceCrabPot.EvidenceAvailable &&
+                inconsistentServiceCrabPot.BlockingReasons.Contains(
+                    "crab_pot_service_state_does_not_prove_next_production"),
+            "Native crab-pot lead-time classification drifted.");
+
+        var readyCropSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        readyCropSnapshot["state_hash"] = "target-date-ready-crop-state";
+        var readyCropCapacity = readyCropSnapshot["state"]!["locations"]!
+            ["social_route_date_evidence"]!["value"]!["locations"]!.AsArray()
+            .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
+            ["cultivation_capacity"]!.AsObject();
+        readyCropCapacity["total_prepared_soil_slot_count"] = 1;
+        readyCropCapacity["open_prepared_soil_slot_count"] = 0;
+        readyCropCapacity["occupied_crop_slot_count"] = 1;
+        readyCropCapacity["unresolved_harvest_item_slot_count"] = 0;
+        readyCropCapacity["occupied_harvest_items"] = new JsonArray(
+            new JsonObject
+            {
+                ["harvest_item_qualified_id"] = "(O)24",
+                ["is_garden_pot"] = false,
+                ["slot_count"] = 1
+            });
+        readyCropSnapshot["state"]!["farm"]!["crops"]!["value"] =
+            new JsonArray(
+                new JsonObject
+                {
+                    ["location_id"] = "Farm",
+                    ["tile_x"] = 1,
+                    ["tile_y"] = 1,
+                    ["harvest_item_qualified_id"] = "(O)24",
+                    ["harvest_item_projection_status"] =
+                        "exact_from_live_index_of_harvest",
+                    ["dead"] = false,
+                    ["ready_for_harvest"] = true,
+                    ["days_until_next_harvest_if_watered"] = 0
+                });
+        var readyCropRoot = Path.Combine(root, "ready-crop-processing");
+        Directory.CreateDirectory(readyCropRoot);
+        var readyCropSnapshotPath = Path.Combine(
+            readyCropRoot,
+            "snapshot.json");
+        var readyCropLedgerPath = Path.Combine(
+            readyCropRoot,
+            "strategy-ledger.json");
+        File.WriteAllText(
+            readyCropSnapshotPath,
+            readyCropSnapshot.ToJsonString(JsonDefaults.Options));
+        WriteEmptyStrategyLedger(
+            readyCropLedgerPath,
+            "target-date-ready-crop-state");
+        var readyCropProcessing = BuildProcessingFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            readyCropSnapshotPath,
+            targetDateRouteCalibrationPath,
+            readyCropLedgerPath,
+            readyCropRoot);
+        Require(readyCropProcessing.ProcessingLeadTimeAxisResolutionComplete &&
+                readyCropProcessing.ProcessingLeadTimeMatchCount == 4 &&
+                readyCropProcessing.ProcessingLeadTimeMissCount == 0 &&
+                readyCropProcessing.Routes.Where(route =>
+                    route.ProcessingLeadTimeRequirementKind ==
+                        "crop_growth_or_ready_crop").All(route =>
+                    route.ProcessingLeadTimeMatchesTargetDate == true &&
+                    route.Evaluations.Single().Status ==
+                        "resolved_existing_crop_ready_on_target_date"),
+            "A harvest-ready live crop did not satisfy same-day lead time.");
+
+        var missingLiveCropSnapshot = JsonNode.Parse(
+            readyCropSnapshot.ToJsonString())!.AsObject();
+        missingLiveCropSnapshot["state_hash"] =
+            "target-date-missing-live-crop-state";
+        missingLiveCropSnapshot["state"]!["farm"]!.AsObject()
+            .Remove("crops");
+        var missingLiveCropRoot = Path.Combine(
+            root,
+            "missing-live-crop-processing");
+        Directory.CreateDirectory(missingLiveCropRoot);
+        var missingLiveCropSnapshotPath = Path.Combine(
+            missingLiveCropRoot,
+            "snapshot.json");
+        var missingLiveCropLedgerPath = Path.Combine(
+            missingLiveCropRoot,
+            "strategy-ledger.json");
+        File.WriteAllText(
+            missingLiveCropSnapshotPath,
+            missingLiveCropSnapshot.ToJsonString(JsonDefaults.Options));
+        WriteEmptyStrategyLedger(
+            missingLiveCropLedgerPath,
+            "target-date-missing-live-crop-state");
+        var missingLiveCropProcessing = BuildProcessingFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingLiveCropSnapshotPath,
+            targetDateRouteCalibrationPath,
+            missingLiveCropLedgerPath,
+            missingLiveCropRoot);
+        Require(missingLiveCropProcessing.Status ==
+                    "partial_target_date_processing_lead_time_axis_blocks" &&
+                !missingLiveCropProcessing
+                    .ProcessingLeadTimeAxisResolutionComplete &&
+                missingLiveCropProcessing
+                    .ProcessingLeadTimeAxisResolvedCount == 74 &&
+                missingLiveCropProcessing.ProcessingLeadTimeMatchCount == 2 &&
+                missingLiveCropProcessing.ProcessingLeadTimeMissCount == 0 &&
+                missingLiveCropProcessing.BlockedProcessingEvidenceCount == 2 &&
+                missingLiveCropProcessing.Routes.Where(route =>
+                    route.ProcessingLeadTimeAxisStatus ==
+                        "blocked_processing_lead_time_evidence").All(route =>
+                    route.BlockingReasons.Contains(
+                        "state.farm.crops.value:missing_or_unavailable")),
+            "Missing per-tile crop state did not fail closed.");
+
+        File.Copy(
+            targetDateReservationPath,
+            tamperedTargetDateReservationPath,
+            overwrite: true);
+        var tamperedReservation = JsonNode.Parse(File.ReadAllText(
+            tamperedTargetDateReservationPath))!.AsObject();
+        tamperedReservation["routes"]![0]!["claim_disposition"] =
+            "tampered";
+        File.WriteAllText(
+            tamperedTargetDateReservationPath,
+            tamperedReservation.ToJsonString(JsonDefaults.Options));
+        var tamperedReservationRejected = false;
+        try
+        {
+            _ = BuildProcessing(
+                tamperedTargetDateReservationPath,
+                strategyLedgerPath,
+                targetDateUnlockSnapshotPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedReservationRejected = true;
+        }
+        Require(tamperedReservationRejected,
+            "A tampered inventory-reservation report was accepted.");
 
         StrategyCommitmentLedger FixtureLedger(int revision) => new()
         {
@@ -2944,6 +3252,85 @@ internal static partial class BootstrapSelfTest
             locationOutputPath,
             facilityOutputPath,
             resourceOutputPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+    }
+
+    private static AcquisitionRouteTargetDateProcessingReport
+        BuildProcessingFixtureChain(
+            string inventoryPath,
+            string loweringPath,
+            string windowsPath,
+            string routeCalendarPath,
+            string targetDateCalendarPath,
+            string snapshotPath,
+            string routeTimingCalibrationPath,
+            string strategyLedgerPath,
+            string outputRoot)
+    {
+        var unlockPath = Path.Combine(outputRoot, "target-date-unlock.json");
+        var festivalPath = Path.Combine(
+            outputRoot,
+            "target-date-festival.json");
+        var locationPath = Path.Combine(
+            outputRoot,
+            "target-date-location.json");
+        var facilityPath = Path.Combine(
+            outputRoot,
+            "target-date-facility.json");
+        var resourcePath = Path.Combine(
+            outputRoot,
+            "target-date-resource.json");
+        var currencyPath = Path.Combine(
+            outputRoot,
+            "target-date-currency.json");
+        var reservationPath = Path.Combine(
+            outputRoot,
+            "target-date-reservation.json");
+        var currency = BuildCurrencyFixtureChain(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            snapshotPath,
+            routeTimingCalibrationPath,
+            unlockPath,
+            festivalPath,
+            locationPath,
+            facilityPath,
+            resourcePath);
+        Write(currencyPath, currency);
+        var reservation = AcquisitionRouteTargetDateReservationBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockPath,
+            festivalPath,
+            locationPath,
+            facilityPath,
+            resourcePath,
+            currencyPath,
+            strategyLedgerPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+        Write(reservationPath, reservation);
+        return AcquisitionRouteTargetDateProcessingBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            unlockPath,
+            festivalPath,
+            locationPath,
+            facilityPath,
+            resourcePath,
+            currencyPath,
+            reservationPath,
+            strategyLedgerPath,
             snapshotPath,
             routeTimingCalibrationPath);
     }

@@ -1377,6 +1377,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   treated as loose inventory. Atomic controller commit/route portfolio selection remains downstream. Training
   authorization stays false; the next fixed dependency axis is `processing_lead_time`.
 
+### 2026-09-13: explicit target-date processing-lead-time axis
+
+- `acquisition_route_target_date_processing_lead_time.v1` deterministically rebuilds and object-compares the complete
+  inventory-reservation artifact, joins every occurrence back to its authoritative static source row, and validates
+  same-day snapshot identity. All 33 route kinds have an explicit processing class; no unknown production route may
+  inherit a zero-duration default.
+- This axis owns deterministic production waiting only. Immediate shop, fishing, geode, forage and other direct
+  interactions require no processing delay, but their action duration remains downstream in `daily_time_energy_budget`
+  and their random attempts remain downstream in `stochastic_retry_budget`.
+- Crop routes combine locked native `DaysInPhase` with exact per-tile `farm.crops` or loaded
+  `current_location.crops`. A new planting retains its authoritative base duration but emits only the decompile-proven
+  not-before-next-day lower bound because fertilizer, profession and paddy acceleration are not resolved at an open
+  aggregate slot. This is sufficient to reject same-day output without inventing an exact maturity date. An existing
+  crop matches only when its live row is harvest-ready; missing rows, aggregate/detail count drift, non-exact harvest
+  identity or an inconsistent zero-day countdown fail closed. Dead or later-maturing crops are resolved misses.
+- Crab-pot routes require the complete persistent pot network. A consistent ready target output is immediate; a
+  serviced empty pot only proves a next-morning production attempt under locked native `CrabPot.DayUpdate`, leaving
+  output probability to the retry axis. Machine, animal, pond, fruit-tree, solar-panel and tapper lead-time evaluators
+  remain explicit blockers until their upstream source/facility/input bindings are complete.
+- The focused fixture remains 76/76: 72 upstream non-applicable occurrences, two immediate matches and two known crop
+  misses. A ready-crop variant produces four matches; removing the required live crop detail blocks only the two crop
+  routes, and a tampered reservation artifact is rejected. Training authorization remains false. The next fixed axis
+  is `stochastic_retry_budget`, followed by daily time/energy, opportunity cost and fresh terminal receipt.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
