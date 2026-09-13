@@ -32,6 +32,32 @@ public sealed class FishingSnapshotValidationTests
         Assert.Contains("missing state domain: fishing", errors);
     }
 
+    [Fact]
+    public void SnapshotValidatorAcceptsDemandOnlyFishingForecastProfile()
+    {
+        var errors = SnapshotValidator.ValidateRaw(
+            PurposeLimitedFishingForecastSnapshotJson(),
+            out var snapshot,
+            "fishing_forecast");
+
+        Assert.Empty(errors);
+        Assert.NotNull(snapshot);
+        Assert.Equal(
+            FishingForecastProfileDomains.OrderBy(value => value),
+            snapshot!.State.Keys.OrderBy(value => value));
+    }
+
+    [Fact]
+    public void SnapshotValidatorKeepsFishingForecastProfileFailClosed()
+    {
+        var errors = SnapshotValidator.ValidateRaw(
+            PurposeLimitedFishingForecastSnapshotJson("fishing"),
+            out _,
+            "fishing_forecast");
+
+        Assert.Contains("missing state domain: fishing", errors);
+    }
+
     private static string PurposeLimitedFishingSnapshotJson(
         string? omittedDomain = null)
     {
@@ -52,6 +78,33 @@ public sealed class FishingSnapshotValidationTests
             BridgeVersion = "test",
             GameTick = 812,
             RealTimestamp = "2026-08-09T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return JsonSerializer.Serialize(snapshot, JsonOptions);
+    }
+
+    private static string PurposeLimitedFishingForecastSnapshotJson(
+        string? omittedDomain = null)
+    {
+        var state = FishingForecastProfileDomains
+            .Where(domain => domain != omittedDomain)
+            .ToDictionary(
+                domain => domain,
+                _ => JsonSerializer.SerializeToElement(
+                    new Dictionary<string, object>
+                    {
+                        ["marker"] = Field("available")
+                    },
+                    JsonOptions),
+                StringComparer.Ordinal);
+        var snapshot = new SnapshotEnvelope
+        {
+            SchemaVersion = "snapshot.v1",
+            BridgeVersion = "test",
+            GameTick = 813,
+            RealTimestamp = "2026-09-14T00:00:00Z",
             Completeness = "complete",
             State = state
         };
@@ -90,6 +143,14 @@ public sealed class FishingSnapshotValidationTests
         "world_progress",
         "mods",
         "modded_state"
+    };
+
+    private static readonly string[] FishingForecastProfileDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "fishing"
     };
 
     private static readonly JsonSerializerOptions JsonOptions =

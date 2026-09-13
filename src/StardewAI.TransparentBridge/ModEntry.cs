@@ -345,6 +345,12 @@ public sealed partial class ModEntry : Mod
     private async Task<SnapshotEnvelope> GetLatestSnapshotAsync(HttpListenerRequest request)
     {
         var profile = SnapshotProfile(request);
+        var fishingLocationId = SnapshotFishingLocationId(request, profile);
+        var fishingRodSlotIndex = SnapshotFishingRodSlotIndex(request, profile);
+        var cacheKey = SnapshotCacheKey(
+            profile,
+            fishingLocationId,
+            fishingRodSlotIndex);
         var forceRefresh = SnapshotForceRefresh(request);
         var expectedStateHash = string.Empty;
         var expectedGameTick = 0L;
@@ -358,7 +364,7 @@ public sealed partial class ModEntry : Mod
         {
             lock (snapshotLock)
             {
-                if (profileSnapshots.TryGetValue(profile, out var cached) &&
+                if (profileSnapshots.TryGetValue(cacheKey, out var cached) &&
                     (hasExpectedCacheIdentity
                         ? SnapshotMatchesExpectedCacheIdentity(
                             cached,
@@ -381,7 +387,13 @@ public sealed partial class ModEntry : Mod
         }
 
         var completion = new TaskCompletionSource<SnapshotEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);
-        pendingSnapshotRequests.Enqueue(new PendingSnapshotRequest(profile, forceRefresh, completion));
+        pendingSnapshotRequests.Enqueue(new PendingSnapshotRequest(
+            profile,
+            fishingLocationId,
+            fishingRodSlotIndex,
+            cacheKey,
+            forceRefresh,
+            completion));
         return await completion.Task.WaitAsync(TimeSpan.FromSeconds(180));
     }
 
@@ -434,7 +446,12 @@ public sealed partial class ModEntry : Mod
         }
 
         foreach (var group in requests.GroupBy(
-                     item => (Profile: item.Profile.ToLowerInvariant(), item.ForceRefresh)))
+                     item => (
+                         Profile: item.Profile.ToLowerInvariant(),
+                         item.FishingLocationId,
+                         item.FishingRodSlotIndex,
+                         item.CacheKey,
+                         item.ForceRefresh)))
         {
             try
             {
@@ -443,10 +460,15 @@ public sealed partial class ModEntry : Mod
                 lock (snapshotLock)
                 {
                     snapshot = !group.Key.ForceRefresh &&
-                               profileSnapshots.TryGetValue(group.Key.Profile, out var cached) &&
+                               profileSnapshots.TryGetValue(group.Key.CacheKey, out var cached) &&
                                IsSnapshotFresh(cached, currentGameTick)
                         ? cached
-                        : RefreshSnapshotCache(group.Key.Profile, publishSnapshotEvent: true);
+                        : RefreshSnapshotCache(
+                            group.Key.Profile,
+                            group.Key.FishingLocationId,
+                            group.Key.FishingRodSlotIndex,
+                            group.Key.CacheKey,
+                            publishSnapshotEvent: true);
                 }
 
                 foreach (var request in group)
@@ -614,32 +636,69 @@ public sealed partial class ModEntry : Mod
         AddAudit(eventType, after);
     }
 
-    private SnapshotEnvelope BuildSnapshotWithoutEvent(string profile = "light")
+    private SnapshotEnvelope BuildSnapshotWithoutEvent(
+        string profile = "light",
+        string? fishingLocationId = null,
+        int? fishingRodSlotIndex = null)
     {
         var previousProfile = SnapshotProfileContext.Current;
+        var previousFishingLocationId =
+            SnapshotProfileContext.TargetFishingLocationId;
+        var previousFishingRodSlotIndex =
+            SnapshotProfileContext.TargetFishingRodSlotIndex;
         try
         {
             SnapshotProfileContext.Current = profile;
+            SnapshotProfileContext.TargetFishingLocationId = fishingLocationId;
+            SnapshotProfileContext.TargetFishingRodSlotIndex =
+                fishingRodSlotIndex;
             return (stateCollector ?? CreateStateCollector(Helper)).BuildSnapshot(AllowedDomainsForProfile(profile));
         }
         finally
         {
             SnapshotProfileContext.Current = previousProfile;
+            SnapshotProfileContext.TargetFishingLocationId =
+                previousFishingLocationId;
+            SnapshotProfileContext.TargetFishingRodSlotIndex =
+                previousFishingRodSlotIndex;
         }
     }
 
     private SnapshotEnvelope RefreshSnapshotCache(bool publishSnapshotEvent)
     {
-        return RefreshSnapshotCache("light", publishSnapshotEvent);
+        return RefreshSnapshotCache(
+            "light",
+            null,
+            null,
+            "light",
+            publishSnapshotEvent);
     }
 
     private SnapshotEnvelope RefreshSnapshotCache(string profile, bool publishSnapshotEvent)
     {
+        return RefreshSnapshotCache(
+            profile,
+            null,
+            null,
+            profile,
+            publishSnapshotEvent);
+    }
+
+    private SnapshotEnvelope RefreshSnapshotCache(
+        string profile,
+        string? fishingLocationId,
+        int? fishingRodSlotIndex,
+        string cacheKey,
+        bool publishSnapshotEvent)
+    {
         var startedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
-            var snapshot = BuildSnapshotWithoutEvent(profile);
-            CacheSnapshot(profile, snapshot, publishSnapshotEvent);
+            var snapshot = BuildSnapshotWithoutEvent(
+                profile,
+                fishingLocationId,
+                fishingRodSlotIndex);
+            CacheSnapshot(cacheKey, snapshot, publishSnapshotEvent);
             return snapshot;
         }
         finally
@@ -648,7 +707,7 @@ public sealed partial class ModEntry : Mod
         }
     }
 
-    private void CacheSnapshot(string profile, SnapshotEnvelope snapshot, bool publishSnapshotEvent)
+    private void CacheSnapshot(string cacheKey, SnapshotEnvelope snapshot, bool publishSnapshotEvent)
     {
         if (publishSnapshotEvent)
         {
@@ -659,7 +718,7 @@ public sealed partial class ModEntry : Mod
         lock (snapshotLock)
         {
             latestSnapshot = snapshot;
-            profileSnapshots[profile] = snapshot;
+            profileSnapshots[cacheKey] = snapshot;
         }
     }
 
@@ -668,8 +727,70 @@ public sealed partial class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "daily" or "clock" or "identity" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "clock" or "identity" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "fishing" or "fishing_forecast" or "mining" or "volcano" or "full" ? value : "light";
     }
+
+    private static string? SnapshotFishingLocationId(
+        HttpListenerRequest request,
+        string profile)
+    {
+        if (!string.Equals(
+                profile,
+                "fishing_forecast",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var query = ParseQuery(request.Url?.Query ?? string.Empty);
+        if (!query.TryGetValue("location_id", out var raw))
+        {
+            return null;
+        }
+        var value = raw.Trim();
+        return value.Length is > 0 and <= 128 &&
+               value.All(character => char.IsLetterOrDigit(character) ||
+                                      character is '_' or '-')
+            ? value
+            : null;
+    }
+
+    private static int? SnapshotFishingRodSlotIndex(
+        HttpListenerRequest request,
+        string profile)
+    {
+        if (!string.Equals(
+                profile,
+                "fishing_forecast",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var query = ParseQuery(request.Url?.Query ?? string.Empty);
+        return query.TryGetValue("rod_slot_index", out var raw) &&
+               int.TryParse(raw, out var slot) &&
+               slot is >= 0 and < 64
+            ? slot
+            : null;
+    }
+
+    private static string SnapshotCacheKey(
+        string profile,
+        string? fishingLocationId,
+        int? fishingRodSlotIndex) =>
+        string.Equals(
+            profile,
+            "fishing_forecast",
+            StringComparison.OrdinalIgnoreCase)
+            ? string.Join(
+                "|",
+                profile.ToLowerInvariant(),
+                fishingLocationId ?? "missing-location",
+                fishingRodSlotIndex?.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture) ??
+                "missing-rod")
+            : profile.ToLowerInvariant();
 
     private static bool SnapshotForceRefresh(HttpListenerRequest request)
     {
@@ -687,6 +808,16 @@ public sealed partial class ModEntry : Mod
         if (profile is "clock" or "identity")
         {
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        if (profile is "fishing_forecast")
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "world",
+                "fishing",
+                "unavailable_fields",
+            };
         }
 
         var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -973,6 +1104,9 @@ public sealed partial class ModEntry : Mod
 
     private sealed record PendingSnapshotRequest(
         string Profile,
+        string? FishingLocationId,
+        int? FishingRodSlotIndex,
+        string CacheKey,
         bool ForceRefresh,
         TaskCompletionSource<SnapshotEnvelope> Completion);
 }

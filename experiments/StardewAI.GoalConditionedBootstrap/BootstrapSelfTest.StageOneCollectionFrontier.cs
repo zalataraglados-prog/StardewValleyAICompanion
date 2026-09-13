@@ -47,6 +47,15 @@ internal static partial class BootstrapSelfTest
         var targetDateProcessingPath = Path.Combine(
             root,
             "target-date-processing-lead-time.json");
+        var fishingForecastSnapshotPath = Path.Combine(
+            root,
+            "fishing-forecast-beach-slot-2.json");
+        var fishingForecastManifestPath = Path.Combine(
+            root,
+            "fishing-forecast-manifest.json");
+        var targetDateFishingProbabilityPath = Path.Combine(
+            root,
+            "target-date-fishing-probability.json");
         var targetDateStochasticRetryPath = Path.Combine(
             root,
             "target-date-stochastic-retry-budget.json");
@@ -1571,6 +1580,72 @@ internal static partial class BootstrapSelfTest
                         targetDateUnlockSnapshotPath),
                     JsonDefaults.Options),
             "Target-date processing-lead-time resolution is not deterministic.");
+
+        WriteFishingForecastSnapshot(fishingForecastSnapshotPath);
+        Write(fishingForecastManifestPath, new FishingForecastSnapshotManifest
+        {
+            Snapshots = new[]
+            {
+                new FishingForecastSnapshotReference(
+                    "fixture:Beach:2",
+                    "Beach",
+                    2,
+                    Path.GetFileName(fishingForecastSnapshotPath),
+                    CurrentTeacherFrontierSupport.HashFile(
+                        fishingForecastSnapshotPath))
+            }
+        });
+        AcquisitionRouteTargetDateFishingProbabilityReport
+            BuildFishingProbability() =>
+                AcquisitionRouteTargetDateFishingProbabilityBuilder.Build(
+                    inventoryPath,
+                    loweringPath,
+                    windowsPath,
+                    routeCalendarPath,
+                    targetDateCalendarPath,
+                    targetDateUnlockPath,
+                    targetDateFestivalPath,
+                    targetDateLocationPath,
+                    targetDateFacilityPath,
+                    targetDateResourcePath,
+                    targetDateCurrencyPath,
+                    targetDateReservationPath,
+                    targetDateProcessingPath,
+                    strategyLedgerPath,
+                    targetDateUnlockSnapshotPath,
+                    targetDateRouteCalibrationPath,
+                    fishingForecastManifestPath);
+        var targetDateFishingProbability = BuildFishingProbability();
+        Write(targetDateFishingProbabilityPath, targetDateFishingProbability);
+        var targetDateFishingRoute = targetDateFishingProbability.Routes.Single(
+            route => route.RouteKind == "native_location_fish_spawn" &&
+                     route.TargetQualifiedItemId == "(O)145");
+        Require(targetDateFishingProbability.Status ==
+                    "complete_target_date_fishing_probability_axis_downstream_pending" &&
+                targetDateFishingProbability.RouteOccurrenceInventoryComplete &&
+                !targetDateFishingProbability.TrainingLabelEligible &&
+                targetDateFishingProbability.RouteOccurrenceCount == 76 &&
+                targetDateFishingProbability.FishingRouteCount == 1 &&
+                targetDateFishingProbability.PositiveProbabilityCount == 1 &&
+                targetDateFishingProbability.ZeroProbabilityCount == 0 &&
+                targetDateFishingProbability.BlockedProbabilityCount == 0 &&
+                targetDateFishingRoute.ProbabilityAxisResolved &&
+                targetDateFishingRoute.PositiveProbabilityAvailable == true &&
+                targetDateFishingRoute.SingleAttemptProbabilityLowerBound == 0.2d &&
+                targetDateFishingRoute.SelectedProjection is not null &&
+                targetDateFishingRoute.SelectedProjection.TargetLocationId ==
+                    "Beach" &&
+                targetDateFishingRoute.SelectedProjection.RodSlotIndex == 2 &&
+                targetDateFishingRoute.ForecastSnapshotSha256.Single() ==
+                    CurrentTeacherFrontierSupport.HashFile(
+                        fishingForecastSnapshotPath),
+            "Target-date fishing terminal probability axis drifted.");
+        Require(JsonSerializer.Serialize(
+                    targetDateFishingProbability,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    BuildFishingProbability(),
+                    JsonDefaults.Options),
+            "Target-date fishing terminal probability is not deterministic.");
 
         AcquisitionRouteTargetDateStochasticRetryReport BuildStochasticRetry(
             string processingPath) =>

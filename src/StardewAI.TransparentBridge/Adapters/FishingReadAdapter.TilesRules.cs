@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
+using StardewValley.Extensions;
 using StardewValley.GameData;
 using StardewValley.GameData.Locations;
 using StardewValley.Internal;
@@ -52,7 +53,8 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
         GameLocation location,
         Farmer player,
         FishingRod? selectedRod,
-        FishingTileReadRow[] fishableTiles)
+        FishingTileReadRow[] fishableTiles,
+        bool deferPlayerPositionToTerminalStand = false)
     {
         var defaultData = Game1.locationData.TryGetValue("Default", out var defaultLocationData)
             ? defaultLocationData
@@ -70,6 +72,7 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 : null;
         var usesTrainingRod = selectedRod?.QualifiedItemId == "(T)TrainingRod";
         var isTutorialCatch = player.fishCaught.Length == 0;
+        var preciseFishCaught = player.stats.Get("PreciseFishCaught");
         var tileIndices = fishableTiles
             .Select((tile, index) => (tile, index))
             .ToDictionary(pair => (pair.tile.TileX, pair.tile.TileY), pair => pair.index);
@@ -103,12 +106,16 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                         null,
                         conditionRandom,
                         ignoreQueryKeys);
+                var conditionProbabilityResolved =
+                    IsConditionResolvedForTerminalProbability(spawn.Condition);
                 var ruleSpec = new FishingRuleEligibilitySpec
                 {
                     Season = spawn.Season?.ToString(),
                     FishAreaId = spawn.FishAreaId,
                     BobberPosition = ReadRectangle(spawn.BobberPosition),
-                    PlayerPosition = ReadRectangle(spawn.PlayerPosition),
+                    PlayerPosition = deferPlayerPositionToTerminalStand
+                        ? null
+                        : ReadRectangle(spawn.PlayerPosition),
                     MinFishingLevel = spawn.MinFishingLevel,
                     MinDistanceFromShore = spawn.MinDistanceFromShore,
                     MaxDistanceFromShore = spawn.MaxDistanceFromShore,
@@ -142,6 +149,15 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                         null,
                         chanceRandom),
                     targetedByBait);
+                var spawnChanceProbabilityResolved =
+                    spawn.ChanceModifiers is not { Count: > 0 };
+                var seededSpawnRollPassed = spawn.UseFishCaughtSeededRandom &&
+                                            spawnChanceProbabilityResolved
+                    ? Utility.CreateRandom(
+                            Game1.uniqueIDForThisGame,
+                            preciseFishCaught * 859)
+                        .NextBool(spawnChance)
+                    : (bool?)null;
                 var outputProjections = ReadSpawnOutputs(
                     spawn,
                     player,
@@ -174,12 +190,21 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                     per_item_condition = spawn.PerItemCondition,
                     condition = spawn.Condition,
                     condition_met = conditionMet,
-                    condition_evaluation = "non_mutating_local_rng",
+                    condition_evaluation = conditionProbabilityResolved
+                        ? "exact_without_unseeded_random"
+                        : "non_mutating_local_rng_preview_not_probability_evidence",
+                    condition_probability_resolved = conditionProbabilityResolved,
+                    condition_met_for_probability = conditionProbabilityResolved
+                        ? conditionMet
+                        : (bool?)null,
                     condition_preview_seed = seed,
                     season = spawn.Season?.ToString(),
                     fish_area_id = spawn.FishAreaId,
                     bobber_position = ReadRectangle(spawn.BobberPosition),
                     player_position = ReadRectangle(spawn.PlayerPosition),
+                    player_position_requires_terminal_stand_check =
+                        deferPlayerPositionToTerminalStand &&
+                        spawn.PlayerPosition.HasValue,
                     min_fishing_level = spawn.MinFishingLevel,
                     min_distance_from_shore = spawn.MinDistanceFromShore,
                     max_distance_from_shore = spawn.MaxDistanceFromShore,
@@ -193,7 +218,25 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                     use_fish_caught_seeded_random = spawn.UseFishCaughtSeededRandom,
                     base_spawn_chance = spawn.Chance,
                     effective_spawn_chance_preview = spawnChance,
-                    spawn_chance_roll_pending = true,
+                    spawn_chance_probability_resolved =
+                        spawnChanceProbabilityResolved,
+                    spawn_probability_kind = spawn.UseFishCaughtSeededRandom
+                        ? "deterministic_fish_caught_seed"
+                        : "independent_game_rng",
+                    spawn_chance_roll_pending = !spawn.UseFishCaughtSeededRandom,
+                    seeded_spawn_roll_resolved =
+                        spawn.UseFishCaughtSeededRandom &&
+                        spawnChanceProbabilityResolved,
+                    seeded_spawn_roll_passed = seededSpawnRollPassed,
+                    seeded_spawn_roll_save_id = spawn.UseFishCaughtSeededRandom
+                        ? Game1.uniqueIDForThisGame
+                        : (ulong?)null,
+                    seeded_spawn_roll_precise_fish_caught = spawn.UseFishCaughtSeededRandom
+                        ? preciseFishCaught
+                        : (uint?)null,
+                    seeded_spawn_roll_multiplier = spawn.UseFishCaughtSeededRandom
+                        ? 859
+                        : (int?)null,
                     apply_daily_luck = spawn.ApplyDailyLuck,
                     curiosity_lure_buff = spawn.CuriosityLureBuff,
                     specific_bait_buff = spawn.SpecificBaitBuff,
@@ -226,6 +269,9 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 is_raining = location.IsRainingHere(),
                 player_tile_x = player.TilePoint.X,
                 player_tile_y = player.TilePoint.Y,
+                player_position_eligibility_mode = deferPlayerPositionToTerminalStand
+                    ? "deferred_to_explicit_terminal_stand"
+                    : "current_player_tile",
                 fishing_level = player.FishingLevel,
                 luck_level = player.LuckLevel,
                 daily_luck = player.DailyLuck,
@@ -235,6 +281,8 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 targeted_fish_qualified_item_id = targetedFishId,
                 uses_training_rod = usesTrainingRod,
                 is_tutorial_catch = isTutorialCatch,
+                unique_game_id = Game1.uniqueIDForThisGame,
+                precise_fish_caught = preciseFishCaught,
                 context_mode = "selected_rod_for_next_cast"
             },
             random_policy = new
@@ -247,6 +295,47 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
             unresolved_rule_keys = unresolvedRules.ToArray(),
             rules = rows.ToArray()
         };
+    }
+
+    private static bool IsConditionResolvedForTerminalProbability(string? condition)
+    {
+        if (string.IsNullOrWhiteSpace(condition) ||
+            string.Equals(condition, "TRUE", StringComparison.Ordinal) ||
+            string.Equals(condition, "FALSE", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        try
+        {
+            return GameStateQuery.Parse(condition).All(parsed =>
+            {
+                if (!string.IsNullOrWhiteSpace(parsed.Error) ||
+                    parsed.Query.Length == 0 ||
+                    parsed.Resolver?.Method.DeclaringType !=
+                    typeof(GameStateQuery.DefaultResolvers))
+                {
+                    return false;
+                }
+
+                var key = parsed.Query[0];
+                if (string.Equals(key, "RANDOM", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                if (!string.Equals(key, "ANY", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                return parsed.Query.Skip(1)
+                    .All(IsConditionResolvedForTerminalProbability);
+            });
+        }
+        catch
+        {
+            return false;
+        }
     }
 
 }

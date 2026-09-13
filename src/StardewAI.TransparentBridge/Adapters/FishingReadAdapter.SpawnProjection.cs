@@ -74,6 +74,7 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 matching_notes_in_inventory = inventoryCount,
                 available_note_count = availableNoteCount,
                 output_local_chance_preview = noteChance,
+                output_local_chance_probability_resolved = true,
                 output_local_chance_roll_pending = eligible,
                 output_eligible_before_random_rolls = eligible,
                 output_blocking_reasons = new[]
@@ -84,6 +85,7 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                     isTutorialCatch ? "secret_note_not_valid_for_tutorial_catch" : null
                 }.Where(reason => reason is not null).ToArray(),
                 data_fish_chance_roll_pending = false,
+                data_fish_chance_probability_resolved = true,
                 data_fish_chance_by_water_depth = Array.Empty<object>()
             }, true);
         }
@@ -198,6 +200,8 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 .ToArray(),
             data_fish_requirements = requirements,
             data_fish_chance_roll_pending = requirements is not null && !spawn.IgnoreFishDataRequirements,
+            data_fish_chance_probability_resolved =
+                spawn.ChanceModifiers is not { Count: > 0 },
             data_fish_chance_by_water_depth = genericChanceByTile
         }, true);
     }
