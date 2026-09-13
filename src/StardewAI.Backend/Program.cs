@@ -187,6 +187,40 @@ app.MapPost("/api/v1/strategy/commitments/materials/{reservationId}/cancel", (st
     return Results.Ok(result);
 });
 
+app.MapPost("/api/v1/strategy/commitments/currencies/upsert", (CurrencyReservationUpsertRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))
+    {
+        return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
+    }
+    var result = repository.UpsertCurrency(snapshot, request);
+    if (!result.Accepted)
+    {
+        return result.Errors.Contains("ledger_revision_conflict", StringComparer.Ordinal)
+            ? Results.Conflict(result)
+            : Results.UnprocessableEntity(result);
+    }
+    store.AppendAudit("CurrencyStrategyReservationUpserted", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(result);
+});
+
+app.MapPost("/api/v1/strategy/commitments/currencies/{reservationId}/cancel", (string reservationId, StrategyCommitmentCancelRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))
+    {
+        return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
+    }
+    var result = repository.CancelCurrency(snapshot, reservationId, request);
+    if (!result.Accepted)
+    {
+        return result.Errors.Contains("ledger_revision_conflict", StringComparer.Ordinal)
+            ? Results.Conflict(result)
+            : Results.UnprocessableEntity(result);
+    }
+    store.AppendAudit("CurrencyStrategyReservationCancelled", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(result);
+});
+
 app.MapPost("/api/v1/events", async (HttpRequest request, StateStore store) =>
 {
     using var reader = new StreamReader(request.Body);

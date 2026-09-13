@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -51,10 +52,19 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
                     "shop_currency_balance_row_invalid");
             }
         }
-        return result.Count == CurrencyKeys.Count
-            ? new(true, result, Array.Empty<string>())
-            : CurrencyReadResult.Blocked(
+        if (result.Count != CurrencyKeys.Count)
+        {
+            return CurrencyReadResult.Blocked(
                 "shop_currency_balance_row_count_invalid");
+        }
+        if (!TryFieldValue(state, "player", "money", out var money) ||
+            !money.TryGetInt32(out var moneyAmount) ||
+            result[NativeShopCurrencies.Money].Balance != moneyAmount)
+        {
+            return CurrencyReadResult.Blocked(
+                "shop_currency_money_balance_drifted");
+        }
+        return new(true, result, Array.Empty<string>());
     }
 
     private sealed record CurrencyRow(string CurrencyKey, int Balance);

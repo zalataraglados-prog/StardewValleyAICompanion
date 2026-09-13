@@ -1,4 +1,5 @@
 using StardewModdingAPI;
+using StardewAI.Contracts.Strategy;
 using StardewValley;
 using StardewValley.Menus;
 
@@ -7,13 +8,9 @@ namespace StardewAI.TransparentBridge.Adapters;
 public sealed partial class PlayerReadAdapter
 {
     private static readonly (int Id, string Key, string NativeMember)[]
-        ShopCurrencyDomain =
-        {
-            (0, "money", "Farmer.Money"),
-            (1, "star_tokens", "Farmer.festivalScore"),
-            (2, "club_coins", "Farmer.clubCoins"),
-            (4, "qi_gems", "Farmer.QiGems")
-        };
+        ShopCurrencyDomain = NativeShopCurrencies.All
+            .Select(row => (row.Id, row.Key, NativeCurrencyMember(row.Id)))
+            .ToArray();
 
     private static object ReadShopCurrencyBalances(Farmer? player)
     {
@@ -54,4 +51,15 @@ public sealed partial class PlayerReadAdapter
         Farmer player,
         int currencyId) =>
         ShopMenu.getPlayerCurrencyAmount(player, currencyId);
+
+    private static string NativeCurrencyMember(int currencyId) =>
+        currencyId switch
+        {
+            NativeShopCurrencies.Money => "Farmer.Money",
+            NativeShopCurrencies.StarTokens => "Farmer.festivalScore",
+            NativeShopCurrencies.ClubCoins => "Farmer.clubCoins",
+            NativeShopCurrencies.QiGems => "Farmer.QiGems",
+            _ => throw new InvalidOperationException(
+                "Unsupported native shop currency definition.")
+        };
 }

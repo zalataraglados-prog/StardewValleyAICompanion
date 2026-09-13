@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 控制器原生货币预留基础设施
+
+- `strategy_commitment_ledger.v1` 新增 `currency_reservations[]`，沿用材料预留的保存/玩家隔离、乐观 `ledger_revision`、取消状态与不可变历史。Backend 新增原生货币预留 upsert/cancel 接口；每次写入均从指定同日快照重算未预留余额，其他活动路线已占用的金额会先扣除，过量预留、旧修订和身份漂移均失败关闭。
+- 预留域严格复用唯一的 `NativeShopCurrencies` 定义，只有 `0=money`、`1=star_tokens`、`2=club_coins`、`4=qi_gems`。透明桥、商店报价、目标日期预算轴和控制器供给投影不再各持一张映射表；读取还会核对 `shop_currency_balances` 的 money 行与 `player.money` 完全一致。
+- 活动预留才减少可用余额，取消和已完成记录只保留审计；错误玩家、未知 ID/key、非正数、重复预留 ID、溢出和余额超占都会阻塞。Core game-free 36/36、Backend 189/189、Bootstrap Release 与 TransparentBridge E 盘真实游戏程序集构建均通过。
+- 这只是下一轴的原子账本前置条件，尚未宣称 `inventory_reservation` 完成：本层不替 Teacher 同时选择全部替代路线，也不把 1599 条候选当成同时支出。下一步由逐路线预留轴生成精确材料槽位/货币 claim；控制器选定路线后才写入账本，后续候选再从扣除后的供给继续求值。训练授权仍为 false，未启动游戏或训练。
+
 ## 2026-09-13 显式目标日期货币预算轴求值
 
 - 新增 `acquisition_route_target_date_currency_budget.v1` 与 `build-acquisition-route-target-date-currency-budget`。构建器会重新生成并逐对象核对完整资源输入报告，再把每个 occurrence 与原始 lowering 数量、静态来源和同日快照连接；全部 `33` 种来源类型必须进入唯一货币分类，未知类型不能静默视为免费。
