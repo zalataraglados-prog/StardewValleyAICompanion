@@ -5,11 +5,25 @@ namespace StardewAI.TransparentBridge.State;
 public static class SnapshotProfileContext
 {
     private static readonly AsyncLocal<string?> CurrentProfile = new();
+    private static readonly AsyncLocal<string?> FishingLocation = new();
+    private static readonly AsyncLocal<int?> FishingRodSlot = new();
 
     public static string Current
     {
         get => CurrentProfile.Value ?? "light";
         set => CurrentProfile.Value = value;
+    }
+
+    public static string? TargetFishingLocationId
+    {
+        get => FishingLocation.Value;
+        set => FishingLocation.Value = value;
+    }
+
+    public static int? TargetFishingRodSlotIndex
+    {
+        get => FishingRodSlot.Value;
+        set => FishingRodSlot.Value = value;
     }
 
     public static bool IncludesPersistentMaterialInventoryGraph =>

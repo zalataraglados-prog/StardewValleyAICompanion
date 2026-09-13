@@ -1140,6 +1140,14 @@ public static class SnapshotValidator
         "modded_state"
     };
 
+    private static readonly string[] FishingForecastRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "fishing"
+    };
+
     private static readonly string[] TrainingMachineRequiredDomains =
     {
         "environment",
@@ -1310,6 +1318,14 @@ public static class SnapshotValidator
         if (string.Equals(profile, "fishing", StringComparison.OrdinalIgnoreCase))
         {
             return FishingRequiredDomains;
+        }
+
+        if (string.Equals(
+                profile,
+                "fishing_forecast",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return FishingForecastRequiredDomains;
         }
 
         if (string.Equals(

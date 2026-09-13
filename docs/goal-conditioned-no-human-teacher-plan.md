@@ -1457,6 +1457,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   both targeted-bait passes, item-query selection and `CheckGenericFishRequirements`. Until that exact or explicitly
   conservative result exists, the stochastic retry axis remains blocked and formal training remains unauthorized.
 
+### 2026-09-14: demand-only fishing terminal probability evidence
+
+- `fishing_forecast` is a purpose-limited bridge profile keyed by the exact loaded location ID and fishing-rod slot.
+  Its cache identity includes both values, and its collector admits only `world`, `fishing` and unavailable-field
+  bookkeeping domains. It does not enumerate unrelated locations or run the heavy player, menu, farm or NPC readers.
+- The bridge projects the complete Default-plus-requested-location first-pass spawn-rule inventory, every fishable
+  tile/depth, exact rule eligibility, output selectors and generic `Data/Fish` acceptance. Decompiled
+  fish-caught-seeded rolls use `Utility.CreateRandom(uniqueGameId, PreciseFishCaught * 859)` and are represented as a
+  deterministic pass/fail for the captured state, never as an independent retry probability. Unseeded `RANDOM`,
+  custom query resolvers, chance modifiers and unresolved item queries fail closed.
+- `acquisition_route_target_date_fishing_probability.v1` hash-binds a manifest of same-save, same-player, same-day,
+  same-time forecast snapshots within a 30-tick capture window. It preserves all 76 fixture route occurrences and
+  evaluates only active `native_location_fish_spawn` routes. Every fishable bobber tile is paired with mechanically
+  legal cardinal stand positions; rule precedence and equal-precedence competitors produce a conservative first-pass
+  lower bound. The focused Beach fixture resolves `(O)145` to a positive 0.2 lower bound and remains deterministic.
+- This artifact cannot authorize training. Collision-aware stand reachability, the second targeted-bait pass,
+  retry-context stability, exact multi-success retry math, retry-expanded resource/currency/reservation validation,
+  daily time/energy and a fresh terminal receipt remain downstream. The next slice feeds this probability evidence
+  into stochastic retry budgeting only after an explicit repeatability proof; fixed-seed state must never be promoted
+  to an IID retry model.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

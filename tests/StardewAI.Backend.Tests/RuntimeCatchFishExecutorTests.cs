@@ -302,9 +302,15 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("ProcessPendingSnapshotRequests();", source);
         Assert.Contains("private void ProcessPendingSnapshotRequests()", source);
         Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
-        Assert.Contains("item => (Profile: item.Profile.ToLowerInvariant(), item.ForceRefresh)", source);
+        Assert.Contains("Profile: item.Profile.ToLowerInvariant()", source);
+        Assert.Contains("item.FishingLocationId", source);
+        Assert.Contains("item.FishingRodSlotIndex", source);
+        Assert.Contains("item.CacheKey", source);
         Assert.Contains("snapshot = !group.Key.ForceRefresh &&", source);
-        Assert.Contains("RefreshSnapshotCache(group.Key.Profile, publishSnapshotEvent: true)", source);
+        Assert.Contains("group.Key.FishingLocationId", source);
+        Assert.Contains("group.Key.FishingRodSlotIndex", source);
+        Assert.Contains("group.Key.CacheKey", source);
+        Assert.Contains("publishSnapshotEvent: true", source);
         Assert.DoesNotContain("return RefreshSnapshotCache(profile, publishSnapshotEvent: true);", source, StringComparison.Ordinal);
         Assert.Contains("if (profile is \"fishing\")", source);
         Assert.Contains("domains.Add(\"quests_progress\")", source);

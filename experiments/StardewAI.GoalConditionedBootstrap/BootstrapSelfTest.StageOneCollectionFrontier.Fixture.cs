@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 
@@ -573,6 +574,106 @@ internal static partial class BootstrapSelfTest
         read_at_tick = 1,
         confidence = 1
     };
+
+    private static void WriteFishingForecastSnapshot(
+        string path,
+        string locationId = "Beach",
+        int rodSlotIndex = 2,
+        long gameTick = 2,
+        int totalDays = 0,
+        int timeOfDay = 700)
+    {
+        var state = new Dictionary<string, JsonElement>
+        {
+            ["time"] = JsonSerializer.SerializeToElement(new
+            {
+                total_days = Field(totalDays),
+                time = Field(timeOfDay)
+            }),
+            ["fishing"] = JsonSerializer.SerializeToElement(new
+            {
+                forecast_request = Field(new
+                {
+                    profile = "fishing_forecast",
+                    target_location_id = locationId,
+                    rod_slot_index = rodSlotIndex,
+                    request_complete = true
+                }),
+                location_context = Field(new
+                {
+                    location_id = locationId,
+                    rod_slot_index = rodSlotIndex,
+                    can_fish_here = true
+                }),
+                fishable_tiles = Field(new[]
+                {
+                    new { tile_x = 5, tile_y = 5, water_depth = 4 }
+                }),
+                spawn_rules = Field(new
+                {
+                    inventory_complete = true,
+                    evaluation_context = new { fishing_level = 5 },
+                    rules = new[]
+                    {
+                        new
+                        {
+                            rule_key = "fixture-target",
+                            precedence = 0,
+                            item_id = "145",
+                            random_item_ids = Array.Empty<string>(),
+                            item_selection_mode = "item_id",
+                            per_item_condition = (string?)null,
+                            condition_probability_resolved = true,
+                            condition_met_for_probability = true,
+                            player_position = (object?)null,
+                            blocking_reasons = Array.Empty<string>(),
+                            eligible_fishable_tile_indices = new[] { 0 },
+                            spawn_chance_probability_resolved = true,
+                            use_fish_caught_seeded_random = false,
+                            effective_spawn_chance_preview = 0.5d,
+                            outputs = new[]
+                            {
+                                new
+                                {
+                                    output_index = 0,
+                                    qualified_item_id = "(O)145",
+                                    resolution_complete = true,
+                                    output_eligible_before_random_rolls = true,
+                                    data_fish_chance_roll_pending = true,
+                                    data_fish_chance_probability_resolved = true,
+                                    data_fish_chance_by_water_depth = new[]
+                                    {
+                                        new
+                                        {
+                                            water_depth = 4,
+                                            chance_preview = 0.4d
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+            })
+        };
+        Write(path, new
+        {
+            schema_version = "snapshot.v1",
+            bridge_version = "self-test",
+            game_version = "1.6.15",
+            smapi_version = "4.0.0",
+            installed_mods = Array.Empty<object>(),
+            save_id = NativeField("fixture-save", "self-test"),
+            player_id = NativeField("1", "self-test"),
+            game_tick = gameTick,
+            in_game_time = NativeField(timeOfDay, "self-test"),
+            real_timestamp = "2026-09-10T00:00:00Z",
+            state_hash = SnapshotHash.ComputeStateHash(state),
+            completeness = "partial",
+            unavailable_fields = Array.Empty<string>(),
+            state
+        });
+    }
 
     private static object UnlockPlayer(
         string playerId,

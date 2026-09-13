@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
+using StardewAI.TransparentBridge.State;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData;
@@ -18,6 +19,14 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
     public override StateAdapterResult Collect(long tick)
     {
         var player = Context.IsWorldReady ? Game1.player : null;
+        if (player is not null &&
+            string.Equals(
+                SnapshotProfileContext.Current,
+                "fishing_forecast",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return CollectForecast(tick, player);
+        }
         var location = Context.IsWorldReady ? Game1.currentLocation : null;
         if (player is null || location is null)
         {
