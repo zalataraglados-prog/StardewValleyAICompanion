@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -51,6 +52,18 @@ internal static partial class BootstrapSelfTest
         source_save_untouched = true
     };
 
+    private static void WriteEmptyStrategyLedger(
+        string path,
+        string stateHash) => Write(path, new StrategyCommitmentLedger
+        {
+            LedgerId = "strategy-ledger:fixture-save:1",
+            SaveId = "fixture-save",
+            PlayerId = "1",
+            Revision = 0,
+            UpdatedAt = "2026-09-10T00:00:00Z",
+            SourceStateHash = stateHash
+        });
+
     private static void WriteStageOneCollectionSnapshot(
         string path,
         string stateHash,
@@ -77,7 +90,7 @@ internal static partial class BootstrapSelfTest
             smapi_version = "4.0.0",
             installed_mods = Array.Empty<object>(),
             save_id = NativeField("fixture-save", "self-test"),
-            player_id = NativeField("fixture-player", "self-test"),
+            player_id = NativeField("1", "self-test"),
             game_tick = gameTick,
             in_game_time = NativeField(timeOfDay, "self-test"),
             real_timestamp = "2026-09-10T00:00:00Z",
@@ -89,7 +102,7 @@ internal static partial class BootstrapSelfTest
                 identity = new
                 {
                     save_id = NativeField("fixture-save", "self-test"),
-                    player_id = NativeField("fixture-player", "self-test")
+                    player_id = NativeField("1", "self-test")
                 },
                 time = new
                 {

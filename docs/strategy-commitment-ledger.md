@@ -37,7 +37,7 @@ Material reservations bind one actor-authorized `material_inventory_graph.v1` no
 
 Every upsert recomputes unreserved supply from the referenced current snapshot and all other active reservations. Currency balance input must be a complete `player.shop_currency_balances.v1` projection and its money row must equal `player.money`. Unknown currencies, wrong owners, malformed rows, stale ledger revisions, overbooking and arithmetic overflow fail closed. The shared currency definition is used by TransparentBridge, shop-quote evaluation, the supply projection and the ledger service, so there is no parallel ID/key table.
 
-These endpoints provide atomic controller storage and double-spend prevention. They do not choose among alternative acquisition routes and do not authorize a Teacher label. The target-date `inventory_reservation` axis must still emit exact per-route claims, and the controller must select a route before committing those claims.
+These endpoints provide controller storage and double-spend prevention for individual rows. They do not choose among alternative acquisition routes and do not authorize a Teacher label. The target-date `inventory_reservation` axis now emits one exact multi-row claim set per feasible route, sharing a source decision, state hash and expected ledger revision. The controller must select a route and commit the complete set atomically; sequential partial success is not sufficient for execution authorization.
 
 ## Machine binding
 

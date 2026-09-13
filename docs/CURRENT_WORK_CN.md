@@ -11,12 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期库存预留轴求值
+
+- 新增 `acquisition_route_target_date_inventory_reservation.v1` 与 `build-acquisition-route-target-date-inventory-reservation`。构建器必须显式读取 `--strategy-ledger`，重新生成并逐对象核对完整货币预算报告，再保持每个 route occurrence 原样进入预留轴；缺账本、错误保存/玩家、旧或损坏契约不能退化为空账本。
+- 每条已经通过资源与货币轴的路线独立生成确定性的原子 claim set，而不是把 1599 条替代路线同时写入账本。可消耗材料继续复用 `MaterialSupplyProjection`，按已授权节点、槽位和物品确定性拆分数量；`money`、`star_tokens`、`club_coins`、`qi_gems` 继续复用 `NativeCurrencySupplyProjection`。求值前扣除其他活动决策的预留，同一决策自己的 claim 则排除后重建并逐字段比对，以区分首次提案、精确已提交和需要整组替换。
+- 全局预检查会把所有活动预留与当前透明供给重新投影；槽位消失、玩家漂移、货币域漂移、重复 ID、余额或堆叠超占都会使输入失败关闭。取消/完成记录保留审计但不占供给。已附着在鱼竿上的魔法鱼饵尚无现有账本可表达的嵌套槽位地址，因此该路线会显式阻塞，不能伪装成普通背包材料。
+- 聚焦 fixture 保持 `76/76`：72 条继承不适用，4 条当前路线匹配；普通钓鱼无需 claim，两条作物各提出精确种子槽位 claim，商店路线提出同一原子组中的 5 木材槽位 claim 与 100g claim，总计 3 个待提交组、3 个材料 claim、1 个货币 claim。其他路线占用 1 木材或 450g 时只让商店路线形成确定冲突；取消记录恢复供给，精确已提交组被幂等识别，错误玩家及全局超占账本被拒绝。
+- 本轴只证明“若控制器选择该路线，这一整组当前资源能否被预留”，不负责替 Teacher 选择替代项，也不允许逐 claim 部分提交后执行。原子批量提交/路线组合属于后续控制器选择边界；固定下一依赖轴为 `processing_lead_time`，之后仍有随机重试、日时间/体力、机会成本和 fresh 终态回执。训练授权仍为 false，未启动游戏或训练。
+
 ## 2026-09-13 控制器原生货币预留基础设施
 
 - `strategy_commitment_ledger.v1` 新增 `currency_reservations[]`，沿用材料预留的保存/玩家隔离、乐观 `ledger_revision`、取消状态与不可变历史。Backend 新增原生货币预留 upsert/cancel 接口；每次写入均从指定同日快照重算未预留余额，其他活动路线已占用的金额会先扣除，过量预留、旧修订和身份漂移均失败关闭。
 - 预留域严格复用唯一的 `NativeShopCurrencies` 定义，只有 `0=money`、`1=star_tokens`、`2=club_coins`、`4=qi_gems`。透明桥、商店报价、目标日期预算轴和控制器供给投影不再各持一张映射表；读取还会核对 `shop_currency_balances` 的 money 行与 `player.money` 完全一致。
 - 活动预留才减少可用余额，取消和已完成记录只保留审计；错误玩家、未知 ID/key、非正数、重复预留 ID、溢出和余额超占都会阻塞。Core game-free 36/36、Backend 189/189、Bootstrap Release 与 TransparentBridge E 盘真实游戏程序集构建均通过。
-- 这只是下一轴的原子账本前置条件，尚未宣称 `inventory_reservation` 完成：本层不替 Teacher 同时选择全部替代路线，也不把 1599 条候选当成同时支出。下一步由逐路线预留轴生成精确材料槽位/货币 claim；控制器选定路线后才写入账本，后续候选再从扣除后的供给继续求值。训练授权仍为 false，未启动游戏或训练。
+- 这是库存预留轴的原子账本前置条件。逐路线预留轴现已生成精确材料槽位/货币 claim，但仍不替 Teacher 同时选择全部替代路线；控制器选定路线后必须整组写入账本，后续候选再从扣除后的供给继续求值。训练授权仍为 false，未启动游戏或训练。
 
 ## 2026-09-13 显式目标日期货币预算轴求值
 

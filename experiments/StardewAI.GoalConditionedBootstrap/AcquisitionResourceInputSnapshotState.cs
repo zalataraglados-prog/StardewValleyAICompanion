@@ -33,6 +33,9 @@ internal sealed class AcquisitionResourceInputSnapshotState
     public string[] MaterialBlockingReasons =>
         materialSupply.Value.BlockingReasons;
 
+    public MaterialInventoryGraph? MaterialGraph =>
+        materialSupply.Value.Graph;
+
     public bool RodEvidenceAvailable => rodInventory.Value.Available;
 
     public AcquisitionResourceRodState[] Rods => rodInventory.Value.Rods;
@@ -102,6 +105,7 @@ internal sealed class AcquisitionResourceInputSnapshotState
             {
                 return new MaterialReadResult(
                     false,
+                    null,
                     new Dictionary<string, int>(StringComparer.Ordinal),
                     projection.BlockingReasons.Length > 0
                         ? projection.BlockingReasons
@@ -113,6 +117,7 @@ internal sealed class AcquisitionResourceInputSnapshotState
                 StringComparer.Ordinal);
             return new MaterialReadResult(
                 true,
+                graph,
                 quantities,
                 Array.Empty<string>());
         }
@@ -248,11 +253,13 @@ internal sealed class AcquisitionResourceInputSnapshotState
 
     private sealed record MaterialReadResult(
         bool Available,
+        MaterialInventoryGraph? Graph,
         IReadOnlyDictionary<string, int> Quantities,
         string[] BlockingReasons)
     {
         public static MaterialReadResult Blocked(string reason) => new(
             false,
+            null,
             new Dictionary<string, int>(StringComparer.Ordinal),
             new[] { reason });
     }

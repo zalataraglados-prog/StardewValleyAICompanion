@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
@@ -37,6 +38,25 @@ internal static partial class BootstrapSelfTest
         var targetDateFacilityPath = Path.Combine(root, "target-date-facility.json");
         var targetDateResourcePath = Path.Combine(root, "target-date-resource.json");
         var targetDateCurrencyPath = Path.Combine(root, "target-date-currency.json");
+        var targetDateReservationPath = Path.Combine(
+            root,
+            "target-date-inventory-reservation.json");
+        var strategyLedgerPath = Path.Combine(root, "strategy-ledger.json");
+        var materialReservedLedgerPath = Path.Combine(
+            root,
+            "material-reserved-strategy-ledger.json");
+        var currencyReservedLedgerPath = Path.Combine(
+            root,
+            "currency-reserved-strategy-ledger.json");
+        var cancelledReservationLedgerPath = Path.Combine(
+            root,
+            "cancelled-reservation-strategy-ledger.json");
+        var committedReservationLedgerPath = Path.Combine(
+            root,
+            "committed-reservation-strategy-ledger.json");
+        var mismatchedStrategyLedgerPath = Path.Combine(
+            root,
+            "mismatched-strategy-ledger.json");
         var missingShopQuoteSnapshotPath = Path.Combine(
             root,
             "missing-shop-quote-snapshot.json");
@@ -1321,6 +1341,289 @@ internal static partial class BootstrapSelfTest
                     targetDateResourceShop,
                     JsonDefaults.Options),
             "Target-date currency-budget axis resolution drifted.");
+
+        WriteEmptyStrategyLedger(strategyLedgerPath, "target-date-unlock-state");
+        AcquisitionRouteTargetDateReservationReport BuildReservation(
+            string ledgerPath) =>
+            AcquisitionRouteTargetDateReservationBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                ledgerPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        var targetDateReservation = BuildReservation(strategyLedgerPath);
+        Write(targetDateReservationPath, targetDateReservation);
+        var targetDateReservationShop = targetDateReservation.Routes.Single(
+            route => route.RouteOccurrenceId ==
+                targetDateCurrencyShop.RouteOccurrenceId);
+        Require(targetDateReservation.Status ==
+                    "complete_target_date_inventory_reservation_axis_downstream_pending" &&
+                targetDateReservation.RouteOccurrenceInventoryComplete &&
+                targetDateReservation.ReservationAxisResolutionComplete &&
+                !targetDateReservation.TrainingLabelEligible &&
+                targetDateReservation.RouteOccurrenceCount == 76 &&
+                targetDateReservation.ReservationAxisResolvedCount == 76 &&
+                targetDateReservation.ReservationMatchCount == 4 &&
+                targetDateReservation.ReservationConflictCount == 0 &&
+                targetDateReservation.ReservationNotRequiredCount == 1 &&
+                targetDateReservation.ClaimProposedCount == 3 &&
+                targetDateReservation.ClaimCommittedCount == 0 &&
+                targetDateReservation.ClaimReplacementCount == 0 &&
+                targetDateReservation.MaterialClaimCount == 3 &&
+                targetDateReservation.CurrencyClaimCount == 1 &&
+                targetDateReservation.NotApplicableUpstreamCount == 72 &&
+                targetDateReservation.BlockedUpstreamCount == 0 &&
+                targetDateReservation.BlockedReservationEvidenceCount == 0 &&
+                targetDateReservation.StrategyLedgerRevision == 0 &&
+                targetDateReservation.StrategyLedgerSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(strategyLedgerPath) &&
+                targetDateReservationShop.ClaimDisposition == "claim_proposed" &&
+                targetDateReservationShop.ClaimSet is not null &&
+                targetDateReservationShop.ClaimSet.AtomicCommitRequired &&
+                !targetDateReservationShop.ClaimSet.ReplacementRequired &&
+                targetDateReservationShop.ClaimSet.ExpectedLedgerRevision == 0 &&
+                targetDateReservationShop.ClaimSet.MaterialClaims.Single()
+                    .QualifiedItemId == "(O)388" &&
+                targetDateReservationShop.ClaimSet.MaterialClaims.Single()
+                    .NodeId == "player:1" &&
+                targetDateReservationShop.ClaimSet.MaterialClaims.Single()
+                    .SlotIndex == 1 &&
+                targetDateReservationShop.ClaimSet.MaterialClaims.Single()
+                    .Quantity == 5 &&
+                targetDateReservationShop.ClaimSet.CurrencyClaims.Single()
+                    .CurrencyId == NativeShopCurrencies.Money &&
+                targetDateReservationShop.ClaimSet.CurrencyClaims.Single()
+                    .Amount == 100,
+            "Target-date inventory-reservation axis resolution drifted.");
+        Require(JsonSerializer.Serialize(
+                    targetDateReservation,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    BuildReservation(strategyLedgerPath),
+                    JsonDefaults.Options),
+            "Target-date reservation claims are not deterministic.");
+
+        StrategyCommitmentLedger FixtureLedger(int revision) => new()
+        {
+            LedgerId = "strategy-ledger:fixture-save:1",
+            SaveId = "fixture-save",
+            PlayerId = "1",
+            Revision = revision,
+            UpdatedAt = "2026-09-10T00:00:00Z",
+            SourceStateHash = "target-date-unlock-state"
+        };
+        var materialReservedLedger = FixtureLedger(1);
+        materialReservedLedger.MaterialReservations = new[]
+        {
+            new MaterialReservation
+            {
+                ReservationId = "other-route-material",
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                SourceDecisionId = "other-route",
+                SourceStateHash = "earlier-state",
+                GoalId = "grandpa_score_21",
+                OwnerPlayerId = 1,
+                NodeId = "player:1",
+                SlotIndex = 1,
+                QualifiedItemId = "(O)388",
+                Quantity = 1,
+                Purpose = "reserve another route"
+            }
+        };
+        Write(materialReservedLedgerPath, materialReservedLedger);
+        var materialReservedReport =
+            BuildReservation(materialReservedLedgerPath);
+        var materialConflict = materialReservedReport.Routes.Single(route =>
+            route.InventoryReservationMatchesTargetDate == false);
+        Require(materialReservedReport.ReservationAxisResolutionComplete &&
+                materialReservedReport.ReservationMatchCount == 3 &&
+                materialReservedReport.ReservationConflictCount == 1 &&
+                materialReservedReport.ClaimProposedCount == 2 &&
+                materialReservedReport.MaterialClaimCount == 2 &&
+                materialReservedReport.CurrencyClaimCount == 0 &&
+                materialConflict.RouteOccurrenceId ==
+                    targetDateCurrencyShop.RouteOccurrenceId &&
+                materialConflict.NonMatchingReasons.Contains(
+                    "unreserved_material_quantity_unavailable:(O)388"),
+            "An active material reservation did not prevent cross-route spending.");
+        materialReservedLedger.MaterialReservations[0].Quantity = 6;
+        Write(materialReservedLedgerPath, materialReservedLedger);
+        var overbookedMaterialLedgerRejected = false;
+        try
+        {
+            _ = BuildReservation(materialReservedLedgerPath);
+        }
+        catch (InvalidDataException)
+        {
+            overbookedMaterialLedgerRejected = true;
+        }
+        Require(overbookedMaterialLedgerRejected,
+            "A globally overbooked material ledger was accepted.");
+
+        var currencyReservedLedger = FixtureLedger(1);
+        currencyReservedLedger.CurrencyReservations = new[]
+        {
+            new CurrencyReservation
+            {
+                ReservationId = "other-route-currency",
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                SourceDecisionId = "other-route",
+                SourceStateHash = "earlier-state",
+                GoalId = "grandpa_score_21",
+                OwnerPlayerId = 1,
+                CurrencyId = NativeShopCurrencies.Money,
+                CurrencyKey = "money",
+                Amount = 450,
+                Purpose = "reserve another route"
+            }
+        };
+        Write(currencyReservedLedgerPath, currencyReservedLedger);
+        var currencyReservedReport =
+            BuildReservation(currencyReservedLedgerPath);
+        var currencyConflict = currencyReservedReport.Routes.Single(route =>
+            route.InventoryReservationMatchesTargetDate == false);
+        Require(currencyReservedReport.ReservationAxisResolutionComplete &&
+                currencyReservedReport.ReservationMatchCount == 3 &&
+                currencyReservedReport.ReservationConflictCount == 1 &&
+                currencyReservedReport.ClaimProposedCount == 2 &&
+                currencyReservedReport.MaterialClaimCount == 2 &&
+                currencyReservedReport.CurrencyClaimCount == 0 &&
+                currencyConflict.RouteOccurrenceId ==
+                    targetDateCurrencyShop.RouteOccurrenceId &&
+                currencyConflict.NonMatchingReasons.Contains(
+                    "unreserved_currency_amount_unavailable:money"),
+            "An active currency reservation did not prevent cross-route spending.");
+        currencyReservedLedger.CurrencyReservations[0].Amount = 501;
+        Write(currencyReservedLedgerPath, currencyReservedLedger);
+        var overbookedCurrencyLedgerRejected = false;
+        try
+        {
+            _ = BuildReservation(currencyReservedLedgerPath);
+        }
+        catch (InvalidDataException)
+        {
+            overbookedCurrencyLedgerRejected = true;
+        }
+        Require(overbookedCurrencyLedgerRejected,
+            "A globally overbooked currency ledger was accepted.");
+
+        var cancelledLedger = FixtureLedger(1);
+        cancelledLedger.MaterialReservations = new[]
+        {
+            new MaterialReservation
+            {
+                ReservationId = "cancelled-material",
+                Revision = 2,
+                Status = StrategyCommitmentStatuses.Cancelled,
+                SourceDecisionId = "other-route",
+                SourceStateHash = "earlier-state",
+                GoalId = "grandpa_score_21",
+                OwnerPlayerId = 1,
+                NodeId = "player:1",
+                SlotIndex = 1,
+                QualifiedItemId = "(O)388",
+                Quantity = 5,
+                Purpose = "reserve another route",
+                CancelReason = "route_replanned"
+            }
+        };
+        cancelledLedger.CurrencyReservations = new[]
+        {
+            new CurrencyReservation
+            {
+                ReservationId = "cancelled-currency",
+                Revision = 2,
+                Status = StrategyCommitmentStatuses.Cancelled,
+                SourceDecisionId = "other-route",
+                SourceStateHash = "earlier-state",
+                GoalId = "grandpa_score_21",
+                OwnerPlayerId = 1,
+                CurrencyId = NativeShopCurrencies.Money,
+                CurrencyKey = "money",
+                Amount = 500,
+                Purpose = "reserve another route",
+                CancelReason = "route_replanned"
+            }
+        };
+        Write(cancelledReservationLedgerPath, cancelledLedger);
+        var cancelledReservationReport =
+            BuildReservation(cancelledReservationLedgerPath);
+        Require(cancelledReservationReport.ReservationMatchCount == 4 &&
+                cancelledReservationReport.ReservationConflictCount == 0 &&
+                cancelledReservationReport.ClaimProposedCount == 3,
+            "Cancelled reservations incorrectly reduced available supply.");
+
+        var proposedShopClaims = targetDateReservationShop.ClaimSet!;
+        var committedLedger = FixtureLedger(2);
+        committedLedger.MaterialReservations = proposedShopClaims.MaterialClaims
+            .Select(claim => new MaterialReservation
+            {
+                ReservationId = claim.ReservationId,
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                SourceDecisionId = claim.SourceDecisionId,
+                SourceStateHash = claim.StateHash,
+                GoalId = claim.GoalId,
+                OwnerPlayerId = 1,
+                NodeId = claim.NodeId,
+                SlotIndex = claim.SlotIndex,
+                QualifiedItemId = claim.QualifiedItemId,
+                Quantity = claim.Quantity,
+                Purpose = claim.Purpose
+            }).ToArray();
+        committedLedger.CurrencyReservations = proposedShopClaims.CurrencyClaims
+            .Select(claim => new CurrencyReservation
+            {
+                ReservationId = claim.ReservationId,
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                SourceDecisionId = claim.SourceDecisionId,
+                SourceStateHash = claim.StateHash,
+                GoalId = claim.GoalId,
+                OwnerPlayerId = 1,
+                CurrencyId = claim.CurrencyId,
+                CurrencyKey = "money",
+                Amount = claim.Amount,
+                Purpose = claim.Purpose
+            }).ToArray();
+        Write(committedReservationLedgerPath, committedLedger);
+        var committedReservationReport =
+            BuildReservation(committedReservationLedgerPath);
+        var committedShop = committedReservationReport.Routes.Single(route =>
+            route.RouteOccurrenceId == targetDateCurrencyShop.RouteOccurrenceId);
+        Require(committedReservationReport.ReservationMatchCount == 4 &&
+                committedReservationReport.ClaimProposedCount == 2 &&
+                committedReservationReport.ClaimCommittedCount == 1 &&
+                committedShop.ClaimDisposition == "claim_already_committed" &&
+                committedShop.ClaimSet is not null &&
+                !committedShop.ClaimSet.ReplacementRequired &&
+                committedShop.ClaimSet.ExistingActiveReservationIds.Length == 2,
+            "An exact committed route claim was not recognized idempotently.");
+
+        var mismatchedLedger = FixtureLedger(0);
+        mismatchedLedger.PlayerId = "2";
+        Write(mismatchedStrategyLedgerPath, mismatchedLedger);
+        var mismatchedLedgerRejected = false;
+        try
+        {
+            _ = BuildReservation(mismatchedStrategyLedgerPath);
+        }
+        catch (InvalidDataException)
+        {
+            mismatchedLedgerRejected = true;
+        }
+        Require(mismatchedLedgerRejected,
+            "A strategy ledger for another player was accepted.");
 
         var tamperedTargetDateFacility = JsonNode.Parse(
             File.ReadAllText(targetDateFacilityPath))!.AsObject();

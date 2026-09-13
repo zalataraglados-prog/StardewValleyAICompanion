@@ -1355,6 +1355,28 @@ Slice 7 remains assigned to the RTX 5070 node.
   balance or material from satisfying multiple selected routes, while keeping future income distinct from current
   spendable state. Lead time, retries, daily budgets, opportunity cost and fresh terminal receipts remain downstream.
 
+### 2026-09-13: explicit target-date inventory-reservation axis
+
+- `acquisition_route_target_date_inventory_reservation.v1` deterministically rebuilds and object-compares the
+  currency-budget artifact, then reads one explicit controller-owned `strategy_commitment_ledger.v1`. Missing files,
+  save/player mismatch, malformed reservation contracts, duplicate IDs and active reservations that exceed current
+  transparent supply fail closed before route evaluation.
+- Each upstream-matched route is evaluated independently after subtracting every other active reservation. Material
+  inputs reuse `MaterialSupplyProjection` and are allocated deterministically to exact actor-authorized node/slot/item
+  rows; currency inputs reuse `NativeCurrencySupplyProjection` over the locked four-member native domain. Cancelled
+  and completed rows remain auditable but do not consume supply.
+- Output is one atomic claim set per feasible route, with deterministic reservation IDs, current state hash and
+  expected ledger revision. Existing active claims for the same source decision are excluded from the supply
+  calculation and then compared exactly, distinguishing a new proposal, an idempotently committed set and a required
+  replacement. The report never selects all alternatives or mutates the ledger.
+- The focused fixture preserves 76/76 occurrences: 72 upstream non-applicable rows, four matches, one no-claim route,
+  three proposed claim sets, three material claims and one currency claim. Independent material and currency
+  reservations each turn only the affected shop route into a resolved conflict; cancelled rows release supply,
+  exact existing claims are recognized, and globally overbooked or wrong-player ledgers are rejected.
+- Attached Magic Bait cannot yet be addressed by the slot-based material ledger and therefore blocks instead of being
+  treated as loose inventory. Atomic controller commit/route portfolio selection remains downstream. Training
+  authorization stays false; the next fixed dependency axis is `processing_lead_time`.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
