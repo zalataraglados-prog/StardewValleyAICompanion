@@ -122,6 +122,40 @@ internal static partial class BootstrapSelfTest
                     tile_x = NativeField(playerTileX, "vanilla_1_6"),
                     tile_y = NativeField(playerTileY, "vanilla_1_6"),
                     money = Field(500),
+                    shop_currency_balances = Field(new
+                    {
+                        schema_version = "shop_currency_balances.v1",
+                        projection_status =
+                            "complete_locked_base_1.6.15_shop_menu_currency_domain",
+                        rows = new[]
+                        {
+                            new
+                            {
+                                currency_id = 0,
+                                currency_key = "money",
+                                balance = 500
+                            },
+                            new
+                            {
+                                currency_id = 1,
+                                currency_key = "star_tokens",
+                                balance = 0
+                            },
+                            new
+                            {
+                                currency_id = 2,
+                                currency_key = "club_coins",
+                                balance = 0
+                            },
+                            new
+                            {
+                                currency_id = 4,
+                                currency_key = "qi_gems",
+                                balance = 0
+                            }
+                        },
+                        supported_currency_ids = new[] { 0, 1, 2, 4 }
+                    }),
                     energy = Field(270d),
                     max_energy = Field(270d),
                     health = Field(100),
@@ -160,6 +194,39 @@ internal static partial class BootstrapSelfTest
                 },
                 locations = new
                 {
+                    shops = Field(new
+                    {
+                        shop_count = 1,
+                        shops = new[]
+                        {
+                            new
+                            {
+                                shop_id = "FixtureShop",
+                                stock_preview = new
+                                {
+                                    kind = "shop_stock_preview",
+                                    shop_id = "FixtureShop",
+                                    currency = 0,
+                                    entry_count = 1,
+                                    entries = new[]
+                                    {
+                                        new
+                                        {
+                                            synced_key = "fixture-parsnip",
+                                            qualified_item_id = "(O)24",
+                                            currency = 0,
+                                            price = 100,
+                                            stock = 1,
+                                            infinite_stock = false,
+                                            can_buy_item = true,
+                                            trade_item_qualified_id = "(O)388",
+                                            effective_trade_item_count = 5
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }),
                     collision_grid = NativeField(new
                     {
                         location_id = "Farm",

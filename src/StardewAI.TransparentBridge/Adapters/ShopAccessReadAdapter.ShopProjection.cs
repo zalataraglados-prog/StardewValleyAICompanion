@@ -100,12 +100,16 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
     private static object ReadShopStockPreview(string shopId, ShopData shopData)
     {
+        var currency = ReadIntProperty(shopData, "Currency") ?? 0;
         var stock = ShopBuilder.GetShopStock(shopId, shopData)
             .OrderBy(entry => entry.Key.QualifiedItemId, StringComparer.Ordinal)
             .ThenBy(entry => entry.Key.DisplayName, StringComparer.Ordinal)
             .Select(entry =>
             {
-                var blockReasons = ShopStockPreviewBlockReasons(entry.Key, entry.Value);
+                var blockReasons = ShopStockPreviewBlockReasons(
+                    entry.Key,
+                    entry.Value,
+                    currency);
                 return new
                 {
                     item_id = entry.Key is Item item ? item.ItemId : entry.Key.QualifiedItemId,
@@ -117,9 +121,14 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     is_recipe = entry.Key.IsRecipe,
                     runtime_type = entry.Key.GetType().FullName,
                     price = entry.Value.Price,
+                    currency,
                     stock = entry.Value.Stock,
                     infinite_stock = entry.Value.Stock == StardewValley.Menus.ShopMenu.infiniteStock,
                     trade_item = entry.Value.TradeItem,
+                    trade_item_qualified_id = entry.Value.TradeItem is null
+                        ? null
+                        : ItemRegistry.QualifyItemId(entry.Value.TradeItem) ??
+                            entry.Value.TradeItem,
                     trade_item_count = entry.Value.TradeItemCount,
                     effective_trade_item_count = entry.Value.TradeItem is null ? (int?)null : entry.Value.TradeItemCount ?? 5,
                     limited_stock_mode = entry.Value.LimitedStockMode.ToString(),
@@ -127,8 +136,12 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     action_on_purchase_count = entry.Value.ActionsOnPurchase?.Count ?? 0,
                     can_buy_item = entry.Key.CanBuyItem(Game1.player),
                     total_price_for_one_purchase = entry.Value.Price,
-                    currency_balance = Game1.player.Money,
-                    can_afford_one_with_currency = Game1.player.Money >= entry.Value.Price,
+                    currency_balance = PlayerReadAdapter
+                        .ReadNativeShopCurrencyBalance(Game1.player, currency),
+                    can_afford_one_with_currency =
+                        PlayerReadAdapter.ReadNativeShopCurrencyBalance(
+                            Game1.player,
+                            currency) >= entry.Value.Price,
                     trade_item_available_count = entry.Value.TradeItem is null ? (int?)null : CountAvailableTradeItem(entry.Value.TradeItem),
                     can_afford_one_with_trade_item = entry.Value.TradeItem is null || CountAvailableTradeItem(entry.Value.TradeItem) >= (entry.Value.TradeItemCount ?? 5),
                     could_inventory_accept = entry.Key.GetSalableInstance() is Item salableItem && Game1.player.couldInventoryAcceptThisItem(salableItem),
@@ -145,6 +158,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         {
             kind = "shop_stock_preview",
             shop_id = shopId,
+            currency,
             source = "ShopBuilder.GetShopStock(shopId, shopData)",
             runtime_menu_recheck_required = true,
             executor_purchase_preview_enabled = anyEnabled,
@@ -154,9 +168,17 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         };
     }
 
-    private static string[] ShopStockPreviewBlockReasons(ISalable item, ItemStockInformation stock)
+    private static string[] ShopStockPreviewBlockReasons(
+        ISalable item,
+        ItemStockInformation stock,
+        int currency)
     {
         var reasons = new List<string>();
+
+        if (currency != 0)
+        {
+            reasons.Add("non_money_currency_purchase_requires_audit");
+        }
 
         if (stock.TradeItem is not null)
         {
@@ -194,7 +216,9 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             reasons.Add("shop_item_out_of_stock");
         }
 
-        if (Game1.player.Money < stock.Price)
+        if (PlayerReadAdapter.ReadNativeShopCurrencyBalance(
+                Game1.player,
+                currency) < stock.Price)
         {
             reasons.Add("insufficient_currency_for_purchase");
         }

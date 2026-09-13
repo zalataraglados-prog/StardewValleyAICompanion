@@ -13,6 +13,7 @@ internal sealed class AcquisitionResourceInputSnapshotState
 
     private AcquisitionResourceInputSnapshotState(JsonElement state)
     {
+        ShopQuotes = new AcquisitionShopQuoteSnapshotState(state);
         materialSupply = new Lazy<MaterialReadResult>(
             () => ReadMaterialSupply(state));
         rodInventory = new Lazy<RodReadResult>(() => ReadRods(state));
@@ -26,6 +27,8 @@ internal sealed class AcquisitionResourceInputSnapshotState
     }
 
     public bool MaterialEvidenceAvailable => materialSupply.Value.Available;
+
+    public AcquisitionShopQuoteSnapshotState ShopQuotes { get; }
 
     public string[] MaterialBlockingReasons =>
         materialSupply.Value.BlockingReasons;

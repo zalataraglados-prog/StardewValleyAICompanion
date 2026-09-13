@@ -1331,7 +1331,29 @@ Slice 7 remains assigned to the RTX 5070 node.
   five-Wood barter route and one no-input fishing route. Removing the canonical graph blocks only the three actual
   input routes; removing the seed produces two resolved misses. The archived day-223 snapshot remains 197 upstream
   non-applicable and 1,402 inherited blocks, with zero guessed resource matches.
+- Shop barter requirements use the exact current native `ShopBuilder` quote shared with the following currency stage,
+  including item-query overrides. Static `Data/Shops` trade terms remain provenance and drift evidence, not a second
+  executable purchase model.
 - Training authorization remains false. The next fixed dependency axis is `currency_budget`.
+
+### 2026-09-13: explicit target-date currency-budget axis
+
+- `acquisition_route_target_date_currency_budget.v1` deterministically rebuilds and object-compares the resource-input
+  artifact, joins exact alternative amounts from acquisition lowering, and preserves every route occurrence. All 33
+  route kinds have one explicit currency class; unknown kinds cannot fall through to a free route.
+- The bridge exposes `shop_currency_balances.v1` from one shared native reader used by player state, unloaded-shop
+  previews and the live shop menu. The locked 1.6.15 domain is exactly `0 money`, `1 star tokens`, `2 club coins` and
+  `4 Qi gems`; unsupported IDs fail closed. Shop purchase identity is `(shop_id, synced_key, qualified_item_id)` and
+  its current `ShopBuilder` quote owns price, currency, stock, buyability and effective barter terms.
+- A missing or malformed complete quote/currency projection is missing evidence. A complete quote that is sold out,
+  not buyable or unaffordable is a resolved miss. `native_money_payment` reads its exact positive amount from lowering
+  and requires the money currency. No balance is inferred from future sales or unrelated candidate utility.
+- The focused fixture preserves 76/76 occurrences with four active matches, three currency-free routes and 72 upstream
+  non-applicable routes. Removing the shop quote or currency field blocks only the affected purchase; 50 available
+  money against a 100 price produces one known miss. Training authorization remains false.
+- This axis proves one route occurrence only. `inventory_reservation` is the next fixed axis and must prevent the same
+  balance or material from satisfying multiple selected routes, while keeping future income distinct from current
+  spendable state. Lead time, retries, daily budgets, opportunity cost and fresh terminal receipts remain downstream.
 
 ## Review questions
 

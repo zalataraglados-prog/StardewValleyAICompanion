@@ -63,6 +63,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["movement_timing_context"] = Field(ReadMovementTimingContext(player), "Farmer.getMovementSpeed cardinal non-event branch; Farmer.Speed/addedSpeed/temporarySpeedBuff/isRidingHorse/hasBuff(19); Game1.CurrentEvent/eventUp/tileSize/realMilliSecondsPerGameMinute", tick, "vanilla_1_6_15_movement_timing"),
             ["money"] = Field(player?.Money, "Game1.player.Money", tick),
             ["club_coins"] = Field(Context.IsWorldReady ? (int?)player?.clubCoins : null, "Game1.player.clubCoins", tick),
+            ["shop_currency_balances"] = Field(ReadShopCurrencyBalances(player), "ShopMenu.getPlayerCurrencyAmount(Game1.player, 0/1/2/4); Game1.player Money/festivalScore/clubCoins/QiGems", tick, "vanilla_1_6_15_shop_currency_domain"),
             ["has_club_card"] = Field(Context.IsWorldReady ? (bool?)player?.hasClubCard : null, "Game1.player.hasClubCard", tick),
             ["total_money_earned"] = Field(Context.IsWorldReady ? (uint?)player?.totalMoneyEarned : null, "Game1.player.totalMoneyEarned", tick),
             ["geodes_cracked"] = Field(Context.IsWorldReady ? (uint?)Game1.stats.GeodesCracked : null, "Game1.stats.GeodesCracked", tick),

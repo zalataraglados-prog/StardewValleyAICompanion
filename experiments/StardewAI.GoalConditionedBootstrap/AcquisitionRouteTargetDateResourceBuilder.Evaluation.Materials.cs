@@ -59,26 +59,57 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         var shop = staticRoute.ShopSource;
         if (shop is null)
             return Blocked(route, ShopTrade, "authoritative_shop_source_missing");
-        if (string.IsNullOrWhiteSpace(shop.TradeItemId))
+        var quoteLookup = state.ShopQuotes.ShopQuote(
+            shop,
+            QualifiedItemId(route));
+        if (!quoteLookup.EvidenceAvailable || !quoteLookup.Found ||
+            quoteLookup.Quote is null)
         {
-            return shop.TradeItemAmount == 0
-                ? NotRequired(route, ShopTrade)
-                : Blocked(
-                    route,
-                    ShopTrade,
-                    "shop_trade_item_identity_missing");
+            return Blocked(
+                route,
+                ShopTrade,
+                quoteLookup.BlockingReasons);
         }
-        if (shop.TradeItemAmount <= 0 ||
-            !shop.TradeItemId.StartsWith("(", StringComparison.Ordinal))
+        var quote = quoteLookup.Quote;
+        var staticTradeItem = string.IsNullOrWhiteSpace(shop.TradeItemId)
+            ? null
+            : QualifyObjectId(shop.TradeItemId);
+        if (quote.CurrencyId != shop.Currency)
         {
-            return Blocked(route, ShopTrade, "shop_trade_item_contract_invalid");
+            return Blocked(
+                route,
+                ShopTrade,
+                "current_native_shop_quote_currency_drifted");
+        }
+        if (!shop.RequiresItemQueryResolution &&
+            (quote.TradeItemQualifiedId != staticTradeItem ||
+             quote.TradeItemCount != (staticTradeItem is null
+                    ? null
+                    : shop.TradeItemAmount)))
+        {
+            return Blocked(
+                route,
+                ShopTrade,
+                "current_native_shop_quote_trade_terms_drifted");
+        }
+        if (string.IsNullOrWhiteSpace(quote.TradeItemQualifiedId))
+        {
+            return NotRequired(route, ShopTrade);
+        }
+        if (!quote.TradeItemCount.HasValue ||
+            !quote.TradeItemQualifiedId.StartsWith("(", StringComparison.Ordinal))
+        {
+            return Blocked(
+                route,
+                ShopTrade,
+                "current_native_shop_quote_trade_terms_invalid");
         }
         return EvaluateMaterial(
             route,
             ShopTrade,
             "shop_trade_item",
-            shop.TradeItemId,
-            shop.TradeItemAmount,
+            quote.TradeItemQualifiedId,
+            quote.TradeItemCount.Value,
             state);
     }
 

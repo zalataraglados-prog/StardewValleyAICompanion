@@ -782,14 +782,9 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
 
     private static int ReadCurrencyBalance(int currency)
     {
-        return currency switch
-        {
-            0 => Game1.player.Money,
-            1 => Game1.player.festivalScore,
-            2 => Game1.player.clubCoins,
-            4 => Game1.player.QiGems,
-            _ => 0
-        };
+        return PlayerReadAdapter.ReadNativeShopCurrencyBalance(
+            Game1.player,
+            currency);
     }
 
     private static int CountAvailableTradeItem(string itemId)
