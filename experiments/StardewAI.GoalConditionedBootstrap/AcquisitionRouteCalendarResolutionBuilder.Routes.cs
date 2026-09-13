@@ -58,6 +58,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             alternative.Amount,
                             alternative.MinimumQuality,
                             route.RouteKind,
+                            route.UncertaintyMode,
                             route.SourceId,
                             route.SourceAsset,
                             route.SourcePath,

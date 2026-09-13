@@ -13,7 +13,6 @@ namespace StardewAI.Core.OptionRegistry;
 public sealed partial class CandidateOptionAvailabilityEvaluator
 {
     private const int StageOneGrandpaDeadlineTotalDayExclusive = 224;
-    private const double CrabPotCapacityTargetSuccessProbability = 0.95d;
 
     private static HashSet<string> CrabPotNetworkCapacitySatisfiedSpecies(
         SnapshotEnvelope snapshot,
@@ -29,7 +28,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 source: null,
                 qualifiedItemId);
             if (assessment.ExistingSuccessProbability >=
-                CrabPotCapacityTargetSuccessProbability)
+                StochasticRetryPolicy.TargetSuccessProbability)
             {
                 result.Add(qualifiedItemId);
             }
@@ -51,7 +50,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         return assessment.RemainingServicedCycles > 0 &&
             assessment.AdditionalPotSingleCycleProbability > 0d &&
             assessment.ExistingSuccessProbability <
-                CrabPotCapacityTargetSuccessProbability;
+                StochasticRetryPolicy.TargetSuccessProbability;
     }
 
     private static string CrabPotCapacityEvidenceJson(
@@ -76,7 +75,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     remaining_serviced_cycles =
                         assessment.RemainingServicedCycles,
                     target_success_probability =
-                        CrabPotCapacityTargetSuccessProbability,
+                        StochasticRetryPolicy.TargetSuccessProbability,
                     existing_success_probability =
                         assessment.ExistingSuccessProbability,
                     additional_pot_single_cycle_probability =

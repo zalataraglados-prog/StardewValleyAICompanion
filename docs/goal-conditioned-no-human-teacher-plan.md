@@ -1424,6 +1424,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   one baseline attempt. Its output must feed a final resource/currency/atomic-reservation validation before execution.
   Any implementation that merely appends retry time after the present claim set is invalid.
 
+### 2026-09-13: explicit target-date stochastic retry budget, first segment
+
+- `acquisition_route_target_date_stochastic_retry_budget.v1` deterministically rebuilds and object-compares the full
+  processing-lead-time artifact, preserves all route occurrences, and validates every carried uncertainty mode against
+  the exhaustive 33-route-kind catalog. `uncertainty_mode` now travels from lowering through static calendar,
+  target-date calendar and unlock instead of being reconstructed by a late lookup.
+- Deterministic fresh receipts and source-resolved guaranteed outputs need zero random retries. A native stochastic
+  route also needs zero retries when exact live processing evidence proves that the required amount and quality are
+  already materialized. Every other native stochastic route fails closed until exact target-location and terminal
+  action probability evidence is present; a current-location fishing projection is not remote-location evidence.
+- The 0.95 success threshold now has one Core owner, `StochasticRetryPolicy`, shared with crab-pot capacity assessment.
+  Retry-expanded consumables still require a resource/currency/atomic-reservation loopback before execution, and
+  daily action time remains downstream.
+- The focused fixture preserves 76/76 occurrences: 74 are upstream non-applicable, the exact shop receipt passes with
+  zero retries, and the reachable Beach fishing route blocks on missing terminal-tile probability. Processing artifact
+  tampering is rejected. Training authorization remains false. The next slice adds remote fishing rule/tile probability
+  evidence, then exact multi-success retry math and reservation revalidation.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

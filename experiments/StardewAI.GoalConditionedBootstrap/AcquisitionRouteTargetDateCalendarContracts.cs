@@ -76,6 +76,7 @@ public sealed record AcquisitionRouteTargetDateCalendar(
     [property: JsonPropertyName("required_amount")] int RequiredAmount,
     [property: JsonPropertyName("minimum_quality")] int MinimumQuality,
     [property: JsonPropertyName("route_kind")] string RouteKind,
+    [property: JsonPropertyName("uncertainty_mode")] string UncertaintyMode,
     [property: JsonPropertyName("source_id")] string SourceId,
     [property: JsonPropertyName("source_resolution_status")] string SourceResolutionStatus,
     [property: JsonPropertyName("calendar_axis_status")] string CalendarAxisStatus,
