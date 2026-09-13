@@ -232,11 +232,87 @@ internal sealed class AcquisitionLocationRouteSnapshotState
             result[locationId] = new AcquisitionRouteLocationState(
                 locationId,
                 ReadString(row, "location_context_id"),
-                ReadNullableBool(row, "seeds_ignore_seasons_here"));
+                ReadNullableBool(row, "seeds_ignore_seasons_here"),
+                ReadCultivationCapacity(row));
         }
         if (result.Count != rows.GetArrayLength())
             reasons.Add("location_route_date_location_count_invalid");
         return result;
+    }
+
+    private static AcquisitionCultivationCapacityState
+        ReadCultivationCapacity(JsonElement location)
+    {
+        if (!location.TryGetProperty(
+                "cultivation_capacity",
+                out var capacity) ||
+            capacity.ValueKind != JsonValueKind.Object)
+        {
+            return AcquisitionCultivationCapacityState.Blocked(
+                "prepared_cultivation_capacity_missing");
+        }
+        if (ReadString(capacity, "schema_version") !=
+                "prepared_cultivation_capacity.v1" ||
+            ReadString(capacity, "projection_status") !=
+                "exact_current_snapshot_prepared_soil_slots")
+        {
+            return AcquisitionCultivationCapacityState.Blocked(
+                "prepared_cultivation_capacity_invalid");
+        }
+
+        var total = ReadInt(capacity, "total_prepared_soil_slot_count");
+        var open = ReadInt(capacity, "open_prepared_soil_slot_count");
+        var occupied = ReadInt(capacity, "occupied_crop_slot_count");
+        var unresolved = ReadInt(
+            capacity,
+            "unresolved_harvest_item_slot_count");
+        var gardenPots = ReadInt(capacity, "garden_pot_slot_count");
+        if (!total.HasValue || !open.HasValue || !occupied.HasValue ||
+            !unresolved.HasValue || !gardenPots.HasValue || total < 0 ||
+            open < 0 || occupied < 0 || unresolved < 0 || gardenPots < 0 ||
+            open + occupied != total || unresolved > occupied ||
+            gardenPots > total ||
+            !capacity.TryGetProperty(
+                "occupied_harvest_items",
+                out var harvestRows) ||
+            harvestRows.ValueKind != JsonValueKind.Array)
+        {
+            return AcquisitionCultivationCapacityState.Blocked(
+                "prepared_cultivation_capacity_counts_invalid");
+        }
+
+        var byItem = new Dictionary<string, int>(StringComparer.Ordinal);
+        var countedOccupied = 0;
+        var countedUnresolved = 0;
+        foreach (var row in harvestRows.EnumerateArray())
+        {
+            var itemId = ReadString(row, "harvest_item_qualified_id");
+            var count = ReadInt(row, "slot_count");
+            if (!count.HasValue || count <= 0)
+            {
+                return AcquisitionCultivationCapacityState.Blocked(
+                    "prepared_cultivation_capacity_harvest_row_invalid");
+            }
+            if (string.IsNullOrWhiteSpace(itemId))
+                countedUnresolved += count.Value;
+            else
+                byItem[itemId] = byItem.GetValueOrDefault(itemId) + count.Value;
+            countedOccupied += count.Value;
+        }
+        if (countedOccupied != occupied || countedUnresolved != unresolved)
+        {
+            return AcquisitionCultivationCapacityState.Blocked(
+                "prepared_cultivation_capacity_harvest_count_mismatch");
+        }
+        return new AcquisitionCultivationCapacityState(
+            true,
+            total.Value,
+            open.Value,
+            occupied.Value,
+            unresolved.Value,
+            gardenPots.Value,
+            byItem,
+            Array.Empty<string>());
     }
 
     private static Dictionary<string, string> ReadWeatherByContext(
@@ -400,4 +476,30 @@ internal sealed class AcquisitionLocationRouteSnapshotState
 internal sealed record AcquisitionRouteLocationState(
     string LocationId,
     string LocationContextId,
-    bool? SeedsIgnoreSeasonsHere);
+    bool? SeedsIgnoreSeasonsHere,
+    AcquisitionCultivationCapacityState CultivationCapacity);
+
+internal sealed record AcquisitionCultivationCapacityState(
+    bool EvidenceAvailable,
+    int TotalPreparedSoilSlotCount,
+    int OpenPreparedSoilSlotCount,
+    int OccupiedCropSlotCount,
+    int UnresolvedHarvestItemSlotCount,
+    int GardenPotSlotCount,
+    IReadOnlyDictionary<string, int> OccupiedHarvestItemCounts,
+    string[] BlockingReasons)
+{
+    public int OccupiedSlotsFor(string qualifiedItemId) =>
+        OccupiedHarvestItemCounts.GetValueOrDefault(qualifiedItemId);
+
+    public static AcquisitionCultivationCapacityState Blocked(string reason) =>
+        new(
+            false,
+            0,
+            0,
+            0,
+            0,
+            0,
+            new Dictionary<string, int>(StringComparer.Ordinal),
+            new[] { reason });
+}

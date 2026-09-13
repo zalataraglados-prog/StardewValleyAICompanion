@@ -1,6 +1,8 @@
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Objects;
+using StardewValley.TerrainFeatures;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -144,7 +146,62 @@ public sealed partial class ShopAccessReadAdapter
             unsupported_route_action_tile_count =
                 unsupportedActionTiles.Length,
             unsupported_route_action_tiles = unsupportedActionTiles,
+            cultivation_capacity = ReadCultivationCapacity(location),
             action_gates = ReadActionGates(location)
+        };
+    }
+
+    private static object ReadCultivationCapacity(GameLocation location)
+    {
+        var preparedSoil = location.terrainFeatures.Pairs
+            .Where(pair => pair.Value is HoeDirt)
+            .Select(pair => ((int)pair.Key.X, (int)pair.Key.Y,
+                Dirt: (HoeDirt)pair.Value, IsGardenPot: false))
+            .Concat(location.objects.Pairs
+                .Where(pair => pair.Value is IndoorPot { bush.Value: null })
+                .Select(pair => ((int)pair.Key.X, (int)pair.Key.Y,
+                    Dirt: ((IndoorPot)pair.Value).hoeDirt.Value,
+                    IsGardenPot: true)))
+            .ToArray();
+        var occupied = preparedSoil
+            .Where(row => row.Dirt.crop is not null)
+            .Select(row => new
+            {
+                qualified_item_id = ItemRegistry.QualifyItemId(
+                    row.Dirt.crop.indexOfHarvest.Value) ?? string.Empty,
+                row.IsGardenPot
+            })
+            .GroupBy(row => (row.qualified_item_id, row.IsGardenPot))
+            .Select(group => new
+            {
+                harvest_item_qualified_id = group.Key.qualified_item_id,
+                is_garden_pot = group.Key.IsGardenPot,
+                slot_count = group.Count()
+            })
+            .OrderBy(row => row.harvest_item_qualified_id,
+                StringComparer.Ordinal)
+            .ThenBy(row => row.is_garden_pot)
+            .ToArray();
+        var unresolvedHarvestItemSlotCount = occupied
+            .Where(row => string.IsNullOrWhiteSpace(
+                row.harvest_item_qualified_id))
+            .Sum(row => row.slot_count);
+        var open = preparedSoil.Count(row => row.Dirt.crop is null);
+        return new
+        {
+            schema_version = "prepared_cultivation_capacity.v1",
+            projection_status = "exact_current_snapshot_prepared_soil_slots",
+            total_prepared_soil_slot_count = preparedSoil.Length,
+            open_prepared_soil_slot_count = open,
+            occupied_crop_slot_count = preparedSoil.Length - open,
+            unresolved_harvest_item_slot_count =
+                unresolvedHarvestItemSlotCount,
+            garden_pot_slot_count = preparedSoil.Count(row => row.IsGardenPot),
+            occupied_harvest_items = occupied,
+            establishment_scope =
+                "existing_HoeDirt_and_unbushed_IndoorPot_only",
+            excluded_scope =
+                "potential_new_tilling_clearance_time_energy_and_inputs"
         };
     }
 
