@@ -57,6 +57,9 @@ internal static class StrategyCommitmentLedgerSupport
             MaterialReservations = current?.MaterialReservations
                 .Select(CloneMaterial)
                 .ToArray() ?? Array.Empty<MaterialReservation>(),
+            CurrencyReservations = current?.CurrencyReservations
+                .Select(CloneCurrency)
+                .ToArray() ?? Array.Empty<CurrencyReservation>(),
             MachineRelocationIntents = current?.MachineRelocationIntents
                 .Select(CloneMachineRelocation)
                 .ToArray() ?? Array.Empty<MachineRelocationIntent>(),
@@ -143,6 +146,23 @@ internal static class StrategyCommitmentLedgerSupport
         SlotIndex = row.SlotIndex,
         QualifiedItemId = row.QualifiedItemId,
         Quantity = row.Quantity,
+        Purpose = row.Purpose,
+        CancelReason = row.CancelReason
+    };
+
+    internal static CurrencyReservation CloneCurrency(
+        CurrencyReservation row) => new()
+    {
+        ReservationId = row.ReservationId,
+        Revision = row.Revision,
+        Status = row.Status,
+        SourceDecisionId = row.SourceDecisionId,
+        SourceStateHash = row.SourceStateHash,
+        GoalId = row.GoalId,
+        OwnerPlayerId = row.OwnerPlayerId,
+        CurrencyId = row.CurrencyId,
+        CurrencyKey = row.CurrencyKey,
+        Amount = row.Amount,
         Purpose = row.Purpose,
         CancelReason = row.CancelReason
     };

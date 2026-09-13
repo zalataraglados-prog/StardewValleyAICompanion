@@ -4,7 +4,7 @@
 
 `strategy_commitment_ledger.v1` is controller-owned strategy state. It is not emitted by TransparentBridge and is not included in the game `state_hash`. The bridge remains authoritative for current game facts; the ledger records explicit future decisions that do not yet exist in game state.
 
-The first supported commitment is `outdoor_seasonal` crop planting. A strategy producer chooses only:
+The ledger currently carries crop planting commitments, exact material and native-currency reservations, and typed machine intents. For `outdoor_seasonal` crop planting, a strategy producer chooses only:
 
 - stable commitment and source-decision IDs;
 - seed ID;
@@ -26,6 +26,18 @@ Endpoints:
 - `GET /api/v1/strategy/commitments/latest`
 - `POST /api/v1/strategy/commitments/crops/upsert`
 - `POST /api/v1/strategy/commitments/crops/{commitmentId}/cancel`
+- `POST /api/v1/strategy/commitments/materials/upsert`
+- `POST /api/v1/strategy/commitments/materials/{reservationId}/cancel`
+- `POST /api/v1/strategy/commitments/currencies/upsert`
+- `POST /api/v1/strategy/commitments/currencies/{reservationId}/cancel`
+
+## Resource reservations
+
+Material reservations bind one actor-authorized `material_inventory_graph.v1` node, slot, qualified item and quantity. Native-currency reservations bind one exact locked shop-currency domain member: money (`0`), star tokens (`1`), club coins (`2`), or Qi gems (`4`). Both carry source decision, source snapshot, goal and purpose. Only active rows reduce available supply; cancelled and completed rows remain auditable.
+
+Every upsert recomputes unreserved supply from the referenced current snapshot and all other active reservations. Currency balance input must be a complete `player.shop_currency_balances.v1` projection and its money row must equal `player.money`. Unknown currencies, wrong owners, malformed rows, stale ledger revisions, overbooking and arithmetic overflow fail closed. The shared currency definition is used by TransparentBridge, shop-quote evaluation, the supply projection and the ledger service, so there is no parallel ID/key table.
+
+These endpoints provide atomic controller storage and double-spend prevention. They do not choose among alternative acquisition routes and do not authorize a Teacher label. The target-date `inventory_reservation` axis must still emit exact per-route claims, and the controller must select a route before committing those claims.
 
 ## Machine binding
 
@@ -44,4 +56,4 @@ Candidate, daily plan, and action compiler preserve these values. The compiler r
 
 ## Remaining scope
 
-This closes the first cross-season crop commitment slice, not the entire long-horizon planner. Greenhouse/Island/Indoor Pot rules, fertilizer and skill modifiers, crop layout feasibility, seed purchasing/reservation, animal/building commitments, mining/smelting queues, storage supply, and machine placement/service still require separate typed commitments or transparent state.
+This closes controller persistence for the listed commitment and reservation types, not the entire long-horizon planner. Greenhouse/Island/Indoor Pot rules, fertilizer and skill modifiers, crop layout feasibility, route-portfolio selection, future-income commitments, animal/building commitments, mining/smelting queues, storage supply, and broader machine placement/service still require separate typed commitments or transparent state.

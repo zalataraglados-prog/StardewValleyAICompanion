@@ -290,6 +290,87 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task CurrencyReservationEndpointsPreventOverbookingAndPersistCancellation()
+        {
+            var repository = new InMemoryStrategyCommitmentRepository();
+            using var isolatedFactory = factory.WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<IStrategyCommitmentRepository>();
+                    services.AddSingleton<IStrategyCommitmentRepository>(repository);
+                }));
+            using var client = isolatedFactory.CreateClient();
+            var snapshotResponse = await client.PostAsync(
+                "/api/v1/snapshots",
+                SampleSnapshotContent(includeCurrencyBalances: true));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(
+                await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement
+                .GetProperty("state_hash")
+                .GetString();
+
+            var create = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/currencies/upsert",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 0,
+                    reservation_id = "vault-payment",
+                    source_decision_id = "route:vault-payment",
+                    goal_id = "goal.grandpa_21",
+                    currency_id = 0,
+                    amount = 400,
+                    purpose = "reserve exact Vault payment"
+                });
+            Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+            var overbooked = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/currencies/upsert",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 1,
+                    reservation_id = "shop-payment",
+                    source_decision_id = "route:shop-payment",
+                    goal_id = "goal.grandpa_21",
+                    currency_id = 0,
+                    amount = 101,
+                    purpose = "reserve shop payment"
+                });
+            Assert.Equal(
+                HttpStatusCode.UnprocessableEntity,
+                overbooked.StatusCode);
+
+            var cancel = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/currencies/vault-payment/cancel",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 1,
+                    reason = "route_replanned"
+                });
+            Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+            var read = await client.GetAsync(
+                "/api/v1/strategy/commitments/latest?stateHash=" + stateHash);
+            using var readJson = JsonDocument.Parse(
+                await read.Content.ReadAsStringAsync());
+            var reservation = Assert.Single(readJson.RootElement
+                .GetProperty("currency_reservations")
+                .EnumerateArray());
+            Assert.Equal(
+                "money",
+                reservation.GetProperty("currency_key").GetString());
+            Assert.Equal(
+                "cancelled",
+                reservation.GetProperty("status").GetString());
+            Assert.Equal(
+                "route_replanned",
+                reservation.GetProperty("cancel_reason").GetString());
+        }
+
+        [Fact]
         public async Task DispatchReadinessRejectsQueueAfterMaterialLedgerChanges()
         {
             var repository = new InMemoryStrategyCommitmentRepository();
@@ -1515,7 +1596,8 @@ namespace StardewAI.Backend.Tests
             bool unavailableCarriesDefault = false,
             string? trainingRunId = null,
             bool includeStrategyCatalog = false,
-            bool includeMaterialGraph = false)
+            bool includeMaterialGraph = false,
+            bool includeCurrencyBalances = false)
         {
             var stateJson = $$"""
             {
@@ -1546,6 +1628,9 @@ namespace StardewAI.Backend.Tests
                 "tile_y": {{FieldJson(15)}},
                 "facing_direction": {{FieldJson(2)}},
                 "money": {{FieldJson(500)}},
+                "shop_currency_balances": {{(includeCurrencyBalances
+                    ? FieldJson("{\"schema_version\":\"shop_currency_balances.v1\",\"projection_status\":\"complete_locked_base_1.6.15_shop_menu_currency_domain\",\"supported_currency_ids\":[0,1,2,4],\"rows\":[{\"currency_id\":0,\"currency_key\":\"money\",\"balance\":500},{\"currency_id\":1,\"currency_key\":\"star_tokens\",\"balance\":20},{\"currency_id\":2,\"currency_key\":\"club_coins\",\"balance\":30},{\"currency_id\":4,\"currency_key\":\"qi_gems\",\"balance\":40}]}", raw: true)
+                    : UnavailableFieldJson("shop_currency_balances_not_in_general_backend_fixture"))}},
                 "total_money_earned": {{FieldJson(1000000)}},
                 "health": {{FieldJson(100)}},
                 "max_health": {{FieldJson(100)}},
@@ -1748,6 +1833,7 @@ namespace StardewAI.Backend.Tests
         {
             private readonly CropCommitmentLedgerService service = new();
             private readonly MaterialReservationLedgerService materialService = new();
+            private readonly CurrencyReservationLedgerService currencyService = new();
             private readonly MachineRelocationIntentLedgerService
                 machineRelocationService = new();
             private readonly MachineSupportIntentLedgerService
@@ -1826,6 +1912,36 @@ namespace StardewAI.Backend.Tests
                 {
                     ledger = result.Ledger;
                 }
+                return result;
+            }
+
+            public StrategyCommitmentMutationResult UpsertCurrency(
+                SnapshotEnvelope snapshot,
+                CurrencyReservationUpsertRequest request)
+            {
+                var result = currencyService.Upsert(
+                    Get(snapshot),
+                    snapshot,
+                    request,
+                    "2026-09-13T00:00:00Z");
+                if (result.Accepted)
+                    ledger = result.Ledger;
+                return result;
+            }
+
+            public StrategyCommitmentMutationResult CancelCurrency(
+                SnapshotEnvelope snapshot,
+                string reservationId,
+                StrategyCommitmentCancelRequest request)
+            {
+                var result = currencyService.Cancel(
+                    Get(snapshot),
+                    snapshot,
+                    reservationId,
+                    request,
+                    "2026-09-13T00:00:00Z");
+                if (result.Accepted)
+                    ledger = result.Ledger;
                 return result;
             }
 

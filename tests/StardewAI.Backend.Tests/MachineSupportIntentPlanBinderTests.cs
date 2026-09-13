@@ -276,6 +276,17 @@ public sealed class MachineSupportIntentPlanBinderTests
             StrategyCommitmentCancelRequest request) =>
             throw new NotSupportedException();
 
+        public StrategyCommitmentMutationResult UpsertCurrency(
+            SnapshotEnvelope snapshot,
+            CurrencyReservationUpsertRequest request) =>
+            throw new NotSupportedException();
+
+        public StrategyCommitmentMutationResult CancelCurrency(
+            SnapshotEnvelope snapshot,
+            string reservationId,
+            StrategyCommitmentCancelRequest request) =>
+            throw new NotSupportedException();
+
         public StrategyCommitmentMutationResult
             UpsertMachineRelocation(
                 SnapshotEnvelope snapshot,

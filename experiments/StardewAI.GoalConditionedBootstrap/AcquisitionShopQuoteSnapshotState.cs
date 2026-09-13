@@ -1,18 +1,15 @@
 using System.Globalization;
 using System.Text.Json;
+using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
 internal sealed partial class AcquisitionShopQuoteSnapshotState
 {
     private static readonly IReadOnlyDictionary<int, string> CurrencyKeys =
-        new Dictionary<int, string>
-        {
-            [0] = "money",
-            [1] = "star_tokens",
-            [2] = "club_coins",
-            [4] = "qi_gems"
-        };
+        NativeShopCurrencies.All.ToDictionary(
+            row => row.Id,
+            row => row.Key);
 
     private readonly Lazy<CurrencyReadResult> currencies;
     private readonly Lazy<ShopReadResult> shops;
