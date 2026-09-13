@@ -1308,6 +1308,31 @@ Slice 7 remains assigned to the RTX 5070 node.
 - Training authorization remains false. The next fixed dependency axis is `resource_inputs`; capacity-bearing source
   families must still receive their exact earlier source/location bindings when those upstream parsers are opened.
 
+### 2026-09-13: explicit target-date resource-input axis
+
+- `acquisition_route_target_date_resource_inputs.v1` deterministically rebuilds and compares the complete facility
+  artifact, then joins every route occurrence to its exact static source row. All 33 route kinds have one explicit
+  resource class; deferred reward, machine, animal, pond, geode and recipe inputs cannot fall through to no-input.
+- Available quantities come from canonical `farm.material_inventory_graph.v1` and the existing
+  `MaterialSupplyProjection`. This includes actor-authorized immediately available player/chest nodes without
+  duplicating global inventories; inaccessible/shared quantities remain excluded. Material, rod and crab-pot reads
+  are independently lazy and cached, so only an active route of that family touches its field. Reservation
+  competition is still owned by the later `inventory_reservation` axis.
+- A matched existing target crop needs no new seed. An open prepared-soil slot requires one exact `Data/Crops` seed.
+  Shop barter items are checked here, but money and other native currencies remain under `currency_budget`. Ordinary
+  target-date fishing requires no consumable; if every retained window requires Magic Bait, the snapshot must prove a
+  bait-capable rod plus attached or loose `(O)908`. A placed crab pot with target output, loaded bait or owner
+  Luremaster needs no new input; an unserviced pot fails closed until the complete native bait candidate domain is
+  bound instead of guessing one bait ID.
+- Reusable tools are not counted as consumable resource quantities. Their ownership and exact live usability remain
+  fresh candidate/compiler/runtime preconditions in the already implemented action stack. Facility establishment,
+  lead time, retries, reservations, daily time/energy and terminal receipts remain separate axes.
+- The focused fixture retains 76/76 occurrences and resolves all four active routes: two exact seed routes, one
+  five-Wood barter route and one no-input fishing route. Removing the canonical graph blocks only the three actual
+  input routes; removing the seed produces two resolved misses. The archived day-223 snapshot remains 197 upstream
+  non-applicable and 1,402 inherited blocks, with zero guessed resource matches.
+- Training authorization remains false. The next fixed dependency axis is `currency_budget`.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
