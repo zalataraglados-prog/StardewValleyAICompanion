@@ -35,6 +35,14 @@ public static class GameClockBudgetPolicy
     public static int ClockMinutesBetween(int start, int end) =>
         ToAbsoluteMinutes(end) - ToAbsoluteMinutes(start);
 
+    public static int AddClockMinutes(int start, int minutes)
+    {
+        if (minutes < 0)
+            throw new ArgumentOutOfRangeException(nameof(minutes));
+        var absolute = checked(ToAbsoluteMinutes(start) + minutes);
+        return absolute / 60 * 100 + absolute % 60;
+    }
+
     public static bool RecoveryWindowStarted(int timeOfDay) =>
         timeOfDay >= AutonomousRecoveryStartTime;
 

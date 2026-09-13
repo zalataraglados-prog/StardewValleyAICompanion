@@ -25,6 +25,8 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
         Assert.Equal("resolved_fishing_terminal_probability_projection", result.Status);
         Assert.Equal((5, 5, 4),
             (result.BobberTileX, result.BobberTileY, result.WaterDepth));
+        Assert.Equal((5, 5),
+            (result.EffectiveFishingLevel, result.BaseFishingLevel));
         Assert.NotNull(result.Probability);
         Assert.Equal(0.16d,
             result.Probability!.SingleAttemptProbabilityLowerBound!.Value,

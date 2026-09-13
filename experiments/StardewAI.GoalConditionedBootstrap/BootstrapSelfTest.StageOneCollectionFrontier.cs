@@ -59,6 +59,9 @@ internal static partial class BootstrapSelfTest
         var targetDateStochasticRetryPath = Path.Combine(
             root,
             "target-date-stochastic-retry-budget.json");
+        var targetDateDailyTimeEnergyPath = Path.Combine(
+            root,
+            "target-date-daily-time-energy-budget.json");
         var tamperedTargetDateReservationPath = Path.Combine(
             root,
             "tampered-target-date-inventory-reservation.json");
@@ -68,6 +71,9 @@ internal static partial class BootstrapSelfTest
         var tamperedTargetDateFishingProbabilityPath = Path.Combine(
             root,
             "tampered-target-date-fishing-probability.json");
+        var tamperedTargetDateStochasticRetryPath = Path.Combine(
+            root,
+            "tampered-target-date-stochastic-retry-budget.json");
         var strategyLedgerPath = Path.Combine(root, "strategy-ledger.json");
         var materialReservedLedgerPath = Path.Combine(
             root,
@@ -1742,6 +1748,113 @@ internal static partial class BootstrapSelfTest
                     BuildStochasticRetry(targetDateProcessingPath),
                     JsonDefaults.Options),
             "Target-date stochastic-retry-budget resolution is not deterministic.");
+
+        AcquisitionRouteTargetDateDailyTimeEnergyReport BuildDailyBudget(
+            string stochasticPath) =>
+            AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                targetDateReservationPath,
+                targetDateProcessingPath,
+                targetDateFishingProbabilityPath,
+                stochasticPath,
+                fishingForecastManifestPath,
+                strategyLedgerPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        var targetDateDailyBudget = BuildDailyBudget(
+            targetDateStochasticRetryPath);
+        Write(targetDateDailyTimeEnergyPath, targetDateDailyBudget);
+        var targetDateDailyShop = targetDateDailyBudget.Routes.Single(route =>
+            route.RouteOccurrenceId == targetDateStochasticShop.RouteOccurrenceId);
+        var targetDateDailyFish = targetDateDailyBudget.Routes.Single(route =>
+            route.RouteOccurrenceId == targetDateStochasticFish.RouteOccurrenceId);
+        Require(targetDateDailyBudget.Status ==
+                    "complete_target_date_daily_time_energy_budget_axis_downstream_pending" &&
+                targetDateDailyBudget.RouteOccurrenceInventoryComplete &&
+                targetDateDailyBudget.DailyTimeEnergyAxisResolutionComplete &&
+                !targetDateDailyBudget.TrainingLabelEligible &&
+                targetDateDailyBudget.RouteOccurrenceCount == 76 &&
+                targetDateDailyBudget.DailyTimeEnergyAxisResolvedCount == 76 &&
+                targetDateDailyBudget.DailyTimeEnergyMatchCount == 2 &&
+                targetDateDailyBudget.DailyTimeBudgetMissCount == 0 &&
+                targetDateDailyBudget.DailyEnergyBudgetMissCount == 0 &&
+                targetDateDailyBudget.NotApplicableUpstreamCount == 74 &&
+                targetDateDailyBudget.BlockedUpstreamCount == 0 &&
+                targetDateDailyBudget.BlockedBudgetEvidenceCount == 0 &&
+                targetDateDailyShop.DailyBudgetKind ==
+                    "native_shop_rolling_purchase" &&
+                targetDateDailyShop.DailyTimeEnergyMatchesTargetDate == true &&
+                targetDateDailyShop.Evaluation is not null &&
+                targetDateDailyShop.Evaluation!.TargetLocationId ==
+                    "FixtureShop" &&
+                targetDateDailyShop.Evaluation.TargetTileX == 4 &&
+                targetDateDailyShop.Evaluation.TargetTileY == 18 &&
+                targetDateDailyShop.Evaluation.RequiredAttemptCount == 2 &&
+                targetDateDailyShop.Evaluation.TerminalActionGameMinutes ==
+                    StardewAI.Core.Execution.ShopPurchaseBudgetPolicy
+                        .ConservativeGameMinutesForPurchases(2) &&
+                targetDateDailyFish.DailyBudgetKind ==
+                    "native_fishing_retry_attempts" &&
+                targetDateDailyFish.DailyTimeEnergyMatchesTargetDate == true &&
+                targetDateDailyFish.Evaluation is not null &&
+                targetDateDailyFish.Evaluation.TargetLocationId == "Beach" &&
+                targetDateDailyFish.Evaluation.TargetTileX ==
+                    targetDateDailyFish.Evaluation.StandTileX &&
+                targetDateDailyFish.Evaluation.TargetTileY ==
+                    targetDateDailyFish.Evaluation.StandTileY &&
+                targetDateDailyFish.Evaluation.RequiredAttemptCount == 14 &&
+                targetDateDailyFish.Evaluation.EffectiveFishingLevel == 5 &&
+                targetDateDailyFish.Evaluation.AvailableEnergy == 270d &&
+                targetDateDailyFish.Evaluation.EnergyPerAttempt == 7.5d &&
+                targetDateDailyFish.Evaluation.RequiredEnergy == 105d &&
+                targetDateDailyFish.Evaluation.MinimumEnergyReserve == 1d &&
+                targetDateDailyFish.Evaluation.TerminalActionGameMinutes ==
+                    StardewAI.Core.Execution.FishingAttemptBudgetPolicy
+                        .ConservativeGameMinutesForAttempts(
+                            14,
+                            challengeBait: false) &&
+                targetDateDailyFish.Evaluation.TerminalExecutionAssumption ==
+                    "perfect_lock_input_profile",
+            "Target-date daily time/energy budget axis drifted.");
+        Require(JsonSerializer.Serialize(
+                    targetDateDailyBudget,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    BuildDailyBudget(targetDateStochasticRetryPath),
+                    JsonDefaults.Options),
+            "Target-date daily time/energy budget is not deterministic.");
+
+        File.Copy(
+            targetDateStochasticRetryPath,
+            tamperedTargetDateStochasticRetryPath,
+            overwrite: true);
+        var tamperedStochasticRetry = JsonNode.Parse(File.ReadAllText(
+            tamperedTargetDateStochasticRetryPath))!.AsObject();
+        tamperedStochasticRetry["routes"]![0]![
+            "stochastic_retry_axis_status"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDateStochasticRetryPath,
+            tamperedStochasticRetry.ToJsonString(JsonDefaults.Options));
+        var tamperedStochasticRetryRejected = false;
+        try
+        {
+            _ = BuildDailyBudget(tamperedTargetDateStochasticRetryPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedStochasticRetryRejected = true;
+        }
+        Require(tamperedStochasticRetryRejected,
+            "Target-date stochastic-retry tampering was not rejected by daily budgeting.");
 
         File.Copy(
             targetDateProcessingPath,

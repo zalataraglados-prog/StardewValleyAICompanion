@@ -37,16 +37,19 @@ namespace StardewAI.Core.Execution
         public DurationEstimate Estimate(ActionQueueItem item)
         {
             var catches = Math.Max(1, ParseInt(Parameter(item, "target_catches")) ?? 1);
-            var minutes = 15 + catches * 12;
+            var minutes = FishingAttemptBudgetPolicy
+                .ConservativeGameMinutesForAttempts(
+                    catches,
+                    challengeBait: true);
             return new DurationEstimate
             {
                 Minutes = minutes,
-                Estimator = "fishing_perfect_executor.v1",
+                Estimator = "fishing_perfect_executor.v2",
                 Notes = new[]
                 {
                     "execution_profile_assumes_perfect_human_player_inputs",
-                    "bite_time_and_fish_difficulty_affect_calibration_not_low_level_failure_penalty",
-                    "decompile_evidence:FishingRod.minFishingBiteTime, FishingRod.maxFishingBiteTime, FishingGame"
+                    "conservative_native_first_bite_cast_perfect_lock_and_receipt_bound",
+                    "decompile_evidence:FishingRod.maxFishingBiteTime, FishingRod.calculateTimeUntilFishingBite, FishingRod.tickUpdate, BobberBar.update"
                 }
             };
         }

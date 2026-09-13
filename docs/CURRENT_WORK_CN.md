@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 目标日日级时间/体力预算轴闭合
+
+- 新增 `acquisition_route_target_date_daily_time_energy_budget.v1` 与 `build-acquisition-route-target-date-daily-time-energy-budget`。构建器会确定性重建完整随机重试预算，核对静态日历、钓鱼概率、快照、路线计时校准及全部 76 条 route occurrence 的身份；上游报告漂移或被篡改会直接拒绝，不能成为训练输入。
+- 当前上游匹配的两种终端均有保守预算。普通无饵钓鱼必须从同一快照到达概率投影指定的精确合法站位，14 次尝试完整计入最大首次咬钩等待、原生抛竿/上钩/完美锁定/收杆时长，并按反编译 `max(0, 8 - effective_fishing_level * 0.1)` 计算 105 体力及至少 1 点保留体力；未证明 Efficient 时不推测其零消耗。商店购买必须到达权威交互格的相邻站位，并按现有 rolling 编译链的菜单等待、交互、对话、逐次购买和关闭菜单最坏时长计入完整数量。
+- 路线抵达与终端动作必须整体落在同一个已由上游目标日解析的来源窗口内。钓鱼临时等级加成、带饵/定向鱼饵、固定种子跨捕获状态及尚未实现的其他活动终端继续显式阻塞；本轴不选择替代路线、不组合日计划、不计算机会成本，也不证明 fresh 产物回执。
+- 聚焦 fixture 现为 `76/76` 已解析、2 条匹配、74 条上游不适用、0 条阻塞；钓鱼和商店预算分别验证精确站位、抵达/完成时刻、尝试数量、体力与编译时长，篡改随机预算报告会被确定性重建拒绝。Core game-free `77/77`、Backend `194/194` 及 Bootstrap 全链自测通过，实验项目 Release 构建为 0 warning / 0 error；训练授权保持 false，未启动游戏或训练。
+- 下一固定轴是 `opportunity_cost`，随后才是 fresh 终态回执。当前成果只证明“若选择这一条路线，单日时间和体力是否可行”，不能提前宣称 Teacher 路线组合或正式训练准入完成。
+
 ## 2026-09-14 普通无饵钓鱼重试预算闭合
 
 - `fishing_forecast` 已成为按 `location_id + rod_slot_index` 隔离缓存的轻量透明快照。它只运行 world/fishing 必需读取器，不再连带扫描玩家全库存、菜单、农场、NPC 或全部地点；目标地点必须已经加载，错误地点、鱼竿槽位、跨存档/玩家/日期/时刻或超过 30 tick 的预测都会失败关闭。

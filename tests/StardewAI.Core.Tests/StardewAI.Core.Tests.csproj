@@ -46,6 +46,10 @@
     <Compile Include="CurrencyReservationLedgerTests.cs" />
     <Compile Include="FishingTerminalProbabilityEvaluatorTests.cs" />
     <Compile Include="FishingTerminalProbabilitySnapshotProjectorTests.cs" />
+    <Compile Include="FishingAttemptBudgetPolicyTests.cs" />
+    <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
+    <Compile Include="GameClockBudgetPolicyTests.cs" />
+    <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="GenericMovementClearanceBoundarySourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />

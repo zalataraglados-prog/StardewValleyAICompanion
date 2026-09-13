@@ -7,6 +7,52 @@ namespace StardewAI.Core.Tests;
 public sealed partial class FutureRouteDateEvidenceProducerTests
 {
     [Fact]
+    public void ExactTargetModeRoutesToTheRequestedStandTile()
+    {
+        var request = Request();
+        request.RequireExactTargetTile = true;
+
+        var production = new FutureRouteDateEvidenceProducer().Produce(
+            RouteGraph(),
+            DateEvidence(totalDays: 12),
+            request,
+            Timing());
+
+        Assert.Equal(
+            FutureRouteDateEvidenceProductionStatus.Produced,
+            production.Status);
+        Assert.Equal(906, production.GuaranteedArrivalByTime);
+        var approach = Assert.Single(
+            Assert.IsType<FutureRouteAccessScenario>(production.Scenario)
+                .ApproachEvidence!);
+        Assert.Equal(
+            (request.TargetTileX, request.TargetTileY),
+            (approach.StandTileX, approach.StandTileY));
+    }
+
+    [Fact]
+    public void ExactTargetModeFailsClosedWhenRequestedStandIsUnreachable()
+    {
+        var request = Request();
+        request.TargetTileX = 99;
+        request.RequireExactTargetTile = true;
+
+        var production = new FutureRouteDateEvidenceProducer().Produce(
+            RouteGraph(),
+            DateEvidence(totalDays: 12),
+            request,
+            Timing());
+
+        Assert.Equal(
+            FutureRouteDateEvidenceProductionStatus.Blocked,
+            production.Status);
+        Assert.Null(production.GuaranteedArrivalByTime);
+        Assert.Contains(
+            "future_route_exact_target_tile_unreachable",
+            production.BlockingReasons);
+    }
+
+    [Fact]
     public void DateBoundNativeGridAndGateProduceConservativeContactProof()
     {
         var graph = RouteGraph();
