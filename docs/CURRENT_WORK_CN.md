@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期处理提前量轴求值
+
+- 新增 `acquisition_route_target_date_processing_lead_time.v1` 与 `build-acquisition-route-target-date-processing-lead-time`。构建器必须读取并逐对象重建完整库存预留报告，同时核对静态来源、同日透明快照和全部 route occurrence；聚焦 fixture 继续保留 `76/76`，未知来源类型不能默认为零等待。
+- 本轴只回答“确定性产出等待是否允许该路线在目标日交付”。商店、钓鱼、地点采集等即时交互没有生产等待；交互耗时仍归 `daily_time_energy_budget`，钓鱼、挖掘、掉落等随机尝试仍归 `stochastic_retry_budget`，两者都没有被伪装成本轴成功。
+- 作物路线复用反编译锁定的 `Data/Crops DaysInPhase` 与透明桥逐格 `farm.crops/current_location.crops`。空耕地当天播种会保留权威基础生长期，但考虑肥料、技能和水田加速后只发布反编译可证明的“不早于次日”下限，因此可靠排除同日交付而不伪造精确成熟日；已有作物只有 `ready_for_harvest=true` 才能同日通过。容量汇总声称存在目标作物但逐格状态缺失、数量不一致、产物投影非 exact 或生长倒计时矛盾时失败关闭。
+- 蟹笼路线复用全局 `player.crab_pot_network`：一致的现成目标产物为零日等待；已服务但尚未产出时依据锁定 `CrabPot.DayUpdate` 只证明最早次晨尝试，产物身份概率仍留给随机重试轴。机器、畜牧、鱼塘、果树、太阳能板和树液采集器等尚未穿过上游的生产类已显式登记，若提前到达本轴会失败关闭，不能偷用即时交互规则。
+- 聚焦自测结果为 72 条上游不适用、2 条即时匹配、2 条新种作物确定性超期；成熟作物变体恢复为 4 条匹配，删除逐格作物状态后仅两条作物路线阻塞，篡改上游报告被拒绝。训练授权仍为 false；下一固定依赖轴为 `stochastic_retry_budget`，之后仍有日时间/体力、机会成本和 fresh 终态回执。
+
 ## 2026-09-13 显式目标日期库存预留轴求值
 
 - 新增 `acquisition_route_target_date_inventory_reservation.v1` 与 `build-acquisition-route-target-date-inventory-reservation`。构建器必须显式读取 `--strategy-ledger`，重新生成并逐对象核对完整货币预算报告，再保持每个 route occurrence 原样进入预留轴；缺账本、错误保存/玩家、旧或损坏契约不能退化为空账本。
