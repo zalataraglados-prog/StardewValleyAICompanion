@@ -33,6 +33,10 @@ internal static partial class BootstrapSelfTest
         var targetDateCalendarPath = Path.Combine(root, "target-date-calendar.json");
         var targetDateUnlockPath = Path.Combine(root, "target-date-unlock.json");
         var targetDateFestivalPath = Path.Combine(root, "target-date-festival.json");
+        var targetDateLocationPath = Path.Combine(root, "target-date-location.json");
+        var targetDateRouteCalibrationPath = Path.Combine(
+            root,
+            "target-date-route-timing.json");
         var targetDateUnlockSnapshotPath = Path.Combine(
             root,
             "target-date-unlock-snapshot.json");
@@ -54,6 +58,27 @@ internal static partial class BootstrapSelfTest
         var tamperedTargetDateUnlockPath = Path.Combine(
             root,
             "tampered-target-date-unlock.json");
+        var tamperedTargetDateFestivalPath = Path.Combine(
+            root,
+            "tampered-target-date-festival.json");
+        var missingRouteSnapshotPath = Path.Combine(
+            root,
+            "missing-route-evidence-snapshot.json");
+        var missingRouteUnlockPath = Path.Combine(
+            root,
+            "missing-route-evidence-unlock.json");
+        var missingRouteFestivalPath = Path.Combine(
+            root,
+            "missing-route-evidence-festival.json");
+        var deniedRouteSnapshotPath = Path.Combine(
+            root,
+            "denied-route-snapshot.json");
+        var deniedRouteUnlockPath = Path.Combine(
+            root,
+            "denied-route-unlock.json");
+        var deniedRouteFestivalPath = Path.Combine(
+            root,
+            "denied-route-festival.json");
         var calibrationPath = Path.Combine(root, "route-timing.json");
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var intentsPath = Path.Combine(root, "master-angler-intents.json");
@@ -847,6 +872,192 @@ internal static partial class BootstrapSelfTest
                     value.Status == "resolved_match" &&
                     value.ConditionMatches == true),
             "Explicit target-date festival-state axis resolution drifted.");
+
+        Write(
+            targetDateRouteCalibrationPath,
+            StageOneRouteTimingCalibration(totalDays: 0));
+        var targetDateLocation =
+            AcquisitionRouteTargetDateLocationBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        Write(targetDateLocationPath, targetDateLocation);
+        var targetDateLocationShop = targetDateLocation.Routes.Single(route =>
+            route.UpstreamRoute.UpstreamRoute.RequirementId ==
+                "community_center:bundle:Pantry/5" &&
+            route.UpstreamRoute.UpstreamRoute.RouteKind == "sells");
+        var sourceFestivalShopJson = JsonSerializer.Serialize(
+            targetDateFestivalShop,
+            JsonDefaults.Options);
+        var carriedFestivalShopJson = JsonSerializer.Serialize(
+            targetDateLocationShop.UpstreamRoute,
+            JsonDefaults.Options);
+        Require(targetDateLocation.Status ==
+                    "complete_target_date_location_route_axis_downstream_pending" &&
+                targetDateLocation.RouteOccurrenceInventoryComplete &&
+                targetDateLocation.LocationRouteAxisResolutionComplete &&
+                !targetDateLocation.TrainingLabelEligible &&
+                targetDateLocation.TargetTotalDay == 0 &&
+                targetDateLocation.RouteOccurrenceCount == 76 &&
+                targetDateLocation.LocationRouteAxisResolvedCount == 76 &&
+                targetDateLocation.LocationRouteMatchCount == 4 &&
+                targetDateLocation.LocationRouteMissCount == 0 &&
+                targetDateLocation.NotApplicableStaticWindowCount == 72 &&
+                targetDateLocation.NotApplicableUnlockStateCount == 0 &&
+                targetDateLocation.NotApplicableCalendarConditionCount == 0 &&
+                targetDateLocation.BlockedUpstreamCount == 0 &&
+                targetDateLocation.BlockedLocationEvidenceCount == 0 &&
+                carriedFestivalShopJson == sourceFestivalShopJson &&
+                targetDateLocationShop.LocationRouteMatchesTargetDate == true &&
+                targetDateLocationShop.TargetEvaluations.Length == 1 &&
+                targetDateLocationShop.TargetEvaluations[0].TargetLocationId ==
+                    "FixtureShop" &&
+                targetDateLocationShop.TargetEvaluations[0]
+                    .GuaranteedArrivalByTime == 902 &&
+                targetDateLocationShop.TargetEvaluations[0].Path.Length == 2,
+            "Target-date location-route axis resolution drifted.");
+
+        var tamperedTargetDateFestival = JsonNode.Parse(
+            File.ReadAllText(targetDateFestivalPath))!.AsObject();
+        tamperedTargetDateFestival["routes"]![0]!["upstream_route"]!
+            ["source_id"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDateFestivalPath,
+            tamperedTargetDateFestival.ToJsonString(JsonDefaults.Options));
+        var tamperedTargetDateFestivalRejected = false;
+        try
+        {
+            _ = AcquisitionRouteTargetDateLocationBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                tamperedTargetDateFestivalPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedTargetDateFestivalRejected = true;
+        }
+        Require(tamperedTargetDateFestivalRejected,
+            "A tampered target-date festival report did not fail closed.");
+
+        var missingRouteSnapshot = JsonNode.Parse(
+            File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();
+        missingRouteSnapshot["state"]!["locations"]!.AsObject()
+            .Remove("social_route_date_evidence");
+        File.WriteAllText(
+            missingRouteSnapshotPath,
+            missingRouteSnapshot.ToJsonString(JsonDefaults.Options));
+        var missingRouteUnlock = AcquisitionRouteTargetDateUnlockBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            missingRouteSnapshotPath);
+        Write(missingRouteUnlockPath, missingRouteUnlock);
+        var missingRouteFestival =
+            AcquisitionRouteTargetDateFestivalBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                missingRouteUnlockPath,
+                missingRouteSnapshotPath);
+        Write(missingRouteFestivalPath, missingRouteFestival);
+        var missingRouteReport =
+            AcquisitionRouteTargetDateLocationBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                missingRouteUnlockPath,
+                missingRouteFestivalPath,
+                missingRouteSnapshotPath,
+                targetDateRouteCalibrationPath);
+        Require(missingRouteReport.Status ==
+                    "partial_target_date_location_route_axis_blocks" &&
+                missingRouteReport.RouteOccurrenceInventoryComplete &&
+                !missingRouteReport.LocationRouteAxisResolutionComplete &&
+                !missingRouteReport.TrainingLabelEligible &&
+                missingRouteReport.LocationRouteAxisResolvedCount == 72 &&
+                missingRouteReport.LocationRouteMatchCount == 0 &&
+                missingRouteReport.LocationRouteMissCount == 0 &&
+                missingRouteReport.NotApplicableStaticWindowCount == 72 &&
+                missingRouteReport.BlockedLocationEvidenceCount == 4 &&
+                missingRouteReport.Routes.Where(route =>
+                    route.LocationRouteAxisStatus ==
+                        "blocked_location_route_evidence").All(route =>
+                    route.BlockingReasons.Contains(
+                        "location_route_date_evidence_missing")),
+            "Missing transparent route evidence did not fail closed per active route.");
+
+        WriteStageOneCollectionSnapshot(
+            deniedRouteSnapshotPath,
+            "denied-route-state",
+            fish,
+            totalDays: 0,
+            timeOfDay: 700,
+            shopDoorAllowed: false);
+        var deniedRouteUnlock = AcquisitionRouteTargetDateUnlockBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            routeCalendarPath,
+            targetDateCalendarPath,
+            deniedRouteSnapshotPath);
+        Write(deniedRouteUnlockPath, deniedRouteUnlock);
+        var deniedRouteFestival =
+            AcquisitionRouteTargetDateFestivalBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                deniedRouteUnlockPath,
+                deniedRouteSnapshotPath);
+        Write(deniedRouteFestivalPath, deniedRouteFestival);
+        var deniedRouteReport =
+            AcquisitionRouteTargetDateLocationBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                deniedRouteUnlockPath,
+                deniedRouteFestivalPath,
+                deniedRouteSnapshotPath,
+                targetDateRouteCalibrationPath);
+        var deniedShop = deniedRouteReport.Routes.Single(route =>
+            route.UpstreamRoute.UpstreamRoute.RequirementId ==
+                "community_center:bundle:Pantry/5" &&
+            route.UpstreamRoute.UpstreamRoute.RouteKind == "sells");
+        Require(deniedRouteReport.Status ==
+                    "complete_target_date_location_route_axis_downstream_pending" &&
+                deniedRouteReport.LocationRouteAxisResolutionComplete &&
+                deniedRouteReport.LocationRouteAxisResolvedCount == 76 &&
+                deniedRouteReport.LocationRouteMatchCount == 3 &&
+                deniedRouteReport.LocationRouteMissCount == 1 &&
+                deniedRouteReport.BlockedLocationEvidenceCount == 0 &&
+                deniedShop.LocationRouteAxisStatus ==
+                    "resolved_location_route_miss" &&
+                deniedShop.LocationRouteMatchesTargetDate == false &&
+                deniedShop.TargetEvaluations.Single().Status ==
+                    "resolved_route_unavailable_on_target_date" &&
+                deniedShop.BlockingReasons.Length == 0,
+            "A complete negative route fact was misclassified as missing evidence.");
 
         var missingCalendarSnapshot = JsonNode.Parse(
             File.ReadAllText(targetDateUnlockSnapshotPath))!.AsObject();

@@ -227,9 +227,10 @@ internal static partial class BootstrapSelfTest
         int fromY,
         string target,
         int targetX,
-        int targetY) => new
+        int targetY,
+        string kind = "building_door") => new
     {
-        kind = "building_door",
+        kind,
         from_location = from,
         from_x = fromX,
         from_y = fromY,
@@ -239,9 +240,14 @@ internal static partial class BootstrapSelfTest
         resolved = true
     };
 
-    private static object Location(string id) => new
+    private static object Location(
+        string id,
+        bool seedsIgnoreSeasonsHere = false,
+        object[]? actionGates = null) => new
     {
         location_id = id,
+        location_context_id = "Default",
+        seeds_ignore_seasons_here = seedsIgnoreSeasonsHere,
         map_width = 5,
         map_height = 10,
         projection_status = "exact_current_date_static_native_walkability",
@@ -254,6 +260,6 @@ internal static partial class BootstrapSelfTest
         unsupported_route_action_record_count = 0,
         unsupported_route_action_tile_count = 0,
         unsupported_route_action_tiles = Array.Empty<object>(),
-        action_gates = Array.Empty<object>()
+        action_gates = actionGates ?? Array.Empty<object>()
     };
 }

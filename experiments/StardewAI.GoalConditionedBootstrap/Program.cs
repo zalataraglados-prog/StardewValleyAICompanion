@@ -60,6 +60,9 @@ try
         case "build-acquisition-route-target-date-festival-state":
             BuildAcquisitionRouteTargetDateFestivalState(options);
             break;
+        case "build-acquisition-route-target-date-location-route":
+            BuildAcquisitionRouteTargetDateLocationRoute(options);
+            break;
         case "build-current-full-shipment-teacher-frontier":
             BuildCurrentFullShipmentTeacherFrontier(options);
             break;
@@ -111,9 +114,12 @@ try
         case "self-test-current-collection":
             SelfTestCurrentCollection(options);
             break;
+        case "self-test-current-stage-one-collection":
+            SelfTestCurrentStageOneCollection(options);
+            break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, or self-test-current-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
     }
 }
 catch (Exception ex)
@@ -372,6 +378,23 @@ static void BuildAcquisitionRouteTargetDateFestivalState(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildAcquisitionRouteTargetDateLocationRoute(Arguments options)
+{
+    var report = AcquisitionRouteTargetDateLocationBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"),
+        options.Required("calendar-resolution"),
+        options.Required("target-date-calendar"),
+        options.Required("target-date-unlock"),
+        options.Required("target-date-festival"),
+        options.Required("snapshot"),
+        options.Required("route-timing-calibration"));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete)
+        Environment.ExitCode = 2;
+}
+
 static void BuildCurrentFullShipmentTeacherFrontier(Arguments options)
 {
     var report = CurrentFullShipmentTeacherFrontierBuilder.Build(
@@ -596,6 +619,10 @@ static void SelfTest(Arguments options)
 
 static void SelfTestCurrentCollection(Arguments options)
     => BootstrapSelfTest.RunCurrentCollection(options.Required("output-root"));
+
+static void SelfTestCurrentStageOneCollection(Arguments options)
+    => BootstrapSelfTest.RunCurrentStageOneCollection(
+        options.Required("output-root"));
 
 static void Write(string path, object value)
 {

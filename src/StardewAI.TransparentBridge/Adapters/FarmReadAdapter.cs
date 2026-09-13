@@ -25,6 +25,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
     private static readonly string[] FarmFields =
     {
         "farm_type",
+        "farm_type_key",
         "farm_identity",
         "crop_catalog",
         "shipping_bins",
@@ -79,6 +80,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return Section("farm", new Dictionary<string, object>
         {
             ["farm_type"] = Field(Game1.whichFarm, "Game1.whichFarm", tick, "vanilla_1_6_farm"),
+            ["farm_type_key"] = Field(Game1.GetFarmTypeKey(), "Game1.GetFarmTypeKey()", tick, "vanilla_1_6_farm"),
             ["farm_identity"] = Field(new
             {
                 location_name = farm.Name,
