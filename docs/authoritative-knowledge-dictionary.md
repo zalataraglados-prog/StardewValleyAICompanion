@@ -444,6 +444,15 @@ cannot create facts or executable edges. Every required method must terminate at
 candidate/compiler/executor chain or at an explicit blocker. Human demonstrations are optional
 post-baseline calibration data, not a training prerequisite.
 
+Requirement identity is indivisible across the target-date chain. Every occurrence must preserve
+its authoritative match kind, positive amount and non-negative minimum quality from lowering through
+calendar, unlock, route, facility, resources, currency, reservation and production timing. A stage
+that proves one ordinary item does not prove a multi-item or quality-constrained requirement. Crop
+capacity and seed calculations may use only locked `Data/Crops` minimum yield; native shop and ready
+crab-pot outputs must retain exact stack and quality. Missing exact quality evidence blocks rather
+than substituting expected quality. Random retry counts that increase consumables must be included in
+the final resource, currency and atomic reservation proof before a route can authorize execution.
+
 Goal-direction ownership is not copied into the dictionary or experiment. The production
 `GrandpaDirectionCatalog` is the sole mapping from score criteria to directions, permitted
 options, effective goals, and demand families. Dictionary-derived dependency expansion is a

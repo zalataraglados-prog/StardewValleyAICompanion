@@ -71,11 +71,45 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 "Wild-seed representative HarvestItemId drifted: " + seedItemId);
         }
 
+        var harvestMinStack = ReadRequiredCropInt(
+            crop,
+            "HarvestMinStack",
+            seedItemId);
+        var harvestMaxStack = ReadRequiredCropInt(
+            crop,
+            "HarvestMaxStack",
+            seedItemId);
+        var extraHarvestChance = ReadRequiredCropDouble(
+            crop,
+            "ExtraHarvestChance",
+            seedItemId);
+        var harvestMinQuality = ReadRequiredCropInt(
+            crop,
+            "HarvestMinQuality",
+            seedItemId);
+        var harvestMaxQuality = ReadNullableCropInt(
+            crop,
+            "HarvestMaxQuality",
+            seedItemId);
+        Require(harvestMinStack > 0 &&
+                harvestMaxStack > 0 &&
+                extraHarvestChance >= 0d &&
+                harvestMinQuality >= 0 &&
+                (!harvestMaxQuality.HasValue ||
+                 harvestMaxQuality.Value >= harvestMinQuality),
+            "Crop harvest quantity or quality contract is invalid: " +
+            seedItemId);
+
         var plantableRules = ReadPlantableLocationRules(crop, seedItemId);
         var cropEvidence = new AcquisitionCropSourceEvidence(
             seedItemId,
             dataHarvestQualifiedItemId,
             possibleOutputs,
+            harvestMinStack,
+            harvestMaxStack,
+            extraHarvestChance,
+            harvestMinQuality,
+            harvestMaxQuality,
             seasons,
             daysInPhase,
             baseGrowthDays,
@@ -187,6 +221,36 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var result = 0;
         Require(row.TryGetProperty(property, out var value) &&
                 value.ValueKind == JsonValueKind.Number &&
+                value.TryGetInt32(out result),
+            "Crop " + property + " is invalid: " + sourceId);
+        return result;
+    }
+
+    private static double ReadRequiredCropDouble(
+        JsonElement row,
+        string property,
+        string sourceId)
+    {
+        var result = 0d;
+        Require(row.TryGetProperty(property, out var value) &&
+                value.ValueKind == JsonValueKind.Number &&
+                value.TryGetDouble(out result) &&
+                double.IsFinite(result),
+            "Crop " + property + " is invalid: " + sourceId);
+        return result;
+    }
+
+    private static int? ReadNullableCropInt(
+        JsonElement row,
+        string property,
+        string sourceId)
+    {
+        Require(row.TryGetProperty(property, out var value),
+            "Crop " + property + " is missing: " + sourceId);
+        if (value.ValueKind == JsonValueKind.Null)
+            return null;
+        var result = 0;
+        Require(value.ValueKind == JsonValueKind.Number &&
                 value.TryGetInt32(out result),
             "Crop " + property + " is invalid: " + sourceId);
         return result;

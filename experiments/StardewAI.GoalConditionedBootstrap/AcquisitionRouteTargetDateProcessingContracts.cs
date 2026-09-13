@@ -72,7 +72,7 @@ public sealed class AcquisitionRouteTargetDateProcessingReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The processing_lead_time axis runs only after an exact inventory-reservation match. Immediate interactions carry zero deterministic production delay; action duration remains owned by daily_time_energy_budget and random attempts remain owned by stochastic_retry_budget. Crop routes bind authoritative native growth data and exact live per-tile crop state. A new planting cannot satisfy the same target day; an existing crop must be harvest-ready on that date. Crab pots distinguish a ready matching output from a next-morning production attempt. Production route kinds without a locked evaluator fail closed instead of defaulting to zero time. This report neither selects routes nor mutates reservations, and training authorization stays false.";
+        "The processing_lead_time axis runs only after an exact inventory-reservation match. Immediate interactions carry zero deterministic production delay; action duration remains owned by daily_time_energy_budget and random attempts remain owned by stochastic_retry_budget. Crop routes bind authoritative native growth, minimum yield and quality bounds plus exact live per-tile crop state; same-day readiness requires the summed proven output to cover the full route amount and minimum quality. A new planting cannot satisfy the same target day. Crab pots distinguish exact ready stack and quality from a next-morning production attempt. Production route kinds without a locked evaluator fail closed instead of defaulting to zero time. This report neither selects routes nor mutates reservations, and training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateProcessing(
@@ -110,6 +110,10 @@ public sealed record AcquisitionProcessingLeadTimeEvaluation(
     int? ProvenLeadTimeDaysLowerBound,
     [property: JsonPropertyName("proven_not_before_total_day")]
     int? ProvenNotBeforeTotalDay,
+    [property: JsonPropertyName("proven_output_quantity_lower_bound")]
+    int? ProvenOutputQuantityLowerBound,
+    [property: JsonPropertyName("proven_minimum_quality")]
+    int? ProvenMinimumQuality,
     [property: JsonPropertyName("output_ready_on_target_date")]
     bool? OutputReadyOnTargetDate,
     [property: JsonPropertyName("evidence_paths")]

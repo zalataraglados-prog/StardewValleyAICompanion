@@ -8,6 +8,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         AcquisitionRouteTargetDateFacility route,
         AcquisitionResourceInputSnapshotState state)
     {
+        var requiredBaitQuantity = RequiredAmount(route);
         var windows = route.UpstreamRoute.UpstreamRoute.UpstreamRoute
             .MatchingWindows;
         Require(windows.Length > 0,
@@ -24,14 +25,14 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                 new AcquisitionResourceInputEvaluation(
                     "magic_bait",
                     MagicBaitQualifiedItemId,
-                    1,
+                    requiredBaitQuantity,
                     0,
                     "resolved_resource_input_miss",
                     new[] { "state.fishing.rod_inventory.value[]" },
                     Array.Empty<string>()),
                 "no_magic_bait_capable_rod");
         }
-        if (state.AttachedMagicBaitQuantity > 0)
+        if (state.AttachedMagicBaitQuantity >= requiredBaitQuantity)
         {
             return ResolvedMatch(
                 route,
@@ -39,7 +40,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                 new AcquisitionResourceInputEvaluation(
                     "attached_magic_bait",
                     MagicBaitQualifiedItemId,
-                    1,
+                    requiredBaitQuantity,
                     state.AttachedMagicBaitQuantity,
                     "resolved_resource_input_match",
                     new[] { "state.fishing.rod_inventory.value[].bait" },
@@ -50,7 +51,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             FishingBait,
             "loose_magic_bait",
             MagicBaitQualifiedItemId,
-            1,
+            checked(requiredBaitQuantity -
+                state.AttachedMagicBaitQuantity),
             state);
     }
 

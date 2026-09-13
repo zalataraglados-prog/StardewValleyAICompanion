@@ -67,8 +67,11 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             Require(result.TryGetValue(route.RouteOccurrenceId, out var row) &&
                     row.RouteKind == RouteKind(route) &&
                     row.QualifiedItemId == QualifiedItemId(route) &&
-                    row.SourceId == SourceId(route),
-                "Static calendar source route identity drifted.");
+                    row.SourceId == SourceId(route) &&
+                    row.MatchKind == MatchKind(route) &&
+                    row.RequiredAmount == RequiredAmount(route) &&
+                    row.MinimumQuality == MinimumQuality(route),
+                "Static calendar source route requirement drifted.");
         }
         return result;
     }
@@ -84,6 +87,18 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
     private static string SourceId(
         AcquisitionRouteTargetDateFacility route) =>
         route.UpstreamRoute.UpstreamRoute.UpstreamRoute.SourceId;
+
+    private static string MatchKind(
+        AcquisitionRouteTargetDateFacility route) =>
+        route.UpstreamRoute.UpstreamRoute.UpstreamRoute.MatchKind;
+
+    private static int RequiredAmount(
+        AcquisitionRouteTargetDateFacility route) =>
+        route.UpstreamRoute.UpstreamRoute.UpstreamRoute.RequiredAmount;
+
+    private static int MinimumQuality(
+        AcquisitionRouteTargetDateFacility route) =>
+        route.UpstreamRoute.UpstreamRoute.UpstreamRoute.MinimumQuality;
 
     private static bool EqualJson<T>(T left, T right)
     {

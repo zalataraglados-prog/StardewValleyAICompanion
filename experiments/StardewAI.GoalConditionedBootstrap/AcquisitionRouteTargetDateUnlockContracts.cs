@@ -90,6 +90,9 @@ public sealed record AcquisitionRouteTargetDateUnlock(
     [property: JsonPropertyName("alternative_index")] int AlternativeIndex,
     [property: JsonPropertyName("route_index")] int RouteIndex,
     [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("match_kind")] string MatchKind,
+    [property: JsonPropertyName("required_amount")] int RequiredAmount,
+    [property: JsonPropertyName("minimum_quality")] int MinimumQuality,
     [property: JsonPropertyName("route_kind")] string RouteKind,
     [property: JsonPropertyName("source_id")] string SourceId,
     [property: JsonPropertyName("source_resolution_status")]

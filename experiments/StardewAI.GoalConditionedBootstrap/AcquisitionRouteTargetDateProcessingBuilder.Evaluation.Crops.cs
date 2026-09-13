@@ -15,10 +15,20 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 CropGrowth,
                 "authoritative_crop_growth_evidence_missing");
         }
+        if (!AcquisitionOutputProof.CanGuaranteeQuality(
+                staticRoute.CropSource.HarvestMinQuality,
+                staticRoute.MinimumQuality))
+        {
+            return Blocked(
+                route,
+                CropGrowth,
+                "live_crop_exact_harvest_quality_projection_missing:" +
+                staticRoute.MinimumQuality);
+        }
         var facility = route.UpstreamRoute.UpstreamRoute.UpstreamRoute;
         var targets = facility.TargetEvaluations.Where(value =>
-                value.Status ==
-                    "resolved_prepared_cultivation_capacity_match")
+                value.MatchingExistingCropSlotCount.GetValueOrDefault() +
+                    value.OpenPreparedSoilSlotCount.GetValueOrDefault() > 0)
             .ToArray();
         if (targets.Length == 0)
         {
@@ -36,7 +46,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                     state,
                     targetTotalDay))
             .ToArray();
-        if (evaluations.Any(value => value.OutputReadyOnTargetDate == true))
+        var provenReadyQuantity = AcquisitionOutputProof.ReadyQuantity(
+            evaluations,
+            staticRoute.MinimumQuality);
+        if (provenReadyQuantity >= staticRoute.RequiredAmount)
             return ResolvedMatch(route, CropGrowth, evaluations);
         var blocking = evaluations.SelectMany(value => value.BlockingReasons)
             .Distinct(StringComparer.Ordinal)
@@ -48,7 +61,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 route,
                 CropGrowth,
                 evaluations,
-                "crop_output_not_ready_on_target_date");
+                provenReadyQuantity > 0
+                    ? "crop_ready_output_quantity_shortfall:" +
+                        provenReadyQuantity + ":" + staticRoute.RequiredAmount
+                    : "crop_output_not_ready_on_target_date");
     }
 
     private static AcquisitionProcessingLeadTimeEvaluation EvaluateCropTarget(
@@ -63,6 +79,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             return EvaluateExistingCrop(
                 target,
                 qualifiedItemId,
+                cropSource,
                 state,
                 targetTotalDay);
         }
@@ -83,6 +100,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             cropSource.BaseGrowthDays,
             1,
             checked(targetTotalDay + 1),
+            null,
+            null,
             false,
             new[]
             {
@@ -95,6 +114,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
     private static AcquisitionProcessingLeadTimeEvaluation EvaluateExistingCrop(
         AcquisitionFacilityTargetEvaluation target,
         string qualifiedItemId,
+        AcquisitionCropSourceEvidence cropSource,
         AcquisitionProcessingLeadTimeSnapshotState state,
         int targetTotalDay)
     {
@@ -132,6 +152,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             .ToArray();
         if (lookup.Rows.Any(crop => !crop.Dead && crop.ReadyForHarvest))
         {
+            var readyCropCount = lookup.Rows.Count(crop =>
+                !crop.Dead && crop.ReadyForHarvest);
             return new AcquisitionProcessingLeadTimeEvaluation(
                 target.TargetLocationId,
                 "existing_crop",
@@ -140,6 +162,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 null,
                 0,
                 targetTotalDay,
+                AcquisitionQuantityMath.Multiply(
+                    cropSource.HarvestMinStack,
+                    readyCropCount),
+                cropSource.HarvestMinQuality,
                 true,
                 evidencePaths,
                 Array.Empty<string>());
@@ -164,6 +190,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 null,
                 null,
                 null,
+                0,
+                null,
                 false,
                 evidencePaths,
                 Array.Empty<string>());
@@ -179,6 +207,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             null,
             leadDays,
             checked(targetTotalDay + leadDays),
+            null,
+            null,
             false,
             evidencePaths,
             Array.Empty<string>());

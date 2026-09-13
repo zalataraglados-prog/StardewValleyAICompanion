@@ -48,6 +48,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
 
     private static AcquisitionRouteTargetDateFacility Evaluate(
         AcquisitionRouteTargetDateLocation route,
+        AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionLocationRouteSnapshotState state)
     {
         if (!route.LocationRouteAxisResolved)
@@ -103,7 +104,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
                 Array.Empty<string>(),
                 Array.Empty<string>()),
             ExistingCrabPot => EvaluateExistingCrabPot(route),
-            PreparedCultivation => EvaluatePreparedCultivation(route, state),
+            PreparedCultivation => EvaluatePreparedCultivation(
+                route,
+                staticRoute,
+                state),
             _ => Result(
                 route,
                 "blocked_facility_capacity_evidence",
@@ -137,6 +141,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             ExistingCrabPot,
             targets.Select(target => new AcquisitionFacilityTargetEvaluation(
                 target.TargetLocationId,
+                null,
                 "resolved_existing_crab_pot_capacity_match",
                 null,
                 null,
@@ -155,22 +160,42 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
     private static AcquisitionRouteTargetDateFacility
         EvaluatePreparedCultivation(
             AcquisitionRouteTargetDateLocation route,
+            AcquisitionRouteCalendarResolution staticRoute,
             AcquisitionLocationRouteSnapshotState state)
     {
+        if (staticRoute.CropSource is null ||
+            staticRoute.CropSource.HarvestMinStack <= 0)
+        {
+            return Result(
+                route,
+                "blocked_facility_capacity_evidence",
+                false,
+                null,
+                PreparedCultivation,
+                Array.Empty<AcquisitionFacilityTargetEvaluation>(),
+                Array.Empty<string>(),
+                new[] { "authoritative_crop_yield_evidence_missing" });
+        }
         var qualifiedItemId =
             route.UpstreamRoute.UpstreamRoute.QualifiedItemId;
+        var requiredCropSlots = AcquisitionQuantityMath.DivideRoundUp(
+            staticRoute.RequiredAmount,
+            staticRoute.CropSource.HarvestMinStack);
         var evaluations = route.TargetEvaluations
             .Where(value => value.Status == "resolved_location_route_match")
             .Select(target => EvaluateCultivationTarget(
                 target.TargetLocationId,
                 qualifiedItemId,
+                requiredCropSlots,
                 state))
             .ToArray();
         Require(evaluations.Length > 0,
             "A matched crop route lacks a matched target location.");
 
-        if (evaluations.Any(value => value.Status ==
-                "resolved_prepared_cultivation_capacity_match"))
+        var knownSlotCount = evaluations.Sum(value =>
+                value.MatchingExistingCropSlotCount.GetValueOrDefault() +
+                value.OpenPreparedSoilSlotCount.GetValueOrDefault());
+        if (knownSlotCount >= requiredCropSlots)
         {
             return Result(
                 route,
@@ -206,7 +231,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             false,
             PreparedCultivation,
             evaluations,
-            new[] { "no_existing_target_crop_or_open_prepared_soil_slot" },
+            new[]
+            {
+                $"insufficient_prepared_cultivation_capacity:{knownSlotCount}:{requiredCropSlots}"
+            },
             Array.Empty<string>());
     }
 
@@ -214,6 +242,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
         EvaluateCultivationTarget(
             string targetLocationId,
             string qualifiedItemId,
+            int requiredCropSlots,
             AcquisitionLocationRouteSnapshotState state)
     {
         if (!state.TryGetLocation(targetLocationId, out var location) ||
@@ -223,6 +252,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
                 new[] { "target_location_capacity_row_missing" };
             return new AcquisitionFacilityTargetEvaluation(
                 targetLocationId,
+                requiredCropSlots,
                 "blocked_prepared_cultivation_capacity_evidence",
                 null,
                 null,
@@ -235,11 +265,16 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
 
         var capacity = location.CultivationCapacity;
         var matching = capacity.OccupiedSlotsFor(qualifiedItemId);
-        var matched = matching > 0 || capacity.OpenPreparedSoilSlotCount > 0;
-        if (!matched && capacity.UnresolvedHarvestItemSlotCount > 0)
+        var knownSlots = checked(matching +
+            capacity.OpenPreparedSoilSlotCount);
+        var matched = knownSlots >= requiredCropSlots;
+        if (!matched && capacity.UnresolvedHarvestItemSlotCount > 0 &&
+            checked(knownSlots + capacity.UnresolvedHarvestItemSlotCount) >=
+                requiredCropSlots)
         {
             return new AcquisitionFacilityTargetEvaluation(
                 targetLocationId,
+                requiredCropSlots,
                 "blocked_prepared_cultivation_capacity_evidence",
                 capacity.TotalPreparedSoilSlotCount,
                 capacity.OpenPreparedSoilSlotCount,
@@ -257,9 +292,11 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
         }
         return new AcquisitionFacilityTargetEvaluation(
             targetLocationId,
-            matched
-                ? "resolved_prepared_cultivation_capacity_match"
-                : "resolved_prepared_cultivation_capacity_miss",
+            requiredCropSlots,
+            matched ? "resolved_prepared_cultivation_capacity_match" :
+                knownSlots > 0
+                    ? "resolved_prepared_cultivation_capacity_contribution"
+                    : "resolved_prepared_cultivation_capacity_miss",
             capacity.TotalPreparedSoilSlotCount,
             capacity.OpenPreparedSoilSlotCount,
             matching,

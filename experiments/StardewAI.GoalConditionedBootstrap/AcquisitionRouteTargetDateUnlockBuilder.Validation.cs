@@ -24,6 +24,11 @@ public static partial class AcquisitionRouteTargetDateUnlockBuilder
                 source.BlockedStaticSourceCount == source.Routes.Count(route =>
                     !route.CalendarAxisResolved),
             "Target-date calendar counts drifted.");
+        Require(source.Routes.All(route =>
+                !string.IsNullOrWhiteSpace(route.MatchKind) &&
+                route.RequiredAmount > 0 &&
+                route.MinimumQuality >= 0),
+            "A target-date route lost its requirement amount or quality contract.");
     }
 
 }

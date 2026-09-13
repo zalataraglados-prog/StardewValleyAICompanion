@@ -36,6 +36,38 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             "A route kind lacks an explicit facility-capacity classification.");
     }
 
+    private static IReadOnlyDictionary<string,
+        AcquisitionRouteCalendarResolution> ValidateStaticSource(
+            AcquisitionRouteCalendarResolutionReport source,
+            AcquisitionRouteTargetDateLocationReport locations)
+    {
+        Require(source.SchemaVersion ==
+                    "acquisition_route_calendar_resolution.v1" &&
+                source.RouteOccurrenceInventoryComplete &&
+                !source.TrainingLabelEligible &&
+                source.RouteOccurrenceCount == source.Routes.Length &&
+                source.RouteOccurrenceCount == locations.RouteOccurrenceCount,
+            "Static calendar source metadata is incomplete.");
+        var result = source.Routes.ToDictionary(
+            route => route.RouteOccurrenceId,
+            StringComparer.Ordinal);
+        Require(result.Count == source.Routes.Length,
+            "Static calendar source contains duplicate route occurrences.");
+        foreach (var route in locations.Routes)
+        {
+            var target = route.UpstreamRoute.UpstreamRoute;
+            Require(result.TryGetValue(route.RouteOccurrenceId, out var row) &&
+                    row.RouteKind == target.RouteKind &&
+                    row.QualifiedItemId == target.QualifiedItemId &&
+                    row.SourceId == target.SourceId &&
+                    row.MatchKind == target.MatchKind &&
+                    row.RequiredAmount == target.RequiredAmount &&
+                    row.MinimumQuality == target.MinimumQuality,
+                "Static calendar source route requirement drifted.");
+        }
+        return result;
+    }
+
     private static bool EqualJson<T>(T left, T right)
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);

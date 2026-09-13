@@ -65,6 +65,8 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
     {
         var stockId = ReadString(entry, "synced_key");
         var itemId = ReadString(entry, "qualified_item_id");
+        var outputStack = ReadInt(entry, "stack");
+        var outputQuality = ReadInt(entry, "quality");
         var entryCurrency = ReadInt(entry, "currency");
         var price = ReadInt(entry, "price");
         var stock = ReadInt(entry, "stock");
@@ -72,6 +74,8 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
         var canBuy = ReadBool(entry, "can_buy_item");
         if (string.IsNullOrWhiteSpace(stockId) ||
             string.IsNullOrWhiteSpace(itemId) ||
+            !outputStack.HasValue || outputStack <= 0 ||
+            !outputQuality.HasValue || outputQuality < 0 ||
             entryCurrency != currencyId || !price.HasValue || price < 0 ||
             !stock.HasValue || !infinite.HasValue || !canBuy.HasValue ||
             (infinite == true && stock != int.MaxValue) ||
@@ -95,6 +99,8 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
             shopId,
             stockId,
             itemId,
+            outputStack.Value,
+            outputQuality.Value,
             currencyId,
             price.Value,
             stock.Value,

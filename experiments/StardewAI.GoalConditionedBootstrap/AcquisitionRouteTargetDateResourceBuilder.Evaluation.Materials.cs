@@ -10,8 +10,10 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         if (staticRoute.CropSource is null)
             return Blocked(route, CropSeed, "authoritative_crop_source_missing");
         var targets = route.TargetEvaluations;
-        if (targets.Any(target =>
-                target.MatchingExistingCropSlotCount > 0))
+        var guaranteedExistingQuantity = checked(targets.Sum(target =>
+            target.MatchingExistingCropSlotCount.GetValueOrDefault()) *
+            staticRoute.CropSource.HarvestMinStack);
+        if (guaranteedExistingQuantity >= staticRoute.RequiredAmount)
         {
             return Result(
                 route,
@@ -25,8 +27,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                         "existing_target_crop",
                         QualifiedItemId(route),
                         0,
-                        targets.Sum(target =>
-                            target.MatchingExistingCropSlotCount ?? 0),
+                        guaranteedExistingQuantity,
                         "resolved_existing_target_crop_requires_no_new_seed",
                         new[]
                         {
@@ -42,12 +43,17 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
 
         var seedQualifiedItemId = QualifyObjectId(
             staticRoute.CropSource.SeedItemId);
+        var remainingQuantity = checked(
+            staticRoute.RequiredAmount - guaranteedExistingQuantity);
+        var requiredSeedCount = AcquisitionQuantityMath.DivideRoundUp(
+            remainingQuantity,
+            staticRoute.CropSource.HarvestMinStack);
         return EvaluateMaterial(
             route,
             CropSeed,
             "crop_seed",
             seedQualifiedItemId,
-            1,
+            requiredSeedCount,
             state);
     }
 
@@ -71,6 +77,9 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                 quoteLookup.BlockingReasons);
         }
         var quote = quoteLookup.Quote;
+        var requiredPurchaseCount = AcquisitionQuantityMath.DivideRoundUp(
+            staticRoute.RequiredAmount,
+            quote.OutputStack);
         var staticTradeItem = string.IsNullOrWhiteSpace(shop.TradeItemId)
             ? null
             : QualifyObjectId(shop.TradeItemId);
@@ -109,7 +118,9 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             ShopTrade,
             "shop_trade_item",
             quote.TradeItemQualifiedId,
-            quote.TradeItemCount.Value,
+            AcquisitionQuantityMath.Multiply(
+                quote.TradeItemCount.Value,
+                requiredPurchaseCount),
             state);
     }
 
