@@ -121,10 +121,12 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 catalog.Status == "complete" &&
                 catalog.SourceInventoryComplete &&
                 catalog.StaticCalendarConstraintComplete &&
+                catalog.LocationRuleSpawnChanceInputInventoryComplete &&
                 catalog.NativeDenominatorCount == 72 &&
                 catalog.Species.Length == 72 &&
                 catalog.UnresolvedSpeciesIds.Length == 0 &&
                 catalog.UnresolvedCalendarRuleIds.Length == 0 &&
+                catalog.UnresolvedSpawnChanceInputRuleIds.Length == 0 &&
                 catalog.GoalId == inventory.GoalId &&
                 string.Equals(catalog.GameVersion, inventory.GameVersion,
                     StringComparison.Ordinal) &&

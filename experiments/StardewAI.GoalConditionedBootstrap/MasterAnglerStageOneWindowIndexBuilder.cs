@@ -14,7 +14,8 @@ public static class MasterAnglerStageOneWindowIndexBuilder
             new JsonSerializerOptions(JsonSerializerDefaults.Web))
             ?? throw new InvalidDataException("Master Angler opportunity catalog is null.");
         Require(catalog.Status == "complete" && catalog.SourceInventoryComplete &&
-                catalog.StaticCalendarConstraintComplete,
+                catalog.StaticCalendarConstraintComplete &&
+                catalog.LocationRuleSpawnChanceInputInventoryComplete,
             "Master Angler opportunity catalog is not complete.");
         Require(catalog.NativeDenominatorCount == 72 && catalog.Species.Length == 72,
             "Master Angler opportunity catalog does not contain the exact native denominator.");

@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 Master Angler 原生地点鱼概率输入目录
+
+- 权威需求清单新增独立的 `native_fish_spawn_chance_rule` 证据，哈希锁定反编译 `SpawnFishData.cs`，并逐段守卫 `GetChance` 的基础概率、好奇诱饵、每日运气、数量修正器、特定鱼饵和运气等级公式。原有 `native_location_spawn_rules` 证据同时明确覆盖 `GameLocation.getFish` 的规则排序与解析入口。
+- `master_angler_opportunity_catalog.v1` 现在对全部 180 条匹配原生地点规则保留直接/随机物品选择、`Chance`、每日运气开关、好奇诱饵修正、特定鱼饵加成与倍率、运气等级加成、完整数量修正器、修正器模式和 `UseFishCaughtSeededRandom`。真实 1.6.15 目录为 174 条直接选择、6 条随机选择、14 条精确鱼获计数种子随机，静态输入未解析项为 0。
+- 新完整性门会拒绝缺少这些字段却仍声称 `complete` 的旧目录；Master Angler 窗口、获取日历和当前 Teacher 前沿均继承此门。合成回归另外覆盖当前 180 条原生规则未使用的 `ChanceModifiers` 分支，避免未执行代码冒充支持。
+- 本步只闭合“目标鱼匹配规则的静态 spawn-chance 输入”，不等于目标投点的终端捕获概率。下一步必须按目标地点和投点组合 Default 与地点全部竞争规则，执行原生 `Precedence + 随机同级顺序`、两轮定向鱼饵回退、ItemQuery 与 `CheckGenericFishRequirements`，再生成单次目标产物概率；在此之前随机重试轴继续失败关闭，训练授权保持 false。
+
 ## 2026-09-13 显式目标日期随机重试预算轴首段
 
 - 新增 `acquisition_route_target_date_stochastic_retry_budget.v1` 与 `build-acquisition-route-target-date-stochastic-retry-budget`。构建器会逐对象重建处理提前量报告并核对静态来源，`uncertainty_mode` 也从 lowering 开始无损穿过静态日历、目标日日历和解锁记录，避免末端按 route kind 临时猜测随机性。全部 33 种 route kind 均有唯一随机性分类，分类漂移会直接拒绝输入。

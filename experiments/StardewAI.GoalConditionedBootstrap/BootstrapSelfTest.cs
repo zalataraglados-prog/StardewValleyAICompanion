@@ -62,6 +62,7 @@ internal static partial class BootstrapSelfTest
             "Legacy AI rollout leaked into expert retrieval.");
 
         VerifyMasterAnglerFullRouteIntent(outputRoot);
+        VerifyMasterAnglerChanceModifierParsing();
         VerifyCurrentFullShipmentTeacherFrontier(outputRoot);
         VerifyCurrentCollectionTeacherFrontier(outputRoot);
         VerifyCurrentStageOneCollectionTeacherFrontier(outputRoot);
