@@ -28,13 +28,28 @@ namespace StardewAI.Core.Training
                         request.TargetLocation);
                 return null;
             }
-            var targetStands = new[]
-            {
-                new RouteTileCoordinate(request.TargetTileX + 1, request.TargetTileY),
-                new RouteTileCoordinate(request.TargetTileX - 1, request.TargetTileY),
-                new RouteTileCoordinate(request.TargetTileX, request.TargetTileY + 1),
-                new RouteTileCoordinate(request.TargetTileX, request.TargetTileY - 1)
-            };
+            var targetStands = request.RequireExactTargetTile
+                ? new[]
+                {
+                    new RouteTileCoordinate(
+                        request.TargetTileX,
+                        request.TargetTileY)
+                }
+                : new[]
+                {
+                    new RouteTileCoordinate(
+                        request.TargetTileX + 1,
+                        request.TargetTileY),
+                    new RouteTileCoordinate(
+                        request.TargetTileX - 1,
+                        request.TargetTileY),
+                    new RouteTileCoordinate(
+                        request.TargetTileX,
+                        request.TargetTileY + 1),
+                    new RouteTileCoordinate(
+                        request.TargetTileX,
+                        request.TargetTileY - 1)
+                };
             var forbidden = connectorTiles.TryGetValue(
                     request.TargetLocation,
                     out var targetBlocked)
@@ -48,7 +63,9 @@ namespace StardewAI.Core.Training
                 forbidden);
             if (!stand.HasValue)
             {
-                failures.Add("future_route_target_adjacent_stand_unreachable");
+                failures.Add(request.RequireExactTargetTile
+                    ? "future_route_exact_target_tile_unreachable"
+                    : "future_route_target_adjacent_stand_unreachable");
                 return null;
             }
 

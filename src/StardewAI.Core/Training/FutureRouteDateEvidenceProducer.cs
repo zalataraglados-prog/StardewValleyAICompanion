@@ -29,6 +29,8 @@ namespace StardewAI.Core.Training
         public int TargetTileX { get; set; }
 
         public int TargetTileY { get; set; }
+
+        public bool RequireExactTargetTile { get; set; }
     }
 
     public sealed class FutureRouteDateEvidenceProduction
@@ -38,6 +40,8 @@ namespace StardewAI.Core.Training
         public FutureRouteAccessScenario? Scenario { get; set; }
 
         public int SuccessfulRouteVariantCount { get; set; }
+
+        public int? GuaranteedArrivalByTime { get; set; }
 
         public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 
@@ -116,6 +120,7 @@ namespace StardewAI.Core.Training
             {
                 Status = FutureRouteDateEvidenceProductionStatus.Produced,
                 SuccessfulRouteVariantCount = 1,
+                GuaranteedArrivalByTime = FromMinutes(search.ArrivalMinutes),
                 Scenario = new FutureRouteAccessScenario
                 {
                     TotalDays = request.TotalDays,

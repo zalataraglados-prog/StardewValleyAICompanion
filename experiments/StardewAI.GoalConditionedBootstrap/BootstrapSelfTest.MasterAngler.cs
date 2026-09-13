@@ -273,17 +273,19 @@ internal static partial class BootstrapSelfTest
         object[]? actionGates = null,
         int openPreparedSoilSlots = 0,
         int occupiedPreparedSoilSlots = 0,
-        object[]? occupiedHarvestItems = null) => new
+        object[]? occupiedHarvestItems = null,
+        int mapWidth = 5,
+        int mapHeight = 10) => new
     {
         location_id = id,
         location_context_id = "Default",
         seeds_ignore_seasons_here = seedsIgnoreSeasonsHere,
-        map_width = 5,
-        map_height = 10,
+        map_width = mapWidth,
+        map_height = mapHeight,
         projection_status = "exact_current_date_static_native_walkability",
-        static_walkable_tile_count = 50,
-        static_walkable_tile_ranges = Enumerable.Range(0, 10)
-            .Select(y => new { y, start_x = 0, end_x = 4 })
+        static_walkable_tile_count = mapWidth * mapHeight,
+        static_walkable_tile_ranges = Enumerable.Range(0, mapHeight)
+            .Select(y => new { y, start_x = 0, end_x = mapWidth - 1 })
             .ToArray(),
         build_conditions = (string?)null,
         build_conditions_met = (bool?)null,

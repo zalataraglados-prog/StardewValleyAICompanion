@@ -41,8 +41,12 @@ public sealed class TimeBudgetValidatorTests
         var report = new TimeBudgetValidator().Validate(model, queue);
 
         Assert.True(report.FitsRequired);
-        Assert.Equal("fishing_perfect_executor.v1", report.Items[0].Estimator);
-        Assert.Equal(51, report.Items[0].EstimatedMinutes);
+        Assert.Equal("fishing_perfect_executor.v2", report.Items[0].Estimator);
+        Assert.Equal(
+            FishingAttemptBudgetPolicy.ConservativeGameMinutesForAttempts(
+                3,
+                challengeBait: true),
+            report.Items[0].EstimatedMinutes);
         Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:fishing"));
         Assert.Contains(report.Items[0].Notes, item => item.Contains("bad_bobber_control"));
     }

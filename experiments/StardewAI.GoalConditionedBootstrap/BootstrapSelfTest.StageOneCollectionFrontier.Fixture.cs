@@ -321,8 +321,8 @@ internal static partial class BootstrapSelfTest
                                         effective_close_time = 1700
                                     }
                                 }),
-                            Location("Beach"),
-                            Location("FixtureShop")
+                            Location("Beach", mapWidth: 6),
+                            Location("FixtureShop", mapHeight: 20)
                         }
                     })
                 },

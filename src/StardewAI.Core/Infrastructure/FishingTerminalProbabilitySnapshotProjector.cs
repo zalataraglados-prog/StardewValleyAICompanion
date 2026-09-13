@@ -17,6 +17,8 @@ public sealed record FishingTerminalProbabilityProjectionResult
     public int WaterDepth { get; init; }
     public int StandTileX { get; init; }
     public int StandTileY { get; init; }
+    public int EffectiveFishingLevel { get; init; }
+    public int BaseFishingLevel { get; init; }
     public FishingTerminalProbabilityResult? Probability { get; init; }
     public string[] BlockingReasons { get; init; } = Array.Empty<string>();
 }
@@ -170,6 +172,8 @@ public static class FishingTerminalProbabilitySnapshotProjector
             WaterDepth = waterDepth,
             StandTileX = standTileX,
             StandTileY = standTileY,
+            EffectiveFishingLevel = fishingLevel.GetValueOrDefault(),
+            BaseFishingLevel = baseFishingLevel.GetValueOrDefault(),
             Probability = probability,
             BlockingReasons = probability.BlockingReasons
         };
