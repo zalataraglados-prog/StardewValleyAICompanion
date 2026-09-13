@@ -445,15 +445,30 @@ internal static partial class BootstrapSelfTest
         source_asset = RouteSourceAsset(routeKind),
         source_path = RouteSourcePath(routeKind, sourceId),
         supervision_mode = "deterministic_dependency",
-        uncertainty_mode = routeKind == "harvests_as"
-            ? "source_resolved_downstream"
-            : "deterministic_fresh_receipt",
+        uncertainty_mode = RouteUncertaintyMode(routeKind),
         required_downstream_dependency_axes =
             StageOneCollectionRouteDependencyAxes.Required,
         endpoint_option_ids = new[] { endpointOptionId },
         supporting_option_ids = Array.Empty<string>(),
         runtime_admission_ready = true,
         teacher_admission_ready = true
+    };
+
+    private static string RouteUncertaintyMode(string routeKind) => routeKind switch
+    {
+        "harvests_as" => "source_resolved_downstream",
+        "creates_reward_item" or
+        "native_bush_shake" or
+        "native_fruit_tree_produce" or
+        "native_ginger_harvest" or
+        "native_money_payment" or
+        "native_solar_panel_output" or
+        "native_spring_onion_harvest" or
+        "native_tea_bush_harvest" or
+        "native_tree_moss_harvest" or
+        "recipe_output" or
+        "sells" => "deterministic_fresh_receipt",
+        _ => "native_outcome_domain_and_retry_bound"
     };
 
     private static string RouteSourceAsset(string routeKind) => routeKind switch

@@ -106,6 +106,7 @@ public sealed record AcquisitionRouteCalendarResolution(
     [property: JsonPropertyName("required_amount")] int RequiredAmount,
     [property: JsonPropertyName("minimum_quality")] int MinimumQuality,
     [property: JsonPropertyName("route_kind")] string RouteKind,
+    [property: JsonPropertyName("uncertainty_mode")] string UncertaintyMode,
     [property: JsonPropertyName("source_id")] string SourceId,
     [property: JsonPropertyName("source_asset")] string SourceAsset,
     [property: JsonPropertyName("source_path")] string SourcePath,

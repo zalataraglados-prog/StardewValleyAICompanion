@@ -128,6 +128,7 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
             route.RequiredAmount,
             route.MinimumQuality,
             route.RouteKind,
+            route.UncertaintyMode,
             route.SourceId,
             route.Status,
             axisStatus,
@@ -160,6 +161,10 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         foreach (var route in source.Routes)
         {
             Require(!string.IsNullOrWhiteSpace(route.MatchKind) &&
+                    route.UncertaintyMode is
+                        "deterministic_fresh_receipt" or
+                        "source_resolved_downstream" or
+                        "native_outcome_domain_and_retry_bound" &&
                     route.RequiredAmount > 0 &&
                     route.MinimumQuality >= 0,
                 "A static route lost its requirement amount or quality contract.");

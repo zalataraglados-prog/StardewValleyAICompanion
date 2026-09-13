@@ -44,9 +44,15 @@ internal static partial class BootstrapSelfTest
         var targetDateProcessingPath = Path.Combine(
             root,
             "target-date-processing-lead-time.json");
+        var targetDateStochasticRetryPath = Path.Combine(
+            root,
+            "target-date-stochastic-retry-budget.json");
         var tamperedTargetDateReservationPath = Path.Combine(
             root,
             "tampered-target-date-inventory-reservation.json");
+        var tamperedTargetDateProcessingPath = Path.Combine(
+            root,
+            "tampered-target-date-processing-lead-time.json");
         var strategyLedgerPath = Path.Combine(root, "strategy-ledger.json");
         var materialReservedLedgerPath = Path.Combine(
             root,
@@ -1529,6 +1535,105 @@ internal static partial class BootstrapSelfTest
                         targetDateUnlockSnapshotPath),
                     JsonDefaults.Options),
             "Target-date processing-lead-time resolution is not deterministic.");
+
+        AcquisitionRouteTargetDateStochasticRetryReport BuildStochasticRetry(
+            string processingPath) =>
+            AcquisitionRouteTargetDateStochasticRetryBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                targetDateReservationPath,
+                processingPath,
+                strategyLedgerPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        var targetDateStochasticRetry = BuildStochasticRetry(
+            targetDateProcessingPath);
+        Write(targetDateStochasticRetryPath, targetDateStochasticRetry);
+        var targetDateStochasticShop = targetDateStochasticRetry.Routes.Single(
+            route => route.RouteOccurrenceId ==
+                targetDateProcessingShop.RouteOccurrenceId);
+        var targetDateStochasticFish = targetDateStochasticRetry.Routes.Single(
+            route => route.StochasticRetryAxisStatus ==
+                "blocked_stochastic_probability_evidence");
+        Require(targetDateStochasticRetry.Status ==
+                    "partial_target_date_stochastic_retry_budget_axis_blocks" &&
+                targetDateStochasticRetry.RouteOccurrenceInventoryComplete &&
+                !targetDateStochasticRetry
+                    .StochasticRetryAxisResolutionComplete &&
+                !targetDateStochasticRetry.TrainingLabelEligible &&
+                targetDateStochasticRetry.RouteOccurrenceCount == 76 &&
+                targetDateStochasticRetry
+                    .StochasticRetryAxisResolvedCount == 75 &&
+                targetDateStochasticRetry.StochasticRetryMatchCount == 1 &&
+                targetDateStochasticRetry
+                    .StochasticRetryNotRequiredCount == 1 &&
+                targetDateStochasticRetry.MaterializedOutputCount == 0 &&
+                targetDateStochasticRetry.NotApplicableUpstreamCount == 74 &&
+                targetDateStochasticRetry.BlockedUpstreamCount == 0 &&
+                targetDateStochasticRetry
+                    .BlockedProbabilityEvidenceCount == 1 &&
+                targetDateStochasticRetry.BlockedRetryReservationCount == 0 &&
+                targetDateStochasticRetry.TargetSuccessProbability ==
+                    StardewAI.Core.Infrastructure.StochasticRetryPolicy
+                        .TargetSuccessProbability &&
+                targetDateStochasticShop.UncertaintyMode ==
+                    "deterministic_fresh_receipt" &&
+                targetDateStochasticShop.StochasticRetryAxisStatus ==
+                    "resolved_stochastic_retry_not_required" &&
+                targetDateStochasticShop.RequiredOutputQuantity == 2 &&
+                targetDateStochasticShop.MinimumOutputQuality == 1 &&
+                targetDateStochasticShop.SingleAttemptSuccessProbability is null &&
+                targetDateStochasticShop.RequiredAttemptCount == 0 &&
+                targetDateStochasticShop.AdditionalRetryCount == 0 &&
+                targetDateStochasticFish.UncertaintyMode ==
+                    "native_outcome_domain_and_retry_bound" &&
+                targetDateStochasticFish.BlockingReasons.Single() ==
+                    "target_location_terminal_probability_evidence_missing:" +
+                    "native_location_fish_spawn" &&
+                JsonSerializer.Serialize(
+                    targetDateStochasticShop.UpstreamRoute,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    targetDateProcessingShop,
+                    JsonDefaults.Options),
+            "Target-date stochastic-retry-budget axis resolution drifted.");
+        Require(JsonSerializer.Serialize(
+                    targetDateStochasticRetry,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    BuildStochasticRetry(targetDateProcessingPath),
+                    JsonDefaults.Options),
+            "Target-date stochastic-retry-budget resolution is not deterministic.");
+
+        File.Copy(
+            targetDateProcessingPath,
+            tamperedTargetDateProcessingPath,
+            overwrite: true);
+        var tamperedProcessing = JsonNode.Parse(File.ReadAllText(
+            tamperedTargetDateProcessingPath))!.AsObject();
+        tamperedProcessing["routes"]![0]![
+            "processing_lead_time_axis_status"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDateProcessingPath,
+            tamperedProcessing.ToJsonString(JsonDefaults.Options));
+        var tamperedProcessingRejected = false;
+        try
+        {
+            _ = BuildStochasticRetry(tamperedTargetDateProcessingPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedProcessingRejected = true;
+        }
+        Require(tamperedProcessingRejected,
+            "Target-date processing artifact tampering was not rejected.");
 
         JsonElement CrabPotNetwork(
             bool ready,

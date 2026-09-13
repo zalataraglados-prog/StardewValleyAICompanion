@@ -24,6 +24,21 @@ Implementation may batch actions that share a decompiled native substrate, such 
 `Object.checkForAction`, but batching never merges their semantic contracts. Each action keeps
 independent preconditions, postconditions, fixture, and E3 evidence.
 
+## Stochastic route evidence boundary
+
+The authoritative lowering catalog assigns every one of its 33 acquisition route kinds exactly
+one uncertainty mode. That mode is carried through calendar, unlock, reservation and processing
+artifacts; downstream code must not recreate it from examples or display names. Deterministic
+receipts and source-resolved guaranteed outputs need no retry. Native stochastic outcomes need an
+exact target-location and terminal-action probability projection, including applicable conditions,
+output quantity, quality and outcome domain. A current-location fishing projection is not proof for
+a remote fishing tile.
+
+The shared planning confidence target is 0.95. It is a policy threshold, not a substitute for native
+probability. Retry counts that increase consumables must be fed back through resource, currency and
+atomic inventory-reservation validation before execution. Missing probability or reservation
+loopback evidence is a typed blocker and cannot produce a training label.
+
 ## Export coverage
 
 `StardewAI.KnowledgeExporter` creates a versioned export directory containing:

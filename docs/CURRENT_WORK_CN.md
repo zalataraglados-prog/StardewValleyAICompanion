@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-13 显式目标日期随机重试预算轴首段
+
+- 新增 `acquisition_route_target_date_stochastic_retry_budget.v1` 与 `build-acquisition-route-target-date-stochastic-retry-budget`。构建器会逐对象重建处理提前量报告并核对静态来源，`uncertainty_mode` 也从 lowering 开始无损穿过静态日历、目标日日历和解锁记录，避免末端按 route kind 临时猜测随机性。全部 33 种 route kind 均有唯一随机性分类，分类漂移会直接拒绝输入。
+- 确定性 fresh receipt 与处理轴已证明的保守产出使用零重试预算；原生随机路线若目标产物已在透明快照中物化，也可按实际数量和品质零重试领取。其余原生随机路线必须给出目标地点、目标终端动作的精确单次概率、产量、品质和条件上下文；当前地点钓鱼投影不能冒充远程地点概率。
+- 95% 成功阈值已抽到 Core 唯一的 `StochasticRetryPolicy`，现有蟹笼容量评估与新目标日期轴共用，不保留第二个常量。重试若增加鱼饵、晶球或其他耗材，在重新通过资源、货币和原子预留校验前仍不能授权执行。
+- 聚焦 fixture 保留 `76/76`：74 条处理轴不适用，商店确定购买路线零重试通过，唯一可达的普通钓鱼路线因缺少 Beach 目标投点概率显式阻塞；篡改处理报告会被确定性重建拒绝。训练授权仍为 false，下一修正是补齐可跨地点查询的钓鱼终端概率证据，再计算多成功次数所需的重试预算与耗材回环；之后才进入日时间/体力轴。
+
 ## 2026-09-13 目标路线数量与最低品质契约修复
 
 - 权威 lowering 中的 `match_kind`、`amount` 和 `minimum_quality` 现在从静态来源解析开始无损进入日历、解锁及全部后续目标日期制品；每个阶段都会把嵌套路线与原始静态行逐字段核对。已删除货币轴末端临时回查数量的 `AcquisitionRouteAmountIndex`，不再允许中间轴把“需要多份/指定品质”退化成“一份普通品质”。

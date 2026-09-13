@@ -209,6 +209,7 @@ public static partial class AcquisitionRouteTargetDateUnlockBuilder
             route.RequiredAmount,
             route.MinimumQuality,
             route.RouteKind,
+            route.UncertaintyMode,
             route.SourceId,
             route.SourceResolutionStatus,
             route.CalendarAxisStatus,

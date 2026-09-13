@@ -71,7 +71,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                     staticRoute.SourceId == requirement.SourceId &&
                     staticRoute.MatchKind == requirement.MatchKind &&
                     staticRoute.RequiredAmount == requirement.RequiredAmount &&
-                    staticRoute.MinimumQuality == requirement.MinimumQuality,
+                    staticRoute.MinimumQuality == requirement.MinimumQuality &&
+                    staticRoute.UncertaintyMode == requirement.UncertaintyMode,
                 "Static and reservation route requirement disagrees: " +
                 route.RouteOccurrenceId);
         }
