@@ -62,6 +62,12 @@ internal static partial class BootstrapSelfTest
         var targetDateDailyTimeEnergyPath = Path.Combine(
             root,
             "target-date-daily-time-energy-budget.json");
+        var targetDateOpportunityCostPath = Path.Combine(
+            root,
+            "target-date-opportunity-cost.json");
+        var tamperedTargetDateDailyTimeEnergyPath = Path.Combine(
+            root,
+            "tampered-target-date-daily-time-energy-budget.json");
         var tamperedTargetDateReservationPath = Path.Combine(
             root,
             "tampered-target-date-inventory-reservation.json");
@@ -1832,6 +1838,213 @@ internal static partial class BootstrapSelfTest
                     BuildDailyBudget(targetDateStochasticRetryPath),
                     JsonDefaults.Options),
             "Target-date daily time/energy budget is not deterministic.");
+
+        AcquisitionRouteTargetDateOpportunityCostReport BuildOpportunityCost(
+            string dailyPath) =>
+            AcquisitionRouteTargetDateOpportunityCostBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                routeCalendarPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                targetDateReservationPath,
+                targetDateProcessingPath,
+                targetDateFishingProbabilityPath,
+                targetDateStochasticRetryPath,
+                dailyPath,
+                fishingForecastManifestPath,
+                strategyLedgerPath,
+                targetDateUnlockSnapshotPath,
+                targetDateRouteCalibrationPath);
+        var targetDateOpportunityCost = BuildOpportunityCost(
+            targetDateDailyTimeEnergyPath);
+        Write(targetDateOpportunityCostPath, targetDateOpportunityCost);
+        var targetDateOpportunityShop = targetDateOpportunityCost.Routes.Single(
+            route => route.RouteOccurrenceId ==
+                targetDateDailyShop.RouteOccurrenceId);
+        var targetDateOpportunityFish = targetDateOpportunityCost.Routes.Single(
+            route => route.RouteOccurrenceId ==
+                targetDateDailyFish.RouteOccurrenceId);
+        Require(targetDateOpportunityCost.Status ==
+                    "complete_target_date_opportunity_cost_axis_downstream_pending" &&
+                targetDateOpportunityCost.RouteOccurrenceInventoryComplete &&
+                targetDateOpportunityCost
+                    .OpportunityCostAxisResolutionComplete &&
+                !targetDateOpportunityCost.TrainingLabelEligible &&
+                targetDateOpportunityCost.RouteOccurrenceCount == 76 &&
+                targetDateOpportunityCost
+                    .OpportunityCostAxisResolvedCount == 76 &&
+                targetDateOpportunityCost.ParetoFrontierCount == 2 &&
+                targetDateOpportunityCost.ParetoDominatedCount == 0 &&
+                targetDateOpportunityCost.NotApplicableUpstreamCount == 74 &&
+                targetDateOpportunityCost.BlockedUpstreamCount == 0 &&
+                targetDateOpportunityCost.BlockedCostEvidenceCount == 0 &&
+                targetDateOpportunityShop.OpportunityCostAxisStatus ==
+                    "resolved_opportunity_cost_pareto_frontier" &&
+                targetDateOpportunityShop.CostVector is not null &&
+                targetDateOpportunityShop.CostVector.RequiredEnergy == 0d &&
+                targetDateOpportunityShop.CostVector
+                    .GuaranteedElapsedGameMinutes ==
+                    StardewAI.Core.Execution.GameClockBudgetPolicy
+                        .ClockMinutesBetween(
+                            targetDateDailyShop.Evaluation!.SnapshotStartTime,
+                            targetDateDailyShop.Evaluation
+                                .GuaranteedCompletionByTime!.Value) &&
+                targetDateOpportunityShop.CostVector
+                    .MaterialTotalSaleValue == 20 &&
+                targetDateOpportunityShop.CostVector.MaterialCosts.Single()
+                    .QualifiedItemId == "(O)388" &&
+                targetDateOpportunityShop.CostVector.MaterialCosts.Single()
+                    .Quality == 0 &&
+                targetDateOpportunityShop.CostVector.MaterialCosts.Single()
+                    .UnitSalePrice == 2 &&
+                targetDateOpportunityShop.CostVector.MaterialCosts.Single()
+                    .Quantity == 10 &&
+                targetDateOpportunityShop.CostVector.CurrencyCosts.Single()
+                    .CurrencyId == NativeShopCurrencies.Money &&
+                targetDateOpportunityShop.CostVector.CurrencyCosts.Single()
+                    .CurrencyKey == "money" &&
+                targetDateOpportunityShop.CostVector.CurrencyCosts.Single()
+                    .Amount == 200 &&
+                targetDateOpportunityFish.OpportunityCostAxisStatus ==
+                    "resolved_opportunity_cost_pareto_frontier" &&
+                targetDateOpportunityFish.CostVector is not null &&
+                targetDateOpportunityFish.CostVector.RequiredEnergy == 105d &&
+                targetDateOpportunityFish.CostVector
+                    .GuaranteedElapsedGameMinutes ==
+                    StardewAI.Core.Execution.GameClockBudgetPolicy
+                        .ClockMinutesBetween(
+                            targetDateDailyFish.Evaluation!.SnapshotStartTime,
+                            targetDateDailyFish.Evaluation
+                                .GuaranteedCompletionByTime!.Value) &&
+                targetDateOpportunityFish.CostVector.MaterialCosts.Length == 0 &&
+                targetDateOpportunityFish.CostVector.CurrencyCosts.Length == 0,
+            "Target-date opportunity-cost axis resolution drifted.");
+        Require(JsonSerializer.Serialize(
+                    targetDateOpportunityCost,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    BuildOpportunityCost(targetDateDailyTimeEnergyPath),
+                    JsonDefaults.Options),
+            "Target-date opportunity-cost resolution is not deterministic.");
+
+        AcquisitionOpportunityCostVector CostVector(
+            int minutes,
+            double energy) => new(
+            minutes,
+            energy,
+            0,
+            Array.Empty<AcquisitionOpportunityMaterialCost>(),
+            Array.Empty<AcquisitionOpportunityCurrencyCost>(),
+            Array.Empty<string>());
+        var lowerTime = CostVector(10, 2d);
+        var higherTime = CostVector(20, 2d);
+        var lowerEnergyTradeoff = CostVector(20, 1d);
+        var oneWood = new AcquisitionOpportunityCostVector(
+            10,
+            2d,
+            2,
+            new[]
+            {
+                new AcquisitionOpportunityMaterialCost("(O)388", 0, 2, 1, 2)
+            },
+            Array.Empty<AcquisitionOpportunityCurrencyCost>(),
+            Array.Empty<string>());
+        var oneStone = new AcquisitionOpportunityCostVector(
+            10,
+            2d,
+            2,
+            new[]
+            {
+                new AcquisitionOpportunityMaterialCost("(O)390", 0, 2, 1, 2)
+            },
+            Array.Empty<AcquisitionOpportunityCurrencyCost>(),
+            Array.Empty<string>());
+        var money100 = new AcquisitionOpportunityCostVector(
+            10,
+            2d,
+            0,
+            Array.Empty<AcquisitionOpportunityMaterialCost>(),
+            new[]
+            {
+                new AcquisitionOpportunityCurrencyCost(
+                    NativeShopCurrencies.Money,
+                    "money",
+                    100)
+            },
+            Array.Empty<string>());
+        var money200 = money100 with
+        {
+            CurrencyCosts = new[]
+            {
+                new AcquisitionOpportunityCurrencyCost(
+                    NativeShopCurrencies.Money,
+                    "money",
+                    200)
+            }
+        };
+        var qiGems100 = money100 with
+        {
+            CurrencyCosts = new[]
+            {
+                new AcquisitionOpportunityCurrencyCost(
+                    NativeShopCurrencies.QiGems,
+                    "qi_gems",
+                    100)
+            }
+        };
+        Require(
+            AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(lowerTime, higherTime) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(higherTime, lowerTime) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(lowerTime, lowerEnergyTradeoff) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(lowerEnergyTradeoff, lowerTime) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(lowerTime, lowerTime) &&
+            AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(lowerTime, oneWood) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(oneWood, oneStone) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(oneStone, oneWood) &&
+            AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(money100, money200) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(money100, qiGems100) &&
+            !AcquisitionRouteTargetDateOpportunityCostBuilder
+                .OpportunityCostDominates(qiGems100, money100),
+            "Opportunity-cost strict Pareto boundary semantics drifted.");
+
+        File.Copy(
+            targetDateDailyTimeEnergyPath,
+            tamperedTargetDateDailyTimeEnergyPath,
+            overwrite: true);
+        var tamperedDailyTimeEnergy = JsonNode.Parse(File.ReadAllText(
+            tamperedTargetDateDailyTimeEnergyPath))!.AsObject();
+        tamperedDailyTimeEnergy["routes"]![0]![
+            "daily_time_energy_axis_status"] = "tampered";
+        File.WriteAllText(
+            tamperedTargetDateDailyTimeEnergyPath,
+            tamperedDailyTimeEnergy.ToJsonString(JsonDefaults.Options));
+        var tamperedDailyTimeEnergyRejected = false;
+        try
+        {
+            _ = BuildOpportunityCost(tamperedTargetDateDailyTimeEnergyPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedDailyTimeEnergyRejected = true;
+        }
+        Require(tamperedDailyTimeEnergyRejected,
+            "Target-date daily time/energy tampering was not rejected by opportunity cost.");
 
         File.Copy(
             targetDateStochasticRetryPath,

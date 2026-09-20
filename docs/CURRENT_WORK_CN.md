@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-20 目标日机会成本轴实现待回归
+
+- `feat/target-date-opportunity-cost` 已接入 `acquisition_route_target_date_opportunity_cost.v1` 与 `build-acquisition-route-target-date-opportunity-cost`。它会确定性重建完整 `daily_time_energy_budget` 上游、核对同一快照身份，并保持全部 route occurrence；上游报告漂移或被篡改时直接拒绝。
+- 机会成本不压成一个人为分数。向量独立保留保证耗时、原生体力、按 `qualified_item_id + quality + live sale_price` 分开的精确物料数量，以及 money、star tokens、club coins、Qi gems 四个原生货币域。物料售价合计只作审计摘要，不代替物品身份，也不进行跨货币换算。
+- 比较严格限制在同一 `(requirement_set_id, requirement_id, alternative_index)` 内，只使用严格 Pareto 支配：所有维度不更差且至少一维更好才淘汰；等价向量和互有得失的路线都保留在前沿。Learner 分数、未来收入和推测效用不得进入本轴。
+- 库存成本从 claim 指向的实时材料槽读取；`quality` 或 `sale_price` 缺失、槽位/物品/状态哈希漂移、未知货币域、溢出或非正 claim 均失败关闭。fixture 已补显式成本字段，并新增两条当前可行路线及三类 Pareto 边界自检。
+- 为避免影响当前游戏，本轮未启动游戏、训练、服务器、反编译、完整构建或自测；因此这里记录的是实现完成、运行回归待办，不是已验收结论。允许测试后先跑实验项目构建和聚焦 Bootstrap 全链自测，成功后提交；随后唯一剩余固定轴是 fresh terminal receipt。
+
 ## 2026-09-13 目标日日级时间/体力预算轴闭合
 
 - 新增 `acquisition_route_target_date_daily_time_energy_budget.v1` 与 `build-acquisition-route-target-date-daily-time-energy-budget`。构建器会确定性重建完整随机重试预算，核对静态日历、钓鱼概率、快照、路线计时校准及全部 76 条 route occurrence 的身份；上游报告漂移或被篡改会直接拒绝，不能成为训练输入。

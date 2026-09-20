@@ -1502,6 +1502,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   later axes. Baited retries stay blocked until per-cast consumption and expanded atomic reservation ownership are
   implemented.
 
+### 2026-09-20: non-scalar target-date opportunity-cost axis
+
+- `acquisition_route_target_date_daily_time_energy_budget.v1` first closes the conservative same-snapshot route,
+  terminal-duration and native-energy budget for each active occurrence. The opportunity-cost builder then
+  deterministically rebuilds and object-compares that complete upstream artifact; a copied or edited report cannot
+  become Teacher evidence.
+- Cost remains an auditable vector instead of one guessed utility scalar: guaranteed elapsed game minutes, required
+  native energy, exact material quantities keyed by qualified item/quality/live unit sale price, and each native
+  currency ID. Material sale value is retained only as a readable audit summary. It cannot erase item identity or
+  convert money, star tokens, club coins and Qi gems into a common unit.
+- Pareto comparison is restricted to routes with the same requirement set, requirement and alternative index. A
+  route is dominated only when another route is no worse in every exact dimension and strictly better in at least
+  one. Equal vectors and time/energy/material/currency trade-offs remain on the frontier for later portfolio policy.
+  Learner scores, future earnings and speculative downstream value are prohibited.
+- Material dimensions are recovered through the atomic reservation claim's exact node/slot/item identity and the
+  same raw transparent snapshot. Missing quality or sale price, stale state hashes, unauthorized or changed slots,
+  invalid quantities, unknown currency domains and arithmetic overflow fail closed. This axis neither selects a
+  route portfolio nor commits a claim.
+- The focused regression is defined for all 76 occurrences: two current matches should remain separate Pareto-front
+  routes and 74 should remain upstream non-applicable. Dedicated pure checks cover strict dominance, incomparable
+  trade-offs and equal vectors. Runtime regression is intentionally deferred while the user is playing; until it
+  passes, this branch is implementation-complete but not admitted. Fresh terminal receipt is the final fixed axis,
+  and training authorization remains false.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

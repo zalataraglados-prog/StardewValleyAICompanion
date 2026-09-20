@@ -366,19 +366,25 @@ internal static partial class BootstrapSelfTest
                                     {
                                         slot_index = 0,
                                         qualified_item_id = "(O)472",
-                                        stack = 2
+                                        stack = 2,
+                                        quality = 0,
+                                        sale_price = 10
                                     },
                                     new
                                     {
                                         slot_index = 1,
                                         qualified_item_id = "(O)388",
-                                        stack = 10
+                                        stack = 10,
+                                        quality = 0,
+                                        sale_price = 2
                                     },
                                     new
                                     {
                                         slot_index = 2,
                                         qualified_item_id = "(T)BambooPole",
-                                        stack = 1
+                                        stack = 1,
+                                        quality = 0,
+                                        sale_price = 0
                                     }
                                 }
                             }
