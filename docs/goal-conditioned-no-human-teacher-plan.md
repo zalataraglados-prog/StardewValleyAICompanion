@@ -1684,8 +1684,13 @@ Slice 7 remains assigned to the RTX 5070 node.
 - `acquisition_route_portfolio_supervision_dataset.v1` now rebuilds the supplied proof and admission before emitting
   three hash-linked transition rows. Teacher preference, native outcome and Student observation are separate typed
   channels; the Teacher-driven fixture records zero Student observations and never infers one from execution.
-  Unavailable portfolios are deferred without negative labels. Formal product training remains false; the next slice
-  is multi-rollout dataset governance plus trainer migration away from `candidate.Selected`.
+  Unavailable portfolios are deferred without negative labels.
+- `acquisition_route_portfolio_supervision_corpus_manifest.v1` re-verifies every source and deterministically splits
+  rows by the verified snapshot save-day key. Exact duplicates are removed, conflicting identities fail closed, and
+  comparison-pair coverage is an independent trainer gate. The current three-transition fixture has one admitted
+  portfolio per decision, so it correctly yields zero pairwise labels and a trainer-blocked corpus instead of an
+  invented negative. Formal product training remains false; the next slice must add multi-candidate strict-Pareto
+  examples across all splits before a dedicated goal-to-method trainer can be admitted.
 
 ## Review questions
 

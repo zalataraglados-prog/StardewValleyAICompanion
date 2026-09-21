@@ -33,6 +33,13 @@ internal static partial class BootstrapSelfTest
                 verified.Rows.Select(row => row.TransitionIndex)
                     .SequenceEqual(new[] { 1, 2, 3 }) &&
                 verified.Rows.All(row =>
+                    row.Payload.DecisionContext.SaveId == "fixture-save" &&
+                    row.Payload.DecisionContext.PlayerId == "1" &&
+                    row.Payload.DecisionContext.Year == 1 &&
+                    row.Payload.DecisionContext.Season == "spring" &&
+                    row.Payload.DecisionContext.Day == 1 &&
+                    row.Payload.DecisionContext.SplitKey ==
+                        "fixture-save:1:spring:1" &&
                     row.Payload.TeacherPreference.SourceKind ==
                         AcquisitionRoutePortfolioSupervisionSourceKinds
                             .TeacherPreference &&
@@ -99,5 +106,76 @@ internal static partial class BootstrapSelfTest
         }
         Require(tamperedSupervisionRejected,
             "Tampered portfolio supervision dataset unexpectedly verified.");
+
+        var source = new
+            AcquisitionRoutePortfolioSupervisionCorpusSource
+            {
+                DatasetPath = supervisionPath,
+                ProofManifestPath = manifestPath,
+                ProofReceiptPath = proofReceiptPath,
+                RolloutAdmissionReceiptPath = admissionPath
+            };
+        var corpusRequestPath = Path.Combine(
+            outputRoot,
+            "portfolio-supervision-corpus-request.json");
+        Write(corpusRequestPath, new
+            AcquisitionRoutePortfolioSupervisionCorpusRequest
+            {
+                CorpusId = "self-test-acquisition-portfolio-corpus",
+                Sources = new[] { source, source }
+            });
+        var corpus = AcquisitionRoutePortfolioSupervisionCorpusBuilder.Build(
+            corpusRequestPath,
+            Path.Combine(outputRoot, "portfolio-supervision-corpus"));
+        var corpusManifest = corpus.Manifest;
+        Require(corpusManifest.Status ==
+                    "verified_teacher_corpus_trainer_blocked" &&
+                corpusManifest.Counts.InputSourceEntries == 2 &&
+                corpusManifest.Counts.UniqueSourceDatasets == 1 &&
+                corpusManifest.Counts.InputRows == 6 &&
+                corpusManifest.Counts.AcceptedRows == 3 &&
+                corpusManifest.Counts.ExactDuplicateRows == 3 &&
+                corpusManifest.Counts.TeacherPairwisePreferences == 0 &&
+                corpusManifest.Counts.StudentObservationCount == 0 &&
+                corpusManifest.Partitions.Sum(row => row.Rows) == 3 &&
+                corpusManifest.Partitions.Count(row => row.Rows == 3) == 1 &&
+                corpusManifest.Partitions.Single(row => row.Rows == 3)
+                    .SplitKeyCount == 1 &&
+                corpusManifest.GameVersions.SequenceEqual(
+                    new[] { "1.6.15" },
+                    StringComparer.Ordinal) &&
+                corpusManifest.BridgeVersions.Length == 1 &&
+                corpusManifest.TeacherTrainingEvidenceEligible &&
+                !corpusManifest.GoalMethodTrainerInputReady &&
+                !corpusManifest.FormalProductTrainingAuthorized &&
+                corpusManifest.BlockingReasons.Contains(
+                    "teacher_pairwise_comparison_empty",
+                    StringComparer.Ordinal) &&
+                File.ReadLines(corpusManifest.Cleaned.Path).Count() == 3,
+            "Portfolio supervision corpus governance drifted.");
+
+        var tamperedCorpusRequestPath = Path.Combine(
+            outputRoot,
+            "tampered-portfolio-supervision-corpus-request.json");
+        source.DatasetPath = tamperedSupervisionPath;
+        Write(tamperedCorpusRequestPath, new
+            AcquisitionRoutePortfolioSupervisionCorpusRequest
+            {
+                CorpusId = "self-test-tampered-acquisition-corpus",
+                Sources = new[] { source }
+            });
+        var tamperedCorpusRejected = false;
+        try
+        {
+            AcquisitionRoutePortfolioSupervisionCorpusBuilder.Build(
+                tamperedCorpusRequestPath,
+                Path.Combine(outputRoot, "tampered-supervision-corpus"));
+        }
+        catch (InvalidDataException)
+        {
+            tamperedCorpusRejected = true;
+        }
+        Require(tamperedCorpusRejected,
+            "Tampered supervision source entered the corpus.");
     }
 }

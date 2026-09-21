@@ -4390,3 +4390,10 @@ Scope boundary:
 - Every row binds the decision snapshot/ledger, complete Teacher denominator, selected strict-Pareto proposal, queue execution, fresh terminal receipt, exact settlement and rollout checkpoint. Unavailable portfolios use `defer_without_negative_label`.
 - Incomplete rollout chains, forged admission receipts and modified dataset rows fail closed under controller recomputation. Teacher execution is explicitly `not_observed_teacher_rollout` in the Student channel.
 - Formal product training remains unauthorized. Multi-rollout dataset governance, trainer migration away from `candidate.Selected`, learner-state relabeling and complete 19/19 Teacher coverage remain pending. No game was started.
+
+2026-09-22 acquisition portfolio supervision corpus governance
+- GoalConditionedBootstrap Release build PASS with 0 warnings / 0 errors; complete current Stage 1 collection self-test and standalone corpus CLI PASS.
+- Decision context is derived from each verified before snapshot and binds game/bridge version, save/player, year/season/day/time, total day, tick and canonical save-day split key.
+- Duplicate-source fixture result: 2 source entries / 1 unique source dataset / 6 input rows / 3 accepted rows / 3 exact duplicates. All accepted rows remained in one deterministic save-day partition; cleaned and three partition JSONL files carry SHA-256, byte and row counts.
+- The corpus remains Teacher-evidence eligible but goal-method trainer blocked: each transition had one admitted portfolio, so pairwise preference count is exactly 0. Empty comparison signal was not replaced by a selected flag or fabricated negative.
+- Tampered source dataset rejection PASS. Formal product training remains unauthorized; multi-candidate strict-Pareto samples across train/validation/test and a dedicated goal-to-method trainer remain pending. No game was started.

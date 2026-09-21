@@ -88,6 +88,10 @@ public sealed class AcquisitionRoutePortfolioSupervisionRow
 
 public sealed class AcquisitionRoutePortfolioSupervisionPayload
 {
+    [JsonPropertyName("decision_context")]
+    public AcquisitionRoutePortfolioSupervisionDecisionContext DecisionContext
+    { get; set; } = new();
+
     [JsonPropertyName("decision_state_hash")]
     public string DecisionStateHash { get; set; } = string.Empty;
 
@@ -112,6 +116,42 @@ public sealed class AcquisitionRoutePortfolioSupervisionPayload
     public AcquisitionRoutePortfolioStudentObservationSupervision
         StudentObservation
     { get; set; } = new();
+}
+
+public sealed class AcquisitionRoutePortfolioSupervisionDecisionContext
+{
+    [JsonPropertyName("game_version")]
+    public string GameVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("bridge_version")]
+    public string BridgeVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("save_id")]
+    public string SaveId { get; set; } = string.Empty;
+
+    [JsonPropertyName("player_id")]
+    public string PlayerId { get; set; } = string.Empty;
+
+    [JsonPropertyName("year")]
+    public int Year { get; set; }
+
+    [JsonPropertyName("season")]
+    public string Season { get; set; } = string.Empty;
+
+    [JsonPropertyName("day")]
+    public int Day { get; set; }
+
+    [JsonPropertyName("time")]
+    public int Time { get; set; }
+
+    [JsonPropertyName("total_day")]
+    public int TotalDay { get; set; }
+
+    [JsonPropertyName("game_tick")]
+    public long GameTick { get; set; }
+
+    [JsonPropertyName("split_key")]
+    public string SplitKey { get; set; } = string.Empty;
 }
 
 public sealed class AcquisitionRoutePortfolioTeacherSupervision

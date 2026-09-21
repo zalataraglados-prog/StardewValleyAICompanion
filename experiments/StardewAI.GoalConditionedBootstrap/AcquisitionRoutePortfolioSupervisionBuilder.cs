@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -144,6 +145,10 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
             "Acquisition route portfolio rollout checkpoint");
         var snapshotPath = Path.GetFullPath(inputs.BeforeSnapshotPath);
         var ledgerPath = Path.GetFullPath(inputs.StrategyLedgerPath);
+        var snapshot = Read<SnapshotEnvelope>(
+            snapshotPath,
+            "Portfolio supervision decision snapshot");
+        var decisionContext = DecisionContext(snapshot);
         var preferenceRequestSha256 =
             CurrentTeacherFrontierSupport.HashFile(Path.GetFullPath(
                 inputs.PortfolioPreferenceRequestPath));
@@ -237,6 +242,7 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
             "Native outcome channel is not an exact verified transition.");
         Require(preference.SnapshotSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(snapshotPath) &&
+                snapshot.StateHash == preference.SnapshotStateHash &&
                 preference.StrategyLedgerSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(ledgerPath) &&
                 preference.ExpectedLedgerRevision ==
@@ -247,6 +253,7 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
 
         return new AcquisitionRoutePortfolioSupervisionPayload
         {
+            DecisionContext = decisionContext,
             DecisionStateHash = preference.SnapshotStateHash,
             DecisionSnapshotSha256 = preference.SnapshotSha256,
             DecisionLedgerRevision = preference.ExpectedLedgerRevision,
@@ -342,6 +349,97 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
         return Convert.ToHexString(SHA256.HashData(
                 Encoding.UTF8.GetBytes(value)))
             .ToLowerInvariant();
+    }
+
+    private static AcquisitionRoutePortfolioSupervisionDecisionContext
+        DecisionContext(SnapshotEnvelope snapshot)
+    {
+        var saveId = snapshot.SaveId.Value;
+        var playerId = snapshot.PlayerId.Value;
+        var year = RequiredStateValue<int>(snapshot, "time", "year");
+        var season = RequiredStateValue<string>(snapshot, "time", "season");
+        var day = RequiredStateValue<int>(snapshot, "time", "day");
+        var time = RequiredStateValue<int>(snapshot, "time", "time");
+        var totalDay = RequiredStateValue<int>(
+            snapshot,
+            "time",
+            "total_days");
+        var seasonIndex = season switch
+        {
+            "spring" => 0,
+            "summer" => 1,
+            "fall" => 2,
+            "winter" => 3,
+            _ => -1
+        };
+        Require(FieldEnvelopeValidator.IsReadableStatus(
+                    snapshot.SaveId.Status) &&
+                FieldEnvelopeValidator.IsReadableStatus(
+                    snapshot.PlayerId.Status) &&
+                FieldEnvelopeValidator.IsReadableStatus(
+                    snapshot.InGameTime.Status) &&
+                !string.IsNullOrWhiteSpace(snapshot.GameVersion) &&
+                !string.IsNullOrWhiteSpace(snapshot.BridgeVersion) &&
+                !string.IsNullOrWhiteSpace(saveId) &&
+                !string.IsNullOrWhiteSpace(playerId) &&
+                year >= 1 &&
+                seasonIndex >= 0 &&
+                day is >= 1 and <= 28 &&
+                time >= 600 &&
+                time <= 2600 &&
+                time % 100 < 60 &&
+                snapshot.InGameTime.Value == time &&
+                totalDay == (year - 1) * 112 + seasonIndex * 28 + day - 1 &&
+                snapshot.GameTick >= 0,
+            "Portfolio supervision decision context is incomplete or inconsistent.");
+        return new AcquisitionRoutePortfolioSupervisionDecisionContext
+        {
+            GameVersion = snapshot.GameVersion,
+            BridgeVersion = snapshot.BridgeVersion,
+            SaveId = saveId!,
+            PlayerId = playerId!,
+            Year = year,
+            Season = season,
+            Day = day,
+            Time = time,
+            TotalDay = totalDay,
+            GameTick = snapshot.GameTick,
+            SplitKey = saveId + ":" + year + ":" + season + ":" + day
+        };
+    }
+
+    private static T RequiredStateValue<T>(
+        SnapshotEnvelope snapshot,
+        string section,
+        string field)
+    {
+        if (!snapshot.State.TryGetValue(section, out var sectionValue) ||
+            sectionValue.ValueKind != JsonValueKind.Object ||
+            !sectionValue.TryGetProperty(field, out var envelope) ||
+            envelope.ValueKind != JsonValueKind.Object ||
+            !envelope.TryGetProperty("status", out var status) ||
+            status.ValueKind != JsonValueKind.String ||
+            !FieldEnvelopeValidator.IsReadableStatus(status.GetString()) ||
+            !envelope.TryGetProperty("value", out var value))
+        {
+            throw new InvalidDataException(
+                "Portfolio supervision snapshot field is missing or unreadable: state." +
+                section + "." + field + ".");
+        }
+        try
+        {
+            return value.Deserialize<T>(JsonDefaults.Options) ??
+                throw new InvalidDataException(
+                    "Portfolio supervision snapshot field is null: state." +
+                    section + "." + field + ".value.");
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException(
+                "Portfolio supervision snapshot field has the wrong type: state." +
+                section + "." + field + ".value.",
+                exception);
+        }
     }
 
     private static T Read<T>(string path, string label) =>

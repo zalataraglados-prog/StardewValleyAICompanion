@@ -694,3 +694,9 @@ before emitting one hash-linked row per transition. Each row keeps `teacher_pref
 `native_outcome`, and `student_observation` in separate typed channels; Teacher-driven rollouts mark
 the Student channel explicitly unobserved and unavailable portfolios receive no negative label. The
 adapter remains scoped Teacher evidence, not a formal dataset/trainer authorization.
+The companion `acquisition_route_portfolio_supervision_corpus_manifest.v1` rebuilds every listed
+source, deduplicates only byte-equivalent typed rows, rejects conflicting row identities, and derives
+train/validation/test partitions from the verified snapshot save-day key. It records comparison-pair
+coverage separately from evidence eligibility. The current three-transition fixture has one admitted
+portfolio at every decision and therefore zero pairwise labels; it is retained as verified evidence
+but is correctly blocked as goal-to-method trainer input.
