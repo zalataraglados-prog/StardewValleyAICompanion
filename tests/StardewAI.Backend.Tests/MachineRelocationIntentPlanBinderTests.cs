@@ -201,5 +201,11 @@ public sealed class MachineRelocationIntentPlanBinderTests
             SnapshotEnvelope snapshot,
             ReservationPortfolioCommitRequest request) =>
             throw new NotSupportedException();
+
+        public ReservationPortfolioRouteSettlementResult
+            SettleReservationPortfolioRoute(
+                SnapshotEnvelope snapshot,
+                ReservationPortfolioRouteSettlementRequest request) =>
+            throw new NotSupportedException();
     }
 }

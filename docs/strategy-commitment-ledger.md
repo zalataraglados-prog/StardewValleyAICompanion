@@ -31,6 +31,7 @@ Endpoints:
 - `POST /api/v1/strategy/commitments/currencies/upsert`
 - `POST /api/v1/strategy/commitments/currencies/{reservationId}/cancel`
 - `POST /api/v1/strategy/commitments/reservation-portfolios/commit`
+- `POST /api/v1/strategy/commitments/reservation-portfolios/settle-completed-route`
 
 ## Resource reservations
 
@@ -41,6 +42,8 @@ Every upsert recomputes unreserved supply from the referenced current snapshot a
 The individual-row endpoints provide controller storage and double-spend prevention, but do not choose among alternative acquisition routes or authorize a Teacher label. The target-date `inventory_reservation` axis emits one exact multi-row claim set per feasible route, sharing a source decision, state hash and expected ledger revision.
 
 `reservation-portfolios/commit` is the sole multi-row mutation boundary. It validates all explicit releases and every material/currency claim against one state hash and one expected revision, applies them only to an in-memory staging ledger, and discards the whole staging result if any later claim fails. A successful request is persisted once under the repository lock, advances the ledger exactly once, and records every component plus `reservation_portfolio_commit` at that same ledger revision. This is an atomic storage primitive; route portfolio admission is owned by `acquisition_route_portfolio_admission.v1`, and neither layer alone authorizes a Teacher label or execution.
+
+`reservation-portfolios/settle-completed-route` is the matching post-execution storage primitive. It requires one fresh snapshot, optimistic ledger revision, portfolio/goal/route identity, a lowercase SHA-256 reference to the fresh terminal receipt, and the exact complete set of active material/currency reservation IDs owned by that route source decision. It stages every row as `completed`, records the completion reason and evidence hash, appends component history plus one `reservation_portfolio_route_complete` marker, and persists the result at one new revision. A missing or extra ID rejects the whole mutation; a route with no claims still receives one auditable marker. This endpoint does not itself authenticate the referenced receipt or decide portfolio membership. The deterministic rollout receipt remains responsible for rebuilding those facts before any training admission.
 
 `acquisition_route_portfolio_commit_receipt.v1` is the post-storage proof boundary. It deterministically rebuilds the admission and checks the exact active material/currency rows, explicit cancellations, commit result, single revision advance and same-revision history. For an admission that needs no mutation it instead requires a canonical unchanged ledger and no commit result. `acquisition_route_execution_binding.v1` rebuilds that receipt and requires every normalized route command to carry the exact portfolio ID and committed ledger revision before dispatch. These artifacts prove ownership, not Teacher preference or portfolio completion.
 

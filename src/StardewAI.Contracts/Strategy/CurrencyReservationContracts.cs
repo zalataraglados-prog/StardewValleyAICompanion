@@ -39,6 +39,12 @@ public sealed class CurrencyReservation
 
     [JsonPropertyName("cancel_reason")]
     public string CancelReason { get; set; } = string.Empty;
+
+    [JsonPropertyName("completion_reason")]
+    public string CompletionReason { get; set; } = string.Empty;
+
+    [JsonPropertyName("completion_evidence_sha256")]
+    public string CompletionEvidenceSha256 { get; set; } = string.Empty;
 }
 
 public sealed class CurrencyReservationUpsertRequest

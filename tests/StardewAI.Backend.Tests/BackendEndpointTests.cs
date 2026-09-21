@@ -444,6 +444,40 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(1, ledger.GetProperty("revision").GetInt32());
             Assert.Single(ledger.GetProperty("material_reservations").EnumerateArray());
             Assert.Single(ledger.GetProperty("currency_reservations").EnumerateArray());
+
+            var settlement = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/reservation-portfolios/settle-completed-route",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 1,
+                    portfolio_id = "portfolio:grandpa:test",
+                    goal_id = "goal.grandpa_21",
+                    route_source_decision_id = "route:test",
+                    fresh_terminal_receipt_sha256 = new string('a', 64),
+                    reservation_ids = new[]
+                    {
+                        "route-material",
+                        "route-money"
+                    },
+                    reason = "fresh_terminal_receipt_verified"
+                });
+            Assert.Equal(HttpStatusCode.OK, settlement.StatusCode);
+            using var settlementJson = JsonDocument.Parse(
+                await settlement.Content.ReadAsStringAsync());
+            var settlementRoot = settlementJson.RootElement;
+            Assert.True(settlementRoot.GetProperty("accepted").GetBoolean());
+            Assert.Equal(2, settlementRoot.GetProperty(
+                "committed_ledger_revision").GetInt32());
+            var settledLedger = settlementRoot.GetProperty("ledger");
+            Assert.All(settledLedger.GetProperty("material_reservations")
+                .EnumerateArray(), row => Assert.Equal(
+                    "completed",
+                    row.GetProperty("status").GetString()));
+            Assert.All(settledLedger.GetProperty("currency_reservations")
+                .EnumerateArray(), row => Assert.Equal(
+                    "completed",
+                    row.GetProperty("status").GetString()));
         }
 
         [Fact]
@@ -2031,6 +2065,21 @@ namespace StardewAI.Backend.Tests
                     snapshot,
                     request,
                     "2026-09-13T00:00:00Z");
+                if (result.Accepted)
+                    ledger = result.Ledger;
+                return result;
+            }
+
+            public ReservationPortfolioRouteSettlementResult
+                SettleReservationPortfolioRoute(
+                    SnapshotEnvelope snapshot,
+                    ReservationPortfolioRouteSettlementRequest request)
+            {
+                var result = portfolioService.SettleCompletedRoute(
+                    Get(snapshot),
+                    snapshot,
+                    request,
+                    "2026-09-13T00:01:00Z");
                 if (result.Accepted)
                     ledger = result.Ledger;
                 return result;

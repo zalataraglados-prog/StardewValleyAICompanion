@@ -238,6 +238,23 @@ app.MapPost("/api/v1/strategy/commitments/reservation-portfolios/commit", (Reser
     return Results.Ok(result);
 });
 
+app.MapPost("/api/v1/strategy/commitments/reservation-portfolios/settle-completed-route", (ReservationPortfolioRouteSettlementRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))
+    {
+        return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
+    }
+    var result = repository.SettleReservationPortfolioRoute(snapshot, request);
+    if (!result.Accepted)
+    {
+        return result.Errors.Contains("ledger_revision_conflict", StringComparer.Ordinal)
+            ? Results.Conflict(result)
+            : Results.UnprocessableEntity(result);
+    }
+    store.AppendAudit("ReservationPortfolioRouteSettled", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(result);
+});
+
 app.MapPost("/api/v1/events", async (HttpRequest request, StateStore store) =>
 {
     using var reader = new StreamReader(request.Body);

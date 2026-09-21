@@ -137,6 +137,133 @@ public sealed class ReservationPortfolioLedgerTests
             row.Status));
     }
 
+    [Fact]
+    public void CompletedRouteSettlesItsExactActiveSetAtOneRevision()
+    {
+        var snapshot = Snapshot();
+        var service = new ReservationPortfolioLedgerService();
+        var committed = service.Commit(
+            null,
+            snapshot,
+            Request(snapshot, materialQuantity: 20, moneyAmount: 300),
+            "2026-09-21T00:00:00Z");
+
+        var settled = service.SettleCompletedRoute(
+            committed.Ledger,
+            snapshot,
+            SettlementRequest(snapshot, revision: 1),
+            "2026-09-21T00:01:00Z");
+
+        Assert.True(settled.Accepted, string.Join(";", settled.Errors));
+        Assert.Equal(2, settled.CommittedLedgerRevision);
+        Assert.Equal(2, settled.Ledger!.Revision);
+        Assert.Equal(
+            new[] { "route-a-material", "route-a-money" },
+            settled.CompletedReservationIds);
+        Assert.All(settled.Ledger.MaterialReservations, row =>
+        {
+            Assert.Equal(StrategyCommitmentStatuses.Completed, row.Status);
+            Assert.Equal("fresh_terminal_receipt_verified", row.CompletionReason);
+            Assert.Equal(new string('a', 64), row.CompletionEvidenceSha256);
+        });
+        Assert.All(settled.Ledger.CurrencyReservations, row =>
+        {
+            Assert.Equal(StrategyCommitmentStatuses.Completed, row.Status);
+            Assert.Equal("fresh_terminal_receipt_verified", row.CompletionReason);
+            Assert.Equal(new string('a', 64), row.CompletionEvidenceSha256);
+        });
+        Assert.Equal(3, settled.Ledger.History.Count(row =>
+            row.LedgerRevision == 2));
+        Assert.Contains(settled.Ledger.History, row =>
+            row.CommitmentId == "portfolio:test" &&
+            row.SourceDecisionId == "route:a" &&
+            row.Operation == "reservation_portfolio_route_complete" &&
+            row.Reason == new string('a', 64));
+    }
+
+    [Fact]
+    public void SettlementRejectsIncompleteActiveSetWithoutMutation()
+    {
+        var snapshot = Snapshot();
+        var service = new ReservationPortfolioLedgerService();
+        var committed = service.Commit(
+            null,
+            snapshot,
+            Request(snapshot, materialQuantity: 20, moneyAmount: 300),
+            "2026-09-21T00:00:00Z");
+        var request = SettlementRequest(snapshot, revision: 1);
+        request.ReservationIds = new[] { "route-a-material" };
+
+        var settled = service.SettleCompletedRoute(
+            committed.Ledger,
+            snapshot,
+            request,
+            "2026-09-21T00:01:00Z");
+
+        Assert.False(settled.Accepted);
+        Assert.Contains(
+            "reservation_portfolio_route_active_set_mismatch",
+            settled.Errors);
+        Assert.Same(committed.Ledger, settled.Ledger);
+        Assert.All(settled.Ledger!.MaterialReservations, row => Assert.Equal(
+            StrategyCommitmentStatuses.Active,
+            row.Status));
+        Assert.All(settled.Ledger.CurrencyReservations, row => Assert.Equal(
+            StrategyCommitmentStatuses.Active,
+            row.Status));
+    }
+
+    [Fact]
+    public void ClaimlessCompletedRouteStillRecordsOneSettlementBoundary()
+    {
+        var snapshot = Snapshot();
+        var service = new ReservationPortfolioLedgerService();
+        var committed = service.Commit(
+            null,
+            snapshot,
+            Request(snapshot, materialQuantity: 20, moneyAmount: 300),
+            "2026-09-21T00:00:00Z");
+        var request = SettlementRequest(snapshot, revision: 1);
+        request.RouteSourceDecisionId = "route:claimless";
+        request.ReservationIds = Array.Empty<string>();
+
+        var settled = service.SettleCompletedRoute(
+            committed.Ledger,
+            snapshot,
+            request,
+            "2026-09-21T00:01:00Z");
+
+        Assert.True(settled.Accepted, string.Join(";", settled.Errors));
+        Assert.Equal(2, settled.Ledger!.Revision);
+        Assert.Empty(settled.CompletedReservationIds);
+        Assert.Equal(StrategyCommitmentStatuses.Active,
+            Assert.Single(settled.Ledger.MaterialReservations).Status);
+        Assert.Equal(StrategyCommitmentStatuses.Active,
+            Assert.Single(settled.Ledger.CurrencyReservations).Status);
+        Assert.Single(settled.Ledger.History.Where(row =>
+            row.LedgerRevision == 2 &&
+            row.Operation == "reservation_portfolio_route_complete"));
+    }
+
+    private static ReservationPortfolioRouteSettlementRequest
+        SettlementRequest(
+            SnapshotEnvelope snapshot,
+            int revision) => new()
+            {
+                StateHash = snapshot.StateHash,
+                ExpectedLedgerRevision = revision,
+                PortfolioId = "portfolio:test",
+                GoalId = "goal.grandpa_21",
+                RouteSourceDecisionId = "route:a",
+                FreshTerminalReceiptSha256 = new string('a', 64),
+                ReservationIds = new[]
+            {
+                "route-a-material",
+                "route-a-money"
+            },
+                Reason = "fresh_terminal_receipt_verified"
+            };
+
     private static ReservationPortfolioCommitRequest Request(
         SnapshotEnvelope snapshot,
         int materialQuantity,

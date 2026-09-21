@@ -36,6 +36,10 @@ public interface IStrategyCommitmentRepository
         SnapshotEnvelope snapshot,
         ReservationPortfolioCommitRequest request);
 
+    ReservationPortfolioRouteSettlementResult SettleReservationPortfolioRoute(
+        SnapshotEnvelope snapshot,
+        ReservationPortfolioRouteSettlementRequest request);
+
     StrategyCommitmentMutationResult UpsertMachineRelocation(
         SnapshotEnvelope snapshot,
         MachineRelocationIntentUpsertRequest request);
@@ -247,6 +251,26 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
             var key = IdentityKey(snapshot);
             var current = Load(key, snapshot);
             var result = portfolioService.Commit(
+                current,
+                snapshot,
+                request,
+                DateTimeOffset.UtcNow.ToString("O"));
+            if (result.Accepted && result.Ledger is not null)
+                Save(key, result.Ledger);
+            return result;
+        }
+    }
+
+    public ReservationPortfolioRouteSettlementResult
+        SettleReservationPortfolioRoute(
+            SnapshotEnvelope snapshot,
+            ReservationPortfolioRouteSettlementRequest request)
+    {
+        lock (sync)
+        {
+            var key = IdentityKey(snapshot);
+            var current = Load(key, snapshot);
+            var result = portfolioService.SettleCompletedRoute(
                 current,
                 snapshot,
                 request,

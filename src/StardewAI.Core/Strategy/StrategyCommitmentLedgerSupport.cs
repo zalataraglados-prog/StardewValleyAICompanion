@@ -147,25 +147,29 @@ internal static class StrategyCommitmentLedgerSupport
         QualifiedItemId = row.QualifiedItemId,
         Quantity = row.Quantity,
         Purpose = row.Purpose,
-        CancelReason = row.CancelReason
+        CancelReason = row.CancelReason,
+        CompletionReason = row.CompletionReason,
+        CompletionEvidenceSha256 = row.CompletionEvidenceSha256
     };
 
     internal static CurrencyReservation CloneCurrency(
         CurrencyReservation row) => new()
-    {
-        ReservationId = row.ReservationId,
-        Revision = row.Revision,
-        Status = row.Status,
-        SourceDecisionId = row.SourceDecisionId,
-        SourceStateHash = row.SourceStateHash,
-        GoalId = row.GoalId,
-        OwnerPlayerId = row.OwnerPlayerId,
-        CurrencyId = row.CurrencyId,
-        CurrencyKey = row.CurrencyKey,
-        Amount = row.Amount,
-        Purpose = row.Purpose,
-        CancelReason = row.CancelReason
-    };
+        {
+            ReservationId = row.ReservationId,
+            Revision = row.Revision,
+            Status = row.Status,
+            SourceDecisionId = row.SourceDecisionId,
+            SourceStateHash = row.SourceStateHash,
+            GoalId = row.GoalId,
+            OwnerPlayerId = row.OwnerPlayerId,
+            CurrencyId = row.CurrencyId,
+            CurrencyKey = row.CurrencyKey,
+            Amount = row.Amount,
+            Purpose = row.Purpose,
+            CancelReason = row.CancelReason,
+            CompletionReason = row.CompletionReason,
+            CompletionEvidenceSha256 = row.CompletionEvidenceSha256
+        };
 
     internal static MachineRelocationIntent CloneMachineRelocation(
         MachineRelocationIntent row) => new()
