@@ -25,6 +25,11 @@ public sealed class AcquisitionRouteExecutionBindingInputs
     public string StrategyLedgerPath { get; init; } = string.Empty;
     public string BeforeSnapshotPath { get; init; } = string.Empty;
     public string RouteTimingCalibrationPath { get; init; } = string.Empty;
+    public string PortfolioProposalPath { get; init; } = string.Empty;
+    public string PortfolioAdmissionPath { get; init; } = string.Empty;
+    public string PortfolioCommitReceiptPath { get; init; } = string.Empty;
+    public string CommittedStrategyLedgerPath { get; init; } = string.Empty;
+    public string PortfolioCommitResultPath { get; init; } = string.Empty;
     public string ActionQueuePath { get; init; } = string.Empty;
     public string RouteOccurrenceId { get; init; } = string.Empty;
 }
@@ -83,6 +88,18 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("opportunity_cost_sha256")]
     public string OpportunityCostSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("portfolio_commit_receipt_sha256")]
+    public string PortfolioCommitReceiptSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("reservation_portfolio_id")]
+    public string ReservationPortfolioId { get; set; } = string.Empty;
+
+    [JsonPropertyName("committed_strategy_ledger_sha256")]
+    public string CommittedStrategyLedgerSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("committed_strategy_ledger_revision")]
+    public int CommittedStrategyLedgerRevision { get; set; }
+
     [JsonPropertyName("acquisition_lowering_sha256")]
     public string AcquisitionLoweringSha256 { get; set; } = string.Empty;
 
@@ -122,6 +139,9 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("queue_options_bound_to_route")]
     public bool QueueOptionsBoundToRoute { get; set; }
 
+    [JsonPropertyName("portfolio_reservation_commit_verified")]
+    public bool PortfolioReservationCommitVerified { get; set; }
+
     [JsonPropertyName("dispatch_binding_ready")]
     public bool DispatchBindingReady { get; set; }
 
@@ -133,5 +153,5 @@ public sealed class AcquisitionRouteExecutionBinding
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A target-date route may be dispatched only after one exact Pareto-front route occurrence is bound to one immutable pending action queue. The accepted candidate ID is derived from the route occurrence, every queue item repeats the exact route/requirement/source/quantity/quality identity, and every option belongs to that route's authoritative endpoint/support set. The queue and every normalized command must retain the same fresh source state. Item identity or a caller-provided candidate alias may never be used to infer which route executed. This pre-dispatch binding predicts no receipt and cannot authorize formal training.";
+        "A target-date route may be dispatched only after its exact Pareto-front occurrence belongs to a deterministically rebuilt, verified reservation portfolio commit. The immutable pending action queue and every normalized command repeat the exact route/requirement/source/quantity/quality identity plus the committed portfolio ID and ledger revision. Every option belongs to the route's authoritative endpoint/support set, and the queue retains the same fresh source state. Item identity, a caller-provided candidate alias, or an uncommitted preflight may never be used to infer ownership or execution. This pre-dispatch binding predicts no terminal receipt and cannot authorize formal training.";
 }

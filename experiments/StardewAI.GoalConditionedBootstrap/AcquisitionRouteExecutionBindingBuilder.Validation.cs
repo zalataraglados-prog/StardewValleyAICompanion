@@ -89,7 +89,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         string beforeStateHash,
         string selectedCandidateId,
         AcquisitionRouteTargetDateUnlock requirement,
-        AcquisitionRequirementRouteLowering route)
+        AcquisitionRequirementRouteLowering route,
+        string portfolioId,
+        int committedLedgerRevision)
     {
         var items = queue.Items ?? Array.Empty<ActionQueueItem>();
         if (!string.Equals(queue.SchemaVersion, "action_queue.v1",
@@ -155,7 +157,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 item.NormalizedCommand.Steps is not { Length: 1 } ||
                 !RouteParametersMatch(
                     item.NormalizedCommand.Parameters,
-                    requirement) ||
+                    requirement,
+                    portfolioId,
+                    committedLedgerRevision) ||
                 !SameActor(item.NormalizedCommand.Actor, queue.Actor)))
         {
             yield return "route_queue_command_binding_invalid";
@@ -166,6 +170,58 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             string.IsNullOrWhiteSpace(queue.Actor.ControlSurface))
         {
             yield return "route_queue_actor_invalid";
+        }
+    }
+
+    private static IEnumerable<string> ValidatePortfolioCommit(
+        AcquisitionRoutePortfolioCommitReceipt receipt,
+        AcquisitionRouteTargetDateOpportunityCostReport opportunity,
+        string routeOccurrenceId,
+        string beforeStateHash)
+    {
+        var expectedStatus = receipt.AtomicMutationObserved
+            ? "verified_atomic_reservation_portfolio_commit"
+            : "verified_existing_reservation_portfolio";
+        if (!string.Equals(
+                receipt.SchemaVersion,
+                "acquisition_route_portfolio_commit_receipt.v1",
+                StringComparison.Ordinal) ||
+            !string.Equals(receipt.Status, expectedStatus,
+                StringComparison.Ordinal) ||
+            !receipt.ExactActiveClaimSetVerified ||
+            !receipt.SingleRevisionCommitVerified ||
+            !receipt.PortfolioCommitVerified ||
+            receipt.FormalTrainingAuthorized ||
+            receipt.BlockingReasons is null ||
+            receipt.BlockingReasons.Length != 0)
+        {
+            yield return "route_portfolio_commit_unverified";
+        }
+        if (string.IsNullOrWhiteSpace(receipt.PortfolioId) ||
+            !string.Equals(receipt.GoalId, opportunity.GoalId,
+                StringComparison.Ordinal) ||
+            !string.Equals(receipt.SnapshotStateHash,
+                opportunity.SnapshotStateHash, StringComparison.Ordinal) ||
+            !string.Equals(receipt.SnapshotStateHash, beforeStateHash,
+                StringComparison.Ordinal))
+        {
+            yield return "route_portfolio_identity_mismatch";
+        }
+        if ((receipt.SelectedRouteOccurrenceIds ?? Array.Empty<string>())
+                .Count(value => string.Equals(
+                    value,
+                    routeOccurrenceId,
+                    StringComparison.Ordinal)) != 1)
+        {
+            yield return "route_portfolio_route_not_selected";
+        }
+        var expectedRevision = receipt.AtomicMutationObserved
+            ? receipt.BaseLedgerRevision + 1
+            : receipt.BaseLedgerRevision;
+        if (receipt.BaseLedgerRevision < 0 ||
+            receipt.CommittedLedgerRevision != expectedRevision)
+        {
+            yield return "route_portfolio_revision_invalid";
         }
     }
 
@@ -240,7 +296,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
     };
 
     internal static SmallModelActionParameter[] RouteBindingParameters(
-        AcquisitionRouteTargetDateUnlock requirement) => new[]
+        AcquisitionRouteTargetDateUnlock requirement,
+        string portfolioId,
+        int committedLedgerRevision) => new[]
     {
         Parameter("acquisition_route_occurrence_id",
             requirement.RouteOccurrenceId),
@@ -259,15 +317,25 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         Parameter("acquisition_minimum_quality",
             requirement.MinimumQuality.ToString(CultureInfo.InvariantCulture)),
         Parameter("acquisition_route_kind", requirement.RouteKind),
-        Parameter("acquisition_source_id", requirement.SourceId)
+        Parameter("acquisition_source_id", requirement.SourceId),
+        Parameter("acquisition_reservation_portfolio_id", portfolioId),
+        Parameter(
+            "acquisition_reservation_ledger_revision",
+            committedLedgerRevision.ToString(CultureInfo.InvariantCulture))
     };
 
     private static bool RouteParametersMatch(
         SmallModelActionParameter[]? actual,
-        AcquisitionRouteTargetDateUnlock requirement)
+        AcquisitionRouteTargetDateUnlock requirement,
+        string portfolioId,
+        int committedLedgerRevision)
     {
         var values = actual ?? Array.Empty<SmallModelActionParameter>();
-        return RouteBindingParameters(requirement).All(expected =>
+        var expectedValues = RouteBindingParameters(
+            requirement,
+            portfolioId,
+            committedLedgerRevision);
+        return expectedValues.All(expected =>
         {
             var matches = values.Where(value => string.Equals(
                     value.Name,

@@ -14,6 +14,10 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             inputs.TargetDateOpportunityCostPath);
         var loweringPath = Path.GetFullPath(inputs.AcquisitionLoweringPath);
         var snapshotPath = Path.GetFullPath(inputs.BeforeSnapshotPath);
+        var portfolioReceiptPath = Path.GetFullPath(
+            inputs.PortfolioCommitReceiptPath);
+        var committedLedgerPath = Path.GetFullPath(
+            inputs.CommittedStrategyLedgerPath);
         var queuePath = Path.GetFullPath(inputs.ActionQueuePath);
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
@@ -22,6 +26,20 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var recomputed = RecomputeOpportunityCost(inputs);
         Require(EqualJson(opportunity, recomputed),
             "Target-date opportunity-cost report drifted from deterministic source compilation.");
+        var portfolioReceipt = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioCommitReceipt>(
+            portfolioReceiptPath,
+            "Acquisition route portfolio commit receipt");
+        var recomputedPortfolioReceipt =
+            AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+                PortfolioInputs(inputs),
+                inputs.PortfolioAdmissionPath,
+                committedLedgerPath,
+                string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath)
+                    ? null
+                    : inputs.PortfolioCommitResultPath);
+        Require(EqualJson(portfolioReceipt, recomputedPortfolioReceipt),
+            "Route portfolio commit receipt drifted from deterministic source compilation.");
         var lowering = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteOptionLoweringReport>(
             loweringPath,
@@ -54,13 +72,20 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 requirement,
                 before,
                 snapshotPath)
+            .Concat(ValidatePortfolioCommit(
+                portfolioReceipt,
+                opportunity,
+                selected.RouteOccurrenceId,
+                before.StateHash))
             .Concat(ValidateQueue(
                 queue,
                 opportunity.GoalId,
                 before.StateHash,
                 selectedCandidateId,
                 requirement,
-                lowered))
+                lowered,
+                portfolioReceipt.PortfolioId,
+                portfolioReceipt.CommittedLedgerRevision))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -70,6 +95,10 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var selectedFromFrontier = !reasons.Any(reason => reason.StartsWith(
             "route_selection_",
             StringComparison.Ordinal));
+        var portfolioCommitVerified = !reasons.Any(reason =>
+            reason.StartsWith(
+                "route_portfolio_",
+                StringComparison.Ordinal));
         var terminalKind = TerminalReceiptKind(requirement.MatchKind);
         if (string.IsNullOrWhiteSpace(terminalKind))
         {
@@ -103,6 +132,13 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             SourceId = requirement.SourceId,
             OpportunityCostSha256 = CurrentTeacherFrontierSupport.HashFile(
                 opportunityPath),
+            PortfolioCommitReceiptSha256 =
+                CurrentTeacherFrontierSupport.HashFile(portfolioReceiptPath),
+            ReservationPortfolioId = portfolioReceipt.PortfolioId,
+            CommittedStrategyLedgerSha256 =
+                CurrentTeacherFrontierSupport.HashFile(committedLedgerPath),
+            CommittedStrategyLedgerRevision =
+                portfolioReceipt.CommittedLedgerRevision,
             AcquisitionLoweringSha256 = CurrentTeacherFrontierSupport.HashFile(
                 loweringPath),
             BeforeSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
@@ -118,6 +154,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             TerminalReceiptKind = terminalKind,
             SelectedFromCompleteParetoFrontier = selectedFromFrontier,
             QueueOptionsBoundToRoute = optionsBound,
+            PortfolioReservationCommitVerified = portfolioCommitVerified,
             DispatchBindingReady = reasons.Length == 0,
             FormalTrainingAuthorized = false,
             BlockingReasons = reasons
@@ -147,6 +184,37 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             inputs.StrategyLedgerPath,
             inputs.BeforeSnapshotPath,
             inputs.RouteTimingCalibrationPath);
+
+    internal static AcquisitionRoutePortfolioInputs PortfolioInputs(
+        AcquisitionRouteExecutionBindingInputs inputs) => new()
+        {
+            RequirementInventoryPath = inputs.RequirementInventoryPath,
+            AcquisitionLoweringPath = inputs.AcquisitionLoweringPath,
+            MasterAnglerWindowsPath = inputs.MasterAnglerWindowsPath,
+            CalendarResolutionPath = inputs.CalendarResolutionPath,
+            TargetDateCalendarPath = inputs.TargetDateCalendarPath,
+            TargetDateUnlockPath = inputs.TargetDateUnlockPath,
+            TargetDateFestivalPath = inputs.TargetDateFestivalPath,
+            TargetDateLocationPath = inputs.TargetDateLocationPath,
+            TargetDateFacilityPath = inputs.TargetDateFacilityPath,
+            TargetDateResourcePath = inputs.TargetDateResourcePath,
+            TargetDateCurrencyPath = inputs.TargetDateCurrencyPath,
+            TargetDateReservationPath = inputs.TargetDateReservationPath,
+            TargetDateProcessingPath = inputs.TargetDateProcessingPath,
+            TargetDateFishingProbabilityPath =
+                inputs.TargetDateFishingProbabilityPath,
+            TargetDateStochasticRetryPath =
+                inputs.TargetDateStochasticRetryPath,
+            TargetDateDailyTimeEnergyPath =
+                inputs.TargetDateDailyTimeEnergyPath,
+            TargetDateOpportunityCostPath =
+                inputs.TargetDateOpportunityCostPath,
+            FishingForecastManifestPath = inputs.FishingForecastManifestPath,
+            StrategyLedgerPath = inputs.StrategyLedgerPath,
+            SnapshotPath = inputs.BeforeSnapshotPath,
+            RouteTimingCalibrationPath = inputs.RouteTimingCalibrationPath,
+            ProposalPath = inputs.PortfolioProposalPath
+        };
 
     internal static string SelectedCandidateId(string routeOccurrenceId) =>
         "acquisition-route:" + routeOccurrenceId;

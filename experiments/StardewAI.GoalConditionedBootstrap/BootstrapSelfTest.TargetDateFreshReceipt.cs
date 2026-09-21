@@ -45,6 +45,10 @@ internal static partial class BootstrapSelfTest
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             inputs.BeforeSnapshotPath,
             "Target-date before snapshot");
+        var portfolioReceipt = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioCommitReceipt>(
+            inputs.PortfolioCommitReceiptPath,
+            "Target-date portfolio commit receipt");
         var actor = ExecutionTargetProfiles.CreateActor(
             ExecutionTargetProfiles.TrainingSingleplayer);
         var queueItem = new ActionQueueItem
@@ -68,7 +72,10 @@ internal static partial class BootstrapSelfTest
                 ExecutionMode = ExecutionTargetProfiles.TrainingSingleplayer,
                 Actor = actor,
                 Parameters = AcquisitionRouteExecutionBindingBuilder
-                    .RouteBindingParameters(requirement),
+                    .RouteBindingParameters(
+                        requirement,
+                        portfolioReceipt.PortfolioId,
+                        portfolioReceipt.CommittedLedgerRevision),
                 Steps = new[]
                 {
                     new CompiledActionStep
@@ -111,9 +118,14 @@ internal static partial class BootstrapSelfTest
                 binding.DispatchBindingReady &&
                 binding.SelectedFromCompleteParetoFrontier &&
                 binding.QueueOptionsBoundToRoute &&
+                binding.PortfolioReservationCommitVerified &&
                 !binding.FormalTrainingAuthorized &&
                 binding.BlockingReasons.Length == 0 &&
                 binding.RouteOccurrenceId == inputs.RouteOccurrenceId &&
+                binding.ReservationPortfolioId ==
+                    portfolioReceipt.PortfolioId &&
+                binding.CommittedStrategyLedgerRevision ==
+                    portfolioReceipt.CommittedLedgerRevision &&
                 binding.PrimitiveOptionIds.SequenceEqual(
                     new[] { optionId },
                     StringComparer.Ordinal) &&
@@ -138,6 +150,21 @@ internal static partial class BootstrapSelfTest
                     "route_queue_command_binding_invalid",
                     StringComparer.Ordinal),
             "Queue missing exact route identity was not rejected.");
+        queueItem.NormalizedCommand.Parameters = routeParameters;
+        Write(inputs.ActionQueuePath, queue);
+
+        queueItem.NormalizedCommand.Parameters = routeParameters
+            .Where(parameter => parameter.Name !=
+                "acquisition_reservation_portfolio_id")
+            .ToArray();
+        Write(inputs.ActionQueuePath, queue);
+        var missingPortfolioOwnership =
+            AcquisitionRouteExecutionBindingBuilder.Build(inputs);
+        Require(!missingPortfolioOwnership.DispatchBindingReady &&
+                missingPortfolioOwnership.BlockingReasons.Contains(
+                    "route_queue_command_binding_invalid",
+                    StringComparer.Ordinal),
+            "Queue missing committed portfolio ownership was not rejected.");
         queueItem.NormalizedCommand.Parameters = routeParameters;
         Write(inputs.ActionQueuePath, queue);
 

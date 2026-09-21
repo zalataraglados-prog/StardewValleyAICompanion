@@ -120,6 +120,10 @@ public static partial class AcquisitionRoutePortfolioBuilder
                 .Select(route => route.RouteOccurrenceId)
                 .Order(StringComparer.Ordinal)
                 .ToArray(),
+            ReplacedRouteOccurrenceIds = (proposal.ReplacedRouteOccurrenceIds ??
+                    Array.Empty<string>())
+                .Order(StringComparer.Ordinal)
+                .ToArray(),
             SelectionRulesSatisfied = selectionRulesSatisfied,
             AllRoutesOnCompleteParetoFrontier = allFrontier,
             AggregateCostVector = aggregate,

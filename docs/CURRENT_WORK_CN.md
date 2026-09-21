@@ -11,13 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-21 路线组合原子提交回执与执行所有权闭合
+
+- `acquisition_route_portfolio_commit_receipt.v1` 会从原始 proposal、完整目标日依赖链、提交前 ledger、admission、提交结果和提交后 ledger 确定性重建组合提交事实。发生写入时必须只前进一个 revision，全部材料/货币 claim 必须成为精确 active 行，全部显式 release 必须取消，并且每个分量历史与唯一 `reservation_portfolio_commit` 标记必须处于同一 revision；任一后置 claim 失败时不得泄漏前置写入。无需新 claim 的组合只接受规范 JSON 等价的未变化 ledger 和无 commit result 的幂等路径。
+- `acquisition_route_execution_binding.v1` 现已消费并重算上述回执。被调度的路线必须在该组合中精确出现一次；每个 normalized command 除原有 11 个路线身份参数外，还必须携带精确 `acquisition_reservation_portfolio_id` 与 `acquisition_reservation_ledger_revision`。因此旧队列、只做过 preflight 的组合、错误 revision 或脱离组合选择的单路线均不能绕过 reservation 所有权边界。
+- Backend 回归为 `199/199`；实验项目 Release 构建为 `0 warning / 0 error`；聚焦 76 路线全链自测通过真实商店材料+货币原子提交、提交后回执、篡改 ledger 拒绝、无 reservation 幂等回执、缺组合所有权参数拒绝和 fresh 终态回执。未启动游戏或训练。
+- 这一步完成的是“组合 claim 原子落账 -> 提交后证明 -> 单路线队列持有组合所有权”，不是 Teacher 偏好。下一固定边界是独立 Teacher 对完整需求组合的偏好/准入，以及组合内多路线的顺序执行、fresh 重规划和组合级完成回执；这些完成前 `formal_training_authorized` 继续保持 false。
+
 ## 2026-09-21 目标日路线执行绑定与 fresh 终态回执闭合
 
 - 新增执行前 `acquisition_route_execution_binding.v1` 和命令 `build-acquisition-route-execution-binding`。构建器会从原始输入确定性重建完整机会成本报告，只允许完整 Pareto 前沿中的一个精确 `route_occurrence_id` 进入执行；候选 ID 由 occurrence 确定生成，每个队列项必须重复携带精确需求、路线、来源、数量和品质身份，同时哈希绑定 lowering、目标日快照、动作队列、全部队列项和 option。每个 option 必须属于该路线权威 endpoint/support 集，且至少包含一个 endpoint，不能再用调用方别名或物品 ID 猜测实际执行了哪条获取路线。
 - 新增执行后 `acquisition_route_fresh_terminal_receipt.v1` 和命令 `build-acquisition-route-fresh-terminal-receipt`。它会重算并逐对象核对执行绑定，复用统一的顺序队列回执验证器，要求同存档/玩家、同目标日、新鲜 after snapshot、精确状态哈希和 tick 边界、逐项身份/顺序/primitive 原生验证以及最终队列闭合。
 - `item_id` 路线必须证明满足最低品质的玩家库存净增量不少于完整 `required_amount`；“要求 2 个但只增加 1 个”已成为显式失败回归。`money_payment` 路线另走社区中心原生 ingredient `false -> true` 与 money 精确减少量双重验证，不冒充库存产物回执。原 Stage 1 Teacher 回执也改用同一精确数量验证器，修复了过去任意正增量即可放行多数量需求的问题。
 - Release 构建为 0 warning / 0 error；聚焦 Bootstrap 76 路线全链自测通过，覆盖确定性绑定、真实商店 Pareto 路线正向回执以及部分数量拒绝。机会成本的延后回归已完成，12 个固定依赖轴至此都有明确契约边界。
-- fresh 回执只证明“这条已选路线的这一队列确实完成并产生了要求的终态”，不能倒过来替代路线选择。`route_training_evidence_eligible=true` 仍不等于正式训练准入；下一阶段是跨需求路线组合、原子 reservation commit 和正式 rollout controller 准入，`formal_training_authorized` 继续保持 false。
+- fresh 回执只证明“这条已选路线的这一队列确实完成并产生了要求的终态”，不能倒过来替代路线选择。跨需求路线组合、原子 reservation commit、提交后所有权回执及其单路线 dispatch 绑定已由上节闭合；`route_training_evidence_eligible=true` 仍不等于正式训练准入，剩余边界是独立 Teacher 组合偏好、组合内顺序执行/fresh 重规划、组合级完成回执和正式 rollout controller 准入。
 
 ## 2026-09-20 目标日机会成本轴实现待回归
 

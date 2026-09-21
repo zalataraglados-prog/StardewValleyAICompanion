@@ -485,8 +485,9 @@ ordered queue receipt against a fresh same-save, same-player and same-target-day
 routes require the full quantity increase at or above minimum quality; native community-center
 money routes require both the exact money decrease and the bundle ingredient transition. A
 predicted receipt, a partial quantity gain or a route inferred only from item identity is not
-Teacher evidence. This closes per-route evidence only; route-set composition, atomic reservation
-commit and formal rollout authorization remain downstream controller responsibilities.
+Teacher evidence. Route-set composition and atomic reservation ownership are now separate typed
+controller artifacts described below; independent preference and formal rollout authorization
+remain downstream controller responsibilities.
 
 Goal-direction ownership is not copied into the dictionary or experiment. The production
 `GrandpaDirectionCatalog` is the sole mapping from score criteria to directions, permitted
@@ -628,6 +629,14 @@ per-route evidence. `acquisition_route_portfolio_admission.v1` binds an explicit
 authoritative requirement set/group identities, enforces each stored selection rule, accepts at
 most one Pareto-front route per selected alternative, preserves the complete non-scalar cost
 vector, and preflights all material/native-currency claims together. The Backend persists those
-claims through one staging transaction and one ledger revision. This closes atomic storage, not
-preference selection or execution evidence. A post-commit exact-active-set receipt and its binding
-into per-route dispatch remain required before the dictionary can admit formal Teacher rollout.
+claims through one staging transaction and one ledger revision.
+
+`acquisition_route_portfolio_commit_receipt.v1` then deterministically rebuilds the pre-commit
+admission and verifies the exact committed active claim set, explicit releases, one-revision
+mutation and same-revision component/portfolio history. The idempotent no-mutation path requires
+an unchanged canonical ledger and no commit result. `acquisition_route_execution_binding.v1`
+rebuilds that receipt and requires every normalized command to carry the exact portfolio ID and
+committed ledger revision, so a preflight-only or stale queue cannot claim reservation ownership.
+This closes atomic storage and per-route dispatch ownership, not independent preference among
+incomparable Pareto portfolios, ordered multi-route rollout, portfolio completion evidence or
+formal Teacher rollout admission.

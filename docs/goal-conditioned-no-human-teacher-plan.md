@@ -1528,11 +1528,13 @@ Slice 7 remains assigned to the RTX 5070 node.
 
 - `acquisition_route_execution_binding.v1` is a pre-dispatch artifact created only after route selection. It
   deterministically rebuilds the complete opportunity-cost chain, requires the selected occurrence to belong to the
-  complete Pareto frontier, and hash-binds the lowering report, source snapshot and immutable pending action queue.
+  complete Pareto frontier, deterministically rebuilds the verified portfolio commit receipt, and hash-binds the
+  lowering report, source snapshot, committed strategy ledger, portfolio receipt and immutable pending action queue.
   The accepted candidate ID is derived from the occurrence rather than supplied as an alias, and every queue item
-  repeats the exact occurrence, requirement, route, source, quantity and quality identity. Every option must belong
-  to the selected route's authoritative endpoint/support set, at least one endpoint must be present, and actor, mode
-  and state hash must remain exact. Qualified item identity alone is never sufficient to infer a route.
+  repeats the exact occurrence, requirement, route, source, quantity and quality identity plus the reservation
+  portfolio ID and committed ledger revision. Every option must belong to the selected route's authoritative
+  endpoint/support set, at least one endpoint must be present, and actor, mode and state hash must remain exact.
+  Qualified item identity, an uncommitted preflight or a stale queue is never sufficient to infer a route.
 - `acquisition_route_fresh_terminal_receipt.v1` is post-execution evidence, not another predictive target-date axis.
   It recomputes and compares the binding, then validates the canonical ordered queue receipt against same-save,
   same-player, same-target-day snapshots. Every queue item must preserve order and identity, rebind the correct state,
@@ -1564,10 +1566,18 @@ Slice 7 remains assigned to the RTX 5070 node.
   Releases and all material/currency upserts run against an in-memory staging ledger under one repository lock;
   any failure discards the staging result. Success is saved once, advances the ledger once, and records all component
   history plus a portfolio commit marker at that same revision.
-- Backend regression is 198/198 and the focused 76-route Bootstrap chain passes both a real shop-route material +
-  money portfolio and a wrong-scope rejection. The next fixed boundary is a post-commit receipt that recomputes the
-  pre-commit admission, verifies the exact resulting active claim set and binds that committed revision into each
-  route execution binding. Formal training remains false until that receipt and rollout-controller admission close.
+- `acquisition_route_portfolio_commit_receipt.v1` recomputes the pre-commit admission and verifies the exact committed
+  active claim set. A mutating commit must advance exactly one ledger revision, cancel every explicit release, retain
+  every exact material/currency claim and record each component plus one portfolio marker at that same revision. A
+  no-mutation admission requires a canonical unchanged ledger and forbids a commit result.
+- Each route execution binding now rebuilds this receipt, requires its occurrence to appear exactly once in the
+  selected portfolio and requires all normalized commands to repeat the exact portfolio ID and committed revision.
+  This prevents preflight-only, stale or unrelated route queues from borrowing reservation ownership.
+- Backend regression is 199/199, the experiment Release build is warning-free, and the focused 76-route Bootstrap
+  chain passes real shop-route material + money commit/receipt, tampered-ledger rejection, no-reservation idempotence,
+  missing queue ownership rejection and fresh terminal evidence. Formal training remains false until an independent
+  Teacher selects among incomparable portfolios and the rollout controller closes ordered multi-route execution,
+  fresh replanning and portfolio-level completion evidence.
 
 ## Review questions
 

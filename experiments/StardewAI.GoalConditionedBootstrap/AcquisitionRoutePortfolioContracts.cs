@@ -112,6 +112,10 @@ public sealed class AcquisitionRoutePortfolioAdmission
     public string[] SelectedRouteOccurrenceIds { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("replaced_route_occurrence_ids")]
+    public string[] ReplacedRouteOccurrenceIds { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("selection_rules_satisfied")]
     public bool SelectionRulesSatisfied { get; set; }
 

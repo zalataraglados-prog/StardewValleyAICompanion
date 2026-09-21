@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -68,6 +70,30 @@ internal static partial class BootstrapSelfTest
         var targetDatePortfolioProposalPath = Path.Combine(
             root,
             "target-date-portfolio-proposal.json");
+        var targetDatePortfolioAdmissionPath = Path.Combine(
+            root,
+            "target-date-portfolio-admission.json");
+        var targetDatePortfolioCommitResultPath = Path.Combine(
+            root,
+            "target-date-portfolio-commit-result.json");
+        var targetDatePortfolioCommitReceiptPath = Path.Combine(
+            root,
+            "target-date-portfolio-commit-receipt.json");
+        var targetDatePortfolioCommittedLedgerPath = Path.Combine(
+            root,
+            "target-date-portfolio-committed-ledger.json");
+        var targetDatePortfolioTamperedLedgerPath = Path.Combine(
+            root,
+            "target-date-portfolio-tampered-ledger.json");
+        var targetDatePortfolioCoupledTamperedLedgerPath = Path.Combine(
+            root,
+            "target-date-portfolio-coupled-tampered-ledger.json");
+        var targetDatePortfolioCoupledTamperedResultPath = Path.Combine(
+            root,
+            "target-date-portfolio-coupled-tampered-result.json");
+        var targetDatePortfolioExistingAdmissionPath = Path.Combine(
+            root,
+            "target-date-portfolio-existing-admission.json");
         var targetDateRouteQueuePath = Path.Combine(
             root,
             "target-date-route-queue.json");
@@ -2012,6 +2038,107 @@ internal static partial class BootstrapSelfTest
                 portfolio.AtomicCommitRequest.MaterialClaims.Length == 1 &&
                 portfolio.AtomicCommitRequest.CurrencyClaims.Length == 1,
             "Target-date route portfolio admission drifted.");
+        Write(targetDatePortfolioAdmissionPath, portfolio);
+        var portfolioSnapshot = CurrentTeacherFrontierSupport.Read<
+            SnapshotEnvelope>(
+            targetDateUnlockSnapshotPath,
+            "Portfolio self-test snapshot");
+        var portfolioBaseLedger = CurrentTeacherFrontierSupport.Read<
+            StrategyCommitmentLedger>(
+            strategyLedgerPath,
+            "Portfolio self-test base ledger");
+        var portfolioCommit = new ReservationPortfolioLedgerService().Commit(
+            portfolioBaseLedger,
+            portfolioSnapshot,
+            portfolio.AtomicCommitRequest!,
+            "2026-09-21T00:00:00Z");
+        Require(portfolioCommit.Accepted &&
+                portfolioCommit.Ledger is not null,
+            "Portfolio self-test atomic commit failed.");
+        Write(targetDatePortfolioCommitResultPath, portfolioCommit);
+        Write(targetDatePortfolioCommittedLedgerPath, portfolioCommit.Ledger!);
+        var portfolioReceipt =
+            AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+                PortfolioInputs(),
+                targetDatePortfolioAdmissionPath,
+                targetDatePortfolioCommittedLedgerPath,
+                targetDatePortfolioCommitResultPath);
+        Require(portfolioReceipt.Status ==
+                    "verified_atomic_reservation_portfolio_commit" &&
+                portfolioReceipt.AtomicMutationObserved &&
+                portfolioReceipt.ExactActiveClaimSetVerified &&
+                portfolioReceipt.SingleRevisionCommitVerified &&
+                portfolioReceipt.PortfolioCommitVerified &&
+                !portfolioReceipt.FormalTrainingAuthorized &&
+                portfolioReceipt.CommittedLedgerRevision ==
+                    portfolioReceipt.BaseLedgerRevision + 1,
+            "Atomic reservation portfolio receipt drifted.");
+        Write(targetDatePortfolioCommitReceiptPath, portfolioReceipt);
+        var tamperedPortfolioLedger = JsonSerializer.Deserialize<
+            StrategyCommitmentLedger>(
+            JsonSerializer.Serialize(
+                portfolioCommit.Ledger,
+                JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        tamperedPortfolioLedger.MaterialReservations[0].Quantity--;
+        Write(targetDatePortfolioTamperedLedgerPath, tamperedPortfolioLedger);
+        var tamperedPortfolioReceipt =
+            AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+                PortfolioInputs(),
+                targetDatePortfolioAdmissionPath,
+                targetDatePortfolioTamperedLedgerPath,
+                targetDatePortfolioCommitResultPath);
+        Require(!tamperedPortfolioReceipt.PortfolioCommitVerified &&
+                tamperedPortfolioReceipt.BlockingReasons.Contains(
+                    "atomic_commit_result_mismatch") &&
+                tamperedPortfolioReceipt.BlockingReasons.Any(reason =>
+                    reason.StartsWith(
+                        "material_claim_not_exactly_committed:",
+                    StringComparison.Ordinal)),
+            "A tampered committed portfolio ledger was accepted.");
+        var coupledTamperedLedger = JsonSerializer.Deserialize<
+            StrategyCommitmentLedger>(
+            JsonSerializer.Serialize(
+                portfolioCommit.Ledger,
+                JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        var unrelatedReservation = JsonSerializer.Deserialize<
+            MaterialReservation>(
+            JsonSerializer.Serialize(
+                coupledTamperedLedger.MaterialReservations[0],
+                JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        unrelatedReservation.ReservationId =
+            "reservation:coupled-tampered-unrelated";
+        unrelatedReservation.SourceDecisionId =
+            "unrelated-tampered-decision";
+        coupledTamperedLedger.MaterialReservations =
+            coupledTamperedLedger.MaterialReservations
+                .Append(unrelatedReservation)
+                .ToArray();
+        var coupledTamperedResult = JsonSerializer.Deserialize<
+            ReservationPortfolioCommitResult>(
+            JsonSerializer.Serialize(
+                portfolioCommit,
+                JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        coupledTamperedResult.Ledger = coupledTamperedLedger;
+        Write(
+            targetDatePortfolioCoupledTamperedLedgerPath,
+            coupledTamperedLedger);
+        Write(
+            targetDatePortfolioCoupledTamperedResultPath,
+            coupledTamperedResult);
+        var coupledTamperedReceipt =
+            AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+                PortfolioInputs(),
+                targetDatePortfolioAdmissionPath,
+                targetDatePortfolioCoupledTamperedLedgerPath,
+                targetDatePortfolioCoupledTamperedResultPath);
+        Require(!coupledTamperedReceipt.PortfolioCommitVerified &&
+                coupledTamperedReceipt.BlockingReasons.Contains(
+                    "atomic_commit_exact_replay_mismatch"),
+            "Coupled result/ledger tampering bypassed exact commit replay.");
         portfolioProposal.ScopedRequirements = new[]
         {
             new AcquisitionRoutePortfolioRequirementScope(
@@ -2033,6 +2160,49 @@ internal static partial class BootstrapSelfTest
                 portfolioRequirement.RequirementSetId,
                 portfolioRequirement.RequirementId)
         };
+        Write(targetDatePortfolioProposalPath, portfolioProposal);
+
+        var fishRequirement = TargetDateRequirementRoute(
+            targetDateOpportunityFish);
+        var existingProposal = new AcquisitionRoutePortfolioProposal
+        {
+            ProposalId = "self-test-fish-route-no-reservation",
+            GoalId = targetDateOpportunityCost.GoalId,
+            SnapshotStateHash = targetDateOpportunityCost.SnapshotStateHash,
+            ExpectedLedgerRevision = 0,
+            ScopedRequirements = new[]
+            {
+                new AcquisitionRoutePortfolioRequirementScope(
+                    fishRequirement.RequirementSetId,
+                    fishRequirement.RequirementId)
+            },
+            SelectedRouteOccurrenceIds = new[]
+            {
+                targetDateOpportunityFish.RouteOccurrenceId
+            }
+        };
+        Write(targetDatePortfolioProposalPath, existingProposal);
+        var existingPortfolio = AcquisitionRoutePortfolioBuilder.Build(
+            PortfolioInputs());
+        Require(existingPortfolio.Status ==
+                    "admitted_reservations_already_committed" &&
+                !existingPortfolio.AtomicCommitRequired &&
+                existingPortfolio.AtomicCommitRequest is null,
+            "No-reservation route unexpectedly required a ledger mutation.");
+        Write(targetDatePortfolioExistingAdmissionPath, existingPortfolio);
+        var existingReceipt =
+            AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+                PortfolioInputs(),
+                targetDatePortfolioExistingAdmissionPath,
+                strategyLedgerPath,
+                null);
+        Require(existingReceipt.Status ==
+                    "verified_existing_reservation_portfolio" &&
+                !existingReceipt.AtomicMutationObserved &&
+                existingReceipt.ExactActiveClaimSetVerified &&
+                existingReceipt.SingleRevisionCommitVerified &&
+                existingReceipt.PortfolioCommitVerified,
+            "Existing no-reservation portfolio receipt drifted.");
         Write(targetDatePortfolioProposalPath, portfolioProposal);
 
         VerifyTargetDateFreshTerminalReceipt(
@@ -2062,6 +2232,14 @@ internal static partial class BootstrapSelfTest
                 StrategyLedgerPath = strategyLedgerPath,
                 BeforeSnapshotPath = targetDateUnlockSnapshotPath,
                 RouteTimingCalibrationPath = targetDateRouteCalibrationPath,
+                PortfolioProposalPath = targetDatePortfolioProposalPath,
+                PortfolioAdmissionPath = targetDatePortfolioAdmissionPath,
+                PortfolioCommitReceiptPath =
+                    targetDatePortfolioCommitReceiptPath,
+                CommittedStrategyLedgerPath =
+                    targetDatePortfolioCommittedLedgerPath,
+                PortfolioCommitResultPath =
+                    targetDatePortfolioCommitResultPath,
                 ActionQueuePath = targetDateRouteQueuePath,
                 RouteOccurrenceId = targetDateOpportunityShop.RouteOccurrenceId
             },
