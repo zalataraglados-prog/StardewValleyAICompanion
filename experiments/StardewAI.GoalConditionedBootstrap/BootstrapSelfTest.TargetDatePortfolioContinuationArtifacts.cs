@@ -174,6 +174,7 @@ internal static partial class BootstrapSelfTest
             string preferencePath,
             string commitReceiptPath,
             string committedLedgerPath,
+            string commitResultPath,
             string queuePath,
             string routeOccurrenceId) => new()
         {
@@ -208,6 +209,7 @@ internal static partial class BootstrapSelfTest
             PortfolioTeacherPreferencePath = preferencePath,
             PortfolioCommitReceiptPath = commitReceiptPath,
             CommittedStrategyLedgerPath = committedLedgerPath,
+            PortfolioCommitResultPath = commitResultPath,
             ActionQueuePath = queuePath,
             RouteOccurrenceId = routeOccurrenceId
         };

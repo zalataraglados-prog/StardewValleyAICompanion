@@ -15,7 +15,26 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string afterSnapshotPath,
         string freshTerminalReceiptPath,
         string runId,
-        string executorVersion)
+        string executorVersion) => BuildRequestCore(
+            inputs,
+            executionBindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            freshTerminalReceiptPath,
+            runId,
+            executorVersion,
+            null);
+
+    private static ReservationPortfolioRouteSettlementRequest
+        BuildRequestCore(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            InitialContinuationProof? continuation)
     {
         var context = Prepare(
             inputs,
@@ -24,7 +43,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             afterSnapshotPath,
             freshTerminalReceiptPath,
             runId,
-            executorVersion);
+            executorVersion,
+            continuation);
         return CanonicalRequest(context);
     }
 
@@ -38,7 +58,32 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string executorVersion,
         string settlementRequestPath,
         string settlementResultPath,
-        string settledLedgerPath)
+        string settledLedgerPath) => BuildReceiptCore(
+            inputs,
+            executionBindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            freshTerminalReceiptPath,
+            runId,
+            executorVersion,
+            settlementRequestPath,
+            settlementResultPath,
+            settledLedgerPath,
+            null);
+
+    private static AcquisitionRoutePortfolioSettlementReceipt
+        BuildReceiptCore(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            string settlementRequestPath,
+            string settlementResultPath,
+            string settledLedgerPath,
+            InitialContinuationProof? continuation)
     {
         var context = Prepare(
             inputs,
@@ -47,7 +92,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             afterSnapshotPath,
             freshTerminalReceiptPath,
             runId,
-            executorVersion);
+            executorVersion,
+            continuation);
         var requestPath = Path.GetFullPath(settlementRequestPath);
         var resultPath = Path.GetFullPath(settlementResultPath);
         var ledgerPath = Path.GetFullPath(settledLedgerPath);

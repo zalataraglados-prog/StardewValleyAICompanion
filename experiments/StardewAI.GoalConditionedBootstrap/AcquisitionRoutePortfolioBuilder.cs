@@ -139,9 +139,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         return new AcquisitionRoutePortfolioAdmission
         {
             Status = ready
-                ? request is null
-                    ? "admitted_reservations_already_committed"
-                    : "admitted_pending_atomic_reservation_commit"
+                ? "admitted_pending_atomic_reservation_commit"
                 : "blocked_route_portfolio_admission",
             ProposalId = proposal.ProposalId,
             GoalId = proposal.GoalId,

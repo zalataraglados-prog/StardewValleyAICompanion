@@ -13,7 +13,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string afterSnapshotPath,
         string freshTerminalReceiptPath,
         string runId,
-        string executorVersion)
+        string executorVersion,
+        InitialContinuationProof? continuation)
     {
         var bindingPath = Path.GetFullPath(executionBindingPath);
         var freshPath = Path.GetFullPath(freshTerminalReceiptPath);
@@ -22,21 +23,39 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             AcquisitionRouteExecutionBinding>(
             bindingPath,
             "Acquisition route execution binding");
-        var expectedBinding = AcquisitionRouteExecutionBindingBuilder.Build(
-            inputs);
+        var expectedBinding = continuation is null
+            ? AcquisitionRouteExecutionBindingBuilder.Build(inputs)
+            : AcquisitionRouteExecutionBindingBuilder
+                .BuildInitialContinuation(
+                    continuation.InitialCheckpointProof,
+                    continuation.CheckpointPath,
+                    continuation.ContinuationRequestPath,
+                    inputs);
         Require(EqualJson(binding, expectedBinding),
             "Route execution binding drifted from deterministic source compilation.");
         var fresh = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteFreshTerminalReceiptAdmission>(
             freshPath,
             "Acquisition route fresh terminal receipt");
-        var expectedFresh = AcquisitionRouteFreshTerminalReceiptBuilder.Build(
-            inputs,
-            bindingPath,
-            executionReceiptPath,
-            afterPath,
-            runId,
-            executorVersion);
+        var expectedFresh = continuation is null
+            ? AcquisitionRouteFreshTerminalReceiptBuilder.Build(
+                inputs,
+                bindingPath,
+                executionReceiptPath,
+                afterPath,
+                runId,
+                executorVersion)
+            : AcquisitionRouteFreshTerminalReceiptBuilder
+                .BuildInitialContinuation(
+                    continuation.InitialCheckpointProof,
+                    continuation.CheckpointPath,
+                    continuation.ContinuationRequestPath,
+                    inputs,
+                    bindingPath,
+                    executionReceiptPath,
+                    afterPath,
+                    runId,
+                    executorVersion);
         Require(EqualJson(fresh, expectedFresh),
             "Fresh terminal receipt drifted from deterministic source compilation.");
         Require(binding.DispatchBindingReady &&
@@ -112,4 +131,10 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string RouteSourceDecisionId,
         string[] ActiveReservationIds,
         string FreshTerminalReceiptSha256);
+
+    private sealed record InitialContinuationProof(
+        AcquisitionRoutePortfolioInitialCheckpointProof
+            InitialCheckpointProof,
+        string CheckpointPath,
+        string ContinuationRequestPath);
 }

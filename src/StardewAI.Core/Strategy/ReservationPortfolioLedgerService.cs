@@ -28,7 +28,15 @@ public sealed class ReservationPortfolioLedgerService
 
         var originalRevision = current?.Revision ?? 0;
         var originalHistoryCount = current?.History.Length ?? 0;
-        StrategyCommitmentLedger? staged = current;
+        var markerOnly = request.ReleaseReservationIds.Length == 0 &&
+            request.MaterialClaims.Length == 0 &&
+            request.CurrencyClaims.Length == 0;
+        StrategyCommitmentLedger? staged = markerOnly
+            ? StrategyCommitmentLedgerSupport.CloneOrCreate(
+                current,
+                snapshot,
+                updatedAt)
+            : current;
 
         foreach (var reservationId in request.ReleaseReservationIds
                      .OrderBy(value => value, StringComparer.Ordinal))
@@ -331,13 +339,6 @@ public sealed class ReservationPortfolioLedgerService
             errors.Add("reservation_portfolio_claim_is_null");
             return;
         }
-        if (request.ReleaseReservationIds.Length == 0 &&
-            request.MaterialClaims.Length == 0 &&
-            request.CurrencyClaims.Length == 0)
-        {
-            errors.Add("reservation_portfolio_empty");
-        }
-
         var releaseIds = request.ReleaseReservationIds;
         if (releaseIds.Any(string.IsNullOrWhiteSpace) ||
             releaseIds.Distinct(StringComparer.Ordinal).Count() != releaseIds.Length)

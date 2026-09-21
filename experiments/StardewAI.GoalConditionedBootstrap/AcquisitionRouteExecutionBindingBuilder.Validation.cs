@@ -179,15 +179,14 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         string routeOccurrenceId,
         string beforeStateHash)
     {
-        var expectedStatus = receipt.AtomicMutationObserved
-            ? "verified_atomic_reservation_portfolio_commit"
-            : "verified_existing_reservation_portfolio";
         if (!string.Equals(
                 receipt.SchemaVersion,
                 "acquisition_route_portfolio_commit_receipt.v1",
                 StringComparison.Ordinal) ||
-            !string.Equals(receipt.Status, expectedStatus,
+            !string.Equals(receipt.Status,
+                "verified_atomic_reservation_portfolio_commit",
                 StringComparison.Ordinal) ||
+            !receipt.AtomicMutationObserved ||
             !receipt.ExactActiveClaimSetVerified ||
             !receipt.SingleRevisionCommitVerified ||
             !receipt.PortfolioCommitVerified ||
@@ -215,11 +214,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         {
             yield return "route_portfolio_route_not_selected";
         }
-        var expectedRevision = receipt.AtomicMutationObserved
-            ? receipt.BaseLedgerRevision + 1
-            : receipt.BaseLedgerRevision;
         if (receipt.BaseLedgerRevision < 0 ||
-            receipt.CommittedLedgerRevision != expectedRevision)
+            receipt.CommittedLedgerRevision !=
+                receipt.BaseLedgerRevision + 1)
         {
             yield return "route_portfolio_revision_invalid";
         }

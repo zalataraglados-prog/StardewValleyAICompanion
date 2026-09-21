@@ -1567,14 +1567,14 @@ Slice 7 remains assigned to the RTX 5070 node.
   any failure discards the staging result. Success is saved once, advances the ledger once, and records all component
   history plus a portfolio commit marker at that same revision.
 - `acquisition_route_portfolio_commit_receipt.v1` recomputes the pre-commit admission and verifies the exact committed
-  active claim set. A mutating commit must advance exactly one ledger revision, cancel every explicit release, retain
-  every exact material/currency claim and record each component plus one portfolio marker at that same revision. A
-  no-mutation admission requires a canonical unchanged ledger and forbids a commit result.
+  active claim set. Every admitted selection advances exactly one ledger revision, cancels every explicit release,
+  retains every exact material/currency claim and records each component plus one portfolio marker at that same
+  revision. A claimless selection still performs a marker-only atomic commit so later settlement has real ownership.
 - Each route execution binding now rebuilds this receipt, requires its occurrence to appear exactly once in the
   selected portfolio and requires all normalized commands to repeat the exact portfolio ID and committed revision.
   This prevents preflight-only, stale or unrelated route queues from borrowing reservation ownership.
 - Backend regression is 199/199, the experiment Release build is warning-free, and the focused 76-route Bootstrap
-  chain passes real shop-route material + money commit/receipt, tampered-ledger rejection, no-reservation idempotence,
+  chain passes real shop-route material + money commit/receipt, tampered-ledger rejection, claimless marker commit,
   missing queue ownership rejection and fresh terminal evidence. Formal training remains false until an independent
   Teacher selects among incomparable portfolios and the rollout controller closes ordered multi-route execution,
   fresh replanning and portfolio-level completion evidence.
@@ -1645,11 +1645,12 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The selected continuation proposal/admission now enters the existing exact commit-receipt implementation only after
   its request and Teacher preference are rebuilt from the verified checkpoint. Proposal, admission, commit receipt and
   execution binding preserve one prior-checkpoint hash and one completed-alternative set; drift fails closed.
-- The existing execution-binding implementation is reused with a verified continuation proof. A two-route fixture
-  commits shop plus fish, executes and settles the shop route, rebuilds only the remaining fish scope from the fresh
-  state and settled ledger, proves its no-mutation commit receipt, and binds the fish queue for dispatch.
-- Formal training remains false. The next slice must execute that second route under continuation ownership, settle it,
-  and build a cumulative second checkpoint that exactly replays both transitions and proves portfolio completion.
+- The existing execution-binding, fresh terminal and settlement implementations are reused with a verified continuation
+  proof. A two-route fixture commits shop plus fish, executes and settles the shop route, rebuilds only the remaining
+  fish scope, performs a marker-only continuation commit, executes/settles fish, and emits a cumulative checkpoint that
+  exactly replays both transitions with `transition_count=2` and all scopes complete.
+- Formal training remains false. The next slice must replace the first-continuation-specific proof surface with a
+  repeatable N-transition checkpoint chain, then admit only a verified terminal checkpoint at the rollout controller.
 
 ## Review questions
 

@@ -80,7 +80,7 @@ public sealed class AcquisitionRoutePortfolioRolloutCheckpoint
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The initial rollout checkpoint rebuilds the current Teacher selection and exact completed-route settlement, maps the verified route back to one authoritative requirement alternative, and reports progress by selection rule. Whole-portfolio completion requires every scoped rule satisfied, every selected route completed, and no selected-route active reservation left behind. Otherwise the old route list is stale and a fresh continuation Teacher replan is mandatory. This checkpoint carries no learner score and never authorizes formal training.";
+        "A rollout checkpoint rebuilds the current Teacher selection and exact completed-route settlement, maps the verified route back to one authoritative requirement alternative, and reports cumulative progress by selection rule. A continuation checkpoint also rebuilds its prior checkpoint and binds that artifact hash. Whole-portfolio completion requires every scoped rule satisfied, every selected route completed, and no rollout-owned active reservation left behind. Otherwise the old route list is stale and a fresh continuation Teacher replan is mandatory. This checkpoint carries no learner score and never authorizes formal training.";
 }
 
 public sealed record AcquisitionRoutePortfolioScopeProgress(

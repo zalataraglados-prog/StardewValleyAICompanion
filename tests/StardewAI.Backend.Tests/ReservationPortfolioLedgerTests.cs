@@ -98,6 +98,52 @@ public sealed class ReservationPortfolioLedgerTests
     }
 
     [Fact]
+    public void MarkerOnlyCommitRegistersClaimlessPortfolioWithoutMutatingInput()
+    {
+        var snapshot = Snapshot();
+        var service = new ReservationPortfolioLedgerService();
+        var first = service.Commit(
+            null,
+            snapshot,
+            Request(snapshot, materialQuantity: 20, moneyAmount: 300),
+            "2026-09-21T00:00:00Z");
+        Assert.True(first.Accepted, string.Join(";", first.Errors));
+        var original = JsonSerializer.Serialize(first.Ledger);
+        var marker = Request(
+            snapshot,
+            materialQuantity: 0,
+            moneyAmount: 0,
+            revision: 1);
+        marker.PortfolioId = "portfolio:claimless";
+        marker.SourceDecisionId = "portfolio-decision:claimless";
+        marker.MaterialClaims = Array.Empty<MaterialReservationUpsertRequest>();
+        marker.CurrencyClaims = Array.Empty<CurrencyReservationUpsertRequest>();
+
+        var result = service.Commit(
+            first.Ledger,
+            snapshot,
+            marker,
+            "2026-09-21T00:01:00Z");
+
+        Assert.True(result.Accepted, string.Join(";", result.Errors));
+        Assert.Equal(2, result.CommittedLedgerRevision);
+        Assert.Equal(2, result.Ledger!.Revision);
+        Assert.Equal(original, JsonSerializer.Serialize(first.Ledger));
+        Assert.Equal(1, first.Ledger!.Revision);
+        Assert.Single(result.Ledger.History.Where(row =>
+            row.LedgerRevision == 2 &&
+            row.CommitmentId == "portfolio:claimless" &&
+            row.SourceDecisionId == "portfolio-decision:claimless" &&
+            row.Operation == "reservation_portfolio_commit"));
+        Assert.All(result.Ledger.MaterialReservations, row => Assert.Equal(
+            StrategyCommitmentStatuses.Active,
+            row.Status));
+        Assert.All(result.Ledger.CurrencyReservations, row => Assert.Equal(
+            StrategyCommitmentStatuses.Active,
+            row.Status));
+    }
+
+    [Fact]
     public void FailedReplacementDiscardsStagedReleases()
     {
         var snapshot = Snapshot();

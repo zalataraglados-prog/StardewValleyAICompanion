@@ -676,8 +676,9 @@ before carrying its incomplete scope into the latest exact state and settled-led
 continuation Teacher excludes completed alternatives internally, reduces the remaining required
 slots, and reuses the same complete bounded enumeration, atomic admission preflight and strict
 Pareto rule. Ordinary caller-authored proposals cannot claim completed alternatives. The selected
-continuation now reuses the same exact commit receipt and execution-binding implementations while
-binding the prior checkpoint hash and completed alternatives across proposal, admission and receipt.
-A two-route offline proof closes fresh remaining-scope selection through second-route dispatch, but
-not its exact settlement, a cumulative second checkpoint, multi-transition completion or formal
-training admission.
+continuation now reuses the same exact commit receipt, execution binding, fresh terminal receipt and
+settlement implementations while binding the prior checkpoint hash and completed alternatives across
+proposal, admission and receipt. Claimless selections receive a marker-only atomic commit instead of
+an unauditable unchanged-ledger shortcut. A two-route offline proof closes both exact transitions and
+produces a verified cumulative completion checkpoint. Arbitrary-depth checkpoint chaining and formal
+training admission remain blocked.

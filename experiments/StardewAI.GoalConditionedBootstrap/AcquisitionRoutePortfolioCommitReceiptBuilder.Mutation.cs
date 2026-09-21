@@ -70,20 +70,6 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         return reasons.Count == initialCount;
     }
 
-    private static bool ValidateUnchangedLedger(
-        StrategyCommitmentLedger baseLedger,
-        StrategyCommitmentLedger committed,
-        string? commitResultPath,
-        ICollection<string> reasons)
-    {
-        var initialCount = reasons.Count;
-        if (!string.IsNullOrWhiteSpace(commitResultPath))
-            reasons.Add("commit_result_for_non_mutating_admission_forbidden");
-        if (!EqualJson(baseLedger, committed))
-            reasons.Add("non_mutating_portfolio_ledger_changed");
-        return reasons.Count == initialCount;
-    }
-
     private static void ValidateCommitHistory(
         ReservationPortfolioCommitRequest request,
         StrategyCommitmentLedger committed,

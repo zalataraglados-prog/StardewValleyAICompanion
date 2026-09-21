@@ -2275,24 +2275,46 @@ internal static partial class BootstrapSelfTest
         var existingPortfolio = AcquisitionRoutePortfolioBuilder.Build(
             PortfolioInputs());
         Require(existingPortfolio.Status ==
-                    "admitted_reservations_already_committed" &&
-                !existingPortfolio.AtomicCommitRequired &&
-                existingPortfolio.AtomicCommitRequest is null,
-            "No-reservation route unexpectedly required a ledger mutation.");
+                    "admitted_pending_atomic_reservation_commit" &&
+                existingPortfolio.AtomicCommitRequired &&
+                existingPortfolio.AtomicCommitRequest is
+                {
+                    MaterialClaims.Length: 0,
+                    CurrencyClaims.Length: 0,
+                    ReleaseReservationIds.Length: 0
+                },
+            "No-reservation route did not require an ownership marker commit.");
         Write(targetDatePortfolioExistingAdmissionPath, existingPortfolio);
+        var existingCommit = new ReservationPortfolioLedgerService().Commit(
+            portfolioBaseLedger,
+            portfolioSnapshot,
+            existingPortfolio.AtomicCommitRequest!,
+            "2026-09-21T00:00:30Z");
+        Require(existingCommit.Accepted && existingCommit.Ledger is not null,
+            "No-reservation portfolio marker commit failed.");
+        var existingCommitResultPath = Path.Combine(
+            root,
+            "target-date-portfolio-existing-commit-result.json");
+        var existingCommittedLedgerPath = Path.Combine(
+            root,
+            "target-date-portfolio-existing-committed-ledger.json");
+        Write(existingCommitResultPath, existingCommit);
+        Write(existingCommittedLedgerPath, existingCommit.Ledger!);
         var existingReceipt =
             AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
                 PortfolioInputs(),
                 targetDatePortfolioExistingAdmissionPath,
-                strategyLedgerPath,
-                null);
+                existingCommittedLedgerPath,
+                existingCommitResultPath);
         Require(existingReceipt.Status ==
-                    "verified_existing_reservation_portfolio" &&
-                !existingReceipt.AtomicMutationObserved &&
+                    "verified_atomic_reservation_portfolio_commit" &&
+                existingReceipt.AtomicMutationObserved &&
                 existingReceipt.ExactActiveClaimSetVerified &&
                 existingReceipt.SingleRevisionCommitVerified &&
-                existingReceipt.PortfolioCommitVerified,
-            "Existing no-reservation portfolio receipt drifted.");
+                existingReceipt.PortfolioCommitVerified &&
+                existingReceipt.ActiveReservationIds.Length == 0 &&
+                existingReceipt.CommittedLedgerRevision == 1,
+            "No-reservation portfolio marker receipt drifted.");
         Write(targetDatePortfolioProposalPath, portfolioProposal);
 
         var targetDateExecutionInputs =

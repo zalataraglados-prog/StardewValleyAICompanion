@@ -5,7 +5,7 @@ using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class AcquisitionRouteFreshTerminalReceiptBuilder
+public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
 {
     public static AcquisitionRouteFreshTerminalReceiptAdmission Build(
         AcquisitionRouteExecutionBindingInputs inputs,
@@ -13,7 +13,24 @@ public static class AcquisitionRouteFreshTerminalReceiptBuilder
         string executionReceiptPath,
         string afterSnapshotPath,
         string runId,
-        string executorVersion)
+        string executorVersion) => BuildVerifiedBinding(
+            inputs,
+            executionBindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            runId,
+            executorVersion,
+            AcquisitionRouteExecutionBindingBuilder.Build(inputs));
+
+    private static AcquisitionRouteFreshTerminalReceiptAdmission
+        BuildVerifiedBinding(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string runId,
+            string executorVersion,
+            AcquisitionRouteExecutionBinding expectedBinding)
     {
         var bindingPath = Path.GetFullPath(executionBindingPath);
         var receiptPath = Path.GetFullPath(executionReceiptPath);
@@ -24,7 +41,6 @@ public static class AcquisitionRouteFreshTerminalReceiptBuilder
             AcquisitionRouteExecutionBinding>(
             bindingPath,
             "Acquisition route execution binding");
-        var expectedBinding = AcquisitionRouteExecutionBindingBuilder.Build(inputs);
         Require(EqualJson(binding, expectedBinding),
             "Route execution binding drifted from deterministic source compilation.");
 

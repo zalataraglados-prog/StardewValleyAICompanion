@@ -95,12 +95,6 @@ public static partial class AcquisitionRoutePortfolioBuilder
             reasons.Add("portfolio_claim_release_overlap");
             return null;
         }
-        if (materialClaims.Count == 0 &&
-            currencyClaims.Count == 0 &&
-            releaseIds.Count == 0)
-        {
-            return null;
-        }
         return new ReservationPortfolioCommitRequest
         {
             StateHash = proposal.SnapshotStateHash,

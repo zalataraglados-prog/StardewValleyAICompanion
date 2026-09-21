@@ -64,20 +64,23 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             expected,
             committedLedger,
             reasons);
-        var mutationObserved = admission.AtomicCommitRequired;
-        var singleRevision = mutationObserved
-            ? ValidateMutation(
+        var mutationObserved = admission.AtomicCommitRequired &&
+            admission.AtomicCommitRequest is not null;
+        var singleRevision = false;
+        if (mutationObserved)
+        {
+            singleRevision = ValidateMutation(
                 admission,
                 baseLedger,
                 committedLedger,
                 snapshot,
                 commitResultPath,
-                reasons)
-            : ValidateUnchangedLedger(
-                baseLedger,
-                committedLedger,
-                commitResultPath,
                 reasons);
+        }
+        else
+        {
+            reasons.Add("portfolio_ownership_commit_required");
+        }
 
         var blocking = reasons.Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
@@ -87,9 +90,7 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         return new AcquisitionRoutePortfolioCommitReceipt
         {
             Status = verified
-                ? mutationObserved
-                    ? "verified_atomic_reservation_portfolio_commit"
-                    : "verified_existing_reservation_portfolio"
+                ? "verified_atomic_reservation_portfolio_commit"
                 : "blocked_reservation_portfolio_commit_receipt",
             ProposalId = admission.ProposalId,
             PortfolioId = request?.PortfolioId ??

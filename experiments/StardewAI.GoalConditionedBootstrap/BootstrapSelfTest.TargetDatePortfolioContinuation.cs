@@ -2,6 +2,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -73,7 +74,20 @@ internal static partial class BootstrapSelfTest
             StrategyCommitmentLedger>(
             currentLedgerPath,
             "Continuation current strategy ledger");
-        Write(committedLedgerPath, currentLedger);
+        var currentSnapshot = CurrentTeacherFrontierSupport.Read<
+            SnapshotEnvelope>(
+            currentSnapshotPath,
+            "Continuation current snapshot");
+        var commit = new ReservationPortfolioLedgerService().Commit(
+            currentLedger,
+            currentSnapshot,
+            preference.SelectedAdmission!.AtomicCommitRequest!,
+            "2026-09-21T00:03:00Z");
+        Require(commit.Accepted && commit.Ledger is not null,
+            "Continuation portfolio marker commit failed.");
+        var commitResultPath = Path.Combine(outputRoot, "commit-result.json");
+        Write(commitResultPath, commit);
+        Write(committedLedgerPath, commit.Ledger!);
         var commitReceiptPath = Path.Combine(
             outputRoot,
             "commit-receipt.json");
@@ -86,14 +100,14 @@ internal static partial class BootstrapSelfTest
                 preferencePath,
                 admissionPath,
                 committedLedgerPath,
-                null);
+                commitResultPath);
         Write(commitReceiptPath, commitReceipt);
         Require(commitReceipt.PortfolioCommitVerified &&
-                !commitReceipt.AtomicMutationObserved &&
+                commitReceipt.AtomicMutationObserved &&
                 commitReceipt.BaseLedgerRevision ==
                     checkpoint.LatestLedgerRevision &&
                 commitReceipt.CommittedLedgerRevision ==
-                    checkpoint.LatestLedgerRevision &&
+                    checkpoint.LatestLedgerRevision + 1 &&
                 commitReceipt.PriorRolloutCheckpointSha256 ==
                     request.PriorCheckpointSha256 &&
                 !commitReceipt.FormalTrainingAuthorized,
@@ -195,6 +209,7 @@ internal static partial class BootstrapSelfTest
             preferencePath,
             commitReceiptPath,
             committedLedgerPath,
+            commitResultPath,
             queuePath,
             route.RouteOccurrenceId);
         var binding = AcquisitionRouteExecutionBindingBuilder
@@ -203,7 +218,8 @@ internal static partial class BootstrapSelfTest
                 checkpointPath,
                 requestPath,
                 bindingInputs);
-        Write(Path.Combine(outputRoot, "execution-binding.json"), binding);
+        var bindingPath = Path.Combine(outputRoot, "execution-binding.json");
+        Write(bindingPath, binding);
         Require(binding.DispatchBindingReady &&
                 binding.PortfolioTeacherPreferenceVerified &&
                 binding.PortfolioReservationCommitVerified &&
@@ -213,6 +229,14 @@ internal static partial class BootstrapSelfTest
                 !binding.FormalTrainingAuthorized &&
                 binding.BlockingReasons.Length == 0,
             "Continuation route execution binding drifted.");
+
+        VerifyTargetDatePortfolioContinuationCompletion(
+            proof,
+            checkpointPath,
+            requestPath,
+            bindingInputs,
+            bindingPath,
+            outputRoot);
     }
 
 }

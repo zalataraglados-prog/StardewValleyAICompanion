@@ -5,7 +5,7 @@ using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class AcquisitionRoutePortfolioRolloutCheckpointBuilder
+public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
 {
     public static AcquisitionRoutePortfolioRolloutCheckpoint BuildInitial(
         AcquisitionRouteExecutionBindingInputs inputs,

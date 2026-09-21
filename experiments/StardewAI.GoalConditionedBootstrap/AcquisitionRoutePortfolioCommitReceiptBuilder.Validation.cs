@@ -31,6 +31,12 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         {
             reasons.Add("portfolio_admission_commit_requirement_invalid");
         }
+        if (admission.PortfolioAdmissionReady &&
+            (!admission.AtomicCommitRequired ||
+                admission.AtomicCommitRequest is null))
+        {
+            reasons.Add("portfolio_ownership_commit_required");
+        }
         return reasons;
     }
 
