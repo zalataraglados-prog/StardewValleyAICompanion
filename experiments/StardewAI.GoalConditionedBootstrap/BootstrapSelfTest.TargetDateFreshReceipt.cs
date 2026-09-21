@@ -15,7 +15,8 @@ internal static partial class BootstrapSelfTest
         string bindingPath,
         string afterSnapshotPath,
         string executionReceiptPath,
-        string insufficientAfterSnapshotPath)
+        string insufficientAfterSnapshotPath,
+        bool expectedPortfolioCompletion = true)
     {
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
@@ -307,55 +308,92 @@ internal static partial class BootstrapSelfTest
                 settledLedgerPath,
                 settlementReceiptPath);
         Write(rolloutCheckpointPath, rolloutCheckpoint);
-        Require(rolloutCheckpoint.Status ==
-                    "verified_initial_portfolio_completion" &&
+        Require(rolloutCheckpoint.Status == (expectedPortfolioCompletion
+                    ? "verified_initial_portfolio_completion"
+                    : "verified_initial_transition_fresh_replan_required") &&
                 rolloutCheckpoint.CheckpointVerified &&
-                rolloutCheckpoint.PortfolioCompletionVerified &&
-                !rolloutCheckpoint.FreshReplanRequired &&
+                rolloutCheckpoint.PortfolioCompletionVerified ==
+                    expectedPortfolioCompletion &&
+                rolloutCheckpoint.FreshReplanRequired ==
+                    !expectedPortfolioCompletion &&
                 !rolloutCheckpoint.FormalTrainingAuthorized &&
                 rolloutCheckpoint.TransitionCount == 1 &&
-                rolloutCheckpoint.ScopedProgress.Length == 1 &&
-                rolloutCheckpoint.ScopedProgress[0].ScopeComplete &&
-                rolloutCheckpoint.ScopedProgress[0]
-                    .RemainingRequiredSlots == 0 &&
                 rolloutCheckpoint.CompletedRouteOccurrenceIds.SequenceEqual(
                     new[] { selected.RouteOccurrenceId },
                     StringComparer.Ordinal) &&
                 rolloutCheckpoint.LatestLedgerSha256 ==
                     settlementReceipt.SettledLedgerSha256 &&
                 rolloutCheckpoint.PendingSelectedRouteOccurrenceIds.Length ==
-                    0 &&
+                    (expectedPortfolioCompletion ? 0 : 1) &&
                 rolloutCheckpoint.BlockingReasons.Length == 0,
             "Initial target-date portfolio rollout checkpoint drifted.");
+        if (expectedPortfolioCompletion)
+        {
+            Require(rolloutCheckpoint.ScopedProgress.Length == 1 &&
+                    rolloutCheckpoint.ScopedProgress[0].ScopeComplete &&
+                    rolloutCheckpoint.ScopedProgress[0]
+                        .RemainingRequiredSlots == 0,
+                "Completed portfolio scope progress drifted.");
+        }
+        else
+        {
+            VerifyTargetDatePortfolioContinuation(
+                inputs,
+                new AcquisitionRoutePortfolioInitialCheckpointProof
+                {
+                    ExecutionInputs = inputs,
+                    ExecutionBindingPath = bindingPath,
+                    ExecutionReceiptPath = executionReceiptPath,
+                    AfterSnapshotPath = afterSnapshotPath,
+                    FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                    RunId = runId,
+                    ExecutorVersion = PolicyTrajectoryVersionPins
+                        .RuntimeTestHarnessExecutor,
+                    SettlementRequestPath = settlementRequestPath,
+                    SettlementResultPath = settlementResultPath,
+                    SettledLedgerPath = settledLedgerPath,
+                    SettlementReceiptPath = settlementReceiptPath
+                },
+                rolloutCheckpointPath,
+                afterSnapshotPath,
+                settledLedgerPath,
+                rolloutCheckpoint);
+        }
         var completedContinuationRejected = false;
-        try
+        if (expectedPortfolioCompletion)
         {
-            _ = AcquisitionRoutePortfolioContinuationBuilder
-                .BuildInitialRequest(
-                    new AcquisitionRoutePortfolioInitialCheckpointProof
-                    {
-                        ExecutionInputs = inputs,
-                        ExecutionBindingPath = bindingPath,
-                        ExecutionReceiptPath = executionReceiptPath,
-                        AfterSnapshotPath = afterSnapshotPath,
-                        FreshTerminalReceiptPath = freshTerminalReceiptPath,
-                        RunId = runId,
-                        ExecutorVersion = PolicyTrajectoryVersionPins
-                            .RuntimeTestHarnessExecutor,
-                        SettlementRequestPath = settlementRequestPath,
-                        SettlementResultPath = settlementResultPath,
-                        SettledLedgerPath = settledLedgerPath,
-                        SettlementReceiptPath = settlementReceiptPath
-                    },
-                    rolloutCheckpointPath,
-                    new AcquisitionRoutePortfolioInputs());
+            try
+            {
+                _ = AcquisitionRoutePortfolioContinuationBuilder
+                    .BuildInitialRequest(
+                        new AcquisitionRoutePortfolioInitialCheckpointProof
+                        {
+                            ExecutionInputs = inputs,
+                            ExecutionBindingPath = bindingPath,
+                            ExecutionReceiptPath = executionReceiptPath,
+                            AfterSnapshotPath = afterSnapshotPath,
+                            FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                            RunId = runId,
+                            ExecutorVersion = PolicyTrajectoryVersionPins
+                                .RuntimeTestHarnessExecutor,
+                            SettlementRequestPath = settlementRequestPath,
+                            SettlementResultPath = settlementResultPath,
+                            SettledLedgerPath = settledLedgerPath,
+                            SettlementReceiptPath = settlementReceiptPath
+                        },
+                        rolloutCheckpointPath,
+                        new AcquisitionRoutePortfolioInputs());
+            }
+            catch (InvalidDataException)
+            {
+                completedContinuationRejected = true;
+            }
         }
-        catch (InvalidDataException)
+        if (expectedPortfolioCompletion)
         {
-            completedContinuationRejected = true;
+            Require(completedContinuationRejected,
+                "A completed portfolio emitted a continuation Teacher request.");
         }
-        Require(completedContinuationRejected,
-            "A completed portfolio emitted a continuation Teacher request.");
         var tamperedSettledLedgerPath = Path.Combine(
             Path.GetDirectoryName(bindingPath)!,
             "target-date-route-settled-ledger-tampered.json");

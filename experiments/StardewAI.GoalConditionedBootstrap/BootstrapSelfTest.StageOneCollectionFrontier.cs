@@ -2295,7 +2295,7 @@ internal static partial class BootstrapSelfTest
             "Existing no-reservation portfolio receipt drifted.");
         Write(targetDatePortfolioProposalPath, portfolioProposal);
 
-        VerifyTargetDateFreshTerminalReceipt(
+        var targetDateExecutionInputs =
             new AcquisitionRouteExecutionBindingInputs
             {
                 RequirementInventoryPath = inventoryPath,
@@ -2338,11 +2338,17 @@ internal static partial class BootstrapSelfTest
                     targetDatePortfolioCommitResultPath,
                 ActionQueuePath = targetDateRouteQueuePath,
                 RouteOccurrenceId = targetDateOpportunityShop.RouteOccurrenceId
-            },
+            };
+        VerifyTargetDateFreshTerminalReceipt(
+            targetDateExecutionInputs,
             targetDateExecutionBindingPath,
             targetDateAfterSnapshotPath,
             targetDateExecutionReceiptPath,
             targetDateInsufficientAfterSnapshotPath);
+        VerifyTargetDatePortfolioContinuationFixture(
+            targetDateExecutionInputs,
+            targetDateOpportunityShop.RouteOccurrenceId,
+            targetDateOpportunityFish.RouteOccurrenceId);
 
         AcquisitionOpportunityCostVector CostVector(
             int minutes,

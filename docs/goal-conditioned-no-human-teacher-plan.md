@@ -1638,9 +1638,18 @@ Slice 7 remains assigned to the RTX 5070 node.
   rule in the same admission/preflight implementation. A normal proposal that supplies completion evidence without the
   rebuilt checkpoint is blocked, so caller choice cannot bypass the denominator.
 - `all_required` and `choose_at_least_required_slots` continuation combinatorics have focused positive checks; completed
-  portfolios have a negative request-generation check and the full 76-route regression remains green. The next slice
-  must carry the selected continuation admission through atomic commit receipt, dispatch ownership, settlement and a
-  second cumulative checkpoint. Formal training remains false until that repeated transition closes.
+  portfolios have a negative request-generation check and the full 76-route regression remains green.
+
+### 2026-09-22: continuation commit and second-route dispatch
+
+- The selected continuation proposal/admission now enters the existing exact commit-receipt implementation only after
+  its request and Teacher preference are rebuilt from the verified checkpoint. Proposal, admission, commit receipt and
+  execution binding preserve one prior-checkpoint hash and one completed-alternative set; drift fails closed.
+- The existing execution-binding implementation is reused with a verified continuation proof. A two-route fixture
+  commits shop plus fish, executes and settles the shop route, rebuilds only the remaining fish scope from the fresh
+  state and settled ledger, proves its no-mutation commit receipt, and binds the fish queue for dispatch.
+- Formal training remains false. The next slice must execute that second route under continuation ownership, settle it,
+  and build a cumulative second checkpoint that exactly replays both transitions and proves portfolio completion.
 
 ## Review questions
 

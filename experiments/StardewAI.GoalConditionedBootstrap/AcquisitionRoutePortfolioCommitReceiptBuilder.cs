@@ -1,6 +1,5 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
-using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -12,6 +11,23 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         string committedLedgerPath,
         string? commitResultPath)
     {
+        var recomputed = AcquisitionRoutePortfolioBuilder.Build(inputs);
+        return BuildVerifiedAdmission(
+            inputs,
+            admissionPath,
+            committedLedgerPath,
+            commitResultPath,
+            recomputed);
+    }
+
+    private static AcquisitionRoutePortfolioCommitReceipt
+        BuildVerifiedAdmission(
+            AcquisitionRoutePortfolioInputs inputs,
+            string admissionPath,
+            string committedLedgerPath,
+            string? commitResultPath,
+            AcquisitionRoutePortfolioAdmission expectedAdmission)
+    {
         var admissionFullPath = Path.GetFullPath(admissionPath);
         var baseLedgerPath = Path.GetFullPath(inputs.StrategyLedgerPath);
         var committedLedgerFullPath = Path.GetFullPath(committedLedgerPath);
@@ -20,8 +36,7 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             AcquisitionRoutePortfolioAdmission>(
             admissionFullPath,
             "Acquisition route portfolio admission");
-        var recomputed = AcquisitionRoutePortfolioBuilder.Build(inputs);
-        Require(EqualJson(admission, recomputed),
+        Require(EqualJson(admission, expectedAdmission),
             "Route portfolio admission drifted from deterministic source compilation.");
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotPath,
@@ -81,6 +96,15 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
                 "target-date-acquisition-portfolio:" + admission.ProposalId,
             GoalId = admission.GoalId,
             SnapshotStateHash = admission.SnapshotStateHash,
+            PriorRolloutCheckpointSha256 =
+                admission.PriorRolloutCheckpointSha256,
+            CompletedAlternatives = (admission.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>())
+                .Where(row => row is not null)
+                .Select(AcquisitionRoutePortfolioBuilder
+                    .CloneCompletedAlternatives)
+                .ToArray(),
             BaseLedgerRevision = baseLedger.Revision,
             CommittedLedgerRevision = committedLedger.Revision,
             PortfolioAdmissionSha256 =

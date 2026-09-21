@@ -8,7 +8,24 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class AcquisitionRouteExecutionBindingBuilder
 {
     public static AcquisitionRouteExecutionBinding Build(
-        AcquisitionRouteExecutionBindingInputs inputs)
+        AcquisitionRouteExecutionBindingInputs inputs) =>
+        BuildCore(inputs, null);
+
+    public static AcquisitionRouteExecutionBinding BuildInitialContinuation(
+        AcquisitionRoutePortfolioInitialCheckpointProof proof,
+        string checkpointPath,
+        string continuationRequestPath,
+        AcquisitionRouteExecutionBindingInputs inputs) =>
+        BuildCore(
+            inputs,
+            new AcquisitionRouteContinuationExecutionProof(
+                proof,
+                checkpointPath,
+                continuationRequestPath));
+
+    private static AcquisitionRouteExecutionBinding BuildCore(
+        AcquisitionRouteExecutionBindingInputs inputs,
+        AcquisitionRouteContinuationExecutionProof? continuation)
     {
         var opportunityPath = Path.GetFullPath(
             inputs.TargetDateOpportunityCostPath);
@@ -32,10 +49,16 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             AcquisitionRoutePortfolioTeacherPreference>(
             portfolioPreferencePath,
             "Acquisition route portfolio Teacher preference");
-        var recomputedPreference =
-            AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
+        var recomputedPreference = continuation is null
+            ? AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
                 PortfolioInputs(inputs),
-                inputs.PortfolioPreferenceRequestPath);
+                inputs.PortfolioPreferenceRequestPath)
+            : AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                .BuildInitialContinuation(
+                    continuation.InitialCheckpointProof,
+                    continuation.CheckpointPath,
+                    PortfolioInputs(inputs),
+                    continuation.ContinuationRequestPath);
         Require(EqualJson(portfolioPreference, recomputedPreference),
             "Route portfolio Teacher preference drifted from deterministic source compilation.");
         var portfolioProposal = CurrentTeacherFrontierSupport.Read<
@@ -50,14 +73,26 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             AcquisitionRoutePortfolioCommitReceipt>(
             portfolioReceiptPath,
             "Acquisition route portfolio commit receipt");
-        var recomputedPortfolioReceipt =
-            AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+        var commitResultPath = string.IsNullOrWhiteSpace(
+                inputs.PortfolioCommitResultPath)
+            ? null
+            : inputs.PortfolioCommitResultPath;
+        var recomputedPortfolioReceipt = continuation is null
+            ? AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
                 PortfolioInputs(inputs),
                 inputs.PortfolioAdmissionPath,
                 committedLedgerPath,
-                string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath)
-                    ? null
-                    : inputs.PortfolioCommitResultPath);
+                commitResultPath)
+            : AcquisitionRoutePortfolioCommitReceiptBuilder
+                .BuildInitialContinuation(
+                    continuation.InitialCheckpointProof,
+                    continuation.CheckpointPath,
+                    PortfolioInputs(inputs),
+                    continuation.ContinuationRequestPath,
+                    inputs.PortfolioTeacherPreferencePath,
+                    inputs.PortfolioAdmissionPath,
+                    committedLedgerPath,
+                    commitResultPath);
         Require(EqualJson(portfolioReceipt, recomputedPortfolioReceipt),
             "Route portfolio commit receipt drifted from deterministic source compilation.");
         var lowering = CurrentTeacherFrontierSupport.Read<
@@ -177,6 +212,15 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 CurrentTeacherFrontierSupport.HashFile(committedLedgerPath),
             CommittedStrategyLedgerRevision =
                 portfolioReceipt.CommittedLedgerRevision,
+            PriorRolloutCheckpointSha256 =
+                portfolioReceipt.PriorRolloutCheckpointSha256,
+            CompletedAlternatives = (portfolioReceipt.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>())
+                .Where(value => value is not null)
+                .Select(AcquisitionRoutePortfolioBuilder
+                    .CloneCompletedAlternatives)
+                .ToArray(),
             AcquisitionLoweringSha256 = CurrentTeacherFrontierSupport.HashFile(
                 loweringPath),
             BeforeSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
@@ -258,6 +302,12 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
 
     internal static string SelectedCandidateId(string routeOccurrenceId) =>
         "acquisition-route:" + routeOccurrenceId;
+
+    private sealed record AcquisitionRouteContinuationExecutionProof(
+        AcquisitionRoutePortfolioInitialCheckpointProof
+            InitialCheckpointProof,
+        string CheckpointPath,
+        string ContinuationRequestPath);
 
     private static bool EqualJson<T>(T left, T right) => string.Equals(
         JsonSerializer.Serialize(left, JsonDefaults.Options),

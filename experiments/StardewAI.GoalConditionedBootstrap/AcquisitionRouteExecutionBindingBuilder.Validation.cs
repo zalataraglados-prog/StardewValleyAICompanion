@@ -282,6 +282,27 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         {
             yield return "route_portfolio_teacher_commit_identity_mismatch";
         }
+        if (proposal.PriorRolloutCheckpointSha256 !=
+                admission.PriorRolloutCheckpointSha256 ||
+            proposal.PriorRolloutCheckpointSha256 !=
+                receipt.PriorRolloutCheckpointSha256 ||
+            !EqualJson(
+                proposal.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>(),
+                admission.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>()) ||
+            !EqualJson(
+                proposal.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>(),
+                receipt.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>()))
+        {
+            yield return "route_portfolio_teacher_continuation_drifted";
+        }
     }
 
     private static AcquisitionRequirementRouteLowering LoweredRoute(

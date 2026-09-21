@@ -105,6 +105,15 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("committed_strategy_ledger_revision")]
     public int CommittedStrategyLedgerRevision { get; set; }
 
+    [JsonPropertyName("prior_rollout_checkpoint_sha256")]
+    public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("completed_alternatives")]
+    public AcquisitionRoutePortfolioCompletedAlternatives[]
+        CompletedAlternatives
+    { get; set; } =
+        Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>();
+
     [JsonPropertyName("acquisition_lowering_sha256")]
     public string AcquisitionLoweringSha256 { get; set; } = string.Empty;
 

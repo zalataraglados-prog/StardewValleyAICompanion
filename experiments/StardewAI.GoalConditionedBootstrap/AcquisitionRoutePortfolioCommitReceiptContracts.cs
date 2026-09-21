@@ -23,6 +23,15 @@ public sealed class AcquisitionRoutePortfolioCommitReceipt
     [JsonPropertyName("snapshot_state_hash")]
     public string SnapshotStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("prior_rollout_checkpoint_sha256")]
+    public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("completed_alternatives")]
+    public AcquisitionRoutePortfolioCompletedAlternatives[]
+        CompletedAlternatives
+    { get; set; } =
+        Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>();
+
     [JsonPropertyName("base_ledger_revision")]
     public int BaseLedgerRevision { get; set; }
 
