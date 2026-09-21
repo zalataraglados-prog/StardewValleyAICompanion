@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -10,18 +9,27 @@ public static class AcquisitionRoutePortfolioContinuationBuilder
         BuildInitialRequest(
             AcquisitionRoutePortfolioInitialCheckpointProof proof,
             string checkpointPath,
+            AcquisitionRoutePortfolioInputs currentInputs) => BuildRequest(
+                AcquisitionRoutePortfolioRolloutProofBuilder.VerifyInitial(
+                    proof,
+                    checkpointPath),
+                currentInputs);
+
+    public static AcquisitionRoutePortfolioContinuationTeacherRequest
+        BuildRequest(
+            string rolloutProofManifestPath,
+            AcquisitionRoutePortfolioInputs currentInputs) => BuildRequest(
+                AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+                    rolloutProofManifestPath),
+                currentInputs);
+
+    internal static AcquisitionRoutePortfolioContinuationTeacherRequest
+        BuildRequest(
+            AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
             AcquisitionRoutePortfolioInputs currentInputs)
     {
-        var expected = RebuildInitialCheckpoint(proof);
-        var checkpointFullPath = Path.GetFullPath(checkpointPath);
-        var checkpoint = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioRolloutCheckpoint>(
-            checkpointFullPath,
-            "Acquisition route portfolio rollout checkpoint");
-        Require(EqualJson(checkpoint, expected) &&
-                checkpoint.CheckpointVerified &&
-                !checkpoint.FormalTrainingAuthorized,
-            "Continuation checkpoint is not an exact verified artifact.");
+        var checkpointFullPath = verifiedPrior.CheckpointPath;
+        var checkpoint = verifiedPrior.Checkpoint;
         Require(!checkpoint.PortfolioCompletionVerified &&
                 checkpoint.FreshReplanRequired,
             "A completed rollout checkpoint cannot emit a continuation request.");
@@ -75,22 +83,6 @@ public static class AcquisitionRoutePortfolioContinuationBuilder
             FormalTrainingAuthorized = false
         };
     }
-
-    internal static AcquisitionRoutePortfolioRolloutCheckpoint
-        RebuildInitialCheckpoint(
-            AcquisitionRoutePortfolioInitialCheckpointProof proof) =>
-        AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial(
-            proof.ExecutionInputs,
-            proof.ExecutionBindingPath,
-            proof.ExecutionReceiptPath,
-            proof.AfterSnapshotPath,
-            proof.FreshTerminalReceiptPath,
-            proof.RunId,
-            proof.ExecutorVersion,
-            proof.SettlementRequestPath,
-            proof.SettlementResultPath,
-            proof.SettledLedgerPath,
-            proof.SettlementReceiptPath);
 
     internal static void ValidateProgress(
         IEnumerable<AcquisitionRoutePortfolioScopeProgress> progress)
@@ -159,11 +151,6 @@ public static class AcquisitionRoutePortfolioContinuationBuilder
         AcquisitionRoutePortfolioScopeProgress row) =>
         Uri.EscapeDataString(row.RequirementSetId) + "/" +
         Uri.EscapeDataString(row.RequirementId);
-
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
     private static void Require(bool condition, string message)
     {

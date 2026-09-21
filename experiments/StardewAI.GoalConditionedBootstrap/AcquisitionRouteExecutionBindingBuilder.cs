@@ -18,14 +18,32 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         AcquisitionRouteExecutionBindingInputs inputs) =>
         BuildCore(
             inputs,
-            new AcquisitionRouteContinuationExecutionProof(
+            AcquisitionRoutePortfolioRolloutProofBuilder.VerifyInitial(
                 proof,
-                checkpointPath,
-                continuationRequestPath));
+                checkpointPath),
+            continuationRequestPath);
+
+    public static AcquisitionRouteExecutionBinding BuildContinuation(
+        string rolloutProofManifestPath,
+        string continuationRequestPath,
+        AcquisitionRouteExecutionBindingInputs inputs) => BuildCore(
+            inputs,
+            AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+                rolloutProofManifestPath),
+            continuationRequestPath);
+
+    internal static AcquisitionRouteExecutionBinding BuildContinuation(
+        AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+        string continuationRequestPath,
+        AcquisitionRouteExecutionBindingInputs inputs) => BuildCore(
+            inputs,
+            verifiedPrior,
+            continuationRequestPath);
 
     private static AcquisitionRouteExecutionBinding BuildCore(
         AcquisitionRouteExecutionBindingInputs inputs,
-        AcquisitionRouteContinuationExecutionProof? continuation)
+        AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
+        string continuationRequestPath = "")
     {
         var opportunityPath = Path.GetFullPath(
             inputs.TargetDateOpportunityCostPath);
@@ -54,11 +72,10 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 PortfolioInputs(inputs),
                 inputs.PortfolioPreferenceRequestPath)
             : AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                .BuildInitialContinuation(
-                    continuation.InitialCheckpointProof,
-                    continuation.CheckpointPath,
+                .BuildContinuation(
+                    continuation,
                     PortfolioInputs(inputs),
-                    continuation.ContinuationRequestPath);
+                    continuationRequestPath);
         Require(EqualJson(portfolioPreference, recomputedPreference),
             "Route portfolio Teacher preference drifted from deterministic source compilation.");
         var portfolioProposal = CurrentTeacherFrontierSupport.Read<
@@ -84,11 +101,10 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 committedLedgerPath,
                 commitResultPath)
             : AcquisitionRoutePortfolioCommitReceiptBuilder
-                .BuildInitialContinuation(
-                    continuation.InitialCheckpointProof,
-                    continuation.CheckpointPath,
+                .BuildContinuation(
+                    continuation,
                     PortfolioInputs(inputs),
-                    continuation.ContinuationRequestPath,
+                    continuationRequestPath,
                     inputs.PortfolioTeacherPreferencePath,
                     inputs.PortfolioAdmissionPath,
                     committedLedgerPath,
@@ -302,12 +318,6 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
 
     internal static string SelectedCandidateId(string routeOccurrenceId) =>
         "acquisition-route:" + routeOccurrenceId;
-
-    private sealed record AcquisitionRouteContinuationExecutionProof(
-        AcquisitionRoutePortfolioInitialCheckpointProof
-            InitialCheckpointProof,
-        string CheckpointPath,
-        string ContinuationRequestPath);
 
     private static bool EqualJson<T>(T left, T right) => string.Equals(
         JsonSerializer.Serialize(left, JsonDefaults.Options),

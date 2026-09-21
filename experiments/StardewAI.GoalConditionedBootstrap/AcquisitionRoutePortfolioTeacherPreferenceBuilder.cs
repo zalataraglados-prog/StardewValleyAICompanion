@@ -42,10 +42,31 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             AcquisitionRoutePortfolioInitialCheckpointProof proof,
             string checkpointPath,
             AcquisitionRoutePortfolioInputs currentInputs,
+            string continuationRequestPath) => BuildContinuation(
+                AcquisitionRoutePortfolioRolloutProofBuilder.VerifyInitial(
+                    proof,
+                    checkpointPath),
+                currentInputs,
+                continuationRequestPath);
+
+    public static AcquisitionRoutePortfolioTeacherPreference
+        BuildContinuation(
+            string rolloutProofManifestPath,
+            AcquisitionRoutePortfolioInputs currentInputs,
+            string continuationRequestPath) => BuildContinuation(
+                AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+                    rolloutProofManifestPath),
+                currentInputs,
+                continuationRequestPath);
+
+    internal static AcquisitionRoutePortfolioTeacherPreference
+        BuildContinuation(
+            AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+            AcquisitionRoutePortfolioInputs currentInputs,
             string continuationRequestPath)
     {
         var expected = AcquisitionRoutePortfolioContinuationBuilder
-            .BuildInitialRequest(proof, checkpointPath, currentInputs);
+            .BuildRequest(verifiedPrior, currentInputs);
         var requestFullPath = Path.GetFullPath(continuationRequestPath);
         var request = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioContinuationTeacherRequest>(

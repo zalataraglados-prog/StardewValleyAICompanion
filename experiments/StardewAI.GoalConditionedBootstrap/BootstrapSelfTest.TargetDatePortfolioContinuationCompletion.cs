@@ -11,6 +11,7 @@ internal static partial class BootstrapSelfTest
     private static void VerifyTargetDatePortfolioContinuationCompletion(
         AcquisitionRoutePortfolioInitialCheckpointProof proof,
         string checkpointPath,
+        string priorManifestPath,
         string requestPath,
         AcquisitionRouteExecutionBindingInputs bindingInputs,
         string bindingPath,
@@ -74,9 +75,8 @@ internal static partial class BootstrapSelfTest
                 runId));
         var freshPath = Path.Combine(outputRoot, "fresh-terminal-receipt.json");
         var fresh = AcquisitionRouteFreshTerminalReceiptBuilder
-            .BuildInitialContinuation(
-                proof,
-                checkpointPath,
+            .BuildContinuation(
+                priorManifestPath,
                 requestPath,
                 bindingInputs,
                 bindingPath,
@@ -91,9 +91,8 @@ internal static partial class BootstrapSelfTest
             "Continuation fresh terminal receipt drifted.");
 
         var settlementRequest = AcquisitionRoutePortfolioSettlementBuilder
-            .BuildInitialContinuationRequest(
-                proof,
-                checkpointPath,
+            .BuildContinuationRequest(
+                priorManifestPath,
                 requestPath,
                 bindingInputs,
                 bindingPath,
@@ -126,9 +125,8 @@ internal static partial class BootstrapSelfTest
         Write(settlementResultPath, settlement);
         Write(settledLedgerPath, settlement.Ledger!);
         var settlementReceipt = AcquisitionRoutePortfolioSettlementBuilder
-            .BuildInitialContinuationReceipt(
-                proof,
-                checkpointPath,
+            .BuildContinuationReceipt(
+                priorManifestPath,
                 requestPath,
                 bindingInputs,
                 bindingPath,
@@ -152,9 +150,8 @@ internal static partial class BootstrapSelfTest
             "Continuation route settlement receipt drifted.");
 
         var cumulative = AcquisitionRoutePortfolioRolloutCheckpointBuilder
-            .BuildInitialContinuation(
-                proof,
-                checkpointPath,
+            .BuildContinuation(
+                priorManifestPath,
                 requestPath,
                 bindingInputs,
                 bindingPath,
@@ -167,7 +164,10 @@ internal static partial class BootstrapSelfTest
                 settlementResultPath,
                 settledLedgerPath,
                 settlementReceiptPath);
-        Write(Path.Combine(outputRoot, "rollout-checkpoint.json"), cumulative);
+        var cumulativePath = Path.Combine(
+            outputRoot,
+            "rollout-checkpoint.json");
+        Write(cumulativePath, cumulative);
         var expectedCompleted = checkpoint.CompletedRouteOccurrenceIds
             .Append(route.RouteOccurrenceId)
             .Order(StringComparer.Ordinal)
@@ -188,5 +188,70 @@ internal static partial class BootstrapSelfTest
                 cumulative.PendingSelectedRouteOccurrenceIds.Length == 0 &&
                 cumulative.BlockingReasons.Length == 0,
             "Cumulative two-route rollout checkpoint drifted.");
+
+        var transition = new
+            AcquisitionRoutePortfolioContinuationTransitionProof
+            {
+                ContinuationRequestPath = requestPath,
+                ExecutionInputs = bindingInputs,
+                ExecutionBindingPath = bindingPath,
+                ExecutionReceiptPath = executionReceiptPath,
+                AfterSnapshotPath = afterSnapshotPath,
+                FreshTerminalReceiptPath = freshPath,
+                RunId = runId,
+                ExecutorVersion =
+                    PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                SettlementRequestPath = settlementRequestPath,
+                SettlementResultPath = settlementResultPath,
+                SettledLedgerPath = settledLedgerPath,
+                SettlementReceiptPath = settlementReceiptPath,
+                CheckpointPath = cumulativePath
+            };
+        var manifest = new AcquisitionRoutePortfolioRolloutProofManifest
+        {
+            InitialCheckpointProof = proof,
+            InitialCheckpointPath = checkpointPath,
+            ContinuationTransitions = new[] { transition }
+        };
+        var manifestPath = Path.Combine(
+            outputRoot,
+            "rollout-proof-manifest.json");
+        Write(manifestPath, manifest);
+        var proofReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
+            .BuildReceipt(manifestPath);
+        Write(Path.Combine(outputRoot, "rollout-proof-receipt.json"),
+            proofReceipt);
+        Require(proofReceipt.ProofChainVerified &&
+                proofReceipt.PortfolioCompletionVerified &&
+                proofReceipt.TransitionCount == 2 &&
+                proofReceipt.ContinuationTransitionCount == 1 &&
+                proofReceipt.LatestCheckpointSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(cumulativePath) &&
+                !proofReceipt.FormalTrainingAuthorized,
+            "Cumulative rollout proof-chain receipt drifted.");
+
+        var tamperedCheckpointPath = Path.Combine(
+            outputRoot,
+            "tampered-rollout-checkpoint.json");
+        cumulative.TransitionCount++;
+        Write(tamperedCheckpointPath, cumulative);
+        cumulative.TransitionCount--;
+        transition.CheckpointPath = tamperedCheckpointPath;
+        var tamperedManifestPath = Path.Combine(
+            outputRoot,
+            "tampered-rollout-proof-manifest.json");
+        Write(tamperedManifestPath, manifest);
+        var rejected = false;
+        try
+        {
+            AcquisitionRoutePortfolioRolloutProofBuilder.BuildReceipt(
+                tamperedManifestPath);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "Tampered rollout checkpoint unexpectedly verified.");
     }
 }

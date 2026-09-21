@@ -1649,8 +1649,15 @@ Slice 7 remains assigned to the RTX 5070 node.
   proof. A two-route fixture commits shop plus fish, executes and settles the shop route, rebuilds only the remaining
   fish scope, performs a marker-only continuation commit, executes/settles fish, and emits a cumulative checkpoint that
   exactly replays both transitions with `transition_count=2` and all scopes complete.
-- Formal training remains false. The next slice must replace the first-continuation-specific proof surface with a
-  repeatable N-transition checkpoint chain, then admit only a verified terminal checkpoint at the rollout controller.
+- `acquisition_route_portfolio_rollout_proof_manifest.v1` replaces the first-continuation-specific proof surface with
+  one ordered chain. Its verifier rebuilds the initial checkpoint and every continuation transition, requires each
+  stored checkpoint to equal the rebuilt artifact, binds the immediately prior hash, and advances transition count
+  exactly once. Existing first-continuation calls are compatibility wrappers over the same verified-checkpoint core.
+- The two-transition positive fixture, tampered-checkpoint rejection and standalone proof-receipt CLI pass. The code
+  has no fixed continuation limit, but a three-or-more-transition fixture is still required before calling the repeated
+  path fully demonstrated.
+- Formal training remains false. The next slice must admit only a verified complete terminal proof receipt at the
+  rollout controller; an incomplete chain or raw caller checkpoint must never authorize training.
 
 ## Review questions
 

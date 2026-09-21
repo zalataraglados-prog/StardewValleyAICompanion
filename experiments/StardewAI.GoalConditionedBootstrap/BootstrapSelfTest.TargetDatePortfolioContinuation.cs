@@ -27,9 +27,26 @@ internal static partial class BootstrapSelfTest
             currentLedgerPath,
             proposalPath,
             outputRoot);
+        var priorManifestPath = Path.Combine(
+            outputRoot,
+            "prior-rollout-proof-manifest.json");
+        Write(priorManifestPath,
+            new AcquisitionRoutePortfolioRolloutProofManifest
+            {
+                InitialCheckpointProof = proof,
+                InitialCheckpointPath = checkpointPath
+            });
+        var priorProofReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
+            .BuildReceipt(priorManifestPath);
+        Require(priorProofReceipt.ProofChainVerified &&
+                !priorProofReceipt.PortfolioCompletionVerified &&
+                priorProofReceipt.TransitionCount == 1 &&
+                priorProofReceipt.ContinuationTransitionCount == 0 &&
+                !priorProofReceipt.FormalTrainingAuthorized,
+            "Initial incomplete rollout proof-chain receipt drifted.");
         var requestPath = Path.Combine(outputRoot, "request.json");
         var request = AcquisitionRoutePortfolioContinuationBuilder
-            .BuildInitialRequest(proof, checkpointPath, currentInputs);
+            .BuildRequest(priorManifestPath, currentInputs);
         Write(requestPath, request);
         Require(request.TransitionCount == 2 &&
                 request.PriorCheckpointSha256 ==
@@ -44,9 +61,8 @@ internal static partial class BootstrapSelfTest
 
         var preferencePath = Path.Combine(outputRoot, "preference.json");
         var preference = AcquisitionRoutePortfolioTeacherPreferenceBuilder
-            .BuildInitialContinuation(
-                proof,
-                checkpointPath,
+            .BuildContinuation(
+                priorManifestPath,
                 currentInputs,
                 requestPath);
         Write(preferencePath, preference);
@@ -92,9 +108,8 @@ internal static partial class BootstrapSelfTest
             outputRoot,
             "commit-receipt.json");
         var commitReceipt = AcquisitionRoutePortfolioCommitReceiptBuilder
-            .BuildInitialContinuation(
-                proof,
-                checkpointPath,
+            .BuildContinuation(
+                priorManifestPath,
                 currentInputs,
                 requestPath,
                 preferencePath,
@@ -213,9 +228,8 @@ internal static partial class BootstrapSelfTest
             queuePath,
             route.RouteOccurrenceId);
         var binding = AcquisitionRouteExecutionBindingBuilder
-            .BuildInitialContinuation(
-                proof,
-                checkpointPath,
+            .BuildContinuation(
+                priorManifestPath,
                 requestPath,
                 bindingInputs);
         var bindingPath = Path.Combine(outputRoot, "execution-binding.json");
@@ -233,6 +247,7 @@ internal static partial class BootstrapSelfTest
         VerifyTargetDatePortfolioContinuationCompletion(
             proof,
             checkpointPath,
+            priorManifestPath,
             requestPath,
             bindingInputs,
             bindingPath,

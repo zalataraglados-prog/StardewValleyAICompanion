@@ -20,28 +20,79 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
             string settlementRequestPath,
             string settlementResultPath,
             string settledLedgerPath,
+            string settlementReceiptPath) => BuildContinuation(
+                AcquisitionRoutePortfolioRolloutProofBuilder.VerifyInitial(
+                    proof,
+                    priorCheckpointPath),
+                continuationRequestPath,
+                currentInputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                executorVersion,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath,
+                settlementReceiptPath);
+
+    public static AcquisitionRoutePortfolioRolloutCheckpoint
+        BuildContinuation(
+            string rolloutProofManifestPath,
+            string continuationRequestPath,
+            AcquisitionRouteExecutionBindingInputs currentInputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            string settlementRequestPath,
+            string settlementResultPath,
+            string settledLedgerPath,
+            string settlementReceiptPath) => BuildContinuation(
+                AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+                    rolloutProofManifestPath),
+                continuationRequestPath,
+                currentInputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                executorVersion,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath,
+                settlementReceiptPath);
+
+    internal static AcquisitionRoutePortfolioRolloutCheckpoint
+        BuildContinuation(
+            AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+            string continuationRequestPath,
+            AcquisitionRouteExecutionBindingInputs currentInputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            string settlementRequestPath,
+            string settlementResultPath,
+            string settledLedgerPath,
             string settlementReceiptPath)
     {
-        var checkpointFullPath = Path.GetFullPath(priorCheckpointPath);
-        var prior = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioRolloutCheckpoint>(
-            checkpointFullPath,
-            "Prior acquisition route portfolio rollout checkpoint");
-        var expectedPrior = AcquisitionRoutePortfolioContinuationBuilder
-            .RebuildInitialCheckpoint(proof);
-        Require(EqualJson(prior, expectedPrior) &&
-                prior.CheckpointVerified &&
-                !prior.PortfolioCompletionVerified &&
+        var checkpointFullPath = verifiedPrior.CheckpointPath;
+        var prior = verifiedPrior.Checkpoint;
+        Require(!prior.PortfolioCompletionVerified &&
                 prior.FreshReplanRequired &&
                 !prior.FormalTrainingAuthorized,
             "Prior rollout checkpoint is not an exact incomplete artifact.");
         var portfolioInputs = AcquisitionRouteExecutionBindingBuilder
             .PortfolioInputs(currentInputs);
         var expectedRequest = AcquisitionRoutePortfolioContinuationBuilder
-            .BuildInitialRequest(
-                proof,
-                checkpointFullPath,
-                portfolioInputs);
+            .BuildRequest(verifiedPrior, portfolioInputs);
         var request = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioContinuationTeacherRequest>(
             Path.GetFullPath(continuationRequestPath),
@@ -50,9 +101,8 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 request.TransitionCount == prior.TransitionCount + 1,
             "Continuation Teacher request is not verified.");
         var expectedSettlement = AcquisitionRoutePortfolioSettlementBuilder
-            .BuildInitialContinuationReceipt(
-                proof,
-                checkpointFullPath,
+            .BuildContinuationReceipt(
+                verifiedPrior,
                 continuationRequestPath,
                 currentInputs,
                 executionBindingPath,
@@ -79,9 +129,8 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
             "Continuation route portfolio Teacher preference");
         var expectedPreference =
             AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                .BuildInitialContinuation(
-                    proof,
-                    checkpointFullPath,
+                .BuildContinuation(
+                    verifiedPrior,
                     portfolioInputs,
                     continuationRequestPath);
         Require(EqualJson(preference, expectedPreference) &&

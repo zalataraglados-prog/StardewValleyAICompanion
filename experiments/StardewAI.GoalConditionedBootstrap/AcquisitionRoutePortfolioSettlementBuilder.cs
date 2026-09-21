@@ -23,7 +23,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             freshTerminalReceiptPath,
             runId,
             executorVersion,
-            null);
+            null,
+            string.Empty);
 
     private static ReservationPortfolioRouteSettlementRequest
         BuildRequestCore(
@@ -34,7 +35,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             string freshTerminalReceiptPath,
             string runId,
             string executorVersion,
-            InitialContinuationProof? continuation)
+            AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
+            string continuationRequestPath)
     {
         var context = Prepare(
             inputs,
@@ -44,7 +46,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             freshTerminalReceiptPath,
             runId,
             executorVersion,
-            continuation);
+            continuation,
+            continuationRequestPath);
         return CanonicalRequest(context);
     }
 
@@ -69,7 +72,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             settlementRequestPath,
             settlementResultPath,
             settledLedgerPath,
-            null);
+            null,
+            string.Empty);
 
     private static AcquisitionRoutePortfolioSettlementReceipt
         BuildReceiptCore(
@@ -83,7 +87,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             string settlementRequestPath,
             string settlementResultPath,
             string settledLedgerPath,
-            InitialContinuationProof? continuation)
+            AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
+            string continuationRequestPath)
     {
         var context = Prepare(
             inputs,
@@ -93,7 +98,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             freshTerminalReceiptPath,
             runId,
             executorVersion,
-            continuation);
+            continuation,
+            continuationRequestPath);
         var requestPath = Path.GetFullPath(settlementRequestPath);
         var resultPath = Path.GetFullPath(settlementResultPath);
         var ledgerPath = Path.GetFullPath(settledLedgerPath);

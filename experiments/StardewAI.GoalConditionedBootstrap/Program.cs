@@ -114,6 +114,9 @@ try
         case "build-acquisition-route-portfolio-rollout-checkpoint":
             BuildAcquisitionRoutePortfolioRolloutCheckpoint(options);
             break;
+        case "build-acquisition-route-portfolio-rollout-proof-receipt":
+            BuildAcquisitionRoutePortfolioRolloutProofReceipt(options);
+            break;
         case "build-acquisition-route-portfolio-continuation-teacher-request":
             BuildAcquisitionRoutePortfolioContinuationTeacherRequest(options);
             break;
@@ -198,7 +201,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
     }
 }
 catch (Exception ex)
@@ -813,23 +816,23 @@ static void BuildAcquisitionRoutePortfolioRolloutCheckpoint(Arguments options)
 static void BuildAcquisitionRoutePortfolioContinuationTeacherRequest(
     Arguments options)
 {
-    var request = AcquisitionRoutePortfolioContinuationBuilder
-        .BuildInitialRequest(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            ContinuationRoutePortfolioInputs(options));
+    var currentInputs = ContinuationRoutePortfolioInputs(options);
+    var request = AcquisitionRoutePortfolioContinuationBuilder.BuildRequest(
+        VerifiedContinuationCheckpoint(options),
+        currentInputs);
     Write(options.Required("output"), request);
 }
 
 static void BuildAcquisitionRoutePortfolioContinuationTeacherPreference(
     Arguments options)
 {
+    var currentInputs = ContinuationRoutePortfolioInputs(options);
+    var requestPath = options.Required("continuation-request");
     var preference = AcquisitionRoutePortfolioTeacherPreferenceBuilder
-        .BuildInitialContinuation(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            ContinuationRoutePortfolioInputs(options),
-            options.Required("continuation-request"));
+        .BuildContinuation(
+            VerifiedContinuationCheckpoint(options),
+            currentInputs,
+            requestPath);
     Write(options.Required("output"), preference);
     if (preference.TeacherPreferenceLabelEligible)
     {
@@ -847,18 +850,23 @@ static void BuildAcquisitionRoutePortfolioContinuationTeacherPreference(
 static void BuildAcquisitionRoutePortfolioContinuationCommitReceipt(
     Arguments options)
 {
+    var currentInputs = ContinuationRoutePortfolioInputs(
+        options,
+        requireProposal: true);
+    var requestPath = options.Required("continuation-request");
+    var preferencePath = options.Required("continuation-preference");
+    var admissionPath = options.Required("next-portfolio-admission");
+    var ledgerPath = options.Required("next-committed-ledger");
+    var resultPath = options.Required("next-commit-result");
     var receipt = AcquisitionRoutePortfolioCommitReceiptBuilder
-        .BuildInitialContinuation(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            ContinuationRoutePortfolioInputs(
-                options,
-                requireProposal: true),
-            options.Required("continuation-request"),
-            options.Required("continuation-preference"),
-            options.Required("next-portfolio-admission"),
-            options.Required("next-committed-ledger"),
-            options.Required("next-commit-result"));
+        .BuildContinuation(
+            VerifiedContinuationCheckpoint(options),
+            currentInputs,
+            requestPath,
+            preferencePath,
+            admissionPath,
+            ledgerPath,
+            resultPath);
     Write(options.Required("output"), receipt);
     if (!receipt.PortfolioCommitVerified)
         Environment.ExitCode = 2;
@@ -867,12 +875,12 @@ static void BuildAcquisitionRoutePortfolioContinuationCommitReceipt(
 static void BuildAcquisitionRouteContinuationExecutionBinding(
     Arguments options)
 {
-    var binding = AcquisitionRouteExecutionBindingBuilder
-        .BuildInitialContinuation(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            options.Required("continuation-request"),
-            ContinuationRouteExecutionBindingInputs(options));
+    var requestPath = options.Required("continuation-request");
+    var inputs = ContinuationRouteExecutionBindingInputs(options);
+    var binding = AcquisitionRouteExecutionBindingBuilder.BuildContinuation(
+        VerifiedContinuationCheckpoint(options),
+        requestPath,
+        inputs);
     Write(options.Required("output"), binding);
     if (!binding.DispatchBindingReady)
         Environment.ExitCode = 2;
@@ -881,17 +889,23 @@ static void BuildAcquisitionRouteContinuationExecutionBinding(
 static void BuildAcquisitionRouteContinuationFreshTerminalReceipt(
     Arguments options)
 {
+    var requestPath = options.Required("continuation-request");
+    var inputs = ContinuationRouteExecutionBindingInputs(options);
+    var bindingPath = options.Required("next-execution-binding");
+    var executionReceiptPath = options.Required("next-execution-receipt");
+    var afterPath = options.Required("next-after-snapshot");
+    var runId = options.Required("next-run-id");
+    var executorVersion = options.Required("next-executor-version");
     var receipt = AcquisitionRouteFreshTerminalReceiptBuilder
-        .BuildInitialContinuation(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            options.Required("continuation-request"),
-            ContinuationRouteExecutionBindingInputs(options),
-            options.Required("next-execution-binding"),
-            options.Required("next-execution-receipt"),
-            options.Required("next-after-snapshot"),
-            options.Required("next-run-id"),
-            options.Required("next-executor-version"));
+        .BuildContinuation(
+            VerifiedContinuationCheckpoint(options),
+            requestPath,
+            inputs,
+            bindingPath,
+            executionReceiptPath,
+            afterPath,
+            runId,
+            executorVersion);
     Write(options.Required("output"), receipt);
     if (!receipt.FreshTerminalReceiptVerified)
         Environment.ExitCode = 2;
@@ -900,39 +914,56 @@ static void BuildAcquisitionRouteContinuationFreshTerminalReceipt(
 static void BuildAcquisitionRoutePortfolioContinuationSettlementRequest(
     Arguments options)
 {
+    var continuationRequestPath = options.Required("continuation-request");
+    var inputs = ContinuationRouteExecutionBindingInputs(options);
+    var bindingPath = options.Required("next-execution-binding");
+    var receiptPath = options.Required("next-execution-receipt");
+    var afterPath = options.Required("next-after-snapshot");
+    var freshPath = options.Required("next-fresh-terminal-receipt");
+    var runId = options.Required("next-run-id");
+    var executorVersion = options.Required("next-executor-version");
     var request = AcquisitionRoutePortfolioSettlementBuilder
-        .BuildInitialContinuationRequest(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            options.Required("continuation-request"),
-            ContinuationRouteExecutionBindingInputs(options),
-            options.Required("next-execution-binding"),
-            options.Required("next-execution-receipt"),
-            options.Required("next-after-snapshot"),
-            options.Required("next-fresh-terminal-receipt"),
-            options.Required("next-run-id"),
-            options.Required("next-executor-version"));
+        .BuildContinuationRequest(
+            VerifiedContinuationCheckpoint(options),
+            continuationRequestPath,
+            inputs,
+            bindingPath,
+            receiptPath,
+            afterPath,
+            freshPath,
+            runId,
+            executorVersion);
     Write(options.Required("output"), request);
 }
 
 static void BuildAcquisitionRoutePortfolioContinuationSettlementReceipt(
     Arguments options)
 {
+    var continuationRequestPath = options.Required("continuation-request");
+    var inputs = ContinuationRouteExecutionBindingInputs(options);
+    var bindingPath = options.Required("next-execution-binding");
+    var executionReceiptPath = options.Required("next-execution-receipt");
+    var afterPath = options.Required("next-after-snapshot");
+    var freshPath = options.Required("next-fresh-terminal-receipt");
+    var runId = options.Required("next-run-id");
+    var executorVersion = options.Required("next-executor-version");
+    var settlementRequestPath = options.Required("next-settlement-request");
+    var settlementResultPath = options.Required("next-settlement-result");
+    var settledLedgerPath = options.Required("next-settled-ledger");
     var receipt = AcquisitionRoutePortfolioSettlementBuilder
-        .BuildInitialContinuationReceipt(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            options.Required("continuation-request"),
-            ContinuationRouteExecutionBindingInputs(options),
-            options.Required("next-execution-binding"),
-            options.Required("next-execution-receipt"),
-            options.Required("next-after-snapshot"),
-            options.Required("next-fresh-terminal-receipt"),
-            options.Required("next-run-id"),
-            options.Required("next-executor-version"),
-            options.Required("next-settlement-request"),
-            options.Required("next-settlement-result"),
-            options.Required("next-settled-ledger"));
+        .BuildContinuationReceipt(
+            VerifiedContinuationCheckpoint(options),
+            continuationRequestPath,
+            inputs,
+            bindingPath,
+            executionReceiptPath,
+            afterPath,
+            freshPath,
+            runId,
+            executorVersion,
+            settlementRequestPath,
+            settlementResultPath,
+            settledLedgerPath);
     Write(options.Required("output"), receipt);
     if (!receipt.ReservationLifecycleVerified)
         Environment.ExitCode = 2;
@@ -941,23 +972,53 @@ static void BuildAcquisitionRoutePortfolioContinuationSettlementReceipt(
 static void BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint(
     Arguments options)
 {
+    var continuationRequestPath = options.Required("continuation-request");
+    var inputs = ContinuationRouteExecutionBindingInputs(options);
+    var bindingPath = options.Required("next-execution-binding");
+    var executionReceiptPath = options.Required("next-execution-receipt");
+    var afterPath = options.Required("next-after-snapshot");
+    var freshPath = options.Required("next-fresh-terminal-receipt");
+    var runId = options.Required("next-run-id");
+    var executorVersion = options.Required("next-executor-version");
+    var settlementRequestPath = options.Required("next-settlement-request");
+    var settlementResultPath = options.Required("next-settlement-result");
+    var settledLedgerPath = options.Required("next-settled-ledger");
+    var settlementReceiptPath = options.Required("next-settlement-receipt");
     var checkpoint = AcquisitionRoutePortfolioRolloutCheckpointBuilder
-        .BuildInitialContinuation(
-            InitialCheckpointProof(options),
-            options.Required("rollout-checkpoint"),
-            options.Required("continuation-request"),
-            ContinuationRouteExecutionBindingInputs(options),
-            options.Required("next-execution-binding"),
-            options.Required("next-execution-receipt"),
-            options.Required("next-after-snapshot"),
-            options.Required("next-fresh-terminal-receipt"),
-            options.Required("next-run-id"),
-            options.Required("next-executor-version"),
-            options.Required("next-settlement-request"),
-            options.Required("next-settlement-result"),
-            options.Required("next-settled-ledger"),
-            options.Required("next-settlement-receipt"));
+        .BuildContinuation(
+            VerifiedContinuationCheckpoint(options),
+            continuationRequestPath,
+            inputs,
+            bindingPath,
+            executionReceiptPath,
+            afterPath,
+            freshPath,
+            runId,
+            executorVersion,
+            settlementRequestPath,
+            settlementResultPath,
+            settledLedgerPath,
+            settlementReceiptPath);
     Write(options.Required("output"), checkpoint);
+}
+
+static void BuildAcquisitionRoutePortfolioRolloutProofReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRoutePortfolioRolloutProofBuilder.BuildReceipt(
+        options.Required("rollout-proof-manifest"));
+    Write(options.Required("output"), receipt);
+}
+
+static AcquisitionRoutePortfolioVerifiedCheckpoint
+    VerifiedContinuationCheckpoint(Arguments options)
+{
+    var manifest = options.Optional("rollout-proof-manifest");
+    return string.IsNullOrWhiteSpace(manifest)
+        ? AcquisitionRoutePortfolioRolloutProofBuilder.VerifyInitial(
+            InitialCheckpointProof(options),
+            options.Required("rollout-checkpoint"))
+        : AcquisitionRoutePortfolioRolloutProofBuilder.Verify(manifest);
 }
 
 static AcquisitionRoutePortfolioInitialCheckpointProof InitialCheckpointProof(

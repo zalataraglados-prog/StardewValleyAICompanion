@@ -4,18 +4,38 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class AcquisitionRoutePortfolioInitialCheckpointProof
 {
+    [JsonPropertyName("execution_inputs")]
     public AcquisitionRouteExecutionBindingInputs ExecutionInputs
     { get; init; } = new();
 
+    [JsonPropertyName("execution_binding_path")]
     public string ExecutionBindingPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("execution_receipt_path")]
     public string ExecutionReceiptPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("after_snapshot_path")]
     public string AfterSnapshotPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("fresh_terminal_receipt_path")]
     public string FreshTerminalReceiptPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("run_id")]
     public string RunId { get; init; } = string.Empty;
+
+    [JsonPropertyName("executor_version")]
     public string ExecutorVersion { get; init; } = string.Empty;
+
+    [JsonPropertyName("settlement_request_path")]
     public string SettlementRequestPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("settlement_result_path")]
     public string SettlementResultPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("settled_ledger_path")]
     public string SettledLedgerPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("settlement_receipt_path")]
     public string SettlementReceiptPath { get; init; } = string.Empty;
 }
 

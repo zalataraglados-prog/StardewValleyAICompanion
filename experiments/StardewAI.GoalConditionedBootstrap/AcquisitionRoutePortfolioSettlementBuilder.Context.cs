@@ -14,7 +14,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string freshTerminalReceiptPath,
         string runId,
         string executorVersion,
-        InitialContinuationProof? continuation)
+        AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
+        string continuationRequestPath)
     {
         var bindingPath = Path.GetFullPath(executionBindingPath);
         var freshPath = Path.GetFullPath(freshTerminalReceiptPath);
@@ -26,10 +27,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         var expectedBinding = continuation is null
             ? AcquisitionRouteExecutionBindingBuilder.Build(inputs)
             : AcquisitionRouteExecutionBindingBuilder
-                .BuildInitialContinuation(
-                    continuation.InitialCheckpointProof,
-                    continuation.CheckpointPath,
-                    continuation.ContinuationRequestPath,
+                .BuildContinuation(
+                    continuation,
+                    continuationRequestPath,
                     inputs);
         Require(EqualJson(binding, expectedBinding),
             "Route execution binding drifted from deterministic source compilation.");
@@ -46,10 +46,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
                 runId,
                 executorVersion)
             : AcquisitionRouteFreshTerminalReceiptBuilder
-                .BuildInitialContinuation(
-                    continuation.InitialCheckpointProof,
-                    continuation.CheckpointPath,
-                    continuation.ContinuationRequestPath,
+                .BuildContinuation(
+                    continuation,
+                    continuationRequestPath,
                     inputs,
                     bindingPath,
                     executionReceiptPath,
@@ -132,9 +131,4 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string[] ActiveReservationIds,
         string FreshTerminalReceiptSha256);
 
-    private sealed record InitialContinuationProof(
-        AcquisitionRoutePortfolioInitialCheckpointProof
-            InitialCheckpointProof,
-        string CheckpointPath,
-        string ContinuationRequestPath);
 }

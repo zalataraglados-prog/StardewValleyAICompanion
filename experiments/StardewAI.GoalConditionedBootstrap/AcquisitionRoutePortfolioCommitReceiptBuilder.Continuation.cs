@@ -11,7 +11,42 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             string continuationPreferencePath,
             string admissionPath,
             string committedLedgerPath,
-            string? commitResultPath)
+            string? commitResultPath) => BuildContinuation(
+                AcquisitionRoutePortfolioRolloutProofBuilder.VerifyInitial(
+                    proof,
+                    checkpointPath),
+                currentInputs,
+                continuationRequestPath,
+                continuationPreferencePath,
+                admissionPath,
+                committedLedgerPath,
+                commitResultPath);
+
+    public static AcquisitionRoutePortfolioCommitReceipt BuildContinuation(
+        string rolloutProofManifestPath,
+        AcquisitionRoutePortfolioInputs currentInputs,
+        string continuationRequestPath,
+        string continuationPreferencePath,
+        string admissionPath,
+        string committedLedgerPath,
+        string? commitResultPath) => BuildContinuation(
+            AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+                rolloutProofManifestPath),
+            currentInputs,
+            continuationRequestPath,
+            continuationPreferencePath,
+            admissionPath,
+            committedLedgerPath,
+            commitResultPath);
+
+    internal static AcquisitionRoutePortfolioCommitReceipt BuildContinuation(
+        AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+        AcquisitionRoutePortfolioInputs currentInputs,
+        string continuationRequestPath,
+        string continuationPreferencePath,
+        string admissionPath,
+        string committedLedgerPath,
+        string? commitResultPath)
     {
         var preferenceFullPath = Path.GetFullPath(
             continuationPreferencePath);
@@ -21,9 +56,8 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             "Acquisition route portfolio continuation Teacher preference");
         var expectedPreference =
             AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                .BuildInitialContinuation(
-                    proof,
-                    checkpointPath,
+                .BuildContinuation(
+                    verifiedPrior,
                     currentInputs,
                     continuationRequestPath);
         Require(EqualJson(preference, expectedPreference) &&

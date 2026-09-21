@@ -679,6 +679,8 @@ Pareto rule. Ordinary caller-authored proposals cannot claim completed alternati
 continuation now reuses the same exact commit receipt, execution binding, fresh terminal receipt and
 settlement implementations while binding the prior checkpoint hash and completed alternatives across
 proposal, admission and receipt. Claimless selections receive a marker-only atomic commit instead of
-an unauditable unchanged-ledger shortcut. A two-route offline proof closes both exact transitions and
-produces a verified cumulative completion checkpoint. Arbitrary-depth checkpoint chaining and formal
-training admission remain blocked.
+an unauditable unchanged-ledger shortcut. A linear rollout proof manifest now exactly rebuilds the
+initial checkpoint and every ordered continuation transition, so every downstream layer consumes one
+shared latest-checkpoint verifier rather than a transition-specific implementation. A two-route
+offline proof plus a tampered-checkpoint rejection covers the current fixture. The chain code has no
+fixed continuation limit; a three-or-more-transition fixture and formal controller admission remain.

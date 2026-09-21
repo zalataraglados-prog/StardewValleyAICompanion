@@ -4,35 +4,94 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class AcquisitionRouteExecutionBindingInputs
 {
+    [JsonPropertyName("requirement_inventory_path")]
     public string RequirementInventoryPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("acquisition_lowering_path")]
     public string AcquisitionLoweringPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("master_angler_windows_path")]
     public string MasterAnglerWindowsPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("calendar_resolution_path")]
     public string CalendarResolutionPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_calendar_path")]
     public string TargetDateCalendarPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_unlock_path")]
     public string TargetDateUnlockPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_festival_path")]
     public string TargetDateFestivalPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_location_path")]
     public string TargetDateLocationPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_facility_path")]
     public string TargetDateFacilityPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_resource_path")]
     public string TargetDateResourcePath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_currency_path")]
     public string TargetDateCurrencyPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_reservation_path")]
     public string TargetDateReservationPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_processing_path")]
     public string TargetDateProcessingPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_fishing_probability_path")]
     public string TargetDateFishingProbabilityPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_stochastic_retry_path")]
     public string TargetDateStochasticRetryPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_daily_time_energy_path")]
     public string TargetDateDailyTimeEnergyPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("target_date_opportunity_cost_path")]
     public string TargetDateOpportunityCostPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("fishing_forecast_manifest_path")]
     public string FishingForecastManifestPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("strategy_ledger_path")]
     public string StrategyLedgerPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("before_snapshot_path")]
     public string BeforeSnapshotPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("route_timing_calibration_path")]
     public string RouteTimingCalibrationPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio_proposal_path")]
     public string PortfolioProposalPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio_admission_path")]
     public string PortfolioAdmissionPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio_preference_request_path")]
     public string PortfolioPreferenceRequestPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio_teacher_preference_path")]
     public string PortfolioTeacherPreferencePath { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio_commit_receipt_path")]
     public string PortfolioCommitReceiptPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("committed_strategy_ledger_path")]
     public string CommittedStrategyLedgerPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio_commit_result_path")]
     public string PortfolioCommitResultPath { get; init; } = string.Empty;
+
+    [JsonPropertyName("action_queue_path")]
     public string ActionQueuePath { get; init; } = string.Empty;
+
+    [JsonPropertyName("route_occurrence_id")]
     public string RouteOccurrenceId { get; init; } = string.Empty;
 }
 
