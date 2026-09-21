@@ -219,8 +219,10 @@ internal static partial class BootstrapSelfTest
         Write(manifestPath, manifest);
         var proofReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
             .BuildReceipt(manifestPath);
-        Write(Path.Combine(outputRoot, "rollout-proof-receipt.json"),
-            proofReceipt);
+        var proofReceiptPath = Path.Combine(
+            outputRoot,
+            "rollout-proof-receipt.json");
+        Write(proofReceiptPath, proofReceipt);
         Require(proofReceipt.ProofChainVerified &&
                 proofReceipt.PortfolioCompletionVerified &&
                 proofReceipt.TransitionCount == 2 &&
@@ -229,6 +231,43 @@ internal static partial class BootstrapSelfTest
                     CurrentTeacherFrontierSupport.HashFile(cumulativePath) &&
                 !proofReceipt.FormalTrainingAuthorized,
             "Cumulative rollout proof-chain receipt drifted.");
+        var admission = AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build(
+            manifestPath,
+            proofReceiptPath);
+        Write(Path.Combine(outputRoot, "rollout-admission-receipt.json"),
+            admission);
+        Require(admission.ControllerAdmissionGranted &&
+                admission.TeacherTrainingEvidenceEligible &&
+                !admission.FormalProductTrainingAuthorized &&
+                admission.RolloutId == proofReceipt.RolloutId &&
+                admission.GoalId == proofReceipt.GoalId &&
+                admission.TransitionCount == proofReceipt.TransitionCount &&
+                admission.ProofManifestSha256 ==
+                    proofReceipt.ManifestSha256 &&
+                admission.LatestCheckpointSha256 ==
+                    proofReceipt.LatestCheckpointSha256 &&
+                admission.BlockingReasons.Length == 0,
+            "Completed rollout proof did not cross scoped controller admission.");
+
+        var forgedProofReceiptPath = Path.Combine(
+            outputRoot,
+            "forged-rollout-proof-receipt.json");
+        proofReceipt.TransitionCount++;
+        Write(forgedProofReceiptPath, proofReceipt);
+        proofReceipt.TransitionCount--;
+        var forgedReceiptRejected = false;
+        try
+        {
+            AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build(
+                manifestPath,
+                forgedProofReceiptPath);
+        }
+        catch (InvalidDataException)
+        {
+            forgedReceiptRejected = true;
+        }
+        Require(forgedReceiptRejected,
+            "Caller-authored rollout proof receipt crossed controller admission.");
 
         var tamperedCheckpointPath = Path.Combine(
             outputRoot,

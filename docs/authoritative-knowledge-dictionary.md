@@ -683,4 +683,8 @@ an unauditable unchanged-ledger shortcut. A linear rollout proof manifest now ex
 initial checkpoint and every ordered continuation transition, so every downstream layer consumes one
 shared latest-checkpoint verifier rather than a transition-specific implementation. A two-route
 offline proof plus a tampered-checkpoint rejection covers the current fixture. The chain code has no
-fixed continuation limit; a three-or-more-transition fixture and formal controller admission remain.
+fixed continuation limit. `acquisition_route_portfolio_rollout_admission_receipt.v1` now recomputes
+the complete manifest and admits only an exactly matching terminal proof as scoped Teacher evidence;
+incomplete chains block and caller-authored proof receipts fail closed. This does not authorize the
+global formal-training process. A three-or-more-transition fixture and portfolio-to-dataset adapter
+remain.

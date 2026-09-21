@@ -38,12 +38,27 @@ internal static partial class BootstrapSelfTest
             });
         var priorProofReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
             .BuildReceipt(priorManifestPath);
+        var priorProofReceiptPath = Path.Combine(
+            outputRoot,
+            "prior-rollout-proof-receipt.json");
+        Write(priorProofReceiptPath, priorProofReceipt);
         Require(priorProofReceipt.ProofChainVerified &&
                 !priorProofReceipt.PortfolioCompletionVerified &&
                 priorProofReceipt.TransitionCount == 1 &&
                 priorProofReceipt.ContinuationTransitionCount == 0 &&
                 !priorProofReceipt.FormalTrainingAuthorized,
             "Initial incomplete rollout proof-chain receipt drifted.");
+        var blockedAdmission =
+            AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build(
+                priorManifestPath,
+                priorProofReceiptPath);
+        Require(!blockedAdmission.ControllerAdmissionGranted &&
+                !blockedAdmission.TeacherTrainingEvidenceEligible &&
+                !blockedAdmission.FormalProductTrainingAuthorized &&
+                blockedAdmission.BlockingReasons.Contains(
+                    "rollout_portfolio_not_complete",
+                    StringComparer.Ordinal),
+            "Incomplete rollout proof unexpectedly crossed controller admission.");
         var requestPath = Path.Combine(outputRoot, "request.json");
         var request = AcquisitionRoutePortfolioContinuationBuilder
             .BuildRequest(priorManifestPath, currentInputs);

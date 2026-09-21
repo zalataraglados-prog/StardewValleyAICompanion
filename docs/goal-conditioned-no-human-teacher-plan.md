@@ -1656,8 +1656,20 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The two-transition positive fixture, tampered-checkpoint rejection and standalone proof-receipt CLI pass. The code
   has no fixed continuation limit, but a three-or-more-transition fixture is still required before calling the repeated
   path fully demonstrated.
-- Formal training remains false. The next slice must admit only a verified complete terminal proof receipt at the
-  rollout controller; an incomplete chain or raw caller checkpoint must never authorize training.
+
+### 2026-09-22: terminal portfolio rollout controller admission
+
+- `acquisition_route_portfolio_rollout_admission_receipt.v1` is a separate controller artifact. It rebuilds the ordered
+  proof chain from the manifest and requires the supplied proof receipt to be exactly equal to that recomputation;
+  trusting `proof_chain_verified` or another caller-provided boolean is insufficient.
+- A verified but incomplete chain returns typed blockers and no admission. A terminal chain receives
+  `controller_admission_granted=true` and `teacher_training_evidence_eligible=true`; a modified receipt is rejected.
+- The authorization scope is only `verified_acquisition_route_portfolio_teacher_evidence`.
+  `formal_product_training_authorized` remains false, so this receipt cannot bypass option admission, dataset/checkpoint
+  validation, Product Executor/version locks, or the native-save transaction. The next slice is a three-or-more-
+  transition fixture followed by a portfolio supervision dataset adapter.
+- Formal product training remains false. The next slice is the three-or-more-transition fixture and portfolio
+  supervision dataset adapter; incomplete chains and raw caller checkpoints remain permanently inadmissible.
 
 ## Review questions
 
