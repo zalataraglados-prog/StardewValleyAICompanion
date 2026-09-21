@@ -81,22 +81,18 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
-        var beforeCount = InventoryCount(
+        var evidence = ExactInventoryReceiptVerifier.Verify(
             before,
-            credit.QualifiedItemId,
-            credit.MinimumQuality);
-        var afterCount = InventoryCount(
             after,
             credit.QualifiedItemId,
+            credit.RequiredQuantity,
             credit.MinimumQuality);
         return Transition(
             credit,
             "exact_inventory_quantity_increased",
-            CountText(beforeCount),
-            CountText(afterCount),
-            beforeCount.HasValue &&
-            afterCount.HasValue &&
-            afterCount.Value > beforeCount.Value);
+            CountText(evidence.BeforeQuantity),
+            CountText(evidence.AfterQuantity),
+            evidence.Verified);
     }
 
     private static PolicyTeacherRequirementTransition VerifyFullShipment(

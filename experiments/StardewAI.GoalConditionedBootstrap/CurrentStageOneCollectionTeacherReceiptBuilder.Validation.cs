@@ -183,147 +183,16 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         SnapshotEnvelope after,
         string runId,
         string executorVersion)
-    {
-        var reasons = new List<string>();
-        var queue = preference.CompiledQueue!;
-        var selectedCandidate = preference.SelectedCandidate!;
-        var receiptSteps = receipt.StepResults ??
-            Array.Empty<QueueExecutionStepReceipt>();
-        if (!string.Equals(before.SchemaVersion, "snapshot.v1",
-                StringComparison.Ordinal) ||
-            !string.Equals(after.SchemaVersion, "snapshot.v1",
-                StringComparison.Ordinal) ||
-            !string.Equals(before.GameVersion, after.GameVersion,
-                StringComparison.Ordinal))
-            reasons.Add("execution_receipt_snapshot_schema_or_game_version_mismatch");
-        if (string.IsNullOrWhiteSpace(before.SaveId.Value) ||
-            !string.Equals(before.SaveId.Value, after.SaveId.Value,
-                StringComparison.Ordinal) ||
-            string.IsNullOrWhiteSpace(before.PlayerId.Value) ||
-            !string.Equals(before.PlayerId.Value, after.PlayerId.Value,
-                StringComparison.Ordinal))
-            reasons.Add("execution_receipt_snapshot_identity_mismatch");
-        if (!string.Equals(
-                receipt.SchemaVersion,
-                "queue_execution_receipt.v1",
-                StringComparison.Ordinal) ||
-            !string.Equals(
-                receipt.QueueExecutionMode,
-                "sequential_queue_items",
-                StringComparison.Ordinal))
-            reasons.Add("queue_execution_receipt_schema_or_mode_mismatch");
-        if (string.IsNullOrWhiteSpace(runId) ||
-            !string.Equals(receipt.RunId, runId, StringComparison.Ordinal))
-            reasons.Add("execution_receipt_run_id_mismatch");
-        if (!PolicyTrajectoryVersionPins.IsKnownExecutor(executorVersion))
-            reasons.Add("execution_receipt_executor_version_unknown");
-        if (!string.Equals(receipt.QueueId, queue.QueueId,
-                StringComparison.Ordinal))
-            reasons.Add("execution_receipt_queue_id_mismatch");
-        if (!string.Equals(
-                receipt.SelectedCandidateId,
-                selectedCandidate.CandidateId,
-                StringComparison.Ordinal))
-            reasons.Add("queue_execution_receipt_candidate_mismatch");
-        if (!string.Equals(before.StateHash, preference.SourceStateHash,
-                StringComparison.Ordinal) ||
-            !string.Equals(receipt.SourceStateHash, before.StateHash,
-                StringComparison.Ordinal))
-            reasons.Add("execution_receipt_before_state_hash_mismatch");
-        if (string.IsNullOrWhiteSpace(after.StateHash) ||
-            string.Equals(after.StateHash, before.StateHash,
-                StringComparison.Ordinal) ||
-            !string.Equals(receipt.AfterStateHash, after.StateHash,
-                StringComparison.Ordinal))
-            reasons.Add("execution_receipt_after_state_hash_mismatch");
-        if (receipt.BeforeGameTick != before.GameTick ||
-            receipt.AfterGameTick != after.GameTick ||
-            receipt.AfterGameTick <= receipt.BeforeGameTick)
-            reasons.Add("execution_receipt_tick_boundary_mismatch");
-        if (!string.Equals(receipt.Status, "applied", StringComparison.Ordinal) ||
-            !receipt.Success ||
-            !receipt.AfterSnapshotFresh ||
-            !receipt.SelectedCandidateCompleted)
-            reasons.Add("queue_execution_receipt_not_completed_verified_fresh");
-        if ((receipt.BlockReasons?.Length ?? 0) > 0)
-            reasons.Add("execution_receipt_contains_block_or_failure_reasons");
-        if (receipt.PlannedItemCount != queue.Items.Length ||
-            receipt.ExecutedItemCount != queue.Items.Length ||
-            receipt.FinalPendingItemCount != 0 ||
-            receipt.MaxQueueItemAttempts < queue.Items.Length ||
-            receipt.MaxQueueItemAttempts >
-                TeacherEvidenceRolloutLimits.MaxQueueItems ||
-            receiptSteps.Length != queue.Items.Length)
-            reasons.Add("queue_execution_receipt_item_count_mismatch");
-
-        var expectedStateHash = before.StateHash;
-        var expectedTick = before.GameTick;
-        for (var index = 0;
-             index < Math.Min(receiptSteps.Length, queue.Items.Length);
-             index++)
-        {
-            var step = receiptSteps[index];
-            var expectedItem = queue.Items[index];
-            if (step.QueueItemIndex != index ||
-                step.QueueItemCount != queue.Items.Length ||
-                step.OriginalPlannedItemCount != queue.Items.Length)
-                reasons.Add("queue_execution_receipt_step_order_mismatch:" + index);
-            if (!string.Equals(step.QueueId, queue.QueueId,
-                    StringComparison.Ordinal) ||
-                !string.Equals(step.QueueItemId, expectedItem.QueueItemId,
-                    StringComparison.Ordinal) ||
-                !string.Equals(step.OptionId, expectedItem.OptionId,
-                    StringComparison.Ordinal) ||
-                !string.Equals(
-                    step.PrimitiveKind,
-                    expectedItem.NormalizedCommand.Steps.Single().StepType,
-                    StringComparison.Ordinal))
-                reasons.Add("queue_execution_receipt_step_identity_mismatch:" + index);
-            if (!string.Equals(
-                    step.CompiledCommandStateHash,
-                    preference.SourceStateHash,
-                    StringComparison.Ordinal) ||
-                !step.TeacherPreferenceStateRebound ||
-                !string.Equals(step.SourceStateHash, expectedStateHash,
-                    StringComparison.Ordinal))
-                reasons.Add("queue_execution_receipt_step_state_rebind_mismatch:" + index);
-            if (string.IsNullOrWhiteSpace(step.AfterStateHash) ||
-                !step.StateHashChanged ||
-                string.Equals(step.SourceStateHash, step.AfterStateHash,
-                    StringComparison.Ordinal) ||
-                step.BeforeGameTick != expectedTick ||
-                step.AfterGameTick <= step.BeforeGameTick)
-                reasons.Add("queue_execution_receipt_step_transition_mismatch:" + index);
-            if (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
-                !step.AfterSnapshotFresh ||
-                step.SelectedQueueCandidateCompleted !=
-                    (index == queue.Items.Length - 1) ||
-                !string.Equals(
-                    step.PrimitiveVerificationStatus,
-                    "verified",
-                    StringComparison.Ordinal) ||
-                (step.PrimitiveVerificationReasons?.Length ?? 0) == 0 ||
-                (step.BlockReasons?.Length ?? 0) > 0 ||
-                !string.IsNullOrWhiteSpace(step.FailureAttribution) ||
-                step.ChangedFacts.ValueKind != JsonValueKind.Array ||
-                step.ChangedFacts.GetArrayLength() == 0)
-                reasons.Add("queue_execution_receipt_step_not_verified:" + index);
-            if (step.EffectiveQueueItem is not { } effective ||
-                !EffectiveQueueItemMatches(
-                    effective,
-                    expectedItem,
-                    expectedStateHash))
-                reasons.Add("execution_receipt_effective_queue_item_mismatch:" + index);
-            expectedStateHash = step.AfterStateHash;
-            expectedTick = step.AfterGameTick;
-        }
-
-        if (!string.Equals(expectedStateHash, after.StateHash,
-                StringComparison.Ordinal) ||
-            expectedTick != after.GameTick)
-            reasons.Add("queue_execution_receipt_final_step_boundary_mismatch");
-        return reasons.Distinct(StringComparer.Ordinal).ToArray();
-    }
+        => QueueExecutionReceiptValidator.Validate(
+            preference.CompiledQueue!,
+            before,
+            receipt,
+            after,
+            runId,
+            executorVersion,
+            preference.SelectedCandidate!.CandidateId,
+            preference.SourceStateHash,
+            requireTeacherPreferenceStateRebound: true);
 
     private static string[] ValidateReceipt(
         CurrentStageOneCollectionTeacherPreferenceLabel preference,
@@ -415,46 +284,12 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             reasons.Add("execution_receipt_changed_facts_missing");
         if (receipt.EffectiveQueueItem is not { } effective ||
             queueItem is null ||
-            !EffectiveQueueItemMatches(effective, queueItem))
+            !ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(
+                effective,
+                queueItem,
+                queueItem.NormalizedCommand.StateHash))
             reasons.Add("execution_receipt_effective_queue_item_mismatch");
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
-    }
-
-    private static bool EffectiveQueueItemMatches(
-        JsonElement effective,
-        ActionQueueItem expected)
-        => EffectiveQueueItemMatches(
-            effective,
-            expected,
-            expected.NormalizedCommand.StateHash);
-
-    private static bool EffectiveQueueItemMatches(
-        JsonElement effective,
-        ActionQueueItem expected,
-        string reboundStateHash)
-    {
-        if (effective.ValueKind != JsonValueKind.Object)
-            return false;
-        try
-        {
-            var actual = JsonSerializer.Deserialize<ActionQueueItem>(
-                effective.GetRawText(),
-                JsonDefaults.Options);
-            var reboundExpected = JsonSerializer.Deserialize<ActionQueueItem>(
-                JsonSerializer.Serialize(expected, JsonDefaults.Options),
-                JsonDefaults.Options);
-            if (reboundExpected is null)
-                return false;
-            reboundExpected.NormalizedCommand.StateHash = reboundStateHash;
-            return actual is not null && string.Equals(
-                JsonSerializer.Serialize(actual, JsonDefaults.Options),
-                JsonSerializer.Serialize(reboundExpected, JsonDefaults.Options),
-                StringComparison.Ordinal);
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
     }
 
     private static int RequiredStateInt(

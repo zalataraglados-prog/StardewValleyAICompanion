@@ -11,13 +11,21 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-21 目标日路线执行绑定与 fresh 终态回执闭合
+
+- 新增执行前 `acquisition_route_execution_binding.v1` 和命令 `build-acquisition-route-execution-binding`。构建器会从原始输入确定性重建完整机会成本报告，只允许完整 Pareto 前沿中的一个精确 `route_occurrence_id` 进入执行；候选 ID 由 occurrence 确定生成，每个队列项必须重复携带精确需求、路线、来源、数量和品质身份，同时哈希绑定 lowering、目标日快照、动作队列、全部队列项和 option。每个 option 必须属于该路线权威 endpoint/support 集，且至少包含一个 endpoint，不能再用调用方别名或物品 ID 猜测实际执行了哪条获取路线。
+- 新增执行后 `acquisition_route_fresh_terminal_receipt.v1` 和命令 `build-acquisition-route-fresh-terminal-receipt`。它会重算并逐对象核对执行绑定，复用统一的顺序队列回执验证器，要求同存档/玩家、同目标日、新鲜 after snapshot、精确状态哈希和 tick 边界、逐项身份/顺序/primitive 原生验证以及最终队列闭合。
+- `item_id` 路线必须证明满足最低品质的玩家库存净增量不少于完整 `required_amount`；“要求 2 个但只增加 1 个”已成为显式失败回归。`money_payment` 路线另走社区中心原生 ingredient `false -> true` 与 money 精确减少量双重验证，不冒充库存产物回执。原 Stage 1 Teacher 回执也改用同一精确数量验证器，修复了过去任意正增量即可放行多数量需求的问题。
+- Release 构建为 0 warning / 0 error；聚焦 Bootstrap 76 路线全链自测通过，覆盖确定性绑定、真实商店 Pareto 路线正向回执以及部分数量拒绝。机会成本的延后回归已完成，12 个固定依赖轴至此都有明确契约边界。
+- fresh 回执只证明“这条已选路线的这一队列确实完成并产生了要求的终态”，不能倒过来替代路线选择。`route_training_evidence_eligible=true` 仍不等于正式训练准入；下一阶段是跨需求路线组合、原子 reservation commit 和正式 rollout controller 准入，`formal_training_authorized` 继续保持 false。
+
 ## 2026-09-20 目标日机会成本轴实现待回归
 
 - `feat/target-date-opportunity-cost` 已接入 `acquisition_route_target_date_opportunity_cost.v1` 与 `build-acquisition-route-target-date-opportunity-cost`。它会确定性重建完整 `daily_time_energy_budget` 上游、核对同一快照身份，并保持全部 route occurrence；上游报告漂移或被篡改时直接拒绝。
 - 机会成本不压成一个人为分数。向量独立保留保证耗时、原生体力、按 `qualified_item_id + quality + live sale_price` 分开的精确物料数量，以及 money、star tokens、club coins、Qi gems 四个原生货币域。物料售价合计只作审计摘要，不代替物品身份，也不进行跨货币换算。
 - 比较严格限制在同一 `(requirement_set_id, requirement_id, alternative_index)` 内，只使用严格 Pareto 支配：所有维度不更差且至少一维更好才淘汰；等价向量和互有得失的路线都保留在前沿。Learner 分数、未来收入和推测效用不得进入本轴。
 - 库存成本从 claim 指向的实时材料槽读取；`quality` 或 `sale_price` 缺失、槽位/物品/状态哈希漂移、未知货币域、溢出或非正 claim 均失败关闭。fixture 已补显式成本字段，并新增两条当前可行路线及三类 Pareto 边界自检。
-- 为避免影响当前游戏，本轮未启动游戏、训练、服务器、反编译、完整构建或自测；因此这里记录的是实现完成、运行回归待办，不是已验收结论。允许测试后先跑实验项目构建和聚焦 Bootstrap 全链自测，成功后提交；随后唯一剩余固定轴是 fresh terminal receipt。
+- 该轴的延后回归已于 2026-09-21 随 fresh 终态回执聚焦全链自测完成；机会成本报告仍只提供候选前沿，不直接选择或执行路线。
 
 ## 2026-09-13 目标日日级时间/体力预算轴闭合
 

@@ -476,6 +476,18 @@ crab-pot outputs must retain exact stack and quality. Missing exact quality evid
 than substituting expected quality. Random retry counts that increase consumables must be included in
 the final resource, currency and atomic reservation proof before a route can authorize execution.
 
+The final receipt boundary is deliberately split around execution. Before dispatch,
+`acquisition_route_execution_binding.v1` must identify one exact Pareto-front route occurrence and
+hash-bind its source snapshot, accepted compiler candidate, immutable queue, queue items and the
+route's authoritative endpoint/support options. After dispatch,
+`acquisition_route_fresh_terminal_receipt.v1` must recompute that binding and verify the canonical
+ordered queue receipt against a fresh same-save, same-player and same-target-day snapshot. Item
+routes require the full quantity increase at or above minimum quality; native community-center
+money routes require both the exact money decrease and the bundle ingredient transition. A
+predicted receipt, a partial quantity gain or a route inferred only from item identity is not
+Teacher evidence. This closes per-route evidence only; route-set composition, atomic reservation
+commit and formal rollout authorization remain downstream controller responsibilities.
+
 Goal-direction ownership is not copied into the dictionary or experiment. The production
 `GrandpaDirectionCatalog` is the sole mapping from score criteria to directions, permitted
 options, effective goals, and demand families. Dictionary-derived dependency expansion is a

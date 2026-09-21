@@ -1520,11 +1520,32 @@ Slice 7 remains assigned to the RTX 5070 node.
   same raw transparent snapshot. Missing quality or sale price, stale state hashes, unauthorized or changed slots,
   invalid quantities, unknown currency domains and arithmetic overflow fail closed. This axis neither selects a
   route portfolio nor commits a claim.
-- The focused regression is defined for all 76 occurrences: two current matches should remain separate Pareto-front
-  routes and 74 should remain upstream non-applicable. Dedicated pure checks cover strict dominance, incomparable
-  trade-offs and equal vectors. Runtime regression is intentionally deferred while the user is playing; until it
-  passes, this branch is implementation-complete but not admitted. Fresh terminal receipt is the final fixed axis,
-  and training authorization remains false.
+- The focused regression passes for all 76 occurrences: two current matches remain separate Pareto-front routes and
+  74 remain upstream non-applicable. Dedicated pure checks cover strict dominance, incomparable trade-offs and equal
+  vectors. This report still cannot predict which route will execute or fabricate its terminal receipt.
+
+### 2026-09-21: exact route execution binding and fresh terminal receipt
+
+- `acquisition_route_execution_binding.v1` is a pre-dispatch artifact created only after route selection. It
+  deterministically rebuilds the complete opportunity-cost chain, requires the selected occurrence to belong to the
+  complete Pareto frontier, and hash-binds the lowering report, source snapshot and immutable pending action queue.
+  The accepted candidate ID is derived from the occurrence rather than supplied as an alias, and every queue item
+  repeats the exact occurrence, requirement, route, source, quantity and quality identity. Every option must belong
+  to the selected route's authoritative endpoint/support set, at least one endpoint must be present, and actor, mode
+  and state hash must remain exact. Qualified item identity alone is never sufficient to infer a route.
+- `acquisition_route_fresh_terminal_receipt.v1` is post-execution evidence, not another predictive target-date axis.
+  It recomputes and compares the binding, then validates the canonical ordered queue receipt against same-save,
+  same-player, same-target-day snapshots. Every queue item must preserve order and identity, rebind the correct state,
+  carry native primitive verification and changed facts, advance to a fresh state/tick, and close the final boundary.
+- Item routes independently recount exact player inventory rows at or above minimum quality and require a net gain of
+  the complete `required_amount`. The focused regression explicitly rejects a one-unit gain for a two-unit route.
+  Native community-center money payments instead require both the exact money decrease and the corresponding bundle
+  ingredient `false -> true` transition. The shared exact inventory verifier also fixes the older Stage 1 Teacher
+  receipt path, which previously accepted any positive increase for a multi-quantity requirement.
+- Release build and the complete focused 76-route Bootstrap chain pass with zero warnings/errors. All twelve fixed
+  dependency-axis contracts now have an explicit boundary, but a verified individual route is only route-level
+  training evidence. Portfolio composition across requirements, atomic reservation commit and formal rollout-
+  controller admission remain mandatory; `formal_training_authorized` stays false.
 
 ## Review questions
 

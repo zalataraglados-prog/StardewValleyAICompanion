@@ -65,6 +65,21 @@ internal static partial class BootstrapSelfTest
         var targetDateOpportunityCostPath = Path.Combine(
             root,
             "target-date-opportunity-cost.json");
+        var targetDateRouteQueuePath = Path.Combine(
+            root,
+            "target-date-route-queue.json");
+        var targetDateExecutionBindingPath = Path.Combine(
+            root,
+            "target-date-route-execution-binding.json");
+        var targetDateAfterSnapshotPath = Path.Combine(
+            root,
+            "target-date-route-after-snapshot.json");
+        var targetDateExecutionReceiptPath = Path.Combine(
+            root,
+            "target-date-route-execution-receipt.json");
+        var targetDateInsufficientAfterSnapshotPath = Path.Combine(
+            root,
+            "target-date-route-insufficient-after-snapshot.json");
         var tamperedTargetDateDailyTimeEnergyPath = Path.Combine(
             root,
             "tampered-target-date-daily-time-energy-budget.json");
@@ -1932,6 +1947,41 @@ internal static partial class BootstrapSelfTest
                     BuildOpportunityCost(targetDateDailyTimeEnergyPath),
                     JsonDefaults.Options),
             "Target-date opportunity-cost resolution is not deterministic.");
+
+        VerifyTargetDateFreshTerminalReceipt(
+            new AcquisitionRouteExecutionBindingInputs
+            {
+                RequirementInventoryPath = inventoryPath,
+                AcquisitionLoweringPath = loweringPath,
+                MasterAnglerWindowsPath = windowsPath,
+                CalendarResolutionPath = routeCalendarPath,
+                TargetDateCalendarPath = targetDateCalendarPath,
+                TargetDateUnlockPath = targetDateUnlockPath,
+                TargetDateFestivalPath = targetDateFestivalPath,
+                TargetDateLocationPath = targetDateLocationPath,
+                TargetDateFacilityPath = targetDateFacilityPath,
+                TargetDateResourcePath = targetDateResourcePath,
+                TargetDateCurrencyPath = targetDateCurrencyPath,
+                TargetDateReservationPath = targetDateReservationPath,
+                TargetDateProcessingPath = targetDateProcessingPath,
+                TargetDateFishingProbabilityPath =
+                    targetDateFishingProbabilityPath,
+                TargetDateStochasticRetryPath =
+                    targetDateStochasticRetryPath,
+                TargetDateDailyTimeEnergyPath =
+                    targetDateDailyTimeEnergyPath,
+                TargetDateOpportunityCostPath = targetDateOpportunityCostPath,
+                FishingForecastManifestPath = fishingForecastManifestPath,
+                StrategyLedgerPath = strategyLedgerPath,
+                BeforeSnapshotPath = targetDateUnlockSnapshotPath,
+                RouteTimingCalibrationPath = targetDateRouteCalibrationPath,
+                ActionQueuePath = targetDateRouteQueuePath,
+                RouteOccurrenceId = targetDateOpportunityShop.RouteOccurrenceId
+            },
+            targetDateExecutionBindingPath,
+            targetDateAfterSnapshotPath,
+            targetDateExecutionReceiptPath,
+            targetDateInsufficientAfterSnapshotPath);
 
         AcquisitionOpportunityCostVector CostVector(
             int minutes,

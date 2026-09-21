@@ -9,23 +9,10 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
     private static int? InventoryCount(
         SnapshotEnvelope snapshot,
         string qualifiedItemId,
-        int minimumQuality)
-    {
-        if (!TryStateValue(snapshot, "player", "inventory", out var rows) ||
-            rows.ValueKind != JsonValueKind.Array)
-            return null;
-        var count = 0;
-        foreach (var row in rows.EnumerateArray().Where(row =>
-                     ReadString(row, "qualified_item_id") == qualifiedItemId))
-        {
-            if (!TryReadInt(row, "quality", out var quality) ||
-                !TryReadInt(row, "stack", out var stack))
-                return null;
-            if (quality >= minimumQuality)
-                count += Math.Max(0, stack);
-        }
-        return count;
-    }
+        int minimumQuality) => ExactInventoryReceiptVerifier.InventoryCount(
+        snapshot,
+        qualifiedItemId,
+        minimumQuality);
 
     private static int? ShippingBinCount(
         SnapshotEnvelope snapshot,
