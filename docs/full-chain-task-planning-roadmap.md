@@ -388,10 +388,13 @@ history, while every per-route execution binding and normalized command now carr
 ID and committed ledger revision. A complete bounded Teacher enumerator now derives proposals from
 the authoritative requirement rules and route frontier rather than a caller list. It selects only a
 unique strict aggregate Pareto winner; equal/incomparable or over-limit frontiers fail closed, and
-the execution binding requires the actual proposal/admission to equal that selection. This is still
-not the Stage 5.5 exit: evidence-backed policy must resolve any required incomparable portfolios,
-then the controller must execute/replan selected routes in order, settle reservation lifecycle and
-emit one portfolio-level completion receipt before formal Teacher rollout admission.
+the execution binding requires the actual proposal/admission to equal that selection. A completed
+route can now settle its exact active material/currency set through one-revision Backend mutation;
+`acquisition_route_portfolio_settlement_receipt.v1` derives that set from the verified route and
+exactly replays the mutation, then requires fresh replanning. This is still not the Stage 5.5 exit:
+evidence-backed policy must resolve any required incomparable portfolios, then the controller must
+carry completed alternative identity across fresh replans, order the remaining routes and emit one
+portfolio-level completion receipt before formal Teacher rollout admission.
 
 ### Stage 6: Perfect-Policy Training And Freeze
 

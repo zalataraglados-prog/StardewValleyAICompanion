@@ -5,9 +5,6 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
 {
-    private const string RouteDecisionPrefix =
-        "target-date-acquisition-route:";
-
     private static List<string> ValidateAdmission(
         AcquisitionRoutePortfolioAdmission admission,
         SnapshotEnvelope snapshot,
@@ -64,13 +61,17 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
                     StringComparer.Ordinal))
             {
                 reasons.Add("selected_route_active_claim_set_mismatch:" +
-                    route.SourceDecisionId[RouteDecisionPrefix.Length..]);
+                    route.SourceDecisionId[
+                        AcquisitionRoutePortfolioBuilder.RouteDecisionPrefix
+                            .Length..]);
             }
         }
         foreach (var routeId in admission.ReplacedRouteOccurrenceIds ??
             Array.Empty<string>())
         {
-            var decisionId = RouteDecisionPrefix + routeId;
+            var decisionId =
+                AcquisitionRoutePortfolioBuilder.RouteDecisionPrefix +
+                routeId;
             if (activeMaterial.Any(row =>
                     row.SourceDecisionId == decisionId) ||
                 activeCurrency.Any(row =>

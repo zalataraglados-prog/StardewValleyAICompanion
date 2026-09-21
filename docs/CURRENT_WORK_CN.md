@@ -11,6 +11,12 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-21 单路线 reservation 结算与重放回执
+
+- 新增 `POST /api/v1/strategy/commitments/reservation-portfolios/settle-completed-route`。请求必须绑定 fresh after snapshot、当前 ledger revision、portfolio/goal/route source decision、fresh terminal receipt 的小写 SHA-256，以及该路线当前全部 active 材料/货币 reservation ID。服务在内存副本中一次性把精确集合改为 `completed`，记录完成原因和证据哈希，只前进一个 revision，并写入逐 claim 历史与唯一 `reservation_portfolio_route_complete` 标记；缺少、多余或重复 ID 均整体拒绝。无 claim 路线仍写入可审计标记。
+- 新增 `acquisition_route_portfolio_settlement_receipt.v1`、`build-acquisition-route-portfolio-settlement-request` 和 `build-acquisition-route-portfolio-settlement-receipt`。请求生成器先确定性重建 execution binding 与 fresh terminal receipt，再从已提交 ledger 推导完整 active claim set；回执随后用历史标记时间精确重放 Core 事务，要求 settlement result、settled ledger 和重放结果逐对象一致。额外历史行篡改会被拒绝。
+- Backend 全量回归为 `202/202`；实验项目 Release 为 `0 warning / 0 error`；聚焦 76 路线链通过真实商店路线的 `revision 1 -> 2`、两条 claim 完整结算、exact replay 与篡改拒绝。该回执只证明一条已选路线完成后的 reservation 生命周期，强制 `fresh_replan_required=true`，不代表组合已完成，`formal_training_authorized` 仍为 false。
+
 ## 2026-09-21 路线组合 Teacher 偏好与 caller 绕过关闭
 
 - 新增 `acquisition_route_portfolio_teacher_preference_request.v1`、`acquisition_route_portfolio_teacher_preference.v1` 与 `build-acquisition-route-portfolio-teacher-preference`。请求只声明目标、同一快照/ledger revision 和需求组 scope；构建器从权威 selection rule 与当前全部目标日 Pareto route occurrence 自动枚举组合，不接收调用方候选列表，也不读取 learner rank/score。

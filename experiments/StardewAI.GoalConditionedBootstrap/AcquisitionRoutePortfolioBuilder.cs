@@ -7,7 +7,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRoutePortfolioBuilder
 {
-    private const string RouteDecisionPrefix =
+    internal const string RouteDecisionPrefix =
         "target-date-acquisition-route:";
 
     public static AcquisitionRoutePortfolioAdmission Build(

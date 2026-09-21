@@ -2,7 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -200,11 +202,10 @@ internal static partial class BootstrapSelfTest
             afterSnapshotPath,
             runId,
             PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
-        Write(
-            Path.Combine(
-                Path.GetDirectoryName(bindingPath)!,
-                "target-date-fresh-terminal-receipt.json"),
-            admitted);
+        var freshTerminalReceiptPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-fresh-terminal-receipt.json");
+        Write(freshTerminalReceiptPath, admitted);
         Require(admitted.Status == "verified_fresh_terminal_receipt" &&
                 admitted.QueueExecutionVerified &&
                 admitted.FreshTerminalReceiptVerified &&
@@ -220,6 +221,115 @@ internal static partial class BootstrapSelfTest
                 admitted.TerminalTransition.QuantityIncrease ==
                     requirement.RequiredAmount,
             "Target-date fresh terminal receipt was not admitted.");
+
+        var settlementRequestPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-route-settlement-request.json");
+        var settlementResultPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-route-settlement-result.json");
+        var settledLedgerPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-route-settled-ledger.json");
+        var settlementReceiptPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-route-settlement-receipt.json");
+        var settlementRequest =
+            AcquisitionRoutePortfolioSettlementBuilder.BuildRequest(
+                inputs,
+                bindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Write(settlementRequestPath, settlementRequest);
+        var baseLedger = CurrentTeacherFrontierSupport.Read<
+            StrategyCommitmentLedger>(
+            inputs.CommittedStrategyLedgerPath,
+            "Target-date committed strategy ledger");
+        var afterSnapshot = CurrentTeacherFrontierSupport.Read<
+            SnapshotEnvelope>(
+            afterSnapshotPath,
+            "Target-date settlement snapshot");
+        var settlement = new ReservationPortfolioLedgerService()
+            .SettleCompletedRoute(
+                baseLedger,
+                afterSnapshot,
+                settlementRequest,
+                "2026-09-21T00:02:00Z");
+        Require(settlement.Accepted && settlement.Ledger is not null,
+            "Target-date route reservation settlement was rejected.");
+        Write(settlementResultPath, settlement);
+        Write(settledLedgerPath, settlement.Ledger!);
+        var settlementReceipt =
+            AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
+                inputs,
+                bindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath);
+        Write(settlementReceiptPath, settlementReceipt);
+        Require(settlementReceipt.Status ==
+                    "verified_route_reservation_settlement" &&
+                settlementReceipt.FreshTerminalReceiptVerified &&
+                settlementReceipt.ExactSettlementReplayVerified &&
+                settlementReceipt.ReservationLifecycleVerified &&
+                settlementReceipt.FreshReplanRequired &&
+                !settlementReceipt.FormalTrainingAuthorized &&
+                settlementReceipt.BlockingReasons.Length == 0 &&
+                settlementReceipt.PortfolioId ==
+                    portfolioReceipt.PortfolioId &&
+                settlementReceipt.RouteOccurrenceId ==
+                    selected.RouteOccurrenceId &&
+                settlementReceipt.SettledLedgerRevision ==
+                    portfolioReceipt.CommittedLedgerRevision + 1,
+            "Target-date route settlement receipt drifted.");
+        var tamperedSettledLedgerPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-route-settled-ledger-tampered.json");
+        var tamperedSettledLedger = JsonSerializer.Deserialize<
+            StrategyCommitmentLedger>(
+            JsonSerializer.Serialize(
+                settlement.Ledger,
+                JsonDefaults.Options),
+            JsonDefaults.Options)!;
+        tamperedSettledLedger.History = tamperedSettledLedger.History
+            .Append(new StrategyCommitmentHistoryEntry
+            {
+                LedgerRevision = tamperedSettledLedger.Revision,
+                CommitmentId = "unrelated-settlement-tamper",
+                CommitmentRevision = 1,
+                Operation = "unrelated_tamper",
+                SourceDecisionId = "unrelated",
+                SourceStateHash = afterSnapshot.StateHash,
+                RecordedAt = "2026-09-21T00:02:00Z"
+            })
+            .ToArray();
+        Write(tamperedSettledLedgerPath, tamperedSettledLedger);
+        var tamperedSettlementReceipt =
+            AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
+                inputs,
+                bindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                settlementRequestPath,
+                settlementResultPath,
+                tamperedSettledLedgerPath);
+        Require(!tamperedSettlementReceipt.ReservationLifecycleVerified &&
+                !tamperedSettlementReceipt.ExactSettlementReplayVerified &&
+                tamperedSettlementReceipt.BlockingReasons.Contains(
+                    "route_settlement_exact_replay_mismatch",
+                    StringComparer.Ordinal),
+            "Route settlement ledger tampering bypassed exact replay.");
 
         var insufficientStateHash =
             "target-date-route-insufficient-after-state";

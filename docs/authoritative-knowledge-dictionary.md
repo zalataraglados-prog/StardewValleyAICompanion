@@ -652,3 +652,13 @@ blocked without learner scores or arbitrary scalarization. Per-route execution b
 this preference and requires the actual proposal/admission to equal its selected artifacts. The
 remaining boundary is evidence-backed policy for incomparable portfolios plus ordered route
 execution, fresh replanning, reservation lifecycle and a portfolio-level completion receipt.
+
+The first post-route lifecycle boundary is now executable. The Backend
+`reservation-portfolios/settle-completed-route` transaction accepts only the exact active
+material/currency reservation set owned by one route source decision, marks every row completed,
+records the fresh terminal receipt hash, and advances the ledger once. The deterministic
+`acquisition_route_portfolio_settlement_receipt.v1` rebuilds the execution binding and fresh
+terminal receipt, derives the request rather than trusting caller IDs, and exactly replays the
+settlement against the base ledger. A verified receipt always requires a fresh replan; it does not
+authorize reuse of the old portfolio snapshot, prove the remaining route order, or prove whole-
+portfolio completion.

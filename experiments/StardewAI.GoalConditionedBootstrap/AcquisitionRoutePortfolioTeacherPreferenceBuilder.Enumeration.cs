@@ -7,9 +7,6 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 {
-    private const string RouteSourceDecisionPrefix =
-        "target-date-acquisition-route:";
-
     private static long CountCandidates(
         AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext
             context,
@@ -55,9 +52,10 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 .Where(row => row.Status == StrategyCommitmentStatuses.Active)
                 .Select(row => row.SourceDecisionId))
             .Where(value => value.StartsWith(
-                RouteSourceDecisionPrefix,
+                AcquisitionRoutePortfolioBuilder.RouteDecisionPrefix,
                 StringComparison.Ordinal))
-            .Select(value => value[RouteSourceDecisionPrefix.Length..])
+            .Select(value => value[
+                AcquisitionRoutePortfolioBuilder.RouteDecisionPrefix.Length..])
             .Where(scopedRouteIds.Contains)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)

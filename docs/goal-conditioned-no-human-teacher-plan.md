@@ -1597,6 +1597,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   warning-free Release build. Formal authorization remains false pending evidence-backed incomparable-portfolio policy,
   ordered route execution, fresh replanning, reservation lifecycle and portfolio-level completion evidence.
 
+### 2026-09-21: exact completed-route reservation settlement
+
+- `reservation-portfolios/settle-completed-route` is the post-execution counterpart to atomic portfolio commit. It
+  consumes a fresh state hash, optimistic ledger revision, exact portfolio/goal/route source identity, the lowercase
+  SHA-256 of a fresh terminal receipt, and the route's complete active reservation ID set. Missing or extra IDs reject
+  the mutation before any row changes. Success marks every route-owned material/currency row completed and records
+  all components plus one portfolio route-completion marker at one new revision. Claimless routes still receive the
+  marker, so lack of reserved inputs cannot erase the execution boundary.
+- `acquisition_route_portfolio_settlement_receipt.v1` does not trust the API request. It deterministically rebuilds
+  the execution binding and fresh terminal receipt, derives the exact active set from the committed ledger, compares
+  the canonical request, verifies the returned result, and replays the Core transaction using the marker timestamp.
+  Result/ledger drift, extra history, partial completion or a leaked active claim fails closed.
+- Backend regression is 202/202 and the focused 76-route chain proves the shop route's two-claim settlement plus
+  tamper rejection with a warning-free Release build. The verified receipt sets `fresh_replan_required=true` and
+  keeps formal authorization false. The next control boundary must carry verified completed alternatives into a
+  newly built current-state Teacher denominator; it may not simply dispatch the next stale route ID.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

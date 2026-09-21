@@ -87,7 +87,11 @@ internal static class AcquisitionStrategyLedgerReader
                 row.Quantity > 0 &&
                 !string.IsNullOrWhiteSpace(row.Purpose) &&
                 (row.Status != StrategyCommitmentStatuses.Cancelled ||
-                 !string.IsNullOrWhiteSpace(row.CancelReason))),
+                 !string.IsNullOrWhiteSpace(row.CancelReason)) &&
+                ValidCompletionEvidence(
+                    row.Status,
+                    row.CompletionReason,
+                    row.CompletionEvidenceSha256)),
             "A material reservation contract is invalid.");
     }
 
@@ -113,9 +117,23 @@ internal static class AcquisitionStrategyLedgerReader
                 row.Amount > 0 &&
                 !string.IsNullOrWhiteSpace(row.Purpose) &&
                 (row.Status != StrategyCommitmentStatuses.Cancelled ||
-                 !string.IsNullOrWhiteSpace(row.CancelReason))),
+                 !string.IsNullOrWhiteSpace(row.CancelReason)) &&
+                ValidCompletionEvidence(
+                    row.Status,
+                    row.CompletionReason,
+                    row.CompletionEvidenceSha256)),
             "A native currency reservation contract is invalid.");
     }
+
+    private static bool ValidCompletionEvidence(
+        string status,
+        string reason,
+        string sha256) =>
+        status != StrategyCommitmentStatuses.Completed ||
+        (!string.IsNullOrWhiteSpace(reason) &&
+         sha256.Length == 64 &&
+         sha256.All(character =>
+             character is >= '0' and <= '9' or >= 'a' and <= 'f'));
 
     private static bool ValidStatus(string status) =>
         status == StrategyCommitmentStatuses.Active ||

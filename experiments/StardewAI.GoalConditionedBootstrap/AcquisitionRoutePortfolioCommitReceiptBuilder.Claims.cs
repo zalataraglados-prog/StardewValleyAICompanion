@@ -23,7 +23,9 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
                 continue;
             }
             var reservation = ReservationRoute(route);
-            var decisionId = RouteDecisionPrefix + routeId;
+            var decisionId =
+                AcquisitionRoutePortfolioBuilder.RouteDecisionPrefix +
+                routeId;
             if (reservation.ClaimDisposition == "not_required")
             {
                 if (reservation.ClaimSet is not null)
