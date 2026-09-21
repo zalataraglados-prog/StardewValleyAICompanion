@@ -669,6 +669,12 @@ to one authoritative requirement alternative, and evaluates progress with the st
 `all_required` or `choose_at_least_required_slots` rule. It may prove whole-portfolio completion
 only when every scoped rule is satisfied, every route selected by that Teacher proposal is
 completed, and none of those route decisions retains an active reservation. Otherwise it requires
-a fresh continuation replan and carries no stale route authorization. This first-transition
-artifact does not yet carry cumulative completed alternatives through a second Teacher selection;
-multi-transition completion and formal training admission remain blocked.
+a fresh continuation replan and carries no stale route authorization.
+
+`acquisition_route_portfolio_continuation_teacher_request.v1` now rebuilds that initial checkpoint
+before carrying its incomplete scope into the latest exact state and settled-ledger identity. The
+continuation Teacher excludes completed alternatives internally, reduces the remaining required
+slots, and reuses the same complete bounded enumeration, atomic admission preflight and strict
+Pareto rule. Ordinary caller-authored proposals cannot claim completed alternatives. This closes
+fresh remaining-scope reselection, but not continuation commit/dispatch binding, a second exact
+settlement/checkpoint, cumulative multi-transition completion or formal training admission.

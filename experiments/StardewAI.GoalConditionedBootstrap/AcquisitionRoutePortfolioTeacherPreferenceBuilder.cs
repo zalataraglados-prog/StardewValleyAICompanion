@@ -25,125 +25,86 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         var reasons = ValidateRequest(context, request);
         if (reasons.Count > 0)
             return Block(result, reasons);
+        return BuildResolved(
+            context,
+            result,
+            request.RequestId,
+            request.GoalId,
+            request.SnapshotStateHash,
+            request.ExpectedLedgerRevision,
+            ResolveScopes(context, request),
+            string.Empty,
+            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>());
+    }
 
-        var denominatorCount = CountCandidates(context, request, reasons);
-        result.CandidateDenominatorCount = denominatorCount;
+    public static AcquisitionRoutePortfolioTeacherPreference
+        BuildInitialContinuation(
+            AcquisitionRoutePortfolioInitialCheckpointProof proof,
+            string checkpointPath,
+            AcquisitionRoutePortfolioInputs currentInputs,
+            string continuationRequestPath)
+    {
+        var expected = AcquisitionRoutePortfolioContinuationBuilder
+            .BuildInitialRequest(proof, checkpointPath, currentInputs);
+        var requestFullPath = Path.GetFullPath(continuationRequestPath);
+        var request = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioContinuationTeacherRequest>(
+            requestFullPath,
+            "Acquisition route portfolio continuation Teacher request");
+        Require(EqualJson(request, expected),
+            "Continuation Teacher request drifted from verified checkpoint.");
+        var context = AcquisitionRoutePortfolioBuilder.Prepare(currentInputs);
+        var surrogate = new AcquisitionRoutePortfolioTeacherPreferenceRequest
+        {
+            RequestId = request.RequestId,
+            GoalId = request.GoalId,
+            SnapshotStateHash = request.SnapshotStateHash,
+            ExpectedLedgerRevision = request.ExpectedLedgerRevision,
+            ScopedRequirements = request.ScopedProgress.Select(row =>
+                    new AcquisitionRoutePortfolioRequirementScope(
+                        row.RequirementSetId,
+                        row.RequirementId))
+                .ToArray()
+        };
+        var result = BaseResult(
+            context,
+            surrogate,
+            CurrentTeacherFrontierSupport.HashFile(requestFullPath));
+        result.SelectionPolicyId =
+            "verified_checkpoint_continuation_unique_strict_pareto.v1";
+        var reasons = ValidateRequest(context, surrogate);
+        AcquisitionRoutePortfolioContinuationBuilder.ValidateProgress(
+            request.ScopedProgress);
+        if (request.SchemaVersion !=
+                "acquisition_route_portfolio_continuation_teacher_request.v1" ||
+            request.FormalTrainingAuthorized ||
+            request.StrategyLedgerSha256 != context.StrategyLedgerSha256)
+        {
+            reasons.Add("portfolio_teacher_continuation_request_invalid");
+        }
         if (reasons.Count > 0)
             return Block(result, reasons);
-        if (denominatorCount == 0)
-        {
-            reasons.Add("portfolio_teacher_candidate_denominator_empty");
-            return Block(result, reasons);
-        }
-        if (denominatorCount > MaxCandidateCount)
-        {
-            reasons.Add(
-                "portfolio_teacher_candidate_denominator_exceeds_limit:" +
-                denominatorCount);
-            return Block(result, reasons);
-        }
-
-        var proposals = EnumerateProposals(context, request).ToArray();
-        if (proposals.LongLength != denominatorCount)
-        {
-            throw new InvalidDataException(
-                "Portfolio Teacher candidate enumeration count drifted.");
-        }
-        if (proposals.Select(proposal => proposal.ProposalId)
-                .Distinct(StringComparer.Ordinal).Count() != proposals.Length)
-        {
-            throw new InvalidDataException(
-                "Portfolio Teacher candidate enumeration produced duplicate proposal identities.");
-        }
-        result.CandidateDenominatorComplete = true;
-        var candidates = proposals.Select(proposal =>
-        {
-            var proposalSha256 = ArtifactSha256(proposal);
-            var admission = AcquisitionRoutePortfolioBuilder.Build(
-                context,
-                proposal,
-                proposalSha256);
-            return new PortfolioCandidate(proposal, proposalSha256, admission);
-        }).ToArray();
-        var admitted = candidates.Where(candidate =>
-                candidate.Admission.PortfolioAdmissionReady &&
-                candidate.Admission.AggregateCostVector is not null)
+        var completed = request.ScopedProgress
+            .Where(row => row.CompletedAlternativeIndices.Length > 0)
+            .OrderBy(row => ScopeKey(
+                row.RequirementSetId,
+                row.RequirementId), StringComparer.Ordinal)
+            .Select(row =>
+                new AcquisitionRoutePortfolioCompletedAlternatives(
+                    row.RequirementSetId,
+                    row.RequirementId,
+                    row.CompletedAlternativeIndices.Order().ToArray()))
             .ToArray();
-        result.AdmittedCandidateCount = admitted.Length;
-        var pareto = EvaluatePareto(admitted.Select(candidate =>
-            new PortfolioCostCandidate(
-                candidate.Proposal.ProposalId,
-                candidate.Admission.AggregateCostVector!)).ToArray());
-        var evaluations = candidates.Select(candidate =>
-        {
-            var dominators = candidate.Admission.PortfolioAdmissionReady &&
-                candidate.Admission.AggregateCostVector is not null
-                ? pareto.DominatedByProposalIds[
-                    candidate.Proposal.ProposalId]
-                : Array.Empty<string>();
-            return new AcquisitionRoutePortfolioTeacherCandidateEvaluation(
-                candidate.Proposal.ProposalId,
-                candidate.ProposalSha256,
-                candidate.Proposal.SelectedRouteOccurrenceIds.ToArray(),
-                candidate.Admission.PortfolioAdmissionReady,
-                candidate.Admission.AggregateCostVector,
-                dominators,
-                candidate.Admission.BlockingReasons.ToArray());
-        }).OrderBy(candidate => candidate.ProposalId, StringComparer.Ordinal)
-            .ToArray();
-        result.CandidateEvaluations = evaluations;
-        var frontier = evaluations.Where(candidate =>
-                pareto.FrontierProposalIds.Contains(
-                    candidate.ProposalId,
-                    StringComparer.Ordinal))
-            .ToArray();
-        result.ParetoFrontierCount = frontier.Length;
-        if (admitted.Length == 0)
-        {
-            reasons.Add("portfolio_teacher_no_admitted_candidate");
-            return Block(result, reasons);
-        }
-        if (frontier.Length != 1)
-        {
-            reasons.Add(frontier.Length == 0
-                ? "portfolio_teacher_frontier_empty"
-                : "portfolio_teacher_frontier_incomparable_or_equal:" +
-                  frontier.Length);
-            return Block(result, reasons);
-        }
-
-        var selected = candidates.Single(candidate =>
-            candidate.Proposal.ProposalId == frontier[0].ProposalId);
-        var nonDominatedAlternative = admitted.FirstOrDefault(candidate =>
-            candidate.Proposal.ProposalId != selected.Proposal.ProposalId &&
-            !AcquisitionRouteTargetDateOpportunityCostBuilder
-                .OpportunityCostDominates(
-                    selected.Admission.AggregateCostVector!,
-                    candidate.Admission.AggregateCostVector!));
-        if (nonDominatedAlternative is not null)
-        {
-            throw new InvalidDataException(
-                "Unique portfolio frontier member did not dominate an admitted alternative.");
-        }
-        result.SelectedProposal = selected.Proposal;
-        result.SelectedAdmission = selected.Admission;
-        result.PairwisePreferences = admitted
-            .Where(candidate => candidate.Proposal.ProposalId !=
-                selected.Proposal.ProposalId)
-            .OrderBy(candidate => candidate.Proposal.ProposalId,
-                StringComparer.Ordinal)
-            .Select(candidate =>
-                new AcquisitionRoutePortfolioPairwisePreference(
-                    selected.Proposal.ProposalId,
-                    candidate.Proposal.ProposalId,
-                    "strict_aggregate_opportunity_cost_pareto_dominance",
-                    "preferred_over_admitted_counterfactual"))
-            .ToArray();
-        result.Status =
-            "ready_unique_strict_pareto_portfolio_teacher_preference";
-        result.TeacherPreferenceLabelEligible = true;
-        result.BlockingReasons = Array.Empty<string>();
-        return result;
+        return BuildResolved(
+            context,
+            result,
+            request.RequestId,
+            request.GoalId,
+            request.SnapshotStateHash,
+            request.ExpectedLedgerRevision,
+            ResolveScopes(context, request),
+            request.PriorCheckpointSha256,
+            completed);
     }
 
     internal static string ArtifactSha256(object value)
@@ -190,8 +151,14 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         return result;
     }
 
-    private sealed record PortfolioCandidate(
-        AcquisitionRoutePortfolioProposal Proposal,
-        string ProposalSha256,
-        AcquisitionRoutePortfolioAdmission Admission);
+    private static bool EqualJson<T>(T left, T right) => string.Equals(
+        JsonSerializer.Serialize(left, JsonDefaults.Options),
+        JsonSerializer.Serialize(right, JsonDefaults.Options),
+        StringComparison.Ordinal);
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition)
+            throw new InvalidDataException(message);
+    }
 }

@@ -66,7 +66,17 @@ public static partial class AcquisitionRoutePortfolioBuilder
     internal static AcquisitionRoutePortfolioAdmission Build(
         AcquisitionRoutePortfolioBuildContext context,
         AcquisitionRoutePortfolioProposal proposal,
-        string proposalSha256)
+        string proposalSha256) => Build(
+        context,
+        proposal,
+        proposalSha256,
+        null);
+
+    internal static AcquisitionRoutePortfolioAdmission Build(
+        AcquisitionRoutePortfolioBuildContext context,
+        AcquisitionRoutePortfolioProposal proposal,
+        string proposalSha256,
+        AcquisitionRoutePortfolioContinuationEvidence? continuation)
     {
         var inventory = context.Inventory;
         var opportunity = context.Opportunity;
@@ -78,12 +88,14 @@ public static partial class AcquisitionRoutePortfolioBuilder
             opportunity,
             proposal,
             snapshot,
-            ledgerState.Ledger);
+            ledgerState.Ledger,
+            continuation);
         var selected = SelectRoutes(opportunity, proposal, reasons);
         var selectionRulesSatisfied = ValidateSelectionRules(
             inventory,
             proposal,
             selected,
+            continuation,
             reasons);
         var allFrontier = ValidateParetoFrontier(selected, reasons);
         var aggregate = reasons.Count == 0
@@ -135,6 +147,14 @@ public static partial class AcquisitionRoutePortfolioBuilder
             GoalId = proposal.GoalId,
             SnapshotStateHash = snapshot.StateHash,
             StrategyLedgerRevision = ledgerState.Ledger.Revision,
+            PriorRolloutCheckpointSha256 =
+                proposal.PriorRolloutCheckpointSha256,
+            CompletedAlternatives = (proposal.CompletedAlternatives ??
+                    Array.Empty<
+                        AcquisitionRoutePortfolioCompletedAlternatives>())
+                .Where(value => value is not null)
+                .Select(CloneCompletedAlternatives)
+                .ToArray(),
             TargetTotalDay = opportunity.TargetTotalDay,
             RequirementInventorySha256 = context.RequirementInventorySha256,
             OpportunityCostSha256 = context.OpportunityCostSha256,
@@ -170,6 +190,18 @@ public static partial class AcquisitionRoutePortfolioBuilder
         string OpportunityCostSha256,
         string StrategyLedgerSha256,
         string SnapshotSha256);
+
+    internal sealed record AcquisitionRoutePortfolioContinuationEvidence(
+        string PriorCheckpointSha256,
+        AcquisitionRoutePortfolioCompletedAlternatives[]
+            CompletedAlternatives);
+
+    internal static AcquisitionRoutePortfolioCompletedAlternatives
+        CloneCompletedAlternatives(
+            AcquisitionRoutePortfolioCompletedAlternatives value) => new(
+        value.RequirementSetId,
+        value.RequirementId,
+        value.AlternativeIndices.ToArray());
 
     private static AcquisitionRouteTargetDateOpportunityCostReport
         RecomputeOpportunityCost(AcquisitionRoutePortfolioInputs inputs) =>

@@ -13,8 +13,15 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         AcquisitionRoutePortfolioTeacherPreferenceRequest request,
         ICollection<string> reasons)
     {
+        return CountCandidates(ResolveScopes(context, request), reasons);
+    }
+
+    private static long CountCandidates(
+        ResolvedScope[] scopes,
+        ICollection<string> reasons)
+    {
         var total = BigInteger.One;
-        foreach (var scoped in ResolveScopes(context, request))
+        foreach (var scoped in scopes)
         {
             var groupCount = CountGroupCandidates(scoped, reasons);
             total *= groupCount;
@@ -30,10 +37,34 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 .AcquisitionRoutePortfolioBuildContext context,
             AcquisitionRoutePortfolioTeacherPreferenceRequest request)
     {
-        var scopes = request.ScopedRequirements
+        var resolved = ResolveScopes(context, request);
+        return EnumerateProposals(
+            context,
+            request.RequestId,
+            request.GoalId,
+            request.SnapshotStateHash,
+            request.ExpectedLedgerRevision,
+            resolved,
+            string.Empty,
+            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>());
+    }
+
+    private static IEnumerable<AcquisitionRoutePortfolioProposal>
+        EnumerateProposals(
+            AcquisitionRoutePortfolioBuilder
+                .AcquisitionRoutePortfolioBuildContext context,
+            string requestId,
+            string goalId,
+            string snapshotStateHash,
+            int expectedLedgerRevision,
+            ResolvedScope[] resolved,
+            string priorCheckpointSha256,
+            AcquisitionRoutePortfolioCompletedAlternatives[] completed)
+    {
+        var scopes = resolved.Select(row => row.Scope)
             .OrderBy(ScopeKey, StringComparer.Ordinal)
             .ToArray();
-        var groupChoices = ResolveScopes(context, request)
+        var groupChoices = resolved
             .Select(EnumerateGroupRouteSelections)
             .ToArray();
         var scopedRouteIds = context.Opportunity.Routes.Where(route =>
@@ -70,16 +101,21 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 .Where(routeId => !selectedSet.Contains(routeId))
                 .ToArray();
             var proposalId = ProposalId(
-                request.RequestId,
+                requestId,
                 scopes,
                 routeIds,
                 replacedRouteIds);
             yield return new AcquisitionRoutePortfolioProposal
             {
                 ProposalId = proposalId,
-                GoalId = request.GoalId,
-                SnapshotStateHash = request.SnapshotStateHash,
-                ExpectedLedgerRevision = request.ExpectedLedgerRevision,
+                GoalId = goalId,
+                SnapshotStateHash = snapshotStateHash,
+                ExpectedLedgerRevision = expectedLedgerRevision,
+                PriorRolloutCheckpointSha256 = priorCheckpointSha256,
+                CompletedAlternatives = completed
+                    .Select(AcquisitionRoutePortfolioBuilder
+                        .CloneCompletedAlternatives)
+                    .ToArray(),
                 ScopedRequirements = scopes.Select(scope =>
                         new AcquisitionRoutePortfolioRequirementScope(
                             scope.RequirementSetId,
@@ -147,112 +183,6 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             }).ToArray();
     }
 
-    internal static BigInteger CountGroupCandidates(
-        ResolvedScope scope,
-        ICollection<string> reasons)
-    {
-        if (scope.SelectionRule == "all_required")
-        {
-            if (scope.RequiredAlternativeCount != scope.AlternativeCount)
-            {
-                reasons.Add("portfolio_teacher_selection_rule_invalid:" +
-                    ScopeKey(scope.Scope));
-                return BigInteger.Zero;
-            }
-            var count = BigInteger.One;
-            for (var index = 0; index < scope.AlternativeCount; index++)
-            {
-                count *= scope.RoutesByAlternative
-                    .GetValueOrDefault(index, Array.Empty<string>()).Length;
-            }
-            return count;
-        }
-        if (scope.SelectionRule != "choose_at_least_required_slots" ||
-            scope.RequiredAlternativeCount <= 0 ||
-            scope.RequiredAlternativeCount > scope.AlternativeCount)
-        {
-            reasons.Add("portfolio_teacher_selection_rule_invalid:" +
-                ScopeKey(scope.Scope));
-            return BigInteger.Zero;
-        }
-        var available = Enumerable.Range(0, scope.AlternativeCount)
-            .Where(index => scope.RoutesByAlternative
-                .GetValueOrDefault(index, Array.Empty<string>()).Length > 0)
-            .ToArray();
-        var subsetCounts = new BigInteger[available.Length + 1];
-        subsetCounts[0] = BigInteger.One;
-        var visited = 0;
-        foreach (var index in available)
-        {
-            var routeCount = scope.RoutesByAlternative[index].Length;
-            visited++;
-            for (var selectedCount = visited; selectedCount >= 1;
-                 selectedCount--)
-            {
-                subsetCounts[selectedCount] +=
-                    subsetCounts[selectedCount - 1] * routeCount;
-            }
-        }
-        return subsetCounts
-            .Skip(scope.RequiredAlternativeCount)
-            .Aggregate(BigInteger.Zero, (sum, count) => sum + count);
-    }
-
-    internal static string[][] EnumerateGroupRouteSelections(
-        ResolvedScope scope)
-    {
-        var available = Enumerable.Range(0, scope.AlternativeCount)
-            .Where(index => scope.RoutesByAlternative
-                .GetValueOrDefault(index, Array.Empty<string>()).Length > 0)
-            .ToArray();
-        IEnumerable<int[]> alternativeSelections =
-            scope.SelectionRule == "all_required"
-                ? new[] { Enumerable.Range(0, scope.AlternativeCount).ToArray() }
-                : Enumerable.Range(
-                        scope.RequiredAlternativeCount,
-                        available.Length -
-                        scope.RequiredAlternativeCount + 1)
-                    .SelectMany(selectedCount => Combinations(
-                        available,
-                        selectedCount));
-        return alternativeSelections
-            .SelectMany(indexes => CartesianProduct(indexes.Select(index =>
-                    scope.RoutesByAlternative.GetValueOrDefault(
-                        index,
-                        Array.Empty<string>())).ToArray())
-                .Select(routes => routes.ToArray()))
-            .ToArray();
-    }
-
-    private static IEnumerable<T[]> CartesianProduct<T>(T[][] choices)
-    {
-        IEnumerable<T[]> result = new[] { Array.Empty<T>() };
-        foreach (var options in choices)
-        {
-            result = result.SelectMany(prefix => options.Select(option =>
-                prefix.Append(option).ToArray()));
-        }
-        return result;
-    }
-
-    private static IEnumerable<int[]> Combinations(int[] values, int count)
-    {
-        if (count == 0)
-        {
-            yield return Array.Empty<int>();
-            yield break;
-        }
-        for (var index = 0; index <= values.Length - count; index++)
-        {
-            foreach (var suffix in Combinations(
-                         values[(index + 1)..],
-                         count - 1))
-            {
-                yield return new[] { values[index] }.Concat(suffix).ToArray();
-            }
-        }
-    }
-
     private static string ProposalId(
         string requestId,
         AcquisitionRoutePortfolioRequirementScope[] scopes,
@@ -274,5 +204,7 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         string SelectionRule,
         int RequiredAlternativeCount,
         int AlternativeCount,
-        IReadOnlyDictionary<int, string[]> RoutesByAlternative);
+        IReadOnlyDictionary<int, string[]> RoutesByAlternative,
+        int[]? CompletedAlternativeIndices = null,
+        int? RemainingRequiredAlternativeCount = null);
 }

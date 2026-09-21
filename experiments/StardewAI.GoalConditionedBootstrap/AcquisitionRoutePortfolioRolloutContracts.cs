@@ -38,6 +38,9 @@ public sealed class AcquisitionRoutePortfolioRolloutCheckpoint
     [JsonPropertyName("latest_ledger_revision")]
     public int LatestLedgerRevision { get; set; }
 
+    [JsonPropertyName("latest_ledger_sha256")]
+    public string LatestLedgerSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("transition_count")]
     public int TransitionCount { get; set; }
 

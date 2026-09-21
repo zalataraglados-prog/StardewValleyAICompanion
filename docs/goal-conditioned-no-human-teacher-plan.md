@@ -1611,8 +1611,8 @@ Slice 7 remains assigned to the RTX 5070 node.
   Result/ledger drift, extra history, partial completion or a leaked active claim fails closed.
 - Backend regression is 202/202 and the focused 76-route chain proves the shop route's two-claim settlement plus
   tamper rejection with a warning-free Release build. The verified receipt sets `fresh_replan_required=true` and
-  keeps formal authorization false. The next control boundary must carry verified completed alternatives into a
-  newly built current-state Teacher denominator; it may not simply dispatch the next stale route ID.
+  keeps formal authorization false. Settlement alone cannot dispatch a stale route ID; the checkpoint and verified
+  continuation sections below own completed-alternative carry-forward and current-state reselection.
 
 ### 2026-09-22: initial portfolio rollout checkpoint
 
@@ -1623,10 +1623,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   the current proposal is completed, and the settled ledger contains no active reservation for any selected decision.
   The focused shop route proves this exact single-transition path; a two-alternative `all_required` check proves that
   one completed alternative remains incomplete.
-- Every incomplete checkpoint requires a fresh replan and cannot authorize a pending ID from the old proposal. The next
-  slice must derive a continuation Teacher request from the verified checkpoint, remove completed alternatives from the
-  current-state denominator, reduce required slots, and chain the next settlement back into cumulative progress. Until
-  that multi-transition proof and controller admission exist, `formal_training_authorized` remains false.
+- Every incomplete checkpoint requires a fresh replan and cannot authorize a pending ID from the old proposal. The
+  checkpoint itself does not select the next route; the verified continuation Teacher boundary below owns removal of
+  completed alternatives and current-state reselection. Until the selected continuation is committed, executed,
+  settled and folded into a second checkpoint, `formal_training_authorized` remains false.
+
+### 2026-09-22: verified continuation Teacher denominator
+
+- `acquisition_route_portfolio_continuation_teacher_request.v1` is not caller-authored planning state. Its builder
+  exactly rebuilds the initial checkpoint, rejects a completed portfolio, then binds the checkpoint hash, terminal
+  state hash, settled ledger hash/revision, cumulative completed alternatives and next transition number.
+- The continuation Teacher removes completed alternatives inside the same enumeration implementation and reduces each
+  rule's remaining slots. Cumulative completed plus newly selected alternatives must still satisfy the authoritative
+  rule in the same admission/preflight implementation. A normal proposal that supplies completion evidence without the
+  rebuilt checkpoint is blocked, so caller choice cannot bypass the denominator.
+- `all_required` and `choose_at_least_required_slots` continuation combinatorics have focused positive checks; completed
+  portfolios have a negative request-generation check and the full 76-route regression remains green. The next slice
+  must carry the selected continuation admission through atomic commit receipt, dispatch ownership, settlement and a
+  second cumulative checkpoint. Formal training remains false until that repeated transition closes.
 
 ## Review questions
 

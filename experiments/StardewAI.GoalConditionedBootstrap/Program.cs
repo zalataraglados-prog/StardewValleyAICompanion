@@ -114,6 +114,13 @@ try
         case "build-acquisition-route-portfolio-rollout-checkpoint":
             BuildAcquisitionRoutePortfolioRolloutCheckpoint(options);
             break;
+        case "build-acquisition-route-portfolio-continuation-teacher-request":
+            BuildAcquisitionRoutePortfolioContinuationTeacherRequest(options);
+            break;
+        case "build-acquisition-route-portfolio-continuation-teacher-preference":
+            BuildAcquisitionRoutePortfolioContinuationTeacherPreference(
+                options);
+            break;
         case "build-current-full-shipment-teacher-frontier":
             BuildCurrentFullShipmentTeacherFrontier(options);
             break;
@@ -170,7 +177,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
     }
 }
 catch (Exception ex)
@@ -781,6 +788,100 @@ static void BuildAcquisitionRoutePortfolioRolloutCheckpoint(Arguments options)
             options.Required("settlement-receipt"));
     Write(options.Required("output"), checkpoint);
 }
+
+static void BuildAcquisitionRoutePortfolioContinuationTeacherRequest(
+    Arguments options)
+{
+    var request = AcquisitionRoutePortfolioContinuationBuilder
+        .BuildInitialRequest(
+            InitialCheckpointProof(options),
+            options.Required("rollout-checkpoint"),
+            ContinuationRoutePortfolioInputs(options));
+    Write(options.Required("output"), request);
+}
+
+static void BuildAcquisitionRoutePortfolioContinuationTeacherPreference(
+    Arguments options)
+{
+    var preference = AcquisitionRoutePortfolioTeacherPreferenceBuilder
+        .BuildInitialContinuation(
+            InitialCheckpointProof(options),
+            options.Required("rollout-checkpoint"),
+            ContinuationRoutePortfolioInputs(options),
+            options.Required("continuation-request"));
+    Write(options.Required("output"), preference);
+    if (preference.TeacherPreferenceLabelEligible)
+    {
+        if (options.Optional("selected-proposal-output") is { } proposalOutput)
+            Write(proposalOutput, preference.SelectedProposal!);
+        if (options.Optional("selected-admission-output") is { } admissionOutput)
+            Write(admissionOutput, preference.SelectedAdmission!);
+    }
+    else
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static AcquisitionRoutePortfolioInitialCheckpointProof InitialCheckpointProof(
+    Arguments options) => new()
+    {
+        ExecutionInputs = RouteExecutionBindingInputs(options),
+        ExecutionBindingPath = options.Required("execution-binding"),
+        ExecutionReceiptPath = options.Required("execution-receipt"),
+        AfterSnapshotPath = options.Required("after-snapshot"),
+        FreshTerminalReceiptPath = options.Required("fresh-terminal-receipt"),
+        RunId = options.Required("run-id"),
+        ExecutorVersion = options.Required("executor-version"),
+        SettlementRequestPath = options.Required("settlement-request"),
+        SettlementResultPath = options.Required("settlement-result"),
+        SettledLedgerPath = options.Required("settled-ledger"),
+        SettlementReceiptPath = options.Required("settlement-receipt")
+    };
+
+static AcquisitionRoutePortfolioInputs ContinuationRoutePortfolioInputs(
+    Arguments options) => new()
+    {
+        RequirementInventoryPath = options.Required(
+            "next-requirement-inventory"),
+        AcquisitionLoweringPath = options.Required(
+            "next-acquisition-lowering"),
+        MasterAnglerWindowsPath = options.Required(
+            "next-master-angler-windows"),
+        CalendarResolutionPath = options.Required(
+            "next-calendar-resolution"),
+        TargetDateCalendarPath = options.Required(
+            "next-target-date-calendar"),
+        TargetDateUnlockPath = options.Required("next-target-date-unlock"),
+        TargetDateFestivalPath = options.Required(
+            "next-target-date-festival"),
+        TargetDateLocationPath = options.Required(
+            "next-target-date-location"),
+        TargetDateFacilityPath = options.Required(
+            "next-target-date-facility"),
+        TargetDateResourcePath = options.Required(
+            "next-target-date-resource"),
+        TargetDateCurrencyPath = options.Required(
+            "next-target-date-currency"),
+        TargetDateReservationPath = options.Required(
+            "next-target-date-reservation"),
+        TargetDateProcessingPath = options.Required(
+            "next-target-date-processing"),
+        TargetDateFishingProbabilityPath = options.Required(
+            "next-target-date-fishing-probability"),
+        TargetDateStochasticRetryPath = options.Required(
+            "next-target-date-stochastic-retry"),
+        TargetDateDailyTimeEnergyPath = options.Required(
+            "next-target-date-daily-time-energy"),
+        TargetDateOpportunityCostPath = options.Required(
+            "next-target-date-opportunity-cost"),
+        FishingForecastManifestPath = options.Required(
+            "next-fishing-forecast-manifest"),
+        StrategyLedgerPath = options.Required("next-strategy-ledger"),
+        SnapshotPath = options.Required("next-snapshot"),
+        RouteTimingCalibrationPath = options.Required(
+            "next-route-timing-calibration")
+    };
 
 static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
     Arguments options) => new()

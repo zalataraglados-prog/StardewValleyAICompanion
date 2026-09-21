@@ -2231,6 +2231,26 @@ internal static partial class BootstrapSelfTest
                 portfolioRequirement.RequirementId)
         };
         Write(targetDatePortfolioProposalPath, portfolioProposal);
+        portfolioProposal.PriorRolloutCheckpointSha256 = new string('a', 64);
+        portfolioProposal.CompletedAlternatives = new[]
+        {
+            new AcquisitionRoutePortfolioCompletedAlternatives(
+                portfolioRequirement.RequirementSetId,
+                portfolioRequirement.RequirementId,
+                new[] { portfolioRequirement.AlternativeIndex })
+        };
+        Write(targetDatePortfolioProposalPath, portfolioProposal);
+        var forgedContinuationPortfolio =
+            AcquisitionRoutePortfolioBuilder.Build(PortfolioInputs());
+        Require(!forgedContinuationPortfolio.PortfolioAdmissionReady &&
+                forgedContinuationPortfolio.BlockingReasons.Contains(
+                    "unverified_portfolio_continuation_evidence",
+                    StringComparer.Ordinal),
+            "Caller-authored completed alternatives bypassed continuation proof.");
+        portfolioProposal.PriorRolloutCheckpointSha256 = string.Empty;
+        portfolioProposal.CompletedAlternatives =
+            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>();
+        Write(targetDatePortfolioProposalPath, portfolioProposal);
 
         var fishRequirement = TargetDateRequirementRoute(
             targetDateOpportunityFish);
@@ -2492,6 +2512,25 @@ internal static partial class BootstrapSelfTest
                 })
         };
         var largeDenominatorReasons = new List<string>();
+        var continuationScope = syntheticScope with
+        {
+            CompletedAlternativeIndices = new[] { 0 },
+            RemainingRequiredAlternativeCount = 1
+        };
+        var continuationReasons = new List<string>();
+        var continuationSelections =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                .EnumerateGroupRouteSelections(continuationScope);
+        var allRequiredContinuationScope = allRequiredScope with
+        {
+            CompletedAlternativeIndices = new[] { 0 },
+            RemainingRequiredAlternativeCount = 2
+        };
+        var allRequiredContinuationReasons = new List<string>();
+        var allRequiredContinuationSelections =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                .EnumerateGroupRouteSelections(
+                    allRequiredContinuationScope);
         Require(syntheticReasons.Count == 0 &&
                 syntheticCount == 11 &&
                 syntheticSelections.Length == syntheticCount &&
@@ -2513,7 +2552,25 @@ internal static partial class BootstrapSelfTest
                         largeDenominatorReasons) >
                 AcquisitionRoutePortfolioTeacherPreferenceBuilder
                     .MaxCandidateCount &&
-                largeDenominatorReasons.Count == 0,
+                largeDenominatorReasons.Count == 0 &&
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                    .CountGroupCandidates(
+                        continuationScope,
+                        continuationReasons) == 3 &&
+                continuationReasons.Count == 0 &&
+                continuationSelections.Length == 3 &&
+                continuationSelections.All(selection =>
+                    !selection.Contains("route-a1") &&
+                    !selection.Contains("route-a2")) &&
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                    .CountGroupCandidates(
+                        allRequiredContinuationScope,
+                        allRequiredContinuationReasons) == 1 &&
+                allRequiredContinuationReasons.Count == 0 &&
+                allRequiredContinuationSelections.Length == 1 &&
+                allRequiredContinuationSelections[0].SequenceEqual(
+                    new[] { "route-b", "route-c" },
+                    StringComparer.Ordinal),
             "Portfolio Teacher weighted subset enumeration drifted.");
         var incompleteAllRequiredProgress =
             AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildProgress(

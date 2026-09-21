@@ -47,6 +47,15 @@ public sealed class AcquisitionRoutePortfolioProposal
     [JsonPropertyName("expected_ledger_revision")]
     public int ExpectedLedgerRevision { get; set; }
 
+    [JsonPropertyName("prior_rollout_checkpoint_sha256")]
+    public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("completed_alternatives")]
+    public AcquisitionRoutePortfolioCompletedAlternatives[]
+        CompletedAlternatives
+    { get; set; } =
+        Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>();
+
     [JsonPropertyName("scoped_requirements")]
     public AcquisitionRoutePortfolioRequirementScope[] ScopedRequirements
     {
@@ -89,6 +98,15 @@ public sealed class AcquisitionRoutePortfolioAdmission
 
     [JsonPropertyName("strategy_ledger_revision")]
     public int StrategyLedgerRevision { get; set; }
+
+    [JsonPropertyName("prior_rollout_checkpoint_sha256")]
+    public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("completed_alternatives")]
+    public AcquisitionRoutePortfolioCompletedAlternatives[]
+        CompletedAlternatives
+    { get; set; } =
+        Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>();
 
     [JsonPropertyName("target_total_day")]
     public int TargetTotalDay { get; set; }

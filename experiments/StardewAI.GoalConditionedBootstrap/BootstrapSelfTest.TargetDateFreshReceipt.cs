@@ -321,10 +321,41 @@ internal static partial class BootstrapSelfTest
                 rolloutCheckpoint.CompletedRouteOccurrenceIds.SequenceEqual(
                     new[] { selected.RouteOccurrenceId },
                     StringComparer.Ordinal) &&
+                rolloutCheckpoint.LatestLedgerSha256 ==
+                    settlementReceipt.SettledLedgerSha256 &&
                 rolloutCheckpoint.PendingSelectedRouteOccurrenceIds.Length ==
                     0 &&
                 rolloutCheckpoint.BlockingReasons.Length == 0,
             "Initial target-date portfolio rollout checkpoint drifted.");
+        var completedContinuationRejected = false;
+        try
+        {
+            _ = AcquisitionRoutePortfolioContinuationBuilder
+                .BuildInitialRequest(
+                    new AcquisitionRoutePortfolioInitialCheckpointProof
+                    {
+                        ExecutionInputs = inputs,
+                        ExecutionBindingPath = bindingPath,
+                        ExecutionReceiptPath = executionReceiptPath,
+                        AfterSnapshotPath = afterSnapshotPath,
+                        FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                        RunId = runId,
+                        ExecutorVersion = PolicyTrajectoryVersionPins
+                            .RuntimeTestHarnessExecutor,
+                        SettlementRequestPath = settlementRequestPath,
+                        SettlementResultPath = settlementResultPath,
+                        SettledLedgerPath = settledLedgerPath,
+                        SettlementReceiptPath = settlementReceiptPath
+                    },
+                    rolloutCheckpointPath,
+                    new AcquisitionRoutePortfolioInputs());
+        }
+        catch (InvalidDataException)
+        {
+            completedContinuationRejected = true;
+        }
+        Require(completedContinuationRejected,
+            "A completed portfolio emitted a continuation Teacher request.");
         var tamperedSettledLedgerPath = Path.Combine(
             Path.GetDirectoryName(bindingPath)!,
             "target-date-route-settled-ledger-tampered.json");

@@ -135,6 +135,7 @@ public static class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                     Path.GetFullPath(settlementReceiptPath)),
             LatestStateHash = settlement.AfterStateHash,
             LatestLedgerRevision = settlement.SettledLedgerRevision,
+            LatestLedgerSha256 = settlement.SettledLedgerSha256,
             TransitionCount = 1,
             ScopedProgress = progress,
             SelectedRouteOccurrenceIds = selected,

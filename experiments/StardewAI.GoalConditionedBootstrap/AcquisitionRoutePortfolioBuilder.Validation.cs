@@ -10,7 +10,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AcquisitionRouteTargetDateOpportunityCostReport opportunity,
         AcquisitionRoutePortfolioProposal proposal,
         SnapshotEnvelope snapshot,
-        StrategyCommitmentLedger ledger)
+        StrategyCommitmentLedger ledger,
+        AcquisitionRoutePortfolioContinuationEvidence? continuation)
     {
         var reasons = new List<string>();
         if (inventory.SchemaVersion !=
@@ -37,7 +38,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
             string.IsNullOrWhiteSpace(proposal.GoalId) ||
             proposal.ScopedRequirements is null ||
             proposal.SelectedRouteOccurrenceIds is null ||
-            proposal.ReplacedRouteOccurrenceIds is null)
+            proposal.ReplacedRouteOccurrenceIds is null ||
+            proposal.CompletedAlternatives is null)
         {
             reasons.Add("route_portfolio_proposal_contract_invalid");
             return reasons;
@@ -81,6 +83,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         {
             reasons.Add("selected_and_replaced_routes_overlap");
         }
+        ValidateContinuationEvidence(proposal, continuation, reasons);
         return reasons;
     }
 
@@ -113,6 +116,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AuthoritativeRequirementInventoryReport inventory,
         AcquisitionRoutePortfolioProposal proposal,
         AcquisitionRouteTargetDateOpportunityCost[] selected,
+        AcquisitionRoutePortfolioContinuationEvidence? continuation,
         ICollection<string> reasons)
     {
         var initialCount = reasons.Count;
@@ -131,6 +135,19 @@ public static partial class AcquisitionRoutePortfolioBuilder
         var scopes = proposal.ScopedRequirements
             .Select(ScopeKey)
             .ToHashSet(StringComparer.Ordinal);
+        var completedByScope = (continuation?.CompletedAlternatives ??
+                Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>())
+            .Where(row => row is not null)
+            .GroupBy(
+                row => ScopeKey(row.RequirementSetId, row.RequirementId),
+                StringComparer.Ordinal);
+        var completedIndexLookup = completedByScope.ToDictionary(
+            group => group.Key,
+            group => group.SelectMany(row =>
+                    row.AlternativeIndices ?? Array.Empty<int>())
+                .Distinct()
+                .ToArray(),
+            StringComparer.Ordinal);
         var selectedByScope = selected.GroupBy(route =>
                 ScopeKey(RequirementRoute(route).RequirementSetId,
                     RequirementRoute(route).RequirementId),
@@ -156,6 +173,9 @@ public static partial class AcquisitionRoutePortfolioBuilder
             var alternativeIndexes = routes.Select(route =>
                     RequirementRoute(route).AlternativeIndex)
                 .ToArray();
+            var completedIndexes = completedIndexLookup.GetValueOrDefault(
+                scope,
+                Array.Empty<int>());
             if (alternativeIndexes.Distinct().Count() !=
                 alternativeIndexes.Length)
             {
@@ -163,23 +183,31 @@ public static partial class AcquisitionRoutePortfolioBuilder
                     scope);
                 continue;
             }
-            if (alternativeIndexes.Any(index =>
+            if (alternativeIndexes.Intersect(completedIndexes).Any())
+            {
+                reasons.Add(
+                    "completed_alternative_selected_again:" + scope);
+                continue;
+            }
+            if (alternativeIndexes.Concat(completedIndexes).Any(index =>
                     index < 0 || index >= group.Alternatives.Length))
             {
                 reasons.Add("selected_alternative_index_out_of_range:" + scope);
                 continue;
             }
+            var cumulativeAlternativeCount = alternativeIndexes.Length +
+                completedIndexes.Length;
             var satisfied = group.SelectionRule switch
             {
                 "all_required" =>
                     group.RequiredAlternativeCount ==
                         group.Alternatives.Length &&
-                    alternativeIndexes.Length == group.Alternatives.Length,
+                    cumulativeAlternativeCount == group.Alternatives.Length,
                 "choose_at_least_required_slots" =>
                     group.RequiredAlternativeCount > 0 &&
                     group.RequiredAlternativeCount <=
                         group.Alternatives.Length &&
-                    alternativeIndexes.Length >=
+                    cumulativeAlternativeCount >=
                         group.RequiredAlternativeCount,
                 _ => false
             };
