@@ -3,6 +3,43 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal static partial class BootstrapSelfTest
 {
     private static AcquisitionRoutePortfolioInputs
+        BuildTargetDatePortfolioInputs(
+            AcquisitionRouteExecutionBindingInputs template,
+            string snapshotPath,
+            string ledgerPath,
+            string proposalPath,
+            string outputRoot,
+            int targetTotalDay)
+    {
+        var calendarPath = Path.Combine(
+            outputRoot,
+            "target-date-calendar.json");
+        var calendar = AcquisitionRouteTargetDateCalendarBuilder.Build(
+            template.RequirementInventoryPath,
+            template.AcquisitionLoweringPath,
+            template.MasterAnglerWindowsPath,
+            template.CalendarResolutionPath,
+            targetTotalDay);
+        Write(calendarPath, calendar);
+        var adjustedJson = System.Text.Json.Nodes.JsonNode.Parse(
+            System.Text.Json.JsonSerializer.Serialize(
+                template,
+                JsonDefaults.Options))!.AsObject();
+        adjustedJson["target_date_calendar_path"] = calendarPath;
+        var adjusted = System.Text.Json.JsonSerializer.Deserialize<
+            AcquisitionRouteExecutionBindingInputs>(
+            adjustedJson.ToJsonString(JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+            "Target-date portfolio input clone failed.");
+        return BuildContinuationPortfolioInputs(
+            adjusted,
+            snapshotPath,
+            ledgerPath,
+            proposalPath,
+            outputRoot);
+    }
+
+    private static AcquisitionRoutePortfolioInputs
         BuildContinuationPortfolioInputs(
             AcquisitionRouteExecutionBindingInputs prior,
             string snapshotPath,
@@ -10,6 +47,11 @@ internal static partial class BootstrapSelfTest
             string proposalPath,
             string outputRoot)
     {
+        var fishingForecastManifestPath =
+            RefreshFishingForecastManifest(
+                prior.FishingForecastManifestPath,
+                snapshotPath,
+                outputRoot);
         var processingPath = Path.Combine(
             outputRoot,
             "target-date-processing.json");
@@ -64,7 +106,7 @@ internal static partial class BootstrapSelfTest
                 ledgerPath,
                 snapshotPath,
                 prior.RouteTimingCalibrationPath,
-                prior.FishingForecastManifestPath);
+                fishingForecastManifestPath);
         Write(fishingPath, fishing);
         var retryPath = Path.Combine(
             outputRoot,
@@ -84,7 +126,7 @@ internal static partial class BootstrapSelfTest
             reservationPath,
             processingPath,
             fishingPath,
-            prior.FishingForecastManifestPath,
+            fishingForecastManifestPath,
             ledgerPath,
             snapshotPath,
             prior.RouteTimingCalibrationPath);
@@ -108,7 +150,7 @@ internal static partial class BootstrapSelfTest
             processingPath,
             fishingPath,
             retryPath,
-            prior.FishingForecastManifestPath,
+            fishingForecastManifestPath,
             ledgerPath,
             snapshotPath,
             prior.RouteTimingCalibrationPath);
@@ -134,7 +176,7 @@ internal static partial class BootstrapSelfTest
                 fishingPath,
                 retryPath,
                 dailyPath,
-                prior.FishingForecastManifestPath,
+                fishingForecastManifestPath,
                 ledgerPath,
                 snapshotPath,
                 prior.RouteTimingCalibrationPath);
@@ -158,12 +200,77 @@ internal static partial class BootstrapSelfTest
             TargetDateStochasticRetryPath = retryPath,
             TargetDateDailyTimeEnergyPath = dailyPath,
             TargetDateOpportunityCostPath = opportunityPath,
-            FishingForecastManifestPath = prior.FishingForecastManifestPath,
+            FishingForecastManifestPath = fishingForecastManifestPath,
             StrategyLedgerPath = ledgerPath,
             SnapshotPath = snapshotPath,
             RouteTimingCalibrationPath = prior.RouteTimingCalibrationPath,
             ProposalPath = proposalPath
         };
+    }
+
+    private static string RefreshFishingForecastManifest(
+        string sourceManifestPath,
+        string baseSnapshotPath,
+        string outputRoot)
+    {
+        var source = CurrentTeacherFrontierSupport.Read<
+            FishingForecastSnapshotManifest>(
+            sourceManifestPath,
+            "Portfolio continuation fishing forecast manifest");
+        var baseRoot = System.Text.Json.Nodes.JsonNode.Parse(
+            File.ReadAllText(baseSnapshotPath))!.AsObject();
+        var baseTick = baseRoot["game_tick"]!.GetValue<long>();
+        var time = baseRoot["state"]!["time"]!["time"]!["value"]!
+            .GetValue<int>();
+        var totalDays = baseRoot["state"]!["time"]!["total_days"]![
+            "value"]!.GetValue<int>();
+        var sourceDirectory = Path.GetDirectoryName(
+            Path.GetFullPath(sourceManifestPath))!;
+        var refreshed = new List<FishingForecastSnapshotReference>();
+        for (var index = 0; index < source.Snapshots.Length; index++)
+        {
+            var reference = source.Snapshots[index];
+            var sourceSnapshotPath = Path.GetFullPath(
+                reference.SnapshotPath,
+                sourceDirectory);
+            var root = System.Text.Json.Nodes.JsonNode.Parse(
+                File.ReadAllText(sourceSnapshotPath))!.AsObject();
+            root["game_tick"] = baseTick + 1;
+            root["in_game_time"]!["value"] = time;
+            root["state"]!["time"]!["time"]!["value"] = time;
+            root["state"]!["time"]!["total_days"]!["value"] = totalDays;
+            var envelope = System.Text.Json.JsonSerializer.Deserialize<
+                StardewAI.Contracts.State.SnapshotEnvelope>(
+                root.ToJsonString(JsonDefaults.Options),
+                JsonDefaults.Options) ?? throw new InvalidDataException(
+                "Fishing forecast fixture clone failed.");
+            root["state_hash"] = StardewAI.Contracts.State.SnapshotHash
+                .ComputeStateHash(envelope.State);
+            var fileName = "fishing-forecast-" +
+                index.ToString(
+                    "D2",
+                    System.Globalization.CultureInfo.InvariantCulture) +
+                ".json";
+            var refreshedPath = Path.Combine(outputRoot, fileName);
+            File.WriteAllText(
+                refreshedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            refreshed.Add(new FishingForecastSnapshotReference(
+                reference.RequestId,
+                reference.TargetLocationId,
+                reference.RodSlotIndex,
+                fileName,
+                CurrentTeacherFrontierSupport.HashFile(refreshedPath)));
+        }
+
+        var manifestPath = Path.Combine(
+            outputRoot,
+            "fishing-forecast-manifest.json");
+        Write(manifestPath, new FishingForecastSnapshotManifest
+        {
+            Snapshots = refreshed.ToArray()
+        });
+        return manifestPath;
     }
 
     private static AcquisitionRouteExecutionBindingInputs

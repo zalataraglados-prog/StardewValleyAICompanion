@@ -48,6 +48,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 fishingRoute,
                 state),
+            "harvests_as" => EvaluateCropHarvest(
+                route,
+                staticRoute,
+                state),
             "sells" => EvaluateShop(route, staticRoute, state),
             _ => Result(
                 route,
@@ -63,6 +67,122 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     staticRoute.RouteKind
                 })
         };
+    }
+
+    private static AcquisitionRouteTargetDateDailyTimeEnergy
+        EvaluateCropHarvest(
+            AcquisitionRouteTargetDateStochasticRetry route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionDailyTimeEnergySnapshotState state)
+    {
+        var source = staticRoute.CropSource;
+        var processing = route.UpstreamRoute;
+        var ready = processing.Evaluations
+            .Where(value =>
+                value.ProductionStateKind == "existing_crop" &&
+                value.OutputReadyOnTargetDate == true &&
+                value.ProvenOutputQuantityLowerBound >=
+                    staticRoute.RequiredAmount &&
+                value.ProvenMinimumQuality >= staticRoute.MinimumQuality)
+            .OrderBy(value => value.TargetLocationId, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (source is null ||
+            source.HarvestMinStack <= 0 ||
+            ready is null)
+        {
+            return Result(
+                route,
+                "native_ready_crop_harvest",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[] { "ready_crop_terminal_evidence_missing" });
+        }
+
+        var requiredCropCount = checked(
+            (staticRoute.RequiredAmount + source.HarvestMinStack - 1) /
+            source.HarvestMinStack);
+        if (requiredCropCount != 1)
+        {
+            return Result(
+                route,
+                "native_ready_crop_harvest",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[]
+                {
+                    "multi_tile_crop_terminal_route_budget_not_implemented:" +
+                    requiredCropCount
+                });
+        }
+
+        var lookup = state.ProcessingState.FindCrops(
+            ready.TargetLocationId,
+            staticRoute.QualifiedItemId);
+        if (!lookup.EvidenceAvailable)
+        {
+            return Result(
+                route,
+                "native_ready_crop_harvest",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                lookup.BlockingReasons);
+        }
+        var crop = lookup.Rows
+            .Where(value =>
+                !value.Dead &&
+                value.ReadyForHarvest &&
+                value.ProjectionStatus.StartsWith(
+                    "exact_",
+                    StringComparison.Ordinal))
+            .OrderBy(value => value.TileX)
+            .ThenBy(value => value.TileY)
+            .FirstOrDefault();
+        if (crop is null)
+        {
+            return Result(
+                route,
+                "native_ready_crop_harvest",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[] { "exact_ready_crop_terminal_tile_missing" });
+        }
+
+        return EvaluateTerminal(
+            route,
+            staticRoute,
+            state,
+            "native_ready_crop_harvest",
+            ready.TargetLocationId,
+            crop.TileX,
+            crop.TileY,
+            requireExactTargetTile: false,
+            CropHarvestBudgetPolicy.ConservativeGameMinutesForHarvests(1),
+            attemptCount: 1,
+            effectiveFishingLevel: null,
+            availableEnergy: null,
+            energyPerAttempt: null,
+            requiredEnergy: null,
+            energyReserve: 0d,
+            "native_exact_ready_crop_harvest_input_profile",
+            lookup.EvidencePaths.Concat(new[]
+                {
+                    "target_date_processing_lead_time.routes[].evaluations[]",
+                    "static_calendar_resolution.routes[].crop_source.harvest_min_stack",
+                    "compiler:CropHarvestBudgetPolicy"
+                })
+                .ToArray());
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy EvaluateFishing(

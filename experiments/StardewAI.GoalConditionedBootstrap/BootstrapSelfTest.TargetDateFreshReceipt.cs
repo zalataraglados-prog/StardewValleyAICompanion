@@ -324,7 +324,10 @@ internal static partial class BootstrapSelfTest
                 rolloutCheckpoint.LatestLedgerSha256 ==
                     settlementReceipt.SettledLedgerSha256 &&
                 rolloutCheckpoint.PendingSelectedRouteOccurrenceIds.Length ==
-                    (expectedPortfolioCompletion ? 0 : 1) &&
+                    (expectedPortfolioCompletion
+                        ? 0
+                        : portfolioReceipt.SelectedRouteOccurrenceIds.Length -
+                          1) &&
                 rolloutCheckpoint.BlockingReasons.Length == 0,
             "Initial target-date portfolio rollout checkpoint drifted.");
         if (expectedPortfolioCompletion)
@@ -337,27 +340,36 @@ internal static partial class BootstrapSelfTest
         }
         else
         {
+            var initialManifestPath = Path.Combine(
+                Path.GetDirectoryName(rolloutCheckpointPath)!,
+                "initial-rollout-proof-manifest.json");
+            Write(
+                initialManifestPath,
+                new AcquisitionRoutePortfolioRolloutProofManifest
+                {
+                    InitialCheckpointProof =
+                        new AcquisitionRoutePortfolioInitialCheckpointProof
+                        {
+                            ExecutionInputs = inputs,
+                            ExecutionBindingPath = bindingPath,
+                            ExecutionReceiptPath = executionReceiptPath,
+                            AfterSnapshotPath = afterSnapshotPath,
+                            FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                            RunId = runId,
+                            ExecutorVersion = PolicyTrajectoryVersionPins
+                                .RuntimeTestHarnessExecutor,
+                            SettlementRequestPath = settlementRequestPath,
+                            SettlementResultPath = settlementResultPath,
+                            SettledLedgerPath = settledLedgerPath,
+                            SettlementReceiptPath = settlementReceiptPath
+                        },
+                    InitialCheckpointPath = rolloutCheckpointPath
+                });
             VerifyTargetDatePortfolioContinuation(
                 inputs,
-                new AcquisitionRoutePortfolioInitialCheckpointProof
-                {
-                    ExecutionInputs = inputs,
-                    ExecutionBindingPath = bindingPath,
-                    ExecutionReceiptPath = executionReceiptPath,
-                    AfterSnapshotPath = afterSnapshotPath,
-                    FreshTerminalReceiptPath = freshTerminalReceiptPath,
-                    RunId = runId,
-                    ExecutorVersion = PolicyTrajectoryVersionPins
-                        .RuntimeTestHarnessExecutor,
-                    SettlementRequestPath = settlementRequestPath,
-                    SettlementResultPath = settlementResultPath,
-                    SettledLedgerPath = settledLedgerPath,
-                    SettlementReceiptPath = settlementReceiptPath
-                },
-                rolloutCheckpointPath,
+                initialManifestPath,
                 afterSnapshotPath,
-                settledLedgerPath,
-                rolloutCheckpoint);
+                settledLedgerPath);
         }
         var completedContinuationRejected = false;
         if (expectedPortfolioCompletion)

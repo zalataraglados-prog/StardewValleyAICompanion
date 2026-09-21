@@ -4376,3 +4376,10 @@ Scope boundary:
 - The loop used `--skip-training`; no formal Teacher/Student training was started. Focused Core PASS 57/57; KnowledgeCompiler PASS 585/585 blocking 0; isolated goal-conditioned bootstrap regression PASS.
 - Reconciliation: 230 registered / 232 semantic / 229 compiler-bound / 145 harness dispatch / 145 Product Executor / 153 five-gate / 64 training allowlist / 2 catalogued blocked. Acquisition lowering is 30/33 admitted and 3 blocked across all 1,599 route occurrences.
 - Final full verification: Core PASS 2472/2472; Backend PASS 177/177; full solution Release build PASS with 0 warnings / 0 errors.
+
+2026-09-22 three-transition acquisition portfolio rollout proof
+- GoalConditionedBootstrap Release build PASS with 0 warnings / 0 errors.
+- Complete current Stage 1 collection self-test PASS. The positive portfolio completed shop purchase, one exact ready-crop harvest and one fishing route across three fresh transitions and two continuation replans.
+- The terminal proof/admission CLI replay PASS: proof chain verified, portfolio complete, transition count 3, continuation count 2, scoped Teacher-evidence admission true, formal product training false.
+- Incomplete-chain, forged-receipt and tampered-checkpoint negative checks remain PASS. Each continuation refreshes fishing forecast evidence against the current save/player/time/tick identity.
+- Core game-free PASS 81/81; Backend PASS 203/203. No game or formal training run was started.

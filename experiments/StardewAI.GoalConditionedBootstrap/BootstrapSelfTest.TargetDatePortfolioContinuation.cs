@@ -10,15 +10,19 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyTargetDatePortfolioContinuation(
         AcquisitionRouteExecutionBindingInputs priorInputs,
-        AcquisitionRoutePortfolioInitialCheckpointProof proof,
-        string checkpointPath,
+        string priorManifestPath,
         string currentSnapshotPath,
-        string currentLedgerPath,
-        AcquisitionRoutePortfolioRolloutCheckpoint checkpoint)
+        string currentLedgerPath)
     {
+        var latest = AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+            priorManifestPath);
+        var checkpoint = latest.Checkpoint;
+        Require(checkpoint.TransitionCount < 8,
+            "Portfolio continuation fixture exceeded its finite bound.");
         var outputRoot = Path.Combine(
-            Path.GetDirectoryName(checkpointPath)!,
-            "continuation");
+            Path.GetDirectoryName(latest.CheckpointPath)!,
+            "continuation-" + (checkpoint.TransitionCount + 1)
+                .ToString("D2", System.Globalization.CultureInfo.InvariantCulture));
         Directory.CreateDirectory(outputRoot);
         var proposalPath = Path.Combine(outputRoot, "proposal.json");
         var currentInputs = BuildContinuationPortfolioInputs(
@@ -27,15 +31,6 @@ internal static partial class BootstrapSelfTest
             currentLedgerPath,
             proposalPath,
             outputRoot);
-        var priorManifestPath = Path.Combine(
-            outputRoot,
-            "prior-rollout-proof-manifest.json");
-        Write(priorManifestPath,
-            new AcquisitionRoutePortfolioRolloutProofManifest
-            {
-                InitialCheckpointProof = proof,
-                InitialCheckpointPath = checkpointPath
-            });
         var priorProofReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
             .BuildReceipt(priorManifestPath);
         var priorProofReceiptPath = Path.Combine(
@@ -44,8 +39,9 @@ internal static partial class BootstrapSelfTest
         Write(priorProofReceiptPath, priorProofReceipt);
         Require(priorProofReceipt.ProofChainVerified &&
                 !priorProofReceipt.PortfolioCompletionVerified &&
-                priorProofReceipt.TransitionCount == 1 &&
-                priorProofReceipt.ContinuationTransitionCount == 0 &&
+                priorProofReceipt.TransitionCount == checkpoint.TransitionCount &&
+                priorProofReceipt.ContinuationTransitionCount ==
+                    checkpoint.TransitionCount - 1 &&
                 !priorProofReceipt.FormalTrainingAuthorized,
             "Initial incomplete rollout proof-chain receipt drifted.");
         var blockedAdmission =
@@ -63,14 +59,15 @@ internal static partial class BootstrapSelfTest
         var request = AcquisitionRoutePortfolioContinuationBuilder
             .BuildRequest(priorManifestPath, currentInputs);
         Write(requestPath, request);
-        Require(request.TransitionCount == 2 &&
+        Require(request.TransitionCount == checkpoint.TransitionCount + 1 &&
                 request.PriorCheckpointSha256 ==
-                    CurrentTeacherFrontierSupport.HashFile(checkpointPath) &&
+                    CurrentTeacherFrontierSupport.HashFile(
+                        latest.CheckpointPath) &&
                 request.CompletedRouteOccurrenceIds.SequenceEqual(
                     checkpoint.CompletedRouteOccurrenceIds,
                     StringComparer.Ordinal) &&
-                request.ScopedProgress.Length == 1 &&
-                !request.ScopedProgress[0].ScopeComplete &&
+                request.ScopedProgress.Length > 0 &&
+                request.ScopedProgress.All(row => !row.ScopeComplete) &&
                 !request.FormalTrainingAuthorized,
             "Continuation Teacher request drifted.");
 
@@ -147,9 +144,12 @@ internal static partial class BootstrapSelfTest
             AcquisitionRouteTargetDateOpportunityCostReport>(
             currentInputs.TargetDateOpportunityCostPath,
             "Continuation opportunity cost");
+        var routeOccurrenceId = preference.SelectedProposal!
+            .SelectedRouteOccurrenceIds
+            .Order(StringComparer.Ordinal)
+            .First();
         var route = opportunity.Routes.Single(value =>
-            value.RouteOccurrenceId ==
-                checkpoint.PendingSelectedRouteOccurrenceIds.Single());
+            value.RouteOccurrenceId == routeOccurrenceId);
         var requirement = TargetDateRequirementRoute(route);
         var lowering = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteOptionLoweringReport>(
@@ -171,8 +171,10 @@ internal static partial class BootstrapSelfTest
             .SelectedCandidateId(route.RouteOccurrenceId);
         var queueItem = new ActionQueueItem
         {
-            QueueItemId = "queue-item.target-date-continuation.0",
-            SourceActionId = "action.target-date-continuation.0",
+            QueueItemId = "queue-item.target-date-continuation." +
+                request.TransitionCount,
+            SourceActionId = "action.target-date-continuation." +
+                request.TransitionCount,
             OptionId = optionId,
             Status = "pending",
             PermissionRequired = "executor",
@@ -199,7 +201,8 @@ internal static partial class BootstrapSelfTest
                 {
                     new CompiledActionStep
                     {
-                        StepId = "primitive.target-date-continuation.0",
+                        StepId = "primitive.target-date-continuation." +
+                            request.TransitionCount,
                         StepType = "fixture_native_route",
                         Target = requirement.QualifiedItemId,
                         ExpectedEffect =
@@ -211,8 +214,10 @@ internal static partial class BootstrapSelfTest
         };
         var queue = new ActionQueueEnvelope
         {
-            QueueId = "queue.target-date-continuation",
-            SourceModelOutputId = "teacher.target-date-continuation",
+            QueueId = "queue.target-date-continuation." +
+                request.TransitionCount,
+            SourceModelOutputId = "teacher.target-date-continuation." +
+                request.TransitionCount,
             SourceModel = "deterministic_teacher.fixture",
             StateHash = before.StateHash,
             GoalId = opportunity.GoalId,
@@ -260,8 +265,6 @@ internal static partial class BootstrapSelfTest
             "Continuation route execution binding drifted.");
 
         VerifyTargetDatePortfolioContinuationCompletion(
-            proof,
-            checkpointPath,
             priorManifestPath,
             requestPath,
             bindingInputs,

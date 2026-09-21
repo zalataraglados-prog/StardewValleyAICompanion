@@ -172,7 +172,7 @@ namespace StardewAI.Core.Execution
                     "harvest_crop",
                     location + "(" + x.Value + "," + y.Value + "):" + harvestMethod,
                     "current_location.crops[" + x.Value + "," + y.Value + "].ready_for_harvest=false_or_blocked",
-                    60)
+                    CropHarvestBudgetPolicy.HarvestTicksPerCrop)
             };
         }
 

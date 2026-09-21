@@ -9,18 +9,15 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal static partial class BootstrapSelfTest
 {
     private static void VerifyTargetDatePortfolioContinuationCompletion(
-        AcquisitionRoutePortfolioInitialCheckpointProof proof,
-        string checkpointPath,
         string priorManifestPath,
         string requestPath,
         AcquisitionRouteExecutionBindingInputs bindingInputs,
         string bindingPath,
         string outputRoot)
     {
-        var checkpoint = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioRolloutCheckpoint>(
-            checkpointPath,
-            "Continuation prior checkpoint");
+        var priorVerified = AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
+            priorManifestPath);
+        var checkpoint = priorVerified.Checkpoint;
         var request = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioContinuationTeacherRequest>(
             requestPath,
@@ -50,7 +47,11 @@ internal static partial class BootstrapSelfTest
         var candidateId = AcquisitionRouteExecutionBindingBuilder
             .SelectedCandidateId(route.RouteOccurrenceId);
 
-        var afterStateHash = "target-date-continuation-after-state";
+        var transitionId = request.TransitionCount.ToString(
+            "D2",
+            System.Globalization.CultureInfo.InvariantCulture);
+        var afterStateHash =
+            "target-date-continuation-after-state-" + transitionId;
         var afterSnapshotPath = Path.Combine(outputRoot, "after-snapshot.json");
         WriteTargetDateInventoryAfterSnapshot(
             bindingInputs.BeforeSnapshotPath,
@@ -59,7 +60,7 @@ internal static partial class BootstrapSelfTest
             requirement.QualifiedItemId,
             requirement.RequiredAmount,
             requirement.MinimumQuality);
-        const string runId = "run.target-date-continuation";
+        var runId = "run.target-date-continuation." + transitionId;
         var executionReceiptPath = Path.Combine(
             outputRoot,
             "execution-receipt.json");
@@ -172,22 +173,28 @@ internal static partial class BootstrapSelfTest
             .Append(route.RouteOccurrenceId)
             .Order(StringComparer.Ordinal)
             .ToArray();
-        Require(cumulative.Status ==
-                    "verified_cumulative_portfolio_completion" &&
-                cumulative.CheckpointVerified &&
-                cumulative.PortfolioCompletionVerified &&
-                !cumulative.FreshReplanRequired &&
+        Require(cumulative.CheckpointVerified &&
                 !cumulative.FormalTrainingAuthorized &&
-                cumulative.TransitionCount == 2 &&
+                cumulative.TransitionCount == checkpoint.TransitionCount + 1 &&
                 cumulative.PriorCheckpointSha256 ==
                     request.PriorCheckpointSha256 &&
                 cumulative.CompletedRouteOccurrenceIds.SequenceEqual(
                     expectedCompleted,
                     StringComparer.Ordinal) &&
-                cumulative.ScopedProgress.All(row => row.ScopeComplete) &&
-                cumulative.PendingSelectedRouteOccurrenceIds.Length == 0 &&
                 cumulative.BlockingReasons.Length == 0,
-            "Cumulative two-route rollout checkpoint drifted.");
+            "Cumulative rollout checkpoint drifted.");
+        Require(cumulative.PortfolioCompletionVerified
+                ? cumulative.Status ==
+                    "verified_cumulative_portfolio_completion" &&
+                  !cumulative.FreshReplanRequired &&
+                  cumulative.ScopedProgress.All(row => row.ScopeComplete) &&
+                  cumulative.PendingSelectedRouteOccurrenceIds.Length == 0
+                : cumulative.Status ==
+                    "verified_continuation_transition_fresh_replan_required" &&
+                  cumulative.FreshReplanRequired &&
+                  cumulative.ScopedProgress.Any(row => !row.ScopeComplete) &&
+                  cumulative.PendingSelectedRouteOccurrenceIds.Length > 0,
+            "Cumulative rollout completion disposition drifted.");
 
         var transition = new
             AcquisitionRoutePortfolioContinuationTransitionProof
@@ -207,12 +214,13 @@ internal static partial class BootstrapSelfTest
                 SettlementReceiptPath = settlementReceiptPath,
                 CheckpointPath = cumulativePath
             };
-        var manifest = new AcquisitionRoutePortfolioRolloutProofManifest
-        {
-            InitialCheckpointProof = proof,
-            InitialCheckpointPath = checkpointPath,
-            ContinuationTransitions = new[] { transition }
-        };
+        var manifest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioRolloutProofManifest>(
+            priorManifestPath,
+            "Prior rollout proof manifest");
+        manifest.ContinuationTransitions = manifest.ContinuationTransitions
+            .Append(transition)
+            .ToArray();
         var manifestPath = Path.Combine(
             outputRoot,
             "rollout-proof-manifest.json");
@@ -224,13 +232,26 @@ internal static partial class BootstrapSelfTest
             "rollout-proof-receipt.json");
         Write(proofReceiptPath, proofReceipt);
         Require(proofReceipt.ProofChainVerified &&
-                proofReceipt.PortfolioCompletionVerified &&
-                proofReceipt.TransitionCount == 2 &&
-                proofReceipt.ContinuationTransitionCount == 1 &&
+                proofReceipt.PortfolioCompletionVerified ==
+                    cumulative.PortfolioCompletionVerified &&
+                proofReceipt.TransitionCount == cumulative.TransitionCount &&
+                proofReceipt.ContinuationTransitionCount ==
+                    cumulative.TransitionCount - 1 &&
                 proofReceipt.LatestCheckpointSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(cumulativePath) &&
                 !proofReceipt.FormalTrainingAuthorized,
             "Cumulative rollout proof-chain receipt drifted.");
+        if (!proofReceipt.PortfolioCompletionVerified)
+        {
+            VerifyTargetDatePortfolioContinuation(
+                bindingInputs,
+                manifestPath,
+                afterSnapshotPath,
+                settledLedgerPath);
+            return;
+        }
+        Require(proofReceipt.TransitionCount >= 3,
+            "Terminal rollout proof did not exercise three transitions.");
         var admission = AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build(
             manifestPath,
             proofReceiptPath);

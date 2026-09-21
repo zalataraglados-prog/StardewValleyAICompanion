@@ -6,17 +6,21 @@ internal sealed class AcquisitionDailyTimeEnergySnapshotState
 {
     private AcquisitionDailyTimeEnergySnapshotState(
         AcquisitionLocationRouteSnapshotState routeState,
+        AcquisitionProcessingLeadTimeSnapshotState processingState,
         int targetTotalDay,
         double? availableEnergy,
         string[] energyBlockingReasons)
     {
         RouteState = routeState;
+        ProcessingState = processingState;
         TargetTotalDay = targetTotalDay;
         AvailableEnergy = availableEnergy;
         EnergyBlockingReasons = energyBlockingReasons;
     }
 
     public AcquisitionLocationRouteSnapshotState RouteState { get; }
+
+    public AcquisitionProcessingLeadTimeSnapshotState ProcessingState { get; }
 
     public int TargetTotalDay { get; }
 
@@ -35,6 +39,8 @@ internal sealed class AcquisitionDailyTimeEnergySnapshotState
             expectedGameVersion,
             targetTotalDay,
             timingCalibrationPath);
+        var processingState = AcquisitionProcessingLeadTimeSnapshotState.Read(
+            snapshot);
         var reasons = new List<string>();
         double? energy = null;
         if (!TryAvailableNumber(snapshot, "player", "energy", out var parsed) ||
@@ -49,6 +55,7 @@ internal sealed class AcquisitionDailyTimeEnergySnapshotState
 
         return new AcquisitionDailyTimeEnergySnapshotState(
             routeState,
+            processingState,
             targetTotalDay,
             energy,
             reasons.ToArray());

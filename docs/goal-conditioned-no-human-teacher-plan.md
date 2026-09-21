@@ -1653,9 +1653,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   one ordered chain. Its verifier rebuilds the initial checkpoint and every continuation transition, requires each
   stored checkpoint to equal the rebuilt artifact, binds the immediately prior hash, and advances transition count
   exactly once. Existing first-continuation calls are compatibility wrappers over the same verified-checkpoint core.
-- The two-transition positive fixture, tampered-checkpoint rejection and standalone proof-receipt CLI pass. The code
-  has no fixed continuation limit, but a three-or-more-transition fixture is still required before calling the repeated
-  path fully demonstrated.
+- The two-transition positive fixture, tampered-checkpoint rejection and standalone proof-receipt CLI passed at this
+  milestone. The code had no fixed continuation limit; the later three-transition fixture below supplies the repeated-
+  path regression that was still missing here.
 
 ### 2026-09-22: terminal portfolio rollout controller admission
 
@@ -1666,10 +1666,22 @@ Slice 7 remains assigned to the RTX 5070 node.
   `controller_admission_granted=true` and `teacher_training_evidence_eligible=true`; a modified receipt is rejected.
 - The authorization scope is only `verified_acquisition_route_portfolio_teacher_evidence`.
   `formal_product_training_authorized` remains false, so this receipt cannot bypass option admission, dataset/checkpoint
-  validation, Product Executor/version locks, or the native-save transaction. The next slice is a three-or-more-
-  transition fixture followed by a portfolio supervision dataset adapter.
-- Formal product training remains false. The next slice is the three-or-more-transition fixture and portfolio
-  supervision dataset adapter; incomplete chains and raw caller checkpoints remain permanently inadmissible.
+  validation, Product Executor/version locks, or the native-save transaction.
+
+### 2026-09-22: three-transition repeated rollout proof
+
+- The positive fixture now selects three independent scopes and routes: Pantry shop purchase, one transparent ready
+  Parsnip for Full Shipment, and one Master Angler catch. The same initial/continuation builders execute and settle all
+  three routes; there is no transition-specific planner or synthetic terminal checkpoint.
+- Each continuation rebuilds the complete target-date chain from the latest snapshot and settled ledger. Fishing
+  forecast snapshots are refreshed to the current save/player/time/tick identity, so the third transition passes the
+  existing stale-forecast guard rather than bypassing it.
+- Ready-crop daily budgeting uses the same `CropHarvestBudgetPolicy.HarvestTicksPerCrop` constant as the native action
+  compiler. It binds one exact ready crop tile only when authoritative minimum stack covers the full requirement;
+  unresolved multi-tile local routing remains blocked.
+- The terminal proof reports `transition_count=3`, complete scoped progress and scoped Teacher-evidence admission.
+  Incomplete chains, modified checkpoints and forged proof receipts remain rejected. Formal product training remains
+  false; the next slice is the portfolio supervision dataset adapter.
 
 ## Review questions
 

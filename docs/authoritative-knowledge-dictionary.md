@@ -681,10 +681,12 @@ settlement implementations while binding the prior checkpoint hash and completed
 proposal, admission and receipt. Claimless selections receive a marker-only atomic commit instead of
 an unauditable unchanged-ledger shortcut. A linear rollout proof manifest now exactly rebuilds the
 initial checkpoint and every ordered continuation transition, so every downstream layer consumes one
-shared latest-checkpoint verifier rather than a transition-specific implementation. A two-route
-offline proof plus a tampered-checkpoint rejection covers the current fixture. The chain code has no
+shared latest-checkpoint verifier rather than a transition-specific implementation. A three-route
+offline proof now executes shop purchase, one exact ready-crop harvest and fishing across three fresh
+transitions; each continuation refreshes snapshot-bound fishing forecast evidence. The chain code has no
 fixed continuation limit. `acquisition_route_portfolio_rollout_admission_receipt.v1` now recomputes
 the complete manifest and admits only an exactly matching terminal proof as scoped Teacher evidence;
 incomplete chains block and caller-authored proof receipts fail closed. This does not authorize the
-global formal-training process. A three-or-more-transition fixture and portfolio-to-dataset adapter
-remain.
+global formal-training process. Ready-crop daily budgeting reuses the executor's harvest-tick policy
+for one exactly identified crop tile and fails closed on unresolved multi-tile local routing. The
+portfolio-to-dataset adapter remains.
