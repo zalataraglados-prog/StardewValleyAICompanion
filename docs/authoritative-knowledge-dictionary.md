@@ -688,5 +688,9 @@ fixed continuation limit. `acquisition_route_portfolio_rollout_admission_receipt
 the complete manifest and admits only an exactly matching terminal proof as scoped Teacher evidence;
 incomplete chains block and caller-authored proof receipts fail closed. This does not authorize the
 global formal-training process. Ready-crop daily budgeting reuses the executor's harvest-tick policy
-for one exactly identified crop tile and fails closed on unresolved multi-tile local routing. The
-portfolio-to-dataset adapter remains.
+for one exactly identified crop tile and fails closed on unresolved multi-tile local routing.
+`acquisition_route_portfolio_supervision_dataset.v1` now rebuilds the terminal proof and admission
+before emitting one hash-linked row per transition. Each row keeps `teacher_preference`,
+`native_outcome`, and `student_observation` in separate typed channels; Teacher-driven rollouts mark
+the Student channel explicitly unobserved and unavailable portfolios receive no negative label. The
+adapter remains scoped Teacher evidence, not a formal dataset/trainer authorization.

@@ -48,6 +48,10 @@ internal static partial class BootstrapSelfTest
             AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build(
                 priorManifestPath,
                 priorProofReceiptPath);
+        var blockedAdmissionPath = Path.Combine(
+            outputRoot,
+            "blocked-rollout-admission-receipt.json");
+        Write(blockedAdmissionPath, blockedAdmission);
         Require(!blockedAdmission.ControllerAdmissionGranted &&
                 !blockedAdmission.TeacherTrainingEvidenceEligible &&
                 !blockedAdmission.FormalProductTrainingAuthorized &&
@@ -55,6 +59,20 @@ internal static partial class BootstrapSelfTest
                     "rollout_portfolio_not_complete",
                     StringComparer.Ordinal),
             "Incomplete rollout proof unexpectedly crossed controller admission.");
+        var incompleteSupervisionRejected = false;
+        try
+        {
+            AcquisitionRoutePortfolioSupervisionBuilder.Build(
+                priorManifestPath,
+                priorProofReceiptPath,
+                blockedAdmissionPath);
+        }
+        catch (InvalidDataException)
+        {
+            incompleteSupervisionRejected = true;
+        }
+        Require(incompleteSupervisionRejected,
+            "Incomplete rollout emitted portfolio supervision rows.");
         var requestPath = Path.Combine(outputRoot, "request.json");
         var request = AcquisitionRoutePortfolioContinuationBuilder
             .BuildRequest(priorManifestPath, currentInputs);

@@ -255,8 +255,10 @@ internal static partial class BootstrapSelfTest
         var admission = AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build(
             manifestPath,
             proofReceiptPath);
-        Write(Path.Combine(outputRoot, "rollout-admission-receipt.json"),
-            admission);
+        var admissionPath = Path.Combine(
+            outputRoot,
+            "rollout-admission-receipt.json");
+        Write(admissionPath, admission);
         Require(admission.ControllerAdmissionGranted &&
                 admission.TeacherTrainingEvidenceEligible &&
                 !admission.FormalProductTrainingAuthorized &&
@@ -269,6 +271,12 @@ internal static partial class BootstrapSelfTest
                     proofReceipt.LatestCheckpointSha256 &&
                 admission.BlockingReasons.Length == 0,
             "Completed rollout proof did not cross scoped controller admission.");
+
+        VerifyTargetDatePortfolioSupervision(
+            manifestPath,
+            proofReceiptPath,
+            admissionPath,
+            outputRoot);
 
         var forgedProofReceiptPath = Path.Combine(
             outputRoot,

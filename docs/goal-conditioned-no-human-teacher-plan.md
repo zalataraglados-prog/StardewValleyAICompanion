@@ -1680,8 +1680,12 @@ Slice 7 remains assigned to the RTX 5070 node.
   compiler. It binds one exact ready crop tile only when authoritative minimum stack covers the full requirement;
   unresolved multi-tile local routing remains blocked.
 - The terminal proof reports `transition_count=3`, complete scoped progress and scoped Teacher-evidence admission.
-  Incomplete chains, modified checkpoints and forged proof receipts remain rejected. Formal product training remains
-  false; the next slice is the portfolio supervision dataset adapter.
+  Incomplete chains, modified checkpoints and forged proof receipts remain rejected.
+- `acquisition_route_portfolio_supervision_dataset.v1` now rebuilds the supplied proof and admission before emitting
+  three hash-linked transition rows. Teacher preference, native outcome and Student observation are separate typed
+  channels; the Teacher-driven fixture records zero Student observations and never infers one from execution.
+  Unavailable portfolios are deferred without negative labels. Formal product training remains false; the next slice
+  is multi-rollout dataset governance plus trainer migration away from `candidate.Selected`.
 
 ## Review questions
 

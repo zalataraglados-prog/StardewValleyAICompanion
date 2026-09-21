@@ -4383,3 +4383,10 @@ Scope boundary:
 - The terminal proof/admission CLI replay PASS: proof chain verified, portfolio complete, transition count 3, continuation count 2, scoped Teacher-evidence admission true, formal product training false.
 - Incomplete-chain, forged-receipt and tampered-checkpoint negative checks remain PASS. Each continuation refreshes fishing forecast evidence against the current save/player/time/tick identity.
 - Core game-free PASS 81/81; Backend PASS 203/203. No game or formal training run was started.
+
+2026-09-22 typed acquisition portfolio supervision dataset
+- GoalConditionedBootstrap Release build PASS with 0 warnings / 0 errors.
+- Complete current Stage 1 collection self-test PASS. The admitted three-transition rollout produced exactly 3 hash-linked rows: 3 independent Teacher preference channels, 3 fresh native outcome channels and 0 Student observations.
+- Every row binds the decision snapshot/ledger, complete Teacher denominator, selected strict-Pareto proposal, queue execution, fresh terminal receipt, exact settlement and rollout checkpoint. Unavailable portfolios use `defer_without_negative_label`.
+- Incomplete rollout chains, forged admission receipts and modified dataset rows fail closed under controller recomputation. Teacher execution is explicitly `not_observed_teacher_rollout` in the Student channel.
+- Formal product training remains unauthorized. Multi-rollout dataset governance, trainer migration away from `candidate.Selected`, learner-state relabeling and complete 19/19 Teacher coverage remain pending. No game was started.
