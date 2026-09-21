@@ -2515,6 +2515,51 @@ internal static partial class BootstrapSelfTest
                     .MaxCandidateCount &&
                 largeDenominatorReasons.Count == 0,
             "Portfolio Teacher weighted subset enumeration drifted.");
+        var incompleteAllRequiredProgress =
+            AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildProgress(
+                new AuthoritativeRequirementInventoryReport
+                {
+                    RequirementSets = new[]
+                    {
+                        new GoalRequirementSet
+                        {
+                            RequirementSetId =
+                                portfolioRequirement.RequirementSetId,
+                            Groups = new[]
+                            {
+                                new GoalRequirementGroup
+                                {
+                                    RequirementId =
+                                        portfolioRequirement.RequirementId,
+                                    SelectionRule = "all_required",
+                                    RequiredAlternativeCount = 2,
+                                    Alternatives = new[]
+                                    {
+                                        new GoalRequirementAlternative(),
+                                        new GoalRequirementAlternative()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                new AcquisitionRoutePortfolioTeacherPreferenceRequest
+                {
+                    ScopedRequirements = new[]
+                    {
+                        new AcquisitionRoutePortfolioRequirementScope(
+                            portfolioRequirement.RequirementSetId,
+                            portfolioRequirement.RequirementId)
+                    }
+                },
+                portfolioRequirement);
+        Require(incompleteAllRequiredProgress.Length == 1 &&
+                !incompleteAllRequiredProgress[0].ScopeComplete &&
+                incompleteAllRequiredProgress[0].RemainingRequiredSlots == 1 &&
+                incompleteAllRequiredProgress[0]
+                    .CompletedAlternativeIndices.SequenceEqual(
+                        new[] { portfolioRequirement.AlternativeIndex }),
+            "Portfolio rollout all-required continuation drifted.");
 
         File.Copy(
             targetDateDailyTimeEnergyPath,

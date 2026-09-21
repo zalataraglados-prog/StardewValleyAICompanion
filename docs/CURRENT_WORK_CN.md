@@ -1269,3 +1269,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - Backend 新增唯一原子入口 `POST /api/v1/strategy/commitments/reservation-portfolios/commit`。显式释放项及全部 material/currency claim 先在内存 staging ledger 中校验；任一后项失败即整组丢弃，成功时在 repository 锁内只保存一次、ledger 只前进一个 revision，全部明细和 portfolio marker 使用同一 revision。
 - Backend 全量回归 198/198；76 路线 Bootstrap 回归通过真实商店路线的材料 + 金钱联合 claim，并确认错误 requirement scope 在上游被拒绝。完整解决方案仍受本机 `f:/steam/.../Stardew Valley` 缺少 SMAPI 的既有环境门槛阻塞，非本提交编译错误。
 - 正式训练仍关闭。下一固定切片是 post-commit receipt：重算提交前 admission，核验提交后 active claim 精确集合与 `base revision + 1`，再把该已提交 revision 强制绑定进每条 route execution binding；未完成前不得把“可原子提交”描述成“可正式 rollout”。
+
+## 2026-09-22 当前权威检查点：首个路线结算滚动检查点
+
+- `acquisition_route_portfolio_settlement_receipt.v1` 已闭合完成路线的原子 reservation 结算：从已验证执行绑定和 fresh terminal receipt 派生精确请求，核对所有 completed 行、历史、route marker、单 revision 前进和带 marker 时间戳的精确重放。结算回执新增 `after_state_hash`，后续控制层不必从非权威旁路猜测终态。
+- 新增 `acquisition_route_portfolio_rollout_checkpoint.v1` 与 `build-acquisition-route-portfolio-rollout-checkpoint`。首个检查点会重建当前 Teacher 选择与路线结算，把已完成 occurrence 映射回权威 requirement alternative，并按 `all_required` / `choose_at_least_required_slots` 计算已完成 alternative 和剩余槽位。
+- 只有全部 scope 已满足、当前 Teacher 选中的路线全部完成、且这些路线没有遗留 active reservation 时，检查点才输出 `verified_initial_portfolio_completion`。单路线商店夹具已证明该路径；两项 `all_required` 只完成一项的纯回归会保持 `remaining_required_slots=1`。
+- 未完成或多路线组合不会沿用旧 route ID，而是输出 `fresh_replan_required=true`。当前尚未实现“携带累计已完成 alternative -> 用最新 state/ledger 重建剩余 Teacher 分母 -> 下一路线结算 -> 累计完成”的多轮链，因此 `formal_training_authorized=false`，不得把首个检查点称为通用组合 rollout 完成。
+- GoalConditionedBootstrap Release 构建为 0 warnings / 0 errors，聚焦四收集/76 路线自测通过并生成真实首检查点制品。下一固定切片是 continuation Teacher request：只从已验证检查点派生累计完成集合，排除已完成 alternatives、减少剩余 required slots，并在组合已完成时禁止生成下一请求。

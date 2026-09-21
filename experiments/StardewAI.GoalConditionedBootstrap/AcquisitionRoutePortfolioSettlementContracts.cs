@@ -23,6 +23,9 @@ public sealed class AcquisitionRoutePortfolioSettlementReceipt
     [JsonPropertyName("route_source_decision_id")]
     public string RouteSourceDecisionId { get; set; } = string.Empty;
 
+    [JsonPropertyName("after_state_hash")]
+    public string AfterStateHash { get; set; } = string.Empty;
+
     [JsonPropertyName("execution_binding_sha256")]
     public string ExecutionBindingSha256 { get; set; } = string.Empty;
 

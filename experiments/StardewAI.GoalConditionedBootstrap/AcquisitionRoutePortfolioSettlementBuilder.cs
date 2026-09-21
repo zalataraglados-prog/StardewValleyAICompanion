@@ -109,6 +109,7 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             PortfolioId = context.Binding.ReservationPortfolioId,
             RouteOccurrenceId = context.Binding.RouteOccurrenceId,
             RouteSourceDecisionId = context.RouteSourceDecisionId,
+            AfterStateHash = context.AfterSnapshot.StateHash,
             ExecutionBindingSha256 =
                 CurrentTeacherFrontierSupport.HashFile(
                     Path.GetFullPath(executionBindingPath)),

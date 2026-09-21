@@ -290,6 +290,41 @@ internal static partial class BootstrapSelfTest
                 settlementReceipt.SettledLedgerRevision ==
                     portfolioReceipt.CommittedLedgerRevision + 1,
             "Target-date route settlement receipt drifted.");
+        var rolloutCheckpointPath = Path.Combine(
+            Path.GetDirectoryName(bindingPath)!,
+            "target-date-portfolio-rollout-checkpoint.json");
+        var rolloutCheckpoint =
+            AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial(
+                inputs,
+                bindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath,
+                settlementReceiptPath);
+        Write(rolloutCheckpointPath, rolloutCheckpoint);
+        Require(rolloutCheckpoint.Status ==
+                    "verified_initial_portfolio_completion" &&
+                rolloutCheckpoint.CheckpointVerified &&
+                rolloutCheckpoint.PortfolioCompletionVerified &&
+                !rolloutCheckpoint.FreshReplanRequired &&
+                !rolloutCheckpoint.FormalTrainingAuthorized &&
+                rolloutCheckpoint.TransitionCount == 1 &&
+                rolloutCheckpoint.ScopedProgress.Length == 1 &&
+                rolloutCheckpoint.ScopedProgress[0].ScopeComplete &&
+                rolloutCheckpoint.ScopedProgress[0]
+                    .RemainingRequiredSlots == 0 &&
+                rolloutCheckpoint.CompletedRouteOccurrenceIds.SequenceEqual(
+                    new[] { selected.RouteOccurrenceId },
+                    StringComparer.Ordinal) &&
+                rolloutCheckpoint.PendingSelectedRouteOccurrenceIds.Length ==
+                    0 &&
+                rolloutCheckpoint.BlockingReasons.Length == 0,
+            "Initial target-date portfolio rollout checkpoint drifted.");
         var tamperedSettledLedgerPath = Path.Combine(
             Path.GetDirectoryName(bindingPath)!,
             "target-date-route-settled-ledger-tampered.json");

@@ -662,3 +662,13 @@ terminal receipt, derives the request rather than trusting caller IDs, and exact
 settlement against the base ledger. A verified receipt always requires a fresh replan; it does not
 authorize reuse of the old portfolio snapshot, prove the remaining route order, or prove whole-
 portfolio completion.
+
+`acquisition_route_portfolio_rollout_checkpoint.v1` now verifies the first controller transition.
+It rebuilds the current Teacher preference and settlement receipt, maps the completed occurrence
+to one authoritative requirement alternative, and evaluates progress with the stored
+`all_required` or `choose_at_least_required_slots` rule. It may prove whole-portfolio completion
+only when every scoped rule is satisfied, every route selected by that Teacher proposal is
+completed, and none of those route decisions retains an active reservation. Otherwise it requires
+a fresh continuation replan and carries no stale route authorization. This first-transition
+artifact does not yet carry cumulative completed alternatives through a second Teacher selection;
+multi-transition completion and formal training admission remain blocked.

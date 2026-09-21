@@ -1614,6 +1614,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   keeps formal authorization false. The next control boundary must carry verified completed alternatives into a
   newly built current-state Teacher denominator; it may not simply dispatch the next stale route ID.
 
+### 2026-09-22: initial portfolio rollout checkpoint
+
+- `acquisition_route_portfolio_rollout_checkpoint.v1` deterministically rebuilds the selected Teacher proposal and
+  exact completed-route settlement, then binds the completed occurrence to its authoritative requirement alternative.
+  Progress is evaluated per scoped `all_required` or `choose_at_least_required_slots` rule rather than by route count.
+- Whole-portfolio completion is admitted only when every scope has no remaining required slot, every route selected by
+  the current proposal is completed, and the settled ledger contains no active reservation for any selected decision.
+  The focused shop route proves this exact single-transition path; a two-alternative `all_required` check proves that
+  one completed alternative remains incomplete.
+- Every incomplete checkpoint requires a fresh replan and cannot authorize a pending ID from the old proposal. The next
+  slice must derive a continuation Teacher request from the verified checkpoint, remove completed alternatives from the
+  current-state denominator, reduce required slots, and chain the next settlement back into cumulative progress. Until
+  that multi-transition proof and controller admission exist, `formal_training_authorized` remains false.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
