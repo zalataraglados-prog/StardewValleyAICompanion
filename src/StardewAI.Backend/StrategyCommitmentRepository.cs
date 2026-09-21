@@ -32,6 +32,10 @@ public interface IStrategyCommitmentRepository
         string reservationId,
         StrategyCommitmentCancelRequest request);
 
+    ReservationPortfolioCommitResult CommitReservationPortfolio(
+        SnapshotEnvelope snapshot,
+        ReservationPortfolioCommitRequest request);
+
     StrategyCommitmentMutationResult UpsertMachineRelocation(
         SnapshotEnvelope snapshot,
         MachineRelocationIntentUpsertRequest request);
@@ -55,6 +59,7 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
     private readonly CropCommitmentLedgerService service = new();
     private readonly MaterialReservationLedgerService materialService = new();
     private readonly CurrencyReservationLedgerService currencyService = new();
+    private readonly ReservationPortfolioLedgerService portfolioService = new();
     private readonly MachineRelocationIntentLedgerService
         machineRelocationService = new();
     private readonly MachineSupportIntentLedgerService
@@ -225,6 +230,25 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
                 current,
                 snapshot,
                 reservationId,
+                request,
+                DateTimeOffset.UtcNow.ToString("O"));
+            if (result.Accepted && result.Ledger is not null)
+                Save(key, result.Ledger);
+            return result;
+        }
+    }
+
+    public ReservationPortfolioCommitResult CommitReservationPortfolio(
+        SnapshotEnvelope snapshot,
+        ReservationPortfolioCommitRequest request)
+    {
+        lock (sync)
+        {
+            var key = IdentityKey(snapshot);
+            var current = Load(key, snapshot);
+            var result = portfolioService.Commit(
+                current,
+                snapshot,
                 request,
                 DateTimeOffset.UtcNow.ToString("O"));
             if (result.Accepted && result.Ledger is not null)

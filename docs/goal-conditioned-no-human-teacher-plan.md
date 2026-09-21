@@ -1547,6 +1547,28 @@ Slice 7 remains assigned to the RTX 5070 node.
   training evidence. Portfolio composition across requirements, atomic reservation commit and formal rollout-
   controller admission remain mandatory; `formal_training_authorized` stays false.
 
+### 2026-09-21: scoped route portfolio admission and atomic reservation commit
+
+- `acquisition_route_portfolio_proposal.v1` names an explicit requirement-group scope, exact selected route
+  occurrences and any exact route occurrences being replaced. The corresponding admission builder rebuilds and
+  object-compares the full target-date opportunity-cost chain instead of trusting a copied report.
+- Every scoped group is checked against its authoritative `all_required` or
+  `choose_at_least_required_slots` rule. Exactly one route may serve each selected alternative, selected routes may
+  not escape the declared scope, and every selected occurrence must remain on the complete Pareto frontier. The
+  builder validates a caller proposal but deliberately does not scalarize incomparable cost vectors or invent a
+  Teacher preference.
+- The selected cost vectors are summed without erasing dimensions: elapsed minutes, energy, exact material
+  identity/quality/live price and each native currency remain separate. Claim sets are combined and preflighted
+  against the same snapshot and ledger so cross-route slot or balance overbooking fails before dispatch.
+- `POST /api/v1/strategy/commitments/reservation-portfolios/commit` now provides the missing storage transaction.
+  Releases and all material/currency upserts run against an in-memory staging ledger under one repository lock;
+  any failure discards the staging result. Success is saved once, advances the ledger once, and records all component
+  history plus a portfolio commit marker at that same revision.
+- Backend regression is 198/198 and the focused 76-route Bootstrap chain passes both a real shop-route material +
+  money portfolio and a wrong-scope rejection. The next fixed boundary is a post-commit receipt that recomputes the
+  pre-commit admission, verifies the exact resulting active claim set and binds that committed revision into each
+  route execution binding. Formal training remains false until that receipt and rollout-controller admission close.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

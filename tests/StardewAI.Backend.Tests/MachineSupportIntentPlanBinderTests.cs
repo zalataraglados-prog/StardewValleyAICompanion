@@ -287,6 +287,11 @@ public sealed class MachineSupportIntentPlanBinderTests
             StrategyCommitmentCancelRequest request) =>
             throw new NotSupportedException();
 
+        public ReservationPortfolioCommitResult CommitReservationPortfolio(
+            SnapshotEnvelope snapshot,
+            ReservationPortfolioCommitRequest request) =>
+            throw new NotSupportedException();
+
         public StrategyCommitmentMutationResult
             UpsertMachineRelocation(
                 SnapshotEnvelope snapshot,

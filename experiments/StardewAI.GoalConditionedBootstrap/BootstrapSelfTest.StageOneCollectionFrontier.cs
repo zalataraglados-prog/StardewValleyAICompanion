@@ -65,6 +65,9 @@ internal static partial class BootstrapSelfTest
         var targetDateOpportunityCostPath = Path.Combine(
             root,
             "target-date-opportunity-cost.json");
+        var targetDatePortfolioProposalPath = Path.Combine(
+            root,
+            "target-date-portfolio-proposal.json");
         var targetDateRouteQueuePath = Path.Combine(
             root,
             "target-date-route-queue.json");
@@ -1947,6 +1950,90 @@ internal static partial class BootstrapSelfTest
                     BuildOpportunityCost(targetDateDailyTimeEnergyPath),
                     JsonDefaults.Options),
             "Target-date opportunity-cost resolution is not deterministic.");
+
+        var portfolioRequirement = TargetDateRequirementRoute(
+            targetDateOpportunityShop);
+        var portfolioProposal = new AcquisitionRoutePortfolioProposal
+        {
+            ProposalId = "self-test-shop-route",
+            GoalId = targetDateOpportunityCost.GoalId,
+            SnapshotStateHash = targetDateOpportunityCost.SnapshotStateHash,
+            ExpectedLedgerRevision = 0,
+            ScopedRequirements = new[]
+            {
+                new AcquisitionRoutePortfolioRequirementScope(
+                    portfolioRequirement.RequirementSetId,
+                    portfolioRequirement.RequirementId)
+            },
+            SelectedRouteOccurrenceIds = new[]
+            {
+                targetDateOpportunityShop.RouteOccurrenceId
+            }
+        };
+        Write(targetDatePortfolioProposalPath, portfolioProposal);
+        AcquisitionRoutePortfolioInputs PortfolioInputs() => new()
+        {
+            RequirementInventoryPath = inventoryPath,
+            AcquisitionLoweringPath = loweringPath,
+            MasterAnglerWindowsPath = windowsPath,
+            CalendarResolutionPath = routeCalendarPath,
+            TargetDateCalendarPath = targetDateCalendarPath,
+            TargetDateUnlockPath = targetDateUnlockPath,
+            TargetDateFestivalPath = targetDateFestivalPath,
+            TargetDateLocationPath = targetDateLocationPath,
+            TargetDateFacilityPath = targetDateFacilityPath,
+            TargetDateResourcePath = targetDateResourcePath,
+            TargetDateCurrencyPath = targetDateCurrencyPath,
+            TargetDateReservationPath = targetDateReservationPath,
+            TargetDateProcessingPath = targetDateProcessingPath,
+            TargetDateFishingProbabilityPath =
+                targetDateFishingProbabilityPath,
+            TargetDateStochasticRetryPath = targetDateStochasticRetryPath,
+            TargetDateDailyTimeEnergyPath = targetDateDailyTimeEnergyPath,
+            TargetDateOpportunityCostPath = targetDateOpportunityCostPath,
+            FishingForecastManifestPath = fishingForecastManifestPath,
+            StrategyLedgerPath = strategyLedgerPath,
+            SnapshotPath = targetDateUnlockSnapshotPath,
+            RouteTimingCalibrationPath = targetDateRouteCalibrationPath,
+            ProposalPath = targetDatePortfolioProposalPath
+        };
+        var portfolio = AcquisitionRoutePortfolioBuilder.Build(
+            PortfolioInputs());
+        Require(portfolio.Status ==
+                    "admitted_pending_atomic_reservation_commit" &&
+                portfolio.SelectionRulesSatisfied &&
+                portfolio.AllRoutesOnCompleteParetoFrontier &&
+                portfolio.AtomicCommitRequired &&
+                portfolio.AtomicCommitPreflightPassed &&
+                portfolio.PortfolioAdmissionReady &&
+                !portfolio.FormalTrainingAuthorized &&
+                portfolio.AggregateCostVector is not null &&
+                portfolio.AtomicCommitRequest is not null &&
+                portfolio.AtomicCommitRequest.MaterialClaims.Length == 1 &&
+                portfolio.AtomicCommitRequest.CurrencyClaims.Length == 1,
+            "Target-date route portfolio admission drifted.");
+        portfolioProposal.ScopedRequirements = new[]
+        {
+            new AcquisitionRoutePortfolioRequirementScope(
+                portfolioRequirement.RequirementSetId,
+                portfolioRequirement.RequirementId + ":wrong")
+        };
+        Write(targetDatePortfolioProposalPath, portfolioProposal);
+        var wrongScopePortfolio = AcquisitionRoutePortfolioBuilder.Build(
+            PortfolioInputs());
+        Require(!wrongScopePortfolio.PortfolioAdmissionReady &&
+                wrongScopePortfolio.BlockingReasons.Any(reason =>
+                    reason.StartsWith(
+                        "selected_route_outside_requirement_scope:",
+                        StringComparison.Ordinal)),
+            "A route outside the explicit portfolio scope was admitted.");
+        portfolioProposal.ScopedRequirements = new[]
+        {
+            new AcquisitionRoutePortfolioRequirementScope(
+                portfolioRequirement.RequirementSetId,
+                portfolioRequirement.RequirementId)
+        };
+        Write(targetDatePortfolioProposalPath, portfolioProposal);
 
         VerifyTargetDateFreshTerminalReceipt(
             new AcquisitionRouteExecutionBindingInputs

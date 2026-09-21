@@ -221,6 +221,23 @@ app.MapPost("/api/v1/strategy/commitments/currencies/{reservationId}/cancel", (s
     return Results.Ok(result);
 });
 
+app.MapPost("/api/v1/strategy/commitments/reservation-portfolios/commit", (ReservationPortfolioCommitRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))
+    {
+        return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
+    }
+    var result = repository.CommitReservationPortfolio(snapshot, request);
+    if (!result.Accepted)
+    {
+        return result.Errors.Contains("ledger_revision_conflict", StringComparer.Ordinal)
+            ? Results.Conflict(result)
+            : Results.UnprocessableEntity(result);
+    }
+    store.AppendAudit("ReservationPortfolioCommitted", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(result);
+});
+
 app.MapPost("/api/v1/events", async (HttpRequest request, StateStore store) =>
 {
     using var reader = new StreamReader(request.Body);

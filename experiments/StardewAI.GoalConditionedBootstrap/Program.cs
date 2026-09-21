@@ -90,6 +90,9 @@ try
         case "build-acquisition-route-target-date-opportunity-cost":
             BuildAcquisitionRouteTargetDateOpportunityCost(options);
             break;
+        case "build-acquisition-route-portfolio-admission":
+            BuildAcquisitionRoutePortfolioAdmission(options);
+            break;
         case "build-acquisition-route-execution-binding":
             BuildAcquisitionRouteExecutionBinding(options);
             break;
@@ -152,7 +155,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
     }
 }
 catch (Exception ex)
@@ -615,6 +618,48 @@ static void BuildAcquisitionRouteTargetDateOpportunityCost(
     if (!report.RouteOccurrenceInventoryComplete)
         Environment.ExitCode = 2;
 }
+
+static void BuildAcquisitionRoutePortfolioAdmission(Arguments options)
+{
+    var report = AcquisitionRoutePortfolioBuilder.Build(
+        RoutePortfolioInputs(options));
+    Write(options.Required("output"), report);
+    if (!report.PortfolioAdmissionReady)
+        Environment.ExitCode = 2;
+}
+
+static AcquisitionRoutePortfolioInputs RoutePortfolioInputs(
+    Arguments options) => new()
+    {
+        RequirementInventoryPath = options.Required("requirement-inventory"),
+        AcquisitionLoweringPath = options.Required("acquisition-lowering"),
+        MasterAnglerWindowsPath = options.Required("master-angler-windows"),
+        CalendarResolutionPath = options.Required("calendar-resolution"),
+        TargetDateCalendarPath = options.Required("target-date-calendar"),
+        TargetDateUnlockPath = options.Required("target-date-unlock"),
+        TargetDateFestivalPath = options.Required("target-date-festival"),
+        TargetDateLocationPath = options.Required("target-date-location"),
+        TargetDateFacilityPath = options.Required("target-date-facility"),
+        TargetDateResourcePath = options.Required("target-date-resource"),
+        TargetDateCurrencyPath = options.Required("target-date-currency"),
+        TargetDateReservationPath = options.Required("target-date-reservation"),
+        TargetDateProcessingPath = options.Required("target-date-processing"),
+        TargetDateFishingProbabilityPath = options.Required(
+            "target-date-fishing-probability"),
+        TargetDateStochasticRetryPath = options.Required(
+            "target-date-stochastic-retry"),
+        TargetDateDailyTimeEnergyPath = options.Required(
+            "target-date-daily-time-energy"),
+        TargetDateOpportunityCostPath = options.Required(
+            "target-date-opportunity-cost"),
+        FishingForecastManifestPath = options.Required(
+            "fishing-forecast-manifest"),
+        StrategyLedgerPath = options.Required("strategy-ledger"),
+        SnapshotPath = options.Required("snapshot"),
+        RouteTimingCalibrationPath = options.Required(
+            "route-timing-calibration"),
+        ProposalPath = options.Required("proposal")
+    };
 
 static void BuildAcquisitionRouteExecutionBinding(Arguments options)
 {

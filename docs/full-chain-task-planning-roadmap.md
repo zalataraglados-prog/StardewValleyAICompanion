@@ -378,6 +378,13 @@ pair member is explicitly non-admitted for this stage. Before Stage 6, the traje
 dataset contracts must distinguish Teacher preference, native outcome and Student behavior,
 and learner-visited states must support independent Teacher relabeling.
 
+Current target-date portfolio boundary (2026-09-21): scoped requirement selection and exact
+Pareto-route validation are implemented in `acquisition_route_portfolio_admission.v1`. Combined
+material/native-currency claims are preflighted together, and the Backend can commit explicit
+releases plus every claim as one locked, one-save, one-revision transaction. This is not yet the
+Stage 5.5 exit: a fresh post-commit receipt must prove the resulting active claim set and feed its
+ledger revision into every per-route execution binding before formal Teacher rollout admission.
+
 ### Stage 6: Perfect-Policy Training And Freeze
 
 Goal: train and benchmark the strongest policy against transparent state and a mechanically perfect executor, without teaching the strategy layer to avoid goals because of low-level executor failures.

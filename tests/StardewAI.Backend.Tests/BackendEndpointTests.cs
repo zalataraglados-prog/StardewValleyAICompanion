@@ -371,6 +371,82 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task ReservationPortfolioEndpointCommitsClaimsAtOneRevision()
+        {
+            var repository = new InMemoryStrategyCommitmentRepository();
+            using var isolatedFactory = factory.WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<IStrategyCommitmentRepository>();
+                    services.AddSingleton<IStrategyCommitmentRepository>(repository);
+                }));
+            using var client = isolatedFactory.CreateClient();
+            var snapshotResponse = await client.PostAsync(
+                "/api/v1/snapshots",
+                SampleSnapshotContent(
+                    includeMaterialGraph: true,
+                    includeCurrencyBalances: true));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(
+                await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement
+                .GetProperty("state_hash").GetString();
+
+            var response = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/reservation-portfolios/commit",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 0,
+                    portfolio_id = "portfolio:grandpa:test",
+                    goal_id = "goal.grandpa_21",
+                    source_decision_id = "portfolio-decision:test",
+                    release_reservation_ids = Array.Empty<string>(),
+                    material_claims = new[]
+                    {
+                        new
+                        {
+                            state_hash = stateHash,
+                            expected_ledger_revision = 0,
+                            reservation_id = "route-material",
+                            source_decision_id = "route:test",
+                            goal_id = "goal.grandpa_21",
+                            node_id = "player:123",
+                            slot_index = 1,
+                            qualified_item_id = "(O)388",
+                            quantity = 20,
+                            purpose = "reserve route material"
+                        }
+                    },
+                    currency_claims = new[]
+                    {
+                        new
+                        {
+                            state_hash = stateHash,
+                            expected_ledger_revision = 0,
+                            reservation_id = "route-money",
+                            source_decision_id = "route:test",
+                            goal_id = "goal.grandpa_21",
+                            currency_id = 0,
+                            amount = 300,
+                            purpose = "reserve route payment"
+                        }
+                    }
+                });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.True(root.GetProperty("accepted").GetBoolean());
+            Assert.Equal(1, root.GetProperty("committed_ledger_revision").GetInt32());
+            var ledger = root.GetProperty("ledger");
+            Assert.Equal(1, ledger.GetProperty("revision").GetInt32());
+            Assert.Single(ledger.GetProperty("material_reservations").EnumerateArray());
+            Assert.Single(ledger.GetProperty("currency_reservations").EnumerateArray());
+        }
+
+        [Fact]
         public async Task DispatchReadinessRejectsQueueAfterMaterialLedgerChanges()
         {
             var repository = new InMemoryStrategyCommitmentRepository();
@@ -1834,6 +1910,7 @@ namespace StardewAI.Backend.Tests
             private readonly CropCommitmentLedgerService service = new();
             private readonly MaterialReservationLedgerService materialService = new();
             private readonly CurrencyReservationLedgerService currencyService = new();
+            private readonly ReservationPortfolioLedgerService portfolioService = new();
             private readonly MachineRelocationIntentLedgerService
                 machineRelocationService = new();
             private readonly MachineSupportIntentLedgerService
@@ -1938,6 +2015,20 @@ namespace StardewAI.Backend.Tests
                     Get(snapshot),
                     snapshot,
                     reservationId,
+                    request,
+                    "2026-09-13T00:00:00Z");
+                if (result.Accepted)
+                    ledger = result.Ledger;
+                return result;
+            }
+
+            public ReservationPortfolioCommitResult CommitReservationPortfolio(
+                SnapshotEnvelope snapshot,
+                ReservationPortfolioCommitRequest request)
+            {
+                var result = portfolioService.Commit(
+                    Get(snapshot),
+                    snapshot,
                     request,
                     "2026-09-13T00:00:00Z");
                 if (result.Accepted)

@@ -1241,3 +1241,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - canonical 数据变为 accepted 203 / rejected 0、train / validation / test = 145 / 5 / 53、train pairs = 4547；checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`。
 - 完整归档位于 `I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r33-round09-20260905-015829`，远端/本机 142 / 142，三类差异均为 0。Core `2274/2274`、Backend `171/171`、Release 0 warnings / 0 errors；正式训练进程已停止。
 - 下一步是从 Summer 4 与当前 canonical 哈希开始连续有界批次，并观察队列失效、长期回报、JSONL 恢复和累计 I/O；在跨季、跨年、Grandpa 21 与 Companion 适配验收前仍不得宣称全量训练完成。
+
+## 2026-09-21 当前权威检查点：目标日期路线组合与原子 reservation
+
+- 新增 `acquisition_route_portfolio_proposal.v1` / `acquisition_route_portfolio_admission.v1`。调用者必须明确本批覆盖的 requirement group 和精确路线 occurrence；上游逐组执行 `all_required` 或 `choose_at_least_required_slots`，每个已选 alternative 只允许一条路线，且所有路线必须仍位于完整目标日期 Pareto 前沿。
+- 组合成本继续保留非标量维度：时间、体力、精确物品/品质/实时售价与各原生货币分别聚合，不把不可比较路线强行压成单一分数，也不把调用者提案冒充独立 Teacher 偏好。
+- Backend 新增唯一原子入口 `POST /api/v1/strategy/commitments/reservation-portfolios/commit`。显式释放项及全部 material/currency claim 先在内存 staging ledger 中校验；任一后项失败即整组丢弃，成功时在 repository 锁内只保存一次、ledger 只前进一个 revision，全部明细和 portfolio marker 使用同一 revision。
+- Backend 全量回归 198/198；76 路线 Bootstrap 回归通过真实商店路线的材料 + 金钱联合 claim，并确认错误 requirement scope 在上游被拒绝。完整解决方案仍受本机 `f:/steam/.../Stardew Valley` 缺少 SMAPI 的既有环境门槛阻塞，非本提交编译错误。
+- 正式训练仍关闭。下一固定切片是 post-commit receipt：重算提交前 admission，核验提交后 active claim 精确集合与 `base revision + 1`，再把该已提交 revision 强制绑定进每条 route execution binding；未完成前不得把“可原子提交”描述成“可正式 rollout”。

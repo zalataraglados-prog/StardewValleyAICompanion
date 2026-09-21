@@ -196,5 +196,10 @@ public sealed class MachineRelocationIntentPlanBinderTests
             string reservationId,
             StrategyCommitmentCancelRequest request) =>
             throw new NotSupportedException();
+
+        public ReservationPortfolioCommitResult CommitReservationPortfolio(
+            SnapshotEnvelope snapshot,
+            ReservationPortfolioCommitRequest request) =>
+            throw new NotSupportedException();
     }
 }

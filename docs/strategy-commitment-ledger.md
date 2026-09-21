@@ -30,6 +30,7 @@ Endpoints:
 - `POST /api/v1/strategy/commitments/materials/{reservationId}/cancel`
 - `POST /api/v1/strategy/commitments/currencies/upsert`
 - `POST /api/v1/strategy/commitments/currencies/{reservationId}/cancel`
+- `POST /api/v1/strategy/commitments/reservation-portfolios/commit`
 
 ## Resource reservations
 
@@ -37,7 +38,9 @@ Material reservations bind one actor-authorized `material_inventory_graph.v1` no
 
 Every upsert recomputes unreserved supply from the referenced current snapshot and all other active reservations. Currency balance input must be a complete `player.shop_currency_balances.v1` projection and its money row must equal `player.money`. Unknown currencies, wrong owners, malformed rows, stale ledger revisions, overbooking and arithmetic overflow fail closed. The shared currency definition is used by TransparentBridge, shop-quote evaluation, the supply projection and the ledger service, so there is no parallel ID/key table.
 
-These endpoints provide controller storage and double-spend prevention for individual rows. They do not choose among alternative acquisition routes and do not authorize a Teacher label. The target-date `inventory_reservation` axis now emits one exact multi-row claim set per feasible route, sharing a source decision, state hash and expected ledger revision. The controller must select a route and commit the complete set atomically; sequential partial success is not sufficient for execution authorization.
+The individual-row endpoints provide controller storage and double-spend prevention, but do not choose among alternative acquisition routes or authorize a Teacher label. The target-date `inventory_reservation` axis emits one exact multi-row claim set per feasible route, sharing a source decision, state hash and expected ledger revision.
+
+`reservation-portfolios/commit` is the sole multi-row mutation boundary. It validates all explicit releases and every material/currency claim against one state hash and one expected revision, applies them only to an in-memory staging ledger, and discards the whole staging result if any later claim fails. A successful request is persisted once under the repository lock, advances the ledger exactly once, and records every component plus `reservation_portfolio_commit` at that same ledger revision. This is an atomic storage primitive; route portfolio admission is owned by `acquisition_route_portfolio_admission.v1`, and neither layer alone authorizes a Teacher label or execution.
 
 ## Machine binding
 
@@ -56,4 +59,4 @@ Candidate, daily plan, and action compiler preserve these values. The compiler r
 
 ## Remaining scope
 
-This closes controller persistence for the listed commitment and reservation types, not the entire long-horizon planner. Greenhouse/Island/Indoor Pot rules, fertilizer and skill modifiers, crop layout feasibility, route-portfolio selection, future-income commitments, animal/building commitments, mining/smelting queues, storage supply, and broader machine placement/service still require separate typed commitments or transparent state.
+This closes controller persistence for the listed commitment and reservation types plus atomic material/currency portfolio mutation, not the entire long-horizon planner. Greenhouse/Island/Indoor Pot rules, fertilizer and skill modifiers, crop layout feasibility, route-portfolio preference selection, post-commit route binding, future-income commitments, animal/building commitments, mining/smelting queues, storage supply, and broader machine placement/service still require separate typed commitments or transparent state.

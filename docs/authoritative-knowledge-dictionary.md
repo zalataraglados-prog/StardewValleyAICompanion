@@ -620,3 +620,14 @@ The exporter output remains immutable source material. The remaining compiler st
   only the terminal native interactions that cannot be expressed by existing executors;
 - acquire scene-specific snapshots for the 18 contextually unavailable fields and fail closed
   on any new modded handler or asset that lacks evidence.
+
+## Target-date route portfolio boundary (2026-09-21)
+
+The dictionary's requirement groups now have an executable portfolio consumer rather than only
+per-route evidence. `acquisition_route_portfolio_admission.v1` binds an explicit scope back to the
+authoritative requirement set/group identities, enforces each stored selection rule, accepts at
+most one Pareto-front route per selected alternative, preserves the complete non-scalar cost
+vector, and preflights all material/native-currency claims together. The Backend persists those
+claims through one staging transaction and one ledger revision. This closes atomic storage, not
+preference selection or execution evidence. A post-commit exact-active-set receipt and its binding
+into per-route dispatch remain required before the dictionary can admit formal Teacher rollout.
