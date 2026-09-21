@@ -14,6 +14,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             inputs.TargetDateOpportunityCostPath);
         var loweringPath = Path.GetFullPath(inputs.AcquisitionLoweringPath);
         var snapshotPath = Path.GetFullPath(inputs.BeforeSnapshotPath);
+        var portfolioPreferencePath = Path.GetFullPath(
+            inputs.PortfolioTeacherPreferencePath);
         var portfolioReceiptPath = Path.GetFullPath(
             inputs.PortfolioCommitReceiptPath);
         var committedLedgerPath = Path.GetFullPath(
@@ -26,6 +28,24 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var recomputed = RecomputeOpportunityCost(inputs);
         Require(EqualJson(opportunity, recomputed),
             "Target-date opportunity-cost report drifted from deterministic source compilation.");
+        var portfolioPreference = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioTeacherPreference>(
+            portfolioPreferencePath,
+            "Acquisition route portfolio Teacher preference");
+        var recomputedPreference =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
+                PortfolioInputs(inputs),
+                inputs.PortfolioPreferenceRequestPath);
+        Require(EqualJson(portfolioPreference, recomputedPreference),
+            "Route portfolio Teacher preference drifted from deterministic source compilation.");
+        var portfolioProposal = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioProposal>(
+            inputs.PortfolioProposalPath,
+            "Teacher-selected acquisition route portfolio proposal");
+        var portfolioAdmission = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioAdmission>(
+            inputs.PortfolioAdmissionPath,
+            "Teacher-selected acquisition route portfolio admission");
         var portfolioReceipt = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioCommitReceipt>(
             portfolioReceiptPath,
@@ -72,6 +92,14 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 requirement,
                 before,
                 snapshotPath)
+            .Concat(ValidatePortfolioTeacherPreference(
+                portfolioPreference,
+                portfolioProposal,
+                portfolioAdmission,
+                portfolioReceipt,
+                opportunity,
+                selected.RouteOccurrenceId,
+                before.StateHash))
             .Concat(ValidatePortfolioCommit(
                 portfolioReceipt,
                 opportunity,
@@ -98,6 +126,13 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var portfolioCommitVerified = !reasons.Any(reason =>
             reason.StartsWith(
                 "route_portfolio_",
+                StringComparison.Ordinal) &&
+            !reason.StartsWith(
+                "route_portfolio_teacher_",
+                StringComparison.Ordinal));
+        var portfolioPreferenceVerified = !reasons.Any(reason =>
+            reason.StartsWith(
+                "route_portfolio_teacher_",
                 StringComparison.Ordinal));
         var terminalKind = TerminalReceiptKind(requirement.MatchKind);
         if (string.IsNullOrWhiteSpace(terminalKind))
@@ -134,6 +169,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 opportunityPath),
             PortfolioCommitReceiptSha256 =
                 CurrentTeacherFrontierSupport.HashFile(portfolioReceiptPath),
+            PortfolioTeacherPreferenceSha256 =
+                CurrentTeacherFrontierSupport.HashFile(
+                    portfolioPreferencePath),
             ReservationPortfolioId = portfolioReceipt.PortfolioId,
             CommittedStrategyLedgerSha256 =
                 CurrentTeacherFrontierSupport.HashFile(committedLedgerPath),
@@ -155,6 +193,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             SelectedFromCompleteParetoFrontier = selectedFromFrontier,
             QueueOptionsBoundToRoute = optionsBound,
             PortfolioReservationCommitVerified = portfolioCommitVerified,
+            PortfolioTeacherPreferenceVerified =
+                portfolioPreferenceVerified,
             DispatchBindingReady = reasons.Length == 0,
             FormalTrainingAuthorized = false,
             BlockingReasons = reasons

@@ -119,6 +119,7 @@ internal static partial class BootstrapSelfTest
                 binding.SelectedFromCompleteParetoFrontier &&
                 binding.QueueOptionsBoundToRoute &&
                 binding.PortfolioReservationCommitVerified &&
+                binding.PortfolioTeacherPreferenceVerified &&
                 !binding.FormalTrainingAuthorized &&
                 binding.BlockingReasons.Length == 0 &&
                 binding.RouteOccurrenceId == inputs.RouteOccurrenceId &&

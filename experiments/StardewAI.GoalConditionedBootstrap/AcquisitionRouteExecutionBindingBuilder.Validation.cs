@@ -225,6 +225,65 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         }
     }
 
+    private static IEnumerable<string> ValidatePortfolioTeacherPreference(
+        AcquisitionRoutePortfolioTeacherPreference preference,
+        AcquisitionRoutePortfolioProposal proposal,
+        AcquisitionRoutePortfolioAdmission admission,
+        AcquisitionRoutePortfolioCommitReceipt receipt,
+        AcquisitionRouteTargetDateOpportunityCostReport opportunity,
+        string routeOccurrenceId,
+        string beforeStateHash)
+    {
+        if (preference.SchemaVersion !=
+                "acquisition_route_portfolio_teacher_preference.v1" ||
+            preference.Status !=
+                "ready_unique_strict_pareto_portfolio_teacher_preference" ||
+            !preference.CandidateDenominatorComplete ||
+            preference.CandidateDenominatorCount <= 0 ||
+            preference.AdmittedCandidateCount <= 0 ||
+            preference.ParetoFrontierCount != 1 ||
+            !preference.TeacherPreferenceLabelEligible ||
+            preference.FormalTrainingAuthorized ||
+            preference.UsesLearnerRankOrScore ||
+            preference.EmitsNegativeLabelsForUnavailablePortfolios ||
+            preference.BlockingReasons is null ||
+            preference.BlockingReasons.Length != 0 ||
+            preference.SelectedProposal is null ||
+            preference.SelectedAdmission is null)
+        {
+            yield return "route_portfolio_teacher_preference_unverified";
+            yield break;
+        }
+        if (!EqualJson(preference.SelectedProposal, proposal) ||
+            !EqualJson(preference.SelectedAdmission, admission))
+        {
+            yield return "route_portfolio_teacher_selection_drifted";
+        }
+        if (preference.GoalId != opportunity.GoalId ||
+            preference.SnapshotStateHash != opportunity.SnapshotStateHash ||
+            preference.SnapshotStateHash != beforeStateHash ||
+            proposal.GoalId != preference.GoalId ||
+            proposal.SnapshotStateHash != preference.SnapshotStateHash ||
+            admission.GoalId != preference.GoalId ||
+            admission.SnapshotStateHash != preference.SnapshotStateHash)
+        {
+            yield return "route_portfolio_teacher_identity_mismatch";
+        }
+        if ((proposal.SelectedRouteOccurrenceIds ?? Array.Empty<string>())
+                .Count(value => value == routeOccurrenceId) != 1 ||
+            (admission.SelectedRouteOccurrenceIds ?? Array.Empty<string>())
+                .Count(value => value == routeOccurrenceId) != 1)
+        {
+            yield return "route_portfolio_teacher_route_not_selected";
+        }
+        if (receipt.ProposalId != proposal.ProposalId ||
+            receipt.PortfolioId !=
+                "target-date-acquisition-portfolio:" + proposal.ProposalId)
+        {
+            yield return "route_portfolio_teacher_commit_identity_mismatch";
+        }
+    }
+
     private static AcquisitionRequirementRouteLowering LoweredRoute(
         AcquisitionRouteOptionLoweringReport lowering,
         AcquisitionRouteTargetDateUnlock requirement)

@@ -1579,6 +1579,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   Teacher selects among incomparable portfolios and the rollout controller closes ordered multi-route execution,
   fresh replanning and portfolio-level completion evidence.
 
+### 2026-09-21: complete bounded portfolio Teacher preference
+
+- `acquisition_route_portfolio_teacher_preference_request.v1` supplies only goal/state/ledger identity and an exact
+  requirement-group scope. The Teacher derives candidates from authoritative selection rules and every target-date
+  Pareto occurrence; no caller candidate list or learner rank enters the denominator.
+- `all_required` uses every alternative. `choose_at_least_required_slots` enumerates every feasible subset from the
+  required count through all alternatives, then takes the Cartesian product of every Pareto route for each selected
+  alternative and across scoped groups. More than 4,096 portfolios blocks the whole request without truncation.
+- Every generated proposal reuses `acquisition_route_portfolio_admission.v1` and atomic preflight. Unavailable
+  portfolios are deferred without negative labels. A Teacher label exists only for one unique aggregate vector that
+  strictly Pareto-dominates all other admitted candidates; equal or time/energy/material/currency trade-offs remain
+  explicitly unresolved instead of being ordered by IDs, learner score, sale-value totals or currency conversion.
+- The selected proposal/admission serialize into artifacts that the original admission builder can reproduce exactly.
+  Per-route execution binding rebuilds the preference and rejects an otherwise legal caller-selected proposal that is
+  not its unique selection. The focused 76-route chain and strict-dominance/equality/trade-off pure checks pass with a
+  warning-free Release build. Formal authorization remains false pending evidence-backed incomparable-portfolio policy,
+  ordered route execution, fresh replanning, reservation lifecycle and portfolio-level completion evidence.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

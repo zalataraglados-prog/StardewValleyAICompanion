@@ -385,9 +385,13 @@ material/native-currency claims are preflighted together, and the Backend commit
 plus every claim as one locked, one-save, one-revision transaction. The deterministic
 `acquisition_route_portfolio_commit_receipt.v1` proves the exact resulting active claim set and
 history, while every per-route execution binding and normalized command now carries its portfolio
-ID and committed ledger revision. This is still not the Stage 5.5 exit: an independent Teacher must
-choose among incomparable admitted portfolios, the controller must execute/replan their routes in
-order and emit one portfolio-level completion receipt before formal Teacher rollout admission.
+ID and committed ledger revision. A complete bounded Teacher enumerator now derives proposals from
+the authoritative requirement rules and route frontier rather than a caller list. It selects only a
+unique strict aggregate Pareto winner; equal/incomparable or over-limit frontiers fail closed, and
+the execution binding requires the actual proposal/admission to equal that selection. This is still
+not the Stage 5.5 exit: evidence-backed policy must resolve any required incomparable portfolios,
+then the controller must execute/replan selected routes in order, settle reservation lifecycle and
+emit one portfolio-level completion receipt before formal Teacher rollout admission.
 
 ### Stage 6: Perfect-Policy Training And Freeze
 

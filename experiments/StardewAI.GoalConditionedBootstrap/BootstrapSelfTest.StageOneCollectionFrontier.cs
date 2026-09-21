@@ -70,6 +70,18 @@ internal static partial class BootstrapSelfTest
         var targetDatePortfolioProposalPath = Path.Combine(
             root,
             "target-date-portfolio-proposal.json");
+        var targetDatePortfolioPreferenceRequestPath = Path.Combine(
+            root,
+            "target-date-portfolio-preference-request.json");
+        var targetDatePortfolioPreferencePath = Path.Combine(
+            root,
+            "target-date-portfolio-preference.json");
+        var targetDatePortfolioTeacherProposalPath = Path.Combine(
+            root,
+            "target-date-portfolio-teacher-proposal.json");
+        var targetDatePortfolioTeacherAdmissionPath = Path.Combine(
+            root,
+            "target-date-portfolio-teacher-admission.json");
         var targetDatePortfolioAdmissionPath = Path.Combine(
             root,
             "target-date-portfolio-admission.json");
@@ -1997,32 +2009,89 @@ internal static partial class BootstrapSelfTest
             }
         };
         Write(targetDatePortfolioProposalPath, portfolioProposal);
-        AcquisitionRoutePortfolioInputs PortfolioInputs() => new()
-        {
-            RequirementInventoryPath = inventoryPath,
-            AcquisitionLoweringPath = loweringPath,
-            MasterAnglerWindowsPath = windowsPath,
-            CalendarResolutionPath = routeCalendarPath,
-            TargetDateCalendarPath = targetDateCalendarPath,
-            TargetDateUnlockPath = targetDateUnlockPath,
-            TargetDateFestivalPath = targetDateFestivalPath,
-            TargetDateLocationPath = targetDateLocationPath,
-            TargetDateFacilityPath = targetDateFacilityPath,
-            TargetDateResourcePath = targetDateResourcePath,
-            TargetDateCurrencyPath = targetDateCurrencyPath,
-            TargetDateReservationPath = targetDateReservationPath,
-            TargetDateProcessingPath = targetDateProcessingPath,
-            TargetDateFishingProbabilityPath =
+        AcquisitionRoutePortfolioInputs PortfolioInputs(
+            string? proposalPath = null) => new()
+            {
+                RequirementInventoryPath = inventoryPath,
+                AcquisitionLoweringPath = loweringPath,
+                MasterAnglerWindowsPath = windowsPath,
+                CalendarResolutionPath = routeCalendarPath,
+                TargetDateCalendarPath = targetDateCalendarPath,
+                TargetDateUnlockPath = targetDateUnlockPath,
+                TargetDateFestivalPath = targetDateFestivalPath,
+                TargetDateLocationPath = targetDateLocationPath,
+                TargetDateFacilityPath = targetDateFacilityPath,
+                TargetDateResourcePath = targetDateResourcePath,
+                TargetDateCurrencyPath = targetDateCurrencyPath,
+                TargetDateReservationPath = targetDateReservationPath,
+                TargetDateProcessingPath = targetDateProcessingPath,
+                TargetDateFishingProbabilityPath =
                 targetDateFishingProbabilityPath,
-            TargetDateStochasticRetryPath = targetDateStochasticRetryPath,
-            TargetDateDailyTimeEnergyPath = targetDateDailyTimeEnergyPath,
-            TargetDateOpportunityCostPath = targetDateOpportunityCostPath,
-            FishingForecastManifestPath = fishingForecastManifestPath,
-            StrategyLedgerPath = strategyLedgerPath,
-            SnapshotPath = targetDateUnlockSnapshotPath,
-            RouteTimingCalibrationPath = targetDateRouteCalibrationPath,
-            ProposalPath = targetDatePortfolioProposalPath
-        };
+                TargetDateStochasticRetryPath = targetDateStochasticRetryPath,
+                TargetDateDailyTimeEnergyPath = targetDateDailyTimeEnergyPath,
+                TargetDateOpportunityCostPath = targetDateOpportunityCostPath,
+                FishingForecastManifestPath = fishingForecastManifestPath,
+                StrategyLedgerPath = strategyLedgerPath,
+                SnapshotPath = targetDateUnlockSnapshotPath,
+                RouteTimingCalibrationPath = targetDateRouteCalibrationPath,
+                ProposalPath = proposalPath ?? targetDatePortfolioProposalPath
+            };
+        var preferenceRequest =
+            new AcquisitionRoutePortfolioTeacherPreferenceRequest
+            {
+                RequestId = "self-test-shop-teacher",
+                GoalId = targetDateOpportunityCost.GoalId,
+                SnapshotStateHash =
+                    targetDateOpportunityCost.SnapshotStateHash,
+                ExpectedLedgerRevision = 0,
+                ScopedRequirements = new[]
+                {
+                    new AcquisitionRoutePortfolioRequirementScope(
+                        portfolioRequirement.RequirementSetId,
+                        portfolioRequirement.RequirementId)
+                }
+            };
+        Write(targetDatePortfolioPreferenceRequestPath, preferenceRequest);
+        var portfolioPreference =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
+                PortfolioInputs(),
+                targetDatePortfolioPreferenceRequestPath);
+        Write(targetDatePortfolioPreferencePath, portfolioPreference);
+        Require(portfolioPreference.Status ==
+                    "ready_unique_strict_pareto_portfolio_teacher_preference" &&
+                portfolioPreference.CandidateDenominatorComplete &&
+                portfolioPreference.CandidateDenominatorCount == 1 &&
+                portfolioPreference.AdmittedCandidateCount == 1 &&
+                portfolioPreference.ParetoFrontierCount == 1 &&
+                portfolioPreference.TeacherPreferenceLabelEligible &&
+                !portfolioPreference.FormalTrainingAuthorized &&
+                !portfolioPreference.UsesLearnerRankOrScore &&
+                !portfolioPreference
+                    .EmitsNegativeLabelsForUnavailablePortfolios &&
+                portfolioPreference.SelectedProposal is not null &&
+                portfolioPreference.SelectedAdmission is not null &&
+                portfolioPreference.SelectedProposal
+                    .SelectedRouteOccurrenceIds.SequenceEqual(
+                        new[]
+                        {
+                            targetDateOpportunityShop.RouteOccurrenceId
+                        },
+                        StringComparer.Ordinal),
+            "Target-date portfolio Teacher preference drifted.");
+        Write(
+            targetDatePortfolioTeacherProposalPath,
+            portfolioPreference.SelectedProposal!);
+        Write(
+            targetDatePortfolioTeacherAdmissionPath,
+            portfolioPreference.SelectedAdmission!);
+        var rebuiltTeacherAdmission = AcquisitionRoutePortfolioBuilder.Build(
+            PortfolioInputs(targetDatePortfolioTeacherProposalPath));
+        Require(JsonSerializer.Serialize(
+                    rebuiltTeacherAdmission,
+                    JsonDefaults.Options) == JsonSerializer.Serialize(
+                    portfolioPreference.SelectedAdmission,
+                    JsonDefaults.Options),
+            "Written Teacher portfolio proposal did not rebuild its admission.");
         var portfolio = AcquisitionRoutePortfolioBuilder.Build(
             PortfolioInputs());
         Require(portfolio.Status ==
@@ -2039,6 +2108,7 @@ internal static partial class BootstrapSelfTest
                 portfolio.AtomicCommitRequest.CurrencyClaims.Length == 1,
             "Target-date route portfolio admission drifted.");
         Write(targetDatePortfolioAdmissionPath, portfolio);
+        var teacherPortfolio = portfolioPreference.SelectedAdmission!;
         var portfolioSnapshot = CurrentTeacherFrontierSupport.Read<
             SnapshotEnvelope>(
             targetDateUnlockSnapshotPath,
@@ -2050,7 +2120,7 @@ internal static partial class BootstrapSelfTest
         var portfolioCommit = new ReservationPortfolioLedgerService().Commit(
             portfolioBaseLedger,
             portfolioSnapshot,
-            portfolio.AtomicCommitRequest!,
+            teacherPortfolio.AtomicCommitRequest!,
             "2026-09-21T00:00:00Z");
         Require(portfolioCommit.Accepted &&
                 portfolioCommit.Ledger is not null,
@@ -2059,8 +2129,8 @@ internal static partial class BootstrapSelfTest
         Write(targetDatePortfolioCommittedLedgerPath, portfolioCommit.Ledger!);
         var portfolioReceipt =
             AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
-                PortfolioInputs(),
-                targetDatePortfolioAdmissionPath,
+                PortfolioInputs(targetDatePortfolioTeacherProposalPath),
+                targetDatePortfolioTeacherAdmissionPath,
                 targetDatePortfolioCommittedLedgerPath,
                 targetDatePortfolioCommitResultPath);
         Require(portfolioReceipt.Status ==
@@ -2084,8 +2154,8 @@ internal static partial class BootstrapSelfTest
         Write(targetDatePortfolioTamperedLedgerPath, tamperedPortfolioLedger);
         var tamperedPortfolioReceipt =
             AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
-                PortfolioInputs(),
-                targetDatePortfolioAdmissionPath,
+                PortfolioInputs(targetDatePortfolioTeacherProposalPath),
+                targetDatePortfolioTeacherAdmissionPath,
                 targetDatePortfolioTamperedLedgerPath,
                 targetDatePortfolioCommitResultPath);
         Require(!tamperedPortfolioReceipt.PortfolioCommitVerified &&
@@ -2131,8 +2201,8 @@ internal static partial class BootstrapSelfTest
             coupledTamperedResult);
         var coupledTamperedReceipt =
             AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
-                PortfolioInputs(),
-                targetDatePortfolioAdmissionPath,
+                PortfolioInputs(targetDatePortfolioTeacherProposalPath),
+                targetDatePortfolioTeacherAdmissionPath,
                 targetDatePortfolioCoupledTamperedLedgerPath,
                 targetDatePortfolioCoupledTamperedResultPath);
         Require(!coupledTamperedReceipt.PortfolioCommitVerified &&
@@ -2232,8 +2302,14 @@ internal static partial class BootstrapSelfTest
                 StrategyLedgerPath = strategyLedgerPath,
                 BeforeSnapshotPath = targetDateUnlockSnapshotPath,
                 RouteTimingCalibrationPath = targetDateRouteCalibrationPath,
-                PortfolioProposalPath = targetDatePortfolioProposalPath,
-                PortfolioAdmissionPath = targetDatePortfolioAdmissionPath,
+                PortfolioProposalPath =
+                    targetDatePortfolioTeacherProposalPath,
+                PortfolioAdmissionPath =
+                    targetDatePortfolioTeacherAdmissionPath,
+                PortfolioPreferenceRequestPath =
+                    targetDatePortfolioPreferenceRequestPath,
+                PortfolioTeacherPreferencePath =
+                    targetDatePortfolioPreferencePath,
                 PortfolioCommitReceiptPath =
                     targetDatePortfolioCommitReceiptPath,
                 CommittedStrategyLedgerPath =
@@ -2337,6 +2413,108 @@ internal static partial class BootstrapSelfTest
             !AcquisitionRouteTargetDateOpportunityCostBuilder
                 .OpportunityCostDominates(qiGems100, money100),
             "Opportunity-cost strict Pareto boundary semantics drifted.");
+        var strictPortfolioPareto =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.EvaluatePareto(
+                new[]
+                {
+                    new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                        .PortfolioCostCandidate("lower", lowerTime),
+                    new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                        .PortfolioCostCandidate("higher", higherTime)
+                });
+        var tradeoffPortfolioPareto =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.EvaluatePareto(
+                new[]
+                {
+                    new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                        .PortfolioCostCandidate("time", lowerTime),
+                    new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                        .PortfolioCostCandidate(
+                            "energy",
+                            lowerEnergyTradeoff)
+                });
+        var equalPortfolioPareto =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.EvaluatePareto(
+                new[]
+                {
+                    new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                        .PortfolioCostCandidate("equal-a", lowerTime),
+                    new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                        .PortfolioCostCandidate("equal-b", lowerTime)
+                });
+        Require(strictPortfolioPareto.FrontierProposalIds.SequenceEqual(
+                    new[] { "lower" },
+                    StringComparer.Ordinal) &&
+                strictPortfolioPareto.DominatedByProposalIds["higher"]
+                    .SequenceEqual(
+                        new[] { "lower" },
+                        StringComparer.Ordinal) &&
+                tradeoffPortfolioPareto.FrontierProposalIds.Length == 2 &&
+                equalPortfolioPareto.FrontierProposalIds.Length == 2,
+            "Portfolio Teacher Pareto preference semantics drifted.");
+        var syntheticScope =
+            new AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                .ResolvedScope(
+                    new AcquisitionRoutePortfolioRequirementScope(
+                        "synthetic-set",
+                        "synthetic-requirement"),
+                    "choose_at_least_required_slots",
+                    1,
+                    3,
+                    new Dictionary<int, string[]>
+                    {
+                        [0] = new[] { "route-a1", "route-a2" },
+                        [1] = new[] { "route-b" },
+                        [2] = new[] { "route-c" }
+                    });
+        var syntheticReasons = new List<string>();
+        var syntheticCount =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                .CountGroupCandidates(syntheticScope, syntheticReasons);
+        var syntheticSelections =
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                .EnumerateGroupRouteSelections(syntheticScope);
+        var allRequiredScope = syntheticScope with
+        {
+            SelectionRule = "all_required",
+            RequiredAlternativeCount = 3
+        };
+        var allRequiredReasons = new List<string>();
+        var largeDenominatorScope = syntheticScope with
+        {
+            AlternativeCount = 17,
+            RoutesByAlternative = Enumerable.Range(0, 17).ToDictionary(
+                index => index,
+                index => new[]
+                {
+                    $"route-{index}-a",
+                    $"route-{index}-b"
+                })
+        };
+        var largeDenominatorReasons = new List<string>();
+        Require(syntheticReasons.Count == 0 &&
+                syntheticCount == 11 &&
+                syntheticSelections.Length == syntheticCount &&
+                syntheticSelections.Select(selection =>
+                        string.Join("|", selection))
+                    .Distinct(StringComparer.Ordinal).Count() ==
+                syntheticSelections.Length &&
+                allRequiredReasons.Count == 0 &&
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                    .CountGroupCandidates(
+                        allRequiredScope,
+                        allRequiredReasons) == 2 &&
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                    .EnumerateGroupRouteSelections(allRequiredScope).Length ==
+                2 &&
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                    .CountGroupCandidates(
+                        largeDenominatorScope,
+                        largeDenominatorReasons) >
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder
+                    .MaxCandidateCount &&
+                largeDenominatorReasons.Count == 0,
+            "Portfolio Teacher weighted subset enumeration drifted.");
 
         File.Copy(
             targetDateDailyTimeEnergyPath,

@@ -640,3 +640,15 @@ committed ledger revision, so a preflight-only or stale queue cannot claim reser
 This closes atomic storage and per-route dispatch ownership, not independent preference among
 incomparable Pareto portfolios, ordered multi-route rollout, portfolio completion evidence or
 formal Teacher rollout admission.
+
+`acquisition_route_portfolio_teacher_preference.v1` now closes the caller-selection bypass for the
+strictly decidable subset. From one explicit requirement-group scope it derives the complete
+bounded denominator directly from authoritative `all_required` / `choose_at_least_required_slots`
+rules and every target-date Pareto route occurrence, then runs every generated proposal through the
+same admission/preflight implementation. More than 4,096 combinations fail closed without
+truncation. One proposal becomes Teacher-preferred only when its aggregate non-scalar cost vector
+strictly Pareto-dominates every other admitted proposal; equal and incomparable frontiers remain
+blocked without learner scores or arbitrary scalarization. Per-route execution binding rebuilds
+this preference and requires the actual proposal/admission to equal its selected artifacts. The
+remaining boundary is evidence-backed policy for incomparable portfolios plus ordered route
+execution, fresh replanning, reservation lifecycle and a portfolio-level completion receipt.

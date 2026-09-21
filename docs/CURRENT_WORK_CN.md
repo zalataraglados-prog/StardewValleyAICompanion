@@ -11,12 +11,19 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-21 路线组合 Teacher 偏好与 caller 绕过关闭
+
+- 新增 `acquisition_route_portfolio_teacher_preference_request.v1`、`acquisition_route_portfolio_teacher_preference.v1` 与 `build-acquisition-route-portfolio-teacher-preference`。请求只声明目标、同一快照/ledger revision 和需求组 scope；构建器从权威 selection rule 与当前全部目标日 Pareto route occurrence 自动枚举组合，不接收调用方候选列表，也不读取 learner rank/score。
+- `all_required` 枚举全部替代项，`choose_at_least_required_slots` 枚举从最低所需槽位到全部可行替代项的所有组合；每个替代项再与全部 Pareto 路线做笛卡尔积。候选分母超过 `4096` 时整体失败而不截断。每个生成 proposal 都复用唯一 portfolio admission 与原子 preflight；不可用组合只作 defer，不生成负标签。
+- Teacher 只在一个 admitted 组合的非标量聚合成本向量严格 Pareto 支配其他全部 admitted 组合时给出偏好。相等或耗时/体力/材料/原生货币互有取舍时显式阻塞，不按 proposal ID、learner 分数、售价汇总或跨货币换算破平局。选中 proposal/admission 可直接按规范 JSON 落盘并由原构建器逐对象重建。
+- `acquisition_route_execution_binding.v1` 现在还会重算完整 Teacher preference，并要求实际 proposal/admission、commit receipt 与 preference 的唯一选中结果一致；合法但由 caller 私自选择的组合不能借用后续 reservation 回执进入执行。聚焦 76 路线全链与严格支配/相等/互有取舍纯回归通过，Release 为 `0 warning / 0 error`。正式训练仍为 false；下一固定边界是组合内顺序执行、逐路线 fresh 重规划、reservation 生命周期和组合级完成回执。
+
 ## 2026-09-21 路线组合原子提交回执与执行所有权闭合
 
 - `acquisition_route_portfolio_commit_receipt.v1` 会从原始 proposal、完整目标日依赖链、提交前 ledger、admission、提交结果和提交后 ledger 确定性重建组合提交事实。发生写入时必须只前进一个 revision，全部材料/货币 claim 必须成为精确 active 行，全部显式 release 必须取消，并且每个分量历史与唯一 `reservation_portfolio_commit` 标记必须处于同一 revision；任一后置 claim 失败时不得泄漏前置写入。无需新 claim 的组合只接受规范 JSON 等价的未变化 ledger 和无 commit result 的幂等路径。
 - `acquisition_route_execution_binding.v1` 现已消费并重算上述回执。被调度的路线必须在该组合中精确出现一次；每个 normalized command 除原有 11 个路线身份参数外，还必须携带精确 `acquisition_reservation_portfolio_id` 与 `acquisition_reservation_ledger_revision`。因此旧队列、只做过 preflight 的组合、错误 revision 或脱离组合选择的单路线均不能绕过 reservation 所有权边界。
 - Backend 回归为 `199/199`；实验项目 Release 构建为 `0 warning / 0 error`；聚焦 76 路线全链自测通过真实商店材料+货币原子提交、提交后回执、篡改 ledger 拒绝、无 reservation 幂等回执、缺组合所有权参数拒绝和 fresh 终态回执。未启动游戏或训练。
-- 这一步完成的是“组合 claim 原子落账 -> 提交后证明 -> 单路线队列持有组合所有权”，不是 Teacher 偏好。下一固定边界是独立 Teacher 对完整需求组合的偏好/准入，以及组合内多路线的顺序执行、fresh 重规划和组合级完成回执；这些完成前 `formal_training_authorized` 继续保持 false。
+- 这一步完成的是“组合 claim 原子落账 -> 提交后证明 -> 单路线队列持有组合所有权”。独立 Teacher 的完整有界候选枚举、唯一严格 Pareto 偏好和执行绑定已由上节接入；相等/不可比组合继续阻塞。剩余固定边界是组合内多路线的顺序执行、fresh 重规划、reservation 生命周期和组合级完成回执；这些完成前 `formal_training_authorized` 继续保持 false。
 
 ## 2026-09-21 目标日路线执行绑定与 fresh 终态回执闭合
 

@@ -93,6 +93,9 @@ try
         case "build-acquisition-route-portfolio-admission":
             BuildAcquisitionRoutePortfolioAdmission(options);
             break;
+        case "build-acquisition-route-portfolio-teacher-preference":
+            BuildAcquisitionRoutePortfolioTeacherPreference(options);
+            break;
         case "build-acquisition-route-portfolio-commit-receipt":
             BuildAcquisitionRoutePortfolioCommitReceipt(options);
             break;
@@ -158,7 +161,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
     }
 }
 catch (Exception ex)
@@ -631,6 +634,25 @@ static void BuildAcquisitionRoutePortfolioAdmission(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildAcquisitionRoutePortfolioTeacherPreference(Arguments options)
+{
+    var report = AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
+        RoutePortfolioInputs(options, requireProposal: false),
+        options.Required("preference-request"));
+    Write(options.Required("output"), report);
+    if (report.TeacherPreferenceLabelEligible)
+    {
+        if (options.Optional("selected-proposal-output") is { } proposalOutput)
+            Write(proposalOutput, report.SelectedProposal!);
+        if (options.Optional("selected-admission-output") is { } admissionOutput)
+            Write(admissionOutput, report.SelectedAdmission!);
+    }
+    else
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
 static void BuildAcquisitionRoutePortfolioCommitReceipt(Arguments options)
 {
     var report = AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
@@ -644,7 +666,8 @@ static void BuildAcquisitionRoutePortfolioCommitReceipt(Arguments options)
 }
 
 static AcquisitionRoutePortfolioInputs RoutePortfolioInputs(
-    Arguments options) => new()
+    Arguments options,
+    bool requireProposal = true) => new()
     {
         RequirementInventoryPath = options.Required("requirement-inventory"),
         AcquisitionLoweringPath = options.Required("acquisition-lowering"),
@@ -673,7 +696,9 @@ static AcquisitionRoutePortfolioInputs RoutePortfolioInputs(
         SnapshotPath = options.Required("snapshot"),
         RouteTimingCalibrationPath = options.Required(
             "route-timing-calibration"),
-        ProposalPath = options.Required("proposal")
+        ProposalPath = requireProposal
+            ? options.Required("proposal")
+            : options.Optional("proposal") ?? string.Empty
     };
 
 static void BuildAcquisitionRouteExecutionBinding(Arguments options)
@@ -731,6 +756,10 @@ static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
             "route-timing-calibration"),
         PortfolioProposalPath = options.Required("portfolio-proposal"),
         PortfolioAdmissionPath = options.Required("portfolio-admission"),
+        PortfolioPreferenceRequestPath = options.Required(
+            "portfolio-preference-request"),
+        PortfolioTeacherPreferencePath = options.Required(
+            "portfolio-teacher-preference"),
         PortfolioCommitReceiptPath = options.Required(
             "portfolio-commit-receipt"),
         CommittedStrategyLedgerPath = options.Required(

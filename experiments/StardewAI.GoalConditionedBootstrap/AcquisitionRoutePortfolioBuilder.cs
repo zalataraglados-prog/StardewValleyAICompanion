@@ -13,10 +13,24 @@ public static partial class AcquisitionRoutePortfolioBuilder
     public static AcquisitionRoutePortfolioAdmission Build(
         AcquisitionRoutePortfolioInputs inputs)
     {
+        var context = Prepare(inputs);
+        var proposalPath = Path.GetFullPath(inputs.ProposalPath);
+        var proposal = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioProposal>(
+            proposalPath,
+            "Acquisition route portfolio proposal");
+        return Build(
+            context,
+            proposal,
+            CurrentTeacherFrontierSupport.HashFile(proposalPath));
+    }
+
+    internal static AcquisitionRoutePortfolioBuildContext Prepare(
+        AcquisitionRoutePortfolioInputs inputs)
+    {
         var inventoryPath = Path.GetFullPath(inputs.RequirementInventoryPath);
         var opportunityPath = Path.GetFullPath(
             inputs.TargetDateOpportunityCostPath);
-        var proposalPath = Path.GetFullPath(inputs.ProposalPath);
         var ledgerPath = Path.GetFullPath(inputs.StrategyLedgerPath);
         var snapshotPath = Path.GetFullPath(inputs.SnapshotPath);
         var inventory = CurrentTeacherFrontierSupport.Read<
@@ -30,10 +44,6 @@ public static partial class AcquisitionRoutePortfolioBuilder
         var recomputed = RecomputeOpportunityCost(inputs);
         Require(EqualJson(opportunity, recomputed),
             "Target-date opportunity-cost report drifted from deterministic source compilation.");
-        var proposal = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioProposal>(
-            proposalPath,
-            "Acquisition route portfolio proposal");
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotPath,
             "Acquisition route portfolio snapshot");
@@ -42,6 +52,26 @@ public static partial class AcquisitionRoutePortfolioBuilder
         var ledgerState = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
             snapshotDocument.RootElement);
+        return new AcquisitionRoutePortfolioBuildContext(
+            inventory,
+            opportunity,
+            snapshot,
+            ledgerState,
+            CurrentTeacherFrontierSupport.HashFile(inventoryPath),
+            CurrentTeacherFrontierSupport.HashFile(opportunityPath),
+            CurrentTeacherFrontierSupport.HashFile(ledgerPath),
+            CurrentTeacherFrontierSupport.HashFile(snapshotPath));
+    }
+
+    internal static AcquisitionRoutePortfolioAdmission Build(
+        AcquisitionRoutePortfolioBuildContext context,
+        AcquisitionRoutePortfolioProposal proposal,
+        string proposalSha256)
+    {
+        var inventory = context.Inventory;
+        var opportunity = context.Opportunity;
+        var snapshot = context.Snapshot;
+        var ledgerState = context.LedgerState;
 
         var reasons = ValidateMetadata(
             inventory,
@@ -106,16 +136,11 @@ public static partial class AcquisitionRoutePortfolioBuilder
             SnapshotStateHash = snapshot.StateHash,
             StrategyLedgerRevision = ledgerState.Ledger.Revision,
             TargetTotalDay = opportunity.TargetTotalDay,
-            RequirementInventorySha256 =
-                CurrentTeacherFrontierSupport.HashFile(inventoryPath),
-            OpportunityCostSha256 =
-                CurrentTeacherFrontierSupport.HashFile(opportunityPath),
-            ProposalSha256 =
-                CurrentTeacherFrontierSupport.HashFile(proposalPath),
-            StrategyLedgerSha256 =
-                CurrentTeacherFrontierSupport.HashFile(ledgerPath),
-            SnapshotSha256 =
-                CurrentTeacherFrontierSupport.HashFile(snapshotPath),
+            RequirementInventorySha256 = context.RequirementInventorySha256,
+            OpportunityCostSha256 = context.OpportunityCostSha256,
+            ProposalSha256 = proposalSha256,
+            StrategyLedgerSha256 = context.StrategyLedgerSha256,
+            SnapshotSha256 = context.SnapshotSha256,
             SelectedRouteOccurrenceIds = selected
                 .Select(route => route.RouteOccurrenceId)
                 .Order(StringComparer.Ordinal)
@@ -135,6 +160,16 @@ public static partial class AcquisitionRoutePortfolioBuilder
             BlockingReasons = blocking
         };
     }
+
+    internal sealed record AcquisitionRoutePortfolioBuildContext(
+        AuthoritativeRequirementInventoryReport Inventory,
+        AcquisitionRouteTargetDateOpportunityCostReport Opportunity,
+        SnapshotEnvelope Snapshot,
+        AcquisitionStrategyLedgerState LedgerState,
+        string RequirementInventorySha256,
+        string OpportunityCostSha256,
+        string StrategyLedgerSha256,
+        string SnapshotSha256);
 
     private static AcquisitionRouteTargetDateOpportunityCostReport
         RecomputeOpportunityCost(AcquisitionRoutePortfolioInputs inputs) =>

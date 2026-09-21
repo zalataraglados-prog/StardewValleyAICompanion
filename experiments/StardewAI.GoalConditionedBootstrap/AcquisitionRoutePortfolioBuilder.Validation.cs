@@ -230,7 +230,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         Uri.EscapeDataString(setId) + "/" +
         Uri.EscapeDataString(requirementId);
 
-    private static AcquisitionRouteTargetDateUnlock RequirementRoute(
+    internal static AcquisitionRouteTargetDateUnlock RequirementRoute(
         AcquisitionRouteTargetDateOpportunityCost route)
     {
         var daily = route.UpstreamRoute;
