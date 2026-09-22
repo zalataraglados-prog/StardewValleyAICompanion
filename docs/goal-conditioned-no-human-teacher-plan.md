@@ -1797,6 +1797,43 @@ Slice 7 remains assigned to the RTX 5070 node.
   settlement. The next slice must consume this bound denominator when constructing the dynamic collection frontier;
   it must not retain the old standard-only alternatives for a remixed save.
 
+### 2026-09-23: issue #129 StrategicPolicy convergence disposition
+
+- Verdict: accept the single strategic entry, shared artifacts, deterministic hard authority, learned soft-preference
+  path and event-driven strategic replanning. The existing `RankLiveShadow` implementation already proves the first
+  bounded form: a sole Pareto-frontier member remains authoritative, while a checkpoint can rank only the verified
+  multi-member frontier and cannot commit it. This is useful evidence, not yet a product interface or runtime
+  admission.
+- Terminology is tightened before implementation. Runtime does not host an online Teacher beside a Student.
+  `TeacherOracle` remains offline supervision, relabeling, counterfactual, coverage and benchmark machinery. The
+  runtime unique-frontier branch is `DeterministicSelection`. A "unique strict-Pareto" decision means exactly one
+  admitted frontier member that passes the existing proof that it dominates every other admitted candidate under
+  `OpportunityCostDominates`; neither weighted scalarization nor a model score can manufacture that status.
+- `StrategicPolicy.SelectMethod` must be a facade over the existing authoritative denominator, feasibility,
+  reservation/ledger and Pareto artifacts. It must not own another candidate generator, route legality graph,
+  verifier, compiler or executor. Both branches return one versioned `StrategicDecision` with state hash, ledger
+  revision, denominator/frontier identities, selected method, `selection_authority`, model/checkpoint identity when
+  applicable, blocker/fallback reason and separate formal-training/runtime-authority flags.
+- The learned branch may rank only admitted, non-dominated members of a genuinely incomparable/equal frontier.
+  Missing, corrupt, stale, version-mismatched or non-admitted checkpoints cannot change a deterministic decision. If
+  an incomparable frontier has no runtime-authorized model, selection fails closed. A rare online Teacher fallback is
+  explicitly deferred and cannot enter through this refactor. Unlike the current `RankLiveShadow`, which loads and
+  verifies the checkpoint before inspecting the rebuilt frontier, the product policy must resolve the deterministic
+  branch first. It records `model_invoked=false`; an optional shadow-audit failure is non-authoritative and cannot
+  block that deterministic result.
+- Strategic replans are triggered by day start, goal/profile/preference change, material or currency availability
+  drift, reservation/ledger revision drift, selected-method completion, execution failure and player interruption.
+  They are not per-frame Teacher runs. Existing fresh-snapshot checks after connector traversal, action effects and
+  queue continuation remain mandatory mechanical validity checks; they do not by themselves create a new strategic
+  model call or training row.
+- Implementation order is fixed. First finish the immediately preceding dynamic standard/remixed Community Center
+  frontier and its unlock/reward/ceremony receipt chain. Then extract the current live-shadow branching into the
+  single policy contract, keep existing scorer/Teacher commands as thin compatibility adapters, add unique-frontier,
+  incomparable-frontier, dominated/blocked, missing/corrupt-model-before-deterministic-selection and trigger-dedup
+  regressions, and record candidate count, frontier count, model invocation, decision latency and fallback/blocker
+  reason. Only after the independent 19/19 coverage gate and a separate runtime promotion gate may the learned branch
+  authorize portfolio commit. Formal product training and runtime model authority remain false now.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

@@ -388,6 +388,17 @@ teacher relabeling path, and isolated real-game dataset described in
 The normative signal separation and stop conditions are fixed in
 [`TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`](TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md).
 
+Before formal training or product selection authority, issue #129 adds a mandatory runtime
+convergence gate: expose one `StrategicPolicy` entry over the existing authoritative candidate,
+admission, reservation and Pareto artifacts. A unique strict-Pareto frontier member remains a
+deterministic selection; a learned model may rank only an admitted incomparable frontier. Both
+paths emit the same decision artifact and continue through the one verifier/compiler/executor
+chain. This is an interface extraction from the current live-shadow prototype, not a new planner,
+candidate generator or online Teacher. Strategic replans are event-driven and distinct from the
+fresh-snapshot mechanical continuation checks that remain mandatory after runtime state changes.
+The deterministic branch must be resolved before checkpoint loading or inference; optional shadow
+scoring cannot make a unique deterministic decision depend on model availability.
+
 Formal policy training remains blocked until every Grandpa criterion has an executable
 goal-to-method route and teacher-generated rows pass fresh-state and day-boundary admission.
 The production `GrandpaDirectionCatalog` is the sole direction/criterion/option mapping;

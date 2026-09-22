@@ -1,6 +1,18 @@
 # StardewAI Teacher / Student 收敛与监督合同
 
-状态：2026-09-08 当前有效架构合同。本文覆盖早期“把已执行候选直接当正样本”的训练解释，但不改写历史运行事实。
+状态：2026-09-23 当前有效架构合同。本文覆盖早期“把已执行候选直接当正样本”的训练解释，但不改写历史运行事实。
+
+## 2026-09-23 StrategicPolicy 单入口覆盖
+
+Issue #129 的核心架构成立：产品运行时对外只暴露一个战略选择入口，但统一入口不等于把确定性规则、学习偏好、编译和执行揉成一个实现。`StrategicPolicy` 必须复用同一份权威候选分母、hard feasibility、reservation/ledger 与 Pareto 证据，并按以下顺序工作：
+
+1. 唯一 Pareto 前沿成员必须由确定性选择分支决定。这里的“唯一 strict-Pareto”严格沿用现有 `OpportunityCostDominates`：该成员支配所有其他 admitted 候选，不允许用标量加权、模型分数或任意 tie-break 冒充。
+2. 只有两个及以上 admitted、non-dominated 且互不可比较/等价的前沿成员，学习模型才可在该前沿内部排序。模型不得生成候选、扩大分母、恢复 blocked/dominated 候选或提供合法性证据。
+3. 两个分支输出同一种 `StrategicDecision`，显式记录 `selection_authority`、输入状态/ledger/denominator 身份、frontier、模型/checkpoint 身份与准入状态，再进入唯一 verifier、Planner/Compiler、Product Executor 和 fresh native receipt 链。
+4. `TeacherOracle` 只保留离线监督、DAgger 重标、反事实、覆盖证明和 benchmark 职责。运行时确定性分支称为 `DeterministicSelection`，不得包装成第二个在线 Teacher 主脑。
+5. 是否存在唯一确定性解必须在加载或调用 checkpoint 之前判定。模型缺失、损坏、版本不匹配或未获 runtime authority 时，唯一确定性解仍可工作并记录 `model_invoked=false`；可选 shadow audit 的失败也不得阻塞它。若只剩不可比较前沿且没有获准模型，则 fail closed。`rare bounded Teacher fallback` 暂不准入，必须另立证据和治理门。
+
+战略重规划只在 day start、目标/偏好变化、资源或 reservation/ledger 漂移、已选方法完成、执行失败和玩家打断等边界触发，不能每帧重跑完整 Teacher proof。连接器、动作和队列 continuation 之后已有的 fresh-snapshot precondition/replan 仍然保留；这些机械刷新不自动构成新的策略选择、Student 样本或模型调用。
 
 ## 结论
 
@@ -52,7 +64,7 @@ Student 自主 rollout 到自己的分布。Teacher 对 learner-visited state �
 
 ### Stage C：native outcome
 
-在 Teacher bootstrap 和 DAgger 稳定后，真实跨日、跨季、跨年结果成为长期价值的主要依据。Teacher 退为离线 oracle、重标器、benchmark 和少量高风险 fallback；它不成为常驻在线主脑。RL/价值微调是后续增强，不是当前 Teacher 图完成的替代品。
+在 Teacher bootstrap 和 DAgger 稳定后，真实跨日、跨季、跨年结果成为长期价值的主要依据。Teacher 退为离线 oracle、重标器和 benchmark；它不成为常驻在线主脑。少量高风险 fallback 只是未来可能单独准入的能力，当前不得启用。RL/价值微调是后续增强，不是当前 Teacher 图完成的替代品。
 
 ## 可验收的工程收敛
 
@@ -85,18 +97,26 @@ Student 自主 rollout 到自己的分布。Teacher 对 learner-visited state �
 ## 运行时职责
 
 ```text
-TransparentBridge -> legal candidate set -> Student ranking
-                                    |-> rolling planner/compiler
-                                    |-> Product Executor
-                                    |-> fresh verifier/outcome
+TransparentBridge -> authoritative candidates -> hard admission -> Pareto frontier
+                                                                  |
+                                                         StrategicPolicy
+                                   unique frontier -> DeterministicSelection
+                              incomparable frontier -> LearnedPreferenceModel
+                                                                  |
+                                                        DecisionVerifier
+                                                                  |
+                                             Planner/Compiler -> Product Executor
+                                                                  |
+                                                    fresh verifier/outcome
 
-Offline Teacher -> supervision/relabel/benchmark
+Offline TeacherOracle -> supervision/relabel/counterfactual/coverage/benchmark
 ```
 
-- Student 是运行时高层主决策器。
+- `StrategicPolicy` 是唯一运行时高层决策入口，不拥有第二套候选、约束、路线、编译器或执行器。
+- `DeterministicSelection` 对唯一 strict-Pareto 解保持权威；Student/`LearnedPreferenceModel` 只解决合法不可比较前沿中的 soft preference。
 - Planner/Compiler 负责组合、时间/资源验证和机械展开。
 - Executor 负责移动、工具、战斗、菜单和原生交互。
-- Teacher 负责训练期“什么更好”，不复制执行器，也不长期代替 Student。
+- TeacherOracle 负责训练期“什么更好”和独立覆盖证明，不复制执行器，也不成为常驻在线主脑。
 
 ## 人类适配边界
 
