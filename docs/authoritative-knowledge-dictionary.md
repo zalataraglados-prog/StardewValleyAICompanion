@@ -703,5 +703,13 @@ other two. Three independently rebuilt three-transition rollout proofs use disti
 verified save-day keys land exactly once in train, validation, and test. The resulting corpus contains nine
 accepted rows and six real pairwise preferences, with three rows and one split key per partition, and is
 therefore `ready_goal_method_trainer_input`. A duplicate single-save source remains a blocked deduplication
-regression. This status does not authorize formal product training: a dedicated trainer for the explicit
-Teacher pairwise schema and the independent 19/19 Teacher-coverage gate are still required.
+regression.
+
+The dedicated `explicit_teacher_pairwise_portfolio_ranker.v1` trainer now consumes that corpus boundary. It does not
+trust the manifest's status: every proof/admission/dataset source and every cleaned/partition digest is reconstructed,
+and optimization pairs come only from the explicit Teacher pair list. Candidate-selected flags, learner scores and
+save/proposal identities do not participate in labels or features. Checkpoints bind all corpus digests, version pins,
+hyperparameters and optional initialization identity; the checkpoint ID is independently recomputed on load. The
+current three-save fixture yields 27 features and 2 verified pairs in each partition, with 1.0 fixture accuracy.
+This is a trainer-integrity result, not a coverage or generalization claim. Runtime ranking integration and the
+independent 19/19 Teacher-coverage gate remain required, and formal product training remains unauthorized.

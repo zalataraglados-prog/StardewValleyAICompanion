@@ -126,6 +126,9 @@ try
         case "build-acquisition-route-portfolio-supervision-corpus":
             BuildAcquisitionRoutePortfolioSupervisionCorpus(options);
             break;
+        case "train-acquisition-route-goal-method":
+            TrainAcquisitionRouteGoalMethod(options);
+            break;
         case "build-acquisition-route-portfolio-continuation-teacher-request":
             BuildAcquisitionRoutePortfolioContinuationTeacherRequest(options);
             break;
@@ -210,7 +213,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
     }
 }
 catch (Exception ex)
@@ -1049,6 +1052,32 @@ static void BuildAcquisitionRoutePortfolioSupervisionCorpus(
     Console.WriteLine(result.ManifestPath);
 }
 
+static void TrainAcquisitionRouteGoalMethod(Arguments options)
+{
+    var hyperparameters = new GoalMethodPairwiseHyperparameters
+    {
+        Epochs = options.Int("epochs", 200),
+        LearningRate = options.Double("learning-rate", 0.05),
+        L2Regularization = options.Double("l2", 0.001)
+    };
+    var result = new GoalMethodPairwiseTrainer().Train(
+        options.Required("corpus-manifest"),
+        options.Required("checkpoint"),
+        hyperparameters,
+        options.Optional("initialize-from-checkpoint"));
+    Console.WriteLine(JsonSerializer.Serialize(new
+    {
+        status = "ok",
+        checkpoint_path = result.CheckpointPath,
+        checkpoint_sha256 = result.CheckpointSha256,
+        checkpoint_id = result.Checkpoint.CheckpointId,
+        model_kind = result.Checkpoint.ModelKind,
+        training = result.Checkpoint.Training,
+        formal_product_training_authorized =
+            result.Checkpoint.FormalProductTrainingAuthorized
+    }, JsonDefaults.Options));
+}
+
 static AcquisitionRoutePortfolioVerifiedCheckpoint
     VerifiedContinuationCheckpoint(Arguments options)
 {
@@ -1530,6 +1559,18 @@ internal sealed class Arguments
             ? int.TryParse(value, out var parsed)
                 ? parsed
                 : throw new ArgumentException("--" + name + " must be an integer.")
+            : fallback;
+
+    public double Double(string name, double fallback) =>
+        values.TryGetValue(name, out var value)
+            ? double.TryParse(
+                value,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsed)
+                ? parsed
+                : throw new ArgumentException(
+                    "--" + name + " must be a number.")
             : fallback;
 
     public string? Optional(string name) =>

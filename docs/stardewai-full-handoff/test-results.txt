@@ -4397,3 +4397,9 @@ Scope boundary:
 - Duplicate-source fixture result: 2 source entries / 1 unique source dataset / 6 input rows / 3 accepted rows / 3 exact duplicates. All accepted rows remained in one deterministic save-day partition; cleaned and three partition JSONL files carry SHA-256, byte and row counts.
 - The corpus remains Teacher-evidence eligible but goal-method trainer blocked: each transition had one admitted portfolio, so pairwise preference count is exactly 0. Empty comparison signal was not replaced by a selected flag or fabricated negative.
 - Tampered source dataset rejection PASS. Formal product training remains unauthorized; multi-candidate strict-Pareto samples across train/validation/test and a dedicated goal-to-method trainer remain pending. No game was started.
+
+2026-09-22 explicit Teacher-pair goal-to-method trainer
+- GoalConditionedBootstrap Release build PASS with 0 warnings / 0 errors; complete current Stage 1 collection self-test PASS.
+- Three independently rebuilt save-day sources produced 9 accepted rows and 6 explicit Teacher pairs. Train, validation and test each contain 3 rows / 2 pairs and reach 1.0 fixture pair accuracy with 27 non-identity features.
+- The trainer re-verifies every proof/admission/dataset source and all corpus/partition digests. Blocked corpus, forged source digest, candidate-selected label claim and forged checkpoint ID negative checks PASS.
+- Core game-free PASS 81/81; Backend PASS 203/203. Runtime scorer integration and 19/19 Teacher coverage remain pending; formal product training remains unauthorized. No game was started.

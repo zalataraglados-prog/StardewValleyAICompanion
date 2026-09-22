@@ -1708,6 +1708,25 @@ Slice 7 remains assigned to the RTX 5070 node.
   gate is satisfied. The existing `StructuredPolicyTrainer.BuildPairs` must not consume it because that trainer derives
   labels from `candidate.Selected` rather than these explicit Teacher pairwise preferences.
 
+### 2026-09-22: dedicated explicit-pair goal-to-method trainer
+
+- `train-acquisition-route-goal-method` consumes only a ready
+  `acquisition_route_portfolio_supervision_corpus_manifest.v1`. It replays every source proof/admission/dataset chain,
+  recomputes cleaned and partition digests, and validates each explicit pair against the candidate denominator and
+  strict non-scalar cost dominance before optimization. Manifest readiness is necessary but is not trusted as proof.
+- `explicit_teacher_pairwise_portfolio_ranker.v1` builds pair differences only from
+  `teacher_preference.pairwise_preferences`. `candidate.Selected`, learner scores, `dominated_by`, save IDs and proposal
+  identities are excluded from the feature/label path. The old `StructuredPolicyTrainer.BuildPairs` is not reused.
+- The checkpoint binds corpus and partition hashes, version pins, hyperparameters and an optional initialization
+  checkpoint. Its ID is recomputed from those inputs on every save/load. Blocked corpora, forged source digests,
+  candidate-selected label claims and forged checkpoint IDs fail closed.
+- The bounded independent-save fixture produces 27 features and reaches 1.0 pair accuracy on each 3-row/2-pair
+  train, validation and test partition. This proves plumbing and boundary integrity only; it is not a generalization
+  claim. The checkpoint retains `formal_product_training_authorized=false`.
+- The next fixed slice is a read-only checkpoint scorer and controlled goal-to-method selection integration. It must
+  rank only candidates already admitted by the deterministic authoritative denominator and cannot bypass reservation,
+  execution binding, fresh native outcome or the independent 19/19 Teacher-coverage gate.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

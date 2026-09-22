@@ -217,11 +217,14 @@ public static partial class AcquisitionRoutePortfolioSupervisionCorpusBuilder
                 DatasetPath = datasetPath,
                 DatasetSha256 = CurrentTeacherFrontierSupport.HashFile(
                     datasetPath),
+                ProofManifestPath = proofManifestPath,
                 ProofManifestSha256 =
                     CurrentTeacherFrontierSupport.HashFile(
                         proofManifestPath),
+                ProofReceiptPath = proofReceiptPath,
                 ProofReceiptSha256 = CurrentTeacherFrontierSupport.HashFile(
                     proofReceiptPath),
+                RolloutAdmissionReceiptPath = admissionPath,
                 RolloutAdmissionReceiptSha256 =
                     CurrentTeacherFrontierSupport.HashFile(admissionPath),
                 RolloutId = dataset.RolloutId,

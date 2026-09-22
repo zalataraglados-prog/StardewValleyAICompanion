@@ -254,6 +254,10 @@ internal static partial class BootstrapSelfTest
                 readyManifest.BlockingReasons.Length == 0 &&
                 File.ReadLines(readyManifest.Cleaned.Path).Count() == 9,
             "Independent train/validation/test Teacher corpus did not cross the goal-method trainer-input gate.");
+        VerifyGoalMethodPairwiseTrainer(
+            readyCorpus.ManifestPath,
+            corpus.ManifestPath,
+            outputRoot);
 
         var tamperedCorpusRequestPath = Path.Combine(
             outputRoot,

@@ -124,11 +124,20 @@ public sealed class AcquisitionRoutePortfolioSupervisionCorpusSourceDigest
     [JsonPropertyName("dataset_sha256")]
     public string DatasetSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("proof_manifest_path")]
+    public string ProofManifestPath { get; set; } = string.Empty;
+
     [JsonPropertyName("proof_manifest_sha256")]
     public string ProofManifestSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("proof_receipt_path")]
+    public string ProofReceiptPath { get; set; } = string.Empty;
+
     [JsonPropertyName("proof_receipt_sha256")]
     public string ProofReceiptSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("rollout_admission_receipt_path")]
+    public string RolloutAdmissionReceiptPath { get; set; } = string.Empty;
 
     [JsonPropertyName("rollout_admission_receipt_sha256")]
     public string RolloutAdmissionReceiptSha256 { get; set; } = string.Empty;

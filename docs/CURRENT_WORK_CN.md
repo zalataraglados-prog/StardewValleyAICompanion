@@ -1305,3 +1305,12 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 钓鱼预测刷新器随之修正一个真实身份漏绑：派生预测快照现在从基准快照同步 save/player FieldEnvelope、state identity 以及 year/season/day/total_days/time，再重新计算 state hash。旧实现只同步 tick/time/total_days，会让其他存档的预测证据混入当前 rollout；该情况现在由既有身份门失败关闭。
 - 三个不可由调用方填写的 split key 分别确定落入 train、validation、test。正向 corpus 得到 `3 source / 3 unique / 9 accepted / 0 duplicate / 6 pairwise`，每个分区都是 `3 rows / 1 split key`，manifest 状态为 `ready_goal_method_trainer_input` 且 blocker 为空。单一 validation 来源重复输入的负例仍得到 `6 input / 3 accepted / 3 duplicate`，并继续因 train/test pairwise 为空而阻塞；篡改 source 仍被拒绝。
 - `goal_method_trainer_input_ready=true` 只证明这批类型化 Teacher corpus 满足专用训练器的最小分区与比较信号门，不等于正式产品训练。`formal_product_training_authorized=false` 保持不变，19/19 Teacher 覆盖仍是独立硬门。本切片没有启动游戏或训练；下一固定切片是实现只消费该 corpus schema 的 goal-to-method pairwise trainer，禁止复用依赖 `candidate.Selected` 的旧 `StructuredPolicyTrainer.BuildPairs`。
+
+## 2026-09-22 专用 goal-to-method 成对训练器
+
+- 新增 `train-acquisition-route-goal-method` 和 `explicit_teacher_pairwise_portfolio_ranker.v1`。训练器只从每行的 `teacher_preference.pairwise_preferences` 构造正负差分，明确禁止把 `candidate.Selected`、learner score、proposal/save 身份或 `dominated_by` 当作标签或特征；没有复用旧 `StructuredPolicyTrainer.BuildPairs`。
+- 训练入口不会只信 corpus manifest。它逐源重读 proof manifest、proof receipt、rollout admission 和 supervision dataset，重新执行来源证明，核对每个文件摘要、cleaned/partition 摘要、split key、行数、显式 pair 引用及严格成本支配；阻塞 corpus、伪造源摘要和伪造标签声明均失败关闭。
+- 检查点绑定 corpus 哈希、cleaned/train/validation/test 哈希、game/bridge/schema 版本、超参数和可选初始化检查点。`checkpoint_id` 可由这些输入重算，单独改写 ID 也会被拒绝；原子落盘不留下半成品。
+- 当前独立三存档夹具产出 27 个无身份泄漏特征；train/validation/test 各为 `3 rows / 2 explicit pairs / 1.0 pair accuracy`，检查点为 `goal-method-0bde5f09208dcdea25c31bc9`。这些数字仅证明专用训练链、分区和标签边界能工作，不是泛化能力结论。
+- 验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`、完整 Stage 1 collection self-test、Core game-free `81/81`、Backend `203/203`。本切片没有启动游戏，也没有写入正式训练数据。
+- `formal_product_training_authorized=false` 继续保持。运行时方法排序尚未消费该检查点，19/19 Teacher 覆盖门也尚未解除。下一固定切片是加入只读的检查点推理/评分边界，并在不绕过确定性候选准入、reservation 和原生执行回执的前提下接入 goal-to-method 选择；随后扩充权威覆盖语料，而不是用当前 9 行直接启动正式产品训练。
