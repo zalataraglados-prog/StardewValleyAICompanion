@@ -711,5 +711,8 @@ and optimization pairs come only from the explicit Teacher pair list. Candidate-
 save/proposal identities do not participate in labels or features. Checkpoints bind all corpus digests, version pins,
 hyperparameters and optional initialization identity; the checkpoint ID is independently recomputed on load. The
 current three-save fixture yields 27 features and 2 verified pairs in each partition, with 1.0 fixture accuracy.
-This is a trainer-integrity result, not a coverage or generalization claim. Runtime ranking integration and the
-independent 19/19 Teacher-coverage gate remain required, and formal product training remains unauthorized.
+This is a trainer-integrity result, not a coverage or generalization claim. A read-only scorer now re-verifies the
+checkpoint-bound corpus and ranks only its already admitted candidates through the same feature encoder; the current
+three-candidate fixture agrees with the Teacher at rank one. Its output explicitly forbids portfolio commit and formal
+product training. Fresh-state denominator reconstruction, gated incomparable-frontier selection and the independent
+19/19 Teacher-coverage gate remain required.

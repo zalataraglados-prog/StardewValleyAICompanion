@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed partial class GoalMethodPairwiseTrainer
 {
-    private static VerifiedCorpus VerifyCorpus(string manifestPath)
+    internal static VerifiedCorpus VerifyCorpus(string manifestPath)
     {
         var manifest = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioSupervisionCorpusManifest>(
@@ -423,7 +423,7 @@ public sealed partial class GoalMethodPairwiseTrainer
         AcquisitionRoutePortfolioSupervisionCorpusSourceDigest Digest,
         AcquisitionRoutePortfolioSupervisionDataset Dataset);
 
-    private sealed record VerifiedCorpus(
+    internal sealed record VerifiedCorpus(
         AcquisitionRoutePortfolioSupervisionCorpusManifest Manifest,
         PolicyDatasetPartitionDigest TrainDigest,
         PolicyDatasetPartitionDigest ValidationDigest,

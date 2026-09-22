@@ -4403,3 +4403,8 @@ Scope boundary:
 - Three independently rebuilt save-day sources produced 9 accepted rows and 6 explicit Teacher pairs. Train, validation and test each contain 3 rows / 2 pairs and reach 1.0 fixture pair accuracy with 27 non-identity features.
 - The trainer re-verifies every proof/admission/dataset source and all corpus/partition digests. Blocked corpus, forged source digest, candidate-selected label claim and forged checkpoint ID negative checks PASS.
 - Core game-free PASS 81/81; Backend PASS 203/203. Runtime scorer integration and 19/19 Teacher coverage remain pending; formal product training remains unauthorized. No game was started.
+
+2026-09-22 read-only goal-to-method checkpoint scoring
+- `score-acquisition-route-goal-method-row` PASS after re-verifying the checkpoint-bound corpus, all source proofs/admissions/datasets, partition digests and the exact requested row.
+- The three-candidate comparison row ranked the Teacher-selected proposal first. The artifact retained the complete ranking and Pareto flags while reporting `portfolio_commit_authorized=false` and `formal_product_training_authorized=false`.
+- GoalConditionedBootstrap Release build PASS with 0 warnings / 0 errors; complete current Stage 1 collection self-test PASS; Core game-free PASS 81/81; Backend PASS 203/203. No game or formal training run was started.

@@ -91,9 +91,17 @@ internal static class GoalMethodPairwiseFeatureEncoder
     public static double[] Encode(
         AcquisitionRoutePortfolioSupervisionCorpusRow row,
         AcquisitionRoutePortfolioTeacherCandidateEvaluation candidate,
+        GoalMethodPairwiseLinearModel model) => Encode(
+        Context(row),
+        candidate,
+        model);
+
+    public static double[] Encode(
+        GoalMethodPairwiseFeatureContext context,
+        AcquisitionRoutePortfolioTeacherCandidateEvaluation candidate,
         GoalMethodPairwiseLinearModel model)
     {
-        var raw = Raw(row, candidate);
+        var raw = Raw(context, candidate);
         var encoded = new double[model.FeatureNames.Length];
         for (var index = 0; index < encoded.Length; index++)
         {
@@ -119,11 +127,34 @@ internal static class GoalMethodPairwiseFeatureEncoder
 
     private static Dictionary<string, double> Raw(
         AcquisitionRoutePortfolioSupervisionCorpusRow row,
-        AcquisitionRoutePortfolioTeacherCandidateEvaluation candidate)
+        AcquisitionRoutePortfolioTeacherCandidateEvaluation candidate) =>
+        Raw(Context(row), candidate);
+
+    private static GoalMethodPairwiseFeatureContext Context(
+        AcquisitionRoutePortfolioSupervisionCorpusRow row)
     {
         var payload = row.SupervisionRow.Payload;
-        var context = payload.DecisionContext;
         var teacher = payload.TeacherPreference;
+        var decision = payload.DecisionContext;
+        return new GoalMethodPairwiseFeatureContext(
+            row.GoalId,
+            decision.Year,
+            decision.Season,
+            decision.Day,
+            decision.Time,
+            decision.TotalDay,
+            row.SupervisionRow.TransitionIndex,
+            payload.DecisionLedgerRevision,
+            teacher.CandidateDenominatorCount,
+            teacher.AdmittedCandidateCount,
+            teacher.ParetoFrontierCount,
+            teacher.SelectionPolicyId);
+    }
+
+    private static Dictionary<string, double> Raw(
+        GoalMethodPairwiseFeatureContext context,
+        AcquisitionRoutePortfolioTeacherCandidateEvaluation candidate)
+    {
         var cost = candidate.AggregateCostVector ??
             throw new InvalidDataException(
                 "Admitted goal-method candidate has no cost vector.");
@@ -134,19 +165,19 @@ internal static class GoalMethodPairwiseFeatureEncoder
             ["state.numeric:time"] = context.Time,
             ["state.numeric:total_day"] = context.TotalDay,
             ["state.numeric:transition_index"] =
-                row.SupervisionRow.TransitionIndex,
+                context.TransitionIndex,
             ["state.numeric:ledger_revision"] =
-                payload.DecisionLedgerRevision,
+                context.LedgerRevision,
             ["state.numeric:candidate_denominator_count"] =
-                teacher.CandidateDenominatorCount,
+                context.CandidateDenominatorCount,
             ["state.numeric:admitted_candidate_count"] =
-                teacher.AdmittedCandidateCount,
+                context.AdmittedCandidateCount,
             ["state.numeric:pareto_frontier_count"] =
-                teacher.ParetoFrontierCount,
-            ["state.categorical:goal=" + Safe(row.GoalId)] = 1,
+                context.ParetoFrontierCount,
+            ["state.categorical:goal=" + Safe(context.GoalId)] = 1,
             ["state.categorical:season=" + Safe(context.Season)] = 1,
             ["state.categorical:selection_policy=" +
-                Safe(teacher.SelectionPolicyId)] = 1,
+                Safe(context.SelectionPolicyId)] = 1,
             ["candidate.numeric:route_count"] =
                 candidate.SelectedRouteOccurrenceIds.Length,
             ["candidate.numeric:elapsed_game_minutes"] =
@@ -162,7 +193,7 @@ internal static class GoalMethodPairwiseFeatureEncoder
         foreach (var routeId in candidate.SelectedRouteOccurrenceIds)
         {
             values["candidate.route=" + Safe(routeId)] = 1;
-            values["interaction.goal=" + Safe(row.GoalId) +
+            values["interaction.goal=" + Safe(context.GoalId) +
                 "|route=" + Safe(routeId)] = 1;
         }
         foreach (var material in cost.MaterialCosts)
@@ -191,3 +222,17 @@ internal static class GoalMethodPairwiseFeatureEncoder
                 .Replace("\r", "\\r", StringComparison.Ordinal)
                 .Replace("\n", "\\n", StringComparison.Ordinal);
 }
+
+internal sealed record GoalMethodPairwiseFeatureContext(
+    string GoalId,
+    int Year,
+    string Season,
+    int Day,
+    int Time,
+    int TotalDay,
+    int TransitionIndex,
+    int LedgerRevision,
+    long CandidateDenominatorCount,
+    int AdmittedCandidateCount,
+    int ParetoFrontierCount,
+    string SelectionPolicyId);

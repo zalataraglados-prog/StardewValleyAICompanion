@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -54,6 +55,41 @@ internal static partial class BootstrapSelfTest
             checkpointPath);
         Require(loaded.CheckpointId == checkpoint.CheckpointId,
             "Saved goal-method checkpoint did not round-trip.");
+
+        var readyManifest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioSupervisionCorpusManifest>(
+            readyCorpusManifestPath,
+            "Goal-method scoring self-test corpus");
+        var trainPath = readyManifest.Partitions.Single(partition =>
+            partition.Partition ==
+                PolicyDatasetPartitions.Train).Path;
+        var comparisonRow = File.ReadLines(trainPath)
+            .Select(line => JsonSerializer.Deserialize<
+                AcquisitionRoutePortfolioSupervisionCorpusRow>(
+                line,
+                JsonDefaults.Compact)!)
+            .Single(row => row.SupervisionRow.Payload.TeacherPreference
+                .PairwisePreferences.Length == 2);
+        var scoring = new GoalMethodPairwiseRanker()
+            .RankVerifiedCorpusRow(
+                checkpointPath,
+                readyCorpusManifestPath,
+                comparisonRow.SupervisionRow.RowId);
+        Require(scoring.Status ==
+                    "ready_verified_goal_method_shadow_ranking" &&
+                scoring.CheckpointId == checkpoint.CheckpointId &&
+                scoring.CandidateDenominatorVerified &&
+                scoring.CandidateScores.Length == 3 &&
+                scoring.CandidateScores.Count(candidate =>
+                    candidate.TeacherSelected) == 1 &&
+                scoring.CandidateScores.Single(candidate =>
+                    candidate.TeacherSelected).Rank == 1 &&
+                scoring.ModelTopProposalId ==
+                    scoring.TeacherSelectedProposalId &&
+                scoring.ModelAgreesWithTeacher &&
+                !scoring.PortfolioCommitAuthorized &&
+                !scoring.FormalProductTrainingAuthorized,
+            "Read-only goal-method checkpoint scoring drifted.");
 
         var blockedCorpusRejected = false;
         try

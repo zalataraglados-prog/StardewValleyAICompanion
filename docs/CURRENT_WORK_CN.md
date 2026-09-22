@@ -1314,3 +1314,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 当前独立三存档夹具产出 27 个无身份泄漏特征；train/validation/test 各为 `3 rows / 2 explicit pairs / 1.0 pair accuracy`，检查点为 `goal-method-0bde5f09208dcdea25c31bc9`。这些数字仅证明专用训练链、分区和标签边界能工作，不是泛化能力结论。
 - 验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`、完整 Stage 1 collection self-test、Core game-free `81/81`、Backend `203/203`。本切片没有启动游戏，也没有写入正式训练数据。
 - `formal_product_training_authorized=false` 继续保持。运行时方法排序尚未消费该检查点，19/19 Teacher 覆盖门也尚未解除。下一固定切片是加入只读的检查点推理/评分边界，并在不绕过确定性候选准入、reservation 和原生执行回执的前提下接入 goal-to-method 选择；随后扩充权威覆盖语料，而不是用当前 9 行直接启动正式产品训练。
+
+## 2026-09-22 goal-to-method 只读影子评分
+
+- 新增 `score-acquisition-route-goal-method-row` 与 `acquisition_route_goal_method_scoring_result.v1`。评分前会重新验证 checkpoint 绑定的完整 corpus、来源 proof/admission/dataset、分区摘要和目标 row；任意换 corpus、换版本或换 row 身份都不能借用旧检查点。
+- 评分器只遍历该权威 row 中 `admission_ready=true` 且具有完整非标量成本向量的候选，不接收调用方候选列表。离线训练和只读推理共用同一个特征上下文与编码器，避免字段含义分叉。
+- 三候选比较样本中，模型第一名与 Teacher 选择一致，Teacher 候选 rank 为 1。输出同时保留全排名、Pareto 前沿标记和一致性结论，但固定 `selection_mode=read_only_teacher_comparison`、`portfolio_commit_authorized=false`、`formal_product_training_authorized=false`。
+- 验证通过：独立评分 CLI、GoalConditionedBootstrap Release `0 warning / 0 error`、完整 Stage 1 collection self-test、Core game-free `81/81`、Backend `203/203`。未启动游戏或正式训练。
+- 这一步证明检查点能被确定性重放和推理，不是实时策略接管。下一固定切片是对当前 fresh snapshot 重新构造完整候选分母，在唯一严格 Pareto 时继续服从 Teacher，在不可比前沿时只生成受门控的模型影子选择；19/19 覆盖门解除前仍不得接入 commit/dispatch。

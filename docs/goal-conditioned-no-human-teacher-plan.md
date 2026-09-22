@@ -1704,8 +1704,8 @@ Slice 7 remains assigned to the RTX 5070 node.
   pairwise preferences, with three rows and one split key in each partition, so the corpus now reaches
   `ready_goal_method_trainer_input`. Forecast refresh also inherits the complete save/player/date identity from its base
   snapshot before rehashing; cross-save forecast evidence therefore cannot leak into a rollout. Formal product training
-  remains false until a dedicated goal-to-method trainer consumes this schema and the separate 19/19 Teacher-coverage
-  gate is satisfied. The existing `StructuredPolicyTrainer.BuildPairs` must not consume it because that trainer derives
+  remains false until the dedicated trainer/scorer path is integrated under the separate 19/19 Teacher-coverage gate.
+  The existing `StructuredPolicyTrainer.BuildPairs` must not consume it because that trainer derives
   labels from `candidate.Selected` rather than these explicit Teacher pairwise preferences.
 
 ### 2026-09-22: dedicated explicit-pair goal-to-method trainer
@@ -1726,6 +1726,21 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The next fixed slice is a read-only checkpoint scorer and controlled goal-to-method selection integration. It must
   rank only candidates already admitted by the deterministic authoritative denominator and cannot bypass reservation,
   execution binding, fresh native outcome or the independent 19/19 Teacher-coverage gate.
+
+### 2026-09-22: read-only checkpoint scoring boundary
+
+- `score-acquisition-route-goal-method-row` reloads a checkpoint, re-verifies its bound corpus and every source proof,
+  resolves exactly one verified row, and scores only `admission_ready` candidates with complete cost vectors. It does
+  not accept a caller-authored candidate list.
+- Training and inference now share one typed feature context and encoder. The scoring artifact records the full ranked
+  denominator, deterministic Pareto-frontier membership, model top proposal and Teacher-selected proposal. On the
+  three-candidate fixture the Teacher proposal ranks first.
+- This boundary is intentionally observational: `selection_mode=read_only_teacher_comparison`,
+  `portfolio_commit_authorized=false`, and `formal_product_training_authorized=false`. It cannot emit a proposal or
+  enter the existing commit/dispatch chain.
+- The next fixed slice rebuilds the same complete denominator from a fresh live snapshot. A unique strict-Pareto
+  Teacher remains authoritative; an incomparable frontier may receive only a gated shadow model choice until the
+  independent 19/19 coverage gate authorizes a later product-selection transition.
 
 ## Review questions
 
