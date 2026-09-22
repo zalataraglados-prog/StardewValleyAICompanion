@@ -45,6 +45,11 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var machinesPath = ResolveExport(rawRoot, manifest, "Data/Machines");
         var fishPondsPath = ResolveExport(rawRoot, manifest, "Data/FishPondData");
         var monstersPath = ResolveExport(rawRoot, manifest, "Data/Monsters");
+        var bundlesPath = ResolveExport(rawRoot, manifest, "Data/Bundles");
+        var randomBundlesPath = ResolveExport(
+            rawRoot,
+            manifest,
+            "Data/RandomBundles");
         var objectSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Object.cs");
         var utilitySourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Utility.cs");
         var museumSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "LibraryMuseum.cs");
@@ -78,6 +83,21 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             "GameData",
             "Locations",
             "SpawnFishData.cs");
+        var bundleGeneratorSourcePath = Path.Combine(
+            decompileFullPath,
+            "StardewValley",
+            "StardewValley",
+            "BundleGenerator.cs");
+        var game1SourcePath = Path.Combine(
+            decompileFullPath,
+            "StardewValley",
+            "StardewValley",
+            "Game1.cs");
+        var saveGameSourcePath = Path.Combine(
+            decompileFullPath,
+            "StardewValley",
+            "StardewValley",
+            "SaveGame.cs");
         var shopBuilderSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Internal", "ShopBuilder.cs");
         var shopMenuSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Menus", "ShopMenu.cs");
         var accessConstraintIndexPath = Path.Combine(
@@ -124,6 +144,11 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             islandSouthEastFishingSourcePath,
             railroadFishingSourcePath,
             spawnFishDataSourcePath);
+        GuardCommunityCenterDenominatorSources(
+            bundleGeneratorSourcePath,
+            game1SourcePath,
+            saveGameSourcePath,
+            utilitySourcePath);
 
         using var objectsDocument = JsonDocument.Parse(File.ReadAllText(objectsPath));
         using var fishDocument = JsonDocument.Parse(File.ReadAllText(fishPath));
@@ -134,6 +159,9 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         using var machinesDocument = JsonDocument.Parse(File.ReadAllText(machinesPath));
         using var fishPondsDocument = JsonDocument.Parse(File.ReadAllText(fishPondsPath));
         using var monstersDocument = JsonDocument.Parse(File.ReadAllText(monstersPath));
+        using var bundlesDocument = JsonDocument.Parse(File.ReadAllText(bundlesPath));
+        using var randomBundlesDocument = JsonDocument.Parse(
+            File.ReadAllText(randomBundlesPath));
         using var goalDocument = JsonDocument.Parse(File.ReadAllText(goalFullPath));
         using var graphDocument = JsonDocument.Parse(File.ReadAllText(graphFullPath));
 
@@ -157,6 +185,11 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             machines,
             fishPonds,
             monsters);
+        var communityCenterDenominatorCatalog =
+            BuildCommunityCenterDenominatorCatalog(
+                bundlesDocument.RootElement.GetProperty("payload"),
+                randomBundlesDocument.RootElement.GetProperty("payload"),
+                objects);
 
         var requirementSets = new[]
         {
@@ -193,6 +226,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("runtime_data_machines", machinesPath, "runtime DataLoader.Machines export"),
                 Evidence("runtime_data_fish_ponds", fishPondsPath, "runtime DataLoader.FishPondData export"),
                 Evidence("runtime_data_monsters", monstersPath, "runtime DataLoader.Monsters export"),
+                Evidence("runtime_data_bundles", bundlesPath, "runtime DataLoader.Bundles export"),
+                Evidence("runtime_data_random_bundles", randomBundlesPath, "runtime DataLoader.RandomBundles export"),
                 Evidence("goal_dependency_index", goalFullPath, "compiled native bundle and Grandpa rules"),
                 Evidence("authoritative_dependency_graph", graphFullPath, "compiled runtime acquisition identity edges"),
                 Evidence("access_constraint_index", accessConstraintIndexPath, "compiled runtime shops, native conditions, map endpoints, door windows, and NPC schedules"),
@@ -223,9 +258,14 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("native_island_fishing_override_rule", islandFishingSourcePath, "decompiled IslandLocation.getFish walnut branch"),
                 Evidence("native_island_southeast_fishing_override_rule", islandSouthEastFishingSourcePath, "decompiled IslandSouthEast.getFish walnut branch"),
                 Evidence("native_railroad_fishing_override_rule", railroadFishingSourcePath, "decompiled Railroad.getFish necklace branch"),
-                Evidence("native_fish_spawn_chance_rule", spawnFishDataSourcePath, "decompiled SpawnFishData.GetChance inputs and formula")
+                Evidence("native_fish_spawn_chance_rule", spawnFishDataSourcePath, "decompiled SpawnFishData.GetChance inputs and formula"),
+                Evidence("native_bundle_generator_rule", bundleGeneratorSourcePath, "decompiled standard and remixed BundleGenerator selection and item parsing"),
+                Evidence("native_bundle_selection_rule", game1SourcePath, "decompiled Game1.GenerateBundles standard/remixed dispatch"),
+                Evidence("native_bundle_persistence_rule", saveGameSourcePath, "decompiled active save BundleData restoration"),
+                Evidence("native_bundle_item_identity_rule", utilitySourcePath, "decompiled Utility.fuzzyItemSearch first-name binding and Stone override")
             },
             RequirementSets = requirementSets,
+            CommunityCenterDenominatorCatalog = communityCenterDenominatorCatalog,
             UnresolvedAcquisitionRequirementIds = unresolved
         };
     }

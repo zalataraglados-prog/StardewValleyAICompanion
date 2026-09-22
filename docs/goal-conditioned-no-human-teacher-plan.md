@@ -1767,6 +1767,36 @@ Slice 7 remains assigned to the RTX 5070 node.
   collection methods, followed by additional typed Teacher-source adapters and split-complete evidence for the other
   Grandpa methods until the independent count reaches 19/19.
 
+### 2026-09-23: live standard/remixed Community Center denominator binding
+
+- The earlier collection frontier assumed the fixed 30-bundle standard layout. That assumption was insufficient for
+  formal training because the active save persists its generated `NetWorldState.BundleData`; remixed saves can keep the
+  same 30-key topology while changing bundle identity, required slots and ingredients. The post-Community-Center
+  `Abandoned Joja Mart/36` Missing Bundle is a separate supplemental row and must never enlarge the Community Center
+  completion denominator.
+- The authoritative requirement inventory now compiles `Data/Bundles` and `Data/RandomBundles` together with guarded
+  decompiled `BundleGenerator.Generate`, `ParseRandomTags`, `ParseItemString`, `Game1.GenerateBundles`,
+  `SaveGame.LoadDataToLocations` and `Utility.fuzzyItemSearch` behavior. The locked catalog contains all 30 standard
+  active templates, the one supplemental template, five randomized areas, 26 replaced keys, 43 selectable remixed
+  templates and the four retained Vault keys. Item-name resolution preserves the native first-match rule and explicit
+  `(O)390` Stone override instead of guessing through duplicate `Data/Objects` names.
+- `build-current-community-center-denominator` validates every exact live row, aggregate count, key/area/ID identity,
+  ingredient order, quantity, quality and required-slot completion. A standard save must equal all locked standard
+  templates. A remixed save must be reproducible as one whole-area native bundle-set/pool assignment, honor fixed-index
+  preference, avoid pool-template reuse and preserve random ingredient removal as an ordered subsequence. Unknown,
+  custom, missing and tampered rows fail closed. Output separates 30 active rows from supplemental rows and hashes only
+  the normalized active denominator identity.
+- Focused regression admits the real standard snapshot after refreshing its stale pre-fix aggregate, synthesizes and
+  admits a valid native remixed realization, and rejects a one-stack ingredient tamper. `Run-Regression.ps1` now locks
+  catalog counts and runs this matrix. The checked-in bridge source already computes `complete_bundle_count` from exact
+  projected row completion; the archived snapshot's 21-versus-25 mismatch predates that fix and is not accepted as live
+  evidence without fixture normalization.
+- This closes active standard/remixed denominator identification, not the whole `complete_community_center` method.
+  Formal product training remains false. Remaining blockers are the Junimo-text/unlock event and receipt chain,
+  remixed dynamic requirement-route lowering through every target-date axis, and room reward/mail/final ceremony
+  settlement. The next slice must consume this bound denominator when constructing the dynamic collection frontier;
+  it must not retain the old standard-only alternatives for a remixed save.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

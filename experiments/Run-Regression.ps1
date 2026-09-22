@@ -9,7 +9,8 @@ param(
     [string]$Legacy = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\canonical-state\datasets\policy-decision-trajectories.jsonl',
     [string]$SocialSnapshot = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-social-future-evidence-smoke\runtime-social-future-evidence-smoke-20260906-053142\social-future-snapshot.json',
     [string]$RouteTimingCalibration = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json',
-    [string]$GoalMethodCorpusManifest = ''
+    [string]$GoalMethodCorpusManifest = '',
+    [string]$CurrentSnapshot = 'I:\StardewAI-KnowledgeArtifacts\game-1.6.15\snapshots\current-live-full-snapshot.json'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -85,6 +86,31 @@ if ($requirementSets['full_shipment'].route_covered_group_count -ne 154 -or
     $requirementSets['community_center_standard'].route_covered_group_count -ne 30 -or
     -not [bool]$requirementInventory.acquisition_routes_complete) {
     throw 'Authoritative acquisition route coverage regression failed.'
+}
+$communityCenterCatalog = $requirementInventory.community_center_denominator_catalog
+if ($communityCenterCatalog.status -ne 'complete_standard_and_remixed_catalog' -or
+    -not [bool]$communityCenterCatalog.standard_supported -or
+    -not [bool]$communityCenterCatalog.remixed_supported -or
+    -not [bool]$communityCenterCatalog.active_key_topology_complete -or
+    [int]$communityCenterCatalog.standard_active_bundle_count -ne 30 -or
+    [int]$communityCenterCatalog.supplemental_bundle_count -ne 1 -or
+    [int]$communityCenterCatalog.remixed_area_count -ne 5 -or
+    [int]$communityCenterCatalog.remixed_key_count -ne 26 -or
+    [int]$communityCenterCatalog.remixed_template_count -ne 43 -or
+    [int]$communityCenterCatalog.retained_standard_key_count -ne 4 -or
+    @($communityCenterCatalog.standard_active_bundle_keys).Count -ne 30 -or
+    @($communityCenterCatalog.standard_active_templates).Count -ne 30 -or
+    @($communityCenterCatalog.supplemental_bundle_keys).Count -ne 1 -or
+    @($communityCenterCatalog.supplemental_templates).Count -ne 1) {
+    throw 'Community Center standard/remixed denominator catalog is incomplete.'
+}
+dotnet run --project $bootstrap --no-build -- `
+    self-test-current-community-center-denominator `
+    --requirement-inventory $requirementInventoryPath `
+    --snapshot $CurrentSnapshot `
+    --output-root $output
+if ($LASTEXITCODE -ne 0) {
+    throw 'Current Community Center denominator regression failed.'
 }
 $masterAngler = @($requirementInventory.requirement_sets |
     Where-Object requirement_set_id -eq 'master_angler')

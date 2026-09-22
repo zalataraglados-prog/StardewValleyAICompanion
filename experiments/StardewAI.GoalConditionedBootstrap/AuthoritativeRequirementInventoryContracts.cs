@@ -28,6 +28,9 @@ public sealed class AuthoritativeRequirementInventoryReport
     [JsonPropertyName("requirement_sets")]
     public GoalRequirementSet[] RequirementSets { get; set; } = Array.Empty<GoalRequirementSet>();
 
+    [JsonPropertyName("community_center_denominator_catalog")]
+    public CommunityCenterDenominatorCatalog CommunityCenterDenominatorCatalog { get; set; } = new();
+
     [JsonPropertyName("unresolved_acquisition_requirement_ids")]
     public string[] UnresolvedAcquisitionRequirementIds { get; set; } = Array.Empty<string>();
 
@@ -35,6 +38,154 @@ public sealed class AuthoritativeRequirementInventoryReport
     public string AdmissionPolicy { get; set; } =
         "Denominators are compiled from exact-version runtime exports and guarded decompiled native methods. Missing acquisition routes fail closed and cannot supervise the model.";
 }
+
+public sealed class CommunityCenterDenominatorCatalog
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "community_center_denominator_catalog.v1";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("standard_active_bundle_count")]
+    public int StandardActiveBundleCount { get; set; }
+
+    [JsonPropertyName("supplemental_bundle_count")]
+    public int SupplementalBundleCount { get; set; }
+
+    [JsonPropertyName("remixed_area_count")]
+    public int RemixedAreaCount { get; set; }
+
+    [JsonPropertyName("remixed_key_count")]
+    public int RemixedKeyCount { get; set; }
+
+    [JsonPropertyName("remixed_template_count")]
+    public int RemixedTemplateCount { get; set; }
+
+    [JsonPropertyName("retained_standard_key_count")]
+    public int RetainedStandardKeyCount { get; set; }
+
+    [JsonPropertyName("standard_supported")]
+    public bool StandardSupported { get; set; }
+
+    [JsonPropertyName("remixed_supported")]
+    public bool RemixedSupported { get; set; }
+
+    [JsonPropertyName("active_key_topology_complete")]
+    public bool ActiveKeyTopologyComplete { get; set; }
+
+    [JsonPropertyName("live_denominator_authority")]
+    public string LiveDenominatorAuthority { get; set; } =
+        "NetWorldState.BundleData persisted by the active save";
+
+    [JsonPropertyName("standard_active_bundle_keys")]
+    public string[] StandardActiveBundleKeys { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("supplemental_bundle_keys")]
+    public string[] SupplementalBundleKeys { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("retained_standard_bundle_keys")]
+    public string[] RetainedStandardBundleKeys { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("standard_active_templates")]
+    public CommunityCenterNativeBundleTemplate[] StandardActiveTemplates { get; set; } =
+        Array.Empty<CommunityCenterNativeBundleTemplate>();
+
+    [JsonPropertyName("supplemental_templates")]
+    public CommunityCenterNativeBundleTemplate[] SupplementalTemplates { get; set; } =
+        Array.Empty<CommunityCenterNativeBundleTemplate>();
+
+    [JsonPropertyName("supplemental_area_names")]
+    public string[] SupplementalAreaNames { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("remixed_areas")]
+    public CommunityCenterRemixedAreaCatalog[] RemixedAreas { get; set; } =
+        Array.Empty<CommunityCenterRemixedAreaCatalog>();
+
+    [JsonPropertyName("admission_policy")]
+    public string AdmissionPolicy { get; set; } =
+        "A live standard denominator must exactly match the locked standard requirement set. A live remixed denominator must preserve the complete 30-key topology and match one whole-area native BundleGenerator configuration without reusing a pool template. The Abandoned Joja Mart bundle is supplemental and never contributes to Community Center completion.";
+}
+
+public sealed class CommunityCenterRemixedAreaCatalog
+{
+    [JsonPropertyName("area_name")]
+    public string AreaName { get; set; } = string.Empty;
+
+    [JsonPropertyName("key_ids")]
+    public int[] KeyIds { get; set; } = Array.Empty<int>();
+
+    [JsonPropertyName("bundle_sets")]
+    public CommunityCenterRemixedBundleSet[] BundleSets { get; set; } =
+        Array.Empty<CommunityCenterRemixedBundleSet>();
+
+    [JsonPropertyName("pool_templates")]
+    public CommunityCenterBundleTemplate[] PoolTemplates { get; set; } =
+        Array.Empty<CommunityCenterBundleTemplate>();
+}
+
+public sealed class CommunityCenterNativeBundleTemplate
+{
+    [JsonPropertyName("bundle_data_key")]
+    public string BundleDataKey { get; set; } = string.Empty;
+
+    [JsonPropertyName("internal_name")]
+    public string InternalName { get; set; } = string.Empty;
+
+    [JsonPropertyName("required_item_count")]
+    public int RequiredItemCount { get; set; }
+
+    [JsonPropertyName("ingredients")]
+    public CommunityCenterTemplateIngredient[] Ingredients { get; set; } =
+        Array.Empty<CommunityCenterTemplateIngredient>();
+}
+
+public sealed class CommunityCenterRemixedBundleSet
+{
+    [JsonPropertyName("set_id")]
+    public string SetId { get; set; } = string.Empty;
+
+    [JsonPropertyName("templates")]
+    public CommunityCenterBundleTemplate[] Templates { get; set; } =
+        Array.Empty<CommunityCenterBundleTemplate>();
+}
+
+public sealed class CommunityCenterBundleTemplate
+{
+    [JsonPropertyName("template_id")]
+    public string TemplateId { get; set; } = string.Empty;
+
+    [JsonPropertyName("internal_name")]
+    public string InternalName { get; set; } = string.Empty;
+
+    [JsonPropertyName("index")]
+    public int Index { get; set; }
+
+    [JsonPropertyName("pick_count")]
+    public int PickCount { get; set; }
+
+    [JsonPropertyName("required_item_count")]
+    public int RequiredItemCount { get; set; }
+
+    [JsonPropertyName("ingredient_slots")]
+    public CommunityCenterTemplateIngredientSlot[] IngredientSlots { get; set; } =
+        Array.Empty<CommunityCenterTemplateIngredientSlot>();
+}
+
+public sealed class CommunityCenterTemplateIngredientSlot
+{
+    [JsonPropertyName("options")]
+    public CommunityCenterTemplateIngredient[] Options { get; set; } =
+        Array.Empty<CommunityCenterTemplateIngredient>();
+}
+
+public sealed record CommunityCenterTemplateIngredient(
+    [property: JsonPropertyName("item_id_or_category")] string ItemIdOrCategory,
+    [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("match_kind")] string MatchKind,
+    [property: JsonPropertyName("amount")] int Amount,
+    [property: JsonPropertyName("minimum_quality")] int MinimumQuality);
 
 public sealed record RequirementSourceEvidence(
     [property: JsonPropertyName("source_id")] string SourceId,

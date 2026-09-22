@@ -250,6 +250,17 @@ candidates remain counterfactual alternatives rather than negative examples. Thi
 for the selected action. Future scheduling and the remaining long-horizon 19-criterion proofs also still
 block formal training.
 
+The requirement report also contains a version-locked Community Center denominator catalog built
+from runtime `Data/Bundles`, `Data/RandomBundles`, and guarded decompiled generation/persistence
+rules. `build-current-community-center-denominator --requirement-inventory <path> --snapshot
+<path> --output <path>` binds an active save to either the exact 30-bundle standard layout or a
+whole-area native remixed realization. It reports the Missing Bundle separately, rejects unknown or
+tampered bundle rows, and never counts the supplemental row toward Community Center completion.
+`self-test-current-community-center-denominator` covers standard, remixed, and tamper-rejection
+paths; it is part of `Run-Regression.ps1`. This denominator binder does not yet make remixed dynamic
+requirements executable through the target-date lowering chain, so formal product training remains
+disabled.
+
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted
 `--preference` artifact that was actually executed and all five source artifacts, recomputes the Teacher
