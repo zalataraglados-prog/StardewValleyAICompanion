@@ -6,14 +6,14 @@
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
       "normalization": "utf8_lf",
-      "bytes": 120830,
-      "sha256": "c2eecf2f01a6c31cd86a96990878aac189fed99725da8772ebd0c2678bb81922"
+      "bytes": 120878,
+      "sha256": "a1de07b5acc96abacc84e007a50e8322e51b82ac23e537b39239f3eec70ea9b4"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
       "normalization": "utf8_lf",
-      "bytes": 219326,
-      "sha256": "6ea717096118f4eaad4e73ecc9190eda01fde6936c5cd54d5327a72a2c2783de"
+      "bytes": 219350,
+      "sha256": "782c933b00464bfc4b8e89128c0f12f3b0a085973a5e4137f5b641739354b8c4"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
@@ -49,7 +49,7 @@
     "primitive_option_count": 142,
     "training_eligible_count": 66,
     "runtime_verified_count": 155,
-    "bytes": 838860,
-    "sha256": "beadc44922316b4387893364d96771fde511efb8266e67519766eba6824ff133"
+    "bytes": 838895,
+    "sha256": "68ed1e3ad35da5fd0adc41da9206abfe9ae5c8d5760abc70fe6b916505850b19"
   }
 }
