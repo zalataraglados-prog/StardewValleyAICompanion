@@ -29,6 +29,37 @@ public sealed class AcquisitionRoutePortfolioInputs
     public string ProposalPath { get; init; } = string.Empty;
 }
 
+internal static class AcquisitionRoutePortfolioInputAdapter
+{
+    public static AcquisitionRoutePortfolioInputs FromExecutionBinding(
+        AcquisitionRouteExecutionBindingInputs value) => new()
+    {
+        RequirementInventoryPath = value.RequirementInventoryPath,
+        AcquisitionLoweringPath = value.AcquisitionLoweringPath,
+        MasterAnglerWindowsPath = value.MasterAnglerWindowsPath,
+        CalendarResolutionPath = value.CalendarResolutionPath,
+        TargetDateCalendarPath = value.TargetDateCalendarPath,
+        TargetDateUnlockPath = value.TargetDateUnlockPath,
+        TargetDateFestivalPath = value.TargetDateFestivalPath,
+        TargetDateLocationPath = value.TargetDateLocationPath,
+        TargetDateFacilityPath = value.TargetDateFacilityPath,
+        TargetDateResourcePath = value.TargetDateResourcePath,
+        TargetDateCurrencyPath = value.TargetDateCurrencyPath,
+        TargetDateReservationPath = value.TargetDateReservationPath,
+        TargetDateProcessingPath = value.TargetDateProcessingPath,
+        TargetDateFishingProbabilityPath =
+            value.TargetDateFishingProbabilityPath,
+        TargetDateStochasticRetryPath = value.TargetDateStochasticRetryPath,
+        TargetDateDailyTimeEnergyPath = value.TargetDateDailyTimeEnergyPath,
+        TargetDateOpportunityCostPath = value.TargetDateOpportunityCostPath,
+        FishingForecastManifestPath = value.FishingForecastManifestPath,
+        StrategyLedgerPath = value.StrategyLedgerPath,
+        SnapshotPath = value.BeforeSnapshotPath,
+        RouteTimingCalibrationPath = value.RouteTimingCalibrationPath,
+        ProposalPath = value.PortfolioProposalPath
+    };
+}
+
 public sealed class AcquisitionRoutePortfolioProposal
 {
     [JsonPropertyName("schema_version")]

@@ -10,7 +10,12 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 
     public static AcquisitionRoutePortfolioTeacherPreference Build(
         AcquisitionRoutePortfolioInputs inputs,
-        string requestPath)
+        string requestPath) => BuildScoringSet(inputs, requestPath).Preference;
+
+    internal static AcquisitionRoutePortfolioTeacherScoringSet
+        BuildScoringSet(
+            AcquisitionRoutePortfolioInputs inputs,
+            string requestPath)
     {
         var requestFullPath = Path.GetFullPath(requestPath);
         var context = AcquisitionRoutePortfolioBuilder.Prepare(inputs);
@@ -24,8 +29,13 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             CurrentTeacherFrontierSupport.HashFile(requestFullPath));
         var reasons = ValidateRequest(context, request);
         if (reasons.Count > 0)
-            return Block(result, reasons);
-        return BuildResolved(
+        {
+            return new AcquisitionRoutePortfolioTeacherScoringSet(
+                Block(result, reasons),
+                context.Snapshot,
+                Array.Empty<PortfolioCandidate>());
+        }
+        return BuildResolvedScoringSet(
             context,
             result,
             request.RequestId,
@@ -61,6 +71,15 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 
     internal static AcquisitionRoutePortfolioTeacherPreference
         BuildContinuation(
+            AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+            AcquisitionRoutePortfolioInputs currentInputs,
+            string continuationRequestPath) => BuildContinuationScoringSet(
+                verifiedPrior,
+                currentInputs,
+                continuationRequestPath).Preference;
+
+    internal static AcquisitionRoutePortfolioTeacherScoringSet
+        BuildContinuationScoringSet(
             AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
             AcquisitionRoutePortfolioInputs currentInputs,
             string continuationRequestPath)
@@ -104,7 +123,12 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             reasons.Add("portfolio_teacher_continuation_request_invalid");
         }
         if (reasons.Count > 0)
-            return Block(result, reasons);
+        {
+            return new AcquisitionRoutePortfolioTeacherScoringSet(
+                Block(result, reasons),
+                context.Snapshot,
+                Array.Empty<PortfolioCandidate>());
+        }
         var completed = request.ScopedProgress
             .Where(row => row.CompletedAlternativeIndices.Length > 0)
             .OrderBy(row => ScopeKey(
@@ -116,7 +140,7 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                     row.RequirementId,
                     row.CompletedAlternativeIndices.Order().ToArray()))
             .ToArray();
-        return BuildResolved(
+        return BuildResolvedScoringSet(
             context,
             result,
             request.RequestId,
@@ -182,4 +206,9 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         if (!condition)
             throw new InvalidDataException(message);
     }
+
+    internal sealed record AcquisitionRoutePortfolioTeacherScoringSet(
+        AcquisitionRoutePortfolioTeacherPreference Preference,
+        StardewAI.Contracts.State.SnapshotEnvelope Snapshot,
+        PortfolioCandidate[] Candidates);
 }

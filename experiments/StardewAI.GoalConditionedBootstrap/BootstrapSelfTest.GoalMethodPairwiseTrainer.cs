@@ -91,6 +91,60 @@ internal static partial class BootstrapSelfTest
                 !scoring.FormalProductTrainingAuthorized,
             "Read-only goal-method checkpoint scoring drifted.");
 
+        var trainSource = readyManifest.Sources.Single(source =>
+            source.DatasetSha256 == comparisonRow.SourceDatasetSha256);
+        var rolloutManifest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioRolloutProofManifest>(
+            trainSource.ProofManifestPath,
+            "Goal-method live shadow self-test rollout");
+        var initialInputs = AcquisitionRoutePortfolioInputAdapter
+            .FromExecutionBinding(
+                rolloutManifest.InitialCheckpointProof.ExecutionInputs);
+        var liveInitial = new GoalMethodPairwiseRanker().RankLiveShadow(
+            checkpointPath,
+            readyCorpusManifestPath,
+            initialInputs,
+            rolloutManifest.InitialCheckpointProof.ExecutionInputs
+                .PortfolioPreferenceRequestPath);
+        Require(liveInitial.Status ==
+                    "ready_teacher_authoritative_live_shadow_scoring" &&
+                liveInitial.TransitionIndex == 1 &&
+                liveInitial.CandidateDenominatorVerified &&
+                liveInitial.CandidateScores.Length == 3 &&
+                liveInitial.ShadowSelectedProposal is not null &&
+                liveInitial.ShadowSelectedAdmission is not null &&
+                liveInitial.SelectionAuthority ==
+                    "deterministic_unique_strict_pareto_teacher" &&
+                liveInitial.ShadowSelectedProposal.ProposalId ==
+                    liveInitial.TeacherSelectedProposalId &&
+                !liveInitial.PortfolioCommitAuthorized &&
+                !liveInitial.FormalProductTrainingAuthorized,
+            "Fresh initial goal-method shadow scoring drifted.");
+
+        var firstContinuation = rolloutManifest.ContinuationTransitions[0];
+        var continuationInputs = AcquisitionRoutePortfolioInputAdapter
+            .FromExecutionBinding(firstContinuation.ExecutionInputs);
+        var initialProofManifestPath = Path.Combine(
+            Path.GetDirectoryName(rolloutManifest.InitialCheckpointPath)!,
+            "initial-rollout-proof-manifest.json");
+        var liveContinuation = new GoalMethodPairwiseRanker().RankLiveShadow(
+            checkpointPath,
+            readyCorpusManifestPath,
+            continuationInputs,
+            firstContinuation.ContinuationRequestPath,
+            initialProofManifestPath);
+        Require(liveContinuation.Status ==
+                    "ready_teacher_authoritative_live_shadow_scoring" &&
+                liveContinuation.TransitionIndex == 2 &&
+                liveContinuation.CandidateDenominatorVerified &&
+                liveContinuation.ShadowSelectedProposal is not null &&
+                liveContinuation.ShadowSelectedAdmission is not null &&
+                liveContinuation.SelectionAuthority ==
+                    "deterministic_unique_strict_pareto_teacher" &&
+                !liveContinuation.PortfolioCommitAuthorized &&
+                !liveContinuation.FormalProductTrainingAuthorized,
+            "Fresh continuation goal-method shadow scoring drifted.");
+
         var blockedCorpusRejected = false;
         try
         {

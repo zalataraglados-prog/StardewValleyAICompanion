@@ -2,7 +2,8 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 {
-    private static AcquisitionRoutePortfolioTeacherPreference BuildResolved(
+    private static AcquisitionRoutePortfolioTeacherScoringSet
+        BuildResolvedScoringSet(
         AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext
             context,
         AcquisitionRoutePortfolioTeacherPreference result,
@@ -18,18 +19,29 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         var denominatorCount = CountCandidates(scopes, reasons);
         result.CandidateDenominatorCount = denominatorCount;
         if (reasons.Count > 0)
-            return Block(result, reasons);
+        {
+            return new AcquisitionRoutePortfolioTeacherScoringSet(
+                Block(result, reasons),
+                context.Snapshot,
+                Array.Empty<PortfolioCandidate>());
+        }
         if (denominatorCount == 0)
         {
             reasons.Add("portfolio_teacher_candidate_denominator_empty");
-            return Block(result, reasons);
+            return new AcquisitionRoutePortfolioTeacherScoringSet(
+                Block(result, reasons),
+                context.Snapshot,
+                Array.Empty<PortfolioCandidate>());
         }
         if (denominatorCount > MaxCandidateCount)
         {
             reasons.Add(
                 "portfolio_teacher_candidate_denominator_exceeds_limit:" +
                 denominatorCount);
-            return Block(result, reasons);
+            return new AcquisitionRoutePortfolioTeacherScoringSet(
+                Block(result, reasons),
+                context.Snapshot,
+                Array.Empty<PortfolioCandidate>());
         }
 
         var proposals = EnumerateProposals(
@@ -70,7 +82,10 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 continuation);
             return new PortfolioCandidate(proposal, proposalSha256, admission);
         }).ToArray();
-        return SelectUniquePreference(result, candidates, reasons);
+        return new AcquisitionRoutePortfolioTeacherScoringSet(
+            SelectUniquePreference(result, candidates, reasons),
+            context.Snapshot,
+            candidates);
     }
 
     private static AcquisitionRoutePortfolioTeacherPreference
@@ -160,7 +175,7 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         return result;
     }
 
-    private sealed record PortfolioCandidate(
+    internal sealed record PortfolioCandidate(
         AcquisitionRoutePortfolioProposal Proposal,
         string ProposalSha256,
         AcquisitionRoutePortfolioAdmission Admission);

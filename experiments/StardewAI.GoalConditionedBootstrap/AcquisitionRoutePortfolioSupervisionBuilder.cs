@@ -351,7 +351,7 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
             .ToLowerInvariant();
     }
 
-    private static AcquisitionRoutePortfolioSupervisionDecisionContext
+    internal static AcquisitionRoutePortfolioSupervisionDecisionContext
         DecisionContext(SnapshotEnvelope snapshot)
     {
         var saveId = snapshot.SaveId.Value;
