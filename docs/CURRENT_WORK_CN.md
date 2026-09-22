@@ -1291,4 +1291,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - `acquisition_route_portfolio_supervision_corpus_request.v1` / `...corpus_manifest.v1` 及 `build-acquisition-route-portfolio-supervision-corpus` 已实现多 rollout 治理。每个源重新执行 dataset/proof/admission 验证；相同源只在本次构建内缓存计算但仍保留输入审计，相同行精确去重，冲突 row ID 失败，cleaned/train/validation/test JSONL 按权威 save-day 哈希分割并逐文件记录 SHA-256、bytes、rows 和 split-key count。
 - `acquisition_route_target_date_daily_time_energy_budget.v2` 已把单格与多格成熟作物统一到同一类型化终端路线：按权威最低产量计算精确作物格数，逐段重证 BFS/时序，并保留每一步站位、抵达、动作和完成时刻；任一地块不可达或超出来源时间窗都会失败关闭。当前正例以 2 格 Parsnip 路线验证，不再用“单格常数”代替多格移动证明。
 - continuation fixture 现暴露 3 个完整 portfolio：2 个高品质 Parsnip、1 个 Green Bean、两者都做。确定性 Teacher 严格选择 Green Bean 方案并产生 2 个真实 pairwise preference；没有 learner score，也没有伪造负例。两份重复输入仍得到 `6 input / 3 accepted / 3 exact duplicate`，全部 3 行仍属于同一 save-day/validation 分区，所以 `goal_method_trainer_input_ready=false`，明确阻塞于 train/test 缺少 pairwise 比较，而不是全局没有 Teacher 偏好。
+
+## 2026-09-22 Issue #128：source-resolved 随机结果失败关闭
+
+- `source_resolved_downstream` 现在只表示静态来源身份已解析，不再无条件映射为零随机重试。只有 source-specific 证据证明唯一确定目标产物时才允许 `resolved_stochastic_retry_not_required`；随机来源若既未物化也没有精确概率及扩量预留重校验证据，会阻塞在 stochastic retry 轴，正式训练授权继续为 false。
+- 锁定的 1.6.15 `Crop` 反编译结果表明，原版季节野生种子 `495..498` 在播种时把随机选择写入 `replaceWithObjectOnFullGrown`，成熟日再将该已选结果物化。透明桥现在读取并校验这个实时字段，而不是误把 `indexOfHarvest` 的 Data/Crops 代表值当最终产物；耕作容量和逐格作物状态共用同一个解析器，避免形成两套身份规则。
+- 处理提前量轴对 `stochastic_outcome=true` 的作物只接受 `exact_from_live_native_wild_seed_replacement`。聚焦回归同时固定三种语义：普通单一产物作物可零重试、未解析的野生种子目标必须要求随机证据、fresh 状态已经确定目标结果时无需再次随机。
 - 验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`，完整 Stage 1 collection self-test 及未完成链/伪造 admission/篡改 dataset/corpus 源负例全部通过。本切片未启动游戏，也未写正式训练数据。下一固定切片是构造彼此独立的 train/validation/test save-day，并让每个分区都具有真实 pairwise 证据；之后实现专用 goal-to-method trainer。旧 `StructuredPolicyTrainer.BuildPairs` 仍依赖 `candidate.Selected`，不得消费本 corpus；19/19 Teacher 覆盖仍是正式全量训练的独立硬门。

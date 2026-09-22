@@ -53,8 +53,8 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 "not_applicable_upstream_processing_lead_time_miss");
         }
 
-        if (staticRoute.UncertaintyMode is DeterministicReceipt or
-            SourceResolvedDownstream)
+        if (staticRoute.UncertaintyMode == DeterministicReceipt ||
+            SourceResolvedOutcomeGuaranteed(staticRoute))
         {
             return Result(
                 route,
@@ -94,6 +94,31 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                     .ToArray(),
                 Array.Empty<string>(),
                 Array.Empty<string>());
+        }
+
+        if (SourceResolvedRetryEvidenceRequired(
+                staticRoute,
+                currentOutputAlreadyMaterialized: false))
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_resolved_retry_budget_requires_exact_probability",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                new[]
+                {
+                    "source_resolved_stochastic_probability_evidence_missing:" +
+                    staticRoute.RouteKind,
+                    "source_resolved_stochastic_retry_reservation_revalidation_missing"
+                });
         }
 
         if (staticRoute.RouteKind == NativeLocationFishSpawn)
@@ -235,6 +260,28 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionOutputProof.ReadyQuantity(
             route.Evaluations,
             staticRoute.MinimumQuality) >= staticRoute.RequiredAmount;
+
+    internal static bool SourceResolvedOutcomeGuaranteed(
+        AcquisitionRouteCalendarResolution route)
+    {
+        if (route.UncertaintyMode != SourceResolvedDownstream ||
+            route.RouteKind != "harvests_as" ||
+            route.CropSource is not { StochasticOutcome: false } crop)
+        {
+            return false;
+        }
+
+        return crop.PossibleHarvestQualifiedItemIds.Length == 1 &&
+            crop.PossibleHarvestQualifiedItemIds[0] == route.QualifiedItemId &&
+            crop.DataHarvestQualifiedItemId == route.QualifiedItemId;
+    }
+
+    internal static bool SourceResolvedRetryEvidenceRequired(
+        AcquisitionRouteCalendarResolution route,
+        bool currentOutputAlreadyMaterialized) =>
+        route.UncertaintyMode == SourceResolvedDownstream &&
+        !SourceResolvedOutcomeGuaranteed(route) &&
+        !currentOutputAlreadyMaterialized;
 
     private static AcquisitionRouteTargetDateStochasticRetry NotApplicable(
         AcquisitionRouteTargetDateProcessing route,

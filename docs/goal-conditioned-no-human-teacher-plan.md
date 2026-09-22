@@ -1441,6 +1441,13 @@ Slice 7 remains assigned to the RTX 5070 node.
   zero retries, and the reachable Beach fishing route blocks on missing terminal-tile probability. Processing artifact
   tampering is rejected. Training authorization remains false. The next slice adds remote fishing rule/tile probability
   evidence, then exact multi-success retry math and reservation revalidation.
+- Issue #128 closes a later-discovered ontology leak: `source_resolved_downstream` proves source identity, not outcome
+  determinism. Zero retry now requires either a single deterministic source-specific output or a fresh exact output
+  proof. Locked 1.6.15 `Crop` evidence shows seasonal wild seeds choose and persist
+  `replaceWithObjectOnFullGrown` at planting, so the transparent bridge and cultivation-capacity projection share one
+  resolver for that live selected output instead of treating `indexOfHarvest` as the final item. Missing or out-of-domain
+  selected output evidence fails closed; any future retry expansion still requires resource, currency and atomic
+  reservation revalidation before it can authorize execution.
 
 ### 2026-09-13: authoritative Master Angler spawn-chance input inventory
 

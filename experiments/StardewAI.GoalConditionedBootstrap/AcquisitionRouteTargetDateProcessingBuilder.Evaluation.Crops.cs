@@ -145,6 +145,15 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 "existing_crop",
                 "live_crop_harvest_projection_is_not_exact");
         }
+        if (cropSource.StochasticOutcome && lookup.Rows.Any(crop =>
+                crop.ProjectionStatus !=
+                    "exact_from_live_native_wild_seed_replacement"))
+        {
+            return EvaluationBlocked(
+                target.TargetLocationId,
+                "existing_crop",
+                "native_wild_seed_selected_output_projection_missing");
+        }
         var evidencePaths = lookup.EvidencePaths.Concat(new[]
             {
                 "state.locations.social_route_date_evidence.value.locations[].cultivation_capacity.occupied_harvest_items[]"

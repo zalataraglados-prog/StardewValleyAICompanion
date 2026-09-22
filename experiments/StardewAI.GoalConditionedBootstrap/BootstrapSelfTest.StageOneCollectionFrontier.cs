@@ -916,6 +916,37 @@ internal static partial class BootstrapSelfTest
                 resolvedShopRoute.ShopSource.DoorWindows[0].CloseTime == 1700,
             "Authoritative route calendar source resolution drifted.");
 
+        var unresolvedWildSeedRoute = resolvedCropRoute with
+        {
+            QualifiedItemId = "(O)16",
+            CropSource = resolvedCropRoute.CropSource! with
+            {
+                SeedItemId = "495",
+                DataHarvestQualifiedItemId = "(O)16",
+                PossibleHarvestQualifiedItemIds =
+                    new[] { "(O)16", "(O)18", "(O)20", "(O)22" },
+                StochasticOutcome = true
+            }
+        };
+        Require(
+            AcquisitionRouteTargetDateStochasticRetryBuilder
+                .SourceResolvedOutcomeGuaranteed(resolvedCropRoute) &&
+            !AcquisitionRouteTargetDateStochasticRetryBuilder
+                .SourceResolvedRetryEvidenceRequired(
+                    resolvedCropRoute,
+                    currentOutputAlreadyMaterialized: false) &&
+            !AcquisitionRouteTargetDateStochasticRetryBuilder
+                .SourceResolvedOutcomeGuaranteed(unresolvedWildSeedRoute) &&
+            AcquisitionRouteTargetDateStochasticRetryBuilder
+                .SourceResolvedRetryEvidenceRequired(
+                    unresolvedWildSeedRoute,
+                    currentOutputAlreadyMaterialized: false) &&
+            !AcquisitionRouteTargetDateStochasticRetryBuilder
+                .SourceResolvedRetryEvidenceRequired(
+                    unresolvedWildSeedRoute,
+                    currentOutputAlreadyMaterialized: true),
+            "Source-resolved stochastic crop retry classification drifted.");
+
         var targetDateCalendar = AcquisitionRouteTargetDateCalendarBuilder.Build(
             inventoryPath,
             loweringPath,

@@ -167,8 +167,8 @@ public sealed partial class ShopAccessReadAdapter
             .Where(row => row.Dirt.crop is not null)
             .Select(row => new
             {
-                qualified_item_id = ItemRegistry.QualifyItemId(
-                    row.Dirt.crop.indexOfHarvest.Value) ?? string.Empty,
+                qualified_item_id = CropHarvestIdentityResolver.Resolve(
+                    row.Dirt.crop).QualifiedItemId,
                 row.IsGardenPot
             })
             .GroupBy(row => (row.qualified_item_id, row.IsGardenPot))

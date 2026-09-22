@@ -477,6 +477,12 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         RequireContains(cropSource, "phaseDays.AddRange(data.DaysInPhase)", cropPath);
         RequireContains(cropSource, "data?.RegrowDays ?? (-1)", cropPath);
         RequireContains(cropSource, "public virtual bool isWildSeedCrop()", cropPath);
+        RequireContains(cropSource,
+            "replaceWithObjectOnFullGrown.Value = getRandomWildCropForSeason(onlyDeterministic: true)",
+            cropPath);
+        RequireContains(cropSource,
+            "ItemRegistry.Create<Object>(replaceWithObjectOnFullGrown.Value ?? getRandomWildCropForSeason())",
+            cropPath);
         RequireContains(cropSource, "case \"495\":", cropPath);
         RequireContains(cropSource, "return getRandomWildCropForSeason(Season.Spring)", cropPath);
         RequireContains(cropSource, "case \"496\":", cropPath);
