@@ -716,3 +716,14 @@ checkpoint-bound corpus and ranks only its already admitted candidates through t
 three-candidate fixture agrees with the Teacher at rank one. Its output explicitly forbids portfolio commit and formal
 product training. Fresh-state denominator reconstruction, gated incomparable-frontier selection and the independent
 19/19 Teacher-coverage gate remain required.
+
+The independent `goal_method_teacher_coverage_gate.v1` now makes that last statement
+machine-checkable. It rebuilds the 19-criterion goal-method frontier from its authoritative
+inputs, re-verifies each typed supervision corpus and proof chain, and derives coverage from
+requirement-set-to-method bindings. Source manifests cannot declare criterion IDs. A criterion
+is ready only when its method is executable and both an explicit Teacher comparison and a
+verified native outcome exist in train, validation, and test. The current bounded corpus has
+19 catalog-mapped criteria, 2 comparison-covered criteria, 4 outcome-covered criteria, 2 with
+both channels split-complete, and 0 gate-ready criteria because those collection methods are
+still `pending_dependency_expansion`. This report is a readiness audit only and always retains
+`formal_product_training_authorized=false`.

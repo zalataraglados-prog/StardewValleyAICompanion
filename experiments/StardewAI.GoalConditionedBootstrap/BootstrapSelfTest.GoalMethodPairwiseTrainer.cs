@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -145,6 +146,12 @@ internal static partial class BootstrapSelfTest
                 !liveContinuation.FormalProductTrainingAuthorized,
             "Fresh continuation goal-method shadow scoring drifted.");
 
+        VerifyIncomparableGoalMethodLiveShadow(
+            checkpointPath,
+            readyCorpusManifestPath,
+            rolloutManifest,
+            outputRoot);
+
         var blockedCorpusRejected = false;
         try
         {
@@ -221,5 +228,134 @@ internal static partial class BootstrapSelfTest
         }
         Require(forgedCheckpointIdRejected,
             "Checkpoint with a forged identity was accepted.");
+    }
+
+    private static void VerifyIncomparableGoalMethodLiveShadow(
+        string checkpointPath,
+        string readyCorpusManifestPath,
+        AcquisitionRoutePortfolioRolloutProofManifest rolloutManifest,
+        string outputRoot)
+    {
+        var fixtureRoot = Path.Combine(
+            outputRoot,
+            "incomparable-goal-method-live-shadow");
+        Directory.CreateDirectory(fixtureRoot);
+        var template = rolloutManifest.InitialCheckpointProof.ExecutionInputs;
+        var snapshotRoot = JsonNode.Parse(
+            File.ReadAllText(template.BeforeSnapshotPath))!.AsObject();
+        const string stateHash = "incomparable-goal-method-live-state";
+        const string saveId = "fixture-save-incomparable-shadow";
+        snapshotRoot["state_hash"] = stateHash;
+        snapshotRoot["save_id"]!["value"] = saveId;
+        snapshotRoot["state"]!["identity"]!["save_id"]!["value"] =
+            saveId;
+        snapshotRoot["in_game_time"]!["value"] = 900;
+        snapshotRoot["state"]!["time"]!["time"]!["value"] = 900;
+        snapshotRoot["state"]!["world_progress"]!
+            ["game_state_query_calendar_state"]!["value"]!
+            ["time_of_day"] = 900;
+        var collisionGrid = snapshotRoot["state"]!["locations"]!
+            ["collision_grid"]!["value"]!.AsObject();
+        collisionGrid["width"] = 100;
+        collisionGrid["height"] = 100;
+        var routeLocations = snapshotRoot["state"]!["locations"]!
+            ["social_route_date_evidence"]!["value"]!["locations"]!
+            .AsArray();
+        var farmRouteLocation = routeLocations.Single(location =>
+            location!["location_id"]!.GetValue<string>() == "Farm")!
+            .AsObject();
+        farmRouteLocation["map_width"] = 100;
+        farmRouteLocation["map_height"] = 100;
+        farmRouteLocation["static_walkable_tile_count"] = 10_000;
+        var walkableRows = new JsonArray();
+        for (var y = 0; y < 100; y++)
+        {
+            walkableRows.Add(new JsonObject
+            {
+                ["y"] = y,
+                ["start_x"] = 0,
+                ["end_x"] = 99
+            });
+        }
+        farmRouteLocation["static_walkable_tile_ranges"] = walkableRows;
+        var crops = snapshotRoot["state"]!["farm"]!["crops"]!["value"]!
+            .AsArray();
+        for (var index = 0; index < crops.Count; index++)
+        {
+            crops[index]!["tile_x"] = 96 + index;
+            crops[index]!["tile_y"] = 96;
+        }
+        var snapshotPath = Path.Combine(fixtureRoot, "before-snapshot.json");
+        File.WriteAllText(
+            snapshotPath,
+            snapshotRoot.ToJsonString(JsonDefaults.Options));
+        var ledgerPath = Path.Combine(fixtureRoot, "strategy-ledger.json");
+        WriteEmptyStrategyLedger(ledgerPath, stateHash, saveId);
+        var proposalPath = Path.Combine(fixtureRoot, "proposal.json");
+        var inputs = BuildTargetDatePortfolioInputs(
+            template,
+            snapshotPath,
+            ledgerPath,
+            proposalPath,
+            fixtureRoot,
+            targetTotalDay: 0);
+        var originalRequest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioTeacherPreferenceRequest>(
+            template.PortfolioPreferenceRequestPath,
+            "Incomparable live shadow preference template");
+        originalRequest.RequestId = "self-test-incomparable-shadow";
+        originalRequest.SnapshotStateHash = stateHash;
+        originalRequest.ExpectedLedgerRevision = 0;
+        var requestPath = Path.Combine(fixtureRoot, "preference-request.json");
+        Write(requestPath, originalRequest);
+
+        var shadow = new GoalMethodPairwiseRanker().RankLiveShadow(
+            checkpointPath,
+            readyCorpusManifestPath,
+            inputs,
+            requestPath);
+        Require(shadow.Status ==
+                    "ready_checkpoint_ranked_incomparable_frontier_shadow" &&
+                shadow.SelectionAuthority ==
+                    "goal_method_checkpoint_shadow_only" &&
+                shadow.TeacherPreferenceStatus ==
+                    "blocked_portfolio_teacher_preference" &&
+                shadow.TeacherSelectedProposalId.Length == 0 &&
+                shadow.ModelAgreesWithTeacher is null &&
+                shadow.CandidateDenominatorVerified &&
+                shadow.CandidateScores.Length >= 2 &&
+                shadow.CandidateScores.Count(candidate =>
+                    candidate.OnDeterministicParetoFrontier) >= 2 &&
+                shadow.ShadowSelectedProposal is not null &&
+                shadow.ShadowSelectedAdmission is not null &&
+                shadow.CandidateScores.Any(candidate =>
+                    candidate.OnDeterministicParetoFrontier &&
+                    candidate.ProposalId ==
+                        shadow.ShadowSelectedProposal.ProposalId) &&
+                !shadow.PortfolioCommitAuthorized &&
+                !shadow.FormalProductTrainingAuthorized,
+            "Incomparable Pareto-frontier shadow scoring drifted: status=" +
+            shadow.Status + "; teacher_status=" +
+            shadow.TeacherPreferenceStatus + "; frontier=" +
+            shadow.CandidateScores.Count(candidate =>
+                candidate.OnDeterministicParetoFrontier) + "; blocks=" +
+            string.Join(",", shadow.BlockingReasons));
+    }
+
+    internal static void RunGoalMethodIncomparableLiveShadow(
+        string checkpointPath,
+        string readyCorpusManifestPath,
+        string rolloutProofManifestPath,
+        string outputRoot)
+    {
+        var rolloutManifest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioRolloutProofManifest>(
+            rolloutProofManifestPath,
+            "Incomparable live shadow self-test rollout");
+        VerifyIncomparableGoalMethodLiveShadow(
+            checkpointPath,
+            readyCorpusManifestPath,
+            rolloutManifest,
+            Path.GetFullPath(outputRoot));
     }
 }

@@ -220,6 +220,18 @@ shared leaves include `recovery.stabilize_day`, `fishing.catch_fish`,
 Museum completion and Rusty Key additionally share the typed
 `museum_item_acquisition_and_reservation` family. Shared dependencies must be improved
 once and reused rather than reimplemented per Grandpa direction.
+
+`build-goal-method-teacher-coverage` is the independent formal-training coverage gate.
+It rebuilds this frontier from the raw inputs instead of trusting the generated report,
+re-verifies each declared supervision corpus, and derives criterion ownership only through
+the production direction catalog and frontier requirement-set bindings. A source cannot
+name or self-assert covered criteria. Coverage requires an executable method plus explicit
+Teacher comparison and verified native-outcome evidence in train, validation, and test.
+The 2026-09-22 bounded corpus maps all 19 criteria, comparison-covers 2, outcome-covers 4,
+and admits 0 because the evidenced collection methods remain dependency-expansion pending.
+The gate therefore reports `formal_product_training_authorized=false`. Pass a verified
+corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
+gate against the freshly rebuilt lowering rather than a stale generated artifact.
 The current requirement report is
 `local-data/output/authoritative-requirement-inventory-v1.json`. Current candidate membership
 for Full Shipment, Master Angler, Museum Collection, and the standard Community Center can be

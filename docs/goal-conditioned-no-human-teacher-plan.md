@@ -1742,6 +1742,31 @@ Slice 7 remains assigned to the RTX 5070 node.
   Teacher remains authoritative; an incomparable frontier may receive only a gated shadow model choice until the
   independent 19/19 coverage gate authorizes a later product-selection transition.
 
+### 2026-09-22: fresh-state shadow selection and independent coverage gate
+
+- `score-live-acquisition-route-goal-method-shadow` rebuilds the complete target-date portfolio denominator from a
+  fresh initial or continuation state. When the deterministic Teacher finds a unique strict-Pareto choice, that choice
+  remains authoritative and the checkpoint is observational. When the frontier is genuinely incomparable, the
+  checkpoint may rank only members of that verified Pareto frontier and emits a shadow choice with no portfolio commit
+  or formal-training authority. The dedicated incomparable fixture constructs a real elapsed-time versus material-cost
+  trade-off and verifies this fail-closed path.
+- `goal_method_teacher_coverage_gate.v1` is a separate promotion gate. It rebuilds the authoritative goal-method graph
+  from raw inputs instead of reading a previously generated graph report, then re-verifies every declared corpus,
+  rollout and opportunity denominator. Corpus declarations cannot name criteria; requirement-set bindings in the
+  rebuilt frontier are the only route from evidence to a method and its criteria.
+- A criterion is ready only when its sole catalog-backed method is `executable_frontier`, an explicit Teacher pair
+  varies that method in train, validation and test, and a verified native outcome for that method exists in all three
+  partitions. The current bounded corpus reports 19 catalog-mapped criteria, 2 comparison-covered, 4 native-outcome-
+  covered, 2 split-complete across both channels, and 0/19 ready because the collection methods remain
+  `pending_dependency_expansion`.
+- The gate rejects caller-supplied formal authorization and unknown source adapters. Its output always keeps
+  `formal_product_training_authorized=false`; a later controller promotion must separately require a complete 19/19
+  report. During implementation the old generated lowering was correctly rejected after its catalog hash drifted;
+  regression must rebuild lowering before this gate rather than reuse stale output.
+- The next fixed slice is therefore not broader model training. It is dependency expansion for the evidenced
+  collection methods, followed by additional typed Teacher-source adapters and split-complete evidence for the other
+  Grandpa methods until the independent count reaches 19/19.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

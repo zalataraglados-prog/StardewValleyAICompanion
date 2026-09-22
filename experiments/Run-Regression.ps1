@@ -8,7 +8,8 @@ param(
     [string]$FullShipmentSnapshot = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\run\live-snapshots\before-snapshot-0002.json',
     [string]$Legacy = 'I:\StardewAITrainingArchive\119.91.139.160\training-plan-result-r36-round03-20260905-154816\canonical-state\datasets\policy-decision-trajectories.jsonl',
     [string]$SocialSnapshot = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-social-future-evidence-smoke\runtime-social-future-evidence-smoke-20260906-053142\social-future-snapshot.json',
-    [string]$RouteTimingCalibration = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json'
+    [string]$RouteTimingCalibration = 'I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json',
+    [string]$GoalMethodCorpusManifest = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -703,6 +704,27 @@ if (-not [bool]$breadth.all_criteria_classified -or
     'complete_museum_collection' -notin $museumAcquisitionFamily[0].direction_ids -or
     'obtain_rusty_key' -notin $museumAcquisitionFamily[0].direction_ids) {
     throw 'Goal-method breadth classification is incomplete or internally inconsistent.'
+}
+if (-not [string]::IsNullOrWhiteSpace($GoalMethodCorpusManifest)) {
+    if (-not (Test-Path -LiteralPath $GoalMethodCorpusManifest -PathType Leaf)) {
+        throw 'Goal-method Teacher coverage corpus manifest is missing.'
+    }
+    dotnet run --project $bootstrap --no-build -- self-test-goal-method-teacher-coverage `
+        --expansion $frontierExpansion `
+        --dependencies $frontierDependencies `
+        --isolated-training-authorization $isolatedTrainingAuthorization `
+        --requirement-inventory $requirementInventoryPath `
+        --acquisition-lowering $acquisitionLoweringPath `
+        --acquisition-lowering-catalog $acquisitionLoweringCatalog `
+        --knowledge $Knowledge `
+        --option-matrix $optionMatrix `
+        --claim-ledger $claimLedger `
+        --direction-catalog-source $directionCatalogSource `
+        --corpus-manifest $GoalMethodCorpusManifest `
+        --output-root (Join-Path $output 'goal-method-teacher-coverage-self-test')
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Goal-method Teacher coverage gate regression failed.'
+    }
 }
 dotnet run --project $bootstrap --no-build -- self-test `
     --knowledge $Knowledge `

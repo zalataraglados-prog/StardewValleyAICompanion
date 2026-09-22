@@ -42,6 +42,9 @@ try
         case "build-goal-method-graph":
             BuildGoalMethodGraph(options);
             break;
+        case "build-goal-method-teacher-coverage":
+            BuildGoalMethodTeacherCoverage(options);
+            break;
         case "build-requirement-inventory":
             BuildRequirementInventory(options);
             break;
@@ -217,9 +220,15 @@ try
         case "self-test-current-stage-one-collection":
             SelfTestCurrentStageOneCollection(options);
             break;
+        case "self-test-goal-method-incomparable-live-shadow":
+            SelfTestGoalMethodIncomparableLiveShadow(options);
+            break;
+        case "self-test-goal-method-teacher-coverage":
+            SelfTestGoalMethodTeacherCoverage(options);
+            break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, or self-test-current-stage-one-collection.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-collection, self-test-current-stage-one-collection, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
     }
 }
 catch (Exception ex)
@@ -389,19 +398,48 @@ static void BuildCurrentSocialTeacherLabel(Arguments options)
 
 static void BuildGoalMethodGraph(Arguments options)
 {
+    var inputs = GoalMethodFrontierInputs(options);
     var report = GoalMethodFrontierBuilder.Build(
-        options.Required("expansion"),
-        options.Required("dependencies"),
-        options.Required("isolated-training-authorization"),
-        options.Required("requirement-inventory"),
-        options.Required("acquisition-lowering"),
-        options.Required("acquisition-lowering-catalog"),
-        options.Required("knowledge"),
-        options.Required("option-matrix"),
-        options.Required("claim-ledger"),
-        options.Required("direction-catalog-source"));
+        inputs.ExpansionPath,
+        inputs.DependencyExpansionPath,
+        inputs.IsolatedTrainingAuthorizationPath,
+        inputs.RequirementInventoryPath,
+        inputs.AcquisitionLoweringPath,
+        inputs.AcquisitionLoweringCatalogPath,
+        inputs.KnowledgePath,
+        inputs.OptionMatrixPath,
+        inputs.ClaimLedgerPath,
+        inputs.DirectionCatalogSourcePath);
     Write(options.Required("output"), report);
 }
+
+static void BuildGoalMethodTeacherCoverage(Arguments options)
+{
+    var report = GoalMethodTeacherCoverageBuilder.Build(
+        GoalMethodFrontierInputs(options),
+        options.Required("request"));
+    Write(options.Required("output"), report);
+    if (!report.CoverageGateSatisfied)
+        Environment.ExitCode = 2;
+}
+
+static GoalMethodFrontierBuildInputs GoalMethodFrontierInputs(
+    Arguments options) => new()
+    {
+        ExpansionPath = options.Required("expansion"),
+        DependencyExpansionPath = options.Required("dependencies"),
+        IsolatedTrainingAuthorizationPath =
+            options.Required("isolated-training-authorization"),
+        RequirementInventoryPath = options.Required("requirement-inventory"),
+        AcquisitionLoweringPath = options.Required("acquisition-lowering"),
+        AcquisitionLoweringCatalogPath =
+            options.Required("acquisition-lowering-catalog"),
+        KnowledgePath = options.Required("knowledge"),
+        OptionMatrixPath = options.Required("option-matrix"),
+        ClaimLedgerPath = options.Required("claim-ledger"),
+        DirectionCatalogSourcePath =
+            options.Required("direction-catalog-source")
+    };
 
 static void BuildRequirementInventory(Arguments options)
 {
@@ -1536,6 +1574,19 @@ static void SelfTestCurrentCollection(Arguments options)
 
 static void SelfTestCurrentStageOneCollection(Arguments options)
     => BootstrapSelfTest.RunCurrentStageOneCollection(
+        options.Required("output-root"));
+
+static void SelfTestGoalMethodIncomparableLiveShadow(Arguments options)
+    => BootstrapSelfTest.RunGoalMethodIncomparableLiveShadow(
+        options.Required("checkpoint"),
+        options.Required("corpus-manifest"),
+        options.Required("rollout-proof-manifest"),
+        options.Required("output-root"));
+
+static void SelfTestGoalMethodTeacherCoverage(Arguments options)
+    => BootstrapSelfTest.RunGoalMethodTeacherCoverage(
+        GoalMethodFrontierInputs(options),
+        options.Required("corpus-manifest"),
         options.Required("output-root"));
 
 static void Write(string path, object value)
