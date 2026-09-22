@@ -6,7 +6,7 @@ public static partial class AcquisitionRouteTargetDateOpportunityCostBuilder
         AcquisitionRouteTargetDateDailyTimeEnergyReport source)
     {
         Require(source.SchemaVersion ==
-                    "acquisition_route_target_date_daily_time_energy_budget.v1" &&
+                    "acquisition_route_target_date_daily_time_energy_budget.v2" &&
                 source.RouteOccurrenceInventoryComplete &&
                 !source.TrainingLabelEligible &&
                 source.RouteOccurrenceCount == source.Routes.Length &&

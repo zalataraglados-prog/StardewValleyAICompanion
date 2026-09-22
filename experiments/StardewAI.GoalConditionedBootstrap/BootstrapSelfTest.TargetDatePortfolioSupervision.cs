@@ -135,7 +135,7 @@ internal static partial class BootstrapSelfTest
                 corpusManifest.Counts.InputRows == 6 &&
                 corpusManifest.Counts.AcceptedRows == 3 &&
                 corpusManifest.Counts.ExactDuplicateRows == 3 &&
-                corpusManifest.Counts.TeacherPairwisePreferences == 0 &&
+                corpusManifest.Counts.TeacherPairwisePreferences == 2 &&
                 corpusManifest.Counts.StudentObservationCount == 0 &&
                 corpusManifest.Partitions.Sum(row => row.Rows) == 3 &&
                 corpusManifest.Partitions.Count(row => row.Rows == 3) == 1 &&
@@ -149,6 +149,12 @@ internal static partial class BootstrapSelfTest
                 !corpusManifest.GoalMethodTrainerInputReady &&
                 !corpusManifest.FormalProductTrainingAuthorized &&
                 corpusManifest.BlockingReasons.Contains(
+                    "train_pairwise_comparison_empty",
+                    StringComparer.Ordinal) &&
+                corpusManifest.BlockingReasons.Contains(
+                    "test_pairwise_comparison_empty",
+                    StringComparer.Ordinal) &&
+                !corpusManifest.BlockingReasons.Contains(
                     "teacher_pairwise_comparison_empty",
                     StringComparer.Ordinal) &&
                 File.ReadLines(corpusManifest.Cleaned.Path).Count() == 3,

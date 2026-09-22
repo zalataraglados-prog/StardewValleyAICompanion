@@ -6,7 +6,7 @@ public sealed class AcquisitionRouteTargetDateDailyTimeEnergyReport
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "acquisition_route_target_date_daily_time_energy_budget.v1";
+        "acquisition_route_target_date_daily_time_energy_budget.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -77,7 +77,7 @@ public sealed class AcquisitionRouteTargetDateDailyTimeEnergyReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The daily_time_energy_budget axis runs only after an exact stochastic-retry match. Every active terminal must be reached from the same snapshot through the locked route graph, date evidence and movement calibration, and its complete conservative action duration must fit one retained authoritative source window. Fishing routes use the selected legal stand tile, complete retry count, locked native cast/bite/perfect-lock/settlement bound and FishingRod stamina formula; Efficient credit is never guessed. Shop routes use an exact authoritative action tile, an adjacent reachable stand and the current rolling compiler's maximum menu wait plus interact/dialogue/purchase/close budget for every required purchase. A ready-crop route may bind one exact transparent crop tile when the authoritative minimum stack covers the complete requirement; multi-tile local routing remains fail-closed. Unsupported terminal kinds fail closed. This axis does not select a route, combine competing routes, reserve opportunity cost or prove a fresh terminal receipt, and training authorization stays false.";
+        "The daily_time_energy_budget axis runs only after an exact stochastic-retry match. Every active terminal must be reached from the same snapshot through the locked route graph, date evidence and movement calibration, and its complete conservative action duration must fit one retained authoritative source window. Fishing routes use the selected legal stand tile, complete retry count, locked native cast/bite/perfect-lock/settlement bound and FishingRod stamina formula; Efficient credit is never guessed. Shop routes use an exact authoritative action tile, an adjacent reachable stand and the current rolling compiler's maximum menu wait plus interact/dialogue/purchase/close budget for every required purchase. Ready-crop routes bind the exact number of transparent crop tiles implied by the authoritative minimum stack, re-prove every local route segment, and retain the ordered stand/arrival/action/completion schedule. Unsupported terminal kinds fail closed. This axis does not select a route, combine competing routes, reserve opportunity cost or prove a fresh terminal receipt, and training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateDailyTimeEnergy(
@@ -144,4 +144,28 @@ public sealed record AcquisitionDailyTimeEnergyEvaluation(
     [property: JsonPropertyName("timing_evidence_id")]
     string TimingEvidenceId,
     [property: JsonPropertyName("evidence_paths")]
-    string[] EvidencePaths);
+    string[] EvidencePaths)
+{
+    [JsonPropertyName("terminal_route_steps")]
+    public AcquisitionDailyTerminalRouteStep[] TerminalRouteSteps
+    { get; init; } = Array.Empty<AcquisitionDailyTerminalRouteStep>();
+}
+
+public sealed record AcquisitionDailyTerminalRouteStep(
+    [property: JsonPropertyName("ordinal")] int Ordinal,
+    [property: JsonPropertyName("target_location_id")]
+    string TargetLocationId,
+    [property: JsonPropertyName("target_tile_x")] int TargetTileX,
+    [property: JsonPropertyName("target_tile_y")] int TargetTileY,
+    [property: JsonPropertyName("stand_tile_x")] int? StandTileX,
+    [property: JsonPropertyName("stand_tile_y")] int? StandTileY,
+    [property: JsonPropertyName("departure_time")] int DepartureTime,
+    [property: JsonPropertyName("guaranteed_arrival_by_time")]
+    int GuaranteedArrivalByTime,
+    [property: JsonPropertyName("action_start_time")] int ActionStartTime,
+    [property: JsonPropertyName("action_game_minutes")]
+    int ActionGameMinutes,
+    [property: JsonPropertyName("guaranteed_completion_by_time")]
+    int GuaranteedCompletionByTime,
+    [property: JsonPropertyName("timing_evidence_id")]
+    string TimingEvidenceId);

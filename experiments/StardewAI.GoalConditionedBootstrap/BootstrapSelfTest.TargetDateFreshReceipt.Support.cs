@@ -89,20 +89,23 @@ internal static partial class BootstrapSelfTest
         int stack,
         int quality)
     {
-        Require(stack > 0,
-            "Fresh-receipt quantity fixture requires a positive stack.");
+        Require(stack >= 0,
+            "Fresh-receipt quantity fixture requires a non-negative stack.");
         var root = JsonNode.Parse(
             File.ReadAllText(beforeSnapshotPath))!.AsObject();
         root["state_hash"] = afterStateHash;
         root["game_tick"] = root["game_tick"]!.GetValue<long>() + 1;
         var inventory = root["state"]!["player"]!["inventory"]!["value"]!
             .AsArray();
-        inventory.Add(JsonSerializer.SerializeToNode(new
+        if (stack > 0)
         {
-            qualified_item_id = qualifiedItemId,
-            stack,
-            quality
-        }, JsonDefaults.Options));
+            inventory.Add(JsonSerializer.SerializeToNode(new
+            {
+                qualified_item_id = qualifiedItemId,
+                stack,
+                quality
+            }, JsonDefaults.Options));
+        }
         File.WriteAllText(
             afterSnapshotPath,
             root.ToJsonString(JsonDefaults.Options));

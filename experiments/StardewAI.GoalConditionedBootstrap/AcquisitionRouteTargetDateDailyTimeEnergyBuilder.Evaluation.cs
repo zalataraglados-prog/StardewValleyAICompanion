@@ -104,23 +104,6 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         var requiredCropCount = checked(
             (staticRoute.RequiredAmount + source.HarvestMinStack - 1) /
             source.HarvestMinStack);
-        if (requiredCropCount != 1)
-        {
-            return Result(
-                route,
-                "native_ready_crop_harvest",
-                "blocked_daily_terminal_budget_evidence",
-                false,
-                null,
-                null,
-                Array.Empty<string>(),
-                new[]
-                {
-                    "multi_tile_crop_terminal_route_budget_not_implemented:" +
-                    requiredCropCount
-                });
-        }
-
         var lookup = state.ProcessingState.FindCrops(
             ready.TargetLocationId,
             staticRoute.QualifiedItemId);
@@ -136,7 +119,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 Array.Empty<string>(),
                 lookup.BlockingReasons);
         }
-        var crop = lookup.Rows
+        var crops = lookup.Rows
             .Where(value =>
                 !value.Dead &&
                 value.ReadyForHarvest &&
@@ -145,8 +128,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     StringComparison.Ordinal))
             .OrderBy(value => value.TileX)
             .ThenBy(value => value.TileY)
-            .FirstOrDefault();
-        if (crop is null)
+            .ToArray();
+        if (crops.Length < requiredCropCount)
         {
             return Result(
                 route,
@@ -156,33 +139,20 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 null,
                 null,
                 Array.Empty<string>(),
-                new[] { "exact_ready_crop_terminal_tile_missing" });
+                new[]
+                {
+                    "exact_ready_crop_terminal_tile_count_insufficient:" +
+                    crops.Length + ":" + requiredCropCount
+                });
         }
 
-        return EvaluateTerminal(
+        return EvaluateCropHarvestRoute(
             route,
-            staticRoute,
             state,
-            "native_ready_crop_harvest",
             ready.TargetLocationId,
-            crop.TileX,
-            crop.TileY,
-            requireExactTargetTile: false,
-            CropHarvestBudgetPolicy.ConservativeGameMinutesForHarvests(1),
-            attemptCount: 1,
-            effectiveFishingLevel: null,
-            availableEnergy: null,
-            energyPerAttempt: null,
-            requiredEnergy: null,
-            energyReserve: 0d,
-            "native_exact_ready_crop_harvest_input_profile",
-            lookup.EvidencePaths.Concat(new[]
-                {
-                    "target_date_processing_lead_time.routes[].evaluations[]",
-                    "static_calendar_resolution.routes[].crop_source.harvest_min_stack",
-                    "compiler:CropHarvestBudgetPolicy"
-                })
-                .ToArray());
+            crops,
+            requiredCropCount,
+            lookup.EvidencePaths);
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy EvaluateFishing(

@@ -1504,7 +1504,7 @@ Slice 7 remains assigned to the RTX 5070 node.
 
 ### 2026-09-20: non-scalar target-date opportunity-cost axis
 
-- `acquisition_route_target_date_daily_time_energy_budget.v1` first closes the conservative same-snapshot route,
+- `acquisition_route_target_date_daily_time_energy_budget.v2` first closes the conservative same-snapshot route,
   terminal-duration and native-energy budget for each active occurrence. The opportunity-cost builder then
   deterministically rebuilds and object-compares that complete upstream artifact; a copied or edited report cannot
   become Teacher evidence.
@@ -1677,8 +1677,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   forecast snapshots are refreshed to the current save/player/time/tick identity, so the third transition passes the
   existing stale-forecast guard rather than bypassing it.
 - Ready-crop daily budgeting uses the same `CropHarvestBudgetPolicy.HarvestTicksPerCrop` constant as the native action
-  compiler. It binds one exact ready crop tile only when authoritative minimum stack covers the full requirement;
-  unresolved multi-tile local routing remains blocked.
+  compiler. It binds the exact number of transparent ready-crop tiles implied by authoritative minimum stack, then
+  re-proves every local route segment and retains the ordered stand, arrival, action and completion schedule. Single-
+  and multi-crop harvests use this same typed route-step path; an unreachable tile or source-window overrun fails closed.
 - The terminal proof reports `transition_count=3`, complete scoped progress and scoped Teacher-evidence admission.
   Incomplete chains, modified checkpoints and forged proof receipts remain rejected.
 - `acquisition_route_portfolio_supervision_dataset.v1` now rebuilds the supplied proof and admission before emitting
@@ -1687,10 +1688,12 @@ Slice 7 remains assigned to the RTX 5070 node.
   Unavailable portfolios are deferred without negative labels.
 - `acquisition_route_portfolio_supervision_corpus_manifest.v1` re-verifies every source and deterministically splits
   rows by the verified snapshot save-day key. Exact duplicates are removed, conflicting identities fail closed, and
-  comparison-pair coverage is an independent trainer gate. The current three-transition fixture has one admitted
-  portfolio per decision, so it correctly yields zero pairwise labels and a trainer-blocked corpus instead of an
-  invented negative. Formal product training remains false; the next slice must add multi-candidate strict-Pareto
-  examples across all splits before a dedicated goal-to-method trainer can be admitted.
+  comparison-pair coverage is an independent trainer gate. The continuation fixture now exposes three complete
+  portfolio alternatives: two quality Parsnips, one Green Bean, or both. The deterministic Teacher strictly selects
+  the Green Bean portfolio and emits two real pairwise preferences; no learner score or invented negative participates.
+  All three accepted transition rows still share one verified save-day and therefore land in validation only. Formal
+  product training remains false until independent train/validation/test save-days each carry pairwise evidence and a
+  dedicated goal-to-method trainer consumes this corpus.
 
 ## Review questions
 

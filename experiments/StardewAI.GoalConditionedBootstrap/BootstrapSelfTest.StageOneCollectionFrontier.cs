@@ -354,6 +354,23 @@ internal static partial class BootstrapSelfTest
                     ["HarvestMaxQuality"] = null,
                     ["Texture"] = @"TileSheets\crops",
                     ["SpriteIndex"] = 0
+                },
+                ["473"] = new Dictionary<string, object?>
+                {
+                    ["Seasons"] = new[] { 0 },
+                    ["DaysInPhase"] = new[] { 1, 1, 1, 1 },
+                    ["RegrowDays"] = 3,
+                    ["IsPaddyCrop"] = false,
+                    ["NeedsWatering"] = true,
+                    ["PlantableLocationRules"] = null,
+                    ["HarvestItemId"] = "188",
+                    ["HarvestMinStack"] = 1,
+                    ["HarvestMaxStack"] = 1,
+                    ["ExtraHarvestChance"] = 0d,
+                    ["HarvestMinQuality"] = 0,
+                    ["HarvestMaxQuality"] = null,
+                    ["Texture"] = @"TileSheets\crops",
+                    ["SpriteIndex"] = 1
                 }
             }
         });
@@ -604,7 +621,10 @@ internal static partial class BootstrapSelfTest
                         1,
                         CollectionAlternative(
                             "24", "(O)24", "Parsnip", "item_id", 2, 1,
-                            "harvests_as", "crop:472", includeFixtureShopRoute: true)))
+                            "harvests_as", "crop:472", includeFixtureShopRoute: true),
+                        CollectionAlternative(
+                            "188", "(O)188", "Green Bean", "item_id", 1, 0,
+                            "harvests_as", "crop:473")))
             }
         });
 
@@ -629,7 +649,7 @@ internal static partial class BootstrapSelfTest
             status = "complete",
             goal_id = "goal.grandpa_21",
             requirement_inventory_sha256 = HashFile(inventoryPath),
-            route_occurrence_count = 76,
+            route_occurrence_count = 77,
             dependency_axis_inventory_complete = true,
             required_downstream_dependency_axes =
                 StageOneCollectionRouteDependencyAxes.Required,
@@ -658,7 +678,11 @@ internal static partial class BootstrapSelfTest
                         CollectionLoweredAlternative(
                             "24", "(O)24", "Parsnip", "item_id", 2, 1,
                             "harvests_as", "crop:472", "farm.maintain_crops",
-                            includeFixtureShopRoute: true)))
+                            includeFixtureShopRoute: true),
+                        CollectionLoweredAlternative(
+                            "188", "(O)188", "Green Bean", "item_id", 1, 0,
+                            "harvests_as", "crop:473",
+                            "farm.maintain_crops")))
             }
         });
 
@@ -773,8 +797,8 @@ internal static partial class BootstrapSelfTest
                 routeCalendar.RouteOccurrenceInventoryComplete &&
                 routeCalendar.StaticCalendarSourceResolutionComplete &&
                 !routeCalendar.TrainingLabelEligible &&
-                routeCalendar.RouteOccurrenceCount == 76 &&
-                routeCalendar.ResolvedStaticSourceCount == 76 &&
+                routeCalendar.RouteOccurrenceCount == 77 &&
+                routeCalendar.ResolvedStaticSourceCount == 77 &&
                 routeCalendar.BlockedStaticSourceCount == 0 &&
                 routeCalendar.CropDataSha256 == HashFile(cropsPath) &&
                 routeCalendar.NativeCropGrowthSourceSha256 ==
@@ -908,9 +932,9 @@ internal static partial class BootstrapSelfTest
                 targetDateCalendar.CalendarAxisResolutionComplete &&
                 !targetDateCalendar.TrainingLabelEligible &&
                 targetDateCalendar.TargetTotalDay == 0 &&
-                targetDateCalendar.RouteOccurrenceCount == 76 &&
-                targetDateCalendar.CalendarAxisResolvedCount == 76 &&
-                targetDateCalendar.StaticWindowMatchCount == 4 &&
+                targetDateCalendar.RouteOccurrenceCount == 77 &&
+                targetDateCalendar.CalendarAxisResolvedCount == 77 &&
+                targetDateCalendar.StaticWindowMatchCount == 5 &&
                 targetDateCalendar.StaticWindowMissCount == 72 &&
                 targetDateCalendar.BlockedStaticSourceCount == 0 &&
                 targetDateCalendar.StaticCalendarResolutionSha256 ==
@@ -964,9 +988,9 @@ internal static partial class BootstrapSelfTest
                 targetDateUnlock.UnlockAxisResolutionComplete &&
                 !targetDateUnlock.TrainingLabelEligible &&
                 targetDateUnlock.TargetTotalDay == 0 &&
-                targetDateUnlock.RouteOccurrenceCount == 76 &&
-                targetDateUnlock.UnlockAxisResolvedCount == 76 &&
-                targetDateUnlock.UnlockStateMatchCount == 4 &&
+                targetDateUnlock.RouteOccurrenceCount == 77 &&
+                targetDateUnlock.UnlockAxisResolvedCount == 77 &&
+                targetDateUnlock.UnlockStateMatchCount == 5 &&
                 targetDateUnlock.UnlockStateMissCount == 0 &&
                 targetDateUnlock.StaticWindowMissCount == 72 &&
                 targetDateUnlock.BlockedUpstreamCalendarCount == 0 &&
@@ -1109,9 +1133,9 @@ internal static partial class BootstrapSelfTest
                 targetDateFestival.CalendarConditionAxisResolutionComplete &&
                 !targetDateFestival.TrainingLabelEligible &&
                 targetDateFestival.TargetTotalDay == 0 &&
-                targetDateFestival.RouteOccurrenceCount == 76 &&
-                targetDateFestival.CalendarConditionAxisResolvedCount == 76 &&
-                targetDateFestival.CalendarConditionMatchCount == 4 &&
+                targetDateFestival.RouteOccurrenceCount == 77 &&
+                targetDateFestival.CalendarConditionAxisResolvedCount == 77 &&
+                targetDateFestival.CalendarConditionMatchCount == 5 &&
                 targetDateFestival.CalendarConditionMissCount == 0 &&
                 targetDateFestival.NotApplicableStaticWindowCount == 72 &&
                 targetDateFestival.NotApplicableUnlockStateCount == 0 &&
@@ -1158,9 +1182,9 @@ internal static partial class BootstrapSelfTest
                 targetDateLocation.LocationRouteAxisResolutionComplete &&
                 !targetDateLocation.TrainingLabelEligible &&
                 targetDateLocation.TargetTotalDay == 0 &&
-                targetDateLocation.RouteOccurrenceCount == 76 &&
-                targetDateLocation.LocationRouteAxisResolvedCount == 76 &&
-                targetDateLocation.LocationRouteMatchCount == 4 &&
+                targetDateLocation.RouteOccurrenceCount == 77 &&
+                targetDateLocation.LocationRouteAxisResolvedCount == 77 &&
+                targetDateLocation.LocationRouteMatchCount == 5 &&
                 targetDateLocation.LocationRouteMissCount == 0 &&
                 targetDateLocation.NotApplicableStaticWindowCount == 72 &&
                 targetDateLocation.NotApplicableUnlockStateCount == 0 &&
@@ -1214,15 +1238,15 @@ internal static partial class BootstrapSelfTest
                 targetDateFacility.TargetTotalDay == 0 &&
                 targetDateFacility.StaticCalendarResolutionSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(routeCalendarPath) &&
-                targetDateFacility.RouteOccurrenceCount == 76 &&
-                targetDateFacility.FacilityCapacityAxisResolvedCount == 76 &&
-                targetDateFacility.FacilityCapacityMatchCount == 4 &&
+                targetDateFacility.RouteOccurrenceCount == 77 &&
+                targetDateFacility.FacilityCapacityAxisResolvedCount == 77 &&
+                targetDateFacility.FacilityCapacityMatchCount == 5 &&
                 targetDateFacility.FacilityCapacityMissCount == 0 &&
                 targetDateFacility.FacilityCapacityNotRequiredCount == 2 &&
                 targetDateFacility.NotApplicableUpstreamCount == 72 &&
                 targetDateFacility.BlockedUpstreamCount == 0 &&
                 targetDateFacility.BlockedFacilityEvidenceCount == 0 &&
-                targetDateFacilityCrops.Length == 2 &&
+                targetDateFacilityCrops.Length == 3 &&
                 targetDateFacilityCrops.All(route =>
                     route.FacilityRequirementKind ==
                         "prepared_cultivation_slot" &&
@@ -1232,7 +1256,7 @@ internal static partial class BootstrapSelfTest
                         route.TargetEvaluations.Single()
                             .RequiredCropSlotCount)
                     .Order()
-                    .SequenceEqual(new int?[] { 1, 2 }) &&
+                    .SequenceEqual(new int?[] { 1, 1, 2 }) &&
                 targetDateFacilityShop.FacilityCapacityAxisStatus ==
                     "resolved_facility_capacity_not_required" &&
                 carriedLocationShopJson == sourceLocationShopJson,
@@ -1297,7 +1321,7 @@ internal static partial class BootstrapSelfTest
                 missingFacilityReport.FacilityCapacityMissCount == 0 &&
                 missingFacilityReport.FacilityCapacityNotRequiredCount == 2 &&
                 missingFacilityReport.NotApplicableUpstreamCount == 72 &&
-                missingFacilityReport.BlockedFacilityEvidenceCount == 2 &&
+                missingFacilityReport.BlockedFacilityEvidenceCount == 3 &&
                 missingFacilityReport.Routes.Where(route =>
                     route.FacilityCapacityAxisStatus ==
                         "blocked_facility_capacity_evidence").All(route =>
@@ -1331,9 +1355,9 @@ internal static partial class BootstrapSelfTest
         Require(zeroFacilityReport.Status ==
                     "complete_target_date_facility_capacity_axis_downstream_pending" &&
                 zeroFacilityReport.FacilityCapacityAxisResolutionComplete &&
-                zeroFacilityReport.FacilityCapacityAxisResolvedCount == 76 &&
+                zeroFacilityReport.FacilityCapacityAxisResolvedCount == 77 &&
                 zeroFacilityReport.FacilityCapacityMatchCount == 2 &&
-                zeroFacilityReport.FacilityCapacityMissCount == 2 &&
+                zeroFacilityReport.FacilityCapacityMissCount == 3 &&
                 zeroFacilityReport.FacilityCapacityNotRequiredCount == 2 &&
                 zeroFacilityReport.BlockedFacilityEvidenceCount == 0 &&
                 zeroFacilityReport.Routes.Where(route =>
@@ -1372,7 +1396,7 @@ internal static partial class BootstrapSelfTest
                 unresolvedCropIdentityReport.FacilityCapacityAxisResolvedCount ==
                     74 &&
                 unresolvedCropIdentityReport.FacilityCapacityMatchCount == 2 &&
-                unresolvedCropIdentityReport.BlockedFacilityEvidenceCount == 2 &&
+                unresolvedCropIdentityReport.BlockedFacilityEvidenceCount == 3 &&
                 unresolvedCropIdentityReport.Routes.Where(route =>
                     route.FacilityCapacityAxisStatus ==
                         "blocked_facility_capacity_evidence").All(route =>
@@ -1416,9 +1440,9 @@ internal static partial class BootstrapSelfTest
                 targetDateResource.TargetTotalDay == 0 &&
                 targetDateResource.StaticCalendarResolutionSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(routeCalendarPath) &&
-                targetDateResource.RouteOccurrenceCount == 76 &&
-                targetDateResource.ResourceInputAxisResolvedCount == 76 &&
-                targetDateResource.ResourceInputMatchCount == 4 &&
+                targetDateResource.RouteOccurrenceCount == 77 &&
+                targetDateResource.ResourceInputAxisResolvedCount == 77 &&
+                targetDateResource.ResourceInputMatchCount == 5 &&
                 targetDateResource.ResourceInputMissCount == 0 &&
                 targetDateResource.ResourceInputNotRequiredCount == 1 &&
                 targetDateResource.NotApplicableUpstreamCount == 72 &&
@@ -1475,11 +1499,11 @@ internal static partial class BootstrapSelfTest
                 targetDateCurrency.RouteOccurrenceInventoryComplete &&
                 targetDateCurrency.CurrencyAxisResolutionComplete &&
                 !targetDateCurrency.TrainingLabelEligible &&
-                targetDateCurrency.RouteOccurrenceCount == 76 &&
-                targetDateCurrency.CurrencyAxisResolvedCount == 76 &&
-                targetDateCurrency.CurrencyBudgetMatchCount == 4 &&
+                targetDateCurrency.RouteOccurrenceCount == 77 &&
+                targetDateCurrency.CurrencyAxisResolvedCount == 77 &&
+                targetDateCurrency.CurrencyBudgetMatchCount == 5 &&
                 targetDateCurrency.CurrencyBudgetMissCount == 0 &&
-                targetDateCurrency.CurrencyNotRequiredCount == 3 &&
+                targetDateCurrency.CurrencyNotRequiredCount == 4 &&
                 targetDateCurrency.NotApplicableUpstreamCount == 72 &&
                 targetDateCurrency.BlockedUpstreamCount == 0 &&
                 targetDateCurrency.BlockedCurrencyEvidenceCount == 0 &&
@@ -1537,15 +1561,15 @@ internal static partial class BootstrapSelfTest
                 targetDateReservation.RouteOccurrenceInventoryComplete &&
                 targetDateReservation.ReservationAxisResolutionComplete &&
                 !targetDateReservation.TrainingLabelEligible &&
-                targetDateReservation.RouteOccurrenceCount == 76 &&
-                targetDateReservation.ReservationAxisResolvedCount == 76 &&
-                targetDateReservation.ReservationMatchCount == 4 &&
+                targetDateReservation.RouteOccurrenceCount == 77 &&
+                targetDateReservation.ReservationAxisResolvedCount == 77 &&
+                targetDateReservation.ReservationMatchCount == 5 &&
                 targetDateReservation.ReservationConflictCount == 0 &&
                 targetDateReservation.ReservationNotRequiredCount == 1 &&
-                targetDateReservation.ClaimProposedCount == 3 &&
+                targetDateReservation.ClaimProposedCount == 4 &&
                 targetDateReservation.ClaimCommittedCount == 0 &&
                 targetDateReservation.ClaimReplacementCount == 0 &&
-                targetDateReservation.MaterialClaimCount == 3 &&
+                targetDateReservation.MaterialClaimCount == 4 &&
                 targetDateReservation.CurrencyClaimCount == 1 &&
                 targetDateReservation.NotApplicableUpstreamCount == 72 &&
                 targetDateReservation.BlockedUpstreamCount == 0 &&
@@ -1616,15 +1640,15 @@ internal static partial class BootstrapSelfTest
                 targetDateProcessing
                     .ProcessingLeadTimeAxisResolutionComplete &&
                 !targetDateProcessing.TrainingLabelEligible &&
-                targetDateProcessing.RouteOccurrenceCount == 76 &&
-                targetDateProcessing.ProcessingLeadTimeAxisResolvedCount == 76 &&
+                targetDateProcessing.RouteOccurrenceCount == 77 &&
+                targetDateProcessing.ProcessingLeadTimeAxisResolvedCount == 77 &&
                 targetDateProcessing.ProcessingLeadTimeMatchCount == 2 &&
-                targetDateProcessing.ProcessingLeadTimeMissCount == 2 &&
+                targetDateProcessing.ProcessingLeadTimeMissCount == 3 &&
                 targetDateProcessing.ProcessingLeadTimeNotRequiredCount == 2 &&
                 targetDateProcessing.NotApplicableUpstreamCount == 72 &&
                 targetDateProcessing.BlockedUpstreamCount == 0 &&
                 targetDateProcessing.BlockedProcessingEvidenceCount == 0 &&
-                targetDateProcessingCrops.Length == 2 &&
+                targetDateProcessingCrops.Length == 3 &&
                 targetDateProcessingCrops.All(route =>
                     route.ProcessingLeadTimeMatchesTargetDate == false &&
                     route.Evaluations.Single().ProductionStateKind ==
@@ -1689,13 +1713,16 @@ internal static partial class BootstrapSelfTest
         var targetDateFishingProbability = BuildFishingProbability();
         Write(targetDateFishingProbabilityPath, targetDateFishingProbability);
         var targetDateFishingRoute = targetDateFishingProbability.Routes.Single(
-            route => route.RouteKind == "native_location_fish_spawn" &&
+            route => route.RouteOccurrenceId.StartsWith(
+                         "master_angler:",
+                         StringComparison.Ordinal) &&
+                     route.RouteKind == "native_location_fish_spawn" &&
                      route.TargetQualifiedItemId == "(O)145");
         Require(targetDateFishingProbability.Status ==
                     "complete_target_date_fishing_probability_axis_downstream_pending" &&
                 targetDateFishingProbability.RouteOccurrenceInventoryComplete &&
                 !targetDateFishingProbability.TrainingLabelEligible &&
-                targetDateFishingProbability.RouteOccurrenceCount == 76 &&
+                targetDateFishingProbability.RouteOccurrenceCount == 77 &&
                 targetDateFishingProbability.FishingRouteCount == 1 &&
                 targetDateFishingProbability.PositiveProbabilityCount == 1 &&
                 targetDateFishingProbability.ZeroProbabilityCount == 0 &&
@@ -1750,22 +1777,25 @@ internal static partial class BootstrapSelfTest
             route => route.RouteOccurrenceId ==
                 targetDateProcessingShop.RouteOccurrenceId);
         var targetDateStochasticFish = targetDateStochasticRetry.Routes.Single(
-            route => route.RetryBudgetKind ==
-                "independent_binomial_retry_budget");
+            route => route.RouteOccurrenceId.StartsWith(
+                         "master_angler:",
+                         StringComparison.Ordinal) &&
+                     route.RetryBudgetKind ==
+                         "independent_binomial_retry_budget");
         Require(targetDateStochasticRetry.Status ==
                     "complete_target_date_stochastic_retry_budget_axis_downstream_pending" &&
                 targetDateStochasticRetry.RouteOccurrenceInventoryComplete &&
                 targetDateStochasticRetry
                     .StochasticRetryAxisResolutionComplete &&
                 !targetDateStochasticRetry.TrainingLabelEligible &&
-                targetDateStochasticRetry.RouteOccurrenceCount == 76 &&
+                targetDateStochasticRetry.RouteOccurrenceCount == 77 &&
                 targetDateStochasticRetry
-                    .StochasticRetryAxisResolvedCount == 76 &&
+                    .StochasticRetryAxisResolvedCount == 77 &&
                 targetDateStochasticRetry.StochasticRetryMatchCount == 2 &&
                 targetDateStochasticRetry
                     .StochasticRetryNotRequiredCount == 1 &&
                 targetDateStochasticRetry.MaterializedOutputCount == 0 &&
-                targetDateStochasticRetry.NotApplicableUpstreamCount == 74 &&
+                targetDateStochasticRetry.NotApplicableUpstreamCount == 75 &&
                 targetDateStochasticRetry.BlockedUpstreamCount == 0 &&
                 targetDateStochasticRetry
                     .BlockedProbabilityEvidenceCount == 0 &&
@@ -1845,12 +1875,12 @@ internal static partial class BootstrapSelfTest
                 targetDateDailyBudget.RouteOccurrenceInventoryComplete &&
                 targetDateDailyBudget.DailyTimeEnergyAxisResolutionComplete &&
                 !targetDateDailyBudget.TrainingLabelEligible &&
-                targetDateDailyBudget.RouteOccurrenceCount == 76 &&
-                targetDateDailyBudget.DailyTimeEnergyAxisResolvedCount == 76 &&
+                targetDateDailyBudget.RouteOccurrenceCount == 77 &&
+                targetDateDailyBudget.DailyTimeEnergyAxisResolvedCount == 77 &&
                 targetDateDailyBudget.DailyTimeEnergyMatchCount == 2 &&
                 targetDateDailyBudget.DailyTimeBudgetMissCount == 0 &&
                 targetDateDailyBudget.DailyEnergyBudgetMissCount == 0 &&
-                targetDateDailyBudget.NotApplicableUpstreamCount == 74 &&
+                targetDateDailyBudget.NotApplicableUpstreamCount == 75 &&
                 targetDateDailyBudget.BlockedUpstreamCount == 0 &&
                 targetDateDailyBudget.BlockedBudgetEvidenceCount == 0 &&
                 targetDateDailyShop.DailyBudgetKind ==
@@ -1933,12 +1963,12 @@ internal static partial class BootstrapSelfTest
                 targetDateOpportunityCost
                     .OpportunityCostAxisResolutionComplete &&
                 !targetDateOpportunityCost.TrainingLabelEligible &&
-                targetDateOpportunityCost.RouteOccurrenceCount == 76 &&
+                targetDateOpportunityCost.RouteOccurrenceCount == 77 &&
                 targetDateOpportunityCost
-                    .OpportunityCostAxisResolvedCount == 76 &&
+                    .OpportunityCostAxisResolvedCount == 77 &&
                 targetDateOpportunityCost.ParetoFrontierCount == 2 &&
                 targetDateOpportunityCost.ParetoDominatedCount == 0 &&
-                targetDateOpportunityCost.NotApplicableUpstreamCount == 74 &&
+                targetDateOpportunityCost.NotApplicableUpstreamCount == 75 &&
                 targetDateOpportunityCost.BlockedUpstreamCount == 0 &&
                 targetDateOpportunityCost.BlockedCostEvidenceCount == 0 &&
                 targetDateOpportunityShop.OpportunityCostAxisStatus ==
@@ -2848,9 +2878,9 @@ internal static partial class BootstrapSelfTest
             ["social_route_date_evidence"]!["value"]!["locations"]!.AsArray()
             .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
             ["cultivation_capacity"]!.AsObject();
-        readyCropCapacity["total_prepared_soil_slot_count"] = 2;
+        readyCropCapacity["total_prepared_soil_slot_count"] = 3;
         readyCropCapacity["open_prepared_soil_slot_count"] = 0;
-        readyCropCapacity["occupied_crop_slot_count"] = 2;
+        readyCropCapacity["occupied_crop_slot_count"] = 3;
         readyCropCapacity["unresolved_harvest_item_slot_count"] = 0;
         readyCropCapacity["occupied_harvest_items"] = new JsonArray(
             new JsonObject
@@ -2858,6 +2888,12 @@ internal static partial class BootstrapSelfTest
                 ["harvest_item_qualified_id"] = "(O)24",
                 ["is_garden_pot"] = false,
                 ["slot_count"] = 2
+            },
+            new JsonObject
+            {
+                ["harvest_item_qualified_id"] = "(O)188",
+                ["is_garden_pot"] = false,
+                ["slot_count"] = 1
             });
         readyCropSnapshot["state"]!["farm"]!["crops"]!["value"] =
             new JsonArray(
@@ -2879,6 +2915,18 @@ internal static partial class BootstrapSelfTest
                     ["tile_x"] = 2,
                     ["tile_y"] = 1,
                     ["harvest_item_qualified_id"] = "(O)24",
+                    ["harvest_item_projection_status"] =
+                        "exact_from_live_index_of_harvest",
+                    ["dead"] = false,
+                    ["ready_for_harvest"] = true,
+                    ["days_until_next_harvest_if_watered"] = 0
+                },
+                new JsonObject
+                {
+                    ["location_id"] = "Farm",
+                    ["tile_x"] = 3,
+                    ["tile_y"] = 1,
+                    ["harvest_item_qualified_id"] = "(O)188",
                     ["harvest_item_projection_status"] =
                         "exact_from_live_index_of_harvest",
                     ["dead"] = false,
@@ -2909,18 +2957,26 @@ internal static partial class BootstrapSelfTest
             targetDateRouteCalibrationPath,
             readyCropLedgerPath,
             readyCropRoot);
+        var readyCropEvaluations = readyCropProcessing.Routes.Where(route =>
+                route.ProcessingLeadTimeRequirementKind ==
+                    "crop_growth_or_ready_crop")
+            .Select(route => route.Evaluations.Single())
+            .ToArray();
         Require(readyCropProcessing.ProcessingLeadTimeAxisResolutionComplete &&
-                readyCropProcessing.ProcessingLeadTimeMatchCount == 4 &&
+                readyCropProcessing.ProcessingLeadTimeMatchCount == 5 &&
                 readyCropProcessing.ProcessingLeadTimeMissCount == 0 &&
-                readyCropProcessing.Routes.Where(route =>
-                    route.ProcessingLeadTimeRequirementKind ==
-                        "crop_growth_or_ready_crop").All(route =>
-                    route.ProcessingLeadTimeMatchesTargetDate == true &&
-                    route.Evaluations.Single().Status ==
-                        "resolved_existing_crop_ready_on_target_date" &&
-                    route.Evaluations.Single()
-                        .ProvenOutputQuantityLowerBound == 2 &&
-                    route.Evaluations.Single().ProvenMinimumQuality == 1),
+                readyCropEvaluations.Length == 3 &&
+                readyCropEvaluations.All(evaluation =>
+                    evaluation.Status ==
+                        "resolved_existing_crop_ready_on_target_date") &&
+                readyCropEvaluations.Select(evaluation =>
+                        evaluation.ProvenOutputQuantityLowerBound)
+                    .Order()
+                    .SequenceEqual(new int?[] { 1, 2, 2 }) &&
+                readyCropEvaluations.Select(evaluation =>
+                        evaluation.ProvenMinimumQuality)
+                    .Order()
+                    .SequenceEqual(new int?[] { 0, 1, 1 }),
             "A harvest-ready live crop did not satisfy same-day lead time.");
 
         var missingLiveCropSnapshot = JsonNode.Parse(
@@ -2963,7 +3019,7 @@ internal static partial class BootstrapSelfTest
                     .ProcessingLeadTimeAxisResolvedCount == 74 &&
                 missingLiveCropProcessing.ProcessingLeadTimeMatchCount == 2 &&
                 missingLiveCropProcessing.ProcessingLeadTimeMissCount == 0 &&
-                missingLiveCropProcessing.BlockedProcessingEvidenceCount == 2 &&
+                missingLiveCropProcessing.BlockedProcessingEvidenceCount == 3 &&
                 missingLiveCropProcessing.Routes.Where(route =>
                     route.ProcessingLeadTimeAxisStatus ==
                         "blocked_processing_lead_time_evidence").All(route =>
@@ -3031,10 +3087,10 @@ internal static partial class BootstrapSelfTest
         var materialConflict = materialReservedReport.Routes.Single(route =>
             route.InventoryReservationMatchesTargetDate == false);
         Require(materialReservedReport.ReservationAxisResolutionComplete &&
-                materialReservedReport.ReservationMatchCount == 3 &&
+                materialReservedReport.ReservationMatchCount == 4 &&
                 materialReservedReport.ReservationConflictCount == 1 &&
-                materialReservedReport.ClaimProposedCount == 2 &&
-                materialReservedReport.MaterialClaimCount == 2 &&
+                materialReservedReport.ClaimProposedCount == 3 &&
+                materialReservedReport.MaterialClaimCount == 3 &&
                 materialReservedReport.CurrencyClaimCount == 0 &&
                 materialConflict.RouteOccurrenceId ==
                     targetDateCurrencyShop.RouteOccurrenceId &&
@@ -3079,10 +3135,10 @@ internal static partial class BootstrapSelfTest
         var currencyConflict = currencyReservedReport.Routes.Single(route =>
             route.InventoryReservationMatchesTargetDate == false);
         Require(currencyReservedReport.ReservationAxisResolutionComplete &&
-                currencyReservedReport.ReservationMatchCount == 3 &&
+                currencyReservedReport.ReservationMatchCount == 4 &&
                 currencyReservedReport.ReservationConflictCount == 1 &&
-                currencyReservedReport.ClaimProposedCount == 2 &&
-                currencyReservedReport.MaterialClaimCount == 2 &&
+                currencyReservedReport.ClaimProposedCount == 3 &&
+                currencyReservedReport.MaterialClaimCount == 3 &&
                 currencyReservedReport.CurrencyClaimCount == 0 &&
                 currencyConflict.RouteOccurrenceId ==
                     targetDateCurrencyShop.RouteOccurrenceId &&
@@ -3144,9 +3200,9 @@ internal static partial class BootstrapSelfTest
         Write(cancelledReservationLedgerPath, cancelledLedger);
         var cancelledReservationReport =
             BuildReservation(cancelledReservationLedgerPath);
-        Require(cancelledReservationReport.ReservationMatchCount == 4 &&
+        Require(cancelledReservationReport.ReservationMatchCount == 5 &&
                 cancelledReservationReport.ReservationConflictCount == 0 &&
-                cancelledReservationReport.ClaimProposedCount == 3,
+                cancelledReservationReport.ClaimProposedCount == 4,
             "Cancelled reservations incorrectly reduced available supply.");
 
         var proposedShopClaims = targetDateReservationShop.ClaimSet!;
@@ -3187,8 +3243,8 @@ internal static partial class BootstrapSelfTest
             BuildReservation(committedReservationLedgerPath);
         var committedShop = committedReservationReport.Routes.Single(route =>
             route.RouteOccurrenceId == targetDateCurrencyShop.RouteOccurrenceId);
-        Require(committedReservationReport.ReservationMatchCount == 4 &&
-                committedReservationReport.ClaimProposedCount == 2 &&
+        Require(committedReservationReport.ReservationMatchCount == 5 &&
+                committedReservationReport.ClaimProposedCount == 3 &&
                 committedReservationReport.ClaimCommittedCount == 1 &&
                 committedShop.ClaimDisposition == "claim_already_committed" &&
                 committedShop.ClaimSet is not null &&
@@ -3270,7 +3326,7 @@ internal static partial class BootstrapSelfTest
                 missingResourceReport.ResourceInputMissCount == 0 &&
                 missingResourceReport.ResourceInputNotRequiredCount == 1 &&
                 missingResourceReport.NotApplicableUpstreamCount == 72 &&
-                missingResourceReport.BlockedResourceEvidenceCount == 3 &&
+                missingResourceReport.BlockedResourceEvidenceCount == 4 &&
                 missingResourceReport.Routes.Where(route =>
                     route.ResourceInputAxisStatus ==
                         "blocked_resource_input_evidence").All(route =>
@@ -3308,8 +3364,8 @@ internal static partial class BootstrapSelfTest
         Require(insufficientSeedReport.Status ==
                     "complete_target_date_resource_inputs_axis_downstream_pending" &&
                 insufficientSeedReport.ResourceInputAxisResolutionComplete &&
-                insufficientSeedReport.ResourceInputAxisResolvedCount == 76 &&
-                insufficientSeedReport.ResourceInputMatchCount == 2 &&
+                insufficientSeedReport.ResourceInputAxisResolvedCount == 77 &&
+                insufficientSeedReport.ResourceInputMatchCount == 3 &&
                 insufficientSeedReport.ResourceInputMissCount == 2 &&
                 insufficientSeedReport.ResourceInputNotRequiredCount == 1 &&
                 insufficientSeedReport.BlockedResourceEvidenceCount == 0 &&
@@ -3326,8 +3382,8 @@ internal static partial class BootstrapSelfTest
             ["locations"]!.AsArray()
             .Single(row => row!["location_id"]!.GetValue<string>() == "Farm")!
             ["cultivation_capacity"]!.AsObject();
-        existingCropCapacity["total_prepared_soil_slot_count"] = 2;
-        existingCropCapacity["open_prepared_soil_slot_count"] = 0;
+        existingCropCapacity["total_prepared_soil_slot_count"] = 3;
+        existingCropCapacity["open_prepared_soil_slot_count"] = 1;
         existingCropCapacity["occupied_crop_slot_count"] = 2;
         existingCropCapacity["unresolved_harvest_item_slot_count"] = 0;
         existingCropCapacity["occupied_harvest_items"] = new JsonArray(
@@ -3355,10 +3411,16 @@ internal static partial class BootstrapSelfTest
         var existingCropRoutes = existingCropReport.Routes.Where(route =>
                 route.ResourceRequirementKind ==
                     "crop_seed_or_existing_crop" &&
-                route.ResourceInputsMatchTargetDate == true)
+                route.ResourceInputsMatchTargetDate == true &&
+                route.InputEvaluations.Single().InputKind ==
+                    "existing_target_crop")
             .ToArray();
+        var existingCropBeanRoute = existingCropReport.Routes.Single(route =>
+            route.ResourceRequirementKind ==
+                "crop_seed_or_existing_crop" &&
+            route.InputEvaluations.Single().QualifiedItemId == "(O)473");
         Require(existingCropReport.ResourceInputAxisResolutionComplete &&
-                existingCropReport.ResourceInputMatchCount == 4 &&
+                existingCropReport.ResourceInputMatchCount == 5 &&
                 existingCropReport.ResourceInputMissCount == 0 &&
                 existingCropReport.ResourceInputNotRequiredCount == 3 &&
                 existingCropRoutes.Length == 2 &&
@@ -3366,7 +3428,13 @@ internal static partial class BootstrapSelfTest
                     route.InputEvaluations.Single().InputKind ==
                         "existing_target_crop" &&
                     route.InputEvaluations.Single().RequiredQuantity == 0 &&
-                    route.InputEvaluations.Single().AvailableQuantity == 2),
+                    route.InputEvaluations.Single().AvailableQuantity == 2) &&
+                existingCropBeanRoute.InputEvaluations.Single().InputKind ==
+                    "crop_seed" &&
+                existingCropBeanRoute.InputEvaluations.Single()
+                    .RequiredQuantity == 1 &&
+                existingCropBeanRoute.InputEvaluations.Single()
+                    .AvailableQuantity == 1,
             "An existing target crop incorrectly required a new seed.");
 
         var missingShopQuoteSnapshot = JsonNode.Parse(
@@ -3391,10 +3459,10 @@ internal static partial class BootstrapSelfTest
             currencyVariantResourcePath);
         Require(missingShopQuoteCurrency.Status ==
                     "partial_target_date_currency_budget_axis_blocks" &&
-                missingShopQuoteCurrency.CurrencyAxisResolvedCount == 75 &&
-                missingShopQuoteCurrency.CurrencyBudgetMatchCount == 3 &&
+                missingShopQuoteCurrency.CurrencyAxisResolvedCount == 76 &&
+                missingShopQuoteCurrency.CurrencyBudgetMatchCount == 4 &&
                 missingShopQuoteCurrency.CurrencyBudgetMissCount == 0 &&
-                missingShopQuoteCurrency.CurrencyNotRequiredCount == 3 &&
+                missingShopQuoteCurrency.CurrencyNotRequiredCount == 4 &&
                 missingShopQuoteCurrency.NotApplicableUpstreamCount == 72 &&
                 missingShopQuoteCurrency.BlockedUpstreamCount == 1 &&
                 missingShopQuoteCurrency.BlockedCurrencyEvidenceCount == 0 &&
@@ -3425,9 +3493,9 @@ internal static partial class BootstrapSelfTest
             currencyVariantLocationPath,
             currencyVariantFacilityPath,
             currencyVariantResourcePath);
-        Require(missingCurrencyReport.CurrencyAxisResolvedCount == 75 &&
-                missingCurrencyReport.CurrencyBudgetMatchCount == 3 &&
-                missingCurrencyReport.CurrencyNotRequiredCount == 3 &&
+        Require(missingCurrencyReport.CurrencyAxisResolvedCount == 76 &&
+                missingCurrencyReport.CurrencyBudgetMatchCount == 4 &&
+                missingCurrencyReport.CurrencyNotRequiredCount == 4 &&
                 missingCurrencyReport.NotApplicableUpstreamCount == 72 &&
                 missingCurrencyReport.BlockedUpstreamCount == 0 &&
                 missingCurrencyReport.BlockedCurrencyEvidenceCount == 1 &&
@@ -3465,10 +3533,10 @@ internal static partial class BootstrapSelfTest
         var insufficientCurrencyRoute = insufficientCurrencyReport.Routes
             .Single(route => route.CurrencyBudgetMatchesTargetDate == false);
         Require(insufficientCurrencyReport.CurrencyAxisResolutionComplete &&
-                insufficientCurrencyReport.CurrencyAxisResolvedCount == 76 &&
-                insufficientCurrencyReport.CurrencyBudgetMatchCount == 3 &&
+                insufficientCurrencyReport.CurrencyAxisResolvedCount == 77 &&
+                insufficientCurrencyReport.CurrencyBudgetMatchCount == 4 &&
                 insufficientCurrencyReport.CurrencyBudgetMissCount == 1 &&
-                insufficientCurrencyReport.CurrencyNotRequiredCount == 3 &&
+                insufficientCurrencyReport.CurrencyNotRequiredCount == 4 &&
                 insufficientCurrencyReport.BlockedCurrencyEvidenceCount == 0 &&
                 insufficientCurrencyRoute.CurrencyEvaluation is not null &&
                 insufficientCurrencyRoute.CurrencyEvaluation.RequiredAmount ==
@@ -3552,7 +3620,7 @@ internal static partial class BootstrapSelfTest
                 missingRouteReport.LocationRouteMatchCount == 0 &&
                 missingRouteReport.LocationRouteMissCount == 0 &&
                 missingRouteReport.NotApplicableStaticWindowCount == 72 &&
-                missingRouteReport.BlockedLocationEvidenceCount == 4 &&
+                missingRouteReport.BlockedLocationEvidenceCount == 5 &&
                 missingRouteReport.Routes.Where(route =>
                     route.LocationRouteAxisStatus ==
                         "blocked_location_route_evidence").All(route =>
@@ -3603,8 +3671,8 @@ internal static partial class BootstrapSelfTest
         Require(deniedRouteReport.Status ==
                     "complete_target_date_location_route_axis_downstream_pending" &&
                 deniedRouteReport.LocationRouteAxisResolutionComplete &&
-                deniedRouteReport.LocationRouteAxisResolvedCount == 76 &&
-                deniedRouteReport.LocationRouteMatchCount == 3 &&
+                deniedRouteReport.LocationRouteAxisResolvedCount == 77 &&
+                deniedRouteReport.LocationRouteMatchCount == 4 &&
                 deniedRouteReport.LocationRouteMissCount == 1 &&
                 deniedRouteReport.BlockedLocationEvidenceCount == 0 &&
                 deniedShop.LocationRouteAxisStatus ==
@@ -3642,8 +3710,8 @@ internal static partial class BootstrapSelfTest
         Require(missingCalendarReport.Status ==
                     "partial_target_date_festival_axis_blocks" &&
                 !missingCalendarReport.CalendarConditionAxisResolutionComplete &&
-                missingCalendarReport.CalendarConditionAxisResolvedCount == 75 &&
-                missingCalendarReport.CalendarConditionMatchCount == 3 &&
+                missingCalendarReport.CalendarConditionAxisResolvedCount == 76 &&
+                missingCalendarReport.CalendarConditionMatchCount == 4 &&
                 missingCalendarReport.BlockedCalendarEvidenceCount == 1 &&
                 missingCalendarReport.Routes.Single(route =>
                     route.UpstreamRoute.RequirementId ==
@@ -3696,7 +3764,7 @@ internal static partial class BootstrapSelfTest
                     "partial_target_date_unlock_axis_blocks" &&
                 !missingUnlockReport.UnlockAxisResolutionComplete &&
                 missingUnlockReport.BlockedUnlockEvidenceCount == 1 &&
-                missingUnlockReport.UnlockStateMatchCount == 3 &&
+                missingUnlockReport.UnlockStateMatchCount == 4 &&
                 missingUnlockReport.Routes.Single(route =>
                     route.RequirementId ==
                         "community_center:bundle:Pantry/5" &&
@@ -3763,7 +3831,7 @@ internal static partial class BootstrapSelfTest
         var secondYearShop = secondYearCalendar.Routes.Single(route =>
             route.RequirementId == "community_center:bundle:Pantry/5" &&
             route.RouteKind == "sells");
-        Require(secondYearCalendar.StaticWindowMatchCount == 4 &&
+        Require(secondYearCalendar.StaticWindowMatchCount == 5 &&
                 secondYearShop.CalendarAxisResolved &&
                 !secondYearShop.StaticWindowMatchesTargetDate &&
                 secondYearShop.CalendarAxisStatus ==

@@ -385,6 +385,14 @@ internal static partial class BootstrapSelfTest
                                         stack = 1,
                                         quality = 0,
                                         sale_price = 0
+                                    },
+                                    new
+                                    {
+                                        slot_index = 3,
+                                        qualified_item_id = "(O)473",
+                                        stack = 1,
+                                        quality = 0,
+                                        sale_price = 30
                                     }
                                 }
                             }
@@ -416,6 +424,16 @@ internal static partial class BootstrapSelfTest
                             new
                             {
                                 qualified_item_id = "(T)BambooPole",
+                                quality = 0,
+                                available_quantity = 1,
+                                ready_output_quantity = 0,
+                                in_process_quantity = 0,
+                                restricted_quantity = 0,
+                                source_slot_count = 1
+                            },
+                            new
+                            {
+                                qualified_item_id = "(O)473",
                                 quality = 0,
                                 available_quantity = 1,
                                 ready_output_quantity = 0,
@@ -562,7 +580,8 @@ internal static partial class BootstrapSelfTest
                                     "Pantry/5",
                                     5,
                                     1,
-                                    CollectionIngredient(0, "24", 2, 1, false))
+                                    CollectionIngredient(0, "24", 2, 1, false),
+                                    CollectionIngredient(1, "188", 1, 0, false))
                             }
                         }
                     }
