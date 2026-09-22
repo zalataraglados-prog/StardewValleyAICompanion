@@ -1698,9 +1698,15 @@ Slice 7 remains assigned to the RTX 5070 node.
   comparison-pair coverage is an independent trainer gate. The continuation fixture now exposes three complete
   portfolio alternatives: two quality Parsnips, one Green Bean, or both. The deterministic Teacher strictly selects
   the Green Bean portfolio and emits two real pairwise preferences; no learner score or invented negative participates.
-  All three accepted transition rows still share one verified save-day and therefore land in validation only. Formal
-  product training remains false until independent train/validation/test save-days each carry pairwise evidence and a
-  dedicated goal-to-method trainer consumes this corpus.
+  The blocked regression still feeds the same validation source twice and proves exact deduplication plus missing-
+  partition rejection. The positive regression independently rebuilds the full three-transition proof for three save
+  identities whose verified save-day keys land in train, validation and test. It yields nine accepted rows and six real
+  pairwise preferences, with three rows and one split key in each partition, so the corpus now reaches
+  `ready_goal_method_trainer_input`. Forecast refresh also inherits the complete save/player/date identity from its base
+  snapshot before rehashing; cross-save forecast evidence therefore cannot leak into a rollout. Formal product training
+  remains false until a dedicated goal-to-method trainer consumes this schema and the separate 19/19 Teacher-coverage
+  gate is satisfied. The existing `StructuredPolicyTrainer.BuildPairs` must not consume it because that trainer derives
+  labels from `candidate.Selected` rather than these explicit Teacher pairwise preferences.
 
 ## Review questions
 

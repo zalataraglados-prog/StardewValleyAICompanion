@@ -13,15 +13,78 @@ internal static partial class BootstrapSelfTest
         string shopRouteOccurrenceId,
         string fishRouteOccurrenceId)
     {
-        var outputRoot = Path.Combine(
+        var fixtureRoot = Path.Combine(
             Path.GetDirectoryName(template.BeforeSnapshotPath)!,
-            "portfolio-continuation-fixture");
+            "portfolio-continuation-fixtures");
+        Directory.CreateDirectory(fixtureRoot);
+        var fixtures = new[]
+        {
+            (FixtureId: "train", SaveId: "fixture-save-0",
+                ExpectedPartition: "train"),
+            (FixtureId: "validation", SaveId: "fixture-save",
+                ExpectedPartition: "validation"),
+            (FixtureId: "test", SaveId: "fixture-save-2",
+                ExpectedPartition: "test")
+        };
+        var sources = fixtures.Select(fixture =>
+            {
+                var source = BuildTargetDatePortfolioContinuationFixture(
+                    template,
+                    shopRouteOccurrenceId,
+                    fishRouteOccurrenceId,
+                    fixtureRoot,
+                    fixture.FixtureId,
+                    fixture.SaveId);
+                var dataset = CurrentTeacherFrontierSupport.Read<
+                    AcquisitionRoutePortfolioSupervisionDataset>(
+                    source.DatasetPath,
+                    "Independent portfolio supervision fixture");
+                var contexts = dataset.Rows.Select(row =>
+                        row.Payload.DecisionContext)
+                    .ToArray();
+                Require(contexts.Length == 3 &&
+                        contexts.All(context =>
+                            context.SaveId == fixture.SaveId &&
+                            context.PlayerId == "1" &&
+                            context.Year == 1 &&
+                            context.Season == "spring" &&
+                            context.Day == 1 &&
+                            context.SplitKey == fixture.SaveId +
+                                ":1:spring:1") &&
+                        StardewAI.Core.Training
+                            .PolicyTrajectoryDatasetBuilder.PartitionFor(
+                                contexts[0].SplitKey) ==
+                            fixture.ExpectedPartition,
+                    "Independent portfolio supervision save-day identity drifted for " +
+                    fixture.FixtureId + ".");
+                return source;
+            })
+            .ToArray();
+        VerifyTargetDatePortfolioSupervisionCorpus(
+            sources,
+            fixtureRoot);
+    }
+
+    private static AcquisitionRoutePortfolioSupervisionCorpusSource
+        BuildTargetDatePortfolioContinuationFixture(
+            AcquisitionRouteExecutionBindingInputs template,
+            string shopRouteOccurrenceId,
+            string fishRouteOccurrenceId,
+            string fixtureRoot,
+            string fixtureId,
+            string saveId)
+    {
+        var outputRoot = Path.Combine(
+            fixtureRoot,
+            fixtureId);
         Directory.CreateDirectory(outputRoot);
         var snapshotPath = Path.Combine(outputRoot, "before-snapshot.json");
         var snapshot = JsonNode.Parse(
             File.ReadAllText(template.BeforeSnapshotPath))!.AsObject();
-        const string stateHash = "three-transition-portfolio-state";
+        var stateHash = "three-transition-portfolio-state-" + fixtureId;
         snapshot["state_hash"] = stateHash;
+        snapshot["save_id"]!["value"] = saveId;
+        snapshot["state"]!["identity"]!["save_id"]!["value"] = saveId;
         var capacity = snapshot["state"]!["locations"]!
             ["social_route_date_evidence"]!["value"]!["locations"]!
             .AsArray()
@@ -53,7 +116,7 @@ internal static partial class BootstrapSelfTest
             snapshotPath,
             snapshot.ToJsonString(JsonDefaults.Options));
         var ledgerPath = Path.Combine(outputRoot, "strategy-ledger.json");
-        WriteEmptyStrategyLedger(ledgerPath, stateHash);
+        WriteEmptyStrategyLedger(ledgerPath, stateHash, saveId);
         var proposalPath = Path.Combine(outputRoot, "proposal.json");
         var portfolioInputs = BuildTargetDatePortfolioInputs(
             template,
@@ -279,13 +342,19 @@ internal static partial class BootstrapSelfTest
             commitResultPath,
             Path.Combine(outputRoot, "queue.json"),
             selectedRequirementRoute);
+        var completedSupervisionSources = new List<
+            AcquisitionRoutePortfolioSupervisionCorpusSource>();
         VerifyTargetDateFreshTerminalReceipt(
             executionInputs,
             Path.Combine(outputRoot, "execution-binding.json"),
             Path.Combine(outputRoot, "after-snapshot.json"),
             Path.Combine(outputRoot, "execution-receipt.json"),
             Path.Combine(outputRoot, "insufficient-after-snapshot.json"),
-            expectedPortfolioCompletion: false);
+            expectedPortfolioCompletion: false,
+            completedSupervisionSources);
+        Require(completedSupervisionSources.Count == 1,
+            "Completed rollout fixture did not emit exactly one supervision source.");
+        return completedSupervisionSources[0];
 
         static JsonObject ReadyCrop(
             int tileX,

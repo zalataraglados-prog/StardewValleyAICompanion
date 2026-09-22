@@ -55,10 +55,13 @@ internal static partial class BootstrapSelfTest
 
     private static void WriteEmptyStrategyLedger(
         string path,
-        string stateHash) => Write(path, new StrategyCommitmentLedger
+        string stateHash,
+        string saveId = "fixture-save") => Write(
+        path,
+        new StrategyCommitmentLedger
         {
-            LedgerId = "strategy-ledger:fixture-save:1",
-            SaveId = "fixture-save",
+            LedgerId = "strategy-ledger:" + saveId + ":1",
+            SaveId = saveId,
             PlayerId = "1",
             Revision = 0,
             UpdatedAt = "2026-09-10T00:00:00Z",

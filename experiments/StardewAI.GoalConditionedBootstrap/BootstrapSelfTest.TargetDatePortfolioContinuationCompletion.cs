@@ -13,7 +13,9 @@ internal static partial class BootstrapSelfTest
         string requestPath,
         AcquisitionRouteExecutionBindingInputs bindingInputs,
         string bindingPath,
-        string outputRoot)
+        string outputRoot,
+        ICollection<AcquisitionRoutePortfolioSupervisionCorpusSource>
+            completedSupervisionSources)
     {
         var priorVerified = AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
             priorManifestPath);
@@ -247,7 +249,8 @@ internal static partial class BootstrapSelfTest
                 bindingInputs,
                 manifestPath,
                 afterSnapshotPath,
-                settledLedgerPath);
+                settledLedgerPath,
+                completedSupervisionSources);
             return;
         }
         Require(proofReceipt.TransitionCount >= 3,
@@ -272,11 +275,12 @@ internal static partial class BootstrapSelfTest
                 admission.BlockingReasons.Length == 0,
             "Completed rollout proof did not cross scoped controller admission.");
 
-        VerifyTargetDatePortfolioSupervision(
-            manifestPath,
-            proofReceiptPath,
-            admissionPath,
-            outputRoot);
+        completedSupervisionSources.Add(
+            VerifyTargetDatePortfolioSupervision(
+                manifestPath,
+                proofReceiptPath,
+                admissionPath,
+                outputRoot));
 
         var forgedProofReceiptPath = Path.Combine(
             outputRoot,

@@ -1298,3 +1298,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 锁定的 1.6.15 `Crop` 反编译结果表明，原版季节野生种子 `495..498` 在播种时把随机选择写入 `replaceWithObjectOnFullGrown`，成熟日再将该已选结果物化。透明桥现在读取并校验这个实时字段，而不是误把 `indexOfHarvest` 的 Data/Crops 代表值当最终产物；耕作容量和逐格作物状态共用同一个解析器，避免形成两套身份规则。
 - 处理提前量轴对 `stochastic_outcome=true` 的作物只接受 `exact_from_live_native_wild_seed_replacement`。聚焦回归同时固定三种语义：普通单一产物作物可零重试、未解析的野生种子目标必须要求随机证据、fresh 状态已经确定目标结果时无需再次随机。
 - 验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`，完整 Stage 1 collection self-test 及未完成链/伪造 admission/篡改 dataset/corpus 源负例全部通过。本切片未启动游戏，也未写正式训练数据。下一固定切片是构造彼此独立的 train/validation/test save-day，并让每个分区都具有真实 pairwise 证据；之后实现专用 goal-to-method trainer。旧 `StructuredPolicyTrainer.BuildPairs` 仍依赖 `candidate.Selected`，不得消费本 corpus；19/19 Teacher 覆盖仍是正式全量训练的独立硬门。
+
+## 2026-09-22 独立 save-day Teacher corpus 跨过训练器输入门
+
+- 同一条三 transition rollout 验证链现在分别从 `fixture-save-0`、`fixture-save`、`fixture-save-2` 三个独立存档身份重新生成。每份来源都独立经历完整 Teacher 分母、严格 Pareto 偏好、原子 reservation、执行回执、fresh 终态、结算、continuation 重规划、终态 proof 和 controller admission；没有复制数据集或改写 split 标签。
+- 钓鱼预测刷新器随之修正一个真实身份漏绑：派生预测快照现在从基准快照同步 save/player FieldEnvelope、state identity 以及 year/season/day/total_days/time，再重新计算 state hash。旧实现只同步 tick/time/total_days，会让其他存档的预测证据混入当前 rollout；该情况现在由既有身份门失败关闭。
+- 三个不可由调用方填写的 split key 分别确定落入 train、validation、test。正向 corpus 得到 `3 source / 3 unique / 9 accepted / 0 duplicate / 6 pairwise`，每个分区都是 `3 rows / 1 split key`，manifest 状态为 `ready_goal_method_trainer_input` 且 blocker 为空。单一 validation 来源重复输入的负例仍得到 `6 input / 3 accepted / 3 duplicate`，并继续因 train/test pairwise 为空而阻塞；篡改 source 仍被拒绝。
+- `goal_method_trainer_input_ready=true` 只证明这批类型化 Teacher corpus 满足专用训练器的最小分区与比较信号门，不等于正式产品训练。`formal_product_training_authorized=false` 保持不变，19/19 Teacher 覆盖仍是独立硬门。本切片没有启动游戏或训练；下一固定切片是实现只消费该 corpus schema 的 goal-to-method pairwise trainer，禁止复用依赖 `candidate.Selected` 的旧 `StructuredPolicyTrainer.BuildPairs`。

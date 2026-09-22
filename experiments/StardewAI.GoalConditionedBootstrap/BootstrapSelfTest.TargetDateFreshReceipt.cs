@@ -16,7 +16,9 @@ internal static partial class BootstrapSelfTest
         string afterSnapshotPath,
         string executionReceiptPath,
         string insufficientAfterSnapshotPath,
-        bool expectedPortfolioCompletion = true)
+        bool expectedPortfolioCompletion = true,
+        ICollection<AcquisitionRoutePortfolioSupervisionCorpusSource>?
+            completedSupervisionSources = null)
     {
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
@@ -369,7 +371,10 @@ internal static partial class BootstrapSelfTest
                 inputs,
                 initialManifestPath,
                 afterSnapshotPath,
-                settledLedgerPath);
+                settledLedgerPath,
+                completedSupervisionSources ??
+                    throw new InvalidOperationException(
+                        "Incomplete rollout fixture requires a supervision source collector."));
         }
         var completedContinuationRejected = false;
         if (expectedPortfolioCompletion)

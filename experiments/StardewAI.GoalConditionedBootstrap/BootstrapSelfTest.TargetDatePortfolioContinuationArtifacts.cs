@@ -220,10 +220,7 @@ internal static partial class BootstrapSelfTest
         var baseRoot = System.Text.Json.Nodes.JsonNode.Parse(
             File.ReadAllText(baseSnapshotPath))!.AsObject();
         var baseTick = baseRoot["game_tick"]!.GetValue<long>();
-        var time = baseRoot["state"]!["time"]!["time"]!["value"]!
-            .GetValue<int>();
-        var totalDays = baseRoot["state"]!["time"]!["total_days"]![
-            "value"]!.GetValue<int>();
+        var baseTime = baseRoot["state"]!["time"]!.AsObject();
         var sourceDirectory = Path.GetDirectoryName(
             Path.GetFullPath(sourceManifestPath))!;
         var refreshed = new List<FishingForecastSnapshotReference>();
@@ -236,9 +233,19 @@ internal static partial class BootstrapSelfTest
             var root = System.Text.Json.Nodes.JsonNode.Parse(
                 File.ReadAllText(sourceSnapshotPath))!.AsObject();
             root["game_tick"] = baseTick + 1;
-            root["in_game_time"]!["value"] = time;
-            root["state"]!["time"]!["time"]!["value"] = time;
-            root["state"]!["time"]!["total_days"]!["value"] = totalDays;
+            root["save_id"] = baseRoot["save_id"]!.DeepClone();
+            root["player_id"] = baseRoot["player_id"]!.DeepClone();
+            root["in_game_time"] = baseRoot["in_game_time"]!.DeepClone();
+            root["state"]!["identity"] =
+                baseRoot["state"]!["identity"]!.DeepClone();
+            foreach (var field in new[]
+                     {
+                         "year", "season", "day", "total_days", "time"
+                     })
+            {
+                root["state"]!["time"]![field] =
+                    baseTime[field]!.DeepClone();
+            }
             var envelope = System.Text.Json.JsonSerializer.Deserialize<
                 StardewAI.Contracts.State.SnapshotEnvelope>(
                 root.ToJsonString(JsonDefaults.Options),

@@ -697,6 +697,11 @@ adapter remains scoped Teacher evidence, not a formal dataset/trainer authorizat
 The companion `acquisition_route_portfolio_supervision_corpus_manifest.v1` rebuilds every listed
 source, deduplicates only byte-equivalent typed rows, rejects conflicting row identities, and derives
 train/validation/test partitions from the verified snapshot save-day key. It records comparison-pair
-coverage separately from evidence eligibility. The current three-transition fixture has one admitted
-portfolio at every decision and therefore zero pairwise labels; it is retained as verified evidence
-but is correctly blocked as goal-to-method trainer input.
+coverage separately from evidence eligibility. The current bounded fixture has three admitted portfolio
+alternatives at each decision, and the deterministic Teacher strictly prefers one alternative over the
+other two. Three independently rebuilt three-transition rollout proofs use distinct save identities whose
+verified save-day keys land exactly once in train, validation, and test. The resulting corpus contains nine
+accepted rows and six real pairwise preferences, with three rows and one split key per partition, and is
+therefore `ready_goal_method_trainer_input`. A duplicate single-save source remains a blocked deduplication
+regression. This status does not authorize formal product training: a dedicated trainer for the explicit
+Teacher pairwise schema and the independent 19/19 Teacher-coverage gate are still required.

@@ -12,7 +12,9 @@ internal static partial class BootstrapSelfTest
         AcquisitionRouteExecutionBindingInputs priorInputs,
         string priorManifestPath,
         string currentSnapshotPath,
-        string currentLedgerPath)
+        string currentLedgerPath,
+        ICollection<AcquisitionRoutePortfolioSupervisionCorpusSource>
+            completedSupervisionSources)
     {
         var latest = AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
             priorManifestPath);
@@ -287,7 +289,8 @@ internal static partial class BootstrapSelfTest
             requestPath,
             bindingInputs,
             bindingPath,
-            outputRoot);
+            outputRoot,
+            completedSupervisionSources);
     }
 
 }
