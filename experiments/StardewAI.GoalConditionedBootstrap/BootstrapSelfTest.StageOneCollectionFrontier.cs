@@ -36,6 +36,9 @@ internal static partial class BootstrapSelfTest
         var shopPurchaseSourcePath = Path.Combine(root, "ShopMenu.cs");
         var gameStateQuerySourcePath = Path.Combine(root, "GameStateQuery.cs");
         var routeCalendarPath = Path.Combine(root, "route-calendar-resolution.json");
+        var currentRouteCalendarPath = Path.Combine(
+            root,
+            "current-route-calendar-resolution.json");
         var targetDateCalendarPath = Path.Combine(root, "target-date-calendar.json");
         var targetDateUnlockPath = Path.Combine(root, "target-date-unlock.json");
         var targetDateFestivalPath = Path.Combine(root, "target-date-festival.json");
@@ -4052,6 +4055,65 @@ internal static partial class BootstrapSelfTest
                     1, "188", "(O)188", "item_id", 1, 0, false,
                     CollectionDenominatorTarget(
                         "188", "(O)188", "Green Bean", "harvests_as", "crop:473"))));
+
+        var calendarCommunityCenterDenominator = CollectionDenominatorFixture(
+            inventoryPath,
+            snapshotPath,
+            stateHash,
+            "remixed",
+            communityCenterDenominator.ActiveBundles[0],
+            CollectionDenominatorBundle(
+                "Pantry/6", "Pantry", 6, 1,
+                CollectionDenominatorIngredient(
+                    0, "-5", string.Empty, "category", 1, 0, false,
+                    CollectionDenominatorTarget(
+                        "176", "(O)176", "Egg", "sells", "shop:FixtureShop"))));
+        var currentRouteCalendar = AcquisitionRouteCalendarResolutionBuilder.Build(
+            inventoryPath,
+            loweringPath,
+            windowsPath,
+            snapshotPath,
+            calendarCommunityCenterDenominator);
+        Write(currentRouteCalendarPath, currentRouteCalendar);
+        var currentCommunityCenterRoutes = currentRouteCalendar.Routes
+            .Where(route => route.RequirementSetId ==
+                "community_center_standard")
+            .ToArray();
+        var staticNonCommunityCenterRoutes = JsonSerializer.Serialize(
+            routeCalendar.Routes.Where(route => route.RequirementSetId !=
+                "community_center_standard").ToArray(),
+            JsonDefaults.Options);
+        var currentNonCommunityCenterRoutes = JsonSerializer.Serialize(
+            currentRouteCalendar.Routes.Where(route => route.RequirementSetId !=
+                "community_center_standard").ToArray(),
+            JsonDefaults.Options);
+        Require(currentRouteCalendar.UsesCurrentCommunityCenterDenominator &&
+                currentRouteCalendar.CommunityCenterBundleMode == "remixed" &&
+                currentRouteCalendar.CommunityCenterDenominatorSha256 ==
+                    calendarCommunityCenterDenominator.DenominatorSha256 &&
+                currentRouteCalendar.CommunityCenterSourceStateHash == stateHash &&
+                currentRouteCalendar.CommunityCenterSnapshotSha256 ==
+                    HashFile(snapshotPath) &&
+                currentRouteCalendar.RouteOccurrenceCount == 77 &&
+                currentCommunityCenterRoutes.Length == 3 &&
+                currentCommunityCenterRoutes.Count(route =>
+                    route.RequirementId ==
+                        "community_center:bundle:Pantry/5") == 2 &&
+                !currentCommunityCenterRoutes.Any(route =>
+                    route.RequirementId ==
+                        "community_center:bundle:Pantry/5" &&
+                    route.RouteKind == "sells") &&
+                currentCommunityCenterRoutes.Any(route =>
+                    route.RequirementId ==
+                        "community_center:bundle:Pantry/6" &&
+                    route.AlternativeIndex == 0 &&
+                    route.ItemId == "176" &&
+                    route.QualifiedItemId == "(O)176" &&
+                    route.MatchKind == "category" &&
+                    route.RouteKind == "sells") &&
+                currentNonCommunityCenterRoutes ==
+                    staticNonCommunityCenterRoutes,
+            "Current Community Center route calendar did not replace static routes or preserve concrete category targets.");
 
         var intents = MasterAnglerTargetDateIntentBuilder.Build(
             windowsPath,

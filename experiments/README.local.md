@@ -269,7 +269,21 @@ alternatives. The stable set ID is retained for compatibility, category ingredie
 slot with concrete accepted item targets, and the denominator hash is propagated into Teacher
 supervision and required by dataset validation. The dynamic requirement identity has not yet been
 carried through every target-date axis, and the unlock/reward/final-ceremony chain is also incomplete,
-so formal product training remains disabled.
+so formal product training remains disabled. The save-bound acquisition calendar root can be built with:
+
+```powershell
+dotnet run --project StardewAI.GoalConditionedBootstrap -- `
+  build-current-acquisition-route-calendar-resolution `
+  --requirement-inventory <path> `
+  --acquisition-lowering <path> `
+  --master-angler-windows <path> `
+  --snapshot <path> `
+  --output <path>
+```
+
+This command strictly rebuilds the current denominator, replaces only the static Community Center route
+occurrences, and records bundle-mode, denominator, source-state and snapshot hashes. It does not authorize
+the existing static target-date chain; making that chain consume the current root is the next fixed slice.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted

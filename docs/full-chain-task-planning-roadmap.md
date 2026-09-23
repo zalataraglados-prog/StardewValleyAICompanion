@@ -410,9 +410,11 @@ identities to 185 concrete, route-backed acquisition targets and hashes those ta
 denominator. Current collection-frontier, preference and receipt builders now rebuild and consume this
 active denominator instead of the static `community_center_standard` alternatives. Category ingredients
 stay one native slot while binding concrete accepted targets, and Teacher supervision carries the
-denominator hash. The next boundary is to propagate that dynamic identity and requirement set through
-every target-date axis and receipt; unlock, room-reward/mail and final-ceremony settlement also remain
-explicit blockers to formal training admission.
+denominator hash. The acquisition-route calendar root now uses the same authority to replace the static
+Community Center route occurrences, preserving concrete accepted targets and active-denominator provenance.
+The next boundary is the explicit target-date calendar, followed by propagation through every downstream
+axis and receipt; unlock, room-reward/mail and final-ceremony settlement also remain explicit blockers to
+formal training admission.
 
 The legacy `StructuredPolicyTrainer` path which treats `candidate.Selected` as the positive
 pair member is explicitly non-admitted for this stage. Before Stage 6, the trajectory and

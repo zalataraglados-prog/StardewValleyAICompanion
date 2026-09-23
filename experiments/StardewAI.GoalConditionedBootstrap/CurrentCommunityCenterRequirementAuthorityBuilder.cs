@@ -1,13 +1,14 @@
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static partial class CurrentCollectionTeacherFrontierBuilder
+internal static class CurrentCommunityCenterRequirementAuthorityBuilder
 {
-    private static CurrentCommunityCenterFrontierAuthority
-        BuildCurrentCommunityCenterAuthority(
-            CurrentCommunityCenterDenominatorReport denominator,
-            AcquisitionRouteOptionLoweringReport lowering)
+    internal const string RequirementSetId = "community_center_standard";
+
+    internal static CurrentCommunityCenterRequirementAuthority Build(
+        CurrentCommunityCenterDenominatorReport denominator,
+        AcquisitionRouteOptionLoweringReport lowering)
     {
-        ValidateCurrentCommunityCenterDenominator(denominator);
+        ValidateDenominator(denominator);
         var routeKinds = BuildRouteKindDescriptors(lowering);
         var alternativesByKey = new Dictionary<
             string,
@@ -44,6 +45,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                             .Select(value => value.First())
                             .OrderBy(value => value.RouteKind, StringComparer.Ordinal)
                             .ThenBy(value => value.SourceId, StringComparer.Ordinal)
+                            .ThenBy(value => value.SourceAsset, StringComparer.Ordinal)
+                            .ThenBy(value => value.SourcePath, StringComparer.Ordinal)
                             .ToArray();
                         var displayName = ingredient.MatchKind switch
                         {
@@ -78,7 +81,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                             routes.Any(value => value.RuntimeAdmissionReady),
                             routes.Any(value => value.TeacherAdmissionReady),
                             routes);
-                        var key = AlternativeAuthorityKey(
+                        var key = AlternativeKey(
                             bundle.RequirementId,
                             ingredient.IngredientIndex);
                         if (!alternativesByKey.TryAdd(
@@ -132,7 +135,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
 
         var inventory = new GoalRequirementSet
         {
-            RequirementSetId = CommunityCenterSetId,
+            RequirementSetId = RequirementSetId,
             CriterionId = "community_center_access_or_completion",
             NativeCompletionRule =
                 "CommunityCenter.ccIsComplete and event/mail settlement on the current save-bound bundle set",
@@ -147,12 +150,12 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             Groups = groups.Select(value => value.Inventory).ToArray()
         };
         var loweredSet = new AcquisitionRequirementSetLowering(
-            CommunityCenterSetId,
+            RequirementSetId,
             groups.Length,
             groups.Count(value => value.Lowering.RuntimeAdmissionReady),
             groups.Count(value => value.Lowering.TeacherAdmissionReady),
             groups.Select(value => value.Lowering).ToArray());
-        return new CurrentCommunityCenterFrontierAuthority(
+        return new CurrentCommunityCenterRequirementAuthority(
             inventory,
             loweredSet,
             alternativesByKey);
@@ -253,9 +256,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         .Select(value => value.First())
         .OrderBy(value => value.RouteKind, StringComparer.Ordinal)
         .ThenBy(value => value.SourceId, StringComparer.Ordinal)
+        .ThenBy(value => value.SourceAsset, StringComparer.Ordinal)
+        .ThenBy(value => value.SourcePath, StringComparer.Ordinal)
         .ToArray();
 
-    private static void ValidateCurrentCommunityCenterDenominator(
+    internal static void ValidateDenominator(
         CurrentCommunityCenterDenominatorReport denominator)
     {
         if (denominator.SchemaVersion != "current_community_center_denominator.v1" ||
@@ -305,6 +310,31 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         }
     }
 
+    internal static void ValidateIdentity(
+        CurrentCommunityCenterDenominatorReport denominator,
+        AuthoritativeRequirementInventoryReport inventory,
+        string inventoryPath,
+        string snapshotPath)
+    {
+        if (!string.Equals(denominator.GoalId, inventory.GoalId,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                denominator.RequirementInventorySha256,
+                CurrentTeacherFrontierSupport.HashFile(inventoryPath),
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                denominator.SnapshotSha256,
+                CurrentTeacherFrontierSupport.HashFile(snapshotPath),
+                StringComparison.OrdinalIgnoreCase) ||
+            (!string.IsNullOrWhiteSpace(inventory.GameVersion) &&
+                !string.Equals(denominator.GameVersion, inventory.GameVersion,
+                    StringComparison.Ordinal)))
+        {
+            throw new InvalidDataException(
+                "The current Community Center denominator does not bind the active inventory and snapshot.");
+        }
+    }
+
     private static void ValidateCurrentCommunityCenterIngredient(
         CurrentCommunityCenterBundle bundle,
         CurrentCommunityCenterIngredient ingredient)
@@ -339,7 +369,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         }
     }
 
-    private static string AlternativeAuthorityKey(
+    internal static string AlternativeKey(
         string requirementId,
         int alternativeIndex) => requirementId + "\u001f" + alternativeIndex;
 
@@ -350,23 +380,6 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         value.SourceId,
         value.SourceAsset,
         value.SourcePath);
-
-    private sealed record CurrentCommunityCenterFrontierAuthority(
-        GoalRequirementSet Inventory,
-        AcquisitionRequirementSetLowering Lowering,
-        IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
-            AlternativesByKey);
-
-    private sealed record CurrentCommunityCenterAlternativeAuthority(
-        int AlternativeIndex,
-        string MatchKind,
-        CurrentCommunityCenterAcceptedTarget[] AcceptedTargets);
-
-    private sealed record CurrentCommunityCenterAcceptedTarget(
-        string ItemId,
-        string QualifiedItemId,
-        string DisplayName,
-        AcquisitionRequirementRouteLowering[] Routes);
 
     private sealed record CurrentCommunityCenterBuiltAlternative(
         GoalRequirementAlternative Inventory,
@@ -396,3 +409,20 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             SupportingOptionIds.SequenceEqual(other.SupportingOptionIds);
     }
 }
+
+internal sealed record CurrentCommunityCenterRequirementAuthority(
+    GoalRequirementSet Inventory,
+    AcquisitionRequirementSetLowering Lowering,
+    IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+        AlternativesByKey);
+
+internal sealed record CurrentCommunityCenterAlternativeAuthority(
+    int AlternativeIndex,
+    string MatchKind,
+    CurrentCommunityCenterAcceptedTarget[] AcceptedTargets);
+
+internal sealed record CurrentCommunityCenterAcceptedTarget(
+    string ItemId,
+    string QualifiedItemId,
+    string DisplayName,
+    AcquisitionRequirementRouteLowering[] Routes);

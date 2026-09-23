@@ -104,7 +104,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 continue;
             var alternative = lowering.Alternatives[index];
             if (!alternativesByKey.TryGetValue(
-                    AlternativeAuthorityKey(group.RequirementId, index),
+                    CurrentCommunityCenterRequirementAuthorityBuilder.AlternativeKey(
+                        group.RequirementId,
+                        index),
                     out var authority) ||
                 authority.AlternativeIndex != index ||
                 authority.MatchKind != alternative.MatchKind)

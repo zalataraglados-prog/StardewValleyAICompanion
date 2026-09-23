@@ -1841,6 +1841,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   requirements through every target-date axis and its receipts. Junimo-text/unlock events, room rewards/mail and final
   ceremony settlement remain later explicit blockers.
 
+### 2026-09-23: current Community Center acquisition-route calendar root
+
+- `build-current-acquisition-route-calendar-resolution` now rebuilds the strict save-bound Community Center
+  denominator and replaces the historical static `community_center_standard` route occurrences at the acquisition
+  calendar root. Every non-Community-Center route remains unchanged. The artifact hash-binds the active bundle mode,
+  denominator, source state and transparent snapshot instead of allowing a standard-layout route set to survive on a
+  remixed save.
+- Collection membership and calendar lowering share one `CurrentCommunityCenterRequirementAuthorityBuilder`; this is
+  not a second route catalog or executor. Exact-item alternatives retain their native identities. A category ingredient
+  remains one native selectable slot, while each accepted concrete item contributes its own stable acquisition-route
+  occurrence under that slot. Duplicate concrete target/route identities are deterministically collapsed before
+  occurrence numbering.
+- The focused fixture removes a static Parsnip shop route, keeps two current exact-item harvest routes and adds one
+  remixed egg-category shop route. The rebuilt report contains only those three Community Center occurrences while
+  preserving the complete 77-route fixture denominator. Provenance and replacement assertions fail closed.
+- This closes only the save-bound root calendar input. Existing target-date calendar and the remaining dependency axes
+  still rebuild the static root, so formal product training remains false. The next fixed slice must make the explicit
+  target-date calendar consume and validate this current root, then propagate the same denominator identity through
+  each downstream axis and receipt before the Junimo/unlock, room reward/mail and final ceremony chain is admitted.
+
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 
 - Verdict: accept the single strategic entry, shared artifacts, deterministic hard authority, learned soft-preference

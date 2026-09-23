@@ -22,6 +22,21 @@ public sealed class AcquisitionRouteCalendarResolutionReport
     [JsonPropertyName("acquisition_lowering_sha256")]
     public string AcquisitionLoweringSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("uses_current_community_center_denominator")]
+    public bool UsesCurrentCommunityCenterDenominator { get; set; }
+
+    [JsonPropertyName("community_center_bundle_mode")]
+    public string CommunityCenterBundleMode { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_denominator_sha256")]
+    public string CommunityCenterDenominatorSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_source_state_hash")]
+    public string CommunityCenterSourceStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_snapshot_sha256")]
+    public string CommunityCenterSnapshotSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("master_angler_window_index_sha256")]
     public string MasterAnglerWindowIndexSha256 { get; set; } = string.Empty;
 
@@ -91,7 +106,7 @@ public sealed class AcquisitionRouteCalendarResolutionReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative source row and calendar projection. Crop source resolution preserves native growth facts. Shop source resolution preserves native stock, price, trade, condition, owner, endpoint and door facts. Neither projection proves target-date availability, location access, live stock, resource affordability, or any other downstream dependency axis.";
+        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative source row and calendar projection. A current-save build replaces the static Community Center set with the hash-bound standard/remixed denominator; category slots retain one alternative identity while each concrete accepted target receives its own route occurrence. Crop source resolution preserves native growth facts. Shop source resolution preserves native stock, price, trade, condition, owner, endpoint and door facts. Neither projection proves target-date availability, location access, live stock, resource affordability, or any other downstream dependency axis.";
 }
 
 public sealed record AcquisitionRouteCalendarResolution(
