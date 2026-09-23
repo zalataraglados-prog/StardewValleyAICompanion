@@ -189,7 +189,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             BuildCommunityCenterDenominatorCatalog(
                 bundlesDocument.RootElement.GetProperty("payload"),
                 randomBundlesDocument.RootElement.GetProperty("payload"),
-                objects);
+                objects,
+                routeIndex);
 
         var requirementSets = new[]
         {

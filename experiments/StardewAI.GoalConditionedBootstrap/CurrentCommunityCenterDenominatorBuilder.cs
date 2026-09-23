@@ -78,7 +78,8 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                     row,
                     "community_center:supplemental_bundle:" + row.BundleDataKey,
                     "standard-supplemental:" + row.BundleDataKey,
-                    string.Empty);
+                    string.Empty,
+                    catalog);
             })
             .OrderBy(value => value.BundleDataKey, StringComparer.Ordinal)
             .ToArray();
@@ -96,6 +97,10 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                 inventoryFullPath),
             SnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(snapshotFullPath),
             DenominatorSha256 = HashDenominator(mode, active),
+            IngredientAcquisitionCatalogComplete =
+                active.SelectMany(value => value.Ingredients)
+                    .All(value => value.AcquisitionTargets.Any(target =>
+                        target.RouteCovered)),
             BundleMode = mode,
             ActiveBundleCount = active.Length,
             CompletedActiveBundleCount = active.Count(value => value.Complete),
@@ -117,6 +122,7 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
             !catalog.StandardSupported ||
             !catalog.RemixedSupported ||
             !catalog.ActiveKeyTopologyComplete ||
+            !catalog.IngredientAcquisitionCatalogComplete ||
             catalog.StandardActiveBundleCount != 30 ||
             catalog.StandardActiveBundleKeys.Length !=
                 catalog.StandardActiveBundleCount ||
@@ -128,6 +134,10 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                 catalog.SupplementalBundleCount ||
             catalog.RetainedStandardBundleKeys.Length !=
                 catalog.RetainedStandardKeyCount ||
+            catalog.IngredientAcquisitionCatalog.Length !=
+                catalog.IngredientAcquisitionIdentityCount ||
+            catalog.IngredientAcquisitionCatalog.Sum(value =>
+                value.Targets.Length) != catalog.IngredientAcquisitionTargetCount ||
             catalog.RemixedAreas.Length != catalog.RemixedAreaCount ||
             catalog.RemixedAreas.Sum(area => area.KeyIds.Length) !=
                 catalog.RemixedKeyCount)
@@ -139,6 +149,24 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
         RequireUnique(catalog.SupplementalBundleKeys, "supplemental bundle keys");
         RequireUnique(catalog.RetainedStandardBundleKeys,
             "retained standard bundle keys");
+        RequireUnique(
+            catalog.IngredientAcquisitionCatalog.Select(value =>
+                value.MatchKind + ":" + value.ItemIdOrCategory),
+            "ingredient acquisition identities");
+        foreach (var row in catalog.IngredientAcquisitionCatalog)
+        {
+            if (!row.AcquisitionRouteComplete || row.Targets.Length == 0 ||
+                !row.Targets.Any(value => value.RouteCovered) ||
+                row.Targets.Any(value => string.IsNullOrWhiteSpace(value.ItemId) ||
+                    string.IsNullOrWhiteSpace(value.QualifiedItemId) &&
+                    row.MatchKind != "money_payment" ||
+                    value.RouteCovered != (value.AcquisitionRoutes.Length > 0)))
+            {
+                throw new InvalidDataException(
+                    "A Community Center ingredient acquisition row is incomplete: " +
+                    row.ItemIdOrCategory);
+            }
+        }
 
         var standard = CurrentTeacherFrontierSupport.SingleSet(
             inventory.RequirementSets,
@@ -296,9 +324,12 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                     CurrentTeacherFrontierSupport.RequiredString(
                         ingredient,
                         "item_id_or_category"),
+                    string.Empty,
+                    string.Empty,
                     stack,
                     quality,
-                    RequiredBool(ingredient, "completed"));
+                    RequiredBool(ingredient, "completed"),
+                    Array.Empty<CommunityCenterIngredientAcquisitionTarget>());
             })
             .ToArray();
         var required = RequiredInt(value, "required_slot_count");
@@ -341,7 +372,8 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                 row,
                 "community_center:bundle:" + row.BundleDataKey,
                 "standard:" + row.BundleDataKey,
-                string.Empty))
+                string.Empty,
+                catalog))
             .ToArray();
         return true;
     }
@@ -370,20 +402,54 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
         LiveBundleRow row,
         string requirementId,
         string templateId,
-        string bundleSetId) => new()
+        string bundleSetId,
+        CommunityCenterDenominatorCatalog catalog)
     {
-        RequirementId = requirementId,
-        BundleDataKey = row.BundleDataKey,
-        AreaName = row.AreaName,
-        BundleId = row.BundleId,
-        InternalName = row.InternalName,
-        SourceTemplateId = templateId,
-        SourceBundleSetId = bundleSetId,
-        RequiredSlotCount = row.RequiredSlotCount,
-        CompletedIngredientCount = row.CompletedIngredientCount,
-        Complete = row.Complete,
-        Ingredients = row.Ingredients
-    };
+        var acquisition = catalog.IngredientAcquisitionCatalog.ToDictionary(
+            value => value.MatchKind + ":" + value.ItemIdOrCategory,
+            StringComparer.Ordinal);
+        var ingredients = row.Ingredients.Select(value =>
+        {
+            var matchKind = value.ItemIdOrCategory == "-1"
+                ? "money_payment"
+                : value.ItemIdOrCategory.StartsWith("-", StringComparison.Ordinal)
+                    ? "category"
+                    : "item_id";
+            if (!acquisition.TryGetValue(
+                    matchKind + ":" + value.ItemIdOrCategory,
+                    out var binding) ||
+                !binding.AcquisitionRouteComplete ||
+                !binding.Targets.Any(target => target.RouteCovered))
+            {
+                throw new InvalidDataException(
+                    "A live Community Center ingredient has no authoritative acquisition binding: " +
+                    value.ItemIdOrCategory);
+            }
+            return new CurrentCommunityCenterIngredient(
+                value.IngredientIndex,
+                value.ItemIdOrCategory,
+                binding.QualifiedItemId,
+                binding.MatchKind,
+                value.RequiredStack,
+                value.MinimumQuality,
+                value.Completed,
+                binding.Targets);
+        }).ToArray();
+        return new CurrentCommunityCenterBundle
+        {
+            RequirementId = requirementId,
+            BundleDataKey = row.BundleDataKey,
+            AreaName = row.AreaName,
+            BundleId = row.BundleId,
+            InternalName = row.InternalName,
+            SourceTemplateId = templateId,
+            SourceBundleSetId = bundleSetId,
+            RequiredSlotCount = row.RequiredSlotCount,
+            CompletedIngredientCount = row.CompletedIngredientCount,
+            Complete = row.Complete,
+            Ingredients = ingredients
+        };
+    }
 
     private static string HashDenominator(
         string mode,
@@ -405,8 +471,19 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                 {
                     ingredient_index = ingredient.IngredientIndex,
                     item_id_or_category = ingredient.ItemIdOrCategory,
+                    qualified_item_id = ingredient.QualifiedItemId,
+                    match_kind = ingredient.MatchKind,
                     required_stack = ingredient.RequiredStack,
-                    minimum_quality = ingredient.MinimumQuality
+                    minimum_quality = ingredient.MinimumQuality,
+                    acquisition_targets = ingredient.AcquisitionTargets.Select(
+                        target => new
+                        {
+                            item_id = target.ItemId,
+                            qualified_item_id = target.QualifiedItemId,
+                            display_name = target.DisplayName,
+                            route_covered = target.RouteCovered,
+                            acquisition_routes = target.AcquisitionRoutes
+                        })
                 })
             })
         }, JsonDefaults.Compact);

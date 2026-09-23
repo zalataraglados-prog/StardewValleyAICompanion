@@ -25,7 +25,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         BuildCommunityCenterDenominatorCatalog(
             JsonElement standardBundles,
             JsonElement randomBundles,
-            JsonElement objects)
+            JsonElement objects,
+            IReadOnlyDictionary<string, RequirementAcquisitionRoute[]> routes)
     {
         RequireCommunityCenter(standardBundles.ValueKind == JsonValueKind.Object,
             "Data/Bundles payload is not an object.");
@@ -79,6 +80,19 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             "The standard/remixed Community Center key topology is incomplete.");
         RequireCommunityCenter(retainedStandardKeys.All(key => BundleAreaName(key) == "Vault"),
             "Remixed generation retains an unexpected standard area.");
+        var ingredientCatalog = BuildCommunityCenterIngredientAcquisitionCatalog(
+            nativeTemplates.Values.SelectMany(value => value.Ingredients)
+                .Concat(areas.SelectMany(area => area.BundleSets
+                    .SelectMany(set => set.Templates)
+                    .Concat(area.PoolTemplates)
+                    .SelectMany(template => template.IngredientSlots)
+                    .SelectMany(slot => slot.Options))),
+            objects,
+            routes);
+        var ingredientCatalogComplete = ingredientCatalog.All(value =>
+            value.AcquisitionRouteComplete);
+        RequireCommunityCenter(ingredientCatalogComplete,
+            "A Community Center ingredient identity has no authoritative acquisition target route.");
 
         return new CommunityCenterDenominatorCatalog
         {
@@ -91,9 +105,13 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 area.BundleSets.Sum(set => set.Templates.Length) +
                 area.PoolTemplates.Length),
             RetainedStandardKeyCount = retainedStandardKeys.Length,
+            IngredientAcquisitionIdentityCount = ingredientCatalog.Length,
+            IngredientAcquisitionTargetCount = ingredientCatalog.Sum(value =>
+                value.Targets.Length),
             StandardSupported = true,
             RemixedSupported = true,
             ActiveKeyTopologyComplete = topologyComplete,
+            IngredientAcquisitionCatalogComplete = ingredientCatalogComplete,
             StandardActiveBundleKeys = activeStandardKeys
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray(),
@@ -116,8 +134,113 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray(),
-            RemixedAreas = areas
+            RemixedAreas = areas,
+            IngredientAcquisitionCatalog = ingredientCatalog
         };
+    }
+
+    private static CommunityCenterIngredientAcquisitionCatalogRow[]
+        BuildCommunityCenterIngredientAcquisitionCatalog(
+            IEnumerable<CommunityCenterTemplateIngredient> ingredients,
+            JsonElement objects,
+            IReadOnlyDictionary<string, RequirementAcquisitionRoute[]> routes)
+    {
+        return ingredients
+            .GroupBy(value => (value.ItemIdOrCategory, value.QualifiedItemId,
+                value.MatchKind))
+            .Select(group =>
+            {
+                var identity = group.Key;
+                CommunityCenterIngredientAcquisitionTarget[] targets;
+                string displayName;
+                if (identity.MatchKind == "money_payment")
+                {
+                    displayName = "Money";
+                    targets = new[]
+                    {
+                        new CommunityCenterIngredientAcquisitionTarget(
+                            "-1",
+                            string.Empty,
+                            displayName,
+                            true,
+                            new[]
+                            {
+                                new RequirementAcquisitionRoute(
+                                    "native_money_payment",
+                                    "money",
+                                    "Data/Bundles",
+                                    "dynamic_community_center_bundle")
+                            })
+                    };
+                }
+                else if (identity.MatchKind == "category")
+                {
+                    RequireCommunityCenter(int.TryParse(
+                            identity.ItemIdOrCategory,
+                            out var categoryId) && categoryId < 0,
+                        "A Community Center category identity is invalid: " +
+                        identity.ItemIdOrCategory);
+                    displayName = "Object category " + identity.ItemIdOrCategory;
+                    targets = objects.EnumerateObject()
+                        .Where(item => item.Value.TryGetProperty(
+                                "Category",
+                                out var category) &&
+                            category.ValueKind == JsonValueKind.Number &&
+                            category.TryGetInt32(out var value) &&
+                            value == categoryId)
+                        .Select(item =>
+                        {
+                            var itemRoutes = RoutesFor(routes, item.Name);
+                            return new CommunityCenterIngredientAcquisitionTarget(
+                                item.Name,
+                                "(O)" + item.Name,
+                                String(item.Value, "Name"),
+                                itemRoutes.Length > 0,
+                                itemRoutes);
+                        })
+                        .OrderBy(value => value.ItemId, StringComparer.Ordinal)
+                        .ToArray();
+                }
+                else
+                {
+                    if (identity.MatchKind != "item_id" ||
+                        !objects.TryGetProperty(identity.ItemIdOrCategory,
+                            out var item))
+                    {
+                        throw new InvalidDataException(
+                            "A Community Center item identity is invalid: " +
+                            identity.ItemIdOrCategory);
+                    }
+                    displayName = String(item, "Name");
+                    var itemRoutes = RoutesFor(routes, identity.ItemIdOrCategory);
+                    targets = new[]
+                    {
+                        new CommunityCenterIngredientAcquisitionTarget(
+                            identity.ItemIdOrCategory,
+                            identity.QualifiedItemId,
+                            displayName,
+                            itemRoutes.Length > 0,
+                            itemRoutes)
+                    };
+                }
+
+                RequireCommunityCenter(targets.Length > 0,
+                    "A Community Center ingredient identity has no native accepted target: " +
+                    identity.ItemIdOrCategory);
+                return new CommunityCenterIngredientAcquisitionCatalogRow
+                {
+                    ItemIdOrCategory = identity.ItemIdOrCategory,
+                    QualifiedItemId = identity.QualifiedItemId,
+                    MatchKind = identity.MatchKind,
+                    DisplayName = displayName,
+                    AcquisitionRouteComplete = targets.Any(value =>
+                        value.RouteCovered),
+                    Targets = targets
+                };
+            })
+            .OrderBy(value => value.MatchKind, StringComparer.Ordinal)
+            .ThenBy(value => value.ItemIdOrCategory, StringComparer.Ordinal)
+            .ToArray();
     }
 
     private static CommunityCenterNativeBundleTemplate ParseNativeBundleTemplate(

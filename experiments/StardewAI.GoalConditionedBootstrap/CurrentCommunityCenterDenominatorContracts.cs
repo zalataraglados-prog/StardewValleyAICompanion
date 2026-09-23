@@ -29,6 +29,9 @@ public sealed class CurrentCommunityCenterDenominatorReport
     [JsonPropertyName("denominator_sha256")]
     public string DenominatorSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("ingredient_acquisition_catalog_complete")]
+    public bool IngredientAcquisitionCatalogComplete { get; set; }
+
     [JsonPropertyName("bundle_mode")]
     public string BundleMode { get; set; } = string.Empty;
 
@@ -54,7 +57,7 @@ public sealed class CurrentCommunityCenterDenominatorReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "Only an exact live 1.6.15 standard denominator or a whole-area native remixed BundleGenerator realization is admitted. Supplemental bundles are reported separately and never contribute to Community Center completion.";
+        "Only an exact live 1.6.15 standard denominator or a whole-area native remixed BundleGenerator realization is admitted. Every active ingredient binds the authoritative acquisition targets for its exact item or native category. Supplemental bundles are reported separately and never contribute to Community Center completion.";
 }
 
 public sealed class CurrentCommunityCenterBundle
@@ -97,6 +100,10 @@ public sealed class CurrentCommunityCenterBundle
 public sealed record CurrentCommunityCenterIngredient(
     [property: JsonPropertyName("ingredient_index")] int IngredientIndex,
     [property: JsonPropertyName("item_id_or_category")] string ItemIdOrCategory,
+    [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("match_kind")] string MatchKind,
     [property: JsonPropertyName("required_stack")] int RequiredStack,
     [property: JsonPropertyName("minimum_quality")] int MinimumQuality,
-    [property: JsonPropertyName("completed")] bool Completed);
+    [property: JsonPropertyName("completed")] bool Completed,
+    [property: JsonPropertyName("acquisition_targets")]
+        CommunityCenterIngredientAcquisitionTarget[] AcquisitionTargets);

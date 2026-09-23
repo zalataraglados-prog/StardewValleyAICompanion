@@ -98,6 +98,10 @@ if ($communityCenterCatalog.status -ne 'complete_standard_and_remixed_catalog' -
     [int]$communityCenterCatalog.remixed_key_count -ne 26 -or
     [int]$communityCenterCatalog.remixed_template_count -ne 43 -or
     [int]$communityCenterCatalog.retained_standard_key_count -ne 4 -or
+    -not [bool]$communityCenterCatalog.ingredient_acquisition_catalog_complete -or
+    [int]$communityCenterCatalog.ingredient_acquisition_identity_count -ne 175 -or
+    [int]$communityCenterCatalog.ingredient_acquisition_target_count -ne 185 -or
+    @($communityCenterCatalog.ingredient_acquisition_catalog).Count -ne 175 -or
     @($communityCenterCatalog.standard_active_bundle_keys).Count -ne 30 -or
     @($communityCenterCatalog.standard_active_templates).Count -ne 30 -or
     @($communityCenterCatalog.supplemental_bundle_keys).Count -ne 1 -or

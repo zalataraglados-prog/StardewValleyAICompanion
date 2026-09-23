@@ -1797,6 +1797,29 @@ Slice 7 remains assigned to the RTX 5070 node.
   settlement. The next slice must consume this bound denominator when constructing the dynamic collection frontier;
   it must not retain the old standard-only alternatives for a remixed save.
 
+### 2026-09-23: Community Center ingredient acquisition catalog admitted
+
+- The bound denominator could not safely replace the old standard-only collection frontier until every ingredient
+  identity selectable by `Data/Bundles` or `Data/RandomBundles` had an authoritative acquisition interpretation.
+  Enumerating only the four historical static requirement sets would omit valid remixed ingredients, including the
+  live synthesized realization's `(O)223` and `(O)233` rows.
+- The authoritative requirement inventory now emits 175 unique bundle-ingredient identities and 185 concrete
+  acquisition targets across standard templates, the supplemental Missing Bundle, remixed set templates and remixed
+  pool templates. Exact items retain their authoritative acquisition routes. Native category ingredients are expanded
+  without guessing: egg category `-5` binds eight accepted `Data/Objects` targets and milk category `-6` binds four.
+  Money payments retain a typed native-money target. An identity with no accepted native target or no route-covered
+  target fails the inventory build closed.
+- The current standard/remixed denominator normalizes every live ingredient against that catalog and carries
+  `qualified_item_id`, `match_kind`, every concrete acquisition target and its route evidence. Those fields now
+  participate in the denominator hash, so route-catalog drift cannot silently reuse an older active denominator.
+  Focused tests lock the 175/185 counts, category expansion, formerly omitted remixed identities, complete route
+  evidence for every active standard/remixed row, and tamper rejection. The complete regression suite passes.
+- This closes the authoritative acquisition-source prerequisite only. It does not yet replace
+  `CurrentCollectionTeacherFrontierBuilder`'s static `community_center_standard` alternatives, does not authorize
+  formal product training, and does not complete ceremony settlement. The next fixed slice is to derive a current
+  dynamic Community Center requirement/lowering set from the active denominator, feed it into the collection frontier,
+  and then carry that identity through every target-date axis and receipt.
+
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 
 - Verdict: accept the single strategic entry, shared artifacts, deterministic hard authority, learned soft-preference

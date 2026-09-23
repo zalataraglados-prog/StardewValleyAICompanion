@@ -17,6 +17,33 @@ internal static partial class BootstrapSelfTest
             AuthoritativeRequirementInventoryReport>(
             requirementInventoryPath,
             "Authoritative requirement inventory");
+        var catalog = inventory.CommunityCenterDenominatorCatalog;
+        var acquisitionRows = catalog.IngredientAcquisitionCatalog;
+        Require(catalog.IngredientAcquisitionCatalogComplete &&
+                catalog.IngredientAcquisitionIdentityCount == 175 &&
+                catalog.IngredientAcquisitionTargetCount == 185 &&
+                acquisitionRows.Length == 175 &&
+                acquisitionRows.All(value => value.AcquisitionRouteComplete &&
+                    value.Targets.Any(target => target.RouteCovered)),
+            "The Community Center ingredient acquisition catalog is incomplete.");
+        foreach (var expected in new[]
+                 {
+                     (Id: "-5", Kind: "category", TargetCount: 8),
+                     (Id: "-6", Kind: "category", TargetCount: 4),
+                     (Id: "223", Kind: "item_id", TargetCount: 1),
+                     (Id: "233", Kind: "item_id", TargetCount: 1),
+                     (Id: "MysteryBox", Kind: "item_id", TargetCount: 1),
+                     (Id: "PrizeTicket", Kind: "item_id", TargetCount: 1)
+                 })
+        {
+            var row = acquisitionRows.Single(value =>
+                value.ItemIdOrCategory == expected.Id &&
+                value.MatchKind == expected.Kind);
+            Require(row.Targets.Length == expected.TargetCount &&
+                    row.Targets.Any(value => value.RouteCovered),
+                "A remixed Community Center acquisition identity drifted: " +
+                expected.Id);
+        }
 
         var standardSnapshot = JsonNode.Parse(
                 File.ReadAllText(Path.GetFullPath(snapshotPath)))!.AsObject();
@@ -29,7 +56,9 @@ internal static partial class BootstrapSelfTest
         Require(standard.Status == "ready" &&
                 standard.BundleMode == "standard" &&
                 standard.ActiveBundleCount == 30 &&
-                standard.SupplementalBundleCount == 1,
+                standard.SupplementalBundleCount == 1 &&
+                standard.IngredientAcquisitionCatalogComplete &&
+                HasCompleteIngredientAcquisitionBindings(standard.ActiveBundles),
             "Current standard Community Center denominator was not admitted.");
 
         var remixedSnapshot = standardSnapshot.DeepClone().AsObject();
@@ -46,6 +75,8 @@ internal static partial class BootstrapSelfTest
                 remixed.BundleMode == "remixed" &&
                 remixed.ActiveBundleCount == 30 &&
                 remixed.SupplementalBundleCount == 1 &&
+                remixed.IngredientAcquisitionCatalogComplete &&
+                HasCompleteIngredientAcquisitionBindings(remixed.ActiveBundles) &&
                 remixed.ActiveBundles.Count(value =>
                     !string.IsNullOrWhiteSpace(value.SourceTemplateId)) == 30,
             "A native remixed Community Center realization was not admitted.");
@@ -85,9 +116,24 @@ internal static partial class BootstrapSelfTest
             remixed_mode = remixed.BundleMode,
             active_bundle_count = remixed.ActiveBundleCount,
             supplemental_bundle_count = remixed.SupplementalBundleCount,
+            ingredient_acquisition_identity_count =
+                catalog.IngredientAcquisitionIdentityCount,
+            ingredient_acquisition_target_count =
+                catalog.IngredientAcquisitionTargetCount,
+            active_ingredient_acquisition_bindings_complete =
+                remixed.IngredientAcquisitionCatalogComplete,
             tampered_snapshot_rejected = rejected
         });
     }
+
+    private static bool HasCompleteIngredientAcquisitionBindings(
+        IEnumerable<CurrentCommunityCenterBundle> bundles) => bundles
+        .SelectMany(value => value.Ingredients)
+        .All(value =>
+            !string.IsNullOrWhiteSpace(value.MatchKind) &&
+            value.AcquisitionTargets.Length > 0 &&
+            value.AcquisitionTargets.Any(target => target.RouteCovered &&
+                target.AcquisitionRoutes.Length > 0));
 
     private static void ApplyRemixedFixture(
         JsonObject snapshot,

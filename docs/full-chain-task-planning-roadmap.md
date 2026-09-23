@@ -405,6 +405,13 @@ The production `GrandpaDirectionCatalog` is the sole direction/criterion/option 
 isolated training artifacts may add dependency expansion by direction ID but must not copy
 or redefine those mappings.
 
+The live standard/remixed Community Center denominator now binds all 175 selectable ingredient
+identities to 185 concrete, route-backed acquisition targets and hashes those targets into the active
+denominator. This is the source-coverage prerequisite for dynamic lowering, not its completion. The
+collection frontier must next consume the active denominator instead of its static
+`community_center_standard` alternatives before the result can enter the target-date axes or formal
+training admission.
+
 The legacy `StructuredPolicyTrainer` path which treats `candidate.Selected` as the positive
 pair member is explicitly non-admitted for this stage. Before Stage 6, the trajectory and
 dataset contracts must distinguish Teacher preference, native outcome and Student behavior,

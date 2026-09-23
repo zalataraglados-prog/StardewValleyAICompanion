@@ -256,10 +256,16 @@ rules. `build-current-community-center-denominator --requirement-inventory <path
 <path> --output <path>` binds an active save to either the exact 30-bundle standard layout or a
 whole-area native remixed realization. It reports the Missing Bundle separately, rejects unknown or
 tampered bundle rows, and never counts the supplemental row toward Community Center completion.
+The inventory also binds all 175 selectable ingredient identities to 185 concrete acquisition
+targets and authoritative routes. Category ingredients are expanded to the exact native object set
+(eight egg targets for `-5`, four milk targets for `-6`), while item and money identities remain
+typed. The current denominator carries and hashes those targets, so acquisition-route drift fails
+closed instead of silently preserving a stale denominator.
 `self-test-current-community-center-denominator` covers standard, remixed, and tamper-rejection
-paths; it is part of `Run-Regression.ps1`. This denominator binder does not yet make remixed dynamic
-requirements executable through the target-date lowering chain, so formal product training remains
-disabled.
+paths, locks the 175/185 catalog counts and verifies acquisition coverage for every active ingredient;
+it is part of `Run-Regression.ps1`. This denominator binder does not yet replace the collection
+frontier's static `community_center_standard` alternatives or make remixed dynamic requirements
+executable through the target-date lowering chain, so formal product training remains disabled.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted

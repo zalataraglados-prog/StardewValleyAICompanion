@@ -27,7 +27,8 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                 row,
                 "community_center:bundle:" + key,
                 "standard-retained:" + key,
-                string.Empty));
+                string.Empty,
+                catalog));
         }
 
         foreach (var area in catalog.RemixedAreas
@@ -56,7 +57,8 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
                 binding.Row,
                 "community_center:bundle:" + binding.Row.BundleDataKey,
                 binding.Template.TemplateId,
-                bundleSetId)));
+                bundleSetId,
+                catalog)));
         }
 
         if (result.Count != catalog.StandardActiveBundleCount ||

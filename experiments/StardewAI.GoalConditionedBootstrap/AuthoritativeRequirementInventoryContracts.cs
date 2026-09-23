@@ -66,6 +66,12 @@ public sealed class CommunityCenterDenominatorCatalog
     [JsonPropertyName("retained_standard_key_count")]
     public int RetainedStandardKeyCount { get; set; }
 
+    [JsonPropertyName("ingredient_acquisition_identity_count")]
+    public int IngredientAcquisitionIdentityCount { get; set; }
+
+    [JsonPropertyName("ingredient_acquisition_target_count")]
+    public int IngredientAcquisitionTargetCount { get; set; }
+
     [JsonPropertyName("standard_supported")]
     public bool StandardSupported { get; set; }
 
@@ -74,6 +80,9 @@ public sealed class CommunityCenterDenominatorCatalog
 
     [JsonPropertyName("active_key_topology_complete")]
     public bool ActiveKeyTopologyComplete { get; set; }
+
+    [JsonPropertyName("ingredient_acquisition_catalog_complete")]
+    public bool IngredientAcquisitionCatalogComplete { get; set; }
 
     [JsonPropertyName("live_denominator_authority")]
     public string LiveDenominatorAuthority { get; set; } =
@@ -103,10 +112,45 @@ public sealed class CommunityCenterDenominatorCatalog
     public CommunityCenterRemixedAreaCatalog[] RemixedAreas { get; set; } =
         Array.Empty<CommunityCenterRemixedAreaCatalog>();
 
+    [JsonPropertyName("ingredient_acquisition_catalog")]
+    public CommunityCenterIngredientAcquisitionCatalogRow[]
+        IngredientAcquisitionCatalog { get; set; } =
+            Array.Empty<CommunityCenterIngredientAcquisitionCatalogRow>();
+
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A live standard denominator must exactly match the locked standard requirement set. A live remixed denominator must preserve the complete 30-key topology and match one whole-area native BundleGenerator configuration without reusing a pool template. The Abandoned Joja Mart bundle is supplemental and never contributes to Community Center completion.";
+        "A live standard denominator must exactly match the locked standard requirement set. A live remixed denominator must preserve the complete 30-key topology and match one whole-area native BundleGenerator configuration without reusing a pool template. Every possible standard/remixed ingredient identity binds at least one authoritative acquisition target; category ingredients retain every native accepted object and identify which targets have routes. The Abandoned Joja Mart bundle is supplemental and never contributes to Community Center completion.";
 }
+
+public sealed class CommunityCenterIngredientAcquisitionCatalogRow
+{
+    [JsonPropertyName("item_id_or_category")]
+    public string ItemIdOrCategory { get; set; } = string.Empty;
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("match_kind")]
+    public string MatchKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("display_name")]
+    public string DisplayName { get; set; } = string.Empty;
+
+    [JsonPropertyName("acquisition_route_complete")]
+    public bool AcquisitionRouteComplete { get; set; }
+
+    [JsonPropertyName("targets")]
+    public CommunityCenterIngredientAcquisitionTarget[] Targets { get; set; } =
+        Array.Empty<CommunityCenterIngredientAcquisitionTarget>();
+}
+
+public sealed record CommunityCenterIngredientAcquisitionTarget(
+    [property: JsonPropertyName("item_id")] string ItemId,
+    [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("display_name")] string DisplayName,
+    [property: JsonPropertyName("route_covered")] bool RouteCovered,
+    [property: JsonPropertyName("acquisition_routes")] RequirementAcquisitionRoute[]
+        AcquisitionRoutes);
 
 public sealed class CommunityCenterRemixedAreaCatalog
 {
