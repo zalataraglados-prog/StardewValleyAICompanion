@@ -111,6 +111,13 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     commitResultPath);
         Require(EqualJson(portfolioReceipt, recomputedPortfolioReceipt),
             "Route portfolio commit receipt drifted from deterministic source compilation.");
+        Require(AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    portfolioPreference.CommunityCenterProvenance,
+                    portfolioAdmission.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    portfolioPreference.CommunityCenterProvenance,
+                    portfolioReceipt.CommunityCenterProvenance),
+            "Route portfolio Community Center provenance drifted before execution binding.");
         var lowering = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteOptionLoweringReport>(
             loweringPath,
@@ -205,6 +212,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             GoalId = opportunity.GoalId,
             GameVersion = opportunity.GameVersion,
             TargetTotalDay = opportunity.TargetTotalDay,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    portfolioReceipt.CommunityCenterProvenance),
             RouteOccurrenceId = selected.RouteOccurrenceId,
             RequirementSetId = requirement.RequirementSetId,
             RequirementId = requirement.RequirementId,

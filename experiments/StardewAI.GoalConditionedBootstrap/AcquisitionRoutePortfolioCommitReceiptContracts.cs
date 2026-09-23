@@ -23,6 +23,10 @@ public sealed class AcquisitionRoutePortfolioCommitReceipt
     [JsonPropertyName("snapshot_state_hash")]
     public string SnapshotStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("prior_rollout_checkpoint_sha256")]
     public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
 

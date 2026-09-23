@@ -65,7 +65,10 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
                 fresh.RouteTrainingEvidenceEligible &&
                 !fresh.FormalTrainingAuthorized &&
                 fresh.RouteOccurrenceId == binding.RouteOccurrenceId &&
-                fresh.GoalId == binding.GoalId,
+                fresh.GoalId == binding.GoalId &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    binding.CommunityCenterProvenance,
+                    fresh.CommunityCenterProvenance),
             "Route settlement source evidence is not verified.");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             afterPath,

@@ -20,6 +20,10 @@ public sealed class AcquisitionRouteFreshTerminalReceiptAdmission
     [JsonPropertyName("route_occurrence_id")]
     public string RouteOccurrenceId { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("execution_binding_sha256")]
     public string ExecutionBindingSha256 { get; set; } = string.Empty;
 

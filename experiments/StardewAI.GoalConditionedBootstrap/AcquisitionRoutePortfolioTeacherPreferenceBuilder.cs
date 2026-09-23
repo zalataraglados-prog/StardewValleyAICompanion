@@ -170,6 +170,9 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             RequestId = request.RequestId,
             GoalId = request.GoalId,
             SnapshotStateHash = request.SnapshotStateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    context.CommunityCenterProvenance),
             ExpectedLedgerRevision = request.ExpectedLedgerRevision,
             PreferenceRequestSha256 = requestSha256,
             RequirementInventorySha256 = context.RequirementInventorySha256,

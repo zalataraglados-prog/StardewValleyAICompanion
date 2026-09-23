@@ -4180,6 +4180,50 @@ internal static partial class BootstrapSelfTest
                 !currentTargetDateCalendar.TrainingLabelEligible,
             "Current Community Center target-date calendar did not preserve the dynamic route root and provenance.");
 
+        var currentProvenanceSnapshot = CurrentTeacherFrontierSupport.Read<
+            SnapshotEnvelope>(
+            snapshotPath,
+            "Current Community Center provenance snapshot");
+        var currentPortfolioProvenance =
+            AcquisitionRouteCommunityCenterProvenanceSupport.From(
+                currentTargetDateCalendar,
+                currentProvenanceSnapshot,
+                HashFile(snapshotPath));
+        Require(currentPortfolioProvenance
+                    .UsesCurrentCommunityCenterDenominator &&
+                currentPortfolioProvenance.CommunityCenterBundleMode ==
+                    "remixed" &&
+                currentPortfolioProvenance
+                    .CommunityCenterDenominatorSha256 ==
+                    calendarCommunityCenterDenominator.DenominatorSha256 &&
+                currentPortfolioProvenance
+                    .CommunityCenterSourceStateHash == stateHash &&
+                currentPortfolioProvenance
+                    .CommunityCenterSnapshotSha256 == HashFile(snapshotPath),
+            "Current Community Center portfolio provenance drifted.");
+        var staleCurrentPortfolioProvenanceRejected = false;
+        var staleCurrentTargetDateCalendar = JsonSerializer.Deserialize<
+            AcquisitionRouteTargetDateCalendarReport>(
+                JsonSerializer.Serialize(
+                    currentTargetDateCalendar,
+                    JsonDefaults.Options),
+                JsonDefaults.Options)!;
+        staleCurrentTargetDateCalendar.CommunityCenterSourceStateHash =
+            "stale-state";
+        try
+        {
+            AcquisitionRouteCommunityCenterProvenanceSupport.From(
+                staleCurrentTargetDateCalendar,
+                currentProvenanceSnapshot,
+                HashFile(snapshotPath));
+        }
+        catch (InvalidDataException)
+        {
+            staleCurrentPortfolioProvenanceRejected = true;
+        }
+        Require(staleCurrentPortfolioProvenanceRejected,
+            "Stale current Community Center portfolio provenance was accepted.");
+
         var tamperedCurrentRouteCalendar = JsonSerializer.Deserialize<
             AcquisitionRouteCalendarResolutionReport>(
                 JsonSerializer.Serialize(

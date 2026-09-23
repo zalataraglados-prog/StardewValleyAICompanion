@@ -47,6 +47,17 @@ public static partial class AcquisitionRoutePortfolioBuilder
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotPath,
             "Acquisition route portfolio snapshot");
+        var targetDateCalendar = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRouteTargetDateCalendarReport>(
+            Path.GetFullPath(inputs.TargetDateCalendarPath),
+            "Acquisition route target-date calendar");
+        var snapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
+            snapshotPath);
+        var communityCenterProvenance =
+            AcquisitionRouteCommunityCenterProvenanceSupport.From(
+                targetDateCalendar,
+                snapshot,
+                snapshotSha256);
         using var snapshotDocument = JsonDocument.Parse(
             File.ReadAllText(snapshotPath));
         var ledgerState = AcquisitionStrategyLedgerReader.Read(
@@ -57,10 +68,11 @@ public static partial class AcquisitionRoutePortfolioBuilder
             opportunity,
             snapshot,
             ledgerState,
+            communityCenterProvenance,
             CurrentTeacherFrontierSupport.HashFile(inventoryPath),
             CurrentTeacherFrontierSupport.HashFile(opportunityPath),
             CurrentTeacherFrontierSupport.HashFile(ledgerPath),
-            CurrentTeacherFrontierSupport.HashFile(snapshotPath));
+            snapshotSha256);
     }
 
     internal static AcquisitionRoutePortfolioAdmission Build(
@@ -144,6 +156,9 @@ public static partial class AcquisitionRoutePortfolioBuilder
             ProposalId = proposal.ProposalId,
             GoalId = proposal.GoalId,
             SnapshotStateHash = snapshot.StateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    context.CommunityCenterProvenance),
             StrategyLedgerRevision = ledgerState.Ledger.Revision,
             PriorRolloutCheckpointSha256 =
                 proposal.PriorRolloutCheckpointSha256,
@@ -184,6 +199,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AcquisitionRouteTargetDateOpportunityCostReport Opportunity,
         SnapshotEnvelope Snapshot,
         AcquisitionStrategyLedgerState LedgerState,
+        AcquisitionRouteCommunityCenterProvenance CommunityCenterProvenance,
         string RequirementInventorySha256,
         string OpportunityCostSha256,
         string StrategyLedgerSha256,

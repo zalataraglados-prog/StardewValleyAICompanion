@@ -417,8 +417,12 @@ preserves its bundle-mode/denominator/state/snapshot identity and evaluates the 
 restoring static alternatives. Unlock now selects static/current deterministic recompilation from that verified
 artifact, and the existing recursive predecessor rebuild plus SHA chain carries the current identity through
 festival, location, capacity, resource, budget, reservation, lead-time, retry, daily-budget and opportunity-cost
-axes without a second implementation. The next boundary is portfolio and receipt propagation; Junimo unlock,
-room-reward/mail and final-ceremony settlement remain explicit blockers to formal training admission.
+axes without a second implementation. Portfolio admission now converts that identity into one typed provenance value;
+Teacher selection, commit/dispatch, fresh terminal evidence, settlement, checkpoints, continuation, terminal proof,
+rollout admission and per-transition supervision all propagate and cross-check it. Continuations bind the same
+static/current mode, bundle mode and denominator hash while allowing only the expected fresh decision-state/snapshot
+hashes to advance. Junimo unlock, room-reward/mail and final-ceremony settlement remain the explicit blockers to formal
+training admission.
 
 The legacy `StructuredPolicyTrainer` path which treats `candidate.Selected` as the positive
 pair member is explicitly non-admitted for this stage. Before Stage 6, the trajectory and

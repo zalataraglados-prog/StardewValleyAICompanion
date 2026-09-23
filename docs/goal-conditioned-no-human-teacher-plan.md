@@ -1895,9 +1895,31 @@ Slice 7 remains assigned to the RTX 5070 node.
   runs the unchanged unlock and festival commands through recursive rebuild. The focused suite continues to cover the
   complete dependency chain through opportunity cost and separately proves that remixed category targets are not
   replaced by static alternatives. Formal training remains false.
-- The next fixed boundary is current-denominator propagation through portfolio selection, commit/execution binding,
-  fresh terminal receipts, settlement, continuation and supervision artifacts. Junimo/unlock events, room reward/mail
-  and final-ceremony settlement remain separate Community Center completion blockers.
+- The next fixed boundary was current-denominator propagation through portfolio selection, commit/execution binding,
+  fresh terminal receipts, settlement, continuation and supervision artifacts. The following section records that
+  implementation. Junimo/unlock events, room reward/mail and final-ceremony settlement remain separate Community
+  Center completion blockers.
+
+### 2026-09-24: current Community Center portfolio and receipt provenance
+
+- `AcquisitionRoutePortfolioBuilder.Prepare` now derives one typed `community_center_provenance` value from the
+  deterministically verified target-date calendar and exact portfolio decision snapshot. A current provenance requires
+  standard/remixed mode, valid denominator/snapshot hashes and an exact source-state/snapshot match; a static path must
+  carry no current-save fields.
+- Portfolio admission, independent Teacher preference, atomic commit receipt, execution binding, fresh terminal
+  receipt, settlement receipt, initial/continuation checkpoint, continuation request, rollout proof/admission and each
+  supervision row now expose that value. Builders copy it through one shared support type and reject disagreement where
+  independently rebuilt artifacts meet, instead of relying only on an opaque predecessor file hash.
+- A continuation must retain the same static/current identity, bundle mode and active denominator SHA-256 as its prior
+  checkpoint. Its source-state and snapshot hashes are intentionally regenerated from the latest terminal state before
+  the next decision. This preserves fresh-state replanning without permitting a standard/remixed denominator switch
+  inside one proof chain.
+- Focused regression covers current remixed provenance construction and stale-state rejection. The complete three-step
+  portfolio rollout verifies that every exported supervision row retains the expected static provenance identity. This
+  closes current-denominator propagation through the training-evidence boundary; it does not authorize formal product
+  training.
+- The next fixed boundary is the native Community Center completion lifecycle: Junimo text/unlock events, room reward
+  and mail effects, and final ceremony settlement must receive fresh native before/after proof and terminal admission.
 
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 

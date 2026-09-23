@@ -162,6 +162,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             RouteOccurrenceId = context.Binding.RouteOccurrenceId,
             RouteSourceDecisionId = context.RouteSourceDecisionId,
             AfterStateHash = context.AfterSnapshot.StateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    context.Binding.CommunityCenterProvenance),
             ExecutionBindingSha256 =
                 CurrentTeacherFrontierSupport.HashFile(
                     Path.GetFullPath(executionBindingPath)),

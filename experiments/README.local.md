@@ -299,8 +299,13 @@ It deterministically rebuilds and compares the current root before evaluating th
 then carries the current denominator provenance into its output. The existing downstream commands require no
 current-specific variants: unlock chooses deterministic static/current recompilation from this artifact, and every
 later dependency axis recursively rebuilds its predecessor and hash-binds that identity through opportunity cost.
-Portfolio and receipt artifacts do not yet admit this dynamic denominator. The Junimo/reward/final-ceremony chain is
-also incomplete, so formal product training remains disabled.
+Portfolio admission now derives one typed `community_center_provenance` value from that target-date artifact and the
+decision snapshot. Teacher preference, atomic commit receipt, execution binding, fresh terminal receipt, settlement,
+rollout checkpoint, continuation request, terminal proof/admission and every supervision row copy and cross-check the
+same value. A continuation may advance its source state/snapshot hashes, but cannot switch static/current mode, bundle
+mode or denominator hash inside one rollout. Static evidence must keep every current-save provenance field empty.
+The Junimo unlock, room reward/mail and final-ceremony settlement chain is still incomplete, so formal product
+training remains disabled.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted

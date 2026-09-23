@@ -49,6 +49,9 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
             GoalId = binding.GoalId,
             GameVersion = binding.GameVersion,
             RouteOccurrenceId = binding.RouteOccurrenceId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    binding.CommunityCenterProvenance),
             ExecutionBindingSha256 = CurrentTeacherFrontierSupport.HashFile(
                 bindingPath),
             ExecutionReceiptSha256 = CurrentTeacherFrontierSupport.HashFile(

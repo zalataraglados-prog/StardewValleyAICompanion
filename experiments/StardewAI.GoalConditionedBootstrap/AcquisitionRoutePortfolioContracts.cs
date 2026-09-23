@@ -127,6 +127,10 @@ public sealed class AcquisitionRoutePortfolioAdmission
     [JsonPropertyName("snapshot_state_hash")]
     public string SnapshotStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("strategy_ledger_revision")]
     public int StrategyLedgerRevision { get; set; }
 

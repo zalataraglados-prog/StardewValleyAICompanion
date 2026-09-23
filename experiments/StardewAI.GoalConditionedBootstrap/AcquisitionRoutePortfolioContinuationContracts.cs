@@ -57,6 +57,10 @@ public sealed class AcquisitionRoutePortfolioContinuationTeacherRequest
     [JsonPropertyName("snapshot_state_hash")]
     public string SnapshotStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("expected_ledger_revision")]
     public int ExpectedLedgerRevision { get; set; }
 

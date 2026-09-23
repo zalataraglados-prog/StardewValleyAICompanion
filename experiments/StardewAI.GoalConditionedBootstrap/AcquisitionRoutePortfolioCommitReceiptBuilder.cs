@@ -97,6 +97,9 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
                 "target-date-acquisition-portfolio:" + admission.ProposalId,
             GoalId = admission.GoalId,
             SnapshotStateHash = admission.SnapshotStateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    admission.CommunityCenterProvenance),
             PriorRolloutCheckpointSha256 =
                 admission.PriorRolloutCheckpointSha256,
             CompletedAlternatives = (admission.CompletedAlternatives ??

@@ -26,6 +26,9 @@ public static class AcquisitionRoutePortfolioRolloutAdmissionBuilder
         {
             RolloutId = expected.RolloutId,
             GoalId = expected.GoalId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    expected.CommunityCenterProvenance),
             ProofManifestSha256 = CurrentTeacherFrontierSupport.HashFile(
                 manifestFullPath),
             ProofReceiptSha256 = CurrentTeacherFrontierSupport.HashFile(

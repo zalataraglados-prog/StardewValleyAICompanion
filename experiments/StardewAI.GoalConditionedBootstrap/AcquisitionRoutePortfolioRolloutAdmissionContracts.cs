@@ -30,6 +30,10 @@ public sealed class AcquisitionRoutePortfolioRolloutAdmissionReceipt
     [JsonPropertyName("goal_id")]
     public string GoalId { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("proof_manifest_sha256")]
     public string ProofManifestSha256 { get; set; } = string.Empty;
 

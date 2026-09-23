@@ -17,6 +17,10 @@ public sealed class AcquisitionRoutePortfolioRolloutCheckpoint
     [JsonPropertyName("goal_id")]
     public string GoalId { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("root_preference_request_sha256")]
     public string RootPreferenceRequestSha256 { get; set; } = string.Empty;
 

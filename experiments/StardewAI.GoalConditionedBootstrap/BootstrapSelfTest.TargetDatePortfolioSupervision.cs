@@ -35,6 +35,16 @@ internal static partial class BootstrapSelfTest
                 verified.Rows.Select(row => row.TransitionIndex)
                     .SequenceEqual(new[] { 1, 2, 3 }) &&
                 verified.Rows.All(row =>
+                    !row.Payload.CommunityCenterProvenance
+                        .UsesCurrentCommunityCenterDenominator &&
+                    row.Payload.CommunityCenterProvenance
+                        .CommunityCenterBundleMode.Length == 0 &&
+                    row.Payload.CommunityCenterProvenance
+                        .CommunityCenterDenominatorSha256.Length == 0 &&
+                    row.Payload.CommunityCenterProvenance
+                        .CommunityCenterSourceStateHash.Length == 0 &&
+                    row.Payload.CommunityCenterProvenance
+                        .CommunityCenterSnapshotSha256.Length == 0 &&
                     row.Payload.DecisionContext.SaveId ==
                         decisionContext.SaveId &&
                     row.Payload.DecisionContext.PlayerId ==

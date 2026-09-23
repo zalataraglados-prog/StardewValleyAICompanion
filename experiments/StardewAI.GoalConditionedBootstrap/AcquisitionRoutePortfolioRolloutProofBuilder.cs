@@ -17,6 +17,9 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
                 : "verified_incomplete_rollout_proof_chain",
             RolloutId = latest.Checkpoint.RolloutId,
             GoalId = latest.Checkpoint.GoalId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    latest.Checkpoint.CommunityCenterProvenance),
             ManifestSha256 = CurrentTeacherFrontierSupport.HashFile(
                 manifestFullPath),
             LatestCheckpointSha256 = CurrentTeacherFrontierSupport.HashFile(

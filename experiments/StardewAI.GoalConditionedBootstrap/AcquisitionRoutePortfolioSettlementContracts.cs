@@ -26,6 +26,10 @@ public sealed class AcquisitionRoutePortfolioSettlementReceipt
     [JsonPropertyName("after_state_hash")]
     public string AfterStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("execution_binding_sha256")]
     public string ExecutionBindingSha256 { get; set; } = string.Empty;
 

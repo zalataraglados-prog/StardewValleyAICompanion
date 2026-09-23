@@ -47,6 +47,11 @@ public static class AcquisitionRoutePortfolioContinuationBuilder
                 context.StrategyLedgerSha256 ==
                     checkpoint.LatestLedgerSha256,
             "Continuation ledger is not the checkpoint settled ledger.");
+        Require(AcquisitionRouteCommunityCenterProvenanceSupport
+                .SameDenominator(
+                    checkpoint.CommunityCenterProvenance,
+                    context.CommunityCenterProvenance),
+            "Continuation Community Center denominator identity drifted.");
         ValidateProgress(checkpoint.ScopedProgress);
 
         var incomplete = checkpoint.ScopedProgress
@@ -69,6 +74,9 @@ public static class AcquisitionRoutePortfolioContinuationBuilder
             RolloutId = checkpoint.RolloutId,
             GoalId = checkpoint.GoalId,
             SnapshotStateHash = context.Snapshot.StateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    context.CommunityCenterProvenance),
             ExpectedLedgerRevision = context.LedgerState.Ledger.Revision,
             StrategyLedgerSha256 = context.StrategyLedgerSha256,
             PriorCheckpointSha256 = checkpointSha,

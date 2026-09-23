@@ -113,6 +113,10 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("target_total_day")]
     public int TargetTotalDay { get; set; }
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("route_occurrence_id")]
     public string RouteOccurrenceId { get; set; } = string.Empty;
 

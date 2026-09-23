@@ -59,6 +59,10 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 preference.SelectedAdmission is not null &&
                 !preference.FormalTrainingAuthorized,
             "Initial rollout Teacher preference is not verified.");
+        Require(AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    settlement.CommunityCenterProvenance),
+            "Initial rollout Community Center provenance drifted across the transition.");
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
             Path.GetFullPath(inputs.TargetDateOpportunityCostPath),
@@ -124,6 +128,9 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 : "verified_initial_transition_fresh_replan_required",
             RolloutId = RolloutId(requestSha),
             GoalId = preference.GoalId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    preference.CommunityCenterProvenance),
             RootPreferenceRequestSha256 = requestSha,
             CurrentTeacherPreferenceSha256 =
                 CurrentTeacherFrontierSupport.HashFile(

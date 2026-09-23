@@ -694,6 +694,13 @@ before emitting one hash-linked row per transition. Each row keeps `teacher_pref
 `native_outcome`, and `student_observation` in separate typed channels; Teacher-driven rollouts mark
 the Student channel explicitly unobserved and unavailable portfolios receive no negative label. The
 adapter remains scoped Teacher evidence, not a formal dataset/trainer authorization.
+The entire portfolio evidence chain also carries one typed `community_center_provenance` value. It is
+derived from the deterministically rebuilt target-date calendar and exact decision snapshot, then
+cross-checked across Teacher preference, admission, commit, execution, fresh receipt, settlement,
+checkpoint, continuation, proof, rollout admission and supervision export. A current standard/remixed
+rollout may update only its decision source-state and snapshot hashes at a continuation; changing the
+static/current mode, bundle mode or active denominator hash fails closed. Static evidence is required
+to keep every current-save provenance field empty.
 The companion `acquisition_route_portfolio_supervision_corpus_manifest.v1` rebuilds every listed
 source, deduplicates only byte-equivalent typed rows, rejects conflicting row identities, and derives
 train/validation/test partitions from the verified snapshot save-day key. It records comparison-pair
