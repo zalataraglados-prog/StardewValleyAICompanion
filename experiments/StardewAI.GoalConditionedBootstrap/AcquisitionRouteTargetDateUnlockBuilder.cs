@@ -18,12 +18,14 @@ public static partial class AcquisitionRouteTargetDateUnlockBuilder
             AcquisitionRouteTargetDateCalendarReport>(
             targetPath,
             "Acquisition route target-date calendar");
-        var recomputed = AcquisitionRouteTargetDateCalendarBuilder.Build(
-            inventoryPath,
-            loweringPath,
-            masterAnglerWindowIndexPath,
-            staticCalendarResolutionPath,
-            source.TargetTotalDay);
+        var recomputed = AcquisitionRouteTargetDateCalendarBuilder
+            .RebuildForSource(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                snapshotFullPath,
+                source);
         Require(EqualJson(source, recomputed),
             "Target-date calendar drifted from deterministic source compilation.");
         ValidateSource(source);

@@ -1878,9 +1878,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   transparent snapshot, with its redundant completion aggregate recomputed from the exact bundle rows, and verifies
   the complete provenance chain. The archived raw snapshot reports 21 complete bundles while its exact rows prove 25;
   strict production code rejects that stale aggregate, and the current bridge source is separately locked to derive
-  the aggregate from those rows. Formal product training remains false. The next fixed slice propagates this current
-  identity through the downstream unlock/festival/location/capacity/resource/budget/reservation/lead-time/retry/daily
-  budget/opportunity-cost chain; portfolio and receipt propagation remains the following boundary.
+  the aggregate from those rows. Formal product training remains false.
+
+### 2026-09-23: current Community Center target-date dependency chain
+
+- `build-acquisition-route-target-date-unlock-state` now determines its deterministic rebuild mode from the verified
+  target-date artifact. A current artifact must rebuild its Community Center denominator and calendar root from the
+  same transparent snapshot; a static artifact still follows the static path. An artifact/snapshot mode mismatch,
+  denominator change or route-root drift fails the existing full-object comparison.
+- This is one dispatch boundary, not a parallel current implementation of every dependency axis. Festival, location,
+  facility capacity, resource inputs, currency, reservation, processing lead time, fishing probability, stochastic
+  retry, daily time/energy and opportunity cost already rebuild their immediate predecessor. Their exact upstream
+  SHA-256 fields therefore bind the current target-date identity transitively, while stages that join the route root
+  continue to require the same complete occurrence set and requirement identity.
+- Production regression now constructs the complete 1,599-occurrence current root from the real day-37 snapshot and
+  runs the unchanged unlock and festival commands through recursive rebuild. The focused suite continues to cover the
+  complete dependency chain through opportunity cost and separately proves that remixed category targets are not
+  replaced by static alternatives. Formal training remains false.
+- The next fixed boundary is current-denominator propagation through portfolio selection, commit/execution binding,
+  fresh terminal receipts, settlement, continuation and supervision artifacts. Junimo/unlock events, room reward/mail
+  and final-ceremony settlement remain separate Community Center completion blockers.
 
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 

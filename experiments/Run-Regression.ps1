@@ -562,18 +562,31 @@ $snapshotForUnlock = Get-Content -LiteralPath $FullShipmentSnapshot -Raw |
     ConvertFrom-Json
 $unlockTargetTotalDay =
     [int]$snapshotForUnlock.state.time.total_days.value
-$unlockTargetDateCalendarPath = Join-Path $output `
-    'acquisition-route-target-date-calendar-snapshot-day-v1.json'
+$dependencyRouteCalendarResolutionPath = Join-Path $output `
+    'current-acquisition-route-calendar-resolution-snapshot-day-v1.json'
 dotnet run --project $bootstrap --no-build -- `
-    build-acquisition-route-target-date-calendar `
+    build-current-acquisition-route-calendar-resolution `
     --requirement-inventory $requirementInventoryPath `
     --acquisition-lowering $acquisitionLoweringPath `
     --master-angler-windows $masterAnglerWindowsPath `
-    --calendar-resolution $routeCalendarResolutionPath `
+    --snapshot $FullShipmentSnapshot `
+    --output $dependencyRouteCalendarResolutionPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Snapshot-date current route calendar resolution failed.'
+}
+$unlockTargetDateCalendarPath = Join-Path $output `
+    'current-acquisition-route-target-date-calendar-snapshot-day-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-current-acquisition-route-target-date-calendar `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
+    --snapshot $FullShipmentSnapshot `
     --target-total-day $unlockTargetTotalDay `
     --output $unlockTargetDateCalendarPath
 if ($LASTEXITCODE -ne 0) {
-    throw 'Snapshot-date calendar resolution failed.'
+    throw 'Snapshot-date current calendar resolution failed.'
 }
 $targetDateUnlockPath = Join-Path $output `
     'acquisition-route-target-date-unlock-state-v1.json'
@@ -582,7 +595,7 @@ dotnet run --project $bootstrap --no-build -- `
     --requirement-inventory $requirementInventoryPath `
     --acquisition-lowering $acquisitionLoweringPath `
     --master-angler-windows $masterAnglerWindowsPath `
-    --calendar-resolution $routeCalendarResolutionPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
     --target-date-calendar $unlockTargetDateCalendarPath `
     --snapshot $FullShipmentSnapshot `
     --output $targetDateUnlockPath
@@ -651,7 +664,7 @@ dotnet run --project $bootstrap --no-build -- `
     --requirement-inventory $requirementInventoryPath `
     --acquisition-lowering $acquisitionLoweringPath `
     --master-angler-windows $masterAnglerWindowsPath `
-    --calendar-resolution $routeCalendarResolutionPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
     --target-date-calendar $unlockTargetDateCalendarPath `
     --target-date-unlock $targetDateUnlockPath `
     --snapshot $FullShipmentSnapshot `

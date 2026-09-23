@@ -52,6 +52,28 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
             denominator,
             targetTotalDay);
 
+    internal static AcquisitionRouteTargetDateCalendarReport RebuildForSource(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string calendarResolutionPath,
+        string snapshotPath,
+        AcquisitionRouteTargetDateCalendarReport source) =>
+        source.UsesCurrentCommunityCenterDenominator
+            ? BuildCurrent(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                calendarResolutionPath,
+                snapshotPath,
+                source.TargetTotalDay)
+            : Build(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                calendarResolutionPath,
+                source.TargetTotalDay);
+
     private static AcquisitionRouteTargetDateCalendarReport BuildCore(
         string inventoryPath,
         string loweringPath,

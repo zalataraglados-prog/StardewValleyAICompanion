@@ -267,9 +267,7 @@ it is part of `Run-Regression.ps1`. Current collection-frontier, preference and 
 rebuild and consume that save-bound denominator instead of the static `community_center_standard`
 alternatives. The stable set ID is retained for compatibility, category ingredients remain one native
 slot with concrete accepted item targets, and the denominator hash is propagated into Teacher
-supervision and required by dataset validation. The dynamic requirement identity has not yet been
-carried through every target-date axis, and the unlock/reward/final-ceremony chain is also incomplete,
-so formal product training remains disabled. The save-bound acquisition calendar root can be built with:
+supervision and required by dataset validation. The save-bound acquisition calendar root can be built with:
 
 ```powershell
 dotnet run --project StardewAI.GoalConditionedBootstrap -- `
@@ -298,8 +296,11 @@ dotnet run --project StardewAI.GoalConditionedBootstrap -- `
 ```
 
 It deterministically rebuilds and compares the current root before evaluating the shared calendar axis,
-then carries the current denominator provenance into its output. Downstream axes and receipts do not yet
-accept this dynamic artifact, so formal training remains disabled.
+then carries the current denominator provenance into its output. The existing downstream commands require no
+current-specific variants: unlock chooses deterministic static/current recompilation from this artifact, and every
+later dependency axis recursively rebuilds its predecessor and hash-binds that identity through opportunity cost.
+Portfolio and receipt artifacts do not yet admit this dynamic denominator. The Junimo/reward/final-ceremony chain is
+also incomplete, so formal product training remains disabled.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted

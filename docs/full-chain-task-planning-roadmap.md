@@ -414,9 +414,11 @@ denominator hash. The acquisition-route calendar root now uses the same authorit
 Community Center route occurrences, preserving concrete accepted targets and active-denominator provenance.
 The explicit target-date calendar now deterministically rebuilds and object-compares that current root,
 preserves its bundle-mode/denominator/state/snapshot identity and evaluates the shared calendar axis without
-restoring static alternatives. The next boundary is propagation through every downstream axis and receipt;
-unlock, room-reward/mail and final-ceremony settlement also remain explicit blockers to formal training
-admission.
+restoring static alternatives. Unlock now selects static/current deterministic recompilation from that verified
+artifact, and the existing recursive predecessor rebuild plus SHA chain carries the current identity through
+festival, location, capacity, resource, budget, reservation, lead-time, retry, daily-budget and opportunity-cost
+axes without a second implementation. The next boundary is portfolio and receipt propagation; Junimo unlock,
+room-reward/mail and final-ceremony settlement remain explicit blockers to formal training admission.
 
 The legacy `StructuredPolicyTrainer` path which treats `candidate.Selected` as the positive
 pair member is explicitly non-admitted for this stage. Before Stage 6, the trajectory and
