@@ -12,22 +12,91 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         string loweringPath,
         string masterAnglerWindowIndexPath,
         string staticCalendarResolutionPath,
+        int targetTotalDay) => BuildCore(
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            staticCalendarResolutionPath,
+            null,
+            null,
+            targetTotalDay);
+
+    public static AcquisitionRouteTargetDateCalendarReport BuildCurrent(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string calendarResolutionPath,
+        string snapshotPath,
+        int targetTotalDay) => BuildCore(
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            calendarResolutionPath,
+            snapshotPath,
+            null,
+            targetTotalDay);
+
+    internal static AcquisitionRouteTargetDateCalendarReport Build(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string calendarResolutionPath,
+        string snapshotPath,
+        CurrentCommunityCenterDenominatorReport denominator,
+        int targetTotalDay) => BuildCore(
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            calendarResolutionPath,
+            snapshotPath,
+            denominator,
+            targetTotalDay);
+
+    private static AcquisitionRouteTargetDateCalendarReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string calendarResolutionPath,
+        string? snapshotPath,
+        CurrentCommunityCenterDenominatorReport? denominator,
         int targetTotalDay)
     {
         var inventoryFullPath = Path.GetFullPath(inventoryPath);
         var loweringFullPath = Path.GetFullPath(loweringPath);
         var windowFullPath = Path.GetFullPath(masterAnglerWindowIndexPath);
-        var calendarFullPath = Path.GetFullPath(staticCalendarResolutionPath);
+        var calendarFullPath = Path.GetFullPath(calendarResolutionPath);
         var source = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteCalendarResolutionReport>(
             calendarFullPath,
-            "Acquisition route static calendar resolution");
-        var recomputed = AcquisitionRouteCalendarResolutionBuilder.Build(
-            inventoryFullPath,
-            loweringFullPath,
-            windowFullPath);
+            "Acquisition route calendar resolution");
+        AcquisitionRouteCalendarResolutionReport recomputed;
+        if (snapshotPath is null)
+        {
+            Require(denominator is null,
+                "A current Community Center denominator requires a snapshot.");
+            recomputed = AcquisitionRouteCalendarResolutionBuilder.Build(
+                inventoryFullPath,
+                loweringFullPath,
+                windowFullPath);
+        }
+        else
+        {
+            var snapshotFullPath = Path.GetFullPath(snapshotPath);
+            recomputed = denominator is null
+                ? AcquisitionRouteCalendarResolutionBuilder.BuildCurrent(
+                    inventoryFullPath,
+                    loweringFullPath,
+                    windowFullPath,
+                    snapshotFullPath)
+                : AcquisitionRouteCalendarResolutionBuilder.Build(
+                    inventoryFullPath,
+                    loweringFullPath,
+                    windowFullPath,
+                    snapshotFullPath,
+                    denominator);
+        }
         Require(EqualJson(source, recomputed),
-            "Static calendar resolution drifted from deterministic source compilation.");
+            "Calendar resolution drifted from deterministic source compilation.");
         ValidateSource(source, targetTotalDay);
 
         var routes = source.Routes.Select(route => Evaluate(route, targetTotalDay))
@@ -51,6 +120,15 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
                 CurrentTeacherFrontierSupport.HashFile(loweringFullPath),
             StaticCalendarResolutionSha256 =
                 CurrentTeacherFrontierSupport.HashFile(calendarFullPath),
+            UsesCurrentCommunityCenterDenominator =
+                source.UsesCurrentCommunityCenterDenominator,
+            CommunityCenterBundleMode = source.CommunityCenterBundleMode,
+            CommunityCenterDenominatorSha256 =
+                source.CommunityCenterDenominatorSha256,
+            CommunityCenterSourceStateHash =
+                source.CommunityCenterSourceStateHash,
+            CommunityCenterSnapshotSha256 =
+                source.CommunityCenterSnapshotSha256,
             TargetTotalDay = targetTotalDay,
             DeadlineTotalDayExclusive = source.DeadlineTotalDayExclusive,
             RouteOccurrenceCount = routes.Length,
@@ -148,7 +226,27 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
                 source.RouteOccurrenceCount == source.Routes.Length &&
                 source.Routes.Select(route => route.RouteOccurrenceId)
                     .Distinct(StringComparer.Ordinal).Count() == source.Routes.Length,
-            "Static calendar resolution metadata is incomplete.");
+            "Calendar resolution metadata is incomplete.");
+        if (source.UsesCurrentCommunityCenterDenominator)
+        {
+            Require(source.CommunityCenterBundleMode is "standard" or "remixed" &&
+                    IsSha256(source.CommunityCenterDenominatorSha256) &&
+                    !string.IsNullOrWhiteSpace(
+                        source.CommunityCenterSourceStateHash) &&
+                    IsSha256(source.CommunityCenterSnapshotSha256),
+                "Current Community Center calendar provenance is incomplete.");
+        }
+        else
+        {
+            Require(string.IsNullOrEmpty(source.CommunityCenterBundleMode) &&
+                    string.IsNullOrEmpty(
+                        source.CommunityCenterDenominatorSha256) &&
+                    string.IsNullOrEmpty(
+                        source.CommunityCenterSourceStateHash) &&
+                    string.IsNullOrEmpty(
+                        source.CommunityCenterSnapshotSha256),
+                "A static calendar resolution carries current-save provenance.");
+        }
         Require(targetTotalDay >= 0 &&
                 targetTotalDay < source.DeadlineTotalDayExclusive,
             "Target total day is outside the authoritative deadline horizon.");
@@ -201,6 +299,9 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
             JsonSerializer.Serialize(right, options),
             StringComparison.Ordinal);
     }
+
+    private static bool IsSha256(string value) =>
+        value.Length == 64 && value.All(Uri.IsHexDigit);
 
     private static void Require(bool condition, string message)
     {

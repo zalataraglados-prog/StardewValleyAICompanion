@@ -1861,6 +1861,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   target-date calendar consume and validate this current root, then propagate the same denominator identity through
   each downstream axis and receipt before the Junimo/unlock, room reward/mail and final ceremony chain is admitted.
 
+### 2026-09-23: current Community Center explicit target-date calendar
+
+- `build-current-acquisition-route-target-date-calendar` consumes the persisted current acquisition-route calendar,
+  rebuilds that root from the same authoritative inventory, lowering, window index and transparent snapshot, and
+  object-compares the complete report before evaluating an explicit target day. Passing a static root to the current
+  command, a current root to the static command, or changing denominator provenance fails closed.
+- The target-date report carries the active bundle mode, denominator hash, source-state hash and snapshot hash in
+  addition to the route-root file hash. Calendar evaluation remains the existing shared implementation; no second
+  condition parser, route catalog or executor was introduced. Non-Community-Center route rows are byte-equivalent to
+  the static target-date result for the same inputs.
+- The remixed fixture preserves the two active exact-item harvest routes, carries the concrete egg target for one
+  category slot, excludes the removed static shop route and rejects a forged denominator hash. One deliberately
+  unmatched fixture shop row remains an explicit source block rather than being promoted to a target-date match.
+- Production regression now executes both current CLI stages against the standard fixture derived from the locked
+  transparent snapshot, with its redundant completion aggregate recomputed from the exact bundle rows, and verifies
+  the complete provenance chain. The archived raw snapshot reports 21 complete bundles while its exact rows prove 25;
+  strict production code rejects that stale aggregate, and the current bridge source is separately locked to derive
+  the aggregate from those rows. Formal product training remains false. The next fixed slice propagates this current
+  identity through the downstream unlock/festival/location/capacity/resource/budget/reservation/lead-time/retry/daily
+  budget/opportunity-cost chain; portfolio and receipt propagation remains the following boundary.
+
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 
 - Verdict: accept the single strategic entry, shared artifacts, deterministic hard authority, learned soft-preference

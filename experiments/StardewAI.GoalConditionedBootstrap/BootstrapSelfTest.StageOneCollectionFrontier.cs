@@ -39,6 +39,12 @@ internal static partial class BootstrapSelfTest
         var currentRouteCalendarPath = Path.Combine(
             root,
             "current-route-calendar-resolution.json");
+        var currentTargetDateCalendarPath = Path.Combine(
+            root,
+            "current-target-date-calendar.json");
+        var tamperedCurrentRouteCalendarPath = Path.Combine(
+            root,
+            "tampered-current-route-calendar-resolution.json");
         var targetDateCalendarPath = Path.Combine(root, "target-date-calendar.json");
         var targetDateUnlockPath = Path.Combine(root, "target-date-unlock.json");
         var targetDateFestivalPath = Path.Combine(root, "target-date-festival.json");
@@ -4114,6 +4120,93 @@ internal static partial class BootstrapSelfTest
                 currentNonCommunityCenterRoutes ==
                     staticNonCommunityCenterRoutes,
             "Current Community Center route calendar did not replace static routes or preserve concrete category targets.");
+
+        var currentTargetDateCalendar =
+            AcquisitionRouteTargetDateCalendarBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                currentRouteCalendarPath,
+                snapshotPath,
+                calendarCommunityCenterDenominator,
+                0);
+        Write(currentTargetDateCalendarPath, currentTargetDateCalendar);
+        var currentTargetDateCommunityCenterRoutes = currentTargetDateCalendar.Routes
+            .Where(route => route.RequirementSetId ==
+                "community_center_standard")
+            .ToArray();
+        var staticNonCommunityCenterTargetDateRoutes = JsonSerializer.Serialize(
+            targetDateCalendar.Routes.Where(route => route.RequirementSetId !=
+                "community_center_standard").ToArray(),
+            JsonDefaults.Options);
+        var currentNonCommunityCenterTargetDateRoutes = JsonSerializer.Serialize(
+            currentTargetDateCalendar.Routes.Where(route =>
+                route.RequirementSetId != "community_center_standard").ToArray(),
+            JsonDefaults.Options);
+        Require(currentTargetDateCalendar.Status ==
+                    "partial_target_date_calendar_axis_source_blocks" &&
+                currentTargetDateCalendar.UsesCurrentCommunityCenterDenominator &&
+                currentTargetDateCalendar.CommunityCenterBundleMode ==
+                    "remixed" &&
+                currentTargetDateCalendar.CommunityCenterDenominatorSha256 ==
+                    calendarCommunityCenterDenominator.DenominatorSha256 &&
+                currentTargetDateCalendar.CommunityCenterSourceStateHash ==
+                    stateHash &&
+                currentTargetDateCalendar.CommunityCenterSnapshotSha256 ==
+                    HashFile(snapshotPath) &&
+                currentTargetDateCalendar.StaticCalendarResolutionSha256 ==
+                    HashFile(currentRouteCalendarPath) &&
+                currentTargetDateCalendar.RouteOccurrenceCount == 77 &&
+                currentTargetDateCalendar.CalendarAxisResolvedCount == 76 &&
+                currentTargetDateCalendar.StaticWindowMatchCount == 4 &&
+                currentTargetDateCalendar.StaticWindowMissCount == 72 &&
+                currentTargetDateCalendar.BlockedStaticSourceCount == 1 &&
+                currentTargetDateCommunityCenterRoutes.Length == 3 &&
+                !currentTargetDateCommunityCenterRoutes.Any(route =>
+                    route.RequirementId ==
+                        "community_center:bundle:Pantry/5" &&
+                    route.RouteKind == "sells") &&
+                currentTargetDateCommunityCenterRoutes.Any(route =>
+                    route.RequirementId ==
+                        "community_center:bundle:Pantry/6" &&
+                    route.QualifiedItemId == "(O)176" &&
+                    route.MatchKind == "category" &&
+                    route.RouteKind == "sells" &&
+                    !route.CalendarAxisResolved &&
+                    route.CalendarAxisStatus ==
+                        "blocked_static_calendar_source_unresolved") &&
+                currentNonCommunityCenterTargetDateRoutes ==
+                    staticNonCommunityCenterTargetDateRoutes &&
+                !currentTargetDateCalendar.TrainingLabelEligible,
+            "Current Community Center target-date calendar did not preserve the dynamic route root and provenance.");
+
+        var tamperedCurrentRouteCalendar = JsonSerializer.Deserialize<
+            AcquisitionRouteCalendarResolutionReport>(
+                JsonSerializer.Serialize(
+                    currentRouteCalendar,
+                    JsonDefaults.Options),
+                JsonDefaults.Options)!;
+        tamperedCurrentRouteCalendar.CommunityCenterDenominatorSha256 =
+            new string('0', 64);
+        Write(tamperedCurrentRouteCalendarPath, tamperedCurrentRouteCalendar);
+        var tamperedCurrentRouteCalendarRejected = false;
+        try
+        {
+            AcquisitionRouteTargetDateCalendarBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                windowsPath,
+                tamperedCurrentRouteCalendarPath,
+                snapshotPath,
+                calendarCommunityCenterDenominator,
+                0);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedCurrentRouteCalendarRejected = true;
+        }
+        Require(tamperedCurrentRouteCalendarRejected,
+            "A target-date calendar accepted tampered current Community Center provenance.");
 
         var intents = MasterAnglerTargetDateIntentBuilder.Build(
             windowsPath,

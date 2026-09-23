@@ -283,7 +283,23 @@ dotnet run --project StardewAI.GoalConditionedBootstrap -- `
 
 This command strictly rebuilds the current denominator, replaces only the static Community Center route
 occurrences, and records bundle-mode, denominator, source-state and snapshot hashes. It does not authorize
-the existing static target-date chain; making that chain consume the current root is the next fixed slice.
+the existing static target-date chain. The first current target-date stage is:
+
+```powershell
+dotnet run --project StardewAI.GoalConditionedBootstrap -- `
+  build-current-acquisition-route-target-date-calendar `
+  --requirement-inventory <path> `
+  --acquisition-lowering <path> `
+  --master-angler-windows <path> `
+  --calendar-resolution <current-root-path> `
+  --snapshot <same-snapshot-path> `
+  --target-total-day <day> `
+  --output <path>
+```
+
+It deterministically rebuilds and compares the current root before evaluating the shared calendar axis,
+then carries the current denominator provenance into its output. Downstream axes and receipts do not yet
+accept this dynamic artifact, so formal training remains disabled.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted
