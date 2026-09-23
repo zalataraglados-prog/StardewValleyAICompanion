@@ -96,7 +96,7 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
             RequirementInventorySha256 = CurrentTeacherFrontierSupport.HashFile(
                 inventoryFullPath),
             SnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(snapshotFullPath),
-            DenominatorSha256 = HashDenominator(mode, active),
+            DenominatorSha256 = ComputeDenominatorSha256(mode, active),
             IngredientAcquisitionCatalogComplete =
                 active.SelectMany(value => value.Ingredients)
                     .All(value => value.AcquisitionTargets.Any(target =>
@@ -451,7 +451,7 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
         };
     }
 
-    private static string HashDenominator(
+    internal static string ComputeDenominatorSha256(
         string mode,
         CurrentCommunityCenterBundle[] bundles)
     {

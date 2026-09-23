@@ -263,9 +263,13 @@ typed. The current denominator carries and hashes those targets, so acquisition-
 closed instead of silently preserving a stale denominator.
 `self-test-current-community-center-denominator` covers standard, remixed, and tamper-rejection
 paths, locks the 175/185 catalog counts and verifies acquisition coverage for every active ingredient;
-it is part of `Run-Regression.ps1`. This denominator binder does not yet replace the collection
-frontier's static `community_center_standard` alternatives or make remixed dynamic requirements
-executable through the target-date lowering chain, so formal product training remains disabled.
+it is part of `Run-Regression.ps1`. Current collection-frontier, preference and receipt builds now
+rebuild and consume that save-bound denominator instead of the static `community_center_standard`
+alternatives. The stable set ID is retained for compatibility, category ingredients remain one native
+slot with concrete accepted item targets, and the denominator hash is propagated into Teacher
+supervision and required by dataset validation. The dynamic requirement identity has not yet been
+carried through every target-date axis, and the unlock/reward/final-ceremony chain is also incomplete,
+so formal product training remains disabled.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted

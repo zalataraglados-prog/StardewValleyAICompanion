@@ -4037,6 +4037,21 @@ internal static partial class BootstrapSelfTest
 
         Write(calibrationPath, StageOneRouteTimingCalibration());
         WriteStageOneCollectionSnapshot(snapshotPath, stateHash, fish);
+        var communityCenterDenominator = CollectionDenominatorFixture(
+            inventoryPath,
+            snapshotPath,
+            stateHash,
+            "remixed",
+            CollectionDenominatorBundle(
+                "Pantry/5", "Pantry", 5, 1,
+                CollectionDenominatorIngredient(
+                    0, "24", "(O)24", "item_id", 2, 1, false,
+                    CollectionDenominatorTarget(
+                        "24", "(O)24", "Parsnip", "harvests_as", "crop:472")),
+                CollectionDenominatorIngredient(
+                    1, "188", "(O)188", "item_id", 1, 0, false,
+                    CollectionDenominatorTarget(
+                        "188", "(O)188", "Green Bean", "harvests_as", "crop:473"))));
 
         var intents = MasterAnglerTargetDateIntentBuilder.Build(
             windowsPath,
@@ -4119,7 +4134,8 @@ internal static partial class BootstrapSelfTest
             loweringPath,
             rankingPath,
             snapshotPath,
-            intentsPath);
+            intentsPath,
+            communityCenterDenominator);
         Require(result.Status == "candidate_contract_ready" &&
                 result.RequirementSetCount == 4 &&
                 result.CurrentCandidateMembershipEligible &&
@@ -4158,7 +4174,8 @@ internal static partial class BootstrapSelfTest
                 loweringPath,
                 rankingPath,
                 snapshotPath,
-                intentsPath);
+                intentsPath,
+                communityCenterDenominator);
         Require(preference.Status == "ready" &&
                 preference.TeacherPreferenceLabelEligible &&
                 !preference.FormalTrainingAuthorized &&
@@ -4211,7 +4228,8 @@ internal static partial class BootstrapSelfTest
                 "fixture-teacher-trajectory",
                 teacherRunId,
                 PolicyTrajectoryVersionPins.KnowledgeDictionary,
-                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                communityCenterDenominator);
         Require(receiptAdmission.Status == "ready" &&
                 receiptAdmission.TeacherTrainingRowEligible &&
                 !receiptAdmission.FormalTrainingAuthorized &&
@@ -4225,6 +4243,8 @@ internal static partial class BootstrapSelfTest
                 receiptAdmission.TrainingRow.Audit.TeacherSupervision is { } teacherSupervision &&
                 teacherSupervision.SelectedCandidateId ==
                     "master-angler-route" &&
+                teacherSupervision.CommunityCenterDenominatorSha256 ==
+                    communityCenterDenominator.DenominatorSha256 &&
                 teacherSupervision.RequirementTransitions.Length == 1,
             "A fresh exact route receipt did not produce a standalone Teacher-supervised policy row.");
         var teacherDatasetPath = Path.Combine(root, "teacher-receipt.jsonl");
@@ -4296,7 +4316,8 @@ internal static partial class BootstrapSelfTest
                 "fixture-uppercase-hash",
                 teacherRunId,
                 PolicyTrajectoryVersionPins.KnowledgeDictionary,
-                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                communityCenterDenominator);
         Require(uppercaseHashAdmission.Status ==
                     "blocked_teacher_preference_not_ready" &&
                 uppercaseHashAdmission.BlockingReasons.Contains(
@@ -4334,7 +4355,8 @@ internal static partial class BootstrapSelfTest
                 "fixture-no-transition",
                 teacherRunId,
                 PolicyTrajectoryVersionPins.KnowledgeDictionary,
-                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                communityCenterDenominator);
         Require(noTransition.Status ==
                     "blocked_exact_requirement_transition_missing" &&
                 !noTransition.TeacherTrainingRowEligible &&
@@ -4371,7 +4393,8 @@ internal static partial class BootstrapSelfTest
                 "fixture-wrong-queue",
                 teacherRunId,
                 PolicyTrajectoryVersionPins.KnowledgeDictionary,
-                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                communityCenterDenominator);
         Require(wrongQueue.Status == "blocked_execution_receipt_not_exact" &&
                 wrongQueue.BlockingReasons.Contains(
                     "execution_receipt_queue_id_mismatch",
@@ -4401,7 +4424,8 @@ internal static partial class BootstrapSelfTest
                 "fixture-wrong-primitive",
                 teacherRunId,
                 PolicyTrajectoryVersionPins.KnowledgeDictionary,
-                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                communityCenterDenominator);
         Require(wrongPrimitive.Status ==
                     "blocked_execution_receipt_not_exact" &&
                 wrongPrimitive.BlockingReasons.Contains(
@@ -4431,7 +4455,8 @@ internal static partial class BootstrapSelfTest
                 loweringPath,
                 rankingPath,
                 snapshotPath,
-                intentsPath);
+                intentsPath,
+                communityCenterDenominator);
         Require(learnerSignalInvariant.Status == "ready" &&
                 learnerSignalInvariant.SelectedCandidate?.CandidateId ==
                     "master-angler-route" &&
@@ -4469,7 +4494,8 @@ internal static partial class BootstrapSelfTest
                 loweringPath,
                 rankingPath,
                 snapshotPath,
-                intentsPath);
+                intentsPath,
+                communityCenterDenominator);
         Require(tiedPreference.Status ==
                     "blocked_authoritatively_tied_top_candidates" &&
                 !tiedPreference.TeacherPreferenceLabelEligible &&
@@ -4487,7 +4513,8 @@ internal static partial class BootstrapSelfTest
                 loweringPath,
                 rankingPath,
                 snapshotPath,
-                intentsPath);
+                intentsPath,
+                communityCenterDenominator);
         }
         catch (InvalidDataException)
         {

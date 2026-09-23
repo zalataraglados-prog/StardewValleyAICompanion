@@ -281,7 +281,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 var validMoney = alternative.MatchKind == "money_payment" &&
                     alternative.ItemId == "-1" &&
                     alternative.QualifiedItemId.Length == 0;
-                if ((!validItem && !validMoney) ||
+                var validCategory = alternative.MatchKind == "category" &&
+                    alternative.ItemId.StartsWith("-", StringComparison.Ordinal) &&
+                    alternative.ItemId != "-1" &&
+                    alternative.QualifiedItemId.Length == 0;
+                if ((!validItem && !validMoney && !validCategory) ||
                     alternative.Amount < 1 ||
                     alternative.MinimumQuality < 0)
                 {
@@ -291,6 +295,31 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             }
         }
         ValidateAlternativeParity(inventory, lowering);
+    }
+
+    private static void ValidateCommunityCenterDenominatorIdentity(
+        CurrentCommunityCenterDenominatorReport denominator,
+        AuthoritativeRequirementInventoryReport inventory,
+        string inventoryPath,
+        string snapshotPath)
+    {
+        if (!string.Equals(denominator.GoalId, inventory.GoalId,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                denominator.RequirementInventorySha256,
+                CurrentTeacherFrontierSupport.HashFile(inventoryPath),
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                denominator.SnapshotSha256,
+                CurrentTeacherFrontierSupport.HashFile(snapshotPath),
+                StringComparison.OrdinalIgnoreCase) ||
+            (!string.IsNullOrWhiteSpace(inventory.GameVersion) &&
+                !string.Equals(denominator.GameVersion, inventory.GameVersion,
+                    StringComparison.Ordinal)))
+        {
+            throw new InvalidDataException(
+                "The current Community Center denominator does not bind the active inventory and snapshot.");
+        }
     }
 
     private static void ValidateSetShape(

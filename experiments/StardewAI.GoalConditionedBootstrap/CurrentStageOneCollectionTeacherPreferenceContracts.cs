@@ -50,6 +50,9 @@ public sealed class CurrentStageOneCollectionTeacherPreferenceLabel
     [JsonPropertyName("snapshot_sha256")]
     public string SnapshotSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_denominator_sha256")]
+    public string CommunityCenterDenominatorSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("master_angler_target_date_intents_sha256")]
     public string MasterAnglerTargetDateIntentsSha256 { get; set; } =
         string.Empty;

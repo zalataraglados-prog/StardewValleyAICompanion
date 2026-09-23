@@ -49,6 +49,10 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 CurrentTeacherFrontierSupport.HashFile(rankingPath)) ||
             !SameHash(actual.SnapshotSha256,
                 CurrentTeacherFrontierSupport.HashFile(beforeSnapshotPath)) ||
+            !SameHash(actual.CommunityCenterDenominatorSha256,
+                expected.CommunityCenterDenominatorSha256) ||
+            string.IsNullOrWhiteSpace(
+                actual.CommunityCenterDenominatorSha256) ||
             !SameHash(actual.MasterAnglerTargetDateIntentsSha256,
                 CurrentTeacherFrontierSupport.HashFile(intentsPath)))
             reasons.Add("teacher_preference_source_hash_mismatch");

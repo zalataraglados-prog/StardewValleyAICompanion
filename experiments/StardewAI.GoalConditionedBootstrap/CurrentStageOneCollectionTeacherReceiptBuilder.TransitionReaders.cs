@@ -82,8 +82,13 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             return null;
         var matches = ingredients.EnumerateArray()
             .Where(row => ReadInt(row, "ingredient_index") == alternativeIndex)
-            .Where(row => qualifiedItemId.Length == 0 ||
-                qualifiedItemId == "(O)" + ReadString(row, "item_id_or_category"))
+            .Where(row =>
+            {
+                var identity = ReadString(row, "item_id_or_category");
+                return qualifiedItemId.Length == 0 ||
+                    identity.StartsWith("-", StringComparison.Ordinal) ||
+                    qualifiedItemId == "(O)" + identity;
+            })
             .ToArray();
         return matches.Length == 1 &&
             matches[0].TryGetProperty("completed", out var completed) &&

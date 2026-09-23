@@ -1814,11 +1814,32 @@ Slice 7 remains assigned to the RTX 5070 node.
   participate in the denominator hash, so route-catalog drift cannot silently reuse an older active denominator.
   Focused tests lock the 175/185 counts, category expansion, formerly omitted remixed identities, complete route
   evidence for every active standard/remixed row, and tamper rejection. The complete regression suite passes.
-- This closes the authoritative acquisition-source prerequisite only. It does not yet replace
-  `CurrentCollectionTeacherFrontierBuilder`'s static `community_center_standard` alternatives, does not authorize
-  formal product training, and does not complete ceremony settlement. The next fixed slice is to derive a current
-  dynamic Community Center requirement/lowering set from the active denominator, feed it into the collection frontier,
-  and then carry that identity through every target-date axis and receipt.
+- This closes the authoritative acquisition-source prerequisite. At this point the next fixed slice was to derive a
+  current dynamic Community Center requirement/lowering set from the active denominator and feed it into the
+  collection frontier; the following section records that implementation.
+
+### 2026-09-23: current Community Center collection frontier binding
+
+- Every public current collection frontier, Stage 1 collection frontier, preference and receipt build now rebuilds the
+  strict current Community Center denominator from the same authoritative inventory and transparent snapshot. The
+  stable set ID remains `community_center_standard` for downstream compatibility, but its groups, required slots and
+  alternatives come only from the active save's standard or remixed denominator; the historical static alternatives
+  are no longer consumed for current Community Center membership.
+- The current denominator is lowered through the one existing acquisition route-kind authority rather than through a
+  second executor or route catalog. Exact items and money remain typed alternatives. A category ingredient remains one
+  native bundle slot while exposing every accepted concrete item target; direct donation and acquisition-endpoint
+  candidates bind the concrete qualified item ID while retaining the original slot and alternative identity.
+- The frontier reports the active bundle mode and denominator SHA-256. Preference, receipt and trajectory Teacher
+  supervision propagate that SHA-256, and dataset validation rejects a row without it. The builder also recomputes the
+  denominator hash and rejects inventory/snapshot drift or a tampered denominator instead of falling back to the
+  standard catalog.
+- The focused regression deliberately supplies a static two-group fixture and a different three-group remixed current
+  denominator containing category `-5`. It proves the current three-group denominator wins, the category remains one
+  slot with concrete egg target `(O)176`, a non-member target is excluded, and a forged denominator hash fails closed.
+- This completes current collection-frontier membership, not the whole `complete_community_center` method. Formal
+  product training remains false. The next fixed slice is to carry the same dynamic denominator identity and
+  requirements through every target-date axis and its receipts. Junimo-text/unlock events, room rewards/mail and final
+  ceremony settlement remain later explicit blockers.
 
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 

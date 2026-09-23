@@ -15,7 +15,23 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
         string acquisitionLoweringPath,
         string rankingPath,
         string snapshotPath,
-        string masterAnglerTargetDateIntentsPath)
+        string masterAnglerTargetDateIntentsPath) => Build(
+            requirementInventoryPath,
+            acquisitionLoweringPath,
+            rankingPath,
+            snapshotPath,
+            masterAnglerTargetDateIntentsPath,
+            CurrentCommunityCenterDenominatorBuilder.Build(
+                requirementInventoryPath,
+                snapshotPath));
+
+    internal static CurrentStageOneCollectionTeacherFrontier Build(
+        string requirementInventoryPath,
+        string acquisitionLoweringPath,
+        string rankingPath,
+        string snapshotPath,
+        string masterAnglerTargetDateIntentsPath,
+        CurrentCommunityCenterDenominatorReport communityCenterDenominator)
     {
         var fullShipment = CurrentFullShipmentTeacherFrontierBuilder.Build(
             requirementInventoryPath,
@@ -26,7 +42,8 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
             requirementInventoryPath,
             acquisitionLoweringPath,
             rankingPath,
-            snapshotPath);
+            snapshotPath,
+            communityCenterDenominator);
         var masterAngler = CurrentMasterAnglerTeacherFrontierBuilder.Build(
             requirementInventoryPath,
             acquisitionLoweringPath,

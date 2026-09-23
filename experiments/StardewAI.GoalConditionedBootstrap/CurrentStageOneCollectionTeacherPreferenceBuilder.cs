@@ -14,7 +14,23 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
         string acquisitionLoweringPath,
         string rankingPath,
         string snapshotPath,
-        string masterAnglerTargetDateIntentsPath)
+        string masterAnglerTargetDateIntentsPath) => Build(
+            requirementInventoryPath,
+            acquisitionLoweringPath,
+            rankingPath,
+            snapshotPath,
+            masterAnglerTargetDateIntentsPath,
+            CurrentCommunityCenterDenominatorBuilder.Build(
+                requirementInventoryPath,
+                snapshotPath));
+
+    internal static CurrentStageOneCollectionTeacherPreferenceLabel Build(
+        string requirementInventoryPath,
+        string acquisitionLoweringPath,
+        string rankingPath,
+        string snapshotPath,
+        string masterAnglerTargetDateIntentsPath,
+        CurrentCommunityCenterDenominatorReport communityCenterDenominator)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -26,7 +42,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             loweringFullPath,
             rankingFullPath,
             snapshotFullPath,
-            intentsFullPath);
+            intentsFullPath,
+            communityCenterDenominator);
         var ranking = CurrentTeacherFrontierSupport.Read<
             AvailabilityAwarePolicyPredictionEnvelope>(
             rankingFullPath,
@@ -193,6 +210,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             loweringPath),
         RankingSha256 = CurrentTeacherFrontierSupport.HashFile(rankingPath),
         SnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(snapshotPath),
+        CommunityCenterDenominatorSha256 =
+            frontier.MuseumAndCommunityCenter.CommunityCenterDenominatorSha256,
         MasterAnglerTargetDateIntentsSha256 =
             CurrentTeacherFrontierSupport.HashFile(intentsPath),
         CandidateMembership = frontier

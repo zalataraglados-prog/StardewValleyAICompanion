@@ -156,6 +156,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
             teacher.PreferenceArtifactSha256,
             teacher.RequirementInventorySha256,
             teacher.AcquisitionLoweringSha256,
+            teacher.CommunityCenterDenominatorSha256,
             teacher.SourceRankingSha256,
             teacher.BeforeSnapshotSha256,
             teacher.ExecutionReceiptSha256,

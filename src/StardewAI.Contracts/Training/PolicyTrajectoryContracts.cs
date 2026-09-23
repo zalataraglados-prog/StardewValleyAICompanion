@@ -262,6 +262,9 @@ public sealed class PolicyTrajectoryTeacherSupervision
     [JsonPropertyName("acquisition_lowering_sha256")]
     public string AcquisitionLoweringSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_denominator_sha256")]
+    public string CommunityCenterDenominatorSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("source_ranking_sha256")]
     public string SourceRankingSha256 { get; set; } = string.Empty;
 

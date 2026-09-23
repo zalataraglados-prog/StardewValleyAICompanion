@@ -29,6 +29,15 @@ public sealed class CurrentCollectionTeacherFrontier
     [JsonPropertyName("snapshot_sha256")]
     public string SnapshotSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("uses_current_community_center_denominator")]
+    public bool UsesCurrentCommunityCenterDenominator { get; set; }
+
+    [JsonPropertyName("community_center_bundle_mode")]
+    public string CommunityCenterBundleMode { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_denominator_sha256")]
+    public string CommunityCenterDenominatorSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("training_label_eligible")]
     public bool TrainingLabelEligible { get; set; }
 
@@ -45,7 +54,7 @@ public sealed class CurrentCollectionTeacherFrontier
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "Museum and standard Community Center labels require an exact live completion denominator. Direct completion requires an exact native projection. Acquisition labels require an exact qualified output, positive quantity, admitted authoritative endpoint, and verified quality whenever the requirement quality is above zero. OR bundle alternatives expose remaining-slot and reservation semantics; unavailable alternatives are deferred, never negative labels.";
+        "Museum and current save-bound standard/remixed Community Center labels require an exact live completion denominator. Direct completion requires an exact native projection. Acquisition labels require an exact qualified output accepted by the active item/category slot, positive quantity, admitted authoritative endpoint, and verified quality whenever the requirement quality is above zero. OR bundle alternatives expose remaining-slot and reservation semantics; unavailable alternatives are deferred, never negative labels.";
 }
 
 public sealed class CurrentCollectionRequirementSet
@@ -128,7 +137,18 @@ public sealed record CurrentCollectionAlternative(
     [property: JsonPropertyName("reservation_semantics")] string ReservationSemantics,
     [property: JsonPropertyName("matched_candidate_ids")] string[] MatchedCandidateIds,
     [property: JsonPropertyName("admitted_endpoint_option_ids")] string[] AdmittedEndpointOptionIds,
-    [property: JsonPropertyName("admitted_supporting_option_ids")] string[] AdmittedSupportingOptionIds);
+    [property: JsonPropertyName("admitted_supporting_option_ids")] string[] AdmittedSupportingOptionIds,
+    [property: JsonPropertyName("accepted_concrete_targets")]
+        CurrentCollectionAcceptedTarget[] AcceptedConcreteTargets);
+
+public sealed record CurrentCollectionAcceptedTarget(
+    [property: JsonPropertyName("item_id")] string ItemId,
+    [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("display_name")] string DisplayName,
+    [property: JsonPropertyName("matched_routes")]
+        CurrentRequirementRouteEvidence[] MatchedRoutes,
+    [property: JsonPropertyName("admitted_endpoint_option_ids")]
+        string[] AdmittedEndpointOptionIds);
 
 public sealed record CurrentCollectionCandidateBinding(
     [property: JsonPropertyName("requirement_set_id")] string RequirementSetId,

@@ -36,6 +36,10 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             frontier.TeacherPreferenceLabelEligible ||
             frontier.UsesLearnerRankOrScore ||
             frontier.EmitsNegativeLabelsForUnavailableRoutes ||
+            !frontier.MuseumAndCommunityCenter
+                .UsesCurrentCommunityCenterDenominator ||
+            string.IsNullOrWhiteSpace(frontier.MuseumAndCommunityCenter
+                .CommunityCenterDenominatorSha256) ||
             !RequiredSetIds.ToHashSet(StringComparer.Ordinal).SetEquals(
                 frontier.SelectionContract.RequiredRequirementSetIds))
         {

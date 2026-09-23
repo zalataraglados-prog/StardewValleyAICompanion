@@ -23,7 +23,37 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         string trajectoryId,
         string runId,
         string knowledgeDictionaryVersion,
-        string executorVersion)
+        string executorVersion) => Build(
+            requirementInventoryPath,
+            acquisitionLoweringPath,
+            rankingPath,
+            beforeSnapshotPath,
+            masterAnglerTargetDateIntentsPath,
+            preferencePath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            trajectoryId,
+            runId,
+            knowledgeDictionaryVersion,
+            executorVersion,
+            CurrentCommunityCenterDenominatorBuilder.Build(
+                requirementInventoryPath,
+                beforeSnapshotPath));
+
+    internal static CurrentStageOneCollectionTeacherReceiptAdmission Build(
+        string requirementInventoryPath,
+        string acquisitionLoweringPath,
+        string rankingPath,
+        string beforeSnapshotPath,
+        string masterAnglerTargetDateIntentsPath,
+        string preferencePath,
+        string executionReceiptPath,
+        string afterSnapshotPath,
+        string trajectoryId,
+        string runId,
+        string knowledgeDictionaryVersion,
+        string executorVersion,
+        CurrentCommunityCenterDenominatorReport communityCenterDenominator)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -43,7 +73,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 loweringFullPath,
                 rankingFullPath,
                 beforeFullPath,
-                intentsFullPath);
+                intentsFullPath,
+                communityCenterDenominator);
         var result = new CurrentStageOneCollectionTeacherReceiptAdmission
         {
             Preference = preference,
@@ -171,6 +202,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             PreferenceArtifactSha256 = result.PreferenceArtifactSha256,
             RequirementInventorySha256 = preference.RequirementInventorySha256,
             AcquisitionLoweringSha256 = preference.AcquisitionLoweringSha256,
+            CommunityCenterDenominatorSha256 =
+                preference.CommunityCenterDenominatorSha256,
             SourceRankingSha256 = preference.RankingSha256,
             BeforeSnapshotSha256 = preference.SnapshotSha256,
             ExecutionReceiptSha256 = result.ExecutionReceiptSha256,

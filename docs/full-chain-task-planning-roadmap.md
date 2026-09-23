@@ -407,10 +407,12 @@ or redefine those mappings.
 
 The live standard/remixed Community Center denominator now binds all 175 selectable ingredient
 identities to 185 concrete, route-backed acquisition targets and hashes those targets into the active
-denominator. This is the source-coverage prerequisite for dynamic lowering, not its completion. The
-collection frontier must next consume the active denominator instead of its static
-`community_center_standard` alternatives before the result can enter the target-date axes or formal
-training admission.
+denominator. Current collection-frontier, preference and receipt builders now rebuild and consume this
+active denominator instead of the static `community_center_standard` alternatives. Category ingredients
+stay one native slot while binding concrete accepted targets, and Teacher supervision carries the
+denominator hash. The next boundary is to propagate that dynamic identity and requirement set through
+every target-date axis and receipt; unlock, room-reward/mail and final-ceremony settlement also remain
+explicit blockers to formal training admission.
 
 The legacy `StructuredPolicyTrainer` path which treats `candidate.Selected` as the positive
 pair member is explicitly non-admitted for this stage. Before Stage 6, the trajectory and

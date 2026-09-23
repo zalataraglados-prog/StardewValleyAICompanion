@@ -93,7 +93,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             AcquisitionRequirementGroupLowering lowering,
             CurrentCollectionRequirementProgress progress,
             CurrentCollectionProgress setProgress,
-            PolicyEventCandidatePrediction[] candidates)
+            PolicyEventCandidatePrediction[] candidates,
+            IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+                alternativesByKey)
     {
         var result = new List<CurrentCollectionCandidateBinding>();
         for (var index = 0; index < lowering.Alternatives.Length; index++)
@@ -101,14 +103,32 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             if (progress.CompletedAlternatives[index])
                 continue;
             var alternative = lowering.Alternatives[index];
+            if (!alternativesByKey.TryGetValue(
+                    AlternativeAuthorityKey(group.RequirementId, index),
+                    out var authority) ||
+                authority.AlternativeIndex != index ||
+                authority.MatchKind != alternative.MatchKind)
+            {
+                throw new InvalidDataException(
+                    "A current Community Center alternative has no exact accepted-target authority: " +
+                    group.RequirementId + ":" + index);
+            }
 
             foreach (var candidate in candidates)
             {
+                if (!TryMatchCommunityCenterTarget(
+                        candidate,
+                        authority,
+                        out var target))
+                {
+                    continue;
+                }
                 if (!IsExactCommunityCenterDonation(
                         candidate,
                         progress,
                         group,
                         alternative,
+                        target,
                         index,
                         out var directQuality,
                         out var directEvidence))
@@ -119,8 +139,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                     requirementSetId,
                     group.RequirementId,
                     index,
-                    alternative.ItemId,
-                    alternative.QualifiedItemId,
+                    target.ItemId,
+                    target.QualifiedItemId,
                     candidate.CandidateId,
                     candidate.OptionId,
                     candidate.Kind,
@@ -140,91 +160,99 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                     Array.Empty<CurrentRequirementRouteEvidence>()));
             }
 
-            if (alternative.MatchKind != "item_id")
-                continue;
-            foreach (var match in CurrentTeacherFrontierSupport.ExactItemCandidates(
-                         alternative.QualifiedItemId,
-                         candidates))
+            foreach (var target in authority.AcceptedTargets.Where(value =>
+                         !string.IsNullOrWhiteSpace(value.QualifiedItemId)))
             {
-                var candidate = match.Candidate;
-                if (IsExactCommunityCenterDonationRoute(
-                        candidate,
-                        progress,
-                        alternative,
-                        index,
-                        out var routeQuality,
-                        out var routeEvidence))
+                foreach (var match in CurrentTeacherFrontierSupport.ExactItemCandidates(
+                             target.QualifiedItemId,
+                             candidates))
                 {
+                    var candidate = match.Candidate;
+                    if (!string.Equals(candidate.ItemId, target.ItemId,
+                            StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+                    if (IsExactCommunityCenterDonationRoute(
+                            candidate,
+                            progress,
+                            alternative,
+                            target,
+                            index,
+                            out var routeQuality,
+                            out var routeEvidence))
+                    {
+                        result.Add(new CurrentCollectionCandidateBinding(
+                            requirementSetId,
+                            group.RequirementId,
+                            index,
+                            target.ItemId,
+                            target.QualifiedItemId,
+                            candidate.CandidateId,
+                            candidate.OptionId,
+                            candidate.Kind,
+                            candidate.Rank,
+                            "authoritative_collection_rolling_route_step",
+                            alternative.Amount,
+                            alternative.MinimumQuality,
+                            candidate.Quantity,
+                            routeQuality,
+                            progress.RemainingSlotCount,
+                            "preserve_exact_item_quantity_quality_and_slot_through_rolling_route_until_native_bundle_donation",
+                            match.IdentityEvidence + "+" + routeEvidence,
+                            Array.Empty<CurrentRequirementRouteEvidence>()));
+                        continue;
+                    }
+                    if (string.Equals(
+                            candidate.Kind,
+                            "donate_community_center_item",
+                            StringComparison.Ordinal) ||
+                        candidate.Quantity <= 0)
+                    {
+                        continue;
+                    }
+                    var routes = AdmittedEndpointRoutes(
+                        target.Routes,
+                        candidate.OptionId);
+                    if (routes.Length == 0)
+                        continue;
+                    int? candidateQuality = null;
+                    var qualityEvidence = string.Empty;
+                    if (alternative.MinimumQuality > 0)
+                    {
+                        if (!TryReadExactCandidateQuality(
+                                candidate,
+                                out var quality,
+                                out qualityEvidence) ||
+                            quality < alternative.MinimumQuality)
+                        {
+                            continue;
+                        }
+                        candidateQuality = quality;
+                    }
                     result.Add(new CurrentCollectionCandidateBinding(
                         requirementSetId,
                         group.RequirementId,
                         index,
-                        alternative.ItemId,
-                        alternative.QualifiedItemId,
+                        target.ItemId,
+                        target.QualifiedItemId,
                         candidate.CandidateId,
                         candidate.OptionId,
                         candidate.Kind,
                         candidate.Rank,
-                        "authoritative_collection_rolling_route_step",
+                        "authoritative_acquisition_endpoint",
                         alternative.Amount,
                         alternative.MinimumQuality,
                         candidate.Quantity,
-                        routeQuality,
+                        candidateQuality,
                         progress.RemainingSlotCount,
-                        "preserve_exact_item_quantity_quality_and_slot_through_rolling_route_until_native_bundle_donation",
-                        match.IdentityEvidence + "+" + routeEvidence,
-                        Array.Empty<CurrentRequirementRouteEvidence>()));
-                    continue;
+                        "reserve_required_quantity_at_minimum_quality_until_native_bundle_donation",
+                        match.IdentityEvidence + "+candidate.quantity" +
+                            (qualityEvidence.Length == 0
+                                ? string.Empty
+                                : "+" + qualityEvidence),
+                        routes));
                 }
-                if (string.Equals(
-                        candidate.Kind,
-                        "donate_community_center_item",
-                        StringComparison.Ordinal) ||
-                    candidate.Quantity <= 0)
-                {
-                    continue;
-                }
-                var routes = CurrentTeacherFrontierSupport.AdmittedEndpointRoutes(
-                    alternative,
-                    candidate.OptionId);
-                if (routes.Length == 0)
-                    continue;
-                int? candidateQuality = null;
-                var qualityEvidence = string.Empty;
-                if (alternative.MinimumQuality > 0)
-                {
-                    if (!TryReadExactCandidateQuality(
-                            candidate,
-                            out var quality,
-                            out qualityEvidence) ||
-                        quality < alternative.MinimumQuality)
-                    {
-                        continue;
-                    }
-                    candidateQuality = quality;
-                }
-                result.Add(new CurrentCollectionCandidateBinding(
-                    requirementSetId,
-                    group.RequirementId,
-                    index,
-                    alternative.ItemId,
-                    alternative.QualifiedItemId,
-                    candidate.CandidateId,
-                    candidate.OptionId,
-                    candidate.Kind,
-                    candidate.Rank,
-                    "authoritative_acquisition_endpoint",
-                    alternative.Amount,
-                    alternative.MinimumQuality,
-                    candidate.Quantity,
-                    candidateQuality,
-                    progress.RemainingSlotCount,
-                    "reserve_required_quantity_at_minimum_quality_until_native_bundle_donation",
-                    match.IdentityEvidence + "+candidate.quantity" +
-                        (qualityEvidence.Length == 0
-                            ? string.Empty
-                            : "+" + qualityEvidence),
-                    routes));
             }
         }
         return OrderedBindings(result);
@@ -280,6 +308,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         PolicyEventCandidatePrediction candidate,
         CurrentCollectionRequirementProgress progress,
         AcquisitionRequirementAlternativeLowering alternative,
+        CurrentCommunityCenterAcceptedTarget target,
         int alternativeIndex,
         out int candidateQuality,
         out string evidence)
@@ -318,11 +347,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             !ReadParameterEquals(
                 candidate,
                 "continuation.item_id",
-                alternative.ItemId) ||
+                target.ItemId) ||
             !ReadParameterEquals(
                 candidate,
                 "continuation.qualified_item_id",
-                alternative.QualifiedItemId) ||
+                target.QualifiedItemId) ||
             !CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
                 candidate,
                 "continuation.inventory_slot_index",
@@ -399,16 +428,17 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         CurrentCollectionRequirementProgress progress,
         GoalRequirementGroup group,
         AcquisitionRequirementAlternativeLowering alternative,
+        CurrentCommunityCenterAcceptedTarget target,
         int alternativeIndex,
         out int? candidateQuality,
         out string evidence)
     {
         candidateQuality = null;
         evidence = string.Empty;
-        var exactItemIdentity = alternative.MatchKind == "item_id" &&
-            string.Equals(
-                candidate.QualifiedItemId,
-                alternative.QualifiedItemId,
+        var exactItemIdentity = alternative.MatchKind is "item_id" or "category" &&
+            string.Equals(candidate.ItemId, target.ItemId,
+                StringComparison.Ordinal) &&
+            string.Equals(candidate.QualifiedItemId, target.QualifiedItemId,
                 StringComparison.Ordinal);
         var exactMoneyIdentity = alternative.MatchKind == "money_payment" &&
             string.IsNullOrWhiteSpace(candidate.QualifiedItemId) &&
@@ -502,6 +532,48 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             "candidate.qualified_item_id+native_bundle_donation_projection+exact_quantity_quality_inventory_consumption";
         return true;
     }
+
+    private static bool TryMatchCommunityCenterTarget(
+        PolicyEventCandidatePrediction candidate,
+        CurrentCommunityCenterAlternativeAuthority authority,
+        out CurrentCommunityCenterAcceptedTarget target)
+    {
+        var matches = authority.AcceptedTargets.Where(value =>
+                authority.MatchKind == "money_payment"
+                    ? candidate.ItemId == "-1" &&
+                        string.IsNullOrWhiteSpace(candidate.QualifiedItemId) &&
+                        value.ItemId == "-1"
+                    : string.Equals(candidate.ItemId, value.ItemId,
+                            StringComparison.Ordinal) &&
+                        string.Equals(candidate.QualifiedItemId,
+                            value.QualifiedItemId,
+                            StringComparison.Ordinal))
+            .ToArray();
+        if (matches.Length == 1)
+        {
+            target = matches[0];
+            return true;
+        }
+        target = null!;
+        return false;
+    }
+
+    private static CurrentRequirementRouteEvidence[] AdmittedEndpointRoutes(
+        IEnumerable<AcquisitionRequirementRouteLowering> routes,
+        string optionId) => routes
+        .Where(value => value.TeacherAdmissionReady)
+        .Where(value => value.EndpointOptionIds.Contains(
+            optionId,
+            StringComparer.Ordinal))
+        .Select(value => new CurrentRequirementRouteEvidence(
+            value.RouteKind,
+            value.SourceId,
+            value.SourceAsset,
+            value.SourcePath))
+        .Distinct()
+        .OrderBy(value => value.RouteKind, StringComparer.Ordinal)
+        .ThenBy(value => value.SourceId, StringComparer.Ordinal)
+        .ToArray();
 
     private static bool TryReadExactCandidateQuality(
         PolicyEventCandidatePrediction candidate,

@@ -12,7 +12,21 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         string requirementInventoryPath,
         string acquisitionLoweringPath,
         string rankingPath,
-        string snapshotPath)
+        string snapshotPath) => Build(
+            requirementInventoryPath,
+            acquisitionLoweringPath,
+            rankingPath,
+            snapshotPath,
+            CurrentCommunityCenterDenominatorBuilder.Build(
+                requirementInventoryPath,
+                snapshotPath));
+
+    internal static CurrentCollectionTeacherFrontier Build(
+        string requirementInventoryPath,
+        string acquisitionLoweringPath,
+        string rankingPath,
+        string snapshotPath,
+        CurrentCommunityCenterDenominatorReport communityCenterDenominator)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -48,20 +62,18 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             value => value.RequirementSetId,
             MuseumSetId,
             "acquisition lowering");
-        var communityCenterInventory = CurrentTeacherFrontierSupport.SingleSet(
-            inventory.RequirementSets,
-            value => value.RequirementSetId,
-            CommunityCenterSetId,
-            "requirement inventory");
-        var communityCenterLowering = CurrentTeacherFrontierSupport.SingleSet(
-            lowering.RequirementSets,
-            value => value.RequirementSetId,
-            CommunityCenterSetId,
-            "acquisition lowering");
         ValidateMuseumSets(museumInventory, museumLowering);
+        ValidateCommunityCenterDenominatorIdentity(
+            communityCenterDenominator,
+            inventory,
+            inventoryFullPath,
+            snapshotFullPath);
+        var communityCenterAuthority = BuildCurrentCommunityCenterAuthority(
+            communityCenterDenominator,
+            lowering);
         ValidateCommunityCenterSets(
-            communityCenterInventory,
-            communityCenterLowering);
+            communityCenterAuthority.Inventory,
+            communityCenterAuthority.Lowering);
 
         var sourceStateHash = CurrentTeacherFrontierSupport.RequiredString(
             snapshot.RootElement,
@@ -69,10 +81,14 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         if (!string.Equals(
                 sourceStateHash,
                 ranking.Availability.StateHash,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                sourceStateHash,
+                communityCenterDenominator.SourceStateHash,
                 StringComparison.Ordinal))
         {
             throw new InvalidDataException(
-                "Ranking availability state_hash does not match the live snapshot.");
+                "Ranking or Community Center denominator state_hash does not match the live snapshot.");
         }
 
         var candidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(ranking);
@@ -81,7 +97,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             museumInventory);
         var communityCenterProgress = ReadCommunityCenterProgress(
             snapshot.RootElement,
-            communityCenterInventory);
+            communityCenterAuthority.Inventory);
         var museum = BuildMuseumSet(
             museumInventory,
             museumLowering,
@@ -89,8 +105,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             candidates,
             out var museumBindings);
         var communityCenter = BuildCommunityCenterSet(
-            communityCenterInventory,
-            communityCenterLowering,
+            communityCenterAuthority.Inventory,
+            communityCenterAuthority.Lowering,
+            communityCenterAuthority.AlternativesByKey,
             communityCenterProgress,
             candidates,
             out var communityCenterBindings);
@@ -115,6 +132,10 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 loweringFullPath),
             RankingSha256 = CurrentTeacherFrontierSupport.HashFile(rankingFullPath),
             SnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(snapshotFullPath),
+            UsesCurrentCommunityCenterDenominator = true,
+            CommunityCenterBundleMode = communityCenterDenominator.BundleMode,
+            CommunityCenterDenominatorSha256 =
+                communityCenterDenominator.DenominatorSha256,
             TrainingLabelEligible = bindings.Length > 0,
             EmitsNegativeLabelsForUnavailableRoutes = false,
             RequirementSets = sets,
@@ -135,12 +156,16 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             progress,
             candidates,
             BuildMuseumBindings,
+            new Dictionary<string, CurrentCommunityCenterAlternativeAuthority>(
+                StringComparer.Ordinal),
             out bindings);
     }
 
     private static CurrentCollectionRequirementSet BuildCommunityCenterSet(
         GoalRequirementSet inventory,
         AcquisitionRequirementSetLowering lowering,
+        IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+            alternativesByKey,
         CurrentCollectionProgress progress,
         PolicyEventCandidatePrediction[] candidates,
         out CurrentCollectionCandidateBinding[] bindings)
@@ -150,7 +175,16 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             lowering,
             progress,
             candidates,
-            BuildCommunityCenterBindings,
+            (setId, group, lowered, requirementProgress, setProgress,
+                    currentCandidates) => BuildCommunityCenterBindings(
+                setId,
+                group,
+                lowered,
+                requirementProgress,
+                setProgress,
+                currentCandidates,
+                alternativesByKey),
+            alternativesByKey,
             out bindings);
     }
 
@@ -160,6 +194,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         CurrentCollectionProgress progress,
         PolicyEventCandidatePrediction[] candidates,
         RequirementBindingBuilder bindingBuilder,
+        IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+            communityCenterAlternatives,
         out CurrentCollectionCandidateBinding[] bindings)
     {
         var resultBindings = new List<CurrentCollectionCandidateBinding>();
@@ -173,7 +209,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 var lowered = loweringGroups[group.RequirementId];
                 if (!progress.Available)
                 {
-                    return UnknownRequirement(group, lowered, progress.BlockingReasons);
+                    return UnknownRequirement(
+                        group,
+                        lowered,
+                        progress.BlockingReasons,
+                        communityCenterAlternatives);
                 }
 
                 var current = progress.Requirements[group.RequirementId];
@@ -198,7 +238,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                     lowered,
                     current,
                     bindingsByAlternative,
-                    inventory.RequirementSetId);
+                    inventory.RequirementSetId,
+                    communityCenterAlternatives);
                 var status = current.Completed
                     ? "completed"
                     : progress.BlockingReasons.Length > 0
@@ -262,7 +303,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
     private static CurrentCollectionRequirement UnknownRequirement(
         GoalRequirementGroup group,
         AcquisitionRequirementGroupLowering lowering,
-        string[] blockingReasons) => new()
+        string[] blockingReasons,
+        IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+            communityCenterAlternatives) => new()
     {
         RequirementId = group.RequirementId,
         SelectionRule = group.SelectionRule,
@@ -282,7 +325,13 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                     "community_center:",
                     StringComparison.Ordinal)
                     ? CommunityCenterSetId
-                    : MuseumSetId)).ToArray(),
+                    : MuseumSetId,
+                AcceptedTargets(
+                    group.RequirementId,
+                    index,
+                    alternative,
+                    lowering.Alternatives[index],
+                    communityCenterAlternatives))).ToArray(),
         DeferReasons = blockingReasons
     };
 
@@ -291,7 +340,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         AcquisitionRequirementGroupLowering lowering,
         CurrentCollectionRequirementProgress progress,
         IReadOnlyDictionary<int, CurrentCollectionCandidateBinding[]> bindings,
-        string requirementSetId) => group.Alternatives
+        string requirementSetId,
+        IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+            communityCenterAlternatives) => group.Alternatives
         .Select((alternative, index) => BuildAlternative(
             alternative,
             lowering.Alternatives[index],
@@ -300,7 +351,13 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             bindings.GetValueOrDefault(
                 index,
                 Array.Empty<CurrentCollectionCandidateBinding>()),
-            requirementSetId))
+            requirementSetId,
+            AcceptedTargets(
+                group.RequirementId,
+                index,
+                alternative,
+                lowering.Alternatives[index],
+                communityCenterAlternatives)))
         .ToArray();
 
     private static CurrentCollectionAlternative BuildAlternative(
@@ -309,7 +366,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         int index,
         bool? completed,
         CurrentCollectionCandidateBinding[] bindings,
-        string requirementSetId) => new(
+        string requirementSetId,
+        CurrentCollectionAcceptedTarget[] acceptedTargets) => new(
         index,
         alternative.ItemId,
         alternative.QualifiedItemId,
@@ -333,7 +391,61 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             .SelectMany(value => value.SupportingOptionIds)
             .Distinct(StringComparer.Ordinal)
             .OrderBy(value => value, StringComparer.Ordinal)
-            .ToArray());
+            .ToArray(),
+        acceptedTargets);
+
+    private static CurrentCollectionAcceptedTarget[] AcceptedTargets(
+        string requirementId,
+        int alternativeIndex,
+        GoalRequirementAlternative alternative,
+        AcquisitionRequirementAlternativeLowering lowering,
+        IReadOnlyDictionary<string, CurrentCommunityCenterAlternativeAuthority>
+            communityCenterAlternatives)
+    {
+        if (communityCenterAlternatives.TryGetValue(
+                AlternativeAuthorityKey(requirementId, alternativeIndex),
+                out var authority))
+        {
+            return authority.AcceptedTargets.Select(value =>
+                new CurrentCollectionAcceptedTarget(
+                    value.ItemId,
+                    value.QualifiedItemId,
+                    value.DisplayName,
+                    value.Routes.Select(route => new CurrentRequirementRouteEvidence(
+                            route.RouteKind,
+                            route.SourceId,
+                            route.SourceAsset,
+                            route.SourcePath))
+                        .Distinct()
+                        .ToArray(),
+                    value.Routes.Where(route => route.TeacherAdmissionReady)
+                        .SelectMany(route => route.EndpointOptionIds)
+                        .Distinct(StringComparer.Ordinal)
+                        .OrderBy(value => value, StringComparer.Ordinal)
+                        .ToArray()))
+                .ToArray();
+        }
+        return new[]
+        {
+            new CurrentCollectionAcceptedTarget(
+                alternative.ItemId,
+                alternative.QualifiedItemId,
+                alternative.DisplayName,
+                lowering.Routes.Where(route => route.TeacherAdmissionReady)
+                    .Select(route => new CurrentRequirementRouteEvidence(
+                        route.RouteKind,
+                        route.SourceId,
+                        route.SourceAsset,
+                        route.SourcePath))
+                    .Distinct()
+                    .ToArray(),
+                lowering.Routes.Where(route => route.TeacherAdmissionReady)
+                    .SelectMany(route => route.EndpointOptionIds)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .ToArray())
+        };
+    }
 
     private static string ReservationSemantics(
         string requirementSetId,

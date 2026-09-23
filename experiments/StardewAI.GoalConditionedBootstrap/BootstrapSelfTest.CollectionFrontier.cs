@@ -79,7 +79,8 @@ internal static partial class BootstrapSelfTest
                             1,
                             CollectionAlternative(
                                 "24", "(O)24", "Parsnip", "item_id", 5, 2,
-                                "harvests_as", "crop:472"),
+                                "harvests_as", "crop:472",
+                                includeFixtureShopRoute: true),
                             CollectionAlternative(
                                 "188", "(O)188", "Green Bean", "item_id", 5, 2,
                                 "harvests_as", "crop:473")),
@@ -139,7 +140,8 @@ internal static partial class BootstrapSelfTest
                             "community_center:bundle:Pantry/5", 1,
                             CollectionLoweredAlternative(
                                 "24", "(O)24", "Parsnip", "item_id", 5, 2,
-                                "harvests_as", "crop:472", "farm.maintain_crops"),
+                                "harvests_as", "crop:472", "farm.maintain_crops",
+                                includeFixtureShopRoute: true),
                             CollectionLoweredAlternative(
                                 "188", "(O)188", "Green Bean", "item_id", 5, 2,
                                 "harvests_as", "crop:473", "farm.maintain_crops")),
@@ -154,6 +156,37 @@ internal static partial class BootstrapSelfTest
             }
         });
         WriteCollectionSnapshotFixture(snapshotPath, stateHash, includeMuseumRows: true);
+        var denominatorBundles = new[]
+        {
+            CollectionDenominatorBundle(
+                "Pantry/5", "Pantry", 5, 1,
+                CollectionDenominatorIngredient(
+                    0, "24", "(O)24", "item_id", 5, 2, false,
+                    CollectionDenominatorTarget(
+                        "24", "(O)24", "Parsnip", "harvests_as", "crop:472")),
+                CollectionDenominatorIngredient(
+                    1, "188", "(O)188", "item_id", 5, 2, false,
+                    CollectionDenominatorTarget(
+                        "188", "(O)188", "Green Bean", "harvests_as", "crop:473"))),
+            CollectionDenominatorBundle(
+                "Pantry/6", "Pantry", 6, 1,
+                CollectionDenominatorIngredient(
+                    0, "-5", string.Empty, "category", 1, 0, false,
+                    CollectionDenominatorTarget(
+                        "176", "(O)176", "Egg", "sells", "shop:FixtureShop"))),
+            CollectionDenominatorBundle(
+                "Vault/23", "Vault", 23, 1,
+                CollectionDenominatorIngredient(
+                    0, "-1", string.Empty, "money_payment", 2500, 2500, false,
+                    CollectionDenominatorTarget(
+                        "-1", string.Empty, "Money", "native_money_payment", "money")))
+        };
+        var denominator = CollectionDenominatorFixture(
+            inventoryPath,
+            snapshotPath,
+            stateHash,
+            "remixed",
+            denominatorBundles);
         Write(rankingPath, CollectionRanking(
             stateHash,
             CollectionCandidate(
@@ -236,13 +269,34 @@ internal static partial class BootstrapSelfTest
                 Parameter("expected_output_quality", "1")),
             CollectionCandidate(
                 "vault-unproven", "community_center.donate_bundle_items",
-                "donate_community_center_item", "-1", "", 11, 2500)));
+                "donate_community_center_item", "-1", "", 11, 2500),
+            CollectionCandidate(
+                "egg-direct", "community_center.donate_bundle_items",
+                "donate_community_center_item", "176", "(O)176", 12, 1,
+                Parameter("bundle_data_key", "Pantry/6"),
+                Parameter("bundle_ingredient_index", "0"),
+                Parameter("required_stack", "1"),
+                Parameter("expected_item_quality", "0"),
+                Parameter("expected_stack_before", "1"),
+                Parameter("expected_stack_after", "0"),
+                Parameter("inventory_item_total_before", "1"),
+                Parameter("inventory_item_total_after", "0"),
+                Parameter("expected_bundle_completed_count_before", "0"),
+                Parameter("expected_bundle_completed_count_after", "1"),
+                Parameter("expected_bundle_complete_after", "true")),
+            CollectionCandidate(
+                "egg-acquire", "economy.buy_supplies", "shop_purchase",
+                "176", "(O)176", 13, 1),
+            CollectionCandidate(
+                "wrong-category-item", "economy.buy_supplies", "shop_purchase",
+                "180", "(O)180", 14, 1)));
 
         var result = CurrentCollectionTeacherFrontierBuilder.Build(
             inventoryPath,
             loweringPath,
             rankingPath,
-            snapshotPath);
+            snapshotPath,
+            denominator);
         Require(result.Status == "ready" && result.TrainingLabelEligible,
             "Current collection Teacher frontier was not ready.");
         var museum = result.RequirementSets.Single(value =>
@@ -256,10 +310,21 @@ internal static partial class BootstrapSelfTest
             "Museum per-item completion frontier drifted.");
         Require(communityCenter.TransparentStateReady &&
                 communityCenter.CompletedGroupCount == 0 &&
-                communityCenter.MissingGroupCount == 2 &&
-                communityCenter.MatchedMissingGroupCount == 1,
-            "Community Center OR-bundle frontier drifted.");
-        Require(result.CandidateBindings.Length == 6 &&
+                communityCenter.RequiredGroupCount == 3 &&
+                communityCenter.MissingGroupCount == 3 &&
+                communityCenter.MatchedMissingGroupCount == 2 &&
+                result.CommunityCenterBundleMode == "remixed" &&
+                result.UsesCurrentCommunityCenterDenominator &&
+                result.CommunityCenterDenominatorSha256 ==
+                    denominator.DenominatorSha256,
+            "Current save-bound Community Center frontier drifted.");
+        var category = communityCenter.Requirements.Single(value =>
+            value.RequirementId == "community_center:bundle:Pantry/6");
+        Require(category.Alternatives.Single().MatchKind == "category" &&
+                category.Alternatives.Single().AcceptedConcreteTargets.Single()
+                    .QualifiedItemId == "(O)176",
+            "A remixed category slot was not preserved as one slot with concrete accepted targets.");
+        Require(result.CandidateBindings.Length == 8 &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "museum-direct" &&
                     value.BindingKind == "native_museum_donation_completion") &&
@@ -282,16 +347,49 @@ internal static partial class BootstrapSelfTest
                     value.CandidateQuality == 2) &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "bundle-acquire-quality" &&
-                    value.CandidateQuality == 2),
+                    value.CandidateQuality == 2) &&
+                result.CandidateBindings.Any(value =>
+                    value.CandidateId == "egg-direct" &&
+                    value.QualifiedItemId == "(O)176" &&
+                    value.AlternativeIndex == 0) &&
+                result.CandidateBindings.Any(value =>
+                    value.CandidateId == "egg-acquire" &&
+                    value.BindingKind == "authoritative_acquisition_endpoint" &&
+                    value.QualifiedItemId == "(O)176"),
             "Exact museum or quantity-quality Bundle bindings drifted.");
         Require(!result.CandidateBindings.Any(value => value.CandidateId is
                     "museum-route-wrong-slot" or
                     "bundle-route-low-quality" or
                     "bundle-acquire-unknown-quality" or
                     "bundle-acquire-low-quality" or
-                    "vault-unproven") &&
+                    "vault-unproven" or
+                    "wrong-category-item") &&
                 !result.EmitsNegativeLabelsForUnavailableRoutes,
             "An unproven quality/payment candidate leaked into collection labels.");
+
+        var validDenominatorSha256 = denominator.DenominatorSha256;
+        denominator.DenominatorSha256 = new string('0', 64);
+        var tamperedDenominatorRejected = false;
+        try
+        {
+            _ = CurrentCollectionTeacherFrontierBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                rankingPath,
+                snapshotPath,
+                denominator);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedDenominatorRejected = true;
+        }
+        finally
+        {
+            denominator.DenominatorSha256 = validDenominatorSha256;
+        }
+
+        Require(tamperedDenominatorRejected,
+            "A tampered current Community Center denominator was not rejected.");
 
         var incompleteLoweringPath = Path.Combine(
             fixtureRoot,
@@ -312,7 +410,8 @@ internal static partial class BootstrapSelfTest
                 inventoryPath,
                 incompleteLoweringPath,
                 rankingPath,
-                snapshotPath);
+                snapshotPath,
+                denominator);
         }
         catch (InvalidDataException)
         {
@@ -326,11 +425,18 @@ internal static partial class BootstrapSelfTest
             snapshotPath,
             stateHash,
             includeMuseumRows: false);
+        denominator = CollectionDenominatorFixture(
+            inventoryPath,
+            snapshotPath,
+            stateHash,
+            "remixed",
+            denominatorBundles);
         var legacyMuseum = CurrentCollectionTeacherFrontierBuilder.Build(
             inventoryPath,
             loweringPath,
             rankingPath,
-            snapshotPath);
+            snapshotPath,
+            denominator);
         var blockedMuseum = legacyMuseum.RequirementSets.Single(value =>
             value.RequirementSetId == "museum_collection");
         Require(legacyMuseum.Status == "ready_with_blocked_requirement_sets" &&
@@ -596,8 +702,8 @@ internal static partial class BootstrapSelfTest
                         value = new
                         {
                             route_state = "undecided",
-                            bundle_data_row_count = 2,
-                            projected_bundle_row_count = 2,
+                            bundle_data_row_count = 3,
+                            projected_bundle_row_count = 3,
                             unavailable_bundle_row_count = 0,
                             complete_bundle_count = 0,
                             bundle_rows = new object[]
@@ -606,6 +712,9 @@ internal static partial class BootstrapSelfTest
                                     "Pantry/5", 5, 1,
                                     CollectionIngredient(0, "24", 5, 2, false),
                                     CollectionIngredient(1, "188", 5, 2, false)),
+                                CollectionBundleRow(
+                                    "Pantry/6", 6, 1,
+                                    CollectionIngredient(0, "-5", 1, 0, false)),
                                 CollectionBundleRow(
                                     "Vault/23", 23, 1,
                                     CollectionIngredient(0, "-1", 2500, 2500, false))
@@ -645,4 +754,94 @@ internal static partial class BootstrapSelfTest
         minimum_quality = quality,
         completed
     };
+
+    private static CurrentCommunityCenterDenominatorReport
+        CollectionDenominatorFixture(
+            string inventoryPath,
+            string snapshotPath,
+            string stateHash,
+            string bundleMode,
+            params CurrentCommunityCenterBundle[] bundles)
+    {
+        var ordered = bundles.OrderBy(value => value.BundleDataKey,
+            StringComparer.Ordinal).ToArray();
+        var report = new CurrentCommunityCenterDenominatorReport
+        {
+            Status = "ready",
+            GoalId = "goal.grandpa_21",
+            GameVersion = "1.6.15",
+            SourceStateHash = stateHash,
+            RequirementInventorySha256 = HashFile(inventoryPath),
+            SnapshotSha256 = HashFile(snapshotPath),
+            IngredientAcquisitionCatalogComplete = true,
+            BundleMode = bundleMode,
+            ActiveBundleCount = ordered.Length,
+            CompletedActiveBundleCount = ordered.Count(value => value.Complete),
+            ActiveBundles = ordered
+        };
+        report.DenominatorSha256 =
+            CurrentCommunityCenterDenominatorBuilder.ComputeDenominatorSha256(
+                report.BundleMode,
+                report.ActiveBundles);
+        return report;
+    }
+
+    private static CurrentCommunityCenterBundle CollectionDenominatorBundle(
+        string bundleDataKey,
+        string areaName,
+        int bundleId,
+        int requiredSlots,
+        params CurrentCommunityCenterIngredient[] ingredients) => new()
+    {
+        RequirementId = "community_center:bundle:" + bundleDataKey,
+        BundleDataKey = bundleDataKey,
+        AreaName = areaName,
+        BundleId = bundleId,
+        InternalName = "Fixture " + bundleDataKey,
+        SourceTemplateId = "fixture:" + bundleDataKey,
+        SourceBundleSetId = "fixture-set",
+        RequiredSlotCount = requiredSlots,
+        CompletedIngredientCount = ingredients.Count(value => value.Completed),
+        Complete = ingredients.Count(value => value.Completed) >= requiredSlots,
+        Ingredients = ingredients
+    };
+
+    private static CurrentCommunityCenterIngredient
+        CollectionDenominatorIngredient(
+            int index,
+            string itemIdOrCategory,
+            string qualifiedItemId,
+            string matchKind,
+            int requiredStack,
+            int minimumQuality,
+            bool completed,
+            params CommunityCenterIngredientAcquisitionTarget[] targets) => new(
+                index,
+                itemIdOrCategory,
+                qualifiedItemId,
+                matchKind,
+                requiredStack,
+                minimumQuality,
+                completed,
+                targets);
+
+    private static CommunityCenterIngredientAcquisitionTarget
+        CollectionDenominatorTarget(
+            string itemId,
+            string qualifiedItemId,
+            string displayName,
+            string routeKind,
+            string sourceId) => new(
+                itemId,
+                qualifiedItemId,
+                displayName,
+                true,
+                new[]
+                {
+                    new RequirementAcquisitionRoute(
+                        routeKind,
+                        sourceId,
+                        RouteSourceAsset(routeKind),
+                        RouteSourcePath(routeKind, sourceId))
+                });
 }
