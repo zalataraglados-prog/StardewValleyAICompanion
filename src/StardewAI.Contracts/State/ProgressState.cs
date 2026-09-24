@@ -831,6 +831,9 @@ namespace StardewAI.Contracts.State
 
     public sealed class CommunityCenterProgressRef
     {
+        [JsonPropertyName("lifecycle")]
+        public CommunityCenterLifecycleRef Lifecycle { get; set; } = new();
+
         [JsonPropertyName("location_accessible")]
         public bool LocationAccessible { get; set; }
 
@@ -893,6 +896,123 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("bundle_rows")]
         public CommunityCenterBundleProgressRef[] BundleRows { get; set; } = System.Array.Empty<CommunityCenterBundleProgressRef>();
+    }
+
+    public sealed class CommunityCenterLifecycleRef
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "community_center_lifecycle.v1";
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_contract")]
+        public string NativeContract { get; set; } = string.Empty;
+
+        [JsonPropertyName("stage")]
+        public string Stage { get; set; } = string.Empty;
+
+        [JsonPropertyName("initial_unlock_event")]
+        public CommunityCenterEventAssetRef InitialUnlockEvent { get; set; } = new();
+
+        [JsonPropertyName("door_unlock_received")]
+        public bool DoorUnlockReceived { get; set; }
+
+        [JsonPropertyName("door_unlock_pending")]
+        public bool DoorUnlockPending { get; set; }
+
+        [JsonPropertyName("first_junimo_note_seen")]
+        public bool FirstJunimoNoteSeen { get; set; }
+
+        [JsonPropertyName("wizard_letter_received")]
+        public bool WizardLetterReceived { get; set; }
+
+        [JsonPropertyName("wizard_letter_pending")]
+        public bool WizardLetterPending { get; set; }
+
+        [JsonPropertyName("junimo_text_event")]
+        public CommunityCenterEventAssetRef JunimoTextEvent { get; set; } = new();
+
+        [JsonPropertyName("can_read_junimo_text_received")]
+        public bool CanReadJunimoTextReceived { get; set; }
+
+        [JsonPropertyName("can_read_junimo_text_pending")]
+        public bool CanReadJunimoTextPending { get; set; }
+
+        [JsonPropertyName("all_areas_complete")]
+        public bool AllAreasComplete { get; set; }
+
+        [JsonPropertyName("unclaimed_bundle_reward_ids")]
+        public int[] UnclaimedBundleRewardIds { get; set; } = System.Array.Empty<int>();
+
+        [JsonPropertyName("missed_reward_bundle_ids")]
+        public int[] MissedRewardBundleIds { get; set; } = System.Array.Empty<int>();
+
+        [JsonPropertyName("missed_rewards_chest_visible")]
+        public bool MissedRewardsChestVisible { get; set; }
+
+        [JsonPropertyName("community_center_complete_flag_received")]
+        public bool CommunityCenterCompleteFlagReceived { get; set; }
+
+        [JsonPropertyName("community_center_complete_flag_pending")]
+        public bool CommunityCenterCompleteFlagPending { get; set; }
+
+        [JsonPropertyName("all_area_completion_mails_received")]
+        public bool AllAreaCompletionMailsReceived { get; set; }
+
+        [JsonPropertyName("final_ceremony_event")]
+        public CommunityCenterEventAssetRef FinalCeremonyEvent { get; set; } = new();
+
+        [JsonPropertyName("final_ceremony_ready")]
+        public bool FinalCeremonyReady { get; set; }
+
+        [JsonPropertyName("completion_admitted")]
+        public bool CompletionAdmitted { get; set; }
+    }
+
+    public sealed class CommunityCenterEventAssetRef
+    {
+        [JsonPropertyName("event_id")]
+        public string EventId { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_asset")]
+        public string SourceAsset { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_event_key")]
+        public string ExpectedEventKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("event_key")]
+        public string EventKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("event_key_matches_locked_base")]
+        public bool EventKeyMatchesLockedBase { get; set; }
+
+        [JsonPropertyName("event_script_sha256")]
+        public string EventScriptSha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("event_script_language")]
+        public string EventScriptLanguage { get; set; } = string.Empty;
+
+        [JsonPropertyName("event_script_is_localized")]
+        public bool EventScriptIsLocalized { get; set; }
+
+        [JsonPropertyName("base_english_event_key")]
+        public string BaseEnglishEventKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("base_english_event_script_sha256")]
+        public string BaseEnglishEventScriptSha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("base_english_event_script_matches_locked_base")]
+        public bool BaseEnglishEventScriptMatchesLockedBase { get; set; }
+
+        [JsonPropertyName("asset_locked")]
+        public bool AssetLocked { get; set; }
+
+        [JsonPropertyName("event_seen")]
+        public bool EventSeen { get; set; }
+
+        [JsonPropertyName("event_active")]
+        public bool EventActive { get; set; }
     }
 
     public sealed class CommunityCenterBundleProgressRef

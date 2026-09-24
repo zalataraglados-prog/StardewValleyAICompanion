@@ -10,6 +10,112 @@ namespace StardewAI.Core.Execution;
 
 public sealed partial class ActionQueueCompiler
 {
+    private static string[] ValidateCommunityCenterFirstNoteInteraction(
+        SmallModelAction action,
+        SnapshotEnvelope snapshot,
+        int targetX,
+        int targetY,
+        string expectedActionType)
+    {
+        var reasons = new List<string>();
+        if (!string.Equals(expectedActionType, "CommunityCenterBundleNote", StringComparison.Ordinal) ||
+            !string.Equals(
+                ReadParameter(action, "native_contract"),
+                "CommunityCenter.checkAction_then_JunimoNoteMenu.setUpMenu",
+                StringComparison.Ordinal))
+        {
+            reasons.Add("community_center_first_note_native_contract_mismatch");
+        }
+        if (!string.Equals(
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                "CommunityCenter",
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                ReadParameter(action, "target_location"),
+                "CommunityCenter",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            reasons.Add("community_center_first_note_location_mismatch");
+        }
+        if (ReadIntParameter(action, "bundle_area_id") != 1)
+        {
+            reasons.Add("community_center_first_note_area_mismatch");
+        }
+        var standX = ReadIntParameter(action, "stand_tile_x");
+        var standY = ReadIntParameter(action, "stand_tile_y");
+        if (!standX.HasValue || !standY.HasValue ||
+            Math.Abs(standX.Value - targetX) + Math.Abs(standY.Value - targetY) != 1 ||
+            !CommunityCenterFirstNotePathExists(
+                snapshot,
+                standX.GetValueOrDefault(),
+                standY.GetValueOrDefault()))
+        {
+            reasons.Add("community_center_first_note_route_unavailable");
+        }
+
+        var progress = ReadStateFieldValue(
+            snapshot,
+            "world_progress",
+            "community_center");
+        if (!progress.HasValue || progress.Value.ValueKind != JsonValueKind.Object ||
+            !progress.Value.TryGetProperty("lifecycle", out var lifecycle) ||
+            lifecycle.ValueKind != JsonValueKind.Object ||
+            ReadString(lifecycle, "projection_status") != "complete_locked_base_1.6.15" ||
+            ReadString(lifecycle, "stage") != "first_junimo_note_pending" ||
+            ReadBool(lifecycle, "door_unlock_received") != true ||
+            ReadBool(lifecycle, "first_junimo_note_seen") == true ||
+            ReadString(progress.Value, "route_state") is not ("undecided" or "community_center_locked") ||
+            ReadBool(progress.Value, "community_center_is_current_location") != true ||
+            ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
+            ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
+            !TryFindCommunityCenterBundleByArea(progress.Value, 1, out var craftsRoom) ||
+            ReadString(craftsRoom, "projection_status") != "exact" ||
+            ReadBool(craftsRoom, "note_appears") != true ||
+            ReadBool(craftsRoom, "area_mutex_locked") == true ||
+            NullableReadInt(craftsRoom, "note_tile_x") !=
+                ReadIntParameter(action, "community_center_note_tile_x") ||
+            NullableReadInt(craftsRoom, "note_tile_y") !=
+                ReadIntParameter(action, "community_center_note_tile_y") ||
+            NullableReadInt(craftsRoom, "interaction_tile_x") != targetX ||
+            NullableReadInt(craftsRoom, "interaction_tile_y") != targetY ||
+            ReadString(craftsRoom, "area_name") !=
+                ReadParameter(action, "bundle_area_name"))
+        {
+            reasons.Add("community_center_first_note_projection_drifted");
+        }
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool CommunityCenterFirstNotePathExists(
+        SnapshotEnvelope snapshot,
+        int targetX,
+        int targetY)
+    {
+        var startX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
+        var startY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
+        var grid = ReadStateFieldValue(snapshot, "locations", "collision_grid");
+        if (!startX.HasValue || !startY.HasValue ||
+            !grid.HasValue || grid.Value.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+        var width = ReadInt(grid.Value, "width");
+        var height = ReadInt(grid.Value, "height");
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+        return PathExists(
+            startX.Value,
+            startY.Value,
+            targetX,
+            targetY,
+            width,
+            height,
+            ReadBlockedCollisionTiles(grid.Value),
+            ReadUnsupportedRouteActionTiles(snapshot));
+    }
+
     private static CompiledActionStep[] CompileDonateCommunityCenterItemStep(SmallModelAction action)
     {
         var slot = ReadIntParameter(action, "inventory_slot_index");
@@ -152,6 +258,29 @@ public sealed partial class ActionQueueCompiler
         foreach (var row in rows.EnumerateArray())
         {
             if (row.ValueKind == JsonValueKind.Object && ReadInt(row, "bundle_id") == bundleId && ReadString(row, "bundle_data_key") == dataKey)
+            {
+                bundle = row;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool TryFindCommunityCenterBundleByArea(
+        JsonElement progress,
+        int areaId,
+        out JsonElement bundle)
+    {
+        bundle = default;
+        if (!progress.TryGetProperty("bundle_rows", out var rows) ||
+            rows.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+        foreach (var row in rows.EnumerateArray())
+        {
+            if (row.ValueKind == JsonValueKind.Object &&
+                ReadInt(row, "area_id") == areaId)
             {
                 bundle = row;
                 return true;

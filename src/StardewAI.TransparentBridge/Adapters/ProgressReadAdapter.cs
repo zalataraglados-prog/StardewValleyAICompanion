@@ -152,9 +152,15 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                     ? "community_center_locked"
                     : "undecided";
         var bundleRows = ReadCommunityCenterBundles(world, communityCenter, routeState);
+        var lifecycle = ReadCommunityCenterLifecycle(
+            master,
+            Game1.player,
+            communityCenter,
+            areaFlags);
 
         return new CommunityCenterProgressRef
         {
+            Lifecycle = lifecycle,
             LocationAccessible = Game1.isLocationAccessible("CommunityCenter"),
             Completed = master.hasCompletedCommunityCenter(),
             Bundles = world.Bundles.Pairs

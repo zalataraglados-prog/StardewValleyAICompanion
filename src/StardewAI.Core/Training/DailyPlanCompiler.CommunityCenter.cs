@@ -6,6 +6,40 @@ namespace StardewAI.Core.Training;
 
 public sealed partial class DailyPlanCompiler
 {
+    private static IEnumerable<SmallModelPlanStep> CommunityCenterFirstNoteSteps(
+        PolicyEventCandidatePrediction candidate)
+    {
+        return new[]
+        {
+            new SmallModelPlanStep
+            {
+                StepId = StepId(candidate, "interact", 0),
+                Kind = "interact",
+                TargetLocation = candidate.LocationId,
+                TargetTileX = candidate.TileX,
+                TargetTileY = candidate.TileY,
+                EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "community_center_lifecycle_stage=first_junimo_note_pending"
+                },
+                ExpectedEffects = new[] { candidate.ExpectedEffect },
+                SafetyConstraints = new[]
+                {
+                    "native_CommunityCenter_checkAction_only",
+                    "native_JunimoNoteMenu_setUpMenu_only",
+                    "no_direct_mail_quest_bundle_or_event_mutation"
+                },
+                FailurePolicy = new[]
+                {
+                    "release_mutex_refresh_snapshot_and_replan"
+                },
+                Parameters = candidate.Parameters
+            }
+        };
+    }
+
     private static IEnumerable<SmallModelPlanStep> CommunityCenterDonationSteps(PolicyEventCandidatePrediction candidate)
     {
         return new[]

@@ -66,6 +66,7 @@ internal static partial class BootstrapSelfTest
         VerifyCurrentFullShipmentTeacherFrontier(outputRoot);
         VerifyCurrentCollectionTeacherFrontier(outputRoot);
         VerifyCurrentStageOneCollectionTeacherFrontier(outputRoot);
+        VerifyCommunityCenterDonationReceiptEvidence();
 
         var guidedPlan = new TeacherPlanBuilder(24).Build(ranking, knowledge, HarvestGuide(knowledge));
         Require(guidedPlan.Audit.UsesExpertDemonstrationGuidance &&

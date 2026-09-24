@@ -508,6 +508,8 @@ public sealed partial class ModEntry
             HasPendingCommunityCenterMail(Game1.player, request.AreaCompletionMailId) == request.ExpectedAreaCompletionMailPendingAfter &&
             HasPendingCommunityCenterMail(Game1.player, "ccBulletinThankYou") == request.ExpectedBulletinThankYouPendingAfter &&
             active.CommunityCenter.areAllAreasComplete() == request.ExpectedAllAreasCompleteAfter &&
+            (!request.ExpectedAllAreasCompleteAfter.GetValueOrDefault() ||
+                Game1.player.mailReceived.Contains("ccIsComplete")) &&
             newlyAppearingAreas.All(active.CommunityCenter.isJunimoNoteAtArea) &&
             !active.CommunityCenter.bundleMutexes[active.AreaId].IsLocked();
     }
@@ -536,7 +538,10 @@ public sealed partial class ModEntry
                 "JunimoNoteMenu.receiveLeftClick_bundle_completed",
                 "JunimoNoteMenu.receiveLeftClick_inventory_completed",
                 "JunimoNoteMenu.receiveLeftClick_ingredient_slot_completed",
-                "JunimoNoteMenu.exitThisMenu_completed"
+                "JunimoNoteMenu.exitThisMenu_completed",
+                request.ExpectedAllAreasCompleteAfter.GetValueOrDefault()
+                    ? "Junimo.returnToJunimoHutToFetchStar_ccIsComplete_received"
+                    : "community_center_final_star_not_expected"
             },
             RequestedEffect = "community_center.bundle=" + active.BundleId + ":ingredient=" + active.IngredientIndex + ":completed=true",
             ObservedEffect = CommunityCenterDonationObservedEffect(active),
@@ -556,6 +561,7 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "player.mail_for_tomorrow." + request.AreaCompletionMailId, Before = active.AreaMailPendingBefore.ToString().ToLowerInvariant(), After = request.ExpectedAreaCompletionMailPendingAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
                 new SimulatedFactChange { Path = "player.mail_for_tomorrow.ccBulletinThankYou", Before = active.BulletinThankYouPendingBefore.ToString().ToLowerInvariant(), After = request.ExpectedBulletinThankYouPendingAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
                 new SimulatedFactChange { Path = "world_progress.community_center.all_areas_complete", Before = active.AllAreasCompleteBefore.ToString().ToLowerInvariant(), After = request.ExpectedAllAreasCompleteAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
+                new SimulatedFactChange { Path = "world_progress.community_center.lifecycle.community_center_complete_flag_received", Before = "false", After = Game1.player.mailReceived.Contains("ccIsComplete").ToString().ToLowerInvariant() },
                 new SimulatedFactChange { Path = "player.inventory.qualified_item_total[" + active.QualifiedItemId + "]", Before = active.InventoryItemTotalBefore.ToString(), After = CommunityCenterDonationInventoryItemTotal(active).ToString() }
             }
         });

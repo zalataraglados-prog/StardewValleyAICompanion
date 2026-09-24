@@ -27,6 +27,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var rowCountExact = ReadInt(progressRow, "bundle_data_row_count") == ReadInt(progressRow, "projected_bundle_row_count") &&
             ReadInt(progressRow, "unavailable_bundle_row_count") == 0;
         var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+        var firstNoteCandidates = CommunityCenterFirstNoteCandidates(
+            snapshot,
+            progressRow,
+            bundles,
+            currentLocation,
+            routeState,
+            rowCountExact);
+        if (firstNoteCandidates.Length > 0)
+        {
+            return firstNoteCandidates;
+        }
         if (ReadBool(progressRow, "community_center_is_current_location") != true)
         {
             return CommunityCenterDonationRouteCandidates(
@@ -144,6 +155,182 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             }
         }
         return result.ToArray();
+    }
+
+    private EventCandidate[] CommunityCenterFirstNoteCandidates(
+        SnapshotEnvelope snapshot,
+        JsonElement progress,
+        JsonElement bundles,
+        string currentLocation,
+        string routeState,
+        bool rowCountExact)
+    {
+        if (!progress.TryGetProperty("lifecycle", out var lifecycle) ||
+            lifecycle.ValueKind != JsonValueKind.Object ||
+            ReadString(lifecycle, "stage") != "first_junimo_note_pending" ||
+            ReadBool(lifecycle, "first_junimo_note_seen") == true)
+        {
+            return Array.Empty<EventCandidate>();
+        }
+
+        var craftsRoom = bundles.EnumerateArray()
+            .Where(row => row.ValueKind == JsonValueKind.Object)
+            .Where(row => ReadInt(row, "area_id") == 1)
+            .OrderBy(row => ReadInt(row, "bundle_id"))
+            .FirstOrDefault();
+        if (craftsRoom.ValueKind != JsonValueKind.Object)
+        {
+            return Array.Empty<EventCandidate>();
+        }
+
+        if (ReadBool(progress, "community_center_is_current_location") != true)
+        {
+            var route = FindResolvedRoutePlan(
+                snapshot,
+                currentLocation,
+                "CommunityCenter",
+                RouteConnectorCandidates(snapshot, int.MaxValue)
+                    .Where(candidate => candidate.Kind == "route_connector_tile")
+                    .ToArray());
+            var connector = route?.FirstActionCandidate;
+            var reasons = CommunityCenterFirstNoteBlockReasons(
+                lifecycle,
+                craftsRoom,
+                routeState,
+                rowCountExact,
+                requireReachableStand: false,
+                standAvailable: true);
+            reasons.AddRange(connector?.BlockReasons ??
+                new[] { "community_center_first_note_cross_map_route_unavailable" });
+            var distinct = reasons.Distinct(StringComparer.Ordinal).ToArray();
+            return new[]
+            {
+                new EventCandidate
+                {
+                    CandidateId = "community-center-first-note-route:" + currentLocation,
+                    Kind = "route_connector_tile",
+                    Available = connector is not null && connector.Available && distinct.Length == 0,
+                    LocationId = currentLocation,
+                    TileX = connector?.TileX,
+                    TileY = connector?.TileY,
+                    ExpectedEffect = (connector?.ExpectedEffect ?? string.Empty) +
+                        ";community_center_lifecycle=first_junimo_note_pending;one_connector_then_fresh_snapshot=true",
+                    EstimatedTicks = connector?.EstimatedTicks ?? -1,
+                    EnergyCost = connector?.EnergyCost ?? 0,
+                    AvailabilityClass = connector is null
+                        ? "community_center_first_note_route_blocked"
+                        : "community_center_first_note_rolling_route",
+                    AllowedNow = connector?.AllowedNow,
+                    AllowedToday = connector?.AllowedToday,
+                    NextOpenTime = connector?.NextOpenTime,
+                    EffectiveOpenTime = connector?.EffectiveOpenTime,
+                    ClosesAt = connector?.ClosesAt,
+                    WaitCost = connector?.WaitCost,
+                    GateReasons = connector?.GateReasons ?? Array.Empty<string>(),
+                    BlockReasons = distinct,
+                    Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
+                        .Concat(new[]
+                        {
+                            Parameter("continuation.option_id", "community_center.donate_bundle_items"),
+                            Parameter("continuation.target_location", "CommunityCenter"),
+                            Parameter("continuation.lifecycle_stage", "first_junimo_note_pending")
+                        })
+                        .ToArray()
+                }
+            };
+        }
+
+        var noteX = NullableReadInt(craftsRoom, "note_tile_x");
+        var noteY = NullableReadInt(craftsRoom, "note_tile_y");
+        var interactionX = NullableReadInt(craftsRoom, "interaction_tile_x");
+        var interactionY = NullableReadInt(craftsRoom, "interaction_tile_y");
+        var stand = interactionX.HasValue && interactionY.HasValue
+            ? FindBestStandTile(snapshot, interactionX.Value, interactionY.Value)
+            : null;
+        var blockReasons = CommunityCenterFirstNoteBlockReasons(
+            lifecycle,
+            craftsRoom,
+            routeState,
+            rowCountExact,
+            requireReachableStand: true,
+            standAvailable: stand is not null);
+        if (!noteX.HasValue || !noteY.HasValue ||
+            !interactionX.HasValue || !interactionY.HasValue)
+        {
+            blockReasons.Add("community_center_first_note_endpoint_unavailable");
+        }
+
+        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
+        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+        var distance = stand is null
+            ? 0
+            : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+        var parameters = stand is null || !noteX.HasValue || !noteY.HasValue ||
+            !interactionX.HasValue || !interactionY.HasValue
+                ? Array.Empty<SmallModelActionParameter>()
+                : new[]
+                {
+                    Parameter("target_location", "CommunityCenter"),
+                    Parameter("stand_tile_x", stand.X.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("stand_tile_y", stand.Y.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("community_center_note_tile_x", noteX.Value.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("community_center_note_tile_y", noteY.Value.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("bundle_area_id", "1"),
+                    Parameter("bundle_area_name", ReadString(craftsRoom, "area_name")),
+                    Parameter("route_state", routeState),
+                    Parameter("interaction_kind", "community_center_note"),
+                    Parameter("expected_action_type", "CommunityCenterBundleNote"),
+                    Parameter("native_contract", "CommunityCenter.checkAction_then_JunimoNoteMenu.setUpMenu"),
+                    Parameter("max_movement_tiles", "512")
+                };
+        var distinctBlocks = blockReasons.Distinct(StringComparer.Ordinal).ToArray();
+        return new[]
+        {
+            new EventCandidate
+            {
+                CandidateId = "community-center-read-first-note:area=1",
+                Kind = "read_first_junimo_note",
+                Available = distinctBlocks.Length == 0,
+                LocationId = "CommunityCenter",
+                TileX = interactionX,
+                TileY = interactionY,
+                ExpectedEffect = "world_progress.community_center.lifecycle.first_junimo_note_seen=true;wizardJunimoNote=received_or_pending;menus.active_menu.type=JunimoNoteMenu",
+                EstimatedTicks = Math.Max(90, distance * 60 + 30),
+                EnergyCost = 0,
+                AvailabilityClass = "transparent_native_community_center_first_note",
+                AllowedNow = distinctBlocks.Length == 0,
+                BlockReasons = distinctBlocks,
+                Parameters = parameters
+            }
+        };
+    }
+
+    private static List<string> CommunityCenterFirstNoteBlockReasons(
+        JsonElement lifecycle,
+        JsonElement craftsRoom,
+        string routeState,
+        bool rowCountExact,
+        bool requireReachableStand,
+        bool standAvailable)
+    {
+        var reasons = new List<string>();
+        if (ReadString(lifecycle, "projection_status") != "complete_locked_base_1.6.15")
+            reasons.Add("community_center_lifecycle_asset_lock_missing");
+        if (ReadBool(lifecycle, "door_unlock_received") != true)
+            reasons.Add("community_center_door_unlock_not_received");
+        if (routeState is not ("undecided" or "community_center_locked"))
+            reasons.Add("community_center_route_locked_out_by_joja");
+        if (!rowCountExact)
+            reasons.Add("community_center_bundle_projection_incomplete");
+        if (ReadString(craftsRoom, "projection_status") != "exact" ||
+            ReadBool(craftsRoom, "note_appears") != true ||
+            ReadBool(craftsRoom, "area_mutex_locked") == true)
+        {
+            reasons.Add("community_center_first_note_projection_not_ready");
+        }
+        if (requireReachableStand && !standAvailable)
+            reasons.Add("community_center_first_note_no_reachable_stand_tile");
+        return reasons;
     }
 
     private EventCandidate[] CommunityCenterDonationRouteCandidates(

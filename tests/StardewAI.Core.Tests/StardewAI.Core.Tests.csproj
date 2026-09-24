@@ -43,6 +43,7 @@
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="CommunityCenterDonationMainlineTests.cs" />
+    <Compile Include="CommunityCenterTransparencyTests.cs" />
     <Compile Include="CurrencyReservationLedgerTests.cs" />
     <Compile Include="FishingTerminalProbabilityEvaluatorTests.cs" />
     <Compile Include="FishingTerminalProbabilitySnapshotProjectorTests.cs" />

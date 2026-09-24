@@ -103,6 +103,7 @@ public sealed partial class ModEntry : Mod
     private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
+    private ActiveCommunityCenterFirstNote? activeCommunityCenterFirstNote;
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
     private ActiveHomeRenovation? activeHomeRenovation;
@@ -612,6 +613,7 @@ public sealed partial class ModEntry : Mod
         TickFieldOfficeSurvey();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
+        TickCommunityCenterFirstNote();
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
         TickHomeRenovation();
@@ -1405,6 +1407,13 @@ public sealed partial class ModEntry : Mod
                 if (IsSpecialOrderBoardActionType(pending.Request.ExpectedActionType))
                 {
                     StartSpecialOrderBoardOpen(pending);
+                }
+                else if (string.Equals(
+                    pending.Request.InteractionKind,
+                    "community_center_note",
+                    StringComparison.Ordinal))
+                {
+                    StartCommunityCenterFirstNote(pending);
                 }
                 else if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
                     string.Equals(pending.Request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
@@ -2357,6 +2366,7 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
+            activeCommunityCenterFirstNote = null;
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
             activeHomeRenovation = null;
@@ -2645,6 +2655,7 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
+            activeCommunityCenterFirstNote is not null ||
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
             activeHomeRenovation is not null ||

@@ -43,9 +43,14 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 "qualified_item_id",
                 "donated",
                 "native_completion_false_to_true"),
-            "native_community_center_payment_completion" or
+            "native_community_center_payment_completion" =>
+                VerifyCommunityCenterPayment(credit, before, after),
             "native_community_center_donation_completion" =>
-                VerifyCommunityCenterAlternative(credit, before, after),
+                VerifyCommunityCenterDonation(
+                    credit,
+                    CommunityCenterDonationQueueItem(credit, queueItems),
+                    before,
+                    after),
             "authoritative_window_terminal_attempt" => VerifyCollectionBoolean(
                 credit,
                 before,
@@ -169,31 +174,64 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             beforeValue == false && afterValue == true);
     }
 
-    private static PolicyTeacherRequirementTransition VerifyCommunityCenterAlternative(
+    private static PolicyTeacherRequirementTransition VerifyCommunityCenterPayment(
         CurrentCollectionRequirementCredit credit,
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
-        const string prefix = "community_center:bundle:";
-        var key = credit.RequirementId.StartsWith(prefix, StringComparison.Ordinal)
-            ? credit.RequirementId[prefix.Length..]
-            : string.Empty;
-        var beforeValue = ReadBundleAlternative(
+        var evidence = ExactCommunityCenterPaymentReceiptVerifier.Verify(
             before,
-            key,
-            credit.AlternativeIndex,
-            credit.QualifiedItemId);
-        var afterValue = ReadBundleAlternative(
             after,
-            key,
+            credit.RequirementId,
             credit.AlternativeIndex,
-            credit.QualifiedItemId);
+            credit.RequiredQuantity);
         return Transition(
             credit,
-            "native_bundle_alternative_false_to_true",
-            beforeValue?.ToString() ?? "unavailable",
-            afterValue?.ToString() ?? "unavailable",
-            beforeValue == false && afterValue == true);
+            evidence.TransitionKind,
+            $"money={CountText(evidence.BeforeMoney)};completed={BooleanText(evidence.BeforeNativeCompletion)}",
+            $"money={CountText(evidence.AfterMoney)};completed={BooleanText(evidence.AfterNativeCompletion)}",
+            evidence.Verified);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyCommunityCenterDonation(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var evidence = ExactCommunityCenterDonationReceiptVerifier.Verify(
+            credit,
+            queueItem,
+            before,
+            after);
+        return Transition(
+            credit,
+            "native_community_center_donation_full_projection_transition",
+            evidence.BeforeSummary,
+            evidence.AfterSummary,
+            evidence.Verified);
+    }
+
+    private static ActionQueueItem? CommunityCenterDonationQueueItem(
+        CurrentCollectionRequirementCredit credit,
+        IEnumerable<ActionQueueItem> queueItems)
+    {
+        const string prefix = "community_center:bundle:";
+        var bundleKey = credit.RequirementId.StartsWith(
+                prefix,
+                StringComparison.Ordinal)
+            ? credit.RequirementId[prefix.Length..]
+            : string.Empty;
+        var matches = queueItems.Where(item =>
+                string.Equals(
+                    item.OptionId,
+                    "executor.donate_community_center_item",
+                    StringComparison.Ordinal) &&
+                ReadParameter(item, "bundle_data_key") == bundleKey &&
+                ReadIntParameter(item, "bundle_ingredient_index") ==
+                    credit.AlternativeIndex)
+            .ToArray();
+        return matches.Length == 1 ? matches[0] : null;
     }
 
     private static PolicyTeacherRequirementTransition VerifyRouteStep(

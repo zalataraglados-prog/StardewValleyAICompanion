@@ -11,6 +11,90 @@ namespace StardewAI.Core.Tests;
 public sealed class CommunityCenterDonationMainlineTests
 {
     [Fact]
+    public void RuntimeWaitsForNativeFinalStarFlagBeforeCompletingLastDonation()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness",
+            "ModEntry.CommunityCenter.cs"));
+
+        Assert.Contains(
+            "Game1.player.mailReceived.Contains(\"ccIsComplete\")",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Junimo.returnToJunimoHutToFetchStar_ccIsComplete_received",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "mailReceived.Add(\"ccIsComplete\")",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FirstJunimoNoteFlowsThroughExistingInteractExecutor()
+    {
+        var snapshot = FirstNoteSnapshot();
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "community_center.donate_bundle_items" },
+                true);
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("read_first_junimo_note", candidate.Kind);
+        Assert.Equal(10, candidate.TileX);
+        Assert.Equal(10, candidate.TileY);
+        AssertParameter(candidate.Parameters, "stand_tile_x", "9");
+        AssertParameter(candidate.Parameters, "bundle_area_id", "1");
+        AssertParameter(
+            candidate.Parameters,
+            "interaction_kind",
+            "community_center_note");
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                availability),
+            snapshot.StateHash);
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("interact", step.Kind);
+        Assert.Contains(
+            "native_CommunityCenter_checkAction_only",
+            step.SafetyConstraints);
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(";", item.BlockingReasons));
+        Assert.Equal("executor.interact", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        AssertParameter(
+            item.NormalizedCommand.Parameters,
+            "expected_action_type",
+            "CommunityCenterBundleNote");
+    }
+
+    [Fact]
+    public void FirstJunimoNoteRuntimeUsesNativeCheckActionWithoutMailWrites()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.CommunityCenterFirstNote.cs"));
+
+        Assert.Contains(".checkAction(", source, StringComparison.Ordinal);
+        Assert.Contains("JunimoNoteMenu", source, StringComparison.Ordinal);
+        Assert.Contains("seenJunimoNote", source, StringComparison.Ordinal);
+        Assert.Contains("wizardJunimoNote", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("mailReceived.Add", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("mailForTomorrow.Add", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ExactBundleDonationFlowsThroughCandidatePlanAndActionQueue()
     {
         var snapshot = Snapshot(completedBefore: 1);
@@ -183,6 +267,80 @@ public sealed class CommunityCenterDonationMainlineTests
             StateHash = SnapshotHash.ComputeStateHash(state),
             GameTick = 1,
             RealTimestamp = "2026-07-18T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+    }
+
+    private static SnapshotEnvelope FirstNoteSnapshot()
+    {
+        const string json = """
+        {
+          "player": {
+            "location_id":{"value":"CommunityCenter","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x":{"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y":{"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "world_progress": {
+            "community_center":{"value":{
+              "lifecycle":{
+                "projection_status":"complete_locked_base_1.6.15",
+                "stage":"first_junimo_note_pending",
+                "door_unlock_received":true,
+                "first_junimo_note_seen":false
+              },
+              "route_state":"undecided",
+              "community_center_is_current_location":true,
+              "can_read_junimo_text":false,
+              "bundle_data_row_count":1,
+              "projected_bundle_row_count":1,
+              "unavailable_bundle_row_count":0,
+              "complete_bundle_count":0,
+              "areas_complete":[false,false,false,false,false,false],
+              "bundle_rows":[{
+                "projection_status":"exact",
+                "projection_failure":"",
+                "bundle_data_key":"Crafts Room/13",
+                "bundle_id":13,
+                "area_id":1,
+                "area_name":"Crafts Room",
+                "required_slot_count":4,
+                "completed_ingredient_count":0,
+                "complete":false,
+                "note_appears":true,
+                "note_tile_x":10,
+                "note_tile_y":10,
+                "interaction_tile_x":10,
+                "interaction_tile_y":10,
+                "area_mutex_locked":false,
+                "reward_available":false,
+                "area_complete":false,
+                "area_completion_mail_id":"ccCraftsRoom",
+                "area_completion_mail_pending":false,
+                "bulletin_thank_you_pending":false,
+                "ingredients":[],
+                "donation_candidates":[]
+              }]
+            },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid":{"value":{"location_id":"CommunityCenter","width":64,"height":64,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """;
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            json,
+            JsonOptions)!;
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-09-24T00:00:00Z",
             Completeness = "complete",
             State = state
         };

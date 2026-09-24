@@ -1921,6 +1921,41 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The next fixed boundary is the native Community Center completion lifecycle: Junimo text/unlock events, room reward
   and mail effects, and final ceremony settlement must receive fresh native before/after proof and terminal admission.
 
+### 2026-09-24: native Community Center completion lifecycle admission
+
+- The transparent bridge now emits one typed `community_center_lifecycle.v1` projection instead of treating
+  `ccIsComplete`, six room-mail flags and `isLocationAccessible("CommunityCenter")` as interchangeable completion
+  signals. It separately exposes the Town `611439` door-unlock event, first-note and Wizard-letter state, WizardHouse
+  `112` Junimo-text event, all-area state, unclaimed/missed bundle rewards, room-mail settlement, the final Town
+  `191393` ceremony and the final admitted state. All three event rows are loaded from the current runtime assets and
+  their base-English scripts are SHA-256 locked to the independently decompiled 1.6.15 rows; a missing or modified row
+  blocks the lifecycle projection rather than falling back to documentation examples.
+- The existing native donation executor remains the sole donation implementation. It already waits for bundle bits,
+  inventory consumption, bundle reward, complete-bundle count, restored room, pending room/Bulletin mail and newly
+  visible notes. For the last room it now also waits for `Junimo.returnToJunimoHutToFetchStar` to place
+  `ccIsComplete`; it never writes that flag itself. This closes the timing gap where an all-areas snapshot could have
+  been accepted before the native final-star sequence settled.
+- The prerequisite first Crafts Room note is now an explicit lifecycle candidate rather than an assumed manual step.
+  The save-bound candidate uses the live area-1 note/interaction endpoint, shared collision routing and the existing
+  `executor.interact`; the runtime follows the original `CommunityCenter.checkAction -> checkBundle ->
+  JunimoNoteMenu.setUpMenu` path and verifies the `seenJunimoNote` false-to-true transition plus the newly scheduled
+  `wizardJunimoNote` letter. It does not write mail, quests, bundle state or events directly. A remote candidate emits
+  one existing route connector and requires a fresh Community Center snapshot before the interaction is compiled.
+- Stage 1 donation receipts no longer accept only one bundle ingredient changing from false to true. The verifier binds
+  the exact compiled queue item and requires its qualified inventory delta plus every projected bundle, reward, room,
+  mail, all-area and new-note postcondition. Vault money payments retain their separate exact-money verifier. Any one
+  omitted side effect blocks the training row.
+- `build-community-center-lifecycle-receipt` admits five explicit fresh transitions against a verified sequential queue
+  receipt: initial door unlock (`611439`), first-note interaction, Junimo text unlock (`112`), room-mail day settlement
+  through the existing recovery/sleep chain, and final ceremony (`191393`). Final completion is admitted only when native room-mail
+  completion was already true and the ceremony changes both event-seen and location-accessible state. Cross-day mail
+  is therefore attributed to `recovery.stabilize_day`, while final accessibility is attributed to
+  `story.advance_event`; neither is incorrectly credited to the last donation.
+- Static focused tests lock the event identities and hashes, reject direct progress mutation, verify the last-star wait,
+  accept a complete donation projection, and reject receipts with a missing room-mail or Wizard-letter side effect.
+  The next runtime gate is one isolated fresh-save sequence covering all five receipt kinds before the later single strategic-policy
+  facade can promote any Community Center row to product training.
+
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 
 - Verdict: accept the single strategic entry, shared artifacts, deterministic hard authority, learned soft-preference
