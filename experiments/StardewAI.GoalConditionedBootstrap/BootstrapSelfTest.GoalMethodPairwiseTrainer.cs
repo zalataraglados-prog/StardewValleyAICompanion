@@ -122,6 +122,77 @@ internal static partial class BootstrapSelfTest
                 !liveInitial.FormalProductTrainingAuthorized,
             "Fresh initial goal-method shadow scoring drifted.");
 
+        var corruptCheckpointPath = Path.Combine(
+            outputRoot,
+            "corrupt-goal-method-checkpoint.json");
+        File.WriteAllText(corruptCheckpointPath, "{}" + Environment.NewLine);
+        var deterministicWithoutModel = new StrategicPolicy().SelectMethod(
+            new StrategicPolicySelectionRequest
+            {
+                CurrentInputs = initialInputs,
+                PreferenceRequestPath = rolloutManifest
+                    .InitialCheckpointProof.ExecutionInputs
+                    .PortfolioPreferenceRequestPath,
+                CheckpointPath = corruptCheckpointPath,
+                CorpusManifestPath = Path.Combine(
+                    outputRoot,
+                    "missing-corpus-manifest.json"),
+                EnableDeterministicShadowAudit = true,
+                Replan = new StrategicReplanContext
+                {
+                    TriggerKinds = new[]
+                    {
+                        StrategicReplanTriggers.DayStart
+                    },
+                    TriggerToken = "initial-day-start"
+                }
+            });
+        Require(deterministicWithoutModel.Status ==
+                    "ready_deterministic_unique_strict_pareto_selection" &&
+                deterministicWithoutModel.SelectionAuthority ==
+                    StrategicSelectionAuthorities
+                        .DeterministicUniqueStrictPareto &&
+                deterministicWithoutModel.SelectedProposal is not null &&
+                deterministicWithoutModel.SelectedAdmission is not null &&
+                !deterministicWithoutModel.ModelInvoked &&
+                deterministicWithoutModel.ShadowAuditAttempted &&
+                !deterministicWithoutModel.ShadowAuditSucceeded &&
+                deterministicWithoutModel.RuntimeSelectionAuthorized &&
+                !deterministicWithoutModel
+                    .RuntimeModelAuthorityAuthorized &&
+                !deterministicWithoutModel.PortfolioCommitAuthorized &&
+                deterministicWithoutModel.FallbackReasons.Single()
+                    .StartsWith(
+                        "optional_deterministic_shadow_audit_failed:",
+                        StringComparison.Ordinal),
+            "A corrupt optional model blocked deterministic strategic selection.");
+
+        var duplicateReplan = new StrategicPolicy().SelectMethod(
+            new StrategicPolicySelectionRequest
+            {
+                CurrentInputs = initialInputs,
+                PreferenceRequestPath = rolloutManifest
+                    .InitialCheckpointProof.ExecutionInputs
+                    .PortfolioPreferenceRequestPath,
+                Replan = new StrategicReplanContext
+                {
+                    TriggerKinds = new[]
+                    {
+                        StrategicReplanTriggers.DayStart
+                    },
+                    TriggerToken = "initial-day-start",
+                    PreviousReplanFingerprint =
+                        deterministicWithoutModel.ReplanFingerprint
+                }
+            });
+        Require(duplicateReplan.Status ==
+                    "deduplicated_strategic_replan" &&
+                duplicateReplan.ReplanDeduplicated &&
+                !duplicateReplan.ReplanRequired &&
+                duplicateReplan.SelectedProposal is null &&
+                !duplicateReplan.ModelInvoked,
+            "An unchanged strategic event was not deduplicated.");
+
         var firstContinuation = rolloutManifest.ContinuationTransitions[0];
         var continuationInputs = AcquisitionRoutePortfolioInputAdapter
             .FromExecutionBinding(firstContinuation.ExecutionInputs);
@@ -340,6 +411,71 @@ internal static partial class BootstrapSelfTest
             shadow.CandidateScores.Count(candidate =>
                 candidate.OnDeterministicParetoFrontier) + "; blocks=" +
             string.Join(",", shadow.BlockingReasons));
+
+        var strategic = new StrategicPolicy().SelectMethod(
+            new StrategicPolicySelectionRequest
+            {
+                CurrentInputs = inputs,
+                PreferenceRequestPath = requestPath,
+                CheckpointPath = checkpointPath,
+                CorpusManifestPath = readyCorpusManifestPath,
+                Replan = new StrategicReplanContext
+                {
+                    TriggerKinds = new[]
+                    {
+                        StrategicReplanTriggers.PreferenceChanged
+                    },
+                    TriggerToken = "incomparable-frontier"
+                }
+            });
+        Require(strategic.Status ==
+                    "ready_learned_incomparable_frontier_shadow_selection" &&
+                strategic.SelectionAuthority ==
+                    StrategicSelectionAuthorities
+                        .LearnedIncomparableFrontierPreference &&
+                strategic.SelectedProposal is not null &&
+                strategic.SelectedAdmission is not null &&
+                strategic.ModelInvoked &&
+                strategic.ModelCandidateScores.Length ==
+                    strategic.ParetoFrontierCount &&
+                strategic.ModelCandidateScores.Length >= 2 &&
+                strategic.ModelCandidateScores.All(candidate =>
+                    candidate.OnDeterministicParetoFrontier) &&
+                strategic.ModelCandidateScores.Any(candidate =>
+                    candidate.ProposalId ==
+                        strategic.SelectedProposal.ProposalId) &&
+                !strategic.RuntimeSelectionAuthorized &&
+                !strategic.RuntimeModelAuthorityAuthorized &&
+                !strategic.PortfolioCommitAuthorized &&
+                !strategic.FormalProductTrainingAuthorized,
+            "Unified learned strategic selection escaped its read-only Pareto frontier.");
+
+        var missingModel = new StrategicPolicy().SelectMethod(
+            new StrategicPolicySelectionRequest
+            {
+                CurrentInputs = inputs,
+                PreferenceRequestPath = requestPath,
+                CheckpointPath = Path.Combine(
+                    fixtureRoot,
+                    "missing-checkpoint.json"),
+                CorpusManifestPath = readyCorpusManifestPath,
+                Replan = new StrategicReplanContext
+                {
+                    TriggerKinds = new[]
+                    {
+                        StrategicReplanTriggers.PreferenceChanged
+                    },
+                    TriggerToken = "incomparable-frontier-no-model"
+                }
+            });
+        Require(missingModel.Status == "blocked_strategic_decision" &&
+                missingModel.SelectedProposal is null &&
+                !missingModel.ModelInvoked &&
+                !missingModel.RuntimeSelectionAuthorized &&
+                missingModel.BlockingReasons.Contains(
+                    "strategic_runtime_model_required_for_incomparable_frontier",
+                    StringComparer.Ordinal),
+            "An incomparable strategic frontier did not fail closed without a model.");
     }
 
     internal static void RunGoalMethodIncomparableLiveShadow(
@@ -352,6 +488,23 @@ internal static partial class BootstrapSelfTest
             AcquisitionRoutePortfolioRolloutProofManifest>(
             rolloutProofManifestPath,
             "Incomparable live shadow self-test rollout");
+        var initial = rolloutManifest.InitialCheckpointProof.ExecutionInputs;
+        var deterministicAdapter = new GoalMethodPairwiseRanker()
+            .RankLiveShadow(
+                checkpointPath,
+                readyCorpusManifestPath,
+                AcquisitionRoutePortfolioInputAdapter.FromExecutionBinding(
+                    initial),
+                initial.PortfolioPreferenceRequestPath);
+        Require(deterministicAdapter.Status ==
+                    "ready_teacher_authoritative_live_shadow_scoring" &&
+                deterministicAdapter.SelectionAuthority ==
+                    "deterministic_unique_strict_pareto_teacher" &&
+                deterministicAdapter.ShadowSelectedProposal is not null &&
+                deterministicAdapter.ShadowSelectedAdmission is not null &&
+                deterministicAdapter.CandidateDenominatorVerified &&
+                !deterministicAdapter.PortfolioCommitAuthorized,
+            "Legacy deterministic live-shadow adapter drifted from StrategicPolicy.");
         VerifyIncomparableGoalMethodLiveShadow(
             checkpointPath,
             readyCorpusManifestPath,

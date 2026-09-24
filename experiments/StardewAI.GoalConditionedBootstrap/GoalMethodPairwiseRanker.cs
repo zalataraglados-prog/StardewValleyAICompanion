@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class GoalMethodPairwiseRanker
@@ -15,6 +13,65 @@ public sealed class GoalMethodPairwiseRanker
         GoalMethodPairwiseCheckpointStore checkpointStore)
     {
         this.checkpointStore = checkpointStore;
+    }
+
+    internal VerifiedGoalMethodPairwiseModel LoadVerifiedModel(
+        string checkpointPath,
+        string corpusManifestPath)
+    {
+        var fullCheckpointPath = RequiredFullPath(
+            checkpointPath,
+            "Checkpoint path");
+        var fullManifestPath = RequiredFullPath(
+            corpusManifestPath,
+            "Corpus manifest path");
+        var checkpoint = checkpointStore.Load(fullCheckpointPath);
+        var corpus = GoalMethodPairwiseTrainer.VerifyCorpus(fullManifestPath);
+        ValidateDatasetBinding(checkpoint, corpus, fullManifestPath);
+        return new VerifiedGoalMethodPairwiseModel(
+            checkpoint,
+            CurrentTeacherFrontierSupport.HashFile(fullCheckpointPath),
+            checkpoint.Dataset.CorpusManifestSha256);
+    }
+
+    internal static GoalMethodPairwiseCandidateScore[] ScoreLiveCandidates(
+        VerifiedGoalMethodPairwiseModel verified,
+        GoalMethodPairwiseFeatureContext featureContext,
+        IEnumerable<AcquisitionRoutePortfolioTeacherCandidateEvaluation>
+            candidates,
+        string teacherSelectedProposalId)
+    {
+        var scored = candidates.Select(candidate =>
+            {
+                var encoded = GoalMethodPairwiseFeatureEncoder.Encode(
+                    featureContext,
+                    candidate,
+                    verified.Checkpoint.Model);
+                var score = Dot(verified.Checkpoint.Model.Weights, encoded);
+                if (!Finite(score))
+                {
+                    throw new InvalidDataException(
+                        "Goal-method checkpoint produced a non-finite live score.");
+                }
+                return new GoalMethodPairwiseCandidateScore
+                {
+                    ProposalId = candidate.ProposalId,
+                    ProposalSha256 = candidate.ProposalSha256,
+                    SelectedRouteOccurrenceIds = candidate
+                        .SelectedRouteOccurrenceIds.ToArray(),
+                    ModelScore = Math.Round(score, 8),
+                    TeacherSelected = candidate.ProposalId ==
+                        teacherSelectedProposalId,
+                    OnDeterministicParetoFrontier =
+                        candidate.DominatedByProposalIds.Length == 0
+                };
+            })
+            .OrderByDescending(candidate => candidate.ModelScore)
+            .ThenBy(candidate => candidate.ProposalId, StringComparer.Ordinal)
+            .ToArray();
+        for (var index = 0; index < scored.Length; index++)
+            scored[index].Rank = index + 1;
+        return scored;
     }
 
     public GoalMethodPairwiseScoringResult RankVerifiedCorpusRow(
@@ -123,221 +180,63 @@ public sealed class GoalMethodPairwiseRanker
         string preferenceRequestPath,
         string? priorRolloutProofManifestPath = null)
     {
-        var fullCheckpointPath = RequiredFullPath(
-            checkpointPath,
-            "Checkpoint path");
-        var fullManifestPath = RequiredFullPath(
-            corpusManifestPath,
-            "Corpus manifest path");
-        var checkpoint = checkpointStore.Load(fullCheckpointPath);
-        var corpus = GoalMethodPairwiseTrainer.VerifyCorpus(fullManifestPath);
-        ValidateDatasetBinding(checkpoint, corpus, fullManifestPath);
-
-        AcquisitionRoutePortfolioTeacherPreferenceBuilder
-            .AcquisitionRoutePortfolioTeacherScoringSet set;
-        int transitionIndex;
-        if (string.IsNullOrWhiteSpace(priorRolloutProofManifestPath))
+        var decision = new StrategicPolicy(this).SelectMethod(
+            new StrategicPolicySelectionRequest
+            {
+                CurrentInputs = currentInputs,
+                PreferenceRequestPath = preferenceRequestPath,
+                PriorRolloutProofManifestPath =
+                    priorRolloutProofManifestPath ?? string.Empty,
+                CheckpointPath = checkpointPath,
+                CorpusManifestPath = corpusManifestPath,
+                EnableDeterministicShadowAudit = true
+            });
+        var modelTop = decision.ModelCandidateScores.FirstOrDefault();
+        var deterministic = decision.SelectionAuthority ==
+            StrategicSelectionAuthorities.DeterministicUniqueStrictPareto;
+        var learned = decision.SelectionAuthority ==
+            StrategicSelectionAuthorities
+                .LearnedIncomparableFrontierPreference;
+        return new GoalMethodPairwiseLiveShadowSelection
         {
-            set = AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                .BuildScoringSet(currentInputs, preferenceRequestPath);
-            transitionIndex = 1;
-        }
-        else
-        {
-            var verified = AcquisitionRoutePortfolioRolloutProofBuilder
-                .Verify(priorRolloutProofManifestPath);
-            set = AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                .BuildContinuationScoringSet(
-                    verified,
-                    currentInputs,
-                    preferenceRequestPath);
-            transitionIndex = verified.Checkpoint.TransitionCount + 1;
-        }
-
-        var preference = set.Preference;
-        var decision = AcquisitionRoutePortfolioSupervisionBuilder
-            .DecisionContext(set.Snapshot);
-        if (decision.GameVersion != checkpoint.Versions.GameVersion ||
-            decision.BridgeVersion != checkpoint.Versions.BridgeVersion)
-        {
-            throw new InvalidDataException(
-                "Goal-method live state version differs from the checkpoint.");
-        }
-        var result = new GoalMethodPairwiseLiveShadowSelection
-        {
-            CheckpointId = checkpoint.CheckpointId,
-            CheckpointSha256 = CurrentTeacherFrontierSupport.HashFile(
-                fullCheckpointPath),
-            CorpusManifestSha256 = checkpoint.Dataset.CorpusManifestSha256,
-            GoalId = preference.GoalId,
-            SnapshotStateHash = preference.SnapshotStateHash,
-            StrategyLedgerRevision = preference.ExpectedLedgerRevision,
-            TransitionIndex = transitionIndex,
-            TeacherPreferenceStatus = preference.Status,
-            TeacherPreferenceSha256 =
-                AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                    .ArtifactSha256(preference),
+            Status = deterministic
+                ? "ready_teacher_authoritative_live_shadow_scoring"
+                : learned
+                    ? "ready_checkpoint_ranked_incomparable_frontier_shadow"
+                    : "blocked_live_goal_method_shadow_selection",
+            CheckpointId = decision.ModelCheckpointId,
+            CheckpointSha256 = decision.ModelCheckpointSha256,
+            CorpusManifestSha256 =
+                decision.ModelCorpusManifestSha256,
+            GoalId = decision.GoalId,
+            SnapshotStateHash = decision.SnapshotStateHash,
+            StrategyLedgerRevision = decision.StrategyLedgerRevision,
+            TransitionIndex = decision.TransitionIndex,
+            TeacherPreferenceStatus =
+                decision.DeterministicPreferenceStatus,
+            TeacherPreferenceSha256 = decision.TeacherPreferenceSha256,
+            CandidateDenominatorVerified =
+                decision.CandidateDenominatorSha256.Length > 0,
+            CandidateScores = decision.ModelCandidateScores,
+            ModelTopProposalId = modelTop?.ProposalId ?? string.Empty,
             TeacherSelectedProposalId =
-                preference.SelectedProposal?.ProposalId ?? string.Empty,
+                decision.DeterministicSelectedMethodId,
+            ModelAgreesWithTeacher = deterministic && modelTop is not null
+                ? modelTop.ProposalId ==
+                    decision.DeterministicSelectedMethodId
+                : null,
+            ShadowSelectedProposal = decision.SelectedProposal,
+            ShadowSelectedAdmission = decision.SelectedAdmission,
+            SelectionAuthority = deterministic
+                ? "deterministic_unique_strict_pareto_teacher"
+                : learned
+                    ? "goal_method_checkpoint_shadow_only"
+                    : string.Empty,
             PortfolioCommitAuthorized = false,
-            FormalProductTrainingAuthorized = false
+            FormalProductTrainingAuthorized = false,
+            BlockingReasons = decision.BlockingReasons
         };
-        if (!preference.CandidateDenominatorComplete ||
-            set.Candidates.Length == 0)
-        {
-            result.Status = "blocked_live_goal_method_shadow_selection";
-            result.BlockingReasons = preference.BlockingReasons
-                .Append("goal_method_live_candidate_denominator_unavailable")
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)
-                .ToArray();
-            return result;
-        }
-
-        var evaluations = preference.CandidateEvaluations.ToDictionary(
-            candidate => candidate.ProposalId,
-            StringComparer.Ordinal);
-        if (evaluations.Count != set.Candidates.Length)
-        {
-            throw new InvalidDataException(
-                "Goal-method live candidate denominator drifted.");
-        }
-        foreach (var candidate in set.Candidates)
-        {
-            if (!evaluations.TryGetValue(
-                    candidate.Proposal.ProposalId,
-                    out var evaluation) ||
-                candidate.ProposalSha256 != evaluation.ProposalSha256 ||
-                candidate.ProposalSha256 !=
-                    AcquisitionRoutePortfolioTeacherPreferenceBuilder
-                        .ArtifactSha256(candidate.Proposal) ||
-                !candidate.Proposal.SelectedRouteOccurrenceIds.SequenceEqual(
-                    evaluation.SelectedRouteOccurrenceIds,
-                    StringComparer.Ordinal) ||
-                candidate.Admission.PortfolioAdmissionReady !=
-                    evaluation.AdmissionReady ||
-                !EqualJson(
-                    candidate.Admission.AggregateCostVector,
-                    evaluation.AggregateCostVector))
-            {
-                throw new InvalidDataException(
-                    "Goal-method live candidate artifact drifted from its deterministic evaluation.");
-            }
-        }
-
-        var admitted = preference.CandidateEvaluations.Where(candidate =>
-                candidate.AdmissionReady &&
-                candidate.AggregateCostVector is not null)
-            .ToArray();
-        if (admitted.Length == 0 ||
-            admitted.Length != preference.AdmittedCandidateCount)
-        {
-            throw new InvalidDataException(
-                "Goal-method live admitted candidate count drifted.");
-        }
-        var featureContext = new GoalMethodPairwiseFeatureContext(
-            preference.GoalId,
-            decision.Year,
-            decision.Season,
-            decision.Day,
-            decision.Time,
-            decision.TotalDay,
-            transitionIndex,
-            preference.ExpectedLedgerRevision,
-            preference.CandidateDenominatorCount,
-            preference.AdmittedCandidateCount,
-            preference.ParetoFrontierCount,
-            preference.SelectionPolicyId);
-        var scored = admitted.Select(candidate =>
-            {
-                var encoded = GoalMethodPairwiseFeatureEncoder.Encode(
-                    featureContext,
-                    candidate,
-                    checkpoint.Model);
-                var score = Dot(checkpoint.Model.Weights, encoded);
-                if (!Finite(score))
-                    throw new InvalidDataException(
-                        "Goal-method checkpoint produced a non-finite live score.");
-                return new GoalMethodPairwiseCandidateScore
-                {
-                    ProposalId = candidate.ProposalId,
-                    ProposalSha256 = candidate.ProposalSha256,
-                    SelectedRouteOccurrenceIds = candidate
-                        .SelectedRouteOccurrenceIds.ToArray(),
-                    ModelScore = Math.Round(score, 8),
-                    TeacherSelected = candidate.ProposalId ==
-                        preference.SelectedProposal?.ProposalId,
-                    OnDeterministicParetoFrontier =
-                        candidate.DominatedByProposalIds.Length == 0
-                };
-            })
-            .OrderByDescending(candidate => candidate.ModelScore)
-            .ThenBy(candidate => candidate.ProposalId, StringComparer.Ordinal)
-            .ToArray();
-        for (var index = 0; index < scored.Length; index++)
-            scored[index].Rank = index + 1;
-        result.CandidateDenominatorVerified = true;
-        result.CandidateScores = scored;
-        result.ModelTopProposalId = scored[0].ProposalId;
-        result.ModelAgreesWithTeacher = preference.SelectedProposal is null
-            ? null
-            : scored[0].ProposalId == preference.SelectedProposal.ProposalId;
-
-        string selectedId;
-        if (preference.TeacherPreferenceLabelEligible &&
-            preference.SelectedProposal is not null &&
-            preference.SelectedAdmission is not null)
-        {
-            selectedId = preference.SelectedProposal.ProposalId;
-            result.Status =
-                "ready_teacher_authoritative_live_shadow_scoring";
-            result.SelectionAuthority =
-                "deterministic_unique_strict_pareto_teacher";
-        }
-        else if (preference.BlockingReasons.Length == 1 &&
-            preference.BlockingReasons[0].StartsWith(
-                "portfolio_teacher_frontier_incomparable_or_equal:",
-                StringComparison.Ordinal) &&
-            preference.ParetoFrontierCount > 1)
-        {
-            var frontier = scored.Where(candidate =>
-                    candidate.OnDeterministicParetoFrontier)
-                .ToArray();
-            if (frontier.Length != preference.ParetoFrontierCount)
-            {
-                throw new InvalidDataException(
-                    "Goal-method live Pareto frontier count drifted.");
-            }
-            selectedId = frontier[0].ProposalId;
-            result.Status =
-                "ready_checkpoint_ranked_incomparable_frontier_shadow";
-            result.SelectionAuthority =
-                "goal_method_checkpoint_shadow_only";
-        }
-        else
-        {
-            result.Status = "blocked_live_goal_method_shadow_selection";
-            result.BlockingReasons = preference.BlockingReasons
-                .Append("goal_method_live_selection_not_permitted")
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)
-                .ToArray();
-            return result;
-        }
-
-        var selected = set.Candidates.Single(candidate =>
-            candidate.Proposal.ProposalId == selectedId);
-        if (!selected.Admission.PortfolioAdmissionReady)
-        {
-            throw new InvalidDataException(
-                "Goal-method live shadow selected a blocked candidate.");
-        }
-        result.ShadowSelectedProposal = selected.Proposal;
-        result.ShadowSelectedAdmission = selected.Admission;
-        result.BlockingReasons = Array.Empty<string>();
-        return result;
     }
-
     private static void ValidateDatasetBinding(
         GoalMethodPairwiseCheckpoint checkpoint,
         GoalMethodPairwiseTrainer.VerifiedCorpus corpus,
@@ -376,13 +275,13 @@ public sealed class GoalMethodPairwiseRanker
     private static bool Finite(double value) =>
         !double.IsNaN(value) && !double.IsInfinity(value);
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Compact),
-        JsonSerializer.Serialize(right, JsonDefaults.Compact),
-        StringComparison.Ordinal);
-
     private static string RequiredFullPath(string value, string label) =>
         string.IsNullOrWhiteSpace(value)
             ? throw new ArgumentException(label + " is required.")
             : Path.GetFullPath(value);
 }
+
+internal sealed record VerifiedGoalMethodPairwiseModel(
+    GoalMethodPairwiseCheckpoint Checkpoint,
+    string CheckpointSha256,
+    string CorpusManifestSha256);

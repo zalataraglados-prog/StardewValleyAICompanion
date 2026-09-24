@@ -2008,6 +2008,29 @@ Slice 7 remains assigned to the RTX 5070 node.
   reason. Only after the independent 19/19 coverage gate and a separate runtime promotion gate may the learned branch
   authorize portfolio commit. Formal product training and runtime model authority remain false now.
 
+### 2026-09-25: single StrategicPolicy facade implemented
+
+- The first bounded product-shaped facade now exists as `StrategicPolicy.SelectMethod`. It consumes the existing
+  authoritative portfolio scoring set and returns one `strategic_decision.v1`; it does not own candidate generation,
+  route legality, admission, reservation, compilation or execution. The decision records the state and ledger
+  identity, denominator and frontier hashes/counts, selected method, authority, model identity, replan fingerprint,
+  latency, blockers/fallbacks and separate runtime/model/training authority flags.
+- The deterministic branch is resolved before any checkpoint access. A unique strict-Pareto member remains usable
+  when the optional checkpoint or corpus is absent/corrupt; `model_invoked=false`. Compatibility shadow auditing may
+  run only after that result and its failure is recorded as a non-authoritative fallback. An incomparable/equal
+  frontier requires a verified checkpoint and scores only admitted, non-dominated frontier members. Missing or
+  invalid model evidence fails closed, and the learned result remains read-only with portfolio commit, runtime model
+  authority and formal product training all false.
+- Event-driven replan metadata recognizes day start, goal/profile/preference changes, material/currency drift,
+  reservation-ledger drift, selected-method completion, execution failure and player interruption. Identical event
+  fingerprints deduplicate instead of creating another strategic decision. Fresh mechanical validation still does
+  not imply a strategic model call.
+- `score-live-acquisition-route-goal-method-shadow` is now a compatibility adapter over the facade instead of a
+  second branching implementation. The new `select-strategic-method` command exposes the unified decision directly.
+  Full Stage-1 self-test and a separate post-refactor incomparable-frontier adapter test pass. This closes the
+  interface-convergence slice only; runtime learned authority still waits for independent 19/19 coverage and the
+  separate promotion gate.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
