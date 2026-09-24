@@ -2043,6 +2043,11 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The coverage self-test locks both the aggregate count and the exact admitted criterion IDs. Forged formal-training
   authorization and unknown source kinds remain rejected. The coverage report is still incomplete and retains
   `formal_product_training_authorized=false`; neither learned runtime authority nor portfolio commit is promoted.
+- Coverage no longer treats `requirement_set_readiness` as an implicit source-adapter flag. Each verified adapter now
+  records its explicit `teacher_source_kinds` on the methods it can derive. The acquisition portfolio adapter still
+  derives ownership only from authoritative requirement sets, while executable non-collection methods such as Skull
+  Key and pet love remain blocked by `goal_method_teacher_source_adapter_missing` until their own typed evidence
+  adapters exist.
 - The next dependency work remains source expansion and independent split-complete Teacher/native evidence for the
   other 17 criteria. A runtime promotion gate may consume only a future independently rebuilt 19/19 report, never the
   current partial count or a caller-authored authorization flag.

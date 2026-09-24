@@ -68,6 +68,9 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     row.TeacherComparisonPartitions);
                 var outcomePartitions = OrderedPartitions(
                     row.NativeOutcomePartitions);
+                var teacherSourceKinds = row.TeacherSourceKinds
+                    .Order(StringComparer.Ordinal)
+                    .ToArray();
                 var comparisonCovered = comparisonPartitions.Length > 0;
                 var outcomeCovered = outcomePartitions.Length > 0;
                 var splitComplete = RequiredPartitions.All(partition =>
@@ -79,7 +82,7 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     blockers.Add(
                         "goal_method_not_executable:" + method.Status);
                 }
-                if (method.RequirementSetReadiness.Length == 0)
+                if (teacherSourceKinds.Length == 0)
                 {
                     blockers.Add(
                         "goal_method_teacher_source_adapter_missing");
@@ -100,7 +103,7 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     blockers.Add("verified_native_outcome_split_incomplete");
                 }
                 var ready = method.Status == "executable_frontier" &&
-                    method.RequirementSetReadiness.Length > 0 &&
+                    teacherSourceKinds.Length > 0 &&
                     splitComplete;
                 return new GoalMethodTeacherCriterionCoverage(
                     criterion.CriterionId,
@@ -113,6 +116,7 @@ public static partial class GoalMethodTeacherCoverageBuilder
                         .Distinct(StringComparer.Ordinal)
                         .Order(StringComparer.Ordinal)
                         .ToArray(),
+                    teacherSourceKinds,
                     comparisonPartitions,
                     outcomePartitions,
                     comparisonCovered,
@@ -269,6 +273,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
         public HashSet<string> TeacherComparisonPartitions { get; } =
             new(StringComparer.Ordinal);
         public HashSet<string> NativeOutcomePartitions { get; } =
+            new(StringComparer.Ordinal);
+        public HashSet<string> TeacherSourceKinds { get; } =
             new(StringComparer.Ordinal);
     }
 }

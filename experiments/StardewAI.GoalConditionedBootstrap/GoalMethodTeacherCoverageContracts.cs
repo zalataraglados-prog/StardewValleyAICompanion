@@ -168,6 +168,7 @@ public sealed record GoalMethodTeacherCriterionCoverage(
     [property: JsonPropertyName("method_id")] string MethodId,
     [property: JsonPropertyName("method_status")] string MethodStatus,
     [property: JsonPropertyName("requirement_set_ids")] string[] RequirementSetIds,
+    [property: JsonPropertyName("teacher_source_kinds")] string[] TeacherSourceKinds,
     [property: JsonPropertyName("teacher_comparison_partitions")] string[] TeacherComparisonPartitions,
     [property: JsonPropertyName("native_outcome_partitions")] string[] NativeOutcomePartitions,
     [property: JsonPropertyName("teacher_comparison_covered")] bool TeacherComparisonCovered,

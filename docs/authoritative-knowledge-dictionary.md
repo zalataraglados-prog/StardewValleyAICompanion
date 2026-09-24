@@ -727,7 +727,10 @@ product training. Fresh-state denominator reconstruction, gated incomparable-fro
 The independent `goal_method_teacher_coverage_gate.v1` now makes that last statement
 machine-checkable. It rebuilds the 19-criterion goal-method frontier from its authoritative
 inputs, re-verifies each typed supervision corpus and proof chain, and derives coverage from
-requirement-set-to-method bindings. Source manifests cannot declare criterion IDs. A criterion
+verified source-adapter-to-method bindings. The acquisition portfolio adapter derives its methods
+through authoritative requirement-set ownership, while non-collection methods require their own
+future typed adapters; no method receives an adapter merely because it is executable. Source
+manifests cannot declare criterion IDs. A criterion
 is ready only when its method is executable and both an explicit Teacher comparison and a
 verified native outcome exist in train, validation, and test. The current bounded corpus has
 19 catalog-mapped criteria, 2 comparison-covered criteria, 4 outcome-covered criteria, 2 with

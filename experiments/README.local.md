@@ -224,7 +224,9 @@ once and reused rather than reimplemented per Grandpa direction.
 `build-goal-method-teacher-coverage` is the independent formal-training coverage gate.
 It rebuilds this frontier from the raw inputs instead of trusting the generated report,
 re-verifies each declared supervision corpus, and derives criterion ownership only through
-the production direction catalog and frontier requirement-set bindings. A source cannot
+the production direction catalog and a verified typed source adapter. The acquisition adapter
+derives method ownership from frontier requirement-set bindings; non-collection methods remain
+source-less until a separate adapter verifies them. A source cannot
 name or self-assert covered criteria. Coverage requires an executable method plus explicit
 Teacher comparison and verified native-outcome evidence in train, validation, and test.
 The current bounded corpus maps all 19 criteria, comparison-covers 2, outcome-covers 4,

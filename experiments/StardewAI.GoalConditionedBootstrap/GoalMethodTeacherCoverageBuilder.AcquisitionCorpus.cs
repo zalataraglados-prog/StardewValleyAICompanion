@@ -39,6 +39,12 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     return methods[0];
                 },
                 StringComparer.Ordinal);
+        foreach (var method in methodsByRequirementSet.Values
+                     .DistinctBy(method => method.MethodId))
+        {
+            evidence[method.MethodId].TeacherSourceKinds.Add(
+                source.SourceKind);
+        }
         var sourceByDataset = corpus.Manifest.Sources.ToDictionary(
             digest => digest.DatasetSha256,
             StringComparer.Ordinal);

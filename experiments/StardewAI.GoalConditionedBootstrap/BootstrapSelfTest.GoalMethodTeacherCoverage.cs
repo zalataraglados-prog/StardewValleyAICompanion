@@ -67,9 +67,25 @@ internal static partial class BootstrapSelfTest
                     "complete_community_center")
                 .All(criterion =>
                     criterion.MethodStatus == "executable_frontier" &&
+                    criterion.TeacherSourceKinds.SequenceEqual(
+                        new[]
+                        {
+                            GoalMethodTeacherCoverageSourceKinds
+                                .AcquisitionRoutePortfolioCorpus
+                        },
+                        StringComparer.Ordinal) &&
                     criterion.SplitCoverageComplete &&
                     criterion.BlockingReasons.Length == 0),
             "Community Center coverage did not become the exact admitted 2/19 slice.");
+        var directNonCollection = report.Criteria.Single(criterion =>
+            criterion.DirectionId == "obtain_skull_key");
+        Require(
+            directNonCollection.MethodStatus == "executable_frontier" &&
+            directNonCollection.TeacherSourceKinds.Length == 0 &&
+            directNonCollection.BlockingReasons.Contains(
+                "goal_method_teacher_source_adapter_missing",
+                StringComparer.Ordinal),
+            "A non-collection method was assigned an implicit requirement-set source adapter.");
 
         var reportPath = Path.Combine(
             fullOutputRoot,
