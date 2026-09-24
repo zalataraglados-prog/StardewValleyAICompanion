@@ -227,9 +227,10 @@ re-verifies each declared supervision corpus, and derives criterion ownership on
 the production direction catalog and frontier requirement-set bindings. A source cannot
 name or self-assert covered criteria. Coverage requires an executable method plus explicit
 Teacher comparison and verified native-outcome evidence in train, validation, and test.
-The 2026-09-22 bounded corpus maps all 19 criteria, comparison-covers 2, outcome-covers 4,
-and admits 0 because the evidenced collection methods remain dependency-expansion pending.
-The gate therefore reports `formal_product_training_authorized=false`. Pass a verified
+The current bounded corpus maps all 19 criteria, comparison-covers 2, outcome-covers 4,
+and admits exactly the two Community Center criteria after its dynamic denominator,
+target-date acquisition chain, and native lifecycle proof closed the shared method. The other
+17 criteria remain blocked, so the gate reports `formal_product_training_authorized=false`. Pass a verified
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
 gate against the freshly rebuilt lowering rather than a stale generated artifact.
 The current requirement report is

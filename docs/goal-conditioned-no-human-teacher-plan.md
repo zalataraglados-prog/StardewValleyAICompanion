@@ -2031,6 +2031,22 @@ Slice 7 remains assigned to the RTX 5070 node.
   interface-convergence slice only; runtime learned authority still waits for independent 19/19 coverage and the
   separate promotion gate.
 
+### 2026-09-25: Community Center enters the independent coverage gate
+
+- The `complete_community_center` dependency graph is now `complete`. Its three former blockers were closed by the
+  save-bound standard/remixed denominator, the shared target-date acquisition chain through opportunity cost and
+  rollout receipts, and the isolated native unlock/note/reward/mail/final-ceremony lifecycle proof. The dependency
+  graph continues to reuse the existing event, donation and sleep options; no second executor was introduced.
+- Rebuilding the authoritative frontier yields 4/19 executable criteria and 15/19 dependency-pending criteria. The
+  existing three-partition corpus comparison-covers 2 and native-outcome-covers 4. The exact two Community Center
+  criteria now pass both channels in train, validation and test, so independent coverage advances from 0/19 to 2/19.
+- The coverage self-test locks both the aggregate count and the exact admitted criterion IDs. Forged formal-training
+  authorization and unknown source kinds remain rejected. The coverage report is still incomplete and retains
+  `formal_product_training_authorized=false`; neither learned runtime authority nor portfolio commit is promoted.
+- The next dependency work remains source expansion and independent split-complete Teacher/native evidence for the
+  other 17 criteria. A runtime promotion gate may consume only a future independently rebuilt 19/19 report, never the
+  current partial count or a caller-authored authorization flag.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

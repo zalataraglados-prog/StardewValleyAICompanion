@@ -37,18 +37,39 @@ internal static partial class BootstrapSelfTest
             report.CriterionPointSum == 21 &&
             report.CriterionDenominatorCount == 19 &&
             report.CatalogMappedCriterionCount == 19 &&
-            report.ExecutableCriterionCount == 2 &&
+            report.ExecutableCriterionCount == 4 &&
             report.TeacherComparisonCoveredCriterionCount == 2 &&
             report.NativeOutcomeCoveredCriterionCount == 4 &&
             report.SplitCompleteTeacherCriterionCount == 2 &&
-            report.CoverageGateReadyCriterionCount == 0 &&
+            report.CoverageGateReadyCriterionCount == 2 &&
             report.Criteria.Length == 19 &&
             !report.CoverageGateSatisfied &&
             !report.FormalProductTrainingAuthorized &&
             report.BlockingReasons.SequenceEqual(
-                new[] { "goal_method_teacher_coverage_incomplete:0/19" },
+                new[] { "goal_method_teacher_coverage_incomplete:2/19" },
                 StringComparer.Ordinal),
             "Current 19/19 goal-method Teacher coverage gate drifted.");
+        var readyCriteria = report.Criteria
+            .Where(criterion => criterion.CoverageGateReady)
+            .Select(criterion => criterion.CriterionId)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Require(
+            readyCriteria.SequenceEqual(
+                new[]
+                {
+                    "community_center_access_or_completion",
+                    "community_center_accessible_bonus"
+                },
+                StringComparer.Ordinal) &&
+            report.Criteria
+                .Where(criterion => criterion.DirectionId ==
+                    "complete_community_center")
+                .All(criterion =>
+                    criterion.MethodStatus == "executable_frontier" &&
+                    criterion.SplitCoverageComplete &&
+                    criterion.BlockingReasons.Length == 0),
+            "Community Center coverage did not become the exact admitted 2/19 slice.");
 
         var reportPath = Path.Combine(
             fullOutputRoot,

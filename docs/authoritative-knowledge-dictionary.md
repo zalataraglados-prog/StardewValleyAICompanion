@@ -731,6 +731,9 @@ requirement-set-to-method bindings. Source manifests cannot declare criterion ID
 is ready only when its method is executable and both an explicit Teacher comparison and a
 verified native outcome exist in train, validation, and test. The current bounded corpus has
 19 catalog-mapped criteria, 2 comparison-covered criteria, 4 outcome-covered criteria, 2 with
-both channels split-complete, and 0 gate-ready criteria because those collection methods are
-still `pending_dependency_expansion`. This report is a readiness audit only and always retains
-`formal_product_training_authorized=false`.
+both channels split-complete, and 2 gate-ready criteria. The admitted pair is exactly
+`community_center_access_or_completion` plus `community_center_accessible_bonus`: their shared
+Community Center method became executable only after the save-bound standard/remixed denominator,
+all target-date acquisition axes, and the native unlock/note/reward/mail/final-ceremony lifecycle
+were independently closed. The other 17 criteria remain blocked. This report is a readiness audit
+only and always retains `formal_product_training_authorized=false`.

@@ -1295,7 +1295,7 @@
     },
     {
       "direction_id": "complete_community_center",
-      "status": "in_progress",
+      "status": "complete",
       "completion_node_id": "dependency.complete_community_center.native_completion",
       "source_ids": [
         "native.utility",
@@ -1308,11 +1308,7 @@
         "runtime_data_objects",
         "authoritative_dependency_graph"
       ],
-      "blockers": [
-        "prove the native Community Center unlock and Junimo-text event chain then bind the active standard or remixed bundle denominator instead of assuming the locked standard inventory is the live save",
-        "lower every selected bundle acquisition route, including the EVD-334-admitted artifact-spot route, through season weather clock quality facility and reservation constraints",
-        "prove all room rewards pending mail and native completion ceremony settlement through fresh receipts before the Year 3 evaluation"
-      ],
+      "blockers": [],
       "nodes": [
         {
           "id": "dependency.complete_community_center.native_completion",
