@@ -123,13 +123,10 @@ internal static class QueueExecutionReceiptValidator
                     StringComparison.Ordinal) ||
                 !string.Equals(step.OptionId, expectedItem.OptionId,
                     StringComparison.Ordinal) ||
-                expectedSteps.Length != 1 ||
-                !string.Equals(
-                    step.PrimitiveKind,
-                    expectedSteps.Length == 1
-                        ? expectedSteps[0].StepType
-                        : string.Empty,
-                    StringComparison.Ordinal))
+                !ReceiptPrimitiveIdentityMatches(
+                    expectedItem,
+                    expectedSteps,
+                    step.PrimitiveKind))
                 reasons.Add("queue_execution_receipt_step_identity_mismatch:" + index);
             if (!string.Equals(
                     step.CompiledCommandStateHash,
@@ -177,6 +174,41 @@ internal static class QueueExecutionReceiptValidator
             reasons.Add("queue_execution_receipt_final_step_boundary_mismatch");
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
+
+    private static bool ReceiptPrimitiveIdentityMatches(
+        ActionQueueItem item,
+        CompiledActionStep[] steps,
+        string primitiveKind)
+    {
+        if (steps.Length == 1)
+        {
+            return string.Equals(
+                primitiveKind,
+                steps[0].StepType,
+                StringComparison.Ordinal);
+        }
+
+        var expectedMacroPrimitive = item.OptionId switch
+        {
+            "executor.sleep" when HasExactStepTypes(
+                steps,
+                "move_to_bed_adjacent",
+                "step_onto_sleep_touch_tile",
+                "confirm_sleep_yes") => "sleep",
+            _ => string.Empty
+        };
+        return !string.IsNullOrWhiteSpace(expectedMacroPrimitive) &&
+            string.Equals(
+                primitiveKind,
+                expectedMacroPrimitive,
+                StringComparison.Ordinal);
+    }
+
+    private static bool HasExactStepTypes(
+        CompiledActionStep[] steps,
+        params string[] expected) =>
+        steps.Select(step => step.StepType)
+            .SequenceEqual(expected, StringComparer.Ordinal);
 }
 
 internal static class ExecutionReceiptValidationSupport

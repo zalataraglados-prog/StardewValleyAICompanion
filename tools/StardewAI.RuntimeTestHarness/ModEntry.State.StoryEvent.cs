@@ -16,6 +16,10 @@ public sealed partial class ModEntry
             LastCommandIndex = nativeEvent.CurrentCommand;
             InitialLocationId = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
             InitialEventSeen = Game1.player.eventsSeen?.Contains(nativeEvent.id) == true;
+            MaxRuntimeTicks = Math.Clamp(
+                pending.Request.StoryEventMaxRuntimeTicks ?? 14400,
+                60,
+                21600);
         }
 
         public PendingExecution Pending { get; }
@@ -25,8 +29,10 @@ public sealed partial class ModEntry
         public int LastCommandIndex { get; set; }
         public string InitialLocationId { get; }
         public bool InitialEventSeen { get; }
+        public int MaxRuntimeTicks { get; }
         public int ElapsedTicks { get; set; }
         public int StalledTicks { get; set; }
+        public int MissingEventTicks { get; set; }
         public int DialogueClicks { get; set; }
         public int MenuActions { get; set; }
         public bool ProgressObserved { get; set; }

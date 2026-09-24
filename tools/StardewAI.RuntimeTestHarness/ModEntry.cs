@@ -272,6 +272,7 @@ public sealed partial class ModEntry : Mod
 
         helper.Events.GameLoop.DayStarted += OnDayStartedForShippingReceipts;
         helper.Events.GameLoop.DayStarted += OnDayStartedForPetBowlReceipts;
+        helper.Events.GameLoop.Saved += OnNativeSaveCommitted;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoadedForPetBowlReceipts;
         ReconcileShippingReceipts();
     }
@@ -1835,6 +1836,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_community_center_donation")
             {
                 pending.Completion.SetResult(ExecuteSetupCommunityCenterDonationFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_community_center_lifecycle")
+            {
+                pending.Completion.SetResult(ExecuteSetupCommunityCenterLifecycleFixture(pending.Request));
                 return;
             }
 

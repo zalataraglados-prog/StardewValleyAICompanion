@@ -13,8 +13,15 @@ public sealed partial class ActionQueueCompiler
     private const string CompilerStoryEventNativeContract =
         "live_Event_Update_tryEventCommand_and_DialogueBox_native_input_until_event_end_or_fresh_decision_minigame_or_player_control_boundary_without_skipEvent_or_direct_event_state_mutation";
 
-    private static CompiledActionStep[] CompileAdvanceStoryEventStep(SmallModelAction action, SnapshotEnvelope _) =>
-        new[]
+    private static CompiledActionStep[] CompileAdvanceStoryEventStep(
+        SmallModelAction action,
+        SnapshotEnvelope _)
+    {
+        var maxRuntimeTicks = Math.Clamp(
+            ReadIntParameter(action, "story_event_max_runtime_ticks") ?? 14400,
+            60,
+            21600);
+        return new[]
         {
             Step(
                 "advance_story_event",
@@ -22,8 +29,9 @@ public sealed partial class ActionQueueCompiler
                 ":command=" + ReadParameter(action, "story_event_command_index") +
                 ":response=" + (ReadParameter(action, "story_event_response_key") is { Length: > 0 } response ? response : "none"),
                 "native_event_progressed_to_end_or_next_fresh_boundary=true",
-                7200)
+                maxRuntimeTicks)
         };
+    }
 
     private static string[] ValidateAdvanceStoryEventPlan(SmallModelAction action, SnapshotEnvelope snapshot)
     {

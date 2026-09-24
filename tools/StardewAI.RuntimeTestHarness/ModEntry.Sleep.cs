@@ -25,6 +25,15 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
+    private void OnNativeSaveCommitted(object? sender, SavedEventArgs e)
+    {
+        if (activeSleep is { } sleep &&
+            Game1.Date.TotalDays == sleep.StartTotalDays + 1)
+        {
+            sleep.SawNativeSaveCommit = true;
+        }
+    }
+
     private void StartSleep(PendingExecution pending)
     {
         var reasons = ValidateExecutionRequest(pending.Request);
@@ -261,14 +270,8 @@ public sealed partial class ModEntry : Mod
                 {
                     ReleaseSmapiLeftButtonOverride();
                 }
-                try
+                if (!TrySettlePostSleepReceipts(sleep))
                 {
-                    TrySettleActiveRunPendingShippingReceipts();
-                }
-                catch (Exception ex)
-                {
-                    Monitor.Log($"Post-sleep shipping receipt settlement threw: {ex.Message}", LogLevel.Error);
-                    CompleteBlockedSleep(sleep, "post_sleep_receipt_settlement_threw:" + ex.GetType().Name);
                     return;
                 }
                 var reasons = sleep.Mode == SleepMode.Tent
@@ -290,6 +293,42 @@ public sealed partial class ModEntry : Mod
 
             if (menu is DialogueBox postSleepDialogue)
             {
+                if (IsPostSleepStoryEventHandoff(sleep, postSleepDialogue))
+                {
+                    if (!sleep.SawNativeSaveCommit ||
+                        Game1.game1.IsSaving ||
+                        SaveGame.IsProcessing)
+                    {
+                        sleep.PostSleepWaitTicks++;
+                        if (sleep.PostSleepWaitTicks > 1800)
+                        {
+                            CompleteBlockedSleep(
+                                sleep,
+                                "native_save_not_completed_before_story_event_handoff");
+                        }
+                        return;
+                    }
+
+                    if (!TrySettlePostSleepReceipts(sleep))
+                    {
+                        return;
+                    }
+
+                    CompleteSleep(
+                        sleep,
+                        "verified",
+                        new[]
+                        {
+                            sleep.Mode == SleepMode.Tent
+                                ? "SleepTent_Yes_confirmed"
+                                : "sleep_yes_confirmed",
+                            "new_day_observed",
+                            "native_save_committed",
+                            "post_sleep_story_event_handoff"
+                        });
+                    return;
+                }
+
                 if (!CanAdvancePostSleepDialogue(sleep, postSleepDialogue))
                 {
                     CompleteBlockedSleep(
@@ -511,6 +550,37 @@ public sealed partial class ModEntry : Mod
             (dialogue.responses is null || dialogue.responses.Length == 0) &&
             !Game1.eventUp &&
             dialogue.characterDialogue is null;
+    }
+
+    private static bool IsPostSleepStoryEventHandoff(
+        ActiveSleep sleep,
+        DialogueBox dialogue)
+    {
+        return Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
+            Game1.eventUp &&
+            Game1.CurrentEvent is not null &&
+            !dialogue.isQuestion &&
+            (dialogue.responses is null || dialogue.responses.Length == 0) &&
+            dialogue.characterDialogue is not null;
+    }
+
+    private bool TrySettlePostSleepReceipts(ActiveSleep sleep)
+    {
+        try
+        {
+            TrySettleActiveRunPendingShippingReceipts();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Monitor.Log(
+                $"Post-sleep shipping receipt settlement threw: {ex.Message}",
+                LogLevel.Error);
+            CompleteBlockedSleep(
+                sleep,
+                "post_sleep_receipt_settlement_threw:" + ex.GetType().Name);
+            return false;
+        }
     }
 
     private void TickShipSummaryClosePhase(ActiveSleep sleep, ShippingMenu shippingMenu)

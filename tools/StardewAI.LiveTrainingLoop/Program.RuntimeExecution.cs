@@ -686,7 +686,8 @@ static partial class Program
         aggregate["before_game_tick"] = ReadLong(beforeSnapshot, "game_tick");
         aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
-        if (options.UseTeacherPreferenceQueue)
+        if (options.UseTeacherPreferenceQueue ||
+            options.EmitQueueExecutionReceipt)
         {
             var receiptSteps = stepResults.OfType<JsonObject>().ToArray();
             var completionMarkerExact = receiptSteps.Length > 0 &&

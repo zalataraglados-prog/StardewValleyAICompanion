@@ -18,6 +18,9 @@ public sealed partial class ModEntry
             return StoryEventFixtureBlocked(request, "story_event_fixture_requires_clear_event_boundary");
 
         var profile = request.StoryEventBoundaryKind;
+        if (IsCommunityCenterLifecycleEventFixture(profile))
+            return ExecuteSetupCommunityCenterLifecycleEventFixture(request, profile);
+
         var eventId = profile switch
         {
             "automatic_fixture" => "EVD322Automatic",

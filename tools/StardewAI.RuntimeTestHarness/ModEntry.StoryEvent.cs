@@ -58,6 +58,10 @@ public sealed partial class ModEntry
             return;
         }
 
+        if (holdCommunityCenterLifecycleEventForExecution)
+        {
+            holdCommunityCenterLifecycleEventForExecution = false;
+        }
         activeStoryEvent = new ActiveStoryEvent(pending, nativeEvent);
     }
 
@@ -82,7 +86,7 @@ public sealed partial class ModEntry
     private void TickStoryEvent(ActiveStoryEvent active)
     {
         active.ElapsedTicks++;
-        if (active.ElapsedTicks > 7200)
+        if (active.ElapsedTicks > active.MaxRuntimeTicks)
         {
             CompleteStoryEventBlocked(active, "story_event_runtime_timeout");
             return;
@@ -91,9 +95,24 @@ public sealed partial class ModEntry
         var currentEvent = Game1.CurrentEvent;
         if (currentEvent is null || !Game1.eventUp)
         {
-            CompleteStoryEventApplied(active, "event_completed");
+            active.MissingEventTicks++;
+            var eventSeen = Game1.player.eventsSeen?.Contains(
+                active.NativeEvent.id) == true;
+            if (eventSeen ||
+                (!active.NativeEvent.markEventSeen && !Game1.eventUp))
+            {
+                CompleteStoryEventApplied(active, "event_completed");
+                return;
+            }
+            if (active.MissingEventTicks > 600)
+            {
+                CompleteStoryEventBlocked(
+                    active,
+                    "story_event_missing_without_native_seen_receipt");
+            }
             return;
         }
+        active.MissingEventTicks = 0;
         if (!ReferenceEquals(currentEvent, active.NativeEvent))
         {
             CompleteStoryEventBlocked(active, "story_event_instance_changed_without_fresh_snapshot");

@@ -61,6 +61,7 @@ public sealed partial class ModEntry
             "debug.setup_tailoring_fixture",
             "debug.setup_collection_task_fixture",
             "debug.setup_community_center_donation",
+            "debug.setup_community_center_lifecycle",
             "debug.setup_crab_pot_target",
             "debug.setup_debris_target",
             "debug.setup_daily_quest_acceptance",

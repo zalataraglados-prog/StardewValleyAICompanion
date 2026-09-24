@@ -123,6 +123,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("story_event_command_raw", ReadString(row, "current_command_raw")),
             Parameter("story_event_boundary_kind", ReadString(row, "boundary_kind")),
             Parameter("story_event_native_contract", ReadString(row, "native_contract")),
-            Parameter("story_event_max_runtime_ticks", "7200")
+            Parameter("story_event_max_runtime_ticks", "14400")
         };
 }

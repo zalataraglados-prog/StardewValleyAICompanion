@@ -95,6 +95,125 @@ public sealed class CommunityCenterDonationMainlineTests
     }
 
     [Fact]
+    public void LifecycleFixtureStartsLockedRuntimeEventsWithoutCompletingThem()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.CommunityCenterLifecycleFixture.cs"));
+
+        Assert.Contains("Data\\\\Events\\\\Town", source, StringComparison.Ordinal);
+        Assert.Contains("Data\\\\Events\\\\WizardHouse", source, StringComparison.Ordinal);
+        Assert.Contains("611439/j 4/t 800 1300/w sunny/a 0 54/H", source, StringComparison.Ordinal);
+        Assert.Contains("112/n seenJunimoNote", source, StringComparison.Ordinal);
+        Assert.Contains("191393/Hn ccFishTank", source, StringComparison.Ordinal);
+        Assert.Contains("location.checkForEvents()", source, StringComparison.Ordinal);
+        Assert.Contains("spec.AssetName", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "Game1.drawObjectDialogue",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "holdCommunityCenterLifecycleEventForExecution = true",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("skipEvent", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("eventsSeen.Add", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("mailReceived.Add(\"ccDoorUnlock\")", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("mailReceived.Add(\"canReadJunimoText\")", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LifecycleSmokeUsesIsolatedSaveAndAllFiveAdmissions()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeCommunityCenterLifecycleSmoke.ps1"));
+
+        Assert.Contains("Copy-Item -LiteralPath $sourceSavePath", source, StringComparison.Ordinal);
+        Assert.Contains("$isolatedSavesPath", source, StringComparison.Ordinal);
+        Assert.Contains("build-community-center-lifecycle-receipt", source, StringComparison.Ordinal);
+        Assert.Contains("--emit-queue-execution-receipt", source, StringComparison.Ordinal);
+        Assert.Contains("initial_unlock_event", source, StringComparison.Ordinal);
+        Assert.Contains("first_junimo_note_interaction", source, StringComparison.Ordinal);
+        Assert.Contains("junimo_text_unlock_event", source, StringComparison.Ordinal);
+        Assert.Contains("room_mail_day_settlement", source, StringComparison.Ordinal);
+        Assert.Contains("final_ceremony_event", source, StringComparison.Ordinal);
+        Assert.Contains("05a-post-sleep-story-event", source, StringComparison.Ordinal);
+        Assert.Contains("06a-final-ceremony-to-decision", source, StringComparison.Ordinal);
+        Assert.Contains("advance_story_event_choice", source, StringComparison.Ordinal);
+        Assert.Contains("dialogue_responses", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "native_interstitial_not_lifecycle_transition",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains("expected_lifecycle_transition_count = 5", source, StringComparison.Ordinal);
+
+        var loopOptions = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "LiveTrainingOptions.cs"));
+        var loopExecution = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecution.cs"));
+        Assert.Contains("EmitQueueExecutionReceipt", loopOptions, StringComparison.Ordinal);
+        Assert.Contains(
+            "options.EmitQueueExecutionReceipt",
+            loopExecution,
+            StringComparison.Ordinal);
+        Assert.Contains("queue_execution_receipt.v1", loopExecution, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SleepHandsOffAConfirmedNewDayStoryEventToTheStoryExecutor()
+    {
+        var entry = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Sleep.cs"));
+        var handoffStart = source.IndexOf(
+            "private static bool IsPostSleepStoryEventHandoff",
+            StringComparison.Ordinal);
+        var handoffEnd = source.IndexOf(
+            "private bool TrySettlePostSleepReceipts",
+            handoffStart,
+            StringComparison.Ordinal);
+        Assert.True(handoffStart >= 0 && handoffEnd > handoffStart);
+        var handoff = source[handoffStart..handoffEnd];
+
+        Assert.Contains("Game1.CurrentEvent is not null", handoff, StringComparison.Ordinal);
+        Assert.Contains("Game1.eventUp", handoff, StringComparison.Ordinal);
+        Assert.Contains("!dialogue.isQuestion", handoff, StringComparison.Ordinal);
+        Assert.DoesNotContain("TryApplySmapi", handoff, StringComparison.Ordinal);
+        Assert.DoesNotContain("skipEvent", handoff, StringComparison.Ordinal);
+        Assert.Contains("!sleep.SawNativeSaveCommit", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "native_save_not_completed_before_story_event_handoff",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains("post_sleep_story_event_handoff", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "helper.Events.GameLoop.Saved += OnNativeSaveCommitted",
+            entry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "private void OnNativeSaveCommitted",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains("sleep.SawNativeSaveCommit = true", source, StringComparison.Ordinal);
+
+        var admission = File.ReadAllText(FindRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "QueueExecutionReceiptValidator.cs"));
+        Assert.Contains("ReceiptPrimitiveIdentityMatches", admission, StringComparison.Ordinal);
+        Assert.Contains("HasExactStepTypes", admission, StringComparison.Ordinal);
+        Assert.Contains("\"executor.sleep\" when HasExactStepTypes", admission, StringComparison.Ordinal);
+        Assert.Contains("\"sleep\"", admission, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ExactBundleDonationFlowsThroughCandidatePlanAndActionQueue()
     {
         var snapshot = Snapshot(completedBefore: 1);

@@ -1953,8 +1953,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   `story.advance_event`; neither is incorrectly credited to the last donation.
 - Static focused tests lock the event identities and hashes, reject direct progress mutation, verify the last-star wait,
   accept a complete donation projection, and reject receipts with a missing room-mail or Wizard-letter side effect.
-  The next runtime gate is one isolated fresh-save sequence covering all five receipt kinds before the later single strategic-policy
-  facade can promote any Community Center row to product training.
+- The isolated runtime gate passed in
+  `artifacts/runtime-community-center-lifecycle/runtime-community-center-lifecycle-20260924-174253/summary.json`.
+  It copied but did not modify the source save, executed the native `611439` unlock, first Junimo note, `112` Wizard
+  event, final bundle donation, native sleep/day settlement and `191393` ceremony, and admitted all five lifecycle
+  transitions as fresh training labels. The final projection was `completion_admitted`.
+- Runtime evidence exposed and closed three cross-boundary gaps. Ordinary story-event requests now carry a bounded
+  `story_event_max_runtime_ticks=14400`, which covers the exact current `112` script rather than timing out during its
+  long native pauses. Sleep observes SMAPI's native `GameLoop.Saved` receipt and can finish at a new-day story-event
+  handoff without consuming that event's dialogue; the naturally triggered `558291` Grandpa evaluation was then
+  handled by the existing story executor as a non-lifecycle interstitial. Sequential receipt admission remains strict,
+  but now recognizes the exact three-step `executor.sleep -> sleep` macro instead of requiring every queue item to
+  contain exactly one compiled step.
+- The final ceremony is not modeled as one decision-free action. One automatic story action advances to the native
+  command-99 question boundary; a fresh `advance_story_event_choice` candidate binds a typed response and completes
+  the remaining event. Neither phase calls `skipEvent` or writes event/mail/completion flags. This closes the runtime
+  lifecycle gate; formal product training still waits for the later single strategic-policy facade and its remaining
+  admission gates.
 
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 

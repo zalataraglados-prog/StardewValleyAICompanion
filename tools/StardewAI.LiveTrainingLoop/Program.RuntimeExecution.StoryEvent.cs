@@ -14,6 +14,9 @@ static partial class Program
         request.StoryEventCommandIndex = ReadQueueParameterInt(item, "story_event_command_index");
         request.StoryEventCommandRaw = ReadQueueParameterString(item, "story_event_command_raw");
         request.StoryEventBoundaryKind = ReadQueueParameterString(item, "story_event_boundary_kind");
+        request.StoryEventMaxRuntimeTicks = ReadQueueParameterInt(
+            item,
+            "story_event_max_runtime_ticks");
         request.StoryEventQuestionKey = ReadQueueParameterString(item, "story_event_question_key");
         request.StoryEventResponseIndex = ReadQueueParameterInt(item, "story_event_response_index");
         request.StoryEventResponseKey = ReadQueueParameterString(item, "story_event_response_key");
