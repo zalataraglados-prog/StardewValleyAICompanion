@@ -221,6 +221,52 @@ internal static partial class BootstrapSelfTest
                     new[] { contradictoryChopCandidate }).Length == 0,
             "A broad native chop source overrode a contradictory candidate item identity.");
 
+        var geodeCandidate = CloneCandidate(animalCandidate);
+        geodeCandidate.OptionId = "processing.crack_geode";
+        geodeCandidate.Kind = "crack_geode";
+        geodeCandidate.QualifiedItemId = "(O)535";
+        geodeCandidate.Parameters = geodeCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
+            {
+                Parameter("geode_expected_output_qid", "(O)538"),
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"native_geode_drop\",\"source_id\":\"geode:535:0:random:0\",\"qualified_item_id\":\"(O)538\"}]")
+            }).ToArray();
+        var geodeRequirement = requirement with
+        {
+            QualifiedItemId = "(O)538",
+            RouteKind = "native_geode_drop",
+            SourceId = "geode:535:0:random:0"
+        };
+        var geodeLowering = lowered with
+        {
+            RouteKind = geodeRequirement.RouteKind,
+            SourceId = geodeRequirement.SourceId,
+            EndpointOptionIds = new[] { "processing.crack_geode" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    geodeRequirement,
+                    geodeLowering,
+                    snapshot,
+                    new[] { geodeCandidate }).Length == 1,
+            "A geode input candidate did not bind its exact projected output source.");
+        var wrongGeodeOutput = CloneCandidate(geodeCandidate);
+        wrongGeodeOutput.Parameters = wrongGeodeOutput.Parameters
+            .Select(parameter => parameter.Name ==
+                "geode_expected_output_qid"
+                ? Parameter(parameter.Name, "(O)542")
+                : parameter)
+            .ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    geodeRequirement,
+                    geodeLowering,
+                    snapshot,
+                    new[] { wrongGeodeOutput }).Length == 0,
+            "A geode candidate with the wrong projected output was admitted.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

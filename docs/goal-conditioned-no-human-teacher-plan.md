@@ -2160,10 +2160,11 @@ Slice 7 remains assigned to the RTX 5070 node.
   independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
   every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
   uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
-- Exact live source proof currently covers 23 of the 33 authoritative lowering route kinds: shops, crops, location and
+- Exact live source proof currently covers 25 of the 33 authoritative lowering route kinds: shops, crops, location and
   mine fishing, crab pots, regular and deluxe animal products, fish ponds, fruit trees, location forage, solar panels,
   base wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, bush and tea harvest,
-  spring onions, ginger, tree moss, location and object-data artifact spots, and learned cooking recipes. Animal,
+  spring onions, ginger, tree moss, location and object-data artifact spots, explicit and bounded-default geode drops,
+  and learned cooking recipes. Animal,
   fish-pond, fruit-tree, forage, solar-panel, artifact-spot and wild-tree candidates
   derive typed source rows from live entity state plus the same native `Data/FarmAnimals`, `Data/FishPondData`, `Data/FruitTrees`,
   `Data/Locations`, `Data/Objects`, `Data/Machines` or `Data/WildTrees` identity used by the authoritative inventory.
@@ -2174,6 +2175,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   Artifact-spot source labels are recorded during the existing day/save-seeded native output replay: exact location rows
   retain their `Default` or effective location-data index, while `RANDOM_ARTIFACT_FOR_DIG_SPOT` results are rebound to
   the matching live `Data/Objects.ArtifactSpotChances` entry without an additional RNG call.
+  Geode candidates retain the input geode in `qualified_item_id`; acquisition matching instead requires the exact
+  replayed `geode_expected_output_qid` plus a matching `Data/Objects.GeodeDrops` row. The native default branch is
+  admitted only for the dictionary's explicit `(O)82` route, not generalized to unrelated default ore outcomes.
   Broad action-kind aliases for radioactive nodes, buried mine items and geode outcomes were deliberately rejected
   because they do not prove that this candidate produces the selected item. All remaining source kinds fail closed
   without a queue.

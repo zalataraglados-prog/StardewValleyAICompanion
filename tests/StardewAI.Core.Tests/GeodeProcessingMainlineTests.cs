@@ -90,6 +90,27 @@ public sealed class GeodeProcessingMainlineTests
     }
 
     [Fact]
+    public void ExactProjectedOutputCarriesItsAuthoritativeGeodeDropRow()
+    {
+        var candidate = Assert.Single(Assert.Single(Evaluate(Snapshot(
+            "Blacksmith",
+            exactDropSource: true)).Options).EventCandidates);
+
+        AssertParameter(
+            candidate.Parameters,
+            "geode_expected_output_qid",
+            "(O)538");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value.Contains(
+                "geode:535:0:random:0",
+                StringComparison.Ordinal) &&
+            parameter.Value.Contains(
+                "native_geode_drop",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void CapabilityAndRuntimeSourcesOwnOneNativeMutationPath()
     {
         foreach (var optionId in new[] { OptionId, "executor.crack_geode" })
@@ -137,9 +158,25 @@ public sealed class GeodeProcessingMainlineTests
     };
 
     private static SnapshotEnvelope Snapshot(string playerLocation, bool capacity = true,
-        string? serviceStatus = null, bool includeRoute = false)
+        string? serviceStatus = null, bool includeRoute = false,
+        bool exactDropSource = false)
     {
         serviceStatus ??= playerLocation == "Blacksmith" ? "ready" : "route_to_blacksmith_required";
+        var outputQualifiedItemId = exactDropSource ? "(O)538" : "(O)378";
+        var pickupEffectKind = exactDropSource
+            ? "mineral_discovery"
+            : "copper_found_counter";
+        var authoritativeRouteSources = exactDropSource
+            ? new object[]
+            {
+                new
+                {
+                    route_kind = "native_geode_drop",
+                    source_id = "geode:535:0:random:0",
+                    qualified_item_id = "(O)538"
+                }
+            }
+            : Array.Empty<object>();
         var projection = new
         {
             schema_version = "geode_processing.v1", projection_status = "complete_locked_base_1.6.15",
@@ -153,10 +190,11 @@ public sealed class GeodeProcessingMainlineTests
             inventory_inputs = new[] { new { slot_index = 0, qualified_item_id = "(O)535", item_id = "535",
                 display_name = "Geode", stack_before = capacity ? 2 : 2, quality = 0, locked_base_1_6_15 = true,
                 output_capacity_allowed = capacity, kind = "exact", status = "available",
-                expected_output = new { qualified_item_id = "(O)378", stack = 3, quality = 0, set_flag_on_pickup = "",
-                    inventory_persists = true, pickup_effect_kind = "copper_found_counter", expected_mail_additions = Array.Empty<string>() },
-                accepted_outputs = new[] { new { qualified_item_id = "(O)378", stack = 3, quality = 0, set_flag_on_pickup = "",
-                    inventory_persists = true, pickup_effect_kind = "copper_found_counter", expected_mail_additions = Array.Empty<string>() } },
+                expected_output = new { qualified_item_id = outputQualifiedItemId, stack = 3, quality = 0, set_flag_on_pickup = "",
+                    inventory_persists = true, pickup_effect_kind = pickupEffectKind, expected_mail_additions = Array.Empty<string>() },
+                accepted_outputs = new[] { new { qualified_item_id = outputQualifiedItemId, stack = 3, quality = 0, set_flag_on_pickup = "",
+                    inventory_persists = true, pickup_effect_kind = pickupEffectKind, expected_mail_additions = Array.Empty<string>() } },
+                authoritative_route_sources = authoritativeRouteSources,
                 expected_mail_additions = Array.Empty<string>(), reason = "seeded_exact" } },
             counter_action_tiles = new[] { new { tile_x = 3, tile_y = 3, action_raw = "Blacksmith", action_token = "Blacksmith" } },
             native_contract = NativeContract

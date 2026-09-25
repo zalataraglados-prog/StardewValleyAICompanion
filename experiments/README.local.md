@@ -282,7 +282,8 @@ ranking, and source-evidence lineage. Legacy high-level `option_request` queues 
 Exact source binding currently covers shops, crops, target-date location or mine fish, crab-pot
 outputs, regular or deluxe animal products, fish ponds, fruit trees, location forage, solar panels, base
 wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, and fixed native bush, tea, spring-onion,
-ginger, tree-moss harvests, location and object-data artifact spots, and learned cooking recipes. Other route kinds fail
+ginger, tree-moss harvests, location and object-data artifact spots, explicit and bounded-default geode drops, and
+learned cooking recipes. Other route kinds fail
 closed until their live candidates expose exact source identity. A selected item with more than one distinct
 matching source row also fails closed rather than creating an ambiguous teacher label. Wild-tree chopping is the
 bounded exception: its complete output domain remains visible, while the dispatch projection selects the lowest

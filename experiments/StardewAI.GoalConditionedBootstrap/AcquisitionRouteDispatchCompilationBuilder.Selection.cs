@@ -93,6 +93,22 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return true;
         }
 
+        if (requirement.RouteKind is "native_geode_drop" or
+                "native_geode_default_drop" &&
+            candidate.Kind == "crack_geode" &&
+            TryReadUniqueParameter(
+                candidate,
+                "geode_expected_output_qid",
+                out var geodeOutput) &&
+            string.Equals(
+                geodeOutput,
+                requirement.QualifiedItemId,
+                StringComparison.Ordinal))
+        {
+            evidence = "candidate.geode_expected_output_qid";
+            return true;
+        }
+
         if (string.IsNullOrWhiteSpace(candidate.QualifiedItemId) &&
             CandidateDeclaresUniqueAuthoritativeRouteItem(
                 candidate,

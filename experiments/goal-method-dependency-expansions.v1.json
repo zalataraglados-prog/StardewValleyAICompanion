@@ -1744,6 +1744,8 @@
               "native_location_forage_spawn",
               "native_location_artifact_spot",
               "native_object_artifact_spot_chance",
+              "native_geode_drop",
+              "native_geode_default_drop",
               "native_solar_panel_output",
               "native_wild_tree_seed",
               "native_wild_tree_seed_drop",
