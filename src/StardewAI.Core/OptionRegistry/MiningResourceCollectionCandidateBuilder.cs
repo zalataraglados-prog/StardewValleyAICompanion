@@ -158,7 +158,7 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter(
                             "authoritative_route_sources_json",
                             MiningAuthoritativeRouteSourceBinding
-                                .ReadSelectedMonsterSources(
+                                .ReadSelectedStepSources(
                                     snapshot,
                                     floorStep)),
                         Parameter("latest_exit_time", "2400"),

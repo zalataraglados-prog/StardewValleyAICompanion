@@ -8,9 +8,24 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
 {
-    internal static class MiningAuthoritativeRouteSourceBinding
+    internal static partial class MiningAuthoritativeRouteSourceBinding
     {
-        public static string ReadSelectedMonsterSources(
+        public static string ReadSelectedStepSources(
+            SnapshotEnvelope snapshot,
+            MiningFloorStepPlan floorStep)
+        {
+            return floorStep.StepKind switch
+            {
+                MiningFloorStepKinds.CombatMonster or
+                    MiningFloorStepKinds.ShootMonster =>
+                    ReadSelectedMonsterSources(snapshot, floorStep),
+                MiningFloorStepKinds.MineStone =>
+                    ReadSelectedStoneSources(snapshot, floorStep),
+                _ => "[]"
+            };
+        }
+
+        private static string ReadSelectedMonsterSources(
             SnapshotEnvelope snapshot,
             MiningFloorStepPlan floorStep)
         {
@@ -54,7 +69,7 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var expectedSourceId = "monster:" + floorStep.TargetName;
-            var sources = new List<MonsterRouteSource>();
+            var sources = new List<MiningRouteSource>();
             foreach (var row in sourceRows.EnumerateArray())
             {
                 if (row.ValueKind != JsonValueKind.Object)
@@ -76,12 +91,18 @@ namespace StardewAI.Core.OptionRegistry
                     return "[]";
                 }
 
-                sources.Add(new MonsterRouteSource(
+                sources.Add(new MiningRouteSource(
                     routeKind,
                     sourceId,
                     qualifiedItemId));
             }
 
+            return SerializeSources(sources);
+        }
+
+        private static string SerializeSources(
+            IEnumerable<MiningRouteSource> sources)
+        {
             return JsonSerializer.Serialize(sources
                 .Distinct()
                 .OrderBy(source => source.QualifiedItemId, StringComparer.Ordinal)
@@ -95,7 +116,7 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray());
         }
 
-        private sealed record MonsterRouteSource(
+        private sealed record MiningRouteSource(
             string RouteKind,
             string SourceId,
             string QualifiedItemId);

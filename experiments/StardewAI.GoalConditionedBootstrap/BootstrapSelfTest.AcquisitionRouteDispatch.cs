@@ -366,6 +366,37 @@ internal static partial class BootstrapSelfTest
                     new[] { monsterCandidate }).Length == 1,
             "An exact selected-monster Data/Monsters source was rejected.");
 
+        var radioactiveNodeCandidate = CloneCandidate(monsterCandidate);
+        radioactiveNodeCandidate.Kind = "mining_reach_depth_plan_envelope";
+        radioactiveNodeCandidate.Parameters =
+            radioactiveNodeCandidate.Parameters
+                .Where(parameter => parameter.Name !=
+                    "authoritative_route_sources_json")
+                .Concat(new[]
+                {
+                    Parameter(
+                        "authoritative_route_sources_json",
+                        "[{\"route_kind\":\"native_radioactive_ore_node\",\"source_id\":\"GameLocation.breakStone\",\"qualified_item_id\":\"(O)909\"}]")
+                }).ToArray();
+        var radioactiveNodeRequirement = requirement with
+        {
+            QualifiedItemId = "(O)909",
+            RouteKind = "native_radioactive_ore_node",
+            SourceId = "GameLocation.breakStone"
+        };
+        var radioactiveNodeLowering = lowered with
+        {
+            RouteKind = radioactiveNodeRequirement.RouteKind,
+            SourceId = radioactiveNodeRequirement.SourceId,
+            EndpointOptionIds = new[] { "mining.reach_depth" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    radioactiveNodeRequirement,
+                    radioactiveNodeLowering,
+                    snapshot,
+                    new[] { radioactiveNodeCandidate }).Length == 1,
+            "An exact selected radioactive ore node source was rejected.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

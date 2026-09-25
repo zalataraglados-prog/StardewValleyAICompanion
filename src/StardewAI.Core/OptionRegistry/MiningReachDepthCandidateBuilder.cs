@@ -180,7 +180,7 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter(
                             "authoritative_route_sources_json",
                             MiningAuthoritativeRouteSourceBinding
-                                .ReadSelectedMonsterSources(
+                                .ReadSelectedStepSources(
                                     snapshot,
                                     floorStep)),
                         Parameter("estimate_status", "rolling_horizon_current_floor_step"),

@@ -2160,10 +2160,10 @@ Slice 7 remains assigned to the RTX 5070 node.
   independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
   every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
   uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
-- Exact live source proof currently covers 29 of the 33 authoritative lowering route kinds: shops, crops, location and
+- Exact live source proof currently covers 30 of the 33 authoritative lowering route kinds: shops, crops, location and
   mine fishing, crab pots, regular and deluxe animal products, fish ponds, fruit trees, location forage, solar panels,
   ordinary machine rules and their legacy flavored or literal item-query output rows, selected-monster
-  `Data/Monsters` reroll rows,
+  `Data/Monsters` reroll rows and exact radioactive ore nodes,
   base wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, bush and tea harvest,
   spring onions, ginger, tree moss, location and object-data artifact spots, explicit and bounded-default geode drops,
   and learned cooking recipes. Animal,
@@ -2188,7 +2188,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   `objectsToDrop` loses provenance after subclass, floor-initialization, ring and trinket mutations, base-list entries
   are not relabeled as `Data/Monsters`; only the native burglar-ring probability rows explicitly projected from
   `GameLocation.monsterDrop/Data/Monsters` are admitted, without consuming RNG.
-  Broad action-kind aliases for radioactive nodes, buried mine items and geode outcomes were deliberately rejected
+  Radioactive ore binds only when the selected mine-stone floor step targets the exact live stone-95 tile whose direct
+  node projection guarantees `(O)909`; source identity remains `GameLocation.breakStone`. Broad action-kind aliases
+  for buried mine items and geode outcomes were deliberately rejected
   because they do not prove that this candidate produces the selected item. All remaining source kinds fail closed
   without a queue.
 - Crop candidates now carry the transparent bridge's native `harvest_source_seed_id`, allowing a harvested product to

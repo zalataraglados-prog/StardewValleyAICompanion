@@ -67,6 +67,10 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 drop_item_identity_completeness = dropProjection?.ItemIdentityCompleteness ?? "not_applicable",
                 drop_probability_status = dropProjection?.ProbabilityStatus ?? "not_applicable",
                 drop_rule_conditions = dropProjection?.AppliedRuleConditions ?? Array.Empty<string>(),
+                authoritative_route_sources =
+                    ReadMiningObjectAuthoritativeRouteSources(
+                        obj,
+                        dropProjection),
                 mining_experience_skill_index = breakableStone ? Farmer.miningSkill : (int?)null,
                 mining_experience_on_break_min = dropProjection?.MiningExperienceMinimum,
                 mining_experience_on_break_max = dropProjection?.MiningExperienceMaximum,

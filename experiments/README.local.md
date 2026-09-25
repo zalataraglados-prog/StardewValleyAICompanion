@@ -284,9 +284,10 @@ outputs, regular or deluxe animal products, fish ponds, fruit trees, location fo
 wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, and fixed native bush, tea, spring-onion,
 ginger, tree-moss harvests, location and object-data artifact spots, explicit and bounded-default geode drops, and
 ordinary machine rules plus legacy unique flavored or literal machine output rows, exact selected-monster
-`Data/Monsters` reroll rows, and learned cooking recipes. Monster rows are exposed only from the native burglar-ring
+`Data/Monsters` reroll rows, exact selected stone-95 radioactive ore nodes, and learned cooking recipes. Monster rows are exposed only from the native burglar-ring
 probability projection and only for the runtime monster selected by the current rolling floor step; the mutable
-`objectsToDrop` list is not treated as provenance. Ordinary
+`objectsToDrop` list is not treated as provenance. Radioactive ore requires the same selected tile, source object,
+direct-node branch and guaranteed `(O)909` projection. Ordinary
 ready machines bind through the persisted native `lastOutputRuleId`; the row fallback is used only when that field is
 absent and does not choose among duplicate matching rows. Other route kinds fail
 closed until their live candidates expose exact source identity. A selected item with more than one distinct

@@ -1750,6 +1750,7 @@
               "native_machine_flavored_output",
               "native_machine_item_query_output",
               "native_monster_drop_table",
+              "native_radioactive_ore_node",
               "native_solar_panel_output",
               "native_wild_tree_seed",
               "native_wild_tree_seed_drop",
