@@ -2068,6 +2068,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   3/19. It is not counted as production native evidence. The authoritative report remains 2/19 until three independent
   isolated native save-day receipts are captured. Formal product training and runtime model authority remain false.
 
+### 2026-09-25: criterion, method and action-capability reconciliation
+
+- `build-goal-method-coverage-reconciliation` rebuilds both the authoritative frontier and the independent Teacher
+  coverage report, then joins them to the current option-governance matrix. It does not accept a generated frontier,
+  caller-authored criterion ownership or a claimed action count.
+- The three denominators are now explicit and non-interchangeable: 19 Grandpa score criteria, 11 strategic root
+  methods, and 36 distinct existing high-level options referenced by those methods. The current `2/19` value is only
+  the split-complete Teacher/native criterion coverage count. It is not an action-registry, compiler or executor count.
+- Current primary criterion dispositions are exact: 2 coverage-ready Community Center criteria, 15 criteria whose
+  root methods still have typed dependency-graph blockers, 1 pet-love criterion whose adapter exists but production
+  three-split native evidence is not connected, and 1 Skull Key criterion that still needs its typed Teacher source
+  adapter. This prevents dependency proof work from being misreported as missing mechanical actions.
+- The same report preserves real implementation gaps instead of hiding them behind the primary disposition. All root
+  methods expose downstream Product Executor gaps. `raise_skill_levels` additionally references three registered-only
+  obstacle/resource-clump options without transparent-read or native-runtime evidence. Friendship and marriage routes
+  also expose high-level social/partnership options that are not yet in the internal execution pipeline.
+- The reconciliation artifact remains read-only and records `formal_product_training_authorized=false`. Coverage-ready
+  does not imply product integration, and product integration does not supply Teacher comparisons or native split
+  evidence.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

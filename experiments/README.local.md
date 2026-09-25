@@ -236,6 +236,17 @@ target-date acquisition chain, and native lifecycle proof closed the shared meth
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
 gate against the freshly rebuilt lowering rather than a stale generated artifact.
 
+`build-goal-method-coverage-reconciliation` is the read-only denominator and gap audit for that
+gate. It takes the same frontier inputs and `--request`, rebuilds both authorities, and joins the
+result to the current option-governance matrix. Its report separates 19 score criteria, 11 root
+methods, and the distinct existing options referenced by those methods; it must not describe a
+criterion coverage count as an action implementation count. Each method records typed dependency
+blockers, implemented versus active Teacher adapters, split evidence, transparent-read and native
+runtime gates, internal execution support, Product Executor support, evidence IDs, and exact next
+actions. The current report classifies 2 criteria as coverage-ready, 15 as dependency-graph
+incomplete, pet love as production evidence not connected, and Skull Key as missing a typed
+Teacher source adapter. It never authorizes formal product training.
+
 `build-pet-love-teacher-corpus --request <path> --output <path>` builds the first
 non-collection coverage source. Each request row names fresh before/after snapshots and one
 `training_execution_result.v1`; the builder derives method ownership and dataset partition,

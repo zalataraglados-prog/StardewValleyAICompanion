@@ -101,6 +101,81 @@ internal static partial class BootstrapSelfTest
             "goal-method-teacher-coverage-report.json");
         Write(reportPath, report);
 
+        var reconciliation =
+            GoalMethodCoverageReconciliationBuilder.Build(
+                inputs,
+                requestPath);
+        var criterionDispositions = reconciliation
+            .CriterionDispositionCounts.ToDictionary(
+                value => value.Disposition,
+                value => value.Count,
+                StringComparer.Ordinal);
+        var methodDispositions = reconciliation
+            .MethodDispositionCounts.ToDictionary(
+                value => value.Disposition,
+                value => value.Count,
+                StringComparer.Ordinal);
+        var petReconciliation = reconciliation.Methods.Single(method =>
+            method.DirectionId == "earn_pet_love");
+        var skullKeyReconciliation = reconciliation.Methods.Single(method =>
+            method.DirectionId == "obtain_skull_key");
+        Require(
+            reconciliation.Status == "reconciled_open_work" &&
+            reconciliation.CriterionDenominatorCount == 19 &&
+            reconciliation.RootMethodCount == 11 &&
+            reconciliation.ExecutableCriterionCount == 4 &&
+            reconciliation.CoverageGateReadyCriterionCount == 2 &&
+            !reconciliation.FormalProductTrainingAuthorized &&
+            criterionDispositions[
+                GoalMethodCoverageDispositions.CoverageReady] == 2 &&
+            criterionDispositions[
+                GoalMethodCoverageDispositions
+                    .DependencyGraphIncomplete] == 15 &&
+            criterionDispositions[
+                GoalMethodCoverageDispositions.EvidenceNotConnected] == 1 &&
+            criterionDispositions[
+                GoalMethodCoverageDispositions
+                    .TeacherSourceAdapterMissing] == 1 &&
+            methodDispositions[
+                GoalMethodCoverageDispositions.CoverageReady] == 1 &&
+            methodDispositions[
+                GoalMethodCoverageDispositions
+                    .DependencyGraphIncomplete] == 8 &&
+            methodDispositions[
+                GoalMethodCoverageDispositions.EvidenceNotConnected] == 1 &&
+            methodDispositions[
+                GoalMethodCoverageDispositions
+                    .TeacherSourceAdapterMissing] == 1 &&
+            petReconciliation.PrimaryDisposition ==
+                GoalMethodCoverageDispositions.EvidenceNotConnected &&
+            petReconciliation.ImplementedTeacherSourceKinds.SequenceEqual(
+                new[]
+                {
+                    GoalMethodTeacherCoverageSourceKinds
+                        .PetLoveTerminalInteractionCorpus
+                },
+                StringComparer.Ordinal) &&
+            petReconciliation.ActiveTeacherSourceKinds.Length == 0 &&
+            petReconciliation.TransparentReadEvidenceComplete &&
+            petReconciliation.NativeRuntimeEvidenceComplete &&
+            petReconciliation.EvidenceIds.Contains(
+                "EVD-223",
+                StringComparer.Ordinal) &&
+            skullKeyReconciliation.PrimaryDisposition ==
+                GoalMethodCoverageDispositions
+                    .TeacherSourceAdapterMissing &&
+            skullKeyReconciliation.TransparentReadEvidenceComplete &&
+            skullKeyReconciliation.NativeRuntimeEvidenceComplete &&
+            skullKeyReconciliation.EvidenceIds.Contains(
+                "EVD-106",
+                StringComparer.Ordinal),
+            "Goal-method reconciliation confused action evidence with criterion coverage.");
+        Write(
+            Path.Combine(
+                fullOutputRoot,
+                "goal-method-coverage-reconciliation.json"),
+            reconciliation);
+
         var petFixtureRequest = new GoalMethodTeacherCoverageRequest
         {
             CoverageId = "self-test-pet-love-adapter-fixture",
