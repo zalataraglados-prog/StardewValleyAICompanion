@@ -2241,6 +2241,33 @@ Slice 7 remains assigned to the RTX 5070 node.
   Later support families (seed purchase, machine load/capacity, animal/building capacity, pond/crab-pot preparation,
   unlock/travel and stochastic retry) must reuse the same role boundary and one-transition replan rule.
 
+### 2026-09-26: deadline-aware crop support request and atomic ownership
+
+- `build-acquisition-route-supporting-transition-request` now consumes the deterministically rebuilt current-day
+  processing chain instead of injecting a crop route into the completed opportunity-cost frontier. It admits only an
+  authoritative `harvests_as` route whose calendar, unlock, location, prepared-soil capacity, seed resource and
+  inventory-reservation axes already match, while its processing result is the exact
+  `resolved_new_crop_requires_future_daily_growth` miss. The live ranking is independently rebuilt from the same
+  transparent snapshot and ledger before the existing source-bound planting matcher runs.
+- The selected planting candidate must expose one exact seed slot, adjusted native growth duration and remaining
+  season days. Its expected ready day must fit both an explicit inclusive support deadline and the authoritative crop
+  calendar window. The same seed slot and qualified ID must be covered by the route's proposed or already committed
+  material claim. Multiple planting candidates are ordered by the existing deterministic selector, then restricted to
+  candidates covered by that claim; learner rank, score and reward never choose the transition.
+- A ready request emits one `ReservationPortfolioCommitRequest` and preflights it through the existing
+  `ReservationPortfolioLedgerService`. Proposed/replacement claims use their exact target-date route IDs; already
+  committed claims still receive a unique marker-only support ownership commit. The request builder never mutates the
+  real ledger and remains ineligible for execution and training until the real commit is independently verified.
+- `build-acquisition-route-supporting-transition-commit-receipt` deterministically rebuilds the request, verifies the
+  accepted commit result and exact post-commit ledger, requires one revision advance, replays the transaction from the
+  base ledger using its recorded timestamp, and checks every expected seed claim as an exact active row. The replay,
+  component-history and exact-claim routines are shared with normal acquisition portfolio commits; this is not a
+  second reservation implementation.
+- The next bounded slice is commit-gated support compilation: only this verified support commit may supply the
+  portfolio ID and committed ledger revision to the existing one-item `supporting_transition` compiler. After native
+  execution, the already implemented planting after-state receipt must drive consumed-seed claim settlement and a
+  mandatory fresh-snapshot replan. Until those two gates land, live recurrence and formal training remain blocked.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

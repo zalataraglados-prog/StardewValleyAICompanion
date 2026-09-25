@@ -636,6 +636,8 @@ internal static partial class BootstrapSelfTest
         var ledger = new StrategyCommitmentLedger
         {
             LedgerId = "ledger.dispatch.crop-support.self-test",
+            SaveId = "support-receipt-save",
+            PlayerId = "123",
             Revision = 2,
             SourceStateHash = snapshot.StateHash
         };
@@ -678,8 +680,14 @@ internal static partial class BootstrapSelfTest
                 support[0].RouteOptionRole == "supporting_transition",
             "The exact seed-to-harvest planting support was not selected uniquely: " +
             support.Length + ":" +
-            string.Join(",", support.Select(value =>
-                value.Candidate.Kind + "/" + value.RouteOptionRole)));
+                string.Join(",", support.Select(value =>
+                    value.Candidate.Kind + "/" + value.RouteOptionRole)));
+        VerifyCropPlantingSupportingRequest(
+            snapshot,
+            ledger,
+            requirement,
+            lowering,
+            support);
         var wrongHarvest = CloneCandidate(support[0].Candidate);
         wrongHarvest.Parameters = wrongHarvest.Parameters
             .Select(parameter =>
@@ -762,7 +770,26 @@ internal static partial class BootstrapSelfTest
         SourceResolutionStatus: "resolved",
         CalendarAxisStatus: "resolved",
         StaticWindowMatchesTargetDate: true,
-        MatchingWindows: Array.Empty<AuthoritativeCalendarSourceWindow>(),
+        MatchingWindows: new[]
+        {
+            new AuthoritativeCalendarSourceWindow
+            {
+                SourceKind = "Data/Crops",
+                SourceKey = "472",
+                Season = "spring",
+                FirstTotalDay = 0,
+                LastTotalDay = 27,
+                TimeWindows = new[]
+                {
+                    new MasterAnglerTimeWindow
+                    {
+                        StartTime = 600,
+                        EndTime = 2600
+                    }
+                },
+                WeatherModes = new[] { "any" }
+            }
+        },
         UnlockAxisStatus: "resolved",
         UnlockAxisResolved: true,
         UnlockStateMatchesTargetDate: true,
@@ -896,7 +923,8 @@ internal static partial class BootstrapSelfTest
             "planting_context":{"value":{"location_id":"Farm","hoe_dirt_tiles":[{"tile_x":5,"tile_y":6,"has_crop":false,"seed_results":[{"slot_index":0,"seed_id":"472","hard_rule_allows_planting":true,"can_mature_before_season_end_with_paddy_if_eligible":true,"adjusted_grow_days_with_paddy_if_eligible":4,"days_remaining_in_season":20}]}]},"status":"available"}
           },
           "farm": {
-            "crop_catalog":{"value":[{"seed_id":"472","harvest_item_id":"24","harvest_item_qualified_id":"(O)24","harvest_unit_sale_price":35,"harvest_min_stack":1,"harvest_max_stack":1,"harvest_max_increase_per_farming_level":0,"extra_harvest_chance":0,"harvest_min_quality":0,"harvest_max_quality":4,"harvest_method":"Grab","regrow_days":-1}],"status":"available"}
+            "crop_catalog":{"value":[{"seed_id":"472","harvest_item_id":"24","harvest_item_qualified_id":"(O)24","harvest_unit_sale_price":35,"harvest_min_stack":1,"harvest_max_stack":1,"harvest_max_increase_per_farming_level":0,"extra_harvest_chance":0,"harvest_min_quality":0,"harvest_max_quality":4,"harvest_method":"Grab","regrow_days":-1}],"status":"available"},
+            "material_inventory_graph":{"value":{"schema_version":"material_inventory_graph.v1","status":"available","player_id":123,"inventory_nodes":[{"node_id":"player:123","inventory_kind":"player_inventory","supply_state":"available","actor_use_authorized":true,"slots":[{"slot_index":0,"qualified_item_id":"(O)472","stack":3,"quality":0,"sale_price":10}]}]},"status":"available"}
           },
           "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
           "locations":{
