@@ -2144,6 +2144,31 @@ Slice 7 remains assigned to the RTX 5070 node.
   admit the resulting receipt without fixture mutation. Calendar, resource, route-time, probability, retry and
   reservation gates remain mandatory upstream inputs.
 
+### 2026-09-25: selected acquisition route to Product queue bridge
+
+- `compile-acquisition-route-dispatch` now consumes the independently selected portfolio route, its atomic reservation
+  receipt, the same-state transparent snapshot and the live availability ranking. It does not accept a caller-authored
+  candidate alias: target item, endpoint option and authoritative source must all match current candidate evidence.
+- The selected physical candidate is ordered only by current readiness, deterministic wait/time/energy and stable
+  location identity. Learner rank, score, model score and expected reward are erased before the existing
+  `DailyPlanCompiler` and `ActionQueueCompiler` run. No second action compiler or executor was added.
+- The existing execution-binding verifier now distinguishes its legacy single-step high-level `option_request` from
+  Product-expanded `compiled_action_steps`. Every expanded native primitive must preserve the endpoint option, route
+  occurrence, requirement, reservation portfolio/revision, source candidate, ranking hash and source-binding evidence.
+  A malformed endpoint lineage cannot fall back to the primitive option ID.
+- Exact live source proof currently covers 10 of the 32 authoritative lowering route kinds: shops, crops, location and
+  mine fishing, crab pots, bush and tea harvest, spring onions, ginger and tree moss. Broad action-kind aliases for
+  radioactive nodes, buried mine items and geode outcomes were deliberately rejected because they do not prove that
+  this candidate produces the selected item. All remaining source kinds fail closed without a queue.
+- Crop candidates now carry the transparent bridge's native `harvest_source_seed_id`, allowing a harvested product to
+  bind back to its authoritative `crop:<seed id>` route rather than relying on output item identity alone.
+- This bridge dispatches only an endpoint that is current now. It does not yet schedule supporting construction,
+  planting, loading, travel/unlock or retry steps needed to make a future endpoint current, and it has not generated
+  the 154-row fresh-save Full Shipment chain. Coverage remains 2/19 and `formal_training_authorized=false`.
+- The next bounded slice is source-identity propagation for the remaining live candidate families, followed by a
+  compiler-owned supporting-step queue that replans from a fresh snapshot after each verified transition. Only then
+  can the existing recurrence driver produce and admit the complete Full Shipment runtime manifest.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

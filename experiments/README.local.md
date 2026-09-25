@@ -268,6 +268,21 @@ without gaps; settlement time cannot reverse; and only row 154 may end with achi
 before total day 224. This command verifies supplied artifacts but does not generate the
 154-step fresh-save runtime chain and does not authorize formal training.
 
+`compile-acquisition-route-dispatch` closes the production boundary between one independently
+selected, atomically reserved acquisition route and the existing Product compilers. In addition to
+the execution-binding inputs, it requires `--ranking`, `--queue-output`, and `--output`. It finds a
+same-state live candidate only when item, endpoint option, and authoritative route source all match;
+then it removes learner rank, score, model score, and reward before invoking `DailyPlanCompiler` and
+`ActionQueueCompiler`. Expanded native primitives retain route, reservation, source-candidate, source-
+ranking, and source-evidence lineage. Legacy high-level `option_request` queues and expanded
+`compiled_action_steps` queues have distinct validation shapes and cannot masquerade as each other.
+Exact source binding currently covers shops, crops, target-date location or mine fish, crab-pot
+outputs, and fixed native bush, tea, spring-onion, ginger, and tree-moss harvests. Other route kinds
+fail closed until their live candidates expose exact source identity; required supporting options
+also remain upstream work. The report and queue paths must differ. A blocked build atomically
+overwrites the queue path with a non-executable blocked envelope, so a stale successful queue cannot
+survive a failed rebuild. This command does not run the queue or authorize formal training.
+
 `build-goal-method-coverage-reconciliation` is the read-only denominator and gap audit for that
 gate. It takes the same frontier inputs and `--request`, rebuilds both authorities, and joins the
 result to the current option-governance matrix. Its report separates 19 score criteria, 11 root

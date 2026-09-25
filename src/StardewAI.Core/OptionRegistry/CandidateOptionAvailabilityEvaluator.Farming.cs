@@ -619,6 +619,9 @@ namespace StardewAI.Core.OptionRegistry
                     var y = ReadInt(crop, "tile_y");
                     var harvestItemId = ReadString(crop, "harvest_item_id");
                     var harvestQualifiedItemId = ReadString(crop, "harvest_item_qualified_id");
+                    var harvestSourceSeedId = ReadString(
+                        crop,
+                        "harvest_source_seed_id");
                     var harvestItemProjectionStatus = ReadString(crop, "harvest_item_projection_status");
                     var harvestItemCategory = ReadInt(crop, "harvest_item_category");
                     var harvestMethod = ReadString(crop, "harvest_method");
@@ -632,6 +635,7 @@ namespace StardewAI.Core.OptionRegistry
                     var effect = "current_location.crops[" + x + "," + y + "].ready_for_harvest=false" +
                         (!string.IsNullOrWhiteSpace(harvestItemId) ? ";harvest_item_id=" + harvestItemId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestQualifiedItemId) ? ";harvest_item_qualified_id=" + harvestQualifiedItemId : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(harvestSourceSeedId) ? ";harvest_source_seed_id=" + harvestSourceSeedId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestItemProjectionStatus) ? ";harvest_item_projection_status=" + harvestItemProjectionStatus : string.Empty) +
                         ";harvest_item_category=" + harvestItemCategory +
                         ";forage_crop=" + forageCrop.ToString().ToLowerInvariant() +
@@ -667,6 +671,7 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter("skill_experience_projection_status", skillStatus),
                             Parameter("harvest_method", harvestMethod),
                             Parameter("harvest_item_qualified_id", harvestQualifiedItemId),
+                            Parameter("harvest_source_seed_id", harvestSourceSeedId),
                             Parameter("harvest_item_projection_status", harvestItemProjectionStatus),
                             Parameter("harvest_item_category", harvestItemCategory.ToString()),
                             Parameter("forage_crop", forageCrop.ToString().ToLowerInvariant()),

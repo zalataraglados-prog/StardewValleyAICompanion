@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 using StardewAI.GoalConditionedBootstrap;
@@ -113,6 +114,9 @@ try
             break;
         case "build-acquisition-route-portfolio-commit-receipt":
             BuildAcquisitionRoutePortfolioCommitReceipt(options);
+            break;
+        case "compile-acquisition-route-dispatch":
+            CompileAcquisitionRouteDispatch(options);
             break;
         case "build-acquisition-route-execution-binding":
             BuildAcquisitionRouteExecutionBinding(options);
@@ -256,6 +260,9 @@ try
         case "self-test-full-shipment-settlement":
             BootstrapSelfTest.RunFullShipmentSettlement();
             break;
+        case "self-test-acquisition-route-dispatch":
+            BootstrapSelfTest.RunAcquisitionRouteDispatch();
+            break;
         case "self-test-goal-method-incomparable-live-shadow":
             SelfTestGoalMethodIncomparableLiveShadow(options);
             break;
@@ -264,7 +271,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-settlement-receipt, build-full-shipment-recurrence-proof-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-full-shipment-settlement, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, compile-acquisition-route-dispatch, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-settlement-receipt, build-full-shipment-recurrence-proof-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-full-shipment-settlement, self-test-acquisition-route-dispatch, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
     }
 }
 catch (Exception ex)
@@ -883,6 +890,48 @@ static void BuildAcquisitionRouteExecutionBinding(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void CompileAcquisitionRouteDispatch(Arguments options)
+{
+    var queueOutput = options.Required("queue-output");
+    var reportOutput = options.Required("output");
+    if (string.Equals(
+            Path.GetFullPath(queueOutput),
+            Path.GetFullPath(reportOutput),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ArgumentException(
+            "--queue-output and --output must be different paths.");
+    }
+    var compilation = AcquisitionRouteDispatchCompilationBuilder.Build(
+        RouteExecutionBindingInputs(options, queueOutput),
+        options.Required("ranking"));
+    Write(reportOutput, compilation);
+    if (compilation.DispatchReady && compilation.ActionQueue is not null)
+        Write(queueOutput, compilation.ActionQueue);
+    else
+    {
+        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation));
+        Environment.ExitCode = 2;
+    }
+}
+
+static ActionQueueEnvelope BlockedAcquisitionRouteQueue(
+    AcquisitionRouteDispatchCompilation compilation) => new()
+    {
+        QueueId = "blocked:acquisition-route:" +
+            compilation.RouteOccurrenceId,
+        SourceModelOutputId = compilation.SelectedCandidateId,
+        SourceModel =
+            "deterministic_teacher.acquisition_route_dispatch.v1",
+        StateHash = compilation.SourceStateHash,
+        GoalId = compilation.GoalId,
+        ExecutionMode = "training_singleplayer",
+        Status = "blocked",
+        CompilerDiagnostics = compilation.BlockingReasons.Length > 0
+            ? compilation.BlockingReasons
+            : new[] { "acquisition_route_dispatch_not_ready" }
+    };
+
 static void BuildAcquisitionRouteFreshTerminalReceipt(Arguments options)
 {
     var report = AcquisitionRouteFreshTerminalReceiptBuilder.Build(
@@ -1388,7 +1437,8 @@ static AcquisitionRouteExecutionBindingInputs
 }
 
 static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
-    Arguments options) => new()
+    Arguments options,
+    string? actionQueuePath = null) => new()
     {
         RequirementInventoryPath = options.Required("requirement-inventory"),
         AcquisitionLoweringPath = options.Required("acquisition-lowering"),
@@ -1429,7 +1479,7 @@ static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
             "committed-strategy-ledger"),
         PortfolioCommitResultPath = options.Optional(
             "portfolio-commit-result") ?? string.Empty,
-        ActionQueuePath = options.Required("action-queue"),
+        ActionQueuePath = actionQueuePath ?? options.Required("action-queue"),
         RouteOccurrenceId = options.Required("route-occurrence-id")
     };
 

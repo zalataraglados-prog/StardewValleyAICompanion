@@ -1666,7 +1666,7 @@
         "authoritative_dependency_graph"
       ],
       "blockers": [
-        "consume the admitted per-requirement acquisition lowerings with exact one-unit reservation and live calendar unlock resource route-time probability or retry bounds",
+        "emit exact authoritative source identity on every remaining live acquisition candidate and compile any required supporting options until the selected endpoint is current; unsupported or ambiguous source kinds must remain fail-closed",
         "generate and admit the complete fresh-save 154-item runtime artifact chain through the implemented ordered recurrence verifier before the Year 3 evaluation"
       ],
       "nodes": [
@@ -1729,6 +1729,21 @@
             "input": "one missing requirement and its complete authoritative acquisition_routes array",
             "teacher_choice": "minimum deadline-safe route after cross-goal reservation and opportunity cost",
             "unknown_rng": "branch or reserve retries; never label an unavailable future outcome as known",
+            "dispatch_compiler": "compile-acquisition-route-dispatch",
+            "dispatch_contract": "the same-state live candidate must prove exact item source and endpoint identity before the existing daily-plan and action-queue compilers may emit native primitives",
+            "current_exact_source_route_kinds": [
+              "sells",
+              "harvests_as",
+              "native_location_fish_spawn",
+              "native_mine_fishing_override",
+              "native_crab_pot_output",
+              "native_bush_shake",
+              "native_tea_bush_harvest",
+              "native_spring_onion_harvest",
+              "native_ginger_harvest",
+              "native_tree_moss_harvest"
+            ],
+            "unsupported_source_behavior": "fail_closed_without_queue",
             "output": "one fresh observed reserve-safe copy in player inventory"
           }
         },
