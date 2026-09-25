@@ -13,7 +13,8 @@ internal static partial class BootstrapSelfTest
     private static void VerifyCropPlantingSupportingReceipt(
         AcquisitionRouteDispatchCompilation compilation,
         SnapshotEnvelope before,
-        SupportingCommitFixture supportCommit)
+        SupportingCommitFixture supportCommit,
+        AcquisitionRouteTargetDateUnlock requirement)
     {
         var after = PlantedCropSnapshot(before, "(O)24");
         var execution = SupportingExecutionReceipt(
@@ -145,6 +146,64 @@ internal static partial class BootstrapSelfTest
                     "support_settlement_recorded_terminal_completion",
                     StringComparer.Ordinal),
             "A supporting transition settlement admitted a terminal route marker.");
+
+        var settledLedgerSha256 = new string('8', 64);
+        settlementReceipt.SettledLedgerSha256 = settledLedgerSha256;
+        var freshContext =
+            new AcquisitionRouteSupportingTransitionFreshContext(
+                supportCommit.Request.GoalId,
+                after.StateHash,
+                new string('7', 64),
+                settlementResult.Ledger!.Revision,
+                settledLedgerSha256,
+                new string('6', 64),
+                new string('5', 64),
+                requirement.RouteOccurrenceId,
+                requirement.RequirementSetId,
+                requirement.RequirementId,
+                true);
+        var replan = AcquisitionRouteSupportingTransitionReplanBuilder
+            .BuildCore(
+                settlementReceipt,
+                supportCommit.Request,
+                compilation,
+                freshContext,
+                new string('4', 64));
+        Require(replan.Status ==
+                    "verified_supporting_transition_fresh_replan_admission" &&
+                replan.AllTargetDateAxesRebuilt &&
+                replan.PriorQueueInvalidated &&
+                replan.FreshTeacherRequestReady &&
+                !replan.FormalTrainingAuthorized &&
+                replan.NextTeacherPreferenceRequest is not null &&
+                replan.NextTeacherPreferenceRequest.SnapshotStateHash ==
+                    after.StateHash &&
+                replan.NextTeacherPreferenceRequest.ExpectedLedgerRevision ==
+                    settlementResult.Ledger.Revision &&
+                replan.NextTeacherPreferenceRequest.ScopedRequirements
+                    .Single() ==
+                    new AcquisitionRoutePortfolioRequirementScope(
+                        requirement.RequirementSetId,
+                        requirement.RequirementId),
+            "Verified support settlement did not produce a fresh Teacher replan: " +
+            string.Join(",", replan.BlockingReasons));
+        var staleReplan = AcquisitionRouteSupportingTransitionReplanBuilder
+            .BuildCore(
+                settlementReceipt,
+                supportCommit.Request,
+                compilation,
+                freshContext with
+                {
+                    StateHash = before.StateHash
+                },
+                new string('4', 64));
+        Require(!staleReplan.FreshTeacherRequestReady &&
+                !staleReplan.PriorQueueInvalidated &&
+                staleReplan.NextTeacherPreferenceRequest is null &&
+                staleReplan.BlockingReasons.Contains(
+                    "support_replan_prior_queue_not_invalidated",
+                    StringComparer.Ordinal),
+            "The pre-planting queue survived recurrence admission.");
 
         var wrongAfter = PlantedCropSnapshot(before, "(O)188");
         var wrongExecution = SupportingExecutionReceipt(

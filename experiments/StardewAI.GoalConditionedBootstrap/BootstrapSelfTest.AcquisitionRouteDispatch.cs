@@ -785,7 +785,8 @@ internal static partial class BootstrapSelfTest
         VerifyCropPlantingSupportingReceipt(
             compilation,
             snapshot,
-            supportCommit);
+            supportCommit,
+            requirement);
     }
 
     private static AcquisitionRouteTargetDateUnlock CropRequirement() => new(

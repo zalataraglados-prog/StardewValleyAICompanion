@@ -2288,10 +2288,19 @@ Slice 7 remains assigned to the RTX 5070 node.
   ledger, two-entry mutation history and deterministic replay. The receipt remains nonterminal, requires a fresh
   replan and cannot authorize formal training. A negative self-test proves that adding a terminal route-completion
   marker invalidates the settlement.
-- The next bounded slice is the mandatory recurrence gate: bind the verified support settlement, settled ledger and
-  post-planting snapshot, rerun every upstream target-date axis and current candidate reconstruction, and prove that no
-  queue item from the pre-planting state can survive. Live recurrence and formal training remain blocked until that
-  fresh plan is independently admitted.
+- `build-acquisition-route-supporting-transition-replan` closes the mandatory recurrence gate. It first rebuilds the
+  complete support settlement proof, then invokes the existing portfolio preparation path against `next-*` inputs.
+  That preparation deterministically recomputes the full target-date opportunity chain from calendar through daily
+  time/energy and opportunity cost; unresolved live facts remain typed blockers rather than being skipped.
+- The gate proves that the old queue is bound to both the pre-planting state hash and the pre-settlement ledger
+  revision, while the new denominator is bound to the post-planting state and settled revision. Therefore no old queue
+  item can survive. A successful gate emits a normal `AcquisitionRoutePortfolioTeacherPreferenceRequest`, scoped to
+  the affected authoritative requirement, for the existing complete-denominator Teacher selector. A stale-state
+  negative self-test proves that reusing the old queue emits no request.
+- The next bounded slice is downstream recurrence admission: consume that emitted request through the existing
+  portfolio Teacher preference, proposal, atomic commit and dispatch chain, while binding the replan admission hash so
+  callers cannot bypass the verified support-settlement ancestry. Formal training remains blocked until the resulting
+  fresh transition rejoins the ordinary rollout proof chain.
 
 ## Review questions
 
