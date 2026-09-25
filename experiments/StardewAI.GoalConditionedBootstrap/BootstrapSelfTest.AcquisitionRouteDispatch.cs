@@ -682,7 +682,7 @@ internal static partial class BootstrapSelfTest
             support.Length + ":" +
                 string.Join(",", support.Select(value =>
                     value.Candidate.Kind + "/" + value.RouteOptionRole)));
-        VerifyCropPlantingSupportingRequest(
+        var supportCommit = VerifyCropPlantingSupportingRequest(
             snapshot,
             ledger,
             requirement,
@@ -702,16 +702,18 @@ internal static partial class BootstrapSelfTest
                     new[] { wrongHarvest }).Length == 0,
             "A crop support candidate with the wrong harvest product was admitted.");
 
-        var compilation = AcquisitionRouteDispatchCompilationBuilder.Compile(
-            "grandpa.stage1.21_points",
+        var compilation =
+            AcquisitionRouteSupportingTransitionCompilationBuilder.BuildCore(
+            supportCommit.Request,
+            supportCommit.CommitReceipt,
             requirement,
             lowering,
-            support[0],
             snapshot,
-            ledger,
-            "support-transition:full_shipment:parsnip",
-            ledger.Revision,
-            new string('b', 64));
+            supportCommit.CommittedLedger,
+            support,
+            new string('b', 64),
+            new string('c', 64),
+            new string('a', 64));
         Require(compilation.DispatchReady &&
                 compilation.Status ==
                     "ready_for_supporting_transition_dispatch" &&
@@ -719,9 +721,38 @@ internal static partial class BootstrapSelfTest
                     "supporting_transition" &&
                 !compilation.TerminalReceiptEligible &&
                 compilation.FreshReplanRequiredAfterSuccess &&
+                compilation.SupportReservationCommitVerified &&
+                compilation.SupportRequestSha256 == new string('c', 64) &&
+                compilation.SupportCommitReceiptSha256 ==
+                    new string('a', 64) &&
                 compilation.ActionQueue is not null &&
                 compilation.ActionQueue.Items.Length == 1,
             "Crop planting support did not compile to one fresh-replan transition.");
+        var unverifiedCommit = JsonSerializer.Deserialize<
+            AcquisitionRouteSupportingTransitionCommitReceipt>(
+            JsonSerializer.Serialize(
+                supportCommit.CommitReceipt,
+                JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+                "Support commit receipt clone failed.");
+        unverifiedCommit.SupportReservationCommitVerified = false;
+        var commitBypass =
+            AcquisitionRouteSupportingTransitionCompilationBuilder.BuildCore(
+                supportCommit.Request,
+                unverifiedCommit,
+                requirement,
+                lowering,
+                snapshot,
+                supportCommit.CommittedLedger,
+                support,
+                new string('b', 64),
+                new string('c', 64),
+                new string('a', 64));
+        Require(!commitBypass.DispatchReady &&
+                commitBypass.BlockingReasons.Contains(
+                    "support_commit_receipt_not_compilation_ready",
+                    StringComparer.Ordinal),
+            "An unverified support reservation commit reached compilation.");
         var queue = compilation.ActionQueue!;
         var supportRole = queue.Items.Single().NormalizedCommand.Parameters
             .Single(value =>
@@ -735,8 +766,8 @@ internal static partial class BootstrapSelfTest
                     compilation.SelectedCandidateId,
                     requirement,
                     lowering,
-                    "support-transition:full_shipment:parsnip",
-                    ledger.Revision,
+                    supportCommit.Request.SupportRequestId,
+                    supportCommit.CommittedLedger.Revision,
                     "supporting_transition").Any(),
             "Crop planting support queue failed supporting-transition validation.");
         Require(AcquisitionRouteExecutionBindingBuilder.ValidateQueue(
@@ -746,8 +777,8 @@ internal static partial class BootstrapSelfTest
                     compilation.SelectedCandidateId,
                     requirement,
                     lowering,
-                    "support-transition:full_shipment:parsnip",
-                    ledger.Revision).Contains(
+                    supportCommit.Request.SupportRequestId,
+                    supportCommit.CommittedLedger.Revision).Contains(
                         "route_queue_command_binding_invalid",
                         StringComparer.Ordinal),
             "A crop planting support queue was admitted as a terminal route queue.");

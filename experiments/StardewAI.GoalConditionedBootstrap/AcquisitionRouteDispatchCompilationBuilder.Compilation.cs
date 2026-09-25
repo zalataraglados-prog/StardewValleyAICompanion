@@ -19,7 +19,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         StrategyCommitmentLedger ledger,
         string portfolioId,
         int committedLedgerRevision,
-        string rankingHash)
+        string rankingHash,
+        SmallModelActionParameter[]? additionalLineage = null)
     {
         var source = selected.Candidate;
         var routeOptionRole = selected.RouteOptionRole;
@@ -55,6 +56,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                     "acquisition_source_binding_evidence",
                     selected.IdentityEvidence)
             })
+            .Concat(additionalLineage ??
+                Array.Empty<SmallModelActionParameter>())
             .ToArray();
         var annotationReasons = AnnotatePlan(plan, lineage);
         var queue = annotationReasons.Length == 0

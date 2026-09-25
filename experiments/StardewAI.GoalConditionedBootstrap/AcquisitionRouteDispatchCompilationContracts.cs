@@ -54,6 +54,21 @@ public sealed class AcquisitionRouteDispatchCompilation
     [JsonPropertyName("source_binding_evidence")]
     public string SourceBindingEvidence { get; set; } = string.Empty;
 
+    [JsonPropertyName("support_request_sha256")]
+    public string SupportRequestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("support_commit_receipt_sha256")]
+    public string SupportCommitReceiptSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("support_deadline_total_day")]
+    public int? SupportDeadlineTotalDay { get; set; }
+
+    [JsonPropertyName("support_expected_ready_total_day")]
+    public int? SupportExpectedReadyTotalDay { get; set; }
+
+    [JsonPropertyName("support_reservation_commit_verified")]
+    public bool SupportReservationCommitVerified { get; set; }
+
     [JsonPropertyName("uses_learner_rank_or_score")]
     public bool UsesLearnerRankOrScore { get; set; }
 

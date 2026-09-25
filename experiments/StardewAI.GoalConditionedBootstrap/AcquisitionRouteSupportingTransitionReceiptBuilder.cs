@@ -119,6 +119,13 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             compilation.SelectedRouteOptionRole != "supporting_transition" ||
             compilation.TerminalReceiptEligible ||
             !compilation.FreshReplanRequiredAfterSuccess ||
+            !compilation.SupportReservationCommitVerified ||
+            !IsSha256(compilation.SupportRequestSha256) ||
+            !IsSha256(compilation.SupportCommitReceiptSha256) ||
+            !compilation.SupportDeadlineTotalDay.HasValue ||
+            !compilation.SupportExpectedReadyTotalDay.HasValue ||
+            compilation.SupportExpectedReadyTotalDay.Value >
+                compilation.SupportDeadlineTotalDay.Value ||
             !compilation.DispatchReady ||
             compilation.FormalTrainingAuthorized ||
             compilation.BlockingReasons.Length != 0 ||
@@ -139,12 +146,35 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 !HasUniqueParameter(
                     item.NormalizedCommand?.Parameters,
                     "acquisition_route_option_role",
-                    "supporting_transition")))
+                    "supporting_transition") ||
+                !HasUniqueParameter(
+                    item.NormalizedCommand?.Parameters,
+                    "acquisition_support_request_sha256",
+                    compilation.SupportRequestSha256) ||
+                !HasUniqueParameter(
+                    item.NormalizedCommand?.Parameters,
+                    "acquisition_support_commit_receipt_sha256",
+                    compilation.SupportCommitReceiptSha256) ||
+                !HasUniqueParameter(
+                    item.NormalizedCommand?.Parameters,
+                    "acquisition_support_deadline_total_day",
+                    compilation.SupportDeadlineTotalDay?.ToString() ??
+                        string.Empty) ||
+                !HasUniqueParameter(
+                    item.NormalizedCommand?.Parameters,
+                    "acquisition_support_expected_ready_total_day",
+                    compilation.SupportExpectedReadyTotalDay?.ToString() ??
+                        string.Empty)))
         {
-            reasons.Add("supporting_transition_queue_role_missing_or_ambiguous");
+            reasons.Add(
+                "supporting_transition_queue_commit_lineage_missing_or_ambiguous");
         }
         return reasons.ToArray();
     }
+
+    private static bool IsSha256(string value) =>
+        value.Length == 64 && value.All(character =>
+            character is >= '0' and <= '9' or >= 'a' and <= 'f');
 
     private static string[] ValidateSnapshots(
         SnapshotEnvelope before,

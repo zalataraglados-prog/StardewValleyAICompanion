@@ -7,7 +7,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private static void VerifyCropPlantingSupportingRequest(
+    private static SupportingCommitFixture VerifyCropPlantingSupportingRequest(
         SnapshotEnvelope snapshot,
         StrategyCommitmentLedger ledger,
         AcquisitionRouteTargetDateUnlock requirement,
@@ -83,7 +83,8 @@ internal static partial class BootstrapSelfTest
                 snapshot,
                 ledger,
                 support,
-                supportDeadlineTotalDay: 10);
+                supportDeadlineTotalDay: 10,
+                rankingSha256: new string('b', 64));
         Require(request.SupportRequestReady &&
                 request.DeadlineProofVerified &&
                 request.ReservationClaimBoundToCandidate &&
@@ -109,7 +110,11 @@ internal static partial class BootstrapSelfTest
                 ledger,
                 commitResult.Ledger!,
                 snapshot,
-                commitResult);
+                commitResult,
+                requestSha256: new string('c', 64),
+                baseLedgerSha256: new string('d', 64),
+                committedLedgerSha256: new string('e', 64),
+                commitResultSha256: new string('f', 64));
         Require(commitReceipt.SupportReservationCommitVerified &&
                 commitReceipt.ExactActiveClaimSetVerified &&
                 commitReceipt.SingleRevisionCommitVerified &&
@@ -201,6 +206,10 @@ internal static partial class BootstrapSelfTest
                     "crop_planting_candidate_seed_claim_mismatch",
                     StringComparer.Ordinal),
             "A crop support candidate escaped its exact reserved seed slot.");
+        return new SupportingCommitFixture(
+            request,
+            commitReceipt,
+            commitResult.Ledger!);
     }
 
     private static MaterialReservationUpsertRequest WithSlot(
@@ -235,4 +244,9 @@ internal static partial class BootstrapSelfTest
         {
             UpstreamRoute = reservation
         };
+
+    private sealed record SupportingCommitFixture(
+        AcquisitionRouteSupportingTransitionRequest Request,
+        AcquisitionRouteSupportingTransitionCommitReceipt CommitReceipt,
+        StrategyCommitmentLedger CommittedLedger);
 }

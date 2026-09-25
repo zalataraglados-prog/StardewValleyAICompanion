@@ -2267,6 +2267,18 @@ Slice 7 remains assigned to the RTX 5070 node.
   portfolio ID and committed ledger revision to the existing one-item `supporting_transition` compiler. After native
   execution, the already implemented planting after-state receipt must drive consumed-seed claim settlement and a
   mandatory fresh-snapshot replan. Until those two gates land, live recurrence and formal training remain blocked.
+- `compile-acquisition-route-supporting-transition` now closes the first of those gates. It deterministically rebuilds
+  the request and commit receipt, reloads the exact committed ledger, independently rebuilds the selected live planting
+  candidate, and calls the existing `AcquisitionRouteDispatchCompilationBuilder.Compile`; it does not own a second
+  planner or action compiler. The committed support request ID and ledger revision become the normal acquisition route
+  lineage. Every queue command additionally repeats the support-request SHA-256, support-commit-receipt SHA-256,
+  inclusive deadline and expected ready day.
+- The planting after-state receipt now requires that commit lineage in both the compilation envelope and its single
+  queue item. A direct call to the lower-level compiler without a verified support reservation commit therefore cannot
+  produce an acceptable support receipt. The next bounded slice is consumed-claim settlement: after the verified
+  planting transition consumes one seed, only that exact material quantity may leave active ownership, the support
+  portfolio marker must be closed without marking the acquisition route terminal, and the new snapshot/ledger pair
+  must force a complete recurrence replan.
 
 ## Review questions
 
