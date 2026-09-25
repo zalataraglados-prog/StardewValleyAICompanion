@@ -2160,16 +2160,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
   every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
   uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
-- Exact live source proof currently covers 21 of the 33 authoritative lowering route kinds: shops, crops, location and
+- Exact live source proof currently covers 23 of the 33 authoritative lowering route kinds: shops, crops, location and
   mine fishing, crab pots, regular and deluxe animal products, fish ponds, fruit trees, location forage, solar panels,
   base wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, bush and tea harvest,
-  spring onions, ginger, tree moss and learned cooking recipes. Animal, fish-pond, fruit-tree, forage, solar-panel and wild-tree candidates
+  spring onions, ginger, tree moss, location and object-data artifact spots, and learned cooking recipes. Animal,
+  fish-pond, fruit-tree, forage, solar-panel, artifact-spot and wild-tree candidates
   derive typed source rows from live entity state plus the same native `Data/FarmAnimals`, `Data/FishPondData`, `Data/FruitTrees`,
-  `Data/Locations`, `Data/Machines` or `Data/WildTrees` identity used by the authoritative inventory.
+  `Data/Locations`, `Data/Objects`, `Data/Machines` or `Data/WildTrees` identity used by the authoritative inventory.
   Dispatch requires exactly one distinct source identity for the selected item. A native wild-tree chop can execute
   several `ChopItems` rows for one item, so the transparent output domain remains complete while the dispatch surface
   selects the lowest currently applicable native row as that item's stable source label. Other duplicate matching rows
   or route kinds remain visible in the transparent snapshot but fail closed instead of becoming a teacher label.
+  Artifact-spot source labels are recorded during the existing day/save-seeded native output replay: exact location rows
+  retain their `Default` or effective location-data index, while `RANDOM_ARTIFACT_FOR_DIG_SPOT` results are rebound to
+  the matching live `Data/Objects.ArtifactSpotChances` entry without an additional RNG call.
   Broad action-kind aliases for radioactive nodes, buried mine items and geode outcomes were deliberately rejected
   because they do not prove that this candidate produces the selected item. All remaining source kinds fail closed
   without a queue.

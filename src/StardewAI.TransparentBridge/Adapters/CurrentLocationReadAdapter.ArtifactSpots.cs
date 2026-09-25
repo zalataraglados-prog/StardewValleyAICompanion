@@ -4,6 +4,7 @@ using StardewValley.Constants;
 using StardewValley.Enchantments;
 using StardewValley.Extensions;
 using StardewValley.GameData.Locations;
+using StardewValley.GameData.Objects;
 using StardewValley.Internal;
 using StardewValley.Locations;
 using StardewValley.Tools;
@@ -52,6 +53,9 @@ public sealed partial class CurrentLocationReadAdapter
         try
         {
             var outputs = new ArtifactSpotOutputAccumulator();
+            var authoritativeRouteSources = new List<object>();
+            var seenAuthoritativeRouteSources = new HashSet<string>(
+                StringComparer.Ordinal);
             var artifactSpotsDugAfter = artifactSpotsDugBefore + 1;
             var defenseBookMailBefore = player.mailReceived.Contains("DefenseBookDropped");
             var defenseRandom = Utility.CreateDaySaveRandom(
@@ -86,11 +90,23 @@ public sealed partial class CurrentLocationReadAdapter
                     requiredToolKind);
             }
 
-            var rules = defaultData.ArtifactSpots.AsEnumerable();
+            var rules = defaultData.ArtifactSpots
+                .Select((drop, index) => new ArtifactSpotRuleSource(
+                    drop,
+                    "location:Default:" + index))
+                .ToList();
             var locationData = location.GetData();
             if (locationData?.ArtifactSpots is { Count: > 0 })
             {
-                rules = rules.Concat(locationData.ArtifactSpots);
+                var locationDataId = ResolveCurrentLocationDataId(
+                    location,
+                    locationData);
+                rules.AddRange(locationData.ArtifactSpots.Select(
+                    (drop, index) => new ArtifactSpotRuleSource(
+                        drop,
+                        string.IsNullOrWhiteSpace(locationDataId)
+                            ? string.Empty
+                            : "location:" + locationDataId + ":" + index)));
             }
 
             var resolverErrors = new List<string>();
@@ -99,8 +115,10 @@ public sealed partial class CurrentLocationReadAdapter
                 player,
                 random,
                 "location '" + location.NameOrUniqueName + "' > artifact spots > transparent preview");
-            foreach (var drop in rules.OrderBy(rule => rule.Precedence))
+            foreach (var sourcedRule in rules.OrderBy(
+                         rule => rule.Drop.Precedence))
             {
+                var drop = sourcedRule.Drop;
                 if (!random.NextBool(drop.Chance) ||
                     (drop.Condition is not null &&
                      !GameStateQuery.CheckConditions(drop.Condition, location, player, null, null, random)))
@@ -140,6 +158,12 @@ public sealed partial class CurrentLocationReadAdapter
                 }
 
                 outputs.Add(item);
+                AddArtifactSpotAuthoritativeRouteSources(
+                    authoritativeRouteSources,
+                    seenAuthoritativeRouteSources,
+                    sourcedRule,
+                    location,
+                    item);
                 if (hoe.hasEnchantmentOfType<GenerousEnchantment>() &&
                     drop.ApplyGenerousEnchantment &&
                     random.NextBool())
@@ -193,7 +217,8 @@ public sealed partial class CurrentLocationReadAdapter
                 TerrainFeatureExpectedAfter = terrainFeatureExpectedAfter,
                 DefenseBookMailBefore = defenseBookMailBefore,
                 DefenseBookMailExpectedAfter = defenseBookMailBefore || defenseBookDropped,
-                OutputItems = outputRows
+                OutputItems = outputRows,
+                AuthoritativeRouteSources = authoritativeRouteSources.ToArray()
             };
         }
         catch
@@ -203,6 +228,100 @@ public sealed partial class CurrentLocationReadAdapter
                 "blocked_artifact_spot_projection_exception",
                 requiredToolKind);
         }
+    }
+
+    private static void AddArtifactSpotAuthoritativeRouteSources(
+        ICollection<object> sources,
+        ISet<string> seen,
+        ArtifactSpotRuleSource rule,
+        GameLocation location,
+        Item item)
+    {
+        var expectedItemIds = new HashSet<string>(StringComparer.Ordinal)
+        {
+            UnqualifiedObjectId(item.QualifiedItemId)
+        };
+        foreach (var itemId in string.IsNullOrWhiteSpace(rule.SourceId)
+                     ? Array.Empty<string>()
+                     : MatchingObjectIds(
+                         rule.Drop.ItemId,
+                         expectedItemIds))
+        {
+            AddArtifactSpotAuthoritativeRouteSource(
+                sources,
+                seen,
+                "native_location_artifact_spot",
+                rule.SourceId,
+                "(O)" + itemId);
+        }
+        if (!string.IsNullOrWhiteSpace(rule.SourceId) &&
+            rule.Drop.RandomItemId is not null)
+        {
+            for (var index = 0;
+                index < rule.Drop.RandomItemId.Count;
+                index++)
+            {
+                foreach (var itemId in MatchingObjectIds(
+                             rule.Drop.RandomItemId[index],
+                             expectedItemIds))
+                {
+                    AddArtifactSpotAuthoritativeRouteSource(
+                        sources,
+                        seen,
+                        "native_location_artifact_spot",
+                        rule.SourceId + ":random:" + index,
+                        "(O)" + itemId);
+                }
+            }
+        }
+
+        if (!ArtifactSpotUsesOnlyRandomArtifactQuery(rule.Drop) ||
+            ItemRegistry.GetData(item.QualifiedItemId)?.RawData is not
+                ObjectData data ||
+            data.ArtifactSpotChances is null ||
+            !data.ArtifactSpotChances.TryGetValue(
+                location.Name,
+                out var chance) ||
+            chance <= 0f)
+        {
+            return;
+        }
+        AddArtifactSpotAuthoritativeRouteSource(
+            sources,
+            seen,
+            "native_object_artifact_spot_chance",
+            "artifact_item:" + UnqualifiedObjectId(item.QualifiedItemId),
+            item.QualifiedItemId);
+    }
+
+    private static bool ArtifactSpotUsesOnlyRandomArtifactQuery(
+        ArtifactSpotDropData drop)
+    {
+        var queries = drop.RandomItemId is { Count: > 0 }
+            ? drop.RandomItemId
+            : new List<string> { drop.ItemId };
+        return queries.Count > 0 && queries.All(query => string.Equals(
+            query?.Trim(),
+            "RANDOM_ARTIFACT_FOR_DIG_SPOT",
+            StringComparison.Ordinal));
+    }
+
+    private static void AddArtifactSpotAuthoritativeRouteSource(
+        ICollection<object> sources,
+        ISet<string> seen,
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId)
+    {
+        var key = routeKind + "|" + sourceId + "|" + qualifiedItemId;
+        if (!seen.Add(key))
+            return;
+        sources.Add(new
+        {
+            route_kind = routeKind,
+            source_id = sourceId,
+            qualified_item_id = qualifiedItemId
+        });
     }
 
     private static void AddArtifactSpotLocationOverrideOutputs(
@@ -320,6 +439,10 @@ public sealed partial class CurrentLocationReadAdapter
         var unseen = Utility.GetUnseenSecretNotes(player, islandNotes, out _).Length;
         return unseen - player.Items.CountId(itemId) > 0;
     }
+
+    private sealed record ArtifactSpotRuleSource(
+        ArtifactSpotDropData Drop,
+        string SourceId);
 
 }
 

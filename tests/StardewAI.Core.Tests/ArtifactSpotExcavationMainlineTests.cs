@@ -28,6 +28,14 @@ public sealed class ArtifactSpotExcavationMainlineTests
         Assert.DoesNotContain("SeedSpot", candidate.ExpectedEffect, StringComparison.Ordinal);
         Assert.Contains(candidate.Parameters, value =>
             value.Name == "clear_output_projection_status" && value.Value == "exact");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "authoritative_route_sources_json" &&
+            value.Value.Contains(
+                "native_object_artifact_spot_chance",
+                StringComparison.Ordinal) &&
+            value.Value.Contains(
+                "artifact_item:100",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -87,6 +95,7 @@ public sealed class ArtifactSpotExcavationMainlineTests
                 "harvest_experience_skill_id":"foraging","harvest_experience_on_success_min":15,"harvest_experience_on_success_max":15,
                 "harvest_experience_condition":"native_hoe_digs_artifact_spot","harvest_experience_projection_status":"exact",
                 "clear_output_projection_status":"exact","clear_output_items_json":{{{JsonSerializer.Serialize(outputItems)}}},
+                "clear_authoritative_route_sources":[{"route_kind":"native_object_artifact_spot_chance","source_id":"artifact_item:100","qualified_item_id":"(O)100"}],
                 "clear_output_qualified_item_id":"(O)100","clear_output_quantity_min":1,"clear_output_quantity_max":1,
                 "clear_bonus_output_qualified_item_id":"(O)Book_Defense","clear_bonus_output_quantity_min":0,"clear_bonus_output_quantity_max":0,
                 "artifact_spots_dug_before":4,"artifact_spots_dug_delta":1,"artifact_spots_dug_expected_after":5,
