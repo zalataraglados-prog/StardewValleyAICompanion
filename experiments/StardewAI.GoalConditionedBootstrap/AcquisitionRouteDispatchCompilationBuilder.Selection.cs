@@ -217,22 +217,54 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         try
         {
             using var document = System.Text.Json.JsonDocument.Parse(json);
-            return document.RootElement.ValueKind ==
-                    System.Text.Json.JsonValueKind.Array &&
-                document.RootElement.EnumerateArray().Any(value =>
-                    value.ValueKind == System.Text.Json.JsonValueKind.Object &&
-                    value.TryGetProperty("route_kind", out var kind) &&
-                    value.TryGetProperty("source_id", out var source) &&
-                    value.TryGetProperty("qualified_item_id", out var item) &&
-                    kind.ValueKind == System.Text.Json.JsonValueKind.String &&
-                    source.ValueKind == System.Text.Json.JsonValueKind.String &&
-                    item.ValueKind == System.Text.Json.JsonValueKind.String &&
-                    string.Equals(kind.GetString(), routeKind,
-                        StringComparison.Ordinal) &&
-                    string.Equals(source.GetString(), sourceId,
-                        StringComparison.Ordinal) &&
-                    string.Equals(item.GetString(), qualifiedItemId,
-                        StringComparison.Ordinal));
+            if (document.RootElement.ValueKind !=
+                System.Text.Json.JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var sources = new List<(
+                string RouteKind,
+                string SourceId,
+                string QualifiedItemId)>();
+            foreach (var value in document.RootElement.EnumerateArray())
+            {
+                if (value.ValueKind !=
+                        System.Text.Json.JsonValueKind.Object ||
+                    !value.TryGetProperty("route_kind", out var kind) ||
+                    !value.TryGetProperty("source_id", out var source) ||
+                    !value.TryGetProperty("qualified_item_id", out var item) ||
+                    kind.ValueKind !=
+                        System.Text.Json.JsonValueKind.String ||
+                    source.ValueKind !=
+                        System.Text.Json.JsonValueKind.String ||
+                    item.ValueKind !=
+                        System.Text.Json.JsonValueKind.String)
+                {
+                    return false;
+                }
+                sources.Add((
+                    kind.GetString() ?? string.Empty,
+                    source.GetString() ?? string.Empty,
+                    item.GetString() ?? string.Empty));
+            }
+
+            var targetSources = sources
+                .Where(value => string.Equals(
+                    value.QualifiedItemId,
+                    qualifiedItemId,
+                    StringComparison.Ordinal))
+                .Distinct()
+                .ToArray();
+            return targetSources.Length == 1 &&
+                string.Equals(
+                    targetSources[0].RouteKind,
+                    routeKind,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    targetSources[0].SourceId,
+                    sourceId,
+                    StringComparison.Ordinal);
         }
         catch (System.Text.Json.JsonException)
         {

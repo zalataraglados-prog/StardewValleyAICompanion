@@ -167,6 +167,21 @@ internal static partial class BootstrapSelfTest
                     snapshot,
                     new[] { animalCandidate }).Length == 0,
             "A regular animal product source was accepted as deluxe produce.");
+        var ambiguousAnimalCandidate = CloneCandidate(animalCandidate);
+        ambiguousAnimalCandidate.Parameters = ambiguousAnimalCandidate.Parameters
+            .Select(parameter =>
+                parameter.Name == "authoritative_route_sources_json"
+                    ? Parameter(
+                        parameter.Name,
+                        "[{\"route_kind\":\"native_farm_animal_produce\",\"source_id\":\"farm_animal:White Cow:0\",\"qualified_item_id\":\"(O)184\"},{\"route_kind\":\"native_farm_animal_produce\",\"source_id\":\"farm_animal:Brown Cow:0\",\"qualified_item_id\":\"(O)184\"}]")
+                    : parameter)
+            .ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    animalRequirement,
+                    animalLowering,
+                    snapshot,
+                    new[] { ambiguousAnimalCandidate }).Length == 0,
+            "A candidate with ambiguous same-item source rows was admitted.");
 
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger

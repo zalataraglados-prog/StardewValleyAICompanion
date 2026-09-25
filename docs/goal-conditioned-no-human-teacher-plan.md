@@ -2160,13 +2160,16 @@ Slice 7 remains assigned to the RTX 5070 node.
   independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
   every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
   uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
-- Exact live source proof currently covers 14 of the 32 authoritative lowering route kinds: shops, crops, location and
-  mine fishing, crab pots, regular and deluxe animal products, fruit trees, bush and tea harvest, spring onions, ginger,
-  tree moss and learned cooking recipes. Animal and fruit-tree candidates derive typed source rows from live entity
-  state plus the same native `Data/FarmAnimals` or `Data/FruitTrees` row numbering used by the authoritative inventory.
-  Broad action-kind aliases for
-  radioactive nodes, buried mine items and geode outcomes were deliberately rejected because they do not prove that
-  this candidate produces the selected item. All remaining source kinds fail closed without a queue.
+- Exact live source proof currently covers 16 of the 33 authoritative lowering route kinds: shops, crops, location and
+  mine fishing, crab pots, regular and deluxe animal products, fish ponds, fruit trees, location forage, bush and tea
+  harvest, spring onions, ginger, tree moss and learned cooking recipes. Animal, fish-pond, fruit-tree and forage
+  candidates derive typed source rows from live entity state plus the same native `Data/FarmAnimals`,
+  `Data/FishPondData`, `Data/FruitTrees` or `Data/Locations` row numbering used by the authoritative inventory.
+  Dispatch requires exactly one distinct source identity for the selected item; duplicate matching rows or route kinds
+  remain visible in the transparent snapshot but fail closed instead of becoming a teacher label.
+  Broad action-kind aliases for radioactive nodes, buried mine items and geode outcomes were deliberately rejected
+  because they do not prove that this candidate produces the selected item. All remaining source kinds fail closed
+  without a queue.
 - Crop candidates now carry the transparent bridge's native `harvest_source_seed_id`, allowing a harvested product to
   bind back to its authoritative `crop:<seed id>` route rather than relying on output item identity alone.
 - This bridge dispatches only an endpoint that is current now. It does not yet schedule supporting construction,

@@ -154,6 +154,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     private static object ReadObject(GameLocation location, Vector2 tile, StardewObject item, Farmer player)
     {
         var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
+        var spawnedObjectAuthoritativeRouteSources =
+            ReadSpawnedObjectAuthoritativeRouteSources(location, item);
         var clearance = ReadObjectClearance(location, tile, item, player);
         var crabPot = ReadCrabPotHarvest(location, tile, item, player);
         var crabPotBaitLoad = ReadCrabPotBaitLoad(item, player);
@@ -189,6 +191,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             is_quest_item = item.questItem.Value,
             quest_id = item.questId.Value ?? string.Empty,
             spawned_object_pickup_status = harvest.Status,
+            spawned_object_authoritative_route_sources =
+                spawnedObjectAuthoritativeRouteSources,
             projected_harvest_quality = harvest.Quality,
             projected_primary_quantity = harvest.PrimaryQuantity,
             projected_gatherer_duplicate = harvest.GathererDuplicate,

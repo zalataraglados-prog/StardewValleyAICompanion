@@ -280,9 +280,10 @@ metadata are ignored. Expanded native primitives retain route, reservation, sour
 ranking, and source-evidence lineage. Legacy high-level `option_request` queues and expanded
 `compiled_action_steps` queues have distinct validation shapes and cannot masquerade as each other.
 Exact source binding currently covers shops, crops, target-date location or mine fish, crab-pot
-outputs, regular or deluxe animal products, fruit trees, and fixed native bush, tea, spring-onion,
-ginger, tree-moss harvests, and learned cooking recipes. Other route kinds fail closed until their live
-candidates expose exact source identity; required supporting options
+outputs, regular or deluxe animal products, fish ponds, fruit trees, location forage, and fixed native
+bush, tea, spring-onion, ginger, tree-moss harvests, and learned cooking recipes. Other route kinds fail
+closed until their live candidates expose exact source identity. A selected item with more than one distinct
+matching source row also fails closed rather than creating an ambiguous teacher label. Required supporting options
 also remain upstream work. The report and queue paths must differ. A blocked build atomically
 overwrites the queue path with a non-executable blocked envelope, so a stale successful queue cannot
 survive a failed rebuild. This command does not run the queue or authorize formal training.
