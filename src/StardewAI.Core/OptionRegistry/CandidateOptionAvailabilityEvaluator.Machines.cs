@@ -489,6 +489,8 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("skill_experience_projection_status", experienceProjectionStatus),
                         Parameter("skill_experience_condition", "native_machine_output_collection"),
                         Parameter("machine_location_id", machineLocation),
+                        Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                            ReadArray(machine, "output_authoritative_route_sources"))),
                         Parameter("output_context_tags_json", JsonSerializer.Serialize(outputContextTags))
                     };
                     if (positiveExperienceDeltas.Length == 1)
@@ -514,6 +516,8 @@ namespace StardewAI.Core.OptionRegistry
                             ";output_sale_price=" + outputSalePrice +
                             ";output_total_value=" + outputTotalValue +
                             ";machine_value_basis=held_item_sale_price_times_stack" +
+                            ";authoritative_route_sources_json=" + JsonSerializer.Serialize(
+                                ReadArray(machine, "output_authoritative_route_sources")) +
                             ";expected_skill_experience_deltas_json=" + experienceDeltasJson +
                             ";expected_mastery_experience_delta=" + (masteryExperienceDelta ?? 0) +
                             ";skill_experience_projection_status=" + experienceProjectionStatus +

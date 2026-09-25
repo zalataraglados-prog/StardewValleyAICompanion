@@ -192,6 +192,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_mastery_experience_delta = harvestExperience.MasteryExperienceDelta,
                     harvest_experience_projection_status = harvestExperience.Status,
                     harvest_experience_native_contract = "Object.CheckForActionOnMachine_pair_parse_then_Farmer.gainExperience",
+                    output_authoritative_route_sources =
+                        ReadMachineOutputAuthoritativeRouteSources(
+                            row.Pair.Value),
                     held_item = SummarizeItem(row.Pair.Value.heldObject.Value),
                     loadable_inputs = loadableInputs
                 };

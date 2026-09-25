@@ -40,6 +40,12 @@ public sealed partial class CurrentLocationReadAdapter
                 }
             };
         var optional = ProjectWildTreeOptionalOutputDomain(tree);
+        var authoritativeRouteSources =
+            ProjectWildTreeProductAuthoritativeRouteSources(
+                tree,
+                dataStatus,
+                branch,
+                primaryQualifiedId);
         var status = tree.GetType() != typeof(Tree)
             ? "blocked_custom_tree_runtime_type"
             : data is null
@@ -79,8 +85,43 @@ public sealed partial class CurrentLocationReadAdapter
             tree.GetType() == typeof(Tree) && string.Equals(dataStatus, "exact_locked_base_1.6.15", StringComparison.Ordinal)
                 ? "exact_from_native_tree_performUseAction_shake_and_locked_wild_tree_data"
                 : "unavailable_unverified_runtime_or_data",
+            authoritativeRouteSources,
             safeSlot,
             Game1.player.CurrentToolIndex);
+    }
+
+    private static object[] ProjectWildTreeProductAuthoritativeRouteSources(
+        Tree tree,
+        string dataStatus,
+        string branch,
+        string qualifiedItemId)
+    {
+        if (tree.GetType() != typeof(Tree) ||
+            !string.Equals(
+                dataStatus,
+                "exact_locked_base_1.6.15",
+                StringComparison.Ordinal) ||
+            string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            return Array.Empty<object>();
+        }
+
+        var fallHazelnut = string.Equals(
+            branch,
+            "fall_hazelnut_replaces_seed",
+            StringComparison.Ordinal);
+        return new object[]
+        {
+            new
+            {
+                route_kind = fallHazelnut
+                    ? "native_wild_tree_seed_drop"
+                    : "native_wild_tree_seed",
+                source_id = "wild_tree:" + tree.treeType.Value +
+                    (fallHazelnut ? ":0" : string.Empty),
+                qualified_item_id = qualifiedItemId
+            }
+        };
     }
 
     private static string ValidateBaseWildTreeProductData(string treeType, WildTreeData? data)
@@ -202,6 +243,7 @@ public sealed partial class CurrentLocationReadAdapter
         object[] OptionalOutputDomain,
         string OutputDistributionStatus,
         string ProjectionStatus,
+        object[] AuthoritativeRouteSources,
         int? SafeSlotIndex,
         int RestoreSlotIndex);
 }

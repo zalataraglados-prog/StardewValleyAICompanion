@@ -1,4 +1,5 @@
 using StardewValley;
+using StardewValley.GameData.Machines;
 using StardewValley.Network;
 
 namespace StardewAI.TransparentBridge.Adapters;
@@ -107,6 +108,52 @@ public sealed partial class FarmReadAdapter
                 lifecycleState == "ready_for_collection"
                     ? "exact_ready_now"
                     : "weather_dependent_no_guessed_multi_day_completion"
+        };
+    }
+
+    private static object[] ReadMachineOutputAuthoritativeRouteSources(
+        StardewValley.Object machine)
+    {
+        var heldItem = machine.heldObject.Value;
+        if (machine.QualifiedItemId !=
+                SolarPanelQualifiedItemId ||
+            machine.GetType() != typeof(StardewValley.Object) ||
+            !machine.readyForHarvest.Value ||
+            heldItem?.QualifiedItemId !=
+                SolarPanelOutputQualifiedItemId)
+        {
+            return Array.Empty<object>();
+        }
+
+        var dayUpdateOutputs = machine.GetMachineData()
+            ?.OutputRules?
+            .Where(rule =>
+                rule.Triggers?.Any(trigger =>
+                    trigger.Trigger.HasFlag(
+                        MachineOutputTrigger.DayUpdate)) == true)
+            .SelectMany(rule =>
+                rule.OutputItem ??
+                new List<MachineItemOutput>())
+            .ToArray() ??
+            Array.Empty<MachineItemOutput>();
+        if (dayUpdateOutputs.Length != 1 ||
+            !IsVettedSolarPanelOutputMethod(
+                machine,
+                dayUpdateOutputs[0].OutputMethod ?? string.Empty))
+        {
+            return Array.Empty<object>();
+        }
+
+        return new object[]
+        {
+            new
+            {
+                route_kind = "native_solar_panel_output",
+                source_id =
+                    "machine:(BC)231:OutputSolarPanel",
+                qualified_item_id =
+                    SolarPanelOutputQualifiedItemId
+            }
         };
     }
 

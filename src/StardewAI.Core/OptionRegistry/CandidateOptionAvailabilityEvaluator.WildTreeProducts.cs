@@ -93,6 +93,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("safe_slot_index", ReadInt(feature, "tree_product_safe_slot_index").ToString()), Parameter("safe_slot_kind", "empty"),
             Parameter("restore_slot_index", ReadInt(feature, "tree_product_restore_slot_index").ToString()),
             Parameter("tree_product_projection_status", ReadString(feature, "tree_product_projection_status")),
+            Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                ReadArray(feature, "tree_product_authoritative_route_sources"))),
             Parameter("tree_product_native_contract", ReadString(feature, "tree_product_native_contract")), Parameter("max_movement_tiles", "512")
         };
     }

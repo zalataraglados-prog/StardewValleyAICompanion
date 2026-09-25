@@ -102,6 +102,8 @@ public sealed partial class CurrentLocationReadAdapter
             tree_product_safe_slot_index = treeProduct.SafeSlotIndex,
             tree_product_restore_slot_index = treeProduct.RestoreSlotIndex,
             tree_product_projection_status = treeProduct.ProjectionStatus,
+            tree_product_authoritative_route_sources =
+                treeProduct.AuthoritativeRouteSources,
             tree_product_native_contract = WildTreeProductNativeContract,
             moss_harvest_status = mossHarvest.Status,
             moss_harvest_completion_mode = mossHarvest.CompletionMode,
