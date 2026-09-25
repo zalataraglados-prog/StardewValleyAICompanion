@@ -239,6 +239,16 @@ target-date acquisition chain, and native lifecycle proof closed the shared meth
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
 gate against the freshly rebuilt lowering rather than a stale generated artifact.
 
+`build-full-shipment-terminal-settlement-receipt` is the fail-closed terminal
+adapter for the Full Shipment recurrence. It takes the mutually hash-bound authoritative
+requirement inventory and acquisition lowering, one independently identified native sleep candidate,
+its compiled queue and execution receipt, plus fresh before/after snapshots. Admission requires the exact 154-item
+denominator to move from one missing item to complete, the final item to move from zero to one
+native shipment, the shared shipping-bin view to settle from one to zero, `total_days` to advance
+exactly once, and achievement 34 to appear without regressing existing progress. The verifier and
+tamper regressions are complete; no isolated native terminal artifact has been admitted yet, so
+the Full Shipment dependency graph remains `in_progress` and the coverage gate remains 2/19.
+
 `build-goal-method-coverage-reconciliation` is the read-only denominator and gap audit for that
 gate. It takes the same frontier inputs and `--request`, rebuilds both authorities, and joins the
 result to the current option-governance matrix. Its report separates 19 score criteria, 11 root

@@ -2098,6 +2098,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   This is evidence wiring through the existing compiler/executor and rollout hash chain, not new shipping or fishing
   action development; long-horizon terminal proofs remain a separate frontier requirement.
 
+### 2026-09-25: Full Shipment terminal settlement verifier
+
+- `build-full-shipment-terminal-settlement-receipt` now provides the missing fail-closed admission boundary for the
+  final native shipping day. It verifies the mutually hash-bound authoritative requirement inventory and acquisition
+  lowering, then hash-binds a single compiler-owned native sleep queue, its execution receipt and fresh before/after
+  snapshots. The selected candidate ID is supplied
+  independently by the caller and must match the runtime receipt; the receipt cannot authenticate its own identity.
+- The transition is admitted only when the exact 154-item denominator starts with one missing item and ends at
+  154/154, the terminal item's native `basicShipped` count moves from zero to exactly one, every shipping-bin view
+  settles from one pending unit to zero, `total_days` advances exactly once, and achievement 34 appears without any
+  existing shipment or achievement regression. Missing achievement, an uncleared bin, a same-day transition and a
+  drifted denominator are explicit regression failures.
+- Release build and the complete Stage-1 offline self-test pass. This closes the verifier implementation, not the
+  Full Shipment method: an isolated native final-item sleep receipt still has to be captured and admitted, and the
+  complete 154-requirement acquisition recurrence still needs its fresh-save deadline proof. The dependency graph
+  therefore remains `in_progress`, coverage-ready remains 2/19, and formal product training remains unauthorized.
+- The next bounded slice is to add the isolated runtime fixture that prepares a save with exactly one authoritative
+  Full Shipment item missing, deposits exactly one reserve-safe copy through the existing shipping executor, sleeps
+  through the existing recovery executor, captures the four artifacts consumed by this verifier, and rejects any run
+  whose fresh after snapshot does not carry the exact terminal transition.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
