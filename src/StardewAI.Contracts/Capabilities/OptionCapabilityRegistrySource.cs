@@ -307,7 +307,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.harvest_bush", "executor.harvest_fruit_tree", "executor.harvest_tree_product", "executor.rummage_garbage", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
-            "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.manage_grange_display", "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward",
+            "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.manage_grange_display", "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward", "executor.pay_community_center_vault_bundle",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
@@ -349,7 +349,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "fishing.manage_fish_pond",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
-            "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.manage_grange_display", "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward",
+            "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.manage_grange_display", "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward", "executor.pay_community_center_vault_bundle",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
@@ -413,7 +413,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.change_building_skin", "executor.place_furniture",
             "executor.set_sign_display_item", "executor.edit_text_sign", "executor.use_firework",
             "executor.choose_dialogue_response", "executor.donate_museum_item", "executor.donate_field_office_piece",
-            "executor.donate_community_center_item", "executor.purchase_joja_membership",
+            "executor.donate_community_center_item", "executor.pay_community_center_vault_bundle", "executor.purchase_joja_membership",
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building");
 
         private static readonly HashSet<string> PlayerCommandOnlyIds = Set(
@@ -469,7 +469,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
             "executor.complete_fish_pond_request", "executor.collect_animal_product",
             "executor.pet_interact", "executor.fill_pet_bowl", "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.manage_grange_display",
-            "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward", "executor.purchase_joja_membership",
+            "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward", "executor.pay_community_center_vault_bundle", "executor.purchase_joja_membership",
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building",
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.load_machine_input", "executor.name_hatched_animal",
@@ -1034,6 +1034,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("read_first_junimo_note"),
                 SupportedCandidate("donate_community_center_item"),
                 SupportedCandidate("claim_community_center_bundle_reward"),
+                SupportedCandidate("pay_community_center_vault_bundle"),
                 SupportedCandidate("donate_museum_item"), SupportedCandidate("donate_field_office_piece"), SupportedCandidate("answer_field_office_survey"), SupportedCandidate("manage_grange_display"), SupportedCandidate("play_fair_fishing_game"), SupportedCandidate("play_fair_slingshot_game"), SupportedCandidate("play_fair_strength_game"), SupportedCandidate("spin_fair_wheel"), SupportedCandidate("fill_pet_bowl"),
                 SupportedCandidate("play_calico_jack"),
                 SupportedCandidate("play_slots"),

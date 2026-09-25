@@ -101,4 +101,38 @@ public sealed partial class DailyPlanCompiler
             }
         };
     }
+
+    private static IEnumerable<SmallModelPlanStep> CommunityCenterMoneyPaymentSteps(
+        PolicyEventCandidatePrediction candidate)
+    {
+        return new[]
+        {
+            new SmallModelPlanStep
+            {
+                StepId = StepId(candidate, "pay_community_center_vault_bundle", 0),
+                Kind = "pay_community_center_vault_bundle",
+                TargetLocation = candidate.LocationId,
+                TargetTileX = candidate.TileX,
+                TargetTileY = candidate.TileY,
+                EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "community_center_vault_payment_projection_still_matches=true"
+                },
+                ExpectedEffects = new[] { candidate.ExpectedEffect },
+                SafetyConstraints = new[]
+                {
+                    "native_JunimoNoteMenu_purchaseButton_only",
+                    "exact_bundle_and_money_rebind_required",
+                    "no_direct_money_bundle_reward_or_area_mutation"
+                },
+                FailurePolicy = new[]
+                {
+                    "close_native_bundle_menu_refresh_snapshot_and_replan"
+                },
+                Parameters = candidate.Parameters
+            }
+        };
+    }
 }

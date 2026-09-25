@@ -44,6 +44,7 @@ public sealed partial class ModEntry
         }
         if (activeCommunityCenterFirstNote is not null ||
             activeCommunityCenterDonation is not null ||
+            activeCommunityCenterVaultPayment is not null ||
             activeCommunityCenterRewardClaim is not null ||
             Game1.activeClickableMenu is not null ||
             Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)

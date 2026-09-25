@@ -162,6 +162,7 @@ namespace StardewAI.Core.Execution
                 "spin_fair_wheel" => "executor.spin_fair_wheel",
                 "donate_community_center_item" => "executor.donate_community_center_item",
                 "claim_community_center_bundle_reward" => "executor.claim_community_center_bundle_reward",
+                "pay_community_center_vault_bundle" => "executor.pay_community_center_vault_bundle",
                 "purchase_joja_membership" => "executor.purchase_joja_membership",
                 "purchase_joja_project" => "executor.purchase_joja_project",
                 "purchase_farmhouse_upgrade" => "executor.purchase_farmhouse_upgrade",

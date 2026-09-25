@@ -437,6 +437,21 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             routeState,
             menuClear,
             mutex?.IsLocked() == true);
+        var moneyPayment = ReadCommunityCenterMoneyPayment(
+            world,
+            communityCenter,
+            dataKey,
+            areaId,
+            bundleId,
+            ingredientParts,
+            ingredients,
+            requiredSlots,
+            completedCount,
+            noteAppears,
+            interactionTile,
+            routeState,
+            menuClear,
+            mutex?.IsLocked() == true);
 
         return new CommunityCenterBundleProgressRef
         {
@@ -460,6 +475,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             AreaMutexLocked = mutex?.IsLocked(),
             RewardAvailable = rewardAvailable,
             Reward = reward,
+            MoneyPayment = moneyPayment,
             AreaComplete = areaComplete,
             AreaCompletionMailId = areaMailId,
             AreaCompletionMailPending = !string.IsNullOrWhiteSpace(areaMailId) && HasPendingMail(Game1.player, areaMailId),
@@ -618,7 +634,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             ActionStatus = actionStatus,
             AuthoritativeRouteSources = new[]
             {
-                new CommunityCenterBundleRewardSourceRef
+                new CommunityCenterAuthoritativeRouteSourceRef
                 {
                     RouteKind = "creates_reward_item",
                     SourceId = "bundle:" + dataKey + ":reward",

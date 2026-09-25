@@ -351,6 +351,36 @@ public static class QueueReplanFilter
         var communityRewardBundleId = ReadParameter(
             queueItem,
             "continuation.bundle_id");
+        var communityPaymentAmount = ReadParameter(
+            queueItem,
+            "continuation.required_money");
+        var communityPaymentRouteKind = ReadParameter(
+            queueItem,
+            "continuation.route_kind");
+        var communityPaymentSourceId = ReadParameter(
+            queueItem,
+            "continuation.source_id");
+        if (string.Equals(
+                optionId,
+                "community_center.donate_bundle_items",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(communityBundleKey) &&
+            !string.IsNullOrWhiteSpace(communityRewardBundleId) &&
+            !string.IsNullOrWhiteSpace(communityPaymentAmount) &&
+            communityPaymentRouteKind == "native_money_payment" &&
+            communityPaymentSourceId == "money")
+        {
+            return new JsonObject
+            {
+                ["kind"] = "community_center_money_payment",
+                ["option_id"] = optionId,
+                ["bundle_data_key"] = communityBundleKey,
+                ["bundle_id"] = communityRewardBundleId,
+                ["price"] = communityPaymentAmount,
+                ["route_kind"] = communityPaymentRouteKind,
+                ["source_id"] = communityPaymentSourceId
+            };
+        }
         var communityRewardMode = ReadParameter(
             queueItem,
             "continuation.reward_claim_mode");
@@ -1037,6 +1067,13 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "bundle_id"), ReadString(continuation, "bundle_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "reward_claim_mode"), ReadString(continuation, "reward_claim_mode"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "community_center_money_payment", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.pay_community_center_vault_bundle", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bundle_data_key"), ReadString(continuation, "bundle_data_key"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bundle_id"), ReadString(continuation, "bundle_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "price"), ReadString(continuation, "price"), StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "field_office_survey", StringComparison.Ordinal))
         {
@@ -1781,6 +1818,13 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "bundle_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "reward_claim_mode");
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "community_center_money_payment", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "bundle_data_key") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "bundle_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "price");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_survey", StringComparison.Ordinal))

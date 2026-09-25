@@ -462,6 +462,41 @@ internal static partial class BootstrapSelfTest
                     new[] { bundleRewardCandidate }).Length == 1,
             "An exact native Community Center bundle reward source was rejected.");
 
+        var vaultPaymentCandidate = CloneCandidate(animalCandidate);
+        vaultPaymentCandidate.OptionId = "community_center.donate_bundle_items";
+        vaultPaymentCandidate.Kind = "pay_community_center_vault_bundle";
+        vaultPaymentCandidate.QualifiedItemId = string.Empty;
+        vaultPaymentCandidate.Parameters = vaultPaymentCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
+            {
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"native_money_payment\",\"source_id\":\"money\",\"qualified_item_id\":\"\"}]")
+            }).ToArray();
+        var vaultPaymentRequirement = requirement with
+        {
+            QualifiedItemId = string.Empty,
+            RouteKind = "native_money_payment",
+            SourceId = "money"
+        };
+        var vaultPaymentLowering = lowered with
+        {
+            RouteKind = vaultPaymentRequirement.RouteKind,
+            SourceId = vaultPaymentRequirement.SourceId,
+            EndpointOptionIds = new[]
+            {
+                "community_center.donate_bundle_items"
+            }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    vaultPaymentRequirement,
+                    vaultPaymentLowering,
+                    snapshot,
+                    new[] { vaultPaymentCandidate }).Length == 1,
+            "An exact native Community Center Vault money source was rejected.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

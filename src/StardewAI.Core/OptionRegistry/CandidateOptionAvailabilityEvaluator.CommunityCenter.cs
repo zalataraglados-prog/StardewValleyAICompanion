@@ -50,21 +50,31 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             return rewardCandidates;
         }
+        var moneyPaymentCandidates = CommunityCenterMoneyPaymentCandidates(
+            snapshot,
+            progressRow,
+            bundles,
+            currentLocation,
+            routeState,
+            canReadJunimoText,
+            rowCountExact);
         if (ReadBool(progressRow, "community_center_is_current_location") != true)
         {
-            return CommunityCenterDonationRouteCandidates(
-                snapshot,
-                progressRow,
-                bundles,
-                currentLocation,
-                routeState,
-                canReadJunimoText,
-                rowCountExact);
+            return moneyPaymentCandidates
+                .Concat(CommunityCenterDonationRouteCandidates(
+                    snapshot,
+                    progressRow,
+                    bundles,
+                    currentLocation,
+                    routeState,
+                    canReadJunimoText,
+                    rowCountExact))
+                .ToArray();
         }
 
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-        var result = new List<EventCandidate>();
+        var result = new List<EventCandidate>(moneyPaymentCandidates);
 
         foreach (var bundle in bundles.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object))
         {

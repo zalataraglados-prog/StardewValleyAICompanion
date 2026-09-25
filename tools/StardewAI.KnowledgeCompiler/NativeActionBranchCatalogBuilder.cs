@@ -521,6 +521,7 @@ internal static class NativeBranchSemanticClassifier
         {
             result.Add("executor.donate_community_center_item");
             result.Add("executor.claim_community_center_bundle_reward");
+            result.Add("executor.pay_community_center_vault_bundle");
         }
         if (calls.Contains("OnDesertTrader", StringComparer.Ordinal))
         {
@@ -750,6 +751,7 @@ internal static class NativeBranchSemanticClassifier
         {
             result.Add("executor.donate_community_center_item");
             result.Add("executor.claim_community_center_bundle_reward");
+            result.Add("executor.pay_community_center_vault_bundle");
         }
         if (surface.RuntimeType == "LibraryMuseum")
             result.Add("executor.interact");
@@ -875,6 +877,7 @@ internal static class NativeBranchSemanticClassifier
                 case "JunimoNoteMenu":
                     result.Add("executor.donate_community_center_item");
                     result.Add("executor.claim_community_center_bundle_reward");
+                    result.Add("executor.pay_community_center_vault_bundle");
                     break;
                 case "MuseumMenu":
                     result.Add("executor.donate_museum_item");

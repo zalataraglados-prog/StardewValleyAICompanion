@@ -89,6 +89,52 @@ public sealed class CollectionDonationRouteContinuationTests
             terminal, continuation, "applied"));
     }
 
+    [Fact]
+    public void CommunityCenterVaultPaymentContinuationLocksBundleAndPriceButRebindsMoney()
+    {
+        var route = QueueItem("executor.traverse_connector", new Dictionary<string, string>
+        {
+            ["continuation.option_id"] = "community_center.donate_bundle_items",
+            ["continuation.bundle_data_key"] = "Vault/23",
+            ["continuation.bundle_id"] = "23",
+            ["continuation.required_money"] = "2500",
+            ["continuation.route_kind"] = "native_money_payment",
+            ["continuation.source_id"] = "money"
+        });
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.Equal("community_center_money_payment", continuation!["kind"]!.GetValue<string>());
+        Assert.Null(continuation["money_before"]);
+        var ranked = JsonNode.Parse("""
+        [{"option_id":"community_center.donate_bundle_items","parameters":[
+          {"name":"bundle_data_key","value":"Vault/23"},
+          {"name":"bundle_id","value":"23"},
+          {"name":"price","value":"2500"},
+          {"name":"expected_money_before","value":"3000"}
+        ]},{"option_id":"community_center.donate_bundle_items","parameters":[
+          {"name":"bundle_data_key","value":"Vault/23"},
+          {"name":"bundle_id","value":"23"},
+          {"name":"price","value":"5000"},
+          {"name":"expected_money_before","value":"9000"}
+        ]}]
+        """)!.AsArray();
+        Assert.Single(QueueReplanFilter.FilterRankedCandidates(ranked, continuation));
+
+        var terminal = QueueItem(
+            "executor.pay_community_center_vault_bundle",
+            new Dictionary<string, string>
+            {
+                ["bundle_data_key"] = "Vault/23",
+                ["bundle_id"] = "23",
+                ["price"] = "2500",
+                ["expected_money_before"] = "4750"
+            });
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            terminal, continuation, "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            terminal, continuation, "blocked"));
+    }
+
     private static JsonObject QueueItem(
         string optionId,
         IReadOnlyDictionary<string, string> parameters)

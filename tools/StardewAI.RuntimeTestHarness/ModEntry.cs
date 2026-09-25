@@ -103,6 +103,7 @@ public sealed partial class ModEntry : Mod
     private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
+    private ActiveCommunityCenterVaultPayment? activeCommunityCenterVaultPayment;
     private ActiveCommunityCenterRewardClaim? activeCommunityCenterRewardClaim;
     private ActiveCommunityCenterFirstNote? activeCommunityCenterFirstNote;
     private ActiveJojaDevelopment? activeJojaDevelopment;
@@ -615,6 +616,7 @@ public sealed partial class ModEntry : Mod
         TickFieldOfficeSurvey();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
+        TickCommunityCenterVaultPayment();
         TickCommunityCenterRewardClaim();
         TickCommunityCenterFirstNote();
         TickJojaDevelopment();
@@ -1904,6 +1906,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.pay_community_center_vault_bundle")
+            {
+                StartCommunityCenterVaultPayment(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.purchase_joja_membership" ||
                 pending.Request.OptionId == "executor.purchase_joja_project")
             {
@@ -2396,6 +2404,7 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
+            activeCommunityCenterVaultPayment = null;
             activeCommunityCenterRewardClaim = null;
             activeCommunityCenterFirstNote = null;
             activeJojaDevelopment = null;
@@ -2686,6 +2695,7 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
+            activeCommunityCenterVaultPayment is not null ||
             activeCommunityCenterRewardClaim is not null ||
             activeCommunityCenterFirstNote is not null ||
             activeJojaDevelopment is not null ||

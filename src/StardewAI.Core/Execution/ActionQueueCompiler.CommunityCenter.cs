@@ -167,6 +167,141 @@ public sealed partial class ActionQueueCompiler
         };
     }
 
+    private static CompiledActionStep[] CompilePayCommunityCenterVaultBundleStep(
+        SmallModelAction action)
+    {
+        var bundleId = ReadIntParameter(action, "bundle_id");
+        var price = ReadIntParameter(action, "price");
+        var moneyAfter = ReadIntParameter(action, "expected_money_after");
+        if (!bundleId.HasValue || !price.HasValue || price.Value < 1 ||
+            !moneyAfter.HasValue || moneyAfter.Value < 0)
+        {
+            return Array.Empty<CompiledActionStep>();
+        }
+
+        return new[]
+        {
+            Step(
+                "pay_community_center_vault_bundle",
+                "community_center:vault_bundle=" + bundleId.Value +
+                    ":money=" + price.Value,
+                "player.money=" + moneyAfter.Value +
+                    ";world_progress.community_center.bundle_rewards[" +
+                    bundleId.Value + "]=true",
+                240)
+        };
+    }
+
+    private static string[] ValidateCommunityCenterMoneyPaymentPlan(
+        SmallModelAction action,
+        SnapshotEnvelope snapshot)
+    {
+        if (action.OptionId != "executor.pay_community_center_vault_bundle")
+            return Array.Empty<string>();
+
+        var targetX = ReadIntParameter(action, "target_tile_x");
+        var targetY = ReadIntParameter(action, "target_tile_y");
+        var standX = ReadIntParameter(action, "stand_tile_x");
+        var standY = ReadIntParameter(action, "stand_tile_y");
+        var noteX = ReadIntParameter(action, "community_center_note_tile_x");
+        var noteY = ReadIntParameter(action, "community_center_note_tile_y");
+        var bundleId = ReadIntParameter(action, "bundle_id");
+        var areaId = ReadIntParameter(action, "bundle_area_id");
+        var ingredientIndex = ReadIntParameter(action, "bundle_ingredient_index");
+        var requiredSlots = ReadIntParameter(action, "bundle_required_slot_count");
+        var price = ReadIntParameter(action, "price");
+        var moneyBefore = ReadIntParameter(action, "expected_money_before");
+        var moneyAfter = ReadIntParameter(action, "expected_money_after");
+        if (!targetX.HasValue || !targetY.HasValue || !standX.HasValue || !standY.HasValue ||
+            Math.Abs(targetX.Value - standX.Value) + Math.Abs(targetY.Value - standY.Value) != 1 ||
+            !noteX.HasValue || !noteY.HasValue ||
+            !bundleId.HasValue || bundleId.Value < 0 || areaId != 4 || ingredientIndex != 0 ||
+            requiredSlots != 1 || !price.HasValue || price.Value < 1 ||
+            !moneyBefore.HasValue || moneyBefore.Value < price.Value ||
+            moneyAfter != moneyBefore - price ||
+            ReadParameter(action, "bundle_area_name") != "Vault" ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "bundle_data_key")) ||
+            ReadParameter(action, "native_contract") !=
+                "CommunityCenter.checkBundle_then_JunimoNoteMenu.receiveLeftClick_bundle_then_purchaseButton" ||
+            ReadParameter(action, "authoritative_route_sources_json") is null or "" or "[]" ||
+            !TryBoolParameter(action, "expected_bundle_complete_after", out var bundleCompleteAfter) ||
+            !bundleCompleteAfter ||
+            !TryBoolParameter(action, "expected_bundle_reward_available_after", out var rewardAvailableAfter) ||
+            !rewardAvailableAfter)
+        {
+            return new[] { "community_center_vault_payment_typed_projection_required" };
+        }
+
+        var reasons = new List<string>();
+        if (ActionSeesActiveMenuOpen(action, snapshot))
+            reasons.Add("community_center_vault_payment_menu_must_be_clear");
+        if (ReadStateFieldInt(snapshot, "player", "money") != moneyBefore.Value)
+            reasons.Add("community_center_vault_payment_money_drifted");
+        if (!string.Equals(
+                ReadParameter(action, "target_location"),
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            reasons.Add("community_center_vault_payment_target_location_mismatch");
+        }
+
+        var progress = ReadStateFieldValue(snapshot, "world_progress", "community_center");
+        if (!progress.HasValue || progress.Value.ValueKind != JsonValueKind.Object ||
+            ReadString(progress.Value, "route_state") != ReadParameter(action, "route_state") ||
+            ReadString(progress.Value, "route_state") is not ("undecided" or "community_center_locked") ||
+            ReadBool(progress.Value, "community_center_is_current_location") != true ||
+            ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
+            ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
+            !TryFindCommunityCenterBundle(
+                progress.Value,
+                bundleId.Value,
+                ReadParameter(action, "bundle_data_key"),
+                out var bundle) ||
+            ReadString(bundle, "projection_status") != "exact" ||
+            ReadInt(bundle, "area_id") != 4 ||
+            ReadString(bundle, "area_name") != "Vault" ||
+            ReadBool(bundle, "complete") == true ||
+            NullableReadInt(bundle, "note_tile_x") != noteX ||
+            NullableReadInt(bundle, "note_tile_y") != noteY ||
+            NullableReadInt(bundle, "interaction_tile_x") != targetX ||
+            NullableReadInt(bundle, "interaction_tile_y") != targetY ||
+            ReadInt(bundle, "required_slot_count") != 1 ||
+            !bundle.TryGetProperty("money_payment", out var payment) ||
+            payment.ValueKind != JsonValueKind.Object ||
+            ReadString(payment, "projection_status") != "exact" ||
+            ReadString(payment, "action_status") != "ready" ||
+            ReadInt(payment, "ingredient_index") != 0 ||
+            ReadInt(payment, "required_money") != price.Value ||
+            ReadInt(payment, "money_before") != moneyBefore.Value ||
+            ReadInt(payment, "money_after") != moneyAfter.Value ||
+            ReadBool(payment, "affordable") != true ||
+            ReadInt(payment, "completed_ingredient_count_before") !=
+                ReadIntParameter(action, "expected_bundle_completed_count_before") ||
+            ReadInt(payment, "completed_ingredient_count_after") !=
+                ReadIntParameter(action, "expected_bundle_completed_count_after") ||
+            ReadBool(payment, "completes_bundle") != bundleCompleteAfter ||
+            ReadBool(payment, "expected_bundle_reward_available_after") != rewardAvailableAfter ||
+            ReadInt(payment, "expected_complete_bundle_count_after") !=
+                ReadIntParameter(action, "expected_complete_bundle_count_after") ||
+            ReadBool(payment, "completes_area") != ReadBoolParameter(action, "completes_area") ||
+            ReadBool(payment, "expected_area_complete_after") !=
+                ReadBoolParameter(action, "expected_area_complete_after") ||
+            ReadBool(payment, "expected_area_completion_mail_pending_after") !=
+                ReadBoolParameter(action, "expected_area_completion_mail_pending_after") ||
+            ReadBool(payment, "expected_bulletin_thank_you_pending_after") !=
+                ReadBoolParameter(action, "expected_bulletin_thank_you_pending_after") ||
+            ReadBool(payment, "expected_all_areas_complete_after") !=
+                ReadBoolParameter(action, "expected_all_areas_complete_after") ||
+            CommunityCenterRawJson(payment, "newly_appearing_note_area_ids") !=
+                ReadParameter(action, "newly_appearing_note_area_ids_json") ||
+            CommunityCenterRawJson(payment, "authoritative_route_sources") !=
+                ReadParameter(action, "authoritative_route_sources_json"))
+        {
+            reasons.Add("community_center_vault_payment_projection_drifted");
+        }
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
     private static string[] ValidateCommunityCenterRewardPlan(
         SmallModelAction action,
         SnapshotEnvelope snapshot)

@@ -2199,18 +2199,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   fresh-snapshot native claim. An incomplete area uses `CommunityCenter.checkBundle -> JunimoNoteMenu.presentButton ->
   ItemGrabMenu`; a completed area uses the native `MissedRewards` chest action. Both paths require the exact bundle ID,
   reward item unit state, endpoint, inventory capacity and pending reward flag, and complete only after the flag clears
-  and the exact inventory delta appears. Remote state emits only a connector and replans. `native_money_payment` is now
-  the sole remaining source kind without a queue.
+  and the exact inventory delta appears. Remote state emits only a connector and replans. `native_money_payment` now
+  binds each vanilla Vault bundle to its exact `Data/Bundles` money ingredient, current balance, bundle progress and
+  native `JunimoNoteMenu.purchaseButton` path. It is a separate terminal from reward collection: a verified payment
+  makes the reward pending, then a fresh snapshot may admit the existing reward-claim terminal. The runtime drives only
+  native menu input and never writes money, bundle bits, reward flags or area-completion state directly.
 - Crop candidates now carry the transparent bridge's native `harvest_source_seed_id`, allowing a harvested product to
   bind back to its authoritative `crop:<seed id>` route rather than relying on output item identity alone.
 - This bridge dispatches only an endpoint that is current now. It does not yet schedule supporting construction,
   planting, loading, travel/unlock or retry steps needed to make a future endpoint current, and it has not generated
   the 154-row fresh-save Full Shipment chain. Coverage remains 2/19 and `formal_training_authorized=false`.
-- Exact executable source coverage is now 32/33. The next bounded slice is source-identity propagation and native
-  execution for `native_money_payment`, followed by a compiler-owned supporting-step queue that replans from a fresh
-  snapshot after each verified transition. Only then can the existing recurrence driver produce and admit the complete
-  Full Shipment runtime manifest. The Community Center reward claim remains runtime-calibration pending until an
-  isolated native game run produces its before/after artifact.
+- Exact executable source coverage is now 33/33. The next bounded slice is the compiler-owned supporting-step queue
+  that replans from a fresh snapshot after each verified transition. Only then can the existing recurrence driver
+  produce and admit the complete Full Shipment runtime manifest. Community Center reward claims and Vault payments
+  remain runtime-calibration pending until isolated native game runs produce their before/after artifacts.
 
 ## Review questions
 

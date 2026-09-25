@@ -1077,6 +1077,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("reward")]
         public CommunityCenterBundleRewardRef Reward { get; set; } = new();
 
+        [JsonPropertyName("money_payment")]
+        public CommunityCenterBundleMoneyPaymentRef MoneyPayment { get; set; } = new();
+
         [JsonPropertyName("area_complete")]
         public bool AreaComplete { get; set; }
 
@@ -1141,10 +1144,73 @@ namespace StardewAI.Contracts.State
         public string ActionStatus { get; set; } = string.Empty;
 
         [JsonPropertyName("authoritative_route_sources")]
-        public CommunityCenterBundleRewardSourceRef[] AuthoritativeRouteSources { get; set; } = System.Array.Empty<CommunityCenterBundleRewardSourceRef>();
+        public CommunityCenterAuthoritativeRouteSourceRef[] AuthoritativeRouteSources { get; set; } = System.Array.Empty<CommunityCenterAuthoritativeRouteSourceRef>();
     }
 
-    public sealed class CommunityCenterBundleRewardSourceRef
+    public sealed class CommunityCenterBundleMoneyPaymentRef
+    {
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("projection_failure")]
+        public string ProjectionFailure { get; set; } = string.Empty;
+
+        [JsonPropertyName("ingredient_index")]
+        public int IngredientIndex { get; set; }
+
+        [JsonPropertyName("required_money")]
+        public int RequiredMoney { get; set; }
+
+        [JsonPropertyName("money_before")]
+        public int MoneyBefore { get; set; }
+
+        [JsonPropertyName("money_after")]
+        public int MoneyAfter { get; set; }
+
+        [JsonPropertyName("affordable")]
+        public bool Affordable { get; set; }
+
+        [JsonPropertyName("completed_ingredient_count_before")]
+        public int CompletedIngredientCountBefore { get; set; }
+
+        [JsonPropertyName("completed_ingredient_count_after")]
+        public int CompletedIngredientCountAfter { get; set; }
+
+        [JsonPropertyName("completes_bundle")]
+        public bool CompletesBundle { get; set; }
+
+        [JsonPropertyName("expected_bundle_reward_available_after")]
+        public bool ExpectedBundleRewardAvailableAfter { get; set; }
+
+        [JsonPropertyName("expected_complete_bundle_count_after")]
+        public int ExpectedCompleteBundleCountAfter { get; set; }
+
+        [JsonPropertyName("completes_area")]
+        public bool CompletesArea { get; set; }
+
+        [JsonPropertyName("expected_area_complete_after")]
+        public bool ExpectedAreaCompleteAfter { get; set; }
+
+        [JsonPropertyName("expected_area_completion_mail_pending_after")]
+        public bool ExpectedAreaCompletionMailPendingAfter { get; set; }
+
+        [JsonPropertyName("expected_bulletin_thank_you_pending_after")]
+        public bool ExpectedBulletinThankYouPendingAfter { get; set; }
+
+        [JsonPropertyName("expected_all_areas_complete_after")]
+        public bool ExpectedAllAreasCompleteAfter { get; set; }
+
+        [JsonPropertyName("newly_appearing_note_area_ids")]
+        public int[] NewlyAppearingNoteAreaIds { get; set; } = System.Array.Empty<int>();
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("authoritative_route_sources")]
+        public CommunityCenterAuthoritativeRouteSourceRef[] AuthoritativeRouteSources { get; set; } = System.Array.Empty<CommunityCenterAuthoritativeRouteSourceRef>();
+    }
+
+    public sealed class CommunityCenterAuthoritativeRouteSourceRef
     {
         [JsonPropertyName("route_kind")]
         public string RouteKind { get; set; } = string.Empty;
