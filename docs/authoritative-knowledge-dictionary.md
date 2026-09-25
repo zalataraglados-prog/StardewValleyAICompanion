@@ -740,3 +740,14 @@ Community Center method became executable only after the save-bound standard/rem
 all target-date acquisition axes, and the native unlock/note/reward/mail/final-ceremony lifecycle
 were independently closed. The other 17 criteria remain blocked. This report is a readiness audit
 only and always retains `formal_product_training_authorized=false`.
+
+The first non-collection adapter is now typed as
+`pet_love_terminal_interaction_corpus`. It does not trust a declared method or criterion. The
+adapter itself maps only to `earn_pet_love`, reopens every source file, recomputes both snapshot
+state hashes, derives the split from save/player/total-day identity, and admits only a native
+`executor.pet_interact` transition from friendship 988-999 to exactly 1000 with a fresh
+`petLoveMessage` receipt. A same-state defer alternative is therefore non-terminal without
+requiring a guide-derived long-horizon estimate. A deterministic three-partition fixture proves
+the adapter and tamper rejection and would raise the test report to 3/19. It is not production
+evidence: the current authoritative report remains 2/19 until three independent native save-day
+receipts are collected through this contract.

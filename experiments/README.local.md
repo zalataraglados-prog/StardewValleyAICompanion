@@ -235,6 +235,15 @@ target-date acquisition chain, and native lifecycle proof closed the shared meth
 17 criteria remain blocked, so the gate reports `formal_product_training_authorized=false`. Pass a verified
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
 gate against the freshly rebuilt lowering rather than a stale generated artifact.
+
+`build-pet-love-teacher-corpus --request <path> --output <path>` builds the first
+non-collection coverage source. Each request row names fresh before/after snapshots and one
+`training_execution_result.v1`; the builder derives method ownership and dataset partition,
+recomputes snapshot hashes, and accepts only an exact native pet interaction that crosses from
+988-999 friendship to 1000 and produces `petLoveMessage`. Repeated evidence from the same
+save/player/day is rejected. The focused three-partition fixture exercises a 3/19 coverage result
+and tamper rejection, but the authoritative current report stays at 2/19 until equivalent native
+receipts exist in train, validation, and test.
 The current requirement report is
 `local-data/output/authoritative-requirement-inventory-v1.json`. Current candidate membership
 for Full Shipment, Master Angler, Museum Collection, and the standard Community Center can be

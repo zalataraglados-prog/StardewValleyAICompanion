@@ -2052,6 +2052,22 @@ Slice 7 remains assigned to the RTX 5070 node.
   other 17 criteria. A runtime promotion gate may consume only a future independently rebuilt 19/19 report, never the
   current partial count or a caller-authored authorization flag.
 
+### 2026-09-25: typed pet-love Teacher source adapter
+
+- `pet_love_terminal_interaction_corpus.v1` is the first non-collection source adapter. The source request contains no
+  criterion IDs and cannot select a method. The adapter is hard-bound to `earn_pet_love` and re-verifies fresh
+  before/after snapshots plus one `training_execution_result.v1` from the existing pet executor.
+- Admission is intentionally narrow: the native pet must be ready and unpetted for that player/day, friendship must
+  move from 988-999 to exactly 1000, `timesPet`, `lastPetDay` and the per-player grant flag must settle exactly, and
+  `petLoveMessage` must appear only after the action. The Teacher comparison is execute-now versus same-state defer;
+  it proves immediate terminal progress without importing guide assumptions, water-bowl forecasts or future RNG.
+- Split identity is derived from save ID, player ID and total day. Duplicate save-days, caller partition labels,
+  modified corpus rows, mismatched state hashes, non-native pet types, stale projections and non-terminal interactions
+  fail closed. The CLI and direct builder produce byte-identical corpus artifacts.
+- A three-partition deterministic fixture proves the adapter and moves only its explicit fixture report from 2/19 to
+  3/19. It is not counted as production native evidence. The authoritative report remains 2/19 until three independent
+  isolated native save-day receipts are captured. Formal product training and runtime model authority remain false.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

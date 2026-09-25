@@ -6,6 +6,9 @@ public static class GoalMethodTeacherCoverageSourceKinds
 {
     public const string AcquisitionRoutePortfolioCorpus =
         "acquisition_route_portfolio_supervision_corpus";
+
+    public const string PetLoveTerminalInteractionCorpus =
+        "pet_love_terminal_interaction_corpus";
 }
 
 public static class GoalMethodTeacherCoverageGoalIds

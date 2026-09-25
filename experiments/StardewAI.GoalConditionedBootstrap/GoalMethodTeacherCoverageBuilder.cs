@@ -248,6 +248,13 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     fullPath,
                     frontier,
                     evidence),
+            GoalMethodTeacherCoverageSourceKinds
+                .PetLoveTerminalInteractionCorpus =>
+                VerifyPetLoveCorpus(
+                    source,
+                    fullPath,
+                    frontier,
+                    evidence),
             _ => throw new InvalidDataException(
                 "Unsupported goal-method Teacher coverage source kind: " +
                 source.SourceKind)
