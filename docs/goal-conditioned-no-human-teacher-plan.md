@@ -2231,7 +2231,13 @@ Slice 7 remains assigned to the RTX 5070 node.
   Before live recurrence may use this support queue, a separate deterministic support-request artifact must select an
   unresolved authoritative route against an explicit future deadline, prove that planting now can mature within that
   horizon, and bind the resulting one-step queue to a fresh-snapshot receipt. Formal training remains unauthorized.
-- The next bounded slice is that deadline-aware support request and verified after-state receipt for crop planting.
+- `build-acquisition-route-supporting-transition-receipt` now verifies the crop-planting after-state independently of
+  the executor's success flag. The before/after snapshots must remain on the same save, player and total day, both
+  state hashes are recomputed, the queue receipt must close exactly one native `plant_seed` item, the exact seed total
+  must decrease by one, and the target tile must gain one live non-harvest-ready crop with the route's source seed and
+  projected harvest item. A verified receipt remains nonterminal and sets `fresh_replan_required=true`; it cannot
+  authorize training or settlement.
+- The next bounded slice is the deadline-aware support request plus atomic reservation commit for crop planting.
   Later support families (seed purchase, machine load/capacity, animal/building capacity, pond/crab-pot preparation,
   unlock/travel and stochastic retry) must reuse the same role boundary and one-transition replan rule.
 

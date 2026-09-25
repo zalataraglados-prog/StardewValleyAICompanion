@@ -639,14 +639,17 @@ internal static partial class BootstrapSelfTest
             Revision = 2,
             SourceStateHash = snapshot.StateHash
         };
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[] { "farm.maintain_crops" },
+            includeExecutorCalibrationOptions: true,
+            commitmentLedger: ledger);
         var ranked = new EventCandidateRanker().Rank(
             new BaselineTrainingReport(),
-            new CandidateOptionAvailabilityEvaluator().Evaluate(
-                snapshot,
-                new[] { "farm.maintain_crops" },
-                includeExecutorCalibrationOptions: true,
-                commitmentLedger: ledger),
+            availability,
             "grandpa.stage1.21_points");
+        Require(ranked.Length > 0,
+            "Crop support snapshot emitted no rankable candidate.");
         var rebuilt = AcquisitionRouteDispatchCompilationBuilder
             .RebuildVerifiedCurrentCandidates(
                 snapshot,
@@ -673,7 +676,10 @@ internal static partial class BootstrapSelfTest
         Require(support.Length == 1 &&
                 support[0].Candidate.Kind == "plant_seed_tile" &&
                 support[0].RouteOptionRole == "supporting_transition",
-            "The exact seed-to-harvest planting support was not selected uniquely.");
+            "The exact seed-to-harvest planting support was not selected uniquely: " +
+            support.Length + ":" +
+            string.Join(",", support.Select(value =>
+                value.Candidate.Kind + "/" + value.RouteOptionRole)));
         var wrongHarvest = CloneCandidate(support[0].Candidate);
         wrongHarvest.Parameters = wrongHarvest.Parameters
             .Select(parameter =>
@@ -737,6 +743,7 @@ internal static partial class BootstrapSelfTest
                         "route_queue_command_binding_invalid",
                         StringComparer.Ordinal),
             "A crop planting support queue was admitted as a terminal route queue.");
+        VerifyCropPlantingSupportingReceipt(compilation, snapshot);
     }
 
     private static AcquisitionRouteTargetDateUnlock CropRequirement() => new(
@@ -872,6 +879,7 @@ internal static partial class BootstrapSelfTest
         const string json = """
         {
           "time": {
+            "total_days":{"value":0,"status":"available"},
             "season":{"value":"spring","status":"available"},
             "weather":{"value":"sun","status":"available"}
           },
@@ -904,6 +912,16 @@ internal static partial class BootstrapSelfTest
             "Crop support dispatch self-test snapshot is null.");
         return new SnapshotEnvelope
         {
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "support-receipt-save",
+                Status = "available"
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "123",
+                Status = "available"
+            },
             StateHash = SnapshotHash.ComputeStateHash(state),
             GameTick = 1,
             RealTimestamp = "2026-09-26T00:00:00Z",

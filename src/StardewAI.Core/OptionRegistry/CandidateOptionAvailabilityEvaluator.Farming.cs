@@ -307,7 +307,13 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("seed_id", seedId),
                         Parameter("harvest_source_seed_id", seedId),
                         Parameter("harvest_item_id", crop.HarvestItemId),
-                        Parameter("harvest_item_qualified_id", crop.HarvestItemQualifiedId)
+                        Parameter("harvest_item_qualified_id", crop.HarvestItemQualifiedId),
+                        Parameter(
+                            "adjusted_grow_days",
+                            adjustedGrowDays?.ToString() ?? string.Empty),
+                        Parameter(
+                            "days_remaining_in_season",
+                            daysRemaining?.ToString() ?? string.Empty)
                     },
                     BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
                 };

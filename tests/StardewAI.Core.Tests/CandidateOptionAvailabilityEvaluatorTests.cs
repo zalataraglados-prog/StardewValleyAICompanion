@@ -715,6 +715,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains(candidate.Parameters, parameter =>
             parameter.Name == "harvest_item_qualified_id" &&
             parameter.Value == "(O)24");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "adjusted_grow_days" &&
+            parameter.Value == "4");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "days_remaining_in_season" &&
+            parameter.Value == "20");
         Assert.Contains("seed_id=472", candidate.ExpectedEffect);
         Assert.Contains("adjusted_grow_days=4", candidate.ExpectedEffect);
         Assert.Contains("days_remaining_in_season=20", candidate.ExpectedEffect);
