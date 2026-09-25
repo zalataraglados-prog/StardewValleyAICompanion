@@ -2214,6 +2214,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   produce and admit the complete Full Shipment runtime manifest. Community Center reward claims and Vault payments
   remain runtime-calibration pending until isolated native game runs produce their before/after artifacts.
 
+### 2026-09-26: nonterminal supporting-transition compiler boundary
+
+- Acquisition dispatch now carries an explicit `terminal_transition` or `supporting_transition` role through every
+  compiled primitive. Terminal transitions remain eligible for the existing fresh terminal receipt. Supporting
+  transitions are restricted to one queue item, are never terminal-receipt eligible, and require a new transparent
+  snapshot plus complete upstream replan after success. The terminal execution-binding verifier defaults to
+  `terminal_transition`, so a supporting queue cannot be relabeled as a completed acquisition.
+- The first exact supporting family is crop planting. A live `plant_seed_tile` candidate is admitted only when its
+  structured seed ID, authoritative `crop:<seed id>` source, projected harvest qualified item, inventory seed identity
+  and selected route all agree. The candidate is rebuilt independently from the same snapshot and commitment ledger,
+  then passes through the existing `DailyPlanCompiler` and `ActionQueueCompiler`; no second compiler or direct state
+  mutation was introduced. Output text is not parsed as authority.
+- This closes the compiler and queue-role boundary, not upstream support selection. The current target-date axis still
+  proves what can finish on the current snapshot day, and a newly planted crop correctly remains a processing miss.
+  Before live recurrence may use this support queue, a separate deterministic support-request artifact must select an
+  unresolved authoritative route against an explicit future deadline, prove that planting now can mature within that
+  horizon, and bind the resulting one-step queue to a fresh-snapshot receipt. Formal training remains unauthorized.
+- The next bounded slice is that deadline-aware support request and verified after-state receipt for crop planting.
+  Later support families (seed purchase, machine load/capacity, animal/building capacity, pond/crab-pot preparation,
+  unlock/travel and stochastic retry) must reuse the same role boundary and one-transition replan rule.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

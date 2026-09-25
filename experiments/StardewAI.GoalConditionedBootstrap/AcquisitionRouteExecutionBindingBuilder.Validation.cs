@@ -91,7 +91,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         AcquisitionRouteTargetDateUnlock requirement,
         AcquisitionRequirementRouteLowering route,
         string portfolioId,
-        int committedLedgerRevision)
+        int committedLedgerRevision,
+        string expectedRouteOptionRole = "terminal_transition")
     {
         var items = queue.Items ?? Array.Empty<ActionQueueItem>();
         if (!string.Equals(queue.SchemaVersion, "action_queue.v1",
@@ -135,14 +136,23 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var boundRouteOptions = items
             .Select(item => BoundRouteOption(item, allowed))
             .ToArray();
-        if (route.EndpointOptionIds.Length == 0 ||
+        var validRole = expectedRouteOptionRole is
+            "terminal_transition" or "supporting_transition";
+        if (!validRole ||
+            route.EndpointOptionIds.Length == 0 ||
             allowed.Count == 0 ||
             boundRouteOptions.Any(string.IsNullOrWhiteSpace) ||
-            !boundRouteOptions.Any(optionId => route.EndpointOptionIds.Contains(
-                optionId,
-                StringComparer.Ordinal)))
+            (expectedRouteOptionRole == "terminal_transition" &&
+             !boundRouteOptions.Any(optionId => route.EndpointOptionIds.Contains(
+                 optionId,
+                 StringComparer.Ordinal))))
         {
             yield return "route_queue_option_outside_authoritative_route";
+        }
+        if (expectedRouteOptionRole == "supporting_transition" &&
+            items.Length != 1)
+        {
+            yield return "route_supporting_transition_not_single_action";
         }
         if (items.Select((item, index) => new
             {
@@ -168,7 +178,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     value.Item.NormalizedCommand.Parameters,
                     requirement,
                     portfolioId,
-                    committedLedgerRevision) ||
+                    committedLedgerRevision,
+                    expectedRouteOptionRole) ||
                 !SameActor(value.Item.NormalizedCommand.Actor, queue.Actor)))
         {
             yield return "route_queue_command_binding_invalid";
@@ -456,7 +467,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
     internal static SmallModelActionParameter[] RouteBindingParameters(
         AcquisitionRouteTargetDateUnlock requirement,
         string portfolioId,
-        int committedLedgerRevision) => new[]
+        int committedLedgerRevision,
+        string routeOptionRole = "terminal_transition") => new[]
     {
         Parameter("acquisition_route_occurrence_id",
             requirement.RouteOccurrenceId),
@@ -479,20 +491,23 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         Parameter("acquisition_reservation_portfolio_id", portfolioId),
         Parameter(
             "acquisition_reservation_ledger_revision",
-            committedLedgerRevision.ToString(CultureInfo.InvariantCulture))
+            committedLedgerRevision.ToString(CultureInfo.InvariantCulture)),
+        Parameter("acquisition_route_option_role", routeOptionRole)
     };
 
     private static bool RouteParametersMatch(
         SmallModelActionParameter[]? actual,
         AcquisitionRouteTargetDateUnlock requirement,
         string portfolioId,
-        int committedLedgerRevision)
+        int committedLedgerRevision,
+        string routeOptionRole)
     {
         var values = actual ?? Array.Empty<SmallModelActionParameter>();
         var expectedValues = RouteBindingParameters(
             requirement,
             portfolioId,
-            committedLedgerRevision);
+            committedLedgerRevision,
+            routeOptionRole);
         return expectedValues.All(expected =>
         {
             var matches = values.Where(value => string.Equals(

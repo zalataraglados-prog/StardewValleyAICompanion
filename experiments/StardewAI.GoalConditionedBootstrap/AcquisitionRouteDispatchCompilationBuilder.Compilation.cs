@@ -22,6 +22,11 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         string rankingHash)
     {
         var source = selected.Candidate;
+        var routeOptionRole = selected.RouteOptionRole;
+        var roleReasons = routeOptionRole is
+                "terminal_transition" or "supporting_transition"
+            ? Array.Empty<string>()
+            : new[] { "route_option_role_invalid" };
         var candidate = NeutralizeLearnerSignals(
             source,
             AcquisitionRouteExecutionBindingBuilder.SelectedCandidateId(
@@ -39,7 +44,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             .RouteBindingParameters(
                 requirement,
                 portfolioId,
-                committedLedgerRevision)
+                committedLedgerRevision,
+                routeOptionRole)
             .Concat(new[]
             {
                 Parameter("acquisition_endpoint_option_id", source.OptionId),
@@ -55,6 +61,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             ? new ActionQueueCompiler().Compile(plan, snapshot, ledger)
             : null;
         var reasons = annotationReasons
+            .Concat(roleReasons)
             .Concat(PlanReasons(plan))
             .Concat(queue is null
                 ? Array.Empty<string>()
@@ -66,7 +73,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                     requirement,
                     lowered,
                     portfolioId,
-                    committedLedgerRevision))
+                    committedLedgerRevision,
+                    routeOptionRole))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -74,7 +82,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         return new AcquisitionRouteDispatchCompilation
         {
             Status = ready
-                ? "ready_for_native_action_queue_dispatch"
+                ? routeOptionRole == "supporting_transition"
+                    ? "ready_for_supporting_transition_dispatch"
+                    : "ready_for_native_action_queue_dispatch"
                 : "blocked",
             GoalId = goalId,
             RouteOccurrenceId = requirement.RouteOccurrenceId,
@@ -86,6 +96,11 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             SourceCandidateId = source.CandidateId,
             SelectedCandidateId = candidate.CandidateId,
             EndpointOptionId = source.OptionId,
+            SelectedRouteOptionRole = routeOptionRole,
+            TerminalReceiptEligible =
+                routeOptionRole == "terminal_transition",
+            FreshReplanRequiredAfterSuccess =
+                routeOptionRole == "supporting_transition",
             SourceBindingEvidence = selected.IdentityEvidence,
             UsesLearnerRankOrScore = false,
             CompiledPlan = plan,

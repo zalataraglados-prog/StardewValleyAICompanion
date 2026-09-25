@@ -42,6 +42,15 @@ public sealed class AcquisitionRouteDispatchCompilation
     [JsonPropertyName("endpoint_option_id")]
     public string EndpointOptionId { get; set; } = string.Empty;
 
+    [JsonPropertyName("selected_route_option_role")]
+    public string SelectedRouteOptionRole { get; set; } = string.Empty;
+
+    [JsonPropertyName("terminal_receipt_eligible")]
+    public bool TerminalReceiptEligible { get; set; }
+
+    [JsonPropertyName("fresh_replan_required_after_success")]
+    public bool FreshReplanRequiredAfterSuccess { get; set; }
+
     [JsonPropertyName("source_binding_evidence")]
     public string SourceBindingEvidence { get; set; } = string.Empty;
 
@@ -65,9 +74,10 @@ public sealed class AcquisitionRouteDispatchCompilation
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The dispatcher selects only a current, available candidate whose exact target item, authoritative endpoint option and route source are proven from the live ranking and same-state transparent snapshot. Learner rank, score and reward are erased before the existing daily-plan and action-queue compilers run. Every expanded primitive repeats the selected route, reservation ledger, source candidate and ranking hash. Missing or ambiguous source evidence, blocked compilation or lost lineage fails closed; this artifact cannot authorize formal training.";
+        "The dispatcher selects only a current, available terminal or source-bound supporting candidate proven from the live ranking and same-state transparent snapshot. Learner rank, score and reward are erased before the existing daily-plan and action-queue compilers run. Every expanded primitive repeats the selected route, reservation ledger, source candidate, route-option role and ranking hash. A supporting transition requires a fresh snapshot and is never terminal-receipt eligible. Missing or ambiguous source evidence, blocked compilation or lost lineage fails closed; this artifact cannot authorize formal training.";
 }
 
 internal sealed record AcquisitionRouteDispatchCandidateMatch(
     StardewAI.Contracts.Training.PolicyEventCandidatePrediction Candidate,
-    string IdentityEvidence);
+    string IdentityEvidence,
+    string RouteOptionRole = "terminal_transition");

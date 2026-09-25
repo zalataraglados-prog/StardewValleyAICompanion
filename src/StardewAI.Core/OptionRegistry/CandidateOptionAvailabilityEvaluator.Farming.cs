@@ -302,6 +302,13 @@ namespace StardewAI.Core.OptionRegistry
                     EstimatedTicks = 60,
                     EnergyCost = 0,
                     AvailabilityClass = "transparent_planting_context",
+                    Parameters = new[]
+                    {
+                        Parameter("seed_id", seedId),
+                        Parameter("harvest_source_seed_id", seedId),
+                        Parameter("harvest_item_id", crop.HarvestItemId),
+                        Parameter("harvest_item_qualified_id", crop.HarvestItemQualifiedId)
+                    },
                     BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
                 };
             }

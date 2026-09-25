@@ -100,6 +100,10 @@ internal static partial class BootstrapSelfTest
         Require(compilation.DispatchReady &&
                 compilation.ActionQueue is not null &&
                 compilation.ActionQueue.Status == "pending" &&
+                compilation.SelectedRouteOptionRole ==
+                    "terminal_transition" &&
+                compilation.TerminalReceiptEligible &&
+                !compilation.FreshReplanRequiredAfterSuccess &&
                 !compilation.UsesLearnerRankOrScore &&
                 !compilation.FormalTrainingAuthorized,
             "Exact source-bound acquisition route did not compile to a pending native queue.");
@@ -115,6 +119,8 @@ internal static partial class BootstrapSelfTest
                     value.Name == "acquisition_source_candidate_id" &&
                     value.Value == faster.CandidateId),
             "Expanded native queue lost its authoritative route lineage.");
+
+        VerifyCropPlantingSupportingTransition();
 
         var invalidSource = requirement with
         {
@@ -622,6 +628,163 @@ internal static partial class BootstrapSelfTest
             JsonDefaults.Options) ?? throw new InvalidDataException(
             "Acquisition dispatch self-test candidate clone failed.");
 
+    private static void VerifyCropPlantingSupportingTransition()
+    {
+        var snapshot = AcquisitionDispatchPlantingSnapshot();
+        var requirement = CropRequirement();
+        var lowering = CropLowering();
+        var ledger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger.dispatch.crop-support.self-test",
+            Revision = 2,
+            SourceStateHash = snapshot.StateHash
+        };
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[] { "farm.maintain_crops" },
+                includeExecutorCalibrationOptions: true,
+                commitmentLedger: ledger),
+            "grandpa.stage1.21_points");
+        var rebuilt = AcquisitionRouteDispatchCompilationBuilder
+            .RebuildVerifiedCurrentCandidates(
+                snapshot,
+                ledger,
+                "grandpa.stage1.21_points",
+                requirement,
+                lowering.EndpointOptionIds,
+                ranked,
+                out var rebuildReasons);
+        Require(rebuildReasons.Length == 0,
+            "Crop support ranking did not reproduce from the transparent snapshot.");
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    requirement,
+                    lowering,
+                    snapshot,
+                    rebuilt).Length == 0,
+            "A seed planting candidate was misclassified as a terminal crop receipt.");
+
+        var support = AcquisitionRouteDispatchCompilationBuilder
+            .SelectSupportingCandidates(
+                requirement,
+                lowering,
+                rebuilt);
+        Require(support.Length == 1 &&
+                support[0].Candidate.Kind == "plant_seed_tile" &&
+                support[0].RouteOptionRole == "supporting_transition",
+            "The exact seed-to-harvest planting support was not selected uniquely.");
+        var wrongHarvest = CloneCandidate(support[0].Candidate);
+        wrongHarvest.Parameters = wrongHarvest.Parameters
+            .Select(parameter =>
+                parameter.Name == "harvest_item_qualified_id"
+                    ? Parameter(parameter.Name, "(O)188")
+                    : parameter)
+            .ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder
+                .SelectSupportingCandidates(
+                    requirement,
+                    lowering,
+                    new[] { wrongHarvest }).Length == 0,
+            "A crop support candidate with the wrong harvest product was admitted.");
+
+        var compilation = AcquisitionRouteDispatchCompilationBuilder.Compile(
+            "grandpa.stage1.21_points",
+            requirement,
+            lowering,
+            support[0],
+            snapshot,
+            ledger,
+            "support-transition:full_shipment:parsnip",
+            ledger.Revision,
+            new string('b', 64));
+        Require(compilation.DispatchReady &&
+                compilation.Status ==
+                    "ready_for_supporting_transition_dispatch" &&
+                compilation.SelectedRouteOptionRole ==
+                    "supporting_transition" &&
+                !compilation.TerminalReceiptEligible &&
+                compilation.FreshReplanRequiredAfterSuccess &&
+                compilation.ActionQueue is not null &&
+                compilation.ActionQueue.Items.Length == 1,
+            "Crop planting support did not compile to one fresh-replan transition.");
+        var queue = compilation.ActionQueue!;
+        var supportRole = queue.Items.Single().NormalizedCommand.Parameters
+            .Single(value =>
+                value.Name == "acquisition_route_option_role");
+        Require(supportRole.Value == "supporting_transition",
+            "Crop planting support queue lost its nonterminal role lineage.");
+        Require(!AcquisitionRouteExecutionBindingBuilder.ValidateQueue(
+                    queue,
+                    compilation.GoalId,
+                    snapshot.StateHash,
+                    compilation.SelectedCandidateId,
+                    requirement,
+                    lowering,
+                    "support-transition:full_shipment:parsnip",
+                    ledger.Revision,
+                    "supporting_transition").Any(),
+            "Crop planting support queue failed supporting-transition validation.");
+        Require(AcquisitionRouteExecutionBindingBuilder.ValidateQueue(
+                    queue,
+                    compilation.GoalId,
+                    snapshot.StateHash,
+                    compilation.SelectedCandidateId,
+                    requirement,
+                    lowering,
+                    "support-transition:full_shipment:parsnip",
+                    ledger.Revision).Contains(
+                        "route_queue_command_binding_invalid",
+                        StringComparer.Ordinal),
+            "A crop planting support queue was admitted as a terminal route queue.");
+    }
+
+    private static AcquisitionRouteTargetDateUnlock CropRequirement() => new(
+        RouteOccurrenceId: "full_shipment:crop:parsnip",
+        RequirementSetId: "full_shipment",
+        RequirementId: "ship_parsnip",
+        AlternativeIndex: 0,
+        RouteIndex: 0,
+        QualifiedItemId: "(O)24",
+        MatchKind: "item_id",
+        RequiredAmount: 1,
+        MinimumQuality: 0,
+        RouteKind: "harvests_as",
+        UncertaintyMode: "deterministic_fresh_receipt",
+        SourceId: "crop:472",
+        SourceResolutionStatus: "resolved",
+        CalendarAxisStatus: "resolved",
+        StaticWindowMatchesTargetDate: true,
+        MatchingWindows: Array.Empty<AuthoritativeCalendarSourceWindow>(),
+        UnlockAxisStatus: "resolved",
+        UnlockAxisResolved: true,
+        UnlockStateMatchesTargetDate: true,
+        UnlockConditions: Array.Empty<AcquisitionUnlockConditionEvaluation>(),
+        PendingCalendarConditions: Array.Empty<string>(),
+        PendingStochasticConditions: Array.Empty<string>(),
+        PendingResourceConditions: Array.Empty<string>(),
+        PendingLocationConditions: Array.Empty<string>(),
+        UnsupportedConditions: Array.Empty<string>(),
+        BlockingReasons: Array.Empty<string>());
+
+    private static AcquisitionRequirementRouteLowering CropLowering() => new(
+        RouteKind: "harvests_as",
+        SourceId: "crop:472",
+        SourceAsset: "Data/Crops",
+        SourcePath: "472.HarvestItemId",
+        SupervisionMode: "policy_option",
+        UncertaintyMode: "deterministic_fresh_receipt",
+        RequiredDownstreamDependencyAxes: new[]
+        {
+            "facility_capacity",
+            "resource_inputs",
+            "processing_lead_time"
+        },
+        EndpointOptionIds: new[] { "farm.maintain_crops" },
+        SupportingOptionIds: new[] { "economy.buy_supplies" },
+        RuntimeAdmissionReady: true,
+        TeacherAdmissionReady: true);
+
     private static AcquisitionRouteTargetDateUnlock BushRequirement() => new(
         RouteOccurrenceId: "full_shipment:bush:salmonberry",
         RequirementSetId: "full_shipment",
@@ -699,6 +862,51 @@ internal static partial class BootstrapSelfTest
             StateHash = SnapshotHash.ComputeStateHash(state),
             GameTick = 1,
             RealTimestamp = "2026-09-25T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+    }
+
+    private static SnapshotEnvelope AcquisitionDispatchPlantingSnapshot()
+    {
+        const string json = """
+        {
+          "time": {
+            "season":{"value":"spring","status":"available"},
+            "weather":{"value":"sun","status":"available"}
+          },
+          "player": {
+            "location_id":{"value":"Farm","status":"available"},
+            "tile_x":{"value":4,"status":"available"},
+            "tile_y":{"value":6,"status":"available"},
+            "energy":{"value":270,"status":"available"},
+            "inventory":{"value":[],"status":"available"},
+            "seed_inventory":{"value":[{"slot_index":0,"item_id":"472","qualified_item_id":"(O)472","stack":3}],"status":"available"}
+          },
+          "current_location": {
+            "crops":{"value":[],"status":"available"},
+            "planting_context":{"value":{"location_id":"Farm","hoe_dirt_tiles":[{"tile_x":5,"tile_y":6,"has_crop":false,"seed_results":[{"slot_index":0,"seed_id":"472","hard_rule_allows_planting":true,"can_mature_before_season_end_with_paddy_if_eligible":true,"adjusted_grow_days_with_paddy_if_eligible":4,"days_remaining_in_season":20}]}]},"status":"available"}
+          },
+          "farm": {
+            "crop_catalog":{"value":[{"seed_id":"472","harvest_item_id":"24","harvest_item_qualified_id":"(O)24","harvest_unit_sale_price":35,"harvest_min_stack":1,"harvest_max_stack":1,"harvest_max_increase_per_farming_level":0,"extra_harvest_chance":0,"harvest_min_quality":0,"harvest_max_quality":4,"harvest_method":"Grab","regrow_days":-1}],"status":"available"}
+          },
+          "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
+          "locations":{
+            "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available"},
+            "route_action_branch_coverage":{"value":{"rows":[]},"status":"available"},
+            "shops":{"value":{"shops":[]},"status":"available"}
+          }
+        }
+        """;
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            json,
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+            "Crop support dispatch self-test snapshot is null.");
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-09-26T00:00:00Z",
             Completeness = "complete",
             State = state
         };

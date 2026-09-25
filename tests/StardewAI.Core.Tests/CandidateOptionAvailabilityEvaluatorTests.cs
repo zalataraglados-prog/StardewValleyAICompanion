@@ -707,6 +707,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("(O)472", candidate.QualifiedItemId);
         Assert.Equal(0, candidate.SlotIndex);
         Assert.Equal(3, candidate.Quantity);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "seed_id" && parameter.Value == "472");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "harvest_source_seed_id" &&
+            parameter.Value == "472");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "harvest_item_qualified_id" &&
+            parameter.Value == "(O)24");
         Assert.Contains("seed_id=472", candidate.ExpectedEffect);
         Assert.Contains("adjusted_grow_days=4", candidate.ExpectedEffect);
         Assert.Contains("days_remaining_in_season=20", candidate.ExpectedEffect);

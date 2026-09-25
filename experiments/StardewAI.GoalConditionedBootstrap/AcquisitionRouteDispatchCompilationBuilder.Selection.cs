@@ -33,6 +33,87 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         .ThenBy(match => match.Candidate.CandidateId, StringComparer.Ordinal)
         .ToArray();
 
+    internal static AcquisitionRouteDispatchCandidateMatch[]
+        SelectSupportingCandidates(
+            AcquisitionRouteTargetDateUnlock requirement,
+            AcquisitionRequirementRouteLowering lowered,
+            IEnumerable<PolicyEventCandidatePrediction> candidates) =>
+        candidates
+            .Where(candidate => lowered.EndpointOptionIds
+                .Concat(lowered.SupportingOptionIds)
+                .Contains(candidate.OptionId, StringComparer.Ordinal))
+            .Select(candidate => TryMatchSupportingCandidate(
+                requirement,
+                candidate))
+            .Where(match => match is not null)
+            .Cast<AcquisitionRouteDispatchCandidateMatch>()
+            .OrderBy(match => match.Candidate.AllowedNow == true ? 0 : 1)
+            .ThenBy(match => match.Candidate.TimelineStatus == "ready_now" ? 0 : 1)
+            .ThenBy(match => match.Candidate.ScheduledWaitCost ?? int.MaxValue)
+            .ThenBy(match => match.Candidate.EstimatedTicks <= 0
+                ? int.MaxValue
+                : match.Candidate.EstimatedTicks)
+            .ThenBy(match => match.Candidate.EnergyCost)
+            .ThenBy(match => match.Candidate.LocationId, StringComparer.Ordinal)
+            .ThenBy(match => match.Candidate.TileX ?? int.MaxValue)
+            .ThenBy(match => match.Candidate.TileY ?? int.MaxValue)
+            .ThenBy(match => match.Candidate.CandidateId, StringComparer.Ordinal)
+            .ToArray();
+
+    private static AcquisitionRouteDispatchCandidateMatch?
+        TryMatchSupportingCandidate(
+            AcquisitionRouteTargetDateUnlock requirement,
+            PolicyEventCandidatePrediction candidate)
+    {
+        if (string.IsNullOrWhiteSpace(candidate.CandidateId) ||
+            (candidate.Parameters ?? Array.Empty<
+                StardewAI.Contracts.Execution.SmallModelActionParameter>())
+            .Any(parameter => parameter.Name.StartsWith(
+                "acquisition_",
+                StringComparison.Ordinal)))
+        {
+            return null;
+        }
+
+        const string cropPrefix = "crop:";
+        if (requirement.RouteKind != "harvests_as" ||
+            !requirement.SourceId.StartsWith(cropPrefix, StringComparison.Ordinal) ||
+            candidate.Kind != "plant_seed_tile" ||
+            !TryReadUniqueParameter(
+                candidate,
+                "seed_id",
+                out var seedId) ||
+            !TryReadUniqueParameter(
+                candidate,
+                "harvest_source_seed_id",
+                out var harvestSourceSeedId) ||
+            !TryReadUniqueParameter(
+                candidate,
+                "harvest_item_qualified_id",
+                out var harvestItemQualifiedId) ||
+            !string.Equals(
+                seedId,
+                requirement.SourceId[cropPrefix.Length..],
+                StringComparison.Ordinal) ||
+            !string.Equals(seedId, harvestSourceSeedId,
+                StringComparison.Ordinal) ||
+            !string.Equals(harvestItemQualifiedId,
+                requirement.QualifiedItemId,
+                StringComparison.Ordinal) ||
+            !string.Equals(candidate.ItemId, seedId, StringComparison.Ordinal) ||
+            !string.Equals(candidate.QualifiedItemId, "(O)" + seedId,
+                StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return new AcquisitionRouteDispatchCandidateMatch(
+            candidate,
+            "candidate.seed_id+candidate.harvest_source_seed_id+" +
+            "candidate.harvest_item_qualified_id",
+            "supporting_transition");
+    }
+
     private static AcquisitionRouteDispatchCandidateMatch? TryMatchCandidate(
         AcquisitionRouteTargetDateUnlock requirement,
         SnapshotEnvelope snapshot,
