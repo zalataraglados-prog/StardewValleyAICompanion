@@ -47,9 +47,9 @@ internal static partial class BootstrapSelfTest
             report.CriterionDenominatorCount == 19 &&
             report.CatalogMappedCriterionCount == 19 &&
             report.ExecutableCriterionCount == 4 &&
-            report.TeacherComparisonCoveredCriterionCount == 2 &&
+            report.TeacherComparisonCoveredCriterionCount == 4 &&
             report.NativeOutcomeCoveredCriterionCount == 4 &&
-            report.SplitCompleteTeacherCriterionCount == 2 &&
+            report.SplitCompleteTeacherCriterionCount == 4 &&
             report.CoverageGateReadyCriterionCount == 2 &&
             report.Criteria.Length == 19 &&
             !report.CoverageGateSatisfied &&
@@ -86,6 +86,34 @@ internal static partial class BootstrapSelfTest
                     criterion.SplitCoverageComplete &&
                     criterion.BlockingReasons.Length == 0),
             "Community Center coverage did not become the exact admitted 2/19 slice.");
+        var strictOrderEvidenceDirections = new[]
+        {
+            "complete_full_shipment",
+            "complete_master_angler"
+        };
+        var requiredPartitions = new[] { "train", "validation", "test" };
+        Require(
+            report.Criteria.Where(criterion =>
+                    strictOrderEvidenceDirections.Contains(
+                        criterion.DirectionId,
+                        StringComparer.Ordinal))
+                .All(criterion =>
+                    criterion.MethodStatus == "pending_dependency_expansion" &&
+                    criterion.TeacherComparisonPartitions.SequenceEqual(
+                        requiredPartitions,
+                        StringComparer.Ordinal) &&
+                    criterion.NativeOutcomePartitions.SequenceEqual(
+                        requiredPartitions,
+                        StringComparer.Ordinal) &&
+                    criterion.SplitCoverageComplete &&
+                    !criterion.CoverageGateReady &&
+                    criterion.BlockingReasons.SequenceEqual(
+                        new[]
+                        {
+                            "goal_method_not_executable:pending_dependency_expansion"
+                        },
+                        StringComparer.Ordinal)),
+            "Full Shipment or Master Angler strict next-route evidence drifted.");
         var directNonCollection = report.Criteria.Single(criterion =>
             criterion.DirectionId == "obtain_skull_key");
         Require(

@@ -2089,11 +2089,14 @@ Slice 7 remains assigned to the RTX 5070 node.
   does not imply product integration, and product integration does not supply Teacher comparisons or native split
   evidence.
 - The immediate follow-up is a single batched evidence slice for Full Shipment and Master Angler. Their existing
-  acquisition corpus already supplies native outcomes in train, validation and test, but its candidate pairs do not
-  vary either method. Extend the same authoritative denominator with independently verified alternative routes so both
-  methods receive explicit three-partition Teacher comparisons. This is evidence wiring through the existing
-  compiler/executor chain, not new shipping or fishing action development; long-horizon terminal proofs remain a
-  separate frontier requirement.
+  acquisition corpus already supplies native outcomes in train, validation and test, but its portfolio-composition
+  pairs do not vary either method. Adding routes to one `all_required` requirement is not a valid repair: same-
+  requirement dominated routes are removed before portfolio enumeration, while surviving equal or incomparable routes
+  cannot produce the unique strict-Pareto Teacher label. The verified adapter must instead rebuild the selected
+  portfolio's next-route denominator at every transition and admit an execute-now versus defer comparison only when one
+  route strictly dominates every other pending selected route and is exactly the route bound to the native receipt.
+  This is evidence wiring through the existing compiler/executor and rollout hash chain, not new shipping or fishing
+  action development; long-horizon terminal proofs remain a separate frontier requirement.
 
 ## Review questions
 

@@ -152,6 +152,14 @@ public static partial class GoalMethodTeacherCoverageBuilder
                 throw new InvalidDataException(
                     "Coverage native outcome route is absent from its opportunity denominator.");
             }
+            pairCount += CreditStrictNextRouteComparisons(
+                row,
+                teacher,
+                outcomeRoute,
+                opportunity,
+                requirementByRoute,
+                methodsByRequirementSet,
+                evidence);
             if (methodsByRequirementSet.TryGetValue(
                     outcomeRequirementSet,
                     out var outcomeMethod))
@@ -168,6 +176,84 @@ public static partial class GoalMethodTeacherCoverageBuilder
             CurrentTeacherFrontierSupport.HashFile(corpusManifestPath),
             rows.Length,
             pairCount);
+    }
+
+    private static int CreditStrictNextRouteComparisons(
+        AcquisitionRoutePortfolioSupervisionCorpusRow row,
+        AcquisitionRoutePortfolioTeacherSupervision teacher,
+        string outcomeRouteOccurrenceId,
+        AcquisitionRouteTargetDateOpportunityCostReport opportunity,
+        IReadOnlyDictionary<string, string> requirementByRoute,
+        IReadOnlyDictionary<string, GoalMethodFrontierMethod>
+            methodsByRequirementSet,
+        IReadOnlyDictionary<string, MethodCoverageEvidence> evidence)
+    {
+        var selectedRouteIds = teacher.SelectedRouteOccurrenceIds
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (selectedRouteIds.Length < 2)
+            return 0;
+        if (!selectedRouteIds.Contains(
+                outcomeRouteOccurrenceId,
+                StringComparer.Ordinal))
+        {
+            throw new InvalidDataException(
+                "Coverage native outcome is absent from the selected Teacher portfolio.");
+        }
+
+        var routesById = opportunity.Routes.ToDictionary(
+            route => route.RouteOccurrenceId,
+            StringComparer.Ordinal);
+        var selectedRoutes = selectedRouteIds.Select(routeId =>
+        {
+            if (!routesById.TryGetValue(routeId, out var route) ||
+                !route.OpportunityCostAxisResolved ||
+                route.OpportunityCostMatchesTargetDate != true ||
+                route.CostVector is null ||
+                route.NonMatchingReasons.Length != 0 ||
+                route.BlockingReasons.Length != 0)
+            {
+                throw new InvalidDataException(
+                    "Coverage selected Teacher route lacks complete opportunity-cost evidence: " +
+                    routeId);
+            }
+            return route;
+        }).ToArray();
+        var strictWinners = selectedRoutes.Where(candidate =>
+                selectedRoutes.Where(other => other.RouteOccurrenceId !=
+                        candidate.RouteOccurrenceId)
+                    .All(other => AcquisitionRouteTargetDateOpportunityCostBuilder
+                        .OpportunityCostDominates(
+                            candidate.CostVector!,
+                            other.CostVector!)))
+            .ToArray();
+        if (strictWinners.Length != 1 ||
+            strictWinners[0].RouteOccurrenceId != outcomeRouteOccurrenceId)
+        {
+            return 0;
+        }
+
+        var preferredRequirementSet = requirementByRoute[
+            outcomeRouteOccurrenceId];
+        foreach (var alternative in selectedRoutes.Where(route =>
+                     route.RouteOccurrenceId != outcomeRouteOccurrenceId))
+        {
+            CreditMethod(preferredRequirementSet);
+            CreditMethod(requirementByRoute[alternative.RouteOccurrenceId]);
+        }
+        return selectedRoutes.Length - 1;
+
+        void CreditMethod(string requirementSetId)
+        {
+            if (methodsByRequirementSet.TryGetValue(
+                    requirementSetId,
+                    out var method))
+            {
+                evidence[method.MethodId].TeacherComparisonPartitions.Add(
+                    row.DatasetPartition);
+            }
+        }
     }
 
     private static AcquisitionRouteExecutionBindingInputs ExecutionInputsFor(

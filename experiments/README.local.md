@@ -229,8 +229,11 @@ derives method ownership from frontier requirement-set bindings; non-collection 
 source-less until a separate adapter verifies them. A source cannot
 name or self-assert covered criteria. Coverage requires an executable method plus explicit
 Teacher comparison and verified native-outcome evidence in train, validation, and test.
-The current bounded corpus maps all 19 criteria, comparison-covers 2, outcome-covers 4,
-and admits exactly the two Community Center criteria after its dynamic denominator,
+The current bounded corpus maps all 19 criteria, comparison-covers 4, outcome-covers 4,
+and has split-complete comparison/outcome evidence for Community Center, Full Shipment, and
+Master Angler. Its verified next-route adapter admits execute-now versus defer pairs only when
+the receipt-bound route strictly dominates every other pending route in the selected portfolio.
+It still admits exactly the two Community Center criteria after its dynamic denominator,
 target-date acquisition chain, and native lifecycle proof closed the shared method. The other
 17 criteria remain blocked, so the gate reports `formal_product_training_authorized=false`. Pass a verified
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
