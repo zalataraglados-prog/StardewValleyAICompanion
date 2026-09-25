@@ -782,7 +782,10 @@ internal static partial class BootstrapSelfTest
                         "route_queue_command_binding_invalid",
                         StringComparer.Ordinal),
             "A crop planting support queue was admitted as a terminal route queue.");
-        VerifyCropPlantingSupportingReceipt(compilation, snapshot);
+        VerifyCropPlantingSupportingReceipt(
+            compilation,
+            snapshot,
+            supportCommit);
     }
 
     private static AcquisitionRouteTargetDateUnlock CropRequirement() => new(

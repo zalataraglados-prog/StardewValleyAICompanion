@@ -1,8 +1,10 @@
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -10,7 +12,8 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyCropPlantingSupportingReceipt(
         AcquisitionRouteDispatchCompilation compilation,
-        SnapshotEnvelope before)
+        SnapshotEnvelope before,
+        SupportingCommitFixture supportCommit)
     {
         var after = PlantedCropSnapshot(before, "(O)24");
         var execution = SupportingExecutionReceipt(
@@ -44,6 +47,104 @@ internal static partial class BootstrapSelfTest
                     AfterCropReadyForHarvest: false
                 },
             "Exact crop planting did not produce a verified nonterminal receipt.");
+
+        var transitionHash = new string('9', 64);
+        var settlementRequest =
+            AcquisitionRouteSupportingTransitionSettlementBuilder
+                .BuildRequestCore(
+                    supportCommit.Request,
+                    supportCommit.CommitReceipt,
+                    compilation,
+                    verified,
+                    after,
+                    supportCommit.CommittedLedger,
+                    transitionHash);
+        var settlementResult = new ReservationPortfolioLedgerService()
+            .SettleSupportingTransition(
+                supportCommit.CommittedLedger,
+                after,
+                settlementRequest,
+                "2026-09-26T00:00:02Z");
+        Require(settlementResult.Accepted &&
+                settlementResult.Ledger is not null,
+            "Verified planting consumption did not settle its exact seed claim: " +
+            string.Join(",", settlementResult.Errors));
+        var settlementReceipt =
+            AcquisitionRouteSupportingTransitionSettlementBuilder
+                .BuildReceiptCore(
+                    supportCommit.Request,
+                    supportCommit.CommitReceipt,
+                    compilation,
+                    verified,
+                    after,
+                    supportCommit.CommittedLedger,
+                    settlementRequest,
+                    settlementResult,
+                    settlementResult.Ledger!,
+                    transitionHash);
+        Require(settlementReceipt.Status ==
+                    "verified_supporting_transition_claim_settlement" &&
+                settlementReceipt.ExactSettlementReplayVerified &&
+                settlementReceipt.ReservationLifecycleVerified &&
+                settlementReceipt.FreshReplanRequired &&
+                !settlementReceipt.RouteTerminalCompletionRecorded &&
+                !settlementReceipt.TerminalReceiptEligible &&
+                !settlementReceipt.FormalTrainingAuthorized &&
+                settlementReceipt.ConsumedQuantity == 1 &&
+                settlementResult.Ledger!.MaterialReservations.Single(
+                    row => row.ReservationId ==
+                        settlementRequest.MaterialReservationId).Status ==
+                    StrategyCommitmentStatuses.Completed &&
+                settlementResult.Ledger.History.All(row =>
+                    row.Operation != "reservation_portfolio_route_complete"),
+            "Verified planting consumption was mistaken for terminal route completion: " +
+            string.Join(",", settlementReceipt.BlockingReasons));
+        var terminalLedger = JsonSerializer.Deserialize<
+            StrategyCommitmentLedger>(
+            JsonSerializer.Serialize(
+                settlementResult.Ledger,
+                JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+                "Support settlement tamper ledger clone failed.");
+        terminalLedger.History = terminalLedger.History.Append(
+            new StrategyCommitmentHistoryEntry
+            {
+                LedgerRevision = terminalLedger.Revision,
+                CommitmentId = supportCommit.Request.SupportRequestId,
+                CommitmentRevision = terminalLedger.Revision,
+                Operation = "reservation_portfolio_route_complete",
+                SourceDecisionId = settlementRequest.RouteSourceDecisionId,
+                SourceStateHash = after.StateHash,
+                RecordedAt = "2026-09-26T00:00:02Z",
+                Reason = transitionHash
+            }).ToArray();
+        var terminalResult = JsonSerializer.Deserialize<
+            ReservationPortfolioSupportingTransitionSettlementResult>(
+            JsonSerializer.Serialize(
+                settlementResult,
+                JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+                "Support settlement tamper result clone failed.");
+        terminalResult.Ledger = terminalLedger;
+        var terminalReceipt =
+            AcquisitionRouteSupportingTransitionSettlementBuilder
+                .BuildReceiptCore(
+                    supportCommit.Request,
+                    supportCommit.CommitReceipt,
+                    compilation,
+                    verified,
+                    after,
+                    supportCommit.CommittedLedger,
+                    settlementRequest,
+                    terminalResult,
+                    terminalLedger,
+                    transitionHash);
+        Require(!terminalReceipt.ReservationLifecycleVerified &&
+                terminalReceipt.RouteTerminalCompletionRecorded &&
+                terminalReceipt.BlockingReasons.Contains(
+                    "support_settlement_recorded_terminal_completion",
+                    StringComparer.Ordinal),
+            "A supporting transition settlement admitted a terminal route marker.");
 
         var wrongAfter = PlantedCropSnapshot(before, "(O)188");
         var wrongExecution = SupportingExecutionReceipt(

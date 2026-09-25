@@ -2275,10 +2275,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   inclusive deadline and expected ready day.
 - The planting after-state receipt now requires that commit lineage in both the compilation envelope and its single
   queue item. A direct call to the lower-level compiler without a verified support reservation commit therefore cannot
-  produce an acceptable support receipt. The next bounded slice is consumed-claim settlement: after the verified
-  planting transition consumes one seed, only that exact material quantity may leave active ownership, the support
-  portfolio marker must be closed without marking the acquisition route terminal, and the new snapshot/ledger pair
-  must force a complete recurrence replan.
+  produce an acceptable support receipt.
+- The shared reservation ledger now exposes a distinct nonterminal supporting-transition settlement. It accepts only
+  one active material claim whose reservation ID, route decision, node, slot, qualified item and full quantity match the
+  observed consumption. The mutation completes that claim at one ledger revision and writes
+  `reservation_portfolio_supporting_transition_complete`; it never writes `reservation_portfolio_route_complete` and
+  never changes unrelated material or currency claims. Partial claim consumption, missing support ownership and replay
+  of an already settled support portfolio fail closed.
+- `build-acquisition-route-supporting-transition-settlement-request` rebuilds the request, commit receipt,
+  commit-gated compilation and fresh planting receipt before identifying the exact one-seed claim.
+  `build-acquisition-route-supporting-transition-settlement-receipt` then verifies the backend result, exact post-state
+  ledger, two-entry mutation history and deterministic replay. The receipt remains nonterminal, requires a fresh
+  replan and cannot authorize formal training. A negative self-test proves that adding a terminal route-completion
+  marker invalidates the settlement.
+- The next bounded slice is the mandatory recurrence gate: bind the verified support settlement, settled ledger and
+  post-planting snapshot, rerun every upstream target-date axis and current candidate reconstruction, and prove that no
+  queue item from the pre-planting state can survive. Live recurrence and formal training remain blocked until that
+  fresh plan is independently admitted.
 
 ## Review questions
 

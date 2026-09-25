@@ -6,7 +6,7 @@ using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.Core.Strategy;
 
-public sealed class ReservationPortfolioLedgerService
+public sealed partial class ReservationPortfolioLedgerService
 {
     private readonly MaterialReservationLedgerService materialService = new();
     private readonly CurrencyReservationLedgerService currencyService = new();
