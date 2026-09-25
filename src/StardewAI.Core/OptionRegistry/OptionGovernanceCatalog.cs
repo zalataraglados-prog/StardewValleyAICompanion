@@ -386,7 +386,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.apply_fertilizer", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.apply_tree_treatment", Primitive, R3, CrossDay, PolicyConfirm, Actor, World, Policy),
                 P("executor.plant_seed", Primitive, R3, CrossDay, PolicyConfirm, Actor, Farm, Policy),
-                P("executor.till_soil", Primitive, R1, None, NoConfirm, Actor, Farm, Allowed),
+                P("executor.till_soil", Primitive, R1, None, NoConfirm, Actor, World, Allowed),
                 P("executor.harvest_crop", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.harvest_giant_crop", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.pickup_debris", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),

@@ -73,41 +73,41 @@ public sealed partial class ModEntry : Mod
 
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "till_soil", "farm.terrain_features[target].type=HoeDirt", TillSoilObservedEffect(Game1.getFarm(), null), "target_tile_required"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "till_soil", "current_location.terrain_features[target].type=HoeDirt", TillSoilObservedEffect(Game1.currentLocation, null), "target_tile_required"));
             return;
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var farm = Game1.getFarm();
+        var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var staminaBefore = Game1.player.Stamina;
         var hoe = FindTool<Hoe>();
         var estimatedTicks = EstimateRuntimeToolTicks(target);
-        var requested = TillSoilRequestedEffect(target);
+        var requested = TillSoilRequestedEffect(location, target);
 
-        if (Game1.currentLocation != farm)
+        if (location is not Farm && location is not MineShaft)
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, "wrong_location", requested, TillSoilObservedEffect(farm, target)));
+            pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, "unsupported_location", requested, TillSoilObservedEffect(location, target)));
             return;
         }
 
-        var precheck = ValidateTillSoilTarget(farm, target, hoe);
+        var precheck = ValidateTillSoilTarget(location, target, hoe);
         if (precheck.Length > 0)
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, precheck[0], requested, TillSoilObservedEffect(farm, target), precheck));
+            pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, precheck[0], requested, TillSoilObservedEffect(location, target), precheck));
             return;
         }
 
-        var path = BuildAdjacentToolPath(farm, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
         if (path is null)
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, moveReason, requested, TillSoilObservedEffect(farm, target)));
+            pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, moveReason, requested, TillSoilObservedEffect(location, target)));
             return;
         }
 
         var tile = new Vector2(target.X, target.Y);
-        var hadHoeDirt = farm.terrainFeatures.TryGetValue(tile, out var beforeFeature) && beforeFeature is HoeDirt;
-        activeNativeTool = ActiveNativeTool.Till(pending, farm.NameOrUniqueName, target, path, hoe!, staminaBefore, started, estimatedTicks, requested, hadHoeDirt);
+        var hadHoeDirt = location.terrainFeatures.TryGetValue(tile, out var beforeFeature) && beforeFeature is HoeDirt;
+        activeNativeTool = ActiveNativeTool.Till(pending, location.NameOrUniqueName, target, path, hoe!, staminaBefore, started, estimatedTicks, requested, hadHoeDirt);
     }
 
     private static string[] ValidateWaterCropTarget(GameLocation location, Point target, WateringCan? can)
@@ -143,11 +143,11 @@ public sealed partial class ModEntry : Mod
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
-    private static string[] ValidateTillSoilTarget(Farm farm, Point target, Hoe? hoe)
+    private static string[] ValidateTillSoilTarget(GameLocation location, Point target, Hoe? hoe)
     {
         var reasons = new List<string>();
         var tile = new Vector2(target.X, target.Y);
-        if (!IsTileOnMap(farm, target) || farm.doesTileHaveProperty(target.X, target.Y, "Diggable", "Back") is null)
+        if (!IsTileOnMap(location, target) || location.doesTileHaveProperty(target.X, target.Y, "Diggable", "Back") is null)
         {
             reasons.Add("invalid_tile");
         }
@@ -159,11 +159,24 @@ public sealed partial class ModEntry : Mod
         {
             reasons.Add("insufficient_stamina");
         }
-        if (farm.terrainFeatures.TryGetValue(tile, out var feature) && feature is HoeDirt)
+        if (location.terrainFeatures.TryGetValue(tile, out var feature) && feature is HoeDirt)
         {
             reasons.Add("already_satisfied_runtime_drift");
         }
-        else if (farm.terrainFeatures.ContainsKey(tile) || farm.objects.ContainsKey(tile) || farm.IsTileBlockedBy(tile, ~(CollisionMask.Characters | CollisionMask.Farmers)))
+        else if (location.terrainFeatures.ContainsKey(tile) ||
+                 location.objects.ContainsKey(tile) ||
+                 location.IsTileBlockedBy(
+                     tile,
+                     ~(CollisionMask.Characters | CollisionMask.Farmers)) ||
+                 (location is MineShaft
+                     ? location.IsTileOccupiedBy(
+                         tile,
+                         CollisionMask.All,
+                         CollisionMask.None,
+                         useFarmerTile: true)
+                     : !location.isTilePassable(
+                         new TileLocation(target.X, target.Y),
+                         Game1.viewport)))
         {
             reasons.Add("occupied_tile");
         }
@@ -305,7 +318,7 @@ public sealed partial class ModEntry : Mod
                 "water_crop" => ValidateWaterCropTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
                 "fill_pet_bowl" => ValidatePetBowlTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
                 "harvest_ginger" => ValidateGingerHarvestTarget(Game1.currentLocation, tool.Target, tool.Tool as Hoe, tool.Pending.Request),
-                _ => ValidateTillSoilTarget(Game1.getFarm(), tool.Target, tool.Tool as Hoe)
+                _ => ValidateTillSoilTarget(Game1.currentLocation, tool.Target, tool.Tool as Hoe)
             };
             if (recheck.Length > 0)
             {
@@ -378,15 +391,14 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var farm = Game1.getFarm();
         var location = Game1.currentLocation;
         var verified = tool.PrimitiveKind == "water_crop"
             ? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(location, tool.Target)
-            : !tool.BeforeHadHoeDirt.GetValueOrDefault() && farm.terrainFeatures.TryGetValue(new Vector2(tool.Target.X, tool.Target.Y), out var feature) && feature is HoeDirt;
+            : !tool.BeforeHadHoeDirt.GetValueOrDefault() && location.terrainFeatures.TryGetValue(new Vector2(tool.Target.X, tool.Target.Y), out var feature) && feature is HoeDirt;
         var failureCategory = verified ? string.Empty : "unchanged_postcondition";
         var waterAfter = tool.Tool is WateringCan can ? can.WaterLeft : (int?)null;
         var afterWatered = tool.PrimitiveKind == "water_crop" ? IsCropWatered(location, tool.Target) : (bool?)null;
-        var afterHoeDirt = tool.PrimitiveKind == "till_soil" ? farm.terrainFeatures.TryGetValue(new Vector2(tool.Target.X, tool.Target.Y), out var afterFeature) && afterFeature is HoeDirt : (bool?)null;
+        var afterHoeDirt = tool.PrimitiveKind == "till_soil" ? location.terrainFeatures.TryGetValue(new Vector2(tool.Target.X, tool.Target.Y), out var afterFeature) && afterFeature is HoeDirt : (bool?)null;
 
         tool.Pending.Completion.SetResult(new TrainingExecutionResult
         {
@@ -474,7 +486,7 @@ public sealed partial class ModEntry : Mod
 
         return tool.PrimitiveKind == "water_crop"
             ? WaterCropObservedEffect(Game1.currentLocation, tool.Target)
-            : TillSoilObservedEffect(Game1.getFarm(), tool.Target);
+            : TillSoilObservedEffect(Game1.currentLocation, tool.Target);
     }
 
     private static string[] NativeToolVerifiedReasons(ActiveNativeTool tool)
@@ -484,7 +496,9 @@ public sealed partial class ModEntry : Mod
             "water_crop" => new[] { "native_watering_can_lifecycle_watered_target_crop" },
             "fill_pet_bowl" => new[] { "native_watering_can_lifecycle_filled_pet_bowl", "pet_friendship_remains_pending_until_Pet.dayUpdate" },
             "harvest_ginger" => new[] { "native_hoe_lifecycle_removed_ginger_crop", "native_ginger_debris_created", "native_foraging_experience_delta_seven" },
-            _ => new[] { "native_hoe_lifecycle_created_hoe_dirt" }
+            _ => Game1.currentLocation is MineShaft
+                ? new[] { "native_hoe_lifecycle_created_hoe_dirt", "native_mineshaft_buried_item_hook_invoked_without_outcome_prediction" }
+                : new[] { "native_hoe_lifecycle_created_hoe_dirt" }
         };
     }
 
@@ -513,7 +527,7 @@ public sealed partial class ModEntry : Mod
         }
         else
         {
-            changes.Insert(0, new SimulatedFactChange { Path = "farm.terrain_features[" + tool.Target.X + "," + tool.Target.Y + "].type", Before = tool.BeforeHadHoeDirt.GetValueOrDefault() ? "HoeDirt" : "none", After = afterHoeDirt.GetValueOrDefault() ? "HoeDirt" : "none" });
+            changes.Insert(0, new SimulatedFactChange { Path = "current_location.terrain_features[" + tool.Target.X + "," + tool.Target.Y + "].type", Before = tool.BeforeHadHoeDirt.GetValueOrDefault() ? "HoeDirt" : "none", After = afterHoeDirt.GetValueOrDefault() ? "HoeDirt" : "none" });
         }
 
         return changes.ToArray();
@@ -557,12 +571,13 @@ public sealed partial class ModEntry : Mod
         return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";" + cropState + ";water_left=" + (water?.WaterLeft.ToString() ?? "missing");
     }
 
-    private static string TillSoilRequestedEffect(Point target)
+    private static string TillSoilRequestedEffect(GameLocation location, Point target)
     {
-        return "farm.terrain_features[" + target.X + "," + target.Y + "].type=HoeDirt;native_tool=Hoe";
+        return "location=" + location.NameOrUniqueName + ";current_location.terrain_features[" + target.X + "," + target.Y + "].type=HoeDirt;native_tool=Hoe" +
+            (location is MineShaft ? ";MineShaft.checkForBuriedItem_invoked=true;outcome_not_guaranteed=true" : string.Empty);
     }
 
-    private static string TillSoilObservedEffect(Farm farm, Point? target)
+    private static string TillSoilObservedEffect(GameLocation location, Point? target)
     {
         if (!target.HasValue)
         {
@@ -570,8 +585,8 @@ public sealed partial class ModEntry : Mod
         }
 
         var tile = new Vector2(target.Value.X, target.Value.Y);
-        var feature = farm.terrainFeatures.TryGetValue(tile, out var existing) ? existing.GetType().Name : "none";
-        var obj = farm.objects.ContainsKey(tile).ToString().ToLowerInvariant();
+        var feature = location.terrainFeatures.TryGetValue(tile, out var existing) ? existing.GetType().Name : "none";
+        var obj = location.objects.ContainsKey(tile).ToString().ToLowerInvariant();
         return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.Value.X + "," + target.Value.Y + ";terrain_feature=" + feature + ";object_present=" + obj;
     }
 

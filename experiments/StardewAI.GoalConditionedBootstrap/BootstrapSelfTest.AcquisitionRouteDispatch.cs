@@ -397,6 +397,36 @@ internal static partial class BootstrapSelfTest
                     new[] { radioactiveNodeCandidate }).Length == 1,
             "An exact selected radioactive ore node source was rejected.");
 
+        var buriedItemCandidate = CloneCandidate(monsterCandidate);
+        buriedItemCandidate.Kind = "mining_buried_item_plan_envelope";
+        buriedItemCandidate.Parameters = buriedItemCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
+            {
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"native_mine_buried_item\",\"source_id\":\"MineShaft.checkForBuriedItem\",\"qualified_item_id\":\"(O)585\"}]")
+            }).ToArray();
+        var buriedItemRequirement = requirement with
+        {
+            QualifiedItemId = "(O)585",
+            RouteKind = "native_mine_buried_item",
+            SourceId = "MineShaft.checkForBuriedItem"
+        };
+        var buriedItemLowering = lowered with
+        {
+            RouteKind = buriedItemRequirement.RouteKind,
+            SourceId = buriedItemRequirement.SourceId,
+            EndpointOptionIds = new[] { "mining.reach_depth" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    buriedItemRequirement,
+                    buriedItemLowering,
+                    snapshot,
+                    new[] { buriedItemCandidate }).Length == 1,
+            "An exact selected mine buried-item source was rejected.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

@@ -21,6 +21,8 @@ namespace StardewAI.Core.OptionRegistry
                     ReadSelectedMonsterSources(snapshot, floorStep),
                 MiningFloorStepKinds.MineStone =>
                     ReadSelectedStoneSources(snapshot, floorStep),
+                MiningFloorStepKinds.DigBuriedItem =>
+                    ReadSelectedBuriedItemSources(snapshot, floorStep),
                 _ => "[]"
             };
         }

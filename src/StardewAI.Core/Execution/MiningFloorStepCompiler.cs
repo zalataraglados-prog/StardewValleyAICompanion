@@ -16,6 +16,7 @@ namespace StardewAI.Core.Execution
             return plan.StepKind switch
             {
                 MiningFloorStepKinds.MineStone => "executor.mine_stone",
+                MiningFloorStepKinds.DigBuriedItem => "executor.till_soil",
                 MiningFloorStepKinds.BreakContainer => "executor.break_container",
                 MiningFloorStepKinds.BreakResourceClump => "executor.break_resource_clump",
                 MiningFloorStepKinds.CombatMonster => "executor.combat_monster",

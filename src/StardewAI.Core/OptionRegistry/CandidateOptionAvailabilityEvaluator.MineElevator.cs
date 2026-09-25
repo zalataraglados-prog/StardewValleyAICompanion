@@ -19,11 +19,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 "combat",
                 StringComparison.Ordinal))
             return currentFloorCandidates;
+        var buriedItemCandidates = MiningBuriedItemCandidateBuilder.Build(
+            snapshot);
+        EventCandidate[] WithBuriedItems(EventCandidate[] candidates) =>
+            candidates.Concat(buriedItemCandidates).ToArray();
         var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
         var resources = ReadStateFieldValue(snapshot, "mining", "player_resources");
         if (!currentMine.HasValue || currentMine.Value.ValueKind != JsonValueKind.Object ||
             !resources.HasValue || resources.Value.ValueKind != JsonValueKind.Object)
-            return currentFloorCandidates;
+            return WithBuriedItems(currentFloorCandidates);
 
         var currentDepth = ReadInt(currentMine.Value, "mine_level");
         var currentFamily = ReadString(currentMine.Value, "mine_kind");
@@ -34,7 +38,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 currentFamily,
                 targetDepth,
                 requestedFamily).Length > 0)
-            return currentFloorCandidates;
+            return WithBuriedItems(currentFloorCandidates);
 
         var deepest = ReadIntOptional(resources.Value, "deepest_mine_level");
         var elevatorTarget = MiningReachDepthCandidateBuilder.ElevatorStartFor(
@@ -44,14 +48,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             deepest);
         if (!targetDepth.HasValue || !elevatorTarget.HasValue || elevatorTarget.Value <= currentDepth ||
             !MineElevatorEndpointOrMenuPresent(snapshot))
-            return currentFloorCandidates;
+            return WithBuriedItems(currentFloorCandidates);
 
         var elevatorMenuOpen = string.Equals(
             ActiveMenuTypeForCandidate(snapshot),
             "MineElevatorMenu",
             StringComparison.Ordinal);
         if (!elevatorMenuOpen && !CurrentFloorStepMayYieldToElevator(currentFloorCandidates))
-            return currentFloorCandidates;
+            return WithBuriedItems(currentFloorCandidates);
 
         var elevatorParameters = parameters
             .Where(parameter =>
@@ -78,7 +82,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 targetDepth.Value,
                 elevatorTarget.Value);
         }
-        return candidates;
+        return WithBuriedItems(candidates);
     }
 
     private static bool CurrentFloorStepMayYieldToElevator(EventCandidate[] candidates)

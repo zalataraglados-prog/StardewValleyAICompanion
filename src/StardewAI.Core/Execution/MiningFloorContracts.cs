@@ -15,6 +15,7 @@ namespace StardewAI.Core.Execution
         public const string DescendShaft = "descend_shaft";
         public const string ExitMine = "exit_mine";
         public const string MineStone = "mine_stone";
+        public const string DigBuriedItem = "dig_buried_item";
         public const string BreakContainer = "break_container";
         public const string BreakResourceClump = "break_resource_clump";
         public const string CombatMonster = "combat_monster";
@@ -36,6 +37,7 @@ namespace StardewAI.Core.Execution
     {
         public const string ReachDepth = "reach_depth";
         public const string CollectResourceOrArtifact = "collect_resource_or_artifact";
+        public const string AcquireBuriedItem = "acquire_buried_item";
         public const string CollectMonsterDrop = "collect_monster_drop";
         public const string SlayNamedMonster = "slay_named_monster";
         public const string TrainCombat = "train_combat";

@@ -125,12 +125,23 @@ namespace StardewAI.Core.Execution
                 return Array.Empty<CompiledActionStep>();
             }
 
+            var targetLocation = ReadParameter(action, "target_location") ??
+                "Farm";
+            var isMineBuriedItem = string.Equals(
+                ReadParameter(action, "mining_step_kind"),
+                MiningFloorStepKinds.DigBuriedItem,
+                StringComparison.Ordinal);
+            var expectedEffect = "current_location.terrain_features[" +
+                x.Value + "," + y.Value + "].type=HoeDirt;native_tool=Hoe" +
+                (isMineBuriedItem
+                    ? ";MineShaft.checkForBuriedItem_invoked=true;outcome_not_guaranteed=true"
+                    : string.Empty);
             return new[]
             {
                 Step(
                     "till_soil",
-                    "Farm(" + x.Value + "," + y.Value + ")",
-                    "farm.terrain_features[" + x.Value + "," + y.Value + "].type=HoeDirt;native_tool=Hoe",
+                    targetLocation + "(" + x.Value + "," + y.Value + ")",
+                    expectedEffect,
                     EstimateToolActionTicks(snapshot, x.Value, y.Value))
             };
         }

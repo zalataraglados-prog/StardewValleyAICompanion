@@ -1749,6 +1749,7 @@
               "machine_output",
               "native_machine_flavored_output",
               "native_machine_item_query_output",
+              "native_mine_buried_item",
               "native_monster_drop_table",
               "native_radioactive_ore_node",
               "native_solar_panel_output",

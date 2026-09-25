@@ -56,13 +56,14 @@ public sealed class MachineFamilyMainlineTests
         Assert.Equal("collect_machine_output_tile", collectCandidate.Kind);
         Assert.True(collectCandidate.Available);
         Assert.Equal(family.OutputQualifiedId, collectCandidate.QualifiedItemId);
-        Assert.Contains("move_to_adjacent=63,15", collectCandidate.ExpectedEffect);
+        Assert.DoesNotContain("move_to_adjacent=", collectCandidate.ExpectedEffect);
         Assert.Contains("output_total_value=" + family.OutputSalePrice, collectCandidate.ExpectedEffect);
 
         var collectPlan = new DailyPlanCompiler().Compile(new[] { collectCandidate }, snapshot.StateHash);
-        Assert.Equal(new[] { "move_to_tile", "collect_machine_output" }, collectPlan.Steps.Select(step => step.Kind).ToArray());
-        Assert.Contains(collectPlan.Steps[1].Parameters, parameter => parameter.Name == "qualified_item_id" && parameter.Value == family.OutputQualifiedId);
-        Assert.Contains(collectPlan.Steps[1].Parameters, parameter => parameter.Name == "output_total_value" && parameter.Value == family.OutputSalePrice.ToString());
+        var collectPlanStep = Assert.Single(collectPlan.Steps);
+        Assert.Equal("collect_machine_output", collectPlanStep.Kind);
+        Assert.Contains(collectPlanStep.Parameters, parameter => parameter.Name == "qualified_item_id" && parameter.Value == family.OutputQualifiedId);
+        Assert.Contains(collectPlanStep.Parameters, parameter => parameter.Name == "output_total_value" && parameter.Value == family.OutputSalePrice.ToString());
 
         var collectQueue = new ActionQueueCompiler().Compile(collectPlan, snapshot);
         Assert.True(collectQueue.Status == "pending", string.Join(";", collectQueue.Items.SelectMany(item => item.BlockingReasons)));
@@ -122,8 +123,8 @@ public sealed class MachineFamilyMainlineTests
             .Rank(new BaselineTrainingReport(), availability));
         var plan = new DailyPlanCompiler().Compile([ranked], snapshot.StateHash);
         Assert.Equal(
-            new[] { "move_to_tile", "collect_machine_output" },
-            plan.Steps.Select(step => step.Kind).ToArray());
+            "collect_machine_output",
+            Assert.Single(plan.Steps).Kind);
 
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         Assert.Equal("pending", queue.Status);

@@ -842,6 +842,7 @@ namespace StardewAI.Core.Training
             }
 
             if (candidate.Kind == "mining_reach_depth_plan_envelope" ||
+                candidate.Kind == "mining_buried_item_plan_envelope" ||
                 candidate.Kind == "mining_combat_training_plan_envelope" ||
                 candidate.Kind == "mining_slay_monsters_plan_envelope" ||
                 candidate.Kind == "mining_collect_quest_resource_plan_envelope" ||

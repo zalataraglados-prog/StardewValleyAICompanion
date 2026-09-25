@@ -355,7 +355,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("(O)262", candidate.QualifiedItemId);
         Assert.Equal(0, candidate.SlotIndex);
         Assert.Equal(2, candidate.Quantity);
-        Assert.Contains("move_to_adjacent=63,15", candidate.ExpectedEffect);
+        Assert.DoesNotContain("move_to_adjacent=", candidate.ExpectedEffect);
         Assert.Contains("input_slot_index=0", candidate.ExpectedEffect);
         Assert.Contains("input_stack_available=2", candidate.ExpectedEffect);
         Assert.Contains("input_sale_price=15", candidate.ExpectedEffect);

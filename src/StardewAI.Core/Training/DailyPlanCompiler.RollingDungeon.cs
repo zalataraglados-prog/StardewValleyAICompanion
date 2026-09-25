@@ -16,6 +16,7 @@ namespace StardewAI.Core.Training
                 "executor.move_to_tile" => "move_to_tile",
                 "executor.interact" => "interact",
                 "executor.mine_stone" => "mine_stone",
+                "executor.till_soil" => "till_soil",
                 "executor.break_container" => "break_container",
                 "executor.break_resource_clump" => "break_resource_clump",
                 "executor.combat_monster" => "combat_monster",
