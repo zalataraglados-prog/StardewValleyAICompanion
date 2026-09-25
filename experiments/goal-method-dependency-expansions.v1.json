@@ -1667,7 +1667,7 @@
       ],
       "blockers": [
         "consume the admitted per-requirement acquisition lowerings with exact one-unit reservation and live calendar unlock resource route-time probability or retry bounds",
-        "capture and admit one isolated fresh native final-item sleep settlement through build-full-shipment-terminal-settlement-receipt, then bind that achievement-34 receipt to the complete 154-requirement recurrence before the Year 3 evaluation"
+        "bind the admitted isolated achievement-34 final-item sleep receipt to the complete 154-requirement recurrence and prove that recurrence before the Year 3 evaluation"
       ],
       "nodes": [
         {
@@ -1770,6 +1770,8 @@
             "execution_owner": "deterministic_day_compiler_not_policy_label",
             "precondition": "terminal sleep remains legal after all required daily commitments",
             "receipt": "fresh shipped collection count completion ratio and achievement state",
+            "terminal_receipt_builder": "build-full-shipment-terminal-settlement-receipt",
+            "isolated_runtime_smoke": "scripts/Invoke-RuntimeFullShipmentTerminalSmoke.ps1",
             "refresh_snapshot_after_transition": true
           }
         },

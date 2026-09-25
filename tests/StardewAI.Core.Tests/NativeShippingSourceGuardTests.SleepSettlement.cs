@@ -322,9 +322,15 @@ public sealed partial class NativeShippingSourceGuardTests
             source,
             "private bool TrySettlePostSleepReceipts",
             "private void TickShipSummaryClosePhase");
-        Assert.Contains("post_sleep_receipt_settlement_threw", settlementSlice, StringComparison.Ordinal);
-        var threwLine = settlementSlice.Split('\n').First(line => line.Contains("post_sleep_receipt_settlement_threw"));
-        Assert.Contains("CompleteBlockedSleep", threwLine, StringComparison.Ordinal);
+        var blockedSleepIdx = settlementSlice.IndexOf("CompleteBlockedSleep(", StringComparison.Ordinal);
+        var settlementThrewIdx = settlementSlice.IndexOf("post_sleep_receipt_settlement_threw", StringComparison.Ordinal);
+        var returnFalseIdx = settlementSlice.IndexOf("return false;", StringComparison.Ordinal);
+
+        Assert.True(blockedSleepIdx >= 0, "CompleteBlockedSleep call not found in settlement failure path");
+        Assert.True(settlementThrewIdx > blockedSleepIdx,
+            "Settlement failure reason must be passed to CompleteBlockedSleep");
+        Assert.True(returnFalseIdx > settlementThrewIdx,
+            "Settlement failure path must return false after blocking sleep");
     }
 
     [Fact]

@@ -1326,6 +1326,14 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId ==
+                "debug.prepare_full_shipment_terminal_sleep")
+            {
+                pending.Completion.SetResult(
+                    ExecutePrepareFullShipmentTerminalSleep(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.enter_ready_incubator_house")
             {
                 pending.Completion.SetResult(
@@ -1371,6 +1379,13 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_shipping_target")
             {
                 pending.Completion.SetResult(ExecuteSetupShippingTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_full_shipment_terminal")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupFullShipmentTerminal(pending.Request));
                 return;
             }
 

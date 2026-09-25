@@ -363,6 +363,16 @@ conflicting rows. `formal_training_authorized=false` remains explicit; the next 
 remaining collection approach/terminal continuations into bounded whole-candidate queues before expanding
 future-date coverage.
 
+`Invoke-RuntimeFullShipmentTerminalSmoke.ps1` proves the final Full Shipment day transition without
+adding another shipping or sleep executor. It copies one runtime save, prepares the copy at exact
+153/154 through a debug-only native-eligibility fixture, deposits one authoritative terminal item through
+`economy.ship_items`, relocates only the isolated actor to the existing native sleep path, and executes
+`recovery.stabilize_day`. The resulting queue, execution receipt, and fresh snapshots are admitted by
+`build-full-shipment-terminal-settlement-receipt` only when the exact item settles 0 -> 1, all shared bin
+views settle 1 -> 0, the day advances once, 154/154 is reached, and achievement 34 appears. This is a
+runtime calibration receipt, not a fresh-save proof of the complete 154-item recurrence and not formal
+training authorization.
+
 ## Hardware
 
 The recorder, semanticizer, retriever, deterministic teacher, regression suite,

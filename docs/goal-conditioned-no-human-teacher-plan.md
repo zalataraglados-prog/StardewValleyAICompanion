@@ -2110,14 +2110,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   settles from one pending unit to zero, `total_days` advances exactly once, and achievement 34 appears without any
   existing shipment or achievement regression. Missing achievement, an uncleared bin, a same-day transition and a
   drifted denominator are explicit regression failures.
-- Release build and the complete Stage-1 offline self-test pass. This closes the verifier implementation, not the
-  Full Shipment method: an isolated native final-item sleep receipt still has to be captured and admitted, and the
-  complete 154-requirement acquisition recurrence still needs its fresh-save deadline proof. The dependency graph
-  therefore remains `in_progress`, coverage-ready remains 2/19, and formal product training remains unauthorized.
-- The next bounded slice is to add the isolated runtime fixture that prepares a save with exactly one authoritative
-  Full Shipment item missing, deposits exactly one reserve-safe copy through the existing shipping executor, sleeps
-  through the existing recovery executor, captures the four artifacts consumed by this verifier, and rejects any run
-  whose fresh after snapshot does not carry the exact terminal transition.
+- `Invoke-RuntimeFullShipmentTerminalSmoke.ps1` now prepares only an isolated save copy at exact 153/154 state by
+  replaying the same native eligibility predicate and requiring the locked denominator to remain 154. The fixture
+  clears achievement 34 and the shared shipping inventory, installs one `(O)24` copy, and positions the actor at an
+  existing shipping endpoint. It is a debug-only state fixture and never substitutes for a Product action or label.
+- Hidden, silent runtime `runtime-full-shipment-terminal-20260925-171152` selected the exact generated
+  `ship:Farm:71,14:9:24:deposit` candidate, compiled and executed the existing `economy.ship_items` path, then used a
+  fixture-only relocation to the native home sleep path and compiled the existing `recovery.stabilize_day` path. The
+  admitted receipt proves 153/154 -> 154/154, terminal `basicShipped` 0 -> 1, shared bin 1 -> 0, total day 223 -> 224,
+  and achievement 34 false -> true with no blocking reason. The source save remained unchanged.
+- This closes the isolated native terminal transition, not the Full Shipment method. The dependency graph remains
+  `in_progress`: the admitted achievement-34 terminal receipt must be bound to the complete 154-requirement
+  acquisition/reservation recurrence, and that recurrence still needs a fresh-save Year 3 deadline proof.
+  Coverage-ready therefore remains 2/19 and formal Product training remains unauthorized.
+- The next bounded slice is to make the existing recurrence consume the admitted terminal contract, then prove that
+  every iteration refreshes the native missing set, selects or acquires one reserve-safe unit through the existing
+  target-date portfolio, deposits it through the existing shipping executor, and reaches the terminal receipt before
+  the Year 3 evaluation without bypassing calendar, resource, route-time, probability, retry, or reservation gates.
 
 ## Review questions
 
