@@ -5,6 +5,66 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static class FullShipmentSettlementVerifier
 {
+    internal static FullShipmentProgressCheckpoint Project(
+        IReadOnlyCollection<string> requiredQualifiedItemIds,
+        SnapshotEnvelope snapshot)
+    {
+        var reasons = new List<string>();
+        var required = requiredQualifiedItemIds
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToHashSet(StringComparer.Ordinal);
+        if (required.Count == 0 ||
+            required.Count != requiredQualifiedItemIds.Count)
+        {
+            reasons.Add(
+                "full_shipment_settlement_requirement_authority_invalid");
+        }
+        var progress = ReadProgress(snapshot, required, reasons, "checkpoint");
+        var shipping = ReadShippingCollection(
+            snapshot,
+            reasons,
+            "checkpoint");
+        var achievements = ReadAchievements(
+            snapshot,
+            reasons,
+            "checkpoint");
+        var totalDay = ReadTotalDay(snapshot, reasons, "checkpoint");
+        if (progress is null || shipping is null || achievements is null ||
+            !totalDay.HasValue || reasons.Count > 0)
+        {
+            throw new InvalidDataException(
+                "Full Shipment recurrence checkpoint is invalid: " +
+                string.Join(",", reasons.Distinct(StringComparer.Ordinal)));
+        }
+        return new FullShipmentProgressCheckpoint(
+            progress.ShippedItemCount,
+            progress.Complete,
+            progress.MissingQualifiedItemIds,
+            progress.Items,
+            shipping,
+            achievements.Contains(34),
+            totalDay.Value);
+    }
+
+    internal static int ProjectUniformBinCount(
+        SnapshotEnvelope snapshot,
+        string qualifiedItemId)
+    {
+        var reasons = new List<string>();
+        var result = ReadUniformBinCount(
+            snapshot,
+            qualifiedItemId,
+            reasons,
+            "checkpoint");
+        if (!result.HasValue || reasons.Count > 0)
+        {
+            throw new InvalidDataException(
+                "Full Shipment recurrence bin checkpoint is invalid: " +
+                string.Join(",", reasons.Distinct(StringComparer.Ordinal)));
+        }
+        return result.Value;
+    }
+
     public static FullShipmentSettlementEvidence Verify(
         IReadOnlyCollection<string> requiredQualifiedItemIds,
         SnapshotEnvelope before,
@@ -453,7 +513,7 @@ internal static class FullShipmentSettlementVerifier
             ? field.GetString() ?? string.Empty
             : string.Empty;
 
-    private sealed record ShipmentItem(
+    internal sealed record ShipmentItem(
         string ItemId,
         int Count,
         bool Shipped);
@@ -464,3 +524,13 @@ internal static class FullShipmentSettlementVerifier
         string[] MissingQualifiedItemIds,
         IReadOnlyDictionary<string, ShipmentItem> Items);
 }
+
+internal sealed record FullShipmentProgressCheckpoint(
+    int ShippedItemCount,
+    bool Complete,
+    string[] MissingQualifiedItemIds,
+    IReadOnlyDictionary<string, FullShipmentSettlementVerifier.ShipmentItem>
+        Items,
+    IReadOnlyDictionary<string, int> ShippingCollection,
+    bool Achievement34,
+    int TotalDay);

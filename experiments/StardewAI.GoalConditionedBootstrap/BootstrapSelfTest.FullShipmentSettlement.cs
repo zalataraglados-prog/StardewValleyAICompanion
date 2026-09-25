@@ -9,6 +9,7 @@ internal static partial class BootstrapSelfTest
     {
         VerifyFullShipmentSettlementEvidence();
         VerifyFullShipmentTerminalSettlementEvidence();
+        VerifyFullShipmentRecurrenceSequence();
     }
 
     private static void VerifyFullShipmentSettlementEvidence()
@@ -197,5 +198,90 @@ internal static partial class BootstrapSelfTest
                 property => property.Value.Clone(),
                 StringComparer.Ordinal)
         };
+    }
+
+    private static void VerifyFullShipmentRecurrenceSequence()
+    {
+        var rows = new[]
+        {
+            RecurrenceRow(0, 0, 1, 0, 1, terminal: false),
+            RecurrenceRow(1, 1, 2, 100, 101, terminal: false),
+            RecurrenceRow(2, 2, 3, 223, 224, terminal: true)
+        };
+        FullShipmentRecurrenceProofBuilder.VerifySequence(
+            rows,
+            requiredItemCount: 3,
+            initialTotalDay: 0);
+
+        RequireSequenceRejected(
+            new[]
+            {
+                rows[0],
+                RecurrenceRow(1, 1, 3, 100, 101, terminal: false),
+                rows[2]
+            },
+            "A noncontiguous shipped-count sequence was admitted.");
+        RequireSequenceRejected(
+            new[]
+            {
+                RecurrenceRow(0, 0, 1, 0, 1, terminal: true),
+                rows[1],
+                rows[2]
+            },
+            "An early terminal Full Shipment transition was admitted.");
+        RequireSequenceRejected(
+            new[]
+            {
+                RecurrenceRow(0, 0, 1, 100, 101, terminal: false),
+                RecurrenceRow(1, 1, 2, 99, 100, terminal: false),
+                rows[2]
+            },
+            "A time-reversing Full Shipment recurrence was admitted.");
+        RequireSequenceRejected(
+            new[]
+            {
+                rows[0],
+                rows[1],
+                RecurrenceRow(2, 2, 3, 224, 225, terminal: true)
+            },
+            "A Full Shipment terminal transition after the Stage-1 deadline was admitted.");
+    }
+
+    private static FullShipmentRecurrenceIterationEvidence RecurrenceRow(
+        int index,
+        int beforeCount,
+        int afterCount,
+        int startDay,
+        int endDay,
+        bool terminal) => new(
+            index,
+            "full_shipment:item:" + index,
+            "(O)" + index,
+            "acquisition-" + index,
+            "deposit-" + index,
+            "settlement-" + index,
+            beforeCount,
+            afterCount,
+            startDay,
+            endDay,
+            terminal);
+
+    private static void RequireSequenceRejected(
+        IReadOnlyList<FullShipmentRecurrenceIterationEvidence> rows,
+        string failureMessage)
+    {
+        var rejected = false;
+        try
+        {
+            FullShipmentRecurrenceProofBuilder.VerifySequence(
+                rows,
+                rows.Count,
+                initialTotalDay: 0);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected, failureMessage);
     }
 }

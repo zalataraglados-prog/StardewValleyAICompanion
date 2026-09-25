@@ -258,6 +258,16 @@ existing shipping and sleep chains. The Full Shipment dependency graph remains `
 because the ordered 154-item fresh-save recurrence and Year 3 deadline proof are still absent; the
 coverage gate therefore remains 2/19.
 
+`build-full-shipment-recurrence-proof-receipt` is the fail-closed whole-recurrence adapter. Its
+manifest must contain exactly 154 unique authoritative requirements. For each row it rebuilds the
+stored acquisition rollout proof, exact Stage-1 `economy.ship_items` Teacher receipt, and either an
+ordinary or terminal native-day settlement receipt. The prior settlement artifact is the exact root
+of the next acquisition proof; the acquisition/deposit/sleep phase boundaries must have identical
+`state_hash` values; save/player/game identity cannot drift; shipment counts must advance 0 -> 154
+without gaps; settlement time cannot reverse; and only row 154 may end with achievement 34 at or
+before total day 224. This command verifies supplied artifacts but does not generate the
+154-step fresh-save runtime chain and does not authorize formal training.
+
 `build-goal-method-coverage-reconciliation` is the read-only denominator and gap audit for that
 gate. It takes the same frontier inputs and `--request`, rebuilds both authorities, and joins the
 result to the current option-governance matrix. Its report separates 19 score criteria, 11 root
@@ -384,10 +394,11 @@ training authorization.
 
 The ordinary and terminal settlement builders now share one exact projection verifier. Ordinary
 steps require exactly one missing item to settle while achievement 34 stays absent; the terminal
-wrapper additionally requires 153/154 -> 154/154 and the native achievement transition. The next
-artifact is an ordered recurrence proof manifest that must rebuild each acquisition rollout,
-shipping deposit and ordinary settlement before consuming the dedicated terminal receipt. It may
-not replace those Product queues with fixture mutations or infer continuity from item IDs alone.
+wrapper additionally requires 153/154 -> 154/154 and the native achievement transition. The ordered
+recurrence manifest and verifier now bind those receipts to rebuilt acquisition rollouts and shipping
+Teacher receipts. The missing artifact is a populated 154-row fresh-save runtime chain; it may not
+replace Product queues with fixture mutations or infer continuity from item IDs alone. Until that
+artifact passes, Full Shipment remains `in_progress`, coverage remains 2/19, and training remains off.
 
 ## Hardware
 

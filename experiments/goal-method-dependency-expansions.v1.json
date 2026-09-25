@@ -1667,7 +1667,7 @@
       ],
       "blockers": [
         "consume the admitted per-requirement acquisition lowerings with exact one-unit reservation and live calendar unlock resource route-time probability or retry bounds",
-        "assemble and verify an ordered 154-item recurrence proof that consumes ordinary one-item settlement receipts and the admitted achievement-34 terminal receipt before the Year 3 evaluation"
+        "generate and admit the complete fresh-save 154-item runtime artifact chain through the implemented ordered recurrence verifier before the Year 3 evaluation"
       ],
       "nodes": [
         {
@@ -1788,6 +1788,9 @@
           ],
           "rule": {
             "continue_while": { "path": "world_progress.full_shipment_progress.complete", "operator": "equals", "value": false },
+            "proof_manifest_schema": "full_shipment_recurrence_proof_manifest.v1",
+            "proof_receipt_builder": "build-full-shipment-recurrence-proof-receipt",
+            "formal_training_authorized": false,
             "iteration": [
               "refresh native missing requirement set",
               "select or acquire one reserve-safe unit",

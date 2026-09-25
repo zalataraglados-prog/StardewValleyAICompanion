@@ -2129,12 +2129,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   achievement, and achievement 34 to remain absent. A complete transition is rejected here and must use the dedicated
   terminal receipt instead. Focused ordinary/two-item/premature-achievement regressions and all terminal regressions
   pass; no game was started for this verifier slice.
-- The next bounded slice is an ordered Full Shipment recurrence proof manifest. Every iteration must rebuild one
-  admitted acquisition portfolio when acquisition is needed, bind one reserve-safe item to the existing shipping
-  deposit receipt, consume one ordinary settlement receipt, and hash-chain the fresh result into the next missing-set
-  refresh. Its final row must consume the admitted terminal receipt. Only a complete 154-item chain whose terminal
-  sleep starts before the exclusive total-day-224 boundary may satisfy the method; calendar, resource, route-time,
-  probability, retry and reservation gates remain mandatory upstream inputs.
+- `build-full-shipment-recurrence-proof-receipt` now implements that ordered proof boundary. It requires exactly one
+  unique iteration for every authoritative Full Shipment requirement, rebuilds each stored acquisition rollout and
+  Stage-1 shipping Teacher receipt, rebuilds ordinary settlements for rows 1 through 153, and reserves the dedicated
+  achievement-34 terminal receipt for row 154. Snapshot identity and exact prior-settlement roots prevent cross-save
+  splicing; acquisition-to-deposit and deposit-to-sleep phase boundaries must preserve the exact `state_hash`, so no
+  unreceipted movement or fixture mutation can hide between queues. Shipped counts must advance contiguously,
+  settlement days may never move backward, and the terminal sleep must end no later than the exclusive total-day-224
+  boundary.
+- This is a verifier contract, not the missing runtime evidence. No complete 154-iteration fresh-save manifest has
+  been generated or admitted yet, so `complete_full_shipment` remains `in_progress`, coverage-ready remains 2/19,
+  and formal Product training remains unauthorized. The next bounded slice is to drive the existing runtime compiler
+  and executor from a fresh save, persist all 154 acquisition/deposit/settlement artifacts into this manifest, and
+  admit the resulting receipt without fixture mutation. Calendar, resource, route-time, probability, retry and
+  reservation gates remain mandatory upstream inputs.
 
 ## Review questions
 
