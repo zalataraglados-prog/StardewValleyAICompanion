@@ -40,10 +40,7 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         GoalMethodFrontierMethod method,
         GoalMethodTeacherCriterionCoverage coverage,
         string[] implementedSources,
-        string[] activeSources,
-        string[] transparentGaps,
-        string[] runtimeGaps,
-        string[] productGaps)
+        string[] activeSources)
     {
         var result = new List<string>();
         if (method.Status == "pending_dependency_expansion")
@@ -55,10 +52,6 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         {
             result.Add(GoalMethodCoverageDispositions.OptionGovernanceGap);
         }
-        if (transparentGaps.Length > 0)
-            result.Add("transparent_read_evidence_gap");
-        if (runtimeGaps.Length > 0)
-            result.Add("native_runtime_evidence_gap");
         if (implementedSources.Length == 0)
         {
             result.Add(GoalMethodCoverageDispositions
@@ -80,8 +73,6 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             result.Add(GoalMethodCoverageDispositions
                 .NativeSplitEvidenceMissing);
         }
-        if (productGaps.Length > 0)
-            result.Add("downstream_product_executor_gap");
         return result.Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -91,24 +82,11 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         GoalMethodFrontierMethod method,
         GoalMethodTeacherCriterionCoverage coverage,
         string[] implementedSources,
-        string[] activeSources,
-        string[] transparentGaps,
-        string[] runtimeGaps,
-        string[] productGaps)
+        string[] activeSources)
     {
         var result = new List<string>();
         result.AddRange(method.UnexpandedRequirements.Select(blocker =>
             "close_dependency_blocker:" + blocker));
-        if (transparentGaps.Length > 0)
-        {
-            result.Add("close_transparent_read_evidence:" +
-                string.Join(",", transparentGaps));
-        }
-        if (runtimeGaps.Length > 0)
-        {
-            result.Add("close_native_runtime_evidence:" +
-                string.Join(",", runtimeGaps));
-        }
         if (implementedSources.Length == 0)
         {
             result.Add("implement_typed_teacher_source_adapter:" +
@@ -136,11 +114,6 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         {
             result.Add("collect_verified_native_outcomes:" +
                 string.Join(",", missingOutcomes));
-        }
-        if (productGaps.Length > 0)
-        {
-            result.Add("downstream_finish_product_executor:" +
-                string.Join(",", productGaps));
         }
         return result.Distinct(StringComparer.Ordinal).ToArray();
     }

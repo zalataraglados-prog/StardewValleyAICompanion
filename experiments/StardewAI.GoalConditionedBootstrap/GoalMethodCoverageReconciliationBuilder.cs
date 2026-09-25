@@ -160,18 +160,12 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             method,
             coverage,
             implementedSources,
-            activeSources,
-            transparentGaps,
-            runtimeGaps,
-            productGaps);
+            activeSources);
         var nextActions = NextActions(
             method,
             coverage,
             implementedSources,
-            activeSources,
-            transparentGaps,
-            runtimeGaps,
-            productGaps);
+            activeSources);
 
         return new GoalMethodCoverageMethodReconciliation(
             method.MethodId,
@@ -200,6 +194,7 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             transparentGaps,
             runtimeGaps,
             productGaps,
+            false,
             optionRows.SelectMany(option => option.EvidenceIds)
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)

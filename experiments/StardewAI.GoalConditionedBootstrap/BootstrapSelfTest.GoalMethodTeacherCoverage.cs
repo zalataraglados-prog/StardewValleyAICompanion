@@ -156,16 +156,38 @@ internal static partial class BootstrapSelfTest
                 },
                 StringComparer.Ordinal) &&
             petReconciliation.ActiveTeacherSourceKinds.Length == 0 &&
-            petReconciliation.TransparentReadEvidenceComplete &&
-            petReconciliation.NativeRuntimeEvidenceComplete &&
+            petReconciliation
+                .ReferencedOptionInventoryTransparentReadComplete &&
+            petReconciliation
+                .ReferencedOptionInventoryNativeRuntimeComplete &&
+            !petReconciliation
+                .OptionInventoryDiagnosticsAffectCurrentReadiness &&
             petReconciliation.EvidenceIds.Contains(
                 "EVD-223",
                 StringComparer.Ordinal) &&
             skullKeyReconciliation.PrimaryDisposition ==
                 GoalMethodCoverageDispositions
                     .TeacherSourceAdapterMissing &&
-            skullKeyReconciliation.TransparentReadEvidenceComplete &&
-            skullKeyReconciliation.NativeRuntimeEvidenceComplete &&
+            skullKeyReconciliation
+                .ReferencedOptionInventoryTransparentReadComplete &&
+            skullKeyReconciliation
+                .ReferencedOptionInventoryNativeRuntimeComplete &&
+            reconciliation.Methods.All(method =>
+                !method.OpenWorkKinds.Contains(
+                    "downstream_product_executor_gap",
+                    StringComparer.Ordinal) &&
+                !method.NextActions.Any(action =>
+                    action.StartsWith(
+                        "downstream_finish_product_executor:",
+                        StringComparison.Ordinal)) &&
+                !method.NextActions.Any(action =>
+                    action.StartsWith(
+                        "close_transparent_read_evidence:",
+                        StringComparison.Ordinal)) &&
+                !method.NextActions.Any(action =>
+                    action.StartsWith(
+                        "close_native_runtime_evidence:",
+                        StringComparison.Ordinal))) &&
             skullKeyReconciliation.EvidenceIds.Contains(
                 "EVD-106",
                 StringComparer.Ordinal),

@@ -2080,13 +2080,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   root methods still have typed dependency-graph blockers, 1 pet-love criterion whose adapter exists but production
   three-split native evidence is not connected, and 1 Skull Key criterion that still needs its typed Teacher source
   adapter. This prevents dependency proof work from being misreported as missing mechanical actions.
-- The same report preserves real implementation gaps instead of hiding them behind the primary disposition. All root
-  methods expose downstream Product Executor gaps. `raise_skill_levels` additionally references three registered-only
-  obstacle/resource-clump options without transparent-read or native-runtime evidence. Friendship and marriage routes
-  also expose high-level social/partnership options that are not yet in the internal execution pipeline.
+- Referenced-option status is an inventory-only diagnostic. Optional alternatives, compiler-owned deterministic
+  dependencies and the later Product Executor promotion gate do not become current method blockers merely because
+  every referenced option is not individually promoted. Current `open_work_kinds` and `next_actions` are derived only
+  from the rebuilt method frontier and verified Teacher/native coverage. This prevents option-matrix breadth from
+  manufacturing duplicate action work or moving the separate runtime-promotion gate ahead of 19/19 coverage.
 - The reconciliation artifact remains read-only and records `formal_product_training_authorized=false`. Coverage-ready
   does not imply product integration, and product integration does not supply Teacher comparisons or native split
   evidence.
+- The immediate follow-up is a single batched evidence slice for Full Shipment and Master Angler. Their existing
+  acquisition corpus already supplies native outcomes in train, validation and test, but its candidate pairs do not
+  vary either method. Extend the same authoritative denominator with independently verified alternative routes so both
+  methods receive explicit three-partition Teacher comparisons. This is evidence wiring through the existing
+  compiler/executor chain, not new shipping or fishing action development; long-horizon terminal proofs remain a
+  separate frontier requirement.
 
 ## Review questions
 

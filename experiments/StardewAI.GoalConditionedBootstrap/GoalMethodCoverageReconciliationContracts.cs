@@ -23,7 +23,7 @@ public sealed class GoalMethodCoverageReconciliationReport
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "goal_method_coverage_reconciliation.v1";
+        "goal_method_coverage_reconciliation.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -79,7 +79,7 @@ public sealed class GoalMethodCoverageReconciliationReport
 
     [JsonPropertyName("denominator_policy")]
     public string DenominatorPolicy { get; set; } =
-        "The 19 rows are Grandpa score criteria, the root methods are strategic routes, and referenced options are existing action capabilities. None of these counts is an action-registry completion count.";
+        "The 19 rows are Grandpa score criteria, the root methods are strategic routes, and referenced options are an inventory-only action audit. Current method work is derived only from the authoritative frontier and verified Teacher/native coverage. Referenced-option diagnostics, including later Product Executor promotion, never create a current method blocker.";
 }
 
 public sealed record GoalMethodCoverageDispositionCount(
@@ -110,14 +110,15 @@ public sealed record GoalMethodCoverageMethodReconciliation(
     [property: JsonPropertyName("teacher_comparison_partitions")] string[] TeacherComparisonPartitions,
     [property: JsonPropertyName("native_outcome_partitions")] string[] NativeOutcomePartitions,
     [property: JsonPropertyName("referenced_options")] GoalMethodCoverageOptionReconciliation[] ReferencedOptions,
-    [property: JsonPropertyName("transparent_read_evidence_complete")] bool TransparentReadEvidenceComplete,
-    [property: JsonPropertyName("native_runtime_evidence_complete")] bool NativeRuntimeEvidenceComplete,
-    [property: JsonPropertyName("five_gate_training_evidence_complete")] bool FiveGateTrainingEvidenceComplete,
-    [property: JsonPropertyName("internal_execution_pipeline_complete")] bool InternalExecutionPipelineComplete,
-    [property: JsonPropertyName("product_executor_complete")] bool ProductExecutorComplete,
-    [property: JsonPropertyName("transparent_read_gap_option_ids")] string[] TransparentReadGapOptionIds,
-    [property: JsonPropertyName("runtime_evidence_gap_option_ids")] string[] RuntimeEvidenceGapOptionIds,
-    [property: JsonPropertyName("product_executor_gap_option_ids")] string[] ProductExecutorGapOptionIds,
+    [property: JsonPropertyName("referenced_option_inventory_transparent_read_complete")] bool ReferencedOptionInventoryTransparentReadComplete,
+    [property: JsonPropertyName("referenced_option_inventory_native_runtime_complete")] bool ReferencedOptionInventoryNativeRuntimeComplete,
+    [property: JsonPropertyName("referenced_option_inventory_five_gate_complete")] bool ReferencedOptionInventoryFiveGateComplete,
+    [property: JsonPropertyName("referenced_option_inventory_internal_pipeline_complete")] bool ReferencedOptionInventoryInternalPipelineComplete,
+    [property: JsonPropertyName("referenced_option_inventory_product_executor_complete")] bool ReferencedOptionInventoryProductExecutorComplete,
+    [property: JsonPropertyName("option_inventory_transparent_read_diagnostics")] string[] OptionInventoryTransparentReadDiagnostics,
+    [property: JsonPropertyName("option_inventory_runtime_evidence_diagnostics")] string[] OptionInventoryRuntimeEvidenceDiagnostics,
+    [property: JsonPropertyName("option_inventory_product_executor_diagnostics")] string[] OptionInventoryProductExecutorDiagnostics,
+    [property: JsonPropertyName("option_inventory_diagnostics_affect_current_readiness")] bool OptionInventoryDiagnosticsAffectCurrentReadiness,
     [property: JsonPropertyName("evidence_ids")] string[] EvidenceIds,
     [property: JsonPropertyName("open_work_kinds")] string[] OpenWorkKinds,
     [property: JsonPropertyName("next_actions")] string[] NextActions);

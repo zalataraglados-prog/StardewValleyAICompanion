@@ -241,9 +241,10 @@ gate. It takes the same frontier inputs and `--request`, rebuilds both authoriti
 result to the current option-governance matrix. Its report separates 19 score criteria, 11 root
 methods, and the distinct existing options referenced by those methods; it must not describe a
 criterion coverage count as an action implementation count. Each method records typed dependency
-blockers, implemented versus active Teacher adapters, split evidence, transparent-read and native
-runtime gates, internal execution support, Product Executor support, evidence IDs, and exact next
-actions. The current report classifies 2 criteria as coverage-ready, 15 as dependency-graph
+blockers, implemented versus active Teacher adapters, split evidence, and an inventory-only view of
+referenced option evidence and Product Executor status. Option inventory diagnostics never become
+current method blockers or next actions; method work is derived only from the rebuilt frontier and
+verified Teacher/native coverage. The current report classifies 2 criteria as coverage-ready, 15 as dependency-graph
 incomplete, pet love as production evidence not connected, and Skull Key as missing a typed
 Teacher source adapter. It never authorizes formal product training.
 
