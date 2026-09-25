@@ -4,9 +4,9 @@ using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class FullShipmentTerminalSettlementReceiptBuilder
+public static class FullShipmentSettlementReceiptBuilder
 {
-    public static FullShipmentTerminalSettlementReceipt Build(
+    public static FullShipmentSettlementReceipt Build(
         string requirementInventoryPath,
         string acquisitionLoweringPath,
         string queuePath,
@@ -15,7 +15,8 @@ public static class FullShipmentTerminalSettlementReceiptBuilder
         string afterSnapshotPath,
         string runId,
         string executorVersion,
-        string selectedCandidateId)
+        string selectedCandidateId,
+        string expectedQualifiedItemId)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -35,23 +36,23 @@ public static class FullShipmentTerminalSettlementReceiptBuilder
             inventoryFullPath,
             inventory,
             lowering,
-            "Full Shipment terminal settlement");
+            "Full Shipment settlement");
         var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(
             queueFullPath,
-            "Full Shipment terminal settlement queue");
+            "Full Shipment settlement queue");
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             beforeFullPath,
-            "Full Shipment terminal settlement before snapshot");
+            "Full Shipment settlement before snapshot");
         var receipt = CurrentTeacherFrontierSupport.Read<
             QueueExecutionReceiptEnvelope>(
             receiptFullPath,
-            "Full Shipment terminal settlement execution receipt");
+            "Full Shipment settlement execution receipt");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             afterFullPath,
-            "Full Shipment terminal settlement after snapshot");
+            "Full Shipment settlement after snapshot");
         var requiredIds = FullShipmentSettlementSupport
             .RequiredQualifiedItemIds(inventory);
-        var result = new FullShipmentTerminalSettlementReceipt
+        var result = new FullShipmentSettlementReceipt
         {
             RequirementInventorySha256 = CurrentTeacherFrontierSupport.HashFile(
                 inventoryFullPath),
@@ -85,30 +86,44 @@ public static class FullShipmentTerminalSettlementReceiptBuilder
                 after.GameVersion,
                 StringComparison.Ordinal))
         {
-            reasons.Add(
-                "full_shipment_terminal_game_version_authority_mismatch");
+            reasons.Add("full_shipment_settlement_game_version_authority_mismatch");
         }
         if (!FullShipmentSettlementSupport.IsSingleNativeSleepQueue(queue))
         {
-            reasons.Add(
-                "full_shipment_terminal_queue_not_single_native_sleep");
+            reasons.Add("full_shipment_settlement_queue_not_single_native_sleep");
         }
-        var transition = FullShipmentTerminalSettlementVerifier.Verify(
+        var transition = FullShipmentSettlementVerifier.Verify(
             requiredIds,
             before,
             after);
         reasons.AddRange(transition.BlockingReasons);
+        if (string.IsNullOrWhiteSpace(expectedQualifiedItemId) ||
+            !requiredIds.Contains(
+                expectedQualifiedItemId,
+                StringComparer.Ordinal) ||
+            !string.Equals(
+                transition.SettledQualifiedItemId,
+                expectedQualifiedItemId,
+                StringComparison.Ordinal))
+        {
+            reasons.Add("full_shipment_settlement_expected_item_mismatch");
+        }
+        if (transition.TerminalTransition)
+        {
+            reasons.Add(
+                "full_shipment_settlement_terminal_requires_dedicated_receipt");
+        }
+
         var distinct = reasons
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();
         result.TransitionEvidence = transition;
         result.BlockingReasons = distinct;
-        result.TrainingLabelEligible = distinct.Length == 0;
-        result.Status = result.TrainingLabelEligible
+        result.RecurrenceEvidenceEligible = distinct.Length == 0;
+        result.Status = result.RecurrenceEvidenceEligible
             ? "ready"
-            : "blocked_fresh_native_terminal_settlement_missing";
+            : "blocked_fresh_native_settlement_missing";
         return result;
     }
-
 }

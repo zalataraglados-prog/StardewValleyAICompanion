@@ -239,15 +239,24 @@ target-date acquisition chain, and native lifecycle proof closed the shared meth
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
 gate against the freshly rebuilt lowering rather than a stale generated artifact.
 
+`build-full-shipment-settlement-receipt` is the fail-closed ordinary native-day adapter for the
+Full Shipment recurrence. It accepts exactly one newly settled authoritative item, requires its
+native shipped count to move 0 -> 1, the shared bin view to move 1 -> 0, the missing denominator
+to decrease by exactly one, the day to advance exactly once, and all other progress to remain
+monotonic. It rejects a terminal transition so achievement 34 cannot bypass the stricter terminal
+contract.
+
 `build-full-shipment-terminal-settlement-receipt` is the fail-closed terminal
-adapter for the Full Shipment recurrence. It takes the mutually hash-bound authoritative
+adapter for the same recurrence. It takes the mutually hash-bound authoritative
 requirement inventory and acquisition lowering, one independently identified native sleep candidate,
 its compiled queue and execution receipt, plus fresh before/after snapshots. Admission requires the exact 154-item
 denominator to move from one missing item to complete, the final item to move from zero to one
 native shipment, the shared shipping-bin view to settle from one to zero, `total_days` to advance
-exactly once, and achievement 34 to appear without regressing existing progress. The verifier and
-tamper regressions are complete; no isolated native terminal artifact has been admitted yet, so
-the Full Shipment dependency graph remains `in_progress` and the coverage gate remains 2/19.
+exactly once, and achievement 34 to appear without regressing existing progress. Hidden isolated
+runtime `runtime-full-shipment-terminal-20260925-171152` admitted this final transition through the
+existing shipping and sleep chains. The Full Shipment dependency graph remains `in_progress`
+because the ordered 154-item fresh-save recurrence and Year 3 deadline proof are still absent; the
+coverage gate therefore remains 2/19.
 
 `build-goal-method-coverage-reconciliation` is the read-only denominator and gap audit for that
 gate. It takes the same frontier inputs and `--request`, rebuilds both authorities, and joins the
@@ -372,6 +381,13 @@ adding another shipping or sleep executor. It copies one runtime save, prepares 
 views settle 1 -> 0, the day advances once, 154/154 is reached, and achievement 34 appears. This is a
 runtime calibration receipt, not a fresh-save proof of the complete 154-item recurrence and not formal
 training authorization.
+
+The ordinary and terminal settlement builders now share one exact projection verifier. Ordinary
+steps require exactly one missing item to settle while achievement 34 stays absent; the terminal
+wrapper additionally requires 153/154 -> 154/154 and the native achievement transition. The next
+artifact is an ordered recurrence proof manifest that must rebuild each acquisition rollout,
+shipping deposit and ordinary settlement before consuming the dedicated terminal receipt. It may
+not replace those Product queues with fixture mutations or infer continuity from item IDs alone.
 
 ## Hardware
 

@@ -2123,10 +2123,18 @@ Slice 7 remains assigned to the RTX 5070 node.
   `in_progress`: the admitted achievement-34 terminal receipt must be bound to the complete 154-requirement
   acquisition/reservation recurrence, and that recurrence still needs a fresh-save Year 3 deadline proof.
   Coverage-ready therefore remains 2/19 and formal Product training remains unauthorized.
-- The next bounded slice is to make the existing recurrence consume the admitted terminal contract, then prove that
-  every iteration refreshes the native missing set, selects or acquires one reserve-safe unit through the existing
-  target-date portfolio, deposits it through the existing shipping executor, and reaches the terminal receipt before
-  the Year 3 evaluation without bypassing calendar, resource, route-time, probability, retry, or reservation gates.
+- `build-full-shipment-settlement-receipt` now closes the missing ordinary native-day boundary used by recurrence
+  iterations 1 through 153. Its shared verifier requires exactly one authoritative missing item to become shipped,
+  native `basicShipped` 0 -> 1, the shared bin view 1 -> 0, one day advance, no regression in any other item or
+  achievement, and achievement 34 to remain absent. A complete transition is rejected here and must use the dedicated
+  terminal receipt instead. Focused ordinary/two-item/premature-achievement regressions and all terminal regressions
+  pass; no game was started for this verifier slice.
+- The next bounded slice is an ordered Full Shipment recurrence proof manifest. Every iteration must rebuild one
+  admitted acquisition portfolio when acquisition is needed, bind one reserve-safe item to the existing shipping
+  deposit receipt, consume one ordinary settlement receipt, and hash-chain the fresh result into the next missing-set
+  refresh. Its final row must consume the admitted terminal receipt. Only a complete 154-item chain whose terminal
+  sleep starts before the exclusive total-day-224 boundary may satisfy the method; calendar, resource, route-time,
+  probability, retry and reservation gates remain mandatory upstream inputs.
 
 ## Review questions
 

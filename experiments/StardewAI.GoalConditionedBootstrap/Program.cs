@@ -205,6 +205,9 @@ try
         case "build-community-center-lifecycle-receipt":
             BuildCommunityCenterLifecycleReceipt(options);
             break;
+        case "build-full-shipment-settlement-receipt":
+            BuildFullShipmentSettlementReceipt(options);
+            break;
         case "build-full-shipment-terminal-settlement-receipt":
             BuildFullShipmentTerminalSettlementReceipt(options);
             break;
@@ -247,6 +250,9 @@ try
         case "self-test-current-stage-one-collection":
             SelfTestCurrentStageOneCollection(options);
             break;
+        case "self-test-full-shipment-settlement":
+            BootstrapSelfTest.RunFullShipmentSettlement();
+            break;
         case "self-test-goal-method-incomparable-live-shadow":
             SelfTestGoalMethodIncomparableLiveShadow(options);
             break;
@@ -255,7 +261,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-settlement-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-full-shipment-settlement, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
     }
 }
 catch (Exception ex)
@@ -1568,6 +1574,24 @@ static void BuildFullShipmentTerminalSettlementReceipt(Arguments options)
         options.Required("selected-candidate-id"));
     Write(options.Required("output"), report);
     if (!report.TrainingLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void BuildFullShipmentSettlementReceipt(Arguments options)
+{
+    var report = FullShipmentSettlementReceiptBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("queue"),
+        options.Required("before-snapshot"),
+        options.Required("execution-receipt"),
+        options.Required("after-snapshot"),
+        options.Required("run-id"),
+        options.Required("executor-version"),
+        options.Required("selected-candidate-id"),
+        options.Required("expected-qualified-item-id"));
+    Write(options.Required("output"), report);
+    if (!report.RecurrenceEvidenceEligible)
         Environment.ExitCode = 2;
 }
 
