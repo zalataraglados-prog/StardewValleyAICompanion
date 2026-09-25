@@ -141,6 +141,7 @@ public sealed partial class CurrentLocationReadAdapter
             tree_chop_energy_cost = wildTreeChop.EnergyCost,
             tree_chop_guaranteed_minimum_outputs = wildTreeChop.GuaranteedMinimumOutputs,
             tree_chop_optional_output_domain = wildTreeChop.OptionalOutputDomain,
+            tree_chop_authoritative_route_sources = wildTreeChop.AuthoritativeRouteSources,
             tree_chop_output_distribution_status = wildTreeChop.OutputDistributionStatus,
             tree_chop_projection_status = wildTreeChop.ProjectionStatus,
             tree_chop_foraging_experience_before = wildTreeChop.ForagingExperienceBefore,

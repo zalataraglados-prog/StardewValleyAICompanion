@@ -93,6 +93,15 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return true;
         }
 
+        if (string.IsNullOrWhiteSpace(candidate.QualifiedItemId) &&
+            CandidateDeclaresUniqueAuthoritativeRouteItem(
+                candidate,
+                requirement.QualifiedItemId))
+        {
+            evidence = "rebuilt_candidate.authoritative_route_item";
+            return true;
+        }
+
         return false;
     }
 
@@ -207,6 +216,44 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         string sourceId,
         string qualifiedItemId)
     {
+        if (!TryReadAuthoritativeRouteSources(candidate, out var sources))
+            return false;
+
+        var targetSources = sources
+            .Where(value => string.Equals(
+                value.QualifiedItemId,
+                qualifiedItemId,
+                StringComparison.Ordinal))
+            .Distinct()
+            .ToArray();
+        return targetSources.Length == 1 &&
+            string.Equals(
+                targetSources[0].RouteKind,
+                routeKind,
+                StringComparison.Ordinal) &&
+            string.Equals(
+                targetSources[0].SourceId,
+                sourceId,
+                StringComparison.Ordinal);
+    }
+
+    private static bool CandidateDeclaresUniqueAuthoritativeRouteItem(
+        PolicyEventCandidatePrediction candidate,
+        string qualifiedItemId) =>
+        TryReadAuthoritativeRouteSources(candidate, out var sources) &&
+        sources
+            .Where(value => string.Equals(
+                value.QualifiedItemId,
+                qualifiedItemId,
+                StringComparison.Ordinal))
+            .Distinct()
+            .Count() == 1;
+
+    private static bool TryReadAuthoritativeRouteSources(
+        PolicyEventCandidatePrediction candidate,
+        out AuthoritativeRouteSource[] sources)
+    {
+        sources = Array.Empty<AuthoritativeRouteSource>();
         if (!TryReadUniqueParameter(
                 candidate,
                 "authoritative_route_sources_json",
@@ -223,10 +270,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 return false;
             }
 
-            var sources = new List<(
-                string RouteKind,
-                string SourceId,
-                string QualifiedItemId)>();
+            var parsed = new List<AuthoritativeRouteSource>();
             foreach (var value in document.RootElement.EnumerateArray())
             {
                 if (value.ValueKind !=
@@ -243,28 +287,13 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 {
                     return false;
                 }
-                sources.Add((
+                parsed.Add(new AuthoritativeRouteSource(
                     kind.GetString() ?? string.Empty,
                     source.GetString() ?? string.Empty,
                     item.GetString() ?? string.Empty));
             }
-
-            var targetSources = sources
-                .Where(value => string.Equals(
-                    value.QualifiedItemId,
-                    qualifiedItemId,
-                    StringComparison.Ordinal))
-                .Distinct()
-                .ToArray();
-            return targetSources.Length == 1 &&
-                string.Equals(
-                    targetSources[0].RouteKind,
-                    routeKind,
-                    StringComparison.Ordinal) &&
-                string.Equals(
-                    targetSources[0].SourceId,
-                    sourceId,
-                    StringComparison.Ordinal);
+            sources = parsed.ToArray();
+            return true;
         }
         catch (System.Text.Json.JsonException)
         {
@@ -319,4 +348,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
     private sealed record FixedNativeSource(
         string SourceId,
         string[] CandidateKinds);
+
+    private sealed record AuthoritativeRouteSource(
+        string RouteKind,
+        string SourceId,
+        string QualifiedItemId);
 }

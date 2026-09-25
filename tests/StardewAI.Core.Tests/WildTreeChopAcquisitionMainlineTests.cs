@@ -27,6 +27,14 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         Assert.Equal("clear_obstacle_tile", candidate.Kind);
         Assert.Contains(candidate.Parameters, value => value.Name == "clear_completion_mode" && value.Value == "wild_tree_removed");
         Assert.Contains(candidate.Parameters, value => value.Name == "required_tool_kind" && value.Value == "axe");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "authoritative_route_sources_json" &&
+            value.Value.Contains(
+                "wild_tree:1:0",
+                StringComparison.Ordinal) &&
+            value.Value.Contains(
+                "native_wild_tree_chop_drop",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -161,6 +169,7 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         "tree_chop_completion_mode":"wild_tree_removed","tree_chop_tool_slot_index":2,"tree_chop_required_tool_kind":"axe","tree_chop_expected_tool_swings":6,"tree_chop_energy_cost":7.2,
         "tree_chop_guaranteed_minimum_outputs":[{"qualifiedItemId":"(O)388","quality":0,"quantityMin":{{{minimumWood}}}},{"qualifiedItemId":"(O)92","quality":0,"quantityMin":6}],
         "tree_chop_optional_output_domain":[{"kind":"exact","qualified_item_id":"(O)388","quality":0,"quantity_max":null,"branch":"quantity_above_guaranteed"}],
+        "tree_chop_authoritative_route_sources":[{"route_kind":"native_wild_tree_chop_drop","source_id":"wild_tree:1:0","qualified_item_id":"(O)92"}],
         "tree_chop_output_distribution_status":"complete_stochastic_native_branch_domain_no_rng_consumed","tree_chop_projection_status":"exact_live_tree_and_locked_wild_tree_chop_domain",
         "tree_chop_foraging_experience_before":620,"tree_chop_foraging_experience_delta":16,"tree_chop_foraging_experience_after":636,
         "tree_chop_trees_chopped_before":25,"tree_chop_trees_chopped_delta":1,"tree_chop_trees_chopped_after":{{{treesChoppedAfter}}},

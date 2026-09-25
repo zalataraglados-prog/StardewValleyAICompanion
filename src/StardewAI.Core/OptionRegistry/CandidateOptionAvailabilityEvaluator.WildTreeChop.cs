@@ -121,6 +121,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("tree_chop_output_domain_contract", ReadString(feature, "tree_chop_output_distribution_status")),
             Parameter("tree_chop_guaranteed_minimum_outputs_json", JsonSerializer.Serialize(ReadArray(feature, "tree_chop_guaranteed_minimum_outputs"))),
             Parameter("tree_chop_output_domain_json", JsonSerializer.Serialize(ReadArray(feature, "tree_chop_optional_output_domain"))),
+            Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(ReadArray(feature, "tree_chop_authoritative_route_sources"))),
             Parameter("tree_chop_native_contract", ReadString(feature, "tree_chop_native_contract")),
             Parameter("skill_experience_skill_id", "foraging"),
             Parameter("skill_experience_projection_status", "exact"),

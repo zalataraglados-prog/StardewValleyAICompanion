@@ -29,6 +29,13 @@ public sealed partial class CurrentLocationReadAdapter
         var optionalOutputDomain = data is null
             ? Array.Empty<object>()
             : ProjectWildTreeChopOptionalOutputDomain(tree, data, axe, expectedHits ?? 1);
+        var authoritativeRouteSources = data is null
+            ? Array.Empty<object>()
+            : ProjectWildTreeChopAuthoritativeRouteSources(
+                tile,
+                tree,
+                data,
+                dataStatus);
         var experienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
         var experienceDelta = tree.growthStage.Value >= Tree.treeStage && !tree.stump.Value ? 16 : 0;
         var treesChoppedBefore = (long)Game1.player.stats.Get("TreesChopped");
@@ -81,6 +88,7 @@ public sealed partial class CurrentLocationReadAdapter
             energyCost,
             guaranteedOutputs,
             optionalOutputDomain,
+            authoritativeRouteSources,
             "complete_stochastic_native_branch_domain_no_rng_consumed",
             tree.GetType() == typeof(Tree) && dataStatus == "exact_locked_base_1.6.15_chop"
                 ? "exact_live_tree_and_locked_wild_tree_chop_domain"
@@ -91,6 +99,89 @@ public sealed partial class CurrentLocationReadAdapter
             treesChoppedBefore,
             tree.stump.Value ? 0 : 1,
             checked(treesChoppedBefore + (tree.stump.Value ? 0 : 1)));
+    }
+
+    private static object[] ProjectWildTreeChopAuthoritativeRouteSources(
+        Vector2 tile,
+        Tree tree,
+        WildTreeData data,
+        string dataStatus)
+    {
+        if (tree.GetType() != typeof(Tree) ||
+            dataStatus != "exact_locked_base_1.6.15_chop")
+        {
+            return Array.Empty<object>();
+        }
+
+        // One native chop can run multiple rows for the same item. Keep the
+        // complete output domain above, but bind one stable row per item so a
+        // Teacher route never receives an ambiguous source identity.
+        var sources = new List<WildTreeChopRouteSource>();
+        var rows = data.ChopItems ?? new List<WildTreeChopItemData>();
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            var row = rows[rowIndex];
+            if (row.Chance <= 0f)
+                continue;
+
+            var appliesToTrunk = row.IsValidForGrowthStage(
+                Tree.treeStage,
+                false);
+            var appliesToStump = row.IsValidForGrowthStage(
+                Tree.treeStage,
+                true);
+            if (!appliesToTrunk && !appliesToStump)
+                continue;
+
+            if (appliesToTrunk)
+            {
+                AddWildTreeChopRouteSource(
+                    sources,
+                    tree.treeType.Value,
+                    rowIndex,
+                    row.ItemId);
+            }
+            if (appliesToStump)
+            {
+                var itemId = row.ItemId;
+                if (itemId == "(O)420" && tile.X % 7f == 0f)
+                    itemId = "(O)422";
+                AddWildTreeChopRouteSource(
+                    sources,
+                    tree.treeType.Value,
+                    rowIndex,
+                    itemId);
+            }
+        }
+
+        return sources
+            .GroupBy(source => source.QualifiedItemId, StringComparer.Ordinal)
+            .Select(group => group
+                .OrderBy(source => source.RowIndex)
+                .First())
+            .OrderBy(source => source.QualifiedItemId, StringComparer.Ordinal)
+            .Select(source => (object)new
+            {
+                route_kind = "native_wild_tree_chop_drop",
+                source_id = "wild_tree:" + source.TreeType + ":" +
+                    source.RowIndex,
+                qualified_item_id = source.QualifiedItemId
+            })
+            .ToArray();
+    }
+
+    private static void AddWildTreeChopRouteSource(
+        ICollection<WildTreeChopRouteSource> sources,
+        string treeType,
+        int rowIndex,
+        string? itemId)
+    {
+        if (string.IsNullOrWhiteSpace(itemId))
+            return;
+        sources.Add(new WildTreeChopRouteSource(
+            treeType,
+            rowIndex,
+            ItemRegistry.Create(itemId).QualifiedItemId));
     }
 
     private static string WildTreeChopProtectionStatus(Vector2 tile, Tree tree)
@@ -346,6 +437,11 @@ public sealed partial class CurrentLocationReadAdapter
         int Quality,
         int QuantityMin);
 
+    private sealed record WildTreeChopRouteSource(
+        string TreeType,
+        int RowIndex,
+        string QualifiedItemId);
+
     private sealed record WildTreeChopProjection(
         string Status,
         string DataContractStatus,
@@ -359,6 +455,7 @@ public sealed partial class CurrentLocationReadAdapter
         double? EnergyCost,
         WildTreeChopOutputMinimum[] GuaranteedMinimumOutputs,
         object[] OptionalOutputDomain,
+        object[] AuthoritativeRouteSources,
         string OutputDistributionStatus,
         string ProjectionStatus,
         int ForagingExperienceBefore,

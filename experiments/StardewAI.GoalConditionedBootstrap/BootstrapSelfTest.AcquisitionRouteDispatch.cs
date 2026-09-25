@@ -183,6 +183,44 @@ internal static partial class BootstrapSelfTest
                     new[] { ambiguousAnimalCandidate }).Length == 0,
             "A candidate with ambiguous same-item source rows was admitted.");
 
+        var broadChopCandidate = CloneCandidate(faster);
+        broadChopCandidate.OptionId = "foraging.chop_wild_tree";
+        broadChopCandidate.Kind = "clear_obstacle_tile";
+        broadChopCandidate.QualifiedItemId = string.Empty;
+        broadChopCandidate.Parameters = broadChopCandidate.Parameters.Concat(
+            new[]
+            {
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"native_wild_tree_chop_drop\",\"source_id\":\"wild_tree:1:0\",\"qualified_item_id\":\"(O)92\"}]")
+            }).ToArray();
+        var chopRequirement = requirement with
+        {
+            QualifiedItemId = "(O)92",
+            RouteKind = "native_wild_tree_chop_drop",
+            SourceId = "wild_tree:1:0"
+        };
+        var chopLowering = lowered with
+        {
+            RouteKind = chopRequirement.RouteKind,
+            SourceId = chopRequirement.SourceId,
+            EndpointOptionIds = new[] { "foraging.chop_wild_tree" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    chopRequirement,
+                    chopLowering,
+                    snapshot,
+                    new[] { broadChopCandidate }).Length == 1,
+            "A broad native chop candidate did not inherit its unique exact output identity.");
+        var contradictoryChopCandidate = CloneCandidate(broadChopCandidate);
+        contradictoryChopCandidate.QualifiedItemId = "(O)388";
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    chopRequirement,
+                    chopLowering,
+                    snapshot,
+                    new[] { contradictoryChopCandidate }).Length == 0,
+            "A broad native chop source overrode a contradictory candidate item identity.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

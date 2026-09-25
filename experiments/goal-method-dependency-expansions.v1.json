@@ -1745,6 +1745,7 @@
               "native_solar_panel_output",
               "native_wild_tree_seed",
               "native_wild_tree_seed_drop",
+              "native_wild_tree_chop_drop",
               "native_wild_tree_tapper_output",
               "native_bush_shake",
               "native_tea_bush_harvest",
