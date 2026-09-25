@@ -281,8 +281,8 @@ ranking, and source-evidence lineage. Legacy high-level `option_request` queues 
 `compiled_action_steps` queues have distinct validation shapes and cannot masquerade as each other.
 Exact source binding currently covers shops, crops, target-date location or mine fish, crab-pot
 outputs, regular or deluxe animal products, fish ponds, fruit trees, location forage, solar panels, base
-wild-tree seeds, wild-tree seed-drop rows, and fixed native bush, tea, spring-onion, ginger, tree-moss
-harvests, and learned cooking recipes. Other route kinds fail
+wild-tree seeds, wild-tree seed-drop rows, wild-tree tapper outputs, and fixed native bush, tea, spring-onion,
+ginger, tree-moss harvests, and learned cooking recipes. Other route kinds fail
 closed until their live candidates expose exact source identity. A selected item with more than one distinct
 matching source row also fails closed rather than creating an ambiguous teacher label. Required supporting options
 also remain upstream work. The report and queue paths must differ. A blocked build atomically

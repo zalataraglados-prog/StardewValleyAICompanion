@@ -40,6 +40,12 @@ public sealed class SolarPanelMachineStateSourceGuardTests
                 "StardewAI.TransparentBridge",
                 "Adapters",
                 "FarmReadAdapter.Machines.cs"));
+        var outputSources = File.ReadAllText(
+            FindRepositoryFile(
+                "src",
+                "StardewAI.TransparentBridge",
+                "Adapters",
+                "FarmReadAdapter.MachineOutputSources.cs"));
 
         Assert.Contains(
             "solar_panel_day_update_weather.v1",
@@ -66,7 +72,7 @@ public sealed class SolarPanelMachineStateSourceGuardTests
             stateSource);
         Assert.DoesNotContain("Game1.random", stateSource);
         Assert.Contains(
-            "ReadMachineOutputAuthoritativeRouteSources",
+            "ReadSolarPanelOutputAuthoritativeRouteSources",
             stateSource);
         Assert.Contains(
             "dayUpdateOutputs.Length != 1",
@@ -77,6 +83,9 @@ public sealed class SolarPanelMachineStateSourceGuardTests
         Assert.Contains(
             "output_authoritative_route_sources",
             machinesSource);
+        Assert.Contains(
+            "ReadMachineOutputAuthoritativeRouteSources",
+            outputSources);
 
         Assert.Contains(
             "ReadSolarPanelSpecialState(",

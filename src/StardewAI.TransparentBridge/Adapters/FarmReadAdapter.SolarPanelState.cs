@@ -111,7 +111,7 @@ public sealed partial class FarmReadAdapter
         };
     }
 
-    private static object[] ReadMachineOutputAuthoritativeRouteSources(
+    private static object[] ReadSolarPanelOutputAuthoritativeRouteSources(
         StardewValley.Object machine)
     {
         var heldItem = machine.heldObject.Value;
