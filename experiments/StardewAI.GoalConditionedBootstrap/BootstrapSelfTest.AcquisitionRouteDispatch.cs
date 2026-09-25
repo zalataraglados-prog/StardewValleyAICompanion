@@ -267,6 +267,73 @@ internal static partial class BootstrapSelfTest
                     new[] { wrongGeodeOutput }).Length == 0,
             "A geode candidate with the wrong projected output was admitted.");
 
+        var machineSources = new[]
+        {
+            new
+            {
+                RouteKind = "machine_output",
+                SourceId = "machine:(BC)13:rule:Default_CopperOre",
+                QualifiedItemId = "(O)334"
+            },
+            new
+            {
+                RouteKind = "native_machine_item_query_output",
+                SourceId = "machine:(BC)13:rule:0:output:0",
+                QualifiedItemId = "(O)334"
+            },
+            new
+            {
+                RouteKind = "native_machine_flavored_output",
+                SourceId = "machine:(BC)10:rule:0:output:0",
+                QualifiedItemId = "(O)340"
+            }
+        };
+        foreach (var machineSource in machineSources)
+        {
+            var machineCandidate = CloneCandidate(animalCandidate);
+            machineCandidate.OptionId = "farm.collect_machine_outputs";
+            machineCandidate.Kind = "collect_machine_output_tile";
+            machineCandidate.QualifiedItemId =
+                machineSource.QualifiedItemId;
+            machineCandidate.Parameters = machineCandidate.Parameters
+                .Where(parameter => parameter.Name !=
+                    "authoritative_route_sources_json")
+                .Concat(new[]
+                {
+                    Parameter(
+                        "authoritative_route_sources_json",
+                        "[{\"route_kind\":\"" +
+                        machineSource.RouteKind +
+                        "\",\"source_id\":\"" +
+                        machineSource.SourceId +
+                        "\",\"qualified_item_id\":\"" +
+                        machineSource.QualifiedItemId + "\"}]")
+                }).ToArray();
+            var machineRequirement = requirement with
+            {
+                QualifiedItemId = machineSource.QualifiedItemId,
+                RouteKind = machineSource.RouteKind,
+                SourceId = machineSource.SourceId
+            };
+            var machineLowering = lowered with
+            {
+                RouteKind = machineRequirement.RouteKind,
+                SourceId = machineRequirement.SourceId,
+                EndpointOptionIds = new[]
+                {
+                    "farm.collect_machine_outputs"
+                }
+            };
+            Require(AcquisitionRouteDispatchCompilationBuilder
+                    .SelectCandidates(
+                        machineRequirement,
+                        machineLowering,
+                        snapshot,
+                        new[] { machineCandidate }).Length == 1,
+                "An exact ordinary machine output source was rejected: " +
+                machineSource.RouteKind);
+        }
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {
