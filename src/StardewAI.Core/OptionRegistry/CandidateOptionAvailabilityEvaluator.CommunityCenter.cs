@@ -38,6 +38,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             return firstNoteCandidates;
         }
+        var rewardCandidates = CommunityCenterRewardCandidates(
+            snapshot,
+            progressRow,
+            bundles,
+            currentLocation,
+            routeState,
+            canReadJunimoText,
+            rowCountExact);
+        if (rewardCandidates.Length > 0)
+        {
+            return rewardCandidates;
+        }
         if (ReadBool(progressRow, "community_center_is_current_location") != true)
         {
             return CommunityCenterDonationRouteCandidates(

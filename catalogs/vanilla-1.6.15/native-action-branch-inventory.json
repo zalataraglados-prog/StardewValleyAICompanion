@@ -9569,6 +9569,7 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
+        "executor.claim_community_center_bundle_reward",
         "executor.donate_community_center_item",
         "inventory.transfer_item"
       ],
@@ -9596,6 +9597,7 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
+        "executor.claim_community_center_bundle_reward",
         "executor.donate_community_center_item"
       ],
       "semanticDisposition": "player_semantic_action",
@@ -9622,6 +9624,7 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
+        "executor.claim_community_center_bundle_reward",
         "executor.donate_community_center_item"
       ],
       "semanticDisposition": "player_semantic_action",
@@ -9647,6 +9650,7 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
+        "executor.claim_community_center_bundle_reward",
         "executor.donate_community_center_item"
       ],
       "semanticDisposition": "player_semantic_action",

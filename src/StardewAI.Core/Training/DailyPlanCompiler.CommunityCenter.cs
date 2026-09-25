@@ -67,4 +67,38 @@ public sealed partial class DailyPlanCompiler
             }
         };
     }
+
+    private static IEnumerable<SmallModelPlanStep> CommunityCenterRewardSteps(
+        PolicyEventCandidatePrediction candidate)
+    {
+        return new[]
+        {
+            new SmallModelPlanStep
+            {
+                StepId = StepId(candidate, "claim_community_center_bundle_reward", 0),
+                Kind = "claim_community_center_bundle_reward",
+                TargetLocation = candidate.LocationId,
+                TargetTileX = candidate.TileX,
+                TargetTileY = candidate.TileY,
+                EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "community_center_bundle_reward_projection_still_matches=true"
+                },
+                ExpectedEffects = new[] { candidate.ExpectedEffect },
+                SafetyConstraints = new[]
+                {
+                    "native_JunimoNoteMenu_or_MissedRewards_entry_only",
+                    "native_ItemGrabMenu_exact_bundle_reward_click_only",
+                    "no_direct_bundle_reward_or_inventory_mutation"
+                },
+                FailurePolicy = new[]
+                {
+                    "close_native_reward_menu_refresh_snapshot_and_replan"
+                },
+                Parameters = candidate.Parameters
+            }
+        };
+    }
 }

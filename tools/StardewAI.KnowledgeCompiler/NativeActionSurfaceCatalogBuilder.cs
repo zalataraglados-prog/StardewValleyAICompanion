@@ -169,7 +169,7 @@ internal sealed class NativeActionSurfaceCatalogBuilder
             "DialogueBox" => new[] { "executor.choose_dialogue_response" },
             "CraftingPage" => new[] { "executor.craft_machine_item", "executor.craft_storage_item" },
             "MuseumMenu" => new[] { "executor.donate_museum_item" },
-            "JunimoNoteMenu" => new[] { "executor.donate_community_center_item" },
+            "JunimoNoteMenu" => new[] { "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward" },
             "JojaCDMenu" => new[] { "executor.purchase_joja_project" },
             "BobberBar" => new[] { "executor.catch_fish" },
             "AnimalQueryMenu" => new[] { "animals.manage_animal" },

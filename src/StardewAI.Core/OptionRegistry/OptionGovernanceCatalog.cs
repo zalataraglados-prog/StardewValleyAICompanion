@@ -414,6 +414,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.play_crane_game", Primitive, R2, Consume, ExplicitConfirm, Actor, ActorState, Explicit, PlayerCommand),
                 P("executor.play_darts", Primitive, R1, None, NoConfirm, Actor, World, Allowed),
                 P("executor.donate_community_center_item", Primitive, R4, Asset, ExplicitConfirm, Actor, World, Explicit),
+                P("executor.claim_community_center_bundle_reward", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.purchase_joja_membership", Primitive, R5, Route, ExplicitConfirm, Host, World, Explicit),
                 P("executor.purchase_joja_project", Primitive, R5, Route, ExplicitConfirm, Host, World, Explicit),
                 P("executor.purchase_farmhouse_upgrade", Primitive, R3, CrossDay, ExplicitConfirm, Host, Farm, Explicit),

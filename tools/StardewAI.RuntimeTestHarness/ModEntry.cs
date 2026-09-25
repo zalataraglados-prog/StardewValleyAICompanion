@@ -103,6 +103,7 @@ public sealed partial class ModEntry : Mod
     private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
+    private ActiveCommunityCenterRewardClaim? activeCommunityCenterRewardClaim;
     private ActiveCommunityCenterFirstNote? activeCommunityCenterFirstNote;
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
@@ -614,6 +615,7 @@ public sealed partial class ModEntry : Mod
         TickFieldOfficeSurvey();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
+        TickCommunityCenterRewardClaim();
         TickCommunityCenterFirstNote();
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
@@ -1896,6 +1898,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.claim_community_center_bundle_reward")
+            {
+                StartCommunityCenterRewardClaim(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.purchase_joja_membership" ||
                 pending.Request.OptionId == "executor.purchase_joja_project")
             {
@@ -2388,6 +2396,7 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
+            activeCommunityCenterRewardClaim = null;
             activeCommunityCenterFirstNote = null;
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
@@ -2677,6 +2686,7 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
+            activeCommunityCenterRewardClaim is not null ||
             activeCommunityCenterFirstNote is not null ||
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||

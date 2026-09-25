@@ -37,7 +37,7 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_typed_projection_required"));
             return;
         }
-        if (activeCommunityCenterDonation is not null || Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        if (activeCommunityCenterDonation is not null || activeCommunityCenterRewardClaim is not null || Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
         {
             pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_player_busy"));
             return;

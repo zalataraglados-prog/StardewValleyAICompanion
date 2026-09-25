@@ -4,9 +4,9 @@
   "native_action_denominator_status": "native_action_denominator_frozen",
   "native_action_surface_fingerprint_sha256": "a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e",
   "planning_semantic_catalog_fingerprint_schema": "stardewai.planning_semantic_catalog_fingerprint.v1",
-  "planning_semantic_catalog_fingerprint_sha256": "f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257",
-  "action_count": 234,
-  "registered_option_spec_count": 232,
+  "planning_semantic_catalog_fingerprint_sha256": "0e013ba44a7a026dbb04123435a55a0709c16b5f7db8856d2bf5cfc1b9123c99",
+  "action_count": 235,
+  "registered_option_spec_count": 233,
   "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -355,6 +355,15 @@
     {
       "action_id": "executor.claim_adventure_guild_reward",
       "domain": "rewards",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.claim_community_center_bundle_reward",
+      "domain": "community_center",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.interaction_menu",
       "catalog_status": "registered_option_spec",
@@ -1218,7 +1227,7 @@
     },
     {
       "action_id": "executor.till_soil",
-      "domain": "farm",
+      "domain": "world",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.tool_harvest",
       "catalog_status": "registered_option_spec",

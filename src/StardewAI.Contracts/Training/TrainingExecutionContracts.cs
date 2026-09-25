@@ -957,6 +957,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("bundle_area_name")]
         public string BundleAreaName { get; set; } = string.Empty;
 
+        [JsonPropertyName("reward_claim_mode")]
+        public string RewardClaimMode { get; set; } = string.Empty;
+
         [JsonPropertyName("bundle_ingredient_index")]
         public int? BundleIngredientIndex { get; set; }
 

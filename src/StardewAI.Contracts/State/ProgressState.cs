@@ -1074,6 +1074,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("reward_available")]
         public bool RewardAvailable { get; set; }
 
+        [JsonPropertyName("reward")]
+        public CommunityCenterBundleRewardRef Reward { get; set; } = new();
+
         [JsonPropertyName("area_complete")]
         public bool AreaComplete { get; set; }
 
@@ -1091,6 +1094,75 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("donation_candidates")]
         public CommunityCenterDonationCandidateRef[] DonationCandidates { get; set; } = System.Array.Empty<CommunityCenterDonationCandidateRef>();
+    }
+
+    public sealed class CommunityCenterBundleRewardRef
+    {
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("projection_failure")]
+        public string ProjectionFailure { get; set; } = string.Empty;
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("quality")]
+        public int Quality { get; set; }
+
+        [JsonPropertyName("stack")]
+        public int Stack { get; set; }
+
+        [JsonPropertyName("inventory_item_total_before")]
+        public int InventoryItemTotalBefore { get; set; }
+
+        [JsonPropertyName("inventory_item_total_after")]
+        public int InventoryItemTotalAfter { get; set; }
+
+        [JsonPropertyName("inventory_accepts_reward")]
+        public bool InventoryAcceptsReward { get; set; }
+
+        [JsonPropertyName("claim_mode")]
+        public string ClaimMode { get; set; } = string.Empty;
+
+        [JsonPropertyName("interaction_tile_x")]
+        public int? InteractionTileX { get; set; }
+
+        [JsonPropertyName("interaction_tile_y")]
+        public int? InteractionTileY { get; set; }
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("authoritative_route_sources")]
+        public CommunityCenterBundleRewardSourceRef[] AuthoritativeRouteSources { get; set; } = System.Array.Empty<CommunityCenterBundleRewardSourceRef>();
+    }
+
+    public sealed class CommunityCenterBundleRewardSourceRef
+    {
+        [JsonPropertyName("route_kind")]
+        public string RouteKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_id")]
+        public string SourceId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_asset")]
+        public string SourceAsset { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_path")]
+        public string SourcePath { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_consumer")]
+        public string NativeConsumer { get; set; } = string.Empty;
     }
 
     public sealed class CommunityCenterIngredientProgressRef

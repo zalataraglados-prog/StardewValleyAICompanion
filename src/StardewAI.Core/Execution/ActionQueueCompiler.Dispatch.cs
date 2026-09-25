@@ -113,6 +113,7 @@ namespace StardewAI.Core.Execution
                 ["executor.play_fair_strength_game"] = (action, _) => CompileFairStrengthGameStep(action),
                 ["executor.spin_fair_wheel"] = (action, _) => CompileFairWheelSpinStep(action),
                 ["executor.donate_community_center_item"] = (action, _) => CompileDonateCommunityCenterItemStep(action),
+                ["executor.claim_community_center_bundle_reward"] = (action, _) => CompileClaimCommunityCenterBundleRewardStep(action),
                 ["executor.purchase_joja_membership"] = (action, _) => CompilePurchaseJojaStep(action),
                 ["executor.purchase_joja_project"] = (action, _) => CompilePurchaseJojaStep(action),
                 ["executor.purchase_farmhouse_upgrade"] = (action, _) => CompilePurchaseFarmhouseUpgradeStep(action),

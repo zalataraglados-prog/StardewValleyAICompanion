@@ -427,6 +427,41 @@ internal static partial class BootstrapSelfTest
                     new[] { buriedItemCandidate }).Length == 1,
             "An exact selected mine buried-item source was rejected.");
 
+        var bundleRewardCandidate = CloneCandidate(animalCandidate);
+        bundleRewardCandidate.OptionId = "community_center.donate_bundle_items";
+        bundleRewardCandidate.Kind = "claim_community_center_bundle_reward";
+        bundleRewardCandidate.QualifiedItemId = "(O)465";
+        bundleRewardCandidate.Parameters = bundleRewardCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
+            {
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"creates_reward_item\",\"source_id\":\"bundle:Pantry/0:reward\",\"qualified_item_id\":\"(O)465\"}]")
+            }).ToArray();
+        var bundleRewardRequirement = requirement with
+        {
+            QualifiedItemId = "(O)465",
+            RouteKind = "creates_reward_item",
+            SourceId = "bundle:Pantry/0:reward"
+        };
+        var bundleRewardLowering = lowered with
+        {
+            RouteKind = bundleRewardRequirement.RouteKind,
+            SourceId = bundleRewardRequirement.SourceId,
+            EndpointOptionIds = new[]
+            {
+                "community_center.donate_bundle_items"
+            }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    bundleRewardRequirement,
+                    bundleRewardLowering,
+                    snapshot,
+                    new[] { bundleRewardCandidate }).Length == 1,
+            "An exact native Community Center bundle reward source was rejected.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

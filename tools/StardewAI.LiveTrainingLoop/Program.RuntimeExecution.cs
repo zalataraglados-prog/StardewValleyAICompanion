@@ -1039,6 +1039,7 @@ static partial class Program
         var targetPaintSaturation = ReadQueueParameterInt(item, "target_saturation");
         var targetPaintLightness = ReadQueueParameterInt(item, "target_lightness");
         var bundleDataKey = ReadQueueParameterString(item, "bundle_data_key");
+        var rewardClaimMode = ReadQueueParameterString(item, "reward_claim_mode");
         var communityCenterNoteTileX = ReadQueueParameterInt(item, "community_center_note_tile_x");
         var communityCenterNoteTileY = ReadQueueParameterInt(item, "community_center_note_tile_y");
         var bundleId = ReadQueueParameterInt(item, "bundle_id");
@@ -1610,6 +1611,7 @@ static partial class Program
         executionRequest.TargetPaintSaturation = targetPaintSaturation;
         executionRequest.TargetPaintLightness = targetPaintLightness;
         executionRequest.BundleDataKey = bundleDataKey;
+        executionRequest.RewardClaimMode = rewardClaimMode;
         executionRequest.CommunityCenterNoteTileX = communityCenterNoteTileX;
         executionRequest.CommunityCenterNoteTileY = communityCenterNoteTileY;
         executionRequest.BundleId = bundleId;

@@ -348,6 +348,31 @@ public static class QueueReplanFilter
                 ["required_stack"] = communityRequiredStack
             };
         }
+        var communityRewardBundleId = ReadParameter(
+            queueItem,
+            "continuation.bundle_id");
+        var communityRewardMode = ReadParameter(
+            queueItem,
+            "continuation.reward_claim_mode");
+        if (string.Equals(
+                optionId,
+                "community_center.donate_bundle_items",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(communityBundleKey) &&
+            !string.IsNullOrWhiteSpace(communityRewardBundleId) &&
+            !string.IsNullOrWhiteSpace(communityItem) &&
+            !string.IsNullOrWhiteSpace(communityRewardMode))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "community_center_reward",
+                ["option_id"] = optionId,
+                ["bundle_data_key"] = communityBundleKey,
+                ["bundle_id"] = communityRewardBundleId,
+                ["qualified_item_id"] = communityItem,
+                ["reward_claim_mode"] = communityRewardMode
+            };
+        }
         var fieldOfficeSurveyKind = ReadParameter(queueItem, "continuation.survey_kind");
         var fieldOfficeSurveyAnswer = ReadParameter(queueItem, "continuation.answer");
         if (string.Equals(optionId, "island.field_office_survey", StringComparison.Ordinal) &&
@@ -1004,6 +1029,14 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "expected_item_quality"), ReadString(continuation, "expected_item_quality"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "required_stack"), ReadString(continuation, "required_stack"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "community_center_reward", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.claim_community_center_bundle_reward", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bundle_data_key"), ReadString(continuation, "bundle_data_key"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "bundle_id"), ReadString(continuation, "bundle_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "reward_claim_mode"), ReadString(continuation, "reward_claim_mode"), StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "field_office_survey", StringComparison.Ordinal))
         {
@@ -1740,6 +1773,14 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "expected_item_quality") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "required_stack");
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "community_center_reward", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "bundle_data_key") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "bundle_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "reward_claim_mode");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_survey", StringComparison.Ordinal))

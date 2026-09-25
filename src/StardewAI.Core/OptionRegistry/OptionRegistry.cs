@@ -1627,6 +1627,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches the exact Junimo note", "native CommunityCenter.checkBundle opens the area menu", "native JunimoNoteMenu clicks donate exactly one full ingredient stack" },
                 new[] { "block_joja_locked_or_route_conflict", "block_bundle_projection_or_mutex_drift", "block_inventory_or_note_tile_drift", "block_unverified_route", "block_direct_bundle_inventory_reward_mail_or_route_mutation" }));
 
+            Register(Option("executor.claim_community_center_bundle_reward", "community_center", "Claim one exact pending bundle reward through its native Community Center menu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.community_center", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact live reward endpoint", "native Junimo Note present button or Missed Rewards action opens ItemGrabMenu", "native exact bundle reward click clears its pending flag and adds the item" },
+                new[] { "block_joja_locked_or_route_conflict", "block_reward_identity_capacity_endpoint_or_mutex_drift", "block_unverified_route", "block_direct_bundle_reward_or_inventory_mutation" }));
+
             Register(Option("executor.purchase_joja_membership", "joja", "Purchase verified Joja membership through native Morris dialogue",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
