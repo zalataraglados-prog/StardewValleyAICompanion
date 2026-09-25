@@ -129,6 +129,67 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
+    public void CombatStepBindsOnlyItsSelectedMonstersAuthoritativeSources()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines",
+            monsters: """
+            [{"runtime_identity":"slime-1","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Green Slime","tile_x":2,"tile_y":2,"health":20,"combat_experience_on_defeat":3,"combat_experience_condition":"native_monster_death_attributed_to_player","authoritative_route_sources":[{"route_kind":"native_monster_drop_table","source_id":"monster:Green Slime","qualified_item_id":"(O)766"}],"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":2.0,"expected_active_damage_duration_ms":600.0,"duration_status":"exact_active_melee_phase_excluding_movement","terminal_effect":"defeat"}]}]
+            """);
+
+        var candidate = Assert.Single(
+            MiningReachDepthCandidateBuilder.Build(
+                snapshot,
+                new[]
+                {
+                    Parameter("skill_training_target_id", "combat"),
+                    Parameter("target_skill_level", "10"),
+                    Parameter("target_location_family", "ordinary_mines")
+                }));
+
+        var sourceParameter = Assert.Single(candidate.Parameters.Where(
+            parameter => parameter.Name ==
+                "authoritative_route_sources_json"));
+        using var document = JsonDocument.Parse(sourceParameter.Value);
+        var source = Assert.Single(document.RootElement.EnumerateArray());
+        Assert.Equal(
+            "native_monster_drop_table",
+            source.GetProperty("route_kind").GetString());
+        Assert.Equal(
+            "monster:Green Slime",
+            source.GetProperty("source_id").GetString());
+        Assert.Equal(
+            "(O)766",
+            source.GetProperty("qualified_item_id").GetString());
+    }
+
+    [Fact]
+    public void CombatStepRejectsMonsterSourceWhoseIdentityDoesNotMatch()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines",
+            monsters: """
+            [{"runtime_identity":"slime-1","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Green Slime","tile_x":2,"tile_y":2,"health":20,"combat_experience_on_defeat":3,"combat_experience_condition":"native_monster_death_attributed_to_player","authoritative_route_sources":[{"route_kind":"native_monster_drop_table","source_id":"monster:Bat","qualified_item_id":"(O)766"}],"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":2.0,"expected_active_damage_duration_ms":600.0,"duration_status":"exact_active_melee_phase_excluding_movement","terminal_effect":"defeat"}]}]
+            """);
+
+        var candidate = Assert.Single(
+            MiningReachDepthCandidateBuilder.Build(
+                snapshot,
+                new[]
+                {
+                    Parameter("skill_training_target_id", "combat"),
+                    Parameter("target_skill_level", "10"),
+                    Parameter("target_location_family", "ordinary_mines")
+                }));
+
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value == "[]");
+    }
+
+    [Fact]
     public void CombatTrainingModeUsesExistingFloorProgressionWhenNoMonsterExists()
     {
         var snapshot = MiningSnapshot(

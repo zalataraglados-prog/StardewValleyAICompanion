@@ -2160,9 +2160,10 @@ Slice 7 remains assigned to the RTX 5070 node.
   independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
   every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
   uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
-- Exact live source proof currently covers 28 of the 33 authoritative lowering route kinds: shops, crops, location and
+- Exact live source proof currently covers 29 of the 33 authoritative lowering route kinds: shops, crops, location and
   mine fishing, crab pots, regular and deluxe animal products, fish ponds, fruit trees, location forage, solar panels,
-  ordinary machine rules and their legacy flavored or literal item-query output rows,
+  ordinary machine rules and their legacy flavored or literal item-query output rows, selected-monster
+  `Data/Monsters` reroll rows,
   base wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, bush and tea harvest,
   spring onions, ginger, tree moss, location and object-data artifact spots, explicit and bounded-default geode drops,
   and learned cooking recipes. Animal,
@@ -2183,6 +2184,10 @@ Slice 7 remains assigned to the RTX 5070 node.
   outputs bind directly to `machine:<qualified machine id>:rule:<rule id>` without replaying RNG or guessing from the
   product. Old saves with no persisted rule ID may expose a structured flavored or literal item-query row only when
   the current machine data leaves that output row identity unambiguous; multiple matching rows remain fail-closed.
+  Monster candidates bind only the one runtime identity selected by the current rolling floor step. Because
+  `objectsToDrop` loses provenance after subclass, floor-initialization, ring and trinket mutations, base-list entries
+  are not relabeled as `Data/Monsters`; only the native burglar-ring probability rows explicitly projected from
+  `GameLocation.monsterDrop/Data/Monsters` are admitted, without consuming RNG.
   Broad action-kind aliases for radioactive nodes, buried mine items and geode outcomes were deliberately rejected
   because they do not prove that this candidate produces the selected item. All remaining source kinds fail closed
   without a queue.

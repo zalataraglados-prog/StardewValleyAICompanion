@@ -334,6 +334,38 @@ internal static partial class BootstrapSelfTest
                 machineSource.RouteKind);
         }
 
+        var monsterCandidate = CloneCandidate(animalCandidate);
+        monsterCandidate.OptionId = "mining.reach_depth";
+        monsterCandidate.Kind = "mining_combat_training_plan_envelope";
+        monsterCandidate.QualifiedItemId = string.Empty;
+        monsterCandidate.Parameters = monsterCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
+            {
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"native_monster_drop_table\",\"source_id\":\"monster:Dust Spirit\",\"qualified_item_id\":\"(O)382\"}]")
+            }).ToArray();
+        var monsterRequirement = requirement with
+        {
+            QualifiedItemId = "(O)382",
+            RouteKind = "native_monster_drop_table",
+            SourceId = "monster:Dust Spirit"
+        };
+        var monsterLowering = lowered with
+        {
+            RouteKind = monsterRequirement.RouteKind,
+            SourceId = monsterRequirement.SourceId,
+            EndpointOptionIds = new[] { "mining.reach_depth" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    monsterRequirement,
+                    monsterLowering,
+                    snapshot,
+                    new[] { monsterCandidate }).Length == 1,
+            "An exact selected-monster Data/Monsters source was rejected.");
+
         var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
         var cookingLedger = new StrategyCommitmentLedger
         {

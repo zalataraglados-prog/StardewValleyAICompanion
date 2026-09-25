@@ -143,6 +143,8 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 primary_drop_status = drops.PrimaryDropStatus,
                 drop_item_identity_completeness = drops.ItemIdentityCompleteness,
                 unresolved_dynamic_drop_rules = drops.UnresolvedDynamicRules,
+                authoritative_route_sources =
+                    ReadMonsterAuthoritativeRouteSources(monster, drops),
                 has_special_item = monster.hasSpecialItem.Value,
                 contact_damage_readable = true,
                 behavior_observation = new
