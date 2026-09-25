@@ -188,7 +188,56 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return true;
         }
 
+        if (CandidateDeclaresAuthoritativeRouteSource(
+                candidate,
+                requirement.RouteKind,
+                requirement.SourceId,
+                requirement.QualifiedItemId))
+        {
+            evidence = "rebuilt_candidate.authoritative_route_sources";
+            return true;
+        }
+
         return false;
+    }
+
+    private static bool CandidateDeclaresAuthoritativeRouteSource(
+        PolicyEventCandidatePrediction candidate,
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId)
+    {
+        if (!TryReadUniqueParameter(
+                candidate,
+                "authoritative_route_sources_json",
+                out var json))
+        {
+            return false;
+        }
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            return document.RootElement.ValueKind ==
+                    System.Text.Json.JsonValueKind.Array &&
+                document.RootElement.EnumerateArray().Any(value =>
+                    value.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                    value.TryGetProperty("route_kind", out var kind) &&
+                    value.TryGetProperty("source_id", out var source) &&
+                    value.TryGetProperty("qualified_item_id", out var item) &&
+                    kind.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    source.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    item.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    string.Equals(kind.GetString(), routeKind,
+                        StringComparison.Ordinal) &&
+                    string.Equals(source.GetString(), sourceId,
+                        StringComparison.Ordinal) &&
+                    string.Equals(item.GetString(), qualifiedItemId,
+                        StringComparison.Ordinal));
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
     }
 
     private static bool TryReadUniqueParameter(

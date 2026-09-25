@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
@@ -19,6 +20,48 @@ internal static partial class BootstrapSelfTest
                 snapshot,
                 new[] { "foraging.harvest_bushes" },
                 true));
+        var requirement = BushRequirement();
+        var ledger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger.dispatch.self-test",
+            Revision = 1,
+            SourceStateHash = snapshot.StateHash
+        };
+        var rebuilt = AcquisitionRouteDispatchCompilationBuilder
+            .RebuildVerifiedCurrentCandidates(
+                snapshot,
+                ledger,
+                "grandpa.stage1.21_points",
+                requirement,
+                new[] { "foraging.harvest_bushes" },
+                ranked,
+                out var rebuildReasons);
+        Require(rebuilt.Length == ranked.Length && rebuildReasons.Length == 0,
+            "Untampered live ranking did not reproduce from the transparent snapshot.");
+        var driftedRanking = ranked.Select(CloneCandidate).ToArray();
+        driftedRanking[0].Parameters = driftedRanking[0].Parameters
+            .Select(parameter => parameter.Name == "target_tile_x"
+                ? new SmallModelActionParameter
+                {
+                    Name = parameter.Name,
+                    Value = "999"
+                }
+                : parameter)
+            .ToArray();
+        var rejected = AcquisitionRouteDispatchCompilationBuilder
+            .RebuildVerifiedCurrentCandidates(
+                snapshot,
+                ledger,
+                "grandpa.stage1.21_points",
+                requirement,
+                new[] { "foraging.harvest_bushes" },
+                driftedRanking,
+                out var driftReasons);
+        Require(rejected.Length == 0 && driftReasons.Contains(
+                "ranking_endpoint_candidate_evidence_mismatch",
+                StringComparer.Ordinal),
+            "A ranking with drifted transparent candidate evidence was admitted.");
+
         var source = ranked.Single(value => value.Kind == "harvest_bush");
         source.Rank = 999;
         source.Score = 999_999;
@@ -33,7 +76,6 @@ internal static partial class BootstrapSelfTest
         faster.ExpectedReward = -999_999;
         faster.EstimatedTicks = 60;
 
-        var requirement = BushRequirement();
         var lowered = BushLowering();
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectCandidates(
@@ -45,12 +87,6 @@ internal static partial class BootstrapSelfTest
                 matches[0].Candidate.CandidateId == faster.CandidateId,
             "Acquisition dispatch selection used learner rank or score instead of deterministic live cost.");
 
-        var ledger = new StrategyCommitmentLedger
-        {
-            LedgerId = "ledger.dispatch.self-test",
-            Revision = 1,
-            SourceStateHash = snapshot.StateHash
-        };
         var compilation = AcquisitionRouteDispatchCompilationBuilder.Compile(
             "grandpa.stage1.21_points",
             requirement,
@@ -91,6 +127,110 @@ internal static partial class BootstrapSelfTest
                     snapshot,
                     new[] { faster }).Length == 0,
             "A same-item candidate from the wrong authoritative source was admitted.");
+
+        var animalCandidate = CloneCandidate(faster);
+        animalCandidate.OptionId = "farm.collect_animal_products";
+        animalCandidate.Kind = "collect_animal_product";
+        animalCandidate.QualifiedItemId = "(O)184";
+        animalCandidate.Parameters = animalCandidate.Parameters.Concat(new[]
+        {
+            new SmallModelActionParameter
+            {
+                Name = "authoritative_route_sources_json",
+                Value = "[{\"route_kind\":\"native_farm_animal_produce\",\"source_id\":\"farm_animal:White Cow:0\",\"qualified_item_id\":\"(O)184\"}]"
+            }
+        }).ToArray();
+        var animalRequirement = requirement with
+        {
+            QualifiedItemId = "(O)184",
+            RouteKind = "native_farm_animal_produce",
+            SourceId = "farm_animal:White Cow:0"
+        };
+        var animalLowering = lowered with
+        {
+            RouteKind = animalRequirement.RouteKind,
+            SourceId = animalRequirement.SourceId,
+            EndpointOptionIds = new[] { "farm.collect_animal_products" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    animalRequirement,
+                    animalLowering,
+                    snapshot,
+                    new[] { animalCandidate }).Length == 1,
+            "A rebuilt candidate with exact typed route source was rejected.");
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    animalRequirement with
+                    {
+                        RouteKind = "native_farm_animal_deluxe_produce"
+                    },
+                    animalLowering,
+                    snapshot,
+                    new[] { animalCandidate }).Length == 0,
+            "A regular animal product source was accepted as deluxe produce.");
+
+        var cookingSnapshot = AcquisitionDispatchCookingSnapshot();
+        var cookingLedger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger.dispatch.cooking.self-test",
+            Revision = 1,
+            SourceStateHash = cookingSnapshot.StateHash
+        };
+        var cookingIntent = new OptionAvailabilityCandidate
+        {
+            OptionId = "crafting.cook_recipe",
+            ExplicitConfirmationGranted = true,
+            Parameters = new[]
+            {
+                Parameter("recipe_name", "Fried Egg"),
+                Parameter("craft_count", "1"),
+                Parameter("cooking_reason", "full_shipment")
+            }
+        };
+        var cookingRanked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            new CandidateOptionAvailabilityEvaluator().Evaluate(
+                cookingSnapshot,
+                new[] { cookingIntent },
+                includeExecutorCalibrationOptions: true,
+                commitmentLedger: cookingLedger),
+            "grandpa.stage1.21_points");
+        var cookingRequirement = requirement with
+        {
+            QualifiedItemId = "(O)194",
+            RouteKind = "recipe_output",
+            SourceId = "cooking_recipe:Fried Egg"
+        };
+        var rebuiltCooking = AcquisitionRouteDispatchCompilationBuilder
+            .RebuildVerifiedCurrentCandidates(
+                cookingSnapshot,
+                cookingLedger,
+                "grandpa.stage1.21_points",
+                cookingRequirement,
+                new[] { "crafting.cook_recipe" },
+                cookingRanked,
+                out var cookingRebuildReasons);
+        Require(rebuiltCooking.Length == cookingRanked.Length &&
+                cookingRebuildReasons.Length == 0,
+            "Exact recipe-output ranking did not reproduce from the transparent snapshot.");
+        var driftedCooking = cookingRanked.Select(CloneCandidate).ToArray();
+        driftedCooking[0].Parameters = driftedCooking[0].Parameters
+            .Select(parameter => parameter.Name == "cooking_reason"
+                ? Parameter("cooking_reason", "ranking_injected_reason")
+                : parameter)
+            .ToArray();
+        var rejectedCooking = AcquisitionRouteDispatchCompilationBuilder
+            .RebuildVerifiedCurrentCandidates(
+                cookingSnapshot,
+                cookingLedger,
+                "grandpa.stage1.21_points",
+                cookingRequirement,
+                new[] { "crafting.cook_recipe" },
+                driftedCooking,
+                out var cookingDriftReasons);
+        Require(rejectedCooking.Length == 0 && cookingDriftReasons.Contains(
+                "ranking_endpoint_candidate_evidence_mismatch",
+                StringComparer.Ordinal),
+            "A ranking-injected cooking reason was admitted.");
 
         var spoofed = CloneCandidate(faster);
         spoofed.Parameters = spoofed.Parameters.Concat(new[]
@@ -225,6 +365,56 @@ internal static partial class BootstrapSelfTest
             json,
             JsonDefaults.Options) ?? throw new InvalidDataException(
             "Acquisition dispatch self-test snapshot is null.");
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-09-25T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+    }
+
+    private static SnapshotEnvelope AcquisitionDispatchCookingSnapshot()
+    {
+        const string ingredientRows =
+            "[{\"requirement_id_or_category\":\"176\",\"required_count\":1,\"available_count_before_this_ingredient\":1,\"satisfied\":true,\"native_consumption_plan\":[{\"source_id\":\"kitchen-fridge:FarmHouse\",\"slot_index\":0,\"qualified_item_id\":\"(O)176\",\"amount\":1,\"unit_sale_price\":50,\"total_sale_value\":50}]}]";
+        const string seasoningRows = "[]";
+        var json = $$$"""
+        {
+          "player":{
+            "location_id":{"value":"FarmHouse","status":"available"},
+            "tile_x":{"value":4,"status":"available"},
+            "tile_y":{"value":5,"status":"available"},
+            "inventory":{"value":[],"status":"available"},
+            "inventory_capacity":{"value":{"occupied_stacks":0,"empty_slots":12,"has_empty_slot":true},"status":"available"},
+            "cooking":{"value":{
+              "projection_status":"complete_learned_cooking_recipe_and_native_source_projection",
+              "rows":[{
+                "recipe_name":"Fried Egg","known_recipe":true,
+                "cooking_source_id":"kitchen:FarmHouse:5,5","cooking_source_kind":"kitchen",
+                "location_id":"FarmHouse","interaction_tile_x":5,"interaction_tile_y":5,
+                "material_container_ids":["kitchen-fridge:FarmHouse"],
+                "material_container_topology_json":"[\"kitchen-fridge:FarmHouse\"]",
+                "output_item_id":"194","output_qualified_item_id":"(O)194","output_display_name":"Fried Egg",
+                "output_count_per_craft":1,"output_quality":0,"output_order_data":"","recipes_cooked_before":0,
+                "ingredient_rows":{{{ingredientRows}}},"ingredient_rows_json":{{{JsonSerializer.Serialize(ingredientRows)}}},
+                "seasoning_rows":{{{seasoningRows}}},"seasoning_rows_json":{{{JsonSerializer.Serialize(seasoningRows)}}},
+                "output_inventory_acceptance_after_material_consumption":true,
+                "craft_candidate_status":"ready_for_native_cooking_page"
+              }]
+            },"status":"available"}
+          },
+          "locations":{
+            "route_graph":{"value":{"edges":[]},"status":"available"},
+            "collision_grid":{"value":{"location_id":"FarmHouse","width":40,"height":40,"notable_tiles":[]},"status":"available"}
+          },
+          "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}}
+        }
+        """;
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            json) ?? throw new InvalidDataException(
+            "Cooking dispatch self-test snapshot did not deserialize.");
         return new SnapshotEnvelope
         {
             StateHash = SnapshotHash.ComputeStateHash(state),

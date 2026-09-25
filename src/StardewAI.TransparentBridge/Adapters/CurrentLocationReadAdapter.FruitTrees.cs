@@ -32,6 +32,8 @@ public sealed partial class CurrentLocationReadAdapter
             .ThenBy(output => output.quality)
             .ToArray();
         var outputQuantity = outputs.Sum(output => output.quantity);
+        var authoritativeRouteSources =
+            ReadFruitTreeAuthoritativeRouteSources(tree, lightning);
         var status = !exactVanillaType
             ? "custom_fruit_tree_runtime_type"
             : tree.stump.Value
@@ -88,6 +90,8 @@ public sealed partial class CurrentLocationReadAdapter
                 ? "exact_from_native_fruit_tree_performUseAction_and_shake"
                 : "unsupported_custom_runtime_type",
             fruit_tree_expected_outputs = outputs,
+            fruit_tree_authoritative_route_sources =
+                authoritativeRouteSources,
             fruit_tree_expected_outputs_json_contract = "array grouped by qualified_item_id and quality with exact quantity",
             fruit_tree_expected_output_quantity_total = outputQuantity,
             fruit_tree_expected_fruit_count_after = 0,
@@ -97,6 +101,83 @@ public sealed partial class CurrentLocationReadAdapter
             source = "FruitTree live net/item fields; FruitTree.GetQuality/performUseAction/shake decompiled vanilla 1.6.15"
         };
     }
+
+    private static object[] ReadFruitTreeAuthoritativeRouteSources(
+        FruitTree tree,
+        bool struckByLightning)
+    {
+        var data = tree.GetData();
+        if (struckByLightning || data?.Fruit is null)
+            return Array.Empty<object>();
+
+        var currentItemIds = tree.fruit
+            .Where(item => item is not null)
+            .Select(item => UnqualifiedObjectId(item.QualifiedItemId))
+            .Where(itemId => itemId.Length > 0)
+            .ToHashSet(StringComparer.Ordinal);
+        var sources = new List<object>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var rowIndex = 0; rowIndex < data.Fruit.Count; rowIndex++)
+        {
+            var row = data.Fruit[rowIndex];
+            var sourcePrefix = "fruit_tree:" + tree.treeId.Value + ":" +
+                rowIndex;
+            foreach (var itemId in MatchingObjectIds(
+                row.ItemId,
+                currentItemIds))
+            {
+                if (seen.Add(sourcePrefix + "|" + itemId))
+                {
+                    sources.Add(new
+                    {
+                        route_kind = "native_fruit_tree_produce",
+                        source_id = sourcePrefix,
+                        qualified_item_id = "(O)" + itemId
+                    });
+                }
+            }
+
+            if (row.RandomItemId is null)
+                continue;
+            for (var randomIndex = 0;
+                randomIndex < row.RandomItemId.Count;
+                randomIndex++)
+            {
+                var sourceId = sourcePrefix + ":random:" + randomIndex;
+                foreach (var itemId in MatchingObjectIds(
+                    row.RandomItemId[randomIndex],
+                    currentItemIds))
+                {
+                    if (seen.Add(sourceId + "|" + itemId))
+                    {
+                        sources.Add(new
+                        {
+                            route_kind = "native_fruit_tree_produce",
+                            source_id = sourceId,
+                            qualified_item_id = "(O)" + itemId
+                        });
+                    }
+                }
+            }
+        }
+        return sources.ToArray();
+    }
+
+    private static IEnumerable<string> MatchingObjectIds(
+        string? raw,
+        IReadOnlySet<string> expectedIds) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? Array.Empty<string>()
+            : raw.Split('|', StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries)
+            .Select(UnqualifiedObjectId)
+            .Where(expectedIds.Contains)
+            .Distinct(StringComparer.Ordinal);
+
+    private static string UnqualifiedObjectId(string? itemId) =>
+        itemId?.StartsWith("(O)", StringComparison.Ordinal) == true
+            ? itemId[3..]
+            : itemId ?? string.Empty;
 
     private sealed record FruitTreeProjectedOutput(
         string QualifiedItemId,

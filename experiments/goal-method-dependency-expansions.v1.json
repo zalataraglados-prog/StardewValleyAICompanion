@@ -1737,11 +1737,15 @@
               "native_location_fish_spawn",
               "native_mine_fishing_override",
               "native_crab_pot_output",
+              "native_farm_animal_produce",
+              "native_farm_animal_deluxe_produce",
+              "native_fruit_tree_produce",
               "native_bush_shake",
               "native_tea_bush_harvest",
               "native_spring_onion_harvest",
               "native_ginger_harvest",
-              "native_tree_moss_harvest"
+              "native_tree_moss_harvest",
+              "recipe_output"
             ],
             "unsupported_source_behavior": "fail_closed_without_queue",
             "output": "one fresh observed reserve-safe copy in player inventory"

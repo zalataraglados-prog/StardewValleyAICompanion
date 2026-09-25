@@ -60,6 +60,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             output.HasBeenInInventory = true;
         }
         var outputProjection = output is null ? null : ClearanceOutputItemProjection.From(output);
+        var authoritativeRouteSources =
+            ReadAnimalHarvestAuthoritativeRouteSources(
+                animal,
+                data,
+                currentProduce);
         var outputItemsJson = outputProjection is null
             ? string.Empty
             : System.Text.Json.JsonSerializer.Serialize(new[] { outputProjection });
@@ -155,6 +160,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             harvest_output_quality = outputProjection?.Quality ?? 0,
             harvest_output_quantity = outputProjection?.Quantity ?? 0,
             harvest_output_unit_state_sha256 = outputProjection?.UnitStateSha256 ?? string.Empty,
+            harvest_authoritative_route_sources =
+                authoritativeRouteSources,
             harvest_expected_output_items_json = outputItemsJson,
             harvest_stat_increments_json = System.Text.Json.JsonSerializer.Serialize(statIncrements),
             harvest_native_stat_increment_amount = nativeStatIncrementAmount,
@@ -182,6 +189,58 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             tile_x = animal.TilePoint.X,
             tile_y = animal.TilePoint.Y
         };
+    }
+
+    private static object[] ReadAnimalHarvestAuthoritativeRouteSources(
+        FarmAnimal animal,
+        FarmAnimalData? data,
+        string currentProduce)
+    {
+        if (data is null || string.IsNullOrWhiteSpace(currentProduce))
+            return Array.Empty<object>();
+
+        var sources = new List<object>();
+        AddAnimalProduceSources(
+            sources,
+            animal.type.Value,
+            currentProduce,
+            "native_farm_animal_produce",
+            data.ProduceItemIds);
+        AddAnimalProduceSources(
+            sources,
+            animal.type.Value,
+            currentProduce,
+            "native_farm_animal_deluxe_produce",
+            data.DeluxeProduceItemIds);
+        return sources.ToArray();
+    }
+
+    private static void AddAnimalProduceSources(
+        ICollection<object> sources,
+        string animalType,
+        string currentProduce,
+        string routeKind,
+        IReadOnlyList<FarmAnimalProduce>? rows)
+    {
+        if (rows is null)
+            return;
+        for (var index = 0; index < rows.Count; index++)
+        {
+            var itemId = rows[index].ItemId;
+            if (itemId?.StartsWith("(O)", StringComparison.Ordinal) == true)
+                itemId = itemId[3..];
+            if (!string.Equals(itemId, currentProduce,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+            sources.Add(new
+            {
+                route_kind = routeKind,
+                source_id = "farm_animal:" + animalType + ":" + index,
+                qualified_item_id = "(O)" + currentProduce
+            });
+        }
     }
 
     private static int ProjectAnimalProduceStatAmountAfterInventoryInsert(Farmer player, Item output)

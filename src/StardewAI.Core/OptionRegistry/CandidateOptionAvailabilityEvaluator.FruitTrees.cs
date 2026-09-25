@@ -118,6 +118,8 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("stand_tile_y", interaction.Stand.Y.ToString()),
                 Parameter("target_runtime_type", ReadString(feature, "runtime_type")),
                 Parameter("fruit_tree_id", ReadString(feature, "fruit_tree_id")),
+                Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                    ReadArray(feature, "fruit_tree_authoritative_route_sources"))),
                 Parameter("expected_fruit_count_before", ReadInt(feature, "fruit_count").ToString()),
                 Parameter("expected_fruit_count_after", ReadInt(feature, "fruit_tree_expected_fruit_count_after").ToString()),
                 Parameter("expected_output_items_json", JsonSerializer.Serialize(ReadArray(feature, "fruit_tree_expected_outputs"))),
@@ -143,6 +145,8 @@ namespace StardewAI.Core.OptionRegistry
                       ";fruit_tree_interaction_tile=" + interaction.Action.X + "," + interaction.Action.Y + ";") +
                 "current_location.terrain_features[" + x + "," + y + "].fruit_count=0" +
                 ";fruit_tree_id=" + ReadString(feature, "fruit_tree_id") +
+                ";authoritative_route_sources_json=" + JsonSerializer.Serialize(
+                    ReadArray(feature, "fruit_tree_authoritative_route_sources")) +
                 ";expected_fruit_count_before=" + ReadInt(feature, "fruit_count") +
                 ";expected_fruit_count_after=0" +
                 ";expected_output_items_json=" + JsonSerializer.Serialize(ReadArray(feature, "fruit_tree_expected_outputs")) +

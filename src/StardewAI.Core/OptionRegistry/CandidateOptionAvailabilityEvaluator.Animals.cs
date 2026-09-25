@@ -133,6 +133,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("target_runtime_type", ReadString(animal, "runtime_type")),
             Parameter("target_runtime_identity", animalId),
             Parameter("target_name", ReadString(animal, "name")),
+            Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                ReadArray(animal, "harvest_authoritative_route_sources"))),
             Parameter("required_tool_kind", ReadString(animal, "harvest_tool")),
             Parameter("tool_slot_index", ReadInt(animal, "harvest_tool_slot_index").ToString()),
             Parameter("qualified_item_id", ReadString(animal, "harvest_output_qualified_item_id")),
@@ -156,6 +158,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             "animal_id=" + animalId +
             ";animal.current_produce=null" +
             ";required_tool_kind=" + ReadString(animal, "harvest_tool") +
+            ";authoritative_route_sources_json=" + JsonSerializer.Serialize(
+                ReadArray(animal, "harvest_authoritative_route_sources")) +
             ";qualified_item_id=" + ReadString(animal, "harvest_output_qualified_item_id") +
             ";quantity=" + ReadInt(animal, "harvest_output_quantity") +
             ";expected_output_quality=" + ReadInt(animal, "harvest_output_quality") +

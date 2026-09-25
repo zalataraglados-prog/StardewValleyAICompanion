@@ -273,12 +273,16 @@ selected, atomically reserved acquisition route and the existing Product compile
 the execution-binding inputs, it requires `--ranking`, `--queue-output`, and `--output`. It finds a
 same-state live candidate only when item, endpoint option, and authoritative route source all match;
 then it removes learner rank, score, model score, and reward before invoking `DailyPlanCompiler` and
-`ActionQueueCompiler`. Expanded native primitives retain route, reservation, source-candidate, source-
+`ActionQueueCompiler`. Before selection, the command independently rebuilds every endpoint candidate
+from the same transparent snapshot and committed ledger. Candidate membership and every non-learning
+field must equal the supplied ranking; only rank, score, model score, expected reward, and model-source
+metadata are ignored. Expanded native primitives retain route, reservation, source-candidate, source-
 ranking, and source-evidence lineage. Legacy high-level `option_request` queues and expanded
 `compiled_action_steps` queues have distinct validation shapes and cannot masquerade as each other.
 Exact source binding currently covers shops, crops, target-date location or mine fish, crab-pot
-outputs, and fixed native bush, tea, spring-onion, ginger, and tree-moss harvests. Other route kinds
-fail closed until their live candidates expose exact source identity; required supporting options
+outputs, regular or deluxe animal products, fruit trees, and fixed native bush, tea, spring-onion,
+ginger, tree-moss harvests, and learned cooking recipes. Other route kinds fail closed until their live
+candidates expose exact source identity; required supporting options
 also remain upstream work. The report and queue paths must differ. A blocked build atomically
 overwrites the queue path with a non-executable blocked envelope, so a stale successful queue cannot
 survive a failed rebuild. This command does not run the queue or authorize formal training.

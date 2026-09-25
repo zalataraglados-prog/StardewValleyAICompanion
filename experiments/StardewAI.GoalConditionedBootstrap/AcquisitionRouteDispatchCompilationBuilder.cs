@@ -1,6 +1,7 @@
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -72,8 +73,25 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 artifactReasons);
         }
 
-        var candidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(
+        var rankedCandidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(
             ranking);
+        var candidates = RebuildVerifiedCurrentCandidates(
+            snapshot,
+            ledger,
+            opportunity.GoalId,
+            requirement,
+            lowered.EndpointOptionIds,
+            rankedCandidates,
+            out var candidateVerificationReasons);
+        if (candidateVerificationReasons.Length > 0)
+        {
+            return Blocked(
+                opportunity.GoalId,
+                requirement,
+                snapshot.StateHash,
+                rankingHash,
+                candidateVerificationReasons);
+        }
         var matches = SelectCandidates(
             requirement,
             lowered,
@@ -119,6 +137,10 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             !string.Equals(
                 ranking.SchemaVersion,
                 "availability_policy_prediction.v1",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                snapshot.StateHash,
+                SnapshotHash.ComputeStateHash(snapshot.State),
                 StringComparison.Ordinal) ||
             !string.Equals(
                 ranking.Availability.StateHash,

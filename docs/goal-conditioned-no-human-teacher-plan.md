@@ -2156,8 +2156,15 @@ Slice 7 remains assigned to the RTX 5070 node.
   Product-expanded `compiled_action_steps`. Every expanded native primitive must preserve the endpoint option, route
   occurrence, requirement, reservation portfolio/revision, source candidate, ranking hash and source-binding evidence.
   A malformed endpoint lineage cannot fall back to the primitive option ID.
-- Exact live source proof currently covers 10 of the 32 authoritative lowering route kinds: shops, crops, location and
-  mine fishing, crab pots, bush and tea harvest, spring onions, ginger and tree moss. Broad action-kind aliases for
+- The supplied ranking is no longer trusted from `state_hash` alone. The dispatcher recomputes the snapshot hash, then
+  independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
+  every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
+  uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
+- Exact live source proof currently covers 14 of the 32 authoritative lowering route kinds: shops, crops, location and
+  mine fishing, crab pots, regular and deluxe animal products, fruit trees, bush and tea harvest, spring onions, ginger,
+  tree moss and learned cooking recipes. Animal and fruit-tree candidates derive typed source rows from live entity
+  state plus the same native `Data/FarmAnimals` or `Data/FruitTrees` row numbering used by the authoritative inventory.
+  Broad action-kind aliases for
   radioactive nodes, buried mine items and geode outcomes were deliberately rejected because they do not prove that
   this candidate produces the selected item. All remaining source kinds fail closed without a queue.
 - Crop candidates now carry the transparent bridge's native `harvest_source_seed_id`, allowing a harvested product to
