@@ -33,7 +33,11 @@ internal static partial class BootstrapSelfTest
                     2 &&
                 parallel.Evaluations.All(value =>
                     value.MachineScheduleBinding is
-                        { CompletionOffsetMinutes: 60 }),
+                        { CompletionOffsetMinutes: 60 }) &&
+                parallel.Evaluations.All(value =>
+                    !value.OutputMaterializedAtSnapshot) &&
+                !AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .CurrentOutputAlreadyMaterialized(parallel, manualRoute),
             "Parallel same-day machine processing schedule drifted.");
 
         var singleMachine = new[]
@@ -116,7 +120,12 @@ internal static partial class BootstrapSelfTest
         Require(automatic.ProcessingLeadTimeMatchesTargetDate == true &&
                 automatic.Evaluations.Single().MachineScheduleBinding is
                     { ActiveOutputRouteMatches: true,
-                      CompletionOffsetMinutes: 30 },
+                      CompletionOffsetMinutes: 30 } &&
+                !automatic.Evaluations.Single().OutputMaterializedAtSnapshot &&
+                !AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .CurrentOutputAlreadyMaterialized(
+                        automatic,
+                        automaticRoute),
             "Exact automatic machine in-flight output was not admitted.");
 
         var unresolvedMachine = new[]

@@ -122,7 +122,9 @@ public sealed record AcquisitionProcessingLeadTimeEvaluation(
     string[] BlockingReasons,
     [property: JsonPropertyName("machine_schedule_binding")]
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    AcquisitionMachineProcessingScheduleBinding? MachineScheduleBinding = null);
+    AcquisitionMachineProcessingScheduleBinding? MachineScheduleBinding = null,
+    [property: JsonPropertyName("output_materialized_at_snapshot")]
+    bool OutputMaterializedAtSnapshot = false);
 
 public sealed record AcquisitionMachineProcessingScheduleBinding(
     [property: JsonPropertyName("schedule_kind")]

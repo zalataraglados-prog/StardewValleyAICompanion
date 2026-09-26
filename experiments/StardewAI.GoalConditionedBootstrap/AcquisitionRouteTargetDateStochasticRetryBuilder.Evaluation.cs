@@ -254,11 +254,12 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             Array.Empty<string>());
     }
 
-    private static bool CurrentOutputAlreadyMaterialized(
+    internal static bool CurrentOutputAlreadyMaterialized(
         AcquisitionRouteTargetDateProcessing route,
         AcquisitionRouteCalendarResolution staticRoute) =>
         AcquisitionOutputProof.ReadyQuantity(
-            route.Evaluations,
+            route.Evaluations.Where(value =>
+                value.OutputMaterializedAtSnapshot),
             staticRoute.MinimumQuality) >= staticRoute.RequiredAmount;
 
     internal static bool SourceResolvedOutcomeGuaranteed(

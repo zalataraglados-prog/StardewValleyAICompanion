@@ -168,9 +168,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                             schedule.ScheduledAttemptCount)
                         : 0,
                     quality,
-                    schedule.ScheduledAttemptCount > 0,
-                    targetTotalDay,
-                    null))
+                     schedule.ScheduledAttemptCount > 0,
+                     targetTotalDay,
+                     null,
+                     false))
             .ToArray();
         var scheduledAttempts = schedules.Sum(value =>
             value.ScheduledAttemptCount);
@@ -264,9 +265,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 remainingPlayableMinutes,
                 ready ? active!.Stack : 0,
                 ready ? active!.Quality : 0,
-                ready,
-                targetTotalDay,
-                routeMatches));
+                 ready,
+                 targetTotalDay,
+                 routeMatches,
+                 ready && machine.ReadyForHarvest));
         }
         if (blocking.Count > 0)
         {
@@ -302,7 +304,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         int provenMinimumQuality,
         bool outputReady,
         int targetTotalDay,
-        bool? activeOutputRouteMatches) => new(
+        bool? activeOutputRouteMatches,
+        bool outputMaterializedAtSnapshot) => new(
             target.Machine.LocationId,
             productionStateKind,
             status,
@@ -333,11 +336,12 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 source.DaysUntilReady >= 0
                     ? null
                     : Math.Max(0, source.MinutesUntilReady),
-                source.DaysUntilReady >= 0
-                    ? source.DaysUntilReady
-                    : null,
-                completionOffsetMinutes,
-                remainingPlayableMinutes,
-                activeOutputRouteMatches));
+                 source.DaysUntilReady >= 0
+                     ? source.DaysUntilReady
+                     : null,
+                 completionOffsetMinutes,
+                 remainingPlayableMinutes,
+                 activeOutputRouteMatches),
+            outputMaterializedAtSnapshot);
 
 }
