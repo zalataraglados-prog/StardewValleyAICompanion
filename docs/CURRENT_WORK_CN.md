@@ -16,7 +16,13 @@
 - 机器 processing binding 新增逐次 `attempt_schedule`，保留全局尝试序号、单机尝试序号、处理开始偏移和完成偏移；随机重试扩量后的每次投料不再只剩一个汇总计数。日内轴直接消费该排程，不重新猜测尝试如何分配到机器。
 - 手动机器路线会从同一快照位置出发，使用既有路线图、日期证据和移动校准，逐次生成 `load_machine_input -> 原生加工等待 -> collect_machine_output`；多台机器可并行加工，但每次投料和收取都必须重新证明可达站位。自动触发机器则等待透明桥已绑定的目标产物完成时点，再移动并收取足量产物。
 - `MachineInteractionBudgetPolicy` 现在是投料/收取 30 tick 估时的唯一常量来源，动作编译器与 Teacher 日内预算共用它。玩家动作时间只统计投料和收取；机器自身加工等待只推进保证完成时刻，不会重复计入 `terminal_action_game_minutes`，机器交互原生不消耗体力。
-- 快照时已经 `processing` 或 `ready_output` 的手动机器暂不冒充空闲容量：在“先收既有产物、库存可接收、再投新料”的完整证明接入前，该分支以 `manual_machine_non_idle_capacity_reuse_not_bound` 失败关闭。空闲手动机器和已唯一绑定输出的自动机器聚焦测试已通过，Core 回归为 `2570/2570`；完整 `experiments/Run-Regression.ps1` 回归通过（退出码 `0`）。
+- 本切片先让快照时 `processing` 或 `ready_output` 的手动机器失败关闭，空闲手动机器和已唯一绑定输出的自动机器聚焦测试通过，Core 回归为 `2570/2570`，完整 `experiments/Run-Regression.ps1` 回归通过（退出码 `0`）；紧随其后的“非空闲手动机器复用”切片在同一日程状态机内闭合该分支。
+
+## 2026-09-27 非空闲手动机器复用
+
+- processing/daily 两轴继续共用同一份机器快照与逐机 attempt schedule；daily 轴现在能按 `minutes_until_ready` 等待已有产物，执行现有 `collect_machine_output`，再执行现有 `load_machine_input`，最后等待并领取本轮目标产物，没有引入第二套机器动作。
+- 复用前必须存在精确 `held_item` 身份、数量和品质，并按每台待清空机器保守预留一个透明 `player.inventory_capacity.empty_slots`；容量不足或字段不一致时上游直接失败关闭。既有产物暂不计入当前目标产出，防止来源未重算时错误减少输入和随机重试预算。
+- 本切片聚焦回归覆盖 `processing` 与 `ready_output` 两种初态的“等待/领取/投料/领取”顺序和零空格拒绝；Release 构建为零警告，`self-test-bootstrap-hermetic` 与完整 `experiments/Run-Regression.ps1` 均通过（退出码 `0`）。
 
 ## 2026-09-27 机器随机输出概率预算
 

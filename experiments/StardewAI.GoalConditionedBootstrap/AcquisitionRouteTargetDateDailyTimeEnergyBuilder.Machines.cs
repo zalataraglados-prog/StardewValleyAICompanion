@@ -80,22 +80,24 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         }
 
         var targets = new List<MachineDailyTargetSeed>();
+        var requiredExistingOutputSlots = 0;
         for (var index = 0; index < evaluations.Length; index++)
         {
             var evaluation = evaluations[index];
             var binding = bindings[index];
-            if (binding.InitialCapacityState != "idle" ||
-                !state.RouteState.MachineFleet.TryGet(
-                    evaluation.TargetLocationId,
-                    binding.TargetTileX,
-                    binding.TargetTileY,
-                    out var machine) ||
-                machine.QualifiedItemId != binding.MachineQualifiedItemId ||
-                machine.CapacityState != "idle")
+            if (!state.RouteState.MachineFleet.TryGet(
+                     evaluation.TargetLocationId,
+                     binding.TargetTileX,
+                     binding.TargetTileY,
+                     out var machine) ||
+                 machine.QualifiedItemId != binding.MachineQualifiedItemId ||
+                 machine.CapacityState != binding.InitialCapacityState ||
+                 machine.MinutesUntilReady !=
+                     binding.InitialMinutesUntilReady)
             {
                 return MachineBlocked(
                     route,
-                    "manual_machine_non_idle_capacity_reuse_not_bound:" +
+                    "manual_machine_initial_capacity_drifted:" +
                     evaluation.TargetLocationId + ":" +
                     binding.TargetTileX + "," + binding.TargetTileY);
             }
@@ -112,6 +114,21 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     route,
                     "manual_machine_local_attempt_schedule_drifted");
             }
+            var clearsExistingOutput = binding.InitialCapacityState is
+                "processing" or "ready_output";
+            if (clearsExistingOutput &&
+                (!machine.ActiveOutputEvidenceAvailable ||
+                 machine.ActiveOutput is null ||
+                 !machine.MachineHasOutput))
+            {
+                return MachineBlocked(
+                    route,
+                    "manual_machine_existing_output_evidence_incomplete:" +
+                    evaluation.TargetLocationId + ":" +
+                    binding.TargetTileX + "," + binding.TargetTileY);
+            }
+            if (clearsExistingOutput)
+                requiredExistingOutputSlots++;
             targets.Add(new MachineDailyTargetSeed(
                 evaluation.TargetLocationId,
                 binding.TargetTileX,
@@ -119,8 +136,29 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 binding.ScheduledAttemptCount,
                 source.MinutesUntilReady,
                 Math.Max(1, source.MinimumStack),
-                MachineDailyAction.LoadInput,
-                state.RouteState.CurrentTime));
+                clearsExistingOutput
+                    ? MachineDailyAction.CollectOutput
+                    : MachineDailyAction.LoadInput,
+                binding.InitialCapacityState == "processing"
+                    ? GameClockBudgetPolicy.AddClockMinutes(
+                        state.RouteState.CurrentTime,
+                        binding.InitialMinutesUntilReady)
+                    : state.RouteState.CurrentTime,
+                clearsExistingOutput));
+        }
+
+        if (requiredExistingOutputSlots > 0 &&
+            (!state.EmptyInventorySlots.HasValue ||
+             state.EmptyInventorySlots < requiredExistingOutputSlots))
+        {
+            return MachineBlocked(
+                route,
+                state.InventoryCapacityBlockingReasons
+                    .Append(
+                        "manual_machine_existing_output_inventory_capacity_shortfall:" +
+                        (state.EmptyInventorySlots?.ToString() ?? "unknown") +
+                        ":" + requiredExistingOutputSlots)
+                    .ToArray());
         }
 
         return EvaluateMachineSchedules(
@@ -161,7 +199,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 MachineDailyAction.CollectOutput,
                 GameClockBudgetPolicy.AddClockMinutes(
                     state.RouteState.CurrentTime,
-                    value.MachineScheduleBinding.CompletionOffsetMinutes!.Value)))
+                    value.MachineScheduleBinding.CompletionOffsetMinutes!.Value),
+                false))
             .ToArray();
         if (targets.Length == 0 ||
             targets.Sum(value => value.OutputQuantityPerCollection) <
@@ -272,6 +311,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "target_date_processing_lead_time.routes[].evaluations[].machine_schedule_binding.attempt_schedule[]",
                 "target_date_stochastic_retry_budget.routes[].required_attempt_count",
                 "state.farm.machines.value[]",
+                "state.player.inventory_capacity.value",
                 "state.locations.route_graph.value",
                 "state.locations.social_route_date_evidence.value",
                 "route_timing_calibration",

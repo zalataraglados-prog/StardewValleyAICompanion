@@ -113,6 +113,105 @@ internal static partial class BootstrapSelfTest
                 dailySteps[^1].GuaranteedCompletionByTime >= 1000,
             "Machine movement, interaction, wait and collection budget drifted.");
 
+        var busyRoute = manualRoute with
+        {
+            RequiredAmount = 1,
+            CalendarWindows = new[] { MachineDailyWindow() }
+        };
+        var busyMachines = new[]
+        {
+            MachineProcessingRow(
+                busyRoute,
+                2,
+                6,
+                30,
+                "(O)340")
+        };
+        var busyProcessing = AcquisitionRouteTargetDateProcessingBuilder
+            .EvaluateMachine(
+                MachineProcessingReservation(busyRoute, busyMachines),
+                busyRoute,
+                MachineProcessingState(900, busyMachines),
+                0);
+        var busyRetry = AcquisitionRouteTargetDateStochasticRetryBuilder
+            .EvaluateMachine(busyProcessing, busyRoute);
+        var busyDaily = AcquisitionRouteTargetDateDailyTimeEnergyBuilder
+            .EvaluateMachine(
+                busyRetry,
+                busyRoute,
+                MachineDailyTimeEnergyState(
+                    busyMachines,
+                    emptyInventorySlots: 1));
+        var busySteps = busyDaily.Evaluation?.TerminalRouteSteps ??
+            Array.Empty<AcquisitionDailyTerminalRouteStep>();
+        Require(busyDaily.DailyTimeEnergyMatchesTargetDate == true &&
+                busyDaily.Evaluation is
+                {
+                    RequiredAttemptCount: 1,
+                    TerminalActionGameMinutes: 3,
+                    RequiredEnergy: 0d
+                } &&
+                busySteps.Select(value => value.ActionKind)
+                    .SequenceEqual(new[]
+                    {
+                        "collect_machine_output",
+                        "load_machine_input",
+                        "collect_machine_output"
+                    }) &&
+                busySteps[0].ActionStartTime >= 930 &&
+                busySteps[^1].GuaranteedCompletionByTime >= 1032,
+            "Busy manual machine capacity did not clear, reload and collect in order.");
+
+        var busyNoInventory =
+            AcquisitionRouteTargetDateDailyTimeEnergyBuilder.EvaluateMachine(
+                busyRetry,
+                busyRoute,
+                MachineDailyTimeEnergyState(
+                    busyMachines,
+                    emptyInventorySlots: 0));
+        Require(!busyNoInventory.DailyTimeEnergyAxisResolved &&
+                busyNoInventory.BlockingReasons.Any(reason =>
+                    reason.StartsWith(
+                        "manual_machine_existing_output_inventory_capacity_shortfall:0:1",
+                        StringComparison.Ordinal)),
+            "Busy manual machine output bypassed exact inventory capacity.");
+
+        var readyMachines = new[]
+        {
+            MachineProcessingRow(
+                busyRoute,
+                2,
+                6,
+                0,
+                "(O)340",
+                readyForHarvest: true)
+        };
+        var readyProcessing = AcquisitionRouteTargetDateProcessingBuilder
+            .EvaluateMachine(
+                MachineProcessingReservation(busyRoute, readyMachines),
+                busyRoute,
+                MachineProcessingState(900, readyMachines),
+                0);
+        var readyRetry = AcquisitionRouteTargetDateStochasticRetryBuilder
+            .EvaluateMachine(readyProcessing, busyRoute);
+        var readyDaily = AcquisitionRouteTargetDateDailyTimeEnergyBuilder
+            .EvaluateMachine(
+                readyRetry,
+                busyRoute,
+                MachineDailyTimeEnergyState(
+                    readyMachines,
+                    emptyInventorySlots: 1));
+        Require(readyDaily.DailyTimeEnergyMatchesTargetDate == true &&
+                readyDaily.Evaluation?.TerminalRouteSteps
+                    .Select(value => value.ActionKind)
+                    .SequenceEqual(new[]
+                    {
+                        "collect_machine_output",
+                        "load_machine_input",
+                        "collect_machine_output"
+                    }) == true,
+            "Ready-output manual machine capacity was not reused in order.");
+
         var firstValidFallback = manualRoute with
         {
             MachineSource = manualRoute.MachineSource! with

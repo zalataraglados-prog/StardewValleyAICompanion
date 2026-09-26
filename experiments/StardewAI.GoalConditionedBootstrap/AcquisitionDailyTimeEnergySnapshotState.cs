@@ -9,13 +9,17 @@ internal sealed class AcquisitionDailyTimeEnergySnapshotState
         AcquisitionProcessingLeadTimeSnapshotState processingState,
         int targetTotalDay,
         double? availableEnergy,
-        string[] energyBlockingReasons)
+        string[] energyBlockingReasons,
+        int? emptyInventorySlots,
+        string[] inventoryCapacityBlockingReasons)
     {
         RouteState = routeState;
         ProcessingState = processingState;
         TargetTotalDay = targetTotalDay;
         AvailableEnergy = availableEnergy;
         EnergyBlockingReasons = energyBlockingReasons;
+        EmptyInventorySlots = emptyInventorySlots;
+        InventoryCapacityBlockingReasons = inventoryCapacityBlockingReasons;
     }
 
     public AcquisitionLocationRouteSnapshotState RouteState { get; }
@@ -27,6 +31,10 @@ internal sealed class AcquisitionDailyTimeEnergySnapshotState
     public double? AvailableEnergy { get; }
 
     public string[] EnergyBlockingReasons { get; }
+
+    public int? EmptyInventorySlots { get; }
+
+    public string[] InventoryCapacityBlockingReasons { get; }
 
     public static AcquisitionDailyTimeEnergySnapshotState Read(
         JsonElement snapshot,
@@ -53,12 +61,56 @@ internal sealed class AcquisitionDailyTimeEnergySnapshotState
             energy = parsed;
         }
 
+        var inventoryReasons = new List<string>();
+        int? emptyInventorySlots = null;
+        var state = snapshot.GetProperty("state");
+        if (!AcquisitionLocationRouteSnapshotState.TryFieldValue(
+                state,
+                "player",
+                "inventory_capacity",
+                out var capacity) ||
+            capacity.ValueKind != JsonValueKind.Object)
+        {
+            inventoryReasons.Add("player_inventory_capacity_evidence_missing");
+        }
+        else
+        {
+            var maxItems = AcquisitionLocationRouteSnapshotState.ReadInt(
+                capacity,
+                "max_items");
+            var occupied = AcquisitionLocationRouteSnapshotState.ReadInt(
+                capacity,
+                "occupied_item_stacks");
+            var empty = AcquisitionLocationRouteSnapshotState.ReadInt(
+                capacity,
+                "empty_slots");
+            var hasEmpty = AcquisitionLocationRouteSnapshotState.ReadBool(
+                capacity,
+                "has_empty_slot");
+            if (!maxItems.HasValue || maxItems < 0 ||
+                !occupied.HasValue || occupied < 0 ||
+                !empty.HasValue || empty < 0 ||
+                !hasEmpty.HasValue ||
+                occupied + empty != maxItems ||
+                hasEmpty != (empty > 0))
+            {
+                inventoryReasons.Add(
+                    "player_inventory_capacity_evidence_inconsistent");
+            }
+            else
+            {
+                emptyInventorySlots = empty;
+            }
+        }
+
         return new AcquisitionDailyTimeEnergySnapshotState(
             routeState,
             processingState,
             targetTotalDay,
             energy,
-            reasons.ToArray());
+            reasons.ToArray(),
+            emptyInventorySlots,
+            inventoryReasons.ToArray());
     }
 
     private static bool TryAvailableNumber(

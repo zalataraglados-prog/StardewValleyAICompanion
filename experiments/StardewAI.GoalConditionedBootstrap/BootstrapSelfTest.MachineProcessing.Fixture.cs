@@ -18,7 +18,9 @@ internal static partial class BootstrapSelfTest
                     route,
                     Convert.ToInt32(machine["tile_x"]),
                     Convert.ToInt32(machine["tile_y"]),
-                    Convert.ToInt32(machine["minutes_until_ready"]) > 0
+                    Convert.ToBoolean(machine["ready_for_harvest"])
+                        ? "ready_output"
+                        : Convert.ToInt32(machine["minutes_until_ready"]) > 0
                         ? "processing"
                         : "idle"))
                 .ToArray()
@@ -82,7 +84,8 @@ internal static partial class BootstrapSelfTest
         int tileY,
         int minutesUntilReady,
         string? activeOutputId = null,
-        bool includeActiveSource = false)
+        bool includeActiveSource = false,
+        bool readyForHarvest = false)
     {
         var activeSources = includeActiveSource
             ? new object[]
@@ -104,7 +107,7 @@ internal static partial class BootstrapSelfTest
                 route.MachineSource!.MachineQualifiedItemId,
             ["location_is_player_controlled"] = true,
             ["owner_player_id"] = 42L,
-            ["ready_for_harvest"] = false,
+            ["ready_for_harvest"] = readyForHarvest,
             ["minutes_until_ready"] = minutesUntilReady,
             ["machine_has_input"] = true,
             ["machine_has_output"] = true,
@@ -229,7 +232,8 @@ internal static partial class BootstrapSelfTest
     private static AcquisitionDailyTimeEnergySnapshotState
         MachineDailyTimeEnergyState(
             IReadOnlyList<Dictionary<string, object?>> machines,
-            int timeOfDay = 900)
+            int timeOfDay = 900,
+            int emptyInventorySlots = 12)
     {
         var root = Path.Combine(
             Path.GetTempPath(),
@@ -249,6 +253,18 @@ internal static partial class BootstrapSelfTest
             totalDays: 0,
             timeOfDay: timeOfDay);
         var snapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        snapshot["state"]!["player"]!["inventory_capacity"] =
+            JsonSerializer.SerializeToNode(new
+            {
+                status = "available",
+                value = new
+                {
+                    max_items = 12,
+                    occupied_item_stacks = 12 - emptyInventorySlots,
+                    empty_slots = emptyInventorySlots,
+                    has_empty_slot = emptyInventorySlots > 0
+                }
+            }, JsonDefaults.Options);
         snapshot["state"]!["farm"]!["machines"] =
             JsonSerializer.SerializeToNode(new
             {

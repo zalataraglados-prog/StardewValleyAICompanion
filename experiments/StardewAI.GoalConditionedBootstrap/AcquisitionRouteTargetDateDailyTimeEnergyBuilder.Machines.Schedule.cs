@@ -113,6 +113,13 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             }
             else
             {
+                if (target.ClearingExistingOutput)
+                {
+                    target.ClearingExistingOutput = false;
+                    target.NextAction = MachineDailyAction.LoadInput;
+                    target.ReadyAtTime = currentTime;
+                    continue;
+                }
                 target.CollectedAttemptCount++;
                 collectedOutput = checked(
                     collectedOutput +
@@ -237,7 +244,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         int ProcessingMinutes,
         int OutputQuantityPerCollection,
         string InitialAction,
-        int InitialReadyAtTime);
+        int InitialReadyAtTime,
+        bool InitialCollectionClearsExistingOutput);
 
     private sealed class MutableMachineDailyTarget
     {
@@ -246,6 +254,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             Seed = seed;
             NextAction = seed.InitialAction;
             ReadyAtTime = seed.InitialReadyAtTime;
+            ClearingExistingOutput =
+                seed.InitialCollectionClearsExistingOutput;
         }
 
         public MachineDailyTargetSeed Seed { get; }
@@ -257,6 +267,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         public int LoadedAttemptCount { get; set; }
 
         public int CollectedAttemptCount { get; set; }
+
+        public bool ClearingExistingOutput { get; set; }
 
         public bool Done { get; set; }
     }
