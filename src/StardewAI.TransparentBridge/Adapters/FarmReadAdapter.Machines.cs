@@ -770,7 +770,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 outputData,
                 out var specialPrediction))
         {
-            return specialPrediction;
+            return AttachPredictedMachineOutputRouteSource(
+                machine,
+                machineData,
+                outputRule,
+                outputData,
+                specialPrediction);
         }
 
         var predictionBlockReasons = ReadPredictionBlockReasons(
@@ -815,7 +820,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 outputItem,
                 inputItem)
             : baseMinutesUntilReady;
-        return new
+        var prediction = new
         {
             status = "available",
             training_eligibility_status = ExactMachinePredictionStatus,
@@ -847,6 +852,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 : string.Empty,
             override_minutes_until_ready = overrideMinutesUntilReady
         };
+        return AttachPredictedMachineOutputRouteSource(
+            machine,
+            machineData,
+            outputRule,
+            outputData,
+            prediction);
     }
 
 }

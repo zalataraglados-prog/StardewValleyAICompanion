@@ -1,4 +1,6 @@
 using Microsoft.Xna.Framework;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewValley;
 using StardewValley.GameData.Machines;
 using StardewValley.TerrainFeatures;
@@ -7,6 +9,95 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
+    private static object AttachPredictedMachineOutputRouteSource(
+        StardewValley.Object machine,
+        MachineData data,
+        MachineOutputRule outputRule,
+        MachineItemOutput outputData,
+        object prediction)
+    {
+        var document = JsonSerializer.SerializeToNode(prediction) as JsonObject;
+        if (document is null)
+            return prediction;
+
+        var ruleIndex = data.OutputRules?.FindIndex(rule =>
+            ReferenceEquals(rule, outputRule)) ?? -1;
+        var outputIndex = outputRule.OutputItem?.FindIndex(output =>
+            ReferenceEquals(output, outputData)) ?? -1;
+        document["matched_rule_index"] = ruleIndex;
+        document["matched_output_index"] = outputIndex;
+
+        var status = document["status"]?.GetValue<string>() ?? string.Empty;
+        var outputIdentity = document["item"] as JsonObject ??
+            document["output_identity"] as JsonObject;
+        var qualifiedItemId =
+            outputIdentity?["qualified_item_id"]?.GetValue<string>() ??
+            string.Empty;
+        var sources = string.Equals(status, "available", StringComparison.Ordinal) &&
+                      ruleIndex >= 0 &&
+                      outputIndex >= 0 &&
+                      !string.IsNullOrWhiteSpace(qualifiedItemId)
+            ? PredictedMachineOutputRouteSources(
+                machine.QualifiedItemId,
+                outputRule,
+                outputData,
+                ruleIndex,
+                outputIndex,
+                qualifiedItemId)
+            : Array.Empty<object>();
+        document["authoritative_route_sources"] =
+            JsonSerializer.SerializeToNode(sources);
+        return document;
+    }
+
+    private static object[] PredictedMachineOutputRouteSources(
+        string machineQualifiedItemId,
+        MachineOutputRule outputRule,
+        MachineItemOutput outputData,
+        int ruleIndex,
+        int outputIndex,
+        string qualifiedItemId)
+    {
+        if (!string.IsNullOrWhiteSpace(outputRule.Id))
+        {
+            return new object[]
+            {
+                new
+                {
+                    route_kind = "machine_output",
+                    source_id = "machine:" + machineQualifiedItemId +
+                        ":rule:" + outputRule.Id,
+                    qualified_item_id = qualifiedItemId
+                }
+            };
+        }
+
+        var query = outputData.ItemId ?? string.Empty;
+        var outputItemId = UnqualifiedMachineOutputObjectId(qualifiedItemId);
+        if (!MachineOutputQueryItemIds(query).Contains(
+                outputItemId,
+                StringComparer.Ordinal))
+        {
+            return Array.Empty<object>();
+        }
+
+        return new object[]
+        {
+            new
+            {
+                route_kind = query.StartsWith(
+                    "FLAVORED_ITEM ",
+                    StringComparison.Ordinal)
+                        ? "native_machine_flavored_output"
+                        : "native_machine_item_query_output",
+                source_id = "machine:" + machineQualifiedItemId +
+                    ":rule:" + ruleIndex +
+                    ":output:" + outputIndex,
+                qualified_item_id = qualifiedItemId
+            }
+        };
+    }
+
     private static object[] ReadMachineOutputAuthoritativeRouteSources(
         GameLocation location,
         Vector2 tile,

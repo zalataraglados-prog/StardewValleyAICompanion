@@ -65,6 +65,13 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var matchedRuleId = ReadString(predictedOutput, "matched_rule_id");
+            var authoritativeRouteSourcesJson =
+                predictedOutput.TryGetProperty(
+                    "authoritative_route_sources",
+                    out var authoritativeRouteSources) &&
+                authoritativeRouteSources.ValueKind == JsonValueKind.Array
+                    ? authoritativeRouteSources.GetRawText()
+                    : "[]";
             var additionalConsumed =
                 trainingContract.Kind ==
                     "complete_distribution"
@@ -301,6 +308,7 @@ namespace StardewAI.Core.OptionRegistry
                 outputQualifiedId,
                 outputItemId,
                 outputContextTags,
+                authoritativeRouteSourcesJson,
                 ReadInt(
                     predictedOutput,
                     "additional_consumed_item_count",
@@ -438,6 +446,7 @@ namespace StardewAI.Core.OptionRegistry
                     outputQualifiedId,
                     outputItemId,
                     Array.Empty<string>(),
+                    "[]",
                     -1);
             }
 
@@ -606,6 +615,7 @@ namespace StardewAI.Core.OptionRegistry
                 string outputQualifiedItemId,
                 string outputItemId,
                 string[] outputContextTags,
+                string authoritativeRouteSourcesJson,
                 int additionalConsumedItemCount)
             {
                 Status = status;
@@ -614,6 +624,7 @@ namespace StardewAI.Core.OptionRegistry
                 OutputQualifiedItemId = outputQualifiedItemId;
                 OutputItemId = outputItemId;
                 OutputContextTags = outputContextTags;
+                AuthoritativeRouteSourcesJson = authoritativeRouteSourcesJson;
                 AdditionalConsumedItemCount = additionalConsumedItemCount;
             }
 
@@ -629,6 +640,8 @@ namespace StardewAI.Core.OptionRegistry
 
             public string[] OutputContextTags { get; }
 
+            public string AuthoritativeRouteSourcesJson { get; }
+
             public int AdditionalConsumedItemCount { get; }
 
             public static MachineOutputPrediction Unavailable(string status)
@@ -640,6 +653,7 @@ namespace StardewAI.Core.OptionRegistry
                     string.Empty,
                     string.Empty,
                     Array.Empty<string>(),
+                    "[]",
                     -1);
             }
         }

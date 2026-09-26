@@ -121,6 +121,7 @@ internal static partial class BootstrapSelfTest
             "Expanded native queue lost its authoritative route lineage.");
 
         VerifyCropPlantingSupportingTransition();
+        VerifyMachineInputSupportingTransition();
 
         var invalidSource = requirement with
         {

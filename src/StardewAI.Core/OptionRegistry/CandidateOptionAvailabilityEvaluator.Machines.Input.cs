@@ -199,6 +199,8 @@ namespace StardewAI.Core.OptionRegistry
                             ";machine_output_rule_count=" + outputRuleCount +
                             ";machine_has_output_rule=" + hasMachineDataOutput.ToString().ToLowerInvariant() +
                             ";machine_output_prediction_status=" + prediction.Status +
+                            ";authoritative_route_sources_json=" +
+                            prediction.AuthoritativeRouteSourcesJson +
                             prediction.ExpectedEffectSuffix +
                             ";machine_input_probe_source=Object.performObjectDropInAction(probe:true)" +
                             ";machine_input_executor_status=" + loadExecutorStatus +
@@ -251,6 +253,9 @@ namespace StardewAI.Core.OptionRegistry
                                 "predicted_output_context_tags_json",
                                 JsonSerializer.Serialize(
                                     prediction.OutputContextTags)),
+                            Parameter(
+                                "authoritative_route_sources_json",
+                                prediction.AuthoritativeRouteSourcesJson),
                             Parameter(
                                 "predicted_output_additional_consumed_item_count",
                                 prediction.AdditionalConsumedItemCount
