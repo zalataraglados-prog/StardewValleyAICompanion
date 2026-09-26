@@ -69,6 +69,10 @@ public sealed class AcquisitionRouteDispatchCompilation
     [JsonPropertyName("support_reservation_commit_verified")]
     public bool SupportReservationCommitVerified { get; set; }
 
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("uses_learner_rank_or_score")]
     public bool UsesLearnerRankOrScore { get; set; }
 

@@ -91,6 +91,45 @@ public static class AcquisitionRouteSupportingTransitionPortfolioBuilder
         return receipt;
     }
 
+    public static AcquisitionRouteDispatchCompilation BuildTerminalDispatch(
+        AcquisitionRouteSupportingTransitionRequestInputs priorInputs,
+        AcquisitionRouteSupportingTransitionSettlementProof proof,
+        string replanAdmissionPath,
+        AcquisitionRouteExecutionBindingInputs freshInputs,
+        string rankingPath)
+    {
+        var portfolio = AcquisitionRouteExecutionBindingBuilder
+            .PortfolioInputs(freshInputs);
+        var expectedCommit = BuildCommitReceipt(
+            priorInputs,
+            proof,
+            portfolio,
+            replanAdmissionPath,
+            freshInputs.PortfolioPreferenceRequestPath,
+            freshInputs.PortfolioTeacherPreferencePath,
+            freshInputs.PortfolioAdmissionPath,
+            freshInputs.CommittedStrategyLedgerPath,
+            string.IsNullOrWhiteSpace(freshInputs.PortfolioCommitResultPath)
+                ? null
+                : freshInputs.PortfolioCommitResultPath);
+        var commit = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioCommitReceipt>(
+            Path.GetFullPath(freshInputs.PortfolioCommitReceiptPath),
+            "Acquisition support-replan portfolio commit receipt");
+        Require(EqualJson(commit, expectedCommit) &&
+                commit.PortfolioCommitVerified &&
+                commit.PriorSupportingTransitionReplanSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(
+                        Path.GetFullPath(replanAdmissionPath)),
+            "Acquisition support-replan portfolio commit is not verified before terminal dispatch.");
+        var compilation = AcquisitionRouteDispatchCompilationBuilder.Build(
+            freshInputs,
+            rankingPath);
+        compilation.PriorSupportingTransitionReplanSha256 =
+            commit.PriorSupportingTransitionReplanSha256;
+        return compilation;
+    }
+
     private static VerifiedReplan VerifyReplan(
         AcquisitionRouteSupportingTransitionRequestInputs priorInputs,
         AcquisitionRouteSupportingTransitionSettlementProof proof,

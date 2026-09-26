@@ -55,6 +55,9 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-supporting-transition-replan", BuildAcquisitionRouteSupportingTransitionReplan),
     new("build-acquisition-route-supporting-transition-portfolio-teacher-preference", BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference),
     new("build-acquisition-route-supporting-transition-portfolio-commit-receipt", BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt),
+    new("compile-acquisition-route-supporting-transition-terminal-dispatch", CompileAcquisitionRouteSupportingTransitionTerminalDispatch),
+    new("build-acquisition-route-supporting-transition-terminal-execution-binding", BuildAcquisitionRouteSupportingTransitionTerminalExecutionBinding),
+    new("build-acquisition-route-supporting-transition-terminal-receipt", BuildAcquisitionRouteSupportingTransitionTerminalReceipt),
     new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
     new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
     new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
@@ -915,6 +918,124 @@ static void BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt(
     Write(options.Required("output"), receipt);
     if (!receipt.PortfolioCommitVerified)
         Environment.ExitCode = 2;
+}
+
+static void CompileAcquisitionRouteSupportingTransitionTerminalDispatch(
+    Arguments options)
+{
+    var queueOutput = options.Required("next-queue-output");
+    var reportOutput = options.Required("output");
+    if (string.Equals(
+            Path.GetFullPath(queueOutput),
+            Path.GetFullPath(reportOutput),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ArgumentException(
+            "--next-queue-output and --output must be different paths.");
+    }
+    var inputs = SupportingTransitionTerminalExecutionInputs(
+        options,
+        queueOutput);
+    var compilation = AcquisitionRouteSupportingTransitionPortfolioBuilder
+        .BuildTerminalDispatch(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            inputs,
+            options.Required("next-ranking"));
+    Write(reportOutput, compilation);
+    if (compilation.DispatchReady && compilation.ActionQueue is not null)
+        Write(queueOutput, compilation.ActionQueue);
+    else
+    {
+        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation));
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalExecutionBinding(
+    Arguments options)
+{
+    var binding = AcquisitionRouteExecutionBindingBuilder
+        .BuildAfterSupportingTransition(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options));
+    Write(options.Required("output"), binding);
+    if (!binding.DispatchBindingReady)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRouteFreshTerminalReceiptBuilder
+        .BuildAfterSupportingTransition(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options),
+            options.Required("next-execution-binding"),
+            options.Required("next-execution-receipt"),
+            options.Required("next-after-snapshot"),
+            options.Required("next-run-id"),
+            options.Required("next-executor-version"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.FreshTerminalReceiptVerified)
+        Environment.ExitCode = 2;
+}
+
+static AcquisitionRouteExecutionBindingInputs
+    SupportingTransitionTerminalExecutionInputs(
+        Arguments options,
+        string? actionQueuePath = null)
+{
+    var portfolio = ContinuationRoutePortfolioInputs(
+        options,
+        requireProposal: true);
+    return new AcquisitionRouteExecutionBindingInputs
+    {
+        RequirementInventoryPath = portfolio.RequirementInventoryPath,
+        AcquisitionLoweringPath = portfolio.AcquisitionLoweringPath,
+        MasterAnglerWindowsPath = portfolio.MasterAnglerWindowsPath,
+        CalendarResolutionPath = portfolio.CalendarResolutionPath,
+        TargetDateCalendarPath = portfolio.TargetDateCalendarPath,
+        TargetDateUnlockPath = portfolio.TargetDateUnlockPath,
+        TargetDateFestivalPath = portfolio.TargetDateFestivalPath,
+        TargetDateLocationPath = portfolio.TargetDateLocationPath,
+        TargetDateFacilityPath = portfolio.TargetDateFacilityPath,
+        TargetDateResourcePath = portfolio.TargetDateResourcePath,
+        TargetDateCurrencyPath = portfolio.TargetDateCurrencyPath,
+        TargetDateReservationPath = portfolio.TargetDateReservationPath,
+        TargetDateProcessingPath = portfolio.TargetDateProcessingPath,
+        TargetDateFishingProbabilityPath =
+            portfolio.TargetDateFishingProbabilityPath,
+        TargetDateStochasticRetryPath =
+            portfolio.TargetDateStochasticRetryPath,
+        TargetDateDailyTimeEnergyPath =
+            portfolio.TargetDateDailyTimeEnergyPath,
+        TargetDateOpportunityCostPath =
+            portfolio.TargetDateOpportunityCostPath,
+        FishingForecastManifestPath = portfolio.FishingForecastManifestPath,
+        StrategyLedgerPath = portfolio.StrategyLedgerPath,
+        BeforeSnapshotPath = portfolio.SnapshotPath,
+        RouteTimingCalibrationPath = portfolio.RouteTimingCalibrationPath,
+        PortfolioProposalPath = portfolio.ProposalPath,
+        PortfolioAdmissionPath = options.Required("next-portfolio-admission"),
+        PortfolioPreferenceRequestPath = options.Required(
+            "preference-request"),
+        PortfolioTeacherPreferencePath = options.Required("preference"),
+        PortfolioCommitReceiptPath = options.Required(
+            "support-replan-portfolio-commit-receipt"),
+        CommittedStrategyLedgerPath = options.Required(
+            "next-committed-ledger"),
+        PortfolioCommitResultPath = options.Optional("next-commit-result") ??
+            string.Empty,
+        ActionQueuePath = actionQueuePath ?? options.Required(
+            "next-action-queue"),
+        RouteOccurrenceId = options.Required("next-route-occurrence-id")
+    };
 }
 
 static AcquisitionRouteSupportingTransitionSettlementProof

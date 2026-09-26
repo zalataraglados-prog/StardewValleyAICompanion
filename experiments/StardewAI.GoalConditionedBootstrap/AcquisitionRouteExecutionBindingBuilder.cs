@@ -11,6 +11,44 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         AcquisitionRouteExecutionBindingInputs inputs) =>
         BuildCore(inputs, null);
 
+    public static AcquisitionRouteExecutionBinding
+        BuildAfterSupportingTransition(
+            AcquisitionRouteSupportingTransitionRequestInputs priorInputs,
+            AcquisitionRouteSupportingTransitionSettlementProof proof,
+            string replanAdmissionPath,
+            AcquisitionRouteExecutionBindingInputs inputs)
+    {
+        var portfolio = PortfolioInputs(inputs);
+        var expectedPreference =
+            AcquisitionRouteSupportingTransitionPortfolioBuilder
+                .BuildTeacherPreference(
+                    priorInputs,
+                    proof,
+                    portfolio,
+                    replanAdmissionPath,
+                    inputs.PortfolioPreferenceRequestPath);
+        var expectedCommit =
+            AcquisitionRouteSupportingTransitionPortfolioBuilder
+                .BuildCommitReceipt(
+                    priorInputs,
+                    proof,
+                    portfolio,
+                    replanAdmissionPath,
+                    inputs.PortfolioPreferenceRequestPath,
+                    inputs.PortfolioTeacherPreferencePath,
+                    inputs.PortfolioAdmissionPath,
+                    inputs.CommittedStrategyLedgerPath,
+                    string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath)
+                        ? null
+                        : inputs.PortfolioCommitResultPath);
+        return BuildCore(
+            inputs,
+            null,
+            string.Empty,
+            expectedPreference,
+            expectedCommit);
+    }
+
     public static AcquisitionRouteExecutionBinding BuildInitialContinuation(
         AcquisitionRoutePortfolioInitialCheckpointProof proof,
         string checkpointPath,
@@ -43,7 +81,11 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
     private static AcquisitionRouteExecutionBinding BuildCore(
         AcquisitionRouteExecutionBindingInputs inputs,
         AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
-        string continuationRequestPath = "")
+        string continuationRequestPath = "",
+        AcquisitionRoutePortfolioTeacherPreference?
+            expectedPreferenceOverride = null,
+        AcquisitionRoutePortfolioCommitReceipt?
+            expectedCommitOverride = null)
     {
         var opportunityPath = Path.GetFullPath(
             inputs.TargetDateOpportunityCostPath);
@@ -67,7 +109,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             AcquisitionRoutePortfolioTeacherPreference>(
             portfolioPreferencePath,
             "Acquisition route portfolio Teacher preference");
-        var recomputedPreference = continuation is null
+        var recomputedPreference = expectedPreferenceOverride ??
+            (continuation is null
             ? AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
                 PortfolioInputs(inputs),
                 inputs.PortfolioPreferenceRequestPath)
@@ -75,7 +118,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 .BuildContinuation(
                     continuation,
                     PortfolioInputs(inputs),
-                    continuationRequestPath);
+                    continuationRequestPath));
         Require(EqualJson(portfolioPreference, recomputedPreference),
             "Route portfolio Teacher preference drifted from deterministic source compilation.");
         var portfolioProposal = CurrentTeacherFrontierSupport.Read<
@@ -94,7 +137,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 inputs.PortfolioCommitResultPath)
             ? null
             : inputs.PortfolioCommitResultPath;
-        var recomputedPortfolioReceipt = continuation is null
+        var recomputedPortfolioReceipt = expectedCommitOverride ??
+            (continuation is null
             ? AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
                 PortfolioInputs(inputs),
                 inputs.PortfolioAdmissionPath,
@@ -108,7 +152,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     inputs.PortfolioTeacherPreferencePath,
                     inputs.PortfolioAdmissionPath,
                     committedLedgerPath,
-                    commitResultPath);
+                    commitResultPath));
         Require(EqualJson(portfolioReceipt, recomputedPortfolioReceipt),
             "Route portfolio commit receipt drifted from deterministic source compilation.");
         Require(AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
@@ -202,6 +246,12 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 .ToArray();
             selectedFromFrontier = false;
         }
+        var priorSupportingTransitionReplanSha256 =
+            VerifiedSupportingTransitionReplanSha256(
+                portfolioPreference.PriorSupportingTransitionReplanSha256,
+                portfolioProposal.PriorSupportingTransitionReplanSha256,
+                portfolioAdmission.PriorSupportingTransitionReplanSha256,
+                portfolioReceipt.PriorSupportingTransitionReplanSha256);
 
         var items = queue.Items ?? Array.Empty<ActionQueueItem>();
         return new AcquisitionRouteExecutionBinding
@@ -240,6 +290,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 portfolioReceipt.CommittedLedgerRevision,
             PriorRolloutCheckpointSha256 =
                 portfolioReceipt.PriorRolloutCheckpointSha256,
+            PriorSupportingTransitionReplanSha256 =
+                priorSupportingTransitionReplanSha256,
             CompletedAlternatives = (portfolioReceipt.CompletedAlternatives ??
                     Array.Empty<
                         AcquisitionRoutePortfolioCompletedAlternatives>())

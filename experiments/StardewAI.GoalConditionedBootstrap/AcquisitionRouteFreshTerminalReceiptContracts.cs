@@ -36,6 +36,10 @@ public sealed class AcquisitionRouteFreshTerminalReceiptAdmission
     [JsonPropertyName("terminal_receipt_kind")]
     public string TerminalReceiptKind { get; set; } = string.Empty;
 
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("terminal_transition")]
     public AcquisitionTerminalTransitionEvidence? TerminalTransition { get; set; }
 

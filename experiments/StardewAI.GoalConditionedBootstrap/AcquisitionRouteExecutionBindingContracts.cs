@@ -171,6 +171,10 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("prior_rollout_checkpoint_sha256")]
     public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("completed_alternatives")]
     public AcquisitionRoutePortfolioCompletedAlternatives[]
         CompletedAlternatives

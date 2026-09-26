@@ -2307,6 +2307,16 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The next bounded slice rejoins the commit-verified support recurrence with the ordinary dispatch, terminal receipt,
   settlement and rollout proof chain. Formal training remains blocked until that fresh terminal transition has been
   independently verified and included in the finite portfolio rollout proof.
+- The first three rejoin boundaries are now implemented without a second compiler or executor. The verified
+  support-replan preference and commit receipt enter the existing terminal dispatch compiler, existing execution
+  binding verifier and existing fresh terminal receipt verifier. The replan admission SHA-256 must agree across the
+  Teacher preference, selected proposal, selected admission and commit receipt; mixed, missing or malformed lineage
+  fails closed before execution binding. The dispatch compilation, execution binding and fresh terminal receipt carry
+  that same lineage explicitly while continuing to bind the ordinary queue, native execution receipt and after-state.
+- The remaining bounded work is to carry this already verified lineage through ordinary reservation settlement and
+  the first support-aware rollout checkpoint/proof. Those artifacts must rebuild the same support-replan sources and
+  must not reinterpret the nonterminal planting transition as terminal acquisition progress. Formal training remains
+  disabled until the resulting finite rollout proof is independently admitted.
 
 ### 2026-09-26: StrategicPolicy identity and hermetic rollout gates
 

@@ -7,6 +7,27 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRouteExecutionBindingBuilder
 {
+    internal static string VerifiedSupportingTransitionReplanSha256(
+        string preferenceSha256,
+        string proposalSha256,
+        string admissionSha256,
+        string commitReceiptSha256)
+    {
+        var values = new[]
+        {
+            preferenceSha256,
+            proposalSha256,
+            admissionSha256,
+            commitReceiptSha256
+        };
+        if (values.All(string.IsNullOrEmpty))
+            return string.Empty;
+        Require(values.All(IsLowerSha256) &&
+                values.Distinct(StringComparer.Ordinal).Count() == 1,
+            "Supporting-transition replan lineage drifted before execution binding.");
+        return values[0];
+    }
+
     private static IEnumerable<string> ValidateSelection(
         AcquisitionRouteTargetDateOpportunityCostReport report,
         AcquisitionRouteTargetDateOpportunityCost selected,

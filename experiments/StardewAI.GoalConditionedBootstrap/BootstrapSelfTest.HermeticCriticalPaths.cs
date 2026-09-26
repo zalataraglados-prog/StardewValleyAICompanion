@@ -9,8 +9,43 @@ internal static partial class BootstrapSelfTest
         VerifyHermeticStrategicPolicyAndPortfolio();
         RunAcquisitionRouteDispatch();
         VerifyCommunityCenterActiveRouteKindScope();
+        VerifySupportingTransitionTerminalLineage();
         VerifyCommunityCenterDonationReceiptEvidence();
         RunFullShipmentSettlement();
+    }
+
+    private static void VerifySupportingTransitionTerminalLineage()
+    {
+        var sha256 = new string('a', 64);
+        Require(AcquisitionRouteExecutionBindingBuilder
+                    .VerifiedSupportingTransitionReplanSha256(
+                        sha256,
+                        sha256,
+                        sha256,
+                        sha256) == sha256 &&
+                AcquisitionRouteExecutionBindingBuilder
+                    .VerifiedSupportingTransitionReplanSha256(
+                        string.Empty,
+                        string.Empty,
+                        string.Empty,
+                        string.Empty) == string.Empty,
+            "Supporting-transition terminal lineage did not preserve exact identity.");
+        var rejected = false;
+        try
+        {
+            AcquisitionRouteExecutionBindingBuilder
+                .VerifiedSupportingTransitionReplanSha256(
+                    sha256,
+                    new string('b', 64),
+                    sha256,
+                    sha256);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "Mixed supporting-transition terminal lineage was admitted.");
     }
 
     private static void VerifyHermeticStrategicPolicyAndPortfolio()

@@ -58,7 +58,9 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
                 receiptPath),
             AfterSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
                 afterPath),
-            TerminalReceiptKind = binding.TerminalReceiptKind
+            TerminalReceiptKind = binding.TerminalReceiptKind,
+            PriorSupportingTransitionReplanSha256 =
+                binding.PriorSupportingTransitionReplanSha256
         };
         if (!string.Equals(binding.SchemaVersion,
                 "acquisition_route_execution_binding.v1",
