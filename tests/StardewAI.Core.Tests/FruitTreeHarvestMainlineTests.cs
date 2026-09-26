@@ -23,6 +23,11 @@ public sealed class FruitTreeHarvestMainlineTests
         Assert.Equal("harvest_fruit_tree", candidate.Kind);
         Assert.Equal(3, candidate.Quantity);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_output_items_json");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value.Contains(
+                "fruit_tree:628:0",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -80,6 +85,7 @@ public sealed class FruitTreeHarvestMainlineTests
               "max_shake":0,"fruit_tree_harvest_status":"{{{status}}}",
               "fruit_tree_projection_status":"exact_from_native_fruit_tree_performUseAction_and_shake",
               "fruit_tree_expected_outputs":{{{outputs}}},
+              "fruit_tree_authoritative_route_sources":[{"route_kind":"native_fruit_tree_produce","source_id":"fruit_tree:628:0","qualified_item_id":"{{{outputId}}}"}],
               "fruit_tree_expected_output_quantity_total":{{{fruitCount}}},
               "fruit_tree_expected_fruit_count_after":0,
               "fruit_tree_expected_foraging_experience_delta":0,

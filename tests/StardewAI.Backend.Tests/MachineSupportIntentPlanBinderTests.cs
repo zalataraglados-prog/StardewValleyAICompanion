@@ -298,6 +298,13 @@ public sealed class MachineSupportIntentPlanBinderTests
                 ReservationPortfolioRouteSettlementRequest request) =>
             throw new NotSupportedException();
 
+        public ReservationPortfolioSupportingTransitionSettlementResult
+            SettleReservationPortfolioSupportingTransition(
+                SnapshotEnvelope snapshot,
+                ReservationPortfolioSupportingTransitionSettlementRequest
+                    request) =>
+            throw new NotSupportedException();
+
         public StrategyCommitmentMutationResult
             UpsertMachineRelocation(
                 SnapshotEnvelope snapshot,

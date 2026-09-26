@@ -188,6 +188,48 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
+    public void SleepExecutorHandsOffNewDayStoryEventWithoutConsumingItsDialogue()
+    {
+        var source = RuntimeHarnessSource;
+        var entry = RuntimeHarnessSources.LoadFile("ModEntry.cs");
+        var tickSlice = Slice(
+            source,
+            "private void TickSleep",
+            "private bool TickSleepMoveToStand");
+        var handoffSlice = Slice(
+            source,
+            "private static bool IsPostSleepStoryEventHandoff",
+            "private bool TrySettlePostSleepReceipts");
+
+        Assert.Contains(
+            "IsPostSleepStoryEventHandoff(sleep, postSleepDialogue)",
+            tickSlice,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "post_sleep_story_event_handoff",
+            tickSlice,
+            StringComparison.Ordinal);
+        Assert.Contains("Game1.CurrentEvent is not null", handoffSlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.eventUp", handoffSlice, StringComparison.Ordinal);
+        Assert.Contains("!dialogue.isQuestion", handoffSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("TryApplySmapi", handoffSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("skipEvent", handoffSlice, StringComparison.Ordinal);
+        Assert.Contains("!sleep.SawNativeSaveCommit", tickSlice, StringComparison.Ordinal);
+        Assert.Contains(
+            "native_save_not_completed_before_story_event_handoff",
+            tickSlice,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "helper.Events.GameLoop.Saved += OnNativeSaveCommitted",
+            entry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "private void OnNativeSaveCommitted",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SleepExecutorCompleteSleepAndBlockedSleepReleaseLeftButton()
     {
         var source = RuntimeHarnessSource;
@@ -246,7 +288,13 @@ public sealed partial class NativeShippingSourceGuardTests
         Assert.Contains("TrySettleActiveRunPendingShippingReceipts()", dayStartedSlice, StringComparison.Ordinal);
 
         var tickSleepSlice = Slice(source, "private void TickSleep", "private bool TickSleepMoveToStand");
-        Assert.Contains("TrySettleActiveRunPendingShippingReceipts()", tickSleepSlice, StringComparison.Ordinal);
+        Assert.Contains("TrySettlePostSleepReceipts(sleep)", tickSleepSlice, StringComparison.Ordinal);
+
+        var settlementSlice = Slice(
+            source,
+            "private bool TrySettlePostSleepReceipts",
+            "private void TickShipSummaryClosePhase");
+        Assert.Contains("TrySettleActiveRunPendingShippingReceipts()", settlementSlice, StringComparison.Ordinal);
 
         var calls = CountOccurrences(source, "TrySettleActiveRunPendingShippingReceipts()");
         Assert.True(calls >= 2, $"Expected >=2 calls to TrySettleActiveRunPendingShippingReceipts, found {calls}");
@@ -259,20 +307,30 @@ public sealed partial class NativeShippingSourceGuardTests
         var tickSleepSlice = Slice(source, "private void TickSleep", "private bool TickSleepMoveToStand");
 
         var menuNullIdx = tickSleepSlice.IndexOf("menu is null", StringComparison.Ordinal);
-        var settlementIdx = tickSleepSlice.IndexOf("TrySettleActiveRunPendingShippingReceipts", StringComparison.Ordinal);
+        var settlementIdx = tickSleepSlice.IndexOf("TrySettlePostSleepReceipts", StringComparison.Ordinal);
         var completeSleepIdx = tickSleepSlice.IndexOf("CompleteSleep(sleep, \"verified\"", StringComparison.Ordinal);
 
         Assert.True(menuNullIdx >= 0, "menu is null check not found in TickSleep");
-        Assert.True(settlementIdx >= 0, "TrySettleActiveRunPendingShippingReceipts call not found in TickSleep");
+        Assert.True(settlementIdx >= 0, "TrySettlePostSleepReceipts call not found in TickSleep");
         Assert.True(completeSleepIdx >= 0, "CompleteSleep call not found in TickSleep");
         Assert.True(menuNullIdx < settlementIdx,
-            $"menu is null (pos {menuNullIdx}) must appear before TrySettleActiveRunPendingShippingReceipts (pos {settlementIdx})");
+            $"menu is null (pos {menuNullIdx}) must appear before TrySettlePostSleepReceipts (pos {settlementIdx})");
         Assert.True(settlementIdx < completeSleepIdx,
-            $"TrySettleActiveRunPendingShippingReceipts (pos {settlementIdx}) must appear before CompleteSleep (pos {completeSleepIdx})");
+            $"TrySettlePostSleepReceipts (pos {settlementIdx}) must appear before CompleteSleep (pos {completeSleepIdx})");
 
-        Assert.Contains("post_sleep_receipt_settlement_threw", tickSleepSlice, StringComparison.Ordinal);
-        var threwLine = tickSleepSlice.Split('\n').First(line => line.Contains("post_sleep_receipt_settlement_threw"));
-        Assert.Contains("CompleteBlockedSleep", threwLine, StringComparison.Ordinal);
+        var settlementSlice = Slice(
+            source,
+            "private bool TrySettlePostSleepReceipts",
+            "private void TickShipSummaryClosePhase");
+        var blockedSleepIdx = settlementSlice.IndexOf("CompleteBlockedSleep(", StringComparison.Ordinal);
+        var settlementThrewIdx = settlementSlice.IndexOf("post_sleep_receipt_settlement_threw", StringComparison.Ordinal);
+        var returnFalseIdx = settlementSlice.IndexOf("return false;", StringComparison.Ordinal);
+
+        Assert.True(blockedSleepIdx >= 0, "CompleteBlockedSleep call not found in settlement failure path");
+        Assert.True(settlementThrewIdx > blockedSleepIdx,
+            "Settlement failure reason must be passed to CompleteBlockedSleep");
+        Assert.True(returnFalseIdx > settlementThrewIdx,
+            "Settlement failure path must return false after blocking sleep");
     }
 
     [Fact]

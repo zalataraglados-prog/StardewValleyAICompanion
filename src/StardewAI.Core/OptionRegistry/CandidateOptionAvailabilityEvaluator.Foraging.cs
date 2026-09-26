@@ -58,6 +58,8 @@ namespace StardewAI.Core.OptionRegistry
                                 Parameter("stand_tile_x", stand.X.ToString()),
                                 Parameter("stand_tile_y", stand.Y.ToString()),
                                 Parameter("qualified_item_id", qualifiedItemId),
+                                Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                                    ReadArray(item, "spawned_object_authoritative_route_sources"))),
                                 Parameter("quantity", totalQuantity.ToString()),
                                 Parameter("projected_harvest_quality", projectedQuality.ToString()),
                                 Parameter("foraging_experience_on_success_min", ReadInt(item, "foraging_experience_on_success_min").ToString()),
@@ -76,6 +78,8 @@ namespace StardewAI.Core.OptionRegistry
                     var effect = (stand is null ? string.Empty : "spawned_object_stand_tile=" + stand.X + "," + stand.Y + ";") +
                         "current_location.objects[" + x + "," + y + "].present=false" +
                         ";qualified_item_id=" + qualifiedItemId +
+                        ";authoritative_route_sources_json=" + JsonSerializer.Serialize(
+                            ReadArray(item, "spawned_object_authoritative_route_sources")) +
                         ";projected_harvest_quality=" + projectedQuality +
                         ";projected_total_quantity=" + totalQuantity +
                         ";projected_gatherer_duplicate=" + ReadBool(item, "projected_gatherer_duplicate").ToString().ToLowerInvariant() +
@@ -104,6 +108,8 @@ namespace StardewAI.Core.OptionRegistry
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
                         Parameters = new[]
                         {
+                            Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                                ReadArray(item, "spawned_object_authoritative_route_sources"))),
                             Parameter("foraging_experience_on_success_min", ReadInt(item, "foraging_experience_on_success_min").ToString()),
                             Parameter("foraging_experience_on_success_max", ReadInt(item, "foraging_experience_on_success_max").ToString()),
                             Parameter("farming_experience_on_success_min", ReadInt(item, "farming_experience_on_success_min").ToString()),

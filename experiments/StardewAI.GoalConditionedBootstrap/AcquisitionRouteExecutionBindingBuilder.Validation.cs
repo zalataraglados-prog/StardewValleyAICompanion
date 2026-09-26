@@ -7,6 +7,27 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRouteExecutionBindingBuilder
 {
+    internal static string VerifiedSupportingTransitionReplanSha256(
+        string preferenceSha256,
+        string proposalSha256,
+        string admissionSha256,
+        string commitReceiptSha256)
+    {
+        var values = new[]
+        {
+            preferenceSha256,
+            proposalSha256,
+            admissionSha256,
+            commitReceiptSha256
+        };
+        if (values.All(string.IsNullOrEmpty))
+            return string.Empty;
+        Require(values.All(IsLowerSha256) &&
+                values.Distinct(StringComparer.Ordinal).Count() == 1,
+            "Supporting-transition replan lineage drifted before execution binding.");
+        return values[0];
+    }
+
     private static IEnumerable<string> ValidateSelection(
         AcquisitionRouteTargetDateOpportunityCostReport report,
         AcquisitionRouteTargetDateOpportunityCost selected,
@@ -83,7 +104,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         }
     }
 
-    private static IEnumerable<string> ValidateQueue(
+    internal static IEnumerable<string> ValidateQueue(
         ActionQueueEnvelope queue,
         string goalId,
         string beforeStateHash,
@@ -91,7 +112,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         AcquisitionRouteTargetDateUnlock requirement,
         AcquisitionRequirementRouteLowering route,
         string portfolioId,
-        int committedLedgerRevision)
+        int committedLedgerRevision,
+        string expectedRouteOptionRole = "terminal_transition")
     {
         var items = queue.Items ?? Array.Empty<ActionQueueItem>();
         if (!string.Equals(queue.SchemaVersion, "action_queue.v1",
@@ -132,35 +154,54 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var allowed = route.EndpointOptionIds
             .Concat(route.SupportingOptionIds)
             .ToHashSet(StringComparer.Ordinal);
-        if (route.EndpointOptionIds.Length == 0 ||
+        var boundRouteOptions = items
+            .Select(item => BoundRouteOption(item, allowed))
+            .ToArray();
+        var validRole = expectedRouteOptionRole is
+            "terminal_transition" or "supporting_transition";
+        if (!validRole ||
+            route.EndpointOptionIds.Length == 0 ||
             allowed.Count == 0 ||
-            items.Any(item => !allowed.Contains(item.OptionId)) ||
-            !items.Any(item => route.EndpointOptionIds.Contains(
-                item.OptionId,
-                StringComparer.Ordinal)))
+            boundRouteOptions.Any(string.IsNullOrWhiteSpace) ||
+            (expectedRouteOptionRole == "terminal_transition" &&
+             !boundRouteOptions.Any(optionId => route.EndpointOptionIds.Contains(
+                 optionId,
+                 StringComparer.Ordinal))))
         {
             yield return "route_queue_option_outside_authoritative_route";
         }
-        if (items.Any(item =>
-                !string.Equals(item.Status, "pending", StringComparison.Ordinal) ||
-                (item.MissingStateFactors?.Length ?? 0) != 0 ||
-                (item.BlockingReasons?.Length ?? 0) != 0 ||
-                item.NormalizedCommand is null ||
-                !string.Equals(item.NormalizedCommand.CommandType,
-                    "option_request", StringComparison.Ordinal) ||
-                !string.Equals(item.NormalizedCommand.OptionId, item.OptionId,
+        if (expectedRouteOptionRole == "supporting_transition" &&
+            items.Length != 1)
+        {
+            yield return "route_supporting_transition_not_single_action";
+        }
+        if (items.Select((item, index) => new
+            {
+                Item = item,
+                RouteOption = boundRouteOptions[index]
+            }).Any(value =>
+                !RouteQueueShapeValid(
+                    value.Item,
+                    value.RouteOption,
+                    allowed) ||
+                !string.Equals(value.Item.Status, "pending", StringComparison.Ordinal) ||
+                (value.Item.MissingStateFactors?.Length ?? 0) != 0 ||
+                (value.Item.BlockingReasons?.Length ?? 0) != 0 ||
+                value.Item.NormalizedCommand is null ||
+                !string.Equals(value.Item.NormalizedCommand.OptionId,
+                    value.Item.OptionId,
                     StringComparison.Ordinal) ||
-                !string.Equals(item.NormalizedCommand.StateHash,
+                !string.Equals(value.Item.NormalizedCommand.StateHash,
                     beforeStateHash, StringComparison.Ordinal) ||
-                !string.Equals(item.NormalizedCommand.ExecutionMode,
+                !string.Equals(value.Item.NormalizedCommand.ExecutionMode,
                     queue.ExecutionMode, StringComparison.Ordinal) ||
-                item.NormalizedCommand.Steps is not { Length: 1 } ||
                 !RouteParametersMatch(
-                    item.NormalizedCommand.Parameters,
+                    value.Item.NormalizedCommand.Parameters,
                     requirement,
                     portfolioId,
-                    committedLedgerRevision) ||
-                !SameActor(item.NormalizedCommand.Actor, queue.Actor)))
+                    committedLedgerRevision,
+                    expectedRouteOptionRole) ||
+                !SameActor(value.Item.NormalizedCommand.Actor, queue.Actor)))
         {
             yield return "route_queue_command_binding_invalid";
         }
@@ -171,6 +212,78 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         {
             yield return "route_queue_actor_invalid";
         }
+    }
+
+    private static string BoundRouteOption(
+        ActionQueueItem item,
+        IReadOnlySet<string> allowed)
+    {
+        var values = (item.NormalizedCommand?.Parameters ??
+                Array.Empty<SmallModelActionParameter>())
+            .Where(value => value.Name == "acquisition_endpoint_option_id")
+            .Select(value => value.Value)
+            .ToArray();
+        if (values.Length > 0)
+            return values.Length == 1 && allowed.Contains(values[0])
+                ? values[0]
+                : string.Empty;
+        return allowed.Contains(item.OptionId) ? item.OptionId : string.Empty;
+    }
+
+    private static bool RouteQueueShapeValid(
+        ActionQueueItem item,
+        string routeOption,
+        IReadOnlySet<string> allowed)
+    {
+        var command = item.NormalizedCommand;
+        if (string.IsNullOrWhiteSpace(routeOption) ||
+            command is null)
+            return false;
+        if (allowed.Contains(item.OptionId))
+        {
+            return command.CommandType == "option_request" &&
+                command.Steps is { Length: 1 };
+        }
+
+        var parameters = command.Parameters ??
+            Array.Empty<SmallModelActionParameter>();
+        return command.CommandType ==
+                "compiled_action_steps" &&
+            command.Steps is { Length: > 0 } &&
+            HasUniqueNonEmptyParameter(
+                parameters,
+                "acquisition_source_candidate_id") &&
+            HasUniqueNonEmptyParameter(
+                parameters,
+                "acquisition_source_binding_evidence") &&
+            HasUniqueSha256Parameter(
+                parameters,
+                "acquisition_source_ranking_sha256");
+    }
+
+    private static bool HasUniqueNonEmptyParameter(
+        IEnumerable<SmallModelActionParameter> parameters,
+        string name)
+    {
+        var values = parameters
+            .Where(value => value.Name == name)
+            .Select(value => value.Value)
+            .ToArray();
+        return values.Length == 1 && !string.IsNullOrWhiteSpace(values[0]);
+    }
+
+    private static bool HasUniqueSha256Parameter(
+        IEnumerable<SmallModelActionParameter> parameters,
+        string name)
+    {
+        var values = parameters
+            .Where(value => value.Name == name)
+            .Select(value => value.Value)
+            .ToArray();
+        return values.Length == 1 && values[0].Length == 64 &&
+            values[0].All(character =>
+                character is >= '0' and <= '9' or >= 'a' and <= 'f' or
+                    >= 'A' and <= 'F');
     }
 
     private static IEnumerable<string> ValidatePortfolioCommit(
@@ -375,7 +488,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
     internal static SmallModelActionParameter[] RouteBindingParameters(
         AcquisitionRouteTargetDateUnlock requirement,
         string portfolioId,
-        int committedLedgerRevision) => new[]
+        int committedLedgerRevision,
+        string routeOptionRole = "terminal_transition") => new[]
     {
         Parameter("acquisition_route_occurrence_id",
             requirement.RouteOccurrenceId),
@@ -398,20 +512,23 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         Parameter("acquisition_reservation_portfolio_id", portfolioId),
         Parameter(
             "acquisition_reservation_ledger_revision",
-            committedLedgerRevision.ToString(CultureInfo.InvariantCulture))
+            committedLedgerRevision.ToString(CultureInfo.InvariantCulture)),
+        Parameter("acquisition_route_option_role", routeOptionRole)
     };
 
     private static bool RouteParametersMatch(
         SmallModelActionParameter[]? actual,
         AcquisitionRouteTargetDateUnlock requirement,
         string portfolioId,
-        int committedLedgerRevision)
+        int committedLedgerRevision,
+        string routeOptionRole)
     {
         var values = actual ?? Array.Empty<SmallModelActionParameter>();
         var expectedValues = RouteBindingParameters(
             requirement,
             portfolioId,
-            committedLedgerRevision);
+            committedLedgerRevision,
+            routeOptionRole);
         return expectedValues.All(expected =>
         {
             var matches = values.Where(value => string.Equals(

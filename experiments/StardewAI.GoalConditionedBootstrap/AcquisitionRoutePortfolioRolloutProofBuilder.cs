@@ -17,6 +17,9 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
                 : "verified_incomplete_rollout_proof_chain",
             RolloutId = latest.Checkpoint.RolloutId,
             GoalId = latest.Checkpoint.GoalId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    latest.Checkpoint.CommunityCenterProvenance),
             ManifestSha256 = CurrentTeacherFrontierSupport.HashFile(
                 manifestFullPath),
             LatestCheckpointSha256 = CurrentTeacherFrontierSupport.HashFile(
@@ -44,8 +47,9 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
             AcquisitionRoutePortfolioRolloutCheckpoint>(
             checkpointFullPath,
             "Acquisition route portfolio rollout checkpoint");
-        var expected = AcquisitionRoutePortfolioRolloutCheckpointBuilder
-            .BuildInitial(
+        var support = proof.SupportingTransition;
+        var expected = support is null
+            ? AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial(
                 proof.ExecutionInputs,
                 proof.ExecutionBindingPath,
                 proof.ExecutionReceiptPath,
@@ -56,10 +60,33 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
                 proof.SettlementRequestPath,
                 proof.SettlementResultPath,
                 proof.SettledLedgerPath,
-                proof.SettlementReceiptPath);
+                proof.SettlementReceiptPath)
+            : AcquisitionRoutePortfolioRolloutCheckpointBuilder
+                .BuildAfterSupportingTransition(
+                    support.RequestInputs,
+                    support.SettlementProof,
+                    support.ReplanAdmissionPath,
+                    proof.ExecutionInputs,
+                    proof.ExecutionBindingPath,
+                    proof.ExecutionReceiptPath,
+                    proof.AfterSnapshotPath,
+                    proof.FreshTerminalReceiptPath,
+                    proof.RunId,
+                    proof.ExecutorVersion,
+                    proof.SettlementRequestPath,
+                    proof.SettlementResultPath,
+                    proof.SettledLedgerPath,
+                    proof.SettlementReceiptPath);
         Require(EqualJson(actual, expected) &&
                 actual.CheckpointVerified &&
-                !actual.FormalTrainingAuthorized,
+                !actual.FormalTrainingAuthorized &&
+                (support is null
+                    ? string.IsNullOrEmpty(
+                        actual.PriorSupportingTransitionReplanSha256)
+                    : actual.PriorSupportingTransitionReplanSha256 ==
+                        CurrentTeacherFrontierSupport.HashFile(
+                            Path.GetFullPath(
+                                support.ReplanAdmissionPath))),
             "Initial rollout checkpoint is not an exact verified artifact.");
         return new AcquisitionRoutePortfolioVerifiedCheckpoint(
             checkpointFullPath,
@@ -144,14 +171,5 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
             path,
             "Acquisition route portfolio rollout proof manifest");
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

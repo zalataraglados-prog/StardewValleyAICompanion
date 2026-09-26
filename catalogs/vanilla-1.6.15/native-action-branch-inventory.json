@@ -9569,7 +9569,9 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
+        "executor.claim_community_center_bundle_reward",
         "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle",
         "inventory.transfer_item"
       ],
       "semanticDisposition": "player_semantic_action",
@@ -9596,7 +9598,9 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
-        "executor.donate_community_center_item"
+        "executor.claim_community_center_bundle_reward",
+        "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle"
       ],
       "semanticDisposition": "player_semantic_action",
       "coverageStatus": "mapped_to_semantic_action",
@@ -9622,7 +9626,9 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
-        "executor.donate_community_center_item"
+        "executor.claim_community_center_bundle_reward",
+        "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle"
       ],
       "semanticDisposition": "player_semantic_action",
       "coverageStatus": "mapped_to_semantic_action",
@@ -9647,7 +9653,9 @@
       "stringLiterals": [],
       "itemIds": [],
       "mappedActionIds": [
-        "executor.donate_community_center_item"
+        "executor.claim_community_center_bundle_reward",
+        "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle"
       ],
       "semanticDisposition": "player_semantic_action",
       "coverageStatus": "mapped_to_semantic_action",

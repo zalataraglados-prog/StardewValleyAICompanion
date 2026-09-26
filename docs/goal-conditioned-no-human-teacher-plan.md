@@ -1841,6 +1841,136 @@ Slice 7 remains assigned to the RTX 5070 node.
   requirements through every target-date axis and its receipts. Junimo-text/unlock events, room rewards/mail and final
   ceremony settlement remain later explicit blockers.
 
+### 2026-09-23: current Community Center acquisition-route calendar root
+
+- `build-current-acquisition-route-calendar-resolution` now rebuilds the strict save-bound Community Center
+  denominator and replaces the historical static `community_center_standard` route occurrences at the acquisition
+  calendar root. Every non-Community-Center route remains unchanged. The artifact hash-binds the active bundle mode,
+  denominator, source state and transparent snapshot instead of allowing a standard-layout route set to survive on a
+  remixed save.
+- Collection membership and calendar lowering share one `CurrentCommunityCenterRequirementAuthorityBuilder`; this is
+  not a second route catalog or executor. Exact-item alternatives retain their native identities. A category ingredient
+  remains one native selectable slot, while each accepted concrete item contributes its own stable acquisition-route
+  occurrence under that slot. Duplicate concrete target/route identities are deterministically collapsed before
+  occurrence numbering.
+- The focused fixture removes a static Parsnip shop route, keeps two current exact-item harvest routes and adds one
+  remixed egg-category shop route. The rebuilt report contains only those three Community Center occurrences while
+  preserving the complete 77-route fixture denominator. Provenance and replacement assertions fail closed.
+- This closes only the save-bound root calendar input. Existing target-date calendar and the remaining dependency axes
+  still rebuild the static root, so formal product training remains false. The next fixed slice must make the explicit
+  target-date calendar consume and validate this current root, then propagate the same denominator identity through
+  each downstream axis and receipt before the Junimo/unlock, room reward/mail and final ceremony chain is admitted.
+
+### 2026-09-23: current Community Center explicit target-date calendar
+
+- `build-current-acquisition-route-target-date-calendar` consumes the persisted current acquisition-route calendar,
+  rebuilds that root from the same authoritative inventory, lowering, window index and transparent snapshot, and
+  object-compares the complete report before evaluating an explicit target day. Passing a static root to the current
+  command, a current root to the static command, or changing denominator provenance fails closed.
+- The target-date report carries the active bundle mode, denominator hash, source-state hash and snapshot hash in
+  addition to the route-root file hash. Calendar evaluation remains the existing shared implementation; no second
+  condition parser, route catalog or executor was introduced. Non-Community-Center route rows are byte-equivalent to
+  the static target-date result for the same inputs.
+- The remixed fixture preserves the two active exact-item harvest routes, carries the concrete egg target for one
+  category slot, excludes the removed static shop route and rejects a forged denominator hash. One deliberately
+  unmatched fixture shop row remains an explicit source block rather than being promoted to a target-date match.
+- Production regression now executes both current CLI stages against the standard fixture derived from the locked
+  transparent snapshot, with its redundant completion aggregate recomputed from the exact bundle rows, and verifies
+  the complete provenance chain. The archived raw snapshot reports 21 complete bundles while its exact rows prove 25;
+  strict production code rejects that stale aggregate, and the current bridge source is separately locked to derive
+  the aggregate from those rows. Formal product training remains false.
+
+### 2026-09-23: current Community Center target-date dependency chain
+
+- `build-acquisition-route-target-date-unlock-state` now determines its deterministic rebuild mode from the verified
+  target-date artifact. A current artifact must rebuild its Community Center denominator and calendar root from the
+  same transparent snapshot; a static artifact still follows the static path. An artifact/snapshot mode mismatch,
+  denominator change or route-root drift fails the existing full-object comparison.
+- This is one dispatch boundary, not a parallel current implementation of every dependency axis. Festival, location,
+  facility capacity, resource inputs, currency, reservation, processing lead time, fishing probability, stochastic
+  retry, daily time/energy and opportunity cost already rebuild their immediate predecessor. Their exact upstream
+  SHA-256 fields therefore bind the current target-date identity transitively, while stages that join the route root
+  continue to require the same complete occurrence set and requirement identity.
+- Production regression now constructs the complete 1,599-occurrence current root from the real day-37 snapshot and
+  runs the unchanged unlock and festival commands through recursive rebuild. The focused suite continues to cover the
+  complete dependency chain through opportunity cost and separately proves that remixed category targets are not
+  replaced by static alternatives. Formal training remains false.
+- The next fixed boundary was current-denominator propagation through portfolio selection, commit/execution binding,
+  fresh terminal receipts, settlement, continuation and supervision artifacts. The following section records that
+  implementation. Junimo/unlock events, room reward/mail and final-ceremony settlement remain separate Community
+  Center completion blockers.
+
+### 2026-09-24: current Community Center portfolio and receipt provenance
+
+- `AcquisitionRoutePortfolioBuilder.Prepare` now derives one typed `community_center_provenance` value from the
+  deterministically verified target-date calendar and exact portfolio decision snapshot. A current provenance requires
+  standard/remixed mode, valid denominator/snapshot hashes and an exact source-state/snapshot match; a static path must
+  carry no current-save fields.
+- Portfolio admission, independent Teacher preference, atomic commit receipt, execution binding, fresh terminal
+  receipt, settlement receipt, initial/continuation checkpoint, continuation request, rollout proof/admission and each
+  supervision row now expose that value. Builders copy it through one shared support type and reject disagreement where
+  independently rebuilt artifacts meet, instead of relying only on an opaque predecessor file hash.
+- A continuation must retain the same static/current identity, bundle mode and active denominator SHA-256 as its prior
+  checkpoint. Its source-state and snapshot hashes are intentionally regenerated from the latest terminal state before
+  the next decision. This preserves fresh-state replanning without permitting a standard/remixed denominator switch
+  inside one proof chain.
+- Focused regression covers current remixed provenance construction and stale-state rejection. The complete three-step
+  portfolio rollout verifies that every exported supervision row retains the expected static provenance identity. This
+  closes current-denominator propagation through the training-evidence boundary; it does not authorize formal product
+  training.
+- The next fixed boundary is the native Community Center completion lifecycle: Junimo text/unlock events, room reward
+  and mail effects, and final ceremony settlement must receive fresh native before/after proof and terminal admission.
+
+### 2026-09-24: native Community Center completion lifecycle admission
+
+- The transparent bridge now emits one typed `community_center_lifecycle.v1` projection instead of treating
+  `ccIsComplete`, six room-mail flags and `isLocationAccessible("CommunityCenter")` as interchangeable completion
+  signals. It separately exposes the Town `611439` door-unlock event, first-note and Wizard-letter state, WizardHouse
+  `112` Junimo-text event, all-area state, unclaimed/missed bundle rewards, room-mail settlement, the final Town
+  `191393` ceremony and the final admitted state. All three event rows are loaded from the current runtime assets and
+  their base-English scripts are SHA-256 locked to the independently decompiled 1.6.15 rows; a missing or modified row
+  blocks the lifecycle projection rather than falling back to documentation examples.
+- The existing native donation executor remains the sole donation implementation. It already waits for bundle bits,
+  inventory consumption, bundle reward, complete-bundle count, restored room, pending room/Bulletin mail and newly
+  visible notes. For the last room it now also waits for `Junimo.returnToJunimoHutToFetchStar` to place
+  `ccIsComplete`; it never writes that flag itself. This closes the timing gap where an all-areas snapshot could have
+  been accepted before the native final-star sequence settled.
+- The prerequisite first Crafts Room note is now an explicit lifecycle candidate rather than an assumed manual step.
+  The save-bound candidate uses the live area-1 note/interaction endpoint, shared collision routing and the existing
+  `executor.interact`; the runtime follows the original `CommunityCenter.checkAction -> checkBundle ->
+  JunimoNoteMenu.setUpMenu` path and verifies the `seenJunimoNote` false-to-true transition plus the newly scheduled
+  `wizardJunimoNote` letter. It does not write mail, quests, bundle state or events directly. A remote candidate emits
+  one existing route connector and requires a fresh Community Center snapshot before the interaction is compiled.
+- Stage 1 donation receipts no longer accept only one bundle ingredient changing from false to true. The verifier binds
+  the exact compiled queue item and requires its qualified inventory delta plus every projected bundle, reward, room,
+  mail, all-area and new-note postcondition. Vault money payments retain their separate exact-money verifier. Any one
+  omitted side effect blocks the training row.
+- `build-community-center-lifecycle-receipt` admits five explicit fresh transitions against a verified sequential queue
+  receipt: initial door unlock (`611439`), first-note interaction, Junimo text unlock (`112`), room-mail day settlement
+  through the existing recovery/sleep chain, and final ceremony (`191393`). Final completion is admitted only when native room-mail
+  completion was already true and the ceremony changes both event-seen and location-accessible state. Cross-day mail
+  is therefore attributed to `recovery.stabilize_day`, while final accessibility is attributed to
+  `story.advance_event`; neither is incorrectly credited to the last donation.
+- Static focused tests lock the event identities and hashes, reject direct progress mutation, verify the last-star wait,
+  accept a complete donation projection, and reject receipts with a missing room-mail or Wizard-letter side effect.
+- The isolated runtime gate passed in
+  `artifacts/runtime-community-center-lifecycle/runtime-community-center-lifecycle-20260924-174253/summary.json`.
+  It copied but did not modify the source save, executed the native `611439` unlock, first Junimo note, `112` Wizard
+  event, final bundle donation, native sleep/day settlement and `191393` ceremony, and admitted all five lifecycle
+  transitions as fresh training labels. The final projection was `completion_admitted`.
+- Runtime evidence exposed and closed three cross-boundary gaps. Ordinary story-event requests now carry a bounded
+  `story_event_max_runtime_ticks=14400`, which covers the exact current `112` script rather than timing out during its
+  long native pauses. Sleep observes SMAPI's native `GameLoop.Saved` receipt and can finish at a new-day story-event
+  handoff without consuming that event's dialogue; the naturally triggered `558291` Grandpa evaluation was then
+  handled by the existing story executor as a non-lifecycle interstitial. Sequential receipt admission remains strict,
+  but now recognizes the exact three-step `executor.sleep -> sleep` macro instead of requiring every queue item to
+  contain exactly one compiled step.
+- The final ceremony is not modeled as one decision-free action. One automatic story action advances to the native
+  command-99 question boundary; a fresh `advance_story_event_choice` candidate binds a typed response and completes
+  the remaining event. Neither phase calls `skipEvent` or writes event/mail/completion flags. This closes the runtime
+  lifecycle gate; formal product training still waits for the later single strategic-policy facade and its remaining
+  admission gates.
+
 ### 2026-09-23: issue #129 StrategicPolicy convergence disposition
 
 - Verdict: accept the single strategic entry, shared artifacts, deterministic hard authority, learned soft-preference
@@ -1877,6 +2007,362 @@ Slice 7 remains assigned to the RTX 5070 node.
   regressions, and record candidate count, frontier count, model invocation, decision latency and fallback/blocker
   reason. Only after the independent 19/19 coverage gate and a separate runtime promotion gate may the learned branch
   authorize portfolio commit. Formal product training and runtime model authority remain false now.
+
+### 2026-09-25: single StrategicPolicy facade implemented
+
+- The first bounded product-shaped facade now exists as `StrategicPolicy.SelectMethod`. It consumes the existing
+  authoritative portfolio scoring set and returns one `strategic_decision.v1`; it does not own candidate generation,
+  route legality, admission, reservation, compilation or execution. The decision records the state and ledger
+  identity, denominator and frontier hashes/counts, selected method, authority, model identity, replan fingerprint,
+  latency, blockers/fallbacks and separate runtime/model/training authority flags.
+- The deterministic branch is resolved before any checkpoint access. A unique strict-Pareto member remains usable
+  when the optional checkpoint or corpus is absent/corrupt; `model_invoked=false`. Compatibility shadow auditing may
+  run only after that result and its failure is recorded as a non-authoritative fallback. An incomparable/equal
+  frontier requires a verified checkpoint and scores only admitted, non-dominated frontier members. Missing or
+  invalid model evidence fails closed, and the learned result remains read-only with portfolio commit, runtime model
+  authority and formal product training all false.
+- Event-driven replan metadata recognizes day start, goal/profile/preference changes, material/currency drift,
+  reservation-ledger drift, selected-method completion, execution failure and player interruption. Identical event
+  fingerprints deduplicate instead of creating another strategic decision. Fresh mechanical validation still does
+  not imply a strategic model call.
+- `score-live-acquisition-route-goal-method-shadow` is now a compatibility adapter over the facade instead of a
+  second branching implementation. The new `select-strategic-method` command exposes the unified decision directly.
+  Full Stage-1 self-test and a separate post-refactor incomparable-frontier adapter test pass. This closes the
+  interface-convergence slice only; runtime learned authority still waits for independent 19/19 coverage and the
+  separate promotion gate.
+
+### 2026-09-25: Community Center enters the independent coverage gate
+
+- The `complete_community_center` dependency graph is now `complete`. Its three former blockers were closed by the
+  save-bound standard/remixed denominator, the shared target-date acquisition chain through opportunity cost and
+  rollout receipts, and the isolated native unlock/note/reward/mail/final-ceremony lifecycle proof. The dependency
+  graph continues to reuse the existing event, donation and sleep options; no second executor was introduced.
+- Rebuilding the authoritative frontier yields 4/19 executable criteria and 15/19 dependency-pending criteria. The
+  existing three-partition corpus comparison-covers 2 and native-outcome-covers 4. The exact two Community Center
+  criteria now pass both channels in train, validation and test, so independent coverage advances from 0/19 to 2/19.
+- The coverage self-test locks both the aggregate count and the exact admitted criterion IDs. Forged formal-training
+  authorization and unknown source kinds remain rejected. The coverage report is still incomplete and retains
+  `formal_product_training_authorized=false`; neither learned runtime authority nor portfolio commit is promoted.
+- Coverage no longer treats `requirement_set_readiness` as an implicit source-adapter flag. Each verified adapter now
+  records its explicit `teacher_source_kinds` on the methods it can derive. The acquisition portfolio adapter still
+  derives ownership only from authoritative requirement sets, while executable non-collection methods such as Skull
+  Key and pet love remain blocked by `goal_method_teacher_source_adapter_missing` until their own typed evidence
+  adapters exist.
+- The next dependency work remains source expansion and independent split-complete Teacher/native evidence for the
+  other 17 criteria. A runtime promotion gate may consume only a future independently rebuilt 19/19 report, never the
+  current partial count or a caller-authored authorization flag.
+
+### 2026-09-25: typed pet-love Teacher source adapter
+
+- `pet_love_terminal_interaction_corpus.v1` is the first non-collection source adapter. The source request contains no
+  criterion IDs and cannot select a method. The adapter is hard-bound to `earn_pet_love` and re-verifies fresh
+  before/after snapshots plus one `training_execution_result.v1` from the existing pet executor.
+- Admission is intentionally narrow: the native pet must be ready and unpetted for that player/day, friendship must
+  move from 988-999 to exactly 1000, `timesPet`, `lastPetDay` and the per-player grant flag must settle exactly, and
+  `petLoveMessage` must appear only after the action. The Teacher comparison is execute-now versus same-state defer;
+  it proves immediate terminal progress without importing guide assumptions, water-bowl forecasts or future RNG.
+- Split identity is derived from save ID, player ID and total day. Duplicate save-days, caller partition labels,
+  modified corpus rows, mismatched state hashes, non-native pet types, stale projections and non-terminal interactions
+  fail closed. The CLI and direct builder produce byte-identical corpus artifacts.
+- A three-partition deterministic fixture proves the adapter and moves only its explicit fixture report from 2/19 to
+  3/19. It is not counted as production native evidence. The authoritative report remains 2/19 until three independent
+  isolated native save-day receipts are captured. Formal product training and runtime model authority remain false.
+
+### 2026-09-25: criterion, method and action-capability reconciliation
+
+- `build-goal-method-coverage-reconciliation` rebuilds both the authoritative frontier and the independent Teacher
+  coverage report, then joins them to the current option-governance matrix. It does not accept a generated frontier,
+  caller-authored criterion ownership or a claimed action count.
+- The three denominators are now explicit and non-interchangeable: 19 Grandpa score criteria, 11 strategic root
+  methods, and 36 distinct existing high-level options referenced by those methods. The current `2/19` value is only
+  the split-complete Teacher/native criterion coverage count. It is not an action-registry, compiler or executor count.
+- Current primary criterion dispositions are exact: 2 coverage-ready Community Center criteria, 15 criteria whose
+  root methods still have typed dependency-graph blockers, 1 pet-love criterion whose adapter exists but production
+  three-split native evidence is not connected, and 1 Skull Key criterion that still needs its typed Teacher source
+  adapter. This prevents dependency proof work from being misreported as missing mechanical actions.
+- Referenced-option status is an inventory-only diagnostic. Optional alternatives, compiler-owned deterministic
+  dependencies and the later Product Executor promotion gate do not become current method blockers merely because
+  every referenced option is not individually promoted. Current `open_work_kinds` and `next_actions` are derived only
+  from the rebuilt method frontier and verified Teacher/native coverage. This prevents option-matrix breadth from
+  manufacturing duplicate action work or moving the separate runtime-promotion gate ahead of 19/19 coverage.
+- The reconciliation artifact remains read-only and records `formal_product_training_authorized=false`. Coverage-ready
+  does not imply product integration, and product integration does not supply Teacher comparisons or native split
+  evidence.
+- The immediate follow-up is a single batched evidence slice for Full Shipment and Master Angler. Their existing
+  acquisition corpus already supplies native outcomes in train, validation and test, but its portfolio-composition
+  pairs do not vary either method. Adding routes to one `all_required` requirement is not a valid repair: same-
+  requirement dominated routes are removed before portfolio enumeration, while surviving equal or incomparable routes
+  cannot produce the unique strict-Pareto Teacher label. The verified adapter must instead rebuild the selected
+  portfolio's next-route denominator at every transition and admit an execute-now versus defer comparison only when one
+  route strictly dominates every other pending selected route and is exactly the route bound to the native receipt.
+  This is evidence wiring through the existing compiler/executor and rollout hash chain, not new shipping or fishing
+  action development; long-horizon terminal proofs remain a separate frontier requirement.
+
+### 2026-09-25: Full Shipment terminal settlement verifier
+
+- `build-full-shipment-terminal-settlement-receipt` now provides the missing fail-closed admission boundary for the
+  final native shipping day. It verifies the mutually hash-bound authoritative requirement inventory and acquisition
+  lowering, then hash-binds a single compiler-owned native sleep queue, its execution receipt and fresh before/after
+  snapshots. The selected candidate ID is supplied
+  independently by the caller and must match the runtime receipt; the receipt cannot authenticate its own identity.
+- The transition is admitted only when the exact 154-item denominator starts with one missing item and ends at
+  154/154, the terminal item's native `basicShipped` count moves from zero to exactly one, every shipping-bin view
+  settles from one pending unit to zero, `total_days` advances exactly once, and achievement 34 appears without any
+  existing shipment or achievement regression. Missing achievement, an uncleared bin, a same-day transition and a
+  drifted denominator are explicit regression failures.
+- `Invoke-RuntimeFullShipmentTerminalSmoke.ps1` now prepares only an isolated save copy at exact 153/154 state by
+  replaying the same native eligibility predicate and requiring the locked denominator to remain 154. The fixture
+  clears achievement 34 and the shared shipping inventory, installs one `(O)24` copy, and positions the actor at an
+  existing shipping endpoint. It is a debug-only state fixture and never substitutes for a Product action or label.
+- Hidden, silent runtime `runtime-full-shipment-terminal-20260925-171152` selected the exact generated
+  `ship:Farm:71,14:9:24:deposit` candidate, compiled and executed the existing `economy.ship_items` path, then used a
+  fixture-only relocation to the native home sleep path and compiled the existing `recovery.stabilize_day` path. The
+  admitted receipt proves 153/154 -> 154/154, terminal `basicShipped` 0 -> 1, shared bin 1 -> 0, total day 223 -> 224,
+  and achievement 34 false -> true with no blocking reason. The source save remained unchanged.
+- This closes the isolated native terminal transition, not the Full Shipment method. The dependency graph remains
+  `in_progress`: the admitted achievement-34 terminal receipt must be bound to the complete 154-requirement
+  acquisition/reservation recurrence, and that recurrence still needs a fresh-save Year 3 deadline proof.
+  Coverage-ready therefore remains 2/19 and formal Product training remains unauthorized.
+- `build-full-shipment-settlement-receipt` now closes the missing ordinary native-day boundary used by recurrence
+  iterations 1 through 153. Its shared verifier requires exactly one authoritative missing item to become shipped,
+  native `basicShipped` 0 -> 1, the shared bin view 1 -> 0, one day advance, no regression in any other item or
+  achievement, and achievement 34 to remain absent. A complete transition is rejected here and must use the dedicated
+  terminal receipt instead. Focused ordinary/two-item/premature-achievement regressions and all terminal regressions
+  pass; no game was started for this verifier slice.
+- `build-full-shipment-recurrence-proof-receipt` now implements that ordered proof boundary. It requires exactly one
+  unique iteration for every authoritative Full Shipment requirement, rebuilds each stored acquisition rollout and
+  Stage-1 shipping Teacher receipt, rebuilds ordinary settlements for rows 1 through 153, and reserves the dedicated
+  achievement-34 terminal receipt for row 154. Snapshot identity and exact prior-settlement roots prevent cross-save
+  splicing; acquisition-to-deposit and deposit-to-sleep phase boundaries must preserve the exact `state_hash`, so no
+  unreceipted movement or fixture mutation can hide between queues. Shipped counts must advance contiguously,
+  settlement days may never move backward, and the terminal sleep must end no later than the exclusive total-day-224
+  boundary.
+- This is a verifier contract, not the missing runtime evidence. No complete 154-iteration fresh-save manifest has
+  been generated or admitted yet, so `complete_full_shipment` remains `in_progress`, coverage-ready remains 2/19,
+  and formal Product training remains unauthorized. The next bounded slice is to drive the existing runtime compiler
+  and executor from a fresh save, persist all 154 acquisition/deposit/settlement artifacts into this manifest, and
+  admit the resulting receipt without fixture mutation. Calendar, resource, route-time, probability, retry and
+  reservation gates remain mandatory upstream inputs.
+
+### 2026-09-25: selected acquisition route to Product queue bridge
+
+- `compile-acquisition-route-dispatch` now consumes the independently selected portfolio route, its atomic reservation
+  receipt, the same-state transparent snapshot and the live availability ranking. It does not accept a caller-authored
+  candidate alias: target item, endpoint option and authoritative source must all match current candidate evidence.
+- The selected physical candidate is ordered only by current readiness, deterministic wait/time/energy and stable
+  location identity. Learner rank, score, model score and expected reward are erased before the existing
+  `DailyPlanCompiler` and `ActionQueueCompiler` run. No second action compiler or executor was added.
+- The existing execution-binding verifier now distinguishes its legacy single-step high-level `option_request` from
+  Product-expanded `compiled_action_steps`. Every expanded native primitive must preserve the endpoint option, route
+  occurrence, requirement, reservation portfolio/revision, source candidate, ranking hash and source-binding evidence.
+  A malformed endpoint lineage cannot fall back to the primitive option ID.
+- The supplied ranking is no longer trusted from `state_hash` alone. The dispatcher recomputes the snapshot hash, then
+  independently rebuilds endpoint candidates from the same transparent snapshot and committed ledger. Membership and
+  every non-learning candidate field must match; only learner rank/score/reward/model metadata may differ. Compilation
+  uses the rebuilt object, so a ranking cannot inject a source, item, coordinate, timeline gate or compiler parameter.
+- Exact live source proof currently covers 31 of the 33 authoritative lowering route kinds: shops, crops, location and
+  mine fishing, crab pots, regular and deluxe animal products, fish ponds, fruit trees, location forage, solar panels,
+  ordinary machine rules and their legacy flavored or literal item-query output rows, selected-monster
+  `Data/Monsters` reroll rows, exact radioactive ore nodes and exact mine buried-item dig opportunities,
+  base wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, bush and tea harvest,
+  spring onions, ginger, tree moss, location and object-data artifact spots, explicit and bounded-default geode drops,
+  and learned cooking recipes. Animal,
+  fish-pond, fruit-tree, forage, solar-panel, artifact-spot and wild-tree candidates
+  derive typed source rows from live entity state plus the same native `Data/FarmAnimals`, `Data/FishPondData`, `Data/FruitTrees`,
+  `Data/Locations`, `Data/Objects`, `Data/Machines` or `Data/WildTrees` identity used by the authoritative inventory.
+  Dispatch requires exactly one distinct source identity for the selected item. A native wild-tree chop can execute
+  several `ChopItems` rows for one item, so the transparent output domain remains complete while the dispatch surface
+  selects the lowest currently applicable native row as that item's stable source label. Other duplicate matching rows
+  or route kinds remain visible in the transparent snapshot but fail closed instead of becoming a teacher label.
+  Artifact-spot source labels are recorded during the existing day/save-seeded native output replay: exact location rows
+  retain their `Default` or effective location-data index, while `RANDOM_ARTIFACT_FOR_DIG_SPOT` results are rebound to
+  the matching live `Data/Objects.ArtifactSpotChances` entry without an additional RNG call.
+  Geode candidates retain the input geode in `qualified_item_id`; acquisition matching instead requires the exact
+  replayed `geode_expected_output_qid` plus a matching `Data/Objects.GeodeDrops` row. The native default branch is
+  admitted only for the dictionary's explicit `(O)82` route, not generalized to unrelated default ore outcomes.
+  Ready ordinary machines use the native persisted `lastOutputRuleId` written by `Object.OutputMachine`, so current
+  outputs bind directly to `machine:<qualified machine id>:rule:<rule id>` without replaying RNG or guessing from the
+  product. Old saves with no persisted rule ID may expose a structured flavored or literal item-query row only when
+  the current machine data leaves that output row identity unambiguous; multiple matching rows remain fail-closed.
+  Monster candidates bind only the one runtime identity selected by the current rolling floor step. Because
+  `objectsToDrop` loses provenance after subclass, floor-initialization, ring and trinket mutations, base-list entries
+  are not relabeled as `Data/Monsters`; only the native burglar-ring probability rows explicitly projected from
+  `GameLocation.monsterDrop/Data/Monsters` are admitted, without consuming RNG.
+  Radioactive ore binds only when the selected mine-stone floor step targets the exact live stone-95 tile whose direct
+  node projection guarantees `(O)909`; source identity remains `GameLocation.breakStone`. Mine buried items use a
+  separate `mining_buried_item_plan_envelope`, never relabel an ordinary reach-depth step, and bind only the selected
+  non-quarry `Diggable` tile plus live Hoe to `MineShaft.checkForBuriedItem` for `(O)585`. The transparent bridge
+  publishes the exact native branch probability `0.001575` but does not read, advance or replay `Game1.random`; the
+  fresh receipt determines success versus retry. Broad action-kind aliases for geode or buried-item outcomes remain
+  rejected because they do not prove that this candidate executes the selected source. `creates_reward_item` now binds
+  every current pending vanilla Community Center bundle reward to its exact `Data/Bundles` reward row and compiles one
+  fresh-snapshot native claim. An incomplete area uses `CommunityCenter.checkBundle -> JunimoNoteMenu.presentButton ->
+  ItemGrabMenu`; a completed area uses the native `MissedRewards` chest action. Both paths require the exact bundle ID,
+  reward item unit state, endpoint, inventory capacity and pending reward flag, and complete only after the flag clears
+  and the exact inventory delta appears. Remote state emits only a connector and replans. `native_money_payment` now
+  binds each vanilla Vault bundle to its exact `Data/Bundles` money ingredient, current balance, bundle progress and
+  native `JunimoNoteMenu.purchaseButton` path. It is a separate terminal from reward collection: a verified payment
+  makes the reward pending, then a fresh snapshot may admit the existing reward-claim terminal. The runtime drives only
+  native menu input and never writes money, bundle bits, reward flags or area-completion state directly.
+- Crop candidates now carry the transparent bridge's native `harvest_source_seed_id`, allowing a harvested product to
+  bind back to its authoritative `crop:<seed id>` route rather than relying on output item identity alone.
+- This bridge dispatches only an endpoint that is current now. It does not yet schedule supporting construction,
+  planting, loading, travel/unlock or retry steps needed to make a future endpoint current, and it has not generated
+  the 154-row fresh-save Full Shipment chain. Coverage remains 2/19 and `formal_training_authorized=false`.
+- Exact executable source coverage is now 33/33. The next bounded slice is the compiler-owned supporting-step queue
+  that replans from a fresh snapshot after each verified transition. Only then can the existing recurrence driver
+  produce and admit the complete Full Shipment runtime manifest. Community Center reward claims and Vault payments
+  remain runtime-calibration pending until isolated native game runs produce their before/after artifacts.
+
+### 2026-09-26: nonterminal supporting-transition compiler boundary
+
+- Acquisition dispatch now carries an explicit `terminal_transition` or `supporting_transition` role through every
+  compiled primitive. Terminal transitions remain eligible for the existing fresh terminal receipt. Supporting
+  transitions are restricted to one queue item, are never terminal-receipt eligible, and require a new transparent
+  snapshot plus complete upstream replan after success. The terminal execution-binding verifier defaults to
+  `terminal_transition`, so a supporting queue cannot be relabeled as a completed acquisition.
+- The first exact supporting family is crop planting. A live `plant_seed_tile` candidate is admitted only when its
+  structured seed ID, authoritative `crop:<seed id>` source, projected harvest qualified item, inventory seed identity
+  and selected route all agree. The candidate is rebuilt independently from the same snapshot and commitment ledger,
+  then passes through the existing `DailyPlanCompiler` and `ActionQueueCompiler`; no second compiler or direct state
+  mutation was introduced. Output text is not parsed as authority.
+- This closes the compiler and queue-role boundary, not upstream support selection. The current target-date axis still
+  proves what can finish on the current snapshot day, and a newly planted crop correctly remains a processing miss.
+  Before live recurrence may use this support queue, a separate deterministic support-request artifact must select an
+  unresolved authoritative route against an explicit future deadline, prove that planting now can mature within that
+  horizon, and bind the resulting one-step queue to a fresh-snapshot receipt. Formal training remains unauthorized.
+- `build-acquisition-route-supporting-transition-receipt` now verifies the crop-planting after-state independently of
+  the executor's success flag. The before/after snapshots must remain on the same save, player and total day, both
+  state hashes are recomputed, the queue receipt must close exactly one native `plant_seed` item, the exact seed total
+  must decrease by one, and the target tile must gain one live non-harvest-ready crop with the route's source seed and
+  projected harvest item. A verified receipt remains nonterminal and sets `fresh_replan_required=true`; it cannot
+  authorize training or settlement.
+- The next bounded slice is the deadline-aware support request plus atomic reservation commit for crop planting.
+  Later support families (seed purchase, machine load/capacity, animal/building capacity, pond/crab-pot preparation,
+  unlock/travel and stochastic retry) must reuse the same role boundary and one-transition replan rule.
+
+### 2026-09-26: deadline-aware crop support request and atomic ownership
+
+- `build-acquisition-route-supporting-transition-request` now consumes the deterministically rebuilt current-day
+  processing chain instead of injecting a crop route into the completed opportunity-cost frontier. It admits only an
+  authoritative `harvests_as` route whose calendar, unlock, location, prepared-soil capacity, seed resource and
+  inventory-reservation axes already match, while its processing result is the exact
+  `resolved_new_crop_requires_future_daily_growth` miss. The live ranking is independently rebuilt from the same
+  transparent snapshot and ledger before the existing source-bound planting matcher runs.
+- The selected planting candidate must expose one exact seed slot, adjusted native growth duration and remaining
+  season days. Its expected ready day must fit both an explicit inclusive support deadline and the authoritative crop
+  calendar window. The same seed slot and qualified ID must be covered by the route's proposed or already committed
+  material claim. Multiple planting candidates are ordered by the existing deterministic selector, then restricted to
+  candidates covered by that claim; learner rank, score and reward never choose the transition.
+- A ready request emits one `ReservationPortfolioCommitRequest` and preflights it through the existing
+  `ReservationPortfolioLedgerService`. Proposed/replacement claims use their exact target-date route IDs; already
+  committed claims still receive a unique marker-only support ownership commit. The request builder never mutates the
+  real ledger and remains ineligible for execution and training until the real commit is independently verified.
+- `build-acquisition-route-supporting-transition-commit-receipt` deterministically rebuilds the request, verifies the
+  accepted commit result and exact post-commit ledger, requires one revision advance, replays the transaction from the
+  base ledger using its recorded timestamp, and checks every expected seed claim as an exact active row. The replay,
+  component-history and exact-claim routines are shared with normal acquisition portfolio commits; this is not a
+  second reservation implementation.
+- The next bounded slice is commit-gated support compilation: only this verified support commit may supply the
+  portfolio ID and committed ledger revision to the existing one-item `supporting_transition` compiler. After native
+  execution, the already implemented planting after-state receipt must drive consumed-seed claim settlement and a
+  mandatory fresh-snapshot replan. Until those two gates land, live recurrence and formal training remain blocked.
+- `compile-acquisition-route-supporting-transition` now closes the first of those gates. It deterministically rebuilds
+  the request and commit receipt, reloads the exact committed ledger, independently rebuilds the selected live planting
+  candidate, and calls the existing `AcquisitionRouteDispatchCompilationBuilder.Compile`; it does not own a second
+  planner or action compiler. The committed support request ID and ledger revision become the normal acquisition route
+  lineage. Every queue command additionally repeats the support-request SHA-256, support-commit-receipt SHA-256,
+  inclusive deadline and expected ready day.
+- The planting after-state receipt now requires that commit lineage in both the compilation envelope and its single
+  queue item. A direct call to the lower-level compiler without a verified support reservation commit therefore cannot
+  produce an acceptable support receipt.
+- The shared reservation ledger now exposes a distinct nonterminal supporting-transition settlement. It accepts only
+  one active material claim whose reservation ID, route decision, node, slot, qualified item and full quantity match the
+  observed consumption. The mutation completes that claim at one ledger revision and writes
+  `reservation_portfolio_supporting_transition_complete`; it never writes `reservation_portfolio_route_complete` and
+  never changes unrelated material or currency claims. Partial claim consumption, missing support ownership and replay
+  of an already settled support portfolio fail closed.
+- `build-acquisition-route-supporting-transition-settlement-request` rebuilds the request, commit receipt,
+  commit-gated compilation and fresh planting receipt before identifying the exact one-seed claim.
+  `build-acquisition-route-supporting-transition-settlement-receipt` then verifies the backend result, exact post-state
+  ledger, two-entry mutation history and deterministic replay. The receipt remains nonterminal, requires a fresh
+  replan and cannot authorize formal training. A negative self-test proves that adding a terminal route-completion
+  marker invalidates the settlement.
+- `build-acquisition-route-supporting-transition-replan` closes the mandatory recurrence gate. It first rebuilds the
+  complete support settlement proof, then invokes the existing portfolio preparation path against `next-*` inputs.
+  That preparation deterministically recomputes the full target-date opportunity chain from calendar through daily
+  time/energy and opportunity cost; unresolved live facts remain typed blockers rather than being skipped.
+- The gate proves that the old queue is bound to both the pre-planting state hash and the pre-settlement ledger
+  revision, while the new denominator is bound to the post-planting state and settled revision. Therefore no old queue
+  item can survive. A successful gate emits a normal `AcquisitionRoutePortfolioTeacherPreferenceRequest`, scoped to
+  the affected authoritative requirement, for the existing complete-denominator Teacher selector. A stale-state
+  negative self-test proves that reusing the old queue emits no request.
+- Downstream recurrence admission now consumes that emitted request through the existing complete-denominator
+  portfolio Teacher selector and atomic reservation commit path. The SHA-256 of the verified replan admission is
+  copied into the Teacher preference, every generated proposal, the selected admission and the commit receipt.
+  `build-acquisition-route-supporting-transition-portfolio-teacher-preference` independently rebuilds the settlement
+  and replan before selection; `build-acquisition-route-supporting-transition-portfolio-commit-receipt` additionally
+  rebuilds the stored preference and rejects proposal or admission drift. Ordinary initial and continuation portfolios
+  require an empty supporting-transition lineage, so this evidence cannot be injected into an unrelated selection.
+- The next bounded slice rejoins the commit-verified support recurrence with the ordinary dispatch, terminal receipt,
+  settlement and rollout proof chain. Formal training remains blocked until that fresh terminal transition has been
+  independently verified and included in the finite portfolio rollout proof.
+- The first three rejoin boundaries are now implemented without a second compiler or executor. The verified
+  support-replan preference and commit receipt enter the existing terminal dispatch compiler, existing execution
+  binding verifier and existing fresh terminal receipt verifier. The replan admission SHA-256 must agree across the
+  Teacher preference, selected proposal, selected admission and commit receipt; mixed, missing or malformed lineage
+  fails closed before execution binding. The dispatch compilation, execution binding and fresh terminal receipt carry
+  that same lineage explicitly while continuing to bind the ordinary queue, native execution receipt and after-state.
+- The verified lineage now continues through the ordinary reservation settlement implementation. Support-aware
+  request and receipt entry points rebuild the same execution binding and fresh terminal receipt, then reuse the
+  canonical active-claim derivation and exact ledger replay. The settlement receipt repeats the replan SHA-256 but
+  still records only the later terminal acquisition route; planting remains a distinct nonterminal transition.
+- Initial rollout checkpoint construction now has one shared progress core. The ordinary entry supplies ordinary
+  settlement/preference reconstructions, while the support-aware entry supplies reconstructions rooted in the exact
+  planting settlement and replan admission. A proof manifest declares that distinction through an explicit optional
+  `supporting_transition` proof block containing the prior request inputs, nonterminal settlement proof and replan
+  admission path. Verification rebuilds the entire declared branch and rejects a hidden support lineage on the
+  ordinary branch. The support-aware checkpoint command can emit this initial-proof block alongside the checkpoint.
+- This closes the first crop-support recurrence through a finite portfolio rollout proof without a second planner,
+  compiler, executor or ledger. It does not authorize learned runtime control or formal product training; broader
+  support families and the separate promotion gates remain outstanding.
+
+### 2026-09-26: StrategicPolicy identity and hermetic rollout gates
+
+- Portfolio Teacher output now carries a typed `selection_disposition`: invalid denominator, no admitted candidate,
+  empty frontier, incomparable frontier or unique strict Pareto. `StrategicPolicy` uses only this field for control
+  flow; diagnostic strings remain explanatory evidence and can no longer silently change model invocation.
+- Every strategic replan now binds a canonical `strategic_input_sha256`. The digest covers the rebuilt Teacher
+  preference, preference request, requirement/opportunity/snapshot/ledger hashes, the complete proposal/admission
+  denominator and prior rollout proof. Model checkpoint and corpus identities participate only for an incomparable
+  frontier, where learned preference is relevant; deterministic unique-Pareto selection remains model-independent.
+- `self-test-bootstrap-hermetic` exercises the real typed portfolio selector and `StrategicPolicy` core, including
+  same-state/same-ledger input drift and extra diagnostic text, then runs acquisition support-transition recurrence,
+  Community Center lifecycle and Full Shipment settlement fixtures. It needs no game installation, local evidence
+  drive or server state. GitHub `quality` now builds the bootstrap project and runs this gate on every push and pull
+  request.
+- Current-save Community Center authority now resolves the route kinds referenced by its active denominator before
+  validating lowering descriptors. A blocked future or unrelated catalog route can no longer invalidate the current
+  bundle authority; every route kind actually referenced by an active ingredient must still have one complete,
+  runtime- and Teacher-admitted lowering. The hermetic gate includes this negative isolation case.
+- The bootstrap CLI now has one ordered `CommandDefinition` registry for all commands. Dispatch, duplicate-name
+  rejection and the unknown-command help list derive from that registry, eliminating the former switch/help identity
+  split.
+- Exact JSON artifact equality, lower-case SHA-256 validation and fail-closed `InvalidDataException` assertions now
+  live in `BootstrapArtifactGuard`. Forty-six builders retain their independent boundary checks while sharing the
+  canonical primitive implementation; guards with intentionally different serialization, exception or uppercase-hash
+  semantics remain local.
+- Live-training runtime structure is split without changing behavior: request construction is isolated from runtime
+  execution, and queue replan handling is divided into base identity, continuation, filtering and post-execution
+  decision partials. The former 2.2k-line files are now bounded below 1.5k and 750 lines respectively; the dedicated
+  queue-replan test suite remains the behavioral gate.
+- Community Center donation command identity now uses one typed parameter protocol for bundle key, bundle ID, area ID,
+  ingredient index, qualified item and required stack. Candidate admission, action compilation, live runtime request
+  construction and terminal receipt verification each parse their own artifact independently. Missing, malformed or
+  duplicated identity fields fail closed; sharing the parser does not let an upstream trust decision bypass a later
+  verification boundary.
+- These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
+  Those promotion gates remain separate and fail closed.
 
 ## Review questions
 

@@ -694,6 +694,13 @@ before emitting one hash-linked row per transition. Each row keeps `teacher_pref
 `native_outcome`, and `student_observation` in separate typed channels; Teacher-driven rollouts mark
 the Student channel explicitly unobserved and unavailable portfolios receive no negative label. The
 adapter remains scoped Teacher evidence, not a formal dataset/trainer authorization.
+The entire portfolio evidence chain also carries one typed `community_center_provenance` value. It is
+derived from the deterministically rebuilt target-date calendar and exact decision snapshot, then
+cross-checked across Teacher preference, admission, commit, execution, fresh receipt, settlement,
+checkpoint, continuation, proof, rollout admission and supervision export. A current standard/remixed
+rollout may update only its decision source-state and snapshot hashes at a continuation; changing the
+static/current mode, bundle mode or active denominator hash fails closed. Static evidence is required
+to keep every current-save provenance field empty.
 The companion `acquisition_route_portfolio_supervision_corpus_manifest.v1` rebuilds every listed
 source, deduplicates only byte-equivalent typed rows, rejects conflicting row identities, and derives
 train/validation/test partitions from the verified snapshot save-day key. It records comparison-pair
@@ -720,10 +727,27 @@ product training. Fresh-state denominator reconstruction, gated incomparable-fro
 The independent `goal_method_teacher_coverage_gate.v1` now makes that last statement
 machine-checkable. It rebuilds the 19-criterion goal-method frontier from its authoritative
 inputs, re-verifies each typed supervision corpus and proof chain, and derives coverage from
-requirement-set-to-method bindings. Source manifests cannot declare criterion IDs. A criterion
+verified source-adapter-to-method bindings. The acquisition portfolio adapter derives its methods
+through authoritative requirement-set ownership, while non-collection methods require their own
+future typed adapters; no method receives an adapter merely because it is executable. Source
+manifests cannot declare criterion IDs. A criterion
 is ready only when its method is executable and both an explicit Teacher comparison and a
 verified native outcome exist in train, validation, and test. The current bounded corpus has
 19 catalog-mapped criteria, 2 comparison-covered criteria, 4 outcome-covered criteria, 2 with
-both channels split-complete, and 0 gate-ready criteria because those collection methods are
-still `pending_dependency_expansion`. This report is a readiness audit only and always retains
-`formal_product_training_authorized=false`.
+both channels split-complete, and 2 gate-ready criteria. The admitted pair is exactly
+`community_center_access_or_completion` plus `community_center_accessible_bonus`: their shared
+Community Center method became executable only after the save-bound standard/remixed denominator,
+all target-date acquisition axes, and the native unlock/note/reward/mail/final-ceremony lifecycle
+were independently closed. The other 17 criteria remain blocked. This report is a readiness audit
+only and always retains `formal_product_training_authorized=false`.
+
+The first non-collection adapter is now typed as
+`pet_love_terminal_interaction_corpus`. It does not trust a declared method or criterion. The
+adapter itself maps only to `earn_pet_love`, reopens every source file, recomputes both snapshot
+state hashes, derives the split from save/player/total-day identity, and admits only a native
+`executor.pet_interact` transition from friendship 988-999 to exactly 1000 with a fresh
+`petLoveMessage` receipt. A same-state defer alternative is therefore non-terminal without
+requiring a guide-derived long-horizon estimate. A deterministic three-partition fixture proves
+the adapter and tamper rejection and would raise the test report to 3/19. It is not production
+evidence: the current authoritative report remains 2/19 until three independent native save-day
+receipts are collected through this contract.

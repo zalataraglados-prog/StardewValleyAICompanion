@@ -297,31 +297,6 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         ValidateAlternativeParity(inventory, lowering);
     }
 
-    private static void ValidateCommunityCenterDenominatorIdentity(
-        CurrentCommunityCenterDenominatorReport denominator,
-        AuthoritativeRequirementInventoryReport inventory,
-        string inventoryPath,
-        string snapshotPath)
-    {
-        if (!string.Equals(denominator.GoalId, inventory.GoalId,
-                StringComparison.Ordinal) ||
-            !string.Equals(
-                denominator.RequirementInventorySha256,
-                CurrentTeacherFrontierSupport.HashFile(inventoryPath),
-                StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(
-                denominator.SnapshotSha256,
-                CurrentTeacherFrontierSupport.HashFile(snapshotPath),
-                StringComparison.OrdinalIgnoreCase) ||
-            (!string.IsNullOrWhiteSpace(inventory.GameVersion) &&
-                !string.Equals(denominator.GameVersion, inventory.GameVersion,
-                    StringComparison.Ordinal)))
-        {
-            throw new InvalidDataException(
-                "The current Community Center denominator does not bind the active inventory and snapshot.");
-        }
-    }
-
     private static void ValidateSetShape(
         GoalRequirementSet inventory,
         AcquisitionRequirementSetLowering lowering)

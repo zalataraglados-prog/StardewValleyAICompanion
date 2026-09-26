@@ -193,11 +193,6 @@ public static class RecordingSemanticizer
     private static string HashFile(string path) =>
         Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record SnapshotDescriptor(string Path, string Sha256);
 

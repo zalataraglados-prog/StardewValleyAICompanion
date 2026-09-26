@@ -49,6 +49,7 @@ public sealed class LiveTrainingOptions
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
     public bool UseParameterizedAction { get; set; }
+    public bool EmitQueueExecutionReceipt { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
     public bool UseTeacherPreferenceQueue =>
         !string.IsNullOrWhiteSpace(TeacherPreferencePath);
@@ -483,6 +484,10 @@ public sealed class LiveTrainingOptions
             {
                 options.DailyPlanCandidateId = args[++i].Trim();
             }
+            else if (current == "--emit-queue-execution-receipt")
+            {
+                options.EmitQueueExecutionReceipt = true;
+            }
             else if (current == "--stop-after-social-objective-complete")
             {
                 options.StopAfterSocialObjectiveComplete = true;
@@ -525,6 +530,7 @@ public sealed class LiveTrainingOptions
         }
 
         options.ValidateTeacherPreferenceMode();
+        options.ValidateQueueExecutionReceiptMode();
 
         return options;
     }
@@ -576,6 +582,41 @@ public sealed class LiveTrainingOptions
             throw new ArgumentException(
                 "--teacher-preference only supports one isolated " +
                 "training_singleplayer evidence action without a save boundary.");
+        }
+    }
+
+    public void ValidateQueueExecutionReceiptMode()
+    {
+        if (!EmitQueueExecutionReceipt || UseTeacherPreferenceQueue)
+            return;
+
+        if (!UseDailyPlan || !SkipTraining || !RequireExecutorFeedback)
+        {
+            throw new ArgumentException(
+                "--emit-queue-execution-receipt requires --use-daily-plan, " +
+                "--skip-training, and executor feedback.");
+        }
+        if (MaxAttempts != 1 || RequiredVerifiedActions != 1)
+        {
+            throw new ArgumentException(
+                "--emit-queue-execution-receipt requires one attempt and " +
+                "one required verified action.");
+        }
+        if (MaxQueueItemAttempts is < 1 or >
+            TeacherEvidenceRolloutLimits.MaxQueueItems)
+        {
+            throw new ArgumentException(
+                "--emit-queue-execution-receipt requires " +
+                "--max-queue-item-attempts between 1 and " +
+                TeacherEvidenceRolloutLimits.MaxQueueItems + ".");
+        }
+        if (DailyPlanMaxCandidates != 1 ||
+            string.IsNullOrWhiteSpace(DailyPlanCandidateKind) ||
+            string.IsNullOrWhiteSpace(DailyPlanCandidateId))
+        {
+            throw new ArgumentException(
+                "--emit-queue-execution-receipt requires one exact daily-plan " +
+                "candidate kind and ID.");
         }
     }
 

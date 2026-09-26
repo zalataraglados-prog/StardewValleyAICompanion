@@ -173,11 +173,6 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_kind_required" };
             }
 
-            if (!InteractTargetWithinOneTile(snapshot, targetX.Value, targetY.Value))
-            {
-                return new[] { "interact_target_not_adjacent" };
-            }
-
             if (ActionSeesActiveMenuOpen(action, snapshot))
             {
                 return new[] { "interact_menu_must_be_clear" };
@@ -187,6 +182,21 @@ namespace StardewAI.Core.Execution
             if (string.IsNullOrWhiteSpace(expectedActionType))
             {
                 return new[] { "interact_expected_action_type_required" };
+            }
+
+            if (string.Equals(interactionKind, "community_center_note", StringComparison.Ordinal))
+            {
+                return ValidateCommunityCenterFirstNoteInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
+            }
+
+            if (!InteractTargetWithinOneTile(snapshot, targetX.Value, targetY.Value))
+            {
+                return new[] { "interact_target_not_adjacent" };
             }
 
             if (string.Equals(interactionKind, "overlay_object", StringComparison.Ordinal))

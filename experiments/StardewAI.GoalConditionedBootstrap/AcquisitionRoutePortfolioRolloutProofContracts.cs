@@ -82,6 +82,10 @@ public sealed class AcquisitionRoutePortfolioRolloutProofReceipt
     [JsonPropertyName("goal_id")]
     public string GoalId { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("manifest_sha256")]
     public string ManifestSha256 { get; set; } = string.Empty;
 
@@ -114,7 +118,7 @@ public sealed class AcquisitionRoutePortfolioRolloutProofReceipt
 
     [JsonPropertyName("proof_policy")]
     public string ProofPolicy { get; set; } =
-        "The manifest is an ordered proof chain, not a trusted summary. Verification exactly rebuilds the initial checkpoint and every continuation transition from its authoritative planning, execution, fresh-terminal and settlement artifacts. Each stored checkpoint must equal the rebuilt value, bind the immediately prior checkpoint hash and advance transition_count exactly once. The receipt exposes the latest verified checkpoint but never authorizes formal training.";
+        "The manifest is an ordered proof chain, not a trusted summary. Verification exactly rebuilds the initial checkpoint and every continuation transition from its authoritative planning, execution, fresh-terminal and settlement artifacts. An initial proof that declares a preceding supporting transition must additionally rebuild that request, nonterminal settlement and replan admission before its terminal route is accepted. Each stored checkpoint must equal the rebuilt value, bind the immediately prior checkpoint hash and advance transition_count exactly once. The receipt exposes the latest verified checkpoint but never authorizes formal training.";
 }
 
 internal sealed record AcquisitionRoutePortfolioVerifiedCheckpoint(

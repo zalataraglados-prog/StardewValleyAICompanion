@@ -81,6 +81,10 @@ public sealed class AcquisitionRoutePortfolioProposal
     [JsonPropertyName("prior_rollout_checkpoint_sha256")]
     public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("completed_alternatives")]
     public AcquisitionRoutePortfolioCompletedAlternatives[]
         CompletedAlternatives
@@ -127,11 +131,19 @@ public sealed class AcquisitionRoutePortfolioAdmission
     [JsonPropertyName("snapshot_state_hash")]
     public string SnapshotStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("strategy_ledger_revision")]
     public int StrategyLedgerRevision { get; set; }
 
     [JsonPropertyName("prior_rollout_checkpoint_sha256")]
     public string PriorRolloutCheckpointSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
 
     [JsonPropertyName("completed_alternatives")]
     public AcquisitionRoutePortfolioCompletedAlternatives[]

@@ -203,6 +203,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             {
                 Parameter("safe_slot_index", ReadInt(pond, "output_safe_slot_index").ToString()),
                 Parameter("qualified_item_id", ReadString(pond, "output_qualified_item_id")),
+                Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+                    ReadArray(pond, "output_authoritative_route_sources"))),
                 Parameter("quantity", ReadInt(pond, "output_stack").ToString()),
                 Parameter("expected_output_items_json", ReadString(pond, "output_items_json")),
                 Parameter("expected_output_state_context", ReadString(pond, "output_state_context")),
@@ -273,6 +275,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         return FishPondEffectPrefix(building, standX, standY) +
             ";fish_pond_output=null" +
             ";qualified_item_id=" + ReadString(pond, "output_qualified_item_id") +
+            ";authoritative_route_sources_json=" + JsonSerializer.Serialize(
+                ReadArray(pond, "output_authoritative_route_sources")) +
             ";quantity=" + ReadInt(pond, "output_stack") +
             ";expected_skill_id=fishing" +
             ";expected_skill_experience_delta=" + ReadInt(pond, "output_fishing_experience_delta");

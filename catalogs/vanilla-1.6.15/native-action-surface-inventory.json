@@ -2098,7 +2098,9 @@
       "endLine": 974,
       "bodySha256": "fcd354b5167ff5f0394f617672634b2db5d08f149f568bd263ead67bc49b4e6b",
       "mappedOptionIds": [
-        "executor.donate_community_center_item"
+        "executor.claim_community_center_bundle_reward",
+        "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle"
       ],
       "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
@@ -2115,7 +2117,9 @@
       "endLine": 636,
       "bodySha256": "47c4ee83ef270568216cbcf1e1b9db6d1ebad0bf24a701dce527647866b2d9c0",
       "mappedOptionIds": [
-        "executor.donate_community_center_item"
+        "executor.claim_community_center_bundle_reward",
+        "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle"
       ],
       "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
@@ -2132,7 +2136,9 @@
       "endLine": 1278,
       "bodySha256": "8c33a9c010e41376175eba410fa5f7f5a0ee60a2567c6def34d46ffc1c595acc",
       "mappedOptionIds": [
-        "executor.donate_community_center_item"
+        "executor.claim_community_center_bundle_reward",
+        "executor.donate_community_center_item",
+        "executor.pay_community_center_vault_bundle"
       ],
       "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",

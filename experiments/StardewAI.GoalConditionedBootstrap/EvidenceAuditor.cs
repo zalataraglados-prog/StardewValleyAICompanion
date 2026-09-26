@@ -219,11 +219,6 @@ public static class EvidenceAuditor
             : result;
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }
 
 public sealed class EvidenceAuditReport

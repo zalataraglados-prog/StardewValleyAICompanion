@@ -127,6 +127,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("geode_expected_output_stack", primary.ValueKind == JsonValueKind.Object ? ReadInt(primary, "stack").ToString(CultureInfo.InvariantCulture) : "0"),
             Parameter("geode_expected_output_quality", primary.ValueKind == JsonValueKind.Object ? ReadInt(primary, "quality").ToString(CultureInfo.InvariantCulture) : "0"),
             Parameter("geode_accepted_outputs_json", row.TryGetProperty("accepted_outputs", out var accepted) ? accepted.GetRawText() : "[]"),
+            Parameter("authoritative_route_sources_json", row.TryGetProperty("authoritative_route_sources", out var routeSources) ? routeSources.GetRawText() : "[]"),
             Parameter("geode_expected_mail_additions_json", row.TryGetProperty("expected_mail_additions", out var mail) ? mail.GetRawText() : "[]"),
             Parameter("geode_projection_fingerprint", ReadString(projection, "projection_fingerprint")),
             Parameter("target_location", ReadString(projection, "location_id")),

@@ -177,6 +177,12 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter(
                             "resource_preservation_policy",
                             resourcePreservationPolicy),
+                        Parameter(
+                            "authoritative_route_sources_json",
+                            MiningAuthoritativeRouteSourceBinding
+                                .ReadSelectedStepSources(
+                                    snapshot,
+                                    floorStep)),
                         Parameter("estimate_status", "rolling_horizon_current_floor_step"),
                         Parameter("required_executor_profile", "mining_perfect_executor"),
                         Parameter("runtime_boundary", available ? "current_floor_step_executable" : floorStep.Reason)

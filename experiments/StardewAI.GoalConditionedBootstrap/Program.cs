@@ -1,241 +1,127 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 using StardewAI.GoalConditionedBootstrap;
 
 var command = args.FirstOrDefault() ?? string.Empty;
 var options = Arguments.Parse(args.Skip(1).ToArray());
+var commandDefinitions = new CommandDefinition[]
+{
+    new("audit-knowledge", AuditKnowledge),
+    new("audit-evidence", AuditEvidence),
+    new("audit-claims", AuditClaims),
+    new("audit-schedules", AuditSchedules),
+    new("audit-current-schedules", AuditCurrentSchedules),
+    new("audit-friendship-day-transition", AuditFriendshipDayTransition),
+    new("validate-route-timing", ValidateRouteTiming),
+    new("audit-current-social-frontier", AuditCurrentSocialFrontier),
+    new("plan-current-social-day", PlanCurrentSocialDay),
+    new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
+    new("build-goal-method-graph", BuildGoalMethodGraph),
+    new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
+    new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
+    new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
+    new("build-requirement-inventory", BuildRequirementInventory),
+    new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
+    new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution),
+    new("build-current-acquisition-route-calendar-resolution", BuildCurrentAcquisitionRouteCalendarResolution),
+    new("build-acquisition-route-target-date-calendar", BuildAcquisitionRouteTargetDateCalendar),
+    new("build-current-acquisition-route-target-date-calendar", BuildCurrentAcquisitionRouteTargetDateCalendar),
+    new("build-acquisition-route-target-date-unlock-state", BuildAcquisitionRouteTargetDateUnlockState),
+    new("build-acquisition-route-target-date-festival-state", BuildAcquisitionRouteTargetDateFestivalState),
+    new("build-acquisition-route-target-date-location-route", BuildAcquisitionRouteTargetDateLocationRoute),
+    new("build-acquisition-route-target-date-facility-capacity", BuildAcquisitionRouteTargetDateFacilityCapacity),
+    new("build-acquisition-route-target-date-resource-inputs", BuildAcquisitionRouteTargetDateResourceInputs),
+    new("build-acquisition-route-target-date-currency-budget", BuildAcquisitionRouteTargetDateCurrencyBudget),
+    new("build-acquisition-route-target-date-inventory-reservation", BuildAcquisitionRouteTargetDateInventoryReservation),
+    new("build-acquisition-route-target-date-processing-lead-time", BuildAcquisitionRouteTargetDateProcessingLeadTime),
+    new("build-acquisition-route-target-date-fishing-probability", BuildAcquisitionRouteTargetDateFishingProbability),
+    new("build-acquisition-route-target-date-stochastic-retry-budget", BuildAcquisitionRouteTargetDateStochasticRetryBudget),
+    new("build-acquisition-route-target-date-daily-time-energy-budget", BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget),
+    new("build-acquisition-route-target-date-opportunity-cost", BuildAcquisitionRouteTargetDateOpportunityCost),
+    new("build-acquisition-route-portfolio-admission", BuildAcquisitionRoutePortfolioAdmission),
+    new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
+    new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
+    new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
+    new("build-acquisition-route-execution-binding", BuildAcquisitionRouteExecutionBinding),
+    new("build-acquisition-route-fresh-terminal-receipt", BuildAcquisitionRouteFreshTerminalReceipt),
+    new("build-acquisition-route-supporting-transition-request", BuildAcquisitionRouteSupportingTransitionRequest),
+    new("build-acquisition-route-supporting-transition-commit-receipt", BuildAcquisitionRouteSupportingTransitionCommitReceipt),
+    new("compile-acquisition-route-supporting-transition", CompileAcquisitionRouteSupportingTransition),
+    new("build-acquisition-route-supporting-transition-receipt", BuildAcquisitionRouteSupportingTransitionReceipt),
+    new("build-acquisition-route-supporting-transition-settlement-request", BuildAcquisitionRouteSupportingTransitionSettlementRequest),
+    new("build-acquisition-route-supporting-transition-settlement-receipt", BuildAcquisitionRouteSupportingTransitionSettlementReceipt),
+    new("build-acquisition-route-supporting-transition-replan", BuildAcquisitionRouteSupportingTransitionReplan),
+    new("build-acquisition-route-supporting-transition-portfolio-teacher-preference", BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference),
+    new("build-acquisition-route-supporting-transition-portfolio-commit-receipt", BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt),
+    new("compile-acquisition-route-supporting-transition-terminal-dispatch", CompileAcquisitionRouteSupportingTransitionTerminalDispatch),
+    new("build-acquisition-route-supporting-transition-terminal-execution-binding", BuildAcquisitionRouteSupportingTransitionTerminalExecutionBinding),
+    new("build-acquisition-route-supporting-transition-terminal-receipt", BuildAcquisitionRouteSupportingTransitionTerminalReceipt),
+    new("build-acquisition-route-supporting-transition-terminal-settlement-request", BuildAcquisitionRouteSupportingTransitionTerminalSettlementRequest),
+    new("build-acquisition-route-supporting-transition-terminal-settlement-receipt", BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt),
+    new("build-acquisition-route-supporting-transition-terminal-rollout-checkpoint", BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint),
+    new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
+    new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
+    new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
+    new("build-acquisition-route-portfolio-rollout-proof-receipt", BuildAcquisitionRoutePortfolioRolloutProofReceipt),
+    new("build-acquisition-route-portfolio-rollout-admission-receipt", BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt),
+    new("build-acquisition-route-portfolio-supervision-dataset", BuildAcquisitionRoutePortfolioSupervisionDataset),
+    new("build-acquisition-route-portfolio-supervision-corpus", BuildAcquisitionRoutePortfolioSupervisionCorpus),
+    new("train-acquisition-route-goal-method", TrainAcquisitionRouteGoalMethod),
+    new("score-acquisition-route-goal-method-row", ScoreAcquisitionRouteGoalMethodRow),
+    new("score-live-acquisition-route-goal-method-shadow", ScoreLiveAcquisitionRouteGoalMethodShadow),
+    new("select-strategic-method", SelectStrategicMethod),
+    new("build-acquisition-route-portfolio-continuation-teacher-request", BuildAcquisitionRoutePortfolioContinuationTeacherRequest),
+    new("build-acquisition-route-portfolio-continuation-teacher-preference", BuildAcquisitionRoutePortfolioContinuationTeacherPreference),
+    new("build-acquisition-route-portfolio-continuation-commit-receipt", BuildAcquisitionRoutePortfolioContinuationCommitReceipt),
+    new("build-acquisition-route-continuation-execution-binding", BuildAcquisitionRouteContinuationExecutionBinding),
+    new("build-acquisition-route-continuation-fresh-terminal-receipt", BuildAcquisitionRouteContinuationFreshTerminalReceipt),
+    new("build-acquisition-route-portfolio-continuation-settlement-request", BuildAcquisitionRoutePortfolioContinuationSettlementRequest),
+    new("build-acquisition-route-portfolio-continuation-settlement-receipt", BuildAcquisitionRoutePortfolioContinuationSettlementReceipt),
+    new("build-acquisition-route-portfolio-continuation-rollout-checkpoint", BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint),
+    new("build-current-full-shipment-teacher-frontier", BuildCurrentFullShipmentTeacherFrontier),
+    new("build-current-community-center-denominator", BuildCurrentCommunityCenterDenominator),
+    new("build-current-collection-teacher-frontier", BuildCurrentCollectionTeacherFrontier),
+    new("build-current-master-angler-teacher-frontier", BuildCurrentMasterAnglerTeacherFrontier),
+    new("build-current-stage-one-collection-teacher-frontier", BuildCurrentStageOneCollectionTeacherFrontier),
+    new("build-current-stage-one-collection-teacher-preference", BuildCurrentStageOneCollectionTeacherPreference),
+    new("build-current-stage-one-collection-teacher-receipt", BuildCurrentStageOneCollectionTeacherReceipt),
+    new("build-community-center-lifecycle-receipt", BuildCommunityCenterLifecycleReceipt),
+    new("build-full-shipment-settlement-receipt", BuildFullShipmentSettlementReceipt),
+    new("build-full-shipment-recurrence-proof-receipt", BuildFullShipmentRecurrenceProofReceipt),
+    new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
+    new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
+    new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
+    new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
+    new("rehash-content", RehashContent),
+    new("teacher-plan", BuildTeacherPlan),
+    new("import-legacy", ImportLegacy),
+    new("validate", Validate),
+    new("semanticize-recording", SemanticizeRecording),
+    new("retrieve", Retrieve),
+    new("self-test", SelfTest),
+    new("self-test-current-collection", SelfTestCurrentCollection),
+    new("self-test-current-community-center-denominator", SelfTestCurrentCommunityCenterDenominator),
+    new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
+    new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
+    new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
+    new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
+    new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
+    new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),
+};
+var commandRegistry = commandDefinitions.ToDictionary(
+    definition => definition.Name,
+    StringComparer.Ordinal);
 try
 {
-    switch (command)
+    if (!commandRegistry.TryGetValue(command, out var definition))
     {
-        case "audit-knowledge":
-            AuditKnowledge(options);
-            break;
-        case "audit-evidence":
-            AuditEvidence(options);
-            break;
-        case "audit-claims":
-            AuditClaims(options);
-            break;
-        case "audit-schedules":
-            AuditSchedules(options);
-            break;
-        case "audit-current-schedules":
-            AuditCurrentSchedules(options);
-            break;
-        case "audit-friendship-day-transition":
-            AuditFriendshipDayTransition(options);
-            break;
-        case "validate-route-timing":
-            ValidateRouteTiming(options);
-            break;
-        case "audit-current-social-frontier":
-            AuditCurrentSocialFrontier(options);
-            break;
-        case "plan-current-social-day":
-            PlanCurrentSocialDay(options);
-            break;
-        case "build-current-social-teacher-label":
-            BuildCurrentSocialTeacherLabel(options);
-            break;
-        case "build-goal-method-graph":
-            BuildGoalMethodGraph(options);
-            break;
-        case "build-goal-method-teacher-coverage":
-            BuildGoalMethodTeacherCoverage(options);
-            break;
-        case "build-requirement-inventory":
-            BuildRequirementInventory(options);
-            break;
-        case "build-acquisition-route-lowering":
-            BuildAcquisitionRouteLowering(options);
-            break;
-        case "build-acquisition-route-calendar-resolution":
-            BuildAcquisitionRouteCalendarResolution(options);
-            break;
-        case "build-acquisition-route-target-date-calendar":
-            BuildAcquisitionRouteTargetDateCalendar(options);
-            break;
-        case "build-acquisition-route-target-date-unlock-state":
-            BuildAcquisitionRouteTargetDateUnlockState(options);
-            break;
-        case "build-acquisition-route-target-date-festival-state":
-            BuildAcquisitionRouteTargetDateFestivalState(options);
-            break;
-        case "build-acquisition-route-target-date-location-route":
-            BuildAcquisitionRouteTargetDateLocationRoute(options);
-            break;
-        case "build-acquisition-route-target-date-facility-capacity":
-            BuildAcquisitionRouteTargetDateFacilityCapacity(options);
-            break;
-        case "build-acquisition-route-target-date-resource-inputs":
-            BuildAcquisitionRouteTargetDateResourceInputs(options);
-            break;
-        case "build-acquisition-route-target-date-currency-budget":
-            BuildAcquisitionRouteTargetDateCurrencyBudget(options);
-            break;
-        case "build-acquisition-route-target-date-inventory-reservation":
-            BuildAcquisitionRouteTargetDateInventoryReservation(options);
-            break;
-        case "build-acquisition-route-target-date-processing-lead-time":
-            BuildAcquisitionRouteTargetDateProcessingLeadTime(options);
-            break;
-        case "build-acquisition-route-target-date-fishing-probability":
-            BuildAcquisitionRouteTargetDateFishingProbability(options);
-            break;
-        case "build-acquisition-route-target-date-stochastic-retry-budget":
-            BuildAcquisitionRouteTargetDateStochasticRetryBudget(options);
-            break;
-        case "build-acquisition-route-target-date-daily-time-energy-budget":
-            BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget(options);
-            break;
-        case "build-acquisition-route-target-date-opportunity-cost":
-            BuildAcquisitionRouteTargetDateOpportunityCost(options);
-            break;
-        case "build-acquisition-route-portfolio-admission":
-            BuildAcquisitionRoutePortfolioAdmission(options);
-            break;
-        case "build-acquisition-route-portfolio-teacher-preference":
-            BuildAcquisitionRoutePortfolioTeacherPreference(options);
-            break;
-        case "build-acquisition-route-portfolio-commit-receipt":
-            BuildAcquisitionRoutePortfolioCommitReceipt(options);
-            break;
-        case "build-acquisition-route-execution-binding":
-            BuildAcquisitionRouteExecutionBinding(options);
-            break;
-        case "build-acquisition-route-fresh-terminal-receipt":
-            BuildAcquisitionRouteFreshTerminalReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-settlement-request":
-            BuildAcquisitionRoutePortfolioSettlementRequest(options);
-            break;
-        case "build-acquisition-route-portfolio-settlement-receipt":
-            BuildAcquisitionRoutePortfolioSettlementReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-rollout-checkpoint":
-            BuildAcquisitionRoutePortfolioRolloutCheckpoint(options);
-            break;
-        case "build-acquisition-route-portfolio-rollout-proof-receipt":
-            BuildAcquisitionRoutePortfolioRolloutProofReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-rollout-admission-receipt":
-            BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-supervision-dataset":
-            BuildAcquisitionRoutePortfolioSupervisionDataset(options);
-            break;
-        case "build-acquisition-route-portfolio-supervision-corpus":
-            BuildAcquisitionRoutePortfolioSupervisionCorpus(options);
-            break;
-        case "train-acquisition-route-goal-method":
-            TrainAcquisitionRouteGoalMethod(options);
-            break;
-        case "score-acquisition-route-goal-method-row":
-            ScoreAcquisitionRouteGoalMethodRow(options);
-            break;
-        case "score-live-acquisition-route-goal-method-shadow":
-            ScoreLiveAcquisitionRouteGoalMethodShadow(options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-teacher-request":
-            BuildAcquisitionRoutePortfolioContinuationTeacherRequest(options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-teacher-preference":
-            BuildAcquisitionRoutePortfolioContinuationTeacherPreference(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-commit-receipt":
-            BuildAcquisitionRoutePortfolioContinuationCommitReceipt(options);
-            break;
-        case "build-acquisition-route-continuation-execution-binding":
-            BuildAcquisitionRouteContinuationExecutionBinding(options);
-            break;
-        case "build-acquisition-route-continuation-fresh-terminal-receipt":
-            BuildAcquisitionRouteContinuationFreshTerminalReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-settlement-request":
-            BuildAcquisitionRoutePortfolioContinuationSettlementRequest(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-settlement-receipt":
-            BuildAcquisitionRoutePortfolioContinuationSettlementReceipt(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-rollout-checkpoint":
-            BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint(
-                options);
-            break;
-        case "build-current-full-shipment-teacher-frontier":
-            BuildCurrentFullShipmentTeacherFrontier(options);
-            break;
-        case "build-current-community-center-denominator":
-            BuildCurrentCommunityCenterDenominator(options);
-            break;
-        case "build-current-collection-teacher-frontier":
-            BuildCurrentCollectionTeacherFrontier(options);
-            break;
-        case "build-current-master-angler-teacher-frontier":
-            BuildCurrentMasterAnglerTeacherFrontier(options);
-            break;
-        case "build-current-stage-one-collection-teacher-frontier":
-            BuildCurrentStageOneCollectionTeacherFrontier(options);
-            break;
-        case "build-current-stage-one-collection-teacher-preference":
-            BuildCurrentStageOneCollectionTeacherPreference(options);
-            break;
-        case "build-current-stage-one-collection-teacher-receipt":
-            BuildCurrentStageOneCollectionTeacherReceipt(options);
-            break;
-        case "build-master-angler-opportunity-catalog":
-            BuildMasterAnglerOpportunityCatalog(options);
-            break;
-        case "build-master-angler-stage-one-windows":
-            BuildMasterAnglerStageOneWindows(options);
-            break;
-        case "build-master-angler-target-date-intents":
-            BuildMasterAnglerTargetDateIntents(options);
-            break;
-        case "rehash-content":
-            RehashContent(options);
-            break;
-        case "teacher-plan":
-            BuildTeacherPlan(options);
-            break;
-        case "import-legacy":
-            ImportLegacy(options);
-            break;
-        case "validate":
-            Validate(options);
-            break;
-        case "semanticize-recording":
-            SemanticizeRecording(options);
-            break;
-        case "retrieve":
-            Retrieve(options);
-            break;
-        case "self-test":
-            SelfTest(options);
-            break;
-        case "self-test-current-collection":
-            SelfTestCurrentCollection(options);
-            break;
-        case "self-test-current-community-center-denominator":
-            SelfTestCurrentCommunityCenterDenominator(options);
-            break;
-        case "self-test-current-stage-one-collection":
-            SelfTestCurrentStageOneCollection(options);
-            break;
-        case "self-test-goal-method-incomparable-live-shadow":
-            SelfTestGoalMethodIncomparableLiveShadow(options);
-            break;
-        case "self-test-goal-method-teacher-coverage":
-            SelfTestGoalMethodTeacherCoverage(options);
-            break;
-        default:
-            throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
+        throw new ArgumentException(
+            "Command must be " + string.Join(", ",
+                commandDefinitions.Select(value => value.Name)) + ".");
     }
+    definition.Execute(options);
 }
 catch (Exception ex)
 {
@@ -429,6 +315,21 @@ static void BuildGoalMethodTeacherCoverage(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildGoalMethodCoverageReconciliation(Arguments options)
+{
+    var report = GoalMethodCoverageReconciliationBuilder.Build(
+        GoalMethodFrontierInputs(options),
+        options.Required("request"));
+    Write(options.Required("output"), report);
+}
+
+static void BuildPetLoveTeacherCorpus(Arguments options)
+{
+    var corpus = PetLoveTeacherCorpusBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), corpus);
+}
+
 static GoalMethodFrontierBuildInputs GoalMethodFrontierInputs(
     Arguments options) => new()
     {
@@ -480,6 +381,18 @@ static void BuildAcquisitionRouteCalendarResolution(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildCurrentAcquisitionRouteCalendarResolution(Arguments options)
+{
+    var report = AcquisitionRouteCalendarResolutionBuilder.BuildCurrent(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"),
+        options.Required("snapshot"));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete)
+        Environment.ExitCode = 2;
+}
+
 static void BuildAcquisitionRouteTargetDateCalendar(Arguments options)
 {
     var report = AcquisitionRouteTargetDateCalendarBuilder.Build(
@@ -487,6 +400,20 @@ static void BuildAcquisitionRouteTargetDateCalendar(Arguments options)
         options.Required("acquisition-lowering"),
         options.Required("master-angler-windows"),
         options.Required("calendar-resolution"),
+        options.Int("target-total-day", -1));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete)
+        Environment.ExitCode = 2;
+}
+
+static void BuildCurrentAcquisitionRouteTargetDateCalendar(Arguments options)
+{
+    var report = AcquisitionRouteTargetDateCalendarBuilder.BuildCurrent(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"),
+        options.Required("calendar-resolution"),
+        options.Required("snapshot"),
         options.Int("target-total-day", -1));
     Write(options.Required("output"), report);
     if (!report.RouteOccurrenceInventoryComplete)
@@ -812,6 +739,48 @@ static void BuildAcquisitionRouteExecutionBinding(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void CompileAcquisitionRouteDispatch(Arguments options)
+{
+    var queueOutput = options.Required("queue-output");
+    var reportOutput = options.Required("output");
+    if (string.Equals(
+            Path.GetFullPath(queueOutput),
+            Path.GetFullPath(reportOutput),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ArgumentException(
+            "--queue-output and --output must be different paths.");
+    }
+    var compilation = AcquisitionRouteDispatchCompilationBuilder.Build(
+        RouteExecutionBindingInputs(options, queueOutput),
+        options.Required("ranking"));
+    Write(reportOutput, compilation);
+    if (compilation.DispatchReady && compilation.ActionQueue is not null)
+        Write(queueOutput, compilation.ActionQueue);
+    else
+    {
+        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation));
+        Environment.ExitCode = 2;
+    }
+}
+
+static ActionQueueEnvelope BlockedAcquisitionRouteQueue(
+    AcquisitionRouteDispatchCompilation compilation) => new()
+    {
+        QueueId = "blocked:acquisition-route:" +
+            compilation.RouteOccurrenceId,
+        SourceModelOutputId = compilation.SelectedCandidateId,
+        SourceModel =
+            "deterministic_teacher.acquisition_route_dispatch.v1",
+        StateHash = compilation.SourceStateHash,
+        GoalId = compilation.GoalId,
+        ExecutionMode = "training_singleplayer",
+        Status = "blocked",
+        CompilerDiagnostics = compilation.BlockingReasons.Length > 0
+            ? compilation.BlockingReasons
+            : new[] { "acquisition_route_dispatch_not_ready" }
+    };
+
 static void BuildAcquisitionRouteFreshTerminalReceipt(Arguments options)
 {
     var report = AcquisitionRouteFreshTerminalReceiptBuilder.Build(
@@ -825,6 +794,455 @@ static void BuildAcquisitionRouteFreshTerminalReceipt(Arguments options)
     if (!report.FreshTerminalReceiptVerified)
         Environment.ExitCode = 2;
 }
+
+static void BuildAcquisitionRouteSupportingTransitionReceipt(Arguments options)
+{
+    var report = AcquisitionRouteSupportingTransitionReceiptBuilder.Build(
+        options.Required("compilation"),
+        options.Required("before-snapshot"),
+        options.Required("execution-receipt"),
+        options.Required("after-snapshot"),
+        options.Required("run-id"),
+        options.Required("executor-version"));
+    Write(options.Required("output"), report);
+    if (!report.SupportingTransitionVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionSettlementRequest(
+    Arguments options)
+{
+    var request = AcquisitionRouteSupportingTransitionSettlementBuilder
+        .BuildRequest(
+            RouteSupportingTransitionInputs(options),
+            options.Required("support-request"),
+            options.Required("support-commit-receipt"),
+            options.Required("committed-ledger"),
+            options.Required("commit-result"),
+            options.Required("compilation"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("supporting-transition-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"));
+    Write(options.Required("output"), request);
+}
+
+static void BuildAcquisitionRouteSupportingTransitionSettlementReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRouteSupportingTransitionSettlementBuilder
+        .BuildReceipt(
+            RouteSupportingTransitionInputs(options),
+            options.Required("support-request"),
+            options.Required("support-commit-receipt"),
+            options.Required("committed-ledger"),
+            options.Required("commit-result"),
+            options.Required("compilation"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("supporting-transition-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"),
+            options.Required("settlement-request"),
+            options.Required("settlement-result"),
+            options.Required("settled-ledger"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.ReservationLifecycleVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionReplan(Arguments options)
+{
+    var output = options.Required("output");
+    var requestOutput = options.Required("preference-request-output");
+    if (string.Equals(
+            Path.GetFullPath(output),
+            Path.GetFullPath(requestOutput),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ArgumentException(
+            "--output and --preference-request-output must be different paths.");
+    }
+    var admission = AcquisitionRouteSupportingTransitionReplanBuilder.Build(
+        RouteSupportingTransitionInputs(options),
+        SupportingTransitionSettlementProof(options),
+        ContinuationRoutePortfolioInputs(options));
+    Write(output, admission);
+    if (admission.FreshTeacherRequestReady &&
+        admission.NextTeacherPreferenceRequest is not null)
+    {
+        Write(requestOutput, admission.NextTeacherPreferenceRequest);
+    }
+    else
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference(
+    Arguments options)
+{
+    var preference = AcquisitionRouteSupportingTransitionPortfolioBuilder
+        .BuildTeacherPreference(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            ContinuationRoutePortfolioInputs(options),
+            options.Required("replan-admission"),
+            options.Required("preference-request"));
+    Write(options.Required("output"), preference);
+    if (preference.TeacherPreferenceLabelEligible)
+    {
+        if (options.Optional("selected-proposal-output") is { } proposalOutput)
+            Write(proposalOutput, preference.SelectedProposal!);
+        if (options.Optional("selected-admission-output") is { } admissionOutput)
+            Write(admissionOutput, preference.SelectedAdmission!);
+    }
+    else
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRouteSupportingTransitionPortfolioBuilder
+        .BuildCommitReceipt(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            ContinuationRoutePortfolioInputs(options, requireProposal: true),
+            options.Required("replan-admission"),
+            options.Required("preference-request"),
+            options.Required("preference"),
+            options.Required("next-portfolio-admission"),
+            options.Required("next-committed-ledger"),
+            options.Optional("next-commit-result"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.PortfolioCommitVerified)
+        Environment.ExitCode = 2;
+}
+
+static void CompileAcquisitionRouteSupportingTransitionTerminalDispatch(
+    Arguments options)
+{
+    var queueOutput = options.Required("next-queue-output");
+    var reportOutput = options.Required("output");
+    if (string.Equals(
+            Path.GetFullPath(queueOutput),
+            Path.GetFullPath(reportOutput),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ArgumentException(
+            "--next-queue-output and --output must be different paths.");
+    }
+    var inputs = SupportingTransitionTerminalExecutionInputs(
+        options,
+        queueOutput);
+    var compilation = AcquisitionRouteSupportingTransitionPortfolioBuilder
+        .BuildTerminalDispatch(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            inputs,
+            options.Required("next-ranking"));
+    Write(reportOutput, compilation);
+    if (compilation.DispatchReady && compilation.ActionQueue is not null)
+        Write(queueOutput, compilation.ActionQueue);
+    else
+    {
+        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation));
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalExecutionBinding(
+    Arguments options)
+{
+    var binding = AcquisitionRouteExecutionBindingBuilder
+        .BuildAfterSupportingTransition(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options));
+    Write(options.Required("output"), binding);
+    if (!binding.DispatchBindingReady)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRouteFreshTerminalReceiptBuilder
+        .BuildAfterSupportingTransition(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options),
+            options.Required("next-execution-binding"),
+            options.Required("next-execution-receipt"),
+            options.Required("next-after-snapshot"),
+            options.Required("next-run-id"),
+            options.Required("next-executor-version"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.FreshTerminalReceiptVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalSettlementRequest(
+    Arguments options)
+{
+    var request = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildAfterSupportingTransitionRequest(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options),
+            options.Required("next-execution-binding"),
+            options.Required("next-execution-receipt"),
+            options.Required("next-after-snapshot"),
+            options.Required("next-fresh-terminal-receipt"),
+            options.Required("next-run-id"),
+            options.Required("next-executor-version"));
+    Write(options.Required("output"), request);
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildAfterSupportingTransitionReceipt(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options),
+            options.Required("next-execution-binding"),
+            options.Required("next-execution-receipt"),
+            options.Required("next-after-snapshot"),
+            options.Required("next-fresh-terminal-receipt"),
+            options.Required("next-run-id"),
+            options.Required("next-executor-version"),
+            options.Required("next-settlement-request"),
+            options.Required("next-settlement-result"),
+            options.Required("next-settled-ledger"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.ReservationLifecycleVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint(
+    Arguments options)
+{
+    var proof = SupportingTransitionTerminalInitialCheckpointProof(options);
+    var support = proof.SupportingTransition ??
+        throw new InvalidOperationException(
+            "Supporting-transition initial proof is missing.");
+    var checkpoint = AcquisitionRoutePortfolioRolloutCheckpointBuilder
+        .BuildAfterSupportingTransition(
+            support.RequestInputs,
+            support.SettlementProof,
+            support.ReplanAdmissionPath,
+            proof.ExecutionInputs,
+            proof.ExecutionBindingPath,
+            proof.ExecutionReceiptPath,
+            proof.AfterSnapshotPath,
+            proof.FreshTerminalReceiptPath,
+            proof.RunId,
+            proof.ExecutorVersion,
+            proof.SettlementRequestPath,
+            proof.SettlementResultPath,
+            proof.SettledLedgerPath,
+            proof.SettlementReceiptPath);
+    Write(options.Required("output"), checkpoint);
+    if (options.Optional("initial-proof-output") is { } proofOutput)
+        Write(proofOutput, proof);
+}
+
+static AcquisitionRoutePortfolioInitialCheckpointProof
+    SupportingTransitionTerminalInitialCheckpointProof(Arguments options) =>
+        new()
+        {
+            SupportingTransition =
+                new AcquisitionRoutePortfolioSupportingTransitionInitialProof
+                {
+                    RequestInputs = RouteSupportingTransitionInputs(options),
+                    SettlementProof =
+                        SupportingTransitionSettlementProof(options),
+                    ReplanAdmissionPath = options.Required(
+                        "replan-admission")
+                },
+            ExecutionInputs =
+                SupportingTransitionTerminalExecutionInputs(options),
+            ExecutionBindingPath = options.Required(
+                "next-execution-binding"),
+            ExecutionReceiptPath = options.Required(
+                "next-execution-receipt"),
+            AfterSnapshotPath = options.Required("next-after-snapshot"),
+            FreshTerminalReceiptPath = options.Required(
+                "next-fresh-terminal-receipt"),
+            RunId = options.Required("next-run-id"),
+            ExecutorVersion = options.Required("next-executor-version"),
+            SettlementRequestPath = options.Required(
+                "next-settlement-request"),
+            SettlementResultPath = options.Required(
+                "next-settlement-result"),
+            SettledLedgerPath = options.Required("next-settled-ledger"),
+            SettlementReceiptPath = options.Required(
+                "next-settlement-receipt")
+        };
+
+static AcquisitionRouteExecutionBindingInputs
+    SupportingTransitionTerminalExecutionInputs(
+        Arguments options,
+        string? actionQueuePath = null)
+{
+    var portfolio = ContinuationRoutePortfolioInputs(
+        options,
+        requireProposal: true);
+    return new AcquisitionRouteExecutionBindingInputs
+    {
+        RequirementInventoryPath = portfolio.RequirementInventoryPath,
+        AcquisitionLoweringPath = portfolio.AcquisitionLoweringPath,
+        MasterAnglerWindowsPath = portfolio.MasterAnglerWindowsPath,
+        CalendarResolutionPath = portfolio.CalendarResolutionPath,
+        TargetDateCalendarPath = portfolio.TargetDateCalendarPath,
+        TargetDateUnlockPath = portfolio.TargetDateUnlockPath,
+        TargetDateFestivalPath = portfolio.TargetDateFestivalPath,
+        TargetDateLocationPath = portfolio.TargetDateLocationPath,
+        TargetDateFacilityPath = portfolio.TargetDateFacilityPath,
+        TargetDateResourcePath = portfolio.TargetDateResourcePath,
+        TargetDateCurrencyPath = portfolio.TargetDateCurrencyPath,
+        TargetDateReservationPath = portfolio.TargetDateReservationPath,
+        TargetDateProcessingPath = portfolio.TargetDateProcessingPath,
+        TargetDateFishingProbabilityPath =
+            portfolio.TargetDateFishingProbabilityPath,
+        TargetDateStochasticRetryPath =
+            portfolio.TargetDateStochasticRetryPath,
+        TargetDateDailyTimeEnergyPath =
+            portfolio.TargetDateDailyTimeEnergyPath,
+        TargetDateOpportunityCostPath =
+            portfolio.TargetDateOpportunityCostPath,
+        FishingForecastManifestPath = portfolio.FishingForecastManifestPath,
+        StrategyLedgerPath = portfolio.StrategyLedgerPath,
+        BeforeSnapshotPath = portfolio.SnapshotPath,
+        RouteTimingCalibrationPath = portfolio.RouteTimingCalibrationPath,
+        PortfolioProposalPath = portfolio.ProposalPath,
+        PortfolioAdmissionPath = options.Required("next-portfolio-admission"),
+        PortfolioPreferenceRequestPath = options.Required(
+            "preference-request"),
+        PortfolioTeacherPreferencePath = options.Required("preference"),
+        PortfolioCommitReceiptPath = options.Required(
+            "support-replan-portfolio-commit-receipt"),
+        CommittedStrategyLedgerPath = options.Required(
+            "next-committed-ledger"),
+        PortfolioCommitResultPath = options.Optional("next-commit-result") ??
+            string.Empty,
+        ActionQueuePath = actionQueuePath ?? options.Required(
+            "next-action-queue"),
+        RouteOccurrenceId = options.Required("next-route-occurrence-id")
+    };
+}
+
+static AcquisitionRouteSupportingTransitionSettlementProof
+    SupportingTransitionSettlementProof(Arguments options) => new()
+    {
+        SupportRequestPath = options.Required("support-request"),
+        SupportCommitReceiptPath = options.Required(
+            "support-commit-receipt"),
+        CommittedLedgerPath = options.Required("committed-ledger"),
+        CommitResultPath = options.Required("commit-result"),
+        CompilationPath = options.Required("compilation"),
+        ExecutionReceiptPath = options.Required("execution-receipt"),
+        AfterSnapshotPath = options.Required("after-snapshot"),
+        SupportingTransitionReceiptPath = options.Required(
+            "supporting-transition-receipt"),
+        RunId = options.Required("run-id"),
+        ExecutorVersion = options.Required("executor-version"),
+        SettlementRequestPath = options.Required("settlement-request"),
+        SettlementResultPath = options.Required("settlement-result"),
+        SettledLedgerPath = options.Required("settled-ledger"),
+        SettlementReceiptPath = options.Required("settlement-receipt")
+    };
+
+static void BuildAcquisitionRouteSupportingTransitionRequest(Arguments options)
+{
+    var report = AcquisitionRouteSupportingTransitionRequestBuilder.Build(
+        RouteSupportingTransitionInputs(options));
+    Write(options.Required("output"), report);
+    if (!report.SupportRequestReady)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionCommitReceipt(
+    Arguments options)
+{
+    var report =
+        AcquisitionRouteSupportingTransitionCommitReceiptBuilder.Build(
+            RouteSupportingTransitionInputs(options),
+            options.Required("support-request"),
+            options.Required("committed-ledger"),
+            options.Required("commit-result"));
+    Write(options.Required("output"), report);
+    if (!report.SupportReservationCommitVerified)
+        Environment.ExitCode = 2;
+}
+
+static void CompileAcquisitionRouteSupportingTransition(Arguments options)
+{
+    var queueOutput = options.Required("queue-output");
+    var reportOutput = options.Required("output");
+    if (string.Equals(
+            Path.GetFullPath(queueOutput),
+            Path.GetFullPath(reportOutput),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ArgumentException(
+            "--queue-output and --output must be different paths.");
+    }
+    var compilation =
+        AcquisitionRouteSupportingTransitionCompilationBuilder.Build(
+            RouteSupportingTransitionInputs(options),
+            options.Required("support-request"),
+            options.Required("support-commit-receipt"),
+            options.Required("committed-ledger"),
+            options.Required("commit-result"));
+    Write(reportOutput, compilation);
+    if (compilation.DispatchReady && compilation.ActionQueue is not null)
+        Write(queueOutput, compilation.ActionQueue);
+    else
+    {
+        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation));
+        Environment.ExitCode = 2;
+    }
+}
+
+static AcquisitionRouteSupportingTransitionRequestInputs
+    RouteSupportingTransitionInputs(Arguments options) => new()
+    {
+        RequirementInventoryPath = options.Required("requirement-inventory"),
+        AcquisitionLoweringPath = options.Required("acquisition-lowering"),
+        MasterAnglerWindowsPath = options.Required("master-angler-windows"),
+        CalendarResolutionPath = options.Required("calendar-resolution"),
+        TargetDateCalendarPath = options.Required("target-date-calendar"),
+        TargetDateUnlockPath = options.Required("target-date-unlock"),
+        TargetDateFestivalPath = options.Required("target-date-festival"),
+        TargetDateLocationPath = options.Required("target-date-location"),
+        TargetDateFacilityPath = options.Required("target-date-facility"),
+        TargetDateResourcePath = options.Required("target-date-resource"),
+        TargetDateCurrencyPath = options.Required("target-date-currency"),
+        TargetDateReservationPath = options.Required(
+            "target-date-reservation"),
+        TargetDateProcessingPath = options.Required("target-date-processing"),
+        StrategyLedgerPath = options.Required("strategy-ledger"),
+        SnapshotPath = options.Required("snapshot"),
+        RouteTimingCalibrationPath = options.Required(
+            "route-timing-calibration"),
+        RankingPath = options.Required("ranking"),
+        RouteOccurrenceId = options.Required("route-occurrence-id"),
+        SupportDeadlineTotalDay = options.Int(
+            "support-deadline-total-day",
+            -1)
+    };
 
 static void BuildAcquisitionRoutePortfolioSettlementRequest(Arguments options)
 {
@@ -1153,6 +1571,43 @@ static void ScoreLiveAcquisitionRouteGoalMethodShadow(Arguments options)
     }
 }
 
+static void SelectStrategicMethod(Arguments options)
+{
+    var triggerKinds = (options.Optional("replan-triggers") ??
+            StrategicReplanTriggers.ExplicitRequest)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
+    var result = new StrategicPolicy().SelectMethod(
+        new StrategicPolicySelectionRequest
+        {
+            CurrentInputs = RoutePortfolioInputs(
+                options,
+                requireProposal: false),
+            PreferenceRequestPath = options.Required("preference-request"),
+            PriorRolloutProofManifestPath =
+                options.Optional("prior-rollout-proof-manifest") ??
+                string.Empty,
+            CheckpointPath = options.Optional("checkpoint") ?? string.Empty,
+            CorpusManifestPath = options.Optional("corpus-manifest") ??
+                string.Empty,
+            EnableDeterministicShadowAudit = string.Equals(
+                options.Optional("deterministic-shadow-audit"),
+                "true",
+                StringComparison.OrdinalIgnoreCase),
+            Replan = new StrategicReplanContext
+            {
+                TriggerKinds = triggerKinds,
+                TriggerToken = options.Optional("replan-trigger-token") ??
+                    string.Empty,
+                PreviousReplanFingerprint = options.Optional(
+                    "previous-replan-fingerprint") ?? string.Empty
+            }
+        });
+    Write(options.Required("output"), result);
+    if (result.SelectedProposal is null && !result.ReplanDeduplicated)
+        Environment.ExitCode = 2;
+}
+
 static AcquisitionRoutePortfolioVerifiedCheckpoint
     VerifiedContinuationCheckpoint(Arguments options)
 {
@@ -1280,7 +1735,8 @@ static AcquisitionRouteExecutionBindingInputs
 }
 
 static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
-    Arguments options) => new()
+    Arguments options,
+    string? actionQueuePath = null) => new()
     {
         RequirementInventoryPath = options.Required("requirement-inventory"),
         AcquisitionLoweringPath = options.Required("acquisition-lowering"),
@@ -1321,7 +1777,7 @@ static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
             "committed-strategy-ledger"),
         PortfolioCommitResultPath = options.Optional(
             "portfolio-commit-result") ?? string.Empty,
-        ActionQueuePath = options.Required("action-queue"),
+        ActionQueuePath = actionQueuePath ?? options.Required("action-queue"),
         RouteOccurrenceId = options.Required("route-occurrence-id")
     };
 
@@ -1438,6 +1894,65 @@ static void BuildCurrentStageOneCollectionTeacherReceipt(Arguments options)
         }
         WriteJsonl(datasetOutput, new[] { report.TrainingRow });
     }
+}
+
+static void BuildCommunityCenterLifecycleReceipt(Arguments options)
+{
+    var report = CommunityCenterLifecycleReceiptBuilder.Build(
+        options.Required("queue"),
+        options.Required("before-snapshot"),
+        options.Required("execution-receipt"),
+        options.Required("after-snapshot"),
+        options.Required("transition-kind"),
+        options.Required("run-id"),
+        options.Required("executor-version"));
+    Write(options.Required("output"), report);
+    if (!report.TrainingLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void BuildFullShipmentTerminalSettlementReceipt(Arguments options)
+{
+    var report = FullShipmentTerminalSettlementReceiptBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("queue"),
+        options.Required("before-snapshot"),
+        options.Required("execution-receipt"),
+        options.Required("after-snapshot"),
+        options.Required("run-id"),
+        options.Required("executor-version"),
+        options.Required("selected-candidate-id"));
+    Write(options.Required("output"), report);
+    if (!report.TrainingLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void BuildFullShipmentSettlementReceipt(Arguments options)
+{
+    var report = FullShipmentSettlementReceiptBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("queue"),
+        options.Required("before-snapshot"),
+        options.Required("execution-receipt"),
+        options.Required("after-snapshot"),
+        options.Required("run-id"),
+        options.Required("executor-version"),
+        options.Required("selected-candidate-id"),
+        options.Required("expected-qualified-item-id"));
+    Write(options.Required("output"), report);
+    if (!report.RecurrenceEvidenceEligible)
+        Environment.ExitCode = 2;
+}
+
+static void BuildFullShipmentRecurrenceProofReceipt(Arguments options)
+{
+    var report = FullShipmentRecurrenceProofBuilder.Build(
+        options.Required("manifest"));
+    Write(options.Required("output"), report);
+    if (!report.RecurrenceProofVerified)
+        Environment.ExitCode = 2;
 }
 
 static void BuildMasterAnglerOpportunityCatalog(Arguments options)
@@ -1632,6 +2147,10 @@ static void WriteJsonl<T>(string path, IEnumerable<T> values)
     File.Move(temporary, fullPath, true);
     Console.WriteLine(fullPath);
 }
+
+internal sealed record CommandDefinition(
+    string Name,
+    Action<Arguments> Execute);
 
 internal sealed class Arguments
 {

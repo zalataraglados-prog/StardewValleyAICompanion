@@ -20,6 +20,26 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             recomputed);
     }
 
+    public static AcquisitionRoutePortfolioCommitReceipt
+        BuildAfterSupportingTransition(
+            AcquisitionRoutePortfolioInputs inputs,
+            string priorSupportingTransitionReplanSha256,
+            string admissionPath,
+            string committedLedgerPath,
+            string? commitResultPath)
+    {
+        var recomputed = AcquisitionRoutePortfolioBuilder
+            .BuildAfterSupportingTransition(
+                inputs,
+                priorSupportingTransitionReplanSha256);
+        return BuildVerifiedAdmission(
+            inputs,
+            admissionPath,
+            committedLedgerPath,
+            commitResultPath,
+            recomputed);
+    }
+
     private static AcquisitionRoutePortfolioCommitReceipt
         BuildVerifiedAdmission(
             AcquisitionRoutePortfolioInputs inputs,
@@ -97,8 +117,13 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
                 "target-date-acquisition-portfolio:" + admission.ProposalId,
             GoalId = admission.GoalId,
             SnapshotStateHash = admission.SnapshotStateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    admission.CommunityCenterProvenance),
             PriorRolloutCheckpointSha256 =
                 admission.PriorRolloutCheckpointSha256,
+            PriorSupportingTransitionReplanSha256 =
+                admission.PriorSupportingTransitionReplanSha256,
             CompletedAlternatives = (admission.CompletedAlternatives ??
                     Array.Empty<
                         AcquisitionRoutePortfolioCompletedAlternatives>())
@@ -140,14 +165,5 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         };
     }
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

@@ -31,7 +31,9 @@ public sealed class RuntimeMachineCraftingExecutorTests
     [Fact]
     public void TrainingRequestCarriesReboundCraftingContract()
     {
-        var source = RuntimeHarnessSources.RepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs");
+        var source = RuntimeHarnessSources.RepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecutionRequest.cs");
 
         Assert.Contains("executionRequest.RecipeName = recipeName", source);
         Assert.Contains("executionRequest.OutputQualifiedItemId = outputQualifiedItemId", source);

@@ -518,7 +518,11 @@ internal static class NativeBranchSemanticClassifier
         if (calls.Any(value => value is "ShowMineCartMenu" or "Game1.enterMine"))
             result.Add("exploration.visit_location");
         if (calls.Any(value => value is "checkBundle" or "numberOfCompleteBundles"))
+        {
             result.Add("executor.donate_community_center_item");
+            result.Add("executor.claim_community_center_bundle_reward");
+            result.Add("executor.pay_community_center_vault_bundle");
+        }
         if (calls.Contains("OnDesertTrader", StringComparer.Ordinal))
         {
             result.Add("executor.buy_shop_item");
@@ -744,7 +748,11 @@ internal static class NativeBranchSemanticClassifier
             result.Add("executor.interact");
         }
         if (surface.RuntimeType == "CommunityCenter")
+        {
             result.Add("executor.donate_community_center_item");
+            result.Add("executor.claim_community_center_bundle_reward");
+            result.Add("executor.pay_community_center_vault_bundle");
+        }
         if (surface.RuntimeType == "LibraryMuseum")
             result.Add("executor.interact");
         if (surface.RuntimeType is "FarmHouse" or "IslandFarmHouse")
@@ -868,6 +876,8 @@ internal static class NativeBranchSemanticClassifier
                     break;
                 case "JunimoNoteMenu":
                     result.Add("executor.donate_community_center_item");
+                    result.Add("executor.claim_community_center_bundle_reward");
+                    result.Add("executor.pay_community_center_vault_bundle");
                     break;
                 case "MuseumMenu":
                     result.Add("executor.donate_museum_item");

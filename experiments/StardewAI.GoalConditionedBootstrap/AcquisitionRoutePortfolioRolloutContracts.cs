@@ -17,6 +17,10 @@ public sealed class AcquisitionRoutePortfolioRolloutCheckpoint
     [JsonPropertyName("goal_id")]
     public string GoalId { get; set; } = string.Empty;
 
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("root_preference_request_sha256")]
     public string RootPreferenceRequestSha256 { get; set; } = string.Empty;
 
@@ -28,6 +32,10 @@ public sealed class AcquisitionRoutePortfolioRolloutCheckpoint
 
     [JsonPropertyName("current_portfolio_id")]
     public string CurrentPortfolioId { get; set; } = string.Empty;
+
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
 
     [JsonPropertyName("latest_settlement_receipt_sha256")]
     public string LatestSettlementReceiptSha256 { get; set; } = string.Empty;
@@ -80,7 +88,7 @@ public sealed class AcquisitionRoutePortfolioRolloutCheckpoint
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A rollout checkpoint rebuilds the current Teacher selection and exact completed-route settlement, maps the verified route back to one authoritative requirement alternative, and reports cumulative progress by selection rule. A continuation checkpoint also rebuilds its prior checkpoint and binds that artifact hash. Whole-portfolio completion requires every scoped rule satisfied, every selected route completed, and no rollout-owned active reservation left behind. Otherwise the old route list is stale and a fresh continuation Teacher replan is mandatory. This checkpoint carries no learner score and never authorizes formal training.";
+        "A rollout checkpoint rebuilds the current Teacher selection and exact completed-route settlement, including the full nonterminal support-replan proof when that transition preceded the terminal route. It maps the verified route back to one authoritative requirement alternative and reports cumulative progress by selection rule. A continuation checkpoint also rebuilds its prior checkpoint and binds that artifact hash. Whole-portfolio completion requires every scoped rule satisfied, every selected route completed, and no rollout-owned active reservation left behind. Otherwise the old route list is stale and a fresh continuation Teacher replan is mandatory. This checkpoint carries no learner score and never authorizes formal training.";
 }
 
 public sealed record AcquisitionRoutePortfolioScopeProgress(

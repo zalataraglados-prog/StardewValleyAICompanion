@@ -21,6 +21,11 @@ public sealed class FishPondMainlineTests
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("(O)812", candidate.QualifiedItemId);
         Assert.Contains(candidate.Parameters, value => value.Name == "expected_skill_experience_delta" && value.Value == "11");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "authoritative_route_sources_json" &&
+            value.Value.Contains(
+                "fish_pond:Roe:0",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability)
             .Where(row => row.Kind == "collect_fish_pond_output")
@@ -65,6 +70,8 @@ public sealed class FishPondMainlineTests
     {
         var source = FarmReadAdapterSources.All;
         Assert.Contains("FishPond.GetRawData", source);
+        Assert.Contains("data.ProducedItems[rowIndex]", source);
+        Assert.Contains("native_fish_pond_output", source);
         Assert.DoesNotContain("pond.GetFishPondData()", source);
         Assert.DoesNotContain("pond.HasUnresolvedNeeds()", source);
         Assert.Contains("Game1.random = liveRandom", source);
@@ -96,6 +103,7 @@ public sealed class FishPondMainlineTests
               "last_unlocked_population_gate":0,"days_since_spawn":5,"preferred_target_tile_x":10,"preferred_target_tile_y":10,"preferred_stand_tile_x":9,"preferred_stand_tile_y":10,
               "output_status":"OUTPUT_STATUS","output_runtime_type":"StardewValley.Object","output_qualified_item_id":"(O)812","output_quality":0,"output_stack":1,
               "output_unit_state_sha256":"OUTPUT_HASH","output_items_json":OUTPUTS,"output_state_context":"post_inventory_receive","output_safe_slot_index":1,
+              "output_authoritative_route_sources":[{"route_kind":"native_fish_pond_output","source_id":"fish_pond:Roe:0","qualified_item_id":"(O)812"}],
               "output_fishing_experience_delta":11,"output_receipt_callbacks_status":"runtime_observed",
               "request_status":"REQUEST_STATUS","request_unresolved":true,"request_item_runtime_type":"StardewValley.Object","request_item_qualified_item_id":"(O)72",
               "request_item_count_remaining":1,"request_item_inventory_count":1,"request_item_toolbar_count":1,"request_item_toolbar_slots_json":SLOTS,

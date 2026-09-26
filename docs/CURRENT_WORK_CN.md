@@ -3,12 +3,12 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `ce0f75cffdde58a631495528a585fcd49cd950a1` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-09-09T05:28:15.6502272+00:00`
-- Catalog: `232 registered / 234 semantic / 231 compiler-bound / 155 five-gate / 66 training-allowlist`
-- Execution: `145 product-executor / 2 catalogued-blocked`
+- Source commit: `fb4543b068bc643c80ec3693388f3938e1f563ca` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-09-25T18:10:25.7803927+00:00`
+- Catalog: `234 registered / 236 semantic / 233 compiler-bound / 155 five-gate / 66 training-allowlist`
+- Execution: `147 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
-- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `f5626cce86149b999836b5e40f631f5ca7cf879db4c2092f939b0bb080c69257`
+- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
 ## 2026-09-21 单路线 reservation 结算与重放回执

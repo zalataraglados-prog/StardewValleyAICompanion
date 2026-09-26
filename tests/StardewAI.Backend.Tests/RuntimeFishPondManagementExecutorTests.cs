@@ -87,7 +87,8 @@ public sealed class RuntimeFishPondManagementExecutorTests
     public void LiveTrainingMappingKeepsFishPondFieldsInItsOwnedPartial()
     {
         var dispatch = RuntimeHarnessSources.RepositoryFile(
-            "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs");
+            "tools", "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecutionRequest.cs");
         var mapping = RuntimeHarnessSources.RepositoryFile(
             "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.FishPondManagement.cs");
 

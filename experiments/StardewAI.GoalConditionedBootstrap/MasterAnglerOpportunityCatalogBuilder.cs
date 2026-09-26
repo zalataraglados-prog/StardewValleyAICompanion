@@ -468,11 +468,6 @@ public static partial class MasterAnglerOpportunityCatalogBuilder
         };
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private static void RequireContains(string source, string value, string path)
     {

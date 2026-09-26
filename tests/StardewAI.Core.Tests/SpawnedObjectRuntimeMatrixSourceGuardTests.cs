@@ -73,7 +73,7 @@ public sealed class SpawnedObjectRuntimeMatrixSourceGuardTests
         var loop = ReadRepositoryFile(
             "tools",
             "StardewAI.LiveTrainingLoop",
-            "Program.RuntimeExecution.cs");
+            "Program.RuntimeExecutionRequest.cs");
 
         Assert.Contains("active.Location.checkAction(", runtime);
         Assert.Contains("request.ExpectedOutputQuality != expectedQuality", runtime);
@@ -97,6 +97,23 @@ public sealed class SpawnedObjectRuntimeMatrixSourceGuardTests
 
         Assert.Contains("blocked_unprojected_lewis_basement_789_side_effect", bridge);
         Assert.Contains("collect_spawned_object_unprojected_lewis_basement_789_side_effect", runtime);
+    }
+
+    [Fact]
+    public void LiveForageSourceUsesCurrentLocationDataAndInventoryRowNumbering()
+    {
+        var bridge = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "CurrentLocationReadAdapter.SpawnedObjects.cs");
+
+        Assert.Contains("Game1.locationData", bridge);
+        Assert.Contains("Game1.GetFarmTypeKey", bridge);
+        Assert.Contains("ActivePassiveFestivals", bridge);
+        Assert.Contains("data.Forage[rowIndex]", bridge);
+        Assert.Contains("native_location_forage_spawn", bridge);
+        Assert.Contains("sourcePrefix + \":random:\" + randomIndex", bridge);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

@@ -10,6 +10,112 @@ namespace StardewAI.Core.Execution;
 
 public sealed partial class ActionQueueCompiler
 {
+    private static string[] ValidateCommunityCenterFirstNoteInteraction(
+        SmallModelAction action,
+        SnapshotEnvelope snapshot,
+        int targetX,
+        int targetY,
+        string expectedActionType)
+    {
+        var reasons = new List<string>();
+        if (!string.Equals(expectedActionType, "CommunityCenterBundleNote", StringComparison.Ordinal) ||
+            !string.Equals(
+                ReadParameter(action, "native_contract"),
+                "CommunityCenter.checkAction_then_JunimoNoteMenu.setUpMenu",
+                StringComparison.Ordinal))
+        {
+            reasons.Add("community_center_first_note_native_contract_mismatch");
+        }
+        if (!string.Equals(
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                "CommunityCenter",
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                ReadParameter(action, "target_location"),
+                "CommunityCenter",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            reasons.Add("community_center_first_note_location_mismatch");
+        }
+        if (ReadIntParameter(action, "bundle_area_id") != 1)
+        {
+            reasons.Add("community_center_first_note_area_mismatch");
+        }
+        var standX = ReadIntParameter(action, "stand_tile_x");
+        var standY = ReadIntParameter(action, "stand_tile_y");
+        if (!standX.HasValue || !standY.HasValue ||
+            Math.Abs(standX.Value - targetX) + Math.Abs(standY.Value - targetY) != 1 ||
+            !CommunityCenterFirstNotePathExists(
+                snapshot,
+                standX.GetValueOrDefault(),
+                standY.GetValueOrDefault()))
+        {
+            reasons.Add("community_center_first_note_route_unavailable");
+        }
+
+        var progress = ReadStateFieldValue(
+            snapshot,
+            "world_progress",
+            "community_center");
+        if (!progress.HasValue || progress.Value.ValueKind != JsonValueKind.Object ||
+            !progress.Value.TryGetProperty("lifecycle", out var lifecycle) ||
+            lifecycle.ValueKind != JsonValueKind.Object ||
+            ReadString(lifecycle, "projection_status") != "complete_locked_base_1.6.15" ||
+            ReadString(lifecycle, "stage") != "first_junimo_note_pending" ||
+            ReadBool(lifecycle, "door_unlock_received") != true ||
+            ReadBool(lifecycle, "first_junimo_note_seen") == true ||
+            ReadString(progress.Value, "route_state") is not ("undecided" or "community_center_locked") ||
+            ReadBool(progress.Value, "community_center_is_current_location") != true ||
+            ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
+            ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
+            !TryFindCommunityCenterBundleByArea(progress.Value, 1, out var craftsRoom) ||
+            ReadString(craftsRoom, "projection_status") != "exact" ||
+            ReadBool(craftsRoom, "note_appears") != true ||
+            ReadBool(craftsRoom, "area_mutex_locked") == true ||
+            NullableReadInt(craftsRoom, "note_tile_x") !=
+                ReadIntParameter(action, "community_center_note_tile_x") ||
+            NullableReadInt(craftsRoom, "note_tile_y") !=
+                ReadIntParameter(action, "community_center_note_tile_y") ||
+            NullableReadInt(craftsRoom, "interaction_tile_x") != targetX ||
+            NullableReadInt(craftsRoom, "interaction_tile_y") != targetY ||
+            ReadString(craftsRoom, "area_name") !=
+                ReadParameter(action, "bundle_area_name"))
+        {
+            reasons.Add("community_center_first_note_projection_drifted");
+        }
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool CommunityCenterFirstNotePathExists(
+        SnapshotEnvelope snapshot,
+        int targetX,
+        int targetY)
+    {
+        var startX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
+        var startY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
+        var grid = ReadStateFieldValue(snapshot, "locations", "collision_grid");
+        if (!startX.HasValue || !startY.HasValue ||
+            !grid.HasValue || grid.Value.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+        var width = ReadInt(grid.Value, "width");
+        var height = ReadInt(grid.Value, "height");
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+        return PathExists(
+            startX.Value,
+            startY.Value,
+            targetX,
+            targetY,
+            width,
+            height,
+            ReadBlockedCollisionTiles(grid.Value),
+            ReadUnsupportedRouteActionTiles(snapshot));
+    }
+
     private static CompiledActionStep[] CompileDonateCommunityCenterItemStep(SmallModelAction action)
     {
         var slot = ReadIntParameter(action, "inventory_slot_index");
@@ -36,6 +142,256 @@ public sealed partial class ActionQueueCompiler
         };
     }
 
+    private static CompiledActionStep[] CompileClaimCommunityCenterBundleRewardStep(
+        SmallModelAction action)
+    {
+        var bundleId = ReadIntParameter(action, "bundle_id");
+        var qualifiedItemId = ReadParameter(action, "qualified_item_id");
+        var stack = ReadIntParameter(action, "required_stack");
+        if (!bundleId.HasValue || string.IsNullOrWhiteSpace(qualifiedItemId) ||
+            !stack.HasValue || stack.Value < 1)
+        {
+            return Array.Empty<CompiledActionStep>();
+        }
+
+        return new[]
+        {
+            Step(
+                "claim_community_center_bundle_reward",
+                "community_center:bundle=" + bundleId.Value +
+                    ":reward=" + qualifiedItemId + ":stack=" + stack.Value,
+                "world_progress.community_center.bundle_rewards[" + bundleId.Value + "]=false" +
+                    ";player.inventory.qualified_item_total[" + qualifiedItemId + "]=" +
+                    ReadParameter(action, "inventory_item_total_after"),
+                180)
+        };
+    }
+
+    private static CompiledActionStep[] CompilePayCommunityCenterVaultBundleStep(
+        SmallModelAction action)
+    {
+        var bundleId = ReadIntParameter(action, "bundle_id");
+        var price = ReadIntParameter(action, "price");
+        var moneyAfter = ReadIntParameter(action, "expected_money_after");
+        if (!bundleId.HasValue || !price.HasValue || price.Value < 1 ||
+            !moneyAfter.HasValue || moneyAfter.Value < 0)
+        {
+            return Array.Empty<CompiledActionStep>();
+        }
+
+        return new[]
+        {
+            Step(
+                "pay_community_center_vault_bundle",
+                "community_center:vault_bundle=" + bundleId.Value +
+                    ":money=" + price.Value,
+                "player.money=" + moneyAfter.Value +
+                    ";world_progress.community_center.bundle_rewards[" +
+                    bundleId.Value + "]=true",
+                240)
+        };
+    }
+
+    private static string[] ValidateCommunityCenterMoneyPaymentPlan(
+        SmallModelAction action,
+        SnapshotEnvelope snapshot)
+    {
+        if (action.OptionId != "executor.pay_community_center_vault_bundle")
+            return Array.Empty<string>();
+
+        var targetX = ReadIntParameter(action, "target_tile_x");
+        var targetY = ReadIntParameter(action, "target_tile_y");
+        var standX = ReadIntParameter(action, "stand_tile_x");
+        var standY = ReadIntParameter(action, "stand_tile_y");
+        var noteX = ReadIntParameter(action, "community_center_note_tile_x");
+        var noteY = ReadIntParameter(action, "community_center_note_tile_y");
+        var bundleId = ReadIntParameter(action, "bundle_id");
+        var areaId = ReadIntParameter(action, "bundle_area_id");
+        var ingredientIndex = ReadIntParameter(action, "bundle_ingredient_index");
+        var requiredSlots = ReadIntParameter(action, "bundle_required_slot_count");
+        var price = ReadIntParameter(action, "price");
+        var moneyBefore = ReadIntParameter(action, "expected_money_before");
+        var moneyAfter = ReadIntParameter(action, "expected_money_after");
+        if (!targetX.HasValue || !targetY.HasValue || !standX.HasValue || !standY.HasValue ||
+            Math.Abs(targetX.Value - standX.Value) + Math.Abs(targetY.Value - standY.Value) != 1 ||
+            !noteX.HasValue || !noteY.HasValue ||
+            !bundleId.HasValue || bundleId.Value < 0 || areaId != 4 || ingredientIndex != 0 ||
+            requiredSlots != 1 || !price.HasValue || price.Value < 1 ||
+            !moneyBefore.HasValue || moneyBefore.Value < price.Value ||
+            moneyAfter != moneyBefore - price ||
+            ReadParameter(action, "bundle_area_name") != "Vault" ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "bundle_data_key")) ||
+            ReadParameter(action, "native_contract") !=
+                "CommunityCenter.checkBundle_then_JunimoNoteMenu.receiveLeftClick_bundle_then_purchaseButton" ||
+            ReadParameter(action, "authoritative_route_sources_json") is null or "" or "[]" ||
+            !TryBoolParameter(action, "expected_bundle_complete_after", out var bundleCompleteAfter) ||
+            !bundleCompleteAfter ||
+            !TryBoolParameter(action, "expected_bundle_reward_available_after", out var rewardAvailableAfter) ||
+            !rewardAvailableAfter)
+        {
+            return new[] { "community_center_vault_payment_typed_projection_required" };
+        }
+
+        var reasons = new List<string>();
+        if (ActionSeesActiveMenuOpen(action, snapshot))
+            reasons.Add("community_center_vault_payment_menu_must_be_clear");
+        if (ReadStateFieldInt(snapshot, "player", "money") != moneyBefore.Value)
+            reasons.Add("community_center_vault_payment_money_drifted");
+        if (!string.Equals(
+                ReadParameter(action, "target_location"),
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            reasons.Add("community_center_vault_payment_target_location_mismatch");
+        }
+
+        var progress = ReadStateFieldValue(snapshot, "world_progress", "community_center");
+        if (!progress.HasValue || progress.Value.ValueKind != JsonValueKind.Object ||
+            ReadString(progress.Value, "route_state") != ReadParameter(action, "route_state") ||
+            ReadString(progress.Value, "route_state") is not ("undecided" or "community_center_locked") ||
+            ReadBool(progress.Value, "community_center_is_current_location") != true ||
+            ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
+            ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
+            !TryFindCommunityCenterBundle(
+                progress.Value,
+                bundleId.Value,
+                ReadParameter(action, "bundle_data_key"),
+                out var bundle) ||
+            ReadString(bundle, "projection_status") != "exact" ||
+            ReadInt(bundle, "area_id") != 4 ||
+            ReadString(bundle, "area_name") != "Vault" ||
+            ReadBool(bundle, "complete") == true ||
+            NullableReadInt(bundle, "note_tile_x") != noteX ||
+            NullableReadInt(bundle, "note_tile_y") != noteY ||
+            NullableReadInt(bundle, "interaction_tile_x") != targetX ||
+            NullableReadInt(bundle, "interaction_tile_y") != targetY ||
+            ReadInt(bundle, "required_slot_count") != 1 ||
+            !bundle.TryGetProperty("money_payment", out var payment) ||
+            payment.ValueKind != JsonValueKind.Object ||
+            ReadString(payment, "projection_status") != "exact" ||
+            ReadString(payment, "action_status") != "ready" ||
+            ReadInt(payment, "ingredient_index") != 0 ||
+            ReadInt(payment, "required_money") != price.Value ||
+            ReadInt(payment, "money_before") != moneyBefore.Value ||
+            ReadInt(payment, "money_after") != moneyAfter.Value ||
+            ReadBool(payment, "affordable") != true ||
+            ReadInt(payment, "completed_ingredient_count_before") !=
+                ReadIntParameter(action, "expected_bundle_completed_count_before") ||
+            ReadInt(payment, "completed_ingredient_count_after") !=
+                ReadIntParameter(action, "expected_bundle_completed_count_after") ||
+            ReadBool(payment, "completes_bundle") != bundleCompleteAfter ||
+            ReadBool(payment, "expected_bundle_reward_available_after") != rewardAvailableAfter ||
+            ReadInt(payment, "expected_complete_bundle_count_after") !=
+                ReadIntParameter(action, "expected_complete_bundle_count_after") ||
+            ReadBool(payment, "completes_area") != ReadBoolParameter(action, "completes_area") ||
+            ReadBool(payment, "expected_area_complete_after") !=
+                ReadBoolParameter(action, "expected_area_complete_after") ||
+            ReadBool(payment, "expected_area_completion_mail_pending_after") !=
+                ReadBoolParameter(action, "expected_area_completion_mail_pending_after") ||
+            ReadBool(payment, "expected_bulletin_thank_you_pending_after") !=
+                ReadBoolParameter(action, "expected_bulletin_thank_you_pending_after") ||
+            ReadBool(payment, "expected_all_areas_complete_after") !=
+                ReadBoolParameter(action, "expected_all_areas_complete_after") ||
+            CommunityCenterRawJson(payment, "newly_appearing_note_area_ids") !=
+                ReadParameter(action, "newly_appearing_note_area_ids_json") ||
+            CommunityCenterRawJson(payment, "authoritative_route_sources") !=
+                ReadParameter(action, "authoritative_route_sources_json"))
+        {
+            reasons.Add("community_center_vault_payment_projection_drifted");
+        }
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static string[] ValidateCommunityCenterRewardPlan(
+        SmallModelAction action,
+        SnapshotEnvelope snapshot)
+    {
+        if (action.OptionId != "executor.claim_community_center_bundle_reward")
+        {
+            return Array.Empty<string>();
+        }
+
+        var reasons = new List<string>();
+        var targetX = ReadIntParameter(action, "target_tile_x");
+        var targetY = ReadIntParameter(action, "target_tile_y");
+        var standX = ReadIntParameter(action, "stand_tile_x");
+        var standY = ReadIntParameter(action, "stand_tile_y");
+        var bundleId = ReadIntParameter(action, "bundle_id");
+        var areaId = ReadIntParameter(action, "bundle_area_id");
+        var quality = ReadIntParameter(action, "expected_item_quality");
+        var stack = ReadIntParameter(action, "required_stack");
+        var inventoryBefore = ReadIntParameter(action, "inventory_item_total_before");
+        var inventoryAfter = ReadIntParameter(action, "inventory_item_total_after");
+        var claimMode = ReadParameter(action, "reward_claim_mode");
+        if (!targetX.HasValue || !targetY.HasValue || !standX.HasValue || !standY.HasValue ||
+            Math.Abs(targetX.Value - standX.Value) + Math.Abs(targetY.Value - standY.Value) != 1 ||
+            !bundleId.HasValue || bundleId.Value < 0 || !areaId.HasValue || areaId.Value < 0 ||
+            !quality.HasValue || quality.Value < 0 || !stack.HasValue || stack.Value < 1 ||
+            !inventoryBefore.HasValue || inventoryBefore.Value < 0 ||
+            !inventoryAfter.HasValue || inventoryAfter.Value != inventoryBefore.Value + stack.Value ||
+            claimMode is not ("junimo_note_present_button" or "missed_rewards_chest") ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "bundle_data_key")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "item_id")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "qualified_item_id")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "target_runtime_type")) ||
+            ReadParameter(action, "native_contract") !=
+                "CommunityCenter.checkBundle_presentButton_or_MissedRewards_then_ItemGrabMenu.receiveLeftClick_exact_bundle_reward" ||
+            ReadParameter(action, "authoritative_route_sources_json") is null or "" or "[]" ||
+            !TryBoolParameter(action, "expected_bundle_reward_available_after", out var rewardAvailableAfter) ||
+            rewardAvailableAfter)
+        {
+            return new[] { "community_center_bundle_reward_typed_projection_required" };
+        }
+
+        if (ActionSeesActiveMenuOpen(action, snapshot))
+            reasons.Add("community_center_bundle_reward_menu_must_be_clear");
+        if (!string.Equals(
+                ReadParameter(action, "target_location"),
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            reasons.Add("community_center_bundle_reward_target_location_mismatch");
+        }
+
+        var progress = ReadStateFieldValue(snapshot, "world_progress", "community_center");
+        if (!progress.HasValue || progress.Value.ValueKind != JsonValueKind.Object ||
+            ReadString(progress.Value, "route_state") != ReadParameter(action, "route_state") ||
+            ReadString(progress.Value, "route_state") is not ("undecided" or "community_center_locked") ||
+            ReadBool(progress.Value, "community_center_is_current_location") != true ||
+            ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
+            ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
+            !TryFindCommunityCenterBundle(
+                progress.Value,
+                bundleId.Value,
+                ReadParameter(action, "bundle_data_key"),
+                out var bundle) ||
+            ReadString(bundle, "projection_status") != "exact" ||
+            ReadInt(bundle, "area_id") != areaId.Value ||
+            ReadString(bundle, "area_name") != ReadParameter(action, "bundle_area_name") ||
+            ReadBool(bundle, "reward_available") != true ||
+            !bundle.TryGetProperty("reward", out var reward) ||
+            reward.ValueKind != JsonValueKind.Object ||
+            ReadString(reward, "projection_status") != "exact" ||
+            ReadString(reward, "action_status") != "ready" ||
+            ReadString(reward, "claim_mode") != claimMode ||
+            NullableReadInt(reward, "interaction_tile_x") != targetX ||
+            NullableReadInt(reward, "interaction_tile_y") != targetY ||
+            ReadString(reward, "item_id") != ReadParameter(action, "item_id") ||
+            ReadString(reward, "qualified_item_id") != ReadParameter(action, "qualified_item_id") ||
+            ReadString(reward, "runtime_type") != ReadParameter(action, "target_runtime_type") ||
+            ReadInt(reward, "quality") != quality.Value ||
+            ReadInt(reward, "stack") != stack.Value ||
+            ReadInt(reward, "inventory_item_total_before") != inventoryBefore.Value ||
+            ReadInt(reward, "inventory_item_total_after") != inventoryAfter.Value ||
+            ReadBool(reward, "inventory_accepts_reward") != true ||
+            CommunityCenterRawJson(reward, "authoritative_route_sources") !=
+                ReadParameter(action, "authoritative_route_sources_json"))
+        {
+            reasons.Add("community_center_bundle_reward_projection_drifted");
+        }
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
     private static string[] ValidateCommunityCenterDonationPlan(SmallModelAction action, SnapshotEnvelope snapshot)
     {
         if (action.OptionId != "executor.donate_community_center_item")
@@ -44,6 +400,10 @@ public sealed partial class ActionQueueCompiler
         }
 
         var reasons = new List<string>();
+        var hasDonationProjection =
+            CommunityCenterDonationParameterProtocol.TryParseExecution(
+                action.Parameters,
+                out var donationProjection);
         var slot = ReadIntParameter(action, "inventory_slot_index");
         var noteX = ReadIntParameter(action, "community_center_note_tile_x");
         var noteY = ReadIntParameter(action, "community_center_note_tile_y");
@@ -53,11 +413,19 @@ public sealed partial class ActionQueueCompiler
         var targetY = ReadIntParameter(action, "target_tile_y");
         var standX = ReadIntParameter(action, "stand_tile_x");
         var standY = ReadIntParameter(action, "stand_tile_y");
-        var bundleId = ReadIntParameter(action, "bundle_id");
-        var areaId = ReadIntParameter(action, "bundle_area_id");
-        var ingredientIndex = ReadIntParameter(action, "bundle_ingredient_index");
+        int? bundleId = hasDonationProjection
+            ? donationProjection.BundleId
+            : null;
+        int? areaId = hasDonationProjection
+            ? donationProjection.BundleAreaId
+            : null;
+        int? ingredientIndex = hasDonationProjection
+            ? donationProjection.Binding.BundleIngredientIndex
+            : null;
         var quality = ReadIntParameter(action, "expected_item_quality");
-        var requiredStack = ReadIntParameter(action, "required_stack");
+        int? requiredStack = hasDonationProjection
+            ? donationProjection.Binding.RequiredStack
+            : null;
         var inventoryTotalBefore = ReadIntParameter(action, "inventory_item_total_before");
         var inventoryTotalAfter = ReadIntParameter(action, "inventory_item_total_after");
         var stackBefore = ReadIntParameter(action, "expected_stack_before");
@@ -73,7 +441,7 @@ public sealed partial class ActionQueueCompiler
             !stackBefore.HasValue || !stackAfter.HasValue || stackBefore.Value < requiredStack.Value || stackAfter.Value != stackBefore.Value - requiredStack.Value ||
             !inventoryTotalBefore.HasValue || !inventoryTotalAfter.HasValue || inventoryTotalBefore.Value < stackBefore.Value || inventoryTotalAfter.Value != inventoryTotalBefore.Value - requiredStack.Value ||
             !requiredSlots.HasValue || requiredSlots.Value < 1 || !completedBefore.HasValue || !completedAfter.HasValue || completedAfter.Value <= completedBefore.Value ||
-            string.IsNullOrWhiteSpace(ReadParameter(action, "bundle_data_key")) || string.IsNullOrWhiteSpace(ReadParameter(action, "qualified_item_id")) ||
+            !hasDonationProjection ||
             !TryBoolParameter(action, "expected_bundle_complete_after", out var completesBundle) || completesBundle != (completedAfter.Value >= requiredSlots.Value) ||
             !TryBoolParameter(action, "expected_bundle_reward_available_after", out _) ||
             !ReadIntParameter(action, "expected_complete_bundle_count_after").HasValue ||
@@ -106,7 +474,11 @@ public sealed partial class ActionQueueCompiler
             ReadBool(progress.Value, "can_read_junimo_text") != true ||
             ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
             ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
-            !TryFindCommunityCenterBundle(progress.Value, bundleId.Value, ReadParameter(action, "bundle_data_key"), out var bundle) ||
+            !TryFindCommunityCenterBundle(
+                progress.Value,
+                bundleId.Value,
+                donationProjection.Binding.BundleDataKey,
+                out var bundle) ||
             ReadString(bundle, "projection_status") != "exact" || ReadInt(bundle, "area_id") != areaId.Value ||
             ReadString(bundle, "area_name") != ReadParameter(action, "bundle_area_name") ||
             NullableReadInt(bundle, "note_tile_x") != noteX || NullableReadInt(bundle, "note_tile_y") != noteY ||
@@ -116,7 +488,12 @@ public sealed partial class ActionQueueCompiler
             ReadString(bundle, "area_completion_mail_id") != ReadParameter(action, "area_completion_mail_id") ||
             !bundle.TryGetProperty("ingredients", out var ingredients) || ingredients.ValueKind != JsonValueKind.Array ||
             completedAfter.Value != (completesBundle ? ingredients.GetArrayLength() : completedBefore.Value + 1) ||
-            !TryFindCommunityCenterDonationCandidate(bundle, slot.Value, ingredientIndex.Value, ReadParameter(action, "qualified_item_id"), out var candidate) ||
+            !TryFindCommunityCenterDonationCandidate(
+                bundle,
+                slot.Value,
+                ingredientIndex.Value,
+                donationProjection.QualifiedItemId,
+                out var candidate) ||
             ReadString(candidate, "action_status") != "ready" || ReadString(candidate, "item_id") != ReadParameter(action, "item_id") ||
             ReadString(candidate, "runtime_type") != ReadParameter(action, "target_runtime_type") || ReadInt(candidate, "quality") != quality.Value ||
             ReadInt(candidate, "required_stack") != requiredStack.Value || ReadInt(candidate, "stack_before") != stackBefore.Value ||
@@ -152,6 +529,29 @@ public sealed partial class ActionQueueCompiler
         foreach (var row in rows.EnumerateArray())
         {
             if (row.ValueKind == JsonValueKind.Object && ReadInt(row, "bundle_id") == bundleId && ReadString(row, "bundle_data_key") == dataKey)
+            {
+                bundle = row;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool TryFindCommunityCenterBundleByArea(
+        JsonElement progress,
+        int areaId,
+        out JsonElement bundle)
+    {
+        bundle = default;
+        if (!progress.TryGetProperty("bundle_rows", out var rows) ||
+            rows.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+        foreach (var row in rows.EnumerateArray())
+        {
+            if (row.ValueKind == JsonValueKind.Object &&
+                ReadInt(row, "area_id") == areaId)
             {
                 bundle = row;
                 return true;

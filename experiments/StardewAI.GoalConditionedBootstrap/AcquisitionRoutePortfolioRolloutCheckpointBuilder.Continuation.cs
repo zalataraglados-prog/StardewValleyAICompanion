@@ -139,6 +139,17 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 preference.SelectedAdmission is not null &&
                 !preference.FormalTrainingAuthorized,
             "Continuation rollout Teacher preference is not verified.");
+        Require(AcquisitionRouteCommunityCenterProvenanceSupport
+                    .SameDenominator(
+                        prior.CommunityCenterProvenance,
+                        request.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    request.CommunityCenterProvenance,
+                    preference.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    settlement.CommunityCenterProvenance),
+            "Continuation Community Center provenance drifted across the rollout.");
 
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
@@ -215,6 +226,9 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 : "verified_continuation_transition_fresh_replan_required",
             RolloutId = prior.RolloutId,
             GoalId = prior.GoalId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    preference.CommunityCenterProvenance),
             RootPreferenceRequestSha256 =
                 prior.RootPreferenceRequestSha256,
             CurrentTeacherPreferenceSha256 =

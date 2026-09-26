@@ -1,3 +1,4 @@
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -104,7 +105,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 continue;
             var alternative = lowering.Alternatives[index];
             if (!alternativesByKey.TryGetValue(
-                    AlternativeAuthorityKey(group.RequirementId, index),
+                    CurrentCommunityCenterRequirementAuthorityBuilder.AlternativeKey(
+                        group.RequirementId,
+                        index),
                     out var authority) ||
                 authority.AlternativeIndex != index ||
                 authority.MatchKind != alternative.MatchKind)
@@ -315,6 +318,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
     {
         candidateQuality = 0;
         evidence = string.Empty;
+        var hasBinding =
+            CommunityCenterDonationParameterProtocol.TryParseBinding(
+                candidate.Parameters,
+                "continuation.",
+                out var binding);
         if (!string.Equals(
                 candidate.OptionId,
                 "community_center.donate_bundle_items",
@@ -332,18 +340,13 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 candidate,
                 "continuation.target_location",
                 "CommunityCenter") ||
-            !ReadParameterEquals(
-                candidate,
-                "continuation.bundle_data_key",
-                progress.RuntimeKey) ||
-            !ReadIntParameterEquals(
-                candidate,
-                "continuation.bundle_ingredient_index",
-                alternativeIndex) ||
-            !ReadIntParameterEquals(
-                candidate,
-                "continuation.required_stack",
-                alternative.Amount) ||
+            !hasBinding ||
+            !string.Equals(
+                binding.BundleDataKey,
+                progress.RuntimeKey,
+                StringComparison.Ordinal) ||
+            binding.BundleIngredientIndex != alternativeIndex ||
+            binding.RequiredStack != alternative.Amount ||
             !ReadParameterEquals(
                 candidate,
                 "continuation.item_id",
@@ -435,6 +438,11 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
     {
         candidateQuality = null;
         evidence = string.Empty;
+        var hasBinding =
+            CommunityCenterDonationParameterProtocol.TryParseBinding(
+                candidate.Parameters,
+                string.Empty,
+                out var binding);
         var exactItemIdentity = alternative.MatchKind is "item_id" or "category" &&
             string.Equals(candidate.ItemId, target.ItemId,
                 StringComparison.Ordinal) &&
@@ -457,15 +465,13 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 "donate_community_center_item",
                 StringComparison.Ordinal) ||
             candidate.Quantity != alternative.Amount ||
-            !ReadParameterEquals(candidate, "bundle_data_key", progress.RuntimeKey) ||
-            !ReadIntParameterEquals(
-                candidate,
-                "bundle_ingredient_index",
-                alternativeIndex) ||
-            !ReadIntParameterEquals(
-                candidate,
-                "required_stack",
-                alternative.Amount) ||
+            !hasBinding ||
+            !string.Equals(
+                binding.BundleDataKey,
+                progress.RuntimeKey,
+                StringComparison.Ordinal) ||
+            binding.BundleIngredientIndex != alternativeIndex ||
+            binding.RequiredStack != alternative.Amount ||
             !ReadIntParameterEquals(
                 candidate,
                 "expected_bundle_completed_count_before",

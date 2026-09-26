@@ -26,6 +26,7 @@ public sealed partial class FarmReadAdapter
         var outputItemsJson = string.Empty;
         var outputExperience = 0;
         var inventoryAcceptsOutput = false;
+        var outputAuthoritativeRouteSources = Array.Empty<object>();
         if (output is not null)
         {
             outputProjection = ProjectFishPondInventoryOutput(output);
@@ -39,6 +40,13 @@ public sealed partial class FarmReadAdapter
 
         var neededItem = pond.neededItem.Value;
         var pondData = FishPond.GetRawData(pond.fishType.Value);
+        if (output is not null)
+        {
+            outputAuthoritativeRouteSources =
+                ReadFishPondOutputAuthoritativeRouteSources(
+                    pondData,
+                    output.QualifiedItemId);
+        }
         var unresolvedRequest = neededItem is not null && !pond.hasCompletedRequest.Value &&
             pond.currentOccupants.Value >= pond.maxOccupants.Value &&
             pond.maxOccupants.Value + 1 > pond.lastUnlockedPopulationGate.Value &&
@@ -162,6 +170,8 @@ public sealed partial class FarmReadAdapter
             output_stack = outputProjection?.Quantity ?? 0,
             output_unit_state_sha256 = outputProjection?.UnitStateSha256 ?? string.Empty,
             output_items_json = outputItemsJson,
+            output_authoritative_route_sources =
+                outputAuthoritativeRouteSources,
             output_state_context = outputProjection is null ? "not_applicable" : "post_inventory_receive",
             output_inventory_accepts = inventoryAcceptsOutput,
             output_safe_slot_index = safeSlot,
@@ -300,6 +310,86 @@ public sealed partial class FarmReadAdapter
             Game1.random = liveRandom;
         }
     }
+
+    private static object[] ReadFishPondOutputAuthoritativeRouteSources(
+        FishPondData? data,
+        string qualifiedItemId)
+    {
+        if (data?.ProducedItems is null ||
+            string.IsNullOrWhiteSpace(data.Id) ||
+            string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            return Array.Empty<object>();
+        }
+
+        var expectedItemId = FishPondUnqualifiedObjectId(qualifiedItemId);
+        var sources = new List<object>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var rowIndex = 0;
+            rowIndex < data.ProducedItems.Count;
+            rowIndex++)
+        {
+            var row = data.ProducedItems[rowIndex];
+            var sourcePrefix = "fish_pond:" + data.Id + ":" + rowIndex;
+            AddFishPondOutputSource(
+                sources,
+                seen,
+                sourcePrefix,
+                row.ItemId,
+                expectedItemId);
+            if (row.RandomItemId is null)
+                continue;
+            for (var randomIndex = 0;
+                randomIndex < row.RandomItemId.Count;
+                randomIndex++)
+            {
+                AddFishPondOutputSource(
+                    sources,
+                    seen,
+                    sourcePrefix + ":random:" + randomIndex,
+                    row.RandomItemId[randomIndex],
+                    expectedItemId);
+            }
+        }
+        return sources.ToArray();
+    }
+
+    private static void AddFishPondOutputSource(
+        ICollection<object> sources,
+        ISet<string> seen,
+        string sourceId,
+        string? rawItemIds,
+        string expectedItemId)
+    {
+        if (string.IsNullOrWhiteSpace(rawItemIds))
+            return;
+        var matches = rawItemIds.Split(
+                '|',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries)
+            .Select(FishPondUnqualifiedObjectId)
+            .Where(itemId => string.Equals(
+                itemId,
+                expectedItemId,
+                StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal);
+        foreach (var itemId in matches)
+        {
+            if (!seen.Add(sourceId + "|" + itemId))
+                continue;
+            sources.Add(new
+            {
+                route_kind = "native_fish_pond_output",
+                source_id = sourceId,
+                qualified_item_id = "(O)" + itemId
+            });
+        }
+    }
+
+    private static string FishPondUnqualifiedObjectId(string? itemId) =>
+        itemId?.StartsWith("(O)", StringComparison.Ordinal) == true
+            ? itemId[3..]
+            : itemId ?? string.Empty;
 
     private static int? ResolveFishPondSpawnTime(FishPondData? data, string? fishItemId)
     {

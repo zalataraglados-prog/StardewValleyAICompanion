@@ -113,11 +113,6 @@ internal sealed partial class AcquisitionProcessingLeadTimeSnapshotState
         return false;
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record SnapshotArrayState(
         bool Available,

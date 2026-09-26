@@ -207,5 +207,12 @@ public sealed class MachineRelocationIntentPlanBinderTests
                 SnapshotEnvelope snapshot,
                 ReservationPortfolioRouteSettlementRequest request) =>
             throw new NotSupportedException();
+
+        public ReservationPortfolioSupportingTransitionSettlementResult
+            SettleReservationPortfolioSupportingTransition(
+                SnapshotEnvelope snapshot,
+                ReservationPortfolioSupportingTransitionSettlementRequest
+                    request) =>
+            throw new NotSupportedException();
     }
 }

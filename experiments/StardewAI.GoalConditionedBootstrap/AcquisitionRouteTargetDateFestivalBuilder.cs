@@ -200,9 +200,4 @@ public static partial class AcquisitionRouteTargetDateFestivalBuilder
             StringComparison.Ordinal);
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

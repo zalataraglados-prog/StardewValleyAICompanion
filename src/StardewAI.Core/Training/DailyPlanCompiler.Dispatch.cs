@@ -35,7 +35,7 @@ namespace StardewAI.Core.Training
                 ["festival.play_slingshot_game"] = new[] { "play_fair_slingshot_game" },
                 ["festival.play_strength_game"] = new[] { "play_fair_strength_game" },
                 ["festival.spin_wheel"] = new[] { "spin_fair_wheel" },
-                ["community_center.donate_bundle_items"] = new[] { "route_connector_tile", "donate_community_center_item" },
+                ["community_center.donate_bundle_items"] = new[] { "route_connector_tile", "read_first_junimo_note", "donate_community_center_item", "pay_community_center_vault_bundle", "claim_community_center_bundle_reward" },
                 ["joja.advance_development"] = new[] { "purchase_joja_membership", "purchase_joja_project" },
                 ["quest.accept_daily"] = new[] { "route_connector_tile", "daily_quest_board_approach", "accept_daily_quest" },
                 ["quest.accept_special_order"] = new[] { "route_connector_tile", "special_order_board_approach", "special_order_board_open", "special_order_board_dialogue_advance", "accept_special_order" },
@@ -675,6 +675,18 @@ namespace StardewAI.Core.Training
             {
                 return CommunityCenterDonationSteps(candidate);
             }
+            if (candidate.Kind == "claim_community_center_bundle_reward")
+            {
+                return CommunityCenterRewardSteps(candidate);
+            }
+            if (candidate.Kind == "pay_community_center_vault_bundle")
+            {
+                return CommunityCenterMoneyPaymentSteps(candidate);
+            }
+            if (candidate.Kind == "read_first_junimo_note")
+            {
+                return CommunityCenterFirstNoteSteps(candidate);
+            }
             if ((candidate.Kind == "purchase_joja_membership" || candidate.Kind == "purchase_joja_project") &&
                 OptionCandidateCompilerKinds["joja.advance_development"].Contains(
                     candidate.Kind,
@@ -838,6 +850,7 @@ namespace StardewAI.Core.Training
             }
 
             if (candidate.Kind == "mining_reach_depth_plan_envelope" ||
+                candidate.Kind == "mining_buried_item_plan_envelope" ||
                 candidate.Kind == "mining_combat_training_plan_envelope" ||
                 candidate.Kind == "mining_slay_monsters_plan_envelope" ||
                 candidate.Kind == "mining_collect_quest_resource_plan_envelope" ||

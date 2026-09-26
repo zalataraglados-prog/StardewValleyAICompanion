@@ -116,6 +116,11 @@ dotnet run --project $bootstrap --no-build -- `
 if ($LASTEXITCODE -ne 0) {
     throw 'Current Community Center denominator regression failed.'
 }
+$currentCommunityCenterRegressionSnapshot = Join-Path $output `
+    'current-community-center-denominator-fixture\standard-snapshot.json'
+if (-not (Test-Path -LiteralPath $currentCommunityCenterRegressionSnapshot)) {
+    throw 'Current Community Center normalized regression snapshot is missing.'
+}
 $masterAngler = @($requirementInventory.requirement_sets |
     Where-Object requirement_set_id -eq 'master_angler')
 if ($masterAngler.Count -ne 1 -or -not [bool]$masterAngler[0].acquisition_routes_complete) {
@@ -498,22 +503,90 @@ if ($targetDateCalendar.status -ne `
     @($targetDateEligibleRoutes | Where-Object route_kind -eq 'sells').Count -ne 93) {
     throw 'Acquisition route target-date calendar-axis regression failed.'
 }
+$currentRouteCalendarResolutionPath = Join-Path $output `
+    'current-acquisition-route-calendar-resolution-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-current-acquisition-route-calendar-resolution `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --snapshot $currentCommunityCenterRegressionSnapshot `
+    --output $currentRouteCalendarResolutionPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Current acquisition route calendar resolution failed.'
+}
+$currentTargetDateCalendarPath = Join-Path $output `
+    'current-acquisition-route-target-date-calendar-day-0-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-current-acquisition-route-target-date-calendar `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $currentRouteCalendarResolutionPath `
+    --snapshot $currentCommunityCenterRegressionSnapshot `
+    --target-total-day 0 `
+    --output $currentTargetDateCalendarPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Current acquisition route target-date calendar resolution failed.'
+}
+$currentRouteCalendarResolution = Get-Content `
+    -LiteralPath $currentRouteCalendarResolutionPath -Raw | ConvertFrom-Json
+$currentTargetDateCalendar = Get-Content `
+    -LiteralPath $currentTargetDateCalendarPath -Raw | ConvertFrom-Json
+$currentRouteCalendarHash = (Get-FileHash `
+    -LiteralPath $currentRouteCalendarResolutionPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$currentSnapshotHash = (Get-FileHash `
+    -LiteralPath $currentCommunityCenterRegressionSnapshot `
+    -Algorithm SHA256).Hash.ToLowerInvariant()
+if (-not [bool]$currentRouteCalendarResolution.uses_current_community_center_denominator -or
+    -not [bool]$currentTargetDateCalendar.uses_current_community_center_denominator -or
+    $currentRouteCalendarResolution.community_center_bundle_mode -notin `
+        @('standard', 'remixed') -or
+    $currentTargetDateCalendar.community_center_bundle_mode -ne `
+        $currentRouteCalendarResolution.community_center_bundle_mode -or
+    $currentTargetDateCalendar.community_center_denominator_sha256 -ne `
+        $currentRouteCalendarResolution.community_center_denominator_sha256 -or
+    $currentTargetDateCalendar.community_center_source_state_hash -ne `
+        $currentRouteCalendarResolution.community_center_source_state_hash -or
+    $currentTargetDateCalendar.community_center_snapshot_sha256 -ne `
+        $currentSnapshotHash -or
+    $currentTargetDateCalendar.static_calendar_resolution_sha256 -ne `
+        $currentRouteCalendarHash -or
+    [int]$currentTargetDateCalendar.route_occurrence_count -ne `
+        [int]$currentRouteCalendarResolution.route_occurrence_count -or
+    -not [bool]$currentTargetDateCalendar.route_occurrence_inventory_complete -or
+    [bool]$currentTargetDateCalendar.training_label_eligible) {
+    throw 'Current target-date calendar provenance regression failed.'
+}
 $snapshotForUnlock = Get-Content -LiteralPath $FullShipmentSnapshot -Raw |
     ConvertFrom-Json
 $unlockTargetTotalDay =
     [int]$snapshotForUnlock.state.time.total_days.value
-$unlockTargetDateCalendarPath = Join-Path $output `
-    'acquisition-route-target-date-calendar-snapshot-day-v1.json'
+$dependencyRouteCalendarResolutionPath = Join-Path $output `
+    'current-acquisition-route-calendar-resolution-snapshot-day-v1.json'
 dotnet run --project $bootstrap --no-build -- `
-    build-acquisition-route-target-date-calendar `
+    build-current-acquisition-route-calendar-resolution `
     --requirement-inventory $requirementInventoryPath `
     --acquisition-lowering $acquisitionLoweringPath `
     --master-angler-windows $masterAnglerWindowsPath `
-    --calendar-resolution $routeCalendarResolutionPath `
+    --snapshot $FullShipmentSnapshot `
+    --output $dependencyRouteCalendarResolutionPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Snapshot-date current route calendar resolution failed.'
+}
+$unlockTargetDateCalendarPath = Join-Path $output `
+    'current-acquisition-route-target-date-calendar-snapshot-day-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-current-acquisition-route-target-date-calendar `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
+    --snapshot $FullShipmentSnapshot `
     --target-total-day $unlockTargetTotalDay `
     --output $unlockTargetDateCalendarPath
 if ($LASTEXITCODE -ne 0) {
-    throw 'Snapshot-date calendar resolution failed.'
+    throw 'Snapshot-date current calendar resolution failed.'
 }
 $targetDateUnlockPath = Join-Path $output `
     'acquisition-route-target-date-unlock-state-v1.json'
@@ -522,7 +595,7 @@ dotnet run --project $bootstrap --no-build -- `
     --requirement-inventory $requirementInventoryPath `
     --acquisition-lowering $acquisitionLoweringPath `
     --master-angler-windows $masterAnglerWindowsPath `
-    --calendar-resolution $routeCalendarResolutionPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
     --target-date-calendar $unlockTargetDateCalendarPath `
     --snapshot $FullShipmentSnapshot `
     --output $targetDateUnlockPath
@@ -591,7 +664,7 @@ dotnet run --project $bootstrap --no-build -- `
     --requirement-inventory $requirementInventoryPath `
     --acquisition-lowering $acquisitionLoweringPath `
     --master-angler-windows $masterAnglerWindowsPath `
-    --calendar-resolution $routeCalendarResolutionPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
     --target-date-calendar $unlockTargetDateCalendarPath `
     --target-date-unlock $targetDateUnlockPath `
     --snapshot $FullShipmentSnapshot `

@@ -144,6 +144,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             golden_scythe_in_inventory = player.Items.Any(item => item?.QualifiedItemId == "(W)53"),
             golden_scythe_inventory_count = player.Items.Where(item => item?.QualifiedItemId == "(W)53").Sum(item => item?.Stack ?? 0),
             pickaxe_slots = player.Items.Select((item, index) => item is Pickaxe pickaxe ? PickaxeSlot(index, pickaxe) : null).Where(item => item is not null).ToArray(),
+            hoe_slots = ToolSlots<Hoe>(player),
             weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? WeaponSlot(index, weapon) : null).Where(item => item is not null).ToArray(),
             slingshot_slots = player.Items.Select((item, index) => item is Slingshot slingshot ? SlingshotSlot(index, slingshot) : null).Where(item => item is not null).ToArray(),
             combat_damage_modifiers = new

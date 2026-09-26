@@ -248,11 +248,29 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
                 preference.ExpectedLedgerRevision ==
                     admission.StrategyLedgerRevision &&
                 preference.StrategyLedgerSha256 ==
-                    admission.StrategyLedgerSha256,
+                    admission.StrategyLedgerSha256 &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    admission.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    binding.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    fresh.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    settlement.CommunityCenterProvenance) &&
+                AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
+                    preference.CommunityCenterProvenance,
+                    checkpoint.CommunityCenterProvenance),
             "Decision-state provenance drifted before supervision export.");
 
         return new AcquisitionRoutePortfolioSupervisionPayload
         {
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    preference.CommunityCenterProvenance),
             DecisionContext = decisionContext,
             DecisionStateHash = preference.SnapshotStateHash,
             DecisionSnapshotSha256 = preference.SnapshotSha256,
@@ -445,16 +463,7 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
     private static T Read<T>(string path, string label) =>
         CurrentTeacherFrontierSupport.Read<T>(path, label);
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record TransitionSource(
         AcquisitionRouteExecutionBindingInputs ExecutionInputs,

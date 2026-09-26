@@ -2085,6 +2085,22 @@ namespace StardewAI.Backend.Tests
                 return result;
             }
 
+            public ReservationPortfolioSupportingTransitionSettlementResult
+                SettleReservationPortfolioSupportingTransition(
+                    SnapshotEnvelope snapshot,
+                    ReservationPortfolioSupportingTransitionSettlementRequest
+                        request)
+            {
+                var result = portfolioService.SettleSupportingTransition(
+                    Get(snapshot),
+                    snapshot,
+                    request,
+                    "2026-09-13T00:01:00Z");
+                if (result.Accepted)
+                    ledger = result.Ledger;
+                return result;
+            }
+
             public StrategyCommitmentMutationResult
                 UpsertMachineRelocation(
                     SnapshotEnvelope snapshot,

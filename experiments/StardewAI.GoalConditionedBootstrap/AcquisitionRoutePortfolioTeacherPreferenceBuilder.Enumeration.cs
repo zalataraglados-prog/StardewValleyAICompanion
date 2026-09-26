@@ -46,7 +46,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             request.ExpectedLedgerRevision,
             resolved,
             string.Empty,
-            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>());
+            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>(),
+            string.Empty);
     }
 
     private static IEnumerable<AcquisitionRoutePortfolioProposal>
@@ -59,7 +60,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             int expectedLedgerRevision,
             ResolvedScope[] resolved,
             string priorCheckpointSha256,
-            AcquisitionRoutePortfolioCompletedAlternatives[] completed)
+            AcquisitionRoutePortfolioCompletedAlternatives[] completed,
+            string priorSupportingTransitionReplanSha256)
     {
         var scopes = resolved.Select(row => row.Scope)
             .OrderBy(ScopeKey, StringComparer.Ordinal)
@@ -112,6 +114,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 SnapshotStateHash = snapshotStateHash,
                 ExpectedLedgerRevision = expectedLedgerRevision,
                 PriorRolloutCheckpointSha256 = priorCheckpointSha256,
+                PriorSupportingTransitionReplanSha256 =
+                    priorSupportingTransitionReplanSha256,
                 CompletedAlternatives = completed
                     .Select(AcquisitionRoutePortfolioBuilder
                         .CloneCompletedAlternatives)

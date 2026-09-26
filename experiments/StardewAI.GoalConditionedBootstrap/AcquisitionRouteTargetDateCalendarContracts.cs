@@ -26,6 +26,21 @@ public sealed class AcquisitionRouteTargetDateCalendarReport
     [JsonPropertyName("static_calendar_resolution_sha256")]
     public string StaticCalendarResolutionSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("uses_current_community_center_denominator")]
+    public bool UsesCurrentCommunityCenterDenominator { get; set; }
+
+    [JsonPropertyName("community_center_bundle_mode")]
+    public string CommunityCenterBundleMode { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_denominator_sha256")]
+    public string CommunityCenterDenominatorSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_source_state_hash")]
+    public string CommunityCenterSourceStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("community_center_snapshot_sha256")]
+    public string CommunityCenterSnapshotSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("target_total_day")]
     public int TargetTotalDay { get; set; }
 
@@ -62,7 +77,7 @@ public sealed class AcquisitionRouteTargetDateCalendarReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A target-date match resolves only the calendar_window axis. Matching time/weather ranges and exact dynamic predicates remain attached; unlock, route, capacity, resources, currency, reservations, lead time, retries, daily budget, opportunity cost and fresh receipt remain independent. This report cannot authorize a training label.";
+        "A target-date match resolves only the calendar_window axis. A current-save build must deterministically reproduce its hash-bound standard/remixed Community Center route root and preserve that provenance. Matching time/weather ranges and exact dynamic predicates remain attached; unlock, route, capacity, resources, currency, reservations, lead time, retries, daily budget, opportunity cost and fresh receipt remain independent. This report cannot authorize a training label.";
 }
 
 public sealed record AcquisitionRouteTargetDateCalendar(

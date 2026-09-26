@@ -1295,7 +1295,7 @@
     },
     {
       "direction_id": "complete_community_center",
-      "status": "in_progress",
+      "status": "complete",
       "completion_node_id": "dependency.complete_community_center.native_completion",
       "source_ids": [
         "native.utility",
@@ -1308,11 +1308,7 @@
         "runtime_data_objects",
         "authoritative_dependency_graph"
       ],
-      "blockers": [
-        "prove the native Community Center unlock and Junimo-text event chain then bind the active standard or remixed bundle denominator instead of assuming the locked standard inventory is the live save",
-        "lower every selected bundle acquisition route, including the EVD-334-admitted artifact-spot route, through season weather clock quality facility and reservation constraints",
-        "prove all room rewards pending mail and native completion ceremony settlement through fresh receipts before the Year 3 evaluation"
-      ],
+      "blockers": [],
       "nodes": [
         {
           "id": "dependency.complete_community_center.native_completion",
@@ -1670,8 +1666,8 @@
         "authoritative_dependency_graph"
       ],
       "blockers": [
-        "consume the admitted per-requirement acquisition lowerings with exact one-unit reservation and live calendar unlock resource route-time probability or retry bounds",
-        "prove completed-day native shipping settlement and achievement 34 receipt for all 154 requirements before the Year 3 evaluation"
+        "emit exact authoritative source identity on every remaining live acquisition candidate and compile any required supporting options until the selected endpoint is current; unsupported or ambiguous source kinds must remain fail-closed",
+        "generate and admit the complete fresh-save 154-item runtime artifact chain through the implemented ordered recurrence verifier before the Year 3 evaluation"
       ],
       "nodes": [
         {
@@ -1733,6 +1729,42 @@
             "input": "one missing requirement and its complete authoritative acquisition_routes array",
             "teacher_choice": "minimum deadline-safe route after cross-goal reservation and opportunity cost",
             "unknown_rng": "branch or reserve retries; never label an unavailable future outcome as known",
+            "dispatch_compiler": "compile-acquisition-route-dispatch",
+            "dispatch_contract": "the same-state live candidate must prove exact item source and endpoint identity before the existing daily-plan and action-queue compilers may emit native primitives",
+            "current_exact_source_route_kinds": [
+              "sells",
+              "harvests_as",
+              "native_location_fish_spawn",
+              "native_mine_fishing_override",
+              "native_crab_pot_output",
+              "native_farm_animal_produce",
+              "native_farm_animal_deluxe_produce",
+              "native_fish_pond_output",
+              "native_fruit_tree_produce",
+              "native_location_forage_spawn",
+              "native_location_artifact_spot",
+              "native_object_artifact_spot_chance",
+              "native_geode_drop",
+              "native_geode_default_drop",
+              "machine_output",
+              "native_machine_flavored_output",
+              "native_machine_item_query_output",
+              "native_mine_buried_item",
+              "native_monster_drop_table",
+              "native_radioactive_ore_node",
+              "native_solar_panel_output",
+              "native_wild_tree_seed",
+              "native_wild_tree_seed_drop",
+              "native_wild_tree_chop_drop",
+              "native_wild_tree_tapper_output",
+              "native_bush_shake",
+              "native_tea_bush_harvest",
+              "native_spring_onion_harvest",
+              "native_ginger_harvest",
+              "native_tree_moss_harvest",
+              "recipe_output"
+            ],
+            "unsupported_source_behavior": "fail_closed_without_queue",
             "output": "one fresh observed reserve-safe copy in player inventory"
           }
         },
@@ -1774,6 +1806,9 @@
             "execution_owner": "deterministic_day_compiler_not_policy_label",
             "precondition": "terminal sleep remains legal after all required daily commitments",
             "receipt": "fresh shipped collection count completion ratio and achievement state",
+            "ordinary_receipt_builder": "build-full-shipment-settlement-receipt",
+            "terminal_receipt_builder": "build-full-shipment-terminal-settlement-receipt",
+            "isolated_runtime_smoke": "scripts/Invoke-RuntimeFullShipmentTerminalSmoke.ps1",
             "refresh_snapshot_after_transition": true
           }
         },
@@ -1789,6 +1824,9 @@
           ],
           "rule": {
             "continue_while": { "path": "world_progress.full_shipment_progress.complete", "operator": "equals", "value": false },
+            "proof_manifest_schema": "full_shipment_recurrence_proof_manifest.v1",
+            "proof_receipt_builder": "build-full-shipment-recurrence-proof-receipt",
+            "formal_training_authorized": false,
             "iteration": [
               "refresh native missing requirement set",
               "select or acquire one reserve-safe unit",

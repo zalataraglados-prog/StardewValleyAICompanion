@@ -36,7 +36,10 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             string runId,
             string executorVersion,
             AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
-            string continuationRequestPath)
+            string continuationRequestPath,
+            AcquisitionRouteExecutionBinding? expectedBindingOverride = null,
+            AcquisitionRouteFreshTerminalReceiptAdmission?
+                expectedFreshOverride = null)
     {
         var context = Prepare(
             inputs,
@@ -47,7 +50,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             runId,
             executorVersion,
             continuation,
-            continuationRequestPath);
+            continuationRequestPath,
+            expectedBindingOverride,
+            expectedFreshOverride);
         return CanonicalRequest(context);
     }
 
@@ -88,7 +93,10 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             string settlementResultPath,
             string settledLedgerPath,
             AcquisitionRoutePortfolioVerifiedCheckpoint? continuation,
-            string continuationRequestPath)
+            string continuationRequestPath,
+            AcquisitionRouteExecutionBinding? expectedBindingOverride = null,
+            AcquisitionRouteFreshTerminalReceiptAdmission?
+                expectedFreshOverride = null)
     {
         var context = Prepare(
             inputs,
@@ -99,7 +107,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             runId,
             executorVersion,
             continuation,
-            continuationRequestPath);
+            continuationRequestPath,
+            expectedBindingOverride,
+            expectedFreshOverride);
         var requestPath = Path.GetFullPath(settlementRequestPath);
         var resultPath = Path.GetFullPath(settlementResultPath);
         var ledgerPath = Path.GetFullPath(settledLedgerPath);
@@ -162,11 +172,16 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             RouteOccurrenceId = context.Binding.RouteOccurrenceId,
             RouteSourceDecisionId = context.RouteSourceDecisionId,
             AfterStateHash = context.AfterSnapshot.StateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    context.Binding.CommunityCenterProvenance),
             ExecutionBindingSha256 =
                 CurrentTeacherFrontierSupport.HashFile(
                     Path.GetFullPath(executionBindingPath)),
             FreshTerminalReceiptSha256 =
                 context.FreshTerminalReceiptSha256,
+            PriorSupportingTransitionReplanSha256 =
+                context.Binding.PriorSupportingTransitionReplanSha256,
             BaseLedgerSha256 =
                 CurrentTeacherFrontierSupport.HashFile(
                     context.BaseLedgerPath),
@@ -184,15 +199,6 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             FormalTrainingAuthorized = false
         };
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
 }

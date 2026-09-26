@@ -79,6 +79,8 @@ public static class OptionImplementationCatalog
         "executor.donate_field_office_piece",
         "executor.answer_field_office_survey",
         "executor.donate_community_center_item",
+        "executor.claim_community_center_bundle_reward",
+        "executor.pay_community_center_vault_bundle",
         "executor.purchase_joja_membership",
         "executor.purchase_joja_project",
         "executor.purchase_farmhouse_upgrade",

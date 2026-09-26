@@ -31,13 +31,16 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
 
         var rows = new string[height];
         var staticRows = new string[height];
+        var buriedItemDigRows = new string[height];
         var collisionMask = CollisionMask.All & ~CollisionMask.Farmers;
         for (var y = 0; y < height; y++)
         {
             var row = new char[width];
             var staticRow = new char[width];
+            var buriedItemDigRow = new char[width];
             for (var x = 0; x < width; x++)
             {
+                var tile = new Vector2(x, y);
                 var blocked = mine.IsTileBlockedBy(new Vector2(x, y), collisionMask, CollisionMask.None, useFarmerTile: true) ||
                     mine.farmers.Any(farmer => farmer != Game1.player && FarmerBlocksTile(farmer, x, y));
                 row[x] = blocked ? '1' : '0';
@@ -46,9 +49,25 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                     Game1.viewport)
                     ? '0'
                     : '1';
+                var blockedForHoeDirt = mine.IsTileBlockedBy(
+                    tile,
+                    ~(CollisionMask.Characters | CollisionMask.Farmers));
+                var occupiedForMineHoe = mine.IsTileOccupiedBy(
+                    tile,
+                    CollisionMask.All,
+                    CollisionMask.None,
+                    useFarmerTile: true);
+                var canInvokeBuriedItemHook = !mine.isQuarryArea &&
+                    !blockedForHoeDirt &&
+                    !occupiedForMineHoe &&
+                    mine.doesTileHaveProperty(x, y, "Diggable", "Back") is not null &&
+                    !mine.terrainFeatures.ContainsKey(tile) &&
+                    !mine.objects.ContainsKey(tile);
+                buriedItemDigRow[x] = canInvokeBuriedItemHook ? '1' : '0';
             }
             rows[y] = new string(row);
             staticRows[y] = new string(staticRow);
+            buriedItemDigRows[y] = new string(buriedItemDigRow);
         }
 
         cachedCollisionSignature = signature;
@@ -60,10 +79,28 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             encoding = "row_major_strings_1_blocked_0_passable",
             blocked_rows = rows,
             static_blocked_rows = staticRows,
+            buried_item_diggable_encoding =
+                "row_major_strings_1_native_hoe_hook_eligible_0_ineligible",
+            buried_item_diggable_rows = buriedItemDigRows,
+            buried_item_target_qualified_item_id = "(O)585",
+            buried_item_target_probability_per_hoe_cycle = 0.001575d,
+            buried_item_probability_status =
+                "exact_native_branch_probability_unrealized_global_rng",
+            buried_item_rng_contract =
+                "Game1.random_not_read_or_replayed_by_transparent_bridge",
+            buried_item_authoritative_route_sources = new object[]
+            {
+                new
+                {
+                    route_kind = "native_mine_buried_item",
+                    source_id = "MineShaft.checkForBuriedItem",
+                    qualified_item_id = "(O)585"
+                }
+            },
             excludes_current_player = true,
             includes_map_objects_characters_terrain_and_other_farmers = true,
             static_rows_exclude_objects_characters_terrain_farmers_and_resource_clumps = true,
-            source = "GameLocation.IsTileBlockedBy plus GameLocation.isTilePassable; decompiled methods are read-only"
+            source = "GameLocation.IsTileBlockedBy plus GameLocation.isTilePassable and decompiled Hoe.DoFunction/MineShaft.checkForBuriedItem eligibility; no RNG consumed"
         };
         return cachedCollisionContext;
     }

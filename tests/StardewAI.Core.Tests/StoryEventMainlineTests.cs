@@ -25,6 +25,7 @@ public sealed class StoryEventMainlineTests
         Assert.Equal("advance_story_event_automatic", candidate.Kind);
         AssertParameter(candidate.Parameters, "story_event_id", "EVD322Auto");
         AssertParameter(candidate.Parameters, "story_event_command_raw", "message \"hello\"");
+        AssertParameter(candidate.Parameters, "story_event_max_runtime_ticks", "14400");
 
         var plan = new DailyPlanCompiler().Compile(new[] { Prediction(candidate) }, snapshot.StateHash);
         var planStep = Assert.Single(plan.Steps);
@@ -32,7 +33,9 @@ public sealed class StoryEventMainlineTests
         var item = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
         Assert.Empty(item.BlockingReasons);
         Assert.Equal(LowOption, item.OptionId);
-        Assert.Equal("advance_story_event", Assert.Single(item.NormalizedCommand.Steps).StepType);
+        var compiledStep = Assert.Single(item.NormalizedCommand.Steps);
+        Assert.Equal("advance_story_event", compiledStep.StepType);
+        Assert.Equal(14400, compiledStep.EstimatedTicks);
     }
 
     [Fact]
@@ -124,6 +127,12 @@ public sealed class StoryEventMainlineTests
         Assert.Contains("string.Equals(command, \"catQuestion\"", runtime, StringComparison.Ordinal);
         Assert.Contains("string.Equals(request.StoryEventQuestionKey, \"pet\"", runtime, StringComparison.Ordinal);
         Assert.Contains("request.StoryEventResponseIndex == 0", runtime, StringComparison.Ordinal);
+        Assert.Contains("active.MissingEventTicks", runtime, StringComparison.Ordinal);
+        Assert.Contains("active.MaxRuntimeTicks", runtime, StringComparison.Ordinal);
+        Assert.Contains(
+            "story_event_missing_without_native_seen_receipt",
+            runtime,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("skipEvent(", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("CurrentCommand =", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("eventsSeen.Add", runtime, StringComparison.Ordinal);

@@ -18,7 +18,44 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     public static AcquisitionRouteCalendarResolutionReport Build(
         string inventoryPath,
         string loweringPath,
-        string masterAnglerWindowIndexPath)
+        string masterAnglerWindowIndexPath) => BuildCore(
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            null,
+            null);
+
+    public static AcquisitionRouteCalendarResolutionReport BuildCurrent(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string snapshotPath) => BuildCore(
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            CurrentCommunityCenterDenominatorBuilder.Build(
+                inventoryPath,
+                snapshotPath),
+            snapshotPath);
+
+    internal static AcquisitionRouteCalendarResolutionReport Build(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string snapshotPath,
+        CurrentCommunityCenterDenominatorReport denominator) => BuildCore(
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            denominator,
+            snapshotPath);
+
+    private static AcquisitionRouteCalendarResolutionReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        CurrentCommunityCenterDenominatorReport? communityCenterDenominator,
+        string? snapshotPath)
     {
         var inventoryFullPath = Path.GetFullPath(inventoryPath);
         var loweringFullPath = Path.GetFullPath(loweringPath);
@@ -36,6 +73,25 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             inventory,
             lowering,
             "Acquisition route calendar resolution");
+        CurrentCommunityCenterRequirementAuthority? communityCenterAuthority = null;
+        if (communityCenterDenominator is not null)
+        {
+            if (string.IsNullOrWhiteSpace(snapshotPath))
+            {
+                throw new InvalidDataException(
+                    "A current Community Center calendar build requires its snapshot path.");
+            }
+            var snapshotFullPath = Path.GetFullPath(snapshotPath);
+            CurrentCommunityCenterRequirementAuthorityBuilder.ValidateIdentity(
+                communityCenterDenominator,
+                inventory,
+                inventoryFullPath,
+                snapshotFullPath);
+            communityCenterAuthority =
+                CurrentCommunityCenterRequirementAuthorityBuilder.Build(
+                    communityCenterDenominator,
+                    lowering);
+        }
 
         var locationEvidence = VerifyEvidence(
             inventory,
@@ -154,16 +210,16 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             StringComparer.Ordinal);
         var routes = BuildRoutes(
             lowering,
+            communityCenterAuthority,
             windowSpecies,
             locations,
             crops,
             shops,
             accessConstraints,
             windows.DeadlineTotalDayExclusive);
-        var expectedRouteCount = lowering.RequirementSets
-            .SelectMany(set => set.Groups)
-            .SelectMany(group => group.Alternatives)
-            .Sum(alternative => alternative.Routes.Length);
+        var expectedRouteCount = ExpectedRouteCount(
+            lowering,
+            communityCenterAuthority);
         Require(routes.Length == expectedRouteCount &&
                 routes.Select(route => route.RouteOccurrenceId)
                     .Distinct(StringComparer.Ordinal).Count() == routes.Length,
@@ -183,6 +239,16 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 CurrentTeacherFrontierSupport.HashFile(inventoryFullPath),
             AcquisitionLoweringSha256 =
                 CurrentTeacherFrontierSupport.HashFile(loweringFullPath),
+            UsesCurrentCommunityCenterDenominator =
+                communityCenterDenominator is not null,
+            CommunityCenterBundleMode =
+                communityCenterDenominator?.BundleMode ?? string.Empty,
+            CommunityCenterDenominatorSha256 =
+                communityCenterDenominator?.DenominatorSha256 ?? string.Empty,
+            CommunityCenterSourceStateHash =
+                communityCenterDenominator?.SourceStateHash ?? string.Empty,
+            CommunityCenterSnapshotSha256 =
+                communityCenterDenominator?.SnapshotSha256 ?? string.Empty,
             MasterAnglerWindowIndexSha256 =
                 CurrentTeacherFrontierSupport.HashFile(windowFullPath),
             MasterAnglerOpportunityCatalogSha256 =
@@ -216,9 +282,4 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         };
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

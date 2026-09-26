@@ -63,12 +63,13 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             MuseumSetId,
             "acquisition lowering");
         ValidateMuseumSets(museumInventory, museumLowering);
-        ValidateCommunityCenterDenominatorIdentity(
+        CurrentCommunityCenterRequirementAuthorityBuilder.ValidateIdentity(
             communityCenterDenominator,
             inventory,
             inventoryFullPath,
             snapshotFullPath);
-        var communityCenterAuthority = BuildCurrentCommunityCenterAuthority(
+        var communityCenterAuthority =
+            CurrentCommunityCenterRequirementAuthorityBuilder.Build(
             communityCenterDenominator,
             lowering);
         ValidateCommunityCenterSets(
@@ -403,7 +404,9 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             communityCenterAlternatives)
     {
         if (communityCenterAlternatives.TryGetValue(
-                AlternativeAuthorityKey(requirementId, alternativeIndex),
+                CurrentCommunityCenterRequirementAuthorityBuilder.AlternativeKey(
+                    requirementId,
+                    alternativeIndex),
                 out var authority))
         {
             return authority.AcceptedTargets.Select(value =>

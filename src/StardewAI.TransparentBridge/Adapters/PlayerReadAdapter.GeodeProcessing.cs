@@ -171,6 +171,7 @@ public sealed partial class PlayerReadAdapter
             prediction.status,
             expected_output = prediction.Primary,
             accepted_outputs = prediction.Accepted,
+            authoritative_route_sources = prediction.AuthoritativeRouteSources,
             expected_mail_additions = prediction.MailAdditions,
             prediction.reason,
             rng_seed_inputs = new
@@ -306,8 +307,13 @@ public sealed partial class PlayerReadAdapter
             (!data.GeodeDropsDefaultItems || random.NextBool()))
         {
             var errors = new List<string>();
-            foreach (var drop in data.GeodeDrops.OrderBy(row => row.Precedence))
+            foreach (var sourcedDrop in data.GeodeDrops
+                         .Select((drop, index) => new GeodeDropSource(
+                             drop,
+                             index))
+                         .OrderBy(row => row.Drop.Precedence))
             {
+                var drop = sourcedDrop.Drop;
                 if (!random.NextBool(drop.Chance) || drop.Condition is not null &&
                     !GameStateQuery.CheckConditions(drop.Condition, null, null, null, null, random)) continue;
                 var item = ItemQueryResolver.TryResolveRandomItem(drop,
@@ -315,7 +321,15 @@ public sealed partial class PlayerReadAdapter
                     avoidRepeat: false, null, null, null, (query, error) => errors.Add(query + ":" + error));
                 if (item is null) continue;
                 if (drop.SetFlagOnPickup is not null) item.SetFlagOnPickup = drop.SetFlagOnPickup;
-                return GeodeOutputProjection.FromItem(item, errors.Count == 0 ? string.Empty : string.Join("|", errors));
+                return GeodeOutputProjection.FromItem(
+                    item,
+                    errors.Count == 0 ? string.Empty : string.Join("|", errors)) with
+                {
+                    AuthoritativeRouteSources = ProjectGeodeDropRouteSources(
+                        geode,
+                        sourcedDrop,
+                        item)
+                };
             }
         }
         var count = random.Next(3) * 2 + 1;
@@ -323,7 +337,7 @@ public sealed partial class PlayerReadAdapter
         if (random.NextBool(0.01)) count = 20;
         if (random.NextBool())
         {
-            return random.Next(4) switch
+            return WithDefaultGeodeSource(random.Next(4) switch
             {
                 0 or 1 => Exact("(O)390", count), 2 => Exact("(O)330"),
                 _ => Exact(geode.QualifiedItemId switch
@@ -331,14 +345,104 @@ public sealed partial class PlayerReadAdapter
                     "(O)749" => "(O)" + (82 + random.Next(3) * 2), "(O)535" => "(O)86",
                     "(O)536" => "(O)84", _ => "(O)82"
                 })
-            };
+            });
         }
         if (geode.QualifiedItemId == "(O)535")
-            return random.Next(3) switch { 0 => Exact("(O)378", count), 1 => Exact(player.deepestMineLevel > 25 ? "(O)380" : "(O)378", count), _ => Exact("(O)382", count) };
+            return WithDefaultGeodeSource(random.Next(3) switch { 0 => Exact("(O)378", count), 1 => Exact(player.deepestMineLevel > 25 ? "(O)380" : "(O)378", count), _ => Exact("(O)382", count) });
         if (geode.QualifiedItemId == "(O)536")
-            return random.Next(4) switch { 0 => Exact("(O)378", count), 1 => Exact("(O)380", count), 2 => Exact("(O)382", count), _ => Exact(player.deepestMineLevel > 75 ? "(O)384" : "(O)380", count) };
-        return random.Next(5) switch { 0 => Exact("(O)378", count), 1 => Exact("(O)380", count), 2 => Exact("(O)382", count), 3 => Exact("(O)384", count), _ => Exact("(O)386", count / 2 + 1) };
+            return WithDefaultGeodeSource(random.Next(4) switch { 0 => Exact("(O)378", count), 1 => Exact("(O)380", count), 2 => Exact("(O)382", count), _ => Exact(player.deepestMineLevel > 75 ? "(O)384" : "(O)380", count) });
+        return WithDefaultGeodeSource(random.Next(5) switch { 0 => Exact("(O)378", count), 1 => Exact("(O)380", count), 2 => Exact("(O)382", count), 3 => Exact("(O)384", count), _ => Exact("(O)386", count / 2 + 1) });
     }
+
+    private static object[] ProjectGeodeDropRouteSources(
+        Item geode,
+        GeodeDropSource sourcedDrop,
+        Item output)
+    {
+        if (!output.QualifiedItemId.StartsWith("(O)", StringComparison.Ordinal))
+            return Array.Empty<object>();
+
+        var expectedItemId = output.QualifiedItemId[3..];
+        var sources = new List<object>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var sourcePrefix = "geode:" + geode.ItemId + ":" +
+            sourcedDrop.RowIndex;
+        AddGeodeDropRouteSource(
+            sources,
+            seen,
+            sourcePrefix,
+            sourcedDrop.Drop.ItemId,
+            expectedItemId);
+        if (sourcedDrop.Drop.RandomItemId is not null)
+        {
+            for (var index = 0;
+                index < sourcedDrop.Drop.RandomItemId.Count;
+                index++)
+            {
+                AddGeodeDropRouteSource(
+                    sources,
+                    seen,
+                    sourcePrefix + ":random:" + index,
+                    sourcedDrop.Drop.RandomItemId[index],
+                    expectedItemId);
+            }
+        }
+        return sources.ToArray();
+    }
+
+    private static void AddGeodeDropRouteSource(
+        ICollection<object> sources,
+        ISet<string> seen,
+        string sourceId,
+        string? rawItemIds,
+        string expectedItemId)
+    {
+        if (string.IsNullOrWhiteSpace(rawItemIds))
+            return;
+        foreach (var itemId in rawItemIds.Split(
+                     '|',
+                     StringSplitOptions.RemoveEmptyEntries |
+                     StringSplitOptions.TrimEntries)
+                 .Select(value => value.StartsWith(
+                         "(O)",
+                         StringComparison.Ordinal)
+                     ? value[3..]
+                     : value)
+                 .Where(value => value.All(character =>
+                     char.IsLetterOrDigit(character) || character == '_'))
+                 .Where(value => string.Equals(
+                     value,
+                     expectedItemId,
+                     StringComparison.Ordinal))
+                 .Distinct(StringComparer.Ordinal))
+        {
+            if (!seen.Add(sourceId + "|" + itemId))
+                continue;
+            sources.Add(new
+            {
+                route_kind = "native_geode_drop",
+                source_id = sourceId,
+                qualified_item_id = "(O)" + itemId
+            });
+        }
+    }
+
+    private static GeodeOutputProjection WithDefaultGeodeSource(
+        GeodeOutputProjection projection) =>
+        projection.Primary?.QualifiedItemId == "(O)82"
+            ? projection with
+            {
+                AuthoritativeRouteSources = new object[]
+                {
+                    new
+                    {
+                        route_kind = "native_geode_default_drop",
+                        source_id = "Utility.getTreasureFromGeode",
+                        qualified_item_id = "(O)82"
+                    }
+                }
+            }
+            : projection;
 
     private static GeodeOutputProjection ApplyClintArtifactGuard(Item geode, GeodeOutputProjection projection, Farmer player)
     {
@@ -444,6 +548,9 @@ public sealed partial class PlayerReadAdapter
     private sealed record GeodeOutputProjection(string kind, string status, GeodeProjectedItem? Primary,
         GeodeProjectedItem[] Accepted, string[] MailAdditions, string reason)
     {
+        public object[] AuthoritativeRouteSources { get; init; } =
+            Array.Empty<object>();
+
         public static GeodeOutputProjection FromItem(Item item, string reason = "", string[]? mailAdditions = null)
         {
             var projected = GeodeProjectedItem.From(item, mailAdditions);
@@ -453,4 +560,8 @@ public sealed partial class PlayerReadAdapter
         public static GeodeOutputProjection Blocked(string reason) =>
             new("blocked", "blocked", null, Array.Empty<GeodeProjectedItem>(), Array.Empty<string>(), reason);
     }
+
+    private sealed record GeodeDropSource(
+        ObjectGeodeDropData Drop,
+        int RowIndex);
 }

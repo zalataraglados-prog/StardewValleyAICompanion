@@ -123,6 +123,21 @@ public sealed partial class ModEntry
         }
         Game1.player.mailReceived.Add("canReadJunimoText");
         Game1.MasterPlayer.mailReceived.Add("ccDoorUnlock");
+        if (request.CommunityCenterFixtureCase == "complete_all_areas")
+        {
+            for (var area = 0; area < communityCenter.areasComplete.Count; area++)
+            {
+                if (area == target.AreaId)
+                {
+                    continue;
+                }
+                var mailId = RuntimeCommunityCenterAreaCompletionMailId(area);
+                if (!string.IsNullOrWhiteSpace(mailId))
+                {
+                    Game1.MasterPlayer.mailReceived.Add(mailId);
+                }
+            }
+        }
 
         if (!communityCenter.isJunimoNoteAtArea(target.AreaId))
         {
@@ -282,6 +297,18 @@ public sealed partial class ModEntry
             farmer.mailForTomorrow.Remove(value);
         }
     }
+
+    private static string RuntimeCommunityCenterAreaCompletionMailId(int areaId) =>
+        areaId switch
+        {
+            0 => "ccPantry",
+            1 => "ccCraftsRoom",
+            2 => "ccFishTank",
+            3 => "ccBoilerRoom",
+            4 => "ccVault",
+            5 => "ccBulletin",
+            _ => string.Empty
+        };
 
     private sealed record CommunityCenterFixtureTarget(
         int BundleId,

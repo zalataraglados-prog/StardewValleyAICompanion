@@ -76,9 +76,4 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             StringComparison.Ordinal);
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

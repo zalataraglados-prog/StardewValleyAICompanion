@@ -44,9 +44,4 @@ internal static class AcquisitionTargetDateSnapshotValidator
             fieldValue.TryGetInt32(out value);
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

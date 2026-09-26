@@ -3,7 +3,7 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeToolSourceGuardTests
 {
     [Fact]
-    public void RuntimeFarmToolExecutorsUseNativeToolFunctions()
+    public void RuntimeWaterAndHoeExecutorsUseNativeToolFunctions()
     {
         var source = RuntimeHarnessSources.All;
 
@@ -26,10 +26,11 @@ public sealed class NativeToolSourceGuardTests
         Assert.Contains("request.LocationId, location.NameOrUniqueName", executionSource, StringComparison.Ordinal);
         Assert.Contains("BuildAdjacentToolPath(location, target", executionSource, StringComparison.Ordinal);
         Assert.Contains("ValidateWaterCropTarget(Game1.currentLocation, tool.Target", executionSource, StringComparison.Ordinal);
-        Assert.Contains("ValidateTillSoilTarget(Game1.getFarm(), tool.Target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("ValidateTillSoilTarget(Game1.currentLocation, tool.Target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("location is not Farm && location is not MineShaft", executionSource, StringComparison.Ordinal);
         Assert.Contains("CompleteNativeTool(tool);", executionSource, StringComparison.Ordinal);
         Assert.Contains("? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(location, tool.Target)", executionSource, StringComparison.Ordinal);
-        Assert.Contains(": !tool.BeforeHadHoeDirt.GetValueOrDefault() && farm.terrainFeatures.TryGetValue", executionSource, StringComparison.Ordinal);
+        Assert.Contains(": !tool.BeforeHadHoeDirt.GetValueOrDefault() && location.terrainFeatures.TryGetValue", executionSource, StringComparison.Ordinal);
         Assert.Contains("Status = verified ? \"applied\" : \"blocked\"", executionSource, StringComparison.Ordinal);
 
         var wateringFixtureSource = Slice(source, "private TrainingExecutionResult ExecuteSetupWateringTarget", "private TrainingExecutionResult ExecuteSetupTillSoilTarget");

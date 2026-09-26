@@ -129,6 +129,102 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
+    public void CombatStepBindsOnlyItsSelectedMonstersAuthoritativeSources()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines",
+            monsters: """
+            [{"runtime_identity":"slime-1","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Green Slime","tile_x":2,"tile_y":2,"health":20,"combat_experience_on_defeat":3,"combat_experience_condition":"native_monster_death_attributed_to_player","authoritative_route_sources":[{"route_kind":"native_monster_drop_table","source_id":"monster:Green Slime","qualified_item_id":"(O)766"}],"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":2.0,"expected_active_damage_duration_ms":600.0,"duration_status":"exact_active_melee_phase_excluding_movement","terminal_effect":"defeat"}]}]
+            """);
+
+        var candidate = Assert.Single(
+            MiningReachDepthCandidateBuilder.Build(
+                snapshot,
+                new[]
+                {
+                    Parameter("skill_training_target_id", "combat"),
+                    Parameter("target_skill_level", "10"),
+                    Parameter("target_location_family", "ordinary_mines")
+                }));
+
+        var sourceParameter = Assert.Single(candidate.Parameters.Where(
+            parameter => parameter.Name ==
+                "authoritative_route_sources_json"));
+        using var document = JsonDocument.Parse(sourceParameter.Value);
+        var source = Assert.Single(document.RootElement.EnumerateArray());
+        Assert.Equal(
+            "native_monster_drop_table",
+            source.GetProperty("route_kind").GetString());
+        Assert.Equal(
+            "monster:Green Slime",
+            source.GetProperty("source_id").GetString());
+        Assert.Equal(
+            "(O)766",
+            source.GetProperty("qualified_item_id").GetString());
+    }
+
+    [Fact]
+    public void CombatStepRejectsMonsterSourceWhoseIdentityDoesNotMatch()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines",
+            monsters: """
+            [{"runtime_identity":"slime-1","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Green Slime","tile_x":2,"tile_y":2,"health":20,"combat_experience_on_defeat":3,"combat_experience_condition":"native_monster_death_attributed_to_player","authoritative_route_sources":[{"route_kind":"native_monster_drop_table","source_id":"monster:Bat","qualified_item_id":"(O)766"}],"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":2.0,"expected_active_damage_duration_ms":600.0,"duration_status":"exact_active_melee_phase_excluding_movement","terminal_effect":"defeat"}]}]
+            """);
+
+        var candidate = Assert.Single(
+            MiningReachDepthCandidateBuilder.Build(
+                snapshot,
+                new[]
+                {
+                    Parameter("skill_training_target_id", "combat"),
+                    Parameter("target_skill_level", "10"),
+                    Parameter("target_location_family", "ordinary_mines")
+                }));
+
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value == "[]");
+    }
+
+    [Fact]
+    public void MineStoneStepBindsExactRadioactiveOreNodeSource()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines",
+            objects: """
+            [{"tile_x":3,"tile_y":2,"item_id":"95","qualified_item_id":"(O)95","is_breakable_stone":true,"best_pickaxe_hits_remaining":2,"drop_rule_branch":"game_location_break_stone_direct_node","guaranteed_drop_qualified_item_ids":["(O)909"],"authoritative_route_sources":[{"route_kind":"native_radioactive_ore_node","source_id":"GameLocation.breakStone","qualified_item_id":"(O)909"}]}]
+            """);
+
+        var candidate = Assert.Single(
+            MiningReachDepthCandidateBuilder.Build(
+                snapshot,
+                new[]
+                {
+                    Parameter("target_depth", "45"),
+                    Parameter("target_location_family", "ordinary_mines")
+                }));
+
+        var sourceParameter = Assert.Single(candidate.Parameters.Where(
+            parameter => parameter.Name ==
+                "authoritative_route_sources_json"));
+        using var document = JsonDocument.Parse(sourceParameter.Value);
+        var source = Assert.Single(document.RootElement.EnumerateArray());
+        Assert.Equal(
+            "native_radioactive_ore_node",
+            source.GetProperty("route_kind").GetString());
+        Assert.Equal(
+            "GameLocation.breakStone",
+            source.GetProperty("source_id").GetString());
+        Assert.Equal(
+            "(O)909",
+            source.GetProperty("qualified_item_id").GetString());
+    }
+
+    [Fact]
     public void CombatTrainingModeUsesExistingFloorProgressionWhenNoMonsterExists()
     {
         var snapshot = MiningSnapshot(
@@ -674,7 +770,7 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "mining_step_reason" && parameter.Value.Contains("target_depth_reached", StringComparison.Ordinal));
     }
 
-    private static SnapshotEnvelope MiningSnapshot(int currentDepth, string targetFamily, string collisionStatus = "available", int health = 100, double energy = 220, string objectsStatus = "available", int deepestMineLevel = 120, string monsters = "[]")
+    private static SnapshotEnvelope MiningSnapshot(int currentDepth, string targetFamily, string collisionStatus = "available", int health = 100, double energy = 220, string objectsStatus = "available", int deepestMineLevel = 120, string monsters = "[]", string objects = "[{\"tile_x\":3,\"tile_y\":2,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":2}]")
     {
         return Snapshot("""
         {
@@ -684,7 +780,7 @@ public sealed class MiningReachDepthPlanningTests
           "mining": {
             "current_mine": {"value":{"location_id":"UndergroundMine","mine_level":CURRENT_DEPTH,"mine_area":40,"mine_kind":"TARGET_FAMILY","is_loaded_current_location":true,"is_skull_cavern":false,"is_quarry_mine":false,"is_dangerous":false,"additional_difficulty":0},"status":"available","source":{"kind":"game_object","path":"MineShaft.mineLevel"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tiles": {"value":{"player_tile":{"tile_x":1,"tile_y":2},"map":{"width":6,"height":5,"status":"loaded_field_only"},"collision_context":{"status":"COLLISION_STATUS","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100001","100001","111111"]},"exits":[{"tile_x":4,"tile_y":2,"tile_index":115,"expected_destination":{"location_id":"Mine","tile_x":23,"tile_y":8}}],"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "objects": {"value":[{"tile_x":3,"tile_y":2,"qualified_item_id":"(O)32","is_breakable_stone":true,"best_pickaxe_hits_remaining":2}],"status":"OBJECTS_STATUS","source":{"kind":"game_object","path":"MineShaft.objects"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "objects": {"value":OBJECTS_JSON,"status":"OBJECTS_STATUS","source":{"kind":"game_object","path":"MineShaft.objects"},"adapter":"test","read_at_tick":1,"confidence":1},
             "resource_clumps": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.resourceClumps"},"adapter":"test","read_at_tick":1,"confidence":1},
             "monsters": {"value":MONSTERS,"status":"available","source":{"kind":"game_object","path":"MineShaft.characters"},"adapter":"test","read_at_tick":1,"confidence":1},
             "floor_objectives": {"value":{"must_kill_all_monsters_to_advance":false,"enemy_count":0,"ladder_has_spawned":false},"status":"available","source":{"kind":"game_object","path":"MineShaft.mustKillAllMonstersToAdvance"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -693,7 +789,7 @@ public sealed class MiningReachDepthPlanningTests
             "completeness": {"value":{"status":"complete","unavailable_reasons":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
-        """.Replace("CURRENT_DEPTH", currentDepth.ToString()).Replace("TARGET_FAMILY", targetFamily).Replace("COLLISION_STATUS", collisionStatus).Replace("HEALTH", health.ToString()).Replace("ENERGY", energy.ToString(System.Globalization.CultureInfo.InvariantCulture)).Replace("OBJECTS_STATUS", objectsStatus).Replace("DEEPEST_MINE_LEVEL", deepestMineLevel.ToString()).Replace("MONSTERS", monsters));
+        """.Replace("CURRENT_DEPTH", currentDepth.ToString()).Replace("TARGET_FAMILY", targetFamily).Replace("COLLISION_STATUS", collisionStatus).Replace("HEALTH", health.ToString()).Replace("ENERGY", energy.ToString(System.Globalization.CultureInfo.InvariantCulture)).Replace("OBJECTS_STATUS", objectsStatus).Replace("DEEPEST_MINE_LEVEL", deepestMineLevel.ToString()).Replace("MONSTERS", monsters).Replace("OBJECTS_JSON", objects));
     }
 
     private static SmallModelActionEnvelope Request(string stateHash)

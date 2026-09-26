@@ -6,7 +6,7 @@ using StardewAI.Core.Strategy;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class ReservationPortfolioLedgerTests
+public sealed partial class ReservationPortfolioLedgerTests
 {
     [Fact]
     public void CommitAppliesMaterialAndCurrencyClaimsAtOneRevision()

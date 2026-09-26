@@ -410,9 +410,19 @@ identities to 185 concrete, route-backed acquisition targets and hashes those ta
 denominator. Current collection-frontier, preference and receipt builders now rebuild and consume this
 active denominator instead of the static `community_center_standard` alternatives. Category ingredients
 stay one native slot while binding concrete accepted targets, and Teacher supervision carries the
-denominator hash. The next boundary is to propagate that dynamic identity and requirement set through
-every target-date axis and receipt; unlock, room-reward/mail and final-ceremony settlement also remain
-explicit blockers to formal training admission.
+denominator hash. The acquisition-route calendar root now uses the same authority to replace the static
+Community Center route occurrences, preserving concrete accepted targets and active-denominator provenance.
+The explicit target-date calendar now deterministically rebuilds and object-compares that current root,
+preserves its bundle-mode/denominator/state/snapshot identity and evaluates the shared calendar axis without
+restoring static alternatives. Unlock now selects static/current deterministic recompilation from that verified
+artifact, and the existing recursive predecessor rebuild plus SHA chain carries the current identity through
+festival, location, capacity, resource, budget, reservation, lead-time, retry, daily-budget and opportunity-cost
+axes without a second implementation. Portfolio admission now converts that identity into one typed provenance value;
+Teacher selection, commit/dispatch, fresh terminal evidence, settlement, checkpoints, continuation, terminal proof,
+rollout admission and per-transition supervision all propagate and cross-check it. Continuations bind the same
+static/current mode, bundle mode and denominator hash while allowing only the expected fresh decision-state/snapshot
+hashes to advance. Junimo unlock, room-reward/mail and final-ceremony settlement remain the explicit blockers to formal
+training admission.
 
 The legacy `StructuredPolicyTrainer` path which treats `candidate.Selected` as the positive
 pair member is explicitly non-admitted for this stage. Before Stage 6, the trajectory and

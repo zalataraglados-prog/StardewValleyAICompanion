@@ -154,7 +154,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "current_location": {
-            "crops": {"value":[{"tile_x":7,"tile_y":8,"harvest_item_id":"24","harvest_method":"Grab","ready_for_harvest":true,"needs_watering":false},{"tile_x":3,"tile_y":4,"ready_for_harvest":false,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "crops": {"value":[{"tile_x":7,"tile_y":8,"harvest_item_id":"24","harvest_source_seed_id":"472","harvest_method":"Grab","ready_for_harvest":true,"needs_watering":false},{"tile_x":3,"tile_y":4,"ready_for_harvest":false,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "planting_context": {"value":{"hoe_dirt_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
@@ -179,8 +179,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal(8, candidate.TileY);
         Assert.Contains("current_location.crops[7,8].ready_for_harvest=false", candidate.ExpectedEffect);
         Assert.Contains("harvest_item_id=24", candidate.ExpectedEffect);
+        Assert.Contains("harvest_source_seed_id=472", candidate.ExpectedEffect);
         Assert.Contains("harvest_method=Grab", candidate.ExpectedEffect);
         Assert.Contains("harvest_executor_status=runtime_verified", candidate.ExpectedEffect);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "harvest_source_seed_id" &&
+            parameter.Value == "472");
         Assert.Empty(candidate.BlockReasons);
     }
 
@@ -351,7 +355,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("(O)262", candidate.QualifiedItemId);
         Assert.Equal(0, candidate.SlotIndex);
         Assert.Equal(2, candidate.Quantity);
-        Assert.Contains("move_to_adjacent=63,15", candidate.ExpectedEffect);
+        Assert.DoesNotContain("move_to_adjacent=", candidate.ExpectedEffect);
         Assert.Contains("input_slot_index=0", candidate.ExpectedEffect);
         Assert.Contains("input_stack_available=2", candidate.ExpectedEffect);
         Assert.Contains("input_sale_price=15", candidate.ExpectedEffect);
@@ -703,6 +707,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("(O)472", candidate.QualifiedItemId);
         Assert.Equal(0, candidate.SlotIndex);
         Assert.Equal(3, candidate.Quantity);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "seed_id" && parameter.Value == "472");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "harvest_source_seed_id" &&
+            parameter.Value == "472");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "harvest_item_qualified_id" &&
+            parameter.Value == "(O)24");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "adjusted_grow_days" &&
+            parameter.Value == "4");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "days_remaining_in_season" &&
+            parameter.Value == "20");
         Assert.Contains("seed_id=472", candidate.ExpectedEffect);
         Assert.Contains("adjusted_grow_days=4", candidate.ExpectedEffect);
         Assert.Contains("days_remaining_in_season=20", candidate.ExpectedEffect);

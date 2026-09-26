@@ -158,6 +158,7 @@ internal sealed class ObjectClearanceProjection
     public bool? DefenseBookMailBefore { get; init; }
     public bool? DefenseBookMailExpectedAfter { get; init; }
     public ClearanceOutputItemProjection[] OutputItems { get; init; } = Array.Empty<ClearanceOutputItemProjection>();
+    public object[] AuthoritativeRouteSources { get; init; } = Array.Empty<object>();
 
     public static ObjectClearanceProjection Blocked(string clearKind, string status, string requiredToolKind = "")
     {

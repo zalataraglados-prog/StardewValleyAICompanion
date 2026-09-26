@@ -3,6 +3,30 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
 {
     public static AcquisitionRouteFreshTerminalReceiptAdmission
+        BuildAfterSupportingTransition(
+            AcquisitionRouteSupportingTransitionRequestInputs priorInputs,
+            AcquisitionRouteSupportingTransitionSettlementProof proof,
+            string replanAdmissionPath,
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string runId,
+            string executorVersion) => BuildVerifiedBinding(
+                inputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                runId,
+                executorVersion,
+                AcquisitionRouteExecutionBindingBuilder
+                    .BuildAfterSupportingTransition(
+                        priorInputs,
+                        proof,
+                        replanAdmissionPath,
+                        inputs));
+
+    public static AcquisitionRouteFreshTerminalReceiptAdmission
         BuildInitialContinuation(
             AcquisitionRoutePortfolioInitialCheckpointProof proof,
             string checkpointPath,

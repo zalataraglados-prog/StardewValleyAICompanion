@@ -88,6 +88,10 @@ public sealed class AcquisitionRoutePortfolioSupervisionRow
 
 public sealed class AcquisitionRoutePortfolioSupervisionPayload
 {
+    [JsonPropertyName("community_center_provenance")]
+    public AcquisitionRouteCommunityCenterProvenance
+        CommunityCenterProvenance { get; set; } = new();
+
     [JsonPropertyName("decision_context")]
     public AcquisitionRoutePortfolioSupervisionDecisionContext DecisionContext
     { get; set; } = new();

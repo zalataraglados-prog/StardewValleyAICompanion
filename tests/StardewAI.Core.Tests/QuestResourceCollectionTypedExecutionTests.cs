@@ -8,6 +8,57 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 {
     [Fact]
+    public void LocationForageCandidateCarriesExactAuthoritativeSpawnRow()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            """
+            "current_location":{
+              "objects":{"value":[{
+                "tile_x":20,"tile_y":20,"item_id":"390","qualified_item_id":"(O)390",
+                "is_spawned_object":true,"spawned_object_pickup_status":"ready",
+                "spawned_object_authoritative_route_sources":[{"route_kind":"native_location_forage_spawn","source_id":"location:Farm:2","qualified_item_id":"(O)390"}],
+                "projected_total_quantity":1,"projected_harvest_quality":0,
+                "projected_gatherer_duplicate":false,
+                "foraging_experience_on_success_min":0,"foraging_experience_on_success_max":0,
+                "farming_experience_on_success_min":0,"farming_experience_on_success_max":0,
+                "harvest_experience_status":"exact","harvest_experience_basis":"native_pickup"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            "locations":{
+              "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "foraging.collect_spawned_objects" },
+                includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available,
+            string.Join(";", candidate.BlockReasons));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value.Contains(
+                "location:Farm:2",
+                StringComparison.Ordinal));
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal(
+            "executor.collect_spawned_object",
+            Assert.Single(queue.Items).OptionId);
+    }
+
+    [Fact]
     public void ResourceCollectionQuestBindsDirectSpawnedObjectReceipt()
     {
         var snapshot = ResourceCollectionSnapshot(

@@ -159,6 +159,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         Parameter("stand_tile_y", standY.ToString(CultureInfo.InvariantCulture)),
         Parameter("output_item_id", ReadString(row, "output_item_id")),
         Parameter("output_qualified_item_id", ReadString(row, "output_qualified_item_id")),
+        Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
+            new[]
+            {
+                new
+                {
+                    route_kind = "recipe_output",
+                    source_id = "cooking_recipe:" + recipeName,
+                    qualified_item_id = ReadString(
+                        row,
+                        "output_qualified_item_id")
+                }
+            })),
         Parameter("output_count", Math.Max(1, ReadInt(row, "output_count_per_craft", 1)).ToString(CultureInfo.InvariantCulture)),
         Parameter("expected_output_quality", ReadInt(row, "output_quality").ToString(CultureInfo.InvariantCulture)),
         Parameter("expected_output_order_data", ReadString(row, "output_order_data")),

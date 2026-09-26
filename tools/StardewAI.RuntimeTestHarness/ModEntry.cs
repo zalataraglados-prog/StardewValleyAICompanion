@@ -103,6 +103,9 @@ public sealed partial class ModEntry : Mod
     private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
+    private ActiveCommunityCenterVaultPayment? activeCommunityCenterVaultPayment;
+    private ActiveCommunityCenterRewardClaim? activeCommunityCenterRewardClaim;
+    private ActiveCommunityCenterFirstNote? activeCommunityCenterFirstNote;
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
     private ActiveHomeRenovation? activeHomeRenovation;
@@ -271,6 +274,7 @@ public sealed partial class ModEntry : Mod
 
         helper.Events.GameLoop.DayStarted += OnDayStartedForShippingReceipts;
         helper.Events.GameLoop.DayStarted += OnDayStartedForPetBowlReceipts;
+        helper.Events.GameLoop.Saved += OnNativeSaveCommitted;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoadedForPetBowlReceipts;
         ReconcileShippingReceipts();
     }
@@ -612,6 +616,9 @@ public sealed partial class ModEntry : Mod
         TickFieldOfficeSurvey();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
+        TickCommunityCenterVaultPayment();
+        TickCommunityCenterRewardClaim();
+        TickCommunityCenterFirstNote();
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
         TickHomeRenovation();
@@ -1323,6 +1330,14 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId ==
+                "debug.prepare_full_shipment_terminal_sleep")
+            {
+                pending.Completion.SetResult(
+                    ExecutePrepareFullShipmentTerminalSleep(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.enter_ready_incubator_house")
             {
                 pending.Completion.SetResult(
@@ -1371,6 +1386,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_full_shipment_terminal")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupFullShipmentTerminal(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_sale_target")
             {
                 pending.Completion.SetResult(ExecuteSetupSaleTarget(pending.Request));
@@ -1405,6 +1427,13 @@ public sealed partial class ModEntry : Mod
                 if (IsSpecialOrderBoardActionType(pending.Request.ExpectedActionType))
                 {
                     StartSpecialOrderBoardOpen(pending);
+                }
+                else if (string.Equals(
+                    pending.Request.InteractionKind,
+                    "community_center_note",
+                    StringComparison.Ordinal))
+                {
+                    StartCommunityCenterFirstNote(pending);
                 }
                 else if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
                     string.Equals(pending.Request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
@@ -1829,6 +1858,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_community_center_lifecycle")
+            {
+                pending.Completion.SetResult(ExecuteSetupCommunityCenterLifecycleFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.prepare_pet_bowl_sleep")
             {
                 pending.Completion.SetResult(ExecutePreparePetBowlSleep(pending.Request));
@@ -1862,6 +1897,18 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.donate_community_center_item")
             {
                 StartCommunityCenterDonation(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_community_center_bundle_reward")
+            {
+                StartCommunityCenterRewardClaim(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.pay_community_center_vault_bundle")
+            {
+                StartCommunityCenterVaultPayment(pending);
                 return;
             }
 
@@ -2357,6 +2404,9 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
+            activeCommunityCenterVaultPayment = null;
+            activeCommunityCenterRewardClaim = null;
+            activeCommunityCenterFirstNote = null;
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
             activeHomeRenovation = null;
@@ -2645,6 +2695,9 @@ public sealed partial class ModEntry : Mod
             activeFieldOfficeSurvey is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
+            activeCommunityCenterVaultPayment is not null ||
+            activeCommunityCenterRewardClaim is not null ||
+            activeCommunityCenterFirstNote is not null ||
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
             activeHomeRenovation is not null ||

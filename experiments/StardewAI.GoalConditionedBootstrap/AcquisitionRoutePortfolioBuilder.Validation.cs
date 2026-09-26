@@ -11,7 +11,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AcquisitionRoutePortfolioProposal proposal,
         SnapshotEnvelope snapshot,
         StrategyCommitmentLedger ledger,
-        AcquisitionRoutePortfolioContinuationEvidence? continuation)
+        AcquisitionRoutePortfolioContinuationEvidence? continuation,
+        string priorSupportingTransitionReplanSha256)
     {
         var reasons = new List<string>();
         if (inventory.SchemaVersion !=
@@ -84,7 +85,33 @@ public static partial class AcquisitionRoutePortfolioBuilder
             reasons.Add("selected_and_replaced_routes_overlap");
         }
         ValidateContinuationEvidence(proposal, continuation, reasons);
+        ValidateSupportingTransitionReplanEvidence(
+            proposal,
+            priorSupportingTransitionReplanSha256,
+            reasons);
         return reasons;
+    }
+
+    private static void ValidateSupportingTransitionReplanEvidence(
+        AcquisitionRoutePortfolioProposal proposal,
+        string expectedSha256,
+        ICollection<string> reasons)
+    {
+        if (string.IsNullOrEmpty(expectedSha256))
+        {
+            if (!string.IsNullOrEmpty(
+                    proposal.PriorSupportingTransitionReplanSha256))
+            {
+                reasons.Add(
+                    "unverified_supporting_transition_replan_evidence");
+            }
+            return;
+        }
+        if (!IsLowerSha256(expectedSha256) ||
+            proposal.PriorSupportingTransitionReplanSha256 != expectedSha256)
+        {
+            reasons.Add("supporting_transition_replan_evidence_mismatch");
+        }
     }
 
     private static AcquisitionRouteTargetDateOpportunityCost[] SelectRoutes(

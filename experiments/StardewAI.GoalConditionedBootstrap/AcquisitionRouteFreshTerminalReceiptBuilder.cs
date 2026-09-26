@@ -49,13 +49,18 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
             GoalId = binding.GoalId,
             GameVersion = binding.GameVersion,
             RouteOccurrenceId = binding.RouteOccurrenceId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    binding.CommunityCenterProvenance),
             ExecutionBindingSha256 = CurrentTeacherFrontierSupport.HashFile(
                 bindingPath),
             ExecutionReceiptSha256 = CurrentTeacherFrontierSupport.HashFile(
                 receiptPath),
             AfterSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
                 afterPath),
-            TerminalReceiptKind = binding.TerminalReceiptKind
+            TerminalReceiptKind = binding.TerminalReceiptKind,
+            PriorSupportingTransitionReplanSha256 =
+                binding.PriorSupportingTransitionReplanSha256
         };
         if (!string.Equals(binding.SchemaVersion,
                 "acquisition_route_execution_binding.v1",
@@ -215,14 +220,5 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
             value.TryGetInt32(out result);
     }
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

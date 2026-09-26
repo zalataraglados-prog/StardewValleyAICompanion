@@ -155,6 +155,12 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_target_qualified_item_ids_json", JsonSerializer.Serialize(targets)),
                         Parameter("quest_acquisition_target_step", isTargetReceipt.ToString().ToLowerInvariant()),
                         Parameter("quest_acquisition_source_step", isSourceStep.ToString().ToLowerInvariant()),
+                        Parameter(
+                            "authoritative_route_sources_json",
+                            MiningAuthoritativeRouteSourceBinding
+                                .ReadSelectedStepSources(
+                                    snapshot,
+                                    floorStep)),
                         Parameter("latest_exit_time", "2400"),
                         Parameter("minimum_reserve_health", "1"),
                         Parameter("estimate_status", "rolling_horizon_current_floor_step"),

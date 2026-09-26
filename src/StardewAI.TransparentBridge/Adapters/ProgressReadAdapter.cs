@@ -152,9 +152,15 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                     ? "community_center_locked"
                     : "undecided";
         var bundleRows = ReadCommunityCenterBundles(world, communityCenter, routeState);
+        var lifecycle = ReadCommunityCenterLifecycle(
+            master,
+            Game1.player,
+            communityCenter,
+            areaFlags);
 
         return new CommunityCenterProgressRef
         {
+            Lifecycle = lifecycle,
             LocationAccessible = Game1.isLocationAccessible("CommunityCenter"),
             Completed = master.hasCompletedCommunityCenter(),
             Bundles = world.Bundles.Pairs
@@ -344,9 +350,16 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
         CommunityCenter communityCenter,
         string routeState)
     {
+        var missedRewardsTile = FindActionTile(communityCenter, "MissedRewards");
         return world.BundleData
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-            .Select(pair => ReadCommunityCenterBundle(world, pair.Key, pair.Value, communityCenter, routeState))
+            .Select(pair => ReadCommunityCenterBundle(
+                world,
+                pair.Key,
+                pair.Value,
+                communityCenter,
+                routeState,
+                missedRewardsTile))
             .ToArray();
     }
 
@@ -355,7 +368,8 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
         string dataKey,
         string raw,
         CommunityCenter communityCenter,
-        string routeState)
+        string routeState,
+        MapActionTileRef? missedRewardsTile)
     {
         var keyParts = dataKey.Split('/');
         var fields = raw.Split('/');
@@ -410,6 +424,34 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                             ? "community_center_area_mutex_locked"
                             : "ready";
         var matcher = new Bundle(fields[Bundle.NameIndex], fields[Bundle.DisplayNameIndex], ingredients, completedBits, fields[Bundle.RewardIndex]);
+        var rewardAvailable = communityCenter.bundleRewards.TryGetValue(bundleId, out var liveRewardAvailable) && liveRewardAvailable;
+        var reward = ReadCommunityCenterBundleReward(
+            matcher,
+            dataKey,
+            rewardAvailable,
+            areaComplete,
+            noteAppears,
+            interactionTile,
+            missedRewardsTile,
+            communityCenter,
+            routeState,
+            menuClear,
+            mutex?.IsLocked() == true);
+        var moneyPayment = ReadCommunityCenterMoneyPayment(
+            world,
+            communityCenter,
+            dataKey,
+            areaId,
+            bundleId,
+            ingredientParts,
+            ingredients,
+            requiredSlots,
+            completedCount,
+            noteAppears,
+            interactionTile,
+            routeState,
+            menuClear,
+            mutex?.IsLocked() == true);
 
         return new CommunityCenterBundleProgressRef
         {
@@ -431,7 +473,9 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             InteractionTileX = interactionTile?.X,
             InteractionTileY = interactionTile?.Y,
             AreaMutexLocked = mutex?.IsLocked(),
-            RewardAvailable = communityCenter.bundleRewards.TryGetValue(bundleId, out var rewardAvailable) && rewardAvailable,
+            RewardAvailable = rewardAvailable,
+            Reward = reward,
+            MoneyPayment = moneyPayment,
             AreaComplete = areaComplete,
             AreaCompletionMailId = areaMailId,
             AreaCompletionMailPending = !string.IsNullOrWhiteSpace(areaMailId) && HasPendingMail(Game1.player, areaMailId),
@@ -500,6 +544,106 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                 .OrderBy(candidate => candidate.InventorySlotIndex)
                 .ThenBy(candidate => candidate.IngredientIndex)
                 .ToArray()
+        };
+    }
+
+    private static CommunityCenterBundleRewardRef ReadCommunityCenterBundleReward(
+        Bundle bundle,
+        string dataKey,
+        bool rewardAvailable,
+        bool areaComplete,
+        bool noteAppears,
+        Point? noteInteractionTile,
+        MapActionTileRef? missedRewardsTile,
+        CommunityCenter communityCenter,
+        string routeState,
+        bool menuClear,
+        bool areaMutexLocked)
+    {
+        Item? item;
+        try
+        {
+            item = bundle.getReward();
+        }
+        catch (Exception exception)
+        {
+            return new CommunityCenterBundleRewardRef
+            {
+                ProjectionStatus = "unavailable",
+                ProjectionFailure = "bundle_reward_description_invalid:" + exception.GetType().Name,
+                ActionStatus = "community_center_bundle_reward_projection_unavailable"
+            };
+        }
+
+        if (item is null || item.Stack <= 0 || string.IsNullOrWhiteSpace(item.QualifiedItemId))
+        {
+            return new CommunityCenterBundleRewardRef
+            {
+                ProjectionStatus = "unavailable",
+                ProjectionFailure = "bundle_reward_item_unavailable",
+                ActionStatus = "community_center_bundle_reward_projection_unavailable"
+            };
+        }
+
+        var claimMode = areaComplete
+            ? "missed_rewards_chest"
+            : "junimo_note_present_button";
+        var endpointX = areaComplete ? missedRewardsTile?.X : noteInteractionTile?.X;
+        var endpointY = areaComplete ? missedRewardsTile?.Y : noteInteractionTile?.Y;
+        var inventoryTotalBefore = Game1.player.Items
+            .Where(candidate => candidate?.QualifiedItemId == item.QualifiedItemId)
+            .Sum(candidate => candidate?.Stack ?? 0);
+        var inventoryAccepts = !item.IsRecipe &&
+            item.QualifiedItemId is not ("(O)102" or "(O)326" or "(O)434") &&
+            Game1.player.couldInventoryAcceptThisItem(item);
+        var actionStatus = routeState == "conflicting_irreversible_flags"
+            ? "community_center_route_state_conflict"
+            : routeState == "joja_locked"
+                ? "community_center_route_locked_out_by_joja"
+                : !ReferenceEquals(Game1.currentLocation, communityCenter)
+                    ? "community_center_not_current_location"
+                    : !menuClear
+                        ? "community_center_menu_or_dialogue_not_clear"
+                        : !rewardAvailable
+                            ? "community_center_bundle_reward_not_available"
+                            : !inventoryAccepts
+                                ? "community_center_bundle_reward_inventory_unavailable"
+                                : !endpointX.HasValue || !endpointY.HasValue
+                                    ? "community_center_bundle_reward_endpoint_unavailable"
+                                    : areaComplete && communityCenter.missedRewardsChestVisible.Value != true
+                                        ? "community_center_missed_rewards_chest_not_visible"
+                                        : !areaComplete && (!noteAppears || areaMutexLocked)
+                                            ? "community_center_bundle_reward_note_unavailable"
+                                            : "ready";
+
+        return new CommunityCenterBundleRewardRef
+        {
+            ProjectionStatus = "exact",
+            ProjectionFailure = string.Empty,
+            ItemId = item.ItemId,
+            QualifiedItemId = item.QualifiedItemId,
+            RuntimeType = item.GetType().FullName ?? string.Empty,
+            Quality = item.Quality,
+            Stack = item.Stack,
+            InventoryItemTotalBefore = inventoryTotalBefore,
+            InventoryItemTotalAfter = inventoryTotalBefore + item.Stack,
+            InventoryAcceptsReward = inventoryAccepts,
+            ClaimMode = claimMode,
+            InteractionTileX = endpointX,
+            InteractionTileY = endpointY,
+            ActionStatus = actionStatus,
+            AuthoritativeRouteSources = new[]
+            {
+                new CommunityCenterAuthoritativeRouteSourceRef
+                {
+                    RouteKind = "creates_reward_item",
+                    SourceId = "bundle:" + dataKey + ":reward",
+                    QualifiedItemId = item.QualifiedItemId,
+                    SourceAsset = "Data/Bundles",
+                    SourcePath = "payload." + dataKey + "[reward]",
+                    NativeConsumer = "JunimoNoteMenu.GetBundleRewards/Utility.getItemFromStandardTextDescription"
+                }
+            }
         };
     }
 

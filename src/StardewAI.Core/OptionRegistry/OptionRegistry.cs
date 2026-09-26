@@ -1395,12 +1395,12 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact vinegar stack decreases", "target tree moss is cleared", "target tree permanently stops growing moss through native placement" },
                 new[] { "block_missing_treatment_reason", "block_unverified_tree_runtime_type", "block_moss_growth_already_stopped", "block_vinegar_inventory_identity_drift", "block_unverified_route", "block_menu_unsafe_item_use" }));
 
-            Register(Option("executor.till_soil", "farm", "Till one eligible farm tile with the native hoe",
+            Register(Option("executor.till_soil", "world", "Till one eligible current-location tile with the native hoe",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "current_location.map", "locations.collision_grid", "menus.active_menu" },
-                new[] { "native Hoe creates HoeDirt on target tile" },
+                new[] { "native Hoe creates HoeDirt on target tile", "MineShaft targets invoke the native buried-item hook without RNG preview" },
                 new[] { "block_unverified_till_tile", "block_missing_hoe", "block_menu_unsafe_tool_use" }));
 
             Register(Option("executor.harvest_crop", "farm", "Harvest one verified mature crop tile",
@@ -1626,6 +1626,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.community_center", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the exact Junimo note", "native CommunityCenter.checkBundle opens the area menu", "native JunimoNoteMenu clicks donate exactly one full ingredient stack" },
                 new[] { "block_joja_locked_or_route_conflict", "block_bundle_projection_or_mutex_drift", "block_inventory_or_note_tile_drift", "block_unverified_route", "block_direct_bundle_inventory_reward_mail_or_route_mutation" }));
+
+            Register(Option("executor.claim_community_center_bundle_reward", "community_center", "Claim one exact pending bundle reward through its native Community Center menu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.community_center", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact live reward endpoint", "native Junimo Note present button or Missed Rewards action opens ItemGrabMenu", "native exact bundle reward click clears its pending flag and adds the item" },
+                new[] { "block_joja_locked_or_route_conflict", "block_reward_identity_capacity_endpoint_or_mutex_drift", "block_unverified_route", "block_direct_bundle_reward_or_inventory_mutation" }));
+
+            Register(Option("executor.pay_community_center_vault_bundle", "community_center", "Pay one exact Vault bundle through the native Junimo Note purchase button",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "world_progress.community_center", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact Vault note", "native Junimo Note purchase button deducts the exact live amount", "native bundle reward and area lifecycle effects settle" },
+                new[] { "block_joja_locked_or_route_conflict", "block_bundle_money_or_source_drift", "block_insufficient_money_or_note_mutex_drift", "block_unverified_route", "block_direct_money_bundle_reward_or_area_mutation" }));
 
             Register(Option("executor.purchase_joja_membership", "joja", "Purchase verified Joja membership through native Morris dialogue",
                 OptionBehaviorCategories.Mechanical,

@@ -25,6 +25,11 @@ public sealed class AnimalProductMainlineTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "required_tool_kind" && parameter.Value == "Milk Pail");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_skill_experience_delta" && parameter.Value == "5");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_energy_delta" && parameter.Value == "-4");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value.Contains(
+                "farm_animal:White Cow:0",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -155,6 +160,7 @@ public sealed class AnimalProductMainlineTests
             "harvest_status":"ready","inventory_accepts_harvest_output":true,"harvest_output_runtime_type":"OUTPUT_RUNTIME_TYPE",
             "harvest_output_qualified_item_id":"(O)184","harvest_output_quality":OUTPUT_QUALITY,"harvest_output_quantity":OUTPUT_QUANTITY,
             "harvest_output_unit_state_sha256":"OUTPUT_HASH","harvest_expected_output_items_json":OUTPUT_ITEMS,
+            "harvest_authoritative_route_sources":[{"route_kind":"native_farm_animal_produce","source_id":"farm_animal:White Cow:0","qualified_item_id":"(O)184"}],
             "harvest_stat_increments_json":STAT_INCREMENTS,"harvest_energy_cost":4,"harvest_farming_experience_delta":5,
             "harvest_friendship_delta":5,"harvest_projection_status":"exact","tile_x":12,"tile_y":10
           }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},

@@ -359,6 +359,47 @@ namespace StardewAI.Core.Execution
                 }
             }
 
+            if (objective.Kind == MiningObjectiveKinds.AcquireBuriedItem)
+            {
+                if (TryFieldValue(mining, "debris", out var buriedDebris))
+                {
+                    var pickup = SelectDebris(
+                        buriedDebris,
+                        search,
+                        grid,
+                        new[] { "(O)585" },
+                        restoreSlot,
+                        playerInventory);
+                    if (pickup is not null)
+                    {
+                        pickup.Reason = "target_mine_buried_item_already_on_floor";
+                        return pickup;
+                    }
+                }
+
+                var threat = SelectImmediateThreat(
+                    monsters,
+                    search,
+                    grid,
+                    start,
+                    objective.ThreatRadiusTiles,
+                    bombFinisherAvailable,
+                    movementTileDurationMs);
+                if (threat is not null)
+                {
+                    threat.Reason =
+                        "buried_item_hoe_window_combat_interrupt";
+                    threat.SafetyWindowStatus =
+                        "blocked_by_immediate_monster_threat";
+                    threat.RestoreSlotIndex = restoreSlot;
+                    return threat;
+                }
+
+                return SelectBuriedItemDig(tiles, resources, search, grid,
+                    restoreSlot) ??
+                    Blocked("no_reachable_native_mine_buried_item_dig_tile");
+            }
+
             if (objective.Kind == MiningObjectiveKinds.CollectResourceOrArtifact)
             {
                 if (TryFieldValue(mining, "debris", out var debris))

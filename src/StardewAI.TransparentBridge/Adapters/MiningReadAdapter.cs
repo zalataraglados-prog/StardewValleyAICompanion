@@ -51,7 +51,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
         var fields = new Dictionary<string, object>
         {
             ["current_mine"] = Field(ReadCurrentMine(mine), "MineShaft.mineLevel/getMineArea/GetAdditionalDifficulty and flags", tick, "mining_read_adapter"),
-            ["tiles"] = Field(ReadTiles(mine), "loaded GameLocation.map plus side-effect-free GameLocation.IsTileBlockedBy reads", tick, "mining_read_adapter"),
+            ["tiles"] = Field(ReadTiles(mine), "loaded GameLocation.map plus side-effect-free collision reads and exact decompiled native mine buried-item hoe eligibility", tick, "mining_read_adapter"),
             ["objects"] = Field(ReadObjects(mine, Game1.player), "MineShaft.objects, Object.IsBreakableStone/MinutesUntilReady, and BreakableContainer live fields", tick, "mining_read_adapter"),
             ["resource_clumps"] = Field(ReadResourceClumps(mine, Game1.player), "MineShaft.resourceClumps live type, footprint, health, and decompiled tool gates", tick, "mining_read_adapter"),
             ["monsters"] = Field(ReadMonsters(mine), "MineShaft.characters filtered to Monster", tick, "mining_read_adapter"),

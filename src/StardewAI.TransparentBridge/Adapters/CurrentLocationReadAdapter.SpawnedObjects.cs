@@ -1,11 +1,177 @@
 using Microsoft.Xna.Framework;
 using StardewValley;
+using StardewValley.GameData.Locations;
+using StardewValley.Locations;
 using StardewObject = StardewValley.Object;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class CurrentLocationReadAdapter
 {
+    private static object[] ReadSpawnedObjectAuthoritativeRouteSources(
+        GameLocation location,
+        StardewObject item)
+    {
+        if (!item.IsSpawnedObject ||
+            string.IsNullOrWhiteSpace(item.QualifiedItemId))
+        {
+            return Array.Empty<object>();
+        }
+
+        var currentData = location.GetData();
+        var currentItemIds = new HashSet<string>(StringComparer.Ordinal)
+        {
+            UnqualifiedObjectId(item.QualifiedItemId)
+        };
+        var sources = new List<object>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        if (Game1.locationData.TryGetValue("Default", out var defaultData))
+        {
+            AddLocationForageSources(
+                sources,
+                seen,
+                "Default",
+                defaultData,
+                currentItemIds);
+        }
+        var currentDataId = ResolveCurrentLocationDataId(
+            location,
+            currentData);
+        if (!string.IsNullOrWhiteSpace(currentDataId) &&
+            !string.Equals(currentDataId, "Default", StringComparison.Ordinal))
+        {
+            AddLocationForageSources(
+                sources,
+                seen,
+                currentDataId,
+                currentData!,
+                currentItemIds);
+        }
+        return sources.ToArray();
+    }
+
+    private static string ResolveCurrentLocationDataId(
+        GameLocation location,
+        LocationData? currentData)
+    {
+        if (currentData is null)
+            return string.Empty;
+
+        var requestedId = location is MineShaft
+            ? "UndergroundMine"
+            : location is Cellar && location.Name.StartsWith(
+                "Cellar",
+                StringComparison.Ordinal)
+                ? "Cellar"
+                : location.Name;
+        if (string.Equals(requestedId, "Farm", StringComparison.Ordinal))
+        {
+            return ResolveLocationDataId(
+                    "Farm_" + Game1.GetFarmTypeKey(),
+                    currentData) ??
+                ResolveLocationDataId("Farm_Standard", currentData) ??
+                string.Empty;
+        }
+        return ResolveLocationDataId(requestedId, currentData) ??
+            string.Empty;
+    }
+
+    private static string? ResolveLocationDataId(
+        string requestedId,
+        LocationData currentData)
+    {
+        if (Game1.locationData.TryGetValue(requestedId, out var direct) &&
+            ReferenceEquals(direct, currentData))
+        {
+            return requestedId;
+        }
+        foreach (var festivalId in
+                 Game1.netWorldState.Value.ActivePassiveFestivals)
+        {
+            if (!Utility.TryGetPassiveFestivalData(
+                    festivalId,
+                    out var festival) ||
+                festival.MapReplacements is null)
+            {
+                continue;
+            }
+            foreach (var replacement in festival.MapReplacements)
+            {
+                if (string.Equals(
+                        replacement.Value,
+                        requestedId,
+                        StringComparison.Ordinal) &&
+                    Game1.locationData.TryGetValue(
+                        replacement.Key,
+                        out var mapped) &&
+                    ReferenceEquals(mapped, currentData))
+                {
+                    return replacement.Key;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void AddLocationForageSources(
+        ICollection<object> sources,
+        ISet<string> seen,
+        string locationDataId,
+        LocationData data,
+        IReadOnlySet<string> currentItemIds)
+    {
+        for (var rowIndex = 0; rowIndex < data.Forage.Count; rowIndex++)
+        {
+            var row = data.Forage[rowIndex];
+            var sourcePrefix = "location:" + locationDataId + ":" +
+                rowIndex;
+            foreach (var itemId in MatchingObjectIds(
+                row.ItemId,
+                currentItemIds))
+            {
+                AddLocationForageSource(
+                    sources,
+                    seen,
+                    sourcePrefix,
+                    itemId);
+            }
+
+            if (row.RandomItemId is null)
+                continue;
+            for (var randomIndex = 0;
+                randomIndex < row.RandomItemId.Count;
+                randomIndex++)
+            {
+                foreach (var itemId in MatchingObjectIds(
+                    row.RandomItemId[randomIndex],
+                    currentItemIds))
+                {
+                    AddLocationForageSource(
+                        sources,
+                        seen,
+                        sourcePrefix + ":random:" + randomIndex,
+                        itemId);
+                }
+            }
+        }
+    }
+
+    private static void AddLocationForageSource(
+        ICollection<object> sources,
+        ISet<string> seen,
+        string sourceId,
+        string itemId)
+    {
+        if (!seen.Add(sourceId + "|" + itemId))
+            return;
+        sources.Add(new
+        {
+            route_kind = "native_location_forage_spawn",
+            source_id = sourceId,
+            qualified_item_id = "(O)" + itemId
+        });
+    }
+
     private static SpawnedObjectHarvestProjection ReadSpawnedObjectHarvest(
         GameLocation location,
         Vector2 tile,

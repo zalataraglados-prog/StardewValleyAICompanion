@@ -224,14 +224,103 @@ once and reused rather than reimplemented per Grandpa direction.
 `build-goal-method-teacher-coverage` is the independent formal-training coverage gate.
 It rebuilds this frontier from the raw inputs instead of trusting the generated report,
 re-verifies each declared supervision corpus, and derives criterion ownership only through
-the production direction catalog and frontier requirement-set bindings. A source cannot
+the production direction catalog and a verified typed source adapter. The acquisition adapter
+derives method ownership from frontier requirement-set bindings; non-collection methods remain
+source-less until a separate adapter verifies them. A source cannot
 name or self-assert covered criteria. Coverage requires an executable method plus explicit
 Teacher comparison and verified native-outcome evidence in train, validation, and test.
-The 2026-09-22 bounded corpus maps all 19 criteria, comparison-covers 2, outcome-covers 4,
-and admits 0 because the evidenced collection methods remain dependency-expansion pending.
-The gate therefore reports `formal_product_training_authorized=false`. Pass a verified
+The current bounded corpus maps all 19 criteria, comparison-covers 4, outcome-covers 4,
+and has split-complete comparison/outcome evidence for Community Center, Full Shipment, and
+Master Angler. Its verified next-route adapter admits execute-now versus defer pairs only when
+the receipt-bound route strictly dominates every other pending route in the selected portfolio.
+It still admits exactly the two Community Center criteria after its dynamic denominator,
+target-date acquisition chain, and native lifecycle proof closed the shared method. The other
+17 criteria remain blocked, so the gate reports `formal_product_training_authorized=false`. Pass a verified
 corpus through `Run-Regression.ps1 -GoalMethodCorpusManifest <path>` to re-run this exact
 gate against the freshly rebuilt lowering rather than a stale generated artifact.
+
+`build-full-shipment-settlement-receipt` is the fail-closed ordinary native-day adapter for the
+Full Shipment recurrence. It accepts exactly one newly settled authoritative item, requires its
+native shipped count to move 0 -> 1, the shared bin view to move 1 -> 0, the missing denominator
+to decrease by exactly one, the day to advance exactly once, and all other progress to remain
+monotonic. It rejects a terminal transition so achievement 34 cannot bypass the stricter terminal
+contract.
+
+`build-full-shipment-terminal-settlement-receipt` is the fail-closed terminal
+adapter for the same recurrence. It takes the mutually hash-bound authoritative
+requirement inventory and acquisition lowering, one independently identified native sleep candidate,
+its compiled queue and execution receipt, plus fresh before/after snapshots. Admission requires the exact 154-item
+denominator to move from one missing item to complete, the final item to move from zero to one
+native shipment, the shared shipping-bin view to settle from one to zero, `total_days` to advance
+exactly once, and achievement 34 to appear without regressing existing progress. Hidden isolated
+runtime `runtime-full-shipment-terminal-20260925-171152` admitted this final transition through the
+existing shipping and sleep chains. The Full Shipment dependency graph remains `in_progress`
+because the ordered 154-item fresh-save recurrence and Year 3 deadline proof are still absent; the
+coverage gate therefore remains 2/19.
+
+`build-full-shipment-recurrence-proof-receipt` is the fail-closed whole-recurrence adapter. Its
+manifest must contain exactly 154 unique authoritative requirements. For each row it rebuilds the
+stored acquisition rollout proof, exact Stage-1 `economy.ship_items` Teacher receipt, and either an
+ordinary or terminal native-day settlement receipt. The prior settlement artifact is the exact root
+of the next acquisition proof; the acquisition/deposit/sleep phase boundaries must have identical
+`state_hash` values; save/player/game identity cannot drift; shipment counts must advance 0 -> 154
+without gaps; settlement time cannot reverse; and only row 154 may end with achievement 34 at or
+before total day 224. This command verifies supplied artifacts but does not generate the
+154-step fresh-save runtime chain and does not authorize formal training.
+
+`compile-acquisition-route-dispatch` closes the production boundary between one independently
+selected, atomically reserved acquisition route and the existing Product compilers. In addition to
+the execution-binding inputs, it requires `--ranking`, `--queue-output`, and `--output`. It finds a
+same-state live candidate only when item, endpoint option, and authoritative route source all match;
+then it removes learner rank, score, model score, and reward before invoking `DailyPlanCompiler` and
+`ActionQueueCompiler`. Before selection, the command independently rebuilds every endpoint candidate
+from the same transparent snapshot and committed ledger. Candidate membership and every non-learning
+field must equal the supplied ranking; only rank, score, model score, expected reward, and model-source
+metadata are ignored. Expanded native primitives retain route, reservation, source-candidate, source-
+ranking, and source-evidence lineage. Legacy high-level `option_request` queues and expanded
+`compiled_action_steps` queues have distinct validation shapes and cannot masquerade as each other.
+Exact source binding currently covers shops, crops, target-date location or mine fish, crab-pot
+outputs, regular or deluxe animal products, fish ponds, fruit trees, location forage, solar panels, base
+wild-tree seeds, wild-tree seed-drop rows, wild-tree chop rows, wild-tree tapper outputs, and fixed native bush, tea, spring-onion,
+ginger, tree-moss harvests, location and object-data artifact spots, explicit and bounded-default geode drops, and
+ordinary machine rules plus legacy unique flavored or literal machine output rows, exact selected-monster
+`Data/Monsters` reroll rows, exact selected stone-95 radioactive ore nodes, exact selected non-quarry mine
+buried-item dig tiles, and learned cooking recipes. Monster rows are exposed only from the native burglar-ring
+probability projection and only for the runtime monster selected by the current rolling floor step; the mutable
+`objectsToDrop` list is not treated as provenance. Radioactive ore requires the same selected tile, source object,
+direct-node branch and guaranteed `(O)909` projection. Mine buried-item dispatch requires the same selected
+`Diggable` tile, a live Hoe, the exact `MineShaft.checkForBuriedItem` source for `(O)585`, and a non-quarry floor;
+the bridge publishes the native `0.001575` branch probability but never reads or advances `Game1.random`. Ordinary
+ready machines bind through the persisted native `lastOutputRuleId`; the row fallback is used only when that field is
+absent and does not choose among duplicate matching rows. Other route kinds fail
+closed until their live candidates expose exact source identity. A selected item with more than one distinct
+matching source row also fails closed rather than creating an ambiguous teacher label. Wild-tree chopping is the
+bounded exception: its complete output domain remains visible, while the dispatch projection selects the lowest
+currently applicable `ChopItems` row per target item because one native chop executes all applicable rows. Required supporting options
+also remain upstream work. The report and queue paths must differ. A blocked build atomically
+overwrites the queue path with a non-executable blocked envelope, so a stale successful queue cannot
+survive a failed rebuild. This command does not run the queue or authorize formal training.
+
+`build-goal-method-coverage-reconciliation` is the read-only denominator and gap audit for that
+gate. It takes the same frontier inputs and `--request`, rebuilds both authorities, and joins the
+result to the current option-governance matrix. Its report separates 19 score criteria, 11 root
+methods, and the distinct existing options referenced by those methods; it must not describe a
+criterion coverage count as an action implementation count. Each method records typed dependency
+blockers, implemented versus active Teacher adapters, split evidence, and an inventory-only view of
+referenced option evidence and Product Executor status. Option inventory diagnostics never become
+current method blockers or next actions; method work is derived only from the rebuilt frontier and
+verified Teacher/native coverage. The current report classifies 2 criteria as coverage-ready, 15 as dependency-graph
+incomplete, pet love as production evidence not connected, and Skull Key as missing a typed
+Teacher source adapter. It never authorizes formal product training.
+
+`build-pet-love-teacher-corpus --request <path> --output <path>` builds the first
+non-collection coverage source. Each request row names fresh before/after snapshots and one
+`training_execution_result.v1`; the builder derives method ownership and dataset partition,
+recomputes snapshot hashes, and accepts only an exact native pet interaction that crosses from
+988-999 friendship to 1000 and produces `petLoveMessage`. Repeated evidence from the same
+save/player/day is rejected. The focused three-partition fixture exercises a 3/19 coverage result
+and tamper rejection, but the authoritative current report stays at 2/19 until equivalent native
+receipts exist in train, validation, and test.
 The current requirement report is
 `local-data/output/authoritative-requirement-inventory-v1.json`. Current candidate membership
 for Full Shipment, Master Angler, Museum Collection, and the standard Community Center can be
@@ -267,9 +356,45 @@ it is part of `Run-Regression.ps1`. Current collection-frontier, preference and 
 rebuild and consume that save-bound denominator instead of the static `community_center_standard`
 alternatives. The stable set ID is retained for compatibility, category ingredients remain one native
 slot with concrete accepted item targets, and the denominator hash is propagated into Teacher
-supervision and required by dataset validation. The dynamic requirement identity has not yet been
-carried through every target-date axis, and the unlock/reward/final-ceremony chain is also incomplete,
-so formal product training remains disabled.
+supervision and required by dataset validation. The save-bound acquisition calendar root can be built with:
+
+```powershell
+dotnet run --project StardewAI.GoalConditionedBootstrap -- `
+  build-current-acquisition-route-calendar-resolution `
+  --requirement-inventory <path> `
+  --acquisition-lowering <path> `
+  --master-angler-windows <path> `
+  --snapshot <path> `
+  --output <path>
+```
+
+This command strictly rebuilds the current denominator, replaces only the static Community Center route
+occurrences, and records bundle-mode, denominator, source-state and snapshot hashes. It does not authorize
+the existing static target-date chain. The first current target-date stage is:
+
+```powershell
+dotnet run --project StardewAI.GoalConditionedBootstrap -- `
+  build-current-acquisition-route-target-date-calendar `
+  --requirement-inventory <path> `
+  --acquisition-lowering <path> `
+  --master-angler-windows <path> `
+  --calendar-resolution <current-root-path> `
+  --snapshot <same-snapshot-path> `
+  --target-total-day <day> `
+  --output <path>
+```
+
+It deterministically rebuilds and compares the current root before evaluating the shared calendar axis,
+then carries the current denominator provenance into its output. The existing downstream commands require no
+current-specific variants: unlock chooses deterministic static/current recompilation from this artifact, and every
+later dependency axis recursively rebuilds its predecessor and hash-binds that identity through opportunity cost.
+Portfolio admission now derives one typed `community_center_provenance` value from that target-date artifact and the
+decision snapshot. Teacher preference, atomic commit receipt, execution binding, fresh terminal receipt, settlement,
+rollout checkpoint, continuation request, terminal proof/admission and every supervision row copy and cross-check the
+same value. A continuation may advance its source state/snapshot hashes, but cannot switch static/current mode, bundle
+mode or denominator hash inside one rollout. Static evidence must keep every current-save provenance field empty.
+The Junimo unlock, room reward/mail and final-ceremony settlement chain is still incomplete, so formal product
+training remains disabled.
 
 `build-current-stage-one-collection-teacher-receipt` now admits either the legacy exact single-primitive
 receipt or `queue_execution_receipt.v1` for `1..8` ordered queue items. It requires the persisted
@@ -289,6 +414,24 @@ subsequent native deposit. Its canonical dataset has `2` accepted, `0` rejected,
 conflicting rows. `formal_training_authorized=false` remains explicit; the next step is to collapse the
 remaining collection approach/terminal continuations into bounded whole-candidate queues before expanding
 future-date coverage.
+
+`Invoke-RuntimeFullShipmentTerminalSmoke.ps1` proves the final Full Shipment day transition without
+adding another shipping or sleep executor. It copies one runtime save, prepares the copy at exact
+153/154 through a debug-only native-eligibility fixture, deposits one authoritative terminal item through
+`economy.ship_items`, relocates only the isolated actor to the existing native sleep path, and executes
+`recovery.stabilize_day`. The resulting queue, execution receipt, and fresh snapshots are admitted by
+`build-full-shipment-terminal-settlement-receipt` only when the exact item settles 0 -> 1, all shared bin
+views settle 1 -> 0, the day advances once, 154/154 is reached, and achievement 34 appears. This is a
+runtime calibration receipt, not a fresh-save proof of the complete 154-item recurrence and not formal
+training authorization.
+
+The ordinary and terminal settlement builders now share one exact projection verifier. Ordinary
+steps require exactly one missing item to settle while achievement 34 stays absent; the terminal
+wrapper additionally requires 153/154 -> 154/154 and the native achievement transition. The ordered
+recurrence manifest and verifier now bind those receipts to rebuilt acquisition rollouts and shipping
+Teacher receipts. The missing artifact is a populated 154-row fresh-save runtime chain; it may not
+replace Product queues with fixture mutations or infer continuity from item IDs alone. Until that
+artifact passes, Full Shipment remains `in_progress`, coverage remains 2/19, and training remains off.
 
 ## Hardware
 

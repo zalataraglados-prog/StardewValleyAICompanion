@@ -22,6 +22,9 @@ public sealed partial class TrainingExecutionRequest
     [JsonPropertyName("story_event_boundary_kind")]
     public string StoryEventBoundaryKind { get; set; } = string.Empty;
 
+    [JsonPropertyName("story_event_max_runtime_ticks")]
+    public int? StoryEventMaxRuntimeTicks { get; set; }
+
     [JsonPropertyName("story_event_question_key")]
     public string StoryEventQuestionKey { get; set; } = string.Empty;
 

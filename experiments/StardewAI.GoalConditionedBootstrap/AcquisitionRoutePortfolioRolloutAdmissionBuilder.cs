@@ -26,6 +26,9 @@ public static class AcquisitionRoutePortfolioRolloutAdmissionBuilder
         {
             RolloutId = expected.RolloutId,
             GoalId = expected.GoalId,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    expected.CommunityCenterProvenance),
             ProofManifestSha256 = CurrentTeacherFrontierSupport.HashFile(
                 manifestFullPath),
             ProofReceiptSha256 = CurrentTeacherFrontierSupport.HashFile(
@@ -93,12 +96,4 @@ public static class AcquisitionRoutePortfolioRolloutAdmissionBuilder
             .ToList();
     }
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
-
-    private static bool IsSha256(string value) =>
-        value is { Length: 64 } && value.All(character =>
-            character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }

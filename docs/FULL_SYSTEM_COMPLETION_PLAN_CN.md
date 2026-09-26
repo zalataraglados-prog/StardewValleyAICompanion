@@ -4,6 +4,8 @@
 
 当前训练解释统一服从 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。有限 TeacherOracle 负责独立偏序、DAgger 重标和评测；产品运行时通过唯一 `StrategicPolicy` 入口，在唯一 strict-Pareto 解上保持确定性权威，只让 Student 在 admitted、non-dominated 的不可比较前沿中学习 soft preference。Planner/Compiler/Executor 的现有唯一链保持不变。`teacher_preference`、`native_outcome`、`student_observation` 必须分离，任何 `selected=true` 都不能自行成为正例。
 
+2026-09-25 已落地首个 `StrategicPolicy.SelectMethod -> strategic_decision.v1` 收口实现：唯一 strict-Pareto 分支先于模型解析并保持确定性；不可比较前沿只允许已验证 checkpoint 在 admitted、non-dominated 成员内排序；旧 live-shadow 命令已降为兼容适配器。模型缺失或损坏不阻断确定性唯一解，但在不可比较前沿上失败关闭。学习分支仍为只读，runtime model authority、portfolio commit 和 formal product training 均未准入；下一门仍是独立 19/19 覆盖与单独运行时提升证据，不能把接口完成描述为正式训练或完整陪玩完成。
+
 因此下方历史“checkpoint 已更新”只证明当时的 Product、事务、数据和训练管线能够运行，不证明监督方向正确。当前正式全量训练继续禁用：反向图仍为 2/19 executable、17/19 pending，且现有 `StructuredPolicyTrainer.BuildPairs` 尚未迁移到独立监督来源。Stage 1 先冻结新存档 Year 3 Spring 1 原版 21/21 最强基线；玩家偏好、协作和拟人节奏只在基线后以可关闭适配层加入。
 
 ## 2026-09-06 无真人教师与服务器续跑提案

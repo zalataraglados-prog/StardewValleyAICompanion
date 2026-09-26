@@ -170,6 +170,14 @@ namespace StardewAI.Core.OptionRegistry
                         probeParameters.Add(Parameter(binding.ParameterName, value));
                     }
                 }
+                if (hasObjectClearanceProjection)
+                {
+                    probeParameters.Add(Parameter(
+                        "authoritative_route_sources_json",
+                        JsonSerializer.Serialize(ReadArray(
+                            source.Value,
+                            "clear_authoritative_route_sources"))));
+                }
             }
             var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
             {

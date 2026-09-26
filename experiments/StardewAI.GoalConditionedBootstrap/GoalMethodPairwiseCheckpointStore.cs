@@ -213,11 +213,6 @@ public sealed class GoalMethodPairwiseCheckpointStore
             ? throw new ArgumentException(label + " is required.")
             : Path.GetFullPath(value);
 
-    private static bool IsSha256(string value) =>
-        value is { Length: 64 } &&
-        value.All(character => character is >= '0' and <= '9' or
-            >= 'a' and <= 'f');
-
     private static bool Finite(double value) =>
         !double.IsNaN(value) && !double.IsInfinity(value);
 

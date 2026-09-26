@@ -12,10 +12,29 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         AcquisitionRoutePortfolioInputs inputs,
         string requestPath) => BuildScoringSet(inputs, requestPath).Preference;
 
+    public static AcquisitionRoutePortfolioTeacherPreference
+        BuildAfterSupportingTransition(
+            AcquisitionRoutePortfolioInputs inputs,
+            string requestPath,
+            string priorSupportingTransitionReplanSha256) =>
+            BuildScoringSet(
+                inputs,
+                requestPath,
+                priorSupportingTransitionReplanSha256).Preference;
+
     internal static AcquisitionRoutePortfolioTeacherScoringSet
         BuildScoringSet(
             AcquisitionRoutePortfolioInputs inputs,
-            string requestPath)
+            string requestPath) => BuildScoringSet(
+                inputs,
+                requestPath,
+                string.Empty);
+
+    private static AcquisitionRoutePortfolioTeacherScoringSet
+        BuildScoringSet(
+            AcquisitionRoutePortfolioInputs inputs,
+            string requestPath,
+            string priorSupportingTransitionReplanSha256)
     {
         var requestFullPath = Path.GetFullPath(requestPath);
         var context = AcquisitionRoutePortfolioBuilder.Prepare(inputs);
@@ -26,12 +45,17 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         var result = BaseResult(
             context,
             request,
-            CurrentTeacherFrontierSupport.HashFile(requestFullPath));
+            CurrentTeacherFrontierSupport.HashFile(requestFullPath),
+            priorSupportingTransitionReplanSha256);
         var reasons = ValidateRequest(context, request);
         if (reasons.Count > 0)
         {
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -44,7 +68,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             request.ExpectedLedgerRevision,
             ResolveScopes(context, request),
             string.Empty,
-            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>());
+            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>(),
+            priorSupportingTransitionReplanSha256);
     }
 
     public static AcquisitionRoutePortfolioTeacherPreference
@@ -109,7 +134,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         var result = BaseResult(
             context,
             surrogate,
-            CurrentTeacherFrontierSupport.HashFile(requestFullPath));
+            CurrentTeacherFrontierSupport.HashFile(requestFullPath),
+            string.Empty);
         result.SelectionPolicyId =
             "verified_checkpoint_continuation_unique_strict_pareto.v1";
         var reasons = ValidateRequest(context, surrogate);
@@ -125,7 +151,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         if (reasons.Count > 0)
         {
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -149,7 +179,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             request.ExpectedLedgerRevision,
             ResolveScopes(context, request),
             request.PriorCheckpointSha256,
-            completed);
+            completed,
+            string.Empty);
     }
 
     internal static string ArtifactSha256(object value)
@@ -165,17 +196,23 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext
             context,
         AcquisitionRoutePortfolioTeacherPreferenceRequest request,
-        string requestSha256) => new()
+        string requestSha256,
+        string priorSupportingTransitionReplanSha256) => new()
         {
             RequestId = request.RequestId,
             GoalId = request.GoalId,
             SnapshotStateHash = request.SnapshotStateHash,
+            CommunityCenterProvenance =
+                AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
+                    context.CommunityCenterProvenance),
             ExpectedLedgerRevision = request.ExpectedLedgerRevision,
             PreferenceRequestSha256 = requestSha256,
             RequirementInventorySha256 = context.RequirementInventorySha256,
             OpportunityCostSha256 = context.OpportunityCostSha256,
             StrategyLedgerSha256 = context.StrategyLedgerSha256,
             SnapshotSha256 = context.SnapshotSha256,
+            PriorSupportingTransitionReplanSha256 =
+                priorSupportingTransitionReplanSha256,
             CandidateLimit = MaxCandidateCount,
             FormalTrainingAuthorized = false,
             UsesLearnerRankOrScore = false,
@@ -184,9 +221,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 
     private static AcquisitionRoutePortfolioTeacherPreference Block(
         AcquisitionRoutePortfolioTeacherPreference result,
-        IEnumerable<string> reasons)
+        IEnumerable<string> reasons,
+        AcquisitionRoutePortfolioSelectionDisposition disposition)
     {
         result.Status = "blocked_portfolio_teacher_preference";
+        result.SelectionDisposition = disposition;
         result.TeacherPreferenceLabelEligible = false;
         result.FormalTrainingAuthorized = false;
         result.BlockingReasons = reasons
@@ -196,16 +235,7 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         return result;
     }
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     internal sealed record AcquisitionRoutePortfolioTeacherScoringSet(
         AcquisitionRoutePortfolioTeacherPreference Preference,

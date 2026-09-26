@@ -24,6 +24,11 @@ public sealed class CookingMainlineTests
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("cook_recipe", candidate.Kind);
         Assert.Contains(candidate.Parameters, row => row.Name == "cooking_source_id" && row.Value == "kitchen:FarmHouse:5,5");
+        Assert.Contains(candidate.Parameters, row =>
+            row.Name == "authoritative_route_sources_json" &&
+            row.Value.Contains(
+                "cooking_recipe:Fried Egg",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);

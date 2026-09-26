@@ -2,7 +2,6 @@ name: quality
 
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -28,6 +27,12 @@ jobs:
         run: dotnet restore tools/StardewAI.KnowledgeCompiler/StardewAI.KnowledgeCompiler.csproj --locked-mode
       - name: Build knowledge compiler
         run: dotnet build tools/StardewAI.KnowledgeCompiler/StardewAI.KnowledgeCompiler.csproj --configuration Release --no-restore
+      - name: Restore goal-conditioned bootstrap
+        run: dotnet restore experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --locked-mode
+      - name: Build goal-conditioned bootstrap
+        run: dotnet build experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-restore
+      - name: Test hermetic bootstrap critical paths
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-bootstrap-hermetic
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance
