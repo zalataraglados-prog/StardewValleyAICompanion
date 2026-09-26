@@ -2333,6 +2333,10 @@ Slice 7 remains assigned to the RTX 5070 node.
   live in `BootstrapArtifactGuard`. Forty-six builders retain their independent boundary checks while sharing the
   canonical primitive implementation; guards with intentionally different serialization, exception or uppercase-hash
   semantics remain local.
+- Live-training runtime structure is split without changing behavior: request construction is isolated from runtime
+  execution, and queue replan handling is divided into base identity, continuation, filtering and post-execution
+  decision partials. The former 2.2k-line files are now bounded below 1.5k and 750 lines respectively; the dedicated
+  queue-replan test suite remains the behavioral gate.
 - These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
   Those promotion gates remain separate and fail closed.
 
