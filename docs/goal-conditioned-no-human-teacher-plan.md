@@ -2337,6 +2337,11 @@ Slice 7 remains assigned to the RTX 5070 node.
   execution, and queue replan handling is divided into base identity, continuation, filtering and post-execution
   decision partials. The former 2.2k-line files are now bounded below 1.5k and 750 lines respectively; the dedicated
   queue-replan test suite remains the behavioral gate.
+- Community Center donation command identity now uses one typed parameter protocol for bundle key, bundle ID, area ID,
+  ingredient index, qualified item and required stack. Candidate admission, action compilation, live runtime request
+  construction and terminal receipt verification each parse their own artifact independently. Missing, malformed or
+  duplicated identity fields fail closed; sharing the parser does not let an upstream trust decision bypass a later
+  verification boundary.
 - These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
   Those promotion gates remain separate and fail closed.
 

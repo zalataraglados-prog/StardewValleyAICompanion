@@ -448,14 +448,27 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 {
                     Parameter("continuation.option_id", "community_center.donate_bundle_items"),
                     Parameter("continuation.target_location", "CommunityCenter"),
-                    Parameter("continuation.bundle_data_key", ReadString(bundle, "bundle_data_key")),
+                    Parameter(
+                        "continuation." +
+                        CommunityCenterDonationParameterProtocol.BundleDataKey,
+                        ReadString(bundle, "bundle_data_key")),
                     Parameter("continuation.bundle_id", ReadInt(bundle, "bundle_id").ToString(CultureInfo.InvariantCulture)),
-                    Parameter("continuation.bundle_ingredient_index", ingredientIndex.ToString(CultureInfo.InvariantCulture)),
+                    Parameter(
+                        "continuation." +
+                        CommunityCenterDonationParameterProtocol.BundleIngredientIndex,
+                        ingredientIndex.ToString(CultureInfo.InvariantCulture)),
                     Parameter("continuation.inventory_slot_index", slot.ToString(CultureInfo.InvariantCulture)),
                     Parameter("continuation.item_id", ReadString(candidate, "item_id")),
-                    Parameter("continuation.qualified_item_id", qualifiedItemId),
+                    Parameter(
+                        "continuation." +
+                        CommunityCenterDonationParameterProtocol.QualifiedItemId,
+                        qualifiedItemId),
                     Parameter("continuation.expected_item_quality", ReadInt(candidate, "quality").ToString(CultureInfo.InvariantCulture)),
-                    Parameter("continuation.required_stack", ReadInt(candidate, "required_stack").ToString(CultureInfo.InvariantCulture))
+                    Parameter(
+                        "continuation." +
+                        CommunityCenterDonationParameterProtocol.RequiredStack,
+                        ReadInt(candidate, "required_stack").ToString(
+                            CultureInfo.InvariantCulture))
                 };
                 var distinctReasons = reasons.Distinct(StringComparer.Ordinal).ToArray();
                 result.Add(new EventCandidate
@@ -554,17 +567,29 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("interaction_tile_x", interactionX.ToString()),
             Parameter("interaction_tile_y", interactionY.ToString()),
             Parameter("route_state", ReadString(progress, "route_state")),
-            Parameter("bundle_data_key", ReadString(bundle, "bundle_data_key")),
-            Parameter("bundle_id", ReadInt(bundle, "bundle_id").ToString()),
-            Parameter("bundle_area_id", ReadInt(bundle, "area_id").ToString()),
+            Parameter(
+                CommunityCenterDonationParameterProtocol.BundleDataKey,
+                ReadString(bundle, "bundle_data_key")),
+            Parameter(
+                CommunityCenterDonationParameterProtocol.BundleId,
+                ReadInt(bundle, "bundle_id").ToString()),
+            Parameter(
+                CommunityCenterDonationParameterProtocol.BundleAreaId,
+                ReadInt(bundle, "area_id").ToString()),
             Parameter("bundle_area_name", ReadString(bundle, "area_name")),
-            Parameter("bundle_ingredient_index", ReadInt(candidate, "ingredient_index").ToString()),
+            Parameter(
+                CommunityCenterDonationParameterProtocol.BundleIngredientIndex,
+                ReadInt(candidate, "ingredient_index").ToString()),
             Parameter("inventory_slot_index", ReadInt(candidate, "inventory_slot_index").ToString()),
             Parameter("item_id", ReadString(candidate, "item_id")),
-            Parameter("qualified_item_id", ReadString(candidate, "qualified_item_id")),
+            Parameter(
+                CommunityCenterDonationParameterProtocol.QualifiedItemId,
+                ReadString(candidate, "qualified_item_id")),
             Parameter("target_runtime_type", ReadString(candidate, "runtime_type")),
             Parameter("expected_item_quality", ReadInt(candidate, "quality").ToString()),
-            Parameter("required_stack", ReadInt(candidate, "required_stack").ToString()),
+            Parameter(
+                CommunityCenterDonationParameterProtocol.RequiredStack,
+                ReadInt(candidate, "required_stack").ToString()),
             Parameter("inventory_item_total_before", ReadInt(candidate, "inventory_item_total_before").ToString()),
             Parameter("inventory_item_total_after", ReadInt(candidate, "inventory_item_total_after").ToString()),
             Parameter("expected_stack_before", ReadInt(candidate, "stack_before").ToString()),

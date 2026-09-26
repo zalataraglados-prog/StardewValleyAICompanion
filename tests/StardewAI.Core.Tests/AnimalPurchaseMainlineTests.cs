@@ -62,7 +62,11 @@ public sealed class AnimalPurchaseMainlineTests
         var root = FindRepositoryRoot();
         var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.AnimalPurchases.cs"));
         var supported = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.SupportedOptions.cs"));
-        var loop = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
+        var loop = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecutionRequest.cs"));
         Assert.Contains("menu.receiveLeftClick", source, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("active.Menu.receiveLeftClick", source, StringComparison.Ordinal);
         Assert.Contains("debug.setup_animal_purchase", supported, StringComparison.Ordinal);

@@ -227,8 +227,11 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                     item.OptionId,
                     "executor.donate_community_center_item",
                     StringComparison.Ordinal) &&
-                ReadParameter(item, "bundle_data_key") == bundleKey &&
-                ReadIntParameter(item, "bundle_ingredient_index") ==
+                CommunityCenterDonationParameterProtocol.TryParseExecution(
+                    item.NormalizedCommand?.Parameters,
+                    out var projection) &&
+                projection.Binding.BundleDataKey == bundleKey &&
+                projection.Binding.BundleIngredientIndex ==
                     credit.AlternativeIndex)
             .ToArray();
         return matches.Length == 1 ? matches[0] : null;

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
@@ -10,6 +11,51 @@ namespace StardewAI.Core.Tests;
 
 public sealed class CommunityCenterDonationMainlineTests
 {
+    [Fact]
+    public void DonationParameterProtocolRejectsDuplicateOrMalformedIdentity()
+    {
+        var parameters = new[]
+        {
+            ProtocolParameter("bundle_data_key", "Pantry/0"),
+            ProtocolParameter("bundle_id", "0"),
+            ProtocolParameter("bundle_area_id", "0"),
+            ProtocolParameter("bundle_ingredient_index", "1"),
+            ProtocolParameter("qualified_item_id", "(O)24"),
+            ProtocolParameter("required_stack", "2")
+        };
+
+        Assert.True(
+            CommunityCenterDonationParameterProtocol.TryParseExecution(
+                parameters,
+                out var projection));
+        Assert.Equal("Pantry/0", projection.Binding.BundleDataKey);
+        Assert.Equal(1, projection.Binding.BundleIngredientIndex);
+        Assert.Equal(2, projection.Binding.RequiredStack);
+
+        Assert.False(
+            CommunityCenterDonationParameterProtocol.TryParseExecution(
+                parameters.Concat(new[]
+                {
+                    ProtocolParameter("required_stack", "2")
+                }),
+                out _));
+        Assert.False(
+            CommunityCenterDonationParameterProtocol.TryParseExecution(
+                parameters.Select(parameter =>
+                    parameter.Name == "bundle_id"
+                        ? ProtocolParameter(parameter.Name, "not-an-integer")
+                        : parameter),
+                out _));
+    }
+
+    private static SmallModelActionParameter ProtocolParameter(
+        string name,
+        string value) => new()
+        {
+            Name = name,
+            Value = value
+        };
+
     [Fact]
     public void RuntimeWaitsForNativeFinalStarFlagBeforeCompletingLastDonation()
     {

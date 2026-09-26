@@ -400,6 +400,10 @@ public sealed partial class ActionQueueCompiler
         }
 
         var reasons = new List<string>();
+        var hasDonationProjection =
+            CommunityCenterDonationParameterProtocol.TryParseExecution(
+                action.Parameters,
+                out var donationProjection);
         var slot = ReadIntParameter(action, "inventory_slot_index");
         var noteX = ReadIntParameter(action, "community_center_note_tile_x");
         var noteY = ReadIntParameter(action, "community_center_note_tile_y");
@@ -409,11 +413,19 @@ public sealed partial class ActionQueueCompiler
         var targetY = ReadIntParameter(action, "target_tile_y");
         var standX = ReadIntParameter(action, "stand_tile_x");
         var standY = ReadIntParameter(action, "stand_tile_y");
-        var bundleId = ReadIntParameter(action, "bundle_id");
-        var areaId = ReadIntParameter(action, "bundle_area_id");
-        var ingredientIndex = ReadIntParameter(action, "bundle_ingredient_index");
+        int? bundleId = hasDonationProjection
+            ? donationProjection.BundleId
+            : null;
+        int? areaId = hasDonationProjection
+            ? donationProjection.BundleAreaId
+            : null;
+        int? ingredientIndex = hasDonationProjection
+            ? donationProjection.Binding.BundleIngredientIndex
+            : null;
         var quality = ReadIntParameter(action, "expected_item_quality");
-        var requiredStack = ReadIntParameter(action, "required_stack");
+        int? requiredStack = hasDonationProjection
+            ? donationProjection.Binding.RequiredStack
+            : null;
         var inventoryTotalBefore = ReadIntParameter(action, "inventory_item_total_before");
         var inventoryTotalAfter = ReadIntParameter(action, "inventory_item_total_after");
         var stackBefore = ReadIntParameter(action, "expected_stack_before");
@@ -429,7 +441,7 @@ public sealed partial class ActionQueueCompiler
             !stackBefore.HasValue || !stackAfter.HasValue || stackBefore.Value < requiredStack.Value || stackAfter.Value != stackBefore.Value - requiredStack.Value ||
             !inventoryTotalBefore.HasValue || !inventoryTotalAfter.HasValue || inventoryTotalBefore.Value < stackBefore.Value || inventoryTotalAfter.Value != inventoryTotalBefore.Value - requiredStack.Value ||
             !requiredSlots.HasValue || requiredSlots.Value < 1 || !completedBefore.HasValue || !completedAfter.HasValue || completedAfter.Value <= completedBefore.Value ||
-            string.IsNullOrWhiteSpace(ReadParameter(action, "bundle_data_key")) || string.IsNullOrWhiteSpace(ReadParameter(action, "qualified_item_id")) ||
+            !hasDonationProjection ||
             !TryBoolParameter(action, "expected_bundle_complete_after", out var completesBundle) || completesBundle != (completedAfter.Value >= requiredSlots.Value) ||
             !TryBoolParameter(action, "expected_bundle_reward_available_after", out _) ||
             !ReadIntParameter(action, "expected_complete_bundle_count_after").HasValue ||
@@ -462,7 +474,11 @@ public sealed partial class ActionQueueCompiler
             ReadBool(progress.Value, "can_read_junimo_text") != true ||
             ReadInt(progress.Value, "bundle_data_row_count") != ReadInt(progress.Value, "projected_bundle_row_count") ||
             ReadInt(progress.Value, "unavailable_bundle_row_count") != 0 ||
-            !TryFindCommunityCenterBundle(progress.Value, bundleId.Value, ReadParameter(action, "bundle_data_key"), out var bundle) ||
+            !TryFindCommunityCenterBundle(
+                progress.Value,
+                bundleId.Value,
+                donationProjection.Binding.BundleDataKey,
+                out var bundle) ||
             ReadString(bundle, "projection_status") != "exact" || ReadInt(bundle, "area_id") != areaId.Value ||
             ReadString(bundle, "area_name") != ReadParameter(action, "bundle_area_name") ||
             NullableReadInt(bundle, "note_tile_x") != noteX || NullableReadInt(bundle, "note_tile_y") != noteY ||
@@ -472,7 +488,12 @@ public sealed partial class ActionQueueCompiler
             ReadString(bundle, "area_completion_mail_id") != ReadParameter(action, "area_completion_mail_id") ||
             !bundle.TryGetProperty("ingredients", out var ingredients) || ingredients.ValueKind != JsonValueKind.Array ||
             completedAfter.Value != (completesBundle ? ingredients.GetArrayLength() : completedBefore.Value + 1) ||
-            !TryFindCommunityCenterDonationCandidate(bundle, slot.Value, ingredientIndex.Value, ReadParameter(action, "qualified_item_id"), out var candidate) ||
+            !TryFindCommunityCenterDonationCandidate(
+                bundle,
+                slot.Value,
+                ingredientIndex.Value,
+                donationProjection.QualifiedItemId,
+                out var candidate) ||
             ReadString(candidate, "action_status") != "ready" || ReadString(candidate, "item_id") != ReadParameter(action, "item_id") ||
             ReadString(candidate, "runtime_type") != ReadParameter(action, "target_runtime_type") || ReadInt(candidate, "quality") != quality.Value ||
             ReadInt(candidate, "required_stack") != requiredStack.Value || ReadInt(candidate, "stack_before") != stackBefore.Value ||

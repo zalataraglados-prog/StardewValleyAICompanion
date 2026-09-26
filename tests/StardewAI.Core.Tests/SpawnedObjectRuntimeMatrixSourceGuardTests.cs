@@ -73,7 +73,7 @@ public sealed class SpawnedObjectRuntimeMatrixSourceGuardTests
         var loop = ReadRepositoryFile(
             "tools",
             "StardewAI.LiveTrainingLoop",
-            "Program.RuntimeExecution.cs");
+            "Program.RuntimeExecutionRequest.cs");
 
         Assert.Contains("active.Location.checkAction(", runtime);
         Assert.Contains("request.ExpectedOutputQuality != expectedQuality", runtime);

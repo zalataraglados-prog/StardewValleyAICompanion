@@ -73,6 +73,32 @@ internal static partial class BootstrapSelfTest
             "Exact Community Center donation side effects were not admitted: " +
             string.Join(",", evidence.BlockingReasons));
 
+        var duplicateBindingQueueItem = new ActionQueueItem
+        {
+            OptionId = queueItem.OptionId,
+            NormalizedCommand = new NormalizedCommand
+            {
+                Parameters = queueItem.NormalizedCommand.Parameters.Concat(
+                    new[]
+                    {
+                        CommunityCenterParameter(
+                            CommunityCenterDonationParameterProtocol.RequiredStack,
+                            "1")
+                    })
+                    .ToArray()
+            }
+        };
+        var duplicateBinding =
+            ExactCommunityCenterDonationReceiptVerifier.Verify(
+                credit,
+                duplicateBindingQueueItem,
+                before,
+                after);
+        Require(!duplicateBinding.Verified &&
+                duplicateBinding.BlockingReasons.Contains(
+                    "community_center_donation_queue_binding_invalid"),
+            "A Community Center receipt with a duplicate command parameter was admitted.");
+
         var tampered = CommunityCenterDonationSnapshot(
             "cc-after-tampered",
             2,

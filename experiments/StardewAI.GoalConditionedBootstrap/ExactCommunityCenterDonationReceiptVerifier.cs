@@ -36,17 +36,26 @@ internal static class ExactCommunityCenterDonationReceiptVerifier
         {
             reasons.Add("community_center_donation_queue_item_missing");
         }
-        var ingredientIndex = ReadIntParameter(
-            queueItem,
-            "bundle_ingredient_index");
-        var bundleId = ReadIntParameter(queueItem, "bundle_id");
-        var areaId = ReadIntParameter(queueItem, "bundle_area_id");
-        var requiredStack = ReadIntParameter(queueItem, "required_stack");
-        var qualifiedItemId = ReadParameter(queueItem, "qualified_item_id");
+        var hasProjection =
+            CommunityCenterDonationParameterProtocol.TryParseExecution(
+                queueItem?.NormalizedCommand?.Parameters,
+                out var projection);
+        int? ingredientIndex = hasProjection
+            ? projection.Binding.BundleIngredientIndex
+            : null;
+        int? bundleId = hasProjection ? projection.BundleId : null;
+        int? areaId = hasProjection ? projection.BundleAreaId : null;
+        int? requiredStack = hasProjection
+            ? projection.Binding.RequiredStack
+            : null;
+        var qualifiedItemId = hasProjection
+            ? projection.QualifiedItemId
+            : string.Empty;
         if (string.IsNullOrWhiteSpace(bundleKey) ||
+            !hasProjection ||
             ingredientIndex != credit.AlternativeIndex ||
             !string.Equals(
-                ReadParameter(queueItem, "bundle_data_key"),
+                projection.Binding.BundleDataKey,
                 bundleKey,
                 StringComparison.Ordinal) ||
             !string.Equals(

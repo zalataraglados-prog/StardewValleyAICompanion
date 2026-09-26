@@ -21,6 +21,17 @@ static partial class Program
         var optionId = string.IsNullOrWhiteSpace(options.ExecutorOptionId)
             ? string.IsNullOrWhiteSpace(compiledExecutionOptionId) ? ReadStringOrEmpty(item, "option_id") : compiledExecutionOptionId
             : options.ExecutorOptionId;
+        CommunityCenterDonationExecutionProjection? communityCenterDonation =
+            null;
+        if (string.Equals(
+                optionId,
+                "executor.donate_community_center_item",
+                StringComparison.Ordinal) &&
+            !TryParseCommunityCenterDonation(item, out communityCenterDonation))
+        {
+            throw new InvalidOperationException(
+                "Community Center donation queue parameters are not one exact typed projection.");
+        }
         var queueItemId = ReadStringOrEmpty(item, "queue_item_id");
         if (string.IsNullOrWhiteSpace(queueItemId))
         {
@@ -272,16 +283,22 @@ static partial class Program
         var targetPaintHue = ReadQueueParameterInt(item, "target_hue");
         var targetPaintSaturation = ReadQueueParameterInt(item, "target_saturation");
         var targetPaintLightness = ReadQueueParameterInt(item, "target_lightness");
-        var bundleDataKey = ReadQueueParameterString(item, "bundle_data_key");
+        var bundleDataKey = communityCenterDonation?.Binding.BundleDataKey ??
+            ReadQueueParameterString(item, "bundle_data_key");
         var rewardClaimMode = ReadQueueParameterString(item, "reward_claim_mode");
         var communityCenterNoteTileX = ReadQueueParameterInt(item, "community_center_note_tile_x");
         var communityCenterNoteTileY = ReadQueueParameterInt(item, "community_center_note_tile_y");
-        var bundleId = ReadQueueParameterInt(item, "bundle_id");
-        var bundleAreaId = ReadQueueParameterInt(item, "bundle_area_id");
+        int? bundleId = communityCenterDonation?.BundleId ??
+            ReadQueueParameterInt(item, "bundle_id");
+        int? bundleAreaId = communityCenterDonation?.BundleAreaId ??
+            ReadQueueParameterInt(item, "bundle_area_id");
         var bundleAreaName = ReadQueueParameterString(item, "bundle_area_name");
-        var bundleIngredientIndex = ReadQueueParameterInt(item, "bundle_ingredient_index");
+        int? bundleIngredientIndex =
+            communityCenterDonation?.Binding.BundleIngredientIndex ??
+            ReadQueueParameterInt(item, "bundle_ingredient_index");
         var expectedItemQuality = ReadQueueParameterInt(item, "expected_item_quality");
-        var requiredStack = ReadQueueParameterInt(item, "required_stack");
+        int? requiredStack = communityCenterDonation?.Binding.RequiredStack ??
+            ReadQueueParameterInt(item, "required_stack");
         var inventoryItemTotalBefore = ReadQueueParameterInt(item, "inventory_item_total_before");
         var inventoryItemTotalAfter = ReadQueueParameterInt(item, "inventory_item_total_after");
         var bundleRequiredSlotCount = ReadQueueParameterInt(item, "bundle_required_slot_count");
@@ -380,7 +397,8 @@ static partial class Program
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
         var expectedArrivalTileY = ReadQueueParameterInt(item, "expected_arrival_tile_y");
         var shopItemId = ReadQueueParameterString(item, "shop_item_id");
-        var qualifiedItemId = ReadQueueParameterString(item, "qualified_item_id");
+        var qualifiedItemId = communityCenterDonation?.QualifiedItemId ??
+            ReadQueueParameterString(item, "qualified_item_id");
         var itemId = ReadQueueParameterString(item, "item_id");
         var quantity = ReadQueueParameterInt(item, "quantity");
         var maxUnitPrice = ReadQueueParameterInt(item, "max_unit_price");
@@ -1465,5 +1483,28 @@ static partial class Program
             executionRequest,
             item);
         return executionRequest;
+    }
+
+    private static bool TryParseCommunityCenterDonation(
+        JsonObject? item,
+        out CommunityCenterDonationExecutionProjection projection)
+    {
+        projection = null!;
+        var parameters = item?["normalized_command"]?["parameters"];
+        if (parameters is null)
+            return false;
+        try
+        {
+            var typed = JsonSerializer.Deserialize<SmallModelActionParameter[]>(
+                parameters.ToJsonString(),
+                JsonOptions);
+            return CommunityCenterDonationParameterProtocol.TryParseExecution(
+                typed,
+                out projection);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 }
