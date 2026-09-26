@@ -115,7 +115,15 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             {
                 if (target.ClearingExistingOutput)
                 {
+                    collectedOutput = checked(
+                        collectedOutput +
+                        target.Seed.CreditedExistingOutputQuantity);
                     target.ClearingExistingOutput = false;
+                    if (target.Seed.RequiredAttemptCount == 0)
+                    {
+                        target.Done = true;
+                        continue;
+                    }
                     target.NextAction = MachineDailyAction.LoadInput;
                     target.ReadyAtTime = currentTime;
                     continue;
@@ -220,9 +228,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
     {
         var rows = targets.ToArray();
         var manual = rows.Any(value =>
-            value.Seed.RequiredAttemptCount > 0);
+            value.Seed.IsManualProductionTarget);
         return manual
-            ? rows.All(value => value.Done)
+            ? rows.All(value => value.Done) &&
+                collectedOutput >= requiredOutputQuantity
             : collectedOutput >= requiredOutputQuantity;
     }
 
@@ -243,9 +252,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         int RequiredAttemptCount,
         int ProcessingMinutes,
         int OutputQuantityPerCollection,
+        int CreditedExistingOutputQuantity,
         string InitialAction,
         int InitialReadyAtTime,
-        bool InitialCollectionClearsExistingOutput);
+        bool InitialCollectionClearsExistingOutput,
+        bool IsManualProductionTarget);
 
     private sealed class MutableMachineDailyTarget
     {

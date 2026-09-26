@@ -6,6 +6,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteTargetDateProcessing route,
         AcquisitionRouteCalendarResolution staticRoute,
         int requiredAttempts,
+        int creditedExistingOutput,
         MachineRetryExpansionContext context,
         out AcquisitionRouteTargetDateProcessing expandedRoute,
         out string[] blockingReasons)
@@ -17,6 +18,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         try
         {
             expandedOutputRequirement = checked(
+                creditedExistingOutput +
                 requiredAttempts * Math.Max(1, source.MinimumStack));
         }
         catch (OverflowException)
@@ -89,8 +91,11 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 context.TargetTotalDay);
         var scheduledAttempts = processing.Evaluations.Sum(value =>
             value.MachineScheduleBinding?.ScheduledAttemptCount ?? 0);
+        var creditedQuantity = processing.Evaluations.Sum(value =>
+            value.MachineScheduleBinding?.CreditedExistingOutputQuantity ?? 0);
         if (processing.ProcessingLeadTimeMatchesTargetDate != true ||
             scheduledAttempts != requiredAttempts ||
+            creditedQuantity != creditedExistingOutput ||
             processing.Evaluations.Any(value =>
                 value.MachineScheduleBinding is not null &&
                 value.MachineScheduleBinding.RequiredAttemptCount !=
@@ -106,6 +111,12 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 reasons.Add(
                     "machine_retry_expanded_scheduled_attempt_count_mismatch:" +
                     scheduledAttempts + ":" + requiredAttempts);
+            }
+            if (creditedQuantity != creditedExistingOutput)
+            {
+                reasons.Add(
+                    "machine_retry_expanded_existing_output_credit_mismatch:" +
+                    creditedQuantity + ":" + creditedExistingOutput);
             }
         }
 

@@ -4,9 +4,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
 {
     private static MachineProcessingTargetResult ReadMachineTargets(
         AcquisitionRouteTargetDateFacility facility,
-        AcquisitionMachineSourceEvidence source,
+        AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionMachineFleetSnapshotState fleet)
     {
+        var source = staticRoute.MachineSource!;
         var targets = new List<MachineProcessingTarget>();
         var blocking = new List<string>();
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -38,10 +39,56 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 blocking.Add("machine_processing_target_duplicate:" + key);
                 continue;
             }
-            targets.Add(new MachineProcessingTarget(machine));
+            var creditCandidate = 0;
+            if (target.MachineActiveOutputRouteMatches == true)
+            {
+                var active = machine.ActiveOutput;
+                var routeMatches = machine.ActiveOutputEvidenceAvailable &&
+                    active is not null &&
+                    active.QualifiedItemId == staticRoute.QualifiedItemId &&
+                    active.Stack == target.MachineActiveOutputStack &&
+                    active.Quality == target.MachineActiveOutputQuality &&
+                    target.MachineActiveOutputEvidenceAvailable == true &&
+                    target.MachineActiveOutputQualifiedItemId ==
+                        active.QualifiedItemId &&
+                    active.RouteSources.Length == 1 &&
+                    active.RouteSources[0].RouteKind == staticRoute.RouteKind &&
+                    active.RouteSources[0].SourceId == staticRoute.SourceId &&
+                    active.RouteSources[0].QualifiedItemId ==
+                        staticRoute.QualifiedItemId;
+                if (!routeMatches)
+                {
+                    blocking.Add(
+                        "machine_processing_existing_output_credit_drifted:" +
+                        key);
+                    continue;
+                }
+                if (active!.Quality >= staticRoute.MinimumQuality)
+                    creditCandidate = active.Stack;
+            }
+            targets.Add(new MachineProcessingTarget(
+                machine,
+                creditCandidate));
         }
+        var remainingCredit = staticRoute.RequiredAmount;
+        var allocated = targets
+            .OrderBy(value => value.Machine.LocationId, StringComparer.Ordinal)
+            .ThenBy(value => value.Machine.TileY)
+            .ThenBy(value => value.Machine.TileX)
+            .Select(value =>
+            {
+                var quantity = Math.Min(
+                    remainingCredit,
+                    value.CreditCandidateQuantity);
+                remainingCredit -= quantity;
+                return value with
+                {
+                    CreditedExistingOutputQuantity = quantity
+                };
+            })
+            .ToArray();
         return new MachineProcessingTargetResult(
-            targets.ToArray(),
+            allocated,
             blocking.Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
                 .ToArray());
@@ -142,7 +189,11 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         machine.LocationId + ":" + machine.TileX + "," + machine.TileY;
 
     private sealed record MachineProcessingTarget(
-        AcquisitionMachineRouteState Machine);
+        AcquisitionMachineRouteState Machine,
+        int CreditCandidateQuantity)
+    {
+        public int CreditedExistingOutputQuantity { get; init; }
+    }
 
     private sealed record MachineProcessingTargetResult(
         MachineProcessingTarget[] Targets,

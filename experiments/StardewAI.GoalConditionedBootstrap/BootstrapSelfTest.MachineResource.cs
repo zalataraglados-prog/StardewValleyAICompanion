@@ -51,6 +51,44 @@ internal static partial class BootstrapSelfTest
                     row.MachineBinding?.RequiredAttemptCount == 2),
             "Machine primary and additional input demand drifted.");
 
+        var partialCredit = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
+            MachineResourceFacilityRoute(
+                itemRoute,
+                existingOutputQuantity: 1),
+            itemRoute,
+            MachineResourceState(
+                MachineResourceSlot(0, "(O)262", 1),
+                MachineResourceSlot(1, "(O)382", 1)));
+        Require(partialCredit.ResourceInputsMatchTargetDate == true &&
+                partialCredit.InputEvaluations.All(value =>
+                    value.RequiredQuantity == 1 &&
+                    value.MachineBinding is
+                    {
+                        RequiredAttemptCount: 1,
+                        CreditedExistingOutputQuantity: 1
+                    }),
+            "Existing machine output did not reduce residual input demand.");
+
+        var fullCredit = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
+            MachineResourceFacilityRoute(
+                itemRoute,
+                existingOutputQuantity: 2),
+            itemRoute,
+            MachineResourceState());
+        Require(fullCredit.ResourceInputsMatchTargetDate == true &&
+                fullCredit.InputEvaluations.Single() is
+                {
+                    InputKind: "machine_existing_output_credit",
+                    RequiredQuantity: 0,
+                    AvailableQuantity: 2,
+                    MachineBinding:
+                    {
+                        RequiredAttemptCount: 0,
+                        CreditedExistingOutputQuantity: 2
+                    }
+                },
+            "Existing machine output did not satisfy zero-input demand.");
+
         var insufficient = AcquisitionRouteTargetDateResourceBuilder
             .Evaluate(
                 MachineResourceFacilityRoute(itemRoute),
@@ -253,7 +291,8 @@ internal static partial class BootstrapSelfTest
     private static AcquisitionRouteTargetDateFacility
         MachineResourceFacilityRoute(
             AcquisitionRouteCalendarResolution route,
-            string[]? pendingResourceConditions = null)
+            string[]? pendingResourceConditions = null,
+            int existingOutputQuantity = 0)
     {
         var unlock = new AcquisitionRouteTargetDateUnlock(
             route.RouteOccurrenceId,
@@ -299,6 +338,31 @@ internal static partial class BootstrapSelfTest
             Array.Empty<AcquisitionLocationRouteTargetEvaluation>(),
             Array.Empty<string>(),
             Array.Empty<string>());
+        var targets = existingOutputQuantity > 0
+            ? new[]
+            {
+                new AcquisitionFacilityTargetEvaluation(
+                    "Farm",
+                    null,
+                    "resolved_existing_machine_capacity_match",
+                    null,
+                    null,
+                    null,
+                    null,
+                    new[] { "state.farm.machines.value[]" },
+                    Array.Empty<string>(),
+                    route.MachineSource!.MachineQualifiedItemId,
+                    12,
+                    34,
+                    true,
+                    "processing",
+                    true,
+                    route.QualifiedItemId,
+                    existingOutputQuantity,
+                    route.MinimumQuality,
+                    true)
+            }
+            : Array.Empty<AcquisitionFacilityTargetEvaluation>();
         return new AcquisitionRouteTargetDateFacility(
             route.RouteOccurrenceId,
             location,
@@ -306,7 +370,7 @@ internal static partial class BootstrapSelfTest
             true,
             true,
             "existing_machine",
-            Array.Empty<AcquisitionFacilityTargetEvaluation>(),
+            targets,
             Array.Empty<string>(),
             Array.Empty<string>());
     }

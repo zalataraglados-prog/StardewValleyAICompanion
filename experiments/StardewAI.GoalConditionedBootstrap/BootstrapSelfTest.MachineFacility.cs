@@ -25,7 +25,19 @@ internal static partial class BootstrapSelfTest
                   "machine_has_output": true,
                   "machine_row_count_total": 1,
                   "machine_row_snapshot_status": "complete_no_row_truncation",
-                  "machine_input_probe_eligible_count": 0
+                  "machine_input_probe_eligible_count": 0,
+                  "held_item": {
+                    "qualified_item_id": "(O)346",
+                    "stack": 2,
+                    "quality": 1
+                  },
+                  "active_output_authoritative_route_sources": [
+                    {
+                      "route_kind": "machine_output",
+                      "source_id": "machine:(BC)12:rule:keg_wheat",
+                      "qualified_item_id": "(O)346"
+                    }
+                  ]
                 }
               ]
             }
@@ -76,14 +88,36 @@ internal static partial class BootstrapSelfTest
         var facility = AcquisitionRouteTargetDateFacilityBuilder
             .EvaluateMachineTarget(
                 targetEvaluation,
-                staticRoute.MachineSource!,
+                staticRoute,
                 fleet);
         Require(facility.MachineSourceMatches == true &&
                 facility.MachineQualifiedItemId == "(BC)12" &&
                 facility.TargetTileX == 12 &&
-                facility.TargetTileY == 34 &&
-                facility.MachineCapacityState == "processing",
+                 facility.TargetTileY == 34 &&
+                 facility.MachineCapacityState == "processing" &&
+                 facility.MachineActiveOutputEvidenceAvailable == true &&
+                 facility.MachineActiveOutputQualifiedItemId == "(O)346" &&
+                 facility.MachineActiveOutputStack == 2 &&
+                 facility.MachineActiveOutputQuality == 1 &&
+                 facility.MachineActiveOutputRouteMatches == true,
             "Machine facility capacity binding drifted.");
+
+        var unrelatedOutputJson = machineJson.Replace(
+            "machine:(BC)12:rule:keg_wheat",
+            "machine:(BC)12:rule:unrelated",
+            StringComparison.Ordinal);
+        using var unrelatedOutputDocument = JsonDocument.Parse(
+            unrelatedOutputJson);
+        var unrelatedOutputFacility =
+            AcquisitionRouteTargetDateFacilityBuilder.EvaluateMachineTarget(
+                targetEvaluation,
+                staticRoute,
+                AcquisitionMachineFleetSnapshotState.Read(
+                    unrelatedOutputDocument.RootElement));
+        Require(unrelatedOutputFacility.MachineSourceMatches == true &&
+                unrelatedOutputFacility.MachineActiveOutputRouteMatches ==
+                    false,
+            "An unrelated active machine output was credited to the route.");
 
         const string emptyFleetJson = """
         {

@@ -32,14 +32,34 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             return Blocked(route, MachineInput,
                 "machine_mixed_input_and_automatic_trigger_requires_route_expansion");
         }
+
+        var guaranteedOutputPerAttempt = Math.Max(1, source.MinimumStack);
+        if (!TryMachineExistingOutputCredit(
+                route,
+                staticRoute,
+                out var creditedExistingOutputQuantity,
+                out var creditBlockingReasons))
+        {
+            return Blocked(route, MachineInput, creditBlockingReasons);
+        }
+        var remainingOutputQuantity = Math.Max(
+            0,
+            staticRoute.RequiredAmount - creditedExistingOutputQuantity);
+        var attemptCount = remainingOutputQuantity == 0
+            ? 0
+            : AcquisitionQuantityMath.DivideRoundUp(
+                remainingOutputQuantity,
+                guaranteedOutputPerAttempt);
+        if (attemptCount == 0)
+        {
+            return ExistingMachineOutputSatisfiesRequirement(
+                route,
+                staticRoute,
+                creditedExistingOutputQuantity);
+        }
         if (!state.MaterialEvidenceAvailable)
             return Blocked(route, MachineInput,
                 state.MaterialBlockingReasons);
-
-        var guaranteedOutputPerAttempt = Math.Max(1, source.MinimumStack);
-        var attemptCount = AcquisitionQuantityMath.DivideRoundUp(
-            staticRoute.RequiredAmount,
-            guaranteedOutputPerAttempt);
         var blockedReasons = new List<string>();
         MachineInputAttempt? firstMiss = null;
         foreach (var trigger in inputTriggers)
@@ -72,6 +92,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                     parsed,
                     candidate,
                     attemptCount,
+                    creditedExistingOutputQuantity,
                     state.MaterialSlots);
                 firstMiss ??= attempt;
                 if (attempt.Matches)
@@ -100,6 +121,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                     trigger,
                     parsed,
                     attemptCount,
+                    creditedExistingOutputQuantity,
                     state.MaterialSlots);
             }
         }
@@ -126,6 +148,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         MachineInputCondition condition,
         MachinePrimaryCandidate candidate,
         int attemptCount,
+        int creditedExistingOutputQuantity,
         AcquisitionResourceMaterialSlot[] slots)
     {
         var remainingBySlot = slots.ToDictionary(
@@ -147,7 +170,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             condition,
             candidate.EligibleSlots,
             remainingBySlot,
-            misses));
+            misses,
+            creditedExistingOutputQuantity));
 
         foreach (var additional in source.AdditionalConsumedItems
                      .GroupBy(item => QualifyObjectId(item.ItemId),
@@ -175,7 +199,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                 MachineInputCondition.Empty,
                 eligible,
                 remainingBySlot,
-                misses));
+                misses,
+                creditedExistingOutputQuantity));
         }
         return new MachineInputAttempt(
             misses.Count == 0,
@@ -195,7 +220,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         MachineInputCondition condition,
         AcquisitionResourceMaterialSlot[] eligibleSlots,
         IDictionary<string, int> remainingBySlot,
-        ICollection<string> misses)
+        ICollection<string> misses,
+        int creditedExistingOutputQuantity)
     {
         var available = eligibleSlots.Sum(slot =>
         {
@@ -254,7 +280,11 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                             slot.SlotIndex,
                             slot.QualifiedItemId,
                             slot.AvailableQuantity))
-                    .ToArray()));
+                    .ToArray())
+            {
+                CreditedExistingOutputQuantity =
+                    creditedExistingOutputQuantity
+            });
     }
 
     private static MachinePrimaryCandidateSet MachinePrimaryCandidates(
@@ -331,6 +361,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         AcquisitionMachineTriggerEvidence trigger,
         MachineInputCondition condition,
         int attemptCount,
+        int creditedExistingOutputQuantity,
         AcquisitionResourceMaterialSlot[] slots)
     {
         var qualifiedItemId = string.IsNullOrWhiteSpace(trigger.RequiredItemId)
@@ -362,7 +393,11 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                 condition.MaximumEdibility,
                 trigger.RequiredCount,
                 attemptCount,
-                Array.Empty<AcquisitionMachineResourceSlot>()));
+                Array.Empty<AcquisitionMachineResourceSlot>())
+            {
+                CreditedExistingOutputQuantity =
+                    creditedExistingOutputQuantity
+            });
         return new MachineInputAttempt(
             false,
             new[] { evaluation },

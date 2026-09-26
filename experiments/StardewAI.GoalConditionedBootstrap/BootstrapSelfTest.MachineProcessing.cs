@@ -60,6 +60,7 @@ internal static partial class BootstrapSelfTest
                         out _) &&
                 deterministicProbability == 1d,
             "Deterministic machine output probability drifted.");
+
         var deterministicRetry =
             AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
                 parallel,
@@ -293,6 +294,8 @@ internal static partial class BootstrapSelfTest
                     .Count() ==
                     expandedRetryRevalidated.RequiredAttemptCount,
             "Expanded machine retries did not reuse reservation and processing axes.");
+
+        VerifyMachineActiveOutputCredit(manualRoute, firstValidFallback);
 
         var randomValid = firstValidFallback with
         {
