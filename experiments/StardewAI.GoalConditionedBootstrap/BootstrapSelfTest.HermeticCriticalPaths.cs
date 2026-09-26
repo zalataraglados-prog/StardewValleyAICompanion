@@ -10,6 +10,7 @@ internal static partial class BootstrapSelfTest
         VerifyMachineCalendarResolution();
         VerifyMachineFacilityResolution();
         VerifyMachineResourceResolution();
+        VerifyMachineProcessingResolution();
         RunAcquisitionRouteDispatch();
         VerifyCommunityCenterActiveRouteKindScope();
         VerifySupportingTransitionTerminalLineage();

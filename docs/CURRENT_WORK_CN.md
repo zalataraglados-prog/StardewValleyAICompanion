@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器处理提前量闭合
+
+- 三类 `Data/Machines` 路线已从资源预留继续接入既有 `processing_lead_time` 轴，没有新增第二套调度器。手动投料路线复用资源轴证明的加工次数，并按设施轴锁定的真实机器位置、当前 `idle / processing / ready_output` 状态与剩余分钟并行排程；机器正在加工时，现有剩余占用时间会先从当日容量中扣除。
+- 计时语义按 1.6.15 反编译锁定：`DaysUntilReady >= 0` 优先于 `MinutesUntilReady`，分钟计时只在当前可游玩日剩余时间内判定同日完成，交互耗时仍归下游 `daily_time_energy_budget`。当前 188 条权威机器路线全部为 `OnlyCompleteOvernight=false` 且没有 `ReadyTimeModifiers`；未来模组或版本若出现过夜限定、时间修正器或 `OutputMethod` 时间覆盖，在对应语义接入前会明确阻塞。
+- 透明桥新增 `active_output_authoritative_route_sources`，把加工中或待收取产物绑定到原生 route kind、source ID 与物品 ID。自动触发机器只有在该绑定唯一且与当前路线完全一致时，才允许把在制产物算作目标日产出；同物品多来源、旧快照缺字段或来源无法唯一归属均 fail-closed。
+- hermetic 测试已覆盖两台机器并行同日完成、单机容量不足、`DaysUntilReady` 跨日、自动触发在制产物精确命中及来源不明阻塞。GoalConditionedBootstrap 与 TransparentBridge Release 构建均为 `0 warning / 0 error`。下一固定切片是把机器随机输出的额外尝试数反向增量绑定到材料、机器处理时间和日内动作预算，随后才允许这类路线进入完整 Teacher 候选比较。
+
 ## 2026-09-27 机器投入资源与非消耗库存条件
 
 - 机器三类来源现已从 `facility_capacity` 接入唯一的 `resource_inputs` 轴。只有带 `ItemPlacedInMachine` 位的原生触发器会产生投料需求；纯 `DayUpdate`、`OutputCollected` 或 `MachinePutDown` 触发器不会错误扣除 `AdditionalConsumedItems`。同一路由混合自动与投料触发器时继续失败关闭，等待静态路由按触发方式展开。

@@ -72,7 +72,7 @@ public sealed class AcquisitionRouteTargetDateProcessingReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The processing_lead_time axis runs only after an exact inventory-reservation match. Immediate interactions carry zero deterministic production delay; action duration remains owned by daily_time_energy_budget and random attempts remain owned by stochastic_retry_budget. Crop routes bind authoritative native growth, minimum yield and quality bounds plus exact live per-tile crop state; same-day readiness requires the summed proven output to cover the full route amount and minimum quality. A new planting cannot satisfy the same target day. Crab pots distinguish exact ready stack and quality from a next-morning production attempt. Production route kinds without a locked evaluator fail closed instead of defaulting to zero time. This report neither selects routes nor mutates reservations, and training authorization stays false.";
+        "The processing_lead_time axis runs only after an exact inventory-reservation match. Immediate interactions carry zero deterministic production delay; action duration remains owned by daily_time_energy_budget and random attempts remain owned by stochastic_retry_budget. Crop routes bind authoritative native growth, minimum yield and quality bounds plus exact live per-tile crop state; same-day readiness requires the summed proven output to cover the full route amount and minimum quality. A new planting cannot satisfy the same target day. Crab pots distinguish exact ready stack and quality from a next-morning production attempt. Machine routes bind the same authoritative MachineSource used by resource and facility axes, exact current time, exact placed-machine timers and resource-proven attempt count. Manual inputs are scheduled across placed machines in parallel; an automatic-trigger output counts only when the transparent bridge proves its active route/source identity. Unbound ready-time modifiers, output-method timer overrides, overnight-only completion, ambiguous active sources and unsupported quality/stack lower bounds fail closed. Production route kinds without a locked evaluator fail closed instead of defaulting to zero time. This report neither selects routes nor mutates reservations, and training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateProcessing(
@@ -119,4 +119,35 @@ public sealed record AcquisitionProcessingLeadTimeEvaluation(
     [property: JsonPropertyName("evidence_paths")]
     string[] EvidencePaths,
     [property: JsonPropertyName("blocking_reasons")]
-    string[] BlockingReasons);
+    string[] BlockingReasons,
+    [property: JsonPropertyName("machine_schedule_binding")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    AcquisitionMachineProcessingScheduleBinding? MachineScheduleBinding = null);
+
+public sealed record AcquisitionMachineProcessingScheduleBinding(
+    [property: JsonPropertyName("schedule_kind")]
+    string ScheduleKind,
+    [property: JsonPropertyName("machine_qualified_item_id")]
+    string MachineQualifiedItemId,
+    [property: JsonPropertyName("target_tile_x")]
+    int TargetTileX,
+    [property: JsonPropertyName("target_tile_y")]
+    int TargetTileY,
+    [property: JsonPropertyName("initial_capacity_state")]
+    string InitialCapacityState,
+    [property: JsonPropertyName("initial_minutes_until_ready")]
+    int InitialMinutesUntilReady,
+    [property: JsonPropertyName("required_attempt_count")]
+    int RequiredAttemptCount,
+    [property: JsonPropertyName("scheduled_attempt_count")]
+    int ScheduledAttemptCount,
+    [property: JsonPropertyName("authoritative_minutes_per_attempt")]
+    int? AuthoritativeMinutesPerAttempt,
+    [property: JsonPropertyName("authoritative_days_per_attempt")]
+    int? AuthoritativeDaysPerAttempt,
+    [property: JsonPropertyName("completion_offset_minutes")]
+    int? CompletionOffsetMinutes,
+    [property: JsonPropertyName("remaining_playable_minutes")]
+    int RemainingPlayableMinutes,
+    [property: JsonPropertyName("active_output_route_matches")]
+    bool? ActiveOutputRouteMatches);

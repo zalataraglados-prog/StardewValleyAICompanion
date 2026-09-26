@@ -90,6 +90,13 @@ internal sealed class AcquisitionMachineFleetSnapshotState
             var minutesUntilReady = ReadInt(row, "minutes_until_ready");
             var machineHasInput = ReadBool(row, "machine_has_input");
             var machineHasOutput = ReadBool(row, "machine_has_output");
+            if (!TryReadActiveOutput(
+                    row,
+                    out var activeOutputEvidenceAvailable,
+                    out var activeOutput))
+            {
+                return Blocked("machine_fleet_active_output_invalid");
+            }
             if (string.IsNullOrWhiteSpace(locationId) ||
                 string.IsNullOrWhiteSpace(qualifiedItemId) ||
                 !qualifiedItemId.StartsWith("(", StringComparison.Ordinal) ||
@@ -118,7 +125,9 @@ internal sealed class AcquisitionMachineFleetSnapshotState
                 readyForHarvest.Value,
                 minutesUntilReady.Value,
                 machineHasInput.Value,
-                machineHasOutput.Value));
+                machineHasOutput.Value,
+                activeOutputEvidenceAvailable,
+                activeOutput));
         }
 
         return new AcquisitionMachineFleetSnapshotState(
@@ -163,6 +172,70 @@ internal sealed class AcquisitionMachineFleetSnapshotState
         value.ValueKind is JsonValueKind.True or JsonValueKind.False
             ? value.GetBoolean()
             : null;
+
+    private static bool TryReadActiveOutput(
+        JsonElement row,
+        out bool evidenceAvailable,
+        out AcquisitionMachineActiveOutputState? activeOutput)
+    {
+        evidenceAvailable = false;
+        activeOutput = null;
+        if (!row.TryGetProperty("held_item", out var heldItem))
+            return true;
+
+        if (!row.TryGetProperty(
+                "active_output_authoritative_route_sources",
+                out var routeSources))
+        {
+            return true;
+        }
+        if (routeSources.ValueKind != JsonValueKind.Array)
+            return false;
+
+        var sources = new List<AcquisitionMachineActiveOutputRouteSource>();
+        foreach (var source in routeSources.EnumerateArray())
+        {
+            if (source.ValueKind != JsonValueKind.Object)
+                return false;
+            var routeKind = ReadString(source, "route_kind");
+            var sourceId = ReadString(source, "source_id");
+            var qualifiedItemId = ReadString(source, "qualified_item_id");
+            if (string.IsNullOrWhiteSpace(routeKind) ||
+                string.IsNullOrWhiteSpace(sourceId) ||
+                string.IsNullOrWhiteSpace(qualifiedItemId))
+            {
+                return false;
+            }
+            sources.Add(new AcquisitionMachineActiveOutputRouteSource(
+                routeKind,
+                sourceId,
+                qualifiedItemId));
+        }
+
+        evidenceAvailable = true;
+        if (heldItem.ValueKind == JsonValueKind.Null)
+            return sources.Count == 0;
+        if (heldItem.ValueKind != JsonValueKind.Object)
+            return false;
+
+        var outputId = ReadString(heldItem, "qualified_item_id");
+        var stack = ReadInt(heldItem, "stack");
+        var quality = ReadInt(heldItem, "quality");
+        if (string.IsNullOrWhiteSpace(outputId) ||
+            !stack.HasValue || stack <= 0 ||
+            !quality.HasValue || quality < 0 ||
+            sources.Any(source =>
+                source.QualifiedItemId != outputId))
+        {
+            return false;
+        }
+        activeOutput = new AcquisitionMachineActiveOutputState(
+            outputId,
+            stack.Value,
+            quality.Value,
+            sources.ToArray());
+        return true;
+    }
 }
 
 internal sealed record AcquisitionMachineRouteState(
@@ -175,7 +248,9 @@ internal sealed record AcquisitionMachineRouteState(
     bool ReadyForHarvest,
     int MinutesUntilReady,
     bool MachineHasInput,
-    bool MachineHasOutput)
+    bool MachineHasOutput,
+    bool ActiveOutputEvidenceAvailable,
+    AcquisitionMachineActiveOutputState? ActiveOutput)
 {
     public string CapacityState => ReadyForHarvest
         ? "ready_output"
@@ -183,3 +258,14 @@ internal sealed record AcquisitionMachineRouteState(
             ? "processing"
             : "idle";
 }
+
+internal sealed record AcquisitionMachineActiveOutputState(
+    string QualifiedItemId,
+    int Stack,
+    int Quality,
+    AcquisitionMachineActiveOutputRouteSource[] RouteSources);
+
+internal sealed record AcquisitionMachineActiveOutputRouteSource(
+    string RouteKind,
+    string SourceId,
+    string QualifiedItemId);

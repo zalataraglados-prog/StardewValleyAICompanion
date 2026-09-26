@@ -197,6 +197,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                             row.Location,
                             row.Pair.Key,
                             row.Pair.Value),
+                    active_output_authoritative_route_sources =
+                        ReadActiveMachineOutputAuthoritativeRouteSources(
+                            row.Pair.Value),
                     held_item = SummarizeItem(row.Pair.Value.heldObject.Value),
                     loadable_inputs = loadableInputs
                 };

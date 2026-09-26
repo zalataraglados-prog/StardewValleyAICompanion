@@ -27,11 +27,25 @@ public sealed partial class FarmReadAdapter
 
     private static object[]
         ReadOrdinaryMachineOutputAuthoritativeRouteSources(
-            StardewValley.Object machine)
+            StardewValley.Object machine) =>
+        ReadOrdinaryMachineOutputAuthoritativeRouteSources(
+            machine,
+            requireReadyForHarvest: true);
+
+    private static object[] ReadActiveMachineOutputAuthoritativeRouteSources(
+        StardewValley.Object machine) =>
+        ReadOrdinaryMachineOutputAuthoritativeRouteSources(
+            machine,
+            requireReadyForHarvest: false);
+
+    private static object[]
+        ReadOrdinaryMachineOutputAuthoritativeRouteSources(
+            StardewValley.Object machine,
+            bool requireReadyForHarvest)
     {
         var output = machine.heldObject.Value;
         var data = machine.GetMachineData();
-        if (!machine.readyForHarvest.Value ||
+        if ((requireReadyForHarvest && !machine.readyForHarvest.Value) ||
             output is null ||
             data?.OutputRules is null)
         {
