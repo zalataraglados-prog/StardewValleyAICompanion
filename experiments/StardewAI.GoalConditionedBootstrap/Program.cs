@@ -58,6 +58,8 @@ var commandDefinitions = new CommandDefinition[]
     new("compile-acquisition-route-supporting-transition-terminal-dispatch", CompileAcquisitionRouteSupportingTransitionTerminalDispatch),
     new("build-acquisition-route-supporting-transition-terminal-execution-binding", BuildAcquisitionRouteSupportingTransitionTerminalExecutionBinding),
     new("build-acquisition-route-supporting-transition-terminal-receipt", BuildAcquisitionRouteSupportingTransitionTerminalReceipt),
+    new("build-acquisition-route-supporting-transition-terminal-settlement-request", BuildAcquisitionRouteSupportingTransitionTerminalSettlementRequest),
+    new("build-acquisition-route-supporting-transition-terminal-settlement-receipt", BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt),
     new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
     new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
     new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
@@ -983,6 +985,47 @@ static void BuildAcquisitionRouteSupportingTransitionTerminalReceipt(
             options.Required("next-executor-version"));
     Write(options.Required("output"), receipt);
     if (!receipt.FreshTerminalReceiptVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalSettlementRequest(
+    Arguments options)
+{
+    var request = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildAfterSupportingTransitionRequest(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options),
+            options.Required("next-execution-binding"),
+            options.Required("next-execution-receipt"),
+            options.Required("next-after-snapshot"),
+            options.Required("next-fresh-terminal-receipt"),
+            options.Required("next-run-id"),
+            options.Required("next-executor-version"));
+    Write(options.Required("output"), request);
+}
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildAfterSupportingTransitionReceipt(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            options.Required("replan-admission"),
+            SupportingTransitionTerminalExecutionInputs(options),
+            options.Required("next-execution-binding"),
+            options.Required("next-execution-receipt"),
+            options.Required("next-after-snapshot"),
+            options.Required("next-fresh-terminal-receipt"),
+            options.Required("next-run-id"),
+            options.Required("next-executor-version"),
+            options.Required("next-settlement-request"),
+            options.Required("next-settlement-result"),
+            options.Required("next-settled-ledger"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.ReservationLifecycleVerified)
         Environment.ExitCode = 2;
 }
 

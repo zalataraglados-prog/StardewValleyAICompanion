@@ -36,6 +36,10 @@ public sealed class AcquisitionRoutePortfolioSettlementReceipt
     [JsonPropertyName("fresh_terminal_receipt_sha256")]
     public string FreshTerminalReceiptSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("base_ledger_sha256")]
     public string BaseLedgerSha256 { get; set; } = string.Empty;
 
