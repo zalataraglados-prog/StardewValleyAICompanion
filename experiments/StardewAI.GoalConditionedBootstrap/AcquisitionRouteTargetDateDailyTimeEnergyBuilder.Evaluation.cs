@@ -52,6 +52,12 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 route,
                 staticRoute,
                 state),
+            "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output" => EvaluateMachine(
+                route,
+                staticRoute,
+                state),
             "sells" => EvaluateShop(route, staticRoute, state),
             _ => Result(
                 route,

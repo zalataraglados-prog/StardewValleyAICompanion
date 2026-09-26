@@ -145,6 +145,12 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             {
                 break;
             }
+            candidate.AttemptSchedule.Add(
+                new AcquisitionMachineProcessingAttemptBinding(
+                    attempt + 1,
+                    candidate.ScheduledAttemptCount + 1,
+                    candidate.AvailableOffsetMinutes,
+                    completionOffset));
             candidate.ScheduledAttemptCount++;
             candidate.AvailableOffsetMinutes = completionOffset;
             candidate.LastCompletionOffsetMinutes = completionOffset;
@@ -171,7 +177,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                      schedule.ScheduledAttemptCount > 0,
                      targetTotalDay,
                      null,
-                     false))
+                     false,
+                     schedule.AttemptSchedule.ToArray()))
             .ToArray();
         var scheduledAttempts = schedules.Sum(value =>
             value.ScheduledAttemptCount);
@@ -268,7 +275,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                  ready,
                  targetTotalDay,
                  routeMatches,
-                 ready && machine.ReadyForHarvest));
+                 ready && machine.ReadyForHarvest,
+                 Array.Empty<AcquisitionMachineProcessingAttemptBinding>()));
         }
         if (blocking.Count > 0)
         {
@@ -305,7 +313,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         bool outputReady,
         int targetTotalDay,
         bool? activeOutputRouteMatches,
-        bool outputMaterializedAtSnapshot) => new(
+        bool outputMaterializedAtSnapshot,
+        AcquisitionMachineProcessingAttemptBinding[] attemptSchedule) => new(
             target.Machine.LocationId,
             productionStateKind,
             status,
@@ -341,7 +350,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                      : null,
                  completionOffsetMinutes,
                  remainingPlayableMinutes,
-                 activeOutputRouteMatches),
+                 activeOutputRouteMatches)
+            {
+                AttemptSchedule = attemptSchedule
+            },
             outputMaterializedAtSnapshot);
 
 }

@@ -36,6 +36,17 @@ internal static partial class BootstrapSelfTest
                 parallel.Evaluations.All(value =>
                     value.MachineScheduleBinding is
                         { CompletionOffsetMinutes: 60 }) &&
+                parallel.Evaluations
+                    .SelectMany(value => value.MachineScheduleBinding!
+                        .AttemptSchedule)
+                    .OrderBy(value => value.AttemptOrdinal)
+                    .Select(value => value.AttemptOrdinal)
+                    .SequenceEqual(new[] { 1, 2 }) &&
+                parallel.Evaluations.All(value =>
+                    value.MachineScheduleBinding!.AttemptSchedule.Single() is
+                        { MachineAttemptOrdinal: 1,
+                          ProcessingStartOffsetMinutes: 0,
+                          CompletionOffsetMinutes: 60 }) &&
                 parallel.Evaluations.All(value =>
                     !value.OutputMaterializedAtSnapshot) &&
                 !AcquisitionRouteTargetDateStochasticRetryBuilder
@@ -60,6 +71,47 @@ internal static partial class BootstrapSelfTest
                 deterministicRetry.BaselineAttemptCount == 2 &&
                 deterministicRetry.AdditionalRetryCount == 0,
             "Guaranteed machine output gained a spurious retry budget.");
+
+        var dailyRoute = manualRoute with
+        {
+            CalendarWindows = new[] { MachineDailyWindow() }
+        };
+        var dailyMachines = new[]
+        {
+            MachineProcessingRow(dailyRoute, 2, 6, 0),
+            MachineProcessingRow(dailyRoute, 3, 6, 0)
+        };
+        var dailyProcessing = AcquisitionRouteTargetDateProcessingBuilder
+            .EvaluateMachine(
+                MachineProcessingReservation(dailyRoute, dailyMachines),
+                dailyRoute,
+                MachineProcessingState(900, dailyMachines),
+                0);
+        var dailyRetry = AcquisitionRouteTargetDateStochasticRetryBuilder
+            .EvaluateMachine(dailyProcessing, dailyRoute);
+        var dailyBudget = AcquisitionRouteTargetDateDailyTimeEnergyBuilder
+            .EvaluateMachine(
+                dailyRetry,
+                dailyRoute,
+                MachineDailyTimeEnergyState(dailyMachines));
+        var dailySteps = dailyBudget.Evaluation?.TerminalRouteSteps ??
+            Array.Empty<AcquisitionDailyTerminalRouteStep>();
+        Require(dailyBudget.DailyTimeEnergyMatchesTargetDate == true &&
+                dailyBudget.Evaluation is
+                {
+                    RequiredAttemptCount: 2,
+                    TerminalActionGameMinutes: 4,
+                    RequiredEnergy: 0d,
+                    TimeBudgetMatches: true,
+                    EnergyBudgetMatches: true
+                } &&
+                dailySteps.Length == 4 &&
+                dailySteps.Count(value => value.ActionKind ==
+                    "load_machine_input") == 2 &&
+                dailySteps.Count(value => value.ActionKind ==
+                    "collect_machine_output") == 2 &&
+                dailySteps[^1].GuaranteedCompletionByTime >= 1000,
+            "Machine movement, interaction, wait and collection budget drifted.");
 
         var firstValidFallback = manualRoute with
         {
@@ -133,6 +185,13 @@ internal static partial class BootstrapSelfTest
                     expandedRetryRevalidated.RequiredAttemptCount &&
                 expandedRetryRevalidated.UpstreamRoute.Evaluations.Sum(value =>
                     value.MachineScheduleBinding?.ScheduledAttemptCount ?? 0) ==
+                    expandedRetryRevalidated.RequiredAttemptCount &&
+                expandedRetryRevalidated.UpstreamRoute.Evaluations
+                    .SelectMany(value => value.MachineScheduleBinding?
+                        .AttemptSchedule ??
+                        Array.Empty<
+                            AcquisitionMachineProcessingAttemptBinding>())
+                    .Count() ==
                     expandedRetryRevalidated.RequiredAttemptCount,
             "Expanded machine retries did not reuse reservation and processing axes.");
 
@@ -210,6 +269,7 @@ internal static partial class BootstrapSelfTest
 
         var automaticRoute = baseRoute with
         {
+            CalendarWindows = new[] { MachineDailyWindow() },
             MachineSource = baseRoute.MachineSource! with
             {
                 MinutesUntilReady = 30,
@@ -230,8 +290,8 @@ internal static partial class BootstrapSelfTest
         {
             MachineProcessingRow(
                 automaticRoute,
-                12,
-                34,
+                2,
+                6,
                 30,
                 automaticRoute.QualifiedItemId,
                 includeActiveSource: true)
@@ -252,13 +312,32 @@ internal static partial class BootstrapSelfTest
                         automatic,
                         automaticRoute),
             "Exact automatic machine in-flight output was not admitted.");
+        var automaticRetry = AcquisitionRouteTargetDateStochasticRetryBuilder
+            .EvaluateMachine(automatic, automaticRoute);
+        var automaticDaily =
+            AcquisitionRouteTargetDateDailyTimeEnergyBuilder.EvaluateMachine(
+                automaticRetry,
+                automaticRoute,
+                MachineDailyTimeEnergyState(activeMachine));
+        Require(automaticDaily.DailyTimeEnergyMatchesTargetDate == true &&
+                automaticDaily.Evaluation is
+                {
+                    TerminalActionGameMinutes: 1,
+                    RequiredAttemptCount: 1,
+                    RequiredEnergy: 0d
+                } &&
+                automaticDaily.Evaluation.TerminalRouteSteps.Single()
+                    .ActionKind == "collect_machine_output" &&
+                automaticDaily.Evaluation.TerminalRouteSteps.Single()
+                    .ActionStartTime >= 930,
+            "Automatic machine completion wait and collection budget drifted.");
 
         var unresolvedMachine = new[]
         {
             MachineProcessingRow(
                 automaticRoute,
-                12,
-                34,
+                2,
+                6,
                 30,
                 automaticRoute.QualifiedItemId,
                 includeActiveSource: false)

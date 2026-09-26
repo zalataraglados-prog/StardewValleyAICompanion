@@ -152,4 +152,19 @@ public sealed record AcquisitionMachineProcessingScheduleBinding(
     [property: JsonPropertyName("remaining_playable_minutes")]
     int RemainingPlayableMinutes,
     [property: JsonPropertyName("active_output_route_matches")]
-    bool? ActiveOutputRouteMatches);
+    bool? ActiveOutputRouteMatches)
+{
+    [JsonPropertyName("attempt_schedule")]
+    public AcquisitionMachineProcessingAttemptBinding[] AttemptSchedule
+    { get; init; } = Array.Empty<AcquisitionMachineProcessingAttemptBinding>();
+}
+
+public sealed record AcquisitionMachineProcessingAttemptBinding(
+    [property: JsonPropertyName("attempt_ordinal")]
+    int AttemptOrdinal,
+    [property: JsonPropertyName("machine_attempt_ordinal")]
+    int MachineAttemptOrdinal,
+    [property: JsonPropertyName("processing_start_offset_minutes")]
+    int ProcessingStartOffsetMinutes,
+    [property: JsonPropertyName("completion_offset_minutes")]
+    int CompletionOffsetMinutes);

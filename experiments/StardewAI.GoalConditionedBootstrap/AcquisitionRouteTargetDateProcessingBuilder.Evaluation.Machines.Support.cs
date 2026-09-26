@@ -165,5 +165,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         public int ScheduledAttemptCount { get; set; }
 
         public int? LastCompletionOffsetMinutes { get; set; }
+
+        public List<AcquisitionMachineProcessingAttemptBinding>
+            AttemptSchedule { get; } = new();
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -224,4 +225,64 @@ internal static partial class BootstrapSelfTest
                 currencyDocument.RootElement.GetProperty("state").Clone()),
             MachineProcessingState(900, machines));
     }
+
+    private static AcquisitionDailyTimeEnergySnapshotState
+        MachineDailyTimeEnergyState(
+            IReadOnlyList<Dictionary<string, object?>> machines,
+            int timeOfDay = 900)
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-machine-daily-fixture");
+        Directory.CreateDirectory(root);
+        var snapshotPath = Path.Combine(root, "snapshot.json");
+        var timingPath = Path.Combine(root, "route-timing.json");
+        foreach (var machine in machines)
+            machine["machine_row_count_total"] = machines.Count;
+        WriteStageOneCollectionSnapshot(
+            snapshotPath,
+            new string('a', 64),
+            Array.Empty<StageOneFishFixture>(),
+            playerLocation: "Farm",
+            playerTileX: 1,
+            playerTileY: 5,
+            totalDays: 0,
+            timeOfDay: timeOfDay);
+        var snapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        snapshot["state"]!["farm"]!["machines"] =
+            JsonSerializer.SerializeToNode(new
+            {
+                status = "available",
+                value = machines
+            }, JsonDefaults.Options);
+        File.WriteAllText(
+            snapshotPath,
+            snapshot.ToJsonString(JsonDefaults.Options));
+        Write(timingPath, StageOneRouteTimingCalibration(totalDays: 0));
+        using var document = JsonDocument.Parse(
+            File.ReadAllText(snapshotPath));
+        return AcquisitionDailyTimeEnergySnapshotState.Read(
+            document.RootElement,
+            "1.6.15",
+            0,
+            timingPath);
+    }
+
+    private static AuthoritativeCalendarSourceWindow
+        MachineDailyWindow() => new()
+        {
+            SourceKind = "machine",
+            SourceKey = "machine:(BC)12:rule:keg_wheat",
+            FirstTotalDay = 0,
+            LastTotalDay = 0,
+            TimeWindows = new[]
+            {
+                new MasterAnglerTimeWindow
+                {
+                    StartTime = 600,
+                    EndTime = 2600
+                }
+            },
+            WeatherModes = new[] { "all" }
+        };
 }

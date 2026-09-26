@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器日内移动与交互预算
+
+- 机器 processing binding 新增逐次 `attempt_schedule`，保留全局尝试序号、单机尝试序号、处理开始偏移和完成偏移；随机重试扩量后的每次投料不再只剩一个汇总计数。日内轴直接消费该排程，不重新猜测尝试如何分配到机器。
+- 手动机器路线会从同一快照位置出发，使用既有路线图、日期证据和移动校准，逐次生成 `load_machine_input -> 原生加工等待 -> collect_machine_output`；多台机器可并行加工，但每次投料和收取都必须重新证明可达站位。自动触发机器则等待透明桥已绑定的目标产物完成时点，再移动并收取足量产物。
+- `MachineInteractionBudgetPolicy` 现在是投料/收取 30 tick 估时的唯一常量来源，动作编译器与 Teacher 日内预算共用它。玩家动作时间只统计投料和收取；机器自身加工等待只推进保证完成时刻，不会重复计入 `terminal_action_game_minutes`，机器交互原生不消耗体力。
+- 快照时已经 `processing` 或 `ready_output` 的手动机器暂不冒充空闲容量：在“先收既有产物、库存可接收、再投新料”的完整证明接入前，该分支以 `manual_machine_non_idle_capacity_reuse_not_bound` 失败关闭。空闲手动机器和已唯一绑定输出的自动机器聚焦测试已通过，Core 回归为 `2570/2570`；完整 `experiments/Run-Regression.ps1` 回归通过（退出码 `0`）。
+
 ## 2026-09-27 机器随机输出概率预算
 
 - `Data/Machines` 的每条静态机器来源现在保留同一原生规则的完整输出选择行，而不再只有目标行和行数。锁定版反编译证明：`UseFirstValidOutput=true` 按顺序返回第一个通过 `GameStateQuery` 的输出；否则从全部有效输出中均匀选择；`RANDOM p` 通过该次上下文的 `Random.NextDouble()` 判定。
