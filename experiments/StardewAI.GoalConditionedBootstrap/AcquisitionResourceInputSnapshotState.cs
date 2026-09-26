@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
@@ -36,6 +37,9 @@ internal sealed class AcquisitionResourceInputSnapshotState
     public MaterialInventoryGraph? MaterialGraph =>
         materialSupply.Value.Graph;
 
+    public AcquisitionResourceMaterialSlot[] MaterialSlots =>
+        materialSupply.Value.Slots;
+
     public bool RodEvidenceAvailable => rodInventory.Value.Available;
 
     public AcquisitionResourceRodState[] Rods => rodInventory.Value.Rods;
@@ -46,6 +50,55 @@ internal sealed class AcquisitionResourceInputSnapshotState
 
     public int AvailableQuantity(string qualifiedItemId) =>
         materialSupply.Value.Quantities.GetValueOrDefault(qualifiedItemId);
+
+    public AcquisitionPlayerInventoryQuantity PlayerInventoryQuantity(
+        string selector,
+        string qualifiedItemId)
+    {
+        if (!MaterialEvidenceAvailable || MaterialGraph is null)
+        {
+            return AcquisitionPlayerInventoryQuantity.Blocked(
+                MaterialBlockingReasons.Length > 0
+                    ? MaterialBlockingReasons[0]
+                    : "material_inventory_graph_missing_or_unavailable");
+        }
+        var selectedPlayerId = selector.Equals(
+                "Current",
+                StringComparison.OrdinalIgnoreCase)
+            ? MaterialGraph.PlayerId
+            : long.TryParse(selector, NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out var playerId)
+                ? playerId
+                : long.MinValue;
+        if (selectedPlayerId != MaterialGraph.PlayerId)
+        {
+            return AcquisitionPlayerInventoryQuantity.Blocked(
+                "player_inventory_selector_not_bound:" + selector);
+        }
+        var nodes = MaterialGraph.InventoryNodes.Where(node =>
+                node.InventoryKind == "player_inventory" &&
+                node.OwnerPlayerId == selectedPlayerId)
+            .ToArray();
+        if (nodes.Length != 1 ||
+            nodes[0].SupplyState != "available" ||
+            !nodes[0].ActorUseAuthorized)
+        {
+            return AcquisitionPlayerInventoryQuantity.Blocked(
+                "current_player_inventory_node_unavailable");
+        }
+        var quantity = nodes[0].Slots.Where(slot =>
+                slot.QualifiedItemId == qualifiedItemId)
+            .Sum(slot => (long)slot.Stack);
+        if (quantity > int.MaxValue)
+        {
+            return AcquisitionPlayerInventoryQuantity.Blocked(
+                "current_player_inventory_quantity_overflow");
+        }
+        return new AcquisitionPlayerInventoryQuantity(
+            true,
+            (int)quantity,
+            string.Empty);
+    }
 
     public bool HasMagicBaitCapableRod =>
         Rods.Any(rod => rod.CanUseBait);
@@ -94,7 +147,8 @@ internal sealed class AcquisitionResourceInputSnapshotState
                     node.Slots.Any(slot =>
                         slot.SlotIndex < 0 ||
                         string.IsNullOrWhiteSpace(slot.QualifiedItemId) ||
-                        slot.Stack <= 0)))
+                        slot.Stack <= 0 ||
+                        slot.ContextTags is null)))
             {
                 return MaterialReadResult.Blocked(
                     "material_inventory_graph_node_or_slot_invalid");
@@ -107,6 +161,7 @@ internal sealed class AcquisitionResourceInputSnapshotState
                     false,
                     null,
                     new Dictionary<string, int>(StringComparer.Ordinal),
+                    Array.Empty<AcquisitionResourceMaterialSlot>(),
                     projection.BlockingReasons.Length > 0
                         ? projection.BlockingReasons
                         : new[] { "material_supply_projection_blocked" });
@@ -115,10 +170,36 @@ internal sealed class AcquisitionResourceInputSnapshotState
                 row => row.QualifiedItemId,
                 row => row.AvailableQuantity,
                 StringComparer.Ordinal);
+            var graphSlots = graph.InventoryNodes
+                .SelectMany(node => node.Slots.Select(slot => new
+                {
+                    node.NodeId,
+                    Slot = slot
+                }))
+                .ToDictionary(
+                    row => SlotKey(row.NodeId, row.Slot.SlotIndex),
+                    row => row.Slot,
+                    StringComparer.Ordinal);
+            var slots = projection.Slots.Select(slot =>
+            {
+                var graphSlot = graphSlots[SlotKey(
+                    slot.NodeId,
+                    slot.SlotIndex)];
+                return new AcquisitionResourceMaterialSlot(
+                    slot.NodeId,
+                    slot.SlotIndex,
+                    slot.QualifiedItemId,
+                    slot.AvailableQuantity,
+                    graphSlot.ContextTags,
+                    graphSlot.ContextTagsProjectionStatus,
+                    graphSlot.Edibility,
+                    graphSlot.EdibilityProjectionStatus);
+            }).ToArray();
             return new MaterialReadResult(
                 true,
                 graph,
                 quantities,
+                slots,
                 Array.Empty<string>());
         }
         catch (Exception ex) when (ex is JsonException or OverflowException)
@@ -250,14 +331,19 @@ internal sealed class AcquisitionResourceInputSnapshotState
         bool Available,
         MaterialInventoryGraph? Graph,
         IReadOnlyDictionary<string, int> Quantities,
+        AcquisitionResourceMaterialSlot[] Slots,
         string[] BlockingReasons)
     {
         public static MaterialReadResult Blocked(string reason) => new(
             false,
             null,
             new Dictionary<string, int>(StringComparer.Ordinal),
+            Array.Empty<AcquisitionResourceMaterialSlot>(),
             new[] { reason });
     }
+
+    private static string SlotKey(string nodeId, int slotIndex) =>
+        nodeId + "#" + slotIndex;
 
     private sealed record RodReadResult(
         bool Available,
@@ -277,3 +363,22 @@ internal sealed record AcquisitionResourceRodState(
     bool CanUseBait,
     bool HasMagicBait,
     int BaitStack);
+
+internal sealed record AcquisitionResourceMaterialSlot(
+    string NodeId,
+    int SlotIndex,
+    string QualifiedItemId,
+    int AvailableQuantity,
+    string[] ContextTags,
+    string ContextTagsProjectionStatus,
+    int? Edibility,
+    string EdibilityProjectionStatus);
+
+internal sealed record AcquisitionPlayerInventoryQuantity(
+    bool EvidenceAvailable,
+    int Quantity,
+    string BlockingReason)
+{
+    public static AcquisitionPlayerInventoryQuantity Blocked(string reason) =>
+        new(false, 0, reason);
+}

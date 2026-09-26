@@ -175,9 +175,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                     cropSource.HarvestMinStack,
                     readyCropCount),
                 cropSource.HarvestMinQuality,
-                true,
-                evidencePaths,
-                Array.Empty<string>());
+                 true,
+                 evidencePaths,
+                 Array.Empty<string>(),
+                 OutputMaterializedAtSnapshot: true);
         }
         var living = lookup.Rows.Where(crop => !crop.Dead).ToArray();
         if (living.Any(crop =>

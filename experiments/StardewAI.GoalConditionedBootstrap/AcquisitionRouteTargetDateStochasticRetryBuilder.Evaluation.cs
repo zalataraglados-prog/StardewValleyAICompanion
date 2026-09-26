@@ -17,7 +17,8 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteTargetDateProcessing route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionRouteTargetDateFishingProbability fishingRoute,
-        string fishingProbabilityPath)
+        string fishingProbabilityPath,
+        MachineRetryExpansionContext machineExpansion)
     {
         if (!route.ProcessingLeadTimeAxisResolved)
         {
@@ -95,6 +96,9 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 Array.Empty<string>(),
                 Array.Empty<string>());
         }
+
+        if (IsMachineRoute(staticRoute.RouteKind))
+            return EvaluateMachine(route, staticRoute, machineExpansion);
 
         if (SourceResolvedRetryEvidenceRequired(
                 staticRoute,
@@ -254,11 +258,12 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             Array.Empty<string>());
     }
 
-    private static bool CurrentOutputAlreadyMaterialized(
+    internal static bool CurrentOutputAlreadyMaterialized(
         AcquisitionRouteTargetDateProcessing route,
         AcquisitionRouteCalendarResolution staticRoute) =>
         AcquisitionOutputProof.ReadyQuantity(
-            route.Evaluations,
+            route.Evaluations.Where(value =>
+                value.OutputMaterializedAtSnapshot),
             staticRoute.MinimumQuality) >= staticRoute.RequiredAmount;
 
     internal static bool SourceResolvedOutcomeGuaranteed(
@@ -314,9 +319,13 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         bool expandedReservationRevalidated,
         string[] evidencePaths,
         string[] nonMatchingReasons,
-        string[] blockingReasons)
+        string[] blockingReasons,
+        int? baselineAttemptCount = null)
     {
         var requirement = RequirementRoute(route);
+        var baselineAttempts = requiredAttempts.HasValue
+            ? baselineAttemptCount ?? requirement.RequiredAmount
+            : baselineAttemptCount;
         return new AcquisitionRouteTargetDateStochasticRetry(
             route.RouteOccurrenceId,
             route,
@@ -330,10 +339,11 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             StochasticRetryPolicy.TargetSuccessProbability,
             singleAttemptProbability,
             requiredAttempts,
+            baselineAttempts,
             requiredAttempts.HasValue
                 ? Math.Max(
                     0,
-                    requiredAttempts.Value - requirement.RequiredAmount)
+                    requiredAttempts.Value - baselineAttempts!.Value)
                 : null,
             expandsReservedConsumables,
             expandedReservationRevalidated,

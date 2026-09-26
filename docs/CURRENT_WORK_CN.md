@@ -11,6 +11,56 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器日内移动与交互预算
+
+- 机器 processing binding 新增逐次 `attempt_schedule`，保留全局尝试序号、单机尝试序号、处理开始偏移和完成偏移；随机重试扩量后的每次投料不再只剩一个汇总计数。日内轴直接消费该排程，不重新猜测尝试如何分配到机器。
+- 手动机器路线会从同一快照位置出发，使用既有路线图、日期证据和移动校准，逐次生成 `load_machine_input -> 原生加工等待 -> collect_machine_output`；多台机器可并行加工，但每次投料和收取都必须重新证明可达站位。自动触发机器则等待透明桥已绑定的目标产物完成时点，再移动并收取足量产物。
+- `MachineInteractionBudgetPolicy` 现在是投料/收取 30 tick 估时的唯一常量来源，动作编译器与 Teacher 日内预算共用它。玩家动作时间只统计投料和收取；机器自身加工等待只推进保证完成时刻，不会重复计入 `terminal_action_game_minutes`，机器交互原生不消耗体力。
+- 本切片先让快照时 `processing` 或 `ready_output` 的手动机器失败关闭，空闲手动机器和已唯一绑定输出的自动机器聚焦测试通过，Core 回归为 `2570/2570`，完整 `experiments/Run-Regression.ps1` 回归通过（退出码 `0`）；紧随其后的“非空闲手动机器复用”切片在同一日程状态机内闭合该分支。
+
+## 2026-09-27 非空闲手动机器复用
+
+- processing/daily 两轴继续共用同一份机器快照与逐机 attempt schedule；daily 轴现在能按 `minutes_until_ready` 等待已有产物，执行现有 `collect_machine_output`，再执行现有 `load_machine_input`，最后等待并领取本轮目标产物，没有引入第二套机器动作。
+- 复用前必须存在精确 `held_item` 身份、数量和品质，并按每台待清空机器保守预留一个透明 `player.inventory_capacity.empty_slots`；容量不足或字段不一致时上游直接失败关闭。既有产物暂不计入当前目标产出，防止来源未重算时错误减少输入和随机重试预算。
+- 本切片聚焦回归覆盖 `processing` 与 `ready_output` 两种初态的“等待/领取/投料/领取”顺序和零空格拒绝；Release 构建为零警告，`self-test-bootstrap-hermetic` 与完整 `experiments/Run-Regression.ps1` 均通过（退出码 `0`）。
+
+## 2026-09-27 机器随机输出概率预算
+
+- `Data/Machines` 的每条静态机器来源现在保留同一原生规则的完整输出选择行，而不再只有目标行和行数。锁定版反编译证明：`UseFirstValidOutput=true` 按顺序返回第一个通过 `GameStateQuery` 的输出；否则从全部有效输出中均匀选择；`RANDOM p` 通过该次上下文的 `Random.NextDouble()` 判定。
+- 随机轴只解析可严格证明的形态：单行、只含简单 `RANDOM p` 的首个有效链，以及全部条件恒真的随机有效集合。首个有效行的概率为前置各行失败概率乘目标行通过概率；随机有效集合为 `1/N`。复合条件、条件化随机有效集合、随机物品查询、输出回调或逐物品条件继续 fail-closed。
+- `processing_lead_time` 的“目标日可领取”与“快照时已落地”已拆成独立事实，避免把当天稍后完成的机器产物误判为现有库存并跳过随机预算。已由透明桥唯一绑定的自动机器在制产物另按“输出选择已完成”处理，不重复抽概率。
+- 随机预算新增基础尝试次数，额外重试改为 `总尝试次数 - ceil(需求数量 / 保证最小堆叠)`，不再错误地直接减需求数量。概率预算扩大机器投料或处理次数时，扩大后的总尝试数会重新进入资源、货币、原子预留和机器排程轴，不能沿用基础 claim 放行。
+- Release 构建、hermetic 机器概率测试和完整 `Run-Regression.ps1` 均通过；全量回归覆盖 1599 条路线、train/validation/test continuation 与伪造/篡改拒绝。下一固定切片是把已排程的机器投料与收取交互接入日内移动、动作时间和体力预算，且不得把机器自身等待时间重复计为玩家动作时间。
+
+## 2026-09-27 机器随机重试增量预留闭合
+
+- 额外随机尝试不再停留在“需要重验”的标志位。随机轴按 `所需总尝试数 * 原生保证最小产量` 构造扩大后的路线需求，并复用现有 `resource_inputs -> currency_budget -> inventory_reservation -> processing_lead_time` 唯一链路；没有新增第二套材料选择、claim 或机器调度算法。
+- 扩大后的资源轴按总尝试数重算主投入和全部附加消耗，reservation 只能从资源轴已证明的精确节点/槽位生成原子 claim；材料不足、现有 claim 冲突、货币不足、机器容量不足或排程次数漂移都会保留对应轴的原始原因并失败关闭。
+- 随机轴成功时直接把扩大后的 processing route 作为自己的 `upstream_route`，因此后续日内预算、机会成本、组合提交和执行绑定会自然遍历到扩大后的 claim set，不通过旁路字段携带第二份预留。聚焦测试锁定 claim 数量和机器排程次数均等于概率预算的总尝试数。
+- GoalConditionedBootstrap Release 构建、hermetic 自测和完整 `Run-Regression.ps1` 均通过；完整回归覆盖 train/validation/test continuation、组合语料以及伪造/篡改拒绝。正式训练准入仍为 false；下一固定切片是机器投料/收取的日内动作预算。
+
+## 2026-09-27 机器处理提前量闭合
+
+- 三类 `Data/Machines` 路线已从资源预留继续接入既有 `processing_lead_time` 轴，没有新增第二套调度器。手动投料路线复用资源轴证明的加工次数，并按设施轴锁定的真实机器位置、当前 `idle / processing / ready_output` 状态与剩余分钟并行排程；机器正在加工时，现有剩余占用时间会先从当日容量中扣除。
+- 计时语义按 1.6.15 反编译锁定：`DaysUntilReady >= 0` 优先于 `MinutesUntilReady`，分钟计时只在当前可游玩日剩余时间内判定同日完成，交互耗时仍归下游 `daily_time_energy_budget`。当前 188 条权威机器路线全部为 `OnlyCompleteOvernight=false` 且没有 `ReadyTimeModifiers`；未来模组或版本若出现过夜限定、时间修正器或 `OutputMethod` 时间覆盖，在对应语义接入前会明确阻塞。
+- 透明桥新增 `active_output_authoritative_route_sources`，把加工中或待收取产物绑定到原生 route kind、source ID 与物品 ID。自动触发机器只有在该绑定唯一且与当前路线完全一致时，才允许把在制产物算作目标日产出；同物品多来源、旧快照缺字段或来源无法唯一归属均 fail-closed。
+- hermetic 测试已覆盖两台机器并行同日完成、单机容量不足、`DaysUntilReady` 跨日、自动触发在制产物精确命中及来源不明阻塞。GoalConditionedBootstrap 与 TransparentBridge Release 构建均为 `0 warning / 0 error`。下一固定切片是把机器随机输出的额外尝试数反向增量绑定到材料、机器处理时间和日内动作预算，随后才允许这类路线进入完整 Teacher 候选比较。
+
+## 2026-09-27 机器投入资源与非消耗库存条件
+
+- 机器三类来源现已从 `facility_capacity` 接入唯一的 `resource_inputs` 轴。只有带 `ItemPlacedInMachine` 位的原生触发器会产生投料需求；纯 `DayUpdate`、`OutputCollected` 或 `MachinePutDown` 触发器不会错误扣除 `AdditionalConsumedItems`。同一路由混合自动与投料触发器时继续失败关闭，等待静态路由按触发方式展开。
+- 资源轴按权威最小产出量计算满足目标数量所需的基础加工次数，再将主投入的 `RequiredCount` 和煤等全部 `AdditionalConsumedItems` 按次数放大。随机成功所需的额外尝试仍由后续 `stochastic_retry` 轴独立追加，当前结果不提前冒充完整随机预算。
+- `farm.material_inventory_graph` 的每个槽位新增原生 `Item.GetContextTags()`、对象 `Edibility` 及各自投影状态。标签型和可食用度型机器规则必须找到同一槽位集合中的真实输入见证；旧快照或不完整元数据只能支持无需这些字段的精确 ID 规则，不能把空标签猜成“不匹配”。
+- 机器资源结果保留所选原生触发器、每次数量、加工次数和允许预约的精确节点/槽位。后续 reservation 只能从这组槽位扣量，避免资源求值与实际预约使用不同物品。`PLAYER_HAS_ITEM` 资源条件也已按反编译语义接入，但它只读取当前玩家随身库存节点、保留否定与最小/最大数量，且不创建消耗预约；原生核桃/Qi 宝石特例在相应货币证据接入前失败关闭。
+- Release 构建、机器资源 hermetic 自测和 Core `2570/2570` 回归通过。下一固定切片是机器 `processing_lead_time`：使用同一 `machine_source` 的分钟/天数、过夜完成和时间修正器计算最迟投料时点，再进入机器随机输出的重试与资源增量闭环。
+
+## 2026-09-27 机器来源地点与设施容量绑定
+
+- `Data/Machines` 静态来源现已接入既有 `location_route -> facility_capacity` 轴，不新增第二套路由或执行器。地点轴只接受同一透明快照中 `farm.machines[]` 的完整、未截断舰队，按机器 qualified ID、地点和格子绑定来源；空舰队是有证据的来源缺失，字段缺失、行数漂移或重复地点格子则失败关闭。
+- 设施轴会在同一快照中再次按地点和格子重绑机器，保留 `idle / processing / ready_output` 状态并要求该机器原生声明可产出。它只证明现有机器容量，不推测制作、摆放、投料、吞吐量、完成时间或随机成功率；这些仍分别归资源输入、处理提前量和随机重试轴。
+- Release 构建和 hermetic 机器舰队/地点/设施测试通过。现有历史训练快照不能提供同一时刻的新版全地图日期路线与完整机器舰队，因此真实 188 条机器路线仍按缺失证据阻塞；回归脚本锁定这一结果，禁止把两份不同快照拼成伪证据。
+- 机器资源输入已由上节闭合；当前下一固定切片是机器处理提前量，随后才进入随机输出预算。
+
 ## 2026-09-21 单路线 reservation 结算与重放回执
 
 - 新增 `POST /api/v1/strategy/commitments/reservation-portfolios/settle-completed-route`。请求必须绑定 fresh after snapshot、当前 ledger revision、portfolio/goal/route source decision、fresh terminal receipt 的小写 SHA-256，以及该路线当前全部 active 材料/货币 reservation ID。服务在内存副本中一次性把精确集合改为 `completed`，记录完成原因和证据哈希，只前进一个 revision，并写入逐 claim 历史与唯一 `reservation_portfolio_route_complete` 标记；缺少、多余或重复 ID 均整体拒绝。无 claim 路线仍写入可审计标记。

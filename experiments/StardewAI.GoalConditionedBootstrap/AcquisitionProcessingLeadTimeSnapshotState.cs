@@ -11,17 +11,25 @@ internal sealed partial class AcquisitionProcessingLeadTimeSnapshotState
         string currentLocationId,
         SnapshotArrayState farmCrops,
         SnapshotArrayState currentLocationCrops,
-        JsonElement crabPotNetwork)
+        JsonElement crabPotNetwork,
+        AcquisitionMachineFleetSnapshotState machineFleet,
+        AcquisitionCalendarSnapshotState calendar)
     {
         CurrentLocationId = currentLocationId;
         this.farmCrops = farmCrops;
         this.currentLocationCrops = currentLocationCrops;
         CrabPotNetwork = crabPotNetwork;
+        MachineFleet = machineFleet;
+        Calendar = calendar;
     }
 
     public string CurrentLocationId { get; }
 
     public JsonElement CrabPotNetwork { get; }
+
+    public AcquisitionMachineFleetSnapshotState MachineFleet { get; }
+
+    public AcquisitionCalendarSnapshotState Calendar { get; }
 
     public static AcquisitionProcessingLeadTimeSnapshotState Read(
         JsonElement snapshot)
@@ -52,7 +60,9 @@ internal sealed partial class AcquisitionProcessingLeadTimeSnapshotState
             currentLocationId,
             farmCrops,
             currentCrops,
-            crabPots);
+            crabPots,
+            AcquisitionMachineFleetSnapshotState.Read(state),
+            AcquisitionCalendarSnapshotState.Read(snapshot));
     }
 
     public LiveCropLookup FindCrops(

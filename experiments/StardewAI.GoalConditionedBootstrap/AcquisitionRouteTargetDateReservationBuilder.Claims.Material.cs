@@ -6,7 +6,14 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class AcquisitionRouteTargetDateReservationBuilder
 {
     private static readonly HashSet<string> SlotMaterialInputKinds = new(
-        new[] { "crop_seed", "shop_trade_item", "loose_magic_bait" },
+        new[]
+        {
+            "crop_seed",
+            "shop_trade_item",
+            "loose_magic_bait",
+            "machine_primary_input",
+            "machine_additional_input"
+        },
         StringComparer.Ordinal);
 
     private static ReservationClaimBuildResult BuildMaterialClaims(
@@ -72,10 +79,34 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         for (var inputIndex = 0; inputIndex < inputs.Length; inputIndex++)
         {
             var input = inputs[inputIndex];
+            HashSet<string>? eligibleMachineSlots = null;
+            if (input.MachineBinding is not null)
+            {
+                if (input.MachineBinding.EligibleSlots.Any(slot =>
+                        slot.QualifiedItemId != input.QualifiedItemId ||
+                        slot.SlotIndex < 0 ||
+                        string.IsNullOrWhiteSpace(slot.NodeId)) ||
+                    input.MachineBinding.EligibleSlots
+                        .Select(slot => SlotKey(slot.NodeId, slot.SlotIndex))
+                        .Distinct(StringComparer.Ordinal).Count() !=
+                    input.MachineBinding.EligibleSlots.Length)
+                {
+                    return ReservationClaimBuildResult.Blocked(
+                        "machine_resource_binding_invalid:" +
+                        input.QualifiedItemId);
+                }
+                eligibleMachineSlots = input.MachineBinding.EligibleSlots
+                    .Select(slot => SlotKey(slot.NodeId, slot.SlotIndex))
+                    .ToHashSet(StringComparer.Ordinal);
+            }
             var remaining = input.RequiredQuantity;
             var claimIndex = 0;
             foreach (var slot in supply.Slots.Where(row =>
-                         row.QualifiedItemId == input.QualifiedItemId)
+                         row.QualifiedItemId == input.QualifiedItemId &&
+                         (eligibleMachineSlots is null ||
+                          eligibleMachineSlots.Contains(SlotKey(
+                              row.NodeId,
+                              row.SlotIndex))))
                      .OrderBy(row => row.NodeId, StringComparer.Ordinal)
                      .ThenBy(row => row.SlotIndex))
             {

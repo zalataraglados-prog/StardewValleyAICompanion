@@ -444,7 +444,7 @@ namespace StardewAI.Core.Execution
                     "collect_machine_output",
                     locationId + "(" + x.Value + "," + y.Value + "):" + qualifiedItemId,
                     expectedEffect,
-                    30)
+                    MachineInteractionBudgetPolicy.CollectOutputTicks)
             };
         }
 
@@ -575,7 +575,7 @@ namespace StardewAI.Core.Execution
                     "load_machine_input",
                     locationId + "(" + x.Value + "," + y.Value + "):slot" + inputSlot.Value + ":" + qualifiedItemId,
                     expectedEffect,
-                    30)
+                    MachineInteractionBudgetPolicy.LoadInputTicks)
             };
         }
 

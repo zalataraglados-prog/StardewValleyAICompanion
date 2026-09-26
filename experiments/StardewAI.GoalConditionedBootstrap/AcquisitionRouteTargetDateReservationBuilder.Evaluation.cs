@@ -6,7 +6,7 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
 {
     private const string DecisionPrefix = "target-date-acquisition-route:";
 
-    private static AcquisitionRouteTargetDateReservation Evaluate(
+    internal static AcquisitionRouteTargetDateReservation Evaluate(
         AcquisitionRouteTargetDateCurrency route,
         string goalId,
         string stateHash,

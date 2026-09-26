@@ -13,6 +13,10 @@ internal static class AcquisitionLocationRouteTargetResolver
         return source.RouteKind switch
         {
             "harvests_as" => ResolveCrop(source, state),
+            "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output" =>
+                ResolveMachine(staticRoute, state.MachineFleet),
             "sells" => ResolveShop(staticRoute, state),
             "native_crab_pot_output" => ResolveCrabPot(source, state),
             "native_location_artifact_spot" or
@@ -29,6 +33,54 @@ internal static class AcquisitionLocationRouteTargetResolver
                 Array.Empty<AcquisitionLocationTarget>(),
                 new[] { "location_route_kind_not_supported:" + source.RouteKind })
         };
+    }
+
+    internal static AcquisitionLocationTargetResolution ResolveMachine(
+        AcquisitionRouteCalendarResolution staticRoute,
+        AcquisitionMachineFleetSnapshotState machineFleet)
+    {
+        var source = staticRoute.MachineSource;
+        if (source is null ||
+            string.IsNullOrWhiteSpace(source.MachineQualifiedItemId))
+        {
+            return new AcquisitionLocationTargetResolution(
+                false,
+                Array.Empty<AcquisitionLocationTarget>(),
+                new[] { "authoritative_machine_source_binding_missing" });
+        }
+        if (!machineFleet.EvidenceAvailable)
+        {
+            return new AcquisitionLocationTargetResolution(
+                false,
+                Array.Empty<AcquisitionLocationTarget>(),
+                machineFleet.BlockingReasons);
+        }
+
+        var targets = machineFleet
+            .RowsFor(source.MachineQualifiedItemId)
+            .OrderBy(machine => machine.LocationId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(machine => machine.TileY)
+            .ThenBy(machine => machine.TileX)
+            .Select(machine => new AcquisitionLocationTarget(
+                "runtime_machine_source_location",
+                staticRoute.SourceId,
+                machine.LocationId,
+                new[]
+                {
+                    "state.farm.machines.value[].qualified_item_id",
+                    "state.farm.machines.value[].location_id",
+                    "state.farm.machines.value[].tile_x",
+                    "state.farm.machines.value[].tile_y"
+                },
+                machine.TileX,
+                machine.TileY))
+            .ToArray();
+        return new AcquisitionLocationTargetResolution(
+            true,
+            targets,
+            targets.Length == 0
+                ? new[] { "matching_machine_runtime_location_not_present" }
+                : Array.Empty<string>());
     }
 
     private static AcquisitionLocationTargetResolution ResolveCrop(
@@ -320,4 +372,6 @@ internal sealed record AcquisitionLocationTarget(
     string BindingKind,
     string SourceKey,
     string LocationId,
-    string[] EvidencePaths);
+    string[] EvidencePaths,
+    int? TargetTileX = null,
+    int? TargetTileY = null);

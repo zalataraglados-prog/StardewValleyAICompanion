@@ -110,9 +110,10 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
                 "resolved_matching_crab_pot_output_ready",
                 0,
                 targetTotalDay,
-                outputStack,
-                outputQuality,
-                true);
+                 outputStack,
+                 outputQuality,
+                 true,
+                 outputMaterializedAtSnapshot: true);
         }
         var serviceStatus =
             AcquisitionProcessingLeadTimeSnapshotState.ReadString(
@@ -164,7 +165,8 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
         int earliestDay,
         int? outputQuantity,
         int? minimumQuality,
-        bool ready) => new(
+        bool ready,
+        bool outputMaterializedAtSnapshot = false) => new(
             locationId,
             "existing_crab_pot",
             status,
@@ -180,7 +182,8 @@ internal static class AcquisitionCrabPotLeadTimeEvaluator
                 "state.player.crab_pot_network.value.rows[]",
                 "locked decompile StardewValley.Objects/CrabPot.cs DayUpdate"
             },
-            Array.Empty<string>());
+            Array.Empty<string>(),
+            OutputMaterializedAtSnapshot: outputMaterializedAtSnapshot);
 
     private static AcquisitionProcessingLeadTimeEvaluation BlockedEvaluation(
         string locationId,

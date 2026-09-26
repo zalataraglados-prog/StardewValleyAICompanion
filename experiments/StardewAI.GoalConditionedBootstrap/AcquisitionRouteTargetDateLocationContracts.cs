@@ -78,7 +78,7 @@ public sealed class AcquisitionRouteTargetDateLocationReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The location_route axis binds each currently applicable acquisition source to exact same-snapshot locations and reuses the existing current-date connector search plus versioned conservative movement calibration. Source weather is evaluated in the target location context and arrival must precede a retained source time-window end. Crop season-independent locations, farm variants, live shop endpoints and placed crab-pot locations are never guessed. Unconsumed native location predicates fail closed. This axis proves source-location arrival only; random/live source appearance, terminal interaction, stock, resources and a fresh native receipt remain downstream and training authorization stays false.";
+        "The location_route axis binds each currently applicable acquisition source to exact same-snapshot locations and reuses the existing current-date connector search plus versioned conservative movement calibration. Source weather is evaluated in the target location context and arrival must precede a retained source time-window end. Crop season-independent locations, farm variants, live shop endpoints, placed crab-pot locations and complete non-truncated machine-fleet rows are never guessed. Machine sources preserve exact location and tile identity for downstream capacity and terminal routing. Unconsumed native location predicates fail closed. This axis proves source-location arrival only; local terminal reachability, random/live source appearance, stock, resources and a fresh native receipt remain downstream and training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateLocation(
@@ -125,4 +125,10 @@ public sealed record AcquisitionLocationRouteTargetEvaluation(
     [property: JsonPropertyName("evidence_paths")]
     string[] EvidencePaths,
     [property: JsonPropertyName("blocking_reasons")]
-    string[] BlockingReasons);
+    string[] BlockingReasons,
+    [property: JsonPropertyName("target_tile_x"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? TargetTileX = null,
+    [property: JsonPropertyName("target_tile_y"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? TargetTileY = null);

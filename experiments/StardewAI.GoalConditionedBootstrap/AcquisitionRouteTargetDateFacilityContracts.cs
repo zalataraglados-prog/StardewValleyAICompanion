@@ -71,7 +71,7 @@ public sealed class AcquisitionRouteTargetDateFacilityReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The facility_capacity axis is evaluated only after an exact target-date source-location match. Routes without a capacity-bearing production facility are explicitly not-required. Crop routes bind authoritative minimum harvest stack and require enough exact existing-target-crop plus open prepared-soil slots across matched locations to cover the full route amount. Unresolved crop identities block only when they can change that conclusion. Crab-pot routes reuse the exact placed-pot source already proven by location_route. Capacity-bearing route kinds that cannot yet reach this axis remain inherited upstream blocks, and any such kind reaching it without a locked evaluator fails closed. Inputs, construction, growth or processing lead time, stochastic output, daily budget, inventory receipt and final interaction remain independently owned; training authorization stays false.";
+        "The facility_capacity axis is evaluated only after an exact target-date source-location match. Routes without a capacity-bearing production facility are explicitly not-required. Crop routes bind authoritative minimum harvest stack and require enough exact existing-target-crop plus open prepared-soil slots across matched locations to cover the full route amount. Unresolved crop identities block only when they can change that conclusion. Crab-pot routes reuse the exact placed-pot source already proven by location_route. Machine routes rebind the complete fleet row by exact machine qualified ID, location and tile, preserve idle/processing/ready state, and require a native output-capable placed machine; they do not infer construction or throughput. Capacity-bearing route kinds that cannot yet reach this axis remain inherited upstream blocks, and any such kind reaching it without a locked evaluator fails closed. Inputs, construction, growth or processing lead time, stochastic output, daily budget, inventory receipt and final interaction remain independently owned; training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateFacility(
@@ -112,4 +112,19 @@ public sealed record AcquisitionFacilityTargetEvaluation(
     [property: JsonPropertyName("evidence_paths")]
     string[] EvidencePaths,
     [property: JsonPropertyName("blocking_reasons")]
-    string[] BlockingReasons);
+    string[] BlockingReasons,
+    [property: JsonPropertyName("machine_qualified_item_id"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? MachineQualifiedItemId = null,
+    [property: JsonPropertyName("target_tile_x"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? TargetTileX = null,
+    [property: JsonPropertyName("target_tile_y"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? TargetTileY = null,
+    [property: JsonPropertyName("machine_source_matches"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? MachineSourceMatches = null,
+    [property: JsonPropertyName("machine_capacity_state"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? MachineCapacityState = null);

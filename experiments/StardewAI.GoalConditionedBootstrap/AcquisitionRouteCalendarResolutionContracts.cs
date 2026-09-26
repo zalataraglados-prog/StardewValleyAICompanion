@@ -193,7 +193,20 @@ public sealed record AcquisitionMachineSourceEvidence(
     [property: JsonPropertyName("output_selection_count")]
     int OutputSelectionCount,
     [property: JsonPropertyName("stochastic_outcome")]
-    bool StochasticOutcome);
+    bool StochasticOutcome,
+    [property: JsonPropertyName("output_selection_rows")]
+    AcquisitionMachineOutputSelectionRowEvidence[]? OutputSelectionRows = null);
+
+public sealed record AcquisitionMachineOutputSelectionRowEvidence(
+    [property: JsonPropertyName("output_index")] int OutputIndex,
+    [property: JsonPropertyName("condition")] string Condition,
+    [property: JsonPropertyName("output_item_query")] string OutputItemQuery,
+    [property: JsonPropertyName("random_item_id")] string RandomItemId,
+    [property: JsonPropertyName("minimum_stack")] int MinimumStack,
+    [property: JsonPropertyName("maximum_stack")] int MaximumStack,
+    [property: JsonPropertyName("output_method")] string OutputMethod,
+    [property: JsonPropertyName("per_item_condition")]
+    string PerItemCondition);
 
 public sealed record AcquisitionMachineTriggerEvidence(
     [property: JsonPropertyName("id")] string Id,

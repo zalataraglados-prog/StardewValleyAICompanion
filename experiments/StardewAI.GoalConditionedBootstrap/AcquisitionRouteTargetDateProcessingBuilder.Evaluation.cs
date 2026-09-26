@@ -6,6 +6,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         "no_deterministic_processing_wait";
     private const string CropGrowth = "crop_growth_or_ready_crop";
     private const string CrabPotProduction = "crab_pot_daily_production";
+    private const string MachineProduction =
+        "native_machine_processing_schedule";
     private const string DeferredProduction =
         "production_lead_time_binding_pending_upstream";
 
@@ -15,7 +17,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         {
             ["creates_reward_item"] = NoDeterministicWait,
             ["harvests_as"] = CropGrowth,
-            ["machine_output"] = DeferredProduction,
+            ["machine_output"] = MachineProduction,
             ["native_bush_shake"] = NoDeterministicWait,
             ["native_crab_pot_output"] = CrabPotProduction,
             ["native_farm_animal_deluxe_produce"] = DeferredProduction,
@@ -28,8 +30,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             ["native_location_artifact_spot"] = NoDeterministicWait,
             ["native_location_fish_spawn"] = NoDeterministicWait,
             ["native_location_forage_spawn"] = NoDeterministicWait,
-            ["native_machine_flavored_output"] = DeferredProduction,
-            ["native_machine_item_query_output"] = DeferredProduction,
+            ["native_machine_flavored_output"] = MachineProduction,
+            ["native_machine_item_query_output"] = MachineProduction,
             ["native_mine_buried_item"] = NoDeterministicWait,
             ["native_mine_fishing_override"] = NoDeterministicWait,
             ["native_money_payment"] = NoDeterministicWait,
@@ -94,6 +96,11 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 state,
                 targetTotalDay),
             CrabPotProduction => EvaluateCrabPot(
+                route,
+                staticRoute,
+                state,
+                targetTotalDay),
+            MachineProduction => EvaluateMachine(
                 route,
                 staticRoute,
                 state,

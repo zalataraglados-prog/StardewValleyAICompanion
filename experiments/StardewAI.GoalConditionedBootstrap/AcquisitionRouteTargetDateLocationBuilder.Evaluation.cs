@@ -339,7 +339,9 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             production?.TimingEvidenceId ?? string.Empty,
             production?.Path ?? Array.Empty<TransparentRouteEdge>(),
             evidencePaths,
-            blockingReasons);
+            blockingReasons,
+            target.TargetTileX,
+            target.TargetTileY);
 
     private static AcquisitionRouteTargetDateLocation Result(
         AcquisitionRouteTargetDateFestival route,
