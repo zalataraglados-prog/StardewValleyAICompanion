@@ -8,6 +8,7 @@ internal static partial class BootstrapSelfTest
     {
         VerifyHermeticStrategicPolicyAndPortfolio();
         RunAcquisitionRouteDispatch();
+        VerifyCommunityCenterActiveRouteKindScope();
         VerifyCommunityCenterDonationReceiptEvidence();
         RunFullShipmentSettlement();
     }
@@ -188,4 +189,107 @@ internal static partial class BootstrapSelfTest
             Array.Empty<AcquisitionOpportunityMaterialCost>(),
             Array.Empty<AcquisitionOpportunityCurrencyCost>(),
             new[] { "hermetic_fixture" });
+
+    private static void VerifyCommunityCenterActiveRouteKindScope()
+    {
+        var activeRoute = new RequirementAcquisitionRoute(
+            "hermetic_active_route",
+            "hermetic-source",
+            "Data/Objects",
+            "24");
+        var activeBundle = new CurrentCommunityCenterBundle
+        {
+            RequirementId = "community_center:bundle:Pantry/0",
+            BundleDataKey = "Pantry/0",
+            AreaName = "Pantry",
+            BundleId = 0,
+            InternalName = "Hermetic Bundle",
+            RequiredSlotCount = 1,
+            Ingredients = new[]
+            {
+                new CurrentCommunityCenterIngredient(
+                    0,
+                    "24",
+                    "(O)24",
+                    "item_id",
+                    1,
+                    0,
+                    false,
+                    new[]
+                    {
+                        new CommunityCenterIngredientAcquisitionTarget(
+                            "24",
+                            "(O)24",
+                            "Parsnip",
+                            true,
+                            new[] { activeRoute })
+                    })
+            }
+        };
+        var denominator = new CurrentCommunityCenterDenominatorReport
+        {
+            Status = "ready",
+            GoalId = "grandpa.stage1.21_points",
+            IngredientAcquisitionCatalogComplete = true,
+            BundleMode = "standard",
+            ActiveBundleCount = 1,
+            ActiveBundles = new[] { activeBundle }
+        };
+        denominator.DenominatorSha256 =
+            CurrentCommunityCenterDenominatorBuilder.ComputeDenominatorSha256(
+                denominator.BundleMode,
+                denominator.ActiveBundles);
+        var lowering = new AcquisitionRouteOptionLoweringReport
+        {
+            RouteKinds = new[]
+            {
+                RouteKind("hermetic_active_route", admitted: true),
+                RouteKind("unrelated_future_gap", admitted: false)
+            }
+        };
+
+        var authority = CurrentCommunityCenterRequirementAuthorityBuilder.Build(
+            denominator,
+            lowering);
+        var route = authority.Lowering.Groups.Single().Alternatives.Single()
+            .Routes.Single();
+        Require(route.RouteKind == "hermetic_active_route" &&
+                route.RuntimeAdmissionReady &&
+                route.TeacherAdmissionReady,
+            "An unrelated blocked route kind invalidated active Community Center authority.");
+
+        static AcquisitionRouteKindLowering RouteKind(
+            string routeKind,
+            bool admitted) => new(
+                routeKind,
+                "hermetic",
+                "deterministic_teacher",
+                "none",
+                admitted
+                    ? StageOneCollectionRouteDependencyAxes.Required.ToArray()
+                    : Array.Empty<string>(),
+                1,
+                1,
+                new[] { "community_center_standard" },
+                admitted
+                    ? new[]
+                    {
+                        new AcquisitionLoweringOption(
+                            "executor.hermetic",
+                            "executor",
+                            "eligible",
+                            "ready",
+                            true,
+                            true,
+                            Array.Empty<string>())
+                    }
+                    : Array.Empty<AcquisitionLoweringOption>(),
+                Array.Empty<AcquisitionLoweringOption>(),
+                admitted,
+                admitted,
+                admitted,
+                admitted
+                    ? Array.Empty<string>()
+                    : new[] { "future_route_not_implemented" });
+    }
 }

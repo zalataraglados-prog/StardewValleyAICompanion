@@ -2322,6 +2322,10 @@ Slice 7 remains assigned to the RTX 5070 node.
   Community Center lifecycle and Full Shipment settlement fixtures. It needs no game installation, local evidence
   drive or server state. GitHub `quality` now builds the bootstrap project and runs this gate on every push and pull
   request.
+- Current-save Community Center authority now resolves the route kinds referenced by its active denominator before
+  validating lowering descriptors. A blocked future or unrelated catalog route can no longer invalidate the current
+  bundle authority; every route kind actually referenced by an active ingredient must still have one complete,
+  runtime- and Teacher-admitted lowering. The hermetic gate includes this negative isolation case.
 - These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
   Those promotion gates remain separate and fail closed.
 

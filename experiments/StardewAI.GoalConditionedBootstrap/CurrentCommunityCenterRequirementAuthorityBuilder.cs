@@ -9,7 +9,7 @@ internal static class CurrentCommunityCenterRequirementAuthorityBuilder
         AcquisitionRouteOptionLoweringReport lowering)
     {
         ValidateDenominator(denominator);
-        var routeKinds = BuildRouteKindDescriptors(lowering);
+        var routeKinds = BuildRouteKindDescriptors(denominator, lowering);
         var alternativesByKey = new Dictionary<
             string,
             CurrentCommunityCenterAlternativeAuthority>(StringComparer.Ordinal);
@@ -162,11 +162,21 @@ internal static class CurrentCommunityCenterRequirementAuthorityBuilder
     }
 
     private static IReadOnlyDictionary<string, CurrentRouteKindDescriptor>
-        BuildRouteKindDescriptors(AcquisitionRouteOptionLoweringReport lowering)
+        BuildRouteKindDescriptors(
+            CurrentCommunityCenterDenominatorReport denominator,
+            AcquisitionRouteOptionLoweringReport lowering)
     {
+        var activeRouteKinds = denominator.ActiveBundles
+            .SelectMany(bundle => bundle.Ingredients)
+            .SelectMany(ingredient => ingredient.AcquisitionTargets)
+            .Where(target => target.RouteCovered)
+            .SelectMany(target => target.AcquisitionRoutes)
+            .Select(route => route.Kind)
+            .ToHashSet(StringComparer.Ordinal);
         var result = new Dictionary<string, CurrentRouteKindDescriptor>(
             StringComparer.Ordinal);
-        foreach (var routeKind in lowering.RouteKinds)
+        foreach (var routeKind in lowering.RouteKinds.Where(routeKind =>
+                     activeRouteKinds.Contains(routeKind.RouteKind)))
         {
             AddRouteKindDescriptor(
                 result,
@@ -183,7 +193,9 @@ internal static class CurrentCommunityCenterRequirementAuthorityBuilder
         foreach (var route in lowering.RequirementSets
                      .SelectMany(value => value.Groups)
                      .SelectMany(value => value.Alternatives)
-                     .SelectMany(value => value.Routes))
+                     .SelectMany(value => value.Routes)
+                     .Where(route => activeRouteKinds.Contains(
+                         route.RouteKind)))
         {
             AddRouteKindDescriptor(
                 result,
@@ -195,7 +207,17 @@ internal static class CurrentCommunityCenterRequirementAuthorityBuilder
                     route.EndpointOptionIds,
                     route.SupportingOptionIds,
                     route.RuntimeAdmissionReady,
-                    route.TeacherAdmissionReady));
+                route.TeacherAdmissionReady));
+        }
+        var missing = activeRouteKinds.Where(routeKind =>
+                !result.ContainsKey(routeKind))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (missing.Length > 0)
+        {
+            throw new InvalidDataException(
+                "Current Community Center route kinds have no lowering: " +
+                string.Join(",", missing));
         }
         return result;
     }
