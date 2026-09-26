@@ -22,7 +22,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         if (reasons.Count > 0)
         {
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -30,7 +34,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         {
             reasons.Add("portfolio_teacher_candidate_denominator_empty");
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -40,7 +48,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 "portfolio_teacher_candidate_denominator_exceeds_limit:" +
                 denominatorCount);
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -91,7 +103,7 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             candidates);
     }
 
-    private static AcquisitionRoutePortfolioTeacherPreference
+    internal static AcquisitionRoutePortfolioTeacherPreference
         SelectUniquePreference(
             AcquisitionRoutePortfolioTeacherPreference result,
             PortfolioCandidate[] candidates,
@@ -133,7 +145,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         if (admitted.Length == 0)
         {
             reasons.Add("portfolio_teacher_no_admitted_candidate");
-            return Block(result, reasons);
+            return Block(
+                result,
+                reasons,
+                AcquisitionRoutePortfolioSelectionDisposition
+                    .NoAdmittedCandidate);
         }
         if (frontier.Length != 1)
         {
@@ -141,7 +157,14 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 ? "portfolio_teacher_frontier_empty"
                 : "portfolio_teacher_frontier_incomparable_or_equal:" +
                   frontier.Length);
-            return Block(result, reasons);
+            return Block(
+                result,
+                reasons,
+                frontier.Length == 0
+                    ? AcquisitionRoutePortfolioSelectionDisposition
+                        .EmptyFrontier
+                    : AcquisitionRoutePortfolioSelectionDisposition
+                        .IncomparableFrontier);
         }
 
         var selected = candidates.Single(candidate =>
@@ -173,6 +196,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             .ToArray();
         result.Status =
             "ready_unique_strict_pareto_portfolio_teacher_preference";
+        result.SelectionDisposition =
+            AcquisitionRoutePortfolioSelectionDisposition.UniqueStrictPareto;
         result.TeacherPreferenceLabelEligible = true;
         result.BlockingReasons = Array.Empty<string>();
         return result;

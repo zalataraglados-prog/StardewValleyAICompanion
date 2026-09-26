@@ -2308,6 +2308,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   settlement and rollout proof chain. Formal training remains blocked until that fresh terminal transition has been
   independently verified and included in the finite portfolio rollout proof.
 
+### 2026-09-26: StrategicPolicy identity and hermetic rollout gates
+
+- Portfolio Teacher output now carries a typed `selection_disposition`: invalid denominator, no admitted candidate,
+  empty frontier, incomparable frontier or unique strict Pareto. `StrategicPolicy` uses only this field for control
+  flow; diagnostic strings remain explanatory evidence and can no longer silently change model invocation.
+- Every strategic replan now binds a canonical `strategic_input_sha256`. The digest covers the rebuilt Teacher
+  preference, preference request, requirement/opportunity/snapshot/ledger hashes, the complete proposal/admission
+  denominator and prior rollout proof. Model checkpoint and corpus identities participate only for an incomparable
+  frontier, where learned preference is relevant; deterministic unique-Pareto selection remains model-independent.
+- `self-test-bootstrap-hermetic` exercises the real typed portfolio selector and `StrategicPolicy` core, including
+  same-state/same-ledger input drift and extra diagnostic text, then runs acquisition support-transition recurrence,
+  Community Center lifecycle and Full Shipment settlement fixtures. It needs no game installation, local evidence
+  drive or server state. GitHub `quality` now builds the bootstrap project and runs this gate on every push and pull
+  request.
+- These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
+  Those promotion gates remain separate and fail closed.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

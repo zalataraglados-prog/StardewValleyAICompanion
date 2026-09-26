@@ -2,6 +2,16 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum AcquisitionRoutePortfolioSelectionDisposition
+{
+    InvalidDenominator = 0,
+    NoAdmittedCandidate = 1,
+    EmptyFrontier = 2,
+    IncomparableFrontier = 3,
+    UniqueStrictPareto = 4
+}
+
 public sealed class AcquisitionRoutePortfolioTeacherPreferenceRequest
 {
     [JsonPropertyName("schema_version")]
@@ -75,6 +85,12 @@ public sealed class AcquisitionRoutePortfolioTeacherPreference
     [JsonPropertyName("selection_policy_id")]
     public string SelectionPolicyId { get; set; } =
         "complete_portfolio_denominator_unique_strict_pareto.v1";
+
+    [JsonPropertyName("selection_disposition")]
+    public AcquisitionRoutePortfolioSelectionDisposition
+        SelectionDisposition { get; set; } =
+            AcquisitionRoutePortfolioSelectionDisposition
+                .InvalidDenominator;
 
     [JsonPropertyName("candidate_limit")]
     public int CandidateLimit { get; set; }

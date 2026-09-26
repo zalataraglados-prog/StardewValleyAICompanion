@@ -152,6 +152,10 @@ internal static partial class BootstrapSelfTest
                 deterministicWithoutModel.SelectionAuthority ==
                     StrategicSelectionAuthorities
                         .DeterministicUniqueStrictPareto &&
+                deterministicWithoutModel
+                    .DeterministicSelectionDisposition ==
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .UniqueStrictPareto &&
                 deterministicWithoutModel.SelectedProposal is not null &&
                 deterministicWithoutModel.SelectedAdmission is not null &&
                 !deterministicWithoutModel.ModelInvoked &&
@@ -192,6 +196,44 @@ internal static partial class BootstrapSelfTest
                 duplicateReplan.SelectedProposal is null &&
                 !duplicateReplan.ModelInvoked,
             "An unchanged strategic event was not deduplicated.");
+
+        var changedRequest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioTeacherPreferenceRequest>(
+            rolloutManifest.InitialCheckpointProof.ExecutionInputs
+                .PortfolioPreferenceRequestPath,
+            "Strategic input identity self-test request");
+        changedRequest.RequestId += ":changed-authoritative-input";
+        var changedRequestPath = Path.Combine(
+            outputRoot,
+            "changed-strategic-preference-request.json");
+        Write(changedRequestPath, changedRequest);
+        var changedInputReplan = new StrategicPolicy().SelectMethod(
+            new StrategicPolicySelectionRequest
+            {
+                CurrentInputs = initialInputs,
+                PreferenceRequestPath = changedRequestPath,
+                Replan = new StrategicReplanContext
+                {
+                    TriggerKinds = new[]
+                    {
+                        StrategicReplanTriggers.DayStart
+                    },
+                    TriggerToken = "initial-day-start",
+                    PreviousReplanFingerprint =
+                        deterministicWithoutModel.ReplanFingerprint
+                }
+            });
+        Require(!changedInputReplan.ReplanDeduplicated &&
+                changedInputReplan.ReplanRequired &&
+                changedInputReplan.SnapshotStateHash ==
+                    deterministicWithoutModel.SnapshotStateHash &&
+                changedInputReplan.StrategyLedgerRevision ==
+                    deterministicWithoutModel.StrategyLedgerRevision &&
+                changedInputReplan.StrategicInputSha256 !=
+                    deterministicWithoutModel.StrategicInputSha256 &&
+                changedInputReplan.ReplanFingerprint !=
+                    deterministicWithoutModel.ReplanFingerprint,
+            "Changed authoritative strategic inputs reused a stale replan fingerprint.");
 
         var firstContinuation = rolloutManifest.ContinuationTransitions[0];
         var continuationInputs = AcquisitionRoutePortfolioInputAdapter
@@ -433,6 +475,9 @@ internal static partial class BootstrapSelfTest
                 strategic.SelectionAuthority ==
                     StrategicSelectionAuthorities
                         .LearnedIncomparableFrontierPreference &&
+                strategic.DeterministicSelectionDisposition ==
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .IncomparableFrontier &&
                 strategic.SelectedProposal is not null &&
                 strategic.SelectedAdmission is not null &&
                 strategic.ModelInvoked &&
@@ -465,10 +510,17 @@ internal static partial class BootstrapSelfTest
                     {
                         StrategicReplanTriggers.PreferenceChanged
                     },
-                    TriggerToken = "incomparable-frontier-no-model"
+                    TriggerToken = "incomparable-frontier",
+                    PreviousReplanFingerprint = strategic.ReplanFingerprint
                 }
             });
         Require(missingModel.Status == "blocked_strategic_decision" &&
+                !missingModel.ReplanDeduplicated &&
+                missingModel.ReplanRequired &&
+                missingModel.StrategicInputSha256 !=
+                    strategic.StrategicInputSha256 &&
+                missingModel.ReplanFingerprint !=
+                    strategic.ReplanFingerprint &&
                 missingModel.SelectedProposal is null &&
                 !missingModel.ModelInvoked &&
                 !missingModel.RuntimeSelectionAuthorized &&

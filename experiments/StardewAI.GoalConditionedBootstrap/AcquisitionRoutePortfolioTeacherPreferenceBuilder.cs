@@ -51,7 +51,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         if (reasons.Count > 0)
         {
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -147,7 +151,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         if (reasons.Count > 0)
         {
             return new AcquisitionRoutePortfolioTeacherScoringSet(
-                Block(result, reasons),
+                Block(
+                    result,
+                    reasons,
+                    AcquisitionRoutePortfolioSelectionDisposition
+                        .InvalidDenominator),
                 context.Snapshot,
                 Array.Empty<PortfolioCandidate>());
         }
@@ -213,9 +221,11 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 
     private static AcquisitionRoutePortfolioTeacherPreference Block(
         AcquisitionRoutePortfolioTeacherPreference result,
-        IEnumerable<string> reasons)
+        IEnumerable<string> reasons,
+        AcquisitionRoutePortfolioSelectionDisposition disposition)
     {
         result.Status = "blocked_portfolio_teacher_preference";
+        result.SelectionDisposition = disposition;
         result.TeacherPreferenceLabelEligible = false;
         result.FormalTrainingAuthorized = false;
         result.BlockingReasons = reasons

@@ -22,8 +22,36 @@ public sealed partial class StrategicPolicy
         ArgumentNullException.ThrowIfNull(request);
         var stopwatch = Stopwatch.StartNew();
         var set = BuildAuthoritativeScoringSet(request, out var transitionIndex);
+        return SelectFromAuthoritativeScoringSet(
+            request,
+            set,
+            transitionIndex,
+            stopwatch);
+    }
+
+    internal StrategicDecision SelectFromAuthoritativeScoringSet(
+        StrategicPolicySelectionRequest request,
+        AcquisitionRoutePortfolioTeacherPreferenceBuilder
+            .AcquisitionRoutePortfolioTeacherScoringSet set,
+        int transitionIndex) => SelectFromAuthoritativeScoringSet(
+            request,
+            set,
+            transitionIndex,
+            Stopwatch.StartNew());
+
+    private StrategicDecision SelectFromAuthoritativeScoringSet(
+        StrategicPolicySelectionRequest request,
+        AcquisitionRoutePortfolioTeacherPreferenceBuilder
+            .AcquisitionRoutePortfolioTeacherScoringSet set,
+        int transitionIndex,
+        Stopwatch stopwatch)
+    {
         var preference = set.Preference;
         var decision = BaseDecision(preference, transitionIndex);
+        var strategicInputSha256 = StrategicInputIdentityBuilder.Build(
+            request,
+            set);
+        decision.StrategicInputSha256 = strategicInputSha256;
 
         StrategicDecision Finish()
         {
@@ -35,7 +63,8 @@ public sealed partial class StrategicPolicy
             request.Replan,
             preference.GoalId,
             preference.SnapshotStateHash,
-            preference.ExpectedLedgerRevision);
+            preference.ExpectedLedgerRevision,
+            strategicInputSha256);
         decision.ReplanRequired = replan.ReplanRequired;
         decision.ReplanDeduplicated = replan.Deduplicated;
         decision.ReplanTriggerKinds = replan.TriggerKinds;
@@ -95,10 +124,16 @@ public sealed partial class StrategicPolicy
             AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(
                 frontier);
 
-        if (preference.TeacherPreferenceLabelEligible &&
-            preference.SelectedProposal is not null &&
-            preference.SelectedAdmission is not null)
+        if (preference.SelectionDisposition ==
+            AcquisitionRoutePortfolioSelectionDisposition.UniqueStrictPareto)
         {
+            if (!preference.TeacherPreferenceLabelEligible ||
+                preference.SelectedProposal is null ||
+                preference.SelectedAdmission is null)
+            {
+                throw new InvalidDataException(
+                    "Unique strict-Pareto disposition lacks a selected portfolio.");
+            }
             if (frontier.Length != 1 ||
                 frontier[0].ProposalId !=
                     preference.SelectedProposal.ProposalId)
@@ -130,7 +165,10 @@ public sealed partial class StrategicPolicy
             return Finish();
         }
 
-        if (!IsIncomparableFrontier(preference) || frontier.Length < 2)
+        if (preference.SelectionDisposition !=
+                AcquisitionRoutePortfolioSelectionDisposition
+                    .IncomparableFrontier ||
+            frontier.Length < 2)
         {
             return FinishBlocked(
                 decision,

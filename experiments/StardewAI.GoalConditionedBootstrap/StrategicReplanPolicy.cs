@@ -14,7 +14,8 @@ public static class StrategicReplanPolicy
         StrategicReplanContext context,
         string goalId,
         string snapshotStateHash,
-        int ledgerRevision)
+        int ledgerRevision,
+        string strategicInputSha256)
     {
         if (context.SchemaVersion != StrategicPolicyVersionPins.ReplanSchema)
         {
@@ -35,6 +36,8 @@ public static class StrategicReplanPolicy
             return Block("strategic_replan_trigger_unknown:" +
                 string.Join(",", unknown));
         }
+        if (!IsLowerSha256(strategicInputSha256))
+            return Block("strategic_replan_input_identity_invalid");
 
         var fingerprint = Hash(new
         {
@@ -42,6 +45,7 @@ public static class StrategicReplanPolicy
             goal_id = goalId,
             snapshot_state_hash = snapshotStateHash,
             strategy_ledger_revision = ledgerRevision,
+            strategic_input_sha256 = strategicInputSha256,
             trigger_kinds = triggers,
             trigger_token = context.TriggerToken ?? string.Empty
         });
@@ -71,6 +75,10 @@ public static class StrategicReplanPolicy
                 Encoding.UTF8.GetBytes(payload)))
             .ToLowerInvariant();
     }
+
+    private static bool IsLowerSha256(string value) =>
+        value.Length == 64 && value.All(character =>
+            character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }
 
 public sealed record StrategicReplanEvaluation(

@@ -124,8 +124,17 @@ public sealed class StrategicDecision
     [JsonPropertyName("teacher_preference_sha256")]
     public string TeacherPreferenceSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("strategic_input_sha256")]
+    public string StrategicInputSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("deterministic_preference_status")]
     public string DeterministicPreferenceStatus { get; set; } = string.Empty;
+
+    [JsonPropertyName("deterministic_selection_disposition")]
+    public AcquisitionRoutePortfolioSelectionDisposition
+        DeterministicSelectionDisposition { get; set; } =
+            AcquisitionRoutePortfolioSelectionDisposition
+                .InvalidDenominator;
 
     [JsonPropertyName("deterministic_selected_method_id")]
     public string DeterministicSelectedMethodId { get; set; } = string.Empty;

@@ -83,6 +83,8 @@ public sealed partial class StrategicPolicy
                 AcquisitionRoutePortfolioTeacherPreferenceBuilder
                     .ArtifactSha256(preference),
             DeterministicPreferenceStatus = preference.Status,
+            DeterministicSelectionDisposition =
+                preference.SelectionDisposition,
             DeterministicSelectedMethodId =
                 preference.SelectedProposal?.ProposalId ?? string.Empty,
             PortfolioCommitAuthorized = false,
@@ -210,14 +212,6 @@ public sealed partial class StrategicPolicy
             }
         }
     }
-
-    private static bool IsIncomparableFrontier(
-        AcquisitionRoutePortfolioTeacherPreference preference) =>
-        preference.BlockingReasons.Length == 1 &&
-        preference.BlockingReasons[0].StartsWith(
-            "portfolio_teacher_frontier_incomparable_or_equal:",
-            StringComparison.Ordinal) &&
-        preference.ParetoFrontierCount > 1;
 
     private static bool IsModelAvailabilityFailure(Exception exception) =>
         exception is ArgumentException or InvalidDataException or IOException or
