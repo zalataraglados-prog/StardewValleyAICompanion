@@ -95,6 +95,18 @@ public sealed class MaterialInventorySlot
     [JsonPropertyName("runtime_type")]
     public string RuntimeType { get; set; } = string.Empty;
 
+    [JsonPropertyName("context_tags")]
+    public string[] ContextTags { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("context_tags_projection_status")]
+    public string ContextTagsProjectionStatus { get; set; } = "unavailable";
+
+    [JsonPropertyName("edibility")]
+    public int? Edibility { get; set; }
+
+    [JsonPropertyName("edibility_projection_status")]
+    public string EdibilityProjectionStatus { get; set; } = "unavailable";
+
     [JsonPropertyName("stack")]
     public int Stack { get; set; }
 

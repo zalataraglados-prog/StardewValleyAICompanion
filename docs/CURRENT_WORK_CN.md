@@ -11,12 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器投入资源与非消耗库存条件
+
+- 机器三类来源现已从 `facility_capacity` 接入唯一的 `resource_inputs` 轴。只有带 `ItemPlacedInMachine` 位的原生触发器会产生投料需求；纯 `DayUpdate`、`OutputCollected` 或 `MachinePutDown` 触发器不会错误扣除 `AdditionalConsumedItems`。同一路由混合自动与投料触发器时继续失败关闭，等待静态路由按触发方式展开。
+- 资源轴按权威最小产出量计算满足目标数量所需的基础加工次数，再将主投入的 `RequiredCount` 和煤等全部 `AdditionalConsumedItems` 按次数放大。随机成功所需的额外尝试仍由后续 `stochastic_retry` 轴独立追加，当前结果不提前冒充完整随机预算。
+- `farm.material_inventory_graph` 的每个槽位新增原生 `Item.GetContextTags()`、对象 `Edibility` 及各自投影状态。标签型和可食用度型机器规则必须找到同一槽位集合中的真实输入见证；旧快照或不完整元数据只能支持无需这些字段的精确 ID 规则，不能把空标签猜成“不匹配”。
+- 机器资源结果保留所选原生触发器、每次数量、加工次数和允许预约的精确节点/槽位。后续 reservation 只能从这组槽位扣量，避免资源求值与实际预约使用不同物品。`PLAYER_HAS_ITEM` 资源条件也已按反编译语义接入，但它只读取当前玩家随身库存节点、保留否定与最小/最大数量，且不创建消耗预约；原生核桃/Qi 宝石特例在相应货币证据接入前失败关闭。
+- Release 构建、机器资源 hermetic 自测和 Core `2570/2570` 回归通过。下一固定切片是机器 `processing_lead_time`：使用同一 `machine_source` 的分钟/天数、过夜完成和时间修正器计算最迟投料时点，再进入机器随机输出的重试与资源增量闭环。
+
 ## 2026-09-27 机器来源地点与设施容量绑定
 
 - `Data/Machines` 静态来源现已接入既有 `location_route -> facility_capacity` 轴，不新增第二套路由或执行器。地点轴只接受同一透明快照中 `farm.machines[]` 的完整、未截断舰队，按机器 qualified ID、地点和格子绑定来源；空舰队是有证据的来源缺失，字段缺失、行数漂移或重复地点格子则失败关闭。
 - 设施轴会在同一快照中再次按地点和格子重绑机器，保留 `idle / processing / ready_output` 状态并要求该机器原生声明可产出。它只证明现有机器容量，不推测制作、摆放、投料、吞吐量、完成时间或随机成功率；这些仍分别归资源输入、处理提前量和随机重试轴。
 - Release 构建和 hermetic 机器舰队/地点/设施测试通过。现有历史训练快照不能提供同一时刻的新版全地图日期路线与完整机器舰队，因此真实 188 条机器路线仍按缺失证据阻塞；回归脚本锁定这一结果，禁止把两份不同快照拼成伪证据。
-- 下一固定切片是机器资源输入：从同一 `machine_source` 求值 `ItemPlacedInMachine` 触发物、额外消耗物和条件，并扩充透明物资槽的 context tags；随后才进入机器处理提前量和随机输出预算。
+- 机器资源输入已由上节闭合；当前下一固定切片是机器处理提前量，随后才进入随机输出预算。
 
 ## 2026-09-21 单路线 reservation 结算与重放回执
 

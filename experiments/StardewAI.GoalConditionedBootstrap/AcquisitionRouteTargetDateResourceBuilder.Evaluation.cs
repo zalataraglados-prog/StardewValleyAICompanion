@@ -7,6 +7,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
     private const string ShopTrade = "shop_trade_item_or_currency_only";
     private const string FishingBait = "conditional_magic_bait";
     private const string CrabPotService = "existing_crab_pot_service";
+    private const string MachineInput = "native_machine_consumed_items";
     private const string DeferredInput = "resource_binding_pending_upstream";
     private const string MagicBaitQualifiedItemId = "(O)908";
 
@@ -16,7 +17,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         {
             ["creates_reward_item"] = DeferredInput,
             ["harvests_as"] = CropSeed,
-            ["machine_output"] = DeferredInput,
+            ["machine_output"] = MachineInput,
             ["native_bush_shake"] = NoInput,
             ["native_crab_pot_output"] = CrabPotService,
             ["native_farm_animal_deluxe_produce"] = DeferredInput,
@@ -29,8 +30,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             ["native_location_artifact_spot"] = NoInput,
             ["native_location_fish_spawn"] = FishingBait,
             ["native_location_forage_spawn"] = NoInput,
-            ["native_machine_flavored_output"] = DeferredInput,
-            ["native_machine_item_query_output"] = DeferredInput,
+            ["native_machine_flavored_output"] = MachineInput,
+            ["native_machine_item_query_output"] = MachineInput,
             ["native_mine_buried_item"] = NoInput,
             ["native_mine_fishing_override"] = FishingBait,
             ["native_money_payment"] = NoInput,
@@ -49,7 +50,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             ["sells"] = ShopTrade
         };
 
-    private static AcquisitionRouteTargetDateResource Evaluate(
+    internal static AcquisitionRouteTargetDateResource Evaluate(
         AcquisitionRouteTargetDateFacility route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionResourceInputSnapshotState state)
@@ -94,18 +95,51 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         }
 
         var routeKind = RouteKind(route);
-        return ResourceClassByRouteKind[routeKind] switch
+        var resourceConditions = EvaluateResourceConditions(route, state);
+        if (!resourceConditions.Resolved)
+        {
+            return Blocked(
+                route,
+                ResourceClassByRouteKind[routeKind],
+                resourceConditions.BlockingReasons);
+        }
+        if (!resourceConditions.Matches)
+        {
+            return Result(
+                route,
+                "resolved_resource_inputs_miss",
+                true,
+                false,
+                ResourceClassByRouteKind[routeKind],
+                resourceConditions.Evaluations,
+                resourceConditions.NonMatchingReasons,
+                Array.Empty<string>());
+        }
+        var result = ResourceClassByRouteKind[routeKind] switch
         {
             NoInput => NotRequired(route),
             CropSeed => EvaluateCrop(route, staticRoute, state),
             ShopTrade => EvaluateShop(route, staticRoute, state),
             FishingBait => EvaluateFishing(route, state),
             CrabPotService => EvaluateCrabPot(route, state),
+            MachineInput => EvaluateMachine(route, staticRoute, state),
             _ => Blocked(
                 route,
                 DeferredInput,
                 "resource_input_evaluator_pending_for_route_kind:" +
                 routeKind)
+        };
+        if (resourceConditions.Evaluations.Length == 0)
+            return result;
+        return result with
+        {
+            ResourceInputAxisStatus = result.ResourceInputAxisStatus ==
+                "resolved_resource_inputs_not_required"
+                    ? "resolved_resource_inputs_match"
+                    : result.ResourceInputAxisStatus,
+            InputEvaluations = resourceConditions.Evaluations
+                .Concat(result.InputEvaluations)
+                .ToArray()
         };
     }
 

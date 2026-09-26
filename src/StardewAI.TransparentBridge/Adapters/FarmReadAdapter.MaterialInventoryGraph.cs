@@ -671,6 +671,16 @@ public sealed partial class FarmReadAdapter
         QualifiedItemId = item.QualifiedItemId,
         DisplayName = item.DisplayName,
         RuntimeType = item.GetType().FullName ?? string.Empty,
+        ContextTags = item.GetContextTags()
+            .OrderBy(tag => tag, StringComparer.Ordinal)
+            .ToArray(),
+        ContextTagsProjectionStatus = "exact_item_get_context_tags",
+        Edibility = item is StardewValley.Object obj
+            ? obj.Edibility
+            : null,
+        EdibilityProjectionStatus = item is StardewValley.Object
+            ? "exact_object_edibility"
+            : "not_applicable_non_object_item",
         Stack = item.Stack,
         MaximumStackSize = item.maximumStackSize(),
         Quality = item.Quality,
