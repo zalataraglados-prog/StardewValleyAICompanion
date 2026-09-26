@@ -68,6 +68,10 @@ public sealed class AcquisitionRoutePortfolioTeacherPreference
     [JsonPropertyName("snapshot_sha256")]
     public string SnapshotSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("prior_supporting_transition_replan_sha256")]
+    public string PriorSupportingTransitionReplanSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("selection_policy_id")]
     public string SelectionPolicyId { get; set; } =
         "complete_portfolio_denominator_unique_strict_pareto.v1";

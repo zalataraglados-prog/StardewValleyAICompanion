@@ -12,10 +12,29 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         AcquisitionRoutePortfolioInputs inputs,
         string requestPath) => BuildScoringSet(inputs, requestPath).Preference;
 
+    public static AcquisitionRoutePortfolioTeacherPreference
+        BuildAfterSupportingTransition(
+            AcquisitionRoutePortfolioInputs inputs,
+            string requestPath,
+            string priorSupportingTransitionReplanSha256) =>
+            BuildScoringSet(
+                inputs,
+                requestPath,
+                priorSupportingTransitionReplanSha256).Preference;
+
     internal static AcquisitionRoutePortfolioTeacherScoringSet
         BuildScoringSet(
             AcquisitionRoutePortfolioInputs inputs,
-            string requestPath)
+            string requestPath) => BuildScoringSet(
+                inputs,
+                requestPath,
+                string.Empty);
+
+    private static AcquisitionRoutePortfolioTeacherScoringSet
+        BuildScoringSet(
+            AcquisitionRoutePortfolioInputs inputs,
+            string requestPath,
+            string priorSupportingTransitionReplanSha256)
     {
         var requestFullPath = Path.GetFullPath(requestPath);
         var context = AcquisitionRoutePortfolioBuilder.Prepare(inputs);
@@ -26,7 +45,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         var result = BaseResult(
             context,
             request,
-            CurrentTeacherFrontierSupport.HashFile(requestFullPath));
+            CurrentTeacherFrontierSupport.HashFile(requestFullPath),
+            priorSupportingTransitionReplanSha256);
         var reasons = ValidateRequest(context, request);
         if (reasons.Count > 0)
         {
@@ -44,7 +64,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             request.ExpectedLedgerRevision,
             ResolveScopes(context, request),
             string.Empty,
-            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>());
+            Array.Empty<AcquisitionRoutePortfolioCompletedAlternatives>(),
+            priorSupportingTransitionReplanSha256);
     }
 
     public static AcquisitionRoutePortfolioTeacherPreference
@@ -109,7 +130,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         var result = BaseResult(
             context,
             surrogate,
-            CurrentTeacherFrontierSupport.HashFile(requestFullPath));
+            CurrentTeacherFrontierSupport.HashFile(requestFullPath),
+            string.Empty);
         result.SelectionPolicyId =
             "verified_checkpoint_continuation_unique_strict_pareto.v1";
         var reasons = ValidateRequest(context, surrogate);
@@ -149,7 +171,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             request.ExpectedLedgerRevision,
             ResolveScopes(context, request),
             request.PriorCheckpointSha256,
-            completed);
+            completed,
+            string.Empty);
     }
 
     internal static string ArtifactSha256(object value)
@@ -165,7 +188,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext
             context,
         AcquisitionRoutePortfolioTeacherPreferenceRequest request,
-        string requestSha256) => new()
+        string requestSha256,
+        string priorSupportingTransitionReplanSha256) => new()
         {
             RequestId = request.RequestId,
             GoalId = request.GoalId,
@@ -179,6 +203,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             OpportunityCostSha256 = context.OpportunityCostSha256,
             StrategyLedgerSha256 = context.StrategyLedgerSha256,
             SnapshotSha256 = context.SnapshotSha256,
+            PriorSupportingTransitionReplanSha256 =
+                priorSupportingTransitionReplanSha256,
             CandidateLimit = MaxCandidateCount,
             FormalTrainingAuthorized = false,
             UsesLearnerRankOrScore = false,

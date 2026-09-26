@@ -145,6 +145,14 @@ try
         case "build-acquisition-route-supporting-transition-replan":
             BuildAcquisitionRouteSupportingTransitionReplan(options);
             break;
+        case "build-acquisition-route-supporting-transition-portfolio-teacher-preference":
+            BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference(
+                options);
+            break;
+        case "build-acquisition-route-supporting-transition-portfolio-commit-receipt":
+            BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt(
+                options);
+            break;
         case "build-acquisition-route-portfolio-settlement-request":
             BuildAcquisitionRoutePortfolioSettlementRequest(options);
             break;
@@ -292,7 +300,7 @@ try
             break;
         default:
             throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, compile-acquisition-route-dispatch, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-supporting-transition-request, build-acquisition-route-supporting-transition-commit-receipt, compile-acquisition-route-supporting-transition, build-acquisition-route-supporting-transition-receipt, build-acquisition-route-supporting-transition-settlement-request, build-acquisition-route-supporting-transition-settlement-receipt, build-acquisition-route-supporting-transition-replan, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-settlement-receipt, build-full-shipment-recurrence-proof-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-full-shipment-settlement, self-test-acquisition-route-dispatch, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
+                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, compile-acquisition-route-dispatch, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-supporting-transition-request, build-acquisition-route-supporting-transition-commit-receipt, compile-acquisition-route-supporting-transition, build-acquisition-route-supporting-transition-receipt, build-acquisition-route-supporting-transition-settlement-request, build-acquisition-route-supporting-transition-settlement-receipt, build-acquisition-route-supporting-transition-replan, build-acquisition-route-supporting-transition-portfolio-teacher-preference, build-acquisition-route-supporting-transition-portfolio-commit-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-settlement-receipt, build-full-shipment-recurrence-proof-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-full-shipment-settlement, self-test-acquisition-route-dispatch, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
     }
 }
 catch (Exception ex)
@@ -1038,25 +1046,7 @@ static void BuildAcquisitionRouteSupportingTransitionReplan(Arguments options)
     }
     var admission = AcquisitionRouteSupportingTransitionReplanBuilder.Build(
         RouteSupportingTransitionInputs(options),
-        new AcquisitionRouteSupportingTransitionSettlementProof
-        {
-            SupportRequestPath = options.Required("support-request"),
-            SupportCommitReceiptPath = options.Required(
-                "support-commit-receipt"),
-            CommittedLedgerPath = options.Required("committed-ledger"),
-            CommitResultPath = options.Required("commit-result"),
-            CompilationPath = options.Required("compilation"),
-            ExecutionReceiptPath = options.Required("execution-receipt"),
-            AfterSnapshotPath = options.Required("after-snapshot"),
-            SupportingTransitionReceiptPath = options.Required(
-                "supporting-transition-receipt"),
-            RunId = options.Required("run-id"),
-            ExecutorVersion = options.Required("executor-version"),
-            SettlementRequestPath = options.Required("settlement-request"),
-            SettlementResultPath = options.Required("settlement-result"),
-            SettledLedgerPath = options.Required("settled-ledger"),
-            SettlementReceiptPath = options.Required("settlement-receipt")
-        },
+        SupportingTransitionSettlementProof(options),
         ContinuationRoutePortfolioInputs(options));
     Write(output, admission);
     if (admission.FreshTeacherRequestReady &&
@@ -1069,6 +1059,70 @@ static void BuildAcquisitionRouteSupportingTransitionReplan(Arguments options)
         Environment.ExitCode = 2;
     }
 }
+
+static void BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference(
+    Arguments options)
+{
+    var preference = AcquisitionRouteSupportingTransitionPortfolioBuilder
+        .BuildTeacherPreference(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            ContinuationRoutePortfolioInputs(options),
+            options.Required("replan-admission"),
+            options.Required("preference-request"));
+    Write(options.Required("output"), preference);
+    if (preference.TeacherPreferenceLabelEligible)
+    {
+        if (options.Optional("selected-proposal-output") is { } proposalOutput)
+            Write(proposalOutput, preference.SelectedProposal!);
+        if (options.Optional("selected-admission-output") is { } admissionOutput)
+            Write(admissionOutput, preference.SelectedAdmission!);
+    }
+    else
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt(
+    Arguments options)
+{
+    var receipt = AcquisitionRouteSupportingTransitionPortfolioBuilder
+        .BuildCommitReceipt(
+            RouteSupportingTransitionInputs(options),
+            SupportingTransitionSettlementProof(options),
+            ContinuationRoutePortfolioInputs(options, requireProposal: true),
+            options.Required("replan-admission"),
+            options.Required("preference-request"),
+            options.Required("preference"),
+            options.Required("next-portfolio-admission"),
+            options.Required("next-committed-ledger"),
+            options.Optional("next-commit-result"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.PortfolioCommitVerified)
+        Environment.ExitCode = 2;
+}
+
+static AcquisitionRouteSupportingTransitionSettlementProof
+    SupportingTransitionSettlementProof(Arguments options) => new()
+    {
+        SupportRequestPath = options.Required("support-request"),
+        SupportCommitReceiptPath = options.Required(
+            "support-commit-receipt"),
+        CommittedLedgerPath = options.Required("committed-ledger"),
+        CommitResultPath = options.Required("commit-result"),
+        CompilationPath = options.Required("compilation"),
+        ExecutionReceiptPath = options.Required("execution-receipt"),
+        AfterSnapshotPath = options.Required("after-snapshot"),
+        SupportingTransitionReceiptPath = options.Required(
+            "supporting-transition-receipt"),
+        RunId = options.Required("run-id"),
+        ExecutorVersion = options.Required("executor-version"),
+        SettlementRequestPath = options.Required("settlement-request"),
+        SettlementResultPath = options.Required("settlement-result"),
+        SettledLedgerPath = options.Required("settled-ledger"),
+        SettlementReceiptPath = options.Required("settlement-receipt")
+    };
 
 static void BuildAcquisitionRouteSupportingTransitionRequest(Arguments options)
 {

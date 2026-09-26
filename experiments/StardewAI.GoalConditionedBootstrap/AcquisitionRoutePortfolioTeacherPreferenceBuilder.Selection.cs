@@ -13,7 +13,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
         int expectedLedgerRevision,
         ResolvedScope[] scopes,
         string priorCheckpointSha256,
-        AcquisitionRoutePortfolioCompletedAlternatives[] completed)
+        AcquisitionRoutePortfolioCompletedAlternatives[] completed,
+        string priorSupportingTransitionReplanSha256)
     {
         var reasons = new List<string>();
         var denominatorCount = CountCandidates(scopes, reasons);
@@ -52,7 +53,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 expectedLedgerRevision,
                 scopes,
                 priorCheckpointSha256,
-                completed)
+                completed,
+                priorSupportingTransitionReplanSha256)
             .ToArray();
         if (proposals.LongLength != denominatorCount)
         {
@@ -79,7 +81,8 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
                 context,
                 proposal,
                 proposalSha256,
-                continuation);
+                continuation,
+                priorSupportingTransitionReplanSha256);
             return new PortfolioCandidate(proposal, proposalSha256, admission);
         }).ToArray();
         return new AcquisitionRoutePortfolioTeacherScoringSet(

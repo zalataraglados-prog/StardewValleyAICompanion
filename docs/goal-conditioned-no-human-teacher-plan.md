@@ -2297,10 +2297,16 @@ Slice 7 remains assigned to the RTX 5070 node.
   item can survive. A successful gate emits a normal `AcquisitionRoutePortfolioTeacherPreferenceRequest`, scoped to
   the affected authoritative requirement, for the existing complete-denominator Teacher selector. A stale-state
   negative self-test proves that reusing the old queue emits no request.
-- The next bounded slice is downstream recurrence admission: consume that emitted request through the existing
-  portfolio Teacher preference, proposal, atomic commit and dispatch chain, while binding the replan admission hash so
-  callers cannot bypass the verified support-settlement ancestry. Formal training remains blocked until the resulting
-  fresh transition rejoins the ordinary rollout proof chain.
+- Downstream recurrence admission now consumes that emitted request through the existing complete-denominator
+  portfolio Teacher selector and atomic reservation commit path. The SHA-256 of the verified replan admission is
+  copied into the Teacher preference, every generated proposal, the selected admission and the commit receipt.
+  `build-acquisition-route-supporting-transition-portfolio-teacher-preference` independently rebuilds the settlement
+  and replan before selection; `build-acquisition-route-supporting-transition-portfolio-commit-receipt` additionally
+  rebuilds the stored preference and rejects proposal or admission drift. Ordinary initial and continuation portfolios
+  require an empty supporting-transition lineage, so this evidence cannot be injected into an unrelated selection.
+- The next bounded slice rejoins the commit-verified support recurrence with the ordinary dispatch, terminal receipt,
+  settlement and rollout proof chain. Formal training remains blocked until that fresh terminal transition has been
+  independently verified and included in the finite portfolio rollout proof.
 
 ## Review questions
 

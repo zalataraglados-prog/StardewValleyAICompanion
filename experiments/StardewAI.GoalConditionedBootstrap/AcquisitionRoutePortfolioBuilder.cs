@@ -25,6 +25,25 @@ public static partial class AcquisitionRoutePortfolioBuilder
             CurrentTeacherFrontierSupport.HashFile(proposalPath));
     }
 
+    public static AcquisitionRoutePortfolioAdmission
+        BuildAfterSupportingTransition(
+            AcquisitionRoutePortfolioInputs inputs,
+            string priorSupportingTransitionReplanSha256)
+    {
+        var context = Prepare(inputs);
+        var proposalPath = Path.GetFullPath(inputs.ProposalPath);
+        var proposal = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioProposal>(
+            proposalPath,
+            "Acquisition support-replan portfolio proposal");
+        return Build(
+            context,
+            proposal,
+            CurrentTeacherFrontierSupport.HashFile(proposalPath),
+            null,
+            priorSupportingTransitionReplanSha256);
+    }
+
     internal static AcquisitionRoutePortfolioBuildContext Prepare(
         AcquisitionRoutePortfolioInputs inputs)
     {
@@ -82,13 +101,15 @@ public static partial class AcquisitionRoutePortfolioBuilder
         context,
         proposal,
         proposalSha256,
-        null);
+        null,
+        string.Empty);
 
     internal static AcquisitionRoutePortfolioAdmission Build(
         AcquisitionRoutePortfolioBuildContext context,
         AcquisitionRoutePortfolioProposal proposal,
         string proposalSha256,
-        AcquisitionRoutePortfolioContinuationEvidence? continuation)
+        AcquisitionRoutePortfolioContinuationEvidence? continuation,
+        string priorSupportingTransitionReplanSha256 = "")
     {
         var inventory = context.Inventory;
         var opportunity = context.Opportunity;
@@ -101,7 +122,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
             proposal,
             snapshot,
             ledgerState.Ledger,
-            continuation);
+            continuation,
+            priorSupportingTransitionReplanSha256);
         var selected = SelectRoutes(opportunity, proposal, reasons);
         var selectionRulesSatisfied = ValidateSelectionRules(
             inventory,
@@ -162,6 +184,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
             StrategyLedgerRevision = ledgerState.Ledger.Revision,
             PriorRolloutCheckpointSha256 =
                 proposal.PriorRolloutCheckpointSha256,
+            PriorSupportingTransitionReplanSha256 =
+                proposal.PriorSupportingTransitionReplanSha256,
             CompletedAlternatives = (proposal.CompletedAlternatives ??
                     Array.Empty<
                         AcquisitionRoutePortfolioCompletedAlternatives>())

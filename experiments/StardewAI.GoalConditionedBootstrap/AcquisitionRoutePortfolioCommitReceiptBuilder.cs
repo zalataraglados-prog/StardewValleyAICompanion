@@ -20,6 +20,26 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             recomputed);
     }
 
+    public static AcquisitionRoutePortfolioCommitReceipt
+        BuildAfterSupportingTransition(
+            AcquisitionRoutePortfolioInputs inputs,
+            string priorSupportingTransitionReplanSha256,
+            string admissionPath,
+            string committedLedgerPath,
+            string? commitResultPath)
+    {
+        var recomputed = AcquisitionRoutePortfolioBuilder
+            .BuildAfterSupportingTransition(
+                inputs,
+                priorSupportingTransitionReplanSha256);
+        return BuildVerifiedAdmission(
+            inputs,
+            admissionPath,
+            committedLedgerPath,
+            commitResultPath,
+            recomputed);
+    }
+
     private static AcquisitionRoutePortfolioCommitReceipt
         BuildVerifiedAdmission(
             AcquisitionRoutePortfolioInputs inputs,
@@ -102,6 +122,8 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
                     admission.CommunityCenterProvenance),
             PriorRolloutCheckpointSha256 =
                 admission.PriorRolloutCheckpointSha256,
+            PriorSupportingTransitionReplanSha256 =
+                admission.PriorSupportingTransitionReplanSha256,
             CompletedAlternatives = (admission.CompletedAlternatives ??
                     Array.Empty<
                         AcquisitionRoutePortfolioCompletedAlternatives>())
