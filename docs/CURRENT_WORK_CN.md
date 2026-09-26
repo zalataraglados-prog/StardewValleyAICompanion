@@ -11,11 +11,18 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器既有产物抵扣：下游闭环
+
+- processing 轴会在同一份透明机器快照上重新核验物品、堆叠、品质以及唯一 route kind/source ID，并按地点与格子稳定分配 `credited_existing_output_quantity`。部分抵扣只排程剩余尝试；完全抵扣保留显式零尝试 binding，并以既有机器计时器作为最迟完成时点。
+- stochastic 轴只让未抵扣余量承担原生输出选择概率。完全抵扣的手动机器为零基线、零重试；部分抵扣扩张时使用“已抵扣数量 + 重试次数 * 权威最小产量”重新经过资源、货币、原子预留和 processing，抵扣量漂移即失败关闭。
+- daily 轴把抵扣转换为真实动作队列：旧产物先收取并按精确抵扣量记账，剩余尝试继续使用既有投料/等待/收取状态机；完全抵扣只生成收取动作。无关旧产物仍只负责腾出机器，不会误算目标产量；手动路线必须同时满足所有逐机安排完成与目标数量收齐。
+- Release 构建、hermetic、Core game-free `91/91` 与完整 `experiments/Run-Regression.ps1` 均通过（退出码 `0`），覆盖无抵扣、部分抵扣、完全抵扣和随机重试扩张场景；训练授权仍保持关闭。
+
 ## 2026-09-27 机器既有产物上游抵扣：资源余量
 
 - `resource_inputs` 只汇总 facility 轴中 `machine_active_output_route_matches=true`、物品一致且品质达标的旧产物，并将抵扣量封顶为当前需求；剩余产量再按权威最小堆叠换算投料次数。
 - 部分抵扣会同步缩减主投入与全部附加消耗，且每个 machine binding 保留 `credited_existing_output_quantity`；完全抵扣生成显式零尝试/零消耗 binding，不要求虚构一个可用材料槽。来源不匹配或品质不足仍按完整需求投料。
-- Release 构建与 hermetic 的无抵扣、部分抵扣、完全抵扣回归通过。下一固定切片让 processing、随机重试和 daily 日程共同消费该 credit；在此之前不把本批单独称为端到端完成。
+- Release 构建与 hermetic 的无抵扣、部分抵扣、完全抵扣回归通过；processing、随机重试和 daily 日程现已共同消费该 credit，细节由上方“下游闭环”记录。
 
 ## 2026-09-27 机器既有产物上游抵扣：设施证据
 
@@ -33,7 +40,7 @@
 ## 2026-09-27 非空闲手动机器复用
 
 - processing/daily 两轴继续共用同一份机器快照与逐机 attempt schedule；daily 轴现在能按 `minutes_until_ready` 等待已有产物，执行现有 `collect_machine_output`，再执行现有 `load_machine_input`，最后等待并领取本轮目标产物，没有引入第二套机器动作。
-- 复用前必须存在精确 `held_item` 身份、数量和品质，并按每台待清空机器保守预留一个透明 `player.inventory_capacity.empty_slots`；容量不足或字段不一致时上游直接失败关闭。既有产物暂不计入当前目标产出，防止来源未重算时错误减少输入和随机重试预算。
+- 复用前必须存在精确 `held_item` 身份、数量和品质，并按每台待清空机器保守预留一个透明 `player.inventory_capacity.empty_slots`；容量不足或字段不一致时上游直接失败关闭。只有设施、资源、processing、随机重试和 daily 各轴都核验为同一路线的既有产物才计入目标；其他旧产物仍只清空机器，不抵扣输入。
 - 本切片聚焦回归覆盖 `processing` 与 `ready_output` 两种初态的“等待/领取/投料/领取”顺序和零空格拒绝；Release 构建为零警告，`self-test-bootstrap-hermetic` 与完整 `experiments/Run-Regression.ps1` 均通过（退出码 `0`）。
 
 ## 2026-09-27 机器随机输出概率预算

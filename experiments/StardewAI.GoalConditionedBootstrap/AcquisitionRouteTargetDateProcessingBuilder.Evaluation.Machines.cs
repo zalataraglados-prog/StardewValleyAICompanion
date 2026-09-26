@@ -49,7 +49,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         var facility = route.UpstreamRoute.UpstreamRoute.UpstreamRoute;
         var targetResult = ReadMachineTargets(
             facility,
-            source,
+            staticRoute,
             state.MachineFleet);
         if (targetResult.BlockingReasons.Length > 0)
         {
@@ -111,12 +111,23 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             .Select(value => value!.Value)
             .Distinct()
             .ToArray();
-        if (attemptCounts.Length != 1 || attemptCounts[0] <= 0)
+        var creditedQuantities = resource.InputEvaluations
+            .Select(evaluation =>
+                evaluation.MachineBinding?.CreditedExistingOutputQuantity)
+            .Where(value => value.HasValue)
+            .Select(value => value!.Value)
+            .Distinct()
+            .ToArray();
+        var targetCredit = targets.Sum(value =>
+            value.CreditedExistingOutputQuantity);
+        if (attemptCounts.Length != 1 || attemptCounts[0] < 0 ||
+            creditedQuantities.Length != 1 ||
+            creditedQuantities[0] != targetCredit)
         {
             return Blocked(
                 route,
                 MachineProduction,
-                "machine_resource_attempt_count_missing_or_inconsistent");
+                "machine_resource_attempt_or_credit_missing_or_inconsistent");
         }
 
         var attemptCount = attemptCounts[0];
@@ -157,28 +168,54 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         }
 
         var evaluations = schedules.Select(schedule =>
+            {
+                var credited = schedule.Target
+                    .CreditedExistingOutputQuantity;
+                var creditedCompletion = credited > 0
+                    ? schedule.Target.Machine.ReadyForHarvest
+                        ? 0
+                        : Math.Max(
+                            0,
+                            schedule.Target.Machine.MinutesUntilReady)
+                    : (int?)null;
+                var completion = schedule.LastCompletionOffsetMinutes;
+                if (creditedCompletion.HasValue &&
+                    (!completion.HasValue ||
+                     creditedCompletion > completion))
+                {
+                    completion = creditedCompletion;
+                }
+                var newlyProducedQuantity = schedule.ScheduledAttemptCount > 0
+                    ? AcquisitionQuantityMath.Multiply(
+                        outputPerAttempt,
+                        schedule.ScheduledAttemptCount)
+                    : 0;
+                var provenQuantity = checked(
+                    credited + newlyProducedQuantity);
+                return
                 MachineEvaluation(
                     schedule.Target,
                     "manual_input_processing",
-                    schedule.ScheduledAttemptCount > 0
+                    provenQuantity > 0
                         ? "resolved_machine_attempts_ready_on_target_date"
                         : "resolved_machine_no_new_output_ready_on_target_date",
                     source,
                     attemptCount,
                     schedule.ScheduledAttemptCount,
-                    schedule.LastCompletionOffsetMinutes,
+                    completion,
                     remainingPlayableMinutes,
-                    schedule.ScheduledAttemptCount > 0
-                        ? AcquisitionQuantityMath.Multiply(
-                            outputPerAttempt,
-                            schedule.ScheduledAttemptCount)
-                        : 0,
+                    provenQuantity,
                     quality,
-                     schedule.ScheduledAttemptCount > 0,
+                     provenQuantity > 0 &&
+                         completion <= remainingPlayableMinutes,
                      targetTotalDay,
-                     null,
-                     false,
-                     schedule.AttemptSchedule.ToArray()))
+                     credited > 0,
+                     credited > 0 &&
+                         schedule.ScheduledAttemptCount == 0 &&
+                         schedule.Target.Machine.ReadyForHarvest,
+                     schedule.AttemptSchedule.ToArray(),
+                     credited);
+            })
             .ToArray();
         var scheduledAttempts = schedules.Sum(value =>
             value.ScheduledAttemptCount);
@@ -276,7 +313,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                  targetTotalDay,
                  routeMatches,
                  ready && machine.ReadyForHarvest,
-                 Array.Empty<AcquisitionMachineProcessingAttemptBinding>()));
+                 Array.Empty<AcquisitionMachineProcessingAttemptBinding>(),
+                 0));
         }
         if (blocking.Count > 0)
         {
@@ -314,7 +352,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         int targetTotalDay,
         bool? activeOutputRouteMatches,
         bool outputMaterializedAtSnapshot,
-        AcquisitionMachineProcessingAttemptBinding[] attemptSchedule) => new(
+        AcquisitionMachineProcessingAttemptBinding[] attemptSchedule,
+        int creditedExistingOutputQuantity) => new(
             target.Machine.LocationId,
             productionStateKind,
             status,
@@ -352,7 +391,9 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                  remainingPlayableMinutes,
                  activeOutputRouteMatches)
             {
-                AttemptSchedule = attemptSchedule
+                AttemptSchedule = attemptSchedule,
+                CreditedExistingOutputQuantity =
+                    creditedExistingOutputQuantity
             },
             outputMaterializedAtSnapshot);
 

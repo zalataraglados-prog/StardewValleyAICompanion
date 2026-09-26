@@ -18,6 +18,27 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteCalendarResolution staticRoute,
         MachineRetryExpansionContext? expansionContext = null)
     {
+        var creditedExistingOutput =
+            MachineCreditedExistingOutputQuantity(route);
+        var baselineAttempts = MachineBaselineAttemptCount(route);
+        if (creditedExistingOutput < 0 ||
+            creditedExistingOutput > staticRoute.RequiredAmount)
+        {
+            return MachineProbabilityBlocked(
+                route,
+                staticRoute,
+                baselineAttempts,
+                "machine_existing_output_credit_out_of_range:" +
+                creditedExistingOutput + ":" + staticRoute.RequiredAmount);
+        }
+        if (!baselineAttempts.HasValue || baselineAttempts < 0)
+        {
+            return MachineProbabilityBlocked(
+                route,
+                staticRoute,
+                baselineAttempts,
+                "machine_processing_baseline_attempt_binding_missing");
+        }
         if (MachineOutputSelectionAlreadyResolved(route, staticRoute))
         {
             return Result(
@@ -28,17 +49,16 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 true,
                 "current_machine_output_selection_already_resolved",
                 1d,
-                MachineBaselineAttemptCount(route),
+                baselineAttempts,
                 false,
                 true,
                 MachineEvidencePaths(route),
                 Array.Empty<string>(),
                 Array.Empty<string>(),
-                MachineBaselineAttemptCount(route));
+                baselineAttempts);
         }
 
-        var baselineAttempts = MachineBaselineAttemptCount(route);
-        if (!baselineAttempts.HasValue || baselineAttempts <= 0)
+        if (baselineAttempts <= 0)
         {
             return MachineProbabilityBlocked(
                 route,
@@ -60,8 +80,11 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
 
         var source = staticRoute.MachineSource!;
         var minimumOutputPerSuccess = Math.Max(1, source.MinimumStack);
+        var remainingRequiredQuantity = Math.Max(
+            0,
+            staticRoute.RequiredAmount - creditedExistingOutput);
         var requiredSuccesses = AcquisitionQuantityMath.DivideRoundUp(
-            staticRoute.RequiredAmount,
+            remainingRequiredQuantity,
             minimumOutputPerSuccess);
         if (requiredSuccesses != baselineAttempts.Value)
         {
@@ -128,6 +151,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                         route,
                         staticRoute,
                         requiredAttempts.Value,
+                        creditedExistingOutput,
                         expansionContext,
                         out var expandedRoute,
                         out expansionReasons))
@@ -208,6 +232,11 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteTargetDateProcessing route,
         AcquisitionRouteCalendarResolution staticRoute)
     {
+        if (MachineCreditedExistingOutputQuantity(route) >=
+            staticRoute.RequiredAmount)
+        {
+            return true;
+        }
         var selected = route.Evaluations.Where(value =>
                 value.OutputReadyOnTargetDate == true &&
                 value.MachineScheduleBinding is
@@ -219,6 +248,11 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 selected,
                 staticRoute.MinimumQuality) >= staticRoute.RequiredAmount;
     }
+
+    private static int MachineCreditedExistingOutputQuantity(
+        AcquisitionRouteTargetDateProcessing route) => route.Evaluations.Sum(
+            value => value.MachineScheduleBinding?
+                .CreditedExistingOutputQuantity ?? 0);
 
     private static int? MachineBaselineAttemptCount(
         AcquisitionRouteTargetDateProcessing route)

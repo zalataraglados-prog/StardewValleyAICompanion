@@ -44,7 +44,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         var processing = route.UpstreamRoute;
         var source = staticRoute.MachineSource!;
         if (!route.RequiredAttemptCount.HasValue ||
-            route.RequiredAttemptCount <= 0 ||
+            route.RequiredAttemptCount < 0 ||
             source.DaysUntilReady >= 0 ||
             source.MinutesUntilReady < 0)
         {
@@ -55,7 +55,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
 
         var evaluations = processing.Evaluations
             .Where(value =>
-                value.MachineScheduleBinding?.ScheduledAttemptCount > 0)
+                value.MachineScheduleBinding is not null &&
+                (value.MachineScheduleBinding.ScheduledAttemptCount > 0 ||
+                 value.MachineScheduleBinding
+                     .CreditedExistingOutputQuantity > 0))
             .OrderBy(value => value.TargetLocationId, StringComparer.Ordinal)
             .ThenBy(value => value.MachineScheduleBinding!.TargetTileY)
             .ThenBy(value => value.MachineScheduleBinding!.TargetTileX)
@@ -127,6 +130,26 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     evaluation.TargetLocationId + ":" +
                     binding.TargetTileX + "," + binding.TargetTileY);
             }
+            if (binding.CreditedExistingOutputQuantity > 0 &&
+                (machine.ActiveOutput is not { } activeOutput ||
+                 activeOutput.QualifiedItemId != staticRoute.QualifiedItemId ||
+                 activeOutput.Quality < staticRoute.MinimumQuality ||
+                 activeOutput.Stack <
+                     binding.CreditedExistingOutputQuantity ||
+                 activeOutput.RouteSources.Length != 1 ||
+                 activeOutput.RouteSources[0].RouteKind !=
+                     staticRoute.RouteKind ||
+                 activeOutput.RouteSources[0].SourceId !=
+                     staticRoute.SourceId ||
+                 activeOutput.RouteSources[0].QualifiedItemId !=
+                     staticRoute.QualifiedItemId))
+            {
+                return MachineBlocked(
+                    route,
+                    "manual_machine_existing_output_credit_drifted:" +
+                    evaluation.TargetLocationId + ":" +
+                    binding.TargetTileX + "," + binding.TargetTileY);
+            }
             if (clearsExistingOutput)
                 requiredExistingOutputSlots++;
             targets.Add(new MachineDailyTargetSeed(
@@ -136,6 +159,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 binding.ScheduledAttemptCount,
                 source.MinutesUntilReady,
                 Math.Max(1, source.MinimumStack),
+                binding.CreditedExistingOutputQuantity,
                 clearsExistingOutput
                     ? MachineDailyAction.CollectOutput
                     : MachineDailyAction.LoadInput,
@@ -144,7 +168,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                         state.RouteState.CurrentTime,
                         binding.InitialMinutesUntilReady)
                     : state.RouteState.CurrentTime,
-                clearsExistingOutput));
+                clearsExistingOutput,
+                true));
         }
 
         if (requiredExistingOutputSlots > 0 &&
@@ -196,10 +221,12 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 0,
                 0,
                 value.ProvenOutputQuantityLowerBound!.Value,
+                0,
                 MachineDailyAction.CollectOutput,
                 GameClockBudgetPolicy.AddClockMinutes(
                     state.RouteState.CurrentTime,
                     value.MachineScheduleBinding.CompletionOffsetMinutes!.Value),
+                false,
                 false))
             .ToArray();
         if (targets.Length == 0 ||
@@ -280,7 +307,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         var actionMinutes = selected.Steps.Sum(value =>
             value.ActionGameMinutes);
         var evaluatedAttemptCount = targets.Any(value =>
-                value.RequiredAttemptCount > 0)
+                value.IsManualProductionTarget)
             ? attemptCount
             : selected.Steps.Count(value =>
                 value.ActionKind == MachineDailyAction.CollectOutput);

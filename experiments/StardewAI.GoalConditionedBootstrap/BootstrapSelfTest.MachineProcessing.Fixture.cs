@@ -16,13 +16,7 @@ internal static partial class BootstrapSelfTest
             TargetEvaluations = machines.Select(machine =>
                 MachineProcessingFacilityTarget(
                     route,
-                    Convert.ToInt32(machine["tile_x"]),
-                    Convert.ToInt32(machine["tile_y"]),
-                    Convert.ToBoolean(machine["ready_for_harvest"])
-                        ? "ready_output"
-                        : Convert.ToInt32(machine["minutes_until_ready"]) > 0
-                        ? "processing"
-                        : "idle"))
+                    machine))
                 .ToArray()
         };
         var resources = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
@@ -60,9 +54,21 @@ internal static partial class BootstrapSelfTest
     private static AcquisitionFacilityTargetEvaluation
         MachineProcessingFacilityTarget(
             AcquisitionRouteCalendarResolution route,
-            int tileX,
-            int tileY,
-            string capacityState) => new(
+            IReadOnlyDictionary<string, object?> machine)
+    {
+        var tileX = Convert.ToInt32(machine["tile_x"]);
+        var tileY = Convert.ToInt32(machine["tile_y"]);
+        var ready = Convert.ToBoolean(machine["ready_for_harvest"]);
+        var minutes = Convert.ToInt32(machine["minutes_until_ready"]);
+        var activeOutputId = Convert.ToString(
+            machine["fixture_active_output_id"]);
+        var activeOutputStack = Convert.ToInt32(
+            machine["fixture_active_output_stack"]);
+        var activeOutputQuality = Convert.ToInt32(
+            machine["fixture_active_output_quality"]);
+        var routeMatches = Convert.ToBoolean(
+            machine["fixture_active_output_route_matches"]);
+        return new AcquisitionFacilityTargetEvaluation(
                 "Farm",
                 null,
                 "resolved_existing_machine_capacity_match",
@@ -76,7 +82,17 @@ internal static partial class BootstrapSelfTest
                 tileX,
                 tileY,
                 true,
-                capacityState);
+                ready ? "ready_output" : minutes > 0 ? "processing" : "idle",
+                true,
+                string.IsNullOrWhiteSpace(activeOutputId)
+                    ? null
+                    : activeOutputId,
+                activeOutputStack > 0 ? activeOutputStack : null,
+                activeOutputQuality >= 0 && activeOutputStack > 0
+                    ? activeOutputQuality
+                    : null,
+                routeMatches);
+    }
 
     private static Dictionary<string, object?> MachineProcessingRow(
         AcquisitionRouteCalendarResolution route,
@@ -85,7 +101,9 @@ internal static partial class BootstrapSelfTest
         int minutesUntilReady,
         string? activeOutputId = null,
         bool includeActiveSource = false,
-        bool readyForHarvest = false)
+        bool readyForHarvest = false,
+        int activeOutputStack = 1,
+        int activeOutputQuality = 0)
     {
         var activeSources = includeActiveSource
             ? new object[]
@@ -120,10 +138,19 @@ internal static partial class BootstrapSelfTest
                 : new
                 {
                     qualified_item_id = activeOutputId,
-                    stack = 1,
-                    quality = 0
+                    stack = activeOutputStack,
+                    quality = activeOutputQuality
                 },
-            ["active_output_authoritative_route_sources"] = activeSources
+            ["active_output_authoritative_route_sources"] = activeSources,
+            ["fixture_active_output_id"] = activeOutputId,
+            ["fixture_active_output_stack"] = activeOutputId is null
+                ? 0
+                : activeOutputStack,
+            ["fixture_active_output_quality"] = activeOutputId is null
+                ? -1
+                : activeOutputQuality,
+            ["fixture_active_output_route_matches"] =
+                includeActiveSource && activeOutputId == route.QualifiedItemId
         };
     }
 
