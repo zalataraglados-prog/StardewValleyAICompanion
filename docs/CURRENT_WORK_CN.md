@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器投料支持过渡：精确来源与共享编译链
+
+- 透明桥现在把投料探针已经选中的 `MachineOutputRule` 与 `MachineItemOutput` 重新绑定到 `Data/Machines` 的原生规则索引，并在预测结果中输出唯一的 `authoritative_route_sources`。有稳定规则 ID 时沿用 `machine_output` 身份；无规则 ID 时按精确 rule/output 索引输出 `native_machine_item_query_output` 或 `native_machine_flavored_output`。规则、输出行或目标物品不能唯一绑定时保持空来源并失败关闭。
+- Core 的 `load_machine_input_tile` 候选保留上述结构化来源及预测输出物品；目标日期支持选择同时核对输出物品、route kind 与 source ID，不按显示名、物品相同或预计收益猜测。错误输出、错误规则与同一目标物品的多来源歧义均不能进入队列。
+- 三类机器路线的 lowering 复用现有 `farm.process_machines` 候选作为原子投料支持动作，再经同一 `DailyPlanCompiler` 与 `ActionQueueCompiler` 编译为 `executor.load_machine_input`。该动作角色为 `supporting_transition`，不允许终端回执，并要求成功后读取新快照、完整重规划；`farm.establish_supported_machine_capacity` 与经济型 `farm.load_supported_machine_input` 仍保留，机器制作/放置没有证据时继续失败关闭。
+- 聚焦 dispatch 与 hermetic 自测、Core/TransparentBridge Release 构建均通过。当前切片闭合“已有空闲机器的精确投料候选到原生动作队列”，尚未把机器专属完成期限、原子材料 claim、投料后机器状态回执及 claim 结算扩展进作物专用的支持请求协议；正式训练授权仍为 false。
+
 ## 2026-09-27 机器既有产物抵扣：下游闭环
 
 - processing 轴会在同一份透明机器快照上重新核验物品、堆叠、品质以及唯一 route kind/source ID，并按地点与格子稳定分配 `credited_existing_output_quantity`。部分抵扣只排程剩余尝试；完全抵扣保留显式零尝试 binding，并以既有机器计时器作为最迟完成时点。

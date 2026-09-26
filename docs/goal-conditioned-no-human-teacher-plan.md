@@ -2364,6 +2364,23 @@ Slice 7 remains assigned to the RTX 5070 node.
 - These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
   Those promotion gates remain separate and fail closed.
 
+### 2026-09-27: exact machine-load supporting transition boundary
+
+- Machine input probes now expose one structured authoritative route source derived from the exact native output-rule
+  and output-row objects selected by `MachineDataUtility`. Stable rule IDs retain the ordinary `machine_output`
+  identity; legacy rows retain exact rule/output indices and the item-query or flavored route kind. Missing indices,
+  output identity drift and ambiguous source sets remain non-authoritative.
+- `load_machine_input_tile` carries that source evidence beside the predicted output identity. Supporting selection
+  admits a load only when predicted qualified item, route kind and source ID all match the selected authoritative
+  route. It reuses `farm.process_machines`, `DailyPlanCompiler`, `ActionQueueCompiler` and
+  `executor.load_machine_input`; there is no route-specific executor. The one-item queue is nonterminal and mandates a
+  fresh snapshot and complete replan after success.
+- This slice deliberately does not reinterpret economic `MachineSupportIntent` as target-date ownership and does not
+  infer machine crafting or placement. The next bounded slice generalizes the crop-only support request protocol for
+  exact machine input: prove a future completion deadline from authoritative machine timing, atomically bind the
+  route's material claims, verify the before/after machine transition, settle only observed input consumption, and
+  rejoin the existing recurrence chain. Formal training remains unauthorized until those gates are complete.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

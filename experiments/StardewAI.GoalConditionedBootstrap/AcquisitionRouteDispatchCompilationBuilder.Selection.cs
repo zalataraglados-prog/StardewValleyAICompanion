@@ -75,6 +75,44 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return null;
         }
 
+        var crop = TryMatchCropSupportingCandidate(requirement, candidate);
+        if (crop is not null)
+            return crop;
+
+        if (requirement.RouteKind is not (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output") ||
+            candidate.Kind != "load_machine_input_tile" ||
+            !TryReadUniqueParameter(
+                candidate,
+                "predicted_output_qualified_item_id",
+                out var predictedOutputQualifiedItemId) ||
+            !string.Equals(
+                predictedOutputQualifiedItemId,
+                requirement.QualifiedItemId,
+                StringComparison.Ordinal) ||
+            !CandidateDeclaresAuthoritativeRouteSource(
+                candidate,
+                requirement.RouteKind,
+                requirement.SourceId,
+                requirement.QualifiedItemId))
+        {
+            return null;
+        }
+
+        return new AcquisitionRouteDispatchCandidateMatch(
+            candidate,
+            "candidate.predicted_output_qualified_item_id+" +
+            "candidate.authoritative_route_sources_json",
+            "supporting_transition");
+    }
+
+    private static AcquisitionRouteDispatchCandidateMatch?
+        TryMatchCropSupportingCandidate(
+            AcquisitionRouteTargetDateUnlock requirement,
+            PolicyEventCandidatePrediction candidate)
+    {
         const string cropPrefix = "crop:";
         if (requirement.RouteKind != "harvests_as" ||
             !requirement.SourceId.StartsWith(cropPrefix, StringComparison.Ordinal) ||
