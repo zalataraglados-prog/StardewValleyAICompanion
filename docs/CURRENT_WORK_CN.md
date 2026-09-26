@@ -11,6 +11,12 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器既有产物上游抵扣：设施证据
+
+- `facility_capacity` 现在随逐机目标保留透明 `held_item` 的精确物品、堆叠和品质；只有 `active_output_authoritative_route_sources` 恰有一个来源，且 route kind、source ID、输出物品都与当前权威路线一致时，才标记 `machine_active_output_route_matches=true`。
+- 该切片只建立抵扣证据，不在设施轴提前改变材料需求。同一机器仍可作为生产设施使用，但缺失、多义或不匹配的旧产物不会获得抵扣资格；后续固定切片由 `resource_inputs` 计算剩余需求并让下游轴共同消费同一结果。
+- GoalConditionedBootstrap Release 构建为零警告，hermetic 覆盖精确命中与错误 source ID 不抵扣。完整回归在 resource/downstream 闭环后统一执行。
+
 ## 2026-09-27 机器日内移动与交互预算
 
 - 机器 processing binding 新增逐次 `attempt_schedule`，保留全局尝试序号、单机尝试序号、处理开始偏移和完成偏移；随机重试扩量后的每次投料不再只剩一个汇总计数。日内轴直接消费该排程，不重新猜测尝试如何分配到机器。

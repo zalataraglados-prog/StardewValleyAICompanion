@@ -71,7 +71,7 @@ public sealed class AcquisitionRouteTargetDateFacilityReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The facility_capacity axis is evaluated only after an exact target-date source-location match. Routes without a capacity-bearing production facility are explicitly not-required. Crop routes bind authoritative minimum harvest stack and require enough exact existing-target-crop plus open prepared-soil slots across matched locations to cover the full route amount. Unresolved crop identities block only when they can change that conclusion. Crab-pot routes reuse the exact placed-pot source already proven by location_route. Machine routes rebind the complete fleet row by exact machine qualified ID, location and tile, preserve idle/processing/ready state, and require a native output-capable placed machine; they do not infer construction or throughput. Capacity-bearing route kinds that cannot yet reach this axis remain inherited upstream blocks, and any such kind reaching it without a locked evaluator fails closed. Inputs, construction, growth or processing lead time, stochastic output, daily budget, inventory receipt and final interaction remain independently owned; training authorization stays false.";
+        "The facility_capacity axis is evaluated only after an exact target-date source-location match. Routes without a capacity-bearing production facility are explicitly not-required. Crop routes bind authoritative minimum harvest stack and require enough exact existing-target-crop plus open prepared-soil slots across matched locations to cover the full route amount. Unresolved crop identities block only when they can change that conclusion. Crab-pot routes reuse the exact placed-pot source already proven by location_route. Machine routes rebind the complete fleet row by exact machine qualified ID, location and tile, preserve idle/processing/ready state, and require a native output-capable placed machine. When active held-output evidence is available, they also preserve its exact item, stack and quality and mark it route-matching only under one exact authoritative route-source identity; facility capacity itself does not yet reduce input demand. Capacity-bearing route kinds that cannot yet reach this axis remain inherited upstream blocks, and any such kind reaching it without a locked evaluator fails closed. Inputs, construction, growth or processing lead time, stochastic output, daily budget, inventory receipt and final interaction remain independently owned; training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateFacility(
@@ -127,4 +127,19 @@ public sealed record AcquisitionFacilityTargetEvaluation(
     bool? MachineSourceMatches = null,
     [property: JsonPropertyName("machine_capacity_state"),
      JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? MachineCapacityState = null);
+    string? MachineCapacityState = null,
+    [property: JsonPropertyName("machine_active_output_evidence_available"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? MachineActiveOutputEvidenceAvailable = null,
+    [property: JsonPropertyName("machine_active_output_qualified_item_id"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? MachineActiveOutputQualifiedItemId = null,
+    [property: JsonPropertyName("machine_active_output_stack"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? MachineActiveOutputStack = null,
+    [property: JsonPropertyName("machine_active_output_quality"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? MachineActiveOutputQuality = null,
+    [property: JsonPropertyName("machine_active_output_route_matches"),
+     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? MachineActiveOutputRouteMatches = null);
