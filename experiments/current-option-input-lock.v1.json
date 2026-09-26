@@ -6,20 +6,20 @@
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
       "normalization": "utf8_lf",
-      "bytes": 120878,
-      "sha256": "a1de07b5acc96abacc84e007a50e8322e51b82ac23e537b39239f3eec70ea9b4"
+      "bytes": 121541,
+      "sha256": "c7c63b2ccf2ced395b225af540e7f95854cf554c746645bc921d6d5777b37c0f"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
       "normalization": "utf8_lf",
-      "bytes": 219350,
-      "sha256": "782c933b00464bfc4b8e89128c0f12f3b0a085973a5e4137f5b641739354b8c4"
+      "bytes": 221345,
+      "sha256": "0e679c13ef14db7cfa8ecad1b844718e460468cd822cbdb5e7b16768a02089b9"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
       "normalization": "utf8_lf",
-      "bytes": 44388,
-      "sha256": "0de61ecaf6a10ba1f32cc1eefaa8a3a64acf42be7455b13e37e10c6460e9fd72"
+      "bytes": 44644,
+      "sha256": "f751d80f80779f2376eead146da215e332c366c0e83ceddf202db35ebc0b46d9"
     },
     {
       "relative_path": "knowledge-artifacts.lock.json",
@@ -43,13 +43,13 @@
   ],
   "output_contract": {
     "schema_version": "stardewai.option_governance_matrix.v3",
-    "option_count": 232,
+    "option_count": 234,
     "goal_template_count": 2,
     "composite_option_count": 88,
-    "primitive_option_count": 142,
+    "primitive_option_count": 144,
     "training_eligible_count": 66,
     "runtime_verified_count": 155,
-    "bytes": 838895,
-    "sha256": "68ed1e3ad35da5fd0adc41da9206abfe9ae5c8d5760abc70fe6b916505850b19"
+    "bytes": 846321,
+    "sha256": "24e4e4c6504daa37c8fd8e91aab1b3cd104cb23619316b98cbc8f5819f123183"
   }
 }
