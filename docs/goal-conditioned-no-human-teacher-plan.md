@@ -2326,6 +2326,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   validating lowering descriptors. A blocked future or unrelated catalog route can no longer invalidate the current
   bundle authority; every route kind actually referenced by an active ingredient must still have one complete,
   runtime- and Teacher-admitted lowering. The hermetic gate includes this negative isolation case.
+- The bootstrap CLI now has one ordered `CommandDefinition` registry for all commands. Dispatch, duplicate-name
+  rejection and the unknown-command help list derive from that registry, eliminating the former switch/help identity
+  split.
 - These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
   Those promotion gates remain separate and fail closed.
 

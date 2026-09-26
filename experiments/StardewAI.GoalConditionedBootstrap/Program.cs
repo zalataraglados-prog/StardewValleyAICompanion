@@ -6,305 +6,116 @@ using StardewAI.GoalConditionedBootstrap;
 
 var command = args.FirstOrDefault() ?? string.Empty;
 var options = Arguments.Parse(args.Skip(1).ToArray());
+var commandDefinitions = new CommandDefinition[]
+{
+    new("audit-knowledge", AuditKnowledge),
+    new("audit-evidence", AuditEvidence),
+    new("audit-claims", AuditClaims),
+    new("audit-schedules", AuditSchedules),
+    new("audit-current-schedules", AuditCurrentSchedules),
+    new("audit-friendship-day-transition", AuditFriendshipDayTransition),
+    new("validate-route-timing", ValidateRouteTiming),
+    new("audit-current-social-frontier", AuditCurrentSocialFrontier),
+    new("plan-current-social-day", PlanCurrentSocialDay),
+    new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
+    new("build-goal-method-graph", BuildGoalMethodGraph),
+    new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
+    new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
+    new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
+    new("build-requirement-inventory", BuildRequirementInventory),
+    new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
+    new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution),
+    new("build-current-acquisition-route-calendar-resolution", BuildCurrentAcquisitionRouteCalendarResolution),
+    new("build-acquisition-route-target-date-calendar", BuildAcquisitionRouteTargetDateCalendar),
+    new("build-current-acquisition-route-target-date-calendar", BuildCurrentAcquisitionRouteTargetDateCalendar),
+    new("build-acquisition-route-target-date-unlock-state", BuildAcquisitionRouteTargetDateUnlockState),
+    new("build-acquisition-route-target-date-festival-state", BuildAcquisitionRouteTargetDateFestivalState),
+    new("build-acquisition-route-target-date-location-route", BuildAcquisitionRouteTargetDateLocationRoute),
+    new("build-acquisition-route-target-date-facility-capacity", BuildAcquisitionRouteTargetDateFacilityCapacity),
+    new("build-acquisition-route-target-date-resource-inputs", BuildAcquisitionRouteTargetDateResourceInputs),
+    new("build-acquisition-route-target-date-currency-budget", BuildAcquisitionRouteTargetDateCurrencyBudget),
+    new("build-acquisition-route-target-date-inventory-reservation", BuildAcquisitionRouteTargetDateInventoryReservation),
+    new("build-acquisition-route-target-date-processing-lead-time", BuildAcquisitionRouteTargetDateProcessingLeadTime),
+    new("build-acquisition-route-target-date-fishing-probability", BuildAcquisitionRouteTargetDateFishingProbability),
+    new("build-acquisition-route-target-date-stochastic-retry-budget", BuildAcquisitionRouteTargetDateStochasticRetryBudget),
+    new("build-acquisition-route-target-date-daily-time-energy-budget", BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget),
+    new("build-acquisition-route-target-date-opportunity-cost", BuildAcquisitionRouteTargetDateOpportunityCost),
+    new("build-acquisition-route-portfolio-admission", BuildAcquisitionRoutePortfolioAdmission),
+    new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
+    new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
+    new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
+    new("build-acquisition-route-execution-binding", BuildAcquisitionRouteExecutionBinding),
+    new("build-acquisition-route-fresh-terminal-receipt", BuildAcquisitionRouteFreshTerminalReceipt),
+    new("build-acquisition-route-supporting-transition-request", BuildAcquisitionRouteSupportingTransitionRequest),
+    new("build-acquisition-route-supporting-transition-commit-receipt", BuildAcquisitionRouteSupportingTransitionCommitReceipt),
+    new("compile-acquisition-route-supporting-transition", CompileAcquisitionRouteSupportingTransition),
+    new("build-acquisition-route-supporting-transition-receipt", BuildAcquisitionRouteSupportingTransitionReceipt),
+    new("build-acquisition-route-supporting-transition-settlement-request", BuildAcquisitionRouteSupportingTransitionSettlementRequest),
+    new("build-acquisition-route-supporting-transition-settlement-receipt", BuildAcquisitionRouteSupportingTransitionSettlementReceipt),
+    new("build-acquisition-route-supporting-transition-replan", BuildAcquisitionRouteSupportingTransitionReplan),
+    new("build-acquisition-route-supporting-transition-portfolio-teacher-preference", BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference),
+    new("build-acquisition-route-supporting-transition-portfolio-commit-receipt", BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt),
+    new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
+    new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
+    new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
+    new("build-acquisition-route-portfolio-rollout-proof-receipt", BuildAcquisitionRoutePortfolioRolloutProofReceipt),
+    new("build-acquisition-route-portfolio-rollout-admission-receipt", BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt),
+    new("build-acquisition-route-portfolio-supervision-dataset", BuildAcquisitionRoutePortfolioSupervisionDataset),
+    new("build-acquisition-route-portfolio-supervision-corpus", BuildAcquisitionRoutePortfolioSupervisionCorpus),
+    new("train-acquisition-route-goal-method", TrainAcquisitionRouteGoalMethod),
+    new("score-acquisition-route-goal-method-row", ScoreAcquisitionRouteGoalMethodRow),
+    new("score-live-acquisition-route-goal-method-shadow", ScoreLiveAcquisitionRouteGoalMethodShadow),
+    new("select-strategic-method", SelectStrategicMethod),
+    new("build-acquisition-route-portfolio-continuation-teacher-request", BuildAcquisitionRoutePortfolioContinuationTeacherRequest),
+    new("build-acquisition-route-portfolio-continuation-teacher-preference", BuildAcquisitionRoutePortfolioContinuationTeacherPreference),
+    new("build-acquisition-route-portfolio-continuation-commit-receipt", BuildAcquisitionRoutePortfolioContinuationCommitReceipt),
+    new("build-acquisition-route-continuation-execution-binding", BuildAcquisitionRouteContinuationExecutionBinding),
+    new("build-acquisition-route-continuation-fresh-terminal-receipt", BuildAcquisitionRouteContinuationFreshTerminalReceipt),
+    new("build-acquisition-route-portfolio-continuation-settlement-request", BuildAcquisitionRoutePortfolioContinuationSettlementRequest),
+    new("build-acquisition-route-portfolio-continuation-settlement-receipt", BuildAcquisitionRoutePortfolioContinuationSettlementReceipt),
+    new("build-acquisition-route-portfolio-continuation-rollout-checkpoint", BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint),
+    new("build-current-full-shipment-teacher-frontier", BuildCurrentFullShipmentTeacherFrontier),
+    new("build-current-community-center-denominator", BuildCurrentCommunityCenterDenominator),
+    new("build-current-collection-teacher-frontier", BuildCurrentCollectionTeacherFrontier),
+    new("build-current-master-angler-teacher-frontier", BuildCurrentMasterAnglerTeacherFrontier),
+    new("build-current-stage-one-collection-teacher-frontier", BuildCurrentStageOneCollectionTeacherFrontier),
+    new("build-current-stage-one-collection-teacher-preference", BuildCurrentStageOneCollectionTeacherPreference),
+    new("build-current-stage-one-collection-teacher-receipt", BuildCurrentStageOneCollectionTeacherReceipt),
+    new("build-community-center-lifecycle-receipt", BuildCommunityCenterLifecycleReceipt),
+    new("build-full-shipment-settlement-receipt", BuildFullShipmentSettlementReceipt),
+    new("build-full-shipment-recurrence-proof-receipt", BuildFullShipmentRecurrenceProofReceipt),
+    new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
+    new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
+    new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
+    new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
+    new("rehash-content", RehashContent),
+    new("teacher-plan", BuildTeacherPlan),
+    new("import-legacy", ImportLegacy),
+    new("validate", Validate),
+    new("semanticize-recording", SemanticizeRecording),
+    new("retrieve", Retrieve),
+    new("self-test", SelfTest),
+    new("self-test-current-collection", SelfTestCurrentCollection),
+    new("self-test-current-community-center-denominator", SelfTestCurrentCommunityCenterDenominator),
+    new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
+    new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
+    new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
+    new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
+    new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
+    new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),
+};
+var commandRegistry = commandDefinitions.ToDictionary(
+    definition => definition.Name,
+    StringComparer.Ordinal);
 try
 {
-    switch (command)
+    if (!commandRegistry.TryGetValue(command, out var definition))
     {
-        case "audit-knowledge":
-            AuditKnowledge(options);
-            break;
-        case "audit-evidence":
-            AuditEvidence(options);
-            break;
-        case "audit-claims":
-            AuditClaims(options);
-            break;
-        case "audit-schedules":
-            AuditSchedules(options);
-            break;
-        case "audit-current-schedules":
-            AuditCurrentSchedules(options);
-            break;
-        case "audit-friendship-day-transition":
-            AuditFriendshipDayTransition(options);
-            break;
-        case "validate-route-timing":
-            ValidateRouteTiming(options);
-            break;
-        case "audit-current-social-frontier":
-            AuditCurrentSocialFrontier(options);
-            break;
-        case "plan-current-social-day":
-            PlanCurrentSocialDay(options);
-            break;
-        case "build-current-social-teacher-label":
-            BuildCurrentSocialTeacherLabel(options);
-            break;
-        case "build-goal-method-graph":
-            BuildGoalMethodGraph(options);
-            break;
-        case "build-goal-method-teacher-coverage":
-            BuildGoalMethodTeacherCoverage(options);
-            break;
-        case "build-goal-method-coverage-reconciliation":
-            BuildGoalMethodCoverageReconciliation(options);
-            break;
-        case "build-pet-love-teacher-corpus":
-            BuildPetLoveTeacherCorpus(options);
-            break;
-        case "build-requirement-inventory":
-            BuildRequirementInventory(options);
-            break;
-        case "build-acquisition-route-lowering":
-            BuildAcquisitionRouteLowering(options);
-            break;
-        case "build-acquisition-route-calendar-resolution":
-            BuildAcquisitionRouteCalendarResolution(options);
-            break;
-        case "build-current-acquisition-route-calendar-resolution":
-            BuildCurrentAcquisitionRouteCalendarResolution(options);
-            break;
-        case "build-acquisition-route-target-date-calendar":
-            BuildAcquisitionRouteTargetDateCalendar(options);
-            break;
-        case "build-current-acquisition-route-target-date-calendar":
-            BuildCurrentAcquisitionRouteTargetDateCalendar(options);
-            break;
-        case "build-acquisition-route-target-date-unlock-state":
-            BuildAcquisitionRouteTargetDateUnlockState(options);
-            break;
-        case "build-acquisition-route-target-date-festival-state":
-            BuildAcquisitionRouteTargetDateFestivalState(options);
-            break;
-        case "build-acquisition-route-target-date-location-route":
-            BuildAcquisitionRouteTargetDateLocationRoute(options);
-            break;
-        case "build-acquisition-route-target-date-facility-capacity":
-            BuildAcquisitionRouteTargetDateFacilityCapacity(options);
-            break;
-        case "build-acquisition-route-target-date-resource-inputs":
-            BuildAcquisitionRouteTargetDateResourceInputs(options);
-            break;
-        case "build-acquisition-route-target-date-currency-budget":
-            BuildAcquisitionRouteTargetDateCurrencyBudget(options);
-            break;
-        case "build-acquisition-route-target-date-inventory-reservation":
-            BuildAcquisitionRouteTargetDateInventoryReservation(options);
-            break;
-        case "build-acquisition-route-target-date-processing-lead-time":
-            BuildAcquisitionRouteTargetDateProcessingLeadTime(options);
-            break;
-        case "build-acquisition-route-target-date-fishing-probability":
-            BuildAcquisitionRouteTargetDateFishingProbability(options);
-            break;
-        case "build-acquisition-route-target-date-stochastic-retry-budget":
-            BuildAcquisitionRouteTargetDateStochasticRetryBudget(options);
-            break;
-        case "build-acquisition-route-target-date-daily-time-energy-budget":
-            BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget(options);
-            break;
-        case "build-acquisition-route-target-date-opportunity-cost":
-            BuildAcquisitionRouteTargetDateOpportunityCost(options);
-            break;
-        case "build-acquisition-route-portfolio-admission":
-            BuildAcquisitionRoutePortfolioAdmission(options);
-            break;
-        case "build-acquisition-route-portfolio-teacher-preference":
-            BuildAcquisitionRoutePortfolioTeacherPreference(options);
-            break;
-        case "build-acquisition-route-portfolio-commit-receipt":
-            BuildAcquisitionRoutePortfolioCommitReceipt(options);
-            break;
-        case "compile-acquisition-route-dispatch":
-            CompileAcquisitionRouteDispatch(options);
-            break;
-        case "build-acquisition-route-execution-binding":
-            BuildAcquisitionRouteExecutionBinding(options);
-            break;
-        case "build-acquisition-route-fresh-terminal-receipt":
-            BuildAcquisitionRouteFreshTerminalReceipt(options);
-            break;
-        case "build-acquisition-route-supporting-transition-request":
-            BuildAcquisitionRouteSupportingTransitionRequest(options);
-            break;
-        case "build-acquisition-route-supporting-transition-commit-receipt":
-            BuildAcquisitionRouteSupportingTransitionCommitReceipt(options);
-            break;
-        case "compile-acquisition-route-supporting-transition":
-            CompileAcquisitionRouteSupportingTransition(options);
-            break;
-        case "build-acquisition-route-supporting-transition-receipt":
-            BuildAcquisitionRouteSupportingTransitionReceipt(options);
-            break;
-        case "build-acquisition-route-supporting-transition-settlement-request":
-            BuildAcquisitionRouteSupportingTransitionSettlementRequest(options);
-            break;
-        case "build-acquisition-route-supporting-transition-settlement-receipt":
-            BuildAcquisitionRouteSupportingTransitionSettlementReceipt(options);
-            break;
-        case "build-acquisition-route-supporting-transition-replan":
-            BuildAcquisitionRouteSupportingTransitionReplan(options);
-            break;
-        case "build-acquisition-route-supporting-transition-portfolio-teacher-preference":
-            BuildAcquisitionRouteSupportingTransitionPortfolioTeacherPreference(
-                options);
-            break;
-        case "build-acquisition-route-supporting-transition-portfolio-commit-receipt":
-            BuildAcquisitionRouteSupportingTransitionPortfolioCommitReceipt(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-settlement-request":
-            BuildAcquisitionRoutePortfolioSettlementRequest(options);
-            break;
-        case "build-acquisition-route-portfolio-settlement-receipt":
-            BuildAcquisitionRoutePortfolioSettlementReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-rollout-checkpoint":
-            BuildAcquisitionRoutePortfolioRolloutCheckpoint(options);
-            break;
-        case "build-acquisition-route-portfolio-rollout-proof-receipt":
-            BuildAcquisitionRoutePortfolioRolloutProofReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-rollout-admission-receipt":
-            BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-supervision-dataset":
-            BuildAcquisitionRoutePortfolioSupervisionDataset(options);
-            break;
-        case "build-acquisition-route-portfolio-supervision-corpus":
-            BuildAcquisitionRoutePortfolioSupervisionCorpus(options);
-            break;
-        case "train-acquisition-route-goal-method":
-            TrainAcquisitionRouteGoalMethod(options);
-            break;
-        case "score-acquisition-route-goal-method-row":
-            ScoreAcquisitionRouteGoalMethodRow(options);
-            break;
-        case "score-live-acquisition-route-goal-method-shadow":
-            ScoreLiveAcquisitionRouteGoalMethodShadow(options);
-            break;
-        case "select-strategic-method":
-            SelectStrategicMethod(options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-teacher-request":
-            BuildAcquisitionRoutePortfolioContinuationTeacherRequest(options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-teacher-preference":
-            BuildAcquisitionRoutePortfolioContinuationTeacherPreference(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-commit-receipt":
-            BuildAcquisitionRoutePortfolioContinuationCommitReceipt(options);
-            break;
-        case "build-acquisition-route-continuation-execution-binding":
-            BuildAcquisitionRouteContinuationExecutionBinding(options);
-            break;
-        case "build-acquisition-route-continuation-fresh-terminal-receipt":
-            BuildAcquisitionRouteContinuationFreshTerminalReceipt(options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-settlement-request":
-            BuildAcquisitionRoutePortfolioContinuationSettlementRequest(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-settlement-receipt":
-            BuildAcquisitionRoutePortfolioContinuationSettlementReceipt(
-                options);
-            break;
-        case "build-acquisition-route-portfolio-continuation-rollout-checkpoint":
-            BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint(
-                options);
-            break;
-        case "build-current-full-shipment-teacher-frontier":
-            BuildCurrentFullShipmentTeacherFrontier(options);
-            break;
-        case "build-current-community-center-denominator":
-            BuildCurrentCommunityCenterDenominator(options);
-            break;
-        case "build-current-collection-teacher-frontier":
-            BuildCurrentCollectionTeacherFrontier(options);
-            break;
-        case "build-current-master-angler-teacher-frontier":
-            BuildCurrentMasterAnglerTeacherFrontier(options);
-            break;
-        case "build-current-stage-one-collection-teacher-frontier":
-            BuildCurrentStageOneCollectionTeacherFrontier(options);
-            break;
-        case "build-current-stage-one-collection-teacher-preference":
-            BuildCurrentStageOneCollectionTeacherPreference(options);
-            break;
-        case "build-current-stage-one-collection-teacher-receipt":
-            BuildCurrentStageOneCollectionTeacherReceipt(options);
-            break;
-        case "build-community-center-lifecycle-receipt":
-            BuildCommunityCenterLifecycleReceipt(options);
-            break;
-        case "build-full-shipment-settlement-receipt":
-            BuildFullShipmentSettlementReceipt(options);
-            break;
-        case "build-full-shipment-recurrence-proof-receipt":
-            BuildFullShipmentRecurrenceProofReceipt(options);
-            break;
-        case "build-full-shipment-terminal-settlement-receipt":
-            BuildFullShipmentTerminalSettlementReceipt(options);
-            break;
-        case "build-master-angler-opportunity-catalog":
-            BuildMasterAnglerOpportunityCatalog(options);
-            break;
-        case "build-master-angler-stage-one-windows":
-            BuildMasterAnglerStageOneWindows(options);
-            break;
-        case "build-master-angler-target-date-intents":
-            BuildMasterAnglerTargetDateIntents(options);
-            break;
-        case "rehash-content":
-            RehashContent(options);
-            break;
-        case "teacher-plan":
-            BuildTeacherPlan(options);
-            break;
-        case "import-legacy":
-            ImportLegacy(options);
-            break;
-        case "validate":
-            Validate(options);
-            break;
-        case "semanticize-recording":
-            SemanticizeRecording(options);
-            break;
-        case "retrieve":
-            Retrieve(options);
-            break;
-        case "self-test":
-            SelfTest(options);
-            break;
-        case "self-test-current-collection":
-            SelfTestCurrentCollection(options);
-            break;
-        case "self-test-current-community-center-denominator":
-            SelfTestCurrentCommunityCenterDenominator(options);
-            break;
-        case "self-test-current-stage-one-collection":
-            SelfTestCurrentStageOneCollection(options);
-            break;
-        case "self-test-full-shipment-settlement":
-            BootstrapSelfTest.RunFullShipmentSettlement();
-            break;
-        case "self-test-acquisition-route-dispatch":
-            BootstrapSelfTest.RunAcquisitionRouteDispatch();
-            break;
-        case "self-test-bootstrap-hermetic":
-            BootstrapSelfTest.RunHermeticCriticalPaths();
-            break;
-        case "self-test-goal-method-incomparable-live-shadow":
-            SelfTestGoalMethodIncomparableLiveShadow(options);
-            break;
-        case "self-test-goal-method-teacher-coverage":
-            SelfTestGoalMethodTeacherCoverage(options);
-            break;
-        default:
-            throw new ArgumentException(
-                "Command must be audit-knowledge, audit-evidence, audit-claims, audit-schedules, audit-current-schedules, audit-friendship-day-transition, validate-route-timing, audit-current-social-frontier, plan-current-social-day, build-current-social-teacher-label, build-goal-method-graph, build-goal-method-teacher-coverage, build-goal-method-coverage-reconciliation, build-pet-love-teacher-corpus, build-requirement-inventory, build-acquisition-route-lowering, build-acquisition-route-calendar-resolution, build-current-acquisition-route-calendar-resolution, build-acquisition-route-target-date-calendar, build-current-acquisition-route-target-date-calendar, build-acquisition-route-target-date-unlock-state, build-acquisition-route-target-date-festival-state, build-acquisition-route-target-date-location-route, build-acquisition-route-target-date-facility-capacity, build-acquisition-route-target-date-resource-inputs, build-acquisition-route-target-date-currency-budget, build-acquisition-route-target-date-inventory-reservation, build-acquisition-route-target-date-processing-lead-time, build-acquisition-route-target-date-fishing-probability, build-acquisition-route-target-date-stochastic-retry-budget, build-acquisition-route-target-date-daily-time-energy-budget, build-acquisition-route-target-date-opportunity-cost, build-acquisition-route-portfolio-admission, build-acquisition-route-portfolio-teacher-preference, build-acquisition-route-portfolio-commit-receipt, compile-acquisition-route-dispatch, build-acquisition-route-execution-binding, build-acquisition-route-fresh-terminal-receipt, build-acquisition-route-supporting-transition-request, build-acquisition-route-supporting-transition-commit-receipt, compile-acquisition-route-supporting-transition, build-acquisition-route-supporting-transition-receipt, build-acquisition-route-supporting-transition-settlement-request, build-acquisition-route-supporting-transition-settlement-receipt, build-acquisition-route-supporting-transition-replan, build-acquisition-route-supporting-transition-portfolio-teacher-preference, build-acquisition-route-supporting-transition-portfolio-commit-receipt, build-acquisition-route-portfolio-settlement-request, build-acquisition-route-portfolio-settlement-receipt, build-acquisition-route-portfolio-rollout-checkpoint, build-acquisition-route-portfolio-rollout-proof-receipt, build-acquisition-route-portfolio-rollout-admission-receipt, build-acquisition-route-portfolio-supervision-dataset, build-acquisition-route-portfolio-supervision-corpus, train-acquisition-route-goal-method, score-acquisition-route-goal-method-row, score-live-acquisition-route-goal-method-shadow, select-strategic-method, build-acquisition-route-portfolio-continuation-teacher-request, build-acquisition-route-portfolio-continuation-teacher-preference, build-acquisition-route-portfolio-continuation-commit-receipt, build-acquisition-route-continuation-execution-binding, build-acquisition-route-continuation-fresh-terminal-receipt, build-acquisition-route-portfolio-continuation-settlement-request, build-acquisition-route-portfolio-continuation-settlement-receipt, build-acquisition-route-portfolio-continuation-rollout-checkpoint, build-current-full-shipment-teacher-frontier, build-current-community-center-denominator, build-current-collection-teacher-frontier, build-current-master-angler-teacher-frontier, build-current-stage-one-collection-teacher-frontier, build-current-stage-one-collection-teacher-preference, build-current-stage-one-collection-teacher-receipt, build-community-center-lifecycle-receipt, build-full-shipment-settlement-receipt, build-full-shipment-recurrence-proof-receipt, build-full-shipment-terminal-settlement-receipt, build-master-angler-opportunity-catalog, build-master-angler-stage-one-windows, build-master-angler-target-date-intents, rehash-content, teacher-plan, import-legacy, validate, semanticize-recording, retrieve, self-test, self-test-current-community-center-denominator, self-test-current-collection, self-test-current-stage-one-collection, self-test-full-shipment-settlement, self-test-acquisition-route-dispatch, self-test-bootstrap-hermetic, self-test-goal-method-incomparable-live-shadow, or self-test-goal-method-teacher-coverage.");
+        throw new ArgumentException(
+            "Command must be " + string.Join(", ",
+                commandDefinitions.Select(value => value.Name)) + ".");
     }
+    definition.Execute(options);
 }
 catch (Exception ex)
 {
@@ -2110,6 +1921,10 @@ static void WriteJsonl<T>(string path, IEnumerable<T> values)
     File.Move(temporary, fullPath, true);
     Console.WriteLine(fullPath);
 }
+
+internal sealed record CommandDefinition(
+    string Name,
+    Action<Arguments> Execute);
 
 internal sealed class Arguments
 {
