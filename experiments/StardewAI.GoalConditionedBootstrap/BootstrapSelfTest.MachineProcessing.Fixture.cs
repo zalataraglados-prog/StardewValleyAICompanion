@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -195,5 +196,32 @@ internal static partial class BootstrapSelfTest
         using var document = JsonDocument.Parse(json);
         return AcquisitionProcessingLeadTimeSnapshotState.Read(
             document.RootElement);
+    }
+
+    private static MachineRetryExpansionContext
+        MachineRetryExpansionContextFixture(
+            IReadOnlyList<Dictionary<string, object?>> machines)
+    {
+        using var currencyDocument = JsonDocument.Parse("{\"state\":{}}");
+        return new MachineRetryExpansionContext(
+            "full_shipment",
+            new string('a', 64),
+            0,
+            new AcquisitionStrategyLedgerState(
+                new StrategyCommitmentLedger
+                {
+                    LedgerId = "machine-retry-ledger",
+                    SaveId = "machine-retry-save",
+                    PlayerId = "42",
+                    Revision = 0,
+                    UpdatedAt = "2026-09-27T00:00:00Z",
+                    SourceStateHash = new string('a', 64)
+                },
+                42),
+            MachineResourceState(
+                MachineResourceSlot(0, "(O)262", 100)),
+            new AcquisitionShopQuoteSnapshotState(
+                currencyDocument.RootElement.GetProperty("state").Clone()),
+            MachineProcessingState(900, machines));
     }
 }

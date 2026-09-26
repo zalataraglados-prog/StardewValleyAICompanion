@@ -45,7 +45,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
             ["sells"] = ShopPurchase
         };
 
-    private static AcquisitionRouteTargetDateCurrency Evaluate(
+    internal static AcquisitionRouteTargetDateCurrency Evaluate(
         AcquisitionRouteTargetDateResource route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionShopQuoteSnapshotState state)

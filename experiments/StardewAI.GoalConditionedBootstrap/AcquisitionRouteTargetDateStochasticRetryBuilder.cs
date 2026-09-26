@@ -98,11 +98,39 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         var staticRoutes = staticSource.Routes.ToDictionary(
             route => route.RouteOccurrenceId,
             StringComparer.Ordinal);
+        using var snapshotDocument = JsonDocument.Parse(
+            File.ReadAllText(snapshotFullPath));
+        var snapshot = snapshotDocument.RootElement;
+        var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
+            snapshot,
+            source.GameVersion,
+            source.TargetTotalDay);
+        Require(source.SnapshotStateHash == stateHash,
+            "Target-date processing and retry expansion snapshot state disagree.");
+        var ledgerState = AcquisitionStrategyLedgerReader.Read(
+            strategyLedgerPath,
+            snapshot);
+        var resourceState = AcquisitionResourceInputSnapshotState.Read(snapshot);
+        var currencyState = new AcquisitionShopQuoteSnapshotState(
+            snapshot.GetProperty("state"));
+        AcquisitionReservationSupplyValidator.Validate(
+            ledgerState,
+            resourceState,
+            currencyState);
+        var machineExpansion = new MachineRetryExpansionContext(
+            source.GoalId,
+            stateHash,
+            source.TargetTotalDay,
+            ledgerState,
+            resourceState,
+            currencyState,
+            AcquisitionProcessingLeadTimeSnapshotState.Read(snapshot));
         var routes = source.Routes.Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
                 fishingRoutes[route.RouteOccurrenceId],
-                fishingProbabilityPath))
+                fishingProbabilityPath,
+                machineExpansion))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>

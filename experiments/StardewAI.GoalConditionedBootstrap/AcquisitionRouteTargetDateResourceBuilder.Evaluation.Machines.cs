@@ -38,7 +38,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
 
         var guaranteedOutputPerAttempt = Math.Max(1, source.MinimumStack);
         var attemptCount = AcquisitionQuantityMath.DivideRoundUp(
-            RequiredAmount(route),
+            staticRoute.RequiredAmount,
             guaranteedOutputPerAttempt);
         var blockedReasons = new List<string>();
         MachineInputAttempt? firstMiss = null;

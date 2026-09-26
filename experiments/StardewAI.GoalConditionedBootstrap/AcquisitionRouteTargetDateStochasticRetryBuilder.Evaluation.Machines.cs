@@ -15,7 +15,8 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
 
     internal static AcquisitionRouteTargetDateStochasticRetry EvaluateMachine(
         AcquisitionRouteTargetDateProcessing route,
-        AcquisitionRouteCalendarResolution staticRoute)
+        AcquisitionRouteCalendarResolution staticRoute,
+        MachineRetryExpansionContext? expansionContext = null)
     {
         if (MachineOutputSelectionAlreadyResolved(route, staticRoute))
         {
@@ -117,6 +118,37 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             baselineAttempts.Value;
         if (expandsReservation)
         {
+            var expansionReasons = new[]
+            {
+                "machine_retry_expansion_context_missing"
+            };
+            if (expansionContext is not null)
+            {
+                if (TryExpandMachineRetryRoute(
+                        route,
+                        staticRoute,
+                        requiredAttempts.Value,
+                        expansionContext,
+                        out var expandedRoute,
+                        out expansionReasons))
+                {
+                    return Result(
+                        expandedRoute,
+                        staticRoute.UncertaintyMode,
+                        "resolved_independent_stochastic_retry_budget",
+                        true,
+                        true,
+                        "independent_binomial_retry_budget",
+                        probability,
+                        requiredAttempts,
+                        true,
+                        true,
+                        MachineEvidencePaths(expandedRoute),
+                        Array.Empty<string>(),
+                        Array.Empty<string>(),
+                        baselineAttempts);
+                }
+            }
             return Result(
                 route,
                 staticRoute.UncertaintyMode,
@@ -130,11 +162,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 false,
                 MachineEvidencePaths(route),
                 Array.Empty<string>(),
-                new[]
-                {
-                    "machine_retry_expanded_reservation_revalidation_missing",
-                    "machine_retry_expanded_processing_schedule_missing"
-                },
+                expansionReasons,
                 baselineAttempts);
         }
 

@@ -17,7 +17,8 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteTargetDateProcessing route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionRouteTargetDateFishingProbability fishingRoute,
-        string fishingProbabilityPath)
+        string fishingProbabilityPath,
+        MachineRetryExpansionContext machineExpansion)
     {
         if (!route.ProcessingLeadTimeAxisResolved)
         {
@@ -97,7 +98,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         }
 
         if (IsMachineRoute(staticRoute.RouteKind))
-            return EvaluateMachine(route, staticRoute);
+            return EvaluateMachine(route, staticRoute, machineExpansion);
 
         if (SourceResolvedRetryEvidenceRequired(
                 staticRoute,

@@ -1,5 +1,7 @@
 namespace StardewAI.GoalConditionedBootstrap;
 
+using StardewAI.Contracts.Strategy;
+
 internal static partial class BootstrapSelfTest
 {
     private static void VerifyMachineProcessingResolution()
@@ -110,6 +112,29 @@ internal static partial class BootstrapSelfTest
                 expandedRetry.RetryExpandsReservedConsumables &&
                 !expandedRetry.RetryExpandedReservationRevalidated,
             "Expanded machine retry demand bypassed reservation closure.");
+        var expandedRetryRevalidated =
+            AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
+                parallel,
+                firstValidFallback,
+                MachineRetryExpansionContextFixture(
+                    manualMachines));
+        var expandedReservation = expandedRetryRevalidated.UpstreamRoute
+            .UpstreamRoute;
+        Require(expandedRetryRevalidated.StochasticRetryAxisResolved &&
+                expandedRetryRevalidated
+                    .StochasticRetryBudgetMatchesTargetDate == true &&
+                expandedRetryRevalidated.RetryExpandsReservedConsumables &&
+                expandedRetryRevalidated
+                    .RetryExpandedReservationRevalidated &&
+                expandedReservation.ClaimSet is
+                    { AtomicCommitRequired: true } &&
+                expandedReservation.ClaimSet.MaterialClaims.Sum(value =>
+                    value.Quantity) ==
+                    expandedRetryRevalidated.RequiredAttemptCount &&
+                expandedRetryRevalidated.UpstreamRoute.Evaluations.Sum(value =>
+                    value.MachineScheduleBinding?.ScheduledAttemptCount ?? 0) ==
+                    expandedRetryRevalidated.RequiredAttemptCount,
+            "Expanded machine retries did not reuse reservation and processing axes.");
 
         var randomValid = firstValidFallback with
         {
