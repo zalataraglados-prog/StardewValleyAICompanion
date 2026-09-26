@@ -2313,10 +2313,19 @@ Slice 7 remains assigned to the RTX 5070 node.
   Teacher preference, selected proposal, selected admission and commit receipt; mixed, missing or malformed lineage
   fails closed before execution binding. The dispatch compilation, execution binding and fresh terminal receipt carry
   that same lineage explicitly while continuing to bind the ordinary queue, native execution receipt and after-state.
-- The remaining bounded work is to carry this already verified lineage through ordinary reservation settlement and
-  the first support-aware rollout checkpoint/proof. Those artifacts must rebuild the same support-replan sources and
-  must not reinterpret the nonterminal planting transition as terminal acquisition progress. Formal training remains
-  disabled until the resulting finite rollout proof is independently admitted.
+- The verified lineage now continues through the ordinary reservation settlement implementation. Support-aware
+  request and receipt entry points rebuild the same execution binding and fresh terminal receipt, then reuse the
+  canonical active-claim derivation and exact ledger replay. The settlement receipt repeats the replan SHA-256 but
+  still records only the later terminal acquisition route; planting remains a distinct nonterminal transition.
+- Initial rollout checkpoint construction now has one shared progress core. The ordinary entry supplies ordinary
+  settlement/preference reconstructions, while the support-aware entry supplies reconstructions rooted in the exact
+  planting settlement and replan admission. A proof manifest declares that distinction through an explicit optional
+  `supporting_transition` proof block containing the prior request inputs, nonterminal settlement proof and replan
+  admission path. Verification rebuilds the entire declared branch and rejects a hidden support lineage on the
+  ordinary branch. The support-aware checkpoint command can emit this initial-proof block alongside the checkpoint.
+- This closes the first crop-support recurrence through a finite portfolio rollout proof without a second planner,
+  compiler, executor or ledger. It does not authorize learned runtime control or formal product training; broader
+  support families and the separate promotion gates remain outstanding.
 
 ### 2026-09-26: StrategicPolicy identity and hermetic rollout gates
 

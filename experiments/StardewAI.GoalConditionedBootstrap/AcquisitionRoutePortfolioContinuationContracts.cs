@@ -4,6 +4,11 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class AcquisitionRoutePortfolioInitialCheckpointProof
 {
+    [JsonPropertyName("supporting_transition")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AcquisitionRoutePortfolioSupportingTransitionInitialProof?
+        SupportingTransition { get; init; }
+
     [JsonPropertyName("execution_inputs")]
     public AcquisitionRouteExecutionBindingInputs ExecutionInputs
     { get; init; } = new();
@@ -37,6 +42,20 @@ public sealed class AcquisitionRoutePortfolioInitialCheckpointProof
 
     [JsonPropertyName("settlement_receipt_path")]
     public string SettlementReceiptPath { get; init; } = string.Empty;
+}
+
+public sealed class AcquisitionRoutePortfolioSupportingTransitionInitialProof
+{
+    [JsonPropertyName("request_inputs")]
+    public AcquisitionRouteSupportingTransitionRequestInputs RequestInputs
+    { get; init; } = new();
+
+    [JsonPropertyName("settlement_proof")]
+    public AcquisitionRouteSupportingTransitionSettlementProof SettlementProof
+    { get; init; } = new();
+
+    [JsonPropertyName("replan_admission_path")]
+    public string ReplanAdmissionPath { get; init; } = string.Empty;
 }
 
 public sealed class AcquisitionRoutePortfolioContinuationTeacherRequest

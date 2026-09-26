@@ -60,6 +60,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-supporting-transition-terminal-receipt", BuildAcquisitionRouteSupportingTransitionTerminalReceipt),
     new("build-acquisition-route-supporting-transition-terminal-settlement-request", BuildAcquisitionRouteSupportingTransitionTerminalSettlementRequest),
     new("build-acquisition-route-supporting-transition-terminal-settlement-receipt", BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt),
+    new("build-acquisition-route-supporting-transition-terminal-rollout-checkpoint", BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint),
     new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
     new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
     new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
@@ -1028,6 +1029,67 @@ static void BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt(
     if (!receipt.ReservationLifecycleVerified)
         Environment.ExitCode = 2;
 }
+
+static void BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint(
+    Arguments options)
+{
+    var proof = SupportingTransitionTerminalInitialCheckpointProof(options);
+    var support = proof.SupportingTransition ??
+        throw new InvalidOperationException(
+            "Supporting-transition initial proof is missing.");
+    var checkpoint = AcquisitionRoutePortfolioRolloutCheckpointBuilder
+        .BuildAfterSupportingTransition(
+            support.RequestInputs,
+            support.SettlementProof,
+            support.ReplanAdmissionPath,
+            proof.ExecutionInputs,
+            proof.ExecutionBindingPath,
+            proof.ExecutionReceiptPath,
+            proof.AfterSnapshotPath,
+            proof.FreshTerminalReceiptPath,
+            proof.RunId,
+            proof.ExecutorVersion,
+            proof.SettlementRequestPath,
+            proof.SettlementResultPath,
+            proof.SettledLedgerPath,
+            proof.SettlementReceiptPath);
+    Write(options.Required("output"), checkpoint);
+    if (options.Optional("initial-proof-output") is { } proofOutput)
+        Write(proofOutput, proof);
+}
+
+static AcquisitionRoutePortfolioInitialCheckpointProof
+    SupportingTransitionTerminalInitialCheckpointProof(Arguments options) =>
+        new()
+        {
+            SupportingTransition =
+                new AcquisitionRoutePortfolioSupportingTransitionInitialProof
+                {
+                    RequestInputs = RouteSupportingTransitionInputs(options),
+                    SettlementProof =
+                        SupportingTransitionSettlementProof(options),
+                    ReplanAdmissionPath = options.Required(
+                        "replan-admission")
+                },
+            ExecutionInputs =
+                SupportingTransitionTerminalExecutionInputs(options),
+            ExecutionBindingPath = options.Required(
+                "next-execution-binding"),
+            ExecutionReceiptPath = options.Required(
+                "next-execution-receipt"),
+            AfterSnapshotPath = options.Required("next-after-snapshot"),
+            FreshTerminalReceiptPath = options.Required(
+                "next-fresh-terminal-receipt"),
+            RunId = options.Required("next-run-id"),
+            ExecutorVersion = options.Required("next-executor-version"),
+            SettlementRequestPath = options.Required(
+                "next-settlement-request"),
+            SettlementResultPath = options.Required(
+                "next-settlement-result"),
+            SettledLedgerPath = options.Required("next-settled-ledger"),
+            SettlementReceiptPath = options.Required(
+                "next-settlement-receipt")
+        };
 
 static AcquisitionRouteExecutionBindingInputs
     SupportingTransitionTerminalExecutionInputs(

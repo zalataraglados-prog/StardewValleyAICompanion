@@ -18,9 +18,18 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
         string settlementRequestPath,
         string settlementResultPath,
         string settledLedgerPath,
-        string settlementReceiptPath)
-    {
-        var expectedSettlement =
+        string settlementReceiptPath) => BuildInitialCore(
+            inputs,
+            executionBindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            freshTerminalReceiptPath,
+            runId,
+            executorVersion,
+            settlementRequestPath,
+            settlementResultPath,
+            settledLedgerPath,
+            settlementReceiptPath,
             AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
                 inputs,
                 executionBindingPath,
@@ -31,7 +40,28 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 executorVersion,
                 settlementRequestPath,
                 settlementResultPath,
-                settledLedgerPath);
+                settledLedgerPath),
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
+                AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(
+                    inputs),
+                inputs.PortfolioPreferenceRequestPath));
+
+    private static AcquisitionRoutePortfolioRolloutCheckpoint
+        BuildInitialCore(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            string settlementRequestPath,
+            string settlementResultPath,
+            string settledLedgerPath,
+            string settlementReceiptPath,
+            AcquisitionRoutePortfolioSettlementReceipt expectedSettlement,
+            AcquisitionRoutePortfolioTeacherPreference expectedPreference)
+    {
         var settlement = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioSettlementReceipt>(
             Path.GetFullPath(settlementReceiptPath),
@@ -49,10 +79,6 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
             AcquisitionRoutePortfolioTeacherPreference>(
             Path.GetFullPath(inputs.PortfolioTeacherPreferencePath),
             "Acquisition route portfolio Teacher preference");
-        var expectedPreference =
-            AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
-                AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs),
-                inputs.PortfolioPreferenceRequestPath);
         Require(EqualJson(preference, expectedPreference) &&
                 preference.TeacherPreferenceLabelEligible &&
                 preference.SelectedProposal is not null &&
@@ -78,7 +104,9 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
         var proposal = preference.SelectedProposal ??
             throw new InvalidDataException(
                 "Initial rollout Teacher proposal is missing.");
-        Require(proposal.SelectedRouteOccurrenceIds.Count(value =>
+        Require(preference.PriorSupportingTransitionReplanSha256 ==
+                    settlement.PriorSupportingTransitionReplanSha256 &&
+                proposal.SelectedRouteOccurrenceIds.Count(value =>
                     value == route.RouteOccurrenceId) == 1 &&
                 settlement.GoalId == preference.GoalId &&
                 settlement.PortfolioId ==
@@ -137,6 +165,8 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                     Path.GetFullPath(inputs.PortfolioTeacherPreferencePath)),
             CurrentProposalId = proposal.ProposalId,
             CurrentPortfolioId = settlement.PortfolioId,
+            PriorSupportingTransitionReplanSha256 =
+                settlement.PriorSupportingTransitionReplanSha256,
             LatestSettlementReceiptSha256 =
                 CurrentTeacherFrontierSupport.HashFile(
                     Path.GetFullPath(settlementReceiptPath)),
