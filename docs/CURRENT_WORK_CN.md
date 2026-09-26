@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器随机输出概率预算
+
+- `Data/Machines` 的每条静态机器来源现在保留同一原生规则的完整输出选择行，而不再只有目标行和行数。锁定版反编译证明：`UseFirstValidOutput=true` 按顺序返回第一个通过 `GameStateQuery` 的输出；否则从全部有效输出中均匀选择；`RANDOM p` 通过该次上下文的 `Random.NextDouble()` 判定。
+- 随机轴只解析可严格证明的形态：单行、只含简单 `RANDOM p` 的首个有效链，以及全部条件恒真的随机有效集合。首个有效行的概率为前置各行失败概率乘目标行通过概率；随机有效集合为 `1/N`。复合条件、条件化随机有效集合、随机物品查询、输出回调或逐物品条件继续 fail-closed。
+- `processing_lead_time` 的“目标日可领取”与“快照时已落地”已拆成独立事实，避免把当天稍后完成的机器产物误判为现有库存并跳过随机预算。已由透明桥唯一绑定的自动机器在制产物另按“输出选择已完成”处理，不重复抽概率。
+- 随机预算新增基础尝试次数，额外重试改为 `总尝试次数 - ceil(需求数量 / 保证最小堆叠)`，不再错误地直接减需求数量。若概率预算扩大机器投料或处理次数，当前结果会明确阻塞在增量 reservation 与机器排程重验门，绝不沿用基础 claim 放行。
+- Release 构建、hermetic 机器概率测试和完整 `Run-Regression.ps1` 均通过；全量回归覆盖 1599 条路线、train/validation/test continuation 与伪造/篡改拒绝。下一固定切片是把额外机器尝试重新绑定到材料槽位、原子 claim 和当日机器容量。
+
 ## 2026-09-27 机器处理提前量闭合
 
 - 三类 `Data/Machines` 路线已从资源预留继续接入既有 `processing_lead_time` 轴，没有新增第二套调度器。手动投料路线复用资源轴证明的加工次数，并按设施轴锁定的真实机器位置、当前 `idle / processing / ready_output` 状态与剩余分钟并行排程；机器正在加工时，现有剩余占用时间会先从当日容量中扣除。

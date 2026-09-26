@@ -40,6 +40,106 @@ internal static partial class BootstrapSelfTest
                     .CurrentOutputAlreadyMaterialized(parallel, manualRoute),
             "Parallel same-day machine processing schedule drifted.");
 
+        Require(AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        manualRoute,
+                        out var deterministicProbability,
+                        out _) &&
+                deterministicProbability == 1d,
+            "Deterministic machine output probability drifted.");
+        var deterministicRetry =
+            AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
+                parallel,
+                manualRoute);
+        Require(deterministicRetry.StochasticRetryAxisResolved &&
+                deterministicRetry.StochasticRetryBudgetMatchesTargetDate ==
+                    true &&
+                deterministicRetry.RequiredAttemptCount == 2 &&
+                deterministicRetry.BaselineAttemptCount == 2 &&
+                deterministicRetry.AdditionalRetryCount == 0,
+            "Guaranteed machine output gained a spurious retry budget.");
+
+        var firstValidFallback = manualRoute with
+        {
+            MachineSource = manualRoute.MachineSource! with
+            {
+                OutputIndex = 1,
+                OutputSelectionCount = 2,
+                OutputSelectionRows = new[]
+                {
+                    new AcquisitionMachineOutputSelectionRowEvidence(
+                        0,
+                        "RANDOM 0.3",
+                        "(O)348",
+                        string.Empty,
+                        1,
+                        1,
+                        string.Empty,
+                        string.Empty),
+                    new AcquisitionMachineOutputSelectionRowEvidence(
+                        1,
+                        string.Empty,
+                        "(O)346",
+                        string.Empty,
+                        1,
+                        1,
+                        string.Empty,
+                        string.Empty)
+                }
+            }
+        };
+        Require(AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        firstValidFallback,
+                        out var fallbackProbability,
+                        out _) &&
+                Math.Abs(fallbackProbability - 0.7d) < 0.0000001d,
+            "First-valid machine fallback probability drifted.");
+        var expandedRetry =
+            AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
+                parallel,
+                firstValidFallback);
+        Require(!expandedRetry.StochasticRetryAxisResolved &&
+                expandedRetry.StochasticRetryAxisStatus ==
+                    "blocked_retry_expanded_reservation_revalidation" &&
+                expandedRetry.RequiredAttemptCount >
+                    expandedRetry.BaselineAttemptCount &&
+                expandedRetry.AdditionalRetryCount ==
+                    expandedRetry.RequiredAttemptCount -
+                    expandedRetry.BaselineAttemptCount &&
+                expandedRetry.RetryExpandsReservedConsumables &&
+                !expandedRetry.RetryExpandedReservationRevalidated,
+            "Expanded machine retry demand bypassed reservation closure.");
+
+        var randomValid = firstValidFallback with
+        {
+            MachineSource = firstValidFallback.MachineSource! with
+            {
+                UseFirstValidOutput = false,
+                OutputIndex = 1,
+                OutputSelectionCount = 3,
+                OutputSelectionRows = new[]
+                {
+                    new AcquisitionMachineOutputSelectionRowEvidence(
+                        0, string.Empty, "(O)348", string.Empty, 1, 1,
+                        string.Empty, string.Empty),
+                    new AcquisitionMachineOutputSelectionRowEvidence(
+                        1, string.Empty, "(O)346", string.Empty, 1, 1,
+                        string.Empty, string.Empty),
+                    new AcquisitionMachineOutputSelectionRowEvidence(
+                        2, string.Empty, "(O)390", string.Empty, 1, 1,
+                        string.Empty, string.Empty)
+                }
+            }
+        };
+        Require(AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        randomValid,
+                        out var randomValidProbability,
+                        out _) &&
+                Math.Abs(randomValidProbability - 1d / 3d) < 0.0000001d,
+            "Uniform random-valid machine output probability drifted.");
+
         var singleMachine = new[]
         {
             MachineProcessingRow(manualRoute, 12, 34, 0)

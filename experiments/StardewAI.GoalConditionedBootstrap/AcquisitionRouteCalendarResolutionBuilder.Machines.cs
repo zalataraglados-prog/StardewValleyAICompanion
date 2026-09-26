@@ -105,6 +105,23 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             "QualityModifiers",
             MachineKey(machineId, ruleIndex, outputIndex));
         var outputRows = ReadMachineArray(rule, "OutputItem", allowNull: false);
+        var outputSelectionRows = outputRows.Select((row, index) =>
+                new AcquisitionMachineOutputSelectionRowEvidence(
+                    index,
+                    ReadMachineString(row, "Condition"),
+                    ReadMachineString(row, "ItemId"),
+                    ReadMachineStringOrJson(row, "RandomItemId"),
+                    ReadRequiredMachineInt(
+                        row,
+                        "MinStack",
+                        MachineKey(machineId, ruleIndex, index)),
+                    ReadRequiredMachineInt(
+                        row,
+                        "MaxStack",
+                        MachineKey(machineId, ruleIndex, index)),
+                    ReadMachineString(row, "OutputMethod"),
+                    ReadMachineString(row, "PerItemCondition")))
+            .ToArray();
 
         var ruleCondition = ReadMachineString(rule, "Condition");
         var outputCondition = ReadMachineString(output, "Condition");
@@ -172,7 +189,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             ReadRequiredMachineInt(output, "QualityModifierMode", MachineKey(machineId, ruleIndex, outputIndex)),
             qualityModifiers,
             outputRows.Length,
-            stochasticOutcome);
+            stochasticOutcome,
+            outputSelectionRows);
 
         Require(deadlineTotalDayExclusive > 0,
             "Machine calendar deadline must be positive.");

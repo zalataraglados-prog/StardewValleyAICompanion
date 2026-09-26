@@ -181,7 +181,19 @@ internal static partial class BootstrapSelfTest
                 0,
                 Array.Empty<AcquisitionMachineNumericModifierEvidence>(),
                 0,
-                Array.Empty<AcquisitionMachineNumericModifierEvidence>(),
-                1,
-                false));
+                 Array.Empty<AcquisitionMachineNumericModifierEvidence>(),
+                 1,
+                 false,
+                 new[]
+                 {
+                     new AcquisitionMachineOutputSelectionRowEvidence(
+                         0,
+                         string.Empty,
+                         "(O)346",
+                         string.Empty,
+                         1,
+                         1,
+                         string.Empty,
+                         string.Empty)
+                 }));
 }

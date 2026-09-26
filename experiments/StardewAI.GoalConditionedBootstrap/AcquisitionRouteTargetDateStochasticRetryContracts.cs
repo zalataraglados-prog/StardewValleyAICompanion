@@ -115,6 +115,8 @@ public sealed record AcquisitionRouteTargetDateStochasticRetry(
     double? SingleAttemptSuccessProbability,
     [property: JsonPropertyName("required_attempt_count")]
     int? RequiredAttemptCount,
+    [property: JsonPropertyName("baseline_attempt_count")]
+    int? BaselineAttemptCount,
     [property: JsonPropertyName("additional_retry_count")]
     int? AdditionalRetryCount,
     [property: JsonPropertyName("retry_expands_reserved_consumables")]
