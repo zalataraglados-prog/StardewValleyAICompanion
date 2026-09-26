@@ -71,7 +71,7 @@ public sealed class AcquisitionRouteTargetDateResourceReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The resource_inputs axis runs only after an exact facility-capacity match. It reads canonical actor-authorized immediately available material nodes, not a player-inventory-only approximation. Non-consuming PLAYER_HAS_ITEM conditions use only the exact current-player inventory node and preserve native negation and count ranges. Crop seed demand is the conservative remainder after guaranteed existing-crop output, using authoritative minimum harvest stack. Shop barter and mandatory Magic Bait quantities scale with the route requirement amount; money and other native currencies remain owned by currency_budget. Attached and loose Magic Bait can jointly satisfy the deterministic catch count. Existing crab-pot output, loaded bait or owner Luremaster satisfies current input service; an unserviced pot fails closed until its exact native-accepted bait candidate domain is bound. Machine item-placement routes bind one native trigger witness, exact item IDs or all required context tags, input edibility conditions, guaranteed-output attempt count, and every additional consumed item; automatic day/update/collection/placement triggers consume no load inventory. Machine reservations remain restricted to the slots that proved the selected witness. Reusable tools, facility construction, processing time, stochastic retry increments, reservations, daily budget and terminal receipts remain independently owned. Unknown or deferred route kinds cannot default to no input, and training authorization stays false.";
+        "The resource_inputs axis runs only after an exact facility-capacity match. It reads canonical actor-authorized immediately available material nodes, not a player-inventory-only approximation. Non-consuming PLAYER_HAS_ITEM conditions use only the exact current-player inventory node and preserve native negation and count ranges. Crop seed demand is the conservative remainder after guaranteed existing-crop output, using authoritative minimum harvest stack. Shop barter and mandatory Magic Bait quantities scale with the route requirement amount; money and other native currencies remain owned by currency_budget. Attached and loose Magic Bait can jointly satisfy the deterministic catch count. Existing crab-pot output, loaded bait or owner Luremaster satisfies current input service; an unserviced pot fails closed until its exact native-accepted bait candidate domain is bound. Machine item-placement routes first subtract only quality-qualified active output that the facility axis uniquely attributed to the same authoritative route, then bind one native trigger witness, exact item IDs or all required context tags, input edibility conditions, the residual guaranteed-output attempt count, and every additional consumed item. A fully credited machine route emits an explicit zero-attempt, zero-consumption binding; automatic day/update/collection/placement triggers consume no load inventory. Machine reservations remain restricted to the slots that proved the selected witness. Reusable tools, facility construction, processing time, stochastic retry increments, reservations, daily budget and terminal receipts remain independently owned. Unknown or deferred route kinds cannot default to no input, and training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateResource(
@@ -143,7 +143,11 @@ public sealed record AcquisitionMachineResourceBinding(
     [property: JsonPropertyName("required_attempt_count")]
     int RequiredAttemptCount,
     [property: JsonPropertyName("eligible_slots")]
-    AcquisitionMachineResourceSlot[] EligibleSlots);
+    AcquisitionMachineResourceSlot[] EligibleSlots)
+{
+    [JsonPropertyName("credited_existing_output_quantity")]
+    public int CreditedExistingOutputQuantity { get; init; }
+}
 
 public sealed record AcquisitionMachineResourceSlot(
     [property: JsonPropertyName("node_id")] string NodeId,

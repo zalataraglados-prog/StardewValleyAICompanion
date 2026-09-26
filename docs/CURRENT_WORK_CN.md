@@ -11,6 +11,12 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器既有产物上游抵扣：资源余量
+
+- `resource_inputs` 只汇总 facility 轴中 `machine_active_output_route_matches=true`、物品一致且品质达标的旧产物，并将抵扣量封顶为当前需求；剩余产量再按权威最小堆叠换算投料次数。
+- 部分抵扣会同步缩减主投入与全部附加消耗，且每个 machine binding 保留 `credited_existing_output_quantity`；完全抵扣生成显式零尝试/零消耗 binding，不要求虚构一个可用材料槽。来源不匹配或品质不足仍按完整需求投料。
+- Release 构建与 hermetic 的无抵扣、部分抵扣、完全抵扣回归通过。下一固定切片让 processing、随机重试和 daily 日程共同消费该 credit；在此之前不把本批单独称为端到端完成。
+
 ## 2026-09-27 机器既有产物上游抵扣：设施证据
 
 - `facility_capacity` 现在随逐机目标保留透明 `held_item` 的精确物品、堆叠和品质；只有 `active_output_authoritative_route_sources` 恰有一个来源，且 route kind、source ID、输出物品都与当前权威路线一致时，才标记 `machine_active_output_route_matches=true`。
