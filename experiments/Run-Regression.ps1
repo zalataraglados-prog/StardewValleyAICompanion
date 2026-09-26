@@ -273,12 +273,15 @@ $routeCalendarResolution = Get-Content -LiteralPath $routeCalendarResolutionPath
     ConvertFrom-Json
 $calendarSupportedRouteKinds = @(
     'harvests_as',
+    'machine_output',
     'sells',
     'native_crab_pot_output',
     'native_location_artifact_spot',
     'native_location_fish_spawn',
     'native_location_forage_spawn',
-    'native_mine_fishing_override'
+    'native_mine_fishing_override',
+    'native_machine_flavored_output',
+    'native_machine_item_query_output'
 )
 $calendarSupportedRoutes = @($loweredRoutes | Where-Object {
     $_.route_kind -in $calendarSupportedRouteKinds
@@ -300,6 +303,10 @@ $cropPlantingEvidence = @($requirementInventory.source_evidence |
     Where-Object source_id -eq 'native_crop_planting_rule')
 $shopDataEvidence = @($requirementInventory.source_evidence |
     Where-Object source_id -eq 'runtime_data_shops')
+$machineDataEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'runtime_data_machines')
+$machineSelectionEvidence = @($requirementInventory.source_evidence |
+    Where-Object source_id -eq 'native_machine_output_selection_rule')
 $shopAccessEvidence = @($requirementInventory.source_evidence |
     Where-Object source_id -eq 'access_constraint_index')
 $shopStockEvidence = @($requirementInventory.source_evidence |
@@ -315,6 +322,13 @@ $resolvedCropRoutes = @($resolvedCalendarRoutes | Where-Object {
 })
 $resolvedShopRoutes = @($resolvedCalendarRoutes | Where-Object {
     $_.route_kind -eq 'sells'
+})
+$resolvedMachineRoutes = @($resolvedCalendarRoutes | Where-Object {
+    $_.route_kind -in @(
+        'machine_output',
+        'native_machine_flavored_output',
+        'native_machine_item_query_output'
+    )
 })
 $wildSeedCropRoutes = @($resolvedCropRoutes | Where-Object {
     [bool]$_.crop_source.stochastic_outcome
@@ -361,6 +375,26 @@ $invalidShopRoutes = @($resolvedShopRoutes | Where-Object {
         -not [bool]$_.requires_existing_live_candidate_match
     }).Count -ne 0
 })
+$invalidMachineRoutes = @($resolvedMachineRoutes | Where-Object {
+    $machineRoute = $_
+    $null -eq $machineRoute.machine_source -or
+    [string]::IsNullOrWhiteSpace(
+        [string]$machineRoute.machine_source.machine_qualified_item_id) -or
+    [int]$machineRoute.machine_source.rule_index -lt 0 -or
+    [int]$machineRoute.machine_source.output_index -lt 0 -or
+    [string]::IsNullOrWhiteSpace(
+        [string]$machineRoute.machine_source.output_item_query) -or
+    [int]$machineRoute.machine_source.output_selection_count -le 0 -or
+    @($machineRoute.machine_source.triggers).Count -eq 0 -or
+    @($machineRoute.calendar_windows).Count -ne 1 -or
+    @($machineRoute.calendar_windows | Where-Object {
+        $_.source_kind -ne 'machine_output_rule' -or
+        -not [bool]$_.requires_location_access_evidence -or
+        -not [bool]$_.requires_existing_live_candidate_match -or
+        [bool]$_.stochastic_outcome -ne
+            [bool]$machineRoute.machine_source.stochastic_outcome
+    }).Count -ne 0
+})
 if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_blocked' -or
     -not [bool]$routeCalendarResolution.route_occurrence_inventory_complete -or
     [bool]$routeCalendarResolution.static_calendar_source_resolution_complete -or
@@ -370,6 +404,8 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $cropGrowthEvidence.Count -ne 1 -or
     $cropPlantingEvidence.Count -ne 1 -or
     $shopDataEvidence.Count -ne 1 -or
+    $machineDataEvidence.Count -ne 1 -or
+    $machineSelectionEvidence.Count -ne 1 -or
     $shopAccessEvidence.Count -ne 1 -or
     $shopStockEvidence.Count -ne 1 -or
     $shopOpenEvidence.Count -ne 1 -or
@@ -382,6 +418,9 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $routeCalendarResolution.native_crop_planting_source_sha256 -ne `
         $cropPlantingEvidence[0].sha256 -or
     $routeCalendarResolution.shop_data_sha256 -ne $shopDataEvidence[0].sha256 -or
+    $routeCalendarResolution.machine_data_sha256 -ne $machineDataEvidence[0].sha256 -or
+    $routeCalendarResolution.native_machine_output_selection_source_sha256 -ne `
+        $machineSelectionEvidence[0].sha256 -or
     $routeCalendarResolution.access_constraint_index_sha256 -ne `
         $shopAccessEvidence[0].sha256 -or
     $routeCalendarResolution.native_shop_stock_source_sha256 -ne `
@@ -393,16 +432,24 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $routeCalendarResolution.native_game_state_query_source_sha256 -ne `
         $nativeGameStateQueryEvidence[0].sha256 -or
     [int]$routeCalendarResolution.route_occurrence_count -ne $loweredRoutes.Count -or
-    [int]$routeCalendarResolution.resolved_static_source_count -ne 689 -or
-    [int]$routeCalendarResolution.blocked_static_source_count -ne 910 -or
-    $calendarSupportedRoutes.Count -ne 689 -or
-    $resolvedCalendarRoutes.Count -ne 689 -or
+    [int]$routeCalendarResolution.resolved_static_source_count -ne 877 -or
+    [int]$routeCalendarResolution.blocked_static_source_count -ne 722 -or
+    $calendarSupportedRoutes.Count -ne 877 -or
+    $resolvedCalendarRoutes.Count -ne 877 -or
     $resolvedCropRoutes.Count -ne 75 -or
     $wildSeedCropRoutes.Count -ne 8 -or
     $invalidCropRoutes.Count -ne 0 -or
     $invalidWildSeedCropRoutes.Count -ne 0 -or
     $resolvedShopRoutes.Count -ne 109 -or
     $invalidShopRoutes.Count -ne 0 -or
+    $resolvedMachineRoutes.Count -ne 188 -or
+    $invalidMachineRoutes.Count -ne 0 -or
+    @($resolvedMachineRoutes | Where-Object {
+        [bool]$_.machine_source.stochastic_outcome
+    }).Count -ne 98 -or
+    @($resolvedMachineRoutes | Where-Object {
+        $_.route_kind -eq 'native_machine_flavored_output'
+    }).Count -ne 12 -or
     @($resolvedShopRoutes | Where-Object {
         [int]$_.shop_source.available_stock -ge 0
     }).Count -ne 69 -or
@@ -476,10 +523,10 @@ if ($targetDateCalendar.status -ne `
     [bool]$targetDateCalendar.training_label_eligible -or
     [int]$targetDateCalendar.target_total_day -ne 0 -or
     [int]$targetDateCalendar.route_occurrence_count -ne 1599 -or
-    [int]$targetDateCalendar.calendar_axis_resolved_count -ne 689 -or
-    [int]$targetDateCalendar.static_window_match_count -ne 451 -or
+    [int]$targetDateCalendar.calendar_axis_resolved_count -ne 877 -or
+    [int]$targetDateCalendar.static_window_match_count -ne 639 -or
     [int]$targetDateCalendar.static_window_miss_count -ne 238 -or
-    [int]$targetDateCalendar.blocked_static_source_count -ne 910 -or
+    [int]$targetDateCalendar.blocked_static_source_count -ne 722 -or
     $targetDateRoutes.Count -ne 1599 -or
     @($targetDateRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or
     $targetDateCalendar.static_calendar_resolution_sha256 -ne `
@@ -635,11 +682,11 @@ if ($targetDateUnlock.status -ne 'partial_target_date_unlock_axis_blocks' -or
     [bool]$targetDateUnlock.training_label_eligible -or
     [int]$targetDateUnlock.target_total_day -ne 37 -or
     [int]$targetDateUnlock.route_occurrence_count -ne 1599 -or
-    [int]$targetDateUnlock.unlock_axis_resolved_count -ne 680 -or
-    [int]$targetDateUnlock.unlock_state_match_count -ne 489 -or
+    [int]$targetDateUnlock.unlock_axis_resolved_count -ne 868 -or
+    [int]$targetDateUnlock.unlock_state_match_count -ne 677 -or
     [int]$targetDateUnlock.unlock_state_miss_count -ne 0 -or
     [int]$targetDateUnlock.static_window_miss_count -ne 191 -or
-    [int]$targetDateUnlock.blocked_upstream_calendar_count -ne 910 -or
+    [int]$targetDateUnlock.blocked_upstream_calendar_count -ne 722 -or
     [int]$targetDateUnlock.blocked_unlock_evidence_count -ne 9 -or
     [int]$targetDateUnlock.pending_calendar_condition_count -ne 6 -or
     [int]$targetDateUnlock.pending_stochastic_condition_count -ne 1 -or
@@ -695,12 +742,12 @@ if ($targetDateFestival.status -ne `
     [bool]$targetDateFestival.training_label_eligible -or
     [int]$targetDateFestival.target_total_day -ne 37 -or
     [int]$targetDateFestival.route_occurrence_count -ne 1599 -or
-    [int]$targetDateFestival.calendar_condition_axis_resolved_count -ne 674 -or
-    [int]$targetDateFestival.calendar_condition_match_count -ne 483 -or
+    [int]$targetDateFestival.calendar_condition_axis_resolved_count -ne 862 -or
+    [int]$targetDateFestival.calendar_condition_match_count -ne 671 -or
     [int]$targetDateFestival.calendar_condition_miss_count -ne 0 -or
     [int]$targetDateFestival.not_applicable_static_window_count -ne 191 -or
     [int]$targetDateFestival.not_applicable_unlock_state_count -ne 0 -or
-    [int]$targetDateFestival.blocked_upstream_count -ne 919 -or
+    [int]$targetDateFestival.blocked_upstream_count -ne 731 -or
     [int]$targetDateFestival.blocked_calendar_evidence_count -ne 6 -or
     [int]$targetDateFestival.pending_stochastic_condition_count -ne 1 -or
     [int]$targetDateFestival.pending_resource_condition_count -ne 1 -or

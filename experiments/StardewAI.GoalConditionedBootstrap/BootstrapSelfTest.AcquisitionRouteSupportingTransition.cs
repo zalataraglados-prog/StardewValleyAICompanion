@@ -235,12 +235,12 @@ internal static partial class BootstrapSelfTest
             StringComparer.Ordinal);
         state["player"] = JsonSerializer.SerializeToElement(new
         {
-            location_id = Field("Farm"),
-            tile_x = Field(4),
-            tile_y = Field(6),
-            energy = Field(270),
-            inventory = Field(Array.Empty<object>()),
-            seed_inventory = Field(new[]
+            location_id = SupportingTransitionField("Farm"),
+            tile_x = SupportingTransitionField(4),
+            tile_y = SupportingTransitionField(6),
+            energy = SupportingTransitionField(270),
+            inventory = SupportingTransitionField(Array.Empty<object>()),
+            seed_inventory = SupportingTransitionField(new[]
             {
                 new
                 {
@@ -254,7 +254,7 @@ internal static partial class BootstrapSelfTest
         }, JsonDefaults.Options);
         state["current_location"] = JsonSerializer.SerializeToElement(new
         {
-            crops = Field(new[]
+            crops = SupportingTransitionField(new[]
             {
                 new
                 {
@@ -270,7 +270,7 @@ internal static partial class BootstrapSelfTest
                     ready_for_harvest = false
                 }
             }),
-            planting_context = Field(new
+            planting_context = SupportingTransitionField(new
             {
                 location_id = "Farm",
                 hoe_dirt_tiles = new[]
@@ -362,7 +362,7 @@ internal static partial class BootstrapSelfTest
         };
     }
 
-    private static object Field<T>(T value) => new
+    private static object SupportingTransitionField<T>(T value) => new
     {
         value,
         status = "available"

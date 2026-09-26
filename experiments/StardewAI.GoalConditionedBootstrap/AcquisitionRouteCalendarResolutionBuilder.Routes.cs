@@ -7,6 +7,24 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     private const string ResolvedStatus =
         "resolved_static_source_window_target_date_pending";
 
+    private static bool UsesMachineRoutes(
+        AcquisitionRouteOptionLoweringReport lowering,
+        CurrentCommunityCenterRequirementAuthority? communityCenterAuthority) =>
+        lowering.RequirementSets
+            .SelectMany(set => set.Groups)
+            .SelectMany(group => group.Alternatives)
+            .SelectMany(alternative => alternative.Routes)
+            .Any(route => IsMachineRouteKind(route.RouteKind)) ||
+        communityCenterAuthority?.AlternativesByKey.Values
+            .SelectMany(alternative => alternative.AcceptedTargets)
+            .SelectMany(target => target.Routes)
+            .Any(route => IsMachineRouteKind(route.RouteKind)) == true;
+
+    private static bool IsMachineRouteKind(string routeKind) => routeKind is
+        "machine_output" or
+        "native_machine_flavored_output" or
+        "native_machine_item_query_output";
+
     private static AcquisitionRouteCalendarResolution[] BuildRoutes(
         AcquisitionRouteOptionLoweringReport lowering,
         CurrentCommunityCenterRequirementAuthority? communityCenterAuthority,
@@ -14,6 +32,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement locations,
         JsonElement crops,
         JsonElement shops,
+        JsonElement machines,
         JsonElement accessConstraints,
         int deadlineTotalDayExclusive)
     {
@@ -31,6 +50,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     locations,
                     crops,
                     shops,
+                    machines,
                     accessConstraints,
                     deadlineTotalDayExclusive);
                 continue;
@@ -63,6 +83,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             locations,
                             crops,
                             shops,
+                            machines,
                             accessConstraints,
                             deadlineTotalDayExclusive);
                     }
@@ -79,6 +100,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement locations,
         JsonElement crops,
         JsonElement shops,
+        JsonElement machines,
         JsonElement accessConstraints,
         int deadlineTotalDayExclusive)
     {
@@ -143,6 +165,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                         locations,
                         crops,
                         shops,
+                        machines,
                         accessConstraints,
                         deadlineTotalDayExclusive);
                 }
@@ -166,6 +189,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement locations,
         JsonElement crops,
         JsonElement shops,
+        JsonElement machines,
         JsonElement accessConstraints,
         int deadlineTotalDayExclusive)
     {
@@ -176,6 +200,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             locations,
             crops,
             shops,
+            machines,
             accessConstraints,
             deadlineTotalDayExclusive);
         var occurrenceId = string.Join(
@@ -205,7 +230,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             resolution.Windows,
             resolution.BlockingReasons,
             resolution.CropSource,
-            resolution.ShopSource));
+            resolution.ShopSource,
+            resolution.MachineSource));
     }
 
     private static int ExpectedRouteCount(
@@ -242,6 +268,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement locations,
         JsonElement crops,
         JsonElement shops,
+        JsonElement machines,
         JsonElement accessConstraints,
         int deadlineTotalDayExclusive)
     {
@@ -261,6 +288,15 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 route,
                 shops,
                 accessConstraints,
+                deadlineTotalDayExclusive);
+        }
+
+        if (IsMachineRouteKind(route.RouteKind))
+        {
+            return ResolveMachineWindows(
+                qualifiedItemId,
+                route,
+                machines,
                 deadlineTotalDayExclusive);
         }
 
@@ -354,11 +390,12 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         _ => string.Empty
     };
 
-    private sealed record CalendarSourceResolution(
+    internal sealed record CalendarSourceResolution(
         string Status,
         string EvidenceClass,
         AuthoritativeCalendarSourceWindow[] Windows,
         string[] BlockingReasons,
         AcquisitionCropSourceEvidence? CropSource = null,
-        AcquisitionShopSourceEvidence? ShopSource = null);
+        AcquisitionShopSourceEvidence? ShopSource = null,
+        AcquisitionMachineSourceEvidence? MachineSource = null);
 }
