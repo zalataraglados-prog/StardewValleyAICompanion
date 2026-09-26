@@ -255,7 +255,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         string sourcePath) =>
         AddRoute(routes, itemId, new RequirementAcquisitionRoute(kind, sourceId, "decompiled native method", sourcePath));
 
-    private static IEnumerable<string> MachineOutputItemIds(string query)
+    internal static IEnumerable<string> MachineOutputItemIds(string query)
     {
         const string flavoredPrefix = "FLAVORED_ITEM ";
         if (!query.StartsWith(flavoredPrefix, StringComparison.Ordinal))
@@ -405,7 +405,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         string itemQueryPath,
         string objectDefinitionPath,
         string fishPondPath,
-        string objectPath)
+        string objectPath,
+        string machineDataUtilityPath)
     {
         var querySource = File.ReadAllText(itemQueryPath);
         RequireContains(querySource, "IEnumerable<ItemQueryResult> FLAVORED_ITEM", itemQueryPath);
@@ -420,6 +421,24 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 $"Object.PreserveType.{mapping.Key} => \"(O){mapping.Value}\"",
                 objectDefinitionPath);
         }
+
+        var machineSource = File.ReadAllText(machineDataUtilityPath);
+        RequireContains(
+            machineSource,
+            "return GetOutputData(outputRule.OutputItem, outputRule.UseFirstValidOutput",
+            machineDataUtilityPath);
+        RequireContains(
+            machineSource,
+            "GameStateQuery.CheckConditions(output.Condition",
+            machineDataUtilityPath);
+        RequireContains(
+            machineSource,
+            "return Game1.random.ChooseFrom(list)",
+            machineDataUtilityPath);
+        RequireContains(
+            machineSource,
+            "ItemQueryResolver.TryResolveRandomItem(outputData",
+            machineDataUtilityPath);
 
         var fishPondSource = File.ReadAllText(fishPondPath);
         RequireContains(fishPondSource, "foreach (FishPondReward producedItem in fishPondData.ProducedItems)", fishPondPath);

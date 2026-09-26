@@ -52,6 +52,13 @@ public sealed class AcquisitionRouteCalendarResolutionReport
     [JsonPropertyName("shop_data_sha256")]
     public string ShopDataSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("machine_data_sha256")]
+    public string MachineDataSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_machine_output_selection_source_sha256")]
+    public string NativeMachineOutputSelectionSourceSha256 { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("access_constraint_index_sha256")]
     public string AccessConstraintIndexSha256 { get; set; } = string.Empty;
 
@@ -134,7 +141,78 @@ public sealed record AcquisitionRouteCalendarResolution(
     AcquisitionCropSourceEvidence? CropSource = null,
     [property: JsonPropertyName("shop_source")]
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    AcquisitionShopSourceEvidence? ShopSource = null);
+    AcquisitionShopSourceEvidence? ShopSource = null,
+    [property: JsonPropertyName("machine_source")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    AcquisitionMachineSourceEvidence? MachineSource = null);
+
+public sealed record AcquisitionMachineSourceEvidence(
+    [property: JsonPropertyName("machine_qualified_item_id")]
+    string MachineQualifiedItemId,
+    [property: JsonPropertyName("rule_id")] string RuleId,
+    [property: JsonPropertyName("rule_index")] int RuleIndex,
+    [property: JsonPropertyName("output_index")] int OutputIndex,
+    [property: JsonPropertyName("rule_condition")] string RuleCondition,
+    [property: JsonPropertyName("use_first_valid_output")]
+    bool UseFirstValidOutput,
+    [property: JsonPropertyName("minutes_until_ready")]
+    int MinutesUntilReady,
+    [property: JsonPropertyName("days_until_ready")] int DaysUntilReady,
+    [property: JsonPropertyName("only_complete_overnight")]
+    bool OnlyCompleteOvernight,
+    [property: JsonPropertyName("recalculate_on_collect")]
+    bool RecalculateOnCollect,
+    [property: JsonPropertyName("ready_time_modifier_mode")]
+    int ReadyTimeModifierMode,
+    [property: JsonPropertyName("ready_time_modifiers")]
+    AcquisitionMachineNumericModifierEvidence[] ReadyTimeModifiers,
+    [property: JsonPropertyName("triggers")]
+    AcquisitionMachineTriggerEvidence[] Triggers,
+    [property: JsonPropertyName("additional_consumed_items")]
+    AcquisitionMachineConsumedItemEvidence[] AdditionalConsumedItems,
+    [property: JsonPropertyName("output_item_query")]
+    string OutputItemQuery,
+    [property: JsonPropertyName("output_method")] string OutputMethod,
+    [property: JsonPropertyName("output_condition")]
+    string OutputCondition,
+    [property: JsonPropertyName("per_item_condition")]
+    string PerItemCondition,
+    [property: JsonPropertyName("random_item_id")] string RandomItemId,
+    [property: JsonPropertyName("minimum_stack")] int MinimumStack,
+    [property: JsonPropertyName("maximum_stack")] int MaximumStack,
+    [property: JsonPropertyName("quality")] int Quality,
+    [property: JsonPropertyName("copy_quality")] bool CopyQuality,
+    [property: JsonPropertyName("stack_modifier_mode")]
+    int StackModifierMode,
+    [property: JsonPropertyName("stack_modifiers")]
+    AcquisitionMachineNumericModifierEvidence[] StackModifiers,
+    [property: JsonPropertyName("quality_modifier_mode")]
+    int QualityModifierMode,
+    [property: JsonPropertyName("quality_modifiers")]
+    AcquisitionMachineNumericModifierEvidence[] QualityModifiers,
+    [property: JsonPropertyName("output_selection_count")]
+    int OutputSelectionCount,
+    [property: JsonPropertyName("stochastic_outcome")]
+    bool StochasticOutcome);
+
+public sealed record AcquisitionMachineTriggerEvidence(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("trigger")] int Trigger,
+    [property: JsonPropertyName("required_item_id")] string RequiredItemId,
+    [property: JsonPropertyName("required_tags")] string[] RequiredTags,
+    [property: JsonPropertyName("required_count")] int RequiredCount,
+    [property: JsonPropertyName("condition")] string Condition);
+
+public sealed record AcquisitionMachineConsumedItemEvidence(
+    [property: JsonPropertyName("item_id")] string ItemId,
+    [property: JsonPropertyName("required_count")] int RequiredCount);
+
+public sealed record AcquisitionMachineNumericModifierEvidence(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("condition")] string Condition,
+    [property: JsonPropertyName("modification")] int Modification,
+    [property: JsonPropertyName("amount")] double Amount,
+    [property: JsonPropertyName("random_amount")] double? RandomAmount);
 
 public sealed record AcquisitionCropSourceEvidence(
     [property: JsonPropertyName("seed_item_id")] string SeedItemId,

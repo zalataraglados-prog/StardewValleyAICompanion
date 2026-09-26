@@ -7,12 +7,15 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     private static readonly HashSet<string> SupportedRouteKinds = new(StringComparer.Ordinal)
     {
         "harvests_as",
+        "machine_output",
         "sells",
         "native_crab_pot_output",
         "native_location_artifact_spot",
         "native_location_fish_spawn",
         "native_location_forage_spawn",
-        "native_mine_fishing_override"
+        "native_mine_fishing_override",
+        "native_machine_flavored_output",
+        "native_machine_item_query_output"
     };
 
     public static AcquisitionRouteCalendarResolutionReport Build(
@@ -113,6 +116,21 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             inventory,
             "runtime_data_shops",
             "Runtime Data/Shops");
+        var requiresMachineEvidence = UsesMachineRoutes(
+            lowering,
+            communityCenterAuthority);
+        var machineEvidence = requiresMachineEvidence
+            ? VerifyEvidence(
+                inventory,
+                "runtime_data_machines",
+                "Runtime Data/Machines")
+            : null;
+        var machineSelectionEvidence = requiresMachineEvidence
+            ? VerifyEvidence(
+                inventory,
+                "native_machine_output_selection_rule",
+                "Native machine output selection rule")
+            : null;
         var accessConstraintEvidence = VerifyEvidence(
             inventory,
             "access_constraint_index",
@@ -136,6 +154,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var locations = ReadPayloadEvidence(locationEvidence, "Runtime Data/Locations");
         var crops = ReadPayloadEvidence(cropEvidence, "Runtime Data/Crops");
         var shops = ReadPayloadEvidence(shopEvidence, "Runtime Data/Shops");
+        var machines = machineEvidence is null
+            ? default
+            : ReadPayloadEvidence(machineEvidence, "Runtime Data/Machines");
         var accessConstraints = ReadRootEvidence(
             accessConstraintEvidence,
             "Access constraint index");
@@ -215,6 +236,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             locations,
             crops,
             shops,
+            machines,
             accessConstraints,
             windows.DeadlineTotalDayExclusive);
         var expectedRouteCount = ExpectedRouteCount(
@@ -256,6 +278,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             LocationDataSha256 = locationEvidence.Sha256,
             CropDataSha256 = cropEvidence.Sha256,
             ShopDataSha256 = shopEvidence.Sha256,
+            MachineDataSha256 = machineEvidence?.Sha256 ?? string.Empty,
+            NativeMachineOutputSelectionSourceSha256 =
+                machineSelectionEvidence?.Sha256 ?? string.Empty,
             AccessConstraintIndexSha256 = accessConstraintEvidence.Sha256,
             NativeCropGrowthSourceSha256 = cropGrowthEvidence.Sha256,
             NativeCropPlantingSourceSha256 = cropPlantingEvidence.Sha256,

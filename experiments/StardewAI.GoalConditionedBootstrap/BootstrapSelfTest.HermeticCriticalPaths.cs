@@ -7,6 +7,7 @@ internal static partial class BootstrapSelfTest
     internal static void RunHermeticCriticalPaths()
     {
         VerifyHermeticStrategicPolicyAndPortfolio();
+        VerifyMachineCalendarResolution();
         RunAcquisitionRouteDispatch();
         VerifyCommunityCenterActiveRouteKindScope();
         VerifySupportingTransitionTerminalLineage();

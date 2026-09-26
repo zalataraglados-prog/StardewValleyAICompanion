@@ -58,6 +58,11 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         var fruitTreeSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "TerrainFeatures", "FruitTree.cs");
         var wildTreeSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "TerrainFeatures", "Tree.cs");
         var itemQuerySourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Internal", "ItemQueryResolver.cs");
+        var machineDataUtilitySourcePath = Path.Combine(
+            decompileFullPath,
+            "StardewValley",
+            "StardewValley",
+            "MachineDataUtility.cs");
         var objectDefinitionSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "ItemTypeDefinitions", "ObjectDataDefinition.cs");
         var fishPondSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Buildings", "FishPond.cs");
         var monsterSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Monsters", "Monster.cs");
@@ -120,7 +125,8 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             itemQuerySourcePath,
             objectDefinitionSourcePath,
             fishPondSourcePath,
-            objectSourcePath);
+            objectSourcePath,
+            machineDataUtilitySourcePath);
         GuardMonsterAndNativeSpecialSources(
             monsterSourcePath,
             bushSourcePath,
@@ -241,6 +247,7 @@ public static partial class AuthoritativeRequirementInventoryBuilder
                 Evidence("native_wild_tree_drop_rule", wildTreeSourcePath, "decompiled Tree drop and tapper selection"),
                 Evidence("native_flavored_item_query_rule", itemQuerySourcePath, "decompiled FLAVORED_ITEM query resolution"),
                 Evidence("native_flavored_item_identity_rule", objectDefinitionSourcePath, "decompiled preserve-type base object mapping"),
+                Evidence("native_machine_output_selection_rule", machineDataUtilitySourcePath, "decompiled machine output condition, selection, and item-query resolution"),
                 Evidence("native_fish_pond_output_rule", fishPondSourcePath, "decompiled FishPond produced-item selection"),
                 Evidence("native_solar_panel_output_rule", objectSourcePath, "decompiled Object.OutputSolarPanel"),
                 Evidence("native_monster_drop_rule", monsterSourcePath, "decompiled Monster.parseMonsterInfo drop parsing"),
