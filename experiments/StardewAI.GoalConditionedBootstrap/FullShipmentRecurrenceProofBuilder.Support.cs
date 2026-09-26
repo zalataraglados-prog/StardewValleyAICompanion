@@ -39,16 +39,7 @@ public static partial class FullShipmentRecurrenceProofBuilder
     private static SnapshotEnvelope ReadSnapshot(string path, string label) =>
         CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(path, label);
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record VerifiedAcquisition(
         string AfterSnapshotPath,

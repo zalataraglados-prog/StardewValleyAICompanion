@@ -836,11 +836,6 @@ public static partial class GoalMethodFrontierBuilder
         Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)))
             .ToLowerInvariant()[..16];
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record DirectionExpansionOverlay(
         string DirectionId,

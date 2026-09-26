@@ -126,9 +126,4 @@ public static partial class AcquisitionRouteTargetDateOpportunityCostBuilder
             JsonSerializer.Serialize(right, options);
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

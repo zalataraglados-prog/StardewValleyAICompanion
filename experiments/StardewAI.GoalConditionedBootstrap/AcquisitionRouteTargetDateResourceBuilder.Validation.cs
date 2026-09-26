@@ -109,9 +109,4 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             StringComparison.Ordinal);
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

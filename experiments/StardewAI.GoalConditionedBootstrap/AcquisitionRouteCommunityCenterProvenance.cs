@@ -127,7 +127,4 @@ internal static class AcquisitionRouteCommunityCenterProvenanceSupport
         }
     }
 
-    private static bool IsSha256(string value) =>
-        value is { Length: 64 } && value.All(character =>
-            character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }

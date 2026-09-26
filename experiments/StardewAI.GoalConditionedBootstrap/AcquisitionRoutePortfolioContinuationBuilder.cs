@@ -160,9 +160,4 @@ public static class AcquisitionRoutePortfolioContinuationBuilder
         Uri.EscapeDataString(row.RequirementSetId) + "/" +
         Uri.EscapeDataString(row.RequirementId);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

@@ -156,9 +156,4 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             JsonSerializer.Serialize(right, options);
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

@@ -69,9 +69,4 @@ internal static class AcquisitionReservationSupplyValidator
             string.Join(",", projection.BlockingReasons));
     }
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

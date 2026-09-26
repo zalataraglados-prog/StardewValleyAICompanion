@@ -2329,6 +2329,10 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The bootstrap CLI now has one ordered `CommandDefinition` registry for all commands. Dispatch, duplicate-name
   rejection and the unknown-command help list derive from that registry, eliminating the former switch/help identity
   split.
+- Exact JSON artifact equality, lower-case SHA-256 validation and fail-closed `InvalidDataException` assertions now
+  live in `BootstrapArtifactGuard`. Forty-six builders retain their independent boundary checks while sharing the
+  canonical primitive implementation; guards with intentionally different serialization, exception or uppercase-hash
+  semantics remain local.
 - These controls harden rollout review but do not grant runtime learned-model authority or formal product training.
   Those promotion gates remain separate and fail closed.
 

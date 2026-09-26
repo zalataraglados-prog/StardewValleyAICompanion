@@ -329,14 +329,5 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
     internal static string SelectedCandidateId(string routeOccurrenceId) =>
         "acquisition-route:" + routeOccurrenceId;
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 }

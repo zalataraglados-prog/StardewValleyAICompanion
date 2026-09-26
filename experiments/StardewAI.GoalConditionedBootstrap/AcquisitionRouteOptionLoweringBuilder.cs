@@ -412,11 +412,6 @@ public static class AcquisitionRouteOptionLoweringBuilder
             .Where(item => item.Length > 0)
             .ToArray();
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record RouteUsage(
         string RequirementSetId,

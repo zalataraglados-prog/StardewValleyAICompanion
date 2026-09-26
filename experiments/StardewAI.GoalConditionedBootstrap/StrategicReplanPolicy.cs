@@ -76,9 +76,6 @@ public static class StrategicReplanPolicy
             .ToLowerInvariant();
     }
 
-    private static bool IsLowerSha256(string value) =>
-        value.Length == 64 && value.All(character =>
-            character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }
 
 public sealed record StrategicReplanEvaluation(

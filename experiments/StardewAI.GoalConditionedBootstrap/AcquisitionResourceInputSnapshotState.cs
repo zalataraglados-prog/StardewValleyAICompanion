@@ -245,11 +245,6 @@ internal sealed class AcquisitionResourceInputSnapshotState
             ? property.GetBoolean()
             : null;
 
-    private static void Require(bool condition, string message)
-    {
-        if (!condition)
-            throw new InvalidDataException(message);
-    }
 
     private sealed record MaterialReadResult(
         bool Available,

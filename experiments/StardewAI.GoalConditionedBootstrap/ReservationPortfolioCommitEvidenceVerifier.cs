@@ -174,8 +174,4 @@ internal static class ReservationPortfolioCommitEvidenceVerifier
             right.Order(StringComparer.Ordinal),
             StringComparer.Ordinal);
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
 }

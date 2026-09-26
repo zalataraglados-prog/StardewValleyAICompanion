@@ -169,10 +169,6 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 .ToArray()
         };
 
-    private static bool IsSha256(string value) =>
-        value.Length == 64 && value.All(character =>
-            character is >= '0' and <= '9' or >= 'a' and <= 'f');
-
     private static SmallModelActionParameter Parameter(
         string name,
         string value) => new()
