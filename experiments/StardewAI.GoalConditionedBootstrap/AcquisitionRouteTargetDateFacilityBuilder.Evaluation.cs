@@ -5,6 +5,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
     private const string NoFacility = "no_capacity_bearing_facility";
     private const string PreparedCultivation = "prepared_cultivation_slot";
     private const string ExistingCrabPot = "existing_crab_pot";
+    private const string ExistingMachine = "existing_machine_source";
     private const string DeferredFacility = "facility_binding_pending_upstream";
 
     private static readonly IReadOnlyDictionary<string, string>
@@ -13,7 +14,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
         {
             ["creates_reward_item"] = NoFacility,
             ["harvests_as"] = PreparedCultivation,
-            ["machine_output"] = DeferredFacility,
+            ["machine_output"] = ExistingMachine,
             ["native_bush_shake"] = NoFacility,
             ["native_crab_pot_output"] = ExistingCrabPot,
             ["native_farm_animal_deluxe_produce"] = DeferredFacility,
@@ -26,8 +27,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             ["native_location_artifact_spot"] = NoFacility,
             ["native_location_fish_spawn"] = NoFacility,
             ["native_location_forage_spawn"] = NoFacility,
-            ["native_machine_flavored_output"] = DeferredFacility,
-            ["native_machine_item_query_output"] = DeferredFacility,
+            ["native_machine_flavored_output"] = ExistingMachine,
+            ["native_machine_item_query_output"] = ExistingMachine,
             ["native_mine_buried_item"] = NoFacility,
             ["native_mine_fishing_override"] = NoFacility,
             ["native_money_payment"] = NoFacility,
@@ -104,6 +105,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
                 Array.Empty<string>(),
                 Array.Empty<string>()),
             ExistingCrabPot => EvaluateExistingCrabPot(route),
+            ExistingMachine => EvaluateExistingMachine(
+                route,
+                staticRoute,
+                state),
             PreparedCultivation => EvaluatePreparedCultivation(
                 route,
                 staticRoute,

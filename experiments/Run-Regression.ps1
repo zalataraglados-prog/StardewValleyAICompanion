@@ -763,6 +763,54 @@ if ($targetDateFestival.status -ne `
     }).Count -ne 0) {
     throw 'Acquisition route target-date festival-state regression failed.'
 }
+$targetDateLocationPath = Join-Path $output `
+    'acquisition-route-target-date-location-route-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    build-acquisition-route-target-date-location-route `
+    --requirement-inventory $requirementInventoryPath `
+    --acquisition-lowering $acquisitionLoweringPath `
+    --master-angler-windows $masterAnglerWindowsPath `
+    --calendar-resolution $dependencyRouteCalendarResolutionPath `
+    --target-date-calendar $unlockTargetDateCalendarPath `
+    --target-date-unlock $targetDateUnlockPath `
+    --target-date-festival $targetDateFestivalPath `
+    --snapshot $FullShipmentSnapshot `
+    --route-timing-calibration $RouteTimingCalibration `
+    --output $targetDateLocationPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Acquisition route target-date location resolution failed.'
+}
+$targetDateLocation = Get-Content -LiteralPath $targetDateLocationPath -Raw |
+    ConvertFrom-Json
+$locationRoutes = @($targetDateLocation.routes)
+$machineLocationRoutes = @($locationRoutes | Where-Object {
+    $_.upstream_route.upstream_route.route_kind -in @(
+        'machine_output',
+        'native_machine_flavored_output',
+        'native_machine_item_query_output')
+})
+if ($targetDateLocation.status -ne `
+        'partial_target_date_location_route_axis_blocks' -or
+    [int]$targetDateLocation.target_total_day -ne 37 -or
+    [int]$targetDateLocation.route_occurrence_count -ne 1599 -or
+    [int]$targetDateLocation.location_route_axis_resolved_count -ne 191 -or
+    [int]$targetDateLocation.location_route_match_count -ne 0 -or
+    [int]$targetDateLocation.location_route_miss_count -ne 0 -or
+    [int]$targetDateLocation.not_applicable_static_window_count -ne 191 -or
+    [int]$targetDateLocation.blocked_upstream_count -ne 737 -or
+    [int]$targetDateLocation.blocked_location_evidence_count -ne 671 -or
+    [bool]$targetDateLocation.location_route_axis_resolution_complete -or
+    [bool]$targetDateLocation.training_label_eligible -or
+    $machineLocationRoutes.Count -ne 188 -or
+    @($machineLocationRoutes | Where-Object {
+        $_.location_route_axis_status -ne 'blocked_location_route_evidence' -or
+        @($_.blocking_reasons) -notcontains `
+            'location_route_date_evidence_missing' -or
+        @($_.blocking_reasons) -notcontains `
+            'location_route_movement_timing_context_missing'
+    }).Count -ne 0) {
+    throw 'Acquisition machine location fail-closed regression failed.'
+}
 $currentFullShipmentFrontierPath = Join-Path $output 'current-full-shipment-teacher-frontier.json'
 dotnet run --project $bootstrap --no-build -- build-current-full-shipment-teacher-frontier `
     --requirement-inventory $requirementInventoryPath `

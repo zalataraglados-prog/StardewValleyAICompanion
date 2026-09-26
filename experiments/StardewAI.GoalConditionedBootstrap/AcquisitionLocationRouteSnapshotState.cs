@@ -18,6 +18,7 @@ internal sealed class AcquisitionLocationRouteSnapshotState
         JsonElement routeGraph,
         JsonElement socialRouteDateEvidence,
         JsonElement crabPotNetwork,
+        AcquisitionMachineFleetSnapshotState machineFleet,
         FutureRouteTimingCalibration? timing,
         IReadOnlyDictionary<string, AcquisitionRouteLocationState> locations,
         IReadOnlyDictionary<string, string> weatherByContext,
@@ -33,6 +34,7 @@ internal sealed class AcquisitionLocationRouteSnapshotState
         RouteGraph = routeGraph;
         SocialRouteDateEvidence = socialRouteDateEvidence;
         CrabPotNetwork = crabPotNetwork;
+        MachineFleet = machineFleet;
         Timing = timing;
         this.locations = locations;
         this.weatherByContext = weatherByContext;
@@ -56,6 +58,8 @@ internal sealed class AcquisitionLocationRouteSnapshotState
     public JsonElement SocialRouteDateEvidence { get; }
 
     public JsonElement CrabPotNetwork { get; }
+
+    public AcquisitionMachineFleetSnapshotState MachineFleet { get; }
 
     public FutureRouteTimingCalibration? Timing { get; }
 
@@ -152,6 +156,7 @@ internal sealed class AcquisitionLocationRouteSnapshotState
             out var crabPotValue)
             ? crabPotValue.Clone()
             : default;
+        var machineFleet = AcquisitionMachineFleetSnapshotState.Read(state);
 
         FutureRouteTimingCalibration? timing = null;
         if (movement.ValueKind != JsonValueKind.Undefined)
@@ -190,6 +195,7 @@ internal sealed class AcquisitionLocationRouteSnapshotState
             routeGraph,
             social,
             crabPots,
+            machineFleet,
             timing,
             locationRows,
             weather,

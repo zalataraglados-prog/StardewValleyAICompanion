@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器来源地点与设施容量绑定
+
+- `Data/Machines` 静态来源现已接入既有 `location_route -> facility_capacity` 轴，不新增第二套路由或执行器。地点轴只接受同一透明快照中 `farm.machines[]` 的完整、未截断舰队，按机器 qualified ID、地点和格子绑定来源；空舰队是有证据的来源缺失，字段缺失、行数漂移或重复地点格子则失败关闭。
+- 设施轴会在同一快照中再次按地点和格子重绑机器，保留 `idle / processing / ready_output` 状态并要求该机器原生声明可产出。它只证明现有机器容量，不推测制作、摆放、投料、吞吐量、完成时间或随机成功率；这些仍分别归资源输入、处理提前量和随机重试轴。
+- Release 构建和 hermetic 机器舰队/地点/设施测试通过。现有历史训练快照不能提供同一时刻的新版全地图日期路线与完整机器舰队，因此真实 188 条机器路线仍按缺失证据阻塞；回归脚本锁定这一结果，禁止把两份不同快照拼成伪证据。
+- 下一固定切片是机器资源输入：从同一 `machine_source` 求值 `ItemPlacedInMachine` 触发物、额外消耗物和条件，并扩充透明物资槽的 context tags；随后才进入机器处理提前量和随机输出预算。
+
 ## 2026-09-21 单路线 reservation 结算与重放回执
 
 - 新增 `POST /api/v1/strategy/commitments/reservation-portfolios/settle-completed-route`。请求必须绑定 fresh after snapshot、当前 ledger revision、portfolio/goal/route source decision、fresh terminal receipt 的小写 SHA-256，以及该路线当前全部 active 材料/货币 reservation ID。服务在内存副本中一次性把精确集合改为 `completed`，记录完成原因和证据哈希，只前进一个 revision，并写入逐 claim 历史与唯一 `reservation_portfolio_route_complete` 标记；缺少、多余或重复 ID 均整体拒绝。无 claim 路线仍写入可审计标记。
