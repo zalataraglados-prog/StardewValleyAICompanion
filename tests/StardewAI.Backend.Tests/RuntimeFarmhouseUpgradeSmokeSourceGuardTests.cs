@@ -42,7 +42,11 @@ public sealed class RuntimeFarmhouseUpgradeSmokeSourceGuardTests
     public void LiveTrainingTransportMapsTheTypedCarpenterAction()
     {
         var root = FindRepositoryRoot();
-        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs"));
+        var source = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecutionRequest.cs"));
 
         Assert.Contains("ReadQueueParameterString(item, \"join_action_raw\")", source, StringComparison.Ordinal);
         Assert.Contains("ReadQueueParameterString(item, \"carpenter_action_raw\")", source, StringComparison.Ordinal);

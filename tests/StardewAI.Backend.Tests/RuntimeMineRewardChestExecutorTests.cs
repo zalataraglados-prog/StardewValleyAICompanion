@@ -25,7 +25,8 @@ public sealed class RuntimeMineRewardChestExecutorTests
         var contract = RuntimeHarnessSources.RepositoryFile(
             "src", "StardewAI.Contracts", "Training", "TrainingExecutionContracts.cs");
         var transport = RuntimeHarnessSources.RepositoryFile(
-            "tools", "StardewAI.LiveTrainingLoop", "Program.RuntimeExecution.cs");
+            "tools", "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecutionRequest.cs");
         var whitelist = RuntimeHarnessSources.File(
             "ModEntry.Shipping.Utilities.cs");
         var executor = RuntimeHarnessSources.File(
