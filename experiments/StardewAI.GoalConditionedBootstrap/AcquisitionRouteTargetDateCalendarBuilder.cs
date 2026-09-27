@@ -165,7 +165,7 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         };
     }
 
-    private static AcquisitionRouteTargetDateCalendar Evaluate(
+    internal static AcquisitionRouteTargetDateCalendar Evaluate(
         AcquisitionRouteCalendarResolution route,
         int targetTotalDay)
     {

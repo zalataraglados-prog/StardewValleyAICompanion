@@ -41,7 +41,7 @@ internal sealed class AcquisitionUnlockConditionEvaluator
             "RANDOM" or "SYNCED_CHOICE" or "SYNCED_RANDOM" =>
                 StochasticAxis,
             "PLAYER_HAS_ITEM" => ResourceAxis,
-            "PLAYER_LOCATION_NAME" => LocationAxis,
+            "LOCATION_SEASON" or "PLAYER_LOCATION_NAME" => LocationAxis,
             _ => UnsupportedAxis
         };
     }

@@ -77,7 +77,7 @@ public sealed class AcquisitionRouteTargetDateCalendarReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A target-date match resolves only the calendar_window axis. A current-save build must deterministically reproduce its hash-bound standard/remixed Community Center route root and preserve that provenance. Matching time/weather ranges and exact dynamic predicates remain attached; unlock, route, capacity, resources, currency, reservations, lead time, retries, daily budget, opportunity cost and fresh receipt remain independent. This report cannot authorize a training label.";
+        "A target-date match resolves only the calendar_window axis. A current-save build must deterministically reproduce its hash-bound standard/remixed Community Center route root and preserve that provenance. Matching time/weather ranges and exact dynamic predicates remain attached, including a supported single native machine-trigger location-season condition; trigger alternatives are never flattened into cumulative predicates. Unlock, route, capacity, resources, currency, reservations, lead time, retries, daily budget, opportunity cost and fresh receipt remain independent. This report cannot authorize a training label.";
 }
 
 public sealed record AcquisitionRouteTargetDateCalendar(

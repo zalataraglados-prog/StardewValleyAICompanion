@@ -211,8 +211,107 @@ internal static partial class BootstrapSelfTest
                 {
                     OutputItemQuery: "FLAVORED_ITEM Honey NEARBY_FLOWER_ID",
                     RecalculateOnCollect: true
-                },
+                } &&
+                flavored.MachineSource.TriggerConditionSet is
+                {
+                    CombinationMode: "or",
+                    Alternatives:
+                    [
+                        {
+                            LocationConditions:
+                            ["!LOCATION_SEASON Target Winter"]
+                        }
+                    ]
+                } &&
+                flavored.Windows.Single().DynamicConditions.SequenceEqual(
+                    new[] { "!LOCATION_SEASON Target Winter" },
+                    StringComparer.Ordinal),
             "Flavored machine output identity did not resolve.");
+
+        var targetDate = AcquisitionRouteTargetDateCalendarBuilder.Evaluate(
+            MachineCalendarRoute(flavored),
+            targetTotalDay: 111);
+        Require(targetDate.CalendarAxisResolved &&
+                targetDate.StaticWindowMatchesTargetDate &&
+                targetDate.PendingDynamicConditions.SequenceEqual(
+                    new[] { "!LOCATION_SEASON Target Winter" },
+                    StringComparer.Ordinal) &&
+                AcquisitionUnlockConditionEvaluator.Classify(
+                    targetDate.PendingDynamicConditions.Single()) ==
+                    AcquisitionUnlockConditionEvaluator.LocationAxis,
+            "Bee House trigger season did not survive into the target-date axis.");
+
+        var winter = AcquisitionLocationConditionEvaluator.Evaluate(
+            targetDate.PendingDynamicConditions,
+            "Farm",
+            "Winter");
+        var island = AcquisitionLocationConditionEvaluator.Evaluate(
+            targetDate.PendingDynamicConditions,
+            "IslandWest",
+            "Summer");
+        var missingSeason = AcquisitionLocationConditionEvaluator.Evaluate(
+            targetDate.PendingDynamicConditions,
+            "Farm",
+            string.Empty);
+        Require(winter is { Resolved: true, Matches: false } &&
+                island is { Resolved: true, Matches: true } &&
+                !missingSeason.Resolved &&
+                missingSeason.BlockingReasons.Contains(
+                    "target_location_effective_season_missing:Farm",
+                    StringComparer.Ordinal),
+            "Target-location season did not preserve valley/Island semantics.");
+
+        var triggerOr = AcquisitionRouteCalendarResolutionBuilder
+            .ProjectMachineTriggerConditions(new[]
+            {
+                MachineTrigger("spring", "LOCATION_SEASON Target Spring"),
+                MachineTrigger("summer", "LOCATION_SEASON Target Summer")
+            });
+        Require(!triggerOr.Supported &&
+                triggerOr.ConditionSet.CombinationMode == "or" &&
+                triggerOr.BlockingReasons.Contains(
+                    "machine_trigger_condition_or_semantics_not_supported",
+                    StringComparer.Ordinal),
+            "Cross-axis machine trigger alternatives were flattened or admitted.");
+
+        var unsupportedTrigger = AcquisitionRouteCalendarResolutionBuilder
+            .ProjectMachineTriggerConditions(new[]
+            {
+                MachineTrigger("unknown", "PLAYER_HAS_PROFESSION Current 4")
+            });
+        Require(!unsupportedTrigger.Supported &&
+                unsupportedTrigger.BlockingReasons.Contains(
+                    "machine_trigger_condition_unsupported:unknown",
+                    StringComparer.Ordinal),
+            "Unsupported machine trigger predicate did not fail closed.");
+
+        var itemTrigger = AcquisitionRouteCalendarResolutionBuilder
+            .ProjectMachineTriggerConditions(new[]
+            {
+                MachineTrigger(
+                    "item",
+                    "ITEM_CONTEXT_TAG Input bone_item",
+                    trigger: 1)
+            });
+        Require(itemTrigger.Supported &&
+                itemTrigger.PendingLocationConditions.Length == 0 &&
+                itemTrigger.ConditionSet.Alternatives.Single()
+                    .ResourceConditions.SequenceEqual(
+                        new[] { "ITEM_CONTEXT_TAG Input bone_item" },
+                        StringComparer.Ordinal),
+            "Existing item-input trigger ownership drifted from the resource axis.");
+
+        var randomTrigger = AcquisitionRouteCalendarResolutionBuilder
+            .ProjectMachineTriggerConditions(new[]
+            {
+                MachineTrigger("random", "RANDOM 0.02", trigger: 1)
+            });
+        Require(randomTrigger.Supported &&
+                randomTrigger.ConditionSet.Alternatives.Single()
+                    .StochasticConditions.SequenceEqual(
+                        new[] { "RANDOM 0.02" },
+                        StringComparer.Ordinal),
+            "Supported trigger randomness drifted from the retry axis.");
 
         var mismatch = AcquisitionRouteCalendarResolutionBuilder
             .ResolveMachineWindows(
@@ -242,4 +341,39 @@ internal static partial class BootstrapSelfTest
             Array.Empty<string>(),
             true,
             true);
+
+    private static AcquisitionRouteCalendarResolution MachineCalendarRoute(
+        AcquisitionRouteCalendarResolutionBuilder.CalendarSourceResolution
+            source) => new(
+        "machine-calendar-bee",
+        "machine-calendar-test",
+        "bee-house-honey",
+        0,
+        0,
+        "340",
+        "(O)340",
+        "exact_item_id",
+        1,
+        0,
+        "native_machine_flavored_output",
+        "deterministic_or_explicit_stochastic",
+        "machine:(BC)10:rule:0:output:0",
+        "Data/Machines",
+        "payload.(BC)10.OutputRules[0].OutputItem[0].ItemId",
+        source.Status,
+        source.EvidenceClass,
+        source.Windows,
+        source.BlockingReasons,
+        MachineSource: source.MachineSource);
+
+    private static AcquisitionMachineTriggerEvidence MachineTrigger(
+        string id,
+        string condition,
+        int trigger = 2) => new(
+        id,
+        trigger,
+        string.Empty,
+        Array.Empty<string>(),
+        1,
+        condition);
 }

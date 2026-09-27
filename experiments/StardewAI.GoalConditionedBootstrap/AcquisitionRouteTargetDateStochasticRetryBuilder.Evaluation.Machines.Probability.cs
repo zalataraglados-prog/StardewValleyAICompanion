@@ -51,6 +51,13 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             blockingReason = "machine_output_identity_probability_unresolved";
             return false;
         }
+        if (!TryMachineTriggerProbability(
+                source,
+                out var triggerProbability,
+                out blockingReason))
+        {
+            return false;
+        }
 
         if (source.UseFirstValidOutput)
         {
@@ -70,6 +77,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                     ? conditionProbability
                     : 1d - conditionProbability;
             }
+            probability *= triggerProbability;
             return true;
         }
 
@@ -79,6 +87,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                     ordered[0].Condition,
                     out probability))
             {
+                probability *= triggerProbability;
                 return true;
             }
             blockingReason =
@@ -95,7 +104,49 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 "machine_conditional_random_valid_set_probability_unresolved";
             return false;
         }
-        probability = 1d / ordered.Length;
+        probability = triggerProbability / ordered.Length;
+        return true;
+    }
+
+    private static bool TryMachineTriggerProbability(
+        AcquisitionMachineSourceEvidence source,
+        out double probability,
+        out string blockingReason)
+    {
+        probability = 1d;
+        blockingReason = string.Empty;
+        var conditionSet = source.TriggerConditionSet;
+        if (conditionSet is null)
+            return true;
+        if (conditionSet.CombinationMode != "or" ||
+            conditionSet.Alternatives.Length != source.Triggers.Length)
+        {
+            blockingReason = "machine_trigger_condition_set_invalid";
+            return false;
+        }
+        var stochastic = conditionSet.Alternatives
+            .SelectMany(value => value.StochasticConditions)
+            .ToArray();
+        if (stochastic.Length == 0)
+            return true;
+        if (conditionSet.Alternatives.Length != 1)
+        {
+            blockingReason =
+                "machine_trigger_stochastic_or_probability_unresolved";
+            return false;
+        }
+        foreach (var condition in stochastic)
+        {
+            if (!TrySimpleMachineConditionProbability(
+                    condition,
+                    out var conditionProbability))
+            {
+                blockingReason =
+                    "machine_trigger_condition_probability_unresolved";
+                return false;
+            }
+            probability *= conditionProbability;
+        }
         return true;
     }
 

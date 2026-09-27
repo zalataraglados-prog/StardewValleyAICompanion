@@ -537,7 +537,7 @@ if ($targetDateCalendar.status -ne `
     }).Count -ne 0 -or
     @($targetDateEligibleRoutes | Where-Object {
         @($_.pending_dynamic_conditions).Count -gt 0
-    }).Count -ne 15 -or
+    }).Count -ne 17 -or
     @($targetDateEligibleRoutes | Where-Object route_kind -eq 'harvests_as').Count -ne 75 -or
     @($targetDateEligibleRoutes | Where-Object route_kind -eq `
         'native_location_artifact_spot').Count -ne 64 -or
@@ -691,7 +691,7 @@ if ($targetDateUnlock.status -ne 'partial_target_date_unlock_axis_blocks' -or
     [int]$targetDateUnlock.pending_calendar_condition_count -ne 6 -or
     [int]$targetDateUnlock.pending_stochastic_condition_count -ne 1 -or
     [int]$targetDateUnlock.pending_resource_condition_count -ne 1 -or
-    [int]$targetDateUnlock.pending_location_condition_count -ne 0 -or
+    [int]$targetDateUnlock.pending_location_condition_count -ne 2 -or
     [int]$targetDateUnlock.unsupported_condition_count -ne 0 -or
     $unlockRoutes.Count -ne 1599 -or
     @($unlockRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or
@@ -751,7 +751,7 @@ if ($targetDateFestival.status -ne `
     [int]$targetDateFestival.blocked_calendar_evidence_count -ne 6 -or
     [int]$targetDateFestival.pending_stochastic_condition_count -ne 1 -or
     [int]$targetDateFestival.pending_resource_condition_count -ne 1 -or
-    [int]$targetDateFestival.pending_location_condition_count -ne 0 -or
+    [int]$targetDateFestival.pending_location_condition_count -ne 2 -or
     [int]$targetDateFestival.unsupported_condition_count -ne 0 -or
     $festivalRoutes.Count -ne 1599 -or
     @($festivalRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or

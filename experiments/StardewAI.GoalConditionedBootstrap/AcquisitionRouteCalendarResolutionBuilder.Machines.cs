@@ -81,6 +81,13 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 ReadRequiredMachineInt(trigger, "RequiredCount", MachineKey(machineId, ruleIndex, index)),
                 ReadMachineString(trigger, "Condition")))
             .ToArray();
+        var triggerConditions = ProjectMachineTriggerConditions(triggers);
+        if (!triggerConditions.Supported)
+        {
+            return BlockMachine(
+                "blocked_machine_trigger_condition_semantics",
+                triggerConditions.BlockingReasons[0]);
+        }
         var additionalConsumedItems = ReadMachineArray(
                 machine,
                 "AdditionalConsumedItems",
@@ -190,7 +197,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             qualityModifiers,
             outputRows.Length,
             stochasticOutcome,
-            outputSelectionRows);
+            outputSelectionRows,
+            triggerConditions.ConditionSet);
 
         Require(deadlineTotalDayExclusive > 0,
             "Machine calendar deadline must be positive.");
@@ -200,6 +208,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 outputCondition,
                 perItemCondition
             }
+            .Concat(triggerConditions.PendingLocationConditions)
             .Where(value => value.Length > 0 && !HasRandomMachineExpression(value))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)

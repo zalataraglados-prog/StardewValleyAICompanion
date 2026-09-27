@@ -496,6 +496,15 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             var name = negated ? tokens[0][1..] : tokens[0];
             if (name is "RANDOM" or "SYNCED_RANDOM")
                 continue;
+            if (name == "LOCATION_SEASON" && tokens.Length >= 3 &&
+                tokens[1] == "Target" &&
+                tokens.Skip(2).All(value => value.ToLowerInvariant() is
+                    "spring" or "summer" or "fall" or "winter"))
+            {
+                // The target-date location axis already matched this clause
+                // against the exact machine location before resources run.
+                continue;
+            }
             if (name == "ITEM_CONTEXT_TAG" && tokens.Length >= 3 &&
                 tokens[1].Equals("Input", StringComparison.OrdinalIgnoreCase))
             {

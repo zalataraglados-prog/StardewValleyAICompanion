@@ -113,7 +113,7 @@ public sealed class AcquisitionRouteCalendarResolutionReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative source row and calendar projection. A current-save build replaces the static Community Center set with the hash-bound standard/remixed denominator; category slots retain one alternative identity while each concrete accepted target receives its own route occurrence. Crop source resolution preserves native growth facts. Shop source resolution preserves native stock, price, trade, condition, owner, endpoint and door facts. Neither projection proves target-date availability, location access, live stock, resource affordability, or any other downstream dependency axis.";
+        "A route is only statically resolved when its exact requirement occurrence and source identity bind to an authoritative source row and calendar projection. A current-save build replaces the static Community Center set with the hash-bound standard/remixed denominator; category slots retain one alternative identity while each concrete accepted target receives its own route occurrence. Crop source resolution preserves native growth facts. Shop source resolution preserves native stock, price, trade, condition, owner, endpoint and door facts. Machine trigger rows remain typed OR alternatives. A single trigger's supported target-location season clauses are retained for the location axis and its RANDOM clauses for the stochastic retry axis; unsupported predicates and multi-trigger cross-axis conditions fail closed instead of being flattened into AND. Item-input tag and edibility clauses remain owned by the resource axis. Neither projection proves target-date availability, location access, live stock, resource affordability, or any other downstream dependency axis.";
 }
 
 public sealed record AcquisitionRouteCalendarResolution(
@@ -195,7 +195,26 @@ public sealed record AcquisitionMachineSourceEvidence(
     [property: JsonPropertyName("stochastic_outcome")]
     bool StochasticOutcome,
     [property: JsonPropertyName("output_selection_rows")]
-    AcquisitionMachineOutputSelectionRowEvidence[]? OutputSelectionRows = null);
+    AcquisitionMachineOutputSelectionRowEvidence[]? OutputSelectionRows = null,
+    [property: JsonPropertyName("trigger_condition_set")]
+    AcquisitionMachineTriggerConditionSetEvidence? TriggerConditionSet = null);
+
+public sealed record AcquisitionMachineTriggerConditionSetEvidence(
+    [property: JsonPropertyName("combination_mode")] string CombinationMode,
+    [property: JsonPropertyName("alternatives")]
+    AcquisitionMachineTriggerConditionAlternativeEvidence[] Alternatives);
+
+public sealed record AcquisitionMachineTriggerConditionAlternativeEvidence(
+    [property: JsonPropertyName("trigger_index")] int TriggerIndex,
+    [property: JsonPropertyName("trigger_id")] string TriggerId,
+    [property: JsonPropertyName("trigger")] int Trigger,
+    [property: JsonPropertyName("condition")] string Condition,
+    [property: JsonPropertyName("location_conditions")]
+    string[] LocationConditions,
+    [property: JsonPropertyName("resource_conditions")]
+    string[] ResourceConditions,
+    [property: JsonPropertyName("stochastic_conditions")]
+    string[] StochasticConditions);
 
 public sealed record AcquisitionMachineOutputSelectionRowEvidence(
     [property: JsonPropertyName("output_index")] int OutputIndex,
