@@ -1,5 +1,6 @@
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -21,7 +22,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         string loweringSha256 = "",
         string ledgerSha256 = "",
         string snapshotSha256 = "",
-        string rankingSha256 = "")
+        string rankingSha256 = "",
+        AcquisitionMachineCapacitySupportBinding? capacityBinding = null)
     {
         var reasons = (inheritedReasons ?? Array.Empty<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -51,6 +53,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             lowered,
             reservation,
             processing,
+            capacityBinding,
             reasons);
         if (matches.Length == 0)
         {
@@ -62,6 +65,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     "no_current_exact_machine_input_support_candidate",
                 "machine_input_purchase" =>
                     "no_current_exact_machine_input_purchase_candidate",
+                "machine_capacity_establishment" =>
+                    "no_current_exact_machine_capacity_support_candidate",
                 _ => "no_current_exact_support_candidate"
             });
         }
@@ -73,24 +78,45 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             snapshot,
             candidate,
             currentDay,
-            supportDeadlineTotalDay);
+            supportDeadlineTotalDay,
+            capacityBinding);
         reasons.AddRange(candidateEvaluation.BlockingReasons);
 
         var supportRequestId = SupportRequestId(
             requirement.RouteOccurrenceId,
             snapshot.StateHash);
-        ValidateClaimIdentity(
-            reservation.ClaimSet,
-            snapshot.StateHash,
-            ledger.Revision,
-            reasons);
+        if (supportTransitionKind != "machine_capacity_establishment")
+        {
+            ValidateClaimIdentity(
+                reservation.ClaimSet,
+                snapshot.StateHash,
+                ledger.Revision,
+                reasons);
+        }
+        var machineSupportIntent =
+            supportTransitionKind == "machine_capacity_establishment" &&
+            candidate is not null &&
+            capacityBinding is not null
+                ? BuildMachineSupportIntentRequest(
+                    goalId,
+                    snapshot,
+                    ledger,
+                    candidate,
+                    capacityBinding)
+                : null;
+        if (supportTransitionKind == "machine_capacity_establishment" &&
+            machineSupportIntent is null)
+        {
+            reasons.Add("machine_capacity_support_intent_binding_missing");
+        }
         var commitRequest = reasons.Count == 0
             ? BuildCommitRequest(
                 goalId,
                 supportRequestId,
                 snapshot.StateHash,
                 ledger,
-                reservation)
+                reservation,
+                machineSupportIntent)
             : null;
         var preflight = false;
         if (commitRequest is not null)
@@ -152,6 +178,12 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 candidateEvaluation.InputRequiredQuantity,
             MachineQualifiedItemId =
                 candidateEvaluation.MachineQualifiedItemId,
+            MachineSupportIntentId =
+                machineSupportIntent?.IntentId ?? string.Empty,
+            MachineSupportIntentStage =
+                machineSupportIntent?.Stage ?? string.Empty,
+            MachineCapacitySupportSourcesJson =
+                machineSupportIntent?.SupportSourcesJson ?? "[]",
             PredictedProcessingMinutes =
                 candidateEvaluation.PredictedProcessingMinutes,
             PurchaseStage = candidateEvaluation.PurchaseStage,
@@ -197,5 +229,44 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             BlockingReasons = blocking
         };
     }
+
+    private static MachineSupportIntentUpsertRequest
+        BuildMachineSupportIntentRequest(
+            string goalId,
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger ledger,
+            PolicyEventCandidatePrediction candidate,
+            AcquisitionMachineCapacitySupportBinding binding) => new()
+        {
+            StateHash = snapshot.StateHash,
+            ExpectedLedgerRevision = ledger.Revision,
+            IntentId = binding.IntentId,
+            Stage = candidate.Kind == "craft_machine_item"
+                ? MachineSupportIntentStages.CraftSelected
+                : MachineSupportIntentStages.PlacementBound,
+            SourceDecisionId = candidate.CandidateId,
+            GoalId = goalId,
+            QualifiedItemId = binding.MachineQualifiedItemId,
+            ItemId = candidate.ItemId,
+            DemandClass = "acquisition_route_requirement",
+            SupportKind = "machine_capacity_acquisition_route",
+            EvidenceStatus = binding.SupportSourcesJson,
+            TaskSourcesJson = "[]",
+            SupportSourcesJson = binding.SupportSourcesJson,
+            GrossBenefit = 0,
+            OpportunityCost = 0,
+            NetBenefit = 0,
+            SupportScore = 0.12,
+            RequiredAdditionalMachineCount = 1,
+            TargetLocationId = candidate.Kind == "place_machine_item"
+                ? candidate.LocationId
+                : string.Empty,
+            TargetTileX = candidate.Kind == "place_machine_item"
+                ? candidate.TileX
+                : null,
+            TargetTileY = candidate.Kind == "place_machine_item"
+                ? candidate.TileY
+                : null
+        };
 
 }

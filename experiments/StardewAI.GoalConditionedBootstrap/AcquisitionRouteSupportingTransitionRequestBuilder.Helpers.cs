@@ -11,6 +11,16 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         PolicyEventCandidatePrediction? candidate = null) =>
         candidate is
         {
+            OptionId: "farm.establish_supported_machine_capacity",
+            Kind: "craft_machine_item" or "place_machine_item"
+        } && requirement.RouteKind is (
+            "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output")
+            ? "machine_capacity_establishment"
+            :
+        candidate is
+        {
             OptionId: "inventory.transfer_item",
             Kind: "transfer_inventory_item"
         } && requirement.RouteKind is (

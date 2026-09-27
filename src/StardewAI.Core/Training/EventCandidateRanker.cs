@@ -88,9 +88,12 @@ namespace StardewAI.Core.Training
                     var goalSupport = candidate.Kind ==
                             "craft_machine_item" ||
                         candidate.Kind == "place_machine_item" &&
-                        candidate.ExpectedEffect.Contains(
-                            "machine_demand_class=priority_task_requirement",
-                            StringComparison.Ordinal)
+                        (candidate.ExpectedEffect.Contains(
+                             "machine_demand_class=priority_task_requirement",
+                             StringComparison.Ordinal) ||
+                         candidate.ExpectedEffect.Contains(
+                             "machine_acquisition_route_support_json=",
+                             StringComparison.Ordinal))
                             ? ExplicitGoalSupportProjection.Read(
                                 candidate.Kind,
                                 candidate.ExpectedEffect,
@@ -110,17 +113,28 @@ namespace StardewAI.Core.Training
                     var machineSupportIntentId =
                         ExplicitGoalSupportProjection.IsSupported(
                             goalSupport)
-                            ? "machine-support:" +
-                              goalId + ":" +
-                              candidate.CandidateId +
-                              ":fleet=" +
-                              ParseValue(
-                                  candidate.ExpectedEffect,
-                                  "placed_same_machine_count=") +
-                              ":required=" +
-                              ParseValue(
-                                  candidate.ExpectedEffect,
-                                  "required_additional_machine_count=")
+                            ? string.Equals(
+                                  goalSupport?.Status,
+                                  ExplicitGoalSupportProjection
+                                      .AcquisitionRouteSupportStatus,
+                                  StringComparison.Ordinal)
+                                ? candidate.Parameters.FirstOrDefault(parameter =>
+                                      string.Equals(
+                                          parameter.Name,
+                                          "machine_capacity_support_intent_id",
+                                          StringComparison.Ordinal))?.Value ??
+                                  string.Empty
+                                : "machine-support:" +
+                                  goalId + ":" +
+                                  candidate.CandidateId +
+                                  ":fleet=" +
+                                  ParseValue(
+                                      candidate.ExpectedEffect,
+                                      "placed_same_machine_count=") +
+                                  ":required=" +
+                                  ParseValue(
+                                      candidate.ExpectedEffect,
+                                      "required_additional_machine_count=")
                             : string.Empty;
                     var expectedEffect =
                         candidate.ExpectedEffect +
@@ -635,6 +649,15 @@ namespace StardewAI.Core.Training
                 return true;
             }
 
+            if (string.Equals(
+                    goalSupport?.Status,
+                    ExplicitGoalSupportProjection
+                        .AcquisitionRouteSupportStatus,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
             var continuationDemandClass = ParseValue(
                 candidate.ExpectedEffect,
                 "machine_support_demand_class=");
@@ -649,6 +672,25 @@ namespace StardewAI.Core.Training
                         "machine_support_continuation_status="),
                     "active",
                     StringComparison.Ordinal);
+            }
+
+            if (string.Equals(
+                    continuationDemandClass,
+                    "acquisition_route_requirement",
+                    StringComparison.Ordinal))
+            {
+                return string.Equals(
+                           ParseValue(
+                               candidate.ExpectedEffect,
+                               "machine_support_continuation_status="),
+                           "active",
+                           StringComparison.Ordinal) &&
+                       string.Equals(
+                           ParseValue(
+                               candidate.ExpectedEffect,
+                               "machine_support_goal_id="),
+                           goalId,
+                           StringComparison.Ordinal);
             }
 
             if (!string.Equals(

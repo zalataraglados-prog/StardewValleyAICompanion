@@ -2437,6 +2437,8 @@ internal static partial class BootstrapSelfTest
             targetDateAfterSnapshotPath,
             targetDateExecutionReceiptPath,
             targetDateInsufficientAfterSnapshotPath);
+        VerifyMachineCapacitySupportingTransitionProof(
+            targetDateExecutionInputs);
         VerifyTargetDatePortfolioContinuationFixture(
             targetDateExecutionInputs,
             targetDateOpportunityShop.RouteOccurrenceId,

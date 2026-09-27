@@ -122,6 +122,7 @@ internal static partial class BootstrapSelfTest
 
         VerifyCropPlantingSupportingTransition();
         VerifyMachineInputSupportingTransition();
+        VerifyMachineCapacitySupportingTransition();
 
         var invalidSource = requirement with
         {

@@ -134,8 +134,19 @@ namespace StardewAI.Core.OptionRegistry
 
         private EventCandidate[] SupportedMachineCapacityLifecycleCandidates(
             SnapshotEnvelope snapshot,
-            StrategyCommitmentLedger? commitmentLedger)
+            StrategyCommitmentLedger? commitmentLedger,
+            SmallModelActionParameter[]? parameters = null)
         {
+            if (TryReadAcquisitionMachineCapacityRequest(
+                    parameters,
+                    out var acquisitionRequest))
+            {
+                return AcquisitionMachineCapacityCandidates(
+                    snapshot,
+                    commitmentLedger,
+                    acquisitionRequest);
+            }
+
             var activeIntents = commitmentLedger?.MachineSupportIntents
                 .Where(intent => string.Equals(
                     intent.Status,

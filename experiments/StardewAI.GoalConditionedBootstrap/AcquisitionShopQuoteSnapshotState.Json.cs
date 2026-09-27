@@ -39,6 +39,7 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
     private static int? ReadInt(JsonElement value, string name) =>
         value.ValueKind == JsonValueKind.Object &&
         value.TryGetProperty(name, out var property) &&
+        property.ValueKind == JsonValueKind.Number &&
         property.TryGetInt32(out var result)
             ? result
             : null;

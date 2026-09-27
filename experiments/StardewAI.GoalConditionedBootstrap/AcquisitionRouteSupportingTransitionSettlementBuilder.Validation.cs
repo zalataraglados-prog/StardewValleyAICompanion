@@ -77,6 +77,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                 value.ReservationStatus == StrategyCommitmentStatuses.Active)
             .Select(value => value.CurrencyReservationId)
             .ToArray();
+        var expectedMachineIntentId =
+            context.MachineSupportIntent?.IntentId ?? string.Empty;
         if (!result.Accepted ||
             (result.Errors?.Length ?? 0) != 0 ||
             result.PortfolioId != request.PortfolioId ||
@@ -121,6 +123,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             !result.ReboundActiveReservationIds.SequenceEqual(
                 request.RebindActiveReservationIds,
                 StringComparer.Ordinal) ||
+            result.ReboundMachineSupportIntentId !=
+                expectedMachineIntentId ||
             result.Ledger is null ||
             !EqualJson(result.Ledger, settled))
         {
@@ -224,6 +228,24 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             if (rebound != 1)
                 reasons.Add("support_settlement_rebound_claim_mismatch");
         }
+        if (context.MachineSupportIntent is not null)
+        {
+            var expectedIntent = JsonSerializer.Deserialize<
+                MachineSupportIntent>(JsonSerializer.Serialize(
+                    context.MachineSupportIntent))!;
+            expectedIntent.Revision++;
+            expectedIntent.SourceStateHash =
+                context.AfterSnapshot.StateHash;
+            var rebound = settled.MachineSupportIntents.Where(row =>
+                    row.IntentId == expectedIntent.IntentId &&
+                    EqualJson(row, expectedIntent))
+                .ToArray();
+            if (rebound.Length != 1)
+            {
+                reasons.Add(
+                    "support_settlement_machine_intent_rebind_mismatch");
+            }
+        }
         var currentHistory = settled.History.Where(row =>
                 row.LedgerRevision == settled.Revision)
             .ToArray();
@@ -269,14 +291,24 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                         request.RouteSourceDecisionId &&
                     row.Operation ==
                         "reservation_rebound_after_supporting_transition" &&
-                    row.Reason == request.Reason) == 1);
+                    row.Reason == request.Reason) == 1) &&
+            (context.MachineSupportIntent is null ||
+             currentHistory.Count(row =>
+                 row.CommitmentId ==
+                    context.MachineSupportIntent.IntentId &&
+                 row.SourceDecisionId ==
+                    request.RouteSourceDecisionId &&
+                 row.Operation ==
+                    "machine_support_intent_rebound_after_supporting_transition" &&
+                 row.Reason == request.Reason) == 1);
         var reboundOnlyCount = request.RebindActiveReservationIds.Count(value =>
             !mutatedIds.Contains(value));
         if (markers.Length != 1 ||
             currentHistory.Length != expectedSettlements.Length +
                 request.MaterialRelocations.Length +
                 expectedCurrencySettlements.Length +
-                reboundOnlyCount + 1 ||
+                reboundOnlyCount +
+                (context.MachineSupportIntent is null ? 0 : 1) + 1 ||
             !mutationHistoryMatches)
         {
             reasons.Add("support_settlement_history_mismatch");

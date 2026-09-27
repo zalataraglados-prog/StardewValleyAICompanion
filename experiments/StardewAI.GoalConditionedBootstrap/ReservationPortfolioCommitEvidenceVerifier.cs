@@ -22,6 +22,8 @@ internal static class ReservationPortfolioCommitEvidenceVerifier
             result.CommittedLedgerRevision != baseLedger.Revision + 1 ||
             result.MaterialClaimCount != request.MaterialClaims.Length ||
             result.CurrencyClaimCount != request.CurrencyClaims.Length ||
+            result.MachineSupportIntentId !=
+                (request.MachineSupportIntent?.IntentId ?? string.Empty) ||
             result.Ledger is null ||
             !EqualJson(result.Ledger, committed) ||
             !SameSet(result.ReleasedReservationIds ?? Array.Empty<string>(),
@@ -136,6 +138,17 @@ internal static class ReservationPortfolioCommitEvidenceVerifier
             .Concat(request.CurrencyClaims.Select(claim =>
                 (Id: claim.ReservationId,
                     OperationSuffix: "currency_reservation_upsert")))
+            .Concat(request.MachineSupportIntent is null
+                ? Array.Empty<(string Id, string OperationSuffix)>()
+                : new[]
+                {
+                    (
+                        Id: request.MachineSupportIntent.IntentId,
+                        OperationSuffix: request.MachineSupportIntent.Stage ==
+                            MachineSupportIntentStages.CraftSelected
+                                ? "machine_support_select"
+                                : "machine_support_bind_placement")
+                })
             .ToArray();
         var current = (committed.History ??
                 Array.Empty<StrategyCommitmentHistoryEntry>()).Where(row =>

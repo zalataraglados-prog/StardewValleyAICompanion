@@ -87,6 +87,7 @@ internal static class StrategyCommitmentLedgerSupport
             SupportKind = row.SupportKind,
             EvidenceStatus = row.EvidenceStatus,
             TaskSourcesJson = row.TaskSourcesJson,
+            SupportSourcesJson = row.SupportSourcesJson,
             GrossBenefit = row.GrossBenefit,
             OpportunityCost = row.OpportunityCost,
             NetBenefit = row.NetBenefit,

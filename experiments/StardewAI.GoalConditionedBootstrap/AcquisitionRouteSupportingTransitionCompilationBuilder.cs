@@ -57,11 +57,19 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             AcquisitionRouteTargetDateProcessingReport>(
             Path.GetFullPath(inputs.TargetDateProcessingPath),
             "Acquisition target-date processing report");
+        var calendar = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRouteCalendarResolutionReport>(
+            Path.GetFullPath(inputs.CalendarResolutionPath),
+            "Acquisition route calendar resolution");
         var route = ExactlyOne(
             processing.Routes,
             value => value.RouteOccurrenceId == inputs.RouteOccurrenceId,
             "Target-date processing route occurrence");
         var requirement = RequirementRoute(route.UpstreamRoute);
+        var staticRoute = ExactlyOne(
+            calendar.Routes,
+            value => value.RouteOccurrenceId == inputs.RouteOccurrenceId,
+            "Static calendar route occurrence");
         var lowering = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteOptionLoweringReport>(
             Path.GetFullPath(inputs.AcquisitionLoweringPath),
@@ -72,7 +80,9 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         var rankedOptionIds = optionIds.Where(optionId =>
-                optionId != "inventory.transfer_item")
+                optionId != "inventory.transfer_item" &&
+                optionId !=
+                    "farm.establish_supported_machine_capacity")
             .ToArray();
         var candidates = AcquisitionRouteDispatchCompilationBuilder
             .RebuildVerifiedCurrentCandidates(
@@ -84,6 +94,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 CurrentTeacherFrontierSupport.ReadCurrentCandidates(ranking),
                 out var candidateReasons);
         var stagingReasons = Array.Empty<string>();
+        AcquisitionMachineCapacitySupportBinding? capacityBinding = null;
+        var capacityReasons = Array.Empty<string>();
         if (request.SupportTransitionKind ==
             "machine_input_material_transfer")
         {
@@ -94,8 +106,38 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 out stagingReasons);
             candidates = candidates.Concat(stagingCandidates).ToArray();
         }
+        if (request.SupportTransitionKind ==
+            "machine_capacity_establishment")
+        {
+            var requestedKind = request.MachineSupportIntentStage ==
+                    MachineSupportIntentStages.CraftSelected
+                ? "craft_machine_item"
+                : request.MachineSupportIntentStage ==
+                    MachineSupportIntentStages.PlacementBound
+                    ? "place_machine_item"
+                    : string.Empty;
+            var capacityMatches = AcquisitionMachineCapacitySupport
+                .BuildCandidates(
+                    snapshot,
+                    ledger,
+                    processing.GoalId,
+                    requirement,
+                    route.UpstreamRoute,
+                    staticRoute,
+                    lowered,
+                    requestedKind,
+                    out capacityBinding,
+                    out capacityReasons);
+            candidates = candidates
+                .Concat(capacityMatches.Select(match => match.Candidate))
+                .ToArray();
+        }
         var matches = AcquisitionRouteDispatchCompilationBuilder
-            .SelectSupportingCandidates(requirement, lowered, candidates);
+            .SelectSupportingCandidates(
+                requirement,
+                lowered,
+                candidates,
+                capacityBinding?.MachineQualifiedItemId ?? string.Empty);
         var purchase = AcquisitionRouteSupportingTransitionRequestBuilder
             .PurchasePrerequisite(route);
         if (purchase is not null)
@@ -118,7 +160,7 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             CurrentTeacherFrontierSupport.HashFile(rankingPath),
             CurrentTeacherFrontierSupport.HashFile(requestPath),
             CurrentTeacherFrontierSupport.HashFile(receiptPath),
-            candidateReasons.Concat(stagingReasons));
+            candidateReasons.Concat(stagingReasons).Concat(capacityReasons));
     }
 
     private static AcquisitionRouteTargetDateUnlock RequirementRoute(

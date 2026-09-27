@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
@@ -59,10 +61,25 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             .Concat(additionalLineage ??
                 Array.Empty<SmallModelActionParameter>())
             .ToArray();
+        var compilationIdentity = CompilationIdentity(
+            goalId,
+            requirement,
+            source,
+            candidate,
+            snapshot,
+            ledger,
+            portfolioId,
+            committedLedgerRevision,
+            rankingHash,
+            routeOptionRole,
+            lineage);
+        plan.PlanId = "acquisition_route_plan." + compilationIdentity;
         var annotationReasons = AnnotatePlan(plan, lineage);
         var queue = annotationReasons.Length == 0
             ? new ActionQueueCompiler().Compile(plan, snapshot, ledger)
             : null;
+        if (queue is not null)
+            StabilizeQueueIdentity(queue, compilationIdentity);
         var reasons = annotationReasons
             .Concat(roleReasons)
             .Concat(PlanReasons(plan))
@@ -191,4 +208,59 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             Name = name,
             Value = value
         };
+
+    private static string CompilationIdentity(
+        string goalId,
+        AcquisitionRouteTargetDateUnlock requirement,
+        PolicyEventCandidatePrediction source,
+        PolicyEventCandidatePrediction candidate,
+        SnapshotEnvelope snapshot,
+        StrategyCommitmentLedger ledger,
+        string portfolioId,
+        int committedLedgerRevision,
+        string rankingHash,
+        string routeOptionRole,
+        SmallModelActionParameter[] lineage)
+    {
+        var value = JsonSerializer.Serialize(new
+        {
+            goalId,
+            requirement.RouteOccurrenceId,
+            SourceCandidateId = source.CandidateId,
+            SelectedCandidateId = candidate.CandidateId,
+            snapshot.StateHash,
+            ledger.LedgerId,
+            LedgerRevision = ledger.Revision,
+            portfolioId,
+            committedLedgerRevision,
+            rankingHash,
+            routeOptionRole,
+            lineage
+        }, JsonDefaults.Compact);
+        return Convert.ToHexString(SHA256.HashData(
+                Encoding.UTF8.GetBytes(value)))
+            .ToLowerInvariant();
+    }
+
+    private static void StabilizeQueueIdentity(
+        ActionQueueEnvelope queue,
+        string compilationIdentity)
+    {
+        queue.QueueId = "acquisition_route_queue." + compilationIdentity;
+        for (var index = 0; index < queue.Items.Length; index++)
+        {
+            var item = queue.Items[index];
+            item.QueueItemId =
+                "acquisition_route_queue_item." + compilationIdentity + "." +
+                index;
+            var steps = item.NormalizedCommand?.Steps ??
+                Array.Empty<CompiledActionStep>();
+            for (var stepIndex = 0; stepIndex < steps.Length; stepIndex++)
+            {
+                steps[stepIndex].StepId =
+                    "acquisition_route_primitive." + compilationIdentity +
+                    "." + index + "." + stepIndex;
+            }
+        }
+    }
 }

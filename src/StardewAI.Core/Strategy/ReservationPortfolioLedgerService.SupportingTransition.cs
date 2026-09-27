@@ -29,6 +29,8 @@ public sealed partial class ReservationPortfolioLedgerService
             Array.Empty<ReservationPortfolioCurrencyConsumption>();
         var rebindIds = request.RebindActiveReservationIds ??
             Array.Empty<string>();
+        var rebindMachineIntent =
+            !string.IsNullOrWhiteSpace(request.MachineSupportIntentId);
         ValidateSupportingTransitionSettlementRequest(
             current,
             snapshot,
@@ -142,6 +144,27 @@ public sealed partial class ReservationPortfolioLedgerService
             }
             return settled;
         }).ToArray();
+        if (rebindMachineIntent)
+        {
+            ledger.MachineSupportIntents = ledger.MachineSupportIntents
+                .Select(row =>
+                {
+                    if (!string.Equals(
+                            row.IntentId,
+                            request.MachineSupportIntentId,
+                            StringComparison.Ordinal))
+                    {
+                        return row;
+                    }
+
+                    var rebound = StrategyCommitmentLedgerSupport
+                        .CloneMachineSupport(row);
+                    rebound.Revision++;
+                    rebound.SourceStateHash = snapshot.StateHash;
+                    return rebound;
+                })
+                .ToArray();
+        }
         StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
         var settlements = consumptions.Select(consumption =>
         {
@@ -228,6 +251,19 @@ public sealed partial class ReservationPortfolioLedgerService
                 updatedAt,
                 request.Reason);
         }
+        if (rebindMachineIntent)
+        {
+            var intent = ledger.MachineSupportIntents.Single(row =>
+                row.IntentId == request.MachineSupportIntentId);
+            StrategyCommitmentLedgerSupport.AppendHistory(
+                ledger,
+                intent.IntentId,
+                intent.Revision,
+                intent.SourceDecisionId,
+                "machine_support_intent_rebound_after_supporting_transition",
+                updatedAt,
+                request.Reason);
+        }
         StrategyCommitmentLedgerSupport.AppendHistory(
             ledger,
             request.PortfolioId,
@@ -280,6 +316,9 @@ public sealed partial class ReservationPortfolioLedgerService
                 .ToArray(),
             CurrencySettlements = currencySettlements,
             ReboundActiveReservationIds = rebindIds,
+            ReboundMachineSupportIntentId = rebindMachineIntent
+                ? request.MachineSupportIntentId
+                : string.Empty,
             Ledger = ledger
         };
     }
@@ -305,7 +344,10 @@ public sealed partial class ReservationPortfolioLedgerService
         var mutationModeCount =
             (consumptions.Length > 0 ? 1 : 0) +
             (relocations.Length > 0 ? 1 : 0) +
-            (currencyConsumptions.Length > 0 ? 1 : 0);
+            (currencyConsumptions.Length > 0 ? 1 : 0) +
+            (!string.IsNullOrWhiteSpace(request.MachineSupportIntentId)
+                ? 1
+                : 0);
         if (consumptions.Length > 0 && relocations.Length > 0)
         {
             errors.Add("supporting_transition_material_mutation_mode_invalid");
@@ -369,6 +411,23 @@ public sealed partial class ReservationPortfolioLedgerService
                 rebindIds.Length)
         {
             errors.Add("supporting_transition_rebind_set_invalid");
+        }
+        var machineIntentMarkerPresent = !string.IsNullOrWhiteSpace(
+            request.MachineSupportIntentId);
+        if (machineIntentMarkerPresent !=
+                !string.IsNullOrWhiteSpace(
+                    request.MachineSupportIntentStage) ||
+            machineIntentMarkerPresent !=
+                (!string.IsNullOrWhiteSpace(
+                     request.MachineSupportSourcesJson) &&
+                 request.MachineSupportSourcesJson != "[]"))
+        {
+            errors.Add("supporting_transition_machine_intent_marker_invalid");
+        }
+        if (machineIntentMarkerPresent && rebindIds.Length > 0)
+        {
+            errors.Add(
+                "supporting_transition_machine_intent_mixed_rebind_invalid");
         }
         if (string.IsNullOrWhiteSpace(request.Reason))
             errors.Add("supporting_transition_reason_required");
@@ -483,6 +542,24 @@ public sealed partial class ReservationPortfolioLedgerService
                     currencyConsumption.ConsumedAmount >= row.Amount))
             {
                 errors.Add("supporting_transition_rebind_claim_mismatch");
+            }
+        }
+        if (machineIntentMarkerPresent)
+        {
+            var intents = current.MachineSupportIntents.Where(row =>
+                    row.IntentId == request.MachineSupportIntentId)
+                .ToArray();
+            if (intents.Length != 1 ||
+                intents[0].Status != StrategyCommitmentStatuses.Active ||
+                intents[0].GoalId != request.GoalId ||
+                intents[0].SourceDecisionId !=
+                    request.RouteSourceDecisionId ||
+                intents[0].Stage != request.MachineSupportIntentStage ||
+                intents[0].SupportSourcesJson !=
+                    request.MachineSupportSourcesJson)
+            {
+                errors.Add(
+                    "supporting_transition_machine_intent_marker_mismatch");
             }
         }
     }
@@ -624,6 +701,8 @@ public sealed partial class ReservationPortfolioLedgerService
                         })
                     .ToArray(),
                 ReboundActiveReservationIds = rebindIds,
+                ReboundMachineSupportIntentId =
+                    request.MachineSupportIntentId,
                 Errors = errors.Distinct(StringComparer.Ordinal).ToArray(),
                 Ledger = ledger
             };

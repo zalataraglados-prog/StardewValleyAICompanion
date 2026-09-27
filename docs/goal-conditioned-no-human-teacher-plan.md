@@ -2463,6 +2463,67 @@ Slice 7 remains assigned to the RTX 5070 node.
   to the existing `farm.establish_supported_machine_capacity` lifecycle with the same commit/receipt/settlement/replan
   discipline; it must not duplicate crafting, placement, loading or execution code. Formal training remains unauthorized.
 
+### 2026-09-27: missing machine-capacity supporting transition
+
+- A target-date machine route may now emit `machine_capacity_establishment` only after the transparent facility axis
+  conclusively proves that the exact route machine has no placed capacity. The binding retains the qualified machine
+  identity, canonical authoritative source set and route lineage; unknown identities, ambiguous sources and non-location
+  misses fail closed before candidate construction.
+- The transition reuses the existing `farm.establish_supported_machine_capacity` lifecycle. An exact machine already in
+  player inventory selects its existing placement candidate; otherwise the existing crafting candidate is selected.
+  `DailyPlanCompiler`, `ActionQueueCompiler`, native crafting/placement and later machine loading remain their ordinary
+  shared implementations. This route adds no acquisition-specific machine executor or path planner.
+- The shared reservation-portfolio transaction may atomically create one source-bound `MachineSupportIntent` beside the
+  normal claims. A capacity transaction may be claimless only in that exact form. Its commit receipt independently
+  replays the ledger and checks the intent identity. Fresh transition evidence then proves either the declared craft
+  output inventory increase, or one inventory decrement plus exactly one new idle machine at the bound location/tile.
+- Settlement uses an exclusive machine-intent marker instead of fabricating material or currency consumption. It verifies
+  the same active intent, goal, decision, stage and canonical sources, advances the shared ledger once, rebinds the intent
+  to the fresh state and requires a complete replan. Focused candidate and ledger tests, Core game-free 103/103, Backend
+  219/219, Release build and the complete hermetic bootstrap pass. Formal product training remains unauthorized.
+- The next bounded slice is an end-to-end hermetic placement proof followed by integration of this nonterminal transition
+  into the ordinary portfolio rollout/proof dataset chain. It must continue to reuse the single machine lifecycle and
+  cannot promote model authority or formal training by itself.
+
+### 2026-09-27: machine-capacity craft-to-placement recurrence
+
+- The hermetic capacity fixture now performs two consecutive supporting transitions. The first uses the shared native
+  crafting executor; its fresh state and marker-settled ledger then rebuild the exact existing move-plus-placement queue.
+  The second atomic commit advances the same source-bound intent from `craft_selected` to `placement_bound`, rather than
+  creating another intent, planner or machine executor.
+- Placement execution preserves the intermediate movement state hash and tick boundary. Its fresh receipt requires the
+  bound inventory machine to decrease by one and the exact target tile to change from no machine to one matching idle
+  machine. A negative fixture with the same inventory decrease but placement on another tile fails closed with
+  `supporting_transition_machine_placement_delta_mismatch`.
+- Marker settlement and exact replay keep the transition nonterminal, then emit a fresh Teacher preference request from
+  the post-placement state and ledger revision. This proves re-entry into the shared portfolio replan boundary; it does
+  not yet claim that the subsequent file-backed terminal rollout/proof/supervision artifacts have been rebuilt.
+- The next bounded slice must use this settlement and replan as the `SupportingTransitionInitialProof` lineage for one
+  ordinary terminal route, then verify the rollout checkpoint, proof receipt and supervision dataset. The support action
+  remains context for that verified terminal decision and must not be exported as a fabricated terminal native outcome.
+
+### 2026-09-28: machine-capacity lineage through terminal supervision
+
+- The placement transition now produces file-backed request, commit, shared compilation, native execution receipt,
+  nonterminal settlement and fresh-replan artifacts. That exact lineage is passed as the existing
+  `SupportingTransitionInitialProof` into the ordinary terminal binding, fresh receipt, reservation settlement, rollout
+  checkpoint, proof receipt, admission and supervision builders. No second planner, ledger, compiler or executor exists.
+- The fresh Teacher rebuilds the complete denominator from the post-placement snapshot and settled ledger. In the
+  hermetic case it selects the immediately completable Beer shop route. The exported supervision row contains only that
+  terminal native outcome; machine placement remains verified context and cannot masquerade as machine production or a
+  terminal label.
+- Deterministic acquisition compilation now derives stable plan, queue, queue-item and primitive identities from the
+  goal, route, candidate, state/ledger, portfolio, ranking, role and complete lineage. This permits independent artifact
+  reconstruction without accepting random GUID drift. Legal null trade fields in native shop previews are also read as
+  absent optional values rather than throwing, while malformed nonnumeric values still fail closed downstream.
+- The complete StageOne self-test passes with the new proof plus existing train/validation/test continuations, corpus,
+  pairwise/live-shadow and tamper-negative coverage. Formal product training and learned runtime authority remain
+  disabled.
+- The next bounded slice is a support-family terminal-lineage coverage matrix. It must account for `crop_planting`,
+  `machine_input_load`, `machine_input_material_transfer`, `machine_input_purchase` and
+  `machine_capacity_establishment`, proving that every admitted support family rejoins the same file-backed terminal
+  rollout path. Existing proofs count as coverage and must be reused rather than reimplemented.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

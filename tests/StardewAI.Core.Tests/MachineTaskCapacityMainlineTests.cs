@@ -341,6 +341,60 @@ public sealed class MachineTaskCapacityMainlineTests
             support.Status);
     }
 
+    [Theory]
+    [InlineData(false, "craft_machine_item")]
+    [InlineData(true, "place_machine_item")]
+    public void ExactAcquisitionRouteUsesExistingCapacityLifecycle(
+        bool inventoryMachine,
+        string expectedKind)
+    {
+        var snapshot = Snapshot(
+            specialOrder: false,
+            inventoryMachine: inventoryMachine);
+        var option = AcquisitionCapacityOption();
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                [option],
+                includeExecutorCalibrationOptions: true,
+                commitmentLedger: Ledger());
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available,
+            string.Join(";", candidate.BlockReasons));
+        Assert.Equal(expectedKind, candidate.Kind);
+        Assert.Equal("(BC)12", candidate.QualifiedItemId);
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            availability,
+            "goal.grandpa_21"));
+        Assert.Equal(
+            ExplicitGoalSupportProjection.AcquisitionRouteSupportStatus,
+            Parameter(ranked.Parameters, "goal_support_status"));
+        Assert.Equal(
+            "machine-support:acquisition-route:route:machine-output:(BC)12",
+            Parameter(ranked.Parameters, "machine_support_intent_id"));
+    }
+
+    [Fact]
+    public void AcquisitionRouteRejectsUnknownExactMachineIdentity()
+    {
+        var option = AcquisitionCapacityOption();
+        option.Parameters.Single(parameter => parameter.Name ==
+            "machine_capacity_machine_qualified_item_id").Value = "(BC)999";
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                Snapshot(specialOrder: false),
+                [option],
+                includeExecutorCalibrationOptions: true,
+                commitmentLedger: Ledger());
+
+        Assert.Empty(Assert.Single(availability.Options).EventCandidates);
+    }
+
     private static StardewAI.Contracts.Options.EventCandidate[] Candidate(
         SnapshotEnvelope snapshot) =>
         new CandidateOptionAvailabilityEvaluator()
@@ -356,6 +410,24 @@ public sealed class MachineTaskCapacityMainlineTests
         LedgerId = "ledger:task-capacity",
         Revision = 1
     };
+
+    private static StardewAI.Contracts.Options.OptionAvailabilityCandidate
+        AcquisitionCapacityOption() => new()
+        {
+            OptionId = "farm.establish_supported_machine_capacity",
+            Parameters =
+            [
+                new() { Name = "machine_capacity_support_kind", Value = "acquisition_route" },
+                new() { Name = "machine_capacity_goal_id", Value = "goal.grandpa_21" },
+                new() { Name = "machine_capacity_route_occurrence_id", Value = "route:machine-output" },
+                new() { Name = "machine_capacity_route_kind", Value = "machine_output" },
+                new() { Name = "machine_capacity_source_id", Value = "machine:12" },
+                new() { Name = "machine_capacity_output_qualified_item_id", Value = "(O)346" },
+                new() { Name = "machine_capacity_machine_qualified_item_id", Value = "(BC)12" },
+                new() { Name = "machine_capacity_intent_id", Value = "machine-support:acquisition-route:route:machine-output:(BC)12" },
+                new() { Name = "machine_capacity_requested_candidate_kind", Value = "" }
+            ]
+        };
 
     private static SnapshotEnvelope Snapshot(
         bool specialOrder,

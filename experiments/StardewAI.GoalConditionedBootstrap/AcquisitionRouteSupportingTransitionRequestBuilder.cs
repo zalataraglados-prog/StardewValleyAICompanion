@@ -44,6 +44,10 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             AcquisitionRouteOptionLoweringReport>(
             loweringPath,
             "Acquisition route lowering");
+        var calendar = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRouteCalendarResolutionReport>(
+            Path.GetFullPath(inputs.CalendarResolutionPath),
+            "Acquisition route calendar resolution");
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotPath,
             "Acquisition support snapshot");
@@ -62,6 +66,10 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             "Target-date processing route occurrence");
         var requirement = RequirementRoute(route.UpstreamRoute);
         var lowered = LoweredRoute(lowering, requirement);
+        var staticRoute = ExactlyOne(
+            calendar.Routes,
+            value => value.RouteOccurrenceId == inputs.RouteOccurrenceId,
+            "Static calendar route occurrence");
         var artifactReasons = ValidateArtifacts(
             processing,
             snapshot,
@@ -75,7 +83,9 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         var rankedOptionIds = optionIds.Where(optionId =>
-                optionId != "inventory.transfer_item")
+                optionId != "inventory.transfer_item" &&
+                optionId !=
+                    "farm.establish_supported_machine_capacity")
             .ToArray();
         var candidates = AcquisitionRouteDispatchCompilationBuilder
             .RebuildVerifiedCurrentCandidates(
@@ -88,6 +98,24 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 out var candidateReasons);
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectSupportingCandidates(requirement, lowered, candidates);
+        AcquisitionMachineCapacitySupportBinding? capacityBinding = null;
+        var capacityReasons = Array.Empty<string>();
+        if (MissingPlacedMachineProven(route.UpstreamRoute))
+        {
+            var capacityMatches = AcquisitionMachineCapacitySupport
+                .BuildCandidates(
+                    snapshot,
+                    ledger,
+                    processing.GoalId,
+                    requirement,
+                    route.UpstreamRoute,
+                    staticRoute,
+                    lowered,
+                    string.Empty,
+                    out capacityBinding,
+                    out capacityReasons);
+            matches = capacityMatches.Concat(matches).ToArray();
+        }
         var purchase = PurchasePrerequisite(route);
         if (purchase is not null)
         {
@@ -124,12 +152,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             ledger,
             matches,
             inputs.SupportDeadlineTotalDay,
-            artifactReasons.Concat(candidateReasons).Concat(stagingReasons),
+            artifactReasons.Concat(candidateReasons)
+                .Concat(stagingReasons)
+                .Concat(capacityReasons),
             CurrentTeacherFrontierSupport.HashFile(processingPath),
             CurrentTeacherFrontierSupport.HashFile(loweringPath),
             CurrentTeacherFrontierSupport.HashFile(ledgerPath),
             CurrentTeacherFrontierSupport.HashFile(snapshotPath),
-            CurrentTeacherFrontierSupport.HashFile(rankingPath));
+            CurrentTeacherFrontierSupport.HashFile(rankingPath),
+            capacityBinding);
     }
 
     private static string[] ValidateArtifacts(
@@ -186,6 +217,20 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         return matches.Length == 1
             ? matches[0]
             : throw new InvalidDataException(label + " is not unique.");
+    }
+
+    private static bool MissingPlacedMachineProven(
+        AcquisitionRouteTargetDateReservation reservation)
+    {
+        var location = reservation.UpstreamRoute.UpstreamRoute.UpstreamRoute
+            .UpstreamRoute;
+        return location.LocationRouteAxisResolved &&
+            location.LocationRouteMatchesTargetDate == false &&
+            location.LocationRouteAxisStatus == "resolved_location_route_miss" &&
+            location.BlockingReasons.Length == 0 &&
+            location.NonMatchingReasons.SequenceEqual(
+                new[] { "matching_machine_runtime_location_not_present" },
+                StringComparer.Ordinal);
     }
 
 

@@ -85,6 +85,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         var snapshotReasons = ValidateSnapshots(before, after);
         AcquisitionCropPlantingTransitionEvidence? cropTransition = null;
         AcquisitionMachineInputTransitionEvidence? machineTransition = null;
+        AcquisitionMachineCapacityTransitionEvidence? machineCapacity = null;
         AcquisitionMaterialTransferTransitionEvidence? materialTransfer = null;
         AcquisitionPurchaseTransitionEvidence? purchaseTransition = null;
         string[] transitionReasons;
@@ -141,6 +142,17 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 transitionReasons = purchaseTransition.BlockingReasons;
                 transitionVerified = purchaseTransition.Verified;
             }
+            else if (transitionKind ==
+                "machine_capacity_establishment" &&
+                MachineCapacityQueueShapeValid(queue))
+            {
+                machineCapacity = VerifyMachineCapacity(
+                    queue,
+                    before,
+                    after);
+                transitionReasons = machineCapacity.BlockingReasons;
+                transitionVerified = machineCapacity.Verified;
+            }
             else
             {
                 transitionReasons = new[]
@@ -153,6 +165,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         }
         result.CropPlantingTransition = cropTransition;
         result.MachineInputTransition = machineTransition;
+        result.MachineCapacityTransition = machineCapacity;
         result.MaterialTransferTransition = materialTransfer;
         result.PurchaseTransition = purchaseTransition;
         result.QueueExecutionVerified = queueReasons.Length == 0;
@@ -251,9 +264,27 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             return false;
         return kinds[0] == "machine_input_material_transfer"
             ? queue.Items.Length == 2
+            : kinds[0] == "machine_capacity_establishment"
+                ? MachineCapacityQueueShapeValid(queue)
             : kinds[0] == "machine_input_purchase"
                 ? PurchaseQueueShapeValid(queue)
                 : queue.Items.Length == 1;
+    }
+
+    private static bool MachineCapacityQueueShapeValid(
+        ActionQueueEnvelope queue)
+    {
+        var optionIds = queue.Items.Select(item => item.OptionId).ToArray();
+        return optionIds.SequenceEqual(
+                new[] { "executor.craft_machine_item" },
+                StringComparer.Ordinal) ||
+            optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.move_to_tile",
+                    "executor.place_machine"
+                },
+                StringComparer.Ordinal);
     }
 
     private static bool PurchaseQueueShapeValid(ActionQueueEnvelope queue)

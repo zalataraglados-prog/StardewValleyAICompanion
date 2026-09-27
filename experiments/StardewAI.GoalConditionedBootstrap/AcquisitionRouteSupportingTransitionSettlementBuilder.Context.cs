@@ -134,7 +134,41 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         var currencyConsumptions = new List<
             SettlementCurrencyConsumptionContext>();
         var rebindReservationIds = Array.Empty<string>();
-        if (request.SupportTransitionKind == "machine_input_purchase")
+        MachineSupportIntent? machineSupportIntent = null;
+        if (request.SupportTransitionKind ==
+            "machine_capacity_establishment")
+        {
+            var evidence = transition.MachineCapacityTransition ??
+                throw new InvalidDataException(
+                    "Support settlement machine-capacity evidence is missing.");
+            Require(evidence.Verified && evidence.Resolved &&
+                    evidence.IntentId == request.MachineSupportIntentId &&
+                    evidence.Stage == request.MachineSupportIntentStage &&
+                    evidence.MachineQualifiedItemId ==
+                        request.MachineQualifiedItemId &&
+                    request.ReservationClaimIds.Length == 0 &&
+                    request.ReservationMaterialClaims.Length == 0 &&
+                    request.ReservationCurrencyClaims.Length == 0 &&
+                    request.SupportMaterialConsumptions.Length == 0 &&
+                    request.SupportMaterialRelocations.Length == 0 &&
+                    request.SupportCurrencyConsumptions.Length == 0,
+                "Support settlement machine-capacity evidence is incomplete.");
+            var intents = ledger.MachineSupportIntents.Where(row =>
+                    row.IntentId == request.MachineSupportIntentId &&
+                    row.Status == StrategyCommitmentStatuses.Active &&
+                    row.Stage == request.MachineSupportIntentStage &&
+                    row.SourceDecisionId == request.SelectedCandidateId &&
+                    row.GoalId == request.GoalId &&
+                    row.QualifiedItemId ==
+                        request.MachineQualifiedItemId &&
+                    row.SupportSourcesJson ==
+                        request.MachineCapacitySupportSourcesJson)
+                .ToArray();
+            Require(intents.Length == 1,
+                "Support settlement machine intent is not active and exact.");
+            machineSupportIntent = intents[0];
+        }
+        else if (request.SupportTransitionKind == "machine_input_purchase")
         {
             var evidence = transition.PurchaseTransition ??
                 throw new InvalidDataException(
@@ -316,6 +350,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             relocations.ToArray(),
             currencyConsumptions.ToArray(),
             rebindReservationIds,
+            machineSupportIntent,
             HashOrEmpty(requestPath),
             HashOrEmpty(commitReceiptPath),
             HashOrEmpty(transitionPath),
@@ -366,7 +401,19 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     })
                 .ToArray(),
             RebindActiveReservationIds = context.RebindReservationIds,
+            MachineSupportIntentId =
+                context.MachineSupportIntent?.IntentId ?? string.Empty,
+            MachineSupportIntentStage =
+                context.MachineSupportIntent?.Stage ?? string.Empty,
+            MachineSupportSourcesJson =
+                context.MachineSupportIntent?.SupportSourcesJson ?? "[]",
             Reason = context.Request.SupportTransitionKind ==
+                    "machine_capacity_establishment"
+                ? context.Request.MachineSupportIntentStage ==
+                    MachineSupportIntentStages.CraftSelected
+                    ? "verified_machine_capacity_craft"
+                    : "verified_machine_capacity_placement"
+                : context.Request.SupportTransitionKind ==
                     "machine_input_purchase"
                 ? context.Request.PurchaseStage == "purchase"
                     ? "verified_machine_input_purchase"
@@ -384,6 +431,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             return context.Relocations[0].Claim.SourceDecisionId;
         if (context.CurrencyConsumptions.Length > 0)
             return context.CurrencyConsumptions[0].Claim.SourceDecisionId;
+        if (context.MachineSupportIntent is not null)
+            return context.MachineSupportIntent.SourceDecisionId;
         return context.Request.ReservationCurrencyClaims
             .Select(claim => claim.SourceDecisionId)
             .Concat(context.Request.ReservationMaterialClaims.Select(claim =>
@@ -496,6 +545,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         SettlementRelocationContext[] Relocations,
         SettlementCurrencyConsumptionContext[] CurrencyConsumptions,
         string[] RebindReservationIds,
+        MachineSupportIntent? MachineSupportIntent,
         string SupportRequestSha256,
         string SupportCommitReceiptSha256,
         string SupportingTransitionReceiptSha256,
