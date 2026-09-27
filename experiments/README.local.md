@@ -310,8 +310,9 @@ blockers, implemented versus active Teacher adapters, split evidence, and an inv
 referenced option evidence and Product Executor status. Option inventory diagnostics never become
 current method blockers or next actions; method work is derived only from the rebuilt frontier and
 verified Teacher/native coverage. The current report classifies 2 criteria as coverage-ready, 15 as dependency-graph
-incomplete, pet love as production evidence not connected, and Skull Key as missing a typed
-Teacher source adapter. It never authorizes formal product training.
+incomplete, and both pet love and Skull Key as production evidence not connected. Both terminal
+methods have typed source adapters; neither has three-partition production evidence. It never
+authorizes formal product training.
 
 `build-goal-method-formal-training-admission-reconciliation` is the aggregate read-only admission
 audit. In addition to the frontier inputs, it requires `--coverage-request`, `--corpus-manifest`,
@@ -325,8 +326,8 @@ valid checkpoint with a forged holdout score is rejected outside this report as 
 The current baseline passes authoritative-denominator, corpus-replay, split-integrity,
 checkpoint-binding, holdout-recomputation, 5/5 support-lineage, and leaf-authority-isolation gates.
 It remains blocked at 2/19 covered criteria and 1/11 covered root methods: 15 criteria have incomplete
-dependency graphs, pet love has an implemented but unconnected production evidence source, and Skull
-Key lacks its typed Teacher source adapter. Downstream execution inventory separately reports three
+dependency graphs, while pet love and Skull Key each have an implemented but unconnected production
+evidence source. Downstream execution inventory separately reports three
 obstacle-clearing executors without transparent/native/five-gate evidence and three social options
 without an internal execution pipeline. A high-level option that lowers through the existing internal
 pipeline does not require its own direct Product Executor and is not reported as a gap. Even a fully
@@ -341,6 +342,16 @@ recomputes snapshot hashes, and accepts only an exact native pet interaction tha
 save/player/day is rejected. The focused three-partition fixture exercises a 3/19 coverage result
 and tamper rejection, but the authoritative current report stays at 2/19 until equivalent native
 receipts exist in train, validation, and test.
+
+`build-skull-key-teacher-corpus --request <path> --output <path>` builds the typed
+Skull Key terminal source. Each source is one `plan_execution_episode.v1`, not a caller-authored
+label or bare execution result. The builder replays the bound snapshots and native result and requires
+one same-day ordinary-mine floor-120 transition: the exact base Skull Key chest is present before and
+absent after, `player.has_skull_key` changes from false to true, and the compiled `executor.interact`
+item binds the chest tile, queue-item identity, native action type and required postcondition. Dataset
+partitions are derived from save, player and day identity. The three-partition fixture reaches 3/19
+and rejects row, queue-item and effect tampering; the production baseline remains 2/19 until three
+independent native episodes are connected to the production coverage request.
 The current requirement report is
 `local-data/output/authoritative-requirement-inventory-v1.json`. Current candidate membership
 for Full Shipment, Master Angler, Museum Collection, and the standard Community Center can be

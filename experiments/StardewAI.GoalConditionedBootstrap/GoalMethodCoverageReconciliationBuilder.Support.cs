@@ -44,6 +44,11 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             kinds.Add(GoalMethodTeacherCoverageSourceKinds
                 .PetLoveTerminalInteractionCorpus);
         }
+        if (method.DirectionId == "obtain_skull_key")
+        {
+            kinds.Add(GoalMethodTeacherCoverageSourceKinds
+                .SkullKeyTerminalInteractionCorpus);
+        }
         return kinds.Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();

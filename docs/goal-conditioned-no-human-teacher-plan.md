@@ -2619,8 +2619,8 @@ Slice 7 remains assigned to the RTX 5070 node.
   pair accuracy recompute to 1.0. These tiny holdouts establish artifact consistency only, not model sufficiency.
 - Seven gates pass: authoritative denominator, corpus replay, split integrity, checkpoint/corpus binding, evaluation
   recomputation, support terminal lineage, and leaf authority isolation. Complete Teacher coverage and referenced
-  option execution inventory remain blocked. The Teacher dispositions are exactly 15 dependency-graph-incomplete,
-  one production-evidence-not-connected, and one typed-source-adapter-missing criterion.
+  option execution inventory remain blocked. After the Skull Key adapter slice, the Teacher dispositions are exactly
+  15 dependency-graph-incomplete and two production-evidence-not-connected criteria.
 - Runtime diagnostics are downstream and do not rewrite Teacher dispositions. Three obstacle-clearing executor options
   still lack transparent-read, native-runtime, and five-gate evidence; three social options lack an internal execution
   pipeline. High-level options are valid when they lower through that shared internal pipeline and are not required to
@@ -2629,8 +2629,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   and dataset hashes are valid but whose holdout score was edited is rejected. Full StageOne and hermetic regressions
   cover the positive and tampered paths.
 - No leaf or aggregate artifact may self-authorize training. Even all-green evidence can only request a separate
-  promotion review. The next bounded implementation slice is the typed Teacher source adapter for
-  `grandpa.direct.obtain_skull_key`; unlike the other 15 dependency-incomplete criteria, its graph is already complete.
+  promotion review. Pet love and Skull Key now both have typed source adapters but still require independent native
+  train/validation/test evidence before either criterion can become coverage-ready.
+
+### 2026-09-28: Skull Key typed Teacher source
+
+- `build-skull-key-teacher-corpus` consumes a fresh `plan_execution_episode.v1` and replays its before snapshot,
+  after snapshot, effective queue item and raw execution result. A bare result cannot provide supervision. The exact
+  accepted transition is the ordinary mine at level 120, with one base `StardewValley.Objects.Chest` carrying native
+  `special_item_which=4`, followed by chest removal and `player.has_skull_key=false -> true` in one Stage-1 day.
+- The adapter binds queue and queue-item identity, target tile, overlay-object interaction, `SkullKeyChest` action,
+  required postcondition, requested/observed effects, native verification reasons and changed facts. Partitions are
+  derived from save/player/day identity; caller labels cannot place rows into train, validation or test.
+- The slice exposed a real bridge/compiler contract mismatch. The bridge emitted
+  `skull_key_special_item_which`, while the compiler and established snapshot contract consumed
+  `special_item_which`. The bridge now emits the canonical field and a game-free source guard prevents regression.
+- A focused three-partition fixture raises coverage from 2/19 to exactly 3/19 and rejects corpus-row, queue-item-ID
+  and effect tampering. It is test evidence only. The production reconciliation remains 2/19 and classifies Skull Key
+  as `evidence_not_connected` until three independent real native episodes are wired into the production request.
+- The implementation is split into orchestration, evidence validation and JSON/path support files. It reuses the
+  existing interaction compiler and executor and does not introduce a second mine, chest or action system.
 
 ## Review questions
 

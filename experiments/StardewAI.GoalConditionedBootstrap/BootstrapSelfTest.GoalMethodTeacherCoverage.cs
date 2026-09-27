@@ -23,6 +23,13 @@ internal static partial class BootstrapSelfTest
             GoalMethodTeacherCoverageSourceKinds
                 .PetLoveTerminalInteractionCorpus,
             petCorpusPath);
+        var skullKeyCorpusPath = BuildSkullKeyTeacherCorpusFixture(
+            fullOutputRoot);
+        var skullKeySource = new GoalMethodTeacherCoverageSource(
+            "skull-key-terminal-corpus",
+            GoalMethodTeacherCoverageSourceKinds
+                .SkullKeyTerminalInteractionCorpus,
+            skullKeyCorpusPath);
         var request = new GoalMethodTeacherCoverageRequest
         {
             CoverageId = "self-test-current-goal-method-teacher-coverage",
@@ -160,20 +167,14 @@ internal static partial class BootstrapSelfTest
                 GoalMethodCoverageDispositions
                     .DependencyGraphIncomplete] == 15 &&
             criterionDispositions[
-                GoalMethodCoverageDispositions.EvidenceNotConnected] == 1 &&
-            criterionDispositions[
-                GoalMethodCoverageDispositions
-                    .TeacherSourceAdapterMissing] == 1 &&
+                GoalMethodCoverageDispositions.EvidenceNotConnected] == 2 &&
             methodDispositions[
                 GoalMethodCoverageDispositions.CoverageReady] == 1 &&
             methodDispositions[
                 GoalMethodCoverageDispositions
                     .DependencyGraphIncomplete] == 8 &&
             methodDispositions[
-                GoalMethodCoverageDispositions.EvidenceNotConnected] == 1 &&
-            methodDispositions[
-                GoalMethodCoverageDispositions
-                    .TeacherSourceAdapterMissing] == 1 &&
+                GoalMethodCoverageDispositions.EvidenceNotConnected] == 2 &&
             petReconciliation.PrimaryDisposition ==
                 GoalMethodCoverageDispositions.EvidenceNotConnected &&
             petReconciliation.ImplementedTeacherSourceKinds.SequenceEqual(
@@ -194,8 +195,15 @@ internal static partial class BootstrapSelfTest
                 "EVD-223",
                 StringComparer.Ordinal) &&
             skullKeyReconciliation.PrimaryDisposition ==
-                GoalMethodCoverageDispositions
-                    .TeacherSourceAdapterMissing &&
+                GoalMethodCoverageDispositions.EvidenceNotConnected &&
+            skullKeyReconciliation.ImplementedTeacherSourceKinds.SequenceEqual(
+                new[]
+                {
+                    GoalMethodTeacherCoverageSourceKinds
+                        .SkullKeyTerminalInteractionCorpus
+                },
+                StringComparer.Ordinal) &&
+            skullKeyReconciliation.ActiveTeacherSourceKinds.Length == 0 &&
             skullKeyReconciliation
                 .ReferencedOptionInventoryTransparentReadComplete &&
             skullKeyReconciliation
@@ -263,6 +271,80 @@ internal static partial class BootstrapSelfTest
                 fullOutputRoot,
                 "pet-love-adapter-fixture-coverage-report.json"),
             petFixtureReport);
+
+        var skullKeyFixtureRequest = new GoalMethodTeacherCoverageRequest
+        {
+            CoverageId = "self-test-skull-key-adapter-fixture",
+            Sources = new[] { source, skullKeySource },
+            FormalProductTrainingAuthorized = false
+        };
+        var skullKeyFixtureRequestPath = Path.Combine(
+            fullOutputRoot,
+            "skull-key-adapter-fixture-coverage-request.json");
+        Write(skullKeyFixtureRequestPath, skullKeyFixtureRequest);
+        var skullKeyFixtureReport = GoalMethodTeacherCoverageBuilder.Build(
+            inputs,
+            skullKeyFixtureRequestPath);
+        var skullKey = skullKeyFixtureReport.Criteria.Single(criterion =>
+            criterion.DirectionId == "obtain_skull_key");
+        Require(
+            skullKeyFixtureReport.CoverageGateReadyCriterionCount == 3 &&
+            skullKeyFixtureReport.BlockingReasons.SequenceEqual(
+                new[] { "goal_method_teacher_coverage_incomplete:3/19" },
+                StringComparer.Ordinal) &&
+            skullKey.MethodStatus == "executable_frontier" &&
+            skullKey.CoverageGateReady &&
+            skullKey.SplitCoverageComplete &&
+            skullKey.BlockingReasons.Length == 0 &&
+            skullKey.TeacherSourceKinds.SequenceEqual(
+                new[]
+                {
+                    GoalMethodTeacherCoverageSourceKinds
+                        .SkullKeyTerminalInteractionCorpus
+                },
+                StringComparer.Ordinal),
+            "Skull Key fixture did not exercise the exact admitted non-collection slice.");
+        Write(
+            Path.Combine(
+                fullOutputRoot,
+                "skull-key-adapter-fixture-coverage-report.json"),
+            skullKeyFixtureReport);
+
+        var tamperedSkullKeyCorpusPath = Path.Combine(
+            fullOutputRoot,
+            "tampered-skull-key-teacher-corpus.json");
+        var tamperedSkullKeyCorpus = JsonNode.Parse(
+                File.ReadAllText(skullKeyCorpusPath))!
+            .AsObject();
+        tamperedSkullKeyCorpus["rows"]![0]!["chest_tile_x"] = 99;
+        File.WriteAllText(
+            tamperedSkullKeyCorpusPath,
+            tamperedSkullKeyCorpus.ToJsonString(new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }) + Environment.NewLine);
+        skullKeyFixtureRequest.Sources = new[]
+        {
+            source,
+            skullKeySource with { ArtifactPath = tamperedSkullKeyCorpusPath }
+        };
+        var tamperedSkullKeyRequestPath = Path.Combine(
+            fullOutputRoot,
+            "tampered-skull-key-coverage-request.json");
+        Write(tamperedSkullKeyRequestPath, skullKeyFixtureRequest);
+        var tamperedSkullKeyRejected = false;
+        try
+        {
+            GoalMethodTeacherCoverageBuilder.Build(
+                inputs,
+                tamperedSkullKeyRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            tamperedSkullKeyRejected = true;
+        }
+        Require(tamperedSkullKeyRejected,
+            "Tampered Skull Key terminal evidence entered the coverage gate.");
 
         var tamperedCorpusPath = Path.Combine(
             fullOutputRoot,
