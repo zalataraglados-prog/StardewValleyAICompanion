@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-09-27 机器箱存原料暂存边界
+
+机器路线现在可以把当前地图普通箱中的已预留原料识别为“可通过支持动作取得”，但不能把箱中数量当作机器可直接消费的背包数量。控制面复用既有 `inventory.transfer_item` 两步原生宏，要求完整 claim 只落入一个玩家背包槽；fresh 回执确认精确箱减/包增后，共享 ledger 只搬迁 claim 地址并保持其活动状态，再以新快照和新 revision 完整重规划进入既有投料链。
+
+该闭环拒绝跨槽拆分、非当前地图或特殊/锁定箱、部分 claim 搬迁、消费/搬迁混用和未观测到目标物品的结算。静态 dispatch、hermetic、Core game-free `91/91`、Backend `213/213` 已通过，但这仍是非终端执行证据，`formal_training_authorized=false`。材料缺失时的权威采购递归、缺少机器时对既有容量生命周期的接线、Teacher 19 项完成度以及独立 Teacher 监督门仍必须继续闭合，不能据此恢复正式全量训练。
+
 ## 2026-09-08 EVD-335 春葱高层准入
 
 `foraging.harvest_spring_onions` 已完成五门闭环。锁定的 1.6.15 程序集确认 `Crop.forageCrop_springOnionID == "1"`，原生 `Crop.harvest` 在该分支动态创建 `(O)399` 并增加 3 点 Foraging XP；它不依赖普通作物的 `indexOfHarvest`。透明桥据此只对精确原版基类春葱发布产物身份及精确投影状态，未知觅食 ID、自定义作物、姜和普通作物均不借用本证据。

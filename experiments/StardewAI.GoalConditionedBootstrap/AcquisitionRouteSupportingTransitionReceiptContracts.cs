@@ -61,12 +61,61 @@ public sealed class AcquisitionRouteSupportingTransitionReceipt
     public AcquisitionMachineInputTransitionEvidence?
         MachineInputTransition { get; set; }
 
+    [JsonPropertyName("material_transfer_transition")]
+    public AcquisitionMaterialTransferTransitionEvidence?
+        MaterialTransferTransition { get; set; }
+
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A supporting transition receipt verifies one hash-bound nonterminal queue item against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+        "A supporting transition receipt verifies one hash-bound nonterminal action or the exact existing move-plus-transfer macro against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. Machine material staging requires the reserved chest stack to decrease and one projected player-inventory slot to increase by the exact full claim quantity; it records relocation, not consumption. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+}
+
+public sealed class AcquisitionMaterialTransferTransitionEvidence
+{
+    [JsonPropertyName("reservation_id")]
+    public string ReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_node_id")]
+    public string SourceNodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_slot_index")]
+    public int? SourceSlotIndex { get; set; }
+
+    [JsonPropertyName("destination_node_id")]
+    public string DestinationNodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("destination_slot_index")]
+    public int? DestinationSlotIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("quantity")]
+    public int? Quantity { get; set; }
+
+    [JsonPropertyName("source_quantity_before")]
+    public int? SourceQuantityBefore { get; set; }
+
+    [JsonPropertyName("source_quantity_after")]
+    public int? SourceQuantityAfter { get; set; }
+
+    [JsonPropertyName("destination_quantity_before")]
+    public int? DestinationQuantityBefore { get; set; }
+
+    [JsonPropertyName("destination_quantity_after")]
+    public int? DestinationQuantityAfter { get; set; }
+
+    [JsonPropertyName("resolved")]
+    public bool Resolved { get; set; }
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 }
 
 public sealed class AcquisitionMachineInputTransitionEvidence

@@ -71,15 +71,29 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             .Concat(lowered.SupportingOptionIds)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+        var rankedOptionIds = optionIds.Where(optionId =>
+                optionId != "inventory.transfer_item")
+            .ToArray();
         var candidates = AcquisitionRouteDispatchCompilationBuilder
             .RebuildVerifiedCurrentCandidates(
                 snapshot,
                 ledger,
                 processing.GoalId,
                 requirement,
-                optionIds,
+                rankedOptionIds,
                 CurrentTeacherFrontierSupport.ReadCurrentCandidates(ranking),
                 out var candidateReasons);
+        var stagingReasons = Array.Empty<string>();
+        if (request.SupportTransitionKind ==
+            "machine_input_material_transfer")
+        {
+            var stagingCandidates =
+                AcquisitionMachineInputMaterialStaging.BuildCandidates(
+                snapshot,
+                route.UpstreamRoute,
+                out stagingReasons);
+            candidates = candidates.Concat(stagingCandidates).ToArray();
+        }
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectSupportingCandidates(requirement, lowered, candidates);
         return BuildCore(
@@ -93,7 +107,7 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             CurrentTeacherFrontierSupport.HashFile(rankingPath),
             CurrentTeacherFrontierSupport.HashFile(requestPath),
             CurrentTeacherFrontierSupport.HashFile(receiptPath),
-            candidateReasons);
+            candidateReasons.Concat(stagingReasons));
     }
 
     private static AcquisitionRouteTargetDateUnlock RequirementRoute(

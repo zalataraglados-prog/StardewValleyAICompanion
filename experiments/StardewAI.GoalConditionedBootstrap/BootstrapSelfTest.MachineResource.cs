@@ -108,16 +108,12 @@ internal static partial class BootstrapSelfTest
             MachineResourceStateWithChestOnly(
                 MachineResourceSlot(0, "(O)262", 2),
                 MachineResourceSlot(1, "(O)382", 2)));
-        Require(chestOnly.ResourceInputsMatchTargetDate == false &&
-                chestOnly.NonMatchingReasons.Contains(
-                    "required_machine_input_candidate_unavailable",
-                    StringComparer.Ordinal) &&
-                chestOnly.InputEvaluations.Single() is
-                {
-                    QualifiedItemId: "(O)262",
-                    AvailableQuantity: 0
-                },
-            "Machine loading incorrectly treated chest stock as actor-held input.");
+        Require(chestOnly.ResourceInputsMatchTargetDate == true &&
+                chestOnly.InputEvaluations.Length == 2 &&
+                chestOnly.InputEvaluations.All(input =>
+                    input.MachineBinding?.EligibleSlots is
+                    [{ RequiresPlayerStaging: true }]),
+            "Stageable current-location chest stock was not preserved as an explicit machine-input prerequisite.");
 
         var tagSource = itemSource with
         {
@@ -253,6 +249,7 @@ internal static partial class BootstrapSelfTest
                     OwnershipClass = "actor_owned",
                     ActorUseAuthorized = true,
                     OwnerPlayerId = 42,
+                    LocationId = "Farm",
                     Capacity = 36,
                     Slots = slots
                 }
@@ -281,6 +278,7 @@ internal static partial class BootstrapSelfTest
                     OwnershipClass = "actor_owned",
                     ActorUseAuthorized = true,
                     OwnerPlayerId = 42,
+                    LocationId = "Farm",
                     Capacity = 36,
                     Slots = Array.Empty<MaterialInventorySlot>()
                 },
@@ -299,8 +297,24 @@ internal static partial class BootstrapSelfTest
                 }
             },
             PhysicalInventoryCount = 2,
-            AccessPointCount = 0,
-            DeduplicatedAccessPointCount = 0
+            AccessPoints = new[]
+            {
+                new MaterialInventoryAccessPoint
+                {
+                    AccessPointId = "access:chest:Farm:4,5",
+                    NodeId = "chest:Farm:4,5",
+                    AccessKind = "placed_chest",
+                    LocationId = "Farm",
+                    LocationIsCurrent = true,
+                    TileX = 4,
+                    TileY = 5,
+                    SpecialChestType = "None",
+                    OwnerPlayerId = 42,
+                    IsPlayerChest = true
+                }
+            },
+            AccessPointCount = 1,
+            DeduplicatedAccessPointCount = 1
         };
         return MachineResourceState(graph);
     }

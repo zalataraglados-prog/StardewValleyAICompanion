@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -140,6 +141,14 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
     public AcquisitionSupportMaterialConsumption[] SupportMaterialConsumptions
     { get; set; } = Array.Empty<AcquisitionSupportMaterialConsumption>();
 
+    [JsonPropertyName("support_material_relocations")]
+    public AcquisitionSupportMaterialRelocation[] SupportMaterialRelocations
+    { get; set; } = Array.Empty<AcquisitionSupportMaterialRelocation>();
+
+    [JsonPropertyName("material_transfer_intent")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialTransferIntent? MaterialTransferIntent { get; set; }
+
     [JsonPropertyName("deadline_proof_verified")]
     public bool DeadlineProofVerified { get; set; }
 
@@ -163,7 +172,31 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A support request may select only one current source-bound candidate from the shared acquisition route. Crop planting retains exact growth, season, seed-slot and deadline proof. Machine input loading additionally requires a unique native output route, exact machine location/tile/type, probe-derived required input count and effective processing minutes matching the authoritative processing schedule; its exact input slot must be covered by the route material claims and its completion day must fit the explicit deadline. All route claims are preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
+        "A support request may select only one current source-bound candidate from the shared acquisition route. Crop planting retains exact growth, season, seed-slot and deadline proof. Machine input loading additionally requires a unique native output route, exact machine location/tile/type, probe-derived required input count and effective processing minutes matching the authoritative processing schedule; its exact input slot must be covered by the route material claims and its completion day must fit the explicit deadline. A machine claim in a current-location ordinary unlocked chest cannot compile as a load: it first emits one deterministic inventory.transfer_item support transition whose native projection fits exactly one player-inventory slot and whose relocation preserves the full active claim. All route claims are preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
+}
+
+public sealed class AcquisitionSupportMaterialRelocation
+{
+    [JsonPropertyName("reservation_id")]
+    public string ReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_node_id")]
+    public string SourceNodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_slot_index")]
+    public int SourceSlotIndex { get; set; }
+
+    [JsonPropertyName("destination_node_id")]
+    public string DestinationNodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("destination_slot_index")]
+    public int DestinationSlotIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("quantity")]
+    public int Quantity { get; set; }
 }
 
 public sealed class AcquisitionSupportMaterialConsumption

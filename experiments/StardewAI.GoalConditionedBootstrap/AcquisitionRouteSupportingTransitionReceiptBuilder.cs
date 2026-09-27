@@ -85,6 +85,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         var snapshotReasons = ValidateSnapshots(before, after);
         AcquisitionCropPlantingTransitionEvidence? cropTransition = null;
         AcquisitionMachineInputTransitionEvidence? machineTransition = null;
+        AcquisitionMaterialTransferTransitionEvidence? materialTransfer = null;
         string[] transitionReasons;
         var transitionVerified = false;
         if (queue is null)
@@ -94,40 +95,54 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 "supporting_transition_action_queue_missing"
             };
         }
-        else if (queue.Items is not { Length: 1 })
-        {
-            transitionReasons = new[]
-            {
-                "supporting_transition_action_queue_item_count_invalid"
-            };
-        }
         else
         {
-            var transitionKind = UniqueParameter(
-                queue.Items.Single().NormalizedCommand?.Parameters,
-                "acquisition_support_transition_kind");
-            if (transitionKind == "crop_planting")
+            var transitionKinds = queue.Items.Select(item =>
+                    UniqueParameter(
+                        item.NormalizedCommand?.Parameters,
+                        "acquisition_support_transition_kind"))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            var transitionKind = transitionKinds.Length == 1
+                ? transitionKinds[0]
+                : string.Empty;
+            if (transitionKind == "crop_planting" &&
+                queue.Items.Length == 1)
             {
                 cropTransition = VerifyCropPlanting(queue, before, after);
                 transitionReasons = cropTransition.BlockingReasons;
                 transitionVerified = cropTransition.Verified;
             }
-            else if (transitionKind == "machine_input_load")
+            else if (transitionKind == "machine_input_load" &&
+                queue.Items.Length == 1)
             {
                 machineTransition = VerifyMachineInput(queue, before, after);
                 transitionReasons = machineTransition.BlockingReasons;
                 transitionVerified = machineTransition.Verified;
             }
+            else if (transitionKind ==
+                "machine_input_material_transfer")
+            {
+                materialTransfer = VerifyMaterialTransfer(
+                    queue,
+                    before,
+                    after);
+                transitionReasons = materialTransfer.BlockingReasons;
+                transitionVerified = materialTransfer.Verified;
+            }
             else
             {
                 transitionReasons = new[]
                 {
-                    "supporting_transition_kind_missing_or_unsupported"
+                    string.IsNullOrWhiteSpace(transitionKind)
+                        ? "supporting_transition_kind_missing_or_unsupported"
+                        : "supporting_transition_action_queue_item_count_invalid"
                 };
             }
         }
         result.CropPlantingTransition = cropTransition;
         result.MachineInputTransition = machineTransition;
+        result.MaterialTransferTransition = materialTransfer;
         result.QueueExecutionVerified = queueReasons.Length == 0;
         result.SupportingTransitionVerified =
             compilationReasons.Length == 0 &&
@@ -171,7 +186,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             compilation.FormalTrainingAuthorized ||
             compilation.BlockingReasons.Length != 0 ||
             queue is null ||
-            queue.Items.Length != 1)
+            !ValidQueueShape(queue))
         {
             reasons.Add("supporting_transition_compilation_not_ready");
         }
@@ -211,6 +226,20 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 "supporting_transition_queue_commit_lineage_missing_or_ambiguous");
         }
         return reasons.ToArray();
+    }
+
+    private static bool ValidQueueShape(ActionQueueEnvelope queue)
+    {
+        var kinds = queue.Items.Select(item => UniqueParameter(
+                item.NormalizedCommand?.Parameters,
+                "acquisition_support_transition_kind"))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (kinds.Length != 1)
+            return false;
+        return kinds[0] == "machine_input_material_transfer"
+            ? queue.Items.Length == 2
+            : queue.Items.Length == 1;
     }
 
     private static string[] ValidateSnapshots(

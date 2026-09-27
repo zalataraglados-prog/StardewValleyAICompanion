@@ -60,7 +60,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         if (!state.MaterialEvidenceAvailable)
             return Blocked(route, MachineInput,
                 state.MaterialBlockingReasons);
-        if (!TryMachinePlayerMaterialSlots(
+        if (!TryMachineMaterialSlots(
                 state,
                 out var machineMaterialSlots,
                 out var machineMaterialBlockingReason))
@@ -152,7 +152,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             Array.Empty<string>());
     }
 
-    private static bool TryMachinePlayerMaterialSlots(
+    private static bool TryMachineMaterialSlots(
         AcquisitionResourceInputSnapshotState state,
         out AcquisitionResourceMaterialSlot[] slots,
         out string blockingReason)
@@ -165,19 +165,47 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             blockingReason = "machine_player_inventory_graph_unavailable";
             return false;
         }
-        var nodes = graph.InventoryNodes.Where(node =>
+        var playerNodes = graph.InventoryNodes.Where(node =>
                 node.InventoryKind == "player_inventory" &&
                 node.OwnerPlayerId == graph.PlayerId &&
                 node.ActorUseAuthorized &&
                 node.SupplyState == "available")
             .ToArray();
-        if (nodes.Length != 1)
+        if (playerNodes.Length != 1)
         {
             blockingReason = "machine_player_inventory_node_not_unique";
             return false;
         }
+        var player = playerNodes[0];
+        var stageableChestNodeIds = graph.InventoryNodes.Where(node =>
+                node.InventoryKind == "chest" &&
+                node.ActorUseAuthorized &&
+                node.SupplyState == "available" &&
+                node.LocationId == player.LocationId)
+            .Where(node =>
+            {
+                var access = graph.AccessPoints.Where(row =>
+                        row.NodeId == node.NodeId)
+                    .ToArray();
+                return access.Length == 1 &&
+                    access[0].AccessKind == "placed_chest" &&
+                    access[0].SpecialChestType == "None" &&
+                    !access[0].LockedByOtherPlayer &&
+                    access[0].LocationIsCurrent &&
+                    access[0].LocationId == node.LocationId &&
+                    access[0].LocationId == player.LocationId &&
+                    access[0].TileX.HasValue &&
+                    access[0].TileY.HasValue;
+            })
+            .Select(node => node.NodeId)
+            .ToHashSet(StringComparer.Ordinal);
         slots = state.MaterialSlots.Where(slot =>
-                slot.NodeId == nodes[0].NodeId)
+                slot.NodeId == player.NodeId ||
+                stageableChestNodeIds.Contains(slot.NodeId))
+            .Select(slot => slot with
+            {
+                RequiresPlayerStaging = slot.NodeId != player.NodeId
+            })
             .ToArray();
         return true;
     }
@@ -272,7 +300,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         });
         var remaining = requiredQuantity;
         foreach (var slot in eligibleSlots
-                     .OrderBy(slot => slot.NodeId, StringComparer.Ordinal)
+                     .OrderBy(slot => slot.RequiresPlayerStaging ? 1 : 0)
+                     .ThenBy(slot => slot.NodeId, StringComparer.Ordinal)
                      .ThenBy(slot => slot.SlotIndex))
         {
             var key = SlotKey(slot.NodeId, slot.SlotIndex);
@@ -319,7 +348,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                             slot.NodeId,
                             slot.SlotIndex,
                             slot.QualifiedItemId,
-                            slot.AvailableQuantity))
+                            slot.AvailableQuantity,
+                            slot.RequiresPlayerStaging))
                     .ToArray())
             {
                 CreditedExistingOutputQuantity =

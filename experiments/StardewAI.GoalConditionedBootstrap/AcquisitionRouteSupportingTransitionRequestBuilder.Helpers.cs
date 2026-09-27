@@ -7,7 +7,18 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
 {
     private static string SupportingTransitionKind(
-        AcquisitionRouteTargetDateUnlock requirement) =>
+        AcquisitionRouteTargetDateUnlock requirement,
+        PolicyEventCandidatePrediction? candidate = null) =>
+        candidate is
+        {
+            OptionId: "inventory.transfer_item",
+            Kind: "transfer_inventory_item"
+        } && requirement.RouteKind is (
+            "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output")
+            ? "machine_input_material_transfer"
+            :
         requirement.RouteKind switch
         {
             "harvests_as" when requirement.SourceId.StartsWith(

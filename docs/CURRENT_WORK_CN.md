@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器箱存原料暂存与 reservation 搬迁闭环
+
+- `resource_inputs` 仍优先使用当前角色背包，但现在允许当前地图内、执行者获权、普通、未锁且交互坐标完整的放置箱子证明机器路线材料充足；此类槽位显式标记 `requires_player_staging=true`，绝不直接编译为机器投料。
+- 当背包没有可直接投料的已预留材料时，支持递归只生成一个确定性 `inventory.transfer_item` 候选，并复用现有 `executor.move_to_tile -> executor.transfer_material` 两步宏。原生投影必须把完整 claim 放入恰好一个玩家背包槽；跨槽拆分、非当前地图、特殊箱、锁定箱、歧义节点或容量不足均在上游失败关闭。
+- fresh 前后快照回执逐节点和逐槽核验箱子减少量与背包增加量。共享 reservation ledger 新增原子 relocation：活动 claim 从原箱子槽搬到实际观测到的背包槽，数量不变、状态仍为 `Active`；它不是消耗，不写 route-complete。部分搬迁、消费与搬迁混用、目标槽未观测到足量物品均拒绝，成功后必须使用新 state hash 与 ledger revision 做完整重规划，随后才可进入既有机器投料支持动作。
+- acquisition dispatch、bootstrap hermetic、Core game-free `91/91` 与 Backend `213/213` 已通过；正式训练授权仍为 `false`。下一固定切片是让已有权威商店报价和开放窗口的确定性材料采购复用同一非终端递归协议；已有机器容量生命周期只做接线复用，不建立第二套制作、放置或投料执行器。
+
 ## 2026-09-27 机器投料部分结算与完整重规划复入
 
 - 共享 `ReservationPortfolioLedgerService` 的非终端支持结算现已接受结构化材料消费数组。每项都必须绑定一个活动 reservation、精确库存节点/槽位/qualified ID，且消费量不得超过 claim 余量；重复 reservation、重复槽位、新旧表示混用、超量或溢出输入均原子失败关闭。旧单条全量消费请求继续兼容。

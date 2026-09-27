@@ -129,56 +129,105 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     transition.SelectedCandidateId &&
                 commit.CommittedLedgerRevision == ledger.Revision,
             "Support settlement source identity drifted.");
-        var evidence = VerifiedMaterialEvidence(request, transition);
-        Require(request.SupportMaterialConsumptions.Length > 0 &&
-                evidence.Length ==
-                    request.SupportMaterialConsumptions.Length,
-            "Support settlement material evidence is incomplete.");
         var consumptions = new List<SettlementConsumptionContext>();
-        foreach (var planned in request.SupportMaterialConsumptions)
+        var relocations = new List<SettlementRelocationContext>();
+        if (request.SupportTransitionKind ==
+            "machine_input_material_transfer")
         {
-            var observed = evidence.Where(value =>
-                    value.ReservationId == planned.ReservationId &&
-                    value.NodeId == planned.NodeId &&
-                    value.SlotIndex == planned.SlotIndex &&
-                    value.QualifiedItemId == planned.QualifiedItemId &&
-                    value.ExpectedConsumedQuantity ==
-                        planned.ConsumedQuantity &&
-                    value.ObservedConsumedQuantity ==
-                        planned.ConsumedQuantity &&
-                    value.Verified)
-                .ToArray();
-            Require(observed.Length == 1,
-                "Support settlement consumption evidence is not unique and exact.");
+            var evidence = transition.MaterialTransferTransition ??
+                throw new InvalidDataException(
+                    "Support settlement material-transfer evidence is missing.");
+            Require(evidence.Verified &&
+                    request.SupportMaterialConsumptions.Length == 0 &&
+                    request.SupportMaterialRelocations.Length == 1,
+                "Support settlement relocation evidence is incomplete.");
+            var planned = request.SupportMaterialRelocations[0];
+            Require(evidence.ReservationId == planned.ReservationId &&
+                    evidence.SourceNodeId == planned.SourceNodeId &&
+                    evidence.SourceSlotIndex == planned.SourceSlotIndex &&
+                    evidence.DestinationNodeId ==
+                        planned.DestinationNodeId &&
+                    evidence.DestinationSlotIndex ==
+                        planned.DestinationSlotIndex &&
+                    evidence.QualifiedItemId == planned.QualifiedItemId &&
+                    evidence.Quantity == planned.Quantity,
+                "Support settlement relocation lineage drifted.");
             var claims = request.ReservationMaterialClaims.Where(claim =>
                     claim.ReservationId == planned.ReservationId &&
-                    claim.NodeId == planned.NodeId &&
-                    claim.SlotIndex == planned.SlotIndex &&
+                    claim.NodeId == planned.SourceNodeId &&
+                    claim.SlotIndex == planned.SourceSlotIndex &&
                     claim.QualifiedItemId == planned.QualifiedItemId &&
-                    claim.Quantity >= planned.ConsumedQuantity)
+                    claim.Quantity == planned.Quantity)
                 .ToArray();
             Require(claims.Length == 1 &&
                     request.ReservationClaimIds.Contains(
                         claims[0].ReservationId,
                         StringComparer.Ordinal),
-                "Support settlement consumed claim is not unique and exact.");
+                "Support settlement relocated claim is not unique and exact.");
             var active = ledger.MaterialReservations.Where(row =>
                     row.ReservationId == claims[0].ReservationId &&
                     row.Status == StrategyCommitmentStatuses.Active &&
                     Exact(row, claims[0], ledger.PlayerId))
                 .ToArray();
             Require(active.Length == 1,
-                "Support settlement consumed claim is not active and exact.");
-            consumptions.Add(new SettlementConsumptionContext(
+                "Support settlement relocated claim is not active and exact.");
+            relocations.Add(new SettlementRelocationContext(
                 claims[0],
-                planned.ConsumedQuantity));
+                planned));
         }
-        Require(consumptions.Select(value => value.Claim.ReservationId)
-                    .Distinct(StringComparer.Ordinal).Count() ==
-                consumptions.Count &&
-                consumptions.Select(value => value.Claim.SourceDecisionId)
-                    .Distinct(StringComparer.Ordinal).Count() == 1,
-            "Support settlement consumption set is ambiguous.");
+        else
+        {
+            var evidence = VerifiedMaterialEvidence(request, transition);
+            Require(request.SupportMaterialConsumptions.Length > 0 &&
+                    request.SupportMaterialRelocations.Length == 0 &&
+                    evidence.Length ==
+                        request.SupportMaterialConsumptions.Length,
+                "Support settlement material evidence is incomplete.");
+            foreach (var planned in request.SupportMaterialConsumptions)
+            {
+                var observed = evidence.Where(value =>
+                        value.ReservationId == planned.ReservationId &&
+                        value.NodeId == planned.NodeId &&
+                        value.SlotIndex == planned.SlotIndex &&
+                        value.QualifiedItemId == planned.QualifiedItemId &&
+                        value.ExpectedConsumedQuantity ==
+                            planned.ConsumedQuantity &&
+                        value.ObservedConsumedQuantity ==
+                            planned.ConsumedQuantity &&
+                        value.Verified)
+                    .ToArray();
+                Require(observed.Length == 1,
+                    "Support settlement consumption evidence is not unique and exact.");
+                var claims = request.ReservationMaterialClaims.Where(claim =>
+                        claim.ReservationId == planned.ReservationId &&
+                        claim.NodeId == planned.NodeId &&
+                        claim.SlotIndex == planned.SlotIndex &&
+                        claim.QualifiedItemId == planned.QualifiedItemId &&
+                        claim.Quantity >= planned.ConsumedQuantity)
+                    .ToArray();
+                Require(claims.Length == 1 &&
+                        request.ReservationClaimIds.Contains(
+                            claims[0].ReservationId,
+                            StringComparer.Ordinal),
+                    "Support settlement consumed claim is not unique and exact.");
+                var active = ledger.MaterialReservations.Where(row =>
+                        row.ReservationId == claims[0].ReservationId &&
+                        row.Status == StrategyCommitmentStatuses.Active &&
+                        Exact(row, claims[0], ledger.PlayerId))
+                    .ToArray();
+                Require(active.Length == 1,
+                    "Support settlement consumed claim is not active and exact.");
+                consumptions.Add(new SettlementConsumptionContext(
+                    claims[0],
+                    planned.ConsumedQuantity));
+            }
+            Require(consumptions.Select(value => value.Claim.ReservationId)
+                        .Distinct(StringComparer.Ordinal).Count() ==
+                    consumptions.Count &&
+                    consumptions.Select(value => value.Claim.SourceDecisionId)
+                        .Distinct(StringComparer.Ordinal).Count() == 1,
+                "Support settlement consumption set is ambiguous.");
+        }
         return new SettlementContext(
             request,
             commit,
@@ -186,6 +235,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             after,
             ledger,
             consumptions.ToArray(),
+            relocations.ToArray(),
             HashOrEmpty(requestPath),
             HashOrEmpty(commitReceiptPath),
             HashOrEmpty(transitionPath),
@@ -199,8 +249,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             ExpectedLedgerRevision = context.BaseLedger.Revision,
             PortfolioId = context.Request.SupportRequestId,
             GoalId = context.Request.GoalId,
-            RouteSourceDecisionId = context.Consumptions[0]
-                .Claim.SourceDecisionId,
+            RouteSourceDecisionId = RouteSourceDecisionId(context),
             SupportingTransitionReceiptSha256 =
                 context.SupportingTransitionReceiptSha256,
             MaterialConsumptions = context.Consumptions.Select(value =>
@@ -211,10 +260,32 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                         SlotIndex = value.Claim.SlotIndex,
                         QualifiedItemId = value.Claim.QualifiedItemId,
                         ConsumedQuantity = value.ConsumedQuantity
+                })
+                .ToArray(),
+            MaterialRelocations = context.Relocations.Select(value =>
+                    new ReservationPortfolioMaterialRelocation
+                    {
+                        MaterialReservationId = value.Claim.ReservationId,
+                        SourceNodeId = value.Relocation.SourceNodeId,
+                        SourceSlotIndex = value.Relocation.SourceSlotIndex,
+                        DestinationNodeId =
+                            value.Relocation.DestinationNodeId,
+                        DestinationSlotIndex =
+                            value.Relocation.DestinationSlotIndex,
+                        QualifiedItemId =
+                            value.Relocation.QualifiedItemId,
+                        Quantity = value.Relocation.Quantity
                     })
                 .ToArray(),
-            Reason = SettlementReason
+            Reason = context.Relocations.Length > 0
+                ? "verified_supporting_transition_relocation"
+                : SettlementReason
         };
+
+    private static string RouteSourceDecisionId(SettlementContext context) =>
+        context.Consumptions.Length > 0
+            ? context.Consumptions[0].Claim.SourceDecisionId
+            : context.Relocations[0].Claim.SourceDecisionId;
 
     private static AcquisitionSupportMaterialConsumptionEvidence[]
         VerifiedMaterialEvidence(
@@ -303,6 +374,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         SnapshotEnvelope AfterSnapshot,
         StrategyCommitmentLedger BaseLedger,
         SettlementConsumptionContext[] Consumptions,
+        SettlementRelocationContext[] Relocations,
         string SupportRequestSha256,
         string SupportCommitReceiptSha256,
         string SupportingTransitionReceiptSha256,
@@ -311,4 +383,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
     private sealed record SettlementConsumptionContext(
         MaterialReservationUpsertRequest Claim,
         int ConsumedQuantity);
+
+    private sealed record SettlementRelocationContext(
+        MaterialReservationUpsertRequest Claim,
+        AcquisitionSupportMaterialRelocation Relocation);
 }

@@ -79,6 +79,19 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (crop is not null)
             return crop;
 
+        if (requirement.RouteKind is (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output") &&
+            candidate.OptionId == "inventory.transfer_item" &&
+            candidate.Kind == "transfer_inventory_item")
+        {
+            return new AcquisitionRouteDispatchCandidateMatch(
+                candidate,
+                "deterministic_reserved_machine_input_material_staging",
+                "supporting_transition");
+        }
+
         if (requirement.RouteKind is not (
                 "machine_output" or
                 "native_machine_flavored_output" or
