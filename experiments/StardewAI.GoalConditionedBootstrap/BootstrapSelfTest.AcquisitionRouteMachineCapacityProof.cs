@@ -7,7 +7,8 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private static void VerifyMachineCapacitySupportingTransitionProof(
+    private static AcquisitionRouteSupportingTransitionTerminalCoverageSource
+        VerifyMachineCapacitySupportingTransitionProof(
         AcquisitionRouteExecutionBindingInputs template)
     {
         var root = Path.Combine(
@@ -258,7 +259,7 @@ internal static partial class BootstrapSelfTest
             SettledLedgerPath = supportSettledLedgerPath,
             SettlementReceiptPath = supportSettlementReceiptPath
         };
-        VerifyMachineCapacityProofTerminalRoute(
+        return VerifyMachineCapacityProofTerminalRoute(
             authority,
             supportInputs,
             proof,
@@ -267,7 +268,8 @@ internal static partial class BootstrapSelfTest
             root);
     }
 
-    private static void VerifyMachineCapacityProofTerminalRoute(
+    private static AcquisitionRouteSupportingTransitionTerminalCoverageSource
+        VerifyMachineCapacityProofTerminalRoute(
         MachineCapacityProofAuthority authority,
         AcquisitionRouteSupportingTransitionRequestInputs supportInputs,
         AcquisitionRouteSupportingTransitionSettlementProof proof,
@@ -479,6 +481,14 @@ internal static partial class BootstrapSelfTest
                 verified.Rows.Single().Payload.NativeOutcome
                     .RouteOccurrenceId != authority.MachineRouteOccurrenceId,
             "Supporting machine placement leaked into terminal supervision.");
+
+        return new AcquisitionRouteSupportingTransitionTerminalCoverageSource
+        {
+            RolloutProofManifestPath = manifestPath,
+            RolloutProofReceiptPath = proofReceiptPath,
+            RolloutAdmissionReceiptPath = rolloutAdmissionPath,
+            SupervisionDatasetPath = datasetPath
+        };
     }
 
     private static AcquisitionRouteSupportingTransitionRequestInputs

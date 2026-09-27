@@ -61,6 +61,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-supporting-transition-terminal-settlement-request", BuildAcquisitionRouteSupportingTransitionTerminalSettlementRequest),
     new("build-acquisition-route-supporting-transition-terminal-settlement-receipt", BuildAcquisitionRouteSupportingTransitionTerminalSettlementReceipt),
     new("build-acquisition-route-supporting-transition-terminal-rollout-checkpoint", BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint),
+    new("build-acquisition-route-supporting-transition-terminal-coverage", BuildAcquisitionRouteSupportingTransitionTerminalCoverage),
     new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
     new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
     new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
@@ -106,6 +107,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
     new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
     new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
+    new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
     new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
     new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),
@@ -1490,6 +1492,17 @@ static void BuildAcquisitionRoutePortfolioRolloutProofReceipt(
     Write(options.Required("output"), receipt);
 }
 
+static void BuildAcquisitionRouteSupportingTransitionTerminalCoverage(
+    Arguments options)
+{
+    var report =
+        AcquisitionRouteSupportingTransitionTerminalCoverageBuilder.Build(
+            options.Required("request"));
+    Write(options.Required("output"), report);
+    if (!report.TerminalLineageCoverageComplete)
+        Environment.ExitCode = 2;
+}
+
 static void BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt(
     Arguments options)
 {
@@ -2110,6 +2123,10 @@ static void SelfTestCurrentCommunityCenterDenominator(Arguments options) =>
 static void SelfTestCurrentStageOneCollection(Arguments options)
     => BootstrapSelfTest.RunCurrentStageOneCollection(
         options.Required("output-root"));
+
+static void SelfTestMachineInputLoadTerminalCoverage(Arguments options) =>
+    BootstrapSelfTest.RunMachineInputLoadTerminalCoverage(
+        options.Required("execution-inputs"));
 
 static void SelfTestGoalMethodIncomparableLiveShadow(Arguments options)
     => BootstrapSelfTest.RunGoalMethodIncomparableLiveShadow(

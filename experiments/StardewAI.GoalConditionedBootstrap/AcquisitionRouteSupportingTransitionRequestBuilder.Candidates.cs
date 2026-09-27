@@ -437,7 +437,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         var timeResolved = TryStateInt(
             snapshot,
             "time",
-            "time_of_day",
+            "time",
             out var timeOfDay);
         int? authoritativeMinutes = null;
         if (schedule is not null && timeResolved)
