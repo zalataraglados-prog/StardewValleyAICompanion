@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 支持动作终端训练谱系覆盖矩阵 5/5
+
+- `crop_planting` 现已复用既有 `farm.maintain_crops -> executor.plant_seed` 候选、编译和原生状态回执，完成 `support request -> atomic commit -> shared compilation -> native receipt -> nonterminal settlement -> fresh replan -> terminal rollout -> supervision` 的 file-backed 全链证明；没有新增第二套农田规划、动作编译、寻路、ledger 或执行器。
+- 证明逐项核验防风草种子 `(O)472` 从 `3 -> 2`、目标地块作物从不存在变为唯一 `(O)24` 防风草、作物未死亡且尚未成熟，并完成唯一种子 material reservation。种植不会伪装成即时收获；fresh Teacher 在同一 `full_shipment:item:24` 需求内改选确定性商店终态备选，种植 run ID 仍从终态 native outcome 中排除。
+- 严格覆盖矩阵现为 `5/5`：`crop_planting`、`machine_input_load`、`machine_input_material_transfer`、`machine_input_purchase`、`machine_capacity_establishment` 均恰好有一条可重算证据，全部 `coverage_verified=true` 且 `support_excluded_from_terminal_outcomes=true`；缺失、重复或支持动作泄漏为终态标签仍失败关闭。
+- Release 构建、定向 crop planting 谱系、三条受共享夹具影响的机器支持链、acquisition dispatch、bootstrap hermetic 与全新输出根上的完整 `self-test-current-stage-one-collection` 均通过。全量报告状态为 `verified_complete_support_terminal_lineage_coverage`，无 missing/blocking 项。
+- `formal_product_training_authorized=false` 保持不变。下一固定切片转入正式训练准入总门审计：从现有 corpus、split、rollout、admission 和 holdout 制品中重新计算剩余阻塞，区分预期的产品安全锁与真实缺口；不得因支持矩阵完成而直接放开训练。
+
 ## 2026-09-28 支持动作终端训练谱系覆盖矩阵 4/5
 
 - `machine_input_purchase` 现已复用既有权威商店报价、`economy.buy_supplies -> executor.buy_shop_item -> executor.close_menu`、原生购买回执与 currency reservation 结算，完成 `support request -> atomic commit -> shared compilation -> native receipt -> nonterminal settlement -> fresh replan -> terminal rollout -> supervision` 的 file-backed 全链证明；没有新增第二套商店、购买、寻路、ledger、终端编译器或执行器。

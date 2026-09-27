@@ -2587,6 +2587,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   state receipt and material-reservation settlement to prove `crop_planting` through the same terminal lineage. It must
   not add another field planner, action compiler, route planner, ledger or terminal executor.
 
+### 2026-09-28: support-family terminal-lineage matrix, 5/5
+
+- `crop_planting` now reuses the existing `farm.maintain_crops -> executor.plant_seed` candidate, compiler and native
+  transition receipt to prove the complete file-backed support-to-terminal lineage. No second field planner, action
+  compiler, route planner, ledger or executor was introduced.
+- The proof verifies exact parsnip-seed inventory `(O)472` `3 -> 2`, absence-to-presence of one `(O)24` crop at the
+  bound tile, a live but not-yet-harvestable crop, and completion of the unique seed material reservation. Planting is
+  not misrepresented as an instant harvest. A fresh Teacher replan selects the deterministic shop alternative for the
+  same `full_shipment:item:24` requirement, while the planting run remains absent from terminal native outcomes.
+- The strict controller-recomputed matrix is complete at 5/5. `crop_planting`, `machine_input_load`,
+  `machine_input_material_transfer`, `machine_input_purchase` and `machine_capacity_establishment` each have exactly
+  one verified row, all exclude support execution from terminal supervision, and missing or duplicate evidence remains
+  fail-closed.
+- Release build, targeted crop lineage, all shared machine-support regressions, acquisition dispatch, hermetic bootstrap
+  and a fresh complete StageOne run pass. The report status is
+  `verified_complete_support_terminal_lineage_coverage` with no missing or blocking entries.
+- This is a regression gate, not product-training authorization. `formal_product_training_authorized=false` remains
+  enforced. The next bounded slice is a full formal-training-admission reconciliation across the existing corpus,
+  split, rollout, admission and holdout artifacts, separating intentional product safety locks from genuine missing
+  evidence before any training gate may change.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

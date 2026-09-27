@@ -9,6 +9,11 @@ internal static partial class BootstrapSelfTest
         "full_shipment:item:346";
     private const string MachineCapacityProofMachineSourceId =
         "machine:(BC)12:rule:keg_wheat";
+    private const string CropPlantingProofRequirementId =
+        "full_shipment:item:24";
+    private const string CropPlantingProofSourceId = "crop:472";
+    private const string CropPlantingProofShopSourcePath =
+        "payload.FixtureShop.Items[0]";
 
     private static MachineCapacityProofAuthority
         BuildMachineCapacityProofAuthority(
@@ -74,6 +79,17 @@ internal static partial class BootstrapSelfTest
             .ToArray();
         var shipment = inventory.RequirementSets.Single(set =>
             set.RequirementSetId == "full_shipment");
+        var cropGroup = shipment.Groups.Single(group =>
+            group.RequirementId == CropPlantingProofRequirementId);
+        var cropAlternative = cropGroup.Alternatives.Single(alternative =>
+            alternative.QualifiedItemId == "(O)24");
+        cropAlternative.AcquisitionRoutes = cropAlternative.AcquisitionRoutes
+            .Append(new RequirementAcquisitionRoute(
+                "sells",
+                "shop:FixtureShop",
+                "Data/Shops",
+                CropPlantingProofShopSourcePath))
+            .ToArray();
         shipment.Groups = shipment.Groups
             .Append(new GoalRequirementGroup
             {
@@ -118,6 +134,35 @@ internal static partial class BootstrapSelfTest
             "Machine-capacity proof lowering template");
         var loweredShipment = lowering.RequirementSets.Single(set =>
             set.RequirementSetId == "full_shipment");
+        var loweredCropGroup = loweredShipment.Groups.Single(group =>
+            group.RequirementId == CropPlantingProofRequirementId);
+        var loweredCropAlternative = loweredCropGroup.Alternatives.Single(
+            alternative => alternative.QualifiedItemId == "(O)24");
+        var cropShopRoute = new AcquisitionRequirementRouteLowering(
+            "sells",
+            "shop:FixtureShop",
+            "Data/Shops",
+            CropPlantingProofShopSourcePath,
+            "deterministic_dependency",
+            "deterministic_fresh_receipt",
+            StageOneCollectionRouteDependencyAxes.Required.ToArray(),
+            ["economy.buy_supplies"],
+            Array.Empty<string>(),
+            true,
+            true);
+        var cropGroupWithShop = loweredCropGroup with
+        {
+            Alternatives = loweredCropGroup.Alternatives.Select(alternative =>
+                alternative == loweredCropAlternative
+                    ? alternative with
+                    {
+                        Routes = alternative.Routes
+                            .Append(cropShopRoute)
+                            .ToArray()
+                    }
+                    : alternative)
+                .ToArray()
+        };
         var machineRoute = new AcquisitionRequirementRouteLowering(
             "machine_output",
             MachineCapacityProofMachineSourceId,
@@ -173,7 +218,12 @@ internal static partial class BootstrapSelfTest
             loweredShipment.RequiredGroupCount + 1,
             loweredShipment.RuntimeAdmittedGroupCount + 1,
             loweredShipment.TeacherAdmittedGroupCount + 1,
-            loweredShipment.Groups.Append(machineGroup).ToArray());
+            loweredShipment.Groups
+                .Select(group => group == loweredCropGroup
+                    ? cropGroupWithShop
+                    : group)
+                .Append(machineGroup)
+                .ToArray());
         lowering.RequirementSets = lowering.RequirementSets
             .Select(set => set.RequirementSetId == "full_shipment"
                 ? replacementShipment
@@ -236,11 +286,27 @@ internal static partial class BootstrapSelfTest
             route.RouteKind == "sells" &&
             route.SourceId == "shop:FixtureShop" &&
             route.QualifiedItemId == "(O)346");
+        var crop = calendar.Routes.Single(route =>
+            route.RouteOccurrenceId.StartsWith(
+                "full_shipment:",
+                StringComparison.Ordinal) &&
+            route.RouteKind == "harvests_as" &&
+            route.SourceId == CropPlantingProofSourceId &&
+            route.QualifiedItemId == "(O)24");
+        var cropShop = calendar.Routes.Single(route =>
+            route.RouteOccurrenceId.StartsWith(
+                "full_shipment:",
+                StringComparison.Ordinal) &&
+            route.RouteKind == "sells" &&
+            route.SourceId == "shop:FixtureShop" &&
+            route.QualifiedItemId == "(O)24");
         return new MachineCapacityProofAuthority(
             adjusted,
             inventory.GoalId,
             machine.RouteOccurrenceId,
-            shop.RouteOccurrenceId);
+            shop.RouteOccurrenceId,
+            crop.RouteOccurrenceId,
+            cropShop.RouteOccurrenceId);
     }
 
     private static void CloneMachineCapacityProofShopAuthority(
@@ -252,6 +318,14 @@ internal static partial class BootstrapSelfTest
             row.SourceId == "runtime_data_shops").Path;
         var shops = JsonNode.Parse(File.ReadAllText(sourceShopPath))!.AsObject();
         var items = shops["payload"]!["FixtureShop"]!["Items"]!.AsArray();
+        var parsnip = items[0]!.AsObject();
+        parsnip["Price"] = 100;
+        parsnip["AvailableStock"] = 2;
+        parsnip["AvailableStockLimit"] = 2;
+        parsnip["TradeItemId"] = null;
+        parsnip["TradeItemAmount"] = 0;
+        parsnip["Condition"] = null;
+        parsnip["ActionsOnPurchase"] = new JsonArray();
         var beer = JsonNode.Parse(items[0]!.ToJsonString())!.AsObject();
         beer["Id"] = "fixture-beer";
         beer["ItemId"] = "(O)346";
@@ -277,6 +351,11 @@ internal static partial class BootstrapSelfTest
         var access = JsonNode.Parse(File.ReadAllText(sourceAccessPath))!
             .AsObject();
         var stock = access["shops"]![0]!["stock"]!.AsArray();
+        var parsnipAccess = stock[0]!.AsObject();
+        parsnipAccess["condition"] = null;
+        parsnipAccess["perItemCondition"] = null;
+        parsnipAccess["parsedCondition"] = null;
+        parsnipAccess["parsedPerItemCondition"] = null;
         var beerAccess = JsonNode.Parse(stock[0]!.ToJsonString())!.AsObject();
         beerAccess["id"] = "fixture-beer";
         beerAccess["itemId"] = "(O)346";
@@ -352,5 +431,7 @@ internal static partial class BootstrapSelfTest
         AcquisitionRouteExecutionBindingInputs Template,
         string GoalId,
         string MachineRouteOccurrenceId,
-        string ShopRouteOccurrenceId);
+        string ShopRouteOccurrenceId,
+        string CropRouteOccurrenceId,
+        string CropShopRouteOccurrenceId);
 }
