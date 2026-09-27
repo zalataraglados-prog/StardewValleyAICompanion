@@ -49,4 +49,27 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
         property.ValueKind is JsonValueKind.True or JsonValueKind.False
             ? property.GetBoolean()
             : null;
+
+    private static string[]? ReadStringArray(
+        JsonElement value,
+        string name)
+    {
+        if (value.ValueKind != JsonValueKind.Object ||
+            !value.TryGetProperty(name, out var property) ||
+            property.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+        var result = new List<string>();
+        foreach (var item in property.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(item.GetString()))
+            {
+                return null;
+            }
+            result.Add(item.GetString()!);
+        }
+        return result.ToArray();
+    }
 }

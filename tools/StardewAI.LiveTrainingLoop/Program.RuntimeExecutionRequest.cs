@@ -404,6 +404,12 @@ static partial class Program
         var maxUnitPrice = ReadQueueParameterInt(item, "max_unit_price");
         var expectedUnitPrice = ReadQueueParameterInt(item, "expected_unit_price");
         var expectedShopId = ReadQueueParameterString(item, "expected_shop_id");
+        var expectedStockId = ReadQueueParameterString(
+            item,
+            "expected_stock_id");
+        var expectedOutputStack = ReadQueueParameterInt(
+            item,
+            "expected_output_stack");
         var expectedDialogueKey = ReadQueueParameterString(item, "expected_dialogue_key");
         var dialogueResponseKey = ReadQueueParameterString(item, "dialogue_response_key");
         var expectedMenuTypeAfter = ReadQueueParameterString(item, "expected_menu_type_after");
@@ -1002,6 +1008,15 @@ static partial class Program
         if (!string.IsNullOrWhiteSpace(expectedShopId))
         {
             executionRequest.ExpectedShopId = expectedShopId;
+        }
+        if (!string.IsNullOrWhiteSpace(expectedStockId))
+        {
+            executionRequest.ExpectedStockId = expectedStockId;
+        }
+        if (expectedOutputStack.HasValue)
+        {
+            executionRequest.ExpectedOutputStack =
+                expectedOutputStack.Value;
         }
         if (!string.IsNullOrWhiteSpace(expectedDialogueKey))
         {

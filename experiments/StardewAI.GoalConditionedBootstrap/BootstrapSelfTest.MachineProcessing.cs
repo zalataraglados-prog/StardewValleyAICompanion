@@ -354,6 +354,77 @@ internal static partial class BootstrapSelfTest
                     0.0000001d,
             "Trigger and output probabilities were not composed.");
 
+        AcquisitionRouteCalendarResolution TriggerProbabilityRoute(
+            params string[] conditions) => manualRoute with
+        {
+            MachineSource = manualRoute.MachineSource! with
+            {
+                Triggers = new[]
+                {
+                    manualRoute.MachineSource!.Triggers.Single() with
+                    {
+                        Condition = string.Join(", ", conditions)
+                    }
+                },
+                TriggerConditionSet =
+                    new AcquisitionMachineTriggerConditionSetEvidence(
+                        "or",
+                        new[]
+                        {
+                            new AcquisitionMachineTriggerConditionAlternativeEvidence(
+                                0,
+                                string.Empty,
+                                1,
+                                string.Join(", ", conditions),
+                                Array.Empty<string>(),
+                                Array.Empty<string>(),
+                                conditions)
+                        })
+            }
+        };
+
+        var singleHalfTriggerRoute = TriggerProbabilityRoute("RANDOM 0.5");
+        var repeatedHalfTriggerRoute = TriggerProbabilityRoute(
+            "RANDOM 0.5",
+            "RANDOM 0.5");
+        var tripledHalfTriggerRoute = TriggerProbabilityRoute(
+            "RANDOM 0.5",
+            "RANDOM 0.5",
+            "RANDOM 0.5");
+        Require(AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        repeatedHalfTriggerRoute,
+                        out var repeatedHalfProbability,
+                        out _) &&
+                Math.Abs(repeatedHalfProbability - 0.25d) < 0.0000001d &&
+                AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        tripledHalfTriggerRoute,
+                        out var tripledHalfProbability,
+                        out _) &&
+                Math.Abs(tripledHalfProbability - 0.125d) < 0.0000001d,
+            "Repeated trigger clauses did not compose as p^2 and p^3.");
+
+        var singleHalfRetry =
+            AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
+                parallel,
+                singleHalfTriggerRoute,
+                MachineRetryExpansionContextFixture(manualMachines));
+        var repeatedHalfRetry =
+            AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
+                parallel,
+                repeatedHalfTriggerRoute,
+                MachineRetryExpansionContextFixture(manualMachines));
+        Require(singleHalfRetry.StochasticRetryAxisResolved &&
+                repeatedHalfRetry.StochasticRetryAxisResolved &&
+                repeatedHalfRetry.RequiredAttemptCount >
+                    singleHalfRetry.RequiredAttemptCount &&
+                repeatedHalfRetry.UpstreamRoute.UpstreamRoute.ClaimSet is
+                    { AtomicCommitRequired: true } repeatedClaims &&
+                repeatedClaims.MaterialClaims.Sum(value => value.Quantity) ==
+                    repeatedHalfRetry.RequiredAttemptCount,
+            "Repeated trigger probability did not expand retries and resources.");
+
         var singleMachine = new[]
         {
             MachineProcessingRow(manualRoute, 12, 34, 0)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using StardewAI.Contracts.Execution;
@@ -17,6 +18,15 @@ namespace StardewAI.Core.OptionRegistry
             var qualifiedItemId = ReadParameter(
                 boundParameters,
                 "continuation.qualified_item_id");
+            var stockId = ReadParameter(
+                boundParameters,
+                "continuation.stock_id");
+            var outputStack = ReadParameterInt(
+                boundParameters,
+                "continuation.output_stack_per_purchase");
+            var outputQuality = ReadParameterInt(
+                boundParameters,
+                "continuation.output_quality");
             var maxUnitPrice = ReadParameterInt(
                 boundParameters,
                 "continuation.max_unit_price");
@@ -30,6 +40,15 @@ namespace StardewAI.Core.OptionRegistry
                         candidate.QualifiedItemId,
                         qualifiedItemId,
                         StringComparison.Ordinal)) &&
+                (string.IsNullOrWhiteSpace(stockId) ||
+                    string.Equals(
+                        candidate.StockId,
+                        stockId,
+                        StringComparison.Ordinal)) &&
+                (!outputStack.HasValue ||
+                    candidate.OutputStack == outputStack.Value) &&
+                (!outputQuality.HasValue ||
+                    candidate.OutputQuality == outputQuality.Value) &&
                 (!maxUnitPrice.HasValue || candidate.UnitPrice <= maxUnitPrice.Value);
         }
 
@@ -37,7 +56,7 @@ namespace StardewAI.Core.OptionRegistry
             EconomicCandidate candidate,
             string targetLocation)
         {
-            return new[]
+            var parameters = new List<SmallModelActionParameter>
             {
                 Parameter("continuation.option_id", "economy.buy_supplies"),
                 Parameter("continuation.shop_id", candidate.ShopId),
@@ -51,6 +70,25 @@ namespace StardewAI.Core.OptionRegistry
                     candidate.UnitPrice.ToString(CultureInfo.InvariantCulture)),
                 Parameter("continuation.quantity", "1")
             };
+            if (!string.IsNullOrWhiteSpace(candidate.StockId))
+            {
+                parameters.Add(Parameter(
+                    "continuation.stock_id",
+                    candidate.StockId));
+            }
+            if (candidate.OutputStack > 0)
+            {
+                parameters.Add(Parameter(
+                    "continuation.output_stack_per_purchase",
+                    candidate.OutputStack.ToString(CultureInfo.InvariantCulture)));
+            }
+            if (candidate.OutputQuality >= 0)
+            {
+                parameters.Add(Parameter(
+                    "continuation.output_quality",
+                    candidate.OutputQuality.ToString(CultureInfo.InvariantCulture)));
+            }
+            return parameters.ToArray();
         }
 
         private static SmallModelActionParameter[] PurchaseContinuationParameters(
@@ -128,8 +166,11 @@ namespace StardewAI.Core.OptionRegistry
             int? tileX,
             int? tileY)
         {
+            var stockIdentity = string.IsNullOrWhiteSpace(candidate.StockId)
+                ? string.Empty
+                : candidate.StockId + ":";
             return objectivePrefix + ":" + candidate.ShopId + ":" +
-                candidate.QualifiedItemId + ":" + stage + ":" +
+                stockIdentity + candidate.QualifiedItemId + ":" + stage + ":" +
                 locationId + ":" + (tileX?.ToString(CultureInfo.InvariantCulture) ?? "none") +
                 "," + (tileY?.ToString(CultureInfo.InvariantCulture) ?? "none");
         }

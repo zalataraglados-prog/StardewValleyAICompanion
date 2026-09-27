@@ -79,6 +79,36 @@ internal static partial class BootstrapSelfTest
                 value.ShopId == binding.ShopId &&
                 value.QualifiedItemId == binding.QualifiedItemId &&
                 value.UnitPrice == binding.UnitPrice);
+        Require(candidate.Parameters.Any(parameter =>
+                    parameter.Name == "continuation.stock_id" &&
+                    parameter.Value == binding.StockId) &&
+                candidate.Parameters.Any(parameter =>
+                    parameter.Name ==
+                        "continuation.output_stack_per_purchase" &&
+                    parameter.Value ==
+                        binding.OutputStackPerPurchase.ToString()) &&
+                candidate.Parameters.Any(parameter =>
+                    parameter.Name == "continuation.output_quality" &&
+                    parameter.Value == binding.OutputQuality.ToString()),
+            "Purchase candidate lost exact stock-row continuation identity.");
+        var mismatchedStockCandidate = JsonSerializer.Deserialize<
+            PolicyEventCandidatePrediction>(
+                JsonSerializer.Serialize(candidate, JsonDefaults.Options),
+                JsonDefaults.Options) ?? throw new InvalidDataException(
+                    "Machine-input purchase mismatch candidate clone failed.");
+        mismatchedStockCandidate.Parameters = mismatchedStockCandidate
+            .Parameters.Select(parameter =>
+                parameter.Name == "continuation.stock_id"
+                    ? Parameter(
+                        "continuation.stock_id",
+                        "same-item-same-price-other-stock")
+                    : parameter)
+            .ToArray();
+        Require(!AcquisitionRouteSupportingTransitionRequestBuilder
+                .PurchaseCandidateMatchesBinding(
+                    mismatchedStockCandidate,
+                    binding),
+            "A same-item/same-price candidate substituted another stock row.");
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectSupportingCandidates(
                 requirement,
@@ -154,6 +184,22 @@ internal static partial class BootstrapSelfTest
                 string.Join("+", item.BlockingReasons) + ":command=" +
                 item.NormalizedCommand?.CommandType) ??
                 Array.Empty<string>()));
+        var purchaseQueueItem = compilation.ActionQueue!.Items.Single(item =>
+            item.OptionId == "executor.buy_shop_item");
+        Require(purchaseQueueItem.NormalizedCommand?.Parameters.Any(
+                    parameter =>
+                        parameter.Name == "expected_stock_id" &&
+                        parameter.Value == binding.StockId) == true &&
+                purchaseQueueItem.NormalizedCommand.Parameters.Any(
+                    parameter =>
+                        parameter.Name == "expected_output_stack" &&
+                        parameter.Value ==
+                            binding.OutputStackPerPurchase.ToString()) &&
+                purchaseQueueItem.NormalizedCommand.Parameters.Any(
+                    parameter =>
+                        parameter.Name == "expected_output_quality" &&
+                        parameter.Value == binding.OutputQuality.ToString()),
+            "Compiled native purchase lost exact stock-row identity.");
 
         var after = MachineInputPurchaseReceiptSnapshot(2, 920, false);
         after.GameTick = 12;
@@ -172,6 +218,7 @@ internal static partial class BootstrapSelfTest
         Require(transition.SupportingTransitionVerified &&
                 transition.PurchaseTransition is
                     { Verified: true,
+                      StockId: "wheat-seed",
                       ObservedCurrencyDecrease: 80,
                       ObservedItemIncrease: 1 },
             "Machine-input purchase fresh receipt was not verified: " +

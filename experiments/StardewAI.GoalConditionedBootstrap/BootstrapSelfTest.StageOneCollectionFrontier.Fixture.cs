@@ -238,6 +238,12 @@ internal static partial class BootstrapSelfTest
                                             stock = 2,
                                             infinite_stock = false,
                                             can_buy_item = true,
+                                            executor_purchase_preview_enabled = false,
+                                            executor_block_reasons = new[]
+                                            {
+                                                "trade_item_purchase_requires_consumption_audit",
+                                                "synchronized_or_limited_stock_requires_post_state_audit"
+                                            },
                                             trade_item_qualified_id = "(O)388",
                                             effective_trade_item_count = 5
                                         }

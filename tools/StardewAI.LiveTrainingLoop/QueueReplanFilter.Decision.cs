@@ -381,7 +381,26 @@ public static partial class QueueReplanFilter
                 string.Equals(
                     candidateQualifiedItemId,
                     ReadString(continuation, "qualified_item_id"),
-                    StringComparison.Ordinal);
+                    StringComparison.Ordinal) &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "stock_id") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "output_stack_per_purchase") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "output_quality") &&
+                (string.IsNullOrWhiteSpace(ReadString(
+                        continuation,
+                        "stock_id")) ||
+                    CandidateParameterMatchesContinuation(
+                        candidate,
+                        continuation,
+                        "max_unit_price"));
         }
         if (string.Equals(
                 ReadString(continuation, "kind"),

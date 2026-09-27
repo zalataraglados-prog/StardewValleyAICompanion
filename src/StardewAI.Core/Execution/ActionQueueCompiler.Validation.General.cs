@@ -375,11 +375,29 @@ namespace StardewAI.Core.Execution
                 return reasons.ToArray();
             }
 
-            var candidate = FindPurchaseCandidate(snapshot, ReadParameter(action, "qualified_item_id"), ReadParameter(action, "shop_item_id"))
-                ?? FirstSafePurchaseCandidate(snapshot);
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id");
+            var shopItemId = ReadParameter(action, "shop_item_id");
+            var expectedStockId = ReadParameter(
+                action,
+                "expected_stock_id") ?? ReadParameter(
+                action,
+                "continuation.stock_id");
+            var exactIdentityRequested =
+                !string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                !string.IsNullOrWhiteSpace(shopItemId) ||
+                !string.IsNullOrWhiteSpace(expectedStockId);
+            var candidate = FindPurchaseCandidate(
+                snapshot,
+                qualifiedItemId,
+                shopItemId,
+                expectedStockId);
+            if (candidate is null && !exactIdentityRequested)
+                candidate = FirstSafePurchaseCandidate(snapshot);
             if (candidate is null)
             {
-                reasons.Add("no_safe_executor_purchase_candidate");
+                reasons.Add(exactIdentityRequested
+                    ? "exact_purchase_candidate_not_found"
+                    : "no_safe_executor_purchase_candidate");
                 return reasons.Distinct(StringComparer.Ordinal).ToArray();
             }
 
@@ -393,6 +411,40 @@ namespace StardewAI.Core.Execution
             if (maxUnitPrice.HasValue && price > maxUnitPrice.Value)
             {
                 reasons.Add("purchase_price_exceeds_request_limit");
+            }
+            var expectedUnitPrice = ReadIntParameter(
+                action,
+                "expected_unit_price");
+            if (expectedUnitPrice.HasValue &&
+                price != expectedUnitPrice.Value)
+            {
+                reasons.Add("purchase_unit_price_identity_drift");
+            }
+            var expectedOutputStack = ReadIntParameter(
+                action,
+                "expected_output_stack");
+            if (expectedOutputStack.HasValue &&
+                ReadInt(candidate.Value, "stack") !=
+                    expectedOutputStack.Value)
+            {
+                reasons.Add("purchase_output_stack_identity_drift");
+            }
+            var expectedOutputQuality = ReadIntParameter(
+                action,
+                "expected_output_quality");
+            if (expectedOutputQuality.HasValue &&
+                ReadInt(candidate.Value, "quality") !=
+                    expectedOutputQuality.Value)
+            {
+                reasons.Add("purchase_output_quality_identity_drift");
+            }
+            if (!string.IsNullOrWhiteSpace(expectedStockId) &&
+                !string.Equals(
+                    ReadString(candidate.Value, "synced_key"),
+                    expectedStockId,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("purchase_stock_identity_drift");
             }
 
             var expectedShopId = ReadParameter(action, "expected_shop_id");

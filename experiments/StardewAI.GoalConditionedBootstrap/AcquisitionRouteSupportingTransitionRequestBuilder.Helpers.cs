@@ -59,6 +59,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             binding.ShopId &&
         ReadStringParameter(candidate, "continuation.qualified_item_id") ==
             binding.QualifiedItemId &&
+        ReadStringParameter(candidate, "continuation.stock_id") ==
+            binding.StockId &&
+        ReadPositiveIntParameter(
+            candidate,
+            "continuation.output_stack_per_purchase") ==
+                binding.OutputStackPerPurchase &&
+        ReadNonNegativeIntParameter(
+            candidate,
+            "continuation.output_quality") == binding.OutputQuality &&
         ReadNonNegativeIntParameter(
             candidate,
             "continuation.max_unit_price") == binding.UnitPrice &&

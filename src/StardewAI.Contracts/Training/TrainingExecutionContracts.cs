@@ -426,6 +426,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_shop_id")]
         public string ExpectedShopId { get; set; } = string.Empty;
 
+        [JsonPropertyName("expected_stock_id")]
+        public string ExpectedStockId { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_output_stack")]
+        public int? ExpectedOutputStack { get; set; }
+
         [JsonPropertyName("expected_dialogue_key")]
         public string ExpectedDialogueKey { get; set; } = string.Empty;
 

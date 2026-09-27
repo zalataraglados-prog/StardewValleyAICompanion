@@ -250,10 +250,38 @@ namespace StardewAI.Core.Training
             if (candidate.UnitPrice > 0)
             {
                 parameters.Add(Parameter("max_unit_price", candidate.UnitPrice.ToString()));
+                parameters.Add(Parameter(
+                    "expected_unit_price",
+                    candidate.UnitPrice.ToString()));
             }
             if (!string.IsNullOrWhiteSpace(candidate.ShopId))
             {
                 parameters.Add(Parameter("expected_shop_id", candidate.ShopId));
+            }
+            var stockId = CandidateParameter(
+                candidate,
+                "continuation.stock_id");
+            if (!string.IsNullOrWhiteSpace(stockId))
+            {
+                parameters.Add(Parameter("expected_stock_id", stockId));
+            }
+            var outputStack = CandidateInt(
+                candidate,
+                "continuation.output_stack_per_purchase");
+            if (outputStack is > 0)
+            {
+                parameters.Add(Parameter(
+                    "expected_output_stack",
+                    outputStack.Value.ToString()));
+            }
+            var outputQuality = CandidateInt(
+                candidate,
+                "continuation.output_quality");
+            if (outputQuality is >= 0)
+            {
+                parameters.Add(Parameter(
+                    "expected_output_quality",
+                    outputQuality.Value.ToString()));
             }
             parameters.AddRange(continuation);
 
