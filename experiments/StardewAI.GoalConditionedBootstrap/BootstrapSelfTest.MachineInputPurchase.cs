@@ -1,5 +1,11 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Strategy;
+using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -50,6 +56,8 @@ internal static partial class BootstrapSelfTest
                     "required_currency_amount_unavailable:money",
                     StringComparer.Ordinal),
             "Insufficient machine-input purchase funds were admitted or lost their exact quote binding.");
+        VerifyMachineInputPurchaseReceipt();
+        VerifyMachineInputPurchaseSupportChain();
     }
 
     private static void VerifyPurchasePass(
@@ -220,4 +228,215 @@ internal static partial class BootstrapSelfTest
             }
         };
     }
+
+    private static void VerifyMachineInputPurchaseReceipt()
+    {
+        var binding = new AcquisitionPurchasePrerequisiteBinding(
+            "machine_primary_input",
+            "SeedShop",
+            "wheat-seed",
+            "(O)262",
+            1,
+            2,
+            1,
+            0,
+            NativeShopCurrencies.Money,
+            "money",
+            80,
+            2);
+        var before = MachineInputPurchaseReceiptSnapshot(1, 1_000);
+        var purchased = AcquisitionRouteSupportingTransitionReceiptBuilder
+            .VerifyPurchaseTransition(
+                PurchaseQueue("purchase", binding),
+                before,
+                MachineInputPurchaseReceiptSnapshot(2, 920));
+        Require(purchased.Verified &&
+                purchased.ObservedCurrencyDecrease == 80 &&
+                purchased.ObservedItemIncrease == 1,
+            "Exact machine-input purchase receipt was not verified.");
+
+        var routed = AcquisitionRouteSupportingTransitionReceiptBuilder
+            .VerifyPurchaseTransition(
+                PurchaseQueue("route_connector", binding),
+                before,
+                MachineInputPurchaseReceiptSnapshot(1, 1_000));
+        Require(routed.Verified &&
+                routed.ObservedCurrencyDecrease == 0 &&
+                routed.ObservedItemIncrease == 0,
+            "Non-purchase continuation progress mutated reserved resources.");
+
+        var mismatched = AcquisitionRouteSupportingTransitionReceiptBuilder
+            .VerifyPurchaseTransition(
+                PurchaseQueue("purchase", binding),
+                before,
+                MachineInputPurchaseReceiptSnapshot(1, 920));
+        Require(!mismatched.Verified &&
+                mismatched.BlockingReasons.Contains(
+                    "machine_input_purchase_inventory_delta_mismatch",
+                    StringComparer.Ordinal),
+            "A charged purchase without the exact item increase was admitted.");
+    }
+
+    private static ActionQueueEnvelope PurchaseQueue(
+        string stage,
+        AcquisitionPurchasePrerequisiteBinding binding) => new()
+        {
+            Items = new[]
+            {
+                new ActionQueueItem
+                {
+                    NormalizedCommand = new NormalizedCommand
+                    {
+                        Parameters = new[]
+                        {
+                            Parameter(
+                                "acquisition_support_purchase_stage",
+                                stage),
+                            Parameter(
+                                "acquisition_support_purchase_prerequisite_json",
+                                JsonSerializer.Serialize(
+                                    binding,
+                                    JsonDefaults.Options))
+                        }
+                    }
+                }
+            }
+        };
+
+    private static SnapshotEnvelope MachineInputPurchaseReceiptSnapshot(
+        int inputQuantity,
+        int money,
+        bool shopMenuOpen = true)
+    {
+        var graph = new MaterialInventoryGraph
+        {
+            PlayerId = 42,
+            InventoryNodes = new[]
+            {
+                new MaterialInventoryNode
+                {
+                    NodeId = "player:42",
+                    InventoryKind = "player_inventory",
+                    SupplyState = "available",
+                    OwnershipClass = "actor_owned",
+                    ActorUseAuthorized = true,
+                    OwnerPlayerId = 42,
+                    LocationId = "Farm",
+                    Capacity = 36,
+                    Slots = new[]
+                    {
+                        MachineResourceSlot(0, "(O)262", inputQuantity)
+                    }
+                }
+            },
+            PhysicalInventoryCount = 1
+        };
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            JsonSerializer.Serialize(new
+            {
+                player = new
+                {
+                    money = Field(money),
+                    location_id = Field("SeedShop"),
+                    tile_x = Field(10),
+                    tile_y = Field(10),
+                    inventory = Field(Array.Empty<object>()),
+                    shop_currency_balances = Field(new
+                    {
+                        schema_version = "shop_currency_balances.v1",
+                        projection_status =
+                            "complete_locked_base_1.6.15_shop_menu_currency_domain",
+                        supported_currency_ids = new[] { 0, 1, 2, 4 },
+                        rows = new object[]
+                        {
+                            new { currency_id = 0, currency_key = "money", balance = money },
+                            new { currency_id = 1, currency_key = "star_tokens", balance = 0 },
+                            new { currency_id = 2, currency_key = "club_coins", balance = 0 },
+                            new { currency_id = 4, currency_key = "qi_gems", balance = 0 }
+                        }
+                    })
+                },
+                farm = new
+                {
+                    material_inventory_graph = Field(graph)
+                },
+                locations = new
+                {
+                    shops = Field(Array.Empty<object>())
+                },
+                menus = new
+                {
+                    active_menu = Field(new
+                    {
+                        is_open = shopMenuOpen,
+                        type = shopMenuOpen ? "ShopMenu" : "none"
+                    }),
+                    sleep_prompt_context = Field(new
+                    {
+                        prompt_open = false,
+                        can_confirm_sleep = false,
+                        confirm_executor_enabled = false,
+                        confirm_action_key = "Sleep_Yes"
+                    }),
+                    shop_stock = Field(new
+                    {
+                        kind = "shop_stock",
+                        shop_id = "SeedShop",
+                        read_only = false,
+                        safety_timer = 0,
+                        entry_count = 1,
+                        entries = new[]
+                        {
+                            new
+                            {
+                                item_id = "262",
+                                qualified_item_id = "(O)262",
+                                display_name = "Wheat Seeds",
+                                price = 80,
+                                stock = int.MaxValue,
+                                infinite_stock = true,
+                                currency_balance = money,
+                                can_buy_item = true,
+                                can_afford_one_with_currency = money >= 80,
+                                can_afford_one_with_trade_item = true,
+                                could_inventory_accept = true,
+                                executor_purchase_enabled = true,
+                                executor_block_reasons = Array.Empty<string>()
+                            }
+                        }
+                    })
+                },
+                time = new
+                {
+                    total_days = Field(1),
+                    time = Field(900),
+                    season = Field("spring")
+                }
+            }, JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+                "Machine-input purchase receipt state is invalid.");
+        return new SnapshotEnvelope
+        {
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "machine-input-purchase-save",
+                Status = "available"
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "42",
+                Status = "available"
+            },
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            State = state
+        };
+
+        static object Field(object value) => new
+        {
+            status = "available",
+            confidence = 1d,
+            value
+        };
+    }
+
 }

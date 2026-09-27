@@ -88,6 +88,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 out var candidateReasons);
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectSupportingCandidates(requirement, lowered, candidates);
+        var purchase = PurchasePrerequisite(route);
+        if (purchase is not null)
+        {
+            matches = matches.Where(match =>
+                    PurchaseCandidateMatchesBinding(
+                        match.Candidate,
+                        purchase))
+                .ToArray();
+        }
         var stagingReasons = Array.Empty<string>();
         if (matches.Length == 0 && requirement.RouteKind is (
                 "machine_output" or

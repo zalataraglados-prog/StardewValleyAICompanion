@@ -25,12 +25,18 @@ public sealed partial class ReservationPortfolioLedgerService
         var consumptions = MaterialConsumptions(request, errors);
         var relocations = request.MaterialRelocations ??
             Array.Empty<ReservationPortfolioMaterialRelocation>();
+        var currencyConsumptions = request.CurrencyConsumptions ??
+            Array.Empty<ReservationPortfolioCurrencyConsumption>();
+        var rebindIds = request.RebindActiveReservationIds ??
+            Array.Empty<string>();
         ValidateSupportingTransitionSettlementRequest(
             current,
             snapshot,
             request,
             consumptions,
             relocations,
+            currencyConsumptions,
+            rebindIds,
             errors);
         if (errors.Count > 0)
             return SupportingTransitionSettlementRejected(
@@ -38,6 +44,8 @@ public sealed partial class ReservationPortfolioLedgerService
                 request,
                 consumptions,
                 relocations,
+                currencyConsumptions,
+                rebindIds,
                 errors);
 
         var ledger = StrategyCommitmentLedgerSupport.CloneOrCreate(
@@ -50,6 +58,10 @@ public sealed partial class ReservationPortfolioLedgerService
         var relocationByReservation = relocations.ToDictionary(
             value => value.MaterialReservationId,
             StringComparer.Ordinal);
+        var currencyByReservation = currencyConsumptions.ToDictionary(
+            value => value.CurrencyReservationId,
+            StringComparer.Ordinal);
+        var rebindSet = rebindIds.ToHashSet(StringComparer.Ordinal);
         ledger.MaterialReservations = ledger.MaterialReservations.Select(row =>
         {
             if (relocationByReservation.TryGetValue(
@@ -69,9 +81,18 @@ public sealed partial class ReservationPortfolioLedgerService
             if (!byReservation.TryGetValue(
                     row.ReservationId,
                     out var consumption))
-                return row;
+            {
+                if (!rebindSet.Contains(row.ReservationId))
+                    return row;
+                var rebound = StrategyCommitmentLedgerSupport
+                    .CloneMaterial(row);
+                rebound.Revision++;
+                rebound.SourceStateHash = snapshot.StateHash;
+                return rebound;
+            }
             var settled = StrategyCommitmentLedgerSupport.CloneMaterial(row);
             settled.Revision++;
+            settled.SourceStateHash = snapshot.StateHash;
             if (consumption.ConsumedQuantity == row.Quantity)
             {
                 settled.Status = StrategyCommitmentStatuses.Completed;
@@ -82,6 +103,39 @@ public sealed partial class ReservationPortfolioLedgerService
             else
             {
                 settled.Quantity -= consumption.ConsumedQuantity;
+                settled.Status = StrategyCommitmentStatuses.Active;
+                settled.CompletionReason = string.Empty;
+                settled.CompletionEvidenceSha256 = string.Empty;
+            }
+            return settled;
+        }).ToArray();
+        ledger.CurrencyReservations = ledger.CurrencyReservations.Select(row =>
+        {
+            if (!currencyByReservation.TryGetValue(
+                    row.ReservationId,
+                    out var consumption))
+            {
+                if (!rebindSet.Contains(row.ReservationId))
+                    return row;
+                var rebound = StrategyCommitmentLedgerSupport
+                    .CloneCurrency(row);
+                rebound.Revision++;
+                rebound.SourceStateHash = snapshot.StateHash;
+                return rebound;
+            }
+            var settled = StrategyCommitmentLedgerSupport.CloneCurrency(row);
+            settled.Revision++;
+            settled.SourceStateHash = snapshot.StateHash;
+            if (consumption.ConsumedAmount == row.Amount)
+            {
+                settled.Status = StrategyCommitmentStatuses.Completed;
+                settled.CompletionReason = request.Reason;
+                settled.CompletionEvidenceSha256 =
+                    request.SupportingTransitionReceiptSha256;
+            }
+            else
+            {
+                settled.Amount -= consumption.ConsumedAmount;
                 settled.Status = StrategyCommitmentStatuses.Active;
                 settled.CompletionReason = string.Empty;
                 settled.CompletionEvidenceSha256 = string.Empty;
@@ -127,6 +181,53 @@ public sealed partial class ReservationPortfolioLedgerService
                 updatedAt,
                 request.Reason);
         }
+        var currencySettlements = currencyConsumptions.Select(consumption =>
+        {
+            var settled = ledger.CurrencyReservations.Single(row =>
+                row.ReservationId == consumption.CurrencyReservationId);
+            StrategyCommitmentLedgerSupport.AppendHistory(
+                ledger,
+                settled.ReservationId,
+                settled.Revision,
+                settled.SourceDecisionId,
+                settled.Status == StrategyCommitmentStatuses.Completed
+                    ? "currency_reservation_consumed"
+                    : "currency_reservation_partially_consumed",
+                updatedAt,
+                request.Reason);
+            return new ReservationPortfolioCurrencySettlement
+            {
+                CurrencyReservationId = settled.ReservationId,
+                ConsumedAmount = consumption.ConsumedAmount,
+                RemainingAmount =
+                    settled.Status == StrategyCommitmentStatuses.Completed
+                        ? 0
+                        : settled.Amount,
+                ReservationStatus = settled.Status
+            };
+        }).ToArray();
+        var mutatedIds = consumptions.Select(value =>
+                value.MaterialReservationId)
+            .Concat(relocations.Select(value => value.MaterialReservationId))
+            .Concat(currencyConsumptions.Select(value =>
+                value.CurrencyReservationId))
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var reservationId in rebindIds.Where(id =>
+                     !mutatedIds.Contains(id)))
+        {
+            var material = ledger.MaterialReservations.SingleOrDefault(row =>
+                row.ReservationId == reservationId);
+            var currency = ledger.CurrencyReservations.SingleOrDefault(row =>
+                row.ReservationId == reservationId);
+            StrategyCommitmentLedgerSupport.AppendHistory(
+                ledger,
+                reservationId,
+                material?.Revision ?? currency!.Revision,
+                material?.SourceDecisionId ?? currency!.SourceDecisionId,
+                "reservation_rebound_after_supporting_transition",
+                updatedAt,
+                request.Reason);
+        }
         StrategyCommitmentLedgerSupport.AppendHistory(
             ledger,
             request.PortfolioId,
@@ -167,6 +268,18 @@ public sealed partial class ReservationPortfolioLedgerService
                 value.ConsumedQuantity),
             MaterialSettlements = settlements,
             MaterialRelocations = relocations,
+            CompletedCurrencyReservationIds = currencySettlements
+                .Where(value => value.ReservationStatus ==
+                    StrategyCommitmentStatuses.Completed)
+                .Select(value => value.CurrencyReservationId)
+                .ToArray(),
+            ActiveCurrencyReservationIds = currencySettlements
+                .Where(value => value.ReservationStatus ==
+                    StrategyCommitmentStatuses.Active)
+                .Select(value => value.CurrencyReservationId)
+                .ToArray(),
+            CurrencySettlements = currencySettlements,
+            ReboundActiveReservationIds = rebindIds,
             Ledger = ledger
         };
     }
@@ -177,6 +290,8 @@ public sealed partial class ReservationPortfolioLedgerService
         ReservationPortfolioSupportingTransitionSettlementRequest request,
         ReservationPortfolioMaterialConsumption[] consumptions,
         ReservationPortfolioMaterialRelocation[] relocations,
+        ReservationPortfolioCurrencyConsumption[] currencyConsumptions,
+        string[] rebindIds,
         ICollection<string> errors)
     {
         if (string.IsNullOrWhiteSpace(request.PortfolioId))
@@ -187,9 +302,18 @@ public sealed partial class ReservationPortfolioLedgerService
             errors.Add("route_source_decision_id_required");
         if (!IsLowerSha256(request.SupportingTransitionReceiptSha256))
             errors.Add("supporting_transition_receipt_sha256_invalid");
-        if ((consumptions.Length == 0) == (relocations.Length == 0))
+        var mutationModeCount =
+            (consumptions.Length > 0 ? 1 : 0) +
+            (relocations.Length > 0 ? 1 : 0) +
+            (currencyConsumptions.Length > 0 ? 1 : 0);
+        if (consumptions.Length > 0 && relocations.Length > 0)
         {
             errors.Add("supporting_transition_material_mutation_mode_invalid");
+        }
+        else if (mutationModeCount > 1 ||
+                 (mutationModeCount == 0 && rebindIds.Length == 0))
+        {
+            errors.Add("supporting_transition_reservation_mutation_mode_invalid");
         }
         if (consumptions.Length > 0 && (
             consumptions.Any(value =>
@@ -229,6 +353,22 @@ public sealed partial class ReservationPortfolioLedgerService
                 relocations.Length))
         {
             errors.Add("supporting_transition_relocated_claim_invalid");
+        }
+        if (currencyConsumptions.Any(value =>
+                string.IsNullOrWhiteSpace(value.CurrencyReservationId) ||
+                !NativeShopCurrencies.TryGetKey(value.CurrencyId, out _) ||
+                value.ConsumedAmount <= 0) ||
+            currencyConsumptions.Select(value => value.CurrencyReservationId)
+                .Distinct(StringComparer.Ordinal).Count() !=
+                    currencyConsumptions.Length)
+        {
+            errors.Add("supporting_transition_currency_claim_invalid");
+        }
+        if (rebindIds.Any(string.IsNullOrWhiteSpace) ||
+            rebindIds.Distinct(StringComparer.Ordinal).Count() !=
+                rebindIds.Length)
+        {
+            errors.Add("supporting_transition_rebind_set_invalid");
         }
         if (string.IsNullOrWhiteSpace(request.Reason))
             errors.Add("supporting_transition_reason_required");
@@ -296,6 +436,54 @@ public sealed partial class ReservationPortfolioLedgerService
                 snapshot,
                 relocation,
                 errors);
+        }
+        foreach (var consumption in currencyConsumptions)
+        {
+            var claims = current.CurrencyReservations.Where(row =>
+                    row.ReservationId == consumption.CurrencyReservationId)
+                .ToArray();
+            if (claims.Length != 1 ||
+                claims[0].Status != StrategyCommitmentStatuses.Active ||
+                claims[0].GoalId != request.GoalId ||
+                claims[0].SourceDecisionId !=
+                    request.RouteSourceDecisionId ||
+                claims[0].CurrencyId != consumption.CurrencyId ||
+                claims[0].Amount < consumption.ConsumedAmount)
+            {
+                errors.Add("supporting_transition_currency_claim_mismatch");
+            }
+        }
+        foreach (var reservationId in rebindIds)
+        {
+            var material = current.MaterialReservations.Where(row =>
+                    row.ReservationId == reservationId)
+                .ToArray();
+            var currency = current.CurrencyReservations.Where(row =>
+                    row.ReservationId == reservationId)
+                .ToArray();
+            var materialConsumption = consumptions.SingleOrDefault(value =>
+                value.MaterialReservationId == reservationId);
+            var currencyConsumption = currencyConsumptions
+                .SingleOrDefault(value =>
+                    value.CurrencyReservationId == reservationId);
+            if (material.Length + currency.Length != 1 ||
+                material.Any(row =>
+                    row.Status != StrategyCommitmentStatuses.Active ||
+                    row.GoalId != request.GoalId ||
+                    row.SourceDecisionId !=
+                        request.RouteSourceDecisionId ||
+                    materialConsumption is not null &&
+                    materialConsumption.ConsumedQuantity >= row.Quantity) ||
+                currency.Any(row =>
+                    row.Status != StrategyCommitmentStatuses.Active ||
+                    row.GoalId != request.GoalId ||
+                    row.SourceDecisionId !=
+                        request.RouteSourceDecisionId ||
+                    currencyConsumption is not null &&
+                    currencyConsumption.ConsumedAmount >= row.Amount))
+            {
+                errors.Add("supporting_transition_rebind_claim_mismatch");
+            }
         }
     }
 
@@ -409,6 +597,8 @@ public sealed partial class ReservationPortfolioLedgerService
             ReservationPortfolioSupportingTransitionSettlementRequest request,
             ReservationPortfolioMaterialConsumption[] consumptions,
             ReservationPortfolioMaterialRelocation[] relocations,
+            ReservationPortfolioCurrencyConsumption[] currencyConsumptions,
+            string[] rebindIds,
             IEnumerable<string> errors) => new()
             {
                 Accepted = false,
@@ -425,6 +615,15 @@ public sealed partial class ReservationPortfolioLedgerService
                         value.MaterialReservationId)
                     .ToArray(),
                 MaterialRelocations = relocations,
+                CurrencySettlements = currencyConsumptions.Select(value =>
+                        new ReservationPortfolioCurrencySettlement
+                        {
+                            CurrencyReservationId =
+                                value.CurrencyReservationId,
+                            ConsumedAmount = value.ConsumedAmount
+                        })
+                    .ToArray(),
+                ReboundActiveReservationIds = rebindIds,
                 Errors = errors.Distinct(StringComparer.Ordinal).ToArray(),
                 Ledger = ledger
             };

@@ -143,6 +143,14 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
     public ReservationPortfolioMaterialRelocation[] MaterialRelocations
     { get; set; } = Array.Empty<ReservationPortfolioMaterialRelocation>();
 
+    [JsonPropertyName("currency_consumptions")]
+    public ReservationPortfolioCurrencyConsumption[] CurrencyConsumptions
+    { get; set; } = Array.Empty<ReservationPortfolioCurrencyConsumption>();
+
+    [JsonPropertyName("rebind_active_reservation_ids")]
+    public string[] RebindActiveReservationIds { get; set; } =
+        Array.Empty<string>();
+
     // Legacy single-consumption representation. New producers use
     // material_consumptions and must not mix the two forms.
     [JsonPropertyName("material_reservation_id")]
@@ -206,6 +214,18 @@ public sealed class ReservationPortfolioMaterialRelocation
     public int Quantity { get; set; }
 }
 
+public sealed class ReservationPortfolioCurrencyConsumption
+{
+    [JsonPropertyName("currency_reservation_id")]
+    public string CurrencyReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("currency_id")]
+    public int CurrencyId { get; set; }
+
+    [JsonPropertyName("consumed_amount")]
+    public int ConsumedAmount { get; set; }
+}
+
 public sealed class ReservationPortfolioSupportingTransitionSettlementResult
 {
     [JsonPropertyName("accepted")]
@@ -250,6 +270,22 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementResult
     public ReservationPortfolioMaterialRelocation[] MaterialRelocations
     { get; set; } = Array.Empty<ReservationPortfolioMaterialRelocation>();
 
+    [JsonPropertyName("completed_currency_reservation_ids")]
+    public string[] CompletedCurrencyReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("active_currency_reservation_ids")]
+    public string[] ActiveCurrencyReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("currency_settlements")]
+    public ReservationPortfolioCurrencySettlement[] CurrencySettlements
+    { get; set; } = Array.Empty<ReservationPortfolioCurrencySettlement>();
+
+    [JsonPropertyName("rebound_active_reservation_ids")]
+    public string[] ReboundActiveReservationIds { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("errors")]
     public string[] Errors { get; set; } = Array.Empty<string>();
 
@@ -267,6 +303,21 @@ public sealed class ReservationPortfolioMaterialSettlement
 
     [JsonPropertyName("remaining_quantity")]
     public int RemainingQuantity { get; set; }
+
+    [JsonPropertyName("reservation_status")]
+    public string ReservationStatus { get; set; } = string.Empty;
+}
+
+public sealed class ReservationPortfolioCurrencySettlement
+{
+    [JsonPropertyName("currency_reservation_id")]
+    public string CurrencyReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("consumed_amount")]
+    public int ConsumedAmount { get; set; }
+
+    [JsonPropertyName("remaining_amount")]
+    public int RemainingAmount { get; set; }
 
     [JsonPropertyName("reservation_status")]
     public string ReservationStatus { get; set; } = string.Empty;

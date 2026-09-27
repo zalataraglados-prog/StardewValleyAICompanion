@@ -103,7 +103,20 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 Parameter(
                     "acquisition_support_predicted_processing_minutes",
                     request.PredictedProcessingMinutes?.ToString() ??
-                        string.Empty)
+                        string.Empty),
+                Parameter(
+                    "acquisition_support_purchase_stage",
+                    request.PurchaseStage),
+                Parameter(
+                    "acquisition_support_purchase_prerequisite_json",
+                    JsonSerializer.Serialize(
+                        request.PurchasePrerequisite,
+                        JsonDefaults.Options)),
+                Parameter(
+                    "acquisition_support_currency_consumptions_json",
+                    JsonSerializer.Serialize(
+                        request.SupportCurrencyConsumptions,
+                        JsonDefaults.Options))
             });
         compilation.SupportRequestSha256 = supportRequestSha256;
         compilation.SupportCommitReceiptSha256 = supportCommitReceiptSha256;
@@ -133,7 +146,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             request.SupportTransitionKind is not (
                 "crop_planting" or
                 "machine_input_load" or
-                "machine_input_material_transfer") ||
+                "machine_input_material_transfer" or
+                "machine_input_purchase") ||
             request.FormalTrainingAuthorized ||
             request.BlockingReasons.Length != 0)
         {
@@ -201,6 +215,28 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 ReadCandidateInt(candidate, "expected_source_stack") ==
                     intent.ExpectedSourceStack &&
                 request.SupportMaterialRelocations.Length == 1;
+        }
+        if (request.SupportTransitionKind == "machine_input_purchase")
+        {
+            var purchase = request.PurchasePrerequisite;
+            return purchase is not null &&
+                AcquisitionRouteSupportingTransitionRequestBuilder
+                    .PurchaseCandidateMatchesBinding(candidate, purchase) &&
+                request.PurchaseStage ==
+                    AcquisitionRouteSupportingTransitionRequestBuilder
+                        .PurchaseStage(candidate) &&
+                request.InputQualifiedItemId == purchase.QualifiedItemId &&
+                request.InputRequiredQuantity ==
+                    purchase.OutputStackPerPurchase &&
+                request.SupportMaterialConsumptions.Length == 0 &&
+                request.SupportMaterialRelocations.Length == 0 &&
+                (request.PurchaseStage == "purchase"
+                    ? request.SupportCurrencyConsumptions is
+                        [{ CurrencyId: var currencyId,
+                           ConsumedAmount: var consumedAmount }] &&
+                      currencyId == purchase.CurrencyId &&
+                      consumedAmount == purchase.UnitPrice
+                    : request.SupportCurrencyConsumptions.Length == 0);
         }
         return request.SupportTransitionKind == "machine_input_load" &&
             candidate.QualifiedItemId == request.InputQualifiedItemId &&

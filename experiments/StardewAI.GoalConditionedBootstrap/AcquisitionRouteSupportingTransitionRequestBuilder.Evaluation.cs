@@ -60,6 +60,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     "no_current_exact_crop_planting_support_candidate",
                 "machine_input_load" =>
                     "no_current_exact_machine_input_support_candidate",
+                "machine_input_purchase" =>
+                    "no_current_exact_machine_input_purchase_candidate",
                 _ => "no_current_exact_support_candidate"
             });
         }
@@ -152,6 +154,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 candidateEvaluation.MachineQualifiedItemId,
             PredictedProcessingMinutes =
                 candidateEvaluation.PredictedProcessingMinutes,
+            PurchaseStage = candidateEvaluation.PurchaseStage,
+            PurchasePrerequisite = candidateEvaluation.PurchasePrerequisite,
             BaseLedgerRevision = ledger.Revision,
             TargetDateProcessingSha256 = processingSha256,
             AcquisitionLoweringSha256 = loweringSha256,
@@ -178,6 +182,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 candidateEvaluation.MaterialConsumptions,
             SupportMaterialRelocations =
                 candidateEvaluation.MaterialRelocations,
+            SupportCurrencyConsumptions =
+                candidateEvaluation.CurrencyConsumptions,
             MaterialTransferIntent =
                 candidateEvaluation.MaterialTransferIntent,
             DeadlineProofVerified =

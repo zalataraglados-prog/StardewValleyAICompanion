@@ -83,6 +83,21 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 "machine_output" or
                 "native_machine_flavored_output" or
                 "native_machine_item_query_output") &&
+            candidate.OptionId == "economy.buy_supplies" &&
+            !string.IsNullOrWhiteSpace(candidate.ShopId) &&
+            !string.IsNullOrWhiteSpace(candidate.QualifiedItemId))
+        {
+            return new AcquisitionRouteDispatchCandidateMatch(
+                candidate,
+                "candidate.shop_id+candidate.qualified_item_id+" +
+                "candidate.purchase_continuation",
+                "supporting_transition");
+        }
+
+        if (requirement.RouteKind is (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output") &&
             candidate.OptionId == "inventory.transfer_item" &&
             candidate.Kind == "transfer_inventory_item")
         {

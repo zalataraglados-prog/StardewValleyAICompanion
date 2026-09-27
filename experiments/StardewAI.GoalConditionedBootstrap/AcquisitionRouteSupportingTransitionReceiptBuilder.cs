@@ -86,6 +86,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         AcquisitionCropPlantingTransitionEvidence? cropTransition = null;
         AcquisitionMachineInputTransitionEvidence? machineTransition = null;
         AcquisitionMaterialTransferTransitionEvidence? materialTransfer = null;
+        AcquisitionPurchaseTransitionEvidence? purchaseTransition = null;
         string[] transitionReasons;
         var transitionVerified = false;
         if (queue is null)
@@ -130,6 +131,16 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 transitionReasons = materialTransfer.BlockingReasons;
                 transitionVerified = materialTransfer.Verified;
             }
+            else if (transitionKind == "machine_input_purchase" &&
+                PurchaseQueueShapeValid(queue))
+            {
+                purchaseTransition = VerifyPurchaseTransition(
+                    queue,
+                    before,
+                    after);
+                transitionReasons = purchaseTransition.BlockingReasons;
+                transitionVerified = purchaseTransition.Verified;
+            }
             else
             {
                 transitionReasons = new[]
@@ -143,6 +154,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         result.CropPlantingTransition = cropTransition;
         result.MachineInputTransition = machineTransition;
         result.MaterialTransferTransition = materialTransfer;
+        result.PurchaseTransition = purchaseTransition;
         result.QueueExecutionVerified = queueReasons.Length == 0;
         result.SupportingTransitionVerified =
             compilationReasons.Length == 0 &&
@@ -239,7 +251,41 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             return false;
         return kinds[0] == "machine_input_material_transfer"
             ? queue.Items.Length == 2
-            : queue.Items.Length == 1;
+            : kinds[0] == "machine_input_purchase"
+                ? PurchaseQueueShapeValid(queue)
+                : queue.Items.Length == 1;
+    }
+
+    private static bool PurchaseQueueShapeValid(ActionQueueEnvelope queue)
+    {
+        var items = queue.Items ?? Array.Empty<ActionQueueItem>();
+        var stages = items.Select(item => UniqueParameter(
+                item.NormalizedCommand?.Parameters,
+                "acquisition_support_purchase_stage"))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (stages.Length != 1)
+            return false;
+        if (stages[0] is "route_connector" or "shop_interaction")
+            return items.Length == 1;
+        if (stages[0] != "purchase")
+            return false;
+        var optionIds = items.Select(item => item.OptionId).ToArray();
+        return optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.buy_shop_item",
+                    "executor.close_menu"
+                },
+                StringComparer.Ordinal) ||
+            optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.wait_ticks",
+                    "executor.buy_shop_item",
+                    "executor.close_menu"
+                },
+                StringComparer.Ordinal);
     }
 
     private static string[] ValidateSnapshots(

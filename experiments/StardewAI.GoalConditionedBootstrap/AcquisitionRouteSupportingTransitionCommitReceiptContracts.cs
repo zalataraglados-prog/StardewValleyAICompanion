@@ -64,5 +64,5 @@ public sealed class AcquisitionRouteSupportingTransitionCommitReceipt
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The support commit receipt deterministically rebuilds the deadline-aware request, requires one accepted shared reservation-portfolio transaction, replays that transaction from the exact base ledger, and verifies every expected route material claim as an exact active row in the committed ledger. A verified commit grants reservation ownership only. Supporting-transition compilation, execution, after-state verification, consumed-or-relocated claim settlement and fresh replanning remain separate gates, so formal training authorization stays false.";
+        "The support commit receipt deterministically rebuilds the deadline-aware request, requires one accepted shared reservation-portfolio transaction, replays that transaction from the exact base ledger, and verifies every expected route material and currency claim as an exact active row in the committed ledger. A verified commit grants reservation ownership only. Supporting-transition compilation, execution, after-state verification, material consumption or relocation, currency consumption and fresh replanning remain separate gates, so formal training authorization stays false.";
 }

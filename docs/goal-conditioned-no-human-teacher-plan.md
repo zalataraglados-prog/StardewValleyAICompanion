@@ -2438,6 +2438,31 @@ Slice 7 remains assigned to the RTX 5070 node.
   unauthorized. The next support-family slice should cover upstream input acquisition or machine-capacity creation
   through this same recurrence protocol; it must not introduce a second ledger, planner or machine executor.
 
+### 2026-09-27: machine-input purchase recurrence
+
+- The currency axis now recognizes exactly one resource-miss exception: a deterministic missing input on a machine
+  route. It enumerates current native shop previews for the exact qualified item, accepts only positive-price money
+  quotes with sufficient stock, and selects deterministically by total cost, unit price, shop ID and synchronized stock
+  key. The reservation axis claims only currently observed material plus the exact purchase funds; unpurchased items are
+  never represented as material claims.
+- The processing axis emits a typed `upstream_machine_input_purchase` miss before any machine schedule is created. The
+  support selector then reuses the existing `economy.buy_supplies` rolling route: one cross-map connector, one shop
+  interaction, or one exact purchase candidate per fresh planning state. Candidate identity binds shop, qualified item,
+  quantity one and maximum unit price; unknown stage kinds fail closed.
+- Compilation continues through the existing `DailyPlanCompiler`, `ActionQueueCompiler` and native shop executor. Route
+  and interaction stages remain one action. The purchase stage admits only the existing optional bounded menu-readiness
+  wait followed by one native purchase and safe menu close. Every expanded item repeats the acquisition, reservation and
+  support lineage; arbitrary multi-item queues remain rejected.
+- Fresh receipts require route and interaction stages to preserve both currency and target inventory. A purchase must
+  reduce the exact native currency by one bound unit price and increase the current player's exact qualified item by one
+  bound output stack. The shared ledger now supports exact partial/full currency consumption and no-consumption active
+  claim rebinding. A fully consumed currency claim is completed and cannot appear in the active rebind set.
+- Each verified stage records only a nonterminal support marker, invalidates the old state/ledger-bound queue and re-enters
+  the complete acquisition replan. Repeated purchases therefore converge one observed item at a time until the ordinary
+  material staging or machine-load path becomes admissible. The next bounded slice must connect missing placed capacity
+  to the existing `farm.establish_supported_machine_capacity` lifecycle with the same commit/receipt/settlement/replan
+  discipline; it must not duplicate crafting, placement, loading or execution code. Formal training remains unauthorized.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

@@ -43,8 +43,85 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     candidate,
                     currentDay,
                     supportDeadlineTotalDay),
+            "machine_input_purchase" => EvaluatePurchaseCandidate(
+                reservation,
+                candidate,
+                currentDay,
+                supportDeadlineTotalDay),
             _ => SupportCandidateEvaluation.Blocked(
                 "support_transition_kind_not_bound")
+        };
+    }
+
+    private static SupportCandidateEvaluation EvaluatePurchaseCandidate(
+        AcquisitionRouteTargetDateReservation reservation,
+        PolicyEventCandidatePrediction candidate,
+        int? currentDay,
+        int supportDeadlineTotalDay)
+    {
+        var reasons = new List<string>();
+        var purchase = reservation.UpstreamRoute.CurrencyEvaluation?
+            .PurchasePrerequisite;
+        if (!candidate.Available)
+            reasons.Add("machine_input_purchase_candidate_not_ready_now");
+        if (purchase is null ||
+            !PurchaseCandidateMatchesBinding(candidate, purchase))
+        {
+            reasons.Add("machine_input_purchase_candidate_binding_mismatch");
+        }
+
+        var currencyClaims = reservation.ClaimSet?.CurrencyClaims ??
+            Array.Empty<CurrencyReservationUpsertRequest>();
+        var matchingClaims = purchase is null
+            ? Array.Empty<CurrencyReservationUpsertRequest>()
+            : currencyClaims.Where(claim =>
+                    claim.CurrencyId == purchase.CurrencyId &&
+                    claim.Amount >= purchase.UnitPrice)
+                .ToArray();
+        var claimBound = purchase is not null &&
+            matchingClaims.Length == 1 &&
+            currencyClaims.Length == 1;
+        if (!claimBound)
+            reasons.Add("machine_input_purchase_currency_claim_mismatch");
+
+        var deadlineVerified = currentDay.HasValue &&
+            supportDeadlineTotalDay > currentDay.Value;
+        if (!deadlineVerified)
+        {
+            reasons.Add(
+                "machine_input_purchase_does_not_fit_support_deadline");
+        }
+        var stage = PurchaseStage(candidate);
+        var currencyConsumptions = claimBound && stage == "purchase"
+            ? new[]
+            {
+                new AcquisitionSupportCurrencyConsumption
+                {
+                    ReservationId = matchingClaims[0].ReservationId,
+                    CurrencyId = purchase!.CurrencyId,
+                    ConsumedAmount = purchase.UnitPrice
+                }
+            }
+            : Array.Empty<AcquisitionSupportCurrencyConsumption>();
+        return new SupportCandidateEvaluation(
+            deadlineVerified ? currentDay : null,
+            null,
+            null,
+            purchase?.QualifiedItemId ?? string.Empty,
+            candidate.SlotIndex,
+            purchase?.OutputStackPerPurchase,
+            string.Empty,
+            null,
+            deadlineVerified,
+            claimBound,
+            Array.Empty<AcquisitionSupportMaterialConsumption>(),
+            null,
+            Array.Empty<AcquisitionSupportMaterialRelocation>(),
+            reasons.Distinct(StringComparer.Ordinal).ToArray())
+        {
+            PurchaseStage = stage,
+            PurchasePrerequisite = purchase,
+            CurrencyConsumptions = currencyConsumptions
         };
     }
 
@@ -561,6 +638,14 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         AcquisitionSupportMaterialRelocation[] MaterialRelocations,
         string[] BlockingReasons)
     {
+        public string PurchaseStage { get; init; } = string.Empty;
+
+        public AcquisitionPurchasePrerequisiteBinding? PurchasePrerequisite
+        { get; init; }
+
+        public AcquisitionSupportCurrencyConsumption[] CurrencyConsumptions
+        { get; init; } = Array.Empty<AcquisitionSupportCurrencyConsumption>();
+
         public static SupportCandidateEvaluation Empty { get; } = new(
             null,
             null,

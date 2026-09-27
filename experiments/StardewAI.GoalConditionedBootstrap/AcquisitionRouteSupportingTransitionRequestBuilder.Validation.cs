@@ -45,7 +45,39 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             ValidateMachineRoute(requirement, processing, reasons);
             return;
         }
+        if (supportTransitionKind == "machine_input_purchase")
+        {
+            ValidateMachinePurchaseRoute(requirement, processing, reasons);
+            return;
+        }
         reasons.Add("support_transition_kind_not_bound");
+    }
+
+    private static void ValidateMachinePurchaseRoute(
+        AcquisitionRouteTargetDateUnlock requirement,
+        AcquisitionRouteTargetDateProcessing processing,
+        ICollection<string> reasons)
+    {
+        if (requirement.RouteKind is not (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output"))
+        {
+            reasons.Add(
+                "support_machine_purchase_route_not_authoritatively_admitted");
+        }
+        var purchase = PurchasePrerequisite(processing);
+        if (!processing.ProcessingLeadTimeAxisResolved ||
+            processing.ProcessingLeadTimeMatchesTargetDate != false ||
+            processing.ProcessingLeadTimeRequirementKind !=
+                "upstream_machine_input_purchase" ||
+            processing.BlockingReasons.Length != 0 ||
+            purchase is null ||
+            purchase.RequiredPurchaseCount <= 0 ||
+            purchase.UnitPrice <= 0)
+        {
+            reasons.Add("support_machine_purchase_prerequisite_not_proven");
+        }
     }
 
     private static void ValidateCropRoute(
@@ -123,6 +155,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     claim.SlotIndex == candidate.SlotIndex.Value &&
                     claim.QualifiedItemId == candidate.QualifiedItemId &&
                     claim.Quantity == quantity.Value) == 1;
+        }
+        if (supportTransitionKind == "machine_input_purchase")
+        {
+            return candidate.OptionId == "economy.buy_supplies" &&
+                candidate.Available &&
+                candidate.UnitPrice > 0 &&
+                claimSet is not null &&
+                claimSet.CurrencyClaims.Length == 1 &&
+                claimSet.CurrencyClaims[0].Amount >= candidate.UnitPrice;
         }
         var requiredQuantity = supportTransitionKind == "machine_input_load"
             ? ReadPositiveIntParameter(candidate, "machine_input_required_count")

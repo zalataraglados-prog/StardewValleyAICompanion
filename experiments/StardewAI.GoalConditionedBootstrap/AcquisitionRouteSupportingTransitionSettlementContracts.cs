@@ -85,6 +85,22 @@ public sealed class AcquisitionRouteSupportingTransitionSettlementReceipt
     public ReservationPortfolioMaterialRelocation[] MaterialRelocations
     { get; set; } = Array.Empty<ReservationPortfolioMaterialRelocation>();
 
+    [JsonPropertyName("completed_currency_reservation_ids")]
+    public string[] CompletedCurrencyReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("active_currency_reservation_ids")]
+    public string[] ActiveCurrencyReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("currency_settlements")]
+    public ReservationPortfolioCurrencySettlement[] CurrencySettlements
+    { get; set; } = Array.Empty<ReservationPortfolioCurrencySettlement>();
+
+    [JsonPropertyName("rebound_active_reservation_ids")]
+    public string[] ReboundActiveReservationIds { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("supporting_transition_verified")]
     public bool SupportingTransitionVerified { get; set; }
 
@@ -111,5 +127,5 @@ public sealed class AcquisitionRouteSupportingTransitionSettlementReceipt
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A supporting-transition settlement is admitted only after rebuilding the exact support request, atomic reservation commit, commit-gated compilation and fresh after-state receipt. Every material consumption must match one verified before/after slot delta and one active route claim. Exact full consumption completes that claim; partial consumption decrements its quantity and preserves it as active. A material-staging transition instead relocates one full active claim from the exact chest slot to the one observed player-inventory slot; partial, mixed, missing-destination or multi-slot relocation fails closed. The shared ledger mutation is exactly replayed and records one supporting-transition marker, never a terminal route-completion marker. Success requires a full fresh-snapshot replan and never authorizes formal training.";
+        "A supporting-transition settlement is admitted only after rebuilding the exact support request, atomic reservation commit, commit-gated compilation and fresh after-state receipt. Every material or currency consumption must match one verified before/after delta and one active route claim. Exact full consumption completes that claim; partial consumption decrements its quantity or amount and preserves it as active. A material-staging transition instead relocates one full active claim from the exact chest slot to the one observed player-inventory slot; partial, mixed, missing-destination or multi-slot relocation fails closed. Machine purchase route and interaction progress only rebinds active claims to the fresh state. A purchase consumes one exact unit price, rebinds every still-active material or currency claim, and never rebinds a fully consumed currency claim. The shared ledger mutation is exactly replayed and records one supporting-transition marker, never a terminal route-completion marker. Success requires a full fresh-snapshot replan and never authorizes formal training.";
 }
