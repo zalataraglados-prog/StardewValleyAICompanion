@@ -2401,6 +2401,25 @@ Slice 7 remains assigned to the RTX 5070 node.
   preserves unconsumed quantity, and re-entry into the existing complete-replan recurrence. Formal training remains
   unauthorized until those gates close.
 
+### 2026-09-27: machine-load supporting-transition receipt
+
+- The existing supporting-transition receipt now dispatches explicitly between crop planting and machine loading. It
+  remains a one-item, nonterminal verifier: an empty or multi-item queue fails closed before transition-specific code
+  runs, and a successful receipt still mandates a fresh complete replan without granting formal training authority.
+- The request and compiled queue carry an exact per-action consumption plan keyed by reservation ID, inventory node,
+  slot, qualified item and input role. Machine receipt verification requires every before/after slot delta to equal
+  that plan, and independently requires the exact machine to move from idle into processing or ready state with the
+  compiled last input, held output, unique route kind/source ID and an admissible native timer.
+- Transparent machine rows now expose native `last_input_item` and `last_output_rule_id`. Resource evaluation was
+  tightened at the same boundary: native `Object.PlaceInMachine` consumes from the acting farmer's inventory, so
+  accessible chest stock no longer qualifies as immediately loadable input. It must first enter the player inventory
+  through the ordinary material-transfer path.
+- Focused dispatch coverage includes exact positive evidence, missing material decrement, wrong native output source,
+  and chest-only stock. GoalConditionedBootstrap and the real-game-reference TransparentBridge Release builds pass
+  with zero warnings or errors. The next bounded slice is partial supporting-transition claim settlement: consume only
+  verified quantities, preserve active residual quantities, then re-enter the existing settlement-backed complete
+  replan recurrence. Formal training remains unauthorized until that recurrence is proven.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

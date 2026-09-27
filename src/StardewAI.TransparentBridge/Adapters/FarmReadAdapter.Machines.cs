@@ -200,6 +200,10 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     active_output_authoritative_route_sources =
                         ReadActiveMachineOutputAuthoritativeRouteSources(
                             row.Pair.Value),
+                    last_output_rule_id =
+                        row.Pair.Value.lastOutputRuleId.Value ?? string.Empty,
+                    last_input_item =
+                        SummarizeItem(row.Pair.Value.lastInputItem.Value),
                     held_item = SummarizeItem(row.Pair.Value.heldObject.Value),
                     loadable_inputs = loadableInputs
                 };

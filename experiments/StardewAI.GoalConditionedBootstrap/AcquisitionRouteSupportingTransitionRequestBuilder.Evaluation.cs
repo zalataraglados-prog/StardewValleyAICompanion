@@ -170,6 +170,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     Array.Empty<CurrencyReservationUpsertRequest>())
                 .OrderBy(value => value.ReservationId, StringComparer.Ordinal)
                 .ToArray(),
+            SupportMaterialConsumptions =
+                candidateEvaluation.MaterialConsumptions,
             DeadlineProofVerified =
                 candidateEvaluation.DeadlineProofVerified,
             ReservationClaimBoundToCandidate =
