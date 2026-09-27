@@ -102,6 +102,23 @@ internal static partial class BootstrapSelfTest
                     StringComparer.Ordinal),
             "Insufficient machine additional input was not rejected.");
 
+        var chestOnly = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
+            MachineResourceFacilityRoute(itemRoute),
+            itemRoute,
+            MachineResourceStateWithChestOnly(
+                MachineResourceSlot(0, "(O)262", 2),
+                MachineResourceSlot(1, "(O)382", 2)));
+        Require(chestOnly.ResourceInputsMatchTargetDate == false &&
+                chestOnly.NonMatchingReasons.Contains(
+                    "required_machine_input_candidate_unavailable",
+                    StringComparer.Ordinal) &&
+                chestOnly.InputEvaluations.Single() is
+                {
+                    QualifiedItemId: "(O)262",
+                    AvailableQuantity: 0
+                },
+            "Machine loading incorrectly treated chest stock as actor-held input.");
+
         var tagSource = itemSource with
         {
             Triggers = new[]
@@ -244,6 +261,53 @@ internal static partial class BootstrapSelfTest
             AccessPointCount = 0,
             DeduplicatedAccessPointCount = 0
         };
+        return MachineResourceState(graph);
+    }
+
+    private static AcquisitionResourceInputSnapshotState
+        MachineResourceStateWithChestOnly(
+            params MaterialInventorySlot[] chestSlots)
+    {
+        var graph = new MaterialInventoryGraph
+        {
+            PlayerId = 42,
+            InventoryNodes = new[]
+            {
+                new MaterialInventoryNode
+                {
+                    NodeId = "player:42",
+                    InventoryKind = "player_inventory",
+                    SupplyState = "available",
+                    OwnershipClass = "actor_owned",
+                    ActorUseAuthorized = true,
+                    OwnerPlayerId = 42,
+                    Capacity = 36,
+                    Slots = Array.Empty<MaterialInventorySlot>()
+                },
+                new MaterialInventoryNode
+                {
+                    NodeId = "chest:Farm:4,5",
+                    InventoryKind = "chest",
+                    SupplyState = "available",
+                    OwnershipClass = "actor_owned",
+                    ActorUseAuthorized = true,
+                    LocationId = "Farm",
+                    TileX = 4,
+                    TileY = 5,
+                    Capacity = 36,
+                    Slots = chestSlots
+                }
+            },
+            PhysicalInventoryCount = 2,
+            AccessPointCount = 0,
+            DeduplicatedAccessPointCount = 0
+        };
+        return MachineResourceState(graph);
+    }
+
+    private static AcquisitionResourceInputSnapshotState MachineResourceState(
+        MaterialInventoryGraph graph)
+    {
         var json = JsonSerializer.Serialize(new
         {
             state = new

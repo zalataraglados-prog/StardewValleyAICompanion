@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器投料支持回执：真实扣料与机器加工态
+
+- 现有 `acquisition_route_supporting_transition_receipt.v1` 已从作物专用核验扩展为按 `crop_planting / machine_input_load` 显式分派，仍只接受一个经过哈希绑定的非终端队列项；畸形的空队列或多项队列只会失败关闭，不会抛异常或被误判为完成。
+- 机器请求和队列现在携带逐 claim、逐库存节点、逐槽位的单次材料消费计划。回执要求每个槽位的前后数量差精确等于计划消耗量，并要求目标机器从空闲态进入加工或已完成态；机器类型、最后输入、持有输出、唯一权威 route kind/source ID 及原生剩余计时必须全部与编译血缘一致。
+- 透明桥新增原生 `last_input_item` 与 `last_output_rule_id` 投影，回执不靠显示名或预计收益猜测投料结果。资源轴同时修正为只把当前执行者的玩家背包视为原生投料来源；箱子里的材料必须先经过取物动作进入背包，不能直接满足机器输入。
+- 聚焦 acquisition dispatch、GoalConditionedBootstrap Release 与 TransparentBridge 真实游戏引用构建均通过，均为零警告、零错误。正式训练授权仍为 `false`；下一固定切片是让共享 reservation 结算支持一次动作只扣除已核验的部分数量、保留 claim 余量，并用结算后的 ledger 和 fresh 快照复入既有完整重规划链。
+
 ## 2026-09-27 机器投料支持请求：期限、材料占用与提交门控
 
 - 现有作物支持协议没有被复制。`acquisition_route_supporting_transition_request.v1` 新增 `crop_planting / machine_input_load` 类型分派；机器分支只接受已经由唯一原生 route kind、source ID 和输出 qualified ID 命中的 `load_machine_input_tile` 候选。

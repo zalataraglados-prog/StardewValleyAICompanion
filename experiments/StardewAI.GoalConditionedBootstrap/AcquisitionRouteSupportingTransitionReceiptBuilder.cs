@@ -83,23 +83,64 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 compilation.SourceStateHash,
                 requireTeacherPreferenceStateRebound: false);
         var snapshotReasons = ValidateSnapshots(before, after);
-        var transition = queue is null
-            ? BlockedTransition("supporting_transition_action_queue_missing")
-            : VerifyCropPlanting(queue, before, after);
-        result.CropPlantingTransition = transition;
+        AcquisitionCropPlantingTransitionEvidence? cropTransition = null;
+        AcquisitionMachineInputTransitionEvidence? machineTransition = null;
+        string[] transitionReasons;
+        var transitionVerified = false;
+        if (queue is null)
+        {
+            transitionReasons = new[]
+            {
+                "supporting_transition_action_queue_missing"
+            };
+        }
+        else if (queue.Items is not { Length: 1 })
+        {
+            transitionReasons = new[]
+            {
+                "supporting_transition_action_queue_item_count_invalid"
+            };
+        }
+        else
+        {
+            var transitionKind = UniqueParameter(
+                queue.Items.Single().NormalizedCommand?.Parameters,
+                "acquisition_support_transition_kind");
+            if (transitionKind == "crop_planting")
+            {
+                cropTransition = VerifyCropPlanting(queue, before, after);
+                transitionReasons = cropTransition.BlockingReasons;
+                transitionVerified = cropTransition.Verified;
+            }
+            else if (transitionKind == "machine_input_load")
+            {
+                machineTransition = VerifyMachineInput(queue, before, after);
+                transitionReasons = machineTransition.BlockingReasons;
+                transitionVerified = machineTransition.Verified;
+            }
+            else
+            {
+                transitionReasons = new[]
+                {
+                    "supporting_transition_kind_missing_or_unsupported"
+                };
+            }
+        }
+        result.CropPlantingTransition = cropTransition;
+        result.MachineInputTransition = machineTransition;
         result.QueueExecutionVerified = queueReasons.Length == 0;
         result.SupportingTransitionVerified =
             compilationReasons.Length == 0 &&
             queueReasons.Length == 0 &&
             snapshotReasons.Length == 0 &&
-            transition.Verified;
+            transitionVerified;
         result.Status = result.SupportingTransitionVerified
             ? "verified_supporting_transition_fresh_replan_required"
             : "blocked_supporting_transition_receipt";
         result.BlockingReasons = compilationReasons
             .Concat(queueReasons)
             .Concat(snapshotReasons)
-            .Concat(transition.BlockingReasons)
+            .Concat(transitionReasons)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();

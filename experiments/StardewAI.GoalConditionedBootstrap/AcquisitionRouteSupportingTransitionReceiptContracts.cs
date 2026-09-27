@@ -57,12 +57,93 @@ public sealed class AcquisitionRouteSupportingTransitionReceipt
     public AcquisitionCropPlantingTransitionEvidence?
         CropPlantingTransition { get; set; }
 
+    [JsonPropertyName("machine_input_transition")]
+    public AcquisitionMachineInputTransitionEvidence?
+        MachineInputTransition { get; set; }
+
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A supporting transition receipt verifies one hash-bound nonterminal queue item against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+        "A supporting transition receipt verifies one hash-bound nonterminal queue item against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+}
+
+public sealed class AcquisitionMachineInputTransitionEvidence
+{
+    [JsonPropertyName("target_location_id")]
+    public string TargetLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("target_tile_x")]
+    public int? TargetTileX { get; set; }
+
+    [JsonPropertyName("target_tile_y")]
+    public int? TargetTileY { get; set; }
+
+    [JsonPropertyName("machine_qualified_item_id")]
+    public string MachineQualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("input_qualified_item_id")]
+    public string InputQualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("output_qualified_item_id")]
+    public string OutputQualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("before_capacity_state")]
+    public string BeforeCapacityState { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_capacity_state")]
+    public string AfterCapacityState { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_minutes_until_ready")]
+    public int? AfterMinutesUntilReady { get; set; }
+
+    [JsonPropertyName("material_consumptions")]
+    public AcquisitionSupportMaterialConsumptionEvidence[]
+        MaterialConsumptions { get; set; } =
+            Array.Empty<AcquisitionSupportMaterialConsumptionEvidence>();
+
+    [JsonPropertyName("resolved")]
+    public bool Resolved { get; set; }
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+}
+
+public sealed class AcquisitionSupportMaterialConsumptionEvidence
+{
+    [JsonPropertyName("reservation_id")]
+    public string ReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("node_id")]
+    public string NodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("slot_index")]
+    public int SlotIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("expected_consumed_quantity")]
+    public int ExpectedConsumedQuantity { get; set; }
+
+    [JsonPropertyName("before_quantity")]
+    public int? BeforeQuantity { get; set; }
+
+    [JsonPropertyName("after_quantity")]
+    public int? AfterQuantity { get; set; }
+
+    [JsonPropertyName("observed_consumed_quantity")]
+    public int? ObservedConsumedQuantity { get; set; }
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 }
 
 public sealed class AcquisitionCropPlantingTransitionEvidence

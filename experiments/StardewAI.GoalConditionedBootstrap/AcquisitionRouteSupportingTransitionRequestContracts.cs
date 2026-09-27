@@ -136,6 +136,10 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
     public CurrencyReservationUpsertRequest[] ReservationCurrencyClaims
     { get; set; } = Array.Empty<CurrencyReservationUpsertRequest>();
 
+    [JsonPropertyName("support_material_consumptions")]
+    public AcquisitionSupportMaterialConsumption[] SupportMaterialConsumptions
+    { get; set; } = Array.Empty<AcquisitionSupportMaterialConsumption>();
+
     [JsonPropertyName("deadline_proof_verified")]
     public bool DeadlineProofVerified { get; set; }
 
@@ -160,4 +164,25 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
         "A support request may select only one current source-bound candidate from the shared acquisition route. Crop planting retains exact growth, season, seed-slot and deadline proof. Machine input loading additionally requires a unique native output route, exact machine location/tile/type, probe-derived required input count and effective processing minutes matching the authoritative processing schedule; its exact input slot must be covered by the route material claims and its completion day must fit the explicit deadline. All route claims are preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
+}
+
+public sealed class AcquisitionSupportMaterialConsumption
+{
+    [JsonPropertyName("reservation_id")]
+    public string ReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("node_id")]
+    public string NodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("slot_index")]
+    public int SlotIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("consumed_quantity")]
+    public int ConsumedQuantity { get; set; }
+
+    [JsonPropertyName("input_role")]
+    public string InputRole { get; set; } = string.Empty;
 }

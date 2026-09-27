@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
@@ -72,7 +73,31 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                     request.SupportDeadlineTotalDay.ToString()),
                 Parameter(
                     "acquisition_support_expected_ready_total_day",
-                    request.ExpectedReadyTotalDay!.Value.ToString())
+                    request.ExpectedReadyTotalDay!.Value.ToString()),
+                Parameter(
+                    "acquisition_support_transition_kind",
+                    request.SupportTransitionKind),
+                Parameter(
+                    "acquisition_support_material_consumptions_json",
+                    JsonSerializer.Serialize(
+                        request.SupportMaterialConsumptions,
+                        JsonDefaults.Options)),
+                Parameter(
+                    "acquisition_support_machine_qualified_item_id",
+                    request.MachineQualifiedItemId),
+                Parameter(
+                    "acquisition_support_input_qualified_item_id",
+                    request.InputQualifiedItemId),
+                Parameter(
+                    "acquisition_support_input_slot_index",
+                    request.InputSlotIndex?.ToString() ?? string.Empty),
+                Parameter(
+                    "acquisition_support_input_required_quantity",
+                    request.InputRequiredQuantity?.ToString() ?? string.Empty),
+                Parameter(
+                    "acquisition_support_predicted_processing_minutes",
+                    request.PredictedProcessingMinutes?.ToString() ??
+                        string.Empty)
             });
         compilation.SupportRequestSha256 = supportRequestSha256;
         compilation.SupportCommitReceiptSha256 = supportCommitReceiptSha256;

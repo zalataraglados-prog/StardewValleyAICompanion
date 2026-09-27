@@ -60,6 +60,16 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         if (!state.MaterialEvidenceAvailable)
             return Blocked(route, MachineInput,
                 state.MaterialBlockingReasons);
+        if (!TryMachinePlayerMaterialSlots(
+                state,
+                out var machineMaterialSlots,
+                out var machineMaterialBlockingReason))
+        {
+            return Blocked(
+                route,
+                MachineInput,
+                machineMaterialBlockingReason);
+        }
         var blockedReasons = new List<string>();
         MachineInputAttempt? firstMiss = null;
         foreach (var trigger in inputTriggers)
@@ -83,7 +93,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             var candidates = MachinePrimaryCandidates(
                 trigger,
                 parsed,
-                state.MaterialSlots);
+                machineMaterialSlots);
             foreach (var candidate in candidates.Candidates)
             {
                 var attempt = EvaluateMachineInputAttempt(
@@ -93,7 +103,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                     candidate,
                     attemptCount,
                     creditedExistingOutputQuantity,
-                    state.MaterialSlots);
+                    machineMaterialSlots);
                 firstMiss ??= attempt;
                 if (attempt.Matches)
                 {
@@ -122,7 +132,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                     parsed,
                     attemptCount,
                     creditedExistingOutputQuantity,
-                    state.MaterialSlots);
+                    machineMaterialSlots);
             }
         }
 
@@ -140,6 +150,36 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             firstMiss.Evaluations,
             firstMiss.NonMatchingReasons,
             Array.Empty<string>());
+    }
+
+    private static bool TryMachinePlayerMaterialSlots(
+        AcquisitionResourceInputSnapshotState state,
+        out AcquisitionResourceMaterialSlot[] slots,
+        out string blockingReason)
+    {
+        slots = Array.Empty<AcquisitionResourceMaterialSlot>();
+        blockingReason = string.Empty;
+        var graph = state.MaterialGraph;
+        if (graph is null)
+        {
+            blockingReason = "machine_player_inventory_graph_unavailable";
+            return false;
+        }
+        var nodes = graph.InventoryNodes.Where(node =>
+                node.InventoryKind == "player_inventory" &&
+                node.OwnerPlayerId == graph.PlayerId &&
+                node.ActorUseAuthorized &&
+                node.SupplyState == "available")
+            .ToArray();
+        if (nodes.Length != 1)
+        {
+            blockingReason = "machine_player_inventory_node_not_unique";
+            return false;
+        }
+        slots = state.MaterialSlots.Where(slot =>
+                slot.NodeId == nodes[0].NodeId)
+            .ToArray();
+        return true;
     }
 
     private static MachineInputAttempt EvaluateMachineInputAttempt(

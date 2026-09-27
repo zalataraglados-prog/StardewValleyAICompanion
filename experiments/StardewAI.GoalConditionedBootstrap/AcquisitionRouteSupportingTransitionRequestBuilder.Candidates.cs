@@ -97,6 +97,18 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             "crop_planting");
         if (!claimBound)
             reasons.Add("crop_planting_candidate_seed_claim_mismatch");
+        var cropConsumptions = claimBound
+            ? reservation.ClaimSet!.MaterialClaims
+                .Where(claim =>
+                    claim.SlotIndex == candidate.SlotIndex &&
+                    claim.QualifiedItemId == candidate.QualifiedItemId)
+                .Take(1)
+                .Select(claim => Consumption(
+                    claim,
+                    1,
+                    "primary_input"))
+                .ToArray()
+            : Array.Empty<AcquisitionSupportMaterialConsumption>();
         return new SupportCandidateEvaluation(
             expectedReadyDay,
             adjustedGrowDays,
@@ -108,6 +120,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             null,
             deadlineVerified,
             claimBound,
+            cropConsumptions,
             reasons.ToArray());
     }
 
@@ -209,6 +222,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             "machine_input_load");
         if (!claimBound)
             reasons.Add("machine_input_candidate_material_claim_mismatch");
+        var consumptions = schedule is not null &&
+            requiredQuantity.HasValue && claimBound
+                ? BuildMachineConsumptions(
+                    candidate,
+                    reservation.ClaimSet!,
+                    schedule.RequiredAttemptCount,
+                    requiredQuantity.Value,
+                    reasons)
+                : Array.Empty<AcquisitionSupportMaterialConsumption>();
         return new SupportCandidateEvaluation(
             expectedReadyDay,
             null,
@@ -220,8 +242,114 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             predictedMinutes,
             deadlineVerified,
             claimBound,
+            consumptions,
             reasons.Distinct(StringComparer.Ordinal).ToArray());
     }
+
+    private static AcquisitionSupportMaterialConsumption[]
+        BuildMachineConsumptions(
+            PolicyEventCandidatePrediction candidate,
+            AcquisitionRouteReservationClaimSet claimSet,
+            int requiredAttemptCount,
+            int primaryRequiredQuantity,
+            ICollection<string> reasons)
+    {
+        if (requiredAttemptCount <= 0)
+        {
+            reasons.Add("machine_input_consumption_attempt_count_invalid");
+            return Array.Empty<AcquisitionSupportMaterialConsumption>();
+        }
+        var primaryClaims = claimSet.MaterialClaims.Where(claim =>
+                claim.SlotIndex == candidate.SlotIndex &&
+                claim.QualifiedItemId == candidate.QualifiedItemId)
+            .ToArray();
+        if (primaryClaims.Length != 1 ||
+            primaryClaims[0].Quantity < primaryRequiredQuantity)
+        {
+            reasons.Add("machine_input_primary_consumption_claim_not_unique");
+            return Array.Empty<AcquisitionSupportMaterialConsumption>();
+        }
+        var consumptions = new List<AcquisitionSupportMaterialConsumption>
+        {
+            Consumption(
+                primaryClaims[0],
+                primaryRequiredQuantity,
+                "primary_input")
+        };
+        foreach (var group in claimSet.MaterialClaims
+                     .GroupBy(claim => claim.QualifiedItemId,
+                         StringComparer.Ordinal)
+                     .OrderBy(group => group.Key, StringComparer.Ordinal))
+        {
+            var total = group.Sum(claim => (long)claim.Quantity);
+            if (total <= 0 || total % requiredAttemptCount != 0 ||
+                total / requiredAttemptCount > int.MaxValue)
+            {
+                reasons.Add(
+                    "machine_input_per_attempt_consumption_not_integral:" +
+                    group.Key);
+                continue;
+            }
+            var perAttempt = (int)(total / requiredAttemptCount);
+            if (group.Key == candidate.QualifiedItemId)
+            {
+                if (perAttempt != primaryRequiredQuantity)
+                {
+                    reasons.Add(
+                        "machine_input_primary_and_additional_identity_overlap");
+                }
+                continue;
+            }
+            var remaining = perAttempt;
+            foreach (var claim in group
+                         .OrderBy(value => value.NodeId, StringComparer.Ordinal)
+                         .ThenBy(value => value.SlotIndex))
+            {
+                var quantity = Math.Min(remaining, claim.Quantity);
+                if (quantity <= 0)
+                    continue;
+                consumptions.Add(Consumption(
+                    claim,
+                    quantity,
+                    "additional_input"));
+                remaining -= quantity;
+                if (remaining == 0)
+                    break;
+            }
+            if (remaining != 0)
+            {
+                reasons.Add(
+                    "machine_input_additional_consumption_claim_incomplete:" +
+                    group.Key);
+            }
+        }
+        return reasons.Any(reason =>
+                (reason.StartsWith(
+                     "machine_input_",
+                     StringComparison.Ordinal) &&
+                 reason.Contains("consumption", StringComparison.Ordinal)) ||
+                reason ==
+                    "machine_input_primary_and_additional_identity_overlap")
+                ? Array.Empty<AcquisitionSupportMaterialConsumption>()
+                : consumptions
+                    .OrderBy(value => value.InputRole, StringComparer.Ordinal)
+                    .ThenBy(value => value.NodeId, StringComparer.Ordinal)
+                    .ThenBy(value => value.SlotIndex)
+                    .ToArray();
+    }
+
+    private static AcquisitionSupportMaterialConsumption Consumption(
+        MaterialReservationUpsertRequest claim,
+        int quantity,
+        string role) => new()
+        {
+            ReservationId = claim.ReservationId,
+            NodeId = claim.NodeId,
+            SlotIndex = claim.SlotIndex,
+            QualifiedItemId = claim.QualifiedItemId,
+            ConsumedQuantity = quantity,
+            InputRole = role
+        };
 
     private static int? AuthoritativeMachineMinutes(
         AcquisitionMachineProcessingScheduleBinding schedule,
@@ -292,6 +420,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         int? PredictedProcessingMinutes,
         bool DeadlineProofVerified,
         bool ReservationClaimBoundToCandidate,
+        AcquisitionSupportMaterialConsumption[] MaterialConsumptions,
         string[] BlockingReasons)
     {
         public static SupportCandidateEvaluation Empty { get; } = new(
@@ -305,6 +434,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             null,
             false,
             false,
+            Array.Empty<AcquisitionSupportMaterialConsumption>(),
             Array.Empty<string>());
 
         public static SupportCandidateEvaluation Blocked(string reason) =>

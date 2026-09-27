@@ -1,4 +1,9 @@
+using System.Text.Json;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -156,6 +161,10 @@ internal static partial class BootstrapSelfTest
                 !compilation.TerminalReceiptEligible,
             "Committed machine support request did not compile through the shared queue: " +
             string.Join(",", compilation.BlockingReasons));
+        VerifyMachineInputSupportingReceipt(
+            compilation,
+            snapshot,
+            request);
 
         var driftedDuration = CloneCandidate(support[0].Candidate);
         driftedDuration.Parameters = driftedDuration.Parameters.Select(parameter =>
@@ -200,5 +209,276 @@ internal static partial class BootstrapSelfTest
                     "machine_input_candidate_material_claim_mismatch",
                     StringComparer.Ordinal),
             "A machine support candidate escaped its exact reserved input slot.");
+    }
+
+    private static void VerifyMachineInputSupportingReceipt(
+        AcquisitionRouteDispatchCompilation compilation,
+        SnapshotEnvelope before,
+        AcquisitionRouteSupportingTransitionRequest request)
+    {
+        var after = LoadedMachineSnapshot(
+            before,
+            materialStack: 1,
+            sourceId: "machine:(BC)12:rule:keg_wheat");
+        var execution = MachineSupportingExecutionReceipt(
+            compilation,
+            before,
+            after);
+        var verified = AcquisitionRouteSupportingTransitionReceiptBuilder
+            .BuildCore(
+                compilation,
+                before,
+                execution,
+                after,
+                "run.machine-support.self-test",
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(verified.SupportingTransitionVerified &&
+                verified.QueueExecutionVerified &&
+                verified.FreshReplanRequired &&
+                !verified.TerminalReceiptEligible &&
+                !verified.FormalTrainingAuthorized &&
+                verified.CropPlantingTransition is null &&
+                verified.MachineInputTransition is
+                {
+                    Verified: true,
+                    BeforeCapacityState: "idle",
+                    AfterCapacityState: "processing",
+                    AfterMinutesUntilReady: 1750
+                } &&
+                verified.MachineInputTransition.MaterialConsumptions is
+                [
+                    {
+                        ReservationId:
+                            "reservation:full_shipment:machine:keg-wheat:material:0:0",
+                        BeforeQuantity: 2,
+                        AfterQuantity: 1,
+                        ObservedConsumedQuantity: 1,
+                        Verified: true
+                    }
+                ],
+            "Exact machine load did not produce a verified nonterminal receipt: " +
+            string.Join(",", verified.BlockingReasons));
+        Require(request.SupportMaterialConsumptions.Length == 1 &&
+                request.SupportMaterialConsumptions[0].ConsumedQuantity == 1,
+            "Machine support request lost its per-action consumption plan.");
+
+        var wrongQuantityAfter = LoadedMachineSnapshot(
+            before,
+            materialStack: 2,
+            sourceId: "machine:(BC)12:rule:keg_wheat");
+        var wrongQuantity =
+            AcquisitionRouteSupportingTransitionReceiptBuilder.BuildCore(
+                compilation,
+                before,
+                MachineSupportingExecutionReceipt(
+                    compilation,
+                    before,
+                    wrongQuantityAfter),
+                wrongQuantityAfter,
+                "run.machine-support.self-test",
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(!wrongQuantity.SupportingTransitionVerified &&
+                wrongQuantity.BlockingReasons.Contains(
+                    "supporting_transition_machine_material_delta_mismatch",
+                    StringComparer.Ordinal),
+            "A machine load receipt accepted a missing inventory decrement.");
+
+        var wrongSourceAfter = LoadedMachineSnapshot(
+            before,
+            materialStack: 1,
+            sourceId: "machine:(BC)12:rule:wrong");
+        var wrongSource =
+            AcquisitionRouteSupportingTransitionReceiptBuilder.BuildCore(
+                compilation,
+                before,
+                MachineSupportingExecutionReceipt(
+                    compilation,
+                    before,
+                    wrongSourceAfter),
+                wrongSourceAfter,
+                "run.machine-support.self-test",
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(!wrongSource.SupportingTransitionVerified &&
+                wrongSource.BlockingReasons.Contains(
+                    "supporting_transition_machine_after_state_mismatch",
+                    StringComparer.Ordinal),
+            "A machine load receipt accepted the wrong native output source.");
+    }
+
+    private static SnapshotEnvelope LoadedMachineSnapshot(
+        SnapshotEnvelope before,
+        int materialStack,
+        string sourceId)
+    {
+        var state = before.State.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value.Clone(),
+            StringComparer.Ordinal);
+        state["player"] = JsonSerializer.SerializeToElement(new
+        {
+            location_id = SupportingTransitionField("Farm"),
+            tile_x = SupportingTransitionField(63),
+            tile_y = SupportingTransitionField(15),
+            inventory = SupportingTransitionField(new[]
+            {
+                new
+                {
+                    slot_index = 0,
+                    item_id = "262",
+                    qualified_item_id = "(O)262",
+                    stack = materialStack,
+                    quality = 0,
+                    sale_price = 25
+                }
+            }),
+            inventory_capacity = SupportingTransitionField(new
+            {
+                occupied_stacks = 1,
+                empty_slots = 11,
+                has_empty_slot = true
+            })
+        }, JsonDefaults.Options);
+        state["farm"] = JsonSerializer.SerializeToElement(new
+        {
+            machines = SupportingTransitionField(new[]
+            {
+                new
+                {
+                    location_id = "Farm",
+                    tile_x = 64,
+                    tile_y = 15,
+                    qualified_item_id = "(BC)12",
+                    ready_for_harvest = false,
+                    minutes_until_ready = 1750,
+                    last_output_rule_id = "keg_wheat",
+                    last_input_item = new
+                    {
+                        item_id = "262",
+                        qualified_item_id = "(O)262",
+                        stack = 2,
+                        quality = 0
+                    },
+                    held_item = new
+                    {
+                        item_id = "346",
+                        qualified_item_id = "(O)346",
+                        stack = 1,
+                        quality = 0
+                    },
+                    active_output_authoritative_route_sources = new[]
+                    {
+                        new
+                        {
+                            route_kind = "machine_output",
+                            source_id = sourceId,
+                            qualified_item_id = "(O)346"
+                        }
+                    }
+                }
+            }),
+            material_inventory_graph = SupportingTransitionField(new
+            {
+                schema_version = "material_inventory_graph.v1",
+                status = "available",
+                player_id = 123,
+                inventory_nodes = new[]
+                {
+                    new
+                    {
+                        node_id = "player:123",
+                        inventory_kind = "player_inventory",
+                        supply_state = "available",
+                        actor_use_authorized = true,
+                        slots = new[]
+                        {
+                            new
+                            {
+                                slot_index = 0,
+                                qualified_item_id = "(O)262",
+                                stack = materialStack,
+                                quality = 0,
+                                sale_price = 25
+                            }
+                        }
+                    }
+                }
+            })
+        }, JsonDefaults.Options);
+        return new SnapshotEnvelope
+        {
+            GameVersion = before.GameVersion,
+            SaveId = before.SaveId,
+            PlayerId = before.PlayerId,
+            GameTick = before.GameTick + 1,
+            RealTimestamp = "2026-09-27T01:00:01Z",
+            Completeness = "complete",
+            State = state,
+            StateHash = SnapshotHash.ComputeStateHash(state)
+        };
+    }
+
+    private static QueueExecutionReceiptEnvelope
+        MachineSupportingExecutionReceipt(
+            AcquisitionRouteDispatchCompilation compilation,
+            SnapshotEnvelope before,
+            SnapshotEnvelope after)
+    {
+        var queue = compilation.ActionQueue ?? throw new InvalidDataException(
+            "Machine supporting-transition queue is null.");
+        var item = queue.Items.Single();
+        return new QueueExecutionReceiptEnvelope
+        {
+            RunId = "run.machine-support.self-test",
+            QueueId = queue.QueueId,
+            SourceStateHash = before.StateHash,
+            AfterStateHash = after.StateHash,
+            BeforeGameTick = before.GameTick,
+            AfterGameTick = after.GameTick,
+            AfterSnapshotFresh = true,
+            QueueExecutionMode = "sequential_queue_items",
+            Status = "applied",
+            Success = true,
+            PlannedItemCount = 1,
+            ExecutedItemCount = 1,
+            FinalPendingItemCount = 0,
+            MaxQueueItemAttempts = 1,
+            SelectedCandidateId = compilation.SelectedCandidateId,
+            SelectedCandidateCompleted = true,
+            StepResults = new[]
+            {
+                new QueueExecutionStepReceipt
+                {
+                    QueueItemIndex = 0,
+                    QueueItemCount = 1,
+                    OriginalPlannedItemCount = 1,
+                    QueueId = queue.QueueId,
+                    QueueItemId = item.QueueItemId,
+                    OptionId = item.OptionId,
+                    SourceStateHash = before.StateHash,
+                    CompiledCommandStateHash = before.StateHash,
+                    SelectedQueueCandidateCompleted = true,
+                    AfterStateHash = after.StateHash,
+                    StateHashChanged = true,
+                    BeforeGameTick = before.GameTick,
+                    AfterGameTick = after.GameTick,
+                    AfterSnapshotFresh = true,
+                    Status = "applied",
+                    PrimitiveKind = "load_machine_input",
+                    PrimitiveVerificationStatus = "verified",
+                    PrimitiveVerificationReasons = new[]
+                    {
+                        "native_machine_input_state_transition_observed"
+                    },
+                    EffectiveQueueItem = JsonSerializer.SerializeToElement(
+                        item,
+                        JsonDefaults.Options),
+                    ChangedFacts = JsonSerializer.SerializeToElement(new[]
+                    {
+                        "farm.material_inventory_graph[player:123,0].stack=1",
+                        "farm.machines[Farm,64,15].minutes_until_ready=1750"
+                    })
+                }
+            }
+        };
     }
 }
