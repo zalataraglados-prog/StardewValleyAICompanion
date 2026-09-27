@@ -313,6 +313,26 @@ verified Teacher/native coverage. The current report classifies 2 criteria as co
 incomplete, pet love as production evidence not connected, and Skull Key as missing a typed
 Teacher source adapter. It never authorizes formal product training.
 
+`build-goal-method-formal-training-admission-reconciliation` is the aggregate read-only admission
+audit. In addition to the frontier inputs, it requires `--coverage-request`, `--corpus-manifest`,
+`--checkpoint`, `--support-terminal-coverage-request`, and `--output`. It rebuilds the 19-criterion
+coverage authority, replays every corpus source through the rollout/admission verifier, verifies all
+three partitions, validates checkpoint/corpus binding, recomputes the stored training/validation/test
+summary from the bound model weights, and rebuilds the five-kind support terminal-lineage matrix.
+The ranker's normal model-loading paths perform the same evaluation recomputation, so a structurally
+valid checkpoint with a forged holdout score is rejected outside this report as well.
+
+The current baseline passes authoritative-denominator, corpus-replay, split-integrity,
+checkpoint-binding, holdout-recomputation, 5/5 support-lineage, and leaf-authority-isolation gates.
+It remains blocked at 2/19 covered criteria and 1/11 covered root methods: 15 criteria have incomplete
+dependency graphs, pet love has an implemented but unconnected production evidence source, and Skull
+Key lacks its typed Teacher source adapter. Downstream execution inventory separately reports three
+obstacle-clearing executors without transparent/native/five-gate evidence and three social options
+without an internal execution pipeline. A high-level option that lowers through the existing internal
+pipeline does not require its own direct Product Executor and is not reported as a gap. Even a fully
+green report would set only `ready_for_separate_promotion_review=true`; this command always emits
+`formal_product_training_authorized=false`.
+
 `build-pet-love-teacher-corpus --request <path> --output <path>` builds the first
 non-collection coverage source. Each request row names fresh before/after snapshots and one
 `training_execution_result.v1`; the builder derives method ownership and dataset partition,

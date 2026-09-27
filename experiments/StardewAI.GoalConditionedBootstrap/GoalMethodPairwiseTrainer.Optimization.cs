@@ -2,6 +2,26 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed partial class GoalMethodPairwiseTrainer
 {
+    internal static GoalMethodPairwiseTrainingSummary
+        ValidateCheckpointEvaluation(
+            GoalMethodPairwiseCheckpoint checkpoint,
+            VerifiedCorpus corpus)
+    {
+        var trainPairs = BuildPairs(corpus.TrainRows, checkpoint.Model);
+        var expected = BuildSummary(
+            checkpoint.Model,
+            corpus.TrainRows,
+            corpus.ValidationRows,
+            corpus.TestRows,
+            trainPairs);
+        if (!SummaryEquals(checkpoint.Training, expected))
+        {
+            throw new InvalidDataException(
+                "Goal-method checkpoint evaluation summary does not recompute from its bound corpus and weights.");
+        }
+        return expected;
+    }
+
     private static TrainingPair[] BuildPairs(
         IReadOnlyList<AcquisitionRoutePortfolioSupervisionCorpusRow> rows,
         GoalMethodPairwiseLinearModel model)
@@ -111,6 +131,20 @@ public sealed partial class GoalMethodPairwiseTrainer
             result += left[index] * right[index];
         return result;
     }
+
+    private static bool SummaryEquals(
+        GoalMethodPairwiseTrainingSummary left,
+        GoalMethodPairwiseTrainingSummary right) =>
+        left.TrainRows == right.TrainRows &&
+        left.TrainPairs == right.TrainPairs &&
+        left.TrainPairAccuracy == right.TrainPairAccuracy &&
+        left.ValidationRows == right.ValidationRows &&
+        left.ValidationPairs == right.ValidationPairs &&
+        left.ValidationPairAccuracy == right.ValidationPairAccuracy &&
+        left.TestRows == right.TestRows &&
+        left.TestPairs == right.TestPairs &&
+        left.TestPairAccuracy == right.TestPairAccuracy &&
+        left.FeatureCount == right.FeatureCount;
 
     private sealed record TrainingPair(double[] Difference);
 }

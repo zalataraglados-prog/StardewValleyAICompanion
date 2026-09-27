@@ -56,6 +56,11 @@ internal static partial class BootstrapSelfTest
             checkpointPath);
         Require(loaded.CheckpointId == checkpoint.CheckpointId,
             "Saved goal-method checkpoint did not round-trip.");
+        var verifiedCorpus = GoalMethodPairwiseTrainer.VerifyCorpus(
+            readyCorpusManifestPath);
+        GoalMethodPairwiseTrainer.ValidateCheckpointEvaluation(
+            loaded,
+            verifiedCorpus);
 
         var readyManifest = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioSupervisionCorpusManifest>(
@@ -301,6 +306,32 @@ internal static partial class BootstrapSelfTest
         }
         Require(forgedSourceRejected,
             "Forged source digest entered the goal-method trainer.");
+
+        var forgedEvaluation = new GoalMethodPairwiseCheckpointStore().Load(
+            checkpointPath);
+        forgedEvaluation.Training.TestPairAccuracy = 0.5;
+        var forgedEvaluationPath = Path.Combine(
+            outputRoot,
+            "forged-evaluation-goal-method-checkpoint.json");
+        File.WriteAllText(
+            forgedEvaluationPath,
+            JsonSerializer.Serialize(forgedEvaluation, JsonDefaults.Options));
+        var structurallyValidForgedEvaluation =
+            new GoalMethodPairwiseCheckpointStore().Load(
+                forgedEvaluationPath);
+        var forgedEvaluationRejected = false;
+        try
+        {
+            GoalMethodPairwiseTrainer.ValidateCheckpointEvaluation(
+                structurallyValidForgedEvaluation,
+                verifiedCorpus);
+        }
+        catch (InvalidDataException)
+        {
+            forgedEvaluationRejected = true;
+        }
+        Require(forgedEvaluationRejected,
+            "Checkpoint with a forged holdout evaluation was accepted.");
 
         checkpoint.UsesCandidateSelectedFlag = true;
         var tamperedCheckpointPath = Path.Combine(
