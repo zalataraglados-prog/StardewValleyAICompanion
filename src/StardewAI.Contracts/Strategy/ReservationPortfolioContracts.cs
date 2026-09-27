@@ -139,6 +139,10 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
     public ReservationPortfolioMaterialConsumption[] MaterialConsumptions
     { get; set; } = Array.Empty<ReservationPortfolioMaterialConsumption>();
 
+    [JsonPropertyName("material_relocations")]
+    public ReservationPortfolioMaterialRelocation[] MaterialRelocations
+    { get; set; } = Array.Empty<ReservationPortfolioMaterialRelocation>();
+
     // Legacy single-consumption representation. New producers use
     // material_consumptions and must not mix the two forms.
     [JsonPropertyName("material_reservation_id")]
@@ -178,6 +182,30 @@ public sealed class ReservationPortfolioMaterialConsumption
     public int ConsumedQuantity { get; set; }
 }
 
+public sealed class ReservationPortfolioMaterialRelocation
+{
+    [JsonPropertyName("material_reservation_id")]
+    public string MaterialReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_node_id")]
+    public string SourceNodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_slot_index")]
+    public int SourceSlotIndex { get; set; }
+
+    [JsonPropertyName("destination_node_id")]
+    public string DestinationNodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("destination_slot_index")]
+    public int DestinationSlotIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("quantity")]
+    public int Quantity { get; set; }
+}
+
 public sealed class ReservationPortfolioSupportingTransitionSettlementResult
 {
     [JsonPropertyName("accepted")]
@@ -207,12 +235,20 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementResult
     public string[] ActiveMaterialReservationIds { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("relocated_material_reservation_ids")]
+    public string[] RelocatedMaterialReservationIds { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("consumed_quantity")]
     public int ConsumedQuantity { get; set; }
 
     [JsonPropertyName("material_settlements")]
     public ReservationPortfolioMaterialSettlement[] MaterialSettlements
     { get; set; } = Array.Empty<ReservationPortfolioMaterialSettlement>();
+
+    [JsonPropertyName("material_relocations")]
+    public ReservationPortfolioMaterialRelocation[] MaterialRelocations
+    { get; set; } = Array.Empty<ReservationPortfolioMaterialRelocation>();
 
     [JsonPropertyName("errors")]
     public string[] Errors { get; set; } = Array.Empty<string>();
