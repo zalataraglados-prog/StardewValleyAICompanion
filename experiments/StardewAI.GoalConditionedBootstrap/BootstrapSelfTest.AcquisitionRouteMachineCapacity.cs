@@ -309,6 +309,17 @@ internal static partial class BootstrapSelfTest
                 !settlementReceipt.FormalTrainingAuthorized,
             "Machine-capacity settlement did not close with a fresh replan: " +
             string.Join(",", settlementReceipt.BlockingReasons));
+
+        VerifyMachineCapacityPlacementContinuation(
+            goalId,
+            requirement,
+            lowering,
+            reservation,
+            processing,
+            binding,
+            capacityOption,
+            after,
+            settlementResult.Ledger!);
     }
 
     private static SnapshotEnvelope AcquisitionMachineCapacitySnapshot()
@@ -317,7 +328,7 @@ internal static partial class BootstrapSelfTest
         {
           "player":{
             "location_id":{"value":"FarmHouse","status":"available"},
-            "tile_x":{"value":6,"status":"available"},
+            "tile_x":{"value":5,"status":"available"},
             "tile_y":{"value":5,"status":"available"},
             "inventory":{"value":[{"slot_index":0,"item_id":"388","qualified_item_id":"(O)388","stack":30,"quality":0,"maximum_stack_size":999,"is_empty":false}],"status":"available"},
             "inventory_capacity":{"value":{"occupied_stacks":1,"empty_slots":11,"has_empty_slot":true},"status":"available"},
@@ -387,6 +398,48 @@ internal static partial class BootstrapSelfTest
                     quality = 0,
                     maximum_stack_size = 999,
                     is_empty = false
+                }
+            },
+            status = "available"
+        });
+        player["machine_placement"] = JsonSerializer.SerializeToElement(new
+        {
+            value = new
+            {
+                projection_status =
+                    "complete_all_inventory_machines_across_loaded_persistent_locations",
+                static_projection_fingerprint =
+                    "capacity-self-test-placement-layout",
+                rows = new[]
+                {
+                    new
+                    {
+                        inventory_slot_index = 4,
+                        item_id = "12",
+                        qualified_item_id = "(BC)12",
+                        stack = 1,
+                        locations = new[]
+                        {
+                            new
+                            {
+                                location_id = "FarmHouse",
+                                location_is_current = true,
+                                machine_operational_context_valid = true,
+                                placement_probe_status =
+                                    "native_legal_tiles_available",
+                                static_legal_tile_count = 1,
+                                static_legal_tile_ranges = new[]
+                                {
+                                    new
+                                    {
+                                        y = 5,
+                                        start_x = 7,
+                                        end_x = 7
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             },
             status = "available"

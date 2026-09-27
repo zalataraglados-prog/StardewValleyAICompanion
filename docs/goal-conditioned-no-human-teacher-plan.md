@@ -2485,6 +2485,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   into the ordinary portfolio rollout/proof dataset chain. It must continue to reuse the single machine lifecycle and
   cannot promote model authority or formal training by itself.
 
+### 2026-09-27: machine-capacity craft-to-placement recurrence
+
+- The hermetic capacity fixture now performs two consecutive supporting transitions. The first uses the shared native
+  crafting executor; its fresh state and marker-settled ledger then rebuild the exact existing move-plus-placement queue.
+  The second atomic commit advances the same source-bound intent from `craft_selected` to `placement_bound`, rather than
+  creating another intent, planner or machine executor.
+- Placement execution preserves the intermediate movement state hash and tick boundary. Its fresh receipt requires the
+  bound inventory machine to decrease by one and the exact target tile to change from no machine to one matching idle
+  machine. A negative fixture with the same inventory decrease but placement on another tile fails closed with
+  `supporting_transition_machine_placement_delta_mismatch`.
+- Marker settlement and exact replay keep the transition nonterminal, then emit a fresh Teacher preference request from
+  the post-placement state and ledger revision. This proves re-entry into the shared portfolio replan boundary; it does
+  not yet claim that the subsequent file-backed terminal rollout/proof/supervision artifacts have been rebuilt.
+- The next bounded slice must use this settlement and replan as the `SupportingTransitionInitialProof` lineage for one
+  ordinary terminal route, then verify the rollout checkpoint, proof receipt and supervision dataset. The support action
+  remains context for that verified terminal decision and must not be exported as a fabricated terminal native outcome.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
