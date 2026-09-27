@@ -2566,6 +2566,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   `machine_input_purchase` through the same terminal lineage. It must not add another shop, purchase, currency-ledger,
   routing or terminal-execution implementation.
 
+### 2026-09-28: support-family terminal-lineage matrix, 4/5
+
+- `machine_input_purchase` now reuses the authoritative shop quote, existing
+  `economy.buy_supplies -> executor.buy_shop_item -> executor.close_menu` queue, native purchase receipt and currency
+  reservation settlement to prove the complete file-backed support-to-terminal lineage. No second shop, purchase,
+  routing, ledger, terminal compiler or executor was introduced.
+- The proof binds exactly one `FixtureShop / fixture-wheat-seed / (O)262 / 80g / quantity 1` stock row. It verifies
+  money `1000 -> 920`, inventory `0 -> 1`, safe menu closure and complete settlement of the unique 80g currency
+  reservation before a fresh Teacher replan. The support execution run remains excluded from terminal native outcomes.
+- This exposed a production artifact-validation contradiction. A typed machine-input purchase intentionally enters with
+  one `resolved_resource_input_miss`, but the old validator required all resource inputs to be satisfied before accepting
+  a matched currency route. The validator now admits only purchase misses that pass the existing exact
+  `ReservationMaterialInputs` binding contract; unbound or malformed resource misses remain fail-closed. The file-backed
+  fixture also supplies the required sleep-prompt context instead of bypassing close-menu state validation.
+- Release build, targeted purchase lineage, acquisition dispatch, hermetic bootstrap and the complete StageOne regression
+  pass. Coverage is deliberately incomplete at 4/5: only `crop_planting` remains, and
+  `formal_product_training_authorized=false` remains enforced.
+- The next bounded slice must reuse the existing seed acquisition, farm-position plan, till/water/plant queue, native crop
+  state receipt and material-reservation settlement to prove `crop_planting` through the same terminal lineage. It must
+  not add another field planner, action compiler, route planner, ledger or terminal executor.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

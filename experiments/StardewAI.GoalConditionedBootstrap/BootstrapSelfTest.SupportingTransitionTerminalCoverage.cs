@@ -34,18 +34,18 @@ internal static partial class BootstrapSelfTest
                         AcquisitionRouteSupportingTransitionKinds
                             .MachineInputMaterialTransfer,
                         AcquisitionRouteSupportingTransitionKinds
+                            .MachineInputPurchase,
+                        AcquisitionRouteSupportingTransitionKinds
                             .MachineCapacityEstablishment
                     },
                     StringComparer.Ordinal) &&
                 partial.MissingSupportTransitionKinds.SequenceEqual(
                     new[]
                     {
-                        AcquisitionRouteSupportingTransitionKinds.CropPlanting,
-                        AcquisitionRouteSupportingTransitionKinds
-                            .MachineInputPurchase
+                        AcquisitionRouteSupportingTransitionKinds.CropPlanting
                     },
                     StringComparer.Ordinal) &&
-                partial.Rows.Length == 3 &&
+                partial.Rows.Length == 4 &&
                 partial.Rows.All(row =>
                     row.CoverageVerified &&
                     row.SupportExcludedFromTerminalOutcomes),

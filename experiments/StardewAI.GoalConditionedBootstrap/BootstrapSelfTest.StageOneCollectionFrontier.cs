@@ -2449,9 +2449,13 @@ internal static partial class BootstrapSelfTest
         var machineMaterialTransferCoverage =
             VerifyMachineMaterialTransferSupportingTransitionProof(
                 targetDateExecutionInputs);
+        var machineInputPurchaseCoverage =
+            VerifyMachineInputPurchaseSupportingTransitionProof(
+                targetDateExecutionInputs);
         VerifySupportingTransitionTerminalCoverageMatrix(
             machineInputLoadCoverage,
             machineMaterialTransferCoverage,
+            machineInputPurchaseCoverage,
             machineCapacityCoverage);
         VerifyTargetDatePortfolioContinuationFixture(
             targetDateExecutionInputs,

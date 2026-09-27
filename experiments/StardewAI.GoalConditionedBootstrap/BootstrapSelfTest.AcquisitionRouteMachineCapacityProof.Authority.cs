@@ -128,6 +128,7 @@ internal static partial class BootstrapSelfTest
             StageOneCollectionRouteDependencyAxes.Required.ToArray(),
             ["farm.collect_machine_outputs"],
             [
+                "economy.buy_supplies",
                 "inventory.transfer_item",
                 "farm.establish_supported_machine_capacity",
                 "farm.load_supported_machine_input",
@@ -261,7 +262,14 @@ internal static partial class BootstrapSelfTest
         beer["TradeItemAmount"] = 0;
         beer["Condition"] = null;
         beer["ActionsOnPurchase"] = new JsonArray();
+        var wheat = JsonNode.Parse(beer.ToJsonString())!.AsObject();
+        wheat["Id"] = "fixture-wheat-seed";
+        wheat["ItemId"] = "(O)262";
+        wheat["Price"] = 80;
+        wheat["AvailableStock"] = 999;
+        wheat["AvailableStockLimit"] = 999;
         items.Add(beer);
+        items.Add(wheat);
         File.WriteAllText(shopsPath, shops.ToJsonString(JsonDefaults.Options));
 
         var sourceAccessPath = inventory.SourceEvidence.Single(row =>
@@ -276,7 +284,11 @@ internal static partial class BootstrapSelfTest
         beerAccess["perItemCondition"] = null;
         beerAccess["parsedCondition"] = null;
         beerAccess["parsedPerItemCondition"] = null;
+        var wheatAccess = JsonNode.Parse(beerAccess.ToJsonString())!.AsObject();
+        wheatAccess["id"] = "fixture-wheat-seed";
+        wheatAccess["itemId"] = "(O)262";
         stock.Add(beerAccess);
+        stock.Add(wheatAccess);
         File.WriteAllText(accessPath, access.ToJsonString(JsonDefaults.Options));
     }
 
