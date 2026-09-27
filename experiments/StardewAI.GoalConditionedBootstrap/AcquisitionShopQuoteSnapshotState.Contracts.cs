@@ -20,6 +20,11 @@ internal sealed record AcquisitionShopQuoteLookup(
     AcquisitionShopQuote? Quote,
     string[] BlockingReasons);
 
+internal sealed record AcquisitionShopQuoteCollectionLookup(
+    bool EvidenceAvailable,
+    AcquisitionShopQuote[] Quotes,
+    string[] BlockingReasons);
+
 internal sealed record AcquisitionCurrencyBalanceLookup(
     bool EvidenceAvailable,
     int CurrencyId,

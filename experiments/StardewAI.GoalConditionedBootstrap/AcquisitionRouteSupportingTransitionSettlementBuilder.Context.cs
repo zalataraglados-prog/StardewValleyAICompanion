@@ -131,7 +131,83 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             "Support settlement source identity drifted.");
         var consumptions = new List<SettlementConsumptionContext>();
         var relocations = new List<SettlementRelocationContext>();
-        if (request.SupportTransitionKind ==
+        var currencyConsumptions = new List<
+            SettlementCurrencyConsumptionContext>();
+        var rebindReservationIds = Array.Empty<string>();
+        if (request.SupportTransitionKind == "machine_input_purchase")
+        {
+            var evidence = transition.PurchaseTransition ??
+                throw new InvalidDataException(
+                    "Support settlement purchase evidence is missing.");
+            Require(evidence.Verified &&
+                    evidence.Stage == request.PurchaseStage &&
+                    evidence.ShopId == request.PurchasePrerequisite?.ShopId &&
+                    evidence.QualifiedItemId ==
+                        request.PurchasePrerequisite?.QualifiedItemId &&
+                    request.SupportMaterialConsumptions.Length == 0 &&
+                    request.SupportMaterialRelocations.Length == 0,
+                "Support settlement purchase evidence is incomplete.");
+            var planned = request.SupportCurrencyConsumptions;
+            Require(request.PurchaseStage == "purchase"
+                    ? planned.Length == 1 &&
+                      evidence.ObservedCurrencyDecrease ==
+                        planned[0].ConsumedAmount
+                    : planned.Length == 0 &&
+                      evidence.ObservedCurrencyDecrease == 0,
+                "Support settlement purchase currency evidence drifted.");
+            foreach (var consumption in planned)
+            {
+                var claims = request.ReservationCurrencyClaims.Where(claim =>
+                        claim.ReservationId == consumption.ReservationId &&
+                        claim.CurrencyId == consumption.CurrencyId &&
+                        claim.Amount >= consumption.ConsumedAmount)
+                    .ToArray();
+                Require(claims.Length == 1 &&
+                        request.ReservationClaimIds.Contains(
+                            claims[0].ReservationId,
+                            StringComparer.Ordinal) &&
+                        ledger.CurrencyReservations.Count(row =>
+                            row.ReservationId == claims[0].ReservationId &&
+                            row.Status ==
+                                StrategyCommitmentStatuses.Active &&
+                            Exact(row, claims[0], ledger.PlayerId)) == 1,
+                    "Support settlement purchase currency claim is not active and exact.");
+                currencyConsumptions.Add(
+                    new SettlementCurrencyConsumptionContext(
+                        claims[0],
+                        consumption.ConsumedAmount));
+            }
+            Require(request.ReservationMaterialClaims.All(claim =>
+                        ledger.MaterialReservations.Count(row =>
+                            row.ReservationId == claim.ReservationId &&
+                            row.Status ==
+                                StrategyCommitmentStatuses.Active &&
+                            Exact(row, claim, ledger.PlayerId)) == 1) &&
+                    request.ReservationCurrencyClaims.All(claim =>
+                        ledger.CurrencyReservations.Count(row =>
+                            row.ReservationId == claim.ReservationId &&
+                            row.Status ==
+                                StrategyCommitmentStatuses.Active &&
+                            Exact(row, claim, ledger.PlayerId)) == 1),
+                "Support settlement purchase rebind set is not active and exact.");
+            var currencyConsumptionByReservation = currencyConsumptions
+                .ToDictionary(
+                    value => value.Claim.ReservationId,
+                    value => value.ConsumedAmount,
+                    StringComparer.Ordinal);
+            rebindReservationIds = request.ReservationMaterialClaims
+                .Select(claim => claim.ReservationId)
+                .Concat(request.ReservationCurrencyClaims
+                    .Where(claim =>
+                        !currencyConsumptionByReservation.TryGetValue(
+                            claim.ReservationId,
+                            out var consumedAmount) ||
+                        consumedAmount < claim.Amount)
+                    .Select(claim => claim.ReservationId))
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+        }
+        else if (request.SupportTransitionKind ==
             "machine_input_material_transfer")
         {
             var evidence = transition.MaterialTransferTransition ??
@@ -236,6 +312,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             ledger,
             consumptions.ToArray(),
             relocations.ToArray(),
+            currencyConsumptions.ToArray(),
+            rebindReservationIds,
             HashOrEmpty(requestPath),
             HashOrEmpty(commitReceiptPath),
             HashOrEmpty(transitionPath),
@@ -275,17 +353,42 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                         QualifiedItemId =
                             value.Relocation.QualifiedItemId,
                         Quantity = value.Relocation.Quantity
+                })
+                .ToArray(),
+            CurrencyConsumptions = context.CurrencyConsumptions.Select(value =>
+                    new ReservationPortfolioCurrencyConsumption
+                    {
+                        CurrencyReservationId = value.Claim.ReservationId,
+                        CurrencyId = value.Claim.CurrencyId,
+                        ConsumedAmount = value.ConsumedAmount
                     })
                 .ToArray(),
-            Reason = context.Relocations.Length > 0
-                ? "verified_supporting_transition_relocation"
-                : SettlementReason
+            RebindActiveReservationIds = context.RebindReservationIds,
+            Reason = context.Request.SupportTransitionKind ==
+                    "machine_input_purchase"
+                ? context.Request.PurchaseStage == "purchase"
+                    ? "verified_machine_input_purchase"
+                    : "verified_machine_input_purchase_progress"
+                : context.Relocations.Length > 0
+                    ? "verified_supporting_transition_relocation"
+                    : SettlementReason
         };
 
-    private static string RouteSourceDecisionId(SettlementContext context) =>
-        context.Consumptions.Length > 0
-            ? context.Consumptions[0].Claim.SourceDecisionId
-            : context.Relocations[0].Claim.SourceDecisionId;
+    private static string RouteSourceDecisionId(SettlementContext context)
+    {
+        if (context.Consumptions.Length > 0)
+            return context.Consumptions[0].Claim.SourceDecisionId;
+        if (context.Relocations.Length > 0)
+            return context.Relocations[0].Claim.SourceDecisionId;
+        if (context.CurrencyConsumptions.Length > 0)
+            return context.CurrencyConsumptions[0].Claim.SourceDecisionId;
+        return context.Request.ReservationCurrencyClaims
+            .Select(claim => claim.SourceDecisionId)
+            .Concat(context.Request.ReservationMaterialClaims.Select(claim =>
+                claim.SourceDecisionId))
+            .Distinct(StringComparer.Ordinal)
+            .Single();
+    }
 
     private static AcquisitionSupportMaterialConsumptionEvidence[]
         VerifiedMaterialEvidence(
@@ -362,6 +465,20 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         row.Quantity == claim.Quantity &&
         row.Purpose == claim.Purpose;
 
+    private static bool Exact(
+        CurrencyReservation row,
+        CurrencyReservationUpsertRequest claim,
+        string playerId) =>
+        long.TryParse(playerId, out var owner) &&
+        row.ReservationId == claim.ReservationId &&
+        row.SourceDecisionId == claim.SourceDecisionId &&
+        row.SourceStateHash == claim.StateHash &&
+        row.GoalId == claim.GoalId &&
+        row.OwnerPlayerId == owner &&
+        row.CurrencyId == claim.CurrencyId &&
+        row.Amount == claim.Amount &&
+        row.Purpose == claim.Purpose;
+
     private static string HashOrEmpty(string path) =>
         string.IsNullOrWhiteSpace(path)
             ? string.Empty
@@ -375,6 +492,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         StrategyCommitmentLedger BaseLedger,
         SettlementConsumptionContext[] Consumptions,
         SettlementRelocationContext[] Relocations,
+        SettlementCurrencyConsumptionContext[] CurrencyConsumptions,
+        string[] RebindReservationIds,
         string SupportRequestSha256,
         string SupportCommitReceiptSha256,
         string SupportingTransitionReceiptSha256,
@@ -387,4 +506,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
     private sealed record SettlementRelocationContext(
         MaterialReservationUpsertRequest Claim,
         AcquisitionSupportMaterialRelocation Relocation);
+
+    private sealed record SettlementCurrencyConsumptionContext(
+        CurrencyReservationUpsertRequest Claim,
+        int ConsumedAmount);
 }

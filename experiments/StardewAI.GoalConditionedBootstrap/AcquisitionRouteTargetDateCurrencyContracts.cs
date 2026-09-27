@@ -74,7 +74,7 @@ public sealed class AcquisitionRouteTargetDateCurrencyReport
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The currency_budget axis runs only after exact resource-input satisfaction. Shop purchases bind the exact current native ShopBuilder quote by shop, synchronized stock key and qualified item; purchase count is the route amount divided upward by the exact output stack, and price, finite stock, barter quantity and output quality must all satisfy that count. Missing, unavailable, sold-out, non-buyable or insufficient-quality quotes cannot be guessed from static price. Currency IDs are exactly ShopMenu 0 money, 1 star tokens, 2 club coins and 4 Qi gems. Native Vault money payments use the carried route amount. This axis proves one route occurrence only; cross-route reservations, future income, processing, time/energy, opportunity cost and terminal purchase/payment receipts remain downstream. Training authorization stays false.";
+        "The currency_budget axis normally runs only after exact resource-input satisfaction. Its sole resource-miss exception is a machine route with one deterministic missing input: from the current native shop previews it selects the cheapest exact positive-money quote by total cost, unit price, shop and stock identity, requires buyable sufficient stock, and binds the current quantity, remaining quantity, output stack, quality, synchronized stock key and exact qualified item. Only current money is supported for this recursive machine-input purchase; barter, future income, unavailable evidence and unquoted inputs remain blocked or not applicable. Ordinary shop purchases retain their exact ShopBuilder quote checks, and native Vault payments retain the carried route amount. This axis proves one route occurrence only; cross-route reservations, purchase execution, processing, time/energy, opportunity cost and terminal receipts remain downstream. Training authorization stays false.";
 }
 
 public sealed record AcquisitionRouteTargetDateCurrency(
@@ -117,4 +117,33 @@ public sealed record AcquisitionCurrencyEvaluation(
     [property: JsonPropertyName("status")]
     string Status,
     [property: JsonPropertyName("evidence_paths")]
-    string[] EvidencePaths);
+    string[] EvidencePaths,
+    [property: JsonPropertyName("purchase_prerequisite")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    AcquisitionPurchasePrerequisiteBinding? PurchasePrerequisite = null);
+
+public sealed record AcquisitionPurchasePrerequisiteBinding(
+    [property: JsonPropertyName("input_kind")]
+    string InputKind,
+    [property: JsonPropertyName("shop_id")]
+    string ShopId,
+    [property: JsonPropertyName("stock_id")]
+    string StockId,
+    [property: JsonPropertyName("qualified_item_id")]
+    string QualifiedItemId,
+    [property: JsonPropertyName("current_available_quantity")]
+    int CurrentAvailableQuantity,
+    [property: JsonPropertyName("remaining_required_quantity")]
+    int RemainingRequiredQuantity,
+    [property: JsonPropertyName("output_stack_per_purchase")]
+    int OutputStackPerPurchase,
+    [property: JsonPropertyName("output_quality")]
+    int OutputQuality,
+    [property: JsonPropertyName("currency_id")]
+    int CurrencyId,
+    [property: JsonPropertyName("currency_key")]
+    string CurrencyKey,
+    [property: JsonPropertyName("unit_price")]
+    int UnitPrice,
+    [property: JsonPropertyName("required_purchase_count")]
+    int RequiredPurchaseCount);

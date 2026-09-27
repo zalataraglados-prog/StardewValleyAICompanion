@@ -79,9 +79,11 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         var existingCurrency = ActiveForDecision(
             ledgerState.Ledger.CurrencyReservations,
             decisionId);
-        var positiveInputs = route.UpstreamRoute.InputEvaluations
-            .Where(row => row.RequiredQuantity > 0)
-            .ToArray();
+        var positiveInputs = ReservationMaterialInputs(
+            route,
+            out var inputReasons);
+        if (inputReasons.Length > 0)
+            return Blocked(route, inputReasons);
         var requiredCurrency = route.CurrencyEvaluation?.RequiredAmount ?? 0;
         if (positiveInputs.Length == 0 && requiredCurrency == 0)
         {
@@ -140,6 +142,59 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
                 claimResult.CurrencyClaims,
                 disposition == "claim_replacement_required"),
             disposition);
+    }
+
+    private static AcquisitionResourceInputEvaluation[]
+        ReservationMaterialInputs(
+            AcquisitionRouteTargetDateCurrency route,
+            out string[] blockingReasons)
+    {
+        var purchase = route.CurrencyEvaluation?.PurchasePrerequisite;
+        if (purchase is null)
+        {
+            blockingReasons = Array.Empty<string>();
+            return route.UpstreamRoute.InputEvaluations
+                .Where(row => row.RequiredQuantity > 0)
+                .ToArray();
+        }
+
+        var matchingInputs = route.UpstreamRoute.InputEvaluations.Where(input =>
+                input.InputKind == purchase.InputKind &&
+                input.QualifiedItemId == purchase.QualifiedItemId &&
+                input.Status == "resolved_resource_input_miss" &&
+                input.AvailableQuantity == purchase.CurrentAvailableQuantity &&
+                input.RequiredQuantity - purchase.CurrentAvailableQuantity ==
+                    purchase.RemainingRequiredQuantity)
+            .ToArray();
+        if (route.CurrencyRequirementKind !=
+                "current_native_machine_input_purchase_quote" ||
+            route.UpstreamRoute.ResourceInputsMatchTargetDate != false ||
+            matchingInputs.Length != 1 ||
+            purchase.RequiredPurchaseCount <= 0 ||
+            purchase.OutputStackPerPurchase <= 0 ||
+            purchase.UnitPrice < 0 ||
+            route.CurrencyEvaluation?.RequiredAmount !=
+                AcquisitionQuantityMath.Multiply(
+                    purchase.UnitPrice,
+                    purchase.RequiredPurchaseCount))
+        {
+            blockingReasons = new[]
+            {
+                "machine_input_purchase_reservation_binding_invalid"
+            };
+            return Array.Empty<AcquisitionResourceInputEvaluation>();
+        }
+
+        blockingReasons = Array.Empty<string>();
+        return route.UpstreamRoute.InputEvaluations
+            .Select(input => input with
+            {
+                RequiredQuantity = Math.Min(
+                    input.RequiredQuantity,
+                    Math.Max(0, input.AvailableQuantity ?? 0))
+            })
+            .Where(input => input.RequiredQuantity > 0)
+            .ToArray();
     }
 
     private static T[] ActiveForDecision<T>(

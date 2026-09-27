@@ -96,6 +96,17 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
         }
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectSupportingCandidates(requirement, lowered, candidates);
+        var purchase = AcquisitionRouteSupportingTransitionRequestBuilder
+            .PurchasePrerequisite(route);
+        if (purchase is not null)
+        {
+            matches = matches.Where(match =>
+                    AcquisitionRouteSupportingTransitionRequestBuilder
+                        .PurchaseCandidateMatchesBinding(
+                        match.Candidate,
+                        purchase))
+                .ToArray();
+        }
         return BuildCore(
             request,
             receipt,

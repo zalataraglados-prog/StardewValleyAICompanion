@@ -65,6 +65,30 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
                 });
     }
 
+    public AcquisitionShopQuoteCollectionLookup ShopQuotes(
+        string qualifiedItemId)
+    {
+        var state = shops.Value;
+        if (!state.Available)
+        {
+            return new(
+                false,
+                Array.Empty<AcquisitionShopQuote>(),
+                state.BlockingReasons);
+        }
+        return new(
+            true,
+            state.Quotes.Values
+                .Where(quote => string.Equals(
+                    quote.QualifiedItemId,
+                    qualifiedItemId,
+                    StringComparison.Ordinal))
+                .OrderBy(quote => quote.ShopId, StringComparer.Ordinal)
+                .ThenBy(quote => quote.StockId, StringComparer.Ordinal)
+                .ToArray(),
+            Array.Empty<string>());
+    }
+
     private static string QuoteKey(
         string shopId,
         string stockId,

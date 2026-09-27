@@ -49,6 +49,34 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         var relocatedIds = request.MaterialRelocations.Select(value =>
                 value.MaterialReservationId)
             .ToArray();
+        var expectedCurrencySettlements = request.CurrencyConsumptions.Select(
+                consumption =>
+                {
+                    var before = context.BaseLedger.CurrencyReservations.Single(
+                        row => row.ReservationId ==
+                            consumption.CurrencyReservationId);
+                    var remaining = before.Amount - consumption.ConsumedAmount;
+                    return new ReservationPortfolioCurrencySettlement
+                    {
+                        CurrencyReservationId =
+                            consumption.CurrencyReservationId,
+                        ConsumedAmount = consumption.ConsumedAmount,
+                        RemainingAmount = remaining,
+                        ReservationStatus = remaining == 0
+                            ? StrategyCommitmentStatuses.Completed
+                            : StrategyCommitmentStatuses.Active
+                    };
+                })
+            .ToArray();
+        var completedCurrencyIds = expectedCurrencySettlements.Where(value =>
+                value.ReservationStatus ==
+                    StrategyCommitmentStatuses.Completed)
+            .Select(value => value.CurrencyReservationId)
+            .ToArray();
+        var activeCurrencyIds = expectedCurrencySettlements.Where(value =>
+                value.ReservationStatus == StrategyCommitmentStatuses.Active)
+            .Select(value => value.CurrencyReservationId)
+            .ToArray();
         if (!result.Accepted ||
             (result.Errors?.Length ?? 0) != 0 ||
             result.PortfolioId != request.PortfolioId ||
@@ -77,6 +105,22 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             !EqualJson(
                 result.MaterialRelocations,
                 request.MaterialRelocations) ||
+            result.CompletedCurrencyReservationIds is null ||
+            !result.CompletedCurrencyReservationIds.SequenceEqual(
+                completedCurrencyIds,
+                StringComparer.Ordinal) ||
+            result.ActiveCurrencyReservationIds is null ||
+            !result.ActiveCurrencyReservationIds.SequenceEqual(
+                activeCurrencyIds,
+                StringComparer.Ordinal) ||
+            result.CurrencySettlements is null ||
+            !EqualJson(
+                result.CurrencySettlements,
+                expectedCurrencySettlements) ||
+            result.ReboundActiveReservationIds is null ||
+            !result.ReboundActiveReservationIds.SequenceEqual(
+                request.RebindActiveReservationIds,
+                StringComparer.Ordinal) ||
             result.Ledger is null ||
             !EqualJson(result.Ledger, settled))
         {
@@ -128,6 +172,58 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             if (rows.Length != 1)
                 reasons.Add("support_settlement_relocated_claim_mismatch");
         }
+        foreach (var expected in expectedCurrencySettlements)
+        {
+            var before = context.BaseLedger.CurrencyReservations.Single(row =>
+                row.ReservationId == expected.CurrencyReservationId);
+            var rows = settled.CurrencyReservations.Where(row =>
+                    row.ReservationId == expected.CurrencyReservationId &&
+                    row.Status == expected.ReservationStatus &&
+                    row.Amount == (expected.RemainingAmount == 0
+                        ? before.Amount
+                        : expected.RemainingAmount) &&
+                    row.SourceStateHash == context.AfterSnapshot.StateHash &&
+                    row.Revision == before.Revision + 1 &&
+                    (expected.ReservationStatus ==
+                        StrategyCommitmentStatuses.Completed
+                            ? row.CompletionReason == request.Reason &&
+                              row.CompletionEvidenceSha256 ==
+                                  request.SupportingTransitionReceiptSha256
+                            : string.IsNullOrEmpty(row.CompletionReason) &&
+                              string.IsNullOrEmpty(
+                                  row.CompletionEvidenceSha256)))
+                .ToArray();
+            if (rows.Length != 1)
+                reasons.Add("support_settlement_currency_claim_mismatch");
+        }
+        var mutatedIds = request.MaterialConsumptions.Select(value =>
+                value.MaterialReservationId)
+            .Concat(request.MaterialRelocations.Select(value =>
+                value.MaterialReservationId))
+            .Concat(request.CurrencyConsumptions.Select(value =>
+                value.CurrencyReservationId))
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var reservationId in request.RebindActiveReservationIds
+                     .Where(value => !mutatedIds.Contains(value)))
+        {
+            var beforeMaterial = context.BaseLedger.MaterialReservations
+                .SingleOrDefault(row => row.ReservationId == reservationId);
+            var beforeCurrency = context.BaseLedger.CurrencyReservations
+                .SingleOrDefault(row => row.ReservationId == reservationId);
+            var rebound = beforeMaterial is not null
+                ? settled.MaterialReservations.Count(row =>
+                    row.ReservationId == reservationId &&
+                    row.Status == StrategyCommitmentStatuses.Active &&
+                    row.SourceStateHash == context.AfterSnapshot.StateHash &&
+                    row.Revision == beforeMaterial.Revision + 1)
+                : settled.CurrencyReservations.Count(row =>
+                    row.ReservationId == reservationId &&
+                    row.Status == StrategyCommitmentStatuses.Active &&
+                    row.SourceStateHash == context.AfterSnapshot.StateHash &&
+                    row.Revision == beforeCurrency!.Revision + 1);
+            if (rebound != 1)
+                reasons.Add("support_settlement_rebound_claim_mismatch");
+        }
         var currentHistory = settled.History.Where(row =>
                 row.LedgerRevision == settled.Revision)
             .ToArray();
@@ -138,7 +234,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     "reservation_portfolio_supporting_transition_complete" &&
                 row.Reason == request.SupportingTransitionReceiptSha256)
             .ToArray();
-        var materialHistoryMatches = expectedSettlements.All(expected =>
+        var mutationHistoryMatches = expectedSettlements.All(expected =>
             currentHistory.Count(row =>
                 row.CommitmentId == expected.MaterialReservationId &&
                 row.SourceDecisionId == request.RouteSourceDecisionId &&
@@ -154,11 +250,34 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     row.SourceDecisionId ==
                         request.RouteSourceDecisionId &&
                     row.Operation == "material_reservation_relocated" &&
+                    row.Reason == request.Reason) == 1) &&
+            expectedCurrencySettlements.All(expected =>
+                currentHistory.Count(row =>
+                    row.CommitmentId == expected.CurrencyReservationId &&
+                    row.SourceDecisionId ==
+                        request.RouteSourceDecisionId &&
+                    row.Operation == (expected.ReservationStatus ==
+                        StrategyCommitmentStatuses.Completed
+                            ? "currency_reservation_consumed"
+                            : "currency_reservation_partially_consumed") &&
+                    row.Reason == request.Reason) == 1) &&
+            request.RebindActiveReservationIds
+                .Where(value => !mutatedIds.Contains(value))
+                .All(reservationId => currentHistory.Count(row =>
+                    row.CommitmentId == reservationId &&
+                    row.SourceDecisionId ==
+                        request.RouteSourceDecisionId &&
+                    row.Operation ==
+                        "reservation_rebound_after_supporting_transition" &&
                     row.Reason == request.Reason) == 1);
+        var reboundOnlyCount = request.RebindActiveReservationIds.Count(value =>
+            !mutatedIds.Contains(value));
         if (markers.Length != 1 ||
             currentHistory.Length != expectedSettlements.Length +
-                request.MaterialRelocations.Length + 1 ||
-            !materialHistoryMatches)
+                request.MaterialRelocations.Length +
+                expectedCurrencySettlements.Length +
+                reboundOnlyCount + 1 ||
+            !mutationHistoryMatches)
         {
             reasons.Add("support_settlement_history_mismatch");
         }

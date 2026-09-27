@@ -222,7 +222,35 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         boundRouteOptions.All(optionId =>
             optionId == "inventory.transfer_item") &&
         items[0].OptionId == "executor.move_to_tile" &&
-        items[1].OptionId == "executor.transfer_material";
+        items[1].OptionId == "executor.transfer_material" ||
+        PurchaseSupportingTransitionQueueShapeValid(
+            items,
+            boundRouteOptions);
+
+    private static bool PurchaseSupportingTransitionQueueShapeValid(
+        ActionQueueItem[] items,
+        string[] boundRouteOptions)
+    {
+        if (!boundRouteOptions.All(optionId =>
+                optionId == "economy.buy_supplies"))
+            return false;
+        var optionIds = items.Select(item => item.OptionId).ToArray();
+        return optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.buy_shop_item",
+                    "executor.close_menu"
+                },
+                StringComparer.Ordinal) ||
+            optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.wait_ticks",
+                    "executor.buy_shop_item",
+                    "executor.close_menu"
+                },
+                StringComparer.Ordinal);
+    }
 
     private static string BoundRouteOption(
         ActionQueueItem item,

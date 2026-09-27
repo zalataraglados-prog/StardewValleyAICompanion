@@ -206,6 +206,17 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                 Array.Empty<ReservationPortfolioMaterialSettlement>(),
             MaterialRelocations = result.MaterialRelocations ??
                 Array.Empty<ReservationPortfolioMaterialRelocation>(),
+            CompletedCurrencyReservationIds =
+                result.CompletedCurrencyReservationIds ??
+                    Array.Empty<string>(),
+            ActiveCurrencyReservationIds =
+                result.ActiveCurrencyReservationIds ??
+                    Array.Empty<string>(),
+            CurrencySettlements = result.CurrencySettlements ??
+                Array.Empty<ReservationPortfolioCurrencySettlement>(),
+            ReboundActiveReservationIds =
+                result.ReboundActiveReservationIds ??
+                    Array.Empty<string>(),
             SupportingTransitionVerified =
                 context.TransitionReceipt.SupportingTransitionVerified,
             ExactSettlementReplayVerified = !reasons.Contains(

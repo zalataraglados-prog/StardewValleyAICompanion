@@ -65,12 +65,64 @@ public sealed class AcquisitionRouteSupportingTransitionReceipt
     public AcquisitionMaterialTransferTransitionEvidence?
         MaterialTransferTransition { get; set; }
 
+    [JsonPropertyName("purchase_transition")]
+    public AcquisitionPurchaseTransitionEvidence? PurchaseTransition
+    { get; set; }
+
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A supporting transition receipt verifies one hash-bound nonterminal action or the exact existing move-plus-transfer macro against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. Machine material staging requires the reserved chest stack to decrease and one projected player-inventory slot to increase by the exact full claim quantity; it records relocation, not consumption. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+        "A supporting transition receipt verifies one hash-bound nonterminal action, the exact existing move-plus-transfer macro, or the exact existing bounded-wait/purchase/menu-close macro against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. Machine material staging requires the reserved chest stack to decrease and one projected player-inventory slot to increase by the exact full claim quantity; it records relocation, not consumption. Machine purchase route and interaction progress must leave both the bound currency and item count unchanged; a purchase must decrease the exact native currency by one bound unit price and increase the exact player-inventory qualified item by one bound output stack. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+}
+
+public sealed class AcquisitionPurchaseTransitionEvidence
+{
+    [JsonPropertyName("stage")]
+    public string Stage { get; set; } = string.Empty;
+
+    [JsonPropertyName("shop_id")]
+    public string ShopId { get; set; } = string.Empty;
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("currency_id")]
+    public int? CurrencyId { get; set; }
+
+    [JsonPropertyName("expected_currency_decrease")]
+    public int? ExpectedCurrencyDecrease { get; set; }
+
+    [JsonPropertyName("currency_before")]
+    public int? CurrencyBefore { get; set; }
+
+    [JsonPropertyName("currency_after")]
+    public int? CurrencyAfter { get; set; }
+
+    [JsonPropertyName("observed_currency_decrease")]
+    public int? ObservedCurrencyDecrease { get; set; }
+
+    [JsonPropertyName("expected_item_increase")]
+    public int? ExpectedItemIncrease { get; set; }
+
+    [JsonPropertyName("item_quantity_before")]
+    public int? ItemQuantityBefore { get; set; }
+
+    [JsonPropertyName("item_quantity_after")]
+    public int? ItemQuantityAfter { get; set; }
+
+    [JsonPropertyName("observed_item_increase")]
+    public int? ObservedItemIncrease { get; set; }
+
+    [JsonPropertyName("resolved")]
+    public bool Resolved { get; set; }
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 }
 
 public sealed class AcquisitionMaterialTransferTransitionEvidence

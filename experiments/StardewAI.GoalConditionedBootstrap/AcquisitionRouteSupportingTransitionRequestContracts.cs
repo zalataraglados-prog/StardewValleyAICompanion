@@ -108,6 +108,14 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
     [JsonPropertyName("predicted_processing_minutes")]
     public int? PredictedProcessingMinutes { get; set; }
 
+    [JsonPropertyName("purchase_stage")]
+    public string PurchaseStage { get; set; } = string.Empty;
+
+    [JsonPropertyName("purchase_prerequisite")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AcquisitionPurchasePrerequisiteBinding? PurchasePrerequisite
+    { get; set; }
+
     [JsonPropertyName("base_ledger_revision")]
     public int BaseLedgerRevision { get; set; }
 
@@ -145,6 +153,10 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
     public AcquisitionSupportMaterialRelocation[] SupportMaterialRelocations
     { get; set; } = Array.Empty<AcquisitionSupportMaterialRelocation>();
 
+    [JsonPropertyName("support_currency_consumptions")]
+    public AcquisitionSupportCurrencyConsumption[] SupportCurrencyConsumptions
+    { get; set; } = Array.Empty<AcquisitionSupportCurrencyConsumption>();
+
     [JsonPropertyName("material_transfer_intent")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MaterialTransferIntent? MaterialTransferIntent { get; set; }
@@ -172,7 +184,19 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A support request may select only one current source-bound candidate from the shared acquisition route. Crop planting retains exact growth, season, seed-slot and deadline proof. Machine input loading additionally requires a unique native output route, exact machine location/tile/type, probe-derived required input count and effective processing minutes matching the authoritative processing schedule; its exact input slot must be covered by the route material claims and its completion day must fit the explicit deadline. A machine claim in a current-location ordinary unlocked chest cannot compile as a load: it first emits one deterministic inventory.transfer_item support transition whose native projection fits exactly one player-inventory slot and whose relocation preserves the full active claim. All route claims are preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
+        "A support request may select only one current source-bound candidate from the shared acquisition route. Crop planting retains exact growth, season, seed-slot and deadline proof. Machine input loading additionally requires a unique native output route, exact machine location/tile/type, probe-derived required input count and effective processing minutes matching the authoritative processing schedule; its exact input slot must be covered by the route material claims and its completion day must fit the explicit deadline. A machine claim in a current-location ordinary unlocked chest cannot compile as a load: it first emits one deterministic inventory.transfer_item support transition whose native projection fits exactly one player-inventory slot and whose relocation preserves the full active claim. A typed upstream machine-input purchase may select only the existing economy.buy_supplies route-connector, shop-interaction or exact one-item purchase candidate matching the bound shop, qualified item and maximum unit price. Route and interaction stages consume nothing; the purchase stage binds exactly one unit-price currency consumption. All route claims are preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
+}
+
+public sealed class AcquisitionSupportCurrencyConsumption
+{
+    [JsonPropertyName("reservation_id")]
+    public string ReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("currency_id")]
+    public int CurrencyId { get; set; }
+
+    [JsonPropertyName("consumed_amount")]
+    public int ConsumedAmount { get; set; }
 }
 
 public sealed class AcquisitionSupportMaterialRelocation

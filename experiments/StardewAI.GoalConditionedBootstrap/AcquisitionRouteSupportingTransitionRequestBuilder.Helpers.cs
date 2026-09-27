@@ -19,6 +19,13 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             "native_machine_item_query_output")
             ? "machine_input_material_transfer"
             :
+        candidate is { OptionId: "economy.buy_supplies" } &&
+        requirement.RouteKind is (
+            "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output")
+            ? "machine_input_purchase"
+            :
         requirement.RouteKind switch
         {
             "harvests_as" when requirement.SourceId.StartsWith(
@@ -27,6 +34,44 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             "machine_output" or
             "native_machine_flavored_output" or
             "native_machine_item_query_output" => "machine_input_load",
+            _ => string.Empty
+        };
+
+    internal static AcquisitionPurchasePrerequisiteBinding?
+        PurchasePrerequisite(
+            AcquisitionRouteTargetDateProcessing route) =>
+        route.UpstreamRoute.UpstreamRoute.CurrencyEvaluation?
+            .PurchasePrerequisite;
+
+    internal static bool PurchaseCandidateMatchesBinding(
+        PolicyEventCandidatePrediction candidate,
+        AcquisitionPurchasePrerequisiteBinding binding) =>
+        candidate.OptionId == "economy.buy_supplies" &&
+        candidate.Kind is (
+            "route_connector_tile" or
+            "interact_endpoint" or
+            "buy_shop_item") &&
+        candidate.Quantity == 1 &&
+        candidate.ShopId == binding.ShopId &&
+        candidate.QualifiedItemId == binding.QualifiedItemId &&
+        candidate.UnitPrice == binding.UnitPrice &&
+        ReadStringParameter(candidate, "continuation.shop_id") ==
+            binding.ShopId &&
+        ReadStringParameter(candidate, "continuation.qualified_item_id") ==
+            binding.QualifiedItemId &&
+        ReadNonNegativeIntParameter(
+            candidate,
+            "continuation.max_unit_price") == binding.UnitPrice &&
+        ReadPositiveIntParameter(
+            candidate,
+            "continuation.quantity") == 1;
+
+    internal static string PurchaseStage(
+        PolicyEventCandidatePrediction candidate) => candidate.Kind switch
+        {
+            "buy_shop_item" => "purchase",
+            "interact_endpoint" => "shop_interaction",
+            "route_connector_tile" => "route_connector",
             _ => string.Empty
         };
 

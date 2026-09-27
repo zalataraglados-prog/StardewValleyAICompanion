@@ -93,7 +93,7 @@ public sealed class AcquisitionRouteDispatchCompilation
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The dispatcher selects only a current, available terminal or source-bound supporting candidate proven from the live ranking and same-state transparent snapshot. Learner rank, score and reward are erased before the existing daily-plan and action-queue compilers run. Every expanded primitive repeats the selected route, reservation ledger, source candidate, route-option role and ranking hash. A supporting transition requires a fresh snapshot and is never terminal-receipt eligible. Missing or ambiguous source evidence, blocked compilation or lost lineage fails closed; this artifact cannot authorize formal training.";
+        "The dispatcher selects only a current, available terminal or source-bound supporting candidate proven from the live ranking and same-state transparent snapshot. Learner rank, score and reward are erased before the existing daily-plan and action-queue compilers run. Every expanded primitive repeats the selected route, reservation ledger, source candidate, route-option role and ranking hash. A supporting transition is normally one action; the only admitted multi-item shapes are the existing move-plus-transfer macro and the existing one-item purchase macro with optional bounded menu-readiness wait followed by purchase and safe menu close. Every supporting transition requires a fresh snapshot and is never terminal-receipt eligible. Missing or ambiguous source evidence, blocked compilation, any other queue shape or lost lineage fails closed; this artifact cannot authorize formal training.";
 }
 
 internal sealed record AcquisitionRouteDispatchCandidateMatch(

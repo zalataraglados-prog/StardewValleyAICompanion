@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器缺料采购递归闭环
+
+- 机器资源轴缺料时不再直接终止：货币轴只对一个确定性的机器输入缺口查询当前原生商店预览，按总价、单价、商店和库存键稳定选择精确的正价金币报价。当前已有材料与未来采购严格分离；reservation 只占用已经实际存在的材料和完成全部缺口所需的金币，不虚构尚未购买的物品。
+- processing 轴在存在采购前置时明确停在 `upstream_machine_input_purchase`。支持链复用现有 `economy.buy_supplies`，逐次执行跨图连接、柜台交互和单件购买；购买阶段仍使用既有 `DailyPlanCompiler -> ActionQueueCompiler -> executor.buy_shop_item`，并保留安全关菜单动作，没有建立第二套商店或购买执行器。
+- route/交互进度要求金币和目标物品都不变，只把仍活动的 claims 重绑到 fresh state。购买回执要求精确金币减少一个绑定单价、玩家背包中精确 qualified item 增加一个绑定堆叠；共享 ledger 支持货币 claim 的部分消费与最终完成，完全耗尽的 claim 不得继续重绑。每个阶段结束后旧队列失效，并从 fresh snapshot 与新 ledger revision 完整重规划，直到材料足够后自然回到既有箱存暂存或机器投料链。
+- Release 构建、bootstrap hermetic 与共享 ledger 聚焦回归通过；该链仍是非终端监督证据，`formal_training_authorized=false`。下一固定切片是把“缺少已摆放机器”的路线接入既有 `farm.establish_supported_machine_capacity` 生命周期并执行同样的提交、回执、结算和完整重规划，不新增制作、放置或投料实现。
+
 ## 2026-09-27 机器箱存原料暂存与 reservation 搬迁闭环
 
 - `resource_inputs` 仍优先使用当前角色背包，但现在允许当前地图内、执行者获权、普通、未锁且交互坐标完整的放置箱子证明机器路线材料充足；此类槽位显式标记 `requires_player_staging=true`，绝不直接编译为机器投料。
