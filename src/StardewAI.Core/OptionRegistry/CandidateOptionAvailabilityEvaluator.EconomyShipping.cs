@@ -178,6 +178,15 @@ namespace StardewAI.Core.OptionRegistry
             var continuationQualifiedItemId = ReadParameter(
                 boundParameters,
                 "continuation.qualified_item_id");
+            var continuationStockId = ReadParameter(
+                boundParameters,
+                "continuation.stock_id");
+            var continuationOutputStack = ReadParameterInt(
+                boundParameters,
+                "continuation.output_stack_per_purchase");
+            var continuationOutputQuality = ReadParameterInt(
+                boundParameters,
+                "continuation.output_quality");
             var continuationMaxUnitPrice = ReadParameterInt(
                 boundParameters,
                 "continuation.max_unit_price");
@@ -212,6 +221,29 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add(
                             "shop_item_does_not_match_purchase_continuation");
                     }
+                    if (!string.IsNullOrWhiteSpace(continuationStockId) &&
+                        !string.Equals(
+                            ReadString(entry, "synced_key"),
+                            continuationStockId,
+                            StringComparison.Ordinal))
+                    {
+                        blockReasons.Add(
+                            "shop_stock_does_not_match_purchase_continuation");
+                    }
+                    if (continuationOutputStack.HasValue &&
+                        ReadInt(entry, "stack") !=
+                            continuationOutputStack.Value)
+                    {
+                        blockReasons.Add(
+                            "shop_output_stack_does_not_match_purchase_continuation");
+                    }
+                    if (continuationOutputQuality.HasValue &&
+                        ReadInt(entry, "quality") !=
+                            continuationOutputQuality.Value)
+                    {
+                        blockReasons.Add(
+                            "shop_output_quality_does_not_match_purchase_continuation");
+                    }
                     var price = ReadInt(entry, "price");
                     if (continuationMaxUnitPrice.HasValue &&
                         price > continuationMaxUnitPrice.Value)
@@ -229,6 +261,9 @@ namespace StardewAI.Core.OptionRegistry
                         QualifiedItemId = ReadString(entry, "qualified_item_id"),
                         DisplayName = ReadString(entry, "display_name"),
                         ShopId = shopId,
+                        StockId = ReadString(entry, "synced_key"),
+                        OutputStack = ReadInt(entry, "stack"),
+                        OutputQuality = ReadInt(entry, "quality"),
                         Quantity = 1,
                         UnitPrice = price,
                         TotalValue = price,
@@ -309,6 +344,9 @@ namespace StardewAI.Core.OptionRegistry
                                 QualifiedItemId = ReadString(entry, "qualified_item_id"),
                                 DisplayName = ReadString(entry, "display_name"),
                                 ShopId = shopId,
+                                StockId = ReadString(entry, "synced_key"),
+                                OutputStack = ReadInt(entry, "stack"),
+                                OutputQuality = ReadInt(entry, "quality"),
                                 Quantity = 1,
                                 UnitPrice = price,
                                 TotalValue = price,
@@ -324,7 +362,22 @@ namespace StardewAI.Core.OptionRegistry
 
         private static string[] BuyEntryBlockReasons(JsonElement entry)
         {
-            var reasons = new List<string>();
+            var executorReasons = ReadStringArray(
+                entry,
+                "executor_block_reasons");
+            var boundedSafetyWait =
+                ReadBool(entry, "executor_purchase_enabled") != true &&
+                executorReasons.Length == 1 &&
+                executorReasons[0] == "shop_menu_safety_timer_active";
+            var reasons = new List<string>(boundedSafetyWait
+                ? Array.Empty<string>()
+                : executorReasons);
+            if (ReadBool(entry, "executor_purchase_enabled") != true &&
+                reasons.Count == 0 &&
+                !boundedSafetyWait)
+            {
+                reasons.Add("purchase_candidate_not_executor_enabled");
+            }
             if (ReadBool(entry, "can_buy_item") != true) reasons.Add("shop_item_cannot_be_bought");
             if (ReadBool(entry, "infinite_stock") != true && ReadInt(entry, "stock") <= 0) reasons.Add("shop_item_out_of_stock");
             if (ReadBool(entry, "can_afford_one_with_currency") != true) reasons.Add("insufficient_currency_for_purchase");

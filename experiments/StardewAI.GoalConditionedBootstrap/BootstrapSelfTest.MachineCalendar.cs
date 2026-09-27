@@ -313,6 +313,26 @@ internal static partial class BootstrapSelfTest
                         StringComparer.Ordinal),
             "Supported trigger randomness drifted from the retry axis.");
 
+        var repeatedRandomTrigger = AcquisitionRouteCalendarResolutionBuilder
+            .ProjectMachineTriggerConditions(new[]
+            {
+                MachineTrigger(
+                    "repeated-random",
+                    "RANDOM 0.5, RANDOM 0.5, RANDOM 0.5",
+                    trigger: 1)
+            });
+        Require(repeatedRandomTrigger.Supported &&
+                repeatedRandomTrigger.ConditionSet.Alternatives.Single()
+                    .StochasticConditions.SequenceEqual(
+                        new[]
+                        {
+                            "RANDOM 0.5",
+                            "RANDOM 0.5",
+                            "RANDOM 0.5"
+                        },
+                        StringComparer.Ordinal),
+            "Repeated trigger randomness lost source multiplicity or order.");
+
         var mismatch = AcquisitionRouteCalendarResolutionBuilder
             .ResolveMachineWindows(
                 "(O)999",

@@ -143,7 +143,8 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                 quote.CurrencyId == NativeShopCurrencies.Money &&
                 quote.TradeItemQualifiedId is null &&
                 quote.Price > 0 &&
-                quote.CanBuyItem)
+                quote.CanBuyItem &&
+                quote.ExecutorPurchaseEnabled)
             .Select(quote => new
             {
                 Quote = quote,

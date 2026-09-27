@@ -469,6 +469,15 @@ public static partial class QueueReplanFilter
                     queueItem,
                     "continuation.item_id"),
                 ["qualified_item_id"] = qualifiedItemId,
+                ["stock_id"] = ReadParameter(
+                    queueItem,
+                    "continuation.stock_id"),
+                ["output_stack_per_purchase"] = ReadParameter(
+                    queueItem,
+                    "continuation.output_stack_per_purchase"),
+                ["output_quality"] = ReadParameter(
+                    queueItem,
+                    "continuation.output_quality"),
                 ["max_unit_price"] = ReadParameter(
                     queueItem,
                     "continuation.max_unit_price"),

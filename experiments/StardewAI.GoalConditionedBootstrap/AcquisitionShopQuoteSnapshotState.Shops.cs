@@ -72,12 +72,20 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
         var stock = ReadInt(entry, "stock");
         var infinite = ReadBool(entry, "infinite_stock");
         var canBuy = ReadBool(entry, "can_buy_item");
+        var executorEnabled = ReadBool(
+            entry,
+            "executor_purchase_preview_enabled");
+        var executorBlockReasons = ReadStringArray(
+            entry,
+            "executor_block_reasons");
         if (string.IsNullOrWhiteSpace(stockId) ||
             string.IsNullOrWhiteSpace(itemId) ||
             !outputStack.HasValue || outputStack <= 0 ||
             !outputQuality.HasValue || outputQuality < 0 ||
             entryCurrency != currencyId || !price.HasValue || price < 0 ||
             !stock.HasValue || !infinite.HasValue || !canBuy.HasValue ||
+            !executorEnabled.HasValue || executorBlockReasons is null ||
+            executorEnabled.Value != (executorBlockReasons.Length == 0) ||
             (infinite == true && stock != int.MaxValue) ||
             (infinite == false && stock < 0))
         {
@@ -106,6 +114,8 @@ internal sealed partial class AcquisitionShopQuoteSnapshotState
             stock.Value,
             infinite.Value,
             canBuy.Value,
+            executorEnabled.Value,
+            executorBlockReasons,
             tradeItem,
             tradeCount);
     }

@@ -176,6 +176,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             Require(evidence.Verified &&
                     evidence.Stage == request.PurchaseStage &&
                     evidence.ShopId == request.PurchasePrerequisite?.ShopId &&
+                    evidence.StockId ==
+                        request.PurchasePrerequisite?.StockId &&
                     evidence.QualifiedItemId ==
                         request.PurchasePrerequisite?.QualifiedItemId &&
                     request.SupportMaterialConsumptions.Length == 0 &&

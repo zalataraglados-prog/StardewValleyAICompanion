@@ -713,6 +713,9 @@ public sealed partial class ActionQueueCompilerTests
               "entries":[{
                 "item_id":"378",
                 "qualified_item_id":"(O)378",
+                "synced_key":"blacksmith-copper",
+                "stack":1,
+                "quality":0,
                 "price":75,
                 "stock":2147483647,
                 "infinite_stock":true,
@@ -732,6 +735,10 @@ public sealed partial class ActionQueueCompilerTests
             new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)378" },
             new SmallModelActionParameter { Name = "quantity", Value = "1" },
             new SmallModelActionParameter { Name = "max_unit_price", Value = "75" },
+            new SmallModelActionParameter { Name = "expected_unit_price", Value = "75" },
+            new SmallModelActionParameter { Name = "expected_stock_id", Value = "blacksmith-copper" },
+            new SmallModelActionParameter { Name = "expected_output_stack", Value = "1" },
+            new SmallModelActionParameter { Name = "expected_output_quality", Value = "0" },
             new SmallModelActionParameter { Name = "expected_shop_id", Value = "Blacksmith" }
         };
 
@@ -744,6 +751,9 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "shop_item_id" && parameter.Value == "378");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "quantity" && parameter.Value == "1");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "max_unit_price" && parameter.Value == "75");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "expected_stock_id" && parameter.Value == "blacksmith-copper");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "expected_output_stack" && parameter.Value == "1");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "expected_output_quality" && parameter.Value == "0");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "expected_shop_id" && parameter.Value == "Blacksmith");
         var step = Assert.Single(item.NormalizedCommand.Steps);
         Assert.Equal("buy_shop_item", step.StepType);
@@ -796,6 +806,64 @@ public sealed partial class ActionQueueCompilerTests
 
         Assert.Equal("blocked", queue.Status);
         Assert.Contains("shop_menu_id_mismatch", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileBuyShopItemRejectsSameItemPriceFromDifferentStockRow()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "money": {"value":500,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"ShopMenu"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "shop_stock": {"value":{
+              "shop_id":"SeedShop",
+              "read_only":false,
+              "safety_timer":0,
+              "held_item_present":false,
+              "executor_purchase_enabled":true,
+              "entries":[{
+                "item_id":"262",
+                "qualified_item_id":"(O)262",
+                "synced_key":"same-item-row-b",
+                "stack":1,
+                "quality":0,
+                "price":80,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "can_buy_item":true,
+                "can_afford_one_with_currency":true,
+                "can_afford_one_with_trade_item":true,
+                "could_inventory_accept":true,
+                "executor_purchase_enabled":true
+              }]
+            },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "executor.buy_shop_item");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)262" },
+            new SmallModelActionParameter { Name = "shop_item_id", Value = "262" },
+            new SmallModelActionParameter { Name = "quantity", Value = "1" },
+            new SmallModelActionParameter { Name = "max_unit_price", Value = "80" },
+            new SmallModelActionParameter { Name = "expected_unit_price", Value = "80" },
+            new SmallModelActionParameter { Name = "expected_shop_id", Value = "SeedShop" },
+            new SmallModelActionParameter { Name = "expected_stock_id", Value = "same-item-row-a" },
+            new SmallModelActionParameter { Name = "expected_output_stack", Value = "1" },
+            new SmallModelActionParameter { Name = "expected_output_quality", Value = "0" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "exact_purchase_candidate_not_found",
+            queue.Items[0].BlockingReasons);
     }
 
 }

@@ -46,6 +46,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             binding.UnitPrice <= 0 ||
             binding.OutputStackPerPurchase <= 0 ||
             string.IsNullOrWhiteSpace(binding.ShopId) ||
+            string.IsNullOrWhiteSpace(binding.StockId) ||
             string.IsNullOrWhiteSpace(binding.QualifiedItemId))
         {
             reasons.Add("machine_input_purchase_receipt_binding_invalid");
@@ -107,6 +108,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         {
             Stage = stage,
             ShopId = binding?.ShopId ?? string.Empty,
+            StockId = binding?.StockId ?? string.Empty,
             QualifiedItemId = binding?.QualifiedItemId ?? string.Empty,
             CurrencyId = binding?.CurrencyId,
             ExpectedCurrencyDecrease = expectedCurrency,

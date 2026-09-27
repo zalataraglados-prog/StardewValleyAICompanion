@@ -11,6 +11,8 @@ internal sealed record AcquisitionShopQuote(
     int Stock,
     bool InfiniteStock,
     bool CanBuyItem,
+    bool ExecutorPurchaseEnabled,
+    string[] ExecutorBlockReasons,
     string? TradeItemQualifiedId,
     int? TradeItemCount);
 

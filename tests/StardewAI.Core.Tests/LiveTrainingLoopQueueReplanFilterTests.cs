@@ -591,6 +591,12 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         route["normalized_command"]!["parameters"]!.AsArray().Add(
             Parameter("continuation.qualified_item_id", "(O)378"));
         route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.stock_id", "blacksmith-copper"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.output_stack_per_purchase", "1"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.output_quality", "0"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
             Parameter("continuation.max_unit_price", "150"));
         route["normalized_command"]!["parameters"]!.AsArray().Add(
             Parameter("continuation.quantity", "1"));
@@ -603,7 +609,16 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             continuation!["kind"]!.GetValue<string>());
         var candidates = new JsonArray
         {
-            PurchaseCandidate("Blacksmith", "(O)378"),
+            PurchaseCandidate(
+                "Blacksmith",
+                "(O)378",
+                "blacksmith-copper",
+                150),
+            PurchaseCandidate(
+                "Blacksmith",
+                "(O)378",
+                "same-item-same-price-other-stock",
+                150),
             PurchaseCandidate("Blacksmith", "(O)380"),
             PurchaseCandidate("SeedShop", "(O)378")
         };
@@ -636,6 +651,14 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             Parameter("expected_shop_id", "Blacksmith"));
         buy["normalized_command"]!["parameters"]!.AsArray().Add(
             Parameter("quantity", "1"));
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_stock_id", "blacksmith-copper"));
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_output_stack", "1"));
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_output_quality", "0"));
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_unit_price", "150"));
         Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
             buy,
             continuation,
@@ -1255,8 +1278,25 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
 
     private static JsonObject PurchaseCandidate(
         string shopId,
-        string qualifiedItemId)
+        string qualifiedItemId,
+        string stockId = "",
+        int maxUnitPrice = 0)
     {
+        var parameters = new JsonArray();
+        if (!string.IsNullOrWhiteSpace(stockId))
+        {
+            parameters.Add(Parameter("continuation.stock_id", stockId));
+            parameters.Add(Parameter(
+                "continuation.output_stack_per_purchase",
+                "1"));
+            parameters.Add(Parameter("continuation.output_quality", "0"));
+        }
+        if (maxUnitPrice > 0)
+        {
+            parameters.Add(Parameter(
+                "continuation.max_unit_price",
+                maxUnitPrice.ToString()));
+        }
         return new JsonObject
         {
             ["candidate_id"] = "purchase:" + shopId + ":" + qualifiedItemId,
@@ -1264,7 +1304,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["kind"] = "buy_shop_item",
             ["shop_id"] = shopId,
             ["qualified_item_id"] = qualifiedItemId,
-            ["parameters"] = new JsonArray()
+            ["parameters"] = parameters
         };
     }
 

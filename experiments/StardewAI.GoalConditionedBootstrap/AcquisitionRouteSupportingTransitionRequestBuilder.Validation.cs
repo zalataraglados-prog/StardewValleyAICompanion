@@ -115,7 +115,9 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             processing.BlockingReasons.Length != 0 ||
             purchase is null ||
             purchase.RequiredPurchaseCount <= 0 ||
-            purchase.UnitPrice <= 0)
+            purchase.UnitPrice <= 0 ||
+            purchase.OutputStackPerPurchase <= 0 ||
+            string.IsNullOrWhiteSpace(purchase.StockId))
         {
             reasons.Add("support_machine_purchase_prerequisite_not_proven");
         }

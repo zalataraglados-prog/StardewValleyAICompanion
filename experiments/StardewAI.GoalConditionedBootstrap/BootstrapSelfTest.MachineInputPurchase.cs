@@ -35,6 +35,7 @@ internal static partial class BootstrapSelfTest
             expectedPurchases: 1,
             expectedMaterialClaim: 2,
             expectedCurrencyClaim: 80);
+        VerifyExecutorEligibleQuoteSelection(route);
 
         var insufficient = AcquisitionRouteTargetDateCurrencyBuilder.Evaluate(
             AcquisitionRouteTargetDateResourceBuilder.Evaluate(
@@ -58,6 +59,51 @@ internal static partial class BootstrapSelfTest
             "Insufficient machine-input purchase funds were admitted or lost their exact quote binding.");
         VerifyMachineInputPurchaseReceipt();
         VerifyMachineInputPurchaseSupportChain();
+    }
+
+    private static void VerifyExecutorEligibleQuoteSelection(
+        AcquisitionRouteCalendarResolution route)
+    {
+        var largeRoute = route with { RequiredAmount = 5 };
+        var resource = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
+            MachineResourceFacilityRoute(largeRoute),
+            largeRoute,
+            MachineResourceState(
+                MachineResourceSlot(0, "(O)262", 1)));
+        var currency = AcquisitionRouteTargetDateCurrencyBuilder.Evaluate(
+            resource,
+            largeRoute,
+            MachineInputPurchaseCurrencyState(
+                1_000,
+                new MachineInputPurchaseQuoteFixture(
+                    "CheapUnsafeShop",
+                    "cheap-unsafe-wheat",
+                    20,
+                    1,
+                    false,
+                    new[] { "actions_on_purchase_present" }),
+                new MachineInputPurchaseQuoteFixture(
+                    "SafeShop",
+                    "safe-double-wheat",
+                    70,
+                    2,
+                    true,
+                    Array.Empty<string>())));
+        Require(currency.CurrencyBudgetMatchesTargetDate == true &&
+                currency.CurrencyEvaluation is
+                {
+                    RequiredAmount: 140,
+                    OutputStackPerPurchase: 2,
+                    RequiredPurchaseCount: 2,
+                    PurchasePrerequisite:
+                    {
+                        ShopId: "SafeShop",
+                        StockId: "safe-double-wheat",
+                        OutputStackPerPurchase: 2,
+                        RequiredPurchaseCount: 2
+                    }
+                },
+            "Executor-blocked cheapest quote displaced the safe exact stock row or its output-stack purchase count.");
     }
 
     private static void VerifyPurchasePass(
@@ -155,8 +201,30 @@ internal static partial class BootstrapSelfTest
     }
 
     private static AcquisitionShopQuoteSnapshotState
-        MachineInputPurchaseCurrencyState(int money)
+        MachineInputPurchaseCurrencyState(
+            int money,
+            params MachineInputPurchaseQuoteFixture[] quoteFixtures)
     {
+        if (quoteFixtures.Length == 0)
+        {
+            quoteFixtures = new[]
+            {
+                new MachineInputPurchaseQuoteFixture(
+                    "JojaMart",
+                    "joja-wheat-seed",
+                    100,
+                    1,
+                    true,
+                    Array.Empty<string>()),
+                new MachineInputPurchaseQuoteFixture(
+                    "SeedShop",
+                    "wheat-seed",
+                    80,
+                    1,
+                    true,
+                    Array.Empty<string>())
+            };
+        }
         var json = JsonSerializer.Serialize(new
         {
             player = new
@@ -181,12 +249,8 @@ internal static partial class BootstrapSelfTest
             {
                 shops = Field(new
                 {
-                    shop_count = 2,
-                    shops = new object[]
-                    {
-                        Shop("JojaMart", "joja-wheat-seed", 100),
-                        Shop("SeedShop", "wheat-seed", 80)
-                    }
+                    shop_count = quoteFixtures.Length,
+                    shops = quoteFixtures.Select(Shop).ToArray()
                 })
             }
         }, JsonDefaults.Options);
@@ -201,33 +265,44 @@ internal static partial class BootstrapSelfTest
             value
         };
 
-        static object Shop(string shopId, string stockId, int price) => new
+        static object Shop(MachineInputPurchaseQuoteFixture quote) => new
         {
-            shop_id = shopId,
+            shop_id = quote.ShopId,
             stock_preview = new
             {
                 kind = "shop_stock_preview",
-                shop_id = shopId,
+                shop_id = quote.ShopId,
                 currency = 0,
                 entry_count = 1,
                 entries = new[]
                 {
                     new
                     {
-                        synced_key = stockId,
+                        synced_key = quote.StockId,
                         qualified_item_id = "(O)262",
-                        stack = 1,
+                        stack = quote.OutputStack,
                         quality = 0,
                         currency = 0,
-                        price,
+                        price = quote.Price,
                         stock = int.MaxValue,
                         infinite_stock = true,
-                        can_buy_item = true
+                        can_buy_item = true,
+                        executor_purchase_preview_enabled =
+                            quote.ExecutorPurchaseEnabled,
+                        executor_block_reasons = quote.ExecutorBlockReasons
                     }
                 }
             }
         };
     }
+
+    private sealed record MachineInputPurchaseQuoteFixture(
+        string ShopId,
+        string StockId,
+        int Price,
+        int OutputStack,
+        bool ExecutorPurchaseEnabled,
+        string[] ExecutorBlockReasons);
 
     private static void VerifyMachineInputPurchaseReceipt()
     {
@@ -392,6 +467,9 @@ internal static partial class BootstrapSelfTest
                                 item_id = "262",
                                 qualified_item_id = "(O)262",
                                 display_name = "Wheat Seeds",
+                                stack = 1,
+                                quality = 0,
+                                synced_key = "wheat-seed",
                                 price = 80,
                                 stock = int.MaxValue,
                                 infinite_stock = true,

@@ -397,7 +397,40 @@ public static partial class QueueReplanFilter
                 string.Equals(
                     ReadParameter(queueItem, "quantity"),
                     ReadString(continuation, "quantity"),
-                    StringComparison.Ordinal);
+                    StringComparison.Ordinal) &&
+                (string.IsNullOrWhiteSpace(ReadString(
+                        continuation,
+                        "stock_id")) ||
+                    string.Equals(
+                        ReadParameter(queueItem, "expected_stock_id"),
+                        ReadString(continuation, "stock_id"),
+                        StringComparison.Ordinal)) &&
+                (string.IsNullOrWhiteSpace(ReadString(
+                        continuation,
+                        "output_stack_per_purchase")) ||
+                    string.Equals(
+                        ReadParameter(queueItem, "expected_output_stack"),
+                        ReadString(
+                            continuation,
+                            "output_stack_per_purchase"),
+                        StringComparison.Ordinal)) &&
+                (string.IsNullOrWhiteSpace(ReadString(
+                        continuation,
+                        "output_quality")) ||
+                    string.Equals(
+                        ReadParameter(queueItem, "expected_output_quality"),
+                        ReadString(continuation, "output_quality"),
+                        StringComparison.Ordinal)) &&
+                (string.IsNullOrWhiteSpace(ReadString(
+                        continuation,
+                        "max_unit_price")) ||
+                    string.IsNullOrWhiteSpace(ReadString(
+                        continuation,
+                        "stock_id")) ||
+                    string.Equals(
+                        ReadParameter(queueItem, "expected_unit_price"),
+                        ReadString(continuation, "max_unit_price"),
+                        StringComparison.Ordinal));
         }
         if (string.Equals(
                 continuationKind,

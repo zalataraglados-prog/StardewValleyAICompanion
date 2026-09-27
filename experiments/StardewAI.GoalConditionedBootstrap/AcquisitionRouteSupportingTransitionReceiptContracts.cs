@@ -134,6 +134,9 @@ public sealed class AcquisitionPurchaseTransitionEvidence
     [JsonPropertyName("shop_id")]
     public string ShopId { get; set; } = string.Empty;
 
+    [JsonPropertyName("stock_id")]
+    public string StockId { get; set; } = string.Empty;
+
     [JsonPropertyName("qualified_item_id")]
     public string QualifiedItemId { get; set; } = string.Empty;
 

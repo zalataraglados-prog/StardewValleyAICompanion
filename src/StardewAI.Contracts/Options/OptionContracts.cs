@@ -678,6 +678,15 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("shop_id")]
         public string ShopId { get; set; } = string.Empty;
 
+        [JsonPropertyName("stock_id")]
+        public string StockId { get; set; } = string.Empty;
+
+        [JsonPropertyName("output_stack")]
+        public int OutputStack { get; set; } = 1;
+
+        [JsonPropertyName("output_quality")]
+        public int OutputQuality { get; set; }
+
         [JsonPropertyName("slot_index")]
         public int? SlotIndex { get; set; }
 
