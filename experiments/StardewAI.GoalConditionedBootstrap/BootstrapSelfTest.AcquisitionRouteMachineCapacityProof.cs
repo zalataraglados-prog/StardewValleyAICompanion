@@ -74,7 +74,7 @@ internal static partial class BootstrapSelfTest
 
         var rankingPath = Path.Combine(priorRoot, "ranking.json");
         Write(rankingPath, CollectionRanking(before.StateHash));
-        var supportInputs = MachineCapacityProofSupportInputs(
+        var supportInputs = SupportingTransitionProofInputs(
             priorPortfolioInputs,
             rankingPath,
             authority.MachineRouteOccurrenceId);
@@ -259,7 +259,7 @@ internal static partial class BootstrapSelfTest
             SettledLedgerPath = supportSettledLedgerPath,
             SettlementReceiptPath = supportSettlementReceiptPath
         };
-        return VerifyMachineCapacityProofTerminalRoute(
+        return VerifySupportingTransitionTerminalRoute(
             authority,
             supportInputs,
             proof,
@@ -269,7 +269,7 @@ internal static partial class BootstrapSelfTest
     }
 
     private static AcquisitionRouteSupportingTransitionTerminalCoverageSource
-        VerifyMachineCapacityProofTerminalRoute(
+        VerifySupportingTransitionTerminalRoute(
         MachineCapacityProofAuthority authority,
         AcquisitionRouteSupportingTransitionRequestInputs supportInputs,
         AcquisitionRouteSupportingTransitionSettlementProof proof,
@@ -295,7 +295,7 @@ internal static partial class BootstrapSelfTest
         Require(replan.FreshTeacherRequestReady &&
                 replan.PriorQueueInvalidated &&
                 replan.NextTeacherPreferenceRequest is not null,
-            "Machine placement did not produce a file-backed fresh replan: " +
+            "Supporting transition did not produce a file-backed fresh replan: " +
             string.Join(",", replan.BlockingReasons));
         Write(replanPath, replan);
         var preferenceRequestPath = Path.Combine(
@@ -329,18 +329,18 @@ internal static partial class BootstrapSelfTest
         var afterSupport = CurrentTeacherFrontierSupport.Read<
             StardewAI.Contracts.State.SnapshotEnvelope>(
             afterSupportSnapshotPath,
-            "Machine-capacity proof terminal before snapshot");
+            "Supporting-transition terminal before snapshot");
         var afterSupportLedger = CurrentTeacherFrontierSupport.Read<
             StrategyCommitmentLedger>(
             afterSupportLedgerPath,
-            "Machine-capacity proof terminal base ledger");
+            "Supporting-transition terminal base ledger");
         var commit = new ReservationPortfolioLedgerService().Commit(
             afterSupportLedger,
             afterSupport,
             preference.SelectedAdmission!.AtomicCommitRequest!,
             "2026-09-27T03:01:00Z");
         Require(commit.Accepted && commit.Ledger is not null,
-            "Machine-capacity proof terminal portfolio commit failed: " +
+            "Supporting-transition terminal portfolio commit failed: " +
             string.Join(",", commit.Errors));
         var commitResultPath = Path.Combine(
             terminalRoot,
@@ -366,12 +366,12 @@ internal static partial class BootstrapSelfTest
                     committedLedgerPath,
                     commitResultPath);
         Require(commitReceipt.PortfolioCommitVerified,
-            "Machine-capacity proof terminal commit receipt failed: " +
+            "Supporting-transition terminal commit receipt failed: " +
             string.Join(",", commitReceipt.BlockingReasons));
         Write(commitReceiptPath, commitReceipt);
 
         var queuePath = Path.Combine(terminalRoot, "action-queue.json");
-        var executionInputs = MachineCapacityProofExecutionInputs(
+        var executionInputs = SupportingTransitionTerminalExecutionInputs(
             portfolioInputs,
             preferenceRequestPath,
             preferencePath,
@@ -442,7 +442,7 @@ internal static partial class BootstrapSelfTest
                 proofReceipt.PortfolioCompletionVerified &&
                 proofReceipt.TransitionCount == 1 &&
                 proofReceipt.ContinuationTransitionCount == 0,
-            "Machine-capacity support lineage did not reach a terminal proof receipt.");
+            "Supporting-transition lineage did not reach a terminal proof receipt.");
         var proofReceiptPath = Path.Combine(
             terminalRoot,
             "rollout-proof-receipt.json");
@@ -454,7 +454,7 @@ internal static partial class BootstrapSelfTest
         Require(rolloutAdmission.ControllerAdmissionGranted &&
                 rolloutAdmission.TeacherTrainingEvidenceEligible &&
                 !rolloutAdmission.FormalProductTrainingAuthorized,
-            "Machine-capacity support terminal proof was not admitted.");
+            "Supporting-transition terminal proof was not admitted.");
         var rolloutAdmissionPath = Path.Combine(
             terminalRoot,
             "rollout-admission.json");
@@ -480,7 +480,7 @@ internal static partial class BootstrapSelfTest
                     .RouteOccurrenceId == authority.ShopRouteOccurrenceId &&
                 verified.Rows.Single().Payload.NativeOutcome
                     .RouteOccurrenceId != authority.MachineRouteOccurrenceId,
-            "Supporting machine placement leaked into terminal supervision.");
+            "Supporting transition leaked into terminal supervision.");
 
         return new AcquisitionRouteSupportingTransitionTerminalCoverageSource
         {
@@ -492,7 +492,7 @@ internal static partial class BootstrapSelfTest
     }
 
     private static AcquisitionRouteSupportingTransitionRequestInputs
-        MachineCapacityProofSupportInputs(
+        SupportingTransitionProofInputs(
             AcquisitionRoutePortfolioInputs inputs,
             string rankingPath,
             string routeOccurrenceId) => new()
@@ -519,7 +519,7 @@ internal static partial class BootstrapSelfTest
         };
 
     private static AcquisitionRouteExecutionBindingInputs
-        MachineCapacityProofExecutionInputs(
+        SupportingTransitionTerminalExecutionInputs(
             AcquisitionRoutePortfolioInputs inputs,
             string preferenceRequestPath,
             string preferencePath,

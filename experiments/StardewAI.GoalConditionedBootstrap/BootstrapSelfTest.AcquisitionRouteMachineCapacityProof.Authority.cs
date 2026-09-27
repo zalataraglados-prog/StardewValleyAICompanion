@@ -128,6 +128,7 @@ internal static partial class BootstrapSelfTest
             StageOneCollectionRouteDependencyAxes.Required.ToArray(),
             ["farm.collect_machine_outputs"],
             [
+                "inventory.transfer_item",
                 "farm.establish_supported_machine_capacity",
                 "farm.load_supported_machine_input",
                 "farm.process_machines"
