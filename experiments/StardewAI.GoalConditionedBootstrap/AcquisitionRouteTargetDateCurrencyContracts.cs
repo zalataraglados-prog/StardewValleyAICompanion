@@ -117,4 +117,33 @@ public sealed record AcquisitionCurrencyEvaluation(
     [property: JsonPropertyName("status")]
     string Status,
     [property: JsonPropertyName("evidence_paths")]
-    string[] EvidencePaths);
+    string[] EvidencePaths,
+    [property: JsonPropertyName("purchase_prerequisite")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    AcquisitionPurchasePrerequisiteBinding? PurchasePrerequisite = null);
+
+public sealed record AcquisitionPurchasePrerequisiteBinding(
+    [property: JsonPropertyName("input_kind")]
+    string InputKind,
+    [property: JsonPropertyName("shop_id")]
+    string ShopId,
+    [property: JsonPropertyName("stock_id")]
+    string StockId,
+    [property: JsonPropertyName("qualified_item_id")]
+    string QualifiedItemId,
+    [property: JsonPropertyName("current_available_quantity")]
+    int CurrentAvailableQuantity,
+    [property: JsonPropertyName("remaining_required_quantity")]
+    int RemainingRequiredQuantity,
+    [property: JsonPropertyName("output_stack_per_purchase")]
+    int OutputStackPerPurchase,
+    [property: JsonPropertyName("output_quality")]
+    int OutputQuality,
+    [property: JsonPropertyName("currency_id")]
+    int CurrencyId,
+    [property: JsonPropertyName("currency_key")]
+    string CurrencyKey,
+    [property: JsonPropertyName("unit_price")]
+    int UnitPrice,
+    [property: JsonPropertyName("required_purchase_count")]
+    int RequiredPurchaseCount);

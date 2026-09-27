@@ -1,9 +1,13 @@
+using StardewAI.Contracts.Strategy;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRouteTargetDateCurrencyBuilder
 {
     private const string NoCurrency = "no_direct_currency_cost";
     private const string ShopPurchase = "current_native_shop_purchase_quote";
+    private const string MachineInputPurchase =
+        "current_native_machine_input_purchase_quote";
     private const string DirectMoneyPayment = "native_money_payment";
 
     private static readonly IReadOnlyDictionary<string, string>
@@ -78,6 +82,13 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         }
         if (route.ResourceInputsMatchTargetDate == false)
         {
+            if (RouteKind(route) is
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output")
+            {
+                return EvaluateMachineInputPurchase(route, state);
+            }
             return Result(
                 route,
                 "not_applicable_upstream_resource_input_miss",
@@ -101,6 +112,127 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                 "Unknown currency requirement classification.")
         };
     }
+
+    private static AcquisitionRouteTargetDateCurrency
+        EvaluateMachineInputPurchase(
+            AcquisitionRouteTargetDateResource route,
+            AcquisitionShopQuoteSnapshotState state)
+    {
+        var missingInputs = route.InputEvaluations
+            .Where(input =>
+                input.Status == "resolved_resource_input_miss" &&
+                input.RequiredQuantity > 0 &&
+                input.AvailableQuantity.HasValue &&
+                input.AvailableQuantity.Value >= 0 &&
+                input.AvailableQuantity.Value < input.RequiredQuantity &&
+                !string.IsNullOrWhiteSpace(input.QualifiedItemId))
+            .OrderBy(input => input.InputKind, StringComparer.Ordinal)
+            .ThenBy(input => input.QualifiedItemId, StringComparer.Ordinal)
+            .ToArray();
+        if (missingInputs.Length == 0)
+            return NotApplicableResourceMiss(route);
+
+        var input = missingInputs[0];
+        var remaining = input.RequiredQuantity - input.AvailableQuantity!.Value;
+        var lookup = state.ShopQuotes(input.QualifiedItemId);
+        if (!lookup.EvidenceAvailable)
+            return Blocked(route, MachineInputPurchase, lookup.BlockingReasons);
+
+        var candidates = lookup.Quotes
+            .Where(quote =>
+                quote.CurrencyId == NativeShopCurrencies.Money &&
+                quote.TradeItemQualifiedId is null &&
+                quote.CanBuyItem)
+            .Select(quote => new
+            {
+                Quote = quote,
+                PurchaseCount = AcquisitionQuantityMath.DivideRoundUp(
+                    remaining,
+                    quote.OutputStack)
+            })
+            .Where(candidate =>
+                candidate.Quote.InfiniteStock ||
+                candidate.Quote.Stock >= candidate.PurchaseCount)
+            .Select(candidate => new
+            {
+                candidate.Quote,
+                candidate.PurchaseCount,
+                RequiredPrice = AcquisitionQuantityMath.Multiply(
+                    candidate.Quote.Price,
+                    candidate.PurchaseCount)
+            })
+            .OrderBy(candidate => candidate.RequiredPrice)
+            .ThenBy(candidate => candidate.Quote.Price)
+            .ThenBy(candidate => candidate.Quote.ShopId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Quote.StockId, StringComparer.Ordinal)
+            .ToArray();
+        if (candidates.Length == 0)
+            return NotApplicableResourceMiss(route);
+
+        var selected = candidates[0];
+        var balance = state.CurrencyBalance(selected.Quote.CurrencyId);
+        if (!balance.EvidenceAvailable || !balance.Balance.HasValue)
+        {
+            return Blocked(
+                route,
+                MachineInputPurchase,
+                balance.BlockingReasons);
+        }
+
+        var binding = new AcquisitionPurchasePrerequisiteBinding(
+            input.InputKind,
+            selected.Quote.ShopId,
+            selected.Quote.StockId,
+            input.QualifiedItemId,
+            input.AvailableQuantity.Value,
+            remaining,
+            selected.Quote.OutputStack,
+            selected.Quote.OutputQuality,
+            selected.Quote.CurrencyId,
+            balance.CurrencyKey,
+            selected.Quote.Price,
+            selected.PurchaseCount);
+        var matches = balance.Balance.Value >= selected.RequiredPrice;
+        var evaluation = new AcquisitionCurrencyEvaluation(
+            selected.Quote.CurrencyId,
+            balance.CurrencyKey,
+            selected.RequiredPrice,
+            balance.Balance,
+            selected.Quote.OutputStack,
+            selected.Quote.OutputQuality,
+            selected.PurchaseCount,
+            "current_native_machine_input_purchase_quote_available",
+            matches
+                ? "resolved_currency_budget_match"
+                : "resolved_currency_budget_miss",
+            new[]
+            {
+                "target_date_resource_inputs.routes[].input_evaluations[]",
+                "state.locations.shops.value.shops[].stock_preview.entries[]",
+                "state.player.shop_currency_balances.value.rows[]"
+            },
+            binding);
+        return matches
+            ? ResolvedMatch(route, MachineInputPurchase, evaluation)
+            : ResolvedMiss(
+                route,
+                MachineInputPurchase,
+                evaluation,
+                "required_currency_amount_unavailable:" +
+                balance.CurrencyKey);
+    }
+
+    private static AcquisitionRouteTargetDateCurrency
+        NotApplicableResourceMiss(
+            AcquisitionRouteTargetDateResource route) => Result(
+                route,
+                "not_applicable_upstream_resource_input_miss",
+                true,
+                null,
+                "not_applicable",
+                null,
+                Array.Empty<string>(),
+                Array.Empty<string>());
 
     private static AcquisitionRouteTargetDateCurrency EvaluateShop(
         AcquisitionRouteTargetDateResource route,

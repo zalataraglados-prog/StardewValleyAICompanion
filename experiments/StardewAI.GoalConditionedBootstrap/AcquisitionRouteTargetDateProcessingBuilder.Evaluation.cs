@@ -8,6 +8,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
     private const string CrabPotProduction = "crab_pot_daily_production";
     private const string MachineProduction =
         "native_machine_processing_schedule";
+    private const string MachineInputPurchase =
+        "upstream_machine_input_purchase";
     private const string DeferredProduction =
         "production_lead_time_binding_pending_upstream";
 
@@ -50,7 +52,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             ["sells"] = NoDeterministicWait
         };
 
-    private static AcquisitionRouteTargetDateProcessing Evaluate(
+    internal static AcquisitionRouteTargetDateProcessing Evaluate(
         AcquisitionRouteTargetDateReservation route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionProcessingLeadTimeSnapshotState state,
@@ -84,6 +86,16 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             return NotApplicable(
                 route,
                 "not_applicable_upstream_inventory_reservation_conflict");
+        }
+
+        if (route.UpstreamRoute.CurrencyEvaluation?.PurchasePrerequisite
+            is not null)
+        {
+            return ResolvedMiss(
+                route,
+                MachineInputPurchase,
+                Array.Empty<AcquisitionProcessingLeadTimeEvaluation>(),
+                "machine_input_purchase_required_before_processing");
         }
 
         var routeKind = RouteKind(route);
