@@ -94,7 +94,8 @@ internal static partial class BootstrapSelfTest
                 settlementReceipt.ConsumedQuantity == 1 &&
                 settlementResult.Ledger!.MaterialReservations.Single(
                     row => row.ReservationId ==
-                        settlementRequest.MaterialReservationId).Status ==
+                        settlementRequest.MaterialConsumptions.Single()
+                            .MaterialReservationId).Status ==
                     StrategyCommitmentStatuses.Completed &&
                 settlementResult.Ledger.History.All(row =>
                     row.Operation != "reservation_portfolio_route_complete"),

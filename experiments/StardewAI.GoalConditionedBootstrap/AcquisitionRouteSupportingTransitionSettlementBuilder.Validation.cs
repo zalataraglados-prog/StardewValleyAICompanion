@@ -15,6 +15,35 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         var reasons = new List<string>();
         if (!EqualJson(request, CanonicalRequest(context)))
             reasons.Add("support_settlement_request_mismatch");
+        var expectedSettlements = request.MaterialConsumptions.Select(
+                consumption =>
+                {
+                    var before = context.BaseLedger.MaterialReservations.Single(
+                        row => row.ReservationId ==
+                            consumption.MaterialReservationId);
+                    var remaining = before.Quantity -
+                        consumption.ConsumedQuantity;
+                    return new ReservationPortfolioMaterialSettlement
+                    {
+                        MaterialReservationId =
+                            consumption.MaterialReservationId,
+                        ConsumedQuantity = consumption.ConsumedQuantity,
+                        RemainingQuantity = remaining,
+                        ReservationStatus = remaining == 0
+                            ? StrategyCommitmentStatuses.Completed
+                            : StrategyCommitmentStatuses.Active
+                    };
+                })
+            .ToArray();
+        var completedIds = expectedSettlements.Where(value =>
+                value.ReservationStatus ==
+                    StrategyCommitmentStatuses.Completed)
+            .Select(value => value.MaterialReservationId)
+            .ToArray();
+        var activeIds = expectedSettlements.Where(value =>
+                value.ReservationStatus == StrategyCommitmentStatuses.Active)
+            .Select(value => value.MaterialReservationId)
+            .ToArray();
         if (!result.Accepted ||
             (result.Errors?.Length ?? 0) != 0 ||
             result.PortfolioId != request.PortfolioId ||
@@ -23,8 +52,19 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                 request.SupportingTransitionReceiptSha256 ||
             result.CommittedLedgerRevision != context.BaseLedger.Revision + 1 ||
             result.CompletedMaterialReservationId !=
-                request.MaterialReservationId ||
-            result.ConsumedQuantity != request.ConsumedQuantity ||
+                (expectedSettlements.Length == 1 && completedIds.Length == 1
+                    ? completedIds[0]
+                    : string.Empty) ||
+            result.CompletedMaterialReservationIds is null ||
+            !result.CompletedMaterialReservationIds.SequenceEqual(
+                completedIds, StringComparer.Ordinal) ||
+            result.ActiveMaterialReservationIds is null ||
+            !result.ActiveMaterialReservationIds.SequenceEqual(
+                activeIds, StringComparer.Ordinal) ||
+            result.ConsumedQuantity != request.MaterialConsumptions.Sum(
+                value => value.ConsumedQuantity) ||
+            result.MaterialSettlements is null ||
+            !EqualJson(result.MaterialSettlements, expectedSettlements) ||
             result.Ledger is null ||
             !EqualJson(result.Ledger, settled))
         {
@@ -32,18 +72,29 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         }
         if (settled.Revision != context.BaseLedger.Revision + 1)
             reasons.Add("support_settlement_revision_mismatch");
-        var consumed = settled.MaterialReservations.Where(row =>
-                row.ReservationId == request.MaterialReservationId &&
-                row.Status == StrategyCommitmentStatuses.Completed &&
-                row.Revision == context.BaseLedger.MaterialReservations.Single(
-                    baseRow => baseRow.ReservationId ==
-                        request.MaterialReservationId).Revision + 1 &&
-                row.CompletionReason == request.Reason &&
-                row.CompletionEvidenceSha256 ==
-                    request.SupportingTransitionReceiptSha256)
-            .ToArray();
-        if (consumed.Length != 1)
-            reasons.Add("support_settlement_consumed_claim_mismatch");
+        foreach (var expected in expectedSettlements)
+        {
+            var before = context.BaseLedger.MaterialReservations.Single(
+                row => row.ReservationId == expected.MaterialReservationId);
+            var rows = settled.MaterialReservations.Where(row =>
+                    row.ReservationId == expected.MaterialReservationId &&
+                    row.Status == expected.ReservationStatus &&
+                    row.Quantity == (expected.RemainingQuantity == 0
+                        ? before.Quantity
+                        : expected.RemainingQuantity) &&
+                    row.Revision == before.Revision + 1 &&
+                    (expected.ReservationStatus ==
+                        StrategyCommitmentStatuses.Completed
+                            ? row.CompletionReason == request.Reason &&
+                              row.CompletionEvidenceSha256 ==
+                                  request.SupportingTransitionReceiptSha256
+                            : string.IsNullOrEmpty(row.CompletionReason) &&
+                              string.IsNullOrEmpty(
+                                  row.CompletionEvidenceSha256)))
+                .ToArray();
+            if (rows.Length != 1)
+                reasons.Add("support_settlement_consumed_claim_mismatch");
+        }
         var currentHistory = settled.History.Where(row =>
                 row.LedgerRevision == settled.Revision)
             .ToArray();
@@ -54,12 +105,18 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     "reservation_portfolio_supporting_transition_complete" &&
                 row.Reason == request.SupportingTransitionReceiptSha256)
             .ToArray();
-        if (markers.Length != 1 || currentHistory.Length != 2 ||
-            !currentHistory.Any(row =>
-                row.CommitmentId == request.MaterialReservationId &&
+        var materialHistoryMatches = expectedSettlements.All(expected =>
+            currentHistory.Count(row =>
+                row.CommitmentId == expected.MaterialReservationId &&
                 row.SourceDecisionId == request.RouteSourceDecisionId &&
-                row.Operation == "material_reservation_consumed" &&
-                row.Reason == request.Reason))
+                row.Operation == (expected.ReservationStatus ==
+                    StrategyCommitmentStatuses.Completed
+                        ? "material_reservation_consumed"
+                        : "material_reservation_partially_consumed") &&
+                row.Reason == request.Reason) == 1);
+        if (markers.Length != 1 ||
+            currentHistory.Length != expectedSettlements.Length + 1 ||
+            !materialHistoryMatches)
         {
             reasons.Add("support_settlement_history_mismatch");
         }

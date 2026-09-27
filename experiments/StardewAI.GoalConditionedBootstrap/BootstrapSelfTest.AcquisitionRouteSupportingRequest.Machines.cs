@@ -164,7 +164,10 @@ internal static partial class BootstrapSelfTest
         VerifyMachineInputSupportingReceipt(
             compilation,
             snapshot,
-            request);
+            request,
+            commitReceipt,
+            commitResult.Ledger!,
+            requirement);
 
         var driftedDuration = CloneCandidate(support[0].Candidate);
         driftedDuration.Parameters = driftedDuration.Parameters.Select(parameter =>
@@ -214,7 +217,10 @@ internal static partial class BootstrapSelfTest
     private static void VerifyMachineInputSupportingReceipt(
         AcquisitionRouteDispatchCompilation compilation,
         SnapshotEnvelope before,
-        AcquisitionRouteSupportingTransitionRequest request)
+        AcquisitionRouteSupportingTransitionRequest request,
+        AcquisitionRouteSupportingTransitionCommitReceipt commitReceipt,
+        StrategyCommitmentLedger committedLedger,
+        AcquisitionRouteTargetDateUnlock requirement)
     {
         var after = LoadedMachineSnapshot(
             before,
@@ -261,6 +267,114 @@ internal static partial class BootstrapSelfTest
         Require(request.SupportMaterialConsumptions.Length == 1 &&
                 request.SupportMaterialConsumptions[0].ConsumedQuantity == 1,
             "Machine support request lost its per-action consumption plan.");
+
+        var transitionHash = new string('e', 64);
+        var settlementRequest =
+            AcquisitionRouteSupportingTransitionSettlementBuilder
+                .BuildRequestCore(
+                    request,
+                    commitReceipt,
+                    compilation,
+                    verified,
+                    after,
+                    committedLedger,
+                    transitionHash);
+        Require(settlementRequest.MaterialConsumptions is
+                [
+                    {
+                        MaterialReservationId:
+                            "reservation:full_shipment:machine:keg-wheat:material:0:0",
+                        ConsumedQuantity: 1
+                    }
+                ] &&
+                string.IsNullOrEmpty(
+                    settlementRequest.MaterialReservationId),
+            "Machine settlement did not use the canonical consumption set.");
+        var settlementResult = new StardewAI.Core.Strategy
+            .ReservationPortfolioLedgerService()
+            .SettleSupportingTransition(
+                committedLedger,
+                after,
+                settlementRequest,
+                "2026-09-27T01:00:02Z");
+        Require(settlementResult.Accepted &&
+                settlementResult.Ledger is not null &&
+                settlementResult.CompletedMaterialReservationIds.Length == 0 &&
+                settlementResult.ActiveMaterialReservationIds.SequenceEqual(
+                    new[]
+                    {
+                        "reservation:full_shipment:machine:keg-wheat:material:0:0"
+                    },
+                    StringComparer.Ordinal) &&
+                settlementResult.Ledger.MaterialReservations.Single(
+                    row => row.ReservationId ==
+                        settlementRequest.MaterialConsumptions[0]
+                            .MaterialReservationId) is
+                    {
+                        Status: StrategyCommitmentStatuses.Active,
+                        Quantity: 1
+                    },
+            "Machine support settlement did not preserve the unconsumed claim: " +
+            string.Join(",", settlementResult.Errors));
+        var settlementReceipt =
+            AcquisitionRouteSupportingTransitionSettlementBuilder
+                .BuildReceiptCore(
+                    request,
+                    commitReceipt,
+                    compilation,
+                    verified,
+                    after,
+                    committedLedger,
+                    settlementRequest,
+                    settlementResult,
+                    settlementResult.Ledger!,
+                    transitionHash);
+        Require(settlementReceipt is
+                {
+                    Status:
+                        "verified_supporting_transition_claim_settlement",
+                    ExactSettlementReplayVerified: true,
+                    ReservationLifecycleVerified: true,
+                    FreshReplanRequired: true,
+                    RouteTerminalCompletionRecorded: false,
+                    TerminalReceiptEligible: false,
+                    FormalTrainingAuthorized: false,
+                    ConsumedQuantity: 1
+                } &&
+                settlementReceipt.ActiveMaterialReservationIds.SequenceEqual(
+                    settlementResult.ActiveMaterialReservationIds,
+                    StringComparer.Ordinal),
+            "Machine partial settlement receipt failed exact replay: " +
+            string.Join(",", settlementReceipt.BlockingReasons));
+
+        var settledLedgerSha256 = new string('f', 64);
+        settlementReceipt.SettledLedgerSha256 = settledLedgerSha256;
+        var replan = AcquisitionRouteSupportingTransitionReplanBuilder
+            .BuildCore(
+                settlementReceipt,
+                request,
+                compilation,
+                new AcquisitionRouteSupportingTransitionFreshContext(
+                    request.GoalId,
+                    after.StateHash,
+                    new string('1', 64),
+                    settlementResult.Ledger!.Revision,
+                    settledLedgerSha256,
+                    new string('2', 64),
+                    new string('3', 64),
+                    requirement.RouteOccurrenceId,
+                    requirement.RequirementSetId,
+                    requirement.RequirementId,
+                    true),
+                new string('4', 64));
+        Require(replan.FreshTeacherRequestReady &&
+                replan.PriorQueueInvalidated &&
+                replan.AllTargetDateAxesRebuilt &&
+                !replan.FormalTrainingAuthorized &&
+                replan.NextTeacherPreferenceRequest?.ExpectedLedgerRevision ==
+                    settlementResult.Ledger.Revision,
+            "Machine partial settlement did not re-enter complete replanning: " +
+            string.Join(",", replan.BlockingReasons));
 
         var wrongQuantityAfter = LoadedMachineSnapshot(
             before,

@@ -2420,6 +2420,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   verified quantities, preserve active residual quantities, then re-enter the existing settlement-backed complete
   replan recurrence. Formal training remains unauthorized until that recurrence is proven.
 
+### 2026-09-27: partial support-claim settlement and recurrence
+
+- The shared supporting-transition settlement API now accepts a canonical material-consumption set. Every entry must
+  bind one active reservation and its exact inventory node, slot and qualified item, and may not consume more than the
+  remaining quantity. Duplicate reservations or slots, mixed legacy/new representations, overflow and overconsumption
+  fail atomically. The legacy one-claim full-consumption representation remains accepted for compatibility.
+- Full consumption retains the existing Completed lifecycle. Partial consumption instead decrements Quantity, keeps
+  the reservation Active, increments its revision and records `material_reservation_partially_consumed`. Multiple
+  primary/additional inputs settle under one ledger revision and one nonterminal support marker; no route-completion
+  marker is emitted.
+- Settlement reconstruction is no longer crop-specific. Crop and machine receipts both map their verified material
+  deltas onto the request-bound consumption set, and the settlement receipt verifies every resulting row, history
+  entry and exact replay. A two-attempt machine route now proves that the first load leaves an active residual claim,
+  advances the ledger once, invalidates the old queue and emits a fresh Teacher request from the post-load snapshot.
+- Focused dispatch, hermetic bootstrap, Core game-free 91/91 and Backend 209/209 pass. Formal training remains
+  unauthorized. The next support-family slice should cover upstream input acquisition or machine-capacity creation
+  through this same recurrence protocol; it must not introduce a second ledger, planner or machine executor.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
