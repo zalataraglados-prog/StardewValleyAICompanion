@@ -51,7 +51,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     trigger.Condition,
                     location.Distinct(StringComparer.Ordinal).ToArray(),
                     resource.Distinct(StringComparer.Ordinal).ToArray(),
-                    stochastic.Distinct(StringComparer.Ordinal).ToArray()));
+                    stochastic.ToArray()));
         }
 
         if (triggers.Length > 1 && alternatives.Any(value =>
