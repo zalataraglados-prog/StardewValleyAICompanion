@@ -16,48 +16,34 @@ internal static partial class BootstrapSelfTest
             {
                 Sources = sources
             });
-        var partial =
+        var complete =
             AcquisitionRouteSupportingTransitionTerminalCoverageBuilder.Build(
                 requestPath);
         Write(
             Path.Combine(
                 Path.GetDirectoryName(requestPath)!,
                 "support-terminal-coverage-report.json"),
-            partial);
-        Require(!partial.TerminalLineageCoverageComplete &&
-                !partial.FormalProductTrainingAuthorized &&
-                partial.CoveredSupportTransitionKinds.SequenceEqual(
-                    new[]
-                    {
-                        AcquisitionRouteSupportingTransitionKinds
-                            .MachineInputLoad,
-                        AcquisitionRouteSupportingTransitionKinds
-                            .MachineInputMaterialTransfer,
-                        AcquisitionRouteSupportingTransitionKinds
-                            .MachineInputPurchase,
-                        AcquisitionRouteSupportingTransitionKinds
-                            .MachineCapacityEstablishment
-                    },
+            complete);
+        Require(complete.TerminalLineageCoverageComplete &&
+                !complete.FormalProductTrainingAuthorized &&
+                complete.CoveredSupportTransitionKinds.SequenceEqual(
+                    AcquisitionRouteSupportingTransitionKinds.All,
                     StringComparer.Ordinal) &&
-                partial.MissingSupportTransitionKinds.SequenceEqual(
-                    new[]
-                    {
-                        AcquisitionRouteSupportingTransitionKinds.CropPlanting
-                    },
-                    StringComparer.Ordinal) &&
-                partial.Rows.Length == 4 &&
-                partial.Rows.All(row =>
+                complete.MissingSupportTransitionKinds.Length == 0 &&
+                complete.Rows.Length ==
+                    AcquisitionRouteSupportingTransitionKinds.All.Length &&
+                complete.Rows.All(row =>
                     row.CoverageVerified &&
                     row.SupportExcludedFromTerminalOutcomes),
-            "Partial support-family terminal coverage was misreported.");
+            "Complete support-family terminal coverage was misreported.");
 
         var duplicate =
             AcquisitionRouteSupportingTransitionTerminalCoverageBuilder
-                .BuildReport(partial.Rows.Append(partial.Rows[0]));
+                .BuildReport(complete.Rows.Append(complete.Rows[0]));
         Require(!duplicate.TerminalLineageCoverageComplete &&
                 duplicate.BlockingReasons.Contains(
                     "support_terminal_lineage_duplicate:" +
-                    partial.Rows[0].SupportTransitionKind,
+                    complete.Rows[0].SupportTransitionKind,
                     StringComparer.Ordinal),
             "Duplicate support-family evidence was counted as coverage.");
     }

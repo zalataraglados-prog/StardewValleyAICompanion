@@ -275,8 +275,14 @@ internal static partial class BootstrapSelfTest
         AcquisitionRouteSupportingTransitionSettlementProof proof,
         string afterSupportSnapshotPath,
         string afterSupportLedgerPath,
-        string root)
+        string root,
+        string? terminalRouteOccurrenceId = null,
+        string? supportRouteOccurrenceId = null)
     {
+        var selectedTerminalRouteOccurrenceId =
+            terminalRouteOccurrenceId ?? authority.ShopRouteOccurrenceId;
+        var selectedSupportRouteOccurrenceId =
+            supportRouteOccurrenceId ?? authority.MachineRouteOccurrenceId;
         var terminalRoot = Path.Combine(root, "terminal-route");
         Directory.CreateDirectory(terminalRoot);
         var proposalPath = Path.Combine(terminalRoot, "proposal.json");
@@ -314,9 +320,9 @@ internal static partial class BootstrapSelfTest
                 preference.SelectedAdmission is not null &&
                 preference.SelectedProposal.SelectedRouteOccurrenceIds
                     .SequenceEqual(
-                        new[] { authority.ShopRouteOccurrenceId },
+                        new[] { selectedTerminalRouteOccurrenceId },
                         StringComparer.Ordinal),
-            "Fresh Teacher did not select the terminal Beer shop route: " +
+            "Fresh Teacher did not select the terminal shop route: " +
             string.Join(",", preference.BlockingReasons));
         Write(proposalPath, preference.SelectedProposal!);
         var preferencePath = Path.Combine(
@@ -380,7 +386,7 @@ internal static partial class BootstrapSelfTest
             committedLedgerPath,
             commitResultPath,
             queuePath,
-            authority.ShopRouteOccurrenceId);
+            selectedTerminalRouteOccurrenceId);
         var supportingTransition =
             new AcquisitionRoutePortfolioSupportingTransitionInitialProof
             {
@@ -477,9 +483,10 @@ internal static partial class BootstrapSelfTest
                 verified.TransitionCount == 1 &&
                 verified.NativeOutcomeCount == 1 &&
                 verified.Rows.Single().Payload.NativeOutcome
-                    .RouteOccurrenceId == authority.ShopRouteOccurrenceId &&
+                    .RouteOccurrenceId ==
+                        selectedTerminalRouteOccurrenceId &&
                 verified.Rows.Single().Payload.NativeOutcome
-                    .RouteOccurrenceId != authority.MachineRouteOccurrenceId,
+                    .RouteOccurrenceId != selectedSupportRouteOccurrenceId,
             "Supporting transition leaked into terminal supervision.");
 
         return new AcquisitionRouteSupportingTransitionTerminalCoverageSource
@@ -495,7 +502,8 @@ internal static partial class BootstrapSelfTest
         SupportingTransitionProofInputs(
             AcquisitionRoutePortfolioInputs inputs,
             string rankingPath,
-            string routeOccurrenceId) => new()
+            string routeOccurrenceId,
+            int supportDeadlineTotalDay = 2) => new()
         {
             RequirementInventoryPath = inputs.RequirementInventoryPath,
             AcquisitionLoweringPath = inputs.AcquisitionLoweringPath,
@@ -515,7 +523,7 @@ internal static partial class BootstrapSelfTest
             RouteTimingCalibrationPath = inputs.RouteTimingCalibrationPath,
             RankingPath = rankingPath,
             RouteOccurrenceId = routeOccurrenceId,
-            SupportDeadlineTotalDay = 2
+            SupportDeadlineTotalDay = supportDeadlineTotalDay
         };
 
     private static AcquisitionRouteExecutionBindingInputs

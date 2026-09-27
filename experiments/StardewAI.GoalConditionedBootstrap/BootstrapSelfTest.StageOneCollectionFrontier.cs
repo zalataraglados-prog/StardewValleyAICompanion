@@ -2452,7 +2452,11 @@ internal static partial class BootstrapSelfTest
         var machineInputPurchaseCoverage =
             VerifyMachineInputPurchaseSupportingTransitionProof(
                 targetDateExecutionInputs);
+        var cropPlantingCoverage =
+            VerifyCropPlantingSupportingTransitionProof(
+                targetDateExecutionInputs);
         VerifySupportingTransitionTerminalCoverageMatrix(
+            cropPlantingCoverage,
             machineInputLoadCoverage,
             machineMaterialTransferCoverage,
             machineInputPurchaseCoverage,

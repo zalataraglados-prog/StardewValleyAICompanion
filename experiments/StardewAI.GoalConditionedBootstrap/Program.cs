@@ -110,6 +110,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-machine-material-transfer-terminal-coverage", SelfTestMachineMaterialTransferTerminalCoverage),
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
+    new("self-test-crop-planting-terminal-coverage", SelfTestCropPlantingTerminalCoverage),
     new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
     new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
     new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),
@@ -2138,6 +2139,10 @@ static void SelfTestMachineMaterialTransferTerminalCoverage(
 static void SelfTestMachineInputPurchaseTerminalCoverage(
     Arguments options) =>
     BootstrapSelfTest.RunMachineInputPurchaseTerminalCoverage(
+        options.Required("execution-inputs"));
+
+static void SelfTestCropPlantingTerminalCoverage(Arguments options) =>
+    BootstrapSelfTest.RunCropPlantingTerminalCoverage(
         options.Required("execution-inputs"));
 
 static void SelfTestGoalMethodIncomparableLiveShadow(Arguments options)

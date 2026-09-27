@@ -528,6 +528,18 @@ internal static partial class BootstrapSelfTest
         var preview = root["state"]!["locations"]!["shops"]!["value"]![
             "shops"]![0]!["stock_preview"]!.AsObject();
         var entries = preview["entries"]!.AsArray();
+        var parsnip = entries.Single(entry =>
+            entry!["qualified_item_id"]!.GetValue<string>() == "(O)24")!
+            .AsObject();
+        parsnip["currency"] = 0;
+        parsnip["price"] = 100;
+        parsnip["stock"] = 2;
+        parsnip["infinite_stock"] = false;
+        parsnip["can_buy_item"] = true;
+        parsnip["executor_purchase_preview_enabled"] = true;
+        parsnip["executor_block_reasons"] = new JsonArray();
+        parsnip["trade_item_qualified_id"] = null;
+        parsnip["effective_trade_item_count"] = null;
         entries.Add(JsonSerializer.SerializeToNode(new
         {
             synced_key = "fixture-beer",
