@@ -2545,6 +2545,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   relocation settlement to prove `machine_input_material_transfer` through the same file-backed terminal lineage. It
   must not add another transfer executor, route planner, ledger or terminal compiler.
 
+### 2026-09-28: support-family terminal-lineage matrix, 3/5
+
+- `machine_input_material_transfer` now reuses the existing `inventory.transfer_item`, movement, material-transfer
+  executor, native receipt and reservation-relocation settlement to prove the complete file-backed support-to-terminal
+  lineage. No second transfer engine, route planner, ledger, terminal compiler or executor was introduced.
+- The proof relocates one exact `(O)262` stack from an authorized ordinary chest on the current map into player
+  inventory. It verifies source `1 -> 0`, destination `0 -> 1`, the unique active reservation's unchanged quantity and
+  its rebinding to the observed destination slot before a fresh Teacher replan. The support execution run remains
+  excluded from terminal native outcomes.
+- This exposed a fixture-authority defect: the machine route's support-option list omitted the real
+  `inventory.transfer_item` option even though the production candidate and compiler already used it. The fixture now
+  matches the production authority contract. Transfer snapshot construction also lives in its own partial file so the
+  machine-capacity fixture does not become a second mixed implementation surface.
+- Release build, targeted material-transfer lineage, acquisition dispatch, hermetic bootstrap and the complete StageOne
+  regression pass. Coverage is deliberately incomplete at 3/5: only `crop_planting` and `machine_input_purchase` remain,
+  and `formal_product_training_authorized=false` remains enforced.
+- The next bounded slice must reuse the existing authoritative shop quote/open-window evidence,
+  `economy.buy_supplies`, native purchase receipt and currency-reservation settlement to prove
+  `machine_input_purchase` through the same terminal lineage. It must not add another shop, purchase, currency-ledger,
+  routing or terminal-execution implementation.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

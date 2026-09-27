@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 支持动作终端训练谱系覆盖矩阵 3/5
+
+- `machine_input_material_transfer` 现已复用既有 `inventory.transfer_item -> executor.move_to_tile -> executor.transfer_material`、原生搬运回执与 reservation relocation 结算，完成 `support request -> atomic commit -> shared compilation -> native receipt -> nonterminal settlement -> fresh replan -> terminal rollout -> supervision` 的 file-backed 全链证明；没有新增第二套搬运、寻路、ledger、终端编译器或执行器。
+- 证明夹具从当前地图普通箱子精确搬运一份 `(O)262` 到玩家背包，逐节点、逐槽核验源数量 `1 -> 0`、目标数量 `0 -> 1`，并要求唯一活动 reservation 保持数量不变且迁移到实际观测到的背包槽。支持动作 run ID 仍必须从终端 native outcome 中排除。
+- 该链暴露并修正了测试权威清单未列出真实支持选项 `inventory.transfer_item` 的问题；同时把新增搬运快照夹具拆到独立 partial 文件，避免继续扩张机器容量快照文件。生产候选、编译和执行路径均直接复用，没有按测试特例放宽准入。
+- Release 构建、定向 material-transfer 谱系测试、acquisition dispatch、bootstrap hermetic 与完整 `self-test-current-stage-one-collection` 均通过。当前矩阵为 `3/5`，尚缺 `crop_planting` 与 `machine_input_purchase`；`formal_product_training_authorized=false` 保持不变。
+- 下一固定切片是复用已经闭合的权威商店报价、开放窗口、`economy.buy_supplies`、原生购买回执和货币 reservation 结算，建立 `machine_input_purchase` 的同型 file-backed 终端谱系证明；不得新增第二套商店、购买、货币 ledger、寻路或终端执行实现。
+
 ## 2026-09-28 支持动作终端训练谱系覆盖矩阵 2/5
 
 - 新增严格的 file-backed 覆盖矩阵。支持类型只能从已结算支持请求的制品中推导，调用方不能自行声明；每类必须恰好有一条可重算的 rollout proof、controller admission 与 supervision dataset，缺失或重复均失败关闭。
