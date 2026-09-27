@@ -10,6 +10,8 @@ public sealed partial class ReservationPortfolioLedgerService
 {
     private readonly MaterialReservationLedgerService materialService = new();
     private readonly CurrencyReservationLedgerService currencyService = new();
+    private readonly MachineSupportIntentLedgerService machineSupportService =
+        new();
 
     public ReservationPortfolioCommitResult Commit(
         StrategyCommitmentLedger? current,
@@ -78,6 +80,20 @@ public sealed partial class ReservationPortfolioLedgerService
             staged = result.Ledger;
         }
 
+        if (request.MachineSupportIntent is not null)
+        {
+            var result = machineSupportService.Upsert(
+                staged,
+                snapshot,
+                Copy(
+                    request.MachineSupportIntent,
+                    staged?.Revision ?? 0),
+                updatedAt);
+            if (!result.Accepted)
+                return Rejected(current, request, result.Errors);
+            staged = result.Ledger;
+        }
+
         var committed = staged!;
         committed.Revision = originalRevision + 1;
         foreach (var history in committed.History.Skip(originalHistoryCount))
@@ -98,6 +114,8 @@ public sealed partial class ReservationPortfolioLedgerService
             CommittedLedgerRevision = committed.Revision,
             MaterialClaimCount = request.MaterialClaims.Length,
             CurrencyClaimCount = request.CurrencyClaims.Length,
+            MachineSupportIntentId =
+                request.MachineSupportIntent?.IntentId ?? string.Empty,
             ReleasedReservationIds = request.ReleaseReservationIds
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray(),
@@ -362,6 +380,26 @@ public sealed partial class ReservationPortfolioLedgerService
         foreach (var claim in request.CurrencyClaims)
             ValidateClaimIdentity(request, claim.StateHash,
                 claim.ExpectedLedgerRevision, claim.GoalId, errors);
+        if (request.MachineSupportIntent is not null)
+        {
+            ValidateClaimIdentity(
+                request,
+                request.MachineSupportIntent.StateHash,
+                request.MachineSupportIntent.ExpectedLedgerRevision,
+                request.MachineSupportIntent.GoalId,
+                errors);
+            if ((current?.MachineSupportIntents ??
+                    Array.Empty<MachineSupportIntent>())
+                .Any(row =>
+                    row.Status == StrategyCommitmentStatuses.Active &&
+                    !string.Equals(
+                        row.IntentId,
+                        request.MachineSupportIntent.IntentId,
+                        StringComparison.Ordinal)))
+            {
+                errors.Add("conflicting_active_machine_support_intent");
+            }
+        }
 
         var allIds = (current?.MaterialReservations.Select(row =>
                 row.ReservationId) ?? Enumerable.Empty<string>())
@@ -444,6 +482,34 @@ public sealed partial class ReservationPortfolioLedgerService
             CurrencyId = source.CurrencyId,
             Amount = source.Amount,
             Purpose = source.Purpose
+        };
+
+    private static MachineSupportIntentUpsertRequest Copy(
+        MachineSupportIntentUpsertRequest source,
+        int expectedRevision) => new()
+        {
+            StateHash = source.StateHash,
+            ExpectedLedgerRevision = expectedRevision,
+            IntentId = source.IntentId,
+            Stage = source.Stage,
+            SourceDecisionId = source.SourceDecisionId,
+            GoalId = source.GoalId,
+            QualifiedItemId = source.QualifiedItemId,
+            ItemId = source.ItemId,
+            DemandClass = source.DemandClass,
+            SupportKind = source.SupportKind,
+            EvidenceStatus = source.EvidenceStatus,
+            TaskSourcesJson = source.TaskSourcesJson,
+            SupportSourcesJson = source.SupportSourcesJson,
+            GrossBenefit = source.GrossBenefit,
+            OpportunityCost = source.OpportunityCost,
+            NetBenefit = source.NetBenefit,
+            SupportScore = source.SupportScore,
+            RequiredAdditionalMachineCount =
+                source.RequiredAdditionalMachineCount,
+            TargetLocationId = source.TargetLocationId,
+            TargetTileX = source.TargetTileX,
+            TargetTileY = source.TargetTileY
         };
 
     private static ReservationPortfolioCommitResult Rejected(

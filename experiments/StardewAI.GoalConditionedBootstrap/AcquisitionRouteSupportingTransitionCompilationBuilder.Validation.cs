@@ -92,6 +92,15 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                     "acquisition_support_machine_qualified_item_id",
                     request.MachineQualifiedItemId),
                 Parameter(
+                    "acquisition_support_machine_intent_id",
+                    request.MachineSupportIntentId),
+                Parameter(
+                    "acquisition_support_machine_intent_stage",
+                    request.MachineSupportIntentStage),
+                Parameter(
+                    "acquisition_support_machine_sources_json",
+                    request.MachineCapacitySupportSourcesJson),
+                Parameter(
                     "acquisition_support_input_qualified_item_id",
                     request.InputQualifiedItemId),
                 Parameter(
@@ -147,7 +156,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 "crop_planting" or
                 "machine_input_load" or
                 "machine_input_material_transfer" or
-                "machine_input_purchase") ||
+                "machine_input_purchase" or
+                "machine_capacity_establishment") ||
             request.FormalTrainingAuthorized ||
             request.BlockingReasons.Length != 0)
         {
@@ -237,6 +247,27 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                       currencyId == purchase.CurrencyId &&
                       consumedAmount == purchase.UnitPrice
                     : request.SupportCurrencyConsumptions.Length == 0);
+        }
+        if (request.SupportTransitionKind ==
+            "machine_capacity_establishment")
+        {
+            return candidate.OptionId ==
+                    "farm.establish_supported_machine_capacity" &&
+                candidate.Kind is (
+                    "craft_machine_item" or "place_machine_item") &&
+                candidate.QualifiedItemId ==
+                    request.MachineQualifiedItemId &&
+                ReadCandidateParameter(
+                    candidate,
+                    "machine_support_intent_id") ==
+                    request.MachineSupportIntentId &&
+                request.MachineSupportIntentStage ==
+                    (candidate.Kind == "craft_machine_item"
+                        ? MachineSupportIntentStages.CraftSelected
+                        : MachineSupportIntentStages.PlacementBound) &&
+                request.SupportMaterialConsumptions.Length == 0 &&
+                request.SupportMaterialRelocations.Length == 0 &&
+                request.SupportCurrencyConsumptions.Length == 0;
         }
         return request.SupportTransitionKind == "machine_input_load" &&
             candidate.QualifiedItemId == request.InputQualifiedItemId &&

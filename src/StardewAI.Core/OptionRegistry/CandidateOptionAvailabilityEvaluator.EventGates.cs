@@ -485,7 +485,10 @@ namespace StardewAI.Core.OptionRegistry
 
             if (string.Equals(optionId, "farm.establish_supported_machine_capacity", StringComparison.Ordinal))
             {
-                return SupportedMachineCapacityLifecycleCandidates(snapshot, commitmentLedger);
+                return SupportedMachineCapacityLifecycleCandidates(
+                    snapshot,
+                    commitmentLedger,
+                    parameters);
             }
 
             if (string.Equals(optionId, "farm.fulfill_machine_task_demand", StringComparison.Ordinal))

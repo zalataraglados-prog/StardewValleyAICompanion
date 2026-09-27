@@ -76,10 +76,13 @@ namespace StardewAI.Core.Training
                 "goal_support_net_benefit",
                 "goal_support_score",
                 "goal_support_reason",
+                "machine_acquisition_route_support_json",
+                "machine_capacity_support_intent_id",
                 "machine_support_intent_id",
                 "machine_support_intent_revision",
                 "machine_support_intent_stage",
-                "machine_support_intent_source_state_hash"
+                "machine_support_intent_source_state_hash",
+                "machine_support_sources_json"
             })
             {
                 parameters.Add(Parameter(name, CandidateParameter(candidate, name)));

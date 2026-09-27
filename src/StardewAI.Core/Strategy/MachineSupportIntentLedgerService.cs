@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
@@ -20,6 +21,10 @@ public sealed class MachineSupportIntentLedgerService
         "priority_task_requirement";
     private const string TaskSupportKind =
         "machine_capacity_active_collection_task";
+    private const string AcquisitionCapacityDemand =
+        "acquisition_route_requirement";
+    private const string AcquisitionSupportKind =
+        "machine_capacity_acquisition_route";
 
     public StrategyCommitmentMutationResult Upsert(
         StrategyCommitmentLedger? current,
@@ -178,6 +183,7 @@ public sealed class MachineSupportIntentLedgerService
         ICollection<string> errors)
     {
         var taskSupport = IsTaskSupport(request);
+        var acquisitionSupport = IsAcquisitionSupport(request);
         var economicSupport = string.Equals(
                 request.GoalId,
                 EarnMoneyGoal,
@@ -190,7 +196,7 @@ public sealed class MachineSupportIntentLedgerService
                 request.SupportKind,
                 SupportKind,
                 StringComparison.Ordinal);
-        if (!economicSupport && !taskSupport)
+        if (!economicSupport && !taskSupport && !acquisitionSupport)
         {
             errors.Add("machine_support_rule_not_vetted");
         }
@@ -220,6 +226,20 @@ public sealed class MachineSupportIntentLedgerService
              !ExactCollectionTaskSources(request.TaskSourcesJson)))
         {
             errors.Add("machine_support_task_contract_invalid");
+        }
+        if (acquisitionSupport &&
+            (request.GrossBenefit != 0 ||
+             request.OpportunityCost != 0 ||
+             request.NetBenefit != 0 ||
+             request.SupportScore != 0.12 ||
+             request.RequiredAdditionalMachineCount != 1 ||
+             !MachineSupportIntentProjection.TryReadAcquisitionRouteSupport(
+                 request.SupportSourcesJson,
+                 request.GoalId,
+                 request.QualifiedItemId,
+                 out _)))
+        {
+            errors.Add("machine_support_acquisition_route_contract_invalid");
         }
         if (!string.IsNullOrWhiteSpace(request.TargetLocationId) ||
             request.TargetTileX.HasValue ||
@@ -255,20 +275,31 @@ public sealed class MachineSupportIntentLedgerService
         MachineSupportIntent? existing,
         ICollection<string> errors)
     {
-        var initialTaskPlacement = existing is null &&
-            IsTaskSupport(request) &&
+        var initialSupportedPlacement = existing is null &&
+            (IsTaskSupport(request) || IsAcquisitionSupport(request)) &&
             request.GrossBenefit == 0 &&
             request.OpportunityCost == 0 &&
             request.NetBenefit == 0 &&
             request.SupportScore == 0.12 &&
             request.RequiredAdditionalMachineCount == 1 &&
             !string.IsNullOrWhiteSpace(request.GoalId) &&
-            string.Equals(
-                request.EvidenceStatus,
-                request.TaskSourcesJson,
-                StringComparison.Ordinal) &&
-            ExactCollectionTaskSources(request.TaskSourcesJson);
-        if (!initialTaskPlacement &&
+            ((IsTaskSupport(request) &&
+              string.Equals(
+                  request.EvidenceStatus,
+                  request.TaskSourcesJson,
+                  StringComparison.Ordinal) &&
+              ExactCollectionTaskSources(request.TaskSourcesJson)) ||
+             (IsAcquisitionSupport(request) &&
+              string.Equals(
+                  request.EvidenceStatus,
+                  request.SupportSourcesJson,
+                  StringComparison.Ordinal) &&
+              MachineSupportIntentProjection.TryReadAcquisitionRouteSupport(
+                  request.SupportSourcesJson,
+                  request.GoalId,
+                  request.QualifiedItemId,
+                  out _)));
+        if (!initialSupportedPlacement &&
             (existing is null ||
              !string.Equals(
                  existing.Status,
@@ -325,6 +356,7 @@ public sealed class MachineSupportIntentLedgerService
             SupportKind = request.SupportKind,
             EvidenceStatus = request.EvidenceStatus,
             TaskSourcesJson = request.TaskSourcesJson,
+            SupportSourcesJson = request.SupportSourcesJson,
             GrossBenefit = request.GrossBenefit,
             OpportunityCost = request.OpportunityCost,
             NetBenefit = request.NetBenefit,
@@ -363,6 +395,17 @@ public sealed class MachineSupportIntentLedgerService
         string.Equals(
             request.SupportKind,
             TaskSupportKind,
+            StringComparison.Ordinal);
+
+    private static bool IsAcquisitionSupport(
+        MachineSupportIntentUpsertRequest request) =>
+        string.Equals(
+            request.DemandClass,
+            AcquisitionCapacityDemand,
+            StringComparison.Ordinal) &&
+        string.Equals(
+            request.SupportKind,
+            AcquisitionSupportKind,
             StringComparison.Ordinal);
 
     private static bool ExactCollectionTaskSources(string json)

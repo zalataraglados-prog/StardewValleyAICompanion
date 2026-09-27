@@ -121,6 +121,9 @@ public static class MachineSupportIntentPlanBinder
             TaskSourcesJson = Parameter(
                 step,
                 "priority_task_sources_json"),
+            SupportSourcesJson = Parameter(
+                step,
+                "machine_acquisition_route_support_json"),
             GrossBenefit = IntParameter(
                 step,
                 "goal_support_gross_benefit"),
@@ -157,10 +160,17 @@ public static class MachineSupportIntentPlanBinder
                 StringComparison.Ordinal));
         if (existing is null)
         {
+            var acquisitionSupport = string.Equals(
+                Parameter(
+                    step,
+                    "machine_support_demand_class"),
+                "acquisition_route_requirement",
+                StringComparison.Ordinal);
             if (!string.Equals(
                     Parameter(step, "goal_support_status"),
                     "supported_exact_active_collection_task",
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal) &&
+                !acquisitionSupport)
             {
                 return null;
             }
@@ -174,35 +184,40 @@ public static class MachineSupportIntentPlanBinder
                 SourceDecisionId = CandidateId(step),
                 GoalId = Parameter(
                     step,
-                    "goal_support_parent_goal_id"),
+                    acquisitionSupport
+                        ? "machine_support_goal_id"
+                        : "goal_support_parent_goal_id"),
                 QualifiedItemId = Parameter(
                     step,
                     "qualified_item_id"),
                 ItemId = Parameter(step, "item_id"),
-                DemandClass = Parameter(
-                    step,
-                    "machine_demand_class"),
-                SupportKind = Parameter(
-                    step,
-                    "goal_support_kind"),
-                EvidenceStatus = Parameter(
-                    step,
-                    "goal_support_evidence_status"),
+                DemandClass = acquisitionSupport
+                    ? "acquisition_route_requirement"
+                    : Parameter(step, "machine_demand_class"),
+                SupportKind = acquisitionSupport
+                    ? "machine_capacity_acquisition_route"
+                    : Parameter(step, "goal_support_kind"),
+                EvidenceStatus = acquisitionSupport
+                    ? Parameter(step, "machine_support_sources_json")
+                    : Parameter(step, "goal_support_evidence_status"),
                 TaskSourcesJson = Parameter(
                     step,
                     "priority_task_sources_json"),
-                GrossBenefit = IntParameter(
+                SupportSourcesJson = Parameter(
                     step,
-                    "goal_support_gross_benefit"),
-                OpportunityCost = IntParameter(
-                    step,
-                    "goal_support_opportunity_cost"),
-                NetBenefit = IntParameter(
-                    step,
-                    "goal_support_net_benefit"),
-                SupportScore = DoubleParameter(
-                    step,
-                    "goal_support_score"),
+                    "machine_support_sources_json"),
+                GrossBenefit = acquisitionSupport
+                    ? 0
+                    : IntParameter(step, "goal_support_gross_benefit"),
+                OpportunityCost = acquisitionSupport
+                    ? 0
+                    : IntParameter(step, "goal_support_opportunity_cost"),
+                NetBenefit = acquisitionSupport
+                    ? 0
+                    : IntParameter(step, "goal_support_net_benefit"),
+                SupportScore = acquisitionSupport
+                    ? 0.12
+                    : DoubleParameter(step, "goal_support_score"),
                 RequiredAdditionalMachineCount = 1,
                 TargetLocationId = step.TargetLocation,
                 TargetTileX = step.TargetTileX,
@@ -226,6 +241,7 @@ public static class MachineSupportIntentPlanBinder
             SupportKind = existing.SupportKind,
             EvidenceStatus = existing.EvidenceStatus,
             TaskSourcesJson = existing.TaskSourcesJson,
+            SupportSourcesJson = existing.SupportSourcesJson,
             GrossBenefit = existing.GrossBenefit,
             OpportunityCost = existing.OpportunityCost,
             NetBenefit = existing.NetBenefit,
@@ -304,6 +320,10 @@ public static class MachineSupportIntentPlanBinder
                 supportStep,
                 "machine_support_demand_class",
                 intent.DemandClass);
+            Set(
+                supportStep,
+                "machine_support_sources_json",
+                intent.SupportSourcesJson);
             Set(
                 supportStep,
                 "machine_support_original_net_benefit",
@@ -415,5 +435,9 @@ public static class MachineSupportIntentPlanBinder
         string.Equals(
             status,
             "supported_exact_active_collection_task",
+            StringComparison.Ordinal) ||
+        string.Equals(
+            status,
+            "supported_exact_acquisition_route",
             StringComparison.Ordinal);
 }

@@ -30,6 +30,11 @@ public sealed class ReservationPortfolioCommitRequest
     [JsonPropertyName("currency_claims")]
     public CurrencyReservationUpsertRequest[] CurrencyClaims { get; set; } =
         Array.Empty<CurrencyReservationUpsertRequest>();
+
+    [JsonPropertyName("machine_support_intent")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MachineSupportIntentUpsertRequest? MachineSupportIntent
+    { get; set; }
 }
 
 public sealed class ReservationPortfolioCommitResult
@@ -48,6 +53,9 @@ public sealed class ReservationPortfolioCommitResult
 
     [JsonPropertyName("currency_claim_count")]
     public int CurrencyClaimCount { get; set; }
+
+    [JsonPropertyName("machine_support_intent_id")]
+    public string MachineSupportIntentId { get; set; } = string.Empty;
 
     [JsonPropertyName("released_reservation_ids")]
     public string[] ReleasedReservationIds { get; set; } = Array.Empty<string>();
@@ -150,6 +158,15 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
     [JsonPropertyName("rebind_active_reservation_ids")]
     public string[] RebindActiveReservationIds { get; set; } =
         Array.Empty<string>();
+
+    [JsonPropertyName("machine_support_intent_id")]
+    public string MachineSupportIntentId { get; set; } = string.Empty;
+
+    [JsonPropertyName("machine_support_intent_stage")]
+    public string MachineSupportIntentStage { get; set; } = string.Empty;
+
+    [JsonPropertyName("machine_support_sources_json")]
+    public string MachineSupportSourcesJson { get; set; } = "[]";
 
     // Legacy single-consumption representation. New producers use
     // material_consumptions and must not mix the two forms.
@@ -285,6 +302,9 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementResult
     [JsonPropertyName("rebound_active_reservation_ids")]
     public string[] ReboundActiveReservationIds { get; set; } =
         Array.Empty<string>();
+
+    [JsonPropertyName("rebound_machine_support_intent_id")]
+    public string ReboundMachineSupportIntentId { get; set; } = string.Empty;
 
     [JsonPropertyName("errors")]
     public string[] Errors { get; set; } = Array.Empty<string>();

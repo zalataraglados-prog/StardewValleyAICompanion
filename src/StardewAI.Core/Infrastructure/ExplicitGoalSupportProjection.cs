@@ -17,6 +17,20 @@ internal sealed record ExplicitGoalSupportDemand(
     double Score,
     string Reason);
 
+internal sealed record MachineAcquisitionRouteSupportSource(
+    [property: System.Text.Json.Serialization.JsonPropertyName("goal_id")]
+    string GoalId,
+    [property: System.Text.Json.Serialization.JsonPropertyName("route_occurrence_id")]
+    string RouteOccurrenceId,
+    [property: System.Text.Json.Serialization.JsonPropertyName("route_kind")]
+    string RouteKind,
+    [property: System.Text.Json.Serialization.JsonPropertyName("source_id")]
+    string SourceId,
+    [property: System.Text.Json.Serialization.JsonPropertyName("output_qualified_item_id")]
+    string OutputQualifiedItemId,
+    [property: System.Text.Json.Serialization.JsonPropertyName("machine_qualified_item_id")]
+    string MachineQualifiedItemId);
+
 internal static class ExplicitGoalSupportProjection
 {
     private const string EarnMoneyGoal =
@@ -27,6 +41,9 @@ internal static class ExplicitGoalSupportProjection
 
     public const string TaskSupportStatus =
         "supported_exact_active_collection_task";
+
+    public const string AcquisitionRouteSupportStatus =
+        "supported_exact_acquisition_route";
 
     public static ExplicitGoalSupportDemand Read(
         string candidateKind,
@@ -46,6 +63,39 @@ internal static class ExplicitGoalSupportProjection
                 StringComparison.Ordinal))
         {
             return NotApplicable(goalId);
+        }
+
+        if (TryReadExactAcquisitionRouteSupport(
+                expectedEffect,
+                out var acquisition))
+        {
+            if (!string.Equals(
+                    acquisition.GoalId,
+                    goalId,
+                    StringComparison.Ordinal))
+            {
+                return new ExplicitGoalSupportDemand(
+                    "blocked_acquisition_route_goal_mismatch",
+                    "machine_capacity_acquisition_route",
+                    goalId,
+                    JsonSerializer.Serialize(acquisition),
+                    0,
+                    0,
+                    0,
+                    0,
+                    "acquisition_route_machine_support_goal_drifted");
+            }
+
+            return new ExplicitGoalSupportDemand(
+                AcquisitionRouteSupportStatus,
+                "machine_capacity_acquisition_route",
+                goalId,
+                JsonSerializer.Serialize(acquisition),
+                0,
+                0,
+                0,
+                0.12,
+                "exact_acquisition_route_requires_one_machine_capacity");
         }
 
         var demandClass = Parse(
@@ -167,7 +217,50 @@ internal static class ExplicitGoalSupportProjection
          string.Equals(
              demand.Status,
              TaskSupportStatus,
+             StringComparison.Ordinal) ||
+         string.Equals(
+             demand.Status,
+             AcquisitionRouteSupportStatus,
              StringComparison.Ordinal));
+
+    public static bool TryReadExactAcquisitionRouteSupport(
+        string expectedEffect,
+        out MachineAcquisitionRouteSupportSource source)
+    {
+        source = new(string.Empty, string.Empty, string.Empty, string.Empty,
+            string.Empty, string.Empty);
+        var json = Parse(
+            expectedEffect,
+            "machine_acquisition_route_support_json=");
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return false;
+        }
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<
+                MachineAcquisitionRouteSupportSource>(json);
+            if (parsed is null ||
+                string.IsNullOrWhiteSpace(parsed.GoalId) ||
+                string.IsNullOrWhiteSpace(parsed.RouteOccurrenceId) ||
+                string.IsNullOrWhiteSpace(parsed.RouteKind) ||
+                string.IsNullOrWhiteSpace(parsed.SourceId) ||
+                string.IsNullOrWhiteSpace(parsed.OutputQualifiedItemId) ||
+                string.IsNullOrWhiteSpace(parsed.MachineQualifiedItemId) ||
+                JsonSerializer.Serialize(parsed) != json)
+            {
+                return false;
+            }
+
+            source = parsed;
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
 
     public static bool HasExactCollectionTaskSources(
         string expectedEffect) =>

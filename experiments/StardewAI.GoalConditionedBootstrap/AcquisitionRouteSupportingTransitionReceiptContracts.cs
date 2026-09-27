@@ -61,6 +61,10 @@ public sealed class AcquisitionRouteSupportingTransitionReceipt
     public AcquisitionMachineInputTransitionEvidence?
         MachineInputTransition { get; set; }
 
+    [JsonPropertyName("machine_capacity_transition")]
+    public AcquisitionMachineCapacityTransitionEvidence?
+        MachineCapacityTransition { get; set; }
+
     [JsonPropertyName("material_transfer_transition")]
     public AcquisitionMaterialTransferTransitionEvidence?
         MaterialTransferTransition { get; set; }
@@ -74,7 +78,52 @@ public sealed class AcquisitionRouteSupportingTransitionReceipt
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A supporting transition receipt verifies one hash-bound nonterminal action, the exact existing move-plus-transfer macro, or the exact existing bounded-wait/purchase/menu-close macro against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. Machine material staging requires the reserved chest stack to decrease and one projected player-inventory slot to increase by the exact full claim quantity; it records relocation, not consumption. Machine purchase route and interaction progress must leave both the bound currency and item count unchanged; a purchase must decrease the exact native currency by one bound unit price and increase the exact player-inventory qualified item by one bound output stack. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+        "A supporting transition receipt verifies one hash-bound nonterminal action, the exact existing move-plus-transfer macro, or the exact existing bounded-wait/purchase/menu-close macro against fresh same-save snapshots. Crop planting requires exactly one seed consumed and one live target crop whose source seed and projected harvest item match the authoritative route lineage. Machine loading requires every request-bound material consumption to match an exact inventory-node slot delta and the exact target machine to move from idle to a native processing or ready state whose last input, output and unique authoritative route source match the compiled lineage. Machine material staging requires the reserved chest stack to decrease and one projected player-inventory slot to increase by the exact full claim quantity; it records relocation, not consumption. Machine purchase route and interaction progress must leave both the bound currency and item count unchanged; a purchase must decrease the exact native currency by one bound unit price and increase the exact player-inventory qualified item by one bound output stack. Machine-capacity craft requires the exact inventory increase declared by the existing craft candidate; placement requires one exact inventory decrement and exactly one new idle machine at the bound location and tile. It never emits a terminal acquisition receipt or formal training authorization. Success requires a complete fresh-snapshot replan before any later action.";
+}
+
+public sealed class AcquisitionMachineCapacityTransitionEvidence
+{
+    [JsonPropertyName("stage")]
+    public string Stage { get; set; } = string.Empty;
+
+    [JsonPropertyName("intent_id")]
+    public string IntentId { get; set; } = string.Empty;
+
+    [JsonPropertyName("machine_qualified_item_id")]
+    public string MachineQualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("target_location_id")]
+    public string TargetLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("target_tile_x")]
+    public int? TargetTileX { get; set; }
+
+    [JsonPropertyName("target_tile_y")]
+    public int? TargetTileY { get; set; }
+
+    [JsonPropertyName("inventory_quantity_before")]
+    public int? InventoryQuantityBefore { get; set; }
+
+    [JsonPropertyName("inventory_quantity_after")]
+    public int? InventoryQuantityAfter { get; set; }
+
+    [JsonPropertyName("observed_inventory_delta")]
+    public int? ObservedInventoryDelta { get; set; }
+
+    [JsonPropertyName("before_target_machine_present")]
+    public bool? BeforeTargetMachinePresent { get; set; }
+
+    [JsonPropertyName("after_target_machine_present")]
+    public bool? AfterTargetMachinePresent { get; set; }
+
+    [JsonPropertyName("resolved")]
+    public bool Resolved { get; set; }
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 }
 
 public sealed class AcquisitionPurchaseTransitionEvidence

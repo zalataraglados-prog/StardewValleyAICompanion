@@ -37,14 +37,16 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         SelectSupportingCandidates(
             AcquisitionRouteTargetDateUnlock requirement,
             AcquisitionRequirementRouteLowering lowered,
-            IEnumerable<PolicyEventCandidatePrediction> candidates) =>
+            IEnumerable<PolicyEventCandidatePrediction> candidates,
+            string expectedMachineQualifiedItemId = "") =>
         candidates
             .Where(candidate => lowered.EndpointOptionIds
                 .Concat(lowered.SupportingOptionIds)
                 .Contains(candidate.OptionId, StringComparer.Ordinal))
             .Select(candidate => TryMatchSupportingCandidate(
                 requirement,
-                candidate))
+                candidate,
+                expectedMachineQualifiedItemId))
             .Where(match => match is not null)
             .Cast<AcquisitionRouteDispatchCandidateMatch>()
             .OrderBy(match => match.Candidate.AllowedNow == true ? 0 : 1)
@@ -63,7 +65,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
     private static AcquisitionRouteDispatchCandidateMatch?
         TryMatchSupportingCandidate(
             AcquisitionRouteTargetDateUnlock requirement,
-            PolicyEventCandidatePrediction candidate)
+            PolicyEventCandidatePrediction candidate,
+            string expectedMachineQualifiedItemId)
     {
         if (string.IsNullOrWhiteSpace(candidate.CandidateId) ||
             (candidate.Parameters ?? Array.Empty<
@@ -78,6 +81,13 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         var crop = TryMatchCropSupportingCandidate(requirement, candidate);
         if (crop is not null)
             return crop;
+
+        var capacity = TryMatchMachineCapacitySupportingCandidate(
+            requirement,
+            candidate,
+            expectedMachineQualifiedItemId);
+        if (capacity is not null)
+            return capacity;
 
         if (requirement.RouteKind is (
                 "machine_output" or
@@ -135,6 +145,93 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             "candidate.authoritative_route_sources_json",
             "supporting_transition");
     }
+
+    private static AcquisitionRouteDispatchCandidateMatch?
+        TryMatchMachineCapacitySupportingCandidate(
+            AcquisitionRouteTargetDateUnlock requirement,
+            PolicyEventCandidatePrediction candidate,
+            string expectedMachineQualifiedItemId)
+    {
+        if (requirement.RouteKind is not (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output") ||
+            string.IsNullOrWhiteSpace(expectedMachineQualifiedItemId) ||
+            candidate.OptionId !=
+                "farm.establish_supported_machine_capacity" ||
+            candidate.Kind is not (
+                "craft_machine_item" or "place_machine_item") ||
+            !string.Equals(
+                candidate.QualifiedItemId,
+                expectedMachineQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var sourceParameter = candidate.Kind == "craft_machine_item"
+            ? "machine_acquisition_route_support_json"
+            : "machine_support_sources_json";
+        if (!TryReadUniqueParameter(
+                candidate,
+                sourceParameter,
+                out var supportJson) ||
+            !TryReadMachineCapacitySupportSource(
+                supportJson,
+                requirement,
+                expectedMachineQualifiedItemId) ||
+            !TryReadUniqueParameter(
+                candidate,
+                "machine_support_intent_id",
+                out _))
+        {
+            return null;
+        }
+
+        return new AcquisitionRouteDispatchCandidateMatch(
+            candidate,
+            "static_calendar.machine_source+" +
+            "resolved_missing_runtime_machine_fleet+" +
+            "candidate.machine_support_sources_json",
+            "supporting_transition");
+    }
+
+    private static bool TryReadMachineCapacitySupportSource(
+        string json,
+        AcquisitionRouteTargetDateUnlock requirement,
+        string expectedMachineQualifiedItemId)
+    {
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var root = document.RootElement;
+            return root.ValueKind ==
+                    System.Text.Json.JsonValueKind.Object &&
+                ReadJsonString(root, "route_occurrence_id") ==
+                    requirement.RouteOccurrenceId &&
+                ReadJsonString(root, "route_kind") == requirement.RouteKind &&
+                ReadJsonString(root, "source_id") == requirement.SourceId &&
+                ReadJsonString(root, "output_qualified_item_id") ==
+                    requirement.QualifiedItemId &&
+                string.Equals(
+                    ReadJsonString(root, "machine_qualified_item_id"),
+                    expectedMachineQualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(ReadJsonString(root, "goal_id"));
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static string ReadJsonString(
+        System.Text.Json.JsonElement source,
+        string name) =>
+        source.TryGetProperty(name, out var value) &&
+        value.ValueKind == System.Text.Json.JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
 
     private static AcquisitionRouteDispatchCandidateMatch?
         TryMatchCropSupportingCandidate(

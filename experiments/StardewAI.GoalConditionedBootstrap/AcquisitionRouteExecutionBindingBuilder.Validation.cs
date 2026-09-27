@@ -223,6 +223,12 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             optionId == "inventory.transfer_item") &&
         items[0].OptionId == "executor.move_to_tile" &&
         items[1].OptionId == "executor.transfer_material" ||
+        items.Length == 2 &&
+        boundRouteOptions.All(optionId =>
+            optionId ==
+                "farm.establish_supported_machine_capacity") &&
+        items[0].OptionId == "executor.move_to_tile" &&
+        items[1].OptionId == "executor.place_machine" ||
         PurchaseSupportingTransitionQueueShapeValid(
             items,
             boundRouteOptions);

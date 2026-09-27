@@ -2463,6 +2463,28 @@ Slice 7 remains assigned to the RTX 5070 node.
   to the existing `farm.establish_supported_machine_capacity` lifecycle with the same commit/receipt/settlement/replan
   discipline; it must not duplicate crafting, placement, loading or execution code. Formal training remains unauthorized.
 
+### 2026-09-27: missing machine-capacity supporting transition
+
+- A target-date machine route may now emit `machine_capacity_establishment` only after the transparent facility axis
+  conclusively proves that the exact route machine has no placed capacity. The binding retains the qualified machine
+  identity, canonical authoritative source set and route lineage; unknown identities, ambiguous sources and non-location
+  misses fail closed before candidate construction.
+- The transition reuses the existing `farm.establish_supported_machine_capacity` lifecycle. An exact machine already in
+  player inventory selects its existing placement candidate; otherwise the existing crafting candidate is selected.
+  `DailyPlanCompiler`, `ActionQueueCompiler`, native crafting/placement and later machine loading remain their ordinary
+  shared implementations. This route adds no acquisition-specific machine executor or path planner.
+- The shared reservation-portfolio transaction may atomically create one source-bound `MachineSupportIntent` beside the
+  normal claims. A capacity transaction may be claimless only in that exact form. Its commit receipt independently
+  replays the ledger and checks the intent identity. Fresh transition evidence then proves either the declared craft
+  output inventory increase, or one inventory decrement plus exactly one new idle machine at the bound location/tile.
+- Settlement uses an exclusive machine-intent marker instead of fabricating material or currency consumption. It verifies
+  the same active intent, goal, decision, stage and canonical sources, advances the shared ledger once, rebinds the intent
+  to the fresh state and requires a complete replan. Focused candidate and ledger tests, Core game-free 103/103, Backend
+  219/219, Release build and the complete hermetic bootstrap pass. Formal product training remains unauthorized.
+- The next bounded slice is an end-to-end hermetic placement proof followed by integration of this nonterminal transition
+  into the ordinary portfolio rollout/proof dataset chain. It must continue to reuse the single machine lifecycle and
+  cannot promote model authority or formal training by itself.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

@@ -92,30 +92,41 @@ namespace StardewAI.Core.Execution
                 MachineCraftMaterialOpportunityCostProjection.Evaluate(
                     ingredientRows,
                     usesWorkbench);
+            var acquisitionSupportJson = ReadParameter(
+                action,
+                "machine_acquisition_route_support_json");
             var expectedGoalSupport =
                 ExplicitGoalSupportProjection.Read(
                     "craft_machine_item",
-                    "machine_demand_class=" +
-                    demand.DemandClass +
-                    ";machine_build_window_open=" +
-                    Lower(demand.BuildWindowOpen) +
-                    ";required_additional_machine_count=" +
-                    demand.RequiredAdditionalMachineCount +
-                    ";priority_task_sources_json=" +
-                    JsonSerializer.Serialize(demand.PriorityTaskSources) +
-                    ";material_reservation_request_priority=" +
-                    demand.Priority +
-                    ";material_reservation_request_class=" +
-                    MachineMaterialReservationRequestClass(demand) +
-                    ";machine_economic_value_status=" +
-                    demand.EconomicValueStatus +
-                    ";machine_capacity_deficit_processing_net_value=" +
-                    demand.CapacityDeficitProcessingNetValue +
-                    ";machine_craft_material_opportunity_cost_status=" +
-                    materialOpportunityCost.Status +
-                    ";machine_craft_material_opportunity_cost=" +
-                    materialOpportunityCost.TotalSaleValue,
+                    string.IsNullOrWhiteSpace(acquisitionSupportJson)
+                        ? "machine_demand_class=" +
+                          demand.DemandClass +
+                          ";machine_build_window_open=" +
+                          Lower(demand.BuildWindowOpen) +
+                          ";required_additional_machine_count=" +
+                          demand.RequiredAdditionalMachineCount +
+                          ";priority_task_sources_json=" +
+                          JsonSerializer.Serialize(
+                              demand.PriorityTaskSources) +
+                          ";material_reservation_request_priority=" +
+                          demand.Priority +
+                          ";material_reservation_request_class=" +
+                          MachineMaterialReservationRequestClass(demand) +
+                          ";machine_economic_value_status=" +
+                          demand.EconomicValueStatus +
+                          ";machine_capacity_deficit_processing_net_value=" +
+                          demand.CapacityDeficitProcessingNetValue +
+                          ";machine_craft_material_opportunity_cost_status=" +
+                          materialOpportunityCost.Status +
+                          ";machine_craft_material_opportunity_cost=" +
+                          materialOpportunityCost.TotalSaleValue
+                        : "machine_acquisition_route_support_json=" +
+                          acquisitionSupportJson,
                     goalId);
+            var acquisitionSupport = string.Equals(
+                expectedGoalSupport.Status,
+                ExplicitGoalSupportProjection.AcquisitionRouteSupportStatus,
+                StringComparison.Ordinal);
             if (!string.Equals(actualReadyStatus, expectedReadyStatus, StringComparison.Ordinal) ||
                 ReadBool(source.Value, "output_inventory_acceptance_after_material_consumption") != true)
             {
@@ -164,7 +175,7 @@ namespace StardewAI.Core.Execution
                     reasons.Add("craft_machine_item_workbench_projection_drifted");
                 }
             }
-            if (!demand.HasDemand ||
+            if ((!demand.HasDemand && !acquisitionSupport) ||
                 !string.Equals(ReadParameter(action, "machine_demand_class"), demand.DemandClass, StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "machine_scale"), demand.MachineScale, StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "machine_horizon_status"), demand.HorizonStatus, StringComparison.Ordinal) ||
@@ -311,6 +322,73 @@ namespace StardewAI.Core.Execution
                         row.Status,
                         StrategyCommitmentStatuses.Active,
                         StringComparison.Ordinal));
+            if (intent is not null &&
+                string.Equals(
+                    expectedSupport.Status,
+                    ExplicitGoalSupportProjection
+                        .AcquisitionRouteSupportStatus,
+                    StringComparison.Ordinal))
+            {
+                return ReadIntParameter(
+                           action,
+                           "machine_support_intent_revision") ==
+                       intent.Revision &&
+                    string.Equals(
+                        ReadParameter(
+                            action,
+                            "machine_support_intent_stage"),
+                        intent.Stage,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        ReadParameter(
+                            action,
+                            "machine_support_intent_source_state_hash"),
+                        intent.SourceStateHash,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.Stage,
+                        MachineSupportIntentStages.CraftSelected,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.GoalId,
+                        expectedSupport.ParentGoalId,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.QualifiedItemId,
+                        outputQualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        intent.ItemId,
+                        outputItemId,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.DemandClass,
+                        "acquisition_route_requirement",
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.SupportKind,
+                        expectedSupport.SupportKind,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.EvidenceStatus,
+                        expectedSupport.EvidenceStatus,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        intent.SupportSourcesJson,
+                        expectedSupport.EvidenceStatus,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        ReadParameter(
+                            action,
+                            "machine_support_sources_json"),
+                        intent.SupportSourcesJson,
+                        StringComparison.Ordinal) &&
+                    intent.GrossBenefit == 0 &&
+                    intent.OpportunityCost == 0 &&
+                    intent.NetBenefit == 0 &&
+                    Math.Abs(intent.SupportScore - 0.12) < 0.0000001 &&
+                    intent.RequiredAdditionalMachineCount == 1;
+            }
             return intent is not null &&
                 ReadIntParameter(
                     action,

@@ -11,6 +11,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         AcquisitionRequirementRouteLowering lowered,
         AcquisitionRouteTargetDateReservation reservation,
         AcquisitionRouteTargetDateProcessing processing,
+        AcquisitionMachineCapacitySupportBinding? capacityBinding,
         ICollection<string> reasons)
     {
         if (requirement.BlockingReasons.Length != 0 ||
@@ -21,14 +22,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         {
             reasons.Add("support_route_not_authoritatively_admitted");
         }
-        if (!reservation.ReservationAxisResolved ||
+        if (supportTransitionKind != "machine_capacity_establishment" &&
+            (!reservation.ReservationAxisResolved ||
             reservation.InventoryReservationMatchesTargetDate != true ||
             reservation.ClaimSet is null ||
             !reservation.ClaimSet.AtomicCommitRequired ||
             reservation.ClaimDisposition is not (
                 "claim_proposed" or
                 "claim_already_committed" or
-                "claim_replacement_required"))
+                "claim_replacement_required")))
         {
             reasons.Add("support_material_reservation_not_ready");
         }
@@ -50,7 +52,46 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             ValidateMachinePurchaseRoute(requirement, processing, reasons);
             return;
         }
+        if (supportTransitionKind == "machine_capacity_establishment")
+        {
+            ValidateMachineCapacityRoute(
+                requirement,
+                reservation,
+                capacityBinding,
+                reasons);
+            return;
+        }
         reasons.Add("support_transition_kind_not_bound");
+    }
+
+    private static void ValidateMachineCapacityRoute(
+        AcquisitionRouteTargetDateUnlock requirement,
+        AcquisitionRouteTargetDateReservation reservation,
+        AcquisitionMachineCapacitySupportBinding? binding,
+        ICollection<string> reasons)
+    {
+        var location = reservation.UpstreamRoute.UpstreamRoute.UpstreamRoute
+            .UpstreamRoute;
+        if (requirement.RouteKind is not (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output") ||
+            binding is null ||
+            string.IsNullOrWhiteSpace(binding.MachineQualifiedItemId) ||
+            string.IsNullOrWhiteSpace(binding.IntentId) ||
+            string.IsNullOrWhiteSpace(binding.SupportSourcesJson) ||
+            !location.LocationRouteAxisResolved ||
+            location.LocationRouteMatchesTargetDate != false ||
+            location.LocationRouteAxisStatus != "resolved_location_route_miss" ||
+            location.TargetEvaluations.Length != 0 ||
+            location.BlockingReasons.Length != 0 ||
+            !location.NonMatchingReasons.SequenceEqual(
+                new[] { "matching_machine_runtime_location_not_present" },
+                StringComparer.Ordinal))
+        {
+            reasons.Add(
+                "support_machine_capacity_missing_fleet_not_authoritatively_proven");
+        }
     }
 
     private static void ValidateMachinePurchaseRoute(
@@ -140,6 +181,19 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         AcquisitionRouteReservationClaimSet? claimSet,
         string supportTransitionKind)
     {
+        if (supportTransitionKind == "machine_capacity_establishment")
+        {
+            return candidate.Available &&
+                candidate.OptionId ==
+                    "farm.establish_supported_machine_capacity" &&
+                candidate.Kind is (
+                    "craft_machine_item" or "place_machine_item") &&
+                !string.IsNullOrWhiteSpace(candidate.QualifiedItemId) &&
+                CurrentTeacherFrontierSupport.TryReadUniqueParameter(
+                    candidate,
+                    "machine_support_intent_id",
+                    out _);
+        }
         if (supportTransitionKind == "machine_input_material_transfer")
         {
             var sourceNodeId = ReadStringParameter(

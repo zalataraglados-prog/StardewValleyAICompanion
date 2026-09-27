@@ -16,7 +16,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         SnapshotEnvelope snapshot,
         PolicyEventCandidatePrediction? candidate,
         int? currentDay,
-        int supportDeadlineTotalDay)
+        int supportDeadlineTotalDay,
+        AcquisitionMachineCapacitySupportBinding? capacityBinding = null)
     {
         if (candidate is null)
             return SupportCandidateEvaluation.Empty;
@@ -48,9 +49,64 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 candidate,
                 currentDay,
                 supportDeadlineTotalDay),
+            "machine_capacity_establishment" =>
+                EvaluateMachineCapacityCandidate(
+                    candidate,
+                    currentDay,
+                    supportDeadlineTotalDay,
+                    capacityBinding),
             _ => SupportCandidateEvaluation.Blocked(
                 "support_transition_kind_not_bound")
         };
+    }
+
+    private static SupportCandidateEvaluation
+        EvaluateMachineCapacityCandidate(
+            PolicyEventCandidatePrediction candidate,
+            int? currentDay,
+            int supportDeadlineTotalDay,
+            AcquisitionMachineCapacitySupportBinding? binding)
+    {
+        var reasons = new List<string>();
+        if (!candidate.Available)
+            reasons.Add("machine_capacity_support_candidate_not_ready_now");
+        if (binding is null ||
+            candidate.OptionId !=
+                "farm.establish_supported_machine_capacity" ||
+            candidate.Kind is not (
+                "craft_machine_item" or "place_machine_item") ||
+            !string.Equals(
+                candidate.QualifiedItemId,
+                binding.MachineQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase) ||
+            !CurrentTeacherFrontierSupport.TryReadUniqueParameter(
+                candidate,
+                "machine_support_intent_id",
+                out var intentId) ||
+            intentId != binding.IntentId)
+        {
+            reasons.Add("machine_capacity_support_candidate_binding_mismatch");
+        }
+        var deadlineVerified = currentDay.HasValue &&
+            supportDeadlineTotalDay > currentDay.Value;
+        if (!deadlineVerified)
+            reasons.Add("machine_capacity_support_does_not_fit_deadline");
+        var bound = reasons.Count == 0;
+        return new SupportCandidateEvaluation(
+            deadlineVerified ? currentDay : null,
+            null,
+            null,
+            string.Empty,
+            null,
+            null,
+            binding?.MachineQualifiedItemId ?? string.Empty,
+            null,
+            deadlineVerified,
+            bound,
+            Array.Empty<AcquisitionSupportMaterialConsumption>(),
+            null,
+            Array.Empty<AcquisitionSupportMaterialRelocation>(),
+            reasons.ToArray());
     }
 
     private static SupportCandidateEvaluation EvaluatePurchaseCandidate(

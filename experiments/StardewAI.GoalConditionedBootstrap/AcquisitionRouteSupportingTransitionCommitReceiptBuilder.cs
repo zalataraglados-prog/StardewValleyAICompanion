@@ -144,12 +144,24 @@ public static class AcquisitionRouteSupportingTransitionCommitReceiptBuilder
                 value.ReservationId))
             .Order(StringComparer.Ordinal)
             .ToArray();
-        if (claimIds.Length == 0 ||
-            claimIds.Distinct(StringComparer.Ordinal).Count() !=
+        var exactMachineIntentOnly = request.SupportTransitionKind ==
+                "machine_capacity_establishment" &&
+            claimIds.Length == 0 &&
+            request.ReservationClaimIds.Length == 0 &&
+            !string.IsNullOrWhiteSpace(request.MachineSupportIntentId) &&
+            request.AtomicCommitRequest?.MachineSupportIntent is
+                { } machineIntent &&
+            machineIntent.IntentId == request.MachineSupportIntentId &&
+            machineIntent.Stage == request.MachineSupportIntentStage &&
+            machineIntent.SupportSourcesJson ==
+                request.MachineCapacitySupportSourcesJson;
+        if (!exactMachineIntentOnly &&
+            (claimIds.Length == 0 ||
+             claimIds.Distinct(StringComparer.Ordinal).Count() !=
                 claimIds.Length ||
-            !claimIds.SequenceEqual(
-                request.ReservationClaimIds,
-                StringComparer.Ordinal))
+             !claimIds.SequenceEqual(
+                 request.ReservationClaimIds,
+                 StringComparer.Ordinal)))
         {
             reasons.Add("support_reservation_claim_inventory_invalid");
         }

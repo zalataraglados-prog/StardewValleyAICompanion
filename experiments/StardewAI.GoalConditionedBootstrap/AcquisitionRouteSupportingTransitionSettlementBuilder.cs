@@ -217,6 +217,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             ReboundActiveReservationIds =
                 result.ReboundActiveReservationIds ??
                     Array.Empty<string>(),
+            ReboundMachineSupportIntentId =
+                result.ReboundMachineSupportIntentId,
             SupportingTransitionVerified =
                 context.TransitionReceipt.SupportingTransitionVerified,
             ExactSettlementReplayVerified = !reasons.Contains(

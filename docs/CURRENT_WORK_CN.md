@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器缺失容量支持递归闭环
+
+- 目标日期机器路线在透明设施轴确认目标机器没有已摆放容量时，现在会发出精确的 `machine_capacity_establishment` 支持过渡。它只接受权威路线绑定的机器 qualified ID、规范化来源集合和确定性地点缺失证据；身份未知、来源多义或并非真实缺容量时仍在上游失败关闭。
+- 候选、日计划和动作编译继续复用既有 `farm.establish_supported_machine_capacity` 生命周期：背包已有机器时进入原放置链，否则进入原制作链；放置之后的投料继续由既有机器支持链负责。没有新增制作、放置、投料或寻路执行器。
+- 原子提交现可在同一 reservation portfolio 事务中建立唯一的 source-bound `MachineSupportIntent`。该分支允许没有材料/货币 claim，但只限精确机器容量请求；提交回执会重放并核对 intent。fresh 回执分别证明制作后的精确库存增量，或放置后的库存减一与目标格唯一空闲机器。
+- 非终端结算使用 machine-intent marker，不伪造 reservation 消费；它只把同一个 active intent 重绑到 fresh state/ledger，并强制完整重规划。聚焦候选、Backend intent settlement、Core game-free `103/103`、Backend `219/219`、Release 构建和完整 hermetic bootstrap 均通过；正式训练仍为 `false`。
+- 下一固定切片只补直接放置分支的完整 hermetic 端到端证据，并把该支持过渡纳入后续 portfolio rollout/proof 数据链；不得重新实现机器生命周期，也不得在证据闭合前授权正式训练。
+
 ## 2026-09-27 机器触发器条件语义修复
 
 - `Data/Machines.OutputRules[].Triggers[]` 的条件现在保留为显式 OR 备选集合，不再从目标日期链中丢失。单触发器的 `LOCATION_SEASON Target` 条件进入地点轴，并使用透明桥逐地点输出的 `effective_season` 精确判断；山谷冬季蜂房不会再被错误视为可产蜜，实际季节非冬的地点仍可通过。

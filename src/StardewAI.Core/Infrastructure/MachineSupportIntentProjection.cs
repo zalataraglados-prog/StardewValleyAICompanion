@@ -18,6 +18,7 @@ internal sealed record MachineSupportContinuation(
     string SourceStateHash,
     string GoalId,
     string DemandClass,
+    string SupportSourcesJson,
     int OriginalNetBenefit,
     int CurrentInputNetBenefit,
     double Score,
@@ -99,6 +100,7 @@ internal static class MachineSupportIntentProjection
                 intent.SourceStateHash,
                 intent.GoalId,
                 intent.DemandClass,
+                intent.SupportSourcesJson,
                 intent.NetBenefit,
                 0,
                 intent.SupportScore,
@@ -107,6 +109,11 @@ internal static class MachineSupportIntentProjection
                     "priority_task_requirement",
                     StringComparison.Ordinal)
                         ? "continue_committed_task_machine_capacity"
+                        : string.Equals(
+                            intent.DemandClass,
+                            "acquisition_route_requirement",
+                            StringComparison.Ordinal)
+                            ? "continue_committed_acquisition_route_machine_capacity"
                         : "continue_committed_positive_machine_capacity");
     }
 
@@ -133,10 +140,32 @@ internal static class MachineSupportIntentProjection
                 intent.SourceStateHash,
                 intent.GoalId,
                 intent.DemandClass,
+                intent.SupportSourcesJson,
                 0,
                 currentInputNetBenefit ?? 0,
                 intent.SupportScore,
                 "exact_task_binding_owns_input_value_tradeoff");
+        }
+
+        if (string.Equals(
+                intent.DemandClass,
+                "acquisition_route_requirement",
+                StringComparison.Ordinal))
+        {
+            return new(
+                "active",
+                "load_acquisition_route_supported_machine",
+                intent.IntentId,
+                intent.Revision,
+                intent.Stage,
+                intent.SourceStateHash,
+                intent.GoalId,
+                intent.DemandClass,
+                intent.SupportSourcesJson,
+                0,
+                currentInputNetBenefit ?? 0,
+                intent.SupportScore,
+                "exact_acquisition_route_owns_input_value_tradeoff");
         }
 
         if (!currentInputNetBenefit.HasValue ||
@@ -151,6 +180,7 @@ internal static class MachineSupportIntentProjection
                 intent.SourceStateHash,
                 intent.GoalId,
                 intent.DemandClass,
+                intent.SupportSourcesJson,
                 intent.NetBenefit,
                 currentInputNetBenefit ?? 0,
                 0,
@@ -166,6 +196,7 @@ internal static class MachineSupportIntentProjection
             intent.SourceStateHash,
             intent.GoalId,
             intent.DemandClass,
+            intent.SupportSourcesJson,
             intent.NetBenefit,
             currentInputNetBenefit.Value,
             intent.SupportScore,
@@ -259,6 +290,8 @@ internal static class MachineSupportIntentProjection
         continuation.GoalId +
         ";machine_support_demand_class=" +
         continuation.DemandClass +
+        ";machine_support_sources_json=" +
+        continuation.SupportSourcesJson +
         ";machine_support_original_net_benefit=" +
         continuation.OriginalNetBenefit +
         ";machine_support_current_input_net_benefit=" +
@@ -297,6 +330,9 @@ internal static class MachineSupportIntentProjection
                 "machine_support_demand_class",
                 continuation.DemandClass),
             Parameter(
+                "machine_support_sources_json",
+                continuation.SupportSourcesJson),
+            Parameter(
                 "machine_support_original_net_benefit",
                 continuation.OriginalNetBenefit.ToString(
                     CultureInfo.InvariantCulture)),
@@ -317,7 +353,9 @@ internal static class MachineSupportIntentProjection
             row.Status,
             StrategyCommitmentStatuses.Active,
             StringComparison.Ordinal) &&
-        (EconomicIntentIsValid(row) || TaskIntentIsValid(row));
+        (EconomicIntentIsValid(row) ||
+         TaskIntentIsValid(row) ||
+         AcquisitionRouteIntentIsValid(row));
 
     public static bool TaskDemandMatchesSnapshot(
         SnapshotEnvelope snapshot,
@@ -437,6 +475,41 @@ internal static class MachineSupportIntentProjection
         }
     }
 
+    internal static bool AcquisitionRouteIntentIsValid(
+        MachineSupportIntent row) =>
+        string.Equals(
+            row.DemandClass,
+            "acquisition_route_requirement",
+            StringComparison.Ordinal) &&
+        string.Equals(
+            row.SupportKind,
+            "machine_capacity_acquisition_route",
+            StringComparison.Ordinal) &&
+        row.GrossBenefit == 0 &&
+        row.OpportunityCost == 0 &&
+        row.NetBenefit == 0 &&
+        row.SupportScore == 0.12 &&
+        row.RequiredAdditionalMachineCount == 1 &&
+        TryReadAcquisitionRouteSupport(
+            row.SupportSourcesJson,
+            row.GoalId,
+            row.QualifiedItemId,
+            out _);
+
+    internal static bool TryReadAcquisitionRouteSupport(
+        string json,
+        string goalId,
+        string machineQualifiedItemId,
+        out MachineAcquisitionRouteSupportSource source) =>
+        ExplicitGoalSupportProjection.TryReadExactAcquisitionRouteSupport(
+            "machine_acquisition_route_support_json=" + json,
+            out source) &&
+        string.Equals(source.GoalId, goalId, StringComparison.Ordinal) &&
+        string.Equals(
+            source.MachineQualifiedItemId,
+            machineQualifiedItemId,
+            StringComparison.OrdinalIgnoreCase);
+
     private static MachineSupportContinuation None(string kind) => new(
         "not_applicable",
         kind,
@@ -446,6 +519,7 @@ internal static class MachineSupportIntentProjection
         string.Empty,
         string.Empty,
         string.Empty,
+        "[]",
         0,
         0,
         0,
