@@ -1,6 +1,7 @@
 param(
     [string] $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
+    [string] $SaveSlot = "",
     [int] $StartMineLevel = 96,
     [int] $TargetMineLevel = 98,
     [int] $MaximumFloorSteps = 96,
@@ -153,6 +154,7 @@ try {
     & (Join-Path $ProjectRoot "scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1") `
         -ProjectRoot $ProjectRoot `
         -RuntimeRoot $RuntimeRoot `
+        -SaveSlot $SaveSlot `
         -MineLevel $StartMineLevel `
         -MinimumBreakableStoneCount 0 `
         -SampleCount 1 `
@@ -207,6 +209,7 @@ try {
             "--iterations", "1",
             "--required-verified-actions", "1",
             "--train-every", "1",
+            "--skip-training",
             "--sleep-ms", "0",
             "--max-crops", "64",
             "--use-parameterized-action"

@@ -134,6 +134,10 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("combat_disengaged_transit_target", smoke, StringComparison.Ordinal);
         Assert.Contains("transit_combat_target_remained", smoke, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_MINING_CALIBRATION_LOADOUT", smoke, StringComparison.Ordinal);
+        Assert.Contains(
+            "-TimeoutSeconds $StartupTimeoutSeconds",
+            smoke,
+            StringComparison.Ordinal);
         Assert.Contains("-MiningCalibrationLoadout", loop, StringComparison.Ordinal);
     }
 
@@ -735,4 +739,5 @@ public sealed partial class MiningFloorStepPlannerTests
             directory = directory.Parent;
         }
         throw new DirectoryNotFoundException("Repository root not found.");
-    }}
+    }
+}

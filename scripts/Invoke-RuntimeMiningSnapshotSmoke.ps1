@@ -247,7 +247,9 @@ try {
 
     $gameWindowStyle = if ($VisibleGame) { "Normal" } else { "Hidden" }
     $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle $gameWindowStyle -PassThru
-    $executorHealth = Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30
+    $executorHealth = Wait-JsonHealth `
+        -Url "http://127.0.0.1:8767/health" `
+        -TimeoutSeconds $StartupTimeoutSeconds
     Start-Sleep -Seconds 20
     $worldSnapshot = Wait-WorldSnapshot -Url $worldSnapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
 

@@ -34,20 +34,24 @@ internal static partial class BootstrapSelfTest
             var sourceId = "skull-key-" + partition;
             var sourceRoot = Path.Combine(fixtureRoot, sourceId);
             Directory.CreateDirectory(sourceRoot);
+            var legacySnapshotShape =
+                partition == PolicyDatasetPartitions.Test;
             var before = SkullKeySnapshot(
                 saveId,
                 playerId,
                 totalDay,
                 gameTick: 100,
                 hasSkullKey: false,
-                hasRewardChest: true);
+                hasRewardChest: true,
+                legacySnapshotShape: legacySnapshotShape);
             var after = SkullKeySnapshot(
                 saveId,
                 playerId,
                 totalDay,
                 gameTick: 220,
                 hasSkullKey: true,
-                hasRewardChest: false);
+                hasRewardChest: false,
+                legacySnapshotShape: legacySnapshotShape);
             var beforePath = Path.Combine(sourceRoot, "before-snapshot.json");
             var afterPath = Path.Combine(sourceRoot, "after-snapshot.json");
             var resultPath = Path.Combine(sourceRoot, "execution-result.json");
@@ -113,14 +117,28 @@ internal static partial class BootstrapSelfTest
                 EffectiveQueueItem = JsonSerializer.SerializeToElement(new
                 {
                     queue_item_id = result.QueueItemId,
-                    option_id = result.OptionId,
-                    parameters = new[]
+                    option_id = "mining.obtain_skull_key",
+                    status = "pending",
+                    blocking_reasons = Array.Empty<string>(),
+                    normalized_command = new
                     {
-                        new { name = "target_tile_x", value = "11" },
-                        new { name = "target_tile_y", value = "10" },
-                        new { name = "interaction_kind", value = "overlay_object" },
-                        new { name = "expected_action_type", value = "SkullKeyChest" },
-                        new { name = "required_postcondition", value = "player.has_skull_key=true" }
+                        option_id = "mining.obtain_skull_key",
+                        state_hash = before.StateHash,
+                        execution_mode = "training_singleplayer",
+                        parameters = new[]
+                        {
+                            new { name = "target_location_family", value = "ordinary_mines" },
+                            new { name = "target_depth", value = "120" },
+                            new { name = "required_terminal_interaction", value = "skull_key_reward_chest" },
+                            new { name = "execution_option_id", value = "executor.interact" },
+                            new { name = "mining_step_kind", value = "claim_skull_key" },
+                            new { name = "target_tile_x", value = "11" },
+                            new { name = "target_tile_y", value = "10" },
+                            new { name = "interaction_kind", value = "overlay_object" },
+                            new { name = "expected_action_type", value = "SkullKeyChest" },
+                            new { name = "required_postcondition", value = "player.has_skull_key=true" },
+                            new { name = "required_postcondition", value = "player.has_skull_key=true" }
+                        }
                     }
                 }),
                 PrimitiveKind = result.PrimitiveKind,
@@ -220,33 +238,44 @@ internal static partial class BootstrapSelfTest
         int totalDay,
         long gameTick,
         bool hasSkullKey,
-        bool hasRewardChest)
+        bool hasRewardChest,
+        bool legacySnapshotShape)
     {
+        var chest = new Dictionary<string, object>
+        {
+            ["tile_x"] = 11,
+            ["tile_y"] = 10,
+            ["runtime_type"] = "StardewValley.Objects.Chest",
+            ["item_count"] = 1,
+            ["contains_skull_key"] = true,
+            [legacySnapshotShape
+                ? "skull_key_special_item_which"
+                : "special_item_which"] = 4,
+            ["interaction_kind"] = "overlay_object",
+            ["expected_action_type"] = "SkullKeyChest",
+            ["source"] =
+                "MineShaft.overlayObjects Chest.Items SpecialItem.which"
+        };
         var chests = hasRewardChest
-            ? new object[]
-            {
-                new
-                {
-                    tile_x = 11,
-                    tile_y = 10,
-                    runtime_type = "StardewValley.Objects.Chest",
-                    item_count = 1,
-                    contains_skull_key = true,
-                    special_item_which = 4,
-                    interaction_kind = "overlay_object",
-                    expected_action_type = "SkullKeyChest",
-                    source =
-                        "MineShaft.overlayObjects Chest.Items SpecialItem.which"
-                }
-            }
+            ? new object[] { chest }
             : Array.Empty<object>();
+        var year = (totalDay / 112) + 1;
+        var yearDay = totalDay % 112;
+        var season = new[] { "spring", "summer", "fall", "winter" }[
+            yearDay / 28];
+        var day = (yearDay % 28) + 1;
+        var time = new Dictionary<string, object>
+        {
+            ["year"] = Envelope(year),
+            ["season"] = Envelope(season),
+            ["day"] = Envelope(day)
+        };
+        if (!legacySnapshotShape)
+            time["total_days"] = Envelope(totalDay);
         var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
             JsonSerializer.Serialize(new
             {
-                time = new
-                {
-                    total_days = Envelope(totalDay)
-                },
+                time,
                 player = new
                 {
                     has_skull_key = Envelope(hasSkullKey),

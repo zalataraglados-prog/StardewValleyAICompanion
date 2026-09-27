@@ -20,7 +20,7 @@ public sealed partial class MiningReadAdapter
                 status = allowed
                     ? staircaseCount > 0
                         ? "unavailable_loaded_map_field_null"
-                        : "unavailable_no_staircase_inventory"
+                        : "blocked_no_staircase_inventory"
                     : "blocked_native_floor_rule",
                 native_floor_rule_allows = allowed,
                 staircase_count = staircaseCount,

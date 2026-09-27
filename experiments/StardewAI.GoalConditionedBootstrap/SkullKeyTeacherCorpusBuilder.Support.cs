@@ -14,18 +14,30 @@ public static partial class SkullKeyTeacherCorpusBuilder
         string section,
         string field)
     {
+        if (!TryReadEnvelopeValue(snapshot, section, field, out var value))
+        {
+            throw new InvalidDataException(
+                $"Skull Key snapshot field {section}.{field} is unavailable.");
+        }
+        return value;
+    }
+
+    private static bool TryReadEnvelopeValue(
+        SnapshotEnvelope snapshot,
+        string section,
+        string field,
+        out JsonElement value)
+    {
+        value = default;
         if (!snapshot.State.TryGetValue(section, out var sectionValue) ||
             !sectionValue.TryGetProperty(field, out var envelope) ||
             !envelope.TryGetProperty("status", out var status) ||
             status.ValueKind != JsonValueKind.String ||
             status.GetString() is not
                 (FieldStatus.Available or FieldStatus.Derived) ||
-            !envelope.TryGetProperty("value", out var value))
-        {
-            throw new InvalidDataException(
-                $"Skull Key snapshot field {section}.{field} is unavailable.");
-        }
-        return value;
+            !envelope.TryGetProperty("value", out value))
+            return false;
+        return true;
     }
 
     private static JsonElement ReadEnvelopeObject(
@@ -50,6 +62,40 @@ public static partial class SkullKeyTeacherCorpusBuilder
         string section,
         string field) => ReadEnvelopeValue(snapshot, section, field).GetBoolean();
 
+    private static int ReadSnapshotTotalDay(SnapshotEnvelope snapshot)
+    {
+        if (TryReadEnvelopeValue(
+                snapshot,
+                "time",
+                "total_days",
+                out var totalDays) &&
+            totalDays.TryGetInt32(out var directTotalDay))
+        {
+            return directTotalDay;
+        }
+
+        var year = ReadEnvelopeInt(snapshot, "time", "year");
+        var day = ReadEnvelopeInt(snapshot, "time", "day");
+        var seasonValue = ReadEnvelopeValue(snapshot, "time", "season");
+        var season = seasonValue.ValueKind == JsonValueKind.String
+            ? seasonValue.GetString()
+            : null;
+        var seasonIndex = season switch
+        {
+            "spring" => 0,
+            "summer" => 1,
+            "fall" => 2,
+            "winter" => 3,
+            _ => -1
+        };
+        if (year < 1 || day is < 1 or > 28 || seasonIndex < 0)
+        {
+            throw new InvalidDataException(
+                "Skull Key snapshot calendar identity is invalid.");
+        }
+        return ((year - 1) * 112) + (seasonIndex * 28) + day - 1;
+    }
+
     private static string RequiredIdentity(
         FieldEnvelope<string?> field,
         string label)
@@ -63,9 +109,24 @@ public static partial class SkullKeyTeacherCorpusBuilder
         return field.Value;
     }
 
-    private static string RequiredParameter(JsonElement item, string name)
+    private static JsonElement RequiredObject(
+        JsonElement value,
+        string property)
     {
-        if (!item.TryGetProperty("parameters", out var parameters) ||
+        if (!value.TryGetProperty(property, out var field) ||
+            field.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException(
+                "Skull Key object is missing: " + property);
+        }
+        return field;
+    }
+
+    private static string RequiredConsistentParameter(
+        JsonElement command,
+        string name)
+    {
+        if (!command.TryGetProperty("parameters", out var parameters) ||
             parameters.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidDataException(
@@ -74,11 +135,12 @@ public static partial class SkullKeyTeacherCorpusBuilder
         var matches = parameters.EnumerateArray()
             .Where(parameter => RequiredString(parameter, "name") == name)
             .Select(parameter => RequiredString(parameter, "value"))
+            .Distinct(StringComparer.Ordinal)
             .ToArray();
         return matches.Length == 1
             ? matches[0]
             : throw new InvalidDataException(
-                "Skull Key queue item has a missing or duplicate parameter: " +
+                "Skull Key queue item has a missing or conflicting parameter: " +
                 name);
     }
 
