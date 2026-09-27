@@ -78,7 +78,8 @@ public sealed partial class ModEntry : Mod
         var match = menu.itemPriceAndStock
             .FirstOrDefault(entry =>
                 (string.IsNullOrWhiteSpace(request.QualifiedItemId) || string.Equals(entry.Key.QualifiedItemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase)) &&
-                (string.IsNullOrWhiteSpace(request.ShopItemId) || string.Equals(entry.Key is Item item ? item.ItemId : entry.Key.QualifiedItemId, request.ShopItemId, StringComparison.OrdinalIgnoreCase)));
+                (string.IsNullOrWhiteSpace(request.ShopItemId) || string.Equals(entry.Key is Item item ? item.ItemId : entry.Key.QualifiedItemId, request.ShopItemId, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(request.ExpectedStockId) || string.Equals(entry.Value.SyncedKey, request.ExpectedStockId, StringComparison.Ordinal)));
         if (match.Key is null)
         {
             return BlockedWithPrimitive(request, "buy_shop_item", BuyShopItemRequestedEffect(request), BuyShopItemObservedEffect(), "shop_item_not_found");
@@ -98,7 +99,7 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "buy_shop_item", BuyShopItemRequestedEffect(request), BuyShopItemObservedEffect(), "salable_instance_not_item");
         }
 
-        itemToAdd.Stack = quantity;
+        itemToAdd.Stack = salable.Stack * quantity;
         var qualifiedItemId = itemToAdd.QualifiedItemId;
         var beforeMoney = Game1.player.Money;
         var beforeCount = CountInventoryItems(qualifiedItemId);
@@ -120,9 +121,15 @@ public sealed partial class ModEntry : Mod
         var afterMoney = Game1.player.Money;
         var afterCount = CountInventoryItems(qualifiedItemId);
         var afterStock = stock.Stock;
-        var verified = afterMoney == beforeMoney - stock.Price * quantity && afterCount >= beforeCount + quantity;
+        var expectedItemIncrease = itemToAdd.Stack;
+        var verified = afterMoney == beforeMoney - stock.Price * quantity &&
+            afterCount == beforeCount + expectedItemIncrease;
         var verificationReasons = verified
-            ? new[] { "money_decreased_by_price", "inventory_count_increased" }
+            ? new[]
+            {
+                "money_decreased_by_price",
+                "inventory_count_increased_by_exact_output_stack"
+            }
             : new[] { "purchase_post_state_mismatch" };
 
         return new TrainingExecutionResult
@@ -341,6 +348,37 @@ public sealed partial class ModEntry : Mod
             reasons.Add("purchase_price_exceeds_request_limit");
         }
 
+        if (request.ExpectedUnitPrice.HasValue &&
+            stock.Price != request.ExpectedUnitPrice.Value)
+        {
+            reasons.Add("purchase_unit_price_identity_drift");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ExpectedStockId) &&
+            !string.Equals(
+                stock.SyncedKey,
+                request.ExpectedStockId,
+                StringComparison.Ordinal))
+        {
+            reasons.Add("purchase_stock_identity_drift");
+        }
+
+        if (request.ExpectedOutputStack.HasValue &&
+            salable.Stack != request.ExpectedOutputStack.Value)
+        {
+            reasons.Add("purchase_output_stack_identity_drift");
+        }
+        if (salable.Stack <= 0)
+        {
+            reasons.Add("purchase_output_stack_invalid");
+        }
+
+        if (request.ExpectedOutputQuality.HasValue &&
+            salable.Quality != request.ExpectedOutputQuality.Value)
+        {
+            reasons.Add("purchase_output_quality_identity_drift");
+        }
+
         if (Game1.player.Money < stock.Price)
         {
             reasons.Add("insufficient_currency_for_purchase");
@@ -374,10 +412,13 @@ public sealed partial class ModEntry : Mod
     private static string BuyShopItemRequestedEffect(TrainingExecutionRequest request)
     {
         return "shop_id=" + (string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "any" : request.ExpectedShopId) +
+            ";stock_id=" + (string.IsNullOrWhiteSpace(request.ExpectedStockId) ? "missing" : request.ExpectedStockId) +
             ";qualified_item_id=" + (string.IsNullOrWhiteSpace(request.QualifiedItemId) ? "missing" : request.QualifiedItemId) +
             ";shop_item_id=" + (string.IsNullOrWhiteSpace(request.ShopItemId) ? "missing" : request.ShopItemId) +
             ";quantity=" + (request.Quantity?.ToString() ?? "1") +
-            ";max_unit_price=" + (request.MaxUnitPrice?.ToString() ?? "unset");
+            ";max_unit_price=" + (request.MaxUnitPrice?.ToString() ?? "unset") +
+            ";expected_output_stack=" + (request.ExpectedOutputStack?.ToString() ?? "unset") +
+            ";expected_output_quality=" + (request.ExpectedOutputQuality?.ToString() ?? "unset");
     }
 
     private static string BuyShopItemObservedEffect()

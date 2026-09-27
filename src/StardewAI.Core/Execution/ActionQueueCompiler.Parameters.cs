@@ -115,6 +115,21 @@ namespace StardewAI.Core.Execution
         private static SmallModelActionParameter[] BuildBuyShopItemParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var parameters = new List<SmallModelActionParameter>(action.Parameters);
+            AddAliasedPurchaseParameter(
+                parameters,
+                action,
+                "expected_stock_id",
+                "continuation.stock_id");
+            AddAliasedPurchaseParameter(
+                parameters,
+                action,
+                "expected_output_stack",
+                "continuation.output_stack_per_purchase");
+            AddAliasedPurchaseParameter(
+                parameters,
+                action,
+                "expected_output_quality",
+                "continuation.output_quality");
             if (ReadIntParameter(action, "quantity") is null)
             {
                 parameters.Add(Parameter("quantity", "1"));
@@ -123,7 +138,12 @@ namespace StardewAI.Core.Execution
             var existingQualifiedId = ReadParameter(action, "qualified_item_id");
             if (!string.IsNullOrWhiteSpace(existingQualifiedId))
             {
-                var existingCandidate = FindPurchaseCandidate(snapshot, existingQualifiedId, ReadParameter(action, "shop_item_id"));
+                var existingCandidate = FindPurchaseCandidate(
+                    snapshot,
+                    existingQualifiedId,
+                    ReadParameter(action, "shop_item_id"),
+                    ReadParameter(action, "expected_stock_id") ??
+                        ReadParameter(action, "continuation.stock_id"));
                 if (existingCandidate.HasValue)
                 {
                     if (string.IsNullOrWhiteSpace(ReadParameter(action, "shop_item_id")))
@@ -135,6 +155,10 @@ namespace StardewAI.Core.Execution
                     {
                         parameters.Add(Parameter("max_unit_price", ReadInt(existingCandidate.Value, "price").ToString()));
                     }
+
+                    AddPurchaseCandidateIdentityParameters(
+                        parameters,
+                        existingCandidate.Value);
 
                     if (string.IsNullOrWhiteSpace(ReadParameter(action, "expected_shop_id")))
                     {
@@ -163,6 +187,9 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("qualified_item_id", ReadString(candidate.Value, "qualified_item_id")));
             parameters.Add(Parameter("shop_item_id", ReadString(candidate.Value, "item_id")));
             parameters.Add(Parameter("max_unit_price", ReadInt(candidate.Value, "price").ToString()));
+            AddPurchaseCandidateIdentityParameters(
+                parameters,
+                candidate.Value);
             var shopStock = ReadStateFieldValue(snapshot, "menus", "shop_stock");
             if (shopStock.HasValue && shopStock.Value.ValueKind == JsonValueKind.Object)
             {
@@ -170,6 +197,66 @@ namespace StardewAI.Core.Execution
             }
 
             return parameters.ToArray();
+        }
+
+        private static void AddAliasedPurchaseParameter(
+            ICollection<SmallModelActionParameter> parameters,
+            SmallModelAction action,
+            string targetName,
+            string sourceName)
+        {
+            if (parameters.Any(parameter => string.Equals(
+                    parameter.Name,
+                    targetName,
+                    StringComparison.Ordinal)))
+                return;
+            var value = ReadParameter(action, sourceName);
+            if (!string.IsNullOrWhiteSpace(value))
+                parameters.Add(Parameter(targetName, value));
+        }
+
+        private static void AddPurchaseCandidateIdentityParameters(
+            ICollection<SmallModelActionParameter> parameters,
+            JsonElement candidate)
+        {
+            if (!parameters.Any(parameter => parameter.Name ==
+                    "expected_stock_id"))
+            {
+                var stockId = ReadString(candidate, "synced_key");
+                if (!string.IsNullOrWhiteSpace(stockId))
+                    parameters.Add(Parameter("expected_stock_id", stockId));
+            }
+            if (!parameters.Any(parameter => parameter.Name ==
+                    "expected_output_stack") &&
+                candidate.TryGetProperty(
+                    "stack",
+                    out var stackProperty) &&
+                stackProperty.TryGetInt32(out var outputStack) &&
+                outputStack > 0)
+            {
+                parameters.Add(Parameter(
+                    "expected_output_stack",
+                    outputStack.ToString()));
+            }
+            if (!parameters.Any(parameter => parameter.Name ==
+                    "expected_output_quality") &&
+                candidate.TryGetProperty(
+                    "quality",
+                    out var qualityProperty) &&
+                qualityProperty.TryGetInt32(out var outputQuality) &&
+                outputQuality >= 0)
+            {
+                parameters.Add(Parameter(
+                    "expected_output_quality",
+                    outputQuality.ToString()));
+            }
+            if (!parameters.Any(parameter => parameter.Name ==
+                    "expected_unit_price"))
+            {
+                parameters.Add(Parameter(
+                    "expected_unit_price",
+                    ReadInt(candidate, "price").ToString()));
+            }
         }
 
         private static SmallModelActionParameter[] BuildRoutePreviewParameters(SmallModelAction action, SnapshotEnvelope snapshot)
@@ -461,7 +548,11 @@ namespace StardewAI.Core.Execution
             return FindPurchaseCandidate(snapshot, null, null);
         }
 
-        private static JsonElement? FindPurchaseCandidate(SnapshotEnvelope snapshot, string? qualifiedItemId, string? shopItemId)
+        private static JsonElement? FindPurchaseCandidate(
+            SnapshotEnvelope snapshot,
+            string? qualifiedItemId,
+            string? shopItemId,
+            string? stockId = null)
         {
             var shopStock = ReadStateFieldValue(snapshot, "menus", "shop_stock");
             if (!shopStock.HasValue ||
@@ -483,7 +574,12 @@ namespace StardewAI.Core.Execution
                     string.Equals(ReadString(entry, "qualified_item_id"), qualifiedItemId, StringComparison.OrdinalIgnoreCase);
                 var itemMatches = string.IsNullOrWhiteSpace(shopItemId) ||
                     string.Equals(ReadString(entry, "item_id"), shopItemId, StringComparison.OrdinalIgnoreCase);
-                if (qualifiedMatches && itemMatches)
+                var stockMatches = string.IsNullOrWhiteSpace(stockId) ||
+                    string.Equals(
+                        ReadString(entry, "synced_key"),
+                        stockId,
+                        StringComparison.Ordinal);
+                if (qualifiedMatches && itemMatches && stockMatches)
                 {
                     return entry;
                 }

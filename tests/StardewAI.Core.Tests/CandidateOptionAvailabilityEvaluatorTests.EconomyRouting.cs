@@ -12,7 +12,7 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 {
     [Fact]
-    public void BuySuppliesAvailableWhenShopHasValueCandidate()
+    public void BuySuppliesFailsClosedWhenExecutorEligibilityIsFalse()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(BuySnapshot(entryOverride: """
@@ -37,9 +37,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("purchase_executor_disabled", option.BlockingReasons);
-        Assert.DoesNotContain("no_value_available_purchase_candidates", option.BlockingReasons);
+        Assert.Contains("no_value_available_purchase_candidates", option.BlockingReasons);
         var candidate = Assert.Single(option.EconomicCandidates);
-        Assert.True(candidate.Available);
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "purchase_candidate_not_executor_enabled",
+            candidate.BlockReasons);
         Assert.Equal("buy_shop_item", candidate.Kind);
         Assert.Equal("(O)472", candidate.QualifiedItemId);
         Assert.Equal(20, candidate.UnitPrice);
