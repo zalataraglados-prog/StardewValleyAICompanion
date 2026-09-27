@@ -23,6 +23,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
     new("build-goal-method-formal-training-admission-reconciliation", BuildGoalMethodFormalTrainingAdmissionReconciliation),
     new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
+    new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
     new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution),
@@ -344,6 +345,13 @@ static void BuildGoalMethodFormalTrainingAdmissionReconciliation(
 static void BuildPetLoveTeacherCorpus(Arguments options)
 {
     var corpus = PetLoveTeacherCorpusBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), corpus);
+}
+
+static void BuildSkullKeyTeacherCorpus(Arguments options)
+{
+    var corpus = SkullKeyTeacherCorpusBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), corpus);
 }

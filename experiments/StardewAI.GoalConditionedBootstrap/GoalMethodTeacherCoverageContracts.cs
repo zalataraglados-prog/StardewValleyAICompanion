@@ -9,6 +9,9 @@ public static class GoalMethodTeacherCoverageSourceKinds
 
     public const string PetLoveTerminalInteractionCorpus =
         "pet_love_terminal_interaction_corpus";
+
+    public const string SkullKeyTerminalInteractionCorpus =
+        "skull_key_terminal_interaction_corpus";
 }
 
 public static class GoalMethodTeacherCoverageGoalIds

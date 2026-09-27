@@ -11,14 +11,22 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Skull Key Teacher 源适配与真实桥接契约修正
+
+- 新增 `build-skull-key-teacher-corpus`。它不接受裸执行结果作为监督，而是从 `plan_execution_episode.v1` 重放并绑定 fresh before/after snapshot、有效队列项和原生 `training_execution_result.v1`。只有同一存档、玩家、版本和 Stage-1 日期内，普通矿井 120 层唯一原生 Skull Key 奖励箱从存在到消失、`player.has_skull_key` 从 `false` 到 `true`，且原生开箱、领奖和状态转移原因全部成立时，才生成 Teacher 行。
+- 审查真实透明桥时发现字段漂移：桥原先发布 `skull_key_special_item_which`，编译器与既有快照契约读取 `special_item_which`。现已统一为后者，并增加 game-free 源守卫；否则合成夹具会通过，而真实 120 层快照永远无法编译领奖动作。
+- corpus 会从 `save_id + player_id + total_day` 自行派生 train/validation/test，不接受调用方伪造分区。验证器还精确绑定 `queue_item_id`、`requested_effect`、`observed_effect`、changed facts、目标格、overlay object、`SkullKeyChest` 和 `player.has_skull_key=true` 后置条件。篡改 corpus 行、episode 队列项或 effect 均失败关闭。
+- 定向三分区夹具使 Skull Key criterion 精确进入准入，覆盖报告从 `2/19` 变为 `3/19`；但该夹具不是生产证据。生产准入总门仍为 `2/19` criterion、`1/11` root method，Teacher 阻塞现为 `dependency_graph_incomplete:15`、`evidence_not_connected:2`，不再存在 `teacher_source_adapter_missing`。
+- Release 构建零警告，Core game-free `104/104`、bootstrap hermetic、定向 Goal Method 覆盖/篡改回归与正式准入总门重算通过。`formal_product_training_authorized=false` 和 `ready_for_separate_promotion_review=false` 保持不变。下一步不是再写 Skull Key 执行器或适配器，而是从三个独立存档/玩家/日期分区采集真实 120 层原生回执并接入生产 coverage request；未取得真实回执前不得把 `3/19` 夹具结果写成当前进度。
+
 ## 2026-09-28 正式训练准入总门重算
 
 - 新增只读命令 `build-goal-method-formal-training-admission-reconciliation`。它从原始 frontier 输入重建 19 项 Grandpa 21 分 criterion，重放 acquisition corpus 及其 rollout/admission 来源，核验 train/validation/test 分区，重新绑定 checkpoint 并用其权重重算训练/验证/测试指标，同时重建 5 类支持动作的终端谱系矩阵；旧汇总 JSON 不能自行证明通过。
 - 当前可信基线是 `2/19` criterion、`1/11` root method、`3` 个来源/`9` 行 corpus，train/validation/test 各 `3` 行、`2` 个 pair，validation/test pair accuracy 均为 `1.0`，支持谱系 `5/5`。这只证明现有小语料和证据链内部一致，不代表样本规模充分，也不代表正式训练已经准入。
-- 九项总门中，权威分母、corpus 重放、split 完整性、checkpoint/corpus 绑定、留出集指标重算、支持谱系和叶制品权限隔离通过；完整 Teacher 覆盖与引用动作执行库存仍失败。Teacher 的精确缺口为 `dependency_graph_incomplete:15`、`evidence_not_connected:1`、`teacher_source_adapter_missing:1`。
+- 九项总门中，权威分母、corpus 重放、split 完整性、checkpoint/corpus 绑定、留出集指标重算、支持谱系和叶制品权限隔离通过；完整 Teacher 覆盖与引用动作执行库存仍失败。Skull Key typed adapter 完成后的精确 Teacher 缺口为 `dependency_graph_incomplete:15`、`evidence_not_connected:2`。
 - 下游真实动作缺口缩到两组：三个清障 executor 缺透明读取、原生运行与 five-gate 证据；三个社交动作缺内部执行管线。高层策略动作只要能经既有 `internal_execution_pipeline` 下沉，就不再因没有直接 Product Executor 被误报为阻塞。
 - pairwise ranker 的两个 checkpoint 加载入口现都会从绑定 corpus 和模型权重重算训练/验证/测试摘要；结构合法但伪造 `test_pair_accuracy` 的 checkpoint 会失败关闭。Release 构建、bootstrap hermetic 以及全新输出根上的完整 `self-test-current-stage-one-collection` 均通过。
-- `formal_product_training_authorized=false`、`ready_for_separate_promotion_review=false` 保持不变。下一固定切片是实现 `obtain_skull_key` 的 typed Teacher source adapter；该方法当前没有依赖图阻塞，是 17 个 criterion 缺口中最小且可由代码直接闭合的一项。宠物爱心仍需生产来源接线和真实 train/validation/test 原生回执，不得用 hermetic fixture 冒充。
+- `formal_product_training_authorized=false`、`ready_for_separate_promotion_review=false` 保持不变。`obtain_skull_key` 与宠物爱心现在都已有 typed adapter，但都仍需生产来源接线和真实 train/validation/test 原生回执；不得用 hermetic fixture 冒充。
 
 ## 2026-09-28 支持动作终端训练谱系覆盖矩阵 5/5
 

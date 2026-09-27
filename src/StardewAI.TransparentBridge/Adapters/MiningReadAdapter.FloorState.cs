@@ -110,7 +110,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                     runtime_type = chest.GetType().FullName,
                     item_count = chest.Items.Count,
                     contains_skull_key = true,
-                    skull_key_special_item_which = 4,
+                    special_item_which = 4,
                     interaction_kind = "overlay_object",
                     expected_action_type = "SkullKeyChest",
                     source = "MineShaft.overlayObjects Chest.Items SpecialItem.which"
