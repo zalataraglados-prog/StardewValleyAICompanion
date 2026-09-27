@@ -28,6 +28,9 @@ public sealed class GoalMethodPairwiseRanker
         var checkpoint = checkpointStore.Load(fullCheckpointPath);
         var corpus = GoalMethodPairwiseTrainer.VerifyCorpus(fullManifestPath);
         ValidateDatasetBinding(checkpoint, corpus, fullManifestPath);
+        GoalMethodPairwiseTrainer.ValidateCheckpointEvaluation(
+            checkpoint,
+            corpus);
         return new VerifiedGoalMethodPairwiseModel(
             checkpoint,
             CurrentTeacherFrontierSupport.HashFile(fullCheckpointPath),
@@ -90,6 +93,9 @@ public sealed class GoalMethodPairwiseRanker
         var checkpoint = checkpointStore.Load(fullCheckpointPath);
         var corpus = GoalMethodPairwiseTrainer.VerifyCorpus(fullManifestPath);
         ValidateDatasetBinding(checkpoint, corpus, fullManifestPath);
+        GoalMethodPairwiseTrainer.ValidateCheckpointEvaluation(
+            checkpoint,
+            corpus);
         var matches = corpus.TrainRows
             .Concat(corpus.ValidationRows)
             .Concat(corpus.TestRows)
@@ -237,7 +243,7 @@ public sealed class GoalMethodPairwiseRanker
             BlockingReasons = decision.BlockingReasons
         };
     }
-    private static void ValidateDatasetBinding(
+    internal static void ValidateDatasetBinding(
         GoalMethodPairwiseCheckpoint checkpoint,
         GoalMethodPairwiseTrainer.VerifiedCorpus corpus,
         string manifestPath)

@@ -14,6 +14,7 @@ internal static partial class BootstrapSelfTest
         VerifyMachineProcessingResolution();
         RunAcquisitionRouteDispatch();
         VerifyCommunityCenterActiveRouteKindScope();
+        VerifyFormalTrainingAdmissionPolicy();
         VerifySupportingTransitionTerminalLineage();
         VerifyCommunityCenterDonationReceiptEvidence();
         RunFullShipmentSettlement();

@@ -2608,6 +2608,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   split, rollout, admission and holdout artifacts, separating intentional product safety locks from genuine missing
   evidence before any training gate may change.
 
+### 2026-09-28: formal-training admission reconciliation
+
+- The new aggregate admission command independently rebuilds the 19-criterion frontier and Teacher coverage, replays
+  the bound acquisition corpus and rollout/admission sources, verifies train/validation/test partitions, rebinds the
+  checkpoint, recomputes every stored evaluation metric from its weights and corpus, and rebuilds the 5/5 support
+  terminal-lineage matrix. It does not trust a prior coverage report or checkpoint summary.
+- The current baseline is internally valid but intentionally insufficient: 2/19 criteria and 1/11 root methods are
+  coverage-ready from 3 sources and 9 rows. Each partition has 3 rows and 2 preference pairs; validation and test
+  pair accuracy recompute to 1.0. These tiny holdouts establish artifact consistency only, not model sufficiency.
+- Seven gates pass: authoritative denominator, corpus replay, split integrity, checkpoint/corpus binding, evaluation
+  recomputation, support terminal lineage, and leaf authority isolation. Complete Teacher coverage and referenced
+  option execution inventory remain blocked. The Teacher dispositions are exactly 15 dependency-graph-incomplete,
+  one production-evidence-not-connected, and one typed-source-adapter-missing criterion.
+- Runtime diagnostics are downstream and do not rewrite Teacher dispositions. Three obstacle-clearing executor options
+  still lack transparent-read, native-runtime, and five-gate evidence; three social options lack an internal execution
+  pipeline. High-level options are valid when they lower through that shared internal pipeline and are not required to
+  expose a duplicate direct Product Executor.
+- Both pairwise ranker checkpoint-loading paths now recompute evaluation summaries. A checkpoint whose shape, identity,
+  and dataset hashes are valid but whose holdout score was edited is rejected. Full StageOne and hermetic regressions
+  cover the positive and tampered paths.
+- No leaf or aggregate artifact may self-authorize training. Even all-green evidence can only request a separate
+  promotion review. The next bounded implementation slice is the typed Teacher source adapter for
+  `grandpa.direct.obtain_skull_key`; unlike the other 15 dependency-incomplete criteria, its graph is already complete.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

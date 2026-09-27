@@ -21,6 +21,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-goal-method-graph", BuildGoalMethodGraph),
     new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
     new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
+    new("build-goal-method-formal-training-admission-reconciliation", BuildGoalMethodFormalTrainingAdmissionReconciliation),
     new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
@@ -325,6 +326,18 @@ static void BuildGoalMethodCoverageReconciliation(Arguments options)
     var report = GoalMethodCoverageReconciliationBuilder.Build(
         GoalMethodFrontierInputs(options),
         options.Required("request"));
+    Write(options.Required("output"), report);
+}
+
+static void BuildGoalMethodFormalTrainingAdmissionReconciliation(
+    Arguments options)
+{
+    var report = GoalMethodFormalTrainingAdmissionBuilder.Build(
+        GoalMethodFrontierInputs(options),
+        options.Required("coverage-request"),
+        options.Required("corpus-manifest"),
+        options.Required("checkpoint"),
+        options.Required("support-terminal-coverage-request"));
     Write(options.Required("output"), report);
 }
 
