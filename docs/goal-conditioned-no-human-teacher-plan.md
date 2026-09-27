@@ -2524,6 +2524,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   `machine_capacity_establishment`, proving that every admitted support family rejoins the same file-backed terminal
   rollout path. Existing proofs count as coverage and must be reused rather than reimplemented.
 
+### 2026-09-28: support-family terminal-lineage matrix, 2/5
+
+- A strict file-backed matrix now derives each support kind from the settled support-request artifact itself; callers
+  cannot declare coverage. Every canonical family must have exactly one independently recomputed rollout proof,
+  controller admission and supervision dataset. Missing or duplicate families fail closed, and matrix completion never
+  authorizes formal product training by itself.
+- `machine_input_load` and `machine_capacity_establishment` now each prove the complete support request, atomic commit,
+  shared compilation, native execution receipt, nonterminal settlement, fresh replan, terminal rollout and supervision
+  lineage. The support execution run ID must be absent from terminal native outcomes even when support and terminal
+  decisions legitimately share a high-level route occurrence.
+- The machine-load proof exposed a schema drift hidden by an older synthetic fixture: the support deadline evaluator read
+  `time.time_of_day`, while the transparent bridge and canonical snapshot schema publish `time.time`. The evaluator and
+  fixture now use the canonical field, and the full file-backed snapshot supplies the required inventory-capacity
+  envelope without relaxing any state or deadline gate.
+- Release build, acquisition dispatch, hermetic bootstrap and the complete StageOne regression pass. Coverage remains
+  deliberately incomplete at 2/5: `crop_planting`, `machine_input_material_transfer` and `machine_input_purchase` are
+  still missing, and `formal_product_training_authorized=false` remains enforced.
+- The next bounded slice must reuse the existing `inventory.transfer_item -> executor.transfer_material` queue and
+  relocation settlement to prove `machine_input_material_transfer` through the same file-backed terminal lineage. It
+  must not add another transfer executor, route planner, ledger or terminal compiler.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

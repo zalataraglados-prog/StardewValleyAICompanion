@@ -205,6 +205,281 @@ internal static partial class BootstrapSelfTest
         return WriteMachineCapacityProofSnapshot(root, outputPath);
     }
 
+    private static SnapshotEnvelope WriteMachineInputLoadProofBeforeSnapshot(
+        string templatePath,
+        string outputPath)
+    {
+        _ = WriteMachineCapacityProofBeforeSnapshot(templatePath, outputPath);
+        var root = JsonNode.Parse(File.ReadAllText(outputPath))!.AsObject();
+        root["game_tick"] = 20;
+        var player = root["state"]!["player"]!.AsObject();
+        player["tile_x"]!["value"] = 6;
+        player["tile_y"]!["value"] = 5;
+        player["inventory"]!["value"] =
+            JsonSerializer.SerializeToNode(new[]
+            {
+                new
+                {
+                    slot_index = 0,
+                    item_id = "262",
+                    qualified_item_id = "(O)262",
+                    stack = 1,
+                    quality = 0,
+                    maximum_stack_size = 999,
+                    is_empty = false,
+                    sale_price = 25
+                }
+            }, JsonDefaults.Options);
+        player["inventory_capacity"] = JsonSerializer.SerializeToNode(new
+        {
+            value = new
+            {
+                occupied_stacks = 1,
+                empty_slots = 11,
+                has_empty_slot = true
+            },
+            status = "available",
+            source = new { kind = "test", path = "machine-input-load-proof" },
+            adapter = "test",
+            read_at_tick = 20,
+            confidence = 1
+        }, JsonDefaults.Options);
+        player["machine_placement"] = JsonSerializer.SerializeToNode(new
+        {
+            value = new
+            {
+                projection_status =
+                    "complete_all_inventory_machines_across_loaded_persistent_locations",
+                static_projection_fingerprint =
+                    "machine-input-load-no-inventory-machine",
+                rows = Array.Empty<object>()
+            },
+            status = "available",
+            source = new { kind = "test", path = "machine-input-load-proof" },
+            adapter = "test",
+            read_at_tick = 20,
+            confidence = 1
+        }, JsonDefaults.Options);
+        SetMachineInputLoadProofMaterialInventory(root, quantity: 1);
+        root["state"]!["farm"]!["machines"] =
+            MachineInputLoadProofMachines(processing: false, readAtTick: 20);
+        return WriteMachineCapacityProofSnapshot(root, outputPath);
+    }
+
+    private static SnapshotEnvelope WriteMachineInputLoadProofAfterSnapshot(
+        string beforePath,
+        string outputPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(beforePath))!.AsObject();
+        root["game_tick"] = root["game_tick"]!.GetValue<long>() + 1;
+        var player = root["state"]!["player"]!.AsObject();
+        player["inventory"]!["value"] = new JsonArray();
+        SetMachineInputLoadProofMaterialInventory(root, quantity: 0);
+        root["state"]!["farm"]!["machines"] =
+            MachineInputLoadProofMachines(processing: true, readAtTick: 21);
+        return WriteMachineCapacityProofSnapshot(root, outputPath);
+    }
+
+    private static JsonNode MachineInputLoadProofMachines(
+        bool processing,
+        int readAtTick)
+    {
+        var row = new
+        {
+            location_id = "Farm",
+            location_kind = "farm_outdoor",
+            location_is_current = true,
+            machine_operational_context_valid = true,
+            location_is_player_controlled = true,
+            owner_player_id = 1,
+            tile_x = 7,
+            tile_y = 5,
+            qualified_item_id = "(BC)12",
+            display_name = "Keg",
+            machine_row_count_total = 1,
+            machine_row_snapshot_status = "complete_no_row_truncation",
+            machine_input_probe_eligible_count = processing ? 0 : 1,
+            machine_has_input = true,
+            machine_has_output = true,
+            ready_for_harvest = false,
+            minutes_until_ready = processing ? 1750 : -1,
+            last_output_rule_id = processing ? "keg_wheat" : null,
+            last_input_item = processing
+                ? new
+                {
+                    item_id = "262",
+                    qualified_item_id = "(O)262",
+                    stack = 1,
+                    quality = 0
+                }
+                : null,
+            held_item = processing
+                ? new
+                {
+                    item_id = "346",
+                    qualified_item_id = "(O)346",
+                    stack = 1,
+                    quality = 0,
+                    sale_price = 200
+                }
+                : null,
+            active_output_authoritative_route_sources = processing
+                ? new[]
+                {
+                    new
+                    {
+                        route_kind = "machine_output",
+                        source_id = MachineCapacityProofMachineSourceId,
+                        qualified_item_id = "(O)346"
+                    }
+                }
+                : Array.Empty<object>(),
+            machine_execution_semantics = new
+            {
+                status = "available",
+                execution_status = "available_data_driven",
+                input_dispatch_kind = "base_object_data_driven",
+                prediction_training_status =
+                    "exact_current_snapshot_probe_supported"
+            },
+            machine_data = new
+            {
+                status = "available",
+                has_output = true,
+                additional_consumed_item_count = 0,
+                output_rule_count = 1,
+                output_rules = new[]
+                {
+                    new
+                    {
+                        id = "keg_wheat",
+                        required_item_id = "(O)262",
+                        required_count = 1,
+                        minutes_until_ready = 1750,
+                        output_item = new
+                        {
+                            item_id = "346",
+                            qualified_item_id = "(O)346",
+                            stack = 1,
+                            quality = 0,
+                            sale_price = 200
+                        }
+                    }
+                }
+            },
+            loadable_inputs = processing
+                ? Array.Empty<object>()
+                : new object[]
+                {
+                    new
+                    {
+                        slot_index = 0,
+                        item_id = "262",
+                        qualified_item_id = "(O)262",
+                        stack = 1,
+                        quality = 0,
+                        sale_price = 25,
+                        predicted_output = new
+                        {
+                            status = "available",
+                            training_eligibility_status =
+                                "exact_current_snapshot_probe_supported",
+                            source =
+                                "MachineDataUtility.GetOutputItem(probe:true)",
+                            matched_rule_id = "keg_wheat",
+                            matched_rule_index = 0,
+                            matched_output_index = 0,
+                            required_item_id = "(O)262",
+                            required_count = 1,
+                            additional_consumed_item_count = 0,
+                            effective_minutes_until_ready = 1750,
+                            output_context_tags = new[]
+                            {
+                                "artisan_good",
+                                "id_o_346"
+                            },
+                            item = new
+                            {
+                                item_id = "346",
+                                qualified_item_id = "(O)346",
+                                stack = 1,
+                                quality = 0,
+                                sale_price = 200
+                            },
+                            sale_price = 200,
+                            stack = 1,
+                            quality = 0,
+                            authoritative_route_sources = new[]
+                            {
+                                new
+                                {
+                                    route_kind = "machine_output",
+                                    source_id =
+                                        MachineCapacityProofMachineSourceId,
+                                    qualified_item_id = "(O)346"
+                                }
+                            }
+                        },
+                        probe_source =
+                            "Object.performObjectDropInAction(probe:true)",
+                        load_executor_status = "covered_for_runtime_load"
+                    }
+                }
+        };
+        return JsonSerializer.SerializeToNode(new
+        {
+            value = new[] { row },
+            status = "available",
+            source = new { kind = "test", path = "machine-input-load-proof" },
+            adapter = "test",
+            read_at_tick = readAtTick,
+            confidence = 1
+        }, JsonDefaults.Options)!;
+    }
+
+    private static void SetMachineInputLoadProofMaterialInventory(
+        JsonObject root,
+        int quantity)
+    {
+        var graph = root["state"]!["farm"]!["material_inventory_graph"]![
+            "value"]!.AsObject();
+        var playerId = graph["player_id"]!.DeepClone();
+        var nodes = graph["inventory_nodes"]!.AsArray();
+        var playerNode = nodes.Single(node =>
+            node!["inventory_kind"]!.GetValue<string>() ==
+            "player_inventory")!.AsObject();
+        playerNode["owner_player_id"] = playerId;
+        var slots = playerNode["slots"]!.AsArray();
+        slots.Clear();
+        var quantities = graph["quantity_rows"]!.AsArray();
+        quantities.Clear();
+        if (quantity <= 0)
+        {
+            return;
+        }
+
+        slots.Add(JsonSerializer.SerializeToNode(new
+        {
+            slot_index = 0,
+            item_id = "262",
+            qualified_item_id = "(O)262",
+            context_tags = Array.Empty<string>(),
+            stack = quantity,
+            quality = 0,
+            sale_price = 25
+        }, JsonDefaults.Options));
+        quantities.Add(JsonSerializer.SerializeToNode(new
+        {
+            qualified_item_id = "(O)262",
+            quality = 0,
+            available_quantity = quantity,
+            ready_output_quantity = 0,
+            in_process_quantity = 0,
+            restricted_quantity = 0,
+            source_slot_count = 1
+        }, JsonDefaults.Options));
+    }
+
     private static void SetMachineCapacityProofMaterialInventory(
         JsonObject root,
         bool containsMachine)

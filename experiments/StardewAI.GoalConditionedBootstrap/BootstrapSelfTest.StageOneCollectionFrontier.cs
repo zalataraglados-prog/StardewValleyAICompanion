@@ -2431,14 +2431,24 @@ internal static partial class BootstrapSelfTest
                 ActionQueuePath = targetDateRouteQueuePath,
                 RouteOccurrenceId = targetDateOpportunityShop.RouteOccurrenceId
             };
+        Write(
+            Path.Combine(root, "target-date-execution-inputs.json"),
+            targetDateExecutionInputs);
         VerifyTargetDateFreshTerminalReceipt(
             targetDateExecutionInputs,
             targetDateExecutionBindingPath,
             targetDateAfterSnapshotPath,
             targetDateExecutionReceiptPath,
             targetDateInsufficientAfterSnapshotPath);
-        VerifyMachineCapacitySupportingTransitionProof(
-            targetDateExecutionInputs);
+        var machineCapacityCoverage =
+            VerifyMachineCapacitySupportingTransitionProof(
+                targetDateExecutionInputs);
+        var machineInputLoadCoverage =
+            VerifyMachineInputLoadSupportingTransitionProof(
+                targetDateExecutionInputs);
+        VerifySupportingTransitionTerminalCoverageMatrix(
+            machineInputLoadCoverage,
+            machineCapacityCoverage);
         VerifyTargetDatePortfolioContinuationFixture(
             targetDateExecutionInputs,
             targetDateOpportunityShop.RouteOccurrenceId,

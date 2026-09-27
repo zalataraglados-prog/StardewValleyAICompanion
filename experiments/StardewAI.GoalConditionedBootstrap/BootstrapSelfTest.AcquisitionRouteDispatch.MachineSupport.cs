@@ -159,7 +159,7 @@ internal static partial class BootstrapSelfTest
     {
         const string json = """
         {
-          "time":{"time_of_day":{"value":900,"status":"available"},"total_days":{"value":0,"status":"available"}},
+          "time":{"time":{"value":900,"status":"available"},"total_days":{"value":0,"status":"available"}},
           "player":{
             "location_id":{"value":"Farm","status":"available"},
             "tile_x":{"value":63,"status":"available"},

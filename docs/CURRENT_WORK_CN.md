@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 支持动作终端训练谱系覆盖矩阵 2/5
+
+- 新增严格的 file-backed 覆盖矩阵。支持类型只能从已结算支持请求的制品中推导，调用方不能自行声明；每类必须恰好有一条可重算的 rollout proof、controller admission 与 supervision dataset，缺失或重复均失败关闭。
+- `machine_input_load` 与 `machine_capacity_establishment` 已完成 `support request -> atomic commit -> shared compilation -> native receipt -> nonterminal settlement -> fresh replan -> terminal rollout -> supervision` 全链证明。支持动作的执行 run ID 必须从终端 native outcome 中排除，即使二者合法共享同一个高层 route occurrence。
+- 修正支持请求读取了非权威 `time.time_of_day` 的错误；现统一读取透明桥 schema 的 `time.time`。文件夹具同时补齐必需的 `player.inventory_capacity`，没有放宽 required-state 或期限门禁。
+- Release 构建、acquisition dispatch、bootstrap hermetic 与完整 `self-test-current-stage-one-collection` 均通过。当前矩阵明确为 `2/5`，尚缺 `crop_planting`、`machine_input_material_transfer`、`machine_input_purchase`；`formal_product_training_authorized=false` 保持不变。
+- 下一固定切片是复用既有 `inventory.transfer_item -> executor.transfer_material` 及其 relocation settlement，建立 `machine_input_material_transfer` 的同型 file-backed 终端谱系证明；不得新增第二套搬运、寻路、ledger 或终端编译实现。
+
 ## 2026-09-28 机器容量支持过渡接入终端 rollout 证明链
 
 - 机器放置现以真实文件制品完成 `support request -> commit receipt -> shared compilation -> native execution receipt -> nonterminal settlement -> fresh replan`，并把这份精确血缘作为 `SupportingTransitionInitialProof` 传入既有终端执行、reservation 结算、rollout checkpoint、proof receipt、rollout admission 与 supervision dataset 构建器。没有新增 planner、ledger、动作编译器或执行器。
