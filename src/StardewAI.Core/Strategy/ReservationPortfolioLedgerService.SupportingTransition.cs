@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
 
@@ -21,16 +23,21 @@ public sealed partial class ReservationPortfolioLedgerService
             request.StateHash,
             request.ExpectedLedgerRevision);
         var consumptions = MaterialConsumptions(request, errors);
+        var relocations = request.MaterialRelocations ??
+            Array.Empty<ReservationPortfolioMaterialRelocation>();
         ValidateSupportingTransitionSettlementRequest(
             current,
+            snapshot,
             request,
             consumptions,
+            relocations,
             errors);
         if (errors.Count > 0)
             return SupportingTransitionSettlementRejected(
                 current,
                 request,
                 consumptions,
+                relocations,
                 errors);
 
         var ledger = StrategyCommitmentLedgerSupport.CloneOrCreate(
@@ -40,14 +47,29 @@ public sealed partial class ReservationPortfolioLedgerService
         var byReservation = consumptions.ToDictionary(
             value => value.MaterialReservationId,
             StringComparer.Ordinal);
+        var relocationByReservation = relocations.ToDictionary(
+            value => value.MaterialReservationId,
+            StringComparer.Ordinal);
         ledger.MaterialReservations = ledger.MaterialReservations.Select(row =>
         {
+            if (relocationByReservation.TryGetValue(
+                    row.ReservationId,
+                    out var relocation))
+            {
+                var relocated = StrategyCommitmentLedgerSupport.CloneMaterial(row);
+                relocated.Revision++;
+                relocated.SourceStateHash = snapshot.StateHash;
+                relocated.NodeId = relocation.DestinationNodeId;
+                relocated.SlotIndex = relocation.DestinationSlotIndex;
+                relocated.Status = StrategyCommitmentStatuses.Active;
+                relocated.CompletionReason = string.Empty;
+                relocated.CompletionEvidenceSha256 = string.Empty;
+                return relocated;
+            }
             if (!byReservation.TryGetValue(
                     row.ReservationId,
                     out var consumption))
-            {
                 return row;
-            }
             var settled = StrategyCommitmentLedgerSupport.CloneMaterial(row);
             settled.Revision++;
             if (consumption.ConsumedQuantity == row.Quantity)
@@ -92,6 +114,19 @@ public sealed partial class ReservationPortfolioLedgerService
                 ReservationStatus = settled.Status
             };
         }).ToArray();
+        foreach (var relocation in relocations)
+        {
+            var relocated = ledger.MaterialReservations.Single(row =>
+                row.ReservationId == relocation.MaterialReservationId);
+            StrategyCommitmentLedgerSupport.AppendHistory(
+                ledger,
+                relocated.ReservationId,
+                relocated.Revision,
+                relocated.SourceDecisionId,
+                "material_reservation_relocated",
+                updatedAt,
+                request.Reason);
+        }
         StrategyCommitmentLedgerSupport.AppendHistory(
             ledger,
             request.PortfolioId,
@@ -122,18 +157,26 @@ public sealed partial class ReservationPortfolioLedgerService
                     value.ReservationStatus ==
                         StrategyCommitmentStatuses.Active)
                 .Select(value => value.MaterialReservationId)
+                .Concat(relocations.Select(value =>
+                    value.MaterialReservationId))
+                .ToArray(),
+            RelocatedMaterialReservationIds = relocations.Select(value =>
+                    value.MaterialReservationId)
                 .ToArray(),
             ConsumedQuantity = settlements.Sum(value =>
                 value.ConsumedQuantity),
             MaterialSettlements = settlements,
+            MaterialRelocations = relocations,
             Ledger = ledger
         };
     }
 
     private static void ValidateSupportingTransitionSettlementRequest(
         StrategyCommitmentLedger? current,
+        SnapshotEnvelope snapshot,
         ReservationPortfolioSupportingTransitionSettlementRequest request,
         ReservationPortfolioMaterialConsumption[] consumptions,
+        ReservationPortfolioMaterialRelocation[] relocations,
         ICollection<string> errors)
     {
         if (string.IsNullOrWhiteSpace(request.PortfolioId))
@@ -144,7 +187,11 @@ public sealed partial class ReservationPortfolioLedgerService
             errors.Add("route_source_decision_id_required");
         if (!IsLowerSha256(request.SupportingTransitionReceiptSha256))
             errors.Add("supporting_transition_receipt_sha256_invalid");
-        if (consumptions.Length == 0 ||
+        if ((consumptions.Length == 0) == (relocations.Length == 0))
+        {
+            errors.Add("supporting_transition_material_mutation_mode_invalid");
+        }
+        if (consumptions.Length > 0 && (
             consumptions.Any(value =>
                 string.IsNullOrWhiteSpace(value.MaterialReservationId) ||
                 string.IsNullOrWhiteSpace(value.NodeId) ||
@@ -158,10 +205,33 @@ public sealed partial class ReservationPortfolioLedgerService
                 .Distinct(StringComparer.Ordinal).Count() !=
                 consumptions.Length ||
             consumptions.Sum(value => (long)value.ConsumedQuantity) >
-                int.MaxValue || string.IsNullOrWhiteSpace(request.Reason))
+                int.MaxValue))
         {
             errors.Add("supporting_transition_consumed_claim_invalid");
         }
+        if (relocations.Length > 0 && (
+            relocations.Any(value =>
+                string.IsNullOrWhiteSpace(value.MaterialReservationId) ||
+                string.IsNullOrWhiteSpace(value.SourceNodeId) ||
+                value.SourceSlotIndex < 0 ||
+                string.IsNullOrWhiteSpace(value.DestinationNodeId) ||
+                value.DestinationSlotIndex < 0 ||
+                value.SourceNodeId == value.DestinationNodeId ||
+                string.IsNullOrWhiteSpace(value.QualifiedItemId) ||
+                value.Quantity <= 0) ||
+            relocations.Select(value => value.MaterialReservationId)
+                .Distinct(StringComparer.Ordinal).Count() !=
+                relocations.Length ||
+            relocations.Select(value =>
+                    value.DestinationNodeId + ":" +
+                    value.DestinationSlotIndex)
+                .Distinct(StringComparer.Ordinal).Count() !=
+                relocations.Length))
+        {
+            errors.Add("supporting_transition_relocated_claim_invalid");
+        }
+        if (string.IsNullOrWhiteSpace(request.Reason))
+            errors.Add("supporting_transition_reason_required");
         if (current is null)
         {
             errors.Add("reservation_portfolio_ledger_required");
@@ -202,6 +272,100 @@ public sealed partial class ReservationPortfolioLedgerService
             {
                 errors.Add("supporting_transition_consumed_claim_mismatch");
             }
+        }
+        foreach (var relocation in relocations)
+        {
+            var claims = current.MaterialReservations.Where(row =>
+                    row.ReservationId == relocation.MaterialReservationId)
+                .ToArray();
+            if (claims.Length != 1 ||
+                claims[0].Status != StrategyCommitmentStatuses.Active ||
+                claims[0].GoalId != request.GoalId ||
+                claims[0].SourceDecisionId !=
+                    request.RouteSourceDecisionId ||
+                claims[0].NodeId != relocation.SourceNodeId ||
+                claims[0].SlotIndex != relocation.SourceSlotIndex ||
+                claims[0].QualifiedItemId !=
+                    relocation.QualifiedItemId ||
+                claims[0].Quantity != relocation.Quantity)
+            {
+                errors.Add("supporting_transition_relocated_claim_mismatch");
+            }
+            ValidateRelocationDestination(
+                current,
+                snapshot,
+                relocation,
+                errors);
+        }
+    }
+
+    private static void ValidateRelocationDestination(
+        StrategyCommitmentLedger current,
+        SnapshotEnvelope snapshot,
+        ReservationPortfolioMaterialRelocation relocation,
+        ICollection<string> errors)
+    {
+        var value = ReadStateFieldValue(
+            snapshot,
+            "farm",
+            "material_inventory_graph");
+        MaterialInventoryGraph? graph = null;
+        try
+        {
+            if (value is { ValueKind: JsonValueKind.Object })
+            {
+                graph = JsonSerializer.Deserialize<MaterialInventoryGraph>(
+                    value.Value.GetRawText());
+            }
+        }
+        catch (JsonException)
+        {
+            // The shared error below is stable for missing and malformed graphs.
+        }
+        var graphMatchesActor = ReadableStatus(ReadStateFieldStatus(
+                snapshot,
+                "farm",
+                "material_inventory_graph")) &&
+            long.TryParse(
+                StrategyCommitmentLedgerSupport.PlayerId(snapshot),
+                out var actorPlayerId) &&
+            graph is
+            {
+                SchemaVersion: "material_inventory_graph.v1",
+                Status: "available"
+            } &&
+            graph.PlayerId == actorPlayerId;
+        var nodes = graph?.InventoryNodes.Where(node =>
+                node.NodeId == relocation.DestinationNodeId &&
+                node.InventoryKind == "player_inventory" &&
+                node.SupplyState == "available" &&
+                node.ActorUseAuthorized &&
+                node.OwnerPlayerId == graph.PlayerId)
+            .ToArray() ?? Array.Empty<MaterialInventoryNode>();
+        var slots = nodes.Length == 1
+            ? nodes[0].Slots.Where(slot =>
+                    slot.SlotIndex == relocation.DestinationSlotIndex &&
+                    slot.QualifiedItemId == relocation.QualifiedItemId)
+                .ToArray()
+            : Array.Empty<MaterialInventorySlot>();
+        var otherDestinationClaims = current.MaterialReservations.Where(row =>
+                row.Status == StrategyCommitmentStatuses.Active &&
+                row.ReservationId != relocation.MaterialReservationId &&
+                row.NodeId == relocation.DestinationNodeId &&
+                row.SlotIndex == relocation.DestinationSlotIndex)
+            .ToArray();
+        var otherReserved = otherDestinationClaims.Where(row =>
+                row.QualifiedItemId == relocation.QualifiedItemId)
+            .Sum(row => (long)row.Quantity);
+        if (!graphMatchesActor ||
+            nodes.Length != 1 ||
+            slots.Length != 1 ||
+            otherDestinationClaims.Any(row =>
+                row.QualifiedItemId != relocation.QualifiedItemId) ||
+            otherReserved + relocation.Quantity > slots[0].Stack)
+        {
+            errors.Add(
+                "supporting_transition_relocation_destination_unavailable");
         }
     }
 
@@ -244,6 +408,7 @@ public sealed partial class ReservationPortfolioLedgerService
             StrategyCommitmentLedger? ledger,
             ReservationPortfolioSupportingTransitionSettlementRequest request,
             ReservationPortfolioMaterialConsumption[] consumptions,
+            ReservationPortfolioMaterialRelocation[] relocations,
             IEnumerable<string> errors) => new()
             {
                 Accepted = false,
@@ -256,6 +421,10 @@ public sealed partial class ReservationPortfolioLedgerService
                         ? consumptions[0].MaterialReservationId
                         : string.Empty,
                 ConsumedQuantity = SafeConsumedQuantity(consumptions),
+                RelocatedMaterialReservationIds = relocations.Select(value =>
+                        value.MaterialReservationId)
+                    .ToArray(),
+                MaterialRelocations = relocations,
                 Errors = errors.Distinct(StringComparer.Ordinal).ToArray(),
                 Ledger = ledger
             };
