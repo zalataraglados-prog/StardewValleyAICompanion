@@ -312,7 +312,11 @@ namespace StardewAI.Core.OptionRegistry
                 ReadInt(
                     predictedOutput,
                     "additional_consumed_item_count",
-                    -1));
+                    -1),
+                Math.Max(1, ReadInt(predictedOutput, "required_count")),
+                minutesUntilReady >= 0
+                    ? minutesUntilReady
+                    : (int?)null);
         }
 
         private static MachineOutputPrediction PredictMachineOutputFromSummary(
@@ -447,7 +451,11 @@ namespace StardewAI.Core.OptionRegistry
                     outputItemId,
                     Array.Empty<string>(),
                     "[]",
-                    -1);
+                    -1,
+                    -1,
+                    minutesUntilReady >= 0
+                        ? minutesUntilReady
+                        : (int?)null);
             }
 
             return MachineOutputPrediction.Unavailable("machine_data_no_exact_required_item_match");
@@ -616,7 +624,9 @@ namespace StardewAI.Core.OptionRegistry
                 string outputItemId,
                 string[] outputContextTags,
                 string authoritativeRouteSourcesJson,
-                int additionalConsumedItemCount)
+                int additionalConsumedItemCount,
+                int requiredInputCount,
+                int? effectiveMinutesUntilReady)
             {
                 Status = status;
                 ValueBasis = valueBasis;
@@ -626,6 +636,8 @@ namespace StardewAI.Core.OptionRegistry
                 OutputContextTags = outputContextTags;
                 AuthoritativeRouteSourcesJson = authoritativeRouteSourcesJson;
                 AdditionalConsumedItemCount = additionalConsumedItemCount;
+                RequiredInputCount = requiredInputCount;
+                EffectiveMinutesUntilReady = effectiveMinutesUntilReady;
             }
 
             public string Status { get; }
@@ -644,6 +656,10 @@ namespace StardewAI.Core.OptionRegistry
 
             public int AdditionalConsumedItemCount { get; }
 
+            public int RequiredInputCount { get; }
+
+            public int? EffectiveMinutesUntilReady { get; }
+
             public static MachineOutputPrediction Unavailable(string status)
             {
                 return new MachineOutputPrediction(
@@ -654,7 +670,9 @@ namespace StardewAI.Core.OptionRegistry
                     string.Empty,
                     Array.Empty<string>(),
                     "[]",
-                    -1);
+                    -1,
+                    -1,
+                    null);
             }
         }
 

@@ -6,6 +6,29 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
 {
+    private static string SupportingTransitionKind(
+        AcquisitionRouteTargetDateUnlock requirement) =>
+        requirement.RouteKind switch
+        {
+            "harvests_as" when requirement.SourceId.StartsWith(
+                "crop:",
+                StringComparison.Ordinal) => "crop_planting",
+            "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output" => "machine_input_load",
+            _ => string.Empty
+        };
+
+    private static string ReadStringParameter(
+        PolicyEventCandidatePrediction candidate,
+        string name) =>
+        CurrentTeacherFrontierSupport.TryReadUniqueParameter(
+            candidate,
+            name,
+            out var value)
+                ? value
+                : string.Empty;
+
     private static int? ReadPositiveIntParameter(
         PolicyEventCandidatePrediction candidate,
         string name) =>

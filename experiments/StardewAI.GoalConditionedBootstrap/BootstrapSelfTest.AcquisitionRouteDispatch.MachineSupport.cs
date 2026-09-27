@@ -15,6 +15,8 @@ internal static partial class BootstrapSelfTest
         var ledger = new StrategyCommitmentLedger
         {
             LedgerId = "ledger.dispatch.machine-support.self-test",
+            SaveId = "machine-support-save",
+            PlayerId = "123",
             Revision = 3,
             SourceStateHash = snapshot.StateHash
         };
@@ -144,13 +146,19 @@ internal static partial class BootstrapSelfTest
                     "executor.load_machine_input",
             "Exact machine input support did not compile through the shared native queue: " +
             string.Join(",", compilation.BlockingReasons));
+        VerifyMachineInputSupportingRequest(
+            snapshot,
+            ledger,
+            requirement,
+            lowering,
+            support);
     }
 
     private static SnapshotEnvelope AcquisitionDispatchMachineInputSnapshot()
     {
         const string json = """
         {
-          "time":{"time_of_day":{"value":900,"status":"available"}},
+          "time":{"time_of_day":{"value":900,"status":"available"},"total_days":{"value":0,"status":"available"}},
           "player":{
             "location_id":{"value":"Farm","status":"available"},
             "tile_x":{"value":63,"status":"available"},
@@ -171,7 +179,8 @@ internal static partial class BootstrapSelfTest
               "predicted_output":{"status":"available","training_eligibility_status":"exact_current_snapshot_probe_supported","source":"MachineDataUtility.GetOutputItem(probe:true)","matched_rule_id":"keg_wheat","matched_rule_index":0,"matched_output_index":0,"required_item_id":"(O)262","required_count":1,"additional_consumed_item_count":0,"effective_minutes_until_ready":1750,"output_context_tags":["artisan_good","id_o_346"],"item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"quality":0,"sale_price":200},"sale_price":200,"stack":1,"quality":0,"authoritative_route_sources":[{"route_kind":"machine_output","source_id":"machine:(BC)12:rule:keg_wheat","qualified_item_id":"(O)346"}]},
               "probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load"
             }]
-          }],"status":"available"}},
+          }],"status":"available"},
+          "material_inventory_graph":{"value":{"schema_version":"material_inventory_graph.v1","status":"available","player_id":123,"inventory_nodes":[{"node_id":"player:123","inventory_kind":"player_inventory","supply_state":"available","actor_use_authorized":true,"slots":[{"slot_index":0,"qualified_item_id":"(O)262","stack":2,"quality":0,"sale_price":25}]}]},"status":"available"}},
           "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
           "locations":{
             "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available"},
@@ -185,6 +194,16 @@ internal static partial class BootstrapSelfTest
             "Machine input support snapshot is null.");
         return new SnapshotEnvelope
         {
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "machine-support-save",
+                Status = "available"
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "123",
+                Status = "available"
+            },
             StateHash = SnapshotHash.ComputeStateHash(state),
             GameTick = 1,
             RealTimestamp = "2026-09-27T00:00:00Z",

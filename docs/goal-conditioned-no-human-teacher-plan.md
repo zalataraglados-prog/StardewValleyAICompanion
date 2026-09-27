@@ -2381,6 +2381,26 @@ Slice 7 remains assigned to the RTX 5070 node.
   route's material claims, verify the before/after machine transition, settle only observed input consumption, and
   rejoin the existing recurrence chain. Formal training remains unauthorized until those gates are complete.
 
+### 2026-09-27: machine-load support request and commit gate
+
+- The existing support-request protocol now dispatches explicitly between `crop_planting` and `machine_input_load`;
+  no second request, commit or compiler stack was introduced. A machine request rebinds the current candidate to the
+  exact location, tile, machine qualified ID, inventory slot, input qualified ID, native `RequiredCount`, predicted
+  effective duration and the authoritative processing schedule.
+- Completion-day proof follows the locked 1.6.15 native semantics. `DaysUntilReady` is converted with the equivalent
+  of `Utility.CalculateMinutesUntilMorning`, while minute-based timers cross the 2am/6am boundary using the game's
+  400-minute overnight decrement. The probe-derived effective duration must exactly equal the processing-axis source
+  duration and finish inside the explicit support deadline and any authoritative route window. Unsupported ready-time
+  modifiers, output-method overrides and overnight-only completion still fail closed upstream.
+- The candidate's exact input slot must be covered for at least one native load by the route material claims. The full
+  claim set is still preflighted and atomically committed through `ReservationPortfolioLedgerService`, after which the
+  existing one-item support compiler produces `executor.load_machine_input`. Duration drift, slot drift and schedule
+  ambiguity have focused negative tests.
+- Dispatch, hermetic bootstrap, Core game-free 91/91 and the full regression pass. The remaining bounded work is the
+  fresh before/after receipt for exact inventory and machine-state changes, partial material-claim settlement that
+  preserves unconsumed quantity, and re-entry into the existing complete-replan recurrence. Formal training remains
+  unauthorized until those gates close.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

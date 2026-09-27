@@ -6,22 +6,20 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
 {
     private static void ValidateRoute(
+        string supportTransitionKind,
         AcquisitionRouteTargetDateUnlock requirement,
         AcquisitionRequirementRouteLowering lowered,
         AcquisitionRouteTargetDateReservation reservation,
         AcquisitionRouteTargetDateProcessing processing,
         ICollection<string> reasons)
     {
-        if (requirement.RouteKind != "harvests_as" ||
-            !requirement.SourceId.StartsWith("crop:", StringComparison.Ordinal) ||
-            requirement.BlockingReasons.Length != 0 ||
+        if (requirement.BlockingReasons.Length != 0 ||
             !requirement.StaticWindowMatchesTargetDate ||
             requirement.UnlockStateMatchesTargetDate != true ||
-            requirement.MatchingWindows.Length == 0 ||
             !lowered.RuntimeAdmissionReady ||
             !lowered.TeacherAdmissionReady)
         {
-            reasons.Add("support_crop_route_not_authoritatively_admitted");
+            reasons.Add("support_route_not_authoritatively_admitted");
         }
         if (!reservation.ReservationAxisResolved ||
             reservation.InventoryReservationMatchesTargetDate != true ||
@@ -32,7 +30,35 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 "claim_already_committed" or
                 "claim_replacement_required"))
         {
-            reasons.Add("support_crop_seed_reservation_not_ready");
+            reasons.Add("support_material_reservation_not_ready");
+        }
+
+        if (supportTransitionKind == "crop_planting")
+        {
+            ValidateCropRoute(requirement, processing, reasons);
+            return;
+        }
+        if (supportTransitionKind == "machine_input_load")
+        {
+            ValidateMachineRoute(requirement, processing, reasons);
+            return;
+        }
+        reasons.Add("support_transition_kind_not_bound");
+    }
+
+    private static void ValidateCropRoute(
+        AcquisitionRouteTargetDateUnlock requirement,
+        AcquisitionRouteTargetDateProcessing processing,
+        ICollection<string> reasons)
+    {
+        if (requirement.RouteKind != "harvests_as" ||
+            !requirement.SourceId.StartsWith("crop:", StringComparison.Ordinal) ||
+            requirement.BlockingReasons.Length != 0 ||
+            !requirement.StaticWindowMatchesTargetDate ||
+            requirement.UnlockStateMatchesTargetDate != true ||
+            requirement.MatchingWindows.Length == 0)
+        {
+            reasons.Add("support_crop_route_not_authoritatively_admitted");
         }
         if (!processing.ProcessingLeadTimeAxisResolved ||
             processing.ProcessingLeadTimeMatchesTargetDate != false ||
@@ -49,16 +75,50 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         }
     }
 
+    private static void ValidateMachineRoute(
+        AcquisitionRouteTargetDateUnlock requirement,
+        AcquisitionRouteTargetDateProcessing processing,
+        ICollection<string> reasons)
+    {
+        if (requirement.RouteKind is not (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output"))
+        {
+            reasons.Add("support_machine_route_not_authoritatively_admitted");
+        }
+        if (!processing.ProcessingLeadTimeAxisResolved ||
+            processing.ProcessingLeadTimeMatchesTargetDate != false ||
+            processing.ProcessingLeadTimeRequirementKind !=
+                "native_machine_processing_schedule" ||
+            processing.BlockingReasons.Length != 0 ||
+            !processing.Evaluations.Any(value =>
+                value.ProductionStateKind == "manual_input_processing" &&
+                value.MachineScheduleBinding is not null &&
+                value.MachineScheduleBinding.RequiredAttemptCount > 0))
+        {
+            reasons.Add("support_machine_processing_miss_not_proven");
+        }
+    }
+
     private static bool CandidateCoveredByClaim(
         PolicyEventCandidatePrediction candidate,
-        AcquisitionRouteReservationClaimSet? claimSet) =>
-        candidate.SlotIndex.HasValue &&
-        claimSet is not null &&
-        claimSet.MaterialClaims.Any(claim =>
-            claim.SlotIndex == candidate.SlotIndex.Value &&
-            claim.QualifiedItemId == candidate.QualifiedItemId &&
-            claim.Quantity >= 1) &&
-        claimSet.CurrencyClaims.Length == 0;
+        AcquisitionRouteReservationClaimSet? claimSet,
+        string supportTransitionKind)
+    {
+        var requiredQuantity = supportTransitionKind == "machine_input_load"
+            ? ReadPositiveIntParameter(candidate, "machine_input_required_count")
+            : 1;
+        return candidate.SlotIndex.HasValue &&
+            requiredQuantity.HasValue &&
+            candidate.Quantity >= requiredQuantity.Value &&
+            claimSet is not null &&
+            claimSet.MaterialClaims.Any(claim =>
+                claim.SlotIndex == candidate.SlotIndex.Value &&
+                claim.QualifiedItemId == candidate.QualifiedItemId &&
+                claim.Quantity >= requiredQuantity.Value) &&
+            claimSet.CurrencyClaims.Length == 0;
+    }
 
     private static void ValidateClaimIdentity(
         AcquisitionRouteReservationClaimSet? claimSet,

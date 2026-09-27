@@ -47,6 +47,9 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
     [JsonPropertyName("route_kind")]
     public string RouteKind { get; set; } = string.Empty;
 
+    [JsonPropertyName("support_transition_kind")]
+    public string SupportTransitionKind { get; set; } = string.Empty;
+
     [JsonPropertyName("source_id")]
     public string SourceId { get; set; } = string.Empty;
 
@@ -88,6 +91,21 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
 
     [JsonPropertyName("seed_slot_index")]
     public int? SeedSlotIndex { get; set; }
+
+    [JsonPropertyName("input_qualified_item_id")]
+    public string InputQualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("input_slot_index")]
+    public int? InputSlotIndex { get; set; }
+
+    [JsonPropertyName("input_required_quantity")]
+    public int? InputRequiredQuantity { get; set; }
+
+    [JsonPropertyName("machine_qualified_item_id")]
+    public string MachineQualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("predicted_processing_minutes")]
+    public int? PredictedProcessingMinutes { get; set; }
 
     [JsonPropertyName("base_ledger_revision")]
     public int BaseLedgerRevision { get; set; }
@@ -141,5 +159,5 @@ public sealed class AcquisitionRouteSupportingTransitionRequest
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A support request may select only a current source-bound planting candidate for an authoritative crop route that passed calendar, unlock, location, capacity, seed-resource and reservation axes but is not yet harvest-ready. Its transparent adjusted growth duration must fit both the live remaining season and an explicit future deadline. The candidate seed slot must be covered by the route's exact material claim. The request is preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
+        "A support request may select only one current source-bound candidate from the shared acquisition route. Crop planting retains exact growth, season, seed-slot and deadline proof. Machine input loading additionally requires a unique native output route, exact machine location/tile/type, probe-derived required input count and effective processing minutes matching the authoritative processing schedule; its exact input slot must be covered by the route material claims and its completion day must fit the explicit deadline. All route claims are preflighted through the shared reservation-portfolio ledger service and must be atomically committed before compilation. This artifact neither mutates the ledger nor authorizes execution or training.";
 }

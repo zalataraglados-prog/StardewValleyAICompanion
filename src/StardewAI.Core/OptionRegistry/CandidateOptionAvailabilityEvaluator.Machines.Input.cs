@@ -201,6 +201,14 @@ namespace StardewAI.Core.OptionRegistry
                             ";machine_output_prediction_status=" + prediction.Status +
                             ";authoritative_route_sources_json=" +
                             prediction.AuthoritativeRouteSourcesJson +
+                            (prediction.RequiredInputCount > 0
+                                ? ";machine_input_required_count=" +
+                                  prediction.RequiredInputCount
+                                : string.Empty) +
+                            (prediction.EffectiveMinutesUntilReady.HasValue
+                                ? ";predicted_processing_minutes=" +
+                                  prediction.EffectiveMinutesUntilReady.Value
+                                : string.Empty) +
                             prediction.ExpectedEffectSuffix +
                             ";machine_input_probe_source=Object.performObjectDropInAction(probe:true)" +
                             ";machine_input_executor_status=" + loadExecutorStatus +
@@ -226,9 +234,7 @@ namespace StardewAI.Core.OptionRegistry
                                     .ExpectedEffectSuffix(
                                         supportContinuation) +
                                   MachineInputReservationExpectedEffect(
-                                      reservationGuard!,
-                                      MachineSupportIntentProjection
-                                          .RequiredInputCount(input))),
+                                      reservationGuard!)),
                         ItemId = itemId,
                         QualifiedItemId = qualifiedItemId,
                         SlotIndex = slotIndex,
@@ -260,6 +266,18 @@ namespace StardewAI.Core.OptionRegistry
                                 "predicted_output_additional_consumed_item_count",
                                 prediction.AdditionalConsumedItemCount
                                     .ToString()),
+                            Parameter(
+                                "machine_qualified_item_id",
+                                machineQualifiedItemId),
+                            Parameter(
+                                "machine_input_required_count",
+                                prediction.RequiredInputCount > 0
+                                    ? prediction.RequiredInputCount.ToString()
+                                    : string.Empty),
+                            Parameter(
+                                "predicted_processing_minutes",
+                                prediction.EffectiveMinutesUntilReady
+                                    ?.ToString() ?? string.Empty),
                             Parameter(
                                 "machine_special_prediction_model_id",
                                 incubatorPrediction?.ModelId ??
@@ -299,9 +317,7 @@ namespace StardewAI.Core.OptionRegistry
                                         supportContinuation)
                                     .Concat(
                                         MachineInputReservationParameters(
-                                            reservationGuard!,
-                                            MachineSupportIntentProjection
-                                                .RequiredInputCount(input))))
+                                            reservationGuard!)))
                         .ToArray()
                     };
                 })
@@ -309,9 +325,7 @@ namespace StardewAI.Core.OptionRegistry
         }
 
         private static string MachineInputReservationExpectedEffect(
-            MachineInputMaterialReservationGuardResult guard,
-            int requiredCount) =>
-            ";machine_input_required_count=" + requiredCount +
+            MachineInputMaterialReservationGuardResult guard) =>
             ";commitment_ledger_id=" + guard.LedgerId +
             ";commitment_ledger_revision=" + guard.LedgerRevision +
             ";material_reservation_guard_status=" + guard.Status +
@@ -322,10 +336,8 @@ namespace StardewAI.Core.OptionRegistry
 
         private static SmallModelActionParameter[]
             MachineInputReservationParameters(
-                MachineInputMaterialReservationGuardResult guard,
-                int requiredCount) =>
+                MachineInputMaterialReservationGuardResult guard) =>
             [
-                Parameter("machine_input_required_count", requiredCount.ToString()),
                 Parameter("commitment_ledger_id", guard.LedgerId),
                 Parameter("commitment_ledger_revision", guard.LedgerRevision.ToString()),
                 Parameter("material_reservation_guard_status", guard.Status),
