@@ -99,6 +99,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
         if (!request.SupportRequestReady ||
             request.AtomicCommitRequest is null ||
             request.ExpectedReadyTotalDay is null ||
+            request.SupportTransitionKind is not (
+                "crop_planting" or "machine_input_load") ||
             request.FormalTrainingAuthorized ||
             request.BlockingReasons.Length != 0)
         {
@@ -131,11 +133,39 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
         AcquisitionRouteSupportingTransitionRequest request)
     {
         var candidate = match.Candidate;
-        return candidate.LocationId == request.TargetLocationId &&
-            candidate.TileX == request.TargetTileX &&
-            candidate.TileY == request.TargetTileY &&
-            candidate.ItemId == request.SeedId &&
-            candidate.SlotIndex == request.SeedSlotIndex;
+        if (candidate.LocationId != request.TargetLocationId)
+            return false;
+        if (candidate.TileX != request.TargetTileX ||
+            candidate.TileY != request.TargetTileY)
+        {
+            return false;
+        }
+        if (request.SupportTransitionKind == "crop_planting")
+        {
+            return candidate.ItemId == request.SeedId &&
+                candidate.SlotIndex == request.SeedSlotIndex &&
+                candidate.QualifiedItemId == request.InputQualifiedItemId &&
+                candidate.SlotIndex == request.InputSlotIndex &&
+                request.InputRequiredQuantity == 1;
+        }
+        return request.SupportTransitionKind == "machine_input_load" &&
+            candidate.QualifiedItemId == request.InputQualifiedItemId &&
+            candidate.SlotIndex == request.InputSlotIndex &&
+            CurrentTeacherFrontierSupport.TryReadUniqueParameter(
+                candidate,
+                "machine_qualified_item_id",
+                out var machineQualifiedItemId) &&
+            machineQualifiedItemId == request.MachineQualifiedItemId &&
+            CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
+                candidate,
+                "machine_input_required_count",
+                out var requiredQuantity) &&
+            requiredQuantity == request.InputRequiredQuantity &&
+            CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
+                candidate,
+                "predicted_processing_minutes",
+                out var processingMinutes) &&
+            processingMinutes == request.PredictedProcessingMinutes;
     }
 
     private static AcquisitionRouteDispatchCompilation Blocked(

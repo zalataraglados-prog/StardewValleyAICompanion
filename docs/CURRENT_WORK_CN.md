@@ -11,12 +11,20 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器投料支持请求：期限、材料占用与提交门控
+
+- 现有作物支持协议没有被复制。`acquisition_route_supporting_transition_request.v1` 新增 `crop_planting / machine_input_load` 类型分派；机器分支只接受已经由唯一原生 route kind、source ID 和输出 qualified ID 命中的 `load_machine_input_tile` 候选。
+- 投料候选现在结构化携带机器 qualified ID、原生触发器 `RequiredCount` 和探针执行 `ReadyTimeModifiers` 后的有效加工分钟。请求会把地点、格子、机器类型、输入槽、输入物品、单次消耗量和处理轴的 `machine_schedule_binding` 逐项重绑；任何数量、时长或槽位漂移都在原子提交前失败关闭。
+- 完成日计算与当前 1.6.15 反编译语义一致：`DaysUntilReady` 按 `Utility.CalculateMinutesUntilMorning` 转换，普通分钟计时跨 2:00/6:00 边界继续递减。只有有效时长与处理轴权威值完全一致、预计完成日落在显式期限和权威窗口内时才放行；未绑定时间修正器、动态输出方法和仅隔夜完成仍由处理轴阻塞。
+- 路线的完整材料 claim set 继续通过共享 `ReservationPortfolioLedgerService` 一次性预检和提交；当前动作只绑定其中与候选槽位相同的单次主输入量。提交回执之后仍复用同一 `DailyPlanCompiler`、`ActionQueueCompiler` 和 `executor.load_machine_input`，不新增机器专用执行器，且保持非终端、成功后强制新快照与完整重规划。
+- 聚焦 dispatch、bootstrap hermetic、Core game-free `91/91` 与完整 `experiments/Run-Regression.ps1` 均通过。下一固定切片是核验投料前后库存与机器状态，并让结算只扣除本次观测到的输入数量、保留同一 claim 的剩余数量；在回执、部分结算和复入链闭合前，正式训练授权仍为 `false`。
+
 ## 2026-09-27 机器投料支持过渡：精确来源与共享编译链
 
 - 透明桥现在把投料探针已经选中的 `MachineOutputRule` 与 `MachineItemOutput` 重新绑定到 `Data/Machines` 的原生规则索引，并在预测结果中输出唯一的 `authoritative_route_sources`。有稳定规则 ID 时沿用 `machine_output` 身份；无规则 ID 时按精确 rule/output 索引输出 `native_machine_item_query_output` 或 `native_machine_flavored_output`。规则、输出行或目标物品不能唯一绑定时保持空来源并失败关闭。
 - Core 的 `load_machine_input_tile` 候选保留上述结构化来源及预测输出物品；目标日期支持选择同时核对输出物品、route kind 与 source ID，不按显示名、物品相同或预计收益猜测。错误输出、错误规则与同一目标物品的多来源歧义均不能进入队列。
 - 三类机器路线的 lowering 复用现有 `farm.process_machines` 候选作为原子投料支持动作，再经同一 `DailyPlanCompiler` 与 `ActionQueueCompiler` 编译为 `executor.load_machine_input`。该动作角色为 `supporting_transition`，不允许终端回执，并要求成功后读取新快照、完整重规划；`farm.establish_supported_machine_capacity` 与经济型 `farm.load_supported_machine_input` 仍保留，机器制作/放置没有证据时继续失败关闭。
-- 聚焦 dispatch 与 hermetic 自测、Core/TransparentBridge Release 构建均通过。当前切片闭合“已有空闲机器的精确投料候选到原生动作队列”，尚未把机器专属完成期限、原子材料 claim、投料后机器状态回执及 claim 结算扩展进作物专用的支持请求协议；正式训练授权仍为 false。
+- 聚焦 dispatch 与 hermetic 自测、Core/TransparentBridge Release 构建均通过。该切片闭合“已有空闲机器的精确投料候选到原生动作队列”；机器专属完成期限、原子材料 claim 与提交门控已由上方后续切片接入共享协议，投料后机器状态回执及部分 claim 结算仍待闭合；正式训练授权仍为 false。
 
 ## 2026-09-27 机器既有产物抵扣：下游闭环
 

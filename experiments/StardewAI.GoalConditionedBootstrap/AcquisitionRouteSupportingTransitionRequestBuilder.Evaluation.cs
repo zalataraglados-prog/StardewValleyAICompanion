@@ -33,70 +33,42 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             out var parsedDay)
                 ? parsedDay
                 : (int?)null;
+        var supportTransitionKind = SupportingTransitionKind(requirement);
         ValidateRoute(
+            supportTransitionKind,
             requirement,
             lowered,
             reservation,
             processing,
             reasons);
         if (matches.Length == 0)
-            reasons.Add("no_current_exact_crop_planting_support_candidate");
+        {
+            reasons.Add(supportTransitionKind switch
+            {
+                "crop_planting" =>
+                    "no_current_exact_crop_planting_support_candidate",
+                "machine_input_load" =>
+                    "no_current_exact_machine_input_support_candidate",
+                _ => "no_current_exact_support_candidate"
+            });
+        }
         var selected = matches.FirstOrDefault(match =>
                 CandidateCoveredByClaim(
                     match.Candidate,
-                    reservation.ClaimSet)) ??
+                    reservation.ClaimSet,
+                    supportTransitionKind)) ??
             matches.FirstOrDefault();
         var candidate = selected?.Candidate;
-        int? adjustedGrowDays = null;
-        int? daysRemaining = null;
-        int? expectedReadyDay = null;
-        var deadlineVerified = false;
-        var claimBound = false;
-        if (candidate is not null)
-        {
-            adjustedGrowDays = ReadPositiveIntParameter(
-                candidate,
-                "adjusted_grow_days");
-            daysRemaining = ReadNonNegativeIntParameter(
-                candidate,
-                "days_remaining_in_season");
-            if (!candidate.Available)
-            {
-                reasons.Add("crop_planting_support_candidate_not_ready_now");
-            }
-            if (!currentDay.HasValue ||
-                !adjustedGrowDays.HasValue ||
-                !daysRemaining.HasValue)
-            {
-                reasons.Add("crop_planting_deadline_evidence_incomplete");
-            }
-            else
-            {
-                try
-                {
-                    expectedReadyDay = checked(
-                        currentDay.Value + adjustedGrowDays.Value);
-                }
-                catch (OverflowException)
-                {
-                    reasons.Add("crop_planting_expected_ready_day_overflow");
-                }
-                deadlineVerified = expectedReadyDay.HasValue &&
-                    supportDeadlineTotalDay > currentDay.Value &&
-                    expectedReadyDay.Value <= supportDeadlineTotalDay &&
-                    adjustedGrowDays.Value <= daysRemaining.Value &&
-                    requirement.MatchingWindows.Any(window =>
-                        currentDay.Value >= window.FirstTotalDay &&
-                        expectedReadyDay.Value <= window.LastTotalDay);
-                if (!deadlineVerified)
-                    reasons.Add("crop_planting_does_not_fit_support_deadline");
-            }
-            claimBound = CandidateCoveredByClaim(
-                candidate,
-                reservation.ClaimSet);
-            if (!claimBound)
-                reasons.Add("crop_planting_candidate_seed_claim_mismatch");
-        }
+        var candidateEvaluation = EvaluateCandidate(
+            supportTransitionKind,
+            requirement,
+            reservation,
+            processing,
+            snapshot,
+            candidate,
+            currentDay,
+            supportDeadlineTotalDay);
+        reasons.AddRange(candidateEvaluation.BlockingReasons);
 
         var supportRequestId = SupportRequestId(
             requirement.RouteOccurrenceId,
@@ -148,20 +120,34 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             GoalId = goalId,
             RouteOccurrenceId = requirement.RouteOccurrenceId,
             RouteKind = requirement.RouteKind,
+            SupportTransitionKind = supportTransitionKind,
             SourceId = requirement.SourceId,
             QualifiedItemId = requirement.QualifiedItemId,
             SourceStateHash = snapshot.StateHash,
             CurrentTotalDay = currentDay,
             SupportDeadlineTotalDay = supportDeadlineTotalDay,
-            ExpectedReadyTotalDay = expectedReadyDay,
-            AdjustedGrowDays = adjustedGrowDays,
-            DaysRemainingInSeason = daysRemaining,
+            ExpectedReadyTotalDay = candidateEvaluation.ExpectedReadyTotalDay,
+            AdjustedGrowDays = candidateEvaluation.AdjustedGrowDays,
+            DaysRemainingInSeason = candidateEvaluation.DaysRemainingInSeason,
             SelectedCandidateId = candidate?.CandidateId ?? string.Empty,
             TargetLocationId = candidate?.LocationId ?? string.Empty,
             TargetTileX = candidate?.TileX,
             TargetTileY = candidate?.TileY,
-            SeedId = candidate?.ItemId ?? string.Empty,
-            SeedSlotIndex = candidate?.SlotIndex,
+            SeedId = supportTransitionKind == "crop_planting"
+                ? candidate?.ItemId ?? string.Empty
+                : string.Empty,
+            SeedSlotIndex = supportTransitionKind == "crop_planting"
+                ? candidate?.SlotIndex
+                : null,
+            InputQualifiedItemId =
+                candidateEvaluation.InputQualifiedItemId,
+            InputSlotIndex = candidateEvaluation.InputSlotIndex,
+            InputRequiredQuantity =
+                candidateEvaluation.InputRequiredQuantity,
+            MachineQualifiedItemId =
+                candidateEvaluation.MachineQualifiedItemId,
+            PredictedProcessingMinutes =
+                candidateEvaluation.PredictedProcessingMinutes,
             BaseLedgerRevision = ledger.Revision,
             TargetDateProcessingSha256 = processingSha256,
             AcquisitionLoweringSha256 = loweringSha256,
@@ -184,8 +170,10 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     Array.Empty<CurrencyReservationUpsertRequest>())
                 .OrderBy(value => value.ReservationId, StringComparer.Ordinal)
                 .ToArray(),
-            DeadlineProofVerified = deadlineVerified,
-            ReservationClaimBoundToCandidate = claimBound,
+            DeadlineProofVerified =
+                candidateEvaluation.DeadlineProofVerified,
+            ReservationClaimBoundToCandidate =
+                candidateEvaluation.ReservationClaimBoundToCandidate,
             AtomicCommitPreflightPassed = preflight,
             AtomicCommitRequest = commitRequest,
             SupportRequestReady = ready,
