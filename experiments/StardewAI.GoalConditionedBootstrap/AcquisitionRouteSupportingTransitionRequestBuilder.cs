@@ -74,17 +74,37 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             .Concat(lowered.SupportingOptionIds)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+        var rankedOptionIds = optionIds.Where(optionId =>
+                optionId != "inventory.transfer_item")
+            .ToArray();
         var candidates = AcquisitionRouteDispatchCompilationBuilder
             .RebuildVerifiedCurrentCandidates(
                 snapshot,
                 ledger,
                 processing.GoalId,
                 requirement,
-                optionIds,
+                rankedOptionIds,
                 rankedCandidates,
                 out var candidateReasons);
         var matches = AcquisitionRouteDispatchCompilationBuilder
             .SelectSupportingCandidates(requirement, lowered, candidates);
+        var stagingReasons = Array.Empty<string>();
+        if (matches.Length == 0 && requirement.RouteKind is (
+                "machine_output" or
+                "native_machine_flavored_output" or
+                "native_machine_item_query_output"))
+        {
+            var stagingCandidates =
+                AcquisitionMachineInputMaterialStaging.BuildCandidates(
+                snapshot,
+                route.UpstreamRoute,
+                out stagingReasons);
+            matches = AcquisitionRouteDispatchCompilationBuilder
+                .SelectSupportingCandidates(
+                    requirement,
+                    lowered,
+                    stagingCandidates);
+        }
         return BuildCore(
             processing.GoalId,
             requirement,
@@ -95,7 +115,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             ledger,
             matches,
             inputs.SupportDeadlineTotalDay,
-            artifactReasons.Concat(candidateReasons),
+            artifactReasons.Concat(candidateReasons).Concat(stagingReasons),
             CurrentTeacherFrontierSupport.HashFile(processingPath),
             CurrentTeacherFrontierSupport.HashFile(loweringPath),
             CurrentTeacherFrontierSupport.HashFile(ledgerPath),

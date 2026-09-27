@@ -172,8 +172,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             GoalId = context.Request.GoalId,
             SupportRequestId = context.Request.SupportRequestId,
             RouteOccurrenceId = context.Request.RouteOccurrenceId,
-            RouteSourceDecisionId = context.Consumptions[0]
-                .Claim.SourceDecisionId,
+            RouteSourceDecisionId = RouteSourceDecisionId(context),
             AfterStateHash = context.AfterSnapshot.StateHash,
             SupportRequestSha256 = context.SupportRequestSha256,
             SupportCommitReceiptSha256 =
@@ -198,10 +197,15 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             ActiveMaterialReservationIds =
                 result.ActiveMaterialReservationIds ??
                     Array.Empty<string>(),
+            RelocatedMaterialReservationIds =
+                result.RelocatedMaterialReservationIds ??
+                    Array.Empty<string>(),
             ConsumedQuantity = context.Consumptions.Sum(value =>
                 value.ConsumedQuantity),
             MaterialSettlements = result.MaterialSettlements ??
                 Array.Empty<ReservationPortfolioMaterialSettlement>(),
+            MaterialRelocations = result.MaterialRelocations ??
+                Array.Empty<ReservationPortfolioMaterialRelocation>(),
             SupportingTransitionVerified =
                 context.TransitionReceipt.SupportingTransitionVerified,
             ExactSettlementReplayVerified = !reasons.Contains(

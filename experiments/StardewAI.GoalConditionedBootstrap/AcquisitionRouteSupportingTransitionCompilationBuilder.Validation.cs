@@ -2,6 +2,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -83,6 +84,11 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                         request.SupportMaterialConsumptions,
                         JsonDefaults.Options)),
                 Parameter(
+                    "acquisition_support_material_relocations_json",
+                    JsonSerializer.Serialize(
+                        request.SupportMaterialRelocations,
+                        JsonDefaults.Options)),
+                Parameter(
                     "acquisition_support_machine_qualified_item_id",
                     request.MachineQualifiedItemId),
                 Parameter(
@@ -125,7 +131,9 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             request.AtomicCommitRequest is null ||
             request.ExpectedReadyTotalDay is null ||
             request.SupportTransitionKind is not (
-                "crop_planting" or "machine_input_load") ||
+                "crop_planting" or
+                "machine_input_load" or
+                "machine_input_material_transfer") ||
             request.FormalTrainingAuthorized ||
             request.BlockingReasons.Length != 0)
         {
@@ -173,6 +181,27 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 candidate.SlotIndex == request.InputSlotIndex &&
                 request.InputRequiredQuantity == 1;
         }
+        if (request.SupportTransitionKind ==
+            "machine_input_material_transfer")
+        {
+            var intent = request.MaterialTransferIntent;
+            return intent is not null &&
+                candidate.OptionId == "inventory.transfer_item" &&
+                candidate.Kind == "transfer_inventory_item" &&
+                ReadCandidateParameter(candidate, "source_node_id") ==
+                    intent.SourceNodeId &&
+                ReadCandidateParameter(candidate, "destination_node_id") ==
+                    intent.DestinationNodeId &&
+                ReadCandidateInt(candidate, "source_slot_index") ==
+                    intent.SourceSlotIndex &&
+                ReadCandidateParameter(candidate, "qualified_item_id") ==
+                    intent.QualifiedItemId &&
+                ReadCandidateInt(candidate, "quality") == intent.Quality &&
+                ReadCandidateInt(candidate, "quantity") == intent.Quantity &&
+                ReadCandidateInt(candidate, "expected_source_stack") ==
+                    intent.ExpectedSourceStack &&
+                request.SupportMaterialRelocations.Length == 1;
+        }
         return request.SupportTransitionKind == "machine_input_load" &&
             candidate.QualifiedItemId == request.InputQualifiedItemId &&
             candidate.SlotIndex == request.InputSlotIndex &&
@@ -192,6 +221,24 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 out var processingMinutes) &&
             processingMinutes == request.PredictedProcessingMinutes;
     }
+
+    private static string ReadCandidateParameter(
+        PolicyEventCandidatePrediction candidate,
+        string name) => CurrentTeacherFrontierSupport.TryReadUniqueParameter(
+            candidate,
+            name,
+            out var value)
+                ? value
+                : string.Empty;
+
+    private static int? ReadCandidateInt(
+        PolicyEventCandidatePrediction candidate,
+        string name) => CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(
+            candidate,
+            name,
+            out var value)
+                ? value
+                : null;
 
     private static AcquisitionRouteDispatchCompilation Blocked(
         AcquisitionRouteSupportingTransitionRequest request,

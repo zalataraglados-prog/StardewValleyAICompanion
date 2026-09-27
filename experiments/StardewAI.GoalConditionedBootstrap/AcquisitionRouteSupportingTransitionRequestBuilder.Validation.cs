@@ -38,7 +38,9 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             ValidateCropRoute(requirement, processing, reasons);
             return;
         }
-        if (supportTransitionKind == "machine_input_load")
+        if (supportTransitionKind is
+            "machine_input_load" or
+            "machine_input_material_transfer")
         {
             ValidateMachineRoute(requirement, processing, reasons);
             return;
@@ -106,6 +108,22 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         AcquisitionRouteReservationClaimSet? claimSet,
         string supportTransitionKind)
     {
+        if (supportTransitionKind == "machine_input_material_transfer")
+        {
+            var sourceNodeId = ReadStringParameter(
+                candidate,
+                "source_node_id");
+            var quantity = ReadPositiveIntParameter(candidate, "quantity");
+            return candidate.SlotIndex.HasValue &&
+                quantity.HasValue &&
+                claimSet is not null &&
+                claimSet.CurrencyClaims.Length == 0 &&
+                claimSet.MaterialClaims.Count(claim =>
+                    claim.NodeId == sourceNodeId &&
+                    claim.SlotIndex == candidate.SlotIndex.Value &&
+                    claim.QualifiedItemId == candidate.QualifiedItemId &&
+                    claim.Quantity == quantity.Value) == 1;
+        }
         var requiredQuantity = supportTransitionKind == "machine_input_load"
             ? ReadPositiveIntParameter(candidate, "machine_input_required_count")
             : 1;

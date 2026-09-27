@@ -33,7 +33,18 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             out var parsedDay)
                 ? parsedDay
                 : (int?)null;
-        var supportTransitionKind = SupportingTransitionKind(requirement);
+        var selected = matches.FirstOrDefault(match =>
+                CandidateCoveredByClaim(
+                    match.Candidate,
+                    reservation.ClaimSet,
+                    SupportingTransitionKind(
+                        requirement,
+                        match.Candidate))) ??
+            matches.FirstOrDefault();
+        var candidate = selected?.Candidate;
+        var supportTransitionKind = SupportingTransitionKind(
+            requirement,
+            candidate);
         ValidateRoute(
             supportTransitionKind,
             requirement,
@@ -52,13 +63,6 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 _ => "no_current_exact_support_candidate"
             });
         }
-        var selected = matches.FirstOrDefault(match =>
-                CandidateCoveredByClaim(
-                    match.Candidate,
-                    reservation.ClaimSet,
-                    supportTransitionKind)) ??
-            matches.FirstOrDefault();
-        var candidate = selected?.Candidate;
         var candidateEvaluation = EvaluateCandidate(
             supportTransitionKind,
             requirement,
@@ -172,6 +176,10 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 .ToArray(),
             SupportMaterialConsumptions =
                 candidateEvaluation.MaterialConsumptions,
+            SupportMaterialRelocations =
+                candidateEvaluation.MaterialRelocations,
+            MaterialTransferIntent =
+                candidateEvaluation.MaterialTransferIntent,
             DeadlineProofVerified =
                 candidateEvaluation.DeadlineProofVerified,
             ReservationClaimBoundToCandidate =

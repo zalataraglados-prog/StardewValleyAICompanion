@@ -152,6 +152,7 @@ internal static partial class BootstrapSelfTest
             requirement,
             lowering,
             support);
+        VerifyMachineInputMaterialStagingTransition();
     }
 
     private static SnapshotEnvelope AcquisitionDispatchMachineInputSnapshot()

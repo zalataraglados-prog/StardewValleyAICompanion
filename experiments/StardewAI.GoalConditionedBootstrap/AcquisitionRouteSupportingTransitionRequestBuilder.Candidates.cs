@@ -1,6 +1,8 @@
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -34,6 +36,13 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 candidate,
                 currentDay,
                 supportDeadlineTotalDay),
+            "machine_input_material_transfer" =>
+                EvaluateMachineMaterialTransferCandidate(
+                    reservation,
+                    snapshot,
+                    candidate,
+                    currentDay,
+                    supportDeadlineTotalDay),
             _ => SupportCandidateEvaluation.Blocked(
                 "support_transition_kind_not_bound")
         };
@@ -121,7 +130,132 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             deadlineVerified,
             claimBound,
             cropConsumptions,
+            null,
+            Array.Empty<AcquisitionSupportMaterialRelocation>(),
             reasons.ToArray());
+    }
+
+    private static SupportCandidateEvaluation
+        EvaluateMachineMaterialTransferCandidate(
+            AcquisitionRouteTargetDateReservation reservation,
+            SnapshotEnvelope snapshot,
+            PolicyEventCandidatePrediction candidate,
+            int? currentDay,
+            int supportDeadlineTotalDay)
+    {
+        var reasons = new List<string>();
+        if (!candidate.Available)
+            reasons.Add("machine_input_staging_candidate_not_ready_now");
+        var sourceNodeId = ReadStringParameter(candidate, "source_node_id");
+        var destinationNodeId = ReadStringParameter(
+            candidate,
+            "destination_node_id");
+        var sourceSlot = ReadNonNegativeIntParameter(
+            candidate,
+            "source_slot_index");
+        var quality = ReadNonNegativeIntParameter(candidate, "quality");
+        var quantity = ReadPositiveIntParameter(candidate, "quantity");
+        var expectedSourceStack = ReadPositiveIntParameter(
+            candidate,
+            "expected_source_stack");
+        var qualifiedItemId = ReadStringParameter(
+            candidate,
+            "qualified_item_id");
+        MaterialTransferIntent? intent = null;
+        if (string.IsNullOrWhiteSpace(sourceNodeId) ||
+            string.IsNullOrWhiteSpace(destinationNodeId) ||
+            !sourceSlot.HasValue || !quality.HasValue ||
+            !quantity.HasValue || !expectedSourceStack.HasValue ||
+            string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            reasons.Add("machine_input_staging_intent_incomplete");
+        }
+        else
+        {
+            intent = new MaterialTransferIntent
+            {
+                SourceNodeId = sourceNodeId,
+                DestinationNodeId = destinationNodeId,
+                SourceSlotIndex = sourceSlot.Value,
+                QualifiedItemId = qualifiedItemId,
+                Quality = quality.Value,
+                Quantity = quantity.Value,
+                ExpectedSourceStack = expectedSourceStack.Value
+            };
+        }
+
+        MaterialTransferProjection? projection = null;
+        if (intent is not null &&
+            AcquisitionMachineInputMaterialStaging.TryReadGraph(
+                snapshot,
+                out var graph))
+        {
+            projection = new MaterialTransferProjector().Project(
+                graph!,
+                intent);
+            if (projection.Status != "projected")
+                reasons.AddRange(projection.BlockingReasons);
+        }
+        else if (intent is not null)
+        {
+            reasons.Add("machine_input_staging_material_graph_unavailable");
+        }
+        if (projection is not null &&
+            projection.DestinationSlotChanges.Length != 1)
+        {
+            reasons.Add(
+                "machine_input_staging_requires_single_destination_slot");
+        }
+
+        var claims = intent is null
+            ? Array.Empty<MaterialReservationUpsertRequest>()
+            : (reservation.ClaimSet?.MaterialClaims ??
+                Array.Empty<MaterialReservationUpsertRequest>())
+                .Where(claim =>
+                    claim.NodeId == intent.SourceNodeId &&
+                    claim.SlotIndex == intent.SourceSlotIndex &&
+                    claim.QualifiedItemId == intent.QualifiedItemId &&
+                    claim.Quantity == intent.Quantity)
+                .ToArray();
+        var claimBound = claims.Length == 1 &&
+            (reservation.ClaimSet?.CurrencyClaims.Length ?? 0) == 0;
+        if (!claimBound)
+            reasons.Add("machine_input_staging_claim_mismatch");
+        var deadlineVerified = currentDay.HasValue &&
+            supportDeadlineTotalDay > currentDay.Value;
+        if (!deadlineVerified)
+            reasons.Add("machine_input_staging_does_not_fit_support_deadline");
+        var relocations = claimBound &&
+            projection?.DestinationSlotChanges is [var destination]
+                ? new[]
+                {
+                    new AcquisitionSupportMaterialRelocation
+                    {
+                        ReservationId = claims[0].ReservationId,
+                        SourceNodeId = intent!.SourceNodeId,
+                        SourceSlotIndex = intent.SourceSlotIndex,
+                        DestinationNodeId = intent.DestinationNodeId,
+                        DestinationSlotIndex = destination.SlotIndex,
+                        QualifiedItemId = intent.QualifiedItemId,
+                        Quantity = intent.Quantity
+                    }
+                }
+                : Array.Empty<AcquisitionSupportMaterialRelocation>();
+        return new SupportCandidateEvaluation(
+            deadlineVerified ? currentDay : null,
+            null,
+            null,
+            qualifiedItemId,
+            sourceSlot,
+            quantity,
+            string.Empty,
+            null,
+            deadlineVerified,
+            claimBound,
+            Array.Empty<AcquisitionSupportMaterialConsumption>(),
+            intent,
+            relocations,
+            reasons.Distinct(StringComparer.Ordinal).ToArray());
     }
 
     private static SupportCandidateEvaluation EvaluateMachineCandidate(
@@ -243,6 +377,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             deadlineVerified,
             claimBound,
             consumptions,
+            null,
+            Array.Empty<AcquisitionSupportMaterialRelocation>(),
             reasons.Distinct(StringComparer.Ordinal).ToArray());
     }
 
@@ -421,6 +557,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         bool DeadlineProofVerified,
         bool ReservationClaimBoundToCandidate,
         AcquisitionSupportMaterialConsumption[] MaterialConsumptions,
+        MaterialTransferIntent? MaterialTransferIntent,
+        AcquisitionSupportMaterialRelocation[] MaterialRelocations,
         string[] BlockingReasons)
     {
         public static SupportCandidateEvaluation Empty { get; } = new(
@@ -435,6 +573,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             false,
             false,
             Array.Empty<AcquisitionSupportMaterialConsumption>(),
+            null,
+            Array.Empty<AcquisitionSupportMaterialRelocation>(),
             Array.Empty<string>());
 
         public static SupportCandidateEvaluation Blocked(string reason) =>

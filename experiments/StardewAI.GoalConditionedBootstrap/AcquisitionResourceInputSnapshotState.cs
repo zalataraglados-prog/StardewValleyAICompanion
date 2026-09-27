@@ -193,7 +193,8 @@ internal sealed class AcquisitionResourceInputSnapshotState
                     graphSlot.ContextTags,
                     graphSlot.ContextTagsProjectionStatus,
                     graphSlot.Edibility,
-                    graphSlot.EdibilityProjectionStatus);
+                    graphSlot.EdibilityProjectionStatus,
+                    false);
             }).ToArray();
             return new MaterialReadResult(
                 true,
@@ -372,7 +373,8 @@ internal sealed record AcquisitionResourceMaterialSlot(
     string[] ContextTags,
     string ContextTagsProjectionStatus,
     int? Edibility,
-    string EdibilityProjectionStatus);
+    string EdibilityProjectionStatus,
+    bool RequiresPlayerStaging);
 
 internal sealed record AcquisitionPlayerInventoryQuantity(
     bool EvidenceAvailable,

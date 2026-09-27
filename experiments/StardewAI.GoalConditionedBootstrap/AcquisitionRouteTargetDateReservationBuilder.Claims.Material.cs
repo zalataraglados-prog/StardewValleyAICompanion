@@ -80,6 +80,7 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         {
             var input = inputs[inputIndex];
             HashSet<string>? eligibleMachineSlots = null;
+            IReadOnlyDictionary<string, bool>? machineStagingBySlot = null;
             if (input.MachineBinding is not null)
             {
                 if (input.MachineBinding.EligibleSlots.Any(slot =>
@@ -98,6 +99,11 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
                 eligibleMachineSlots = input.MachineBinding.EligibleSlots
                     .Select(slot => SlotKey(slot.NodeId, slot.SlotIndex))
                     .ToHashSet(StringComparer.Ordinal);
+                machineStagingBySlot = input.MachineBinding.EligibleSlots
+                    .ToDictionary(
+                        slot => SlotKey(slot.NodeId, slot.SlotIndex),
+                        slot => slot.RequiresPlayerStaging,
+                        StringComparer.Ordinal);
             }
             var remaining = input.RequiredQuantity;
             var claimIndex = 0;
@@ -107,7 +113,12 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
                           eligibleMachineSlots.Contains(SlotKey(
                               row.NodeId,
                               row.SlotIndex))))
-                     .OrderBy(row => row.NodeId, StringComparer.Ordinal)
+                     .OrderBy(row => machineStagingBySlot is not null &&
+                         machineStagingBySlot.TryGetValue(SlotKey(
+                             row.NodeId,
+                             row.SlotIndex), out var requiresStaging) &&
+                         requiresStaging ? 1 : 0)
+                     .ThenBy(row => row.NodeId, StringComparer.Ordinal)
                      .ThenBy(row => row.SlotIndex))
             {
                 var key = SlotKey(slot.NodeId, slot.SlotIndex);

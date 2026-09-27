@@ -43,6 +43,11 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         var activeIds = expectedSettlements.Where(value =>
                 value.ReservationStatus == StrategyCommitmentStatuses.Active)
             .Select(value => value.MaterialReservationId)
+            .Concat(request.MaterialRelocations.Select(value =>
+                value.MaterialReservationId))
+            .ToArray();
+        var relocatedIds = request.MaterialRelocations.Select(value =>
+                value.MaterialReservationId)
             .ToArray();
         if (!result.Accepted ||
             (result.Errors?.Length ?? 0) != 0 ||
@@ -61,10 +66,17 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             result.ActiveMaterialReservationIds is null ||
             !result.ActiveMaterialReservationIds.SequenceEqual(
                 activeIds, StringComparer.Ordinal) ||
+            result.RelocatedMaterialReservationIds is null ||
+            !result.RelocatedMaterialReservationIds.SequenceEqual(
+                relocatedIds, StringComparer.Ordinal) ||
             result.ConsumedQuantity != request.MaterialConsumptions.Sum(
                 value => value.ConsumedQuantity) ||
             result.MaterialSettlements is null ||
             !EqualJson(result.MaterialSettlements, expectedSettlements) ||
+            result.MaterialRelocations is null ||
+            !EqualJson(
+                result.MaterialRelocations,
+                request.MaterialRelocations) ||
             result.Ledger is null ||
             !EqualJson(result.Ledger, settled))
         {
@@ -95,6 +107,27 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             if (rows.Length != 1)
                 reasons.Add("support_settlement_consumed_claim_mismatch");
         }
+        foreach (var relocation in request.MaterialRelocations)
+        {
+            var before = context.BaseLedger.MaterialReservations.Single(
+                row => row.ReservationId ==
+                    relocation.MaterialReservationId);
+            var rows = settled.MaterialReservations.Where(row =>
+                    row.ReservationId == relocation.MaterialReservationId &&
+                    row.Status == StrategyCommitmentStatuses.Active &&
+                    row.SourceStateHash == context.AfterSnapshot.StateHash &&
+                    row.NodeId == relocation.DestinationNodeId &&
+                    row.SlotIndex == relocation.DestinationSlotIndex &&
+                    row.QualifiedItemId == relocation.QualifiedItemId &&
+                    row.Quantity == relocation.Quantity &&
+                    row.Revision == before.Revision + 1 &&
+                    string.IsNullOrEmpty(row.CompletionReason) &&
+                    string.IsNullOrEmpty(
+                        row.CompletionEvidenceSha256))
+                .ToArray();
+            if (rows.Length != 1)
+                reasons.Add("support_settlement_relocated_claim_mismatch");
+        }
         var currentHistory = settled.History.Where(row =>
                 row.LedgerRevision == settled.Revision)
             .ToArray();
@@ -113,9 +146,18 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     StrategyCommitmentStatuses.Completed
                         ? "material_reservation_consumed"
                         : "material_reservation_partially_consumed") &&
-                row.Reason == request.Reason) == 1);
+                row.Reason == request.Reason) == 1) &&
+            request.MaterialRelocations.All(relocation =>
+                currentHistory.Count(row =>
+                    row.CommitmentId ==
+                        relocation.MaterialReservationId &&
+                    row.SourceDecisionId ==
+                        request.RouteSourceDecisionId &&
+                    row.Operation == "material_reservation_relocated" &&
+                    row.Reason == request.Reason) == 1);
         if (markers.Length != 1 ||
-            currentHistory.Length != expectedSettlements.Length + 1 ||
+            currentHistory.Length != expectedSettlements.Length +
+                request.MaterialRelocations.Length + 1 ||
             !materialHistoryMatches)
         {
             reasons.Add("support_settlement_history_mismatch");

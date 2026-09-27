@@ -171,7 +171,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             yield return "route_queue_option_outside_authoritative_route";
         }
         if (expectedRouteOptionRole == "supporting_transition" &&
-            items.Length != 1)
+            !SupportingTransitionQueueShapeValid(items, boundRouteOptions))
         {
             yield return "route_supporting_transition_not_single_action";
         }
@@ -213,6 +213,16 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             yield return "route_queue_actor_invalid";
         }
     }
+
+    private static bool SupportingTransitionQueueShapeValid(
+        ActionQueueItem[] items,
+        string[] boundRouteOptions) =>
+        items.Length == 1 ||
+        items.Length == 2 &&
+        boundRouteOptions.All(optionId =>
+            optionId == "inventory.transfer_item") &&
+        items[0].OptionId == "executor.move_to_tile" &&
+        items[1].OptionId == "executor.transfer_material";
 
     private static string BoundRouteOption(
         ActionQueueItem item,
