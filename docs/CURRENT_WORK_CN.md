@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Skull Key 真实三分区生产证据完成
+
+- `build-skull-key-teacher-corpus` 现已重放三条真实 `plan_execution_episode.v1`：既有 EVD-106 作为 train（第 209 天），本轮隔离运行 `runtime-skull-key-validation-20260928-062858` 作为 validation（第 223 天），`runtime-skull-key-test-20260928-064032` 作为 test（第 223 天）。三个分区均由 `save_id + player_id + total_day` 哈希派生，调用方不能指定分区。
+- validation 隐藏静音运行通过 `32/32` 个原生步骤：119 层清障、下梯、120 层移动、`claim_skull_key` 的 `false -> true` 转移以及退出矿井全部验证；test 运行通过 `5/5` 个步骤，并在第 4 步完成相同终态。三条 corpus 行的 Teacher 对比与原生终态验证均为真，状态为 `ready_split_complete_skull_key_teacher_corpus`。
+- 真实采集暴露并修复两个运行缺陷：无楼梯物品是已知业务阻塞，透明桥现发布 `blocked_no_staircase_inventory`，不再把整组矿井数据误判为不可读；矿井快照脚本的执行端健康检查现复用 `StartupTimeoutSeconds`，不再用 30 秒硬编码误杀正常冷启动。两项均有定向回归测试。
+- 真实 EVD 还确认历史 episode 使用高层 `mining.obtain_skull_key` 队列项，并在 `normalized_command` 内下沉到 `executor.interact`；旧快照缺少 `time.total_days` 且使用历史字段 `skull_key_special_item_which`。适配器只在严格日历换算和唯一旧字段别名下兼容历史证据，冲突字段、冲突重复参数或队列漂移继续失败关闭。
+- 生产 Goal Method 覆盖现为 `3/19`，Skull Key 的 Teacher 与原生终态分区均为 `train/validation/test`，该 criterion 已 `coverage_gate_ready=true`。全局仍为 `blocked_incomplete_goal_method_teacher_coverage`，`formal_product_training_authorized=false`；不得把单项闭环写成全量训练准入。下一固定切片是连接宠物爱心的真实三分区原生证据，然后再处理剩余依赖图，而不是继续扩写第二套矿井/箱子执行系统。
+
 ## 2026-09-28 Skull Key Teacher 源适配与真实桥接契约修正
 
 - 新增 `build-skull-key-teacher-corpus`。它不接受裸执行结果作为监督，而是从 `plan_execution_episode.v1` 重放并绑定 fresh before/after snapshot、有效队列项和原生 `training_execution_result.v1`。只有同一存档、玩家、版本和 Stage-1 日期内，普通矿井 120 层唯一原生 Skull Key 奖励箱从存在到消失、`player.has_skull_key` 从 `false` 到 `true`，且原生开箱、领奖和状态转移原因全部成立时，才生成 Teacher 行。

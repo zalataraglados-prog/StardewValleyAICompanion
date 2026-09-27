@@ -736,6 +736,32 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
+    public void KnownMissingStaircaseInventoryDoesNotBlockIndependentFloorStep()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines",
+            staircasePlacement:
+                "{\"status\":\"blocked_no_staircase_inventory\",\"native_floor_rule_allows\":true,\"staircase_count\":0,\"candidates\":[]}");
+
+        var candidate = Assert.Single(
+            MiningReachDepthCandidateBuilder.Build(snapshot, new[]
+            {
+                Parameter("target_depth", "45"),
+                Parameter("target_location_family", "ordinary_mines")
+            }));
+
+        Assert.True(candidate.Available);
+        Assert.DoesNotContain(
+            "mining.tiles.staircase_placement",
+            candidate.BlockReasons);
+        Assert.Contains(
+            candidate.Parameters,
+            parameter => parameter.Name == "execution_option_id" &&
+                parameter.Value == "executor.mine_stone");
+    }
+
+    [Fact]
     public void ReachedReserveConstraintCompilesMandatoryRetreatInsteadOfStrandingActor()
     {
         var snapshot = MiningSnapshot(currentDepth: 40, targetFamily: "ordinary_mines", health: 10, energy: 5);
@@ -770,7 +796,7 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "mining_step_reason" && parameter.Value.Contains("target_depth_reached", StringComparison.Ordinal));
     }
 
-    private static SnapshotEnvelope MiningSnapshot(int currentDepth, string targetFamily, string collisionStatus = "available", int health = 100, double energy = 220, string objectsStatus = "available", int deepestMineLevel = 120, string monsters = "[]", string objects = "[{\"tile_x\":3,\"tile_y\":2,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":2}]")
+    private static SnapshotEnvelope MiningSnapshot(int currentDepth, string targetFamily, string collisionStatus = "available", int health = 100, double energy = 220, string objectsStatus = "available", int deepestMineLevel = 120, string monsters = "[]", string objects = "[{\"tile_x\":3,\"tile_y\":2,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":2}]", string staircasePlacement = "{}")
     {
         return Snapshot("""
         {
@@ -779,7 +805,7 @@ public sealed class MiningReachDepthPlanningTests
           },
           "mining": {
             "current_mine": {"value":{"location_id":"UndergroundMine","mine_level":CURRENT_DEPTH,"mine_area":40,"mine_kind":"TARGET_FAMILY","is_loaded_current_location":true,"is_skull_cavern":false,"is_quarry_mine":false,"is_dangerous":false,"additional_difficulty":0},"status":"available","source":{"kind":"game_object","path":"MineShaft.mineLevel"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tiles": {"value":{"player_tile":{"tile_x":1,"tile_y":2},"map":{"width":6,"height":5,"status":"loaded_field_only"},"collision_context":{"status":"COLLISION_STATUS","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100001","100001","111111"]},"exits":[{"tile_x":4,"tile_y":2,"tile_index":115,"expected_destination":{"location_id":"Mine","tile_x":23,"tile_y":8}}],"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tiles": {"value":{"player_tile":{"tile_x":1,"tile_y":2},"map":{"width":6,"height":5,"status":"loaded_field_only"},"collision_context":{"status":"COLLISION_STATUS","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100001","100001","111111"]},"exits":[{"tile_x":4,"tile_y":2,"tile_index":115,"expected_destination":{"location_id":"Mine","tile_x":23,"tile_y":8}}],"ladders":[],"shafts":[],"elevators":[],"staircase_placement":STAIRCASE_PLACEMENT},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
             "objects": {"value":OBJECTS_JSON,"status":"OBJECTS_STATUS","source":{"kind":"game_object","path":"MineShaft.objects"},"adapter":"test","read_at_tick":1,"confidence":1},
             "resource_clumps": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.resourceClumps"},"adapter":"test","read_at_tick":1,"confidence":1},
             "monsters": {"value":MONSTERS,"status":"available","source":{"kind":"game_object","path":"MineShaft.characters"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -789,7 +815,7 @@ public sealed class MiningReachDepthPlanningTests
             "completeness": {"value":{"status":"complete","unavailable_reasons":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
-        """.Replace("CURRENT_DEPTH", currentDepth.ToString()).Replace("TARGET_FAMILY", targetFamily).Replace("COLLISION_STATUS", collisionStatus).Replace("HEALTH", health.ToString()).Replace("ENERGY", energy.ToString(System.Globalization.CultureInfo.InvariantCulture)).Replace("OBJECTS_STATUS", objectsStatus).Replace("DEEPEST_MINE_LEVEL", deepestMineLevel.ToString()).Replace("MONSTERS", monsters).Replace("OBJECTS_JSON", objects));
+        """.Replace("CURRENT_DEPTH", currentDepth.ToString()).Replace("TARGET_FAMILY", targetFamily).Replace("COLLISION_STATUS", collisionStatus).Replace("HEALTH", health.ToString()).Replace("ENERGY", energy.ToString(System.Globalization.CultureInfo.InvariantCulture)).Replace("OBJECTS_STATUS", objectsStatus).Replace("DEEPEST_MINE_LEVEL", deepestMineLevel.ToString()).Replace("MONSTERS", monsters).Replace("OBJECTS_JSON", objects).Replace("STAIRCASE_PLACEMENT", staircasePlacement));
     }
 
     private static SmallModelActionEnvelope Request(string stateHash)

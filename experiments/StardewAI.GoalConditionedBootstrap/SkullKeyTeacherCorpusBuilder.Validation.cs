@@ -90,9 +90,11 @@ public static partial class SkullKeyTeacherCorpusBuilder
                 "StardewValley.Objects.Chest" ||
             RequiredInt(chest, "item_count") < 1 ||
             !RequiredBool(chest, "contains_skull_key") ||
-            RequiredInt(chest, "special_item_which") != 4 ||
+            RequiredSkullKeySpecialItemWhich(chest) != 4 ||
             RequiredString(chest, "interaction_kind") != "overlay_object" ||
-            RequiredString(chest, "expected_action_type") != "SkullKeyChest")
+            RequiredString(chest, "expected_action_type") != "SkullKeyChest" ||
+            RequiredString(chest, "source") !=
+                "MineShaft.overlayObjects Chest.Items SpecialItem.which")
         {
             throw new InvalidDataException(
                 "Skull Key reward chest identity is invalid.");
@@ -106,24 +108,66 @@ public static partial class SkullKeyTeacherCorpusBuilder
         int chestY)
     {
         var item = episode.EffectiveQueueItem;
-        if (!item.HasValue || item.Value.ValueKind != JsonValueKind.Object ||
+        if (!item.HasValue || item.Value.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException(
+                "Skull Key execution episode has no effective queue item.");
+        }
+        var command = RequiredObject(item.Value, "normalized_command");
+        if (
             RequiredString(item.Value, "queue_item_id") !=
                 result.QueueItemId ||
-            RequiredString(item.Value, "option_id") != "executor.interact" ||
-            RequiredParameter(item.Value, "target_tile_x") !=
+            RequiredString(item.Value, "option_id") !=
+                "mining.obtain_skull_key" ||
+            RequiredString(command, "option_id") !=
+                "mining.obtain_skull_key" ||
+            RequiredString(command, "state_hash") != episode.SourceStateHash ||
+            RequiredConsistentParameter(command, "execution_option_id") !=
+                "executor.interact" ||
+            RequiredConsistentParameter(command, "target_location_family") !=
+                "ordinary_mines" ||
+            RequiredConsistentParameter(command, "target_depth") !=
+                BottomOfOrdinaryMines.ToString(CultureInfo.InvariantCulture) ||
+            RequiredConsistentParameter(
+                command,
+                "required_terminal_interaction") !=
+                "skull_key_reward_chest" ||
+            RequiredConsistentParameter(command, "mining_step_kind") !=
+                "claim_skull_key" ||
+            RequiredConsistentParameter(command, "target_tile_x") !=
                 chestX.ToString(CultureInfo.InvariantCulture) ||
-            RequiredParameter(item.Value, "target_tile_y") !=
+            RequiredConsistentParameter(command, "target_tile_y") !=
                 chestY.ToString(CultureInfo.InvariantCulture) ||
-            RequiredParameter(item.Value, "interaction_kind") !=
+            RequiredConsistentParameter(command, "interaction_kind") !=
                 "overlay_object" ||
-            RequiredParameter(item.Value, "expected_action_type") !=
+            RequiredConsistentParameter(command, "expected_action_type") !=
                 "SkullKeyChest" ||
-            RequiredParameter(item.Value, "required_postcondition") !=
+            RequiredConsistentParameter(command, "required_postcondition") !=
                 "player.has_skull_key=true")
         {
             throw new InvalidDataException(
                 "Skull Key execution episode does not bind the compiled terminal interaction.");
         }
+    }
+
+    private static int RequiredSkullKeySpecialItemWhich(JsonElement chest)
+    {
+        var hasCanonical = chest.TryGetProperty(
+            "special_item_which",
+            out var canonical);
+        var hasLegacy = chest.TryGetProperty(
+            "skull_key_special_item_which",
+            out var legacy);
+        if (hasCanonical == hasLegacy)
+        {
+            throw new InvalidDataException(
+                "Skull Key reward chest special-item identity is missing or ambiguous.");
+        }
+        var value = hasCanonical ? canonical : legacy;
+        return value.TryGetInt32(out var result)
+            ? result
+            : throw new InvalidDataException(
+                "Skull Key reward chest special-item identity is invalid.");
     }
 
     private static void ValidateExecutionResult(

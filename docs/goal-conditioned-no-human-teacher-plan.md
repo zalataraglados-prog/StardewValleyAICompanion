@@ -2644,9 +2644,23 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The slice exposed a real bridge/compiler contract mismatch. The bridge emitted
   `skull_key_special_item_which`, while the compiler and established snapshot contract consumed
   `special_item_which`. The bridge now emits the canonical field and a game-free source guard prevents regression.
-- A focused three-partition fixture raises coverage from 2/19 to exactly 3/19 and rejects corpus-row, queue-item-ID
-  and effect tampering. It is test evidence only. The production reconciliation remains 2/19 and classifies Skull Key
-  as `evidence_not_connected` until three independent real native episodes are wired into the production request.
+- The focused three-partition fixture raises its isolated report from 2/19 to exactly 3/19 and rejects corpus-row,
+  queue-item-ID and effect tampering. Production evidence is now also connected from three real native episodes:
+  EVD-106 supplies train, `runtime-skull-key-validation-20260928-062858` supplies validation, and
+  `runtime-skull-key-test-20260928-064032` supplies test. Dataset partitions are independently derived from
+  save/player/day identity.
+- The validation run verified 32/32 native primitives from floor 119 through the level-120 reward and exit; the test
+  run verified 5/5. Both observed the exact reward-chest removal and `player.has_skull_key=false -> true` transition.
+  Their different rolling action sequences demonstrate fresh-state compilation rather than a fixed action replay.
+- Real collection exposed two runtime defects. A known absence of staircase inventory was labelled
+  `unavailable_no_staircase_inventory`, which incorrectly poisoned mining transparency even when an existing ladder
+  was usable; the bridge now emits `blocked_no_staircase_inventory`. Cold SMAPI startup could also exceed the smoke
+  script's hard-coded 30-second executor-health timeout; that check now uses the existing 120-second configurable
+  startup budget. Focused regressions cover both fixes.
+- Production Goal Method coverage is now exactly 3/19 and Skull Key is `coverage_gate_ready=true` with complete
+  train/validation/test Teacher and native-outcome partitions. The aggregate gate remains blocked and
+  `formal_product_training_authorized=false`. The next bounded evidence slice is real three-partition pet-love
+  connection, followed by the remaining dependency-graph methods; no second mining or chest execution path is needed.
 - The implementation is split into orchestration, evidence validation and JSON/path support files. It reuses the
   existing interaction compiler and executor and does not introduce a second mine, chest or action system.
 

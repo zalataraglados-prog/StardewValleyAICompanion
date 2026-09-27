@@ -134,9 +134,9 @@ public static partial class SkullKeyTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Skull Key snapshot identity or version changed during one action.");
         }
-        var totalDay = ReadEnvelopeInt(before, "time", "total_days");
+        var totalDay = ReadSnapshotTotalDay(before);
         if (totalDay < 0 || totalDay >= StageOneDeadlineExclusive ||
-            ReadEnvelopeInt(after, "time", "total_days") != totalDay)
+            ReadSnapshotTotalDay(after) != totalDay)
         {
             throw new InvalidDataException(
                 "Skull Key terminal interaction is outside one Stage-1 day.");
