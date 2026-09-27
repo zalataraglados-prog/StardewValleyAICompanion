@@ -11,6 +11,12 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器触发器条件语义修复
+
+- `Data/Machines.OutputRules[].Triggers[]` 的条件现在保留为显式 OR 备选集合，不再从目标日期链中丢失。单触发器的 `LOCATION_SEASON Target` 条件进入地点轴，并使用透明桥逐地点输出的 `effective_season` 精确判断；山谷冬季蜂房不会再被错误视为可产蜜，实际季节非冬的地点仍可通过。
+- 多触发器只要包含跨轴地点或随机条件就失败关闭，不会把 OR 错压成 AND；未知 GSQ 谓词同样失败关闭。单触发器 `RANDOM` 概率由既有随机重试轴与输出项概率相乘；`ITEM_CONTEXT_TAG Input` 与 `ITEM_EDIBILITY Input` 继续由既有资源轴处理，没有复制第二套物品条件求值器。
+- 修复只收紧静态日历与目标地点准入，不改变执行器、Teacher/Student 权限或正式训练门槛；`formal_training_authorized=false` 保持不变。
+
 ## 2026-09-27 机器缺料采购递归闭环
 
 - 机器资源轴缺料时不再直接终止：货币轴只对一个确定性的机器输入缺口查询当前原生商店预览，按总价、单价、商店和库存键稳定选择精确的正价金币报价。当前已有材料与未来采购严格分离；reservation 只占用已经实际存在的材料和完成全部缺口所需的金币，不虚构尚未购买的物品。

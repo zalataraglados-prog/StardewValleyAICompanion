@@ -80,6 +80,20 @@ internal sealed class AcquisitionLocationRouteSnapshotState
         out AcquisitionRouteLocationState location) =>
         locations.TryGetValue(locationId, out location!);
 
+    public bool TryGetEffectiveSeason(
+        string locationId,
+        out string effectiveSeason)
+    {
+        effectiveSeason = string.Empty;
+        if (!locations.TryGetValue(locationId, out var location) ||
+            string.IsNullOrWhiteSpace(location.EffectiveSeason))
+        {
+            return false;
+        }
+        effectiveSeason = location.EffectiveSeason;
+        return true;
+    }
+
     public bool TryGetWeather(
         string locationId,
         out string weather,
@@ -238,6 +252,7 @@ internal sealed class AcquisitionLocationRouteSnapshotState
             result[locationId] = new AcquisitionRouteLocationState(
                 locationId,
                 ReadString(row, "location_context_id"),
+                ReadString(row, "effective_season"),
                 ReadNullableBool(row, "seeds_ignore_seasons_here"),
                 ReadCultivationCapacity(row));
         }
@@ -482,6 +497,7 @@ internal sealed class AcquisitionLocationRouteSnapshotState
 internal sealed record AcquisitionRouteLocationState(
     string LocationId,
     string LocationContextId,
+    string EffectiveSeason,
     bool? SeedsIgnoreSeasonsHere,
     AcquisitionCultivationCapacityState CultivationCapacity);
 

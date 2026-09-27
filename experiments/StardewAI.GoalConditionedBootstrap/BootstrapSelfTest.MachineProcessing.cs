@@ -325,6 +325,34 @@ internal static partial class BootstrapSelfTest
                         out _) &&
                 Math.Abs(randomValidProbability - 1d / 3d) < 0.0000001d,
             "Uniform random-valid machine output probability drifted.");
+        var randomTriggerRoute = randomValid with
+        {
+            MachineSource = randomValid.MachineSource! with
+            {
+                TriggerConditionSet =
+                    new AcquisitionMachineTriggerConditionSetEvidence(
+                        "or",
+                        new[]
+                        {
+                            new AcquisitionMachineTriggerConditionAlternativeEvidence(
+                                0,
+                                "ItemPlacedInMachine",
+                                1,
+                                "RANDOM 0.02",
+                                Array.Empty<string>(),
+                                Array.Empty<string>(),
+                                new[] { "RANDOM 0.02" })
+                        })
+            }
+        };
+        Require(AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        randomTriggerRoute,
+                        out var randomTriggerProbability,
+                        out _) &&
+                Math.Abs(randomTriggerProbability - 0.02d / 3d) <
+                    0.0000001d,
+            "Trigger and output probabilities were not composed.");
 
         var singleMachine = new[]
         {

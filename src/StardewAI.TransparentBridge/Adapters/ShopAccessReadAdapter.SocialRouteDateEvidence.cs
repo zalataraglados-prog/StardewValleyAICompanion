@@ -125,6 +125,7 @@ public sealed partial class ShopAccessReadAdapter
             location_id = location.NameOrUniqueName,
             location_name = location.Name,
             location_context_id = location.GetLocationContextId(),
+            effective_season = Game1.GetSeasonForLocation(location).ToString(),
             runtime_type = location.GetType().FullName,
             map_id = location.map?.Id,
             seeds_ignore_seasons_here = location.SeedsIgnoreSeasonsHere(),

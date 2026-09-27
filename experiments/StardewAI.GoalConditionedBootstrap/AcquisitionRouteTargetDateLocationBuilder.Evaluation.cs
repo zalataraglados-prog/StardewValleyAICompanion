@@ -67,7 +67,12 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 route.CalendarConditionsMatchTargetDate == true,
             "A location-applicable route lacks an upstream match result.");
 
-        if (route.UpstreamRoute.PendingLocationConditions.Length > 0)
+        var unsupportedLocationConditions = route.UpstreamRoute
+            .PendingLocationConditions
+            .Where(condition =>
+                !AcquisitionLocationConditionEvaluator.Supports(condition))
+            .ToArray();
+        if (unsupportedLocationConditions.Length > 0)
         {
             return Result(
                 route,
@@ -76,9 +81,9 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 null,
                 Array.Empty<AcquisitionLocationRouteTargetEvaluation>(),
                 Array.Empty<string>(),
-                route.UpstreamRoute.PendingLocationConditions
+                unsupportedLocationConditions
                     .Select(condition =>
-                        "location_condition_evaluator_pending:" + condition)
+                        "location_condition_unsupported:" + condition)
                     .Distinct(StringComparer.Ordinal)
                     .Order(StringComparer.Ordinal)
                     .ToArray());
@@ -193,6 +198,47 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
     {
         state.TryGetLocation(target.LocationId, out var location);
         var contextId = location?.LocationContextId ?? string.Empty;
+        state.TryGetEffectiveSeason(
+            target.LocationId,
+            out var effectiveSeason);
+        var locationCondition = AcquisitionLocationConditionEvaluator.Evaluate(
+            route.UpstreamRoute.PendingLocationConditions,
+            target.LocationId,
+            effectiveSeason);
+        var usesSeasonEvidence = route.UpstreamRoute.PendingLocationConditions
+            .Length > 0;
+        if (!locationCondition.Resolved)
+        {
+            return TargetResult(
+                target,
+                contextId,
+                "blocked_location_condition_evidence",
+                string.Empty,
+                null,
+                0,
+                null,
+                target.EvidencePaths
+                    .Concat(locationCondition.EvidencePaths)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
+                locationCondition.BlockingReasons);
+        }
+        if (locationCondition.Matches == false)
+        {
+            return TargetResult(
+                target,
+                contextId,
+                "resolved_location_condition_miss",
+                string.Empty,
+                null,
+                0,
+                null,
+                target.EvidencePaths
+                    .Concat(locationCondition.EvidencePaths)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
+                Array.Empty<string>());
+        }
         if (!routeByLocation.TryGetValue(target.LocationId, out var production) ||
             production.Status != FutureRouteDateEvidenceProductionStatus.Produced ||
             !production.GuaranteedArrivalByTime.HasValue)
@@ -213,7 +259,7 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 production?.GuaranteedArrivalByTime,
                 0,
                 production,
-                target.EvidencePaths,
+                EvidencePaths(target, false, usesSeasonEvidence),
                 resolvedMiss ? Array.Empty<string>() : blocking);
         }
 
@@ -232,7 +278,7 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 arrival,
                 0,
                 production,
-                EvidencePaths(target, false),
+                EvidencePaths(target, false, usesSeasonEvidence),
                 Array.Empty<string>());
         }
 
@@ -259,7 +305,7 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 arrival,
                 0,
                 production,
-                EvidencePaths(target, false),
+                EvidencePaths(target, false, usesSeasonEvidence),
                 new[]
                 {
                     "target_location_weather_context_evidence_missing:" +
@@ -285,7 +331,7 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             arrival,
             matching.Length,
             production,
-            EvidencePaths(target, usesWeatherEvidence),
+            EvidencePaths(target, usesWeatherEvidence, usesSeasonEvidence),
             Array.Empty<string>());
     }
 
@@ -299,7 +345,8 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
 
     private static string[] EvidencePaths(
         AcquisitionLocationTarget target,
-        bool weather) => target.EvidencePaths
+        bool weather,
+        bool season) => target.EvidencePaths
         .Concat(new[]
         {
             "state.locations.route_graph.value",
@@ -312,6 +359,12 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             {
                 "state.locations.social_route_date_evidence.value.locations[].location_context_id",
                 "state.time.location_context_weather.value[]"
+            }
+            : Array.Empty<string>())
+        .Concat(season
+            ? new[]
+            {
+                "state.locations.social_route_date_evidence.value.locations[].effective_season"
             }
             : Array.Empty<string>())
         .Distinct(StringComparer.Ordinal)
