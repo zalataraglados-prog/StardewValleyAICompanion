@@ -135,6 +135,12 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
     public string SupportingTransitionReceiptSha256 { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("material_consumptions")]
+    public ReservationPortfolioMaterialConsumption[] MaterialConsumptions
+    { get; set; } = Array.Empty<ReservationPortfolioMaterialConsumption>();
+
+    // Legacy single-consumption representation. New producers use
+    // material_consumptions and must not mix the two forms.
     [JsonPropertyName("material_reservation_id")]
     public string MaterialReservationId { get; set; } = string.Empty;
 
@@ -152,6 +158,24 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
 
     [JsonPropertyName("reason")]
     public string Reason { get; set; } = string.Empty;
+}
+
+public sealed class ReservationPortfolioMaterialConsumption
+{
+    [JsonPropertyName("material_reservation_id")]
+    public string MaterialReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("node_id")]
+    public string NodeId { get; set; } = string.Empty;
+
+    [JsonPropertyName("slot_index")]
+    public int SlotIndex { get; set; }
+
+    [JsonPropertyName("qualified_item_id")]
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("consumed_quantity")]
+    public int ConsumedQuantity { get; set; }
 }
 
 public sealed class ReservationPortfolioSupportingTransitionSettlementResult
@@ -175,12 +199,39 @@ public sealed class ReservationPortfolioSupportingTransitionSettlementResult
     [JsonPropertyName("completed_material_reservation_id")]
     public string CompletedMaterialReservationId { get; set; } = string.Empty;
 
+    [JsonPropertyName("completed_material_reservation_ids")]
+    public string[] CompletedMaterialReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("active_material_reservation_ids")]
+    public string[] ActiveMaterialReservationIds { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("consumed_quantity")]
     public int ConsumedQuantity { get; set; }
+
+    [JsonPropertyName("material_settlements")]
+    public ReservationPortfolioMaterialSettlement[] MaterialSettlements
+    { get; set; } = Array.Empty<ReservationPortfolioMaterialSettlement>();
 
     [JsonPropertyName("errors")]
     public string[] Errors { get; set; } = Array.Empty<string>();
 
     [JsonPropertyName("ledger")]
     public StrategyCommitmentLedger? Ledger { get; set; }
+}
+
+public sealed class ReservationPortfolioMaterialSettlement
+{
+    [JsonPropertyName("material_reservation_id")]
+    public string MaterialReservationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("consumed_quantity")]
+    public int ConsumedQuantity { get; set; }
+
+    [JsonPropertyName("remaining_quantity")]
+    public int RemainingQuantity { get; set; }
+
+    [JsonPropertyName("reservation_status")]
+    public string ReservationStatus { get; set; } = string.Empty;
 }

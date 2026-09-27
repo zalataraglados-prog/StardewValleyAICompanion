@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-27 机器投料部分结算与完整重规划复入
+
+- 共享 `ReservationPortfolioLedgerService` 的非终端支持结算现已接受结构化材料消费数组。每项都必须绑定一个活动 reservation、精确库存节点/槽位/qualified ID，且消费量不得超过 claim 余量；重复 reservation、重复槽位、新旧表示混用、超量或溢出输入均原子失败关闭。旧单条全量消费请求继续兼容。
+- 全量消费仍把 claim 标记为 `Completed`；部分消费只扣减 `Quantity`、保持 `Active`、递增 claim revision，并分别记录 `material_reservation_consumed` 或 `material_reservation_partially_consumed`。一次动作包含主料和附加料时，所有消费在同一个 ledger revision 结算，只写一个非终端 support marker，不写 route-complete marker。
+- 实验控制面不再假设支持动作必为种植。作物与机器都从各自已验证的 fresh 前后态回执生成同一种 canonical 消费集合；结算回执逐项核对余量、状态、history 与精确重放。机器两次投料场景的第一次动作现保留一份活动余量，并使用结算后 ledger revision 和 fresh 机器快照复入既有完整 Teacher 重规划链。
+- 聚焦 acquisition dispatch、bootstrap hermetic、Core game-free `91/91` 与 Backend `209/209` 已通过。该闭环仍只提供非终端监督证据，`formal_training_authorized=false`；下一固定切片是把同一支持递归协议扩展到需要先采购输入或建立机器容量的上游支持动作，而不是绕过候选、reservation 或原生执行回执。
+
 ## 2026-09-27 机器投料支持回执：真实扣料与机器加工态
 
 - 现有 `acquisition_route_supporting_transition_receipt.v1` 已从作物专用核验扩展为按 `crop_planting / machine_input_load` 显式分派，仍只接受一个经过哈希绑定的非终端队列项；畸形的空队列或多项队列只会失败关闭，不会抛异常或被误判为完成。

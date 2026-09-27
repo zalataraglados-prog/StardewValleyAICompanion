@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -57,8 +58,24 @@ public sealed class AcquisitionRouteSupportingTransitionSettlementReceipt
     [JsonPropertyName("consumed_material_reservation_id")]
     public string ConsumedMaterialReservationId { get; set; } = string.Empty;
 
+    [JsonPropertyName("consumed_material_reservation_ids")]
+    public string[] ConsumedMaterialReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("completed_material_reservation_ids")]
+    public string[] CompletedMaterialReservationIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("active_material_reservation_ids")]
+    public string[] ActiveMaterialReservationIds { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("consumed_quantity")]
     public int ConsumedQuantity { get; set; }
+
+    [JsonPropertyName("material_settlements")]
+    public ReservationPortfolioMaterialSettlement[] MaterialSettlements
+    { get; set; } = Array.Empty<ReservationPortfolioMaterialSettlement>();
 
     [JsonPropertyName("supporting_transition_verified")]
     public bool SupportingTransitionVerified { get; set; }
@@ -86,5 +103,5 @@ public sealed class AcquisitionRouteSupportingTransitionSettlementReceipt
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A supporting-transition settlement is admitted only after rebuilding the exact support request, atomic reservation commit, commit-gated compilation and fresh after-state receipt. It completes only the one material claim whose slot, qualified item and quantity equal the observed seed consumption, then exactly replays the shared ledger mutation. It records a supporting-transition marker, never a terminal route-completion marker. Success requires a full fresh-snapshot replan and never authorizes formal training.";
+        "A supporting-transition settlement is admitted only after rebuilding the exact support request, atomic reservation commit, commit-gated compilation and fresh after-state receipt. Every material consumption must match one verified before/after slot delta and one active route claim. Exact full consumption completes that claim; partial consumption decrements its quantity and preserves it as active. The shared ledger mutation is exactly replayed and records one supporting-transition marker, never a terminal route-completion marker. Success requires a full fresh-snapshot replan and never authorizes formal training.";
 }

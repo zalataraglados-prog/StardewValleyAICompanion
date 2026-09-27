@@ -172,7 +172,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             GoalId = context.Request.GoalId,
             SupportRequestId = context.Request.SupportRequestId,
             RouteOccurrenceId = context.Request.RouteOccurrenceId,
-            RouteSourceDecisionId = context.ConsumedClaim.SourceDecisionId,
+            RouteSourceDecisionId = context.Consumptions[0]
+                .Claim.SourceDecisionId,
             AfterStateHash = context.AfterSnapshot.StateHash,
             SupportRequestSha256 = context.SupportRequestSha256,
             SupportCommitReceiptSha256 =
@@ -185,9 +186,22 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             SettledLedgerSha256 = settledLedgerSha256,
             BaseLedgerRevision = context.BaseLedger.Revision,
             SettledLedgerRevision = settled.Revision,
-            ConsumedMaterialReservationId =
-                context.ConsumedClaim.ReservationId,
-            ConsumedQuantity = context.ConsumedClaim.Quantity,
+            ConsumedMaterialReservationId = context.Consumptions.Length == 1
+                ? context.Consumptions[0].Claim.ReservationId
+                : string.Empty,
+            ConsumedMaterialReservationIds = context.Consumptions.Select(
+                    value => value.Claim.ReservationId)
+                .ToArray(),
+            CompletedMaterialReservationIds =
+                result.CompletedMaterialReservationIds ??
+                    Array.Empty<string>(),
+            ActiveMaterialReservationIds =
+                result.ActiveMaterialReservationIds ??
+                    Array.Empty<string>(),
+            ConsumedQuantity = context.Consumptions.Sum(value =>
+                value.ConsumedQuantity),
+            MaterialSettlements = result.MaterialSettlements ??
+                Array.Empty<ReservationPortfolioMaterialSettlement>(),
             SupportingTransitionVerified =
                 context.TransitionReceipt.SupportingTransitionVerified,
             ExactSettlementReplayVerified = !reasons.Contains(
