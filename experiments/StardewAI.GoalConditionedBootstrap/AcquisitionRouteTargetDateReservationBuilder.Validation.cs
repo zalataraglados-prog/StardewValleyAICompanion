@@ -45,15 +45,24 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
     {
         if (route.CurrencyBudgetMatchesTargetDate != true)
             return true;
-        if (route.UpstreamRoute.ResourceInputsMatchTargetDate != true ||
-            route.UpstreamRoute.InputEvaluations.Any(row =>
-                row.RequiredQuantity < 0 ||
-                row.AvailableQuantity < row.RequiredQuantity ||
-                row.Status != "resolved_resource_input_match" &&
-                row.Status !=
-                    "resolved_existing_target_crop_requires_no_new_seed"))
+        if (route.CurrencyEvaluation?.PurchasePrerequisite is null)
         {
-            return false;
+            if (route.UpstreamRoute.ResourceInputsMatchTargetDate != true ||
+                route.UpstreamRoute.InputEvaluations.Any(row =>
+                    row.RequiredQuantity < 0 ||
+                    row.AvailableQuantity < row.RequiredQuantity ||
+                    row.Status != "resolved_resource_input_match" &&
+                    row.Status !=
+                        "resolved_existing_target_crop_requires_no_new_seed"))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            _ = ReservationMaterialInputs(route, out var purchaseReasons);
+            if (purchaseReasons.Length > 0)
+                return false;
         }
         if (route.CurrencyRequirementKind == "no_direct_currency_cost")
             return route.CurrencyEvaluation is null;

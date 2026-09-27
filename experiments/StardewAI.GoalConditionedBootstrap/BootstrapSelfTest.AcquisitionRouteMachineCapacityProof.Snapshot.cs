@@ -544,6 +544,24 @@ internal static partial class BootstrapSelfTest
             trade_item_qualified_id = (string?)null,
             effective_trade_item_count = (int?)null
         }, JsonDefaults.Options));
+        entries.Add(JsonSerializer.SerializeToNode(new
+        {
+            synced_key = "fixture-wheat-seed",
+            item_id = "262",
+            qualified_item_id = "(O)262",
+            display_name = "Wheat Seeds",
+            stack = 1,
+            quality = 0,
+            currency = 0,
+            price = 80,
+            stock = 999,
+            infinite_stock = false,
+            can_buy_item = true,
+            executor_purchase_preview_enabled = true,
+            executor_block_reasons = Array.Empty<string>(),
+            trade_item_qualified_id = (string?)null,
+            effective_trade_item_count = (int?)null
+        }, JsonDefaults.Options));
         preview["entry_count"] = entries.Count;
     }
 

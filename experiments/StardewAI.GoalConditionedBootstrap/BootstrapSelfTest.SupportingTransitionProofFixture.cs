@@ -64,13 +64,13 @@ internal static partial class BootstrapSelfTest
                 commitReceiptPath,
                 committedLedgerPath,
                 commitResultPath);
+        Write(compilationPath, compilation);
         Require(compilation.DispatchReady &&
                 compilation.ActionQueue is not null &&
                 compilation.FreshReplanRequiredAfterSuccess &&
                 !compilation.TerminalReceiptEligible,
             "File-backed support compilation failed: " +
             string.Join(",", compilation.BlockingReasons));
-        Write(compilationPath, compilation);
 
         var afterSnapshotPath = Path.Combine(root, "after-snapshot.json");
         var executed = execute(compilation, afterSnapshotPath);

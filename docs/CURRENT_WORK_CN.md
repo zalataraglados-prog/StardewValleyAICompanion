@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 支持动作终端训练谱系覆盖矩阵 4/5
+
+- `machine_input_purchase` 现已复用既有权威商店报价、`economy.buy_supplies -> executor.buy_shop_item -> executor.close_menu`、原生购买回执与 currency reservation 结算，完成 `support request -> atomic commit -> shared compilation -> native receipt -> nonterminal settlement -> fresh replan -> terminal rollout -> supervision` 的 file-backed 全链证明；没有新增第二套商店、购买、寻路、ledger、终端编译器或执行器。
+- 证明绑定唯一 `FixtureShop / fixture-wheat-seed / (O)262 / 80g / 1` 库存行，逐项核验金币 `1000 -> 920`、物品 `0 -> 1`、菜单安全关闭以及唯一货币 reservation `80 -> 0`。支持动作 run ID 继续从终端 native outcome 中排除。
+- 该链暴露并修正了生产制品验证器中的契约矛盾：精确机器输入购买本来就以 `resolved_resource_input_miss` 进入 typed purchase prerequisite，旧验证却要求所有资源已经满足。现在只有通过既有 `ReservationMaterialInputs` 精确绑定校验的购买缺口可被接受；无购买前置或绑定不精确的资源缺口仍失败关闭。夹具同时补齐 `sleep_prompt_context`，没有跳过 `close_menu` 的 required-state 校验。
+- Release 构建、定向 purchase 谱系测试、acquisition dispatch、bootstrap hermetic 与完整 `self-test-current-stage-one-collection` 均通过。矩阵现为 `4/5`，唯一缺口是 `crop_planting`；`formal_product_training_authorized=false` 保持不变。
+- 下一固定切片是复用既有种子获取、农田位置方案、整地/浇水/播种队列、原生作物状态回执和材料 reservation 结算，建立 `crop_planting` 的同型 file-backed 终端谱系证明；不得新增第二套农田规划、动作编译、寻路、ledger 或终端执行实现。
+
 ## 2026-09-28 支持动作终端训练谱系覆盖矩阵 3/5
 
 - `machine_input_material_transfer` 现已复用既有 `inventory.transfer_item -> executor.move_to_tile -> executor.transfer_material`、原生搬运回执与 reservation relocation 结算，完成 `support request -> atomic commit -> shared compilation -> native receipt -> nonterminal settlement -> fresh replan -> terminal rollout -> supervision` 的 file-backed 全链证明；没有新增第二套搬运、寻路、ledger、终端编译器或执行器。
