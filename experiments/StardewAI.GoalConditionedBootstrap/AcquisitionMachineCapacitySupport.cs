@@ -131,6 +131,9 @@ internal static class AcquisitionMachineCapacitySupport
         if (matches.Length == 0)
         {
             reasons.AddRange(availability.Options
+                .SelectMany(option => option.BlockingReasons)
+                .Where(reason => !string.IsNullOrWhiteSpace(reason)));
+            reasons.AddRange(availability.Options
                 .SelectMany(option => option.EventCandidates)
                 .SelectMany(candidate => candidate.BlockReasons)
                 .Where(reason => !string.IsNullOrWhiteSpace(reason)));

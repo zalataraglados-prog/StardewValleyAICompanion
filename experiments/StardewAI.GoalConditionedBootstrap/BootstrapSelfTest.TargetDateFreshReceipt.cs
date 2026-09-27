@@ -10,7 +10,8 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private static void VerifyTargetDateFreshTerminalReceipt(
+    private static TargetDateTerminalProofArtifacts
+        VerifyTargetDateFreshTerminalReceipt(
         AcquisitionRouteExecutionBindingInputs inputs,
         string bindingPath,
         string afterSnapshotPath,
@@ -18,7 +19,9 @@ internal static partial class BootstrapSelfTest
         string insufficientAfterSnapshotPath,
         bool expectedPortfolioCompletion = true,
         ICollection<AcquisitionRoutePortfolioSupervisionCorpusSource>?
-            completedSupervisionSources = null)
+            completedSupervisionSources = null,
+        AcquisitionRoutePortfolioSupportingTransitionInitialProof?
+            supportingTransition = null)
     {
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
@@ -117,7 +120,9 @@ internal static partial class BootstrapSelfTest
         };
         Write(inputs.ActionQueuePath, queue);
 
-        var binding = AcquisitionRouteExecutionBindingBuilder.Build(inputs);
+        var binding = BuildTargetDateExecutionBinding(
+            inputs,
+            supportingTransition);
         Write(bindingPath, binding);
         Require(binding.Status == "ready_for_exact_route_dispatch" &&
                 binding.DispatchBindingReady &&
@@ -140,7 +145,9 @@ internal static partial class BootstrapSelfTest
             "Target-date route execution binding drifted.");
         Require(JsonSerializer.Serialize(binding, JsonDefaults.Options) ==
                 JsonSerializer.Serialize(
-                    AcquisitionRouteExecutionBindingBuilder.Build(inputs),
+                    BuildTargetDateExecutionBinding(
+                        inputs,
+                        supportingTransition),
                     JsonDefaults.Options),
             "Target-date route execution binding is not deterministic.");
 
@@ -150,7 +157,7 @@ internal static partial class BootstrapSelfTest
             .ToArray();
         Write(inputs.ActionQueuePath, queue);
         var incompleteIdentity =
-            AcquisitionRouteExecutionBindingBuilder.Build(inputs);
+            BuildTargetDateExecutionBinding(inputs, supportingTransition);
         Require(!incompleteIdentity.DispatchBindingReady &&
                 incompleteIdentity.BlockingReasons.Contains(
                     "route_queue_command_binding_invalid",
@@ -165,7 +172,7 @@ internal static partial class BootstrapSelfTest
             .ToArray();
         Write(inputs.ActionQueuePath, queue);
         var missingPortfolioOwnership =
-            AcquisitionRouteExecutionBindingBuilder.Build(inputs);
+            BuildTargetDateExecutionBinding(inputs, supportingTransition);
         Require(!missingPortfolioOwnership.DispatchBindingReady &&
                 missingPortfolioOwnership.BlockingReasons.Contains(
                     "route_queue_command_binding_invalid",
@@ -198,7 +205,8 @@ internal static partial class BootstrapSelfTest
         File.WriteAllText(
             executionReceiptPath,
             receiptNode.ToJsonString(JsonDefaults.Options));
-        var admitted = AcquisitionRouteFreshTerminalReceiptBuilder.Build(
+        var admitted = BuildTargetDateFreshTerminalReceipt(
+            supportingTransition,
             inputs,
             bindingPath,
             executionReceiptPath,
@@ -237,8 +245,8 @@ internal static partial class BootstrapSelfTest
         var settlementReceiptPath = Path.Combine(
             Path.GetDirectoryName(bindingPath)!,
             "target-date-route-settlement-receipt.json");
-        var settlementRequest =
-            AcquisitionRoutePortfolioSettlementBuilder.BuildRequest(
+        var settlementRequest = BuildTargetDateSettlementRequest(
+                supportingTransition,
                 inputs,
                 bindingPath,
                 executionReceiptPath,
@@ -265,8 +273,8 @@ internal static partial class BootstrapSelfTest
             "Target-date route reservation settlement was rejected.");
         Write(settlementResultPath, settlement);
         Write(settledLedgerPath, settlement.Ledger!);
-        var settlementReceipt =
-            AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
+        var settlementReceipt = BuildTargetDateSettlementReceipt(
+                supportingTransition,
                 inputs,
                 bindingPath,
                 executionReceiptPath,
@@ -296,8 +304,8 @@ internal static partial class BootstrapSelfTest
         var rolloutCheckpointPath = Path.Combine(
             Path.GetDirectoryName(bindingPath)!,
             "target-date-portfolio-rollout-checkpoint.json");
-        var rolloutCheckpoint =
-            AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial(
+        var rolloutCheckpoint = BuildTargetDateRolloutCheckpoint(
+                supportingTransition,
                 inputs,
                 bindingPath,
                 executionReceiptPath,
@@ -352,6 +360,7 @@ internal static partial class BootstrapSelfTest
                     InitialCheckpointProof =
                         new AcquisitionRoutePortfolioInitialCheckpointProof
                         {
+                            SupportingTransition = supportingTransition,
                             ExecutionInputs = inputs,
                             ExecutionBindingPath = bindingPath,
                             ExecutionReceiptPath = executionReceiptPath,
@@ -385,6 +394,7 @@ internal static partial class BootstrapSelfTest
                     .BuildInitialRequest(
                         new AcquisitionRoutePortfolioInitialCheckpointProof
                         {
+                            SupportingTransition = supportingTransition,
                             ExecutionInputs = inputs,
                             ExecutionBindingPath = bindingPath,
                             ExecutionReceiptPath = executionReceiptPath,
@@ -433,8 +443,8 @@ internal static partial class BootstrapSelfTest
             })
             .ToArray();
         Write(tamperedSettledLedgerPath, tamperedSettledLedger);
-        var tamperedSettlementReceipt =
-            AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
+        var tamperedSettlementReceipt = BuildTargetDateSettlementReceipt(
+                supportingTransition,
                 inputs,
                 bindingPath,
                 executionReceiptPath,
@@ -473,7 +483,8 @@ internal static partial class BootstrapSelfTest
                 before.GameTick + 1,
                 selectedCandidateId,
                 runId));
-        var insufficient = AcquisitionRouteFreshTerminalReceiptBuilder.Build(
+        var insufficient = BuildTargetDateFreshTerminalReceipt(
+            supportingTransition,
             inputs,
             bindingPath,
             insufficientReceiptPath,
@@ -495,6 +506,17 @@ internal static partial class BootstrapSelfTest
                     StringComparer.Ordinal),
             "Partial target-date quantity increase was not rejected.");
         VerifyExactCommunityCenterPaymentReceipt(inputs.BeforeSnapshotPath);
+        return new TargetDateTerminalProofArtifacts(
+            bindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            freshTerminalReceiptPath,
+            runId,
+            settlementRequestPath,
+            settlementResultPath,
+            settledLedgerPath,
+            settlementReceiptPath,
+            rolloutCheckpointPath);
     }
 
     private static void VerifyExactCommunityCenterPaymentReceipt(

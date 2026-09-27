@@ -2502,6 +2502,28 @@ Slice 7 remains assigned to the RTX 5070 node.
   ordinary terminal route, then verify the rollout checkpoint, proof receipt and supervision dataset. The support action
   remains context for that verified terminal decision and must not be exported as a fabricated terminal native outcome.
 
+### 2026-09-28: machine-capacity lineage through terminal supervision
+
+- The placement transition now produces file-backed request, commit, shared compilation, native execution receipt,
+  nonterminal settlement and fresh-replan artifacts. That exact lineage is passed as the existing
+  `SupportingTransitionInitialProof` into the ordinary terminal binding, fresh receipt, reservation settlement, rollout
+  checkpoint, proof receipt, admission and supervision builders. No second planner, ledger, compiler or executor exists.
+- The fresh Teacher rebuilds the complete denominator from the post-placement snapshot and settled ledger. In the
+  hermetic case it selects the immediately completable Beer shop route. The exported supervision row contains only that
+  terminal native outcome; machine placement remains verified context and cannot masquerade as machine production or a
+  terminal label.
+- Deterministic acquisition compilation now derives stable plan, queue, queue-item and primitive identities from the
+  goal, route, candidate, state/ledger, portfolio, ranking, role and complete lineage. This permits independent artifact
+  reconstruction without accepting random GUID drift. Legal null trade fields in native shop previews are also read as
+  absent optional values rather than throwing, while malformed nonnumeric values still fail closed downstream.
+- The complete StageOne self-test passes with the new proof plus existing train/validation/test continuations, corpus,
+  pairwise/live-shadow and tamper-negative coverage. Formal product training and learned runtime authority remain
+  disabled.
+- The next bounded slice is a support-family terminal-lineage coverage matrix. It must account for `crop_planting`,
+  `machine_input_load`, `machine_input_material_transfer`, `machine_input_purchase` and
+  `machine_capacity_establishment`, proving that every admitted support family rejoins the same file-backed terminal
+  rollout path. Existing proofs count as coverage and must be reused rather than reimplemented.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

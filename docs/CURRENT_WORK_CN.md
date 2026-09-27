@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 机器容量支持过渡接入终端 rollout 证明链
+
+- 机器放置现以真实文件制品完成 `support request -> commit receipt -> shared compilation -> native execution receipt -> nonterminal settlement -> fresh replan`，并把这份精确血缘作为 `SupportingTransitionInitialProof` 传入既有终端执行、reservation 结算、rollout checkpoint、proof receipt、rollout admission 与 supervision dataset 构建器。没有新增 planner、ledger、动作编译器或执行器。
+- fresh Teacher 会从放置后的快照与结算后 ledger 重建完整候选分母；本 fixture 最终选择可立即完成的 Beer 商店路线。监督数据只包含该终端原生结果，前置机器放置仅作为可验证上下文，绝不伪装成机器产出或 terminal native outcome。
+- acquisition Teacher 编译边界现在根据目标、路线、候选、state/ledger、portfolio、ranking、角色和完整血缘生成稳定的 plan/queue/item/primitive ID；同一证明链重建不再受随机 GUID 干扰。商店报价读取器同时修正合法 `null` 交易数量的解析，测试快照补齐同一日期绑定的地图可行走证据，均保持失败关闭。
+- 完整 `self-test-current-stage-one-collection` 已通过，覆盖新机器容量链及既有 train/validation/test continuation、语料、pairwise、live-shadow 和篡改拒绝。正式产品训练仍为 `false`。
+- 下一固定切片是建立支持动作家族的终端训练谱系覆盖矩阵，并逐项证明 `crop_planting`、`machine_input_load`、`machine_input_material_transfer`、`machine_input_purchase`、`machine_capacity_establishment` 都能经同一 file-backed recurrence 接入终端 rollout；已有闭环只登记复用，不得复制实现。
+
 ## 2026-09-27 机器容量制作后放置 hermetic 闭环
 
 - 缺机器容量的 hermetic 路线现连续执行两次非终端支持过渡：先经既有 `executor.craft_machine_item` 得到机器，再用 fresh 快照和结算后 ledger 重新枚举既有 `executor.move_to_tile -> executor.place_machine` 队列。第二次原子提交把同一个 source-bound intent 从 `craft_selected` 推进到 `placement_bound`，没有创建第二个 intent 或第二套放置器。
