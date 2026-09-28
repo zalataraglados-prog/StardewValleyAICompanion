@@ -369,35 +369,49 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         AcquisitionRouteTargetDateUnlock requirement,
         SnapshotEnvelope snapshot,
         PolicyEventCandidatePrediction candidate,
+        out string evidence) => MatchesAuthoritativeSource(
+            requirement.RouteKind,
+            requirement.SourceId,
+            requirement.QualifiedItemId,
+            snapshot,
+            candidate,
+            out evidence);
+
+    internal static bool MatchesAuthoritativeSource(
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId,
+        SnapshotEnvelope snapshot,
+        PolicyEventCandidatePrediction candidate,
         out string evidence)
     {
         evidence = string.Empty;
-        if (requirement.RouteKind == "sells" &&
-            requirement.SourceId.StartsWith("shop:", StringComparison.Ordinal) &&
+        if (routeKind == "sells" &&
+            sourceId.StartsWith("shop:", StringComparison.Ordinal) &&
             string.Equals(
                 candidate.ShopId,
-                requirement.SourceId["shop:".Length..],
+                sourceId["shop:".Length..],
                 StringComparison.Ordinal))
         {
             evidence = "candidate.shop_id";
             return true;
         }
-        if (requirement.RouteKind == "harvests_as" &&
-            requirement.SourceId.StartsWith("crop:", StringComparison.Ordinal) &&
+        if (routeKind == "harvests_as" &&
+            sourceId.StartsWith("crop:", StringComparison.Ordinal) &&
             TryReadUniqueParameter(
                 candidate,
                 "harvest_source_seed_id",
                 out var seedId) &&
             string.Equals(
                 seedId,
-                requirement.SourceId["crop:".Length..],
+                sourceId["crop:".Length..],
                 StringComparison.Ordinal))
         {
             evidence = "candidate.harvest_source_seed_id";
             return true;
         }
-        if (requirement.RouteKind == "native_location_fish_spawn" &&
-            requirement.SourceId.StartsWith(
+        if (routeKind == "native_location_fish_spawn" &&
+            sourceId.StartsWith(
                 "location_fish:",
                 StringComparison.Ordinal) &&
             MasterAnglerCurrentCandidateMatcher.TryMatch(
@@ -411,13 +425,13 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 StringComparison.Ordinal) &&
             string.Equals(
                 fishing.Intent.SourceKey,
-                requirement.SourceId["location_fish:".Length..],
+                sourceId["location_fish:".Length..],
                 StringComparison.Ordinal))
         {
             evidence = "validated_master_angler_source_key";
             return true;
         }
-        if (requirement.RouteKind == "native_mine_fishing_override" &&
+        if (routeKind == "native_mine_fishing_override" &&
             MasterAnglerCurrentCandidateMatcher.TryMatch(
                 snapshot,
                 candidate,
@@ -429,15 +443,14 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 StringComparison.Ordinal) &&
             string.Equals(
                 mineFishing.Intent.SourceKey,
-                requirement.SourceId,
+                sourceId,
                 StringComparison.Ordinal))
         {
             evidence = "validated_master_angler_mine_override";
             return true;
         }
-        if (requirement.RouteKind == "native_crab_pot_output" &&
-            requirement.SourceId ==
-                "crab_pot_fish:" + ItemId(requirement.QualifiedItemId) &&
+        if (routeKind == "native_crab_pot_output" &&
+            sourceId == "crab_pot_fish:" + ItemId(qualifiedItemId) &&
             candidate.Kind == "collect_crab_pot")
         {
             evidence = "exact_crab_pot_output_identity";
@@ -445,9 +458,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         }
 
         var expected = FixedNativeSources.GetValueOrDefault(
-            requirement.RouteKind);
+            routeKind);
         if (expected is not null &&
-            string.Equals(expected.SourceId, requirement.SourceId,
+            string.Equals(expected.SourceId, sourceId,
                 StringComparison.Ordinal) &&
             expected.CandidateKinds.Contains(
                 candidate.Kind,
@@ -459,9 +472,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
 
         if (CandidateDeclaresAuthoritativeRouteSource(
                 candidate,
-                requirement.RouteKind,
-                requirement.SourceId,
-                requirement.QualifiedItemId))
+                routeKind,
+                sourceId,
+                qualifiedItemId))
         {
             evidence = "rebuilt_candidate.authoritative_route_sources";
             return true;
@@ -573,7 +586,6 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 name,
                 StringComparison.Ordinal))
             .Select(parameter => parameter.Value)
-            .Distinct(StringComparer.Ordinal)
             .ToArray();
         value = matches.Length == 1 ? matches[0] : string.Empty;
         return matches.Length == 1 && !string.IsNullOrWhiteSpace(value);

@@ -237,7 +237,8 @@ internal static partial class BootstrapSelfTest
                     "(O)24",
                     99,
                     1,
-                    Parameter("projected_harvest_quality", "1"));
+                    Parameter("projected_harvest_quality", "1"),
+                    Parameter("harvest_source_seed_id", "472"));
             sharedCandidate.LocationId = "Farm";
             sharedCandidate.TileX = 4;
             sharedCandidate.TileY = 5;
@@ -641,7 +642,8 @@ internal static partial class BootstrapSelfTest
                 "24",
                 "(O)24",
                 1,
-                1);
+                1,
+                Parameter("harvest_source_seed_id", "472"));
             var tieB = CollectionCandidate(
                 "tied-parsnip-b",
                 "farm.maintain_crops",
@@ -649,7 +651,8 @@ internal static partial class BootstrapSelfTest
                 "24",
                 "(O)24",
                 2,
-                1);
+                1,
+                Parameter("harvest_source_seed_id", "472"));
             foreach (var candidate in new[] { tieA, tieB })
             {
                 candidate.LocationId = "Farm";

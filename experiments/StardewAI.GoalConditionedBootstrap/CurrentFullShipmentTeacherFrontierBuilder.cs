@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -26,6 +27,9 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
         var ranking = CurrentTeacherFrontierSupport.Read<AvailabilityAwarePolicyPredictionEnvelope>(
             rankingFullPath,
             "Availability-aware ranking");
+        var snapshotEnvelope = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+            snapshotFullPath,
+            "Full Shipment snapshot");
         using var snapshot = JsonDocument.Parse(File.ReadAllText(snapshotFullPath));
 
         CurrentTeacherFrontierSupport.ValidateAuthority(
@@ -60,7 +64,11 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
 
         var progress = ReadFullShipmentProgress(snapshotRoot, inventorySet);
         var candidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(ranking);
-        var bindings = BuildBindings(loweringSet, progress, candidates);
+        var bindings = BuildBindings(
+            loweringSet,
+            progress,
+            snapshotEnvelope,
+            candidates);
         var bindingsByRequirement = bindings
             .GroupBy(value => value.RequirementId, StringComparer.Ordinal)
             .ToDictionary(
@@ -161,6 +169,7 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
     private static CurrentRequirementCandidateBinding[] BuildBindings(
         AcquisitionRequirementSetLowering lowering,
         IReadOnlyDictionary<string, bool> progress,
+        SnapshotEnvelope snapshot,
         IEnumerable<PolicyEventCandidatePrediction> candidates)
     {
         var result = new List<CurrentRequirementCandidateBinding>();
@@ -186,11 +195,25 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                         candidate.FullShipmentAlreadyShipped == false &&
                         candidate.FullShipmentCurrentShippedCount == 0 &&
                         candidate.FullShipmentContributes == true;
-                    var routes = CurrentTeacherFrontierSupport.AdmittedEndpointRoutes(
-                        alternative,
-                        candidate.OptionId);
-                    if (!directCompletion && routes.Length == 0)
+                    var routeMatches = CurrentTeacherFrontierSupport
+                        .AdmittedEndpointRoutes(alternative, candidate.OptionId)
+                        .Select(route => MatchRouteSource(
+                            route,
+                            alternative.QualifiedItemId,
+                            snapshot,
+                            candidate))
+                        .Where(value => value is not null)
+                        .Cast<MatchedRouteSource>()
+                        .ToArray();
+                    if (!directCompletion && routeMatches.Length != 1)
                         continue;
+
+                    var routes = routeMatches
+                        .Select(value => value.Route)
+                        .ToArray();
+                    var sourceEvidence = routeMatches.Length == 1
+                        ? "+" + routeMatches[0].IdentityEvidence
+                        : string.Empty;
 
                     result.Add(new CurrentRequirementCandidateBinding(
                         group.RequirementId,
@@ -205,7 +228,7 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                             : "authoritative_acquisition_endpoint",
                         directCompletion
                             ? match.IdentityEvidence + "+native_full_shipment_contribution_flags"
-                            : match.IdentityEvidence,
+                            : match.IdentityEvidence + sourceEvidence,
                         routes));
                 }
             }
@@ -216,5 +239,24 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
             .ThenBy(value => value.CandidateId, StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static MatchedRouteSource? MatchRouteSource(
+        CurrentRequirementRouteEvidence route,
+        string qualifiedItemId,
+        SnapshotEnvelope snapshot,
+        PolicyEventCandidatePrediction candidate) =>
+        AcquisitionRouteDispatchCompilationBuilder.MatchesAuthoritativeSource(
+            route.RouteKind,
+            route.SourceId,
+            qualifiedItemId,
+            snapshot,
+            candidate,
+            out var identityEvidence)
+            ? new MatchedRouteSource(route, identityEvidence)
+            : null;
+
+    private sealed record MatchedRouteSource(
+        CurrentRequirementRouteEvidence Route,
+        string IdentityEvidence);
 
 }
