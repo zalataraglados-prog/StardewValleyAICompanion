@@ -8,6 +8,14 @@ public sealed class HarnessConfig
 
     public bool AutoLoad { get; set; } = true;
 
+    public bool CreateFreshSave { get; set; }
+
+    public string FreshPlayerName { get; set; } = "StardewAI";
+
+    public string FreshFarmName { get; set; } = "ProofFarm";
+
+    public string FreshFavoriteThing { get; set; } = "Parsnip";
+
     public int LoadAfterTicks { get; set; } = 120;
 
     public bool EnableTrainingExecutor { get; set; } = true;

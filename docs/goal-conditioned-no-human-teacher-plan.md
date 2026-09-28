@@ -2750,6 +2750,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   one hidden, silent native iteration from a fresh save, persist all three phase boundaries, and admit that manifest as
   the first prefix checkpoint before extending it.
 
+### 2026-09-28: native fresh-save runtime root
+
+- The runtime harness now has an explicit fresh-save mode derived from the current 1.6.15 decompiled new-game path:
+  `Game1.resetPlayer()` followed by deterministic standard-farm customization and native
+  `TitleMenu.createdNewCharacter(skipIntro: true)`. It does not fabricate save XML or clone an existing slot.
+- Fresh creation fails closed unless training mode is explicit, both isolation environment paths resolve to the same
+  empty `fresh-save-*` directory, the directory is neither a drive root nor a reparse point, and no existing slot is
+  requested. Invalid isolation disables the whole harness before its executor starts.
+- Hidden and silent run `runtime-fresh-save-20260928-133156` produced native slot `ProofFarm_450250338`. Its preserved
+  snapshot is Spring 1 with the exact 154-item denominator, zero shipped requirements, 154 missing requirements and no
+  achievement 34; both native save files were present before admission. The launcher also now applies its configured
+  startup budget to executor health after the first retained failed run exposed a stale hard-coded 60-second timeout.
+- This is the auditable recurrence root, not an acquisition iteration. Progress remains 0/154 and formal product
+  training remains unauthorized. The next bounded slice must preserve this actor/save lineage, record native movement
+  out of the farmhouse, acquire Sap through the existing `foraging.chop_wild_tree` route, deposit it through the
+  existing shipping chain, settle the day, and admit the result as the first 1/154 prefix checkpoint. No second
+  movement, tree-chop, shipping, or recurrence implementation is permitted.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
