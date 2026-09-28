@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 宠物爱心真实三分区生产证据完成
+
+- `Invoke-RuntimePetCareSmoke.ps1` 新增只运行终端宠物爱心转移的 `TeacherTerminalOnly` 模式，并持久化 fresh before/after 快照及原生执行结果。快照保存改为直接写入桥返回的原始 JSON；不再把 PowerShell 对象重新序列化后冒充权威快照。Windows PowerShell 5.1 的快照 GET 显式使用 `-UseBasicParsing`，避免旧 IE 解析器造成空引用和假超时。
+- 三个隔离存档分别产生真实 train、validation、test 证据：`runtime-pet-love-train-raw-20260928-0915`、`runtime-pet-love-validation-raw-20260928-0920`、`runtime-pet-love-test-raw-20260928-0925`。每条均由原生 `executor.pet_interact` 完成友情 `994 -> 1000`、当天抚摸次数递增和 `petLoveMessage false -> true`，且 fresh 前后状态哈希不同。
+- 严格 `PetLoveTeacherCorpusBuilder` 已重新计算三组原始快照状态哈希并接受全部来源；分区由 `save_id + player_id + total_day` 派生，结果为 `ready_split_complete_pet_love_teacher_corpus`、`3 rows / 3 partitions`，Teacher 比较与原生终态验证全部为真。此前由 PowerShell 重序列化生成的无效快照未进入该 corpus。
+- 生产 Goal Method 覆盖在保持同一权威字典、依赖展开、动作矩阵和 claim ledger 的前提下由 `3/19` 提升至 `4/19`。宠物爱心 criterion 现为 `executable_frontier`、train/validation/test Teacher 与原生结果分区齐全、`coverage_gate_ready=true`；全局仍为 `blocked_incomplete_goal_method_teacher_coverage:4/19`，`formal_product_training_authorized=false`。
+- 验证通过：PowerShell AST、宠物运行源码守卫 `5/5`、Core game-free `109/109`、GoalConditionedBootstrap Release `0 warning / 0 error`、`self-test-bootstrap-hermetic`、三次隐藏静音 Teacher 原生运行，以及普通抚摸/满心礼物/隔夜水碗的完整旧路径 `3/3`。隔夜测试后已用克隆自身的 `_old` 文件恢复第 223 天，不触及原始游玩存档。GitHub 当前没有新增代码审查 issue；#130 的剩余夹具拆分已在上一切片完成并关闭。
+- 下一固定切片是补齐 Full Shipment 当前实时 acquisition candidate 的权威来源身份和所需 supporting option 编译，使既有 154 项 ordered recurrence 能消费真实当前端点；不得复制第二套收集规划、执行或训练链。随后才采集该方法的 fresh-save 完整证据。
+
 ## 2026-09-28 Stage 1 collection 自测夹具分解（#130）
 
 - 将 `BootstrapSelfTest.StageOneCollectionFrontier.cs` 从约 4900 行的单方法拆为薄入口和 8 个同前缀 partial 文件，职责分别为夹具路径/调度、静态权威输入、目标日期轴、组合提交与执行、组合语义、负例与篡改拒绝、当前前沿准入、共享构建支持；单文件最大约 1350 行。

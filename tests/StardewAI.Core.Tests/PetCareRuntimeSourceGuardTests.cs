@@ -63,6 +63,22 @@ public sealed class PetCareRuntimeSourceGuardTests
         Assert.Contains("Refusing to attach", SmokeSource, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void TeacherTerminalModePersistsFreshBoundedNativeTransition()
+    {
+        Assert.Contains("[switch] $TeacherTerminalOnly", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("Invoke-PetInteractionCase \"pet-love-terminal\" 994 $false", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("$CaseName + \"-after-snapshot.json\"", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("Wait-PetInteractionAfterSnapshot", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("[IO.File]::WriteAllText(", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("Invoke-WebRequest -UseBasicParsing", SmokeSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("$before | ConvertTo-Json", SmokeSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("$after | ConvertTo-Json", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("$terminal.friendship_after -eq 1000", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("$terminal.pet_love_mail_after -eq $true", SmokeSource, StringComparison.Ordinal);
+        Assert.Contains("Wait-Json \"http://127.0.0.1:8767/health\" $StartupTimeoutSeconds", SmokeSource, StringComparison.Ordinal);
+    }
+
     private static string Slice(string source, string start, string end)
     {
         var startIndex = source.IndexOf(start, StringComparison.Ordinal);

@@ -2664,6 +2664,31 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The implementation is split into orchestration, evidence validation and JSON/path support files. It reuses the
   existing interaction compiler and executor and does not introduce a second mine, chest or action system.
 
+### 2026-09-28: real three-partition pet-love production evidence
+
+- `Invoke-RuntimePetCareSmoke.ps1` now has a bounded `TeacherTerminalOnly` mode that persists fresh before/after
+  snapshots and the native execution result for one terminal pet interaction. Snapshot evidence is written from the
+  bridge's raw JSON response rather than from a PowerShell object reserialization. Windows PowerShell 5.1 uses
+  `-UseBasicParsing`, preventing its legacy IE parser from turning a valid 8 MB snapshot response into a null-reference
+  timeout.
+- Three isolated native runs supply independently derived train, validation and test rows:
+  `runtime-pet-love-train-raw-20260928-0915`, `runtime-pet-love-validation-raw-20260928-0920`, and
+  `runtime-pet-love-test-raw-20260928-0925`. Each verifies `executor.pet_interact`, friendship `994 -> 1000`, one
+  additional daily interaction, `petLoveMessage false -> true`, and distinct fresh before/after state hashes.
+- The strict corpus builder recomputes every raw snapshot hash and produces
+  `ready_split_complete_pet_love_teacher_corpus` with three rows across all three partitions. The earlier snapshots
+  produced through PowerShell reserialization are invalid and are not referenced by the accepted corpus.
+- With all other authoritative inputs unchanged, production Goal Method coverage advances from 3/19 to exactly 4/19.
+  Pet love is `executable_frontier`, split-complete and `coverage_gate_ready=true`. The aggregate remains
+  `blocked_incomplete_goal_method_teacher_coverage`, and `formal_product_training_authorized=false` remains enforced.
+- PowerShell parsing, focused source guards, Core game-free 109/109, Release build with zero warnings/errors, hermetic
+  critical paths, all three hidden Teacher runs and the legacy three-case pet-care runtime smoke pass. The isolated
+  clone was restored from its own pre-sleep `_old` files after the next-day case.
+- The next bounded slice is the first Full Shipment dependency closure: bind exact authoritative source identity to
+  every remaining live acquisition candidate and compile any required supporting option through the existing path. It
+  must reuse the implemented 154-item ordered recurrence and must not introduce a second collection planner, executor
+  or training chain.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
