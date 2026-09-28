@@ -5,6 +5,8 @@ param(
     [string] $RunId = ("runtime-pet-care-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [int] $PetTileX = 64,
     [int] $PetTileY = 15,
+    [int] $StartupTimeoutSeconds = 120,
+    [switch] $TeacherTerminalOnly,
     [switch] $KeepGameRunning
 )
 
@@ -28,15 +30,31 @@ function Wait-Json([string] $Url, [int] $TimeoutSeconds) {
     throw "Timed out waiting for $Url. Last error: $lastError"
 }
 
-function Wait-WorldSnapshot([int] $TimeoutSeconds) {
+function Wait-WorldSnapshot([int] $TimeoutSeconds, [string] $OutputPath = "") {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     $lastError = "not_requested"
     while ((Get-Date) -lt $deadline) {
         try {
-            $snapshot = Invoke-RestMethod -Method Get -Uri $snapshotUrl -TimeoutSec 5
+            $response = Invoke-WebRequest -UseBasicParsing -Method Get -Uri $snapshotUrl -TimeoutSec 30
+            $rawSnapshot = if ($response.Content -is [byte[]]) {
+                [Text.Encoding]::UTF8.GetString($response.Content)
+            }
+            else {
+                [string]$response.Content
+            }
+            if ([string]::IsNullOrWhiteSpace($rawSnapshot)) {
+                throw "Snapshot response body is empty."
+            }
+            $snapshot = $rawSnapshot | ConvertFrom-Json
             if ($snapshot.save_id.status -in @("available", "derived") -and
                 $snapshot.state.farm.pets.status -in @("available", "derived") -and
                 $snapshot.state.farm.pet_bowls.status -in @("available", "derived")) {
+                if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
+                    [IO.File]::WriteAllText(
+                        $OutputPath,
+                        $rawSnapshot,
+                        [Text.UTF8Encoding]::new($false))
+                }
                 return $snapshot
             }
         }
@@ -44,6 +62,33 @@ function Wait-WorldSnapshot([int] $TimeoutSeconds) {
         Start-Sleep -Seconds 2
     }
     throw "Timed out waiting for world-ready pet snapshot. Last error: $lastError"
+}
+
+function Wait-PetInteractionAfterSnapshot(
+    [string] $BeforeStateHash,
+    [string] $PetId,
+    [int] $ExpectedFriendship,
+    [bool] $ExpectedPetLoveMail,
+    [string] $OutputPath,
+    [int] $TimeoutSeconds) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastObserved = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Wait-WorldSnapshot 30 $OutputPath
+        $pet = @($snapshot.state.farm.pets.value) |
+            Where-Object { [string]$_.pet_id -eq $PetId } |
+            Select-Object -First 1
+        $hasPetLoveMail = @($snapshot.state.quests.mail_received.value) -contains "petLoveMessage"
+        $lastObserved = "state_hash=$($snapshot.state_hash);friendship=$($pet.friendship_toward_farmer);pet_love_mail=$hasPetLoveMail"
+        if ($snapshot.state_hash -ne $BeforeStateHash -and
+            $null -ne $pet -and
+            [int]$pet.friendship_toward_farmer -eq $ExpectedFriendship -and
+            $hasPetLoveMail -eq $ExpectedPetLoveMail) {
+            return $snapshot
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    throw "Timed out waiting for fresh pet-interaction after snapshot. Last observed: $lastObserved"
 }
 
 function New-BaseRequest($Snapshot, [string] $OptionId, [string] $QueueItemId) {
@@ -55,7 +100,11 @@ function New-BaseRequest($Snapshot, [string] $OptionId, [string] $QueueItemId) {
     }
 }
 
-function Setup-PetFixture([int] $Friendship, [bool] $GiftTrigger, [string] $InteractionKind) {
+function Setup-PetFixture(
+    [int] $Friendship,
+    [bool] $GiftTrigger,
+    [string] $InteractionKind,
+    [string] $SnapshotOutputPath = "") {
     $snapshot = Wait-WorldSnapshot 30
     $request = New-BaseRequest $snapshot "debug.setup_pet_care_target" ("setup-" + $InteractionKind + "-" + $Friendship)
     $request.target_tile_x = $PetTileX; $request.target_tile_y = $PetTileY
@@ -67,12 +116,14 @@ function Setup-PetFixture([int] $Friendship, [bool] $GiftTrigger, [string] $Inte
         throw "Pet fixture setup failed: $($result | ConvertTo-Json -Depth 32 -Compress)"
     }
     Start-Sleep -Milliseconds 750
-    return Wait-WorldSnapshot 30
+    return Wait-WorldSnapshot 30 $SnapshotOutputPath
 }
 
 function Invoke-PetInteractionCase([string] $CaseName, [int] $Friendship, [bool] $GiftTrigger) {
-    $before = Setup-PetFixture $Friendship $GiftTrigger "pet_interact"
-    $before | ConvertTo-Json -Depth 96 | Set-Content -LiteralPath (Join-Path $artifactDirectory ($CaseName + "-before-snapshot.json")) -Encoding utf8
+    $beforePath = Join-Path $artifactDirectory ($CaseName + "-before-snapshot.json")
+    $afterPath = Join-Path $artifactDirectory ($CaseName + "-after-snapshot.json")
+    $resultPath = Join-Path $artifactDirectory ($CaseName + "-result.json")
+    $before = Setup-PetFixture $Friendship $GiftTrigger "pet_interact" $beforePath
     $pet = @($before.state.farm.pets.value) | Where-Object { $_.name -eq "EvdPet" } | Select-Object -First 1
     if ($null -eq $pet -or $pet.action_status -ne "ready") {
         throw "Transparent pet fixture was not ready for $CaseName."
@@ -100,24 +151,34 @@ function Invoke-PetInteractionCase([string] $CaseName, [int] $Friendship, [bool]
     $request.pet_gift_selection_status = [string]$pet.gift_selection_status
     $request.max_movement_tiles = 512
     $result = Invoke-JsonPost $executorUrl $request
-    $result | ConvertTo-Json -Depth 64 | Set-Content -LiteralPath (Join-Path $artifactDirectory ($CaseName + "-result.json")) -Encoding utf8
+    $result | ConvertTo-Json -Depth 64 | Set-Content -LiteralPath $resultPath -Encoding utf8
+    $after = Wait-PetInteractionAfterSnapshot `
+        $before.state_hash `
+        ([string]$result.pet_id) `
+        ([int]$result.pet_friendship_after) `
+        ([bool]$result.pet_love_mail_after) `
+        $afterPath `
+        30
     [ordered]@{
         case = $CaseName; status = $result.status; verification = $result.primitive_verification_status
         friendship_before = $result.pet_friendship_before; friendship_after = $result.pet_friendship_after
         times_pet_before = $result.pet_times_pet_before; times_pet_after = $result.pet_times_pet_after
+        pet_id = $result.pet_id; pet_love_mail_before = $result.pet_love_mail_before; pet_love_mail_after = $result.pet_love_mail_after
         gift_trigger_expected = $result.pet_gift_trigger_expected
         gift_debris_before = $result.pet_gift_debris_count_before; gift_debris_after = $result.pet_gift_debris_count_after
+        before_snapshot_path = $beforePath; after_snapshot_path = $afterPath; execution_result_path = $resultPath
+        before_state_hash = $before.state_hash; after_state_hash = $after.state_hash
         reasons = @($result.primitive_verification_reasons); block_reasons = @($result.block_reasons)
     }
 }
 
 function Invoke-PetBowlSettlementCase {
-    $before = Setup-PetFixture 994 $false "pet_bowl"
+    $beforePath = Join-Path $artifactDirectory "pet-bowl-before-snapshot.json"
+    $afterPath = Join-Path $artifactDirectory "pet-bowl-after-snapshot.json"
+    $before = Setup-PetFixture 994 $false "pet_bowl" $beforePath
     $sourceDay = [int]$before.state.time.total_days.value
     $bowl = @($before.state.farm.pet_bowls.value) | Where-Object { $_.action_status -eq "ready" -and $_.assigned_pet_name -eq "EvdPet" } | Select-Object -First 1
     if ($null -eq $bowl) { throw "Transparent pet bowl fixture was not ready." }
-    $before | ConvertTo-Json -Depth 96 | Set-Content -LiteralPath (Join-Path $artifactDirectory "pet-bowl-before-snapshot.json") -Encoding utf8
-
     $request = New-BaseRequest $before "executor.fill_pet_bowl" "fill-pet-bowl"
     $request.location_id = [string]$bowl.location_id; $request.target_location = [string]$bowl.location_id
     $request.target_tile_x = [int]$bowl.action_tile_x; $request.target_tile_y = [int]$bowl.action_tile_y
@@ -166,8 +227,7 @@ function Invoke-PetBowlSettlementCase {
     if ($null -eq $receipt -or $receipt.status -ne "completed") {
         throw "Pet bowl delayed receipt did not settle exactly: $receiptPath"
     }
-    $after = Wait-WorldSnapshot 30
-    $after | ConvertTo-Json -Depth 96 | Set-Content -LiteralPath (Join-Path $artifactDirectory "pet-bowl-after-snapshot.json") -Encoding utf8
+    $after = Wait-WorldSnapshot 30 $afterPath
     [ordered]@{
         case = "pet-bowl-native-next-day"; fill_status = $fillResult.status; fill_verification = $fillResult.primitive_verification_status
         sleep_status = $sleepResult.status; receipt_status = $receipt.status; settlement_reason = $receipt.settlement_reason
@@ -204,19 +264,36 @@ try {
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId; $env:STARDEWAI_TRAINING_MODE = "1"; $env:STARDEWAI_TRAINING_OUTPUT_DIR = $trainingOutputDirectory
     $env:SDL_AUDIODRIVER = "dummy"; $env:ALSOFT_DRIVERS = "null"
     $process = Start-Process -FilePath $smapiExe -WorkingDirectory $gameDir -WindowStyle Hidden -PassThru
-    Wait-Json "http://127.0.0.1:8767/health" 30 | Out-Null; Wait-WorldSnapshot 120 | Out-Null
+    Wait-Json "http://127.0.0.1:8767/health" $StartupTimeoutSeconds | Out-Null
+    Wait-WorldSnapshot $StartupTimeoutSeconds | Out-Null
 
-    $normal = Invoke-PetInteractionCase "pet-interaction-normal" 500 $false
-    $maximumGift = Invoke-PetInteractionCase "pet-interaction-max-gift" 1000 $true
-    $bowl = Invoke-PetBowlSettlementCase
-    $passed = $normal.status -eq "applied" -and $normal.verification -eq "verified" -and
-        $normal.friendship_after -eq 512 -and $maximumGift.status -eq "applied" -and
-        $maximumGift.verification -eq "verified" -and $maximumGift.friendship_after -eq 1000 -and
-        $maximumGift.times_pet_after -eq ($maximumGift.times_pet_before + 1) -and $maximumGift.gift_trigger_expected -eq $true -and
-        $bowl.receipt_status -eq "completed" -and $bowl.settled_friendship -eq 1000 -and $bowl.settled_bowl_watered -eq $false
+    if ($TeacherTerminalOnly) {
+        $terminal = Invoke-PetInteractionCase "pet-love-terminal" 994 $false
+        $passed = $terminal.status -eq "applied" -and
+            $terminal.verification -eq "verified" -and
+            $terminal.friendship_before -eq 994 -and
+            $terminal.friendship_after -eq 1000 -and
+            $terminal.pet_love_mail_before -eq $false -and
+            $terminal.pet_love_mail_after -eq $true -and
+            $terminal.times_pet_after -eq ($terminal.times_pet_before + 1) -and
+            $terminal.before_state_hash -ne $terminal.after_state_hash
+        $cases = @($terminal)
+    }
+    else {
+        $normal = Invoke-PetInteractionCase "pet-interaction-normal" 500 $false
+        $maximumGift = Invoke-PetInteractionCase "pet-interaction-max-gift" 1000 $true
+        $bowl = Invoke-PetBowlSettlementCase
+        $passed = $normal.status -eq "applied" -and $normal.verification -eq "verified" -and
+            $normal.friendship_after -eq 512 -and $maximumGift.status -eq "applied" -and
+            $maximumGift.verification -eq "verified" -and $maximumGift.friendship_after -eq 1000 -and
+            $maximumGift.times_pet_after -eq ($maximumGift.times_pet_before + 1) -and $maximumGift.gift_trigger_expected -eq $true -and
+            $bowl.receipt_status -eq "completed" -and $bowl.settled_friendship -eq 1000 -and $bowl.settled_bowl_watered -eq $false
+        $cases = @($normal, $maximumGift, $bowl)
+    }
     $summary = [ordered]@{
         status = if ($passed) { "passed" } else { "failed" }; evidence_id = "EVD-223"; run_id = $RunId; save_slot = $SaveSlot
-        expected_case_count = 3; passed_case_count = if ($passed) { 3 } else { 0 }; cases = @($normal, $maximumGift, $bowl)
+        evidence_scope = if ($TeacherTerminalOnly) { "native_pet_love_terminal_teacher_source" } else { "pet_care_runtime_smoke" }
+        expected_case_count = $cases.Count; passed_case_count = if ($passed) { $cases.Count } else { 0 }; cases = $cases
     }
     $summary | ConvertTo-Json -Depth 48 | Set-Content -LiteralPath (Join-Path $artifactDirectory "summary.json") -Encoding utf8
     $summary | ConvertTo-Json -Depth 48
