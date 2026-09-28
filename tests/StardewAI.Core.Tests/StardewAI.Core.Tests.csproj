@@ -60,6 +60,7 @@
     <Compile Include="NativeObjectMechanicsGovernanceTests.cs" />
     <Compile Include="PetCareRuntimeSourceGuardTests.cs" />
     <Compile Include="RuntimeHarnessSources.cs" />
+    <Compile Include="RuntimeHarnessFreshSaveSourceGuardTests.cs" />
     <Compile Include="RuntimeEvidenceFreshnessGovernanceTests.cs" />
     <PackageReference Update="Pathoschild.Stardew.ModBuildConfig"
                       ExcludeAssets="compile;runtime;build;buildTransitive;native;contentfiles;analyzers" />

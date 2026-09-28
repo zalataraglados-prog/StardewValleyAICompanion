@@ -164,6 +164,14 @@ public sealed partial class ModEntry : Mod
         config.SavesPath = Path.GetFullPath(config.SavesPath);
         Directory.CreateDirectory(config.SavesPath);
 
+        if (config.CreateFreshSave && !TryValidateFreshSaveConfiguration(out var freshSaveError))
+        {
+            Monitor.Log(
+                $"Runtime harness disabled: fresh-save isolation rejected ({freshSaveError}).",
+                LogLevel.Error);
+            return;
+        }
+
         SavesFolderPatch.RedirectPath = config.SavesPath;
         var harmony = new Harmony(ModManifest.UniqueID);
         harmony.Patch(
@@ -304,6 +312,27 @@ public sealed partial class ModEntry : Mod
             config.AutoLoad = true;
         }
 
+        var createFreshSave = Environment.GetEnvironmentVariable(
+            "STARDEWAI_TEST_CREATE_FRESH_SAVE");
+        if (bool.TryParse(createFreshSave, out var createFreshSaveEnabled))
+        {
+            config.CreateFreshSave = createFreshSaveEnabled;
+            if (createFreshSaveEnabled)
+            {
+                config.AutoLoad = true;
+            }
+        }
+
+        config.FreshPlayerName = ReadEnvironmentOverride(
+            "STARDEWAI_TEST_FRESH_PLAYER_NAME",
+            config.FreshPlayerName);
+        config.FreshFarmName = ReadEnvironmentOverride(
+            "STARDEWAI_TEST_FRESH_FARM_NAME",
+            config.FreshFarmName);
+        config.FreshFavoriteThing = ReadEnvironmentOverride(
+            "STARDEWAI_TEST_FRESH_FAVORITE_THING",
+            config.FreshFavoriteThing);
+
         var executorTimeout = Environment.GetEnvironmentVariable("STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS");
         if (int.TryParse(executorTimeout, out var timeoutSeconds))
         {
@@ -395,6 +424,12 @@ public sealed partial class ModEntry : Mod
         loadAttempted = true;
         if (string.IsNullOrWhiteSpace(config.SlotName))
         {
+            if (config.CreateFreshSave)
+            {
+                StartNativeFreshSave();
+                return;
+            }
+
             Monitor.Log("AutoLoad skipped: SlotName is empty.", LogLevel.Warn);
             return;
         }

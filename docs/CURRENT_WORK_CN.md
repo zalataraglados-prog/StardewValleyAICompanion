@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 原生 fresh-save 运行根已闭合
+
+- `RuntimeTestHarness` 新增严格隔离的 `CreateFreshSave` 模式。实现先按当前 1.6.15 反编译结果调用 `Game1.resetPlayer()`，设置确定性的标准农场角色配置，再调用原生 `TitleMenu.createdNewCharacter(skipIntro: true)`；不构造或改写存档 XML，也不复制历史存档充当新档。
+- fresh-save 模式必须同时满足 `STARDEWAI_TRAINING_MODE=1`、显式且相同的 `STARDEWAI_TEST_SAVES`/`STARDEWAI_SAVE_ISOLATION_PATH`、空的 `fresh-save-*` 专用目录、非盘符根和非重解析点，并且不能指定已有 slot。任一条件不满足时整个 harness fail-closed，执行器也不会启动。
+- 新增隐藏静音 `Invoke-RuntimeFreshSaveSmoke.ps1`。真实运行 `runtime-fresh-save-20260928-133156` 已在游戏 1.6.15 中原生创建 `ProofFarm_450250338`，透明桥读到 Spring 1、Full Shipment `0/154`、无 achievement 34，并等到主存档和 `SaveGameInfo` 都落盘后才通过。第一次运行暴露并修复了健康检查硬编码 60 秒、忽略脚本 180 秒启动预算的问题；失败证据保留，未覆盖旧存档。
+- 这只闭合“可复现的新存档根”，尚未闭合任何 Full Shipment acquisition/deposit/settlement 迭代，因此生产 recurrence 仍是 `0/154`，`formal_product_training_authorized=false`。下一切片从该原生根执行可审计的出屋连接动作，再用现有 `foraging.chop_wild_tree` 获取 Sap、原生投入出货箱并跨日结算，最后交给 prefix checkpoint 验证为第一条 `1/154` 证据；不得增加第二套移动、砍树或出货实现。
+
 ## 2026-09-28 Full Shipment 真实 recurrence 增量检查点
 
 - 新增 `build-full-shipment-recurrence-prefix-checkpoint`，复用既有 whole-recurrence 的 acquisition rollout、`economy.ship_items` Teacher receipt、ordinary/terminal sleep settlement 验证核心，使真实证据可以按 `1..154` 轮逐步落盘，而不必等 154 轮全部完成后才发现中间链路错误。
