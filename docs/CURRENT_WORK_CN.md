@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Full Shipment 154 项静态可编译性清单完成
+
+- 新增 `build-full-shipment-static-compilability-inventory`，从权威需求清单、acquisition lowering、动作实现 reconciliation 和五类 supporting-transition 终端谱系证据中重建 Full Shipment 的静态可编译性；它不信任调用方声明的汇总状态。
+- 当前生产输入严格核对为 `154/154` 个必需物品组、`641` 条权威 acquisition route、`26` 种实际路由、`504` 个 `route_kind + source_id` 身份和 `24` 个被引用动作选项。全部来源身份契约、endpoint/supporting option 编译绑定、运行时绑定和支持链谱系通过，阻塞项为 `0`。
+- 权威 acquisition 总目录的 `33` 种路由均有显式来源身份契约；未知路由种类、空/畸形来源、陈旧 lowering 哈希或摘要计数、缺失依赖轴、未绑定编译器、缺失运行时绑定和不完整支持谱系全部 fail-closed。没有引入第二套收集规划、编译器或执行器。
+- `static_compilability_complete=true` 只证明：当前状态满足先决条件时，每个 Full Shipment 需求至少存在一条可由现有链路精确编译的路线。它不证明同一新存档已实际完成 154 项递归 acquisition/shipping 闭环；因此 `fresh_save_recurrence_evidence_complete=false`、`formal_product_training_authorized=false` 保持不变，Goal Method 生产覆盖仍为 `4/19`。
+- 验证通过：Release 构建 `0 warning / 0 error`、新增静态清单正/负例、真实生产 154 项清单、`self-test-acquisition-route-dispatch`、`self-test-bootstrap-hermetic`、Core game-free `109/109` 以及完整 `self-test-current-stage-one-collection`。完整回归覆盖五类 supporting transition、三分区连续重规划及篡改拒绝，没有发现共享链路回退。
+- 下一固定切片是建立第一条真实新存档 Full Shipment recurrence 证据链：从 fresh snapshot 选择权威需求，经现有 route/source/support 编译与原生执行，取得终态物品及 shipping credit，重新规划下一项，并把每一轮的哈希、队列、原生回执和剩余分母落盘。不得以合成 fixture 冒充生产证据，也不得重新开发已有的 154 项动作链。
+
 ## 2026-09-28 Full Shipment 当前候选权威来源身份闭合
 
 - 修复了 `CurrentFullShipmentTeacherFrontierBuilder` 的错误正标签边界：旧实现只要求当前候选产物精确、option 属于该物品的权威 endpoint，因而同一 option 下来自错误作物、商店或原生掉落源的候选仍可能被标成 Teacher 正例。现在 Full Shipment 前沿直接复用生产 acquisition dispatch 的唯一来源匹配器，同时绑定 `route_kind + source_id + qualified_item_id`；没有建立第二套来源解析或收集规划。

@@ -386,6 +386,10 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         out string evidence)
     {
         evidence = string.Empty;
+        var sourceContract = DescribeAuthoritativeSourceContract(routeKind);
+        if (sourceContract is null)
+            return false;
+
         if (routeKind == "sells" &&
             sourceId.StartsWith("shop:", StringComparison.Ordinal) &&
             string.Equals(
@@ -470,7 +474,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return true;
         }
 
-        if (CandidateDeclaresAuthoritativeRouteSource(
+        if (sourceContract.EvidenceMode ==
+                "typed_authoritative_route_sources_json" &&
+            CandidateDeclaresAuthoritativeRouteSource(
                 candidate,
                 routeKind,
                 sourceId,

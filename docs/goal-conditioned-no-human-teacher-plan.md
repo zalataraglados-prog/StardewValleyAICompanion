@@ -2710,6 +2710,29 @@ Slice 7 remains assigned to the RTX 5070 node.
   the actual 154-item recurrence against current endpoint/source/supporting-option compilability, then close the first
   deterministic missing source family through the existing dispatch/compiler path.
 
+### 2026-09-28: Full Shipment 154-item static compilability inventory
+
+- `build-full-shipment-static-compilability-inventory` now independently reconciles the authoritative requirement
+  inventory, acquisition lowering, action-implementation reconciliation and controller-recomputed 5/5 support-lineage
+  report. It does not infer completion from a prior aggregate status.
+- Production reconciliation is complete for all 154 required Full Shipment groups: 641 route occurrences, 26 observed
+  route kinds, 504 distinct `route_kind|source_id` identities and 24 referenced endpoint/supporting options. Every group
+  has at least one statically compilable route and there are no static blockers.
+- All 33 route kinds in the authoritative acquisition catalog have an explicit source-identity contract. Unknown kinds,
+  malformed sources, stale hashes or summary counts, incomplete dependency axes, unbound compilers, missing runtime
+  bindings and incomplete support lineage fail closed. The inventory reuses the existing dispatch/compiler/runtime
+  surfaces and does not create a second collection path.
+- This is a static closure result, not native recurrence evidence. `fresh_save_recurrence_evidence_complete=false` and
+  `formal_product_training_authorized=false` remain mandatory; production Goal Method coverage remains 4/19.
+- Release build, focused positive and fail-closed inventory tests, the real 154-item production inventory, acquisition
+  dispatch, hermetic bootstrap, Core game-free 109/109 and the complete StageOne collection regression pass. The full
+  regression covers all five support families, three-partition continuation and tamper rejection.
+- The next bounded slice must construct the first fresh-save Full Shipment recurrence through the existing chain:
+  authoritative unmet requirement -> exact route/source candidate -> support and endpoint compilation -> native receipt
+  -> exact inventory/shipping credit -> fresh snapshot -> next unmet requirement. Every transition must persist source
+  hashes, queue identity, native receipt and denominator delta. Synthetic fixtures may test rejection behavior but cannot
+  count as product evidence.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
