@@ -59,5 +59,6 @@ public static partial class FullShipmentRecurrenceProofBuilder
         int AfterShippedItemCount,
         int StartTotalDay,
         int EndTotalDay,
-        bool TerminalTransition);
+        bool TerminalTransition,
+        FullShipmentRecoveryTransitionEvidence[] RecoveryTransitions);
 }

@@ -1,5 +1,9 @@
 # StardewAI 完全体完成路线图
 
+## 2026-09-28 Full Shipment 结算恢复链统一
+
+第一阶段 21/21 Teacher 的 Full Shipment 方法继续使用唯一的候选、DailyPlan、动作编译器和产品执行器。出货后到睡眠前不再被错误压缩为同一状态：证明层按既有 recovery 的单连接点滚动重规划逐段验真，并在最终 prefix/recurrence evidence 中哈希绑定每段队列、快照和执行回执。中间段不能睡眠或改变日期、Full Shipment 进度与待结算箱内物品，最终跨日仍由原有 ordinary/terminal 睡眠回执负责。该修复不改变目标顺序，下一项仍是从原生 fresh save 取得 Sap 的真实 `1/154` 前缀。
+
 ## 2026-09-08 Teacher / Student 收敛覆盖
 
 当前训练解释统一服从 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。有限 TeacherOracle 负责独立偏序、DAgger 重标和评测；产品运行时通过唯一 `StrategicPolicy` 入口，在唯一 strict-Pareto 解上保持确定性权威，只让 Student 在 admitted、non-dominated 的不可比较前沿中学习 soft preference。Planner/Compiler/Executor 的现有唯一链保持不变。`teacher_preference`、`native_outcome`、`student_observation` 必须分离，任何 `selected=true` 都不能自行成为正例。

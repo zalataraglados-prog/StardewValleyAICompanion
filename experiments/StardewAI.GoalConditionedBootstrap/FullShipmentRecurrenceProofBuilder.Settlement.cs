@@ -14,11 +14,17 @@ public static partial class FullShipmentRecurrenceProofBuilder
     {
         var input = proof.Settlement ?? throw new InvalidDataException(
             "Full Shipment recurrence settlement proof is missing.");
+        var recovery = VerifyRecoveryTransitions(
+            input,
+            depositAfter,
+            requiredIds,
+            proof.QualifiedItemId);
+        var recoveryAfter = recovery.AfterSnapshot;
         var beforePath = Path.GetFullPath(input.BeforeSnapshotPath);
         var afterPath = Path.GetFullPath(input.AfterSnapshotPath);
         var before = ReadSnapshot(beforePath, "settlement before snapshot");
         var after = ReadSnapshot(afterPath, "settlement after snapshot");
-        RequireSameActor(depositAfter, before);
+        RequireSameActor(recoveryAfter, before);
         RequireSameActor(before, after);
         var deposited = FullShipmentSettlementVerifier.Project(
             requiredIds,
@@ -27,17 +33,21 @@ public static partial class FullShipmentRecurrenceProofBuilder
             requiredIds,
             before);
         Require(
-            !string.IsNullOrWhiteSpace(depositAfter.StateHash) &&
-            depositAfter.StateHash == before.StateHash &&
-            EquivalentProgress(deposited, settlementBefore) &&
+            !string.IsNullOrWhiteSpace(recoveryAfter.StateHash) &&
+            recoveryAfter.StateHash == before.StateHash &&
+            EquivalentProgress(
+                FullShipmentSettlementVerifier.Project(
+                    requiredIds,
+                    recoveryAfter),
+                settlementBefore) &&
             deposited.TotalDay == settlementBefore.TotalDay &&
             FullShipmentSettlementVerifier.ProjectUniformBinCount(
                 depositAfter,
                 proof.QualifiedItemId) == 1 &&
             FullShipmentSettlementVerifier.ProjectUniformBinCount(
-                before,
+                recoveryAfter,
                 proof.QualifiedItemId) == 1,
-            "Full Shipment sleep boundary changed state, progress, day, or pending bin state.");
+            "Full Shipment recovery-to-sleep boundary changed state, progress, day, or pending bin state.");
 
         var actualPath = Path.GetFullPath(input.SettlementReceiptPath);
         int beforeCount;
@@ -121,6 +131,7 @@ public static partial class FullShipmentRecurrenceProofBuilder
             afterCount,
             startDay,
             endDay,
-            terminal);
+            terminal,
+            recovery.Evidence);
     }
 }
