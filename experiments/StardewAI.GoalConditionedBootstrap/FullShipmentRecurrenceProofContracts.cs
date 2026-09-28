@@ -184,6 +184,86 @@ public sealed class FullShipmentRecurrenceProofReceipt
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 }
 
+public sealed class FullShipmentRecurrencePrefixCheckpoint
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "full_shipment_recurrence_prefix_checkpoint.v1";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "blocked";
+
+    [JsonPropertyName("goal_id")]
+    public string GoalId { get; set; } = string.Empty;
+
+    [JsonPropertyName("manifest_sha256")]
+    public string ManifestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("requirement_inventory_sha256")]
+    public string RequirementInventorySha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("acquisition_lowering_sha256")]
+    public string AcquisitionLoweringSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("required_item_count")]
+    public int RequiredItemCount { get; set; }
+
+    [JsonPropertyName("verified_iteration_count")]
+    public int VerifiedIterationCount { get; set; }
+
+    [JsonPropertyName("remaining_item_count")]
+    public int RemainingItemCount { get; set; }
+
+    [JsonPropertyName("initial_state_hash")]
+    public string InitialStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("final_state_hash")]
+    public string FinalStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("final_snapshot_sha256")]
+    public string FinalSnapshotSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("initial_total_day")]
+    public int InitialTotalDay { get; set; }
+
+    [JsonPropertyName("final_total_day")]
+    public int FinalTotalDay { get; set; }
+
+    [JsonPropertyName("prefix_proof_verified")]
+    public bool PrefixProofVerified { get; set; }
+
+    [JsonPropertyName("complete")]
+    public bool Complete { get; set; }
+
+    [JsonPropertyName("achievement_34_verified")]
+    public bool Achievement34Verified { get; set; }
+
+    [JsonPropertyName("ready_for_next_iteration")]
+    public bool ReadyForNextIteration { get; set; }
+
+    [JsonPropertyName("formal_training_authorized")]
+    public bool FormalTrainingAuthorized { get; set; }
+
+    [JsonPropertyName("completed_requirement_ids")]
+    public string[] CompletedRequirementIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("remaining_requirement_ids")]
+    public string[] RemainingRequirementIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("remaining_qualified_item_ids")]
+    public string[] RemainingQualifiedItemIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("iterations")]
+    public FullShipmentRecurrenceIterationEvidence[] Iterations { get; set; } =
+        Array.Empty<FullShipmentRecurrenceIterationEvidence>();
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+}
+
 public sealed record FullShipmentRecurrenceIterationEvidence(
     [property: JsonPropertyName("iteration_index")] int IterationIndex,
     [property: JsonPropertyName("requirement_id")] string RequirementId,

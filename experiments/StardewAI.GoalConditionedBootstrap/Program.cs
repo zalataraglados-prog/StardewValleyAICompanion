@@ -94,6 +94,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-community-center-lifecycle-receipt", BuildCommunityCenterLifecycleReceipt),
     new("build-full-shipment-settlement-receipt", BuildFullShipmentSettlementReceipt),
     new("build-full-shipment-recurrence-proof-receipt", BuildFullShipmentRecurrenceProofReceipt),
+    new("build-full-shipment-recurrence-prefix-checkpoint", BuildFullShipmentRecurrencePrefixCheckpoint),
     new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
     new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
@@ -2003,6 +2004,15 @@ static void BuildFullShipmentRecurrenceProofReceipt(Arguments options)
         options.Required("manifest"));
     Write(options.Required("output"), report);
     if (!report.RecurrenceProofVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildFullShipmentRecurrencePrefixCheckpoint(Arguments options)
+{
+    var report = FullShipmentRecurrenceProofBuilder.BuildPrefixCheckpoint(
+        options.Required("manifest"));
+    Write(options.Required("output"), report);
+    if (!report.PrefixProofVerified)
         Environment.ExitCode = 2;
 }
 

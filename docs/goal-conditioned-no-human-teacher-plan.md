@@ -2733,6 +2733,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   hashes, queue identity, native receipt and denominator delta. Synthetic fixtures may test rejection behavior but cannot
   count as product evidence.
 
+### 2026-09-28: incremental Full Shipment recurrence checkpoint
+
+- `build-full-shipment-recurrence-prefix-checkpoint` now reuses the whole-recurrence verifier so native evidence can be
+  admitted after each contiguous iteration instead of waiting for all 154 transitions. It accepts 1 through 154 rows
+  and still requires the original day-zero, zero-shipment root.
+- Every supplied row rebuilds the acquisition rollout, exact shipping Teacher receipt and native sleep settlement. An
+  incomplete prefix must remain nonterminal, keep achievement 34 false, finish before the terminal deadline day and
+  expose the exact remaining requirement/item denominator. Its final snapshot hash is the only valid root for the next
+  iteration.
+- The original whole-recurrence receipt calls the same core and remains stricter: exactly 154 rows, complete denominator
+  and achievement 34. Empty prefixes, early terminal transitions, completion-status lies and late nonterminal rows fail
+  closed. No second recurrence, candidate, compiler or executor path was introduced.
+- This slice creates incremental verification infrastructure only. No real fresh-save prefix has been supplied, so
+  production recurrence progress remains 0/154 and `formal_product_training_authorized=false`. The next slice must run
+  one hidden, silent native iteration from a fresh save, persist all three phase boundaries, and admit that manifest as
+  the first prefix checkpoint before extending it.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

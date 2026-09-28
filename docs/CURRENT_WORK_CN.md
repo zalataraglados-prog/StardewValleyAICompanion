@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Full Shipment 真实 recurrence 增量检查点
+
+- 新增 `build-full-shipment-recurrence-prefix-checkpoint`，复用既有 whole-recurrence 的 acquisition rollout、`economy.ship_items` Teacher receipt、ordinary/terminal sleep settlement 验证核心，使真实证据可以按 `1..154` 轮逐步落盘，而不必等 154 轮全部完成后才发现中间链路错误。
+- prefix 仍必须从同一新存档的第 0 天、零出货状态开始；每轮 shipped count 必须连续 `n -> n+1`，前一轮 settlement after snapshot 必须是下一轮 acquisition 的精确根。未完成前缀不得出现 achievement 34、terminal settlement 或占用第 224 天，且 checkpoint 会发布精确的剩余 requirement/item 集合与最终快照哈希。
+- 原 `build-full-shipment-recurrence-proof-receipt` 现在调用同一共享验证核心，仍严格要求全部 `154` 轮、最终 achievement 34 和完整分母；没有复制第二套 recurrence、候选、编译或执行系统。空前缀、提前终态、把前缀冒充完整序列、把完整序列冒充未完成前缀及超期非终态均有拒绝回归。
+- 当前只完成增量验证基础设施，尚未取得真实 fresh-save 第一轮证据，因此生产 recurrence 进度仍是 `0/154`，`formal_product_training_authorized=false` 不变。下一步是由隐藏静音原生运行生成第一轮真实 manifest/artifacts，再用该 checkpoint 验证并固定下一轮根；合成夹具不得计入进度。
+
 ## 2026-09-28 Full Shipment 154 项静态可编译性清单完成
 
 - 新增 `build-full-shipment-static-compilability-inventory`，从权威需求清单、acquisition lowering、动作实现 reconciliation 和五类 supporting-transition 终端谱系证据中重建 Full Shipment 的静态可编译性；它不信任调用方声明的汇总状态。
