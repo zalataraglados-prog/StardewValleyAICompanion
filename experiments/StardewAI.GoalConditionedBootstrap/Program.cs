@@ -83,6 +83,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-portfolio-continuation-settlement-request", BuildAcquisitionRoutePortfolioContinuationSettlementRequest),
     new("build-acquisition-route-portfolio-continuation-settlement-receipt", BuildAcquisitionRoutePortfolioContinuationSettlementReceipt),
     new("build-acquisition-route-portfolio-continuation-rollout-checkpoint", BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint),
+    new("build-full-shipment-static-compilability-inventory", BuildFullShipmentStaticCompilabilityInventory),
     new("build-current-full-shipment-teacher-frontier", BuildCurrentFullShipmentTeacherFrontier),
     new("build-current-community-center-denominator", BuildCurrentCommunityCenterDenominator),
     new("build-current-collection-teacher-frontier", BuildCurrentCollectionTeacherFrontier),
@@ -109,6 +110,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
     new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
     new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
+    new("self-test-full-shipment-static-compilability", SelfTestFullShipmentStaticCompilability),
     new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-machine-material-transfer-terminal-coverage", SelfTestMachineMaterialTransferTerminalCoverage),
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
@@ -1854,6 +1856,18 @@ static void BuildCurrentFullShipmentTeacherFrontier(Arguments options)
     Write(options.Required("output"), report);
 }
 
+static void BuildFullShipmentStaticCompilabilityInventory(Arguments options)
+{
+    var report = FullShipmentStaticCompilabilityInventoryBuilder.Build(
+        options.Required("requirement-inventory"),
+        options.Required("acquisition-lowering"),
+        options.Required("action-reconciliation"),
+        options.Required("support-terminal-coverage"));
+    Write(options.Required("output"), report);
+    if (!report.StaticCompilabilityComplete)
+        Environment.ExitCode = 2;
+}
+
 static void BuildCurrentCommunityCenterDenominator(Arguments options)
 {
     var report = CurrentCommunityCenterDenominatorBuilder.Build(
@@ -2146,6 +2160,10 @@ static void SelfTestCurrentCommunityCenterDenominator(Arguments options) =>
 
 static void SelfTestCurrentStageOneCollection(Arguments options)
     => BootstrapSelfTest.RunCurrentStageOneCollection(
+        options.Required("output-root"));
+
+static void SelfTestFullShipmentStaticCompilability(Arguments options) =>
+    BootstrapSelfTest.RunFullShipmentStaticCompilability(
         options.Required("output-root"));
 
 static void SelfTestMachineInputLoadTerminalCoverage(Arguments options) =>
