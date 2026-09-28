@@ -11,6 +11,12 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Stage 1 collection 自测夹具分解（#130）
+
+- 将 `BootstrapSelfTest.StageOneCollectionFrontier.cs` 从约 4900 行的单方法拆为薄入口和 8 个同前缀 partial 文件，职责分别为夹具路径/调度、静态权威输入、目标日期轴、组合提交与执行、组合语义、负例与篡改拒绝、当前前沿准入、共享构建支持；单文件最大约 1350 行。
+- 拆分只显式传递原方法已有的 `fish`、`stateHash`、货币路由与 reservation 依赖，原有 `BuildFacilityFixtureChain` / `BuildProcessingFixtureChain` 仍是唯一共享实现，没有复制第二套候选、编译、执行或训练链。既有 `BootstrapSelfTest.StageOneCollectionFrontier.Fixture.cs` 内容保持不变。
+- 验证通过：GoalConditionedBootstrap Release 构建 `0 warning / 0 error`、完整 `self-test-current-stage-one-collection`、`self-test-bootstrap-hermetic`、Core game-free `104/104`，且 `git diff --check` 通过。本切片不改变任何业务输出、训练准入或 `formal_product_training_authorized=false` 状态。
+
 ## 2026-09-28 Skull Key 真实三分区生产证据完成
 
 - `build-skull-key-teacher-corpus` 现已重放三条真实 `plan_execution_episode.v1`：既有 EVD-106 作为 train（第 209 天），本轮隔离运行 `runtime-skull-key-validation-20260928-062858` 作为 validation（第 223 天），`runtime-skull-key-test-20260928-064032` 作为 test（第 223 天）。三个分区均由 `save_id + player_id + total_day` 哈希派生，调用方不能指定分区。
