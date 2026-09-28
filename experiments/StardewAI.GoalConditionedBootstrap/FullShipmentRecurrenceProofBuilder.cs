@@ -191,7 +191,11 @@ public static partial class FullShipmentRecurrenceProofBuilder
                 settlement.AfterShippedItemCount,
                 settlement.StartTotalDay,
                 settlement.EndTotalDay,
-                settlement.TerminalTransition));
+                settlement.TerminalTransition)
+            {
+                SettlementRecoveryTransitions =
+                    settlement.RecoveryTransitions
+            });
             anchorSnapshot = settlement.AfterSnapshot;
             anchorSnapshotPath = settlement.AfterSnapshotPath;
         }

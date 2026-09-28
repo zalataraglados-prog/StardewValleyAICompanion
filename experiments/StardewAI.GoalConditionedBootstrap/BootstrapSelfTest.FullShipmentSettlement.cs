@@ -9,6 +9,7 @@ internal static partial class BootstrapSelfTest
     {
         VerifyFullShipmentSettlementEvidence();
         VerifyFullShipmentTerminalSettlementEvidence();
+        VerifyFullShipmentRecoveryTransitionEvidence();
         VerifyFullShipmentRecurrenceSequence();
     }
 
@@ -191,6 +192,17 @@ internal static partial class BootstrapSelfTest
         });
         return new SnapshotEnvelope
         {
+            GameVersion = "1.6.15",
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "full-shipment-save",
+                Status = FieldStatus.Available
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "full-shipment-player",
+                Status = FieldStatus.Available
+            },
             StateHash = stateHash,
             GameTick = totalDay * 100L,
             State = json.EnumerateObject().ToDictionary(

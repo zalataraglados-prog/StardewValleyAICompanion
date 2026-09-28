@@ -2768,6 +2768,23 @@ Slice 7 remains assigned to the RTX 5070 node.
   existing shipping chain, settle the day, and admit the result as the first 1/154 prefix checkpoint. No second
   movement, tree-chop, shipping, or recurrence implementation is permitted.
 
+### 2026-09-28: rolling native recovery proof before settlement
+
+- A pre-runtime audit found that the recurrence verifier required the post-deposit snapshot hash to equal the final
+  sleep queue's before-snapshot hash. That contradicted the existing fail-closed recovery design, which traverses one
+  native connector and takes a fresh snapshot before replanning. Walking from the farm shipping bin to the farmhouse
+  therefore could not produce an admissible proof without a teleport or fixture.
+- Each settlement may now carry up to eight ordered `recovery_transitions`. Every transition is rebuilt through the
+  shared queue-execution validator and is limited to an existing recovery candidate paired with an existing connector,
+  menu-close, or bounded-wait primitive. Intermediate sleep is forbidden. Actor identity, state-hash continuity, day,
+  Full Shipment progress, and the exact one-item pending bin state remain invariant until the dedicated final native
+  sleep receipt.
+- Each admitted iteration records SHA-256 values for every recovery queue, before snapshot, execution receipt, and
+  after snapshot. Duplicate artifacts, disconnected or reordered transitions, cross-player evidence, progress/day
+  drift, and pending-bin loss fail closed. Zero-transition manifests remain compatible when the deposit state is
+  already the final sleep state. This changes proof composition only; it adds no planner, movement, recovery, sleep, or
+  shipping implementation and does not advance production recurrence beyond 0/154.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

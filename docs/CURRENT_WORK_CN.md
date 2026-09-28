@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Full Shipment 跨图结算证明修复
+
+- 审计发现 recurrence 证明错误地要求“投入出货箱后的快照”与“最终睡眠前快照”哈希完全相同，但现有 `recovery.stabilize_day` 按设计每次只执行一个原生连接点并刷新快照。角色从农场出货箱走回农舍必然改变状态，因此旧合同实际上只能依赖传送或调试夹具，不能承载真实新档证据。
+- settlement manifest 现可记录最多 8 段有序 `recovery_transitions`。每段仍复用现有 recovery 候选、DailyPlan、动作编译器和产品执行器，只允许已知的跨连接点、关闭阻塞菜单或短等待原语；中间段禁止睡眠。队列、前后快照和原生执行回执都经共享校验器重建验证，并强制同一存档/玩家、哈希连续、日期不变、Full Shipment 进度不变以及本轮物品仍精确留在出货箱中。
+- prefix/whole-recurrence 的每轮 evidence 会固化每段恢复队列、前后快照和执行回执的 SHA-256；重复文件、断链、乱序、跨角色、提前跨日、出货进度漂移和待结算物品消失均失败关闭。链尾仍必须接原有 ordinary/terminal 原生睡眠回执，没有新增第二套路由、恢复、睡眠或出货实现。
+- 专项 Release 构建为 `0 warning / 0 error`，Full Shipment settlement 自测覆盖正常恢复及睡眠混入、日期/进度/出货箱/角色/顺序篡改拒绝。该修复只解除首轮真实 recurrence 的证明层硬阻塞，生产进度仍是 `0/154`，`formal_product_training_authorized=false`；下一步仍是从已验证原生 fresh save 采集 Sap 的第一条真实 `1/154` 前缀。
+
 ## 2026-09-28 原生 fresh-save 运行根已闭合
 
 - `RuntimeTestHarness` 新增严格隔离的 `CreateFreshSave` 模式。实现先按当前 1.6.15 反编译结果调用 `Game1.resetPlayer()`，设置确定性的标准农场角色配置，再调用原生 `TitleMenu.createdNewCharacter(skipIntro: true)`；不构造或改写存档 XML，也不复制历史存档充当新档。

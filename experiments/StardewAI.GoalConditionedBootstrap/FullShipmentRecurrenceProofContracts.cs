@@ -100,6 +100,10 @@ public sealed class FullShipmentRecurrenceSettlementProof
     [JsonPropertyName("settlement_kind")]
     public string SettlementKind { get; set; } = string.Empty;
 
+    [JsonPropertyName("recovery_transitions")]
+    public FullShipmentRecoveryTransitionProof[] RecoveryTransitions
+        { get; set; } = Array.Empty<FullShipmentRecoveryTransitionProof>();
+
     [JsonPropertyName("queue_path")]
     public string QueuePath { get; set; } = string.Empty;
 
@@ -114,6 +118,30 @@ public sealed class FullShipmentRecurrenceSettlementProof
 
     [JsonPropertyName("settlement_receipt_path")]
     public string SettlementReceiptPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("run_id")]
+    public string RunId { get; set; } = string.Empty;
+
+    [JsonPropertyName("executor_version")]
+    public string ExecutorVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("selected_candidate_id")]
+    public string SelectedCandidateId { get; set; } = string.Empty;
+}
+
+public sealed class FullShipmentRecoveryTransitionProof
+{
+    [JsonPropertyName("queue_path")]
+    public string QueuePath { get; set; } = string.Empty;
+
+    [JsonPropertyName("before_snapshot_path")]
+    public string BeforeSnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("execution_receipt_path")]
+    public string ExecutionReceiptPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_snapshot_path")]
+    public string AfterSnapshotPath { get; set; } = string.Empty;
 
     [JsonPropertyName("run_id")]
     public string RunId { get; set; } = string.Empty;
@@ -283,4 +311,24 @@ public sealed record FullShipmentRecurrenceIterationEvidence(
     [property: JsonPropertyName("settlement_end_total_day")]
         int SettlementEndTotalDay,
     [property: JsonPropertyName("terminal_transition")]
-        bool TerminalTransition);
+        bool TerminalTransition)
+{
+    [JsonPropertyName("settlement_recovery_transitions")]
+    public FullShipmentRecoveryTransitionEvidence[]
+        SettlementRecoveryTransitions { get; init; } =
+        Array.Empty<FullShipmentRecoveryTransitionEvidence>();
+}
+
+public sealed record FullShipmentRecoveryTransitionEvidence(
+    [property: JsonPropertyName("queue_sha256")] string QueueSha256,
+    [property: JsonPropertyName("before_snapshot_sha256")]
+        string BeforeSnapshotSha256,
+    [property: JsonPropertyName("execution_receipt_sha256")]
+        string ExecutionReceiptSha256,
+    [property: JsonPropertyName("after_snapshot_sha256")]
+        string AfterSnapshotSha256,
+    [property: JsonPropertyName("run_id")] string RunId,
+    [property: JsonPropertyName("executor_version")]
+        string ExecutorVersion,
+    [property: JsonPropertyName("selected_candidate_id")]
+        string SelectedCandidateId);
