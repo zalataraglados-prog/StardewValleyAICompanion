@@ -166,6 +166,20 @@ internal static partial class BootstrapSelfTest
                     snapshot,
                     new[] { animalCandidate }).Length == 1,
             "A rebuilt candidate with exact typed route source was rejected.");
+        var duplicateSourceParameterCandidate = CloneCandidate(animalCandidate);
+        duplicateSourceParameterCandidate.Parameters =
+            duplicateSourceParameterCandidate.Parameters.Concat(new[]
+            {
+                Parameter(
+                    "authoritative_route_sources_json",
+                    "[{\"route_kind\":\"native_farm_animal_produce\",\"source_id\":\"farm_animal:White Cow:0\",\"qualified_item_id\":\"(O)184\"}]")
+            }).ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    animalRequirement,
+                    animalLowering,
+                    snapshot,
+                    new[] { duplicateSourceParameterCandidate }).Length == 0,
+            "A candidate with duplicate same-value source parameters was admitted.");
         Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
                     animalRequirement with
                     {

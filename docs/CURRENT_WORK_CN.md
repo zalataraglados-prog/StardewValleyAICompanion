@@ -11,6 +11,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-09-28 Full Shipment 当前候选权威来源身份闭合
+
+- 修复了 `CurrentFullShipmentTeacherFrontierBuilder` 的错误正标签边界：旧实现只要求当前候选产物精确、option 属于该物品的权威 endpoint，因而同一 option 下来自错误作物、商店或原生掉落源的候选仍可能被标成 Teacher 正例。现在 Full Shipment 前沿直接复用生产 acquisition dispatch 的唯一来源匹配器，同时绑定 `route_kind + source_id + qualified_item_id`；没有建立第二套来源解析或收集规划。
+- acquisition 正例现在必须在该需求的 admitted endpoint routes 中恰好匹配一条权威来源。商店、作物种子来源、普通地点/矿井钓鱼、蟹笼、固定反编译原生来源和候选携带的 typed authoritative source JSON 均沿用实际调度规则；来源缺失、来源错误、来源歧义或多条 route 同时命中均失败关闭。原生 `economy.ship_items` 终态仍由精确 Full Shipment 贡献字段证明，不伪造获取来源。
+- 同时修复共享参数读取器的歧义漏洞：两个同名同值参数过去会先经 `Distinct()` 折叠后被当成“唯一”，现在必须物理上恰好出现一次。Full Shipment 前沿与 acquisition dispatch 均加入重复同值、缺失、错误和歧义来源负例；Stage 1 共享防风草候选夹具补齐真实 `harvest_source_seed_id=472`，继续验证一次执行同时给 Full Shipment 和社区中心记 exact credit。
+- 验证通过：GoalConditionedBootstrap Release `0 warning / 0 error`、`self-test-acquisition-route-dispatch`、完整 `self-test-current-stage-one-collection`、`self-test-bootstrap-hermetic`、Core game-free `109/109` 及 `git diff --check`。首次未带 `GameFreeGovernance=true` 的 Core 命令被本机缺少 SMAPI 的旧游戏目录门禁拒绝，使用仓库 CI 标准 game-free 命令重跑后全部通过；该环境性拒绝不计为代码测试失败。
+- 本切片没有增加生产 Teacher/native 三分区证据，Goal Method 覆盖仍为 `4/19`，聚合状态仍为 `blocked_incomplete_goal_method_teacher_coverage`，`formal_product_training_authorized=false`。下一固定切片是对 154 项 ordered recurrence 的实际 endpoint/source/supporting-option 可编译性做精确缺口盘点，再按现有 dispatch/compiler 路径闭合第一组确定性来源；不得回退到“同产物 + 同 option”弱匹配，也不得新增第二套执行链。
+
 ## 2026-09-28 宠物爱心真实三分区生产证据完成
 
 - `Invoke-RuntimePetCareSmoke.ps1` 新增只运行终端宠物爱心转移的 `TeacherTerminalOnly` 模式，并持久化 fresh before/after 快照及原生执行结果。快照保存改为直接写入桥返回的原始 JSON；不再把 PowerShell 对象重新序列化后冒充权威快照。Windows PowerShell 5.1 的快照 GET 显式使用 `-UseBasicParsing`，避免旧 IE 解析器造成空引用和假超时。

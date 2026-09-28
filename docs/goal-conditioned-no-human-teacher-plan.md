@@ -2689,6 +2689,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   must reuse the implemented 154-item ordered recurrence and must not introduce a second collection planner, executor
   or training chain.
 
+### 2026-09-28: Full Shipment live candidate source identity
+
+- The Full Shipment live frontier previously required an exact output item and an admitted endpoint option but did not
+  prove that the candidate came from the requirement's exact authoritative source. A same-item candidate from another
+  crop, shop or native source could therefore become a false positive Teacher binding.
+- The frontier now reuses `AcquisitionRouteDispatchCompilationBuilder.MatchesAuthoritativeSource`, the same source
+  matcher used by real dispatch. A nonterminal acquisition binding must match exactly one admitted route by
+  `route_kind`, `source_id` and `qualified_item_id`. Shop, crop, location/mine fishing, crab-pot, fixed decompiled
+  native and typed candidate-declared sources remain centralized in that one matcher.
+- Missing, wrong, ambiguous and duplicate source evidence fails closed. The shared unique-parameter reader no longer
+  collapses duplicate same-value parameters with `Distinct`; physical parameter cardinality must be exactly one.
+  Native `economy.ship_items` completion remains separately proven by exact Full Shipment contribution fields.
+- Focused Full Shipment and acquisition-dispatch negatives cover wrong, missing and duplicate source identity. The
+  complete StageOne regression also proves that one source-complete parsnip harvest is still executed once and
+  credited to both Full Shipment and the Community Center. Release build, acquisition dispatch, complete StageOne,
+  hermetic bootstrap and Core game-free 109/109 pass.
+- This closes only the source-identity sub-slice. It adds no production Teacher/native partition and does not change
+  Goal Method coverage (`4/19`) or `formal_product_training_authorized=false`. The next bounded slice must inventory
+  the actual 154-item recurrence against current endpoint/source/supporting-option compilability, then close the first
+  deterministic missing source family through the existing dispatch/compiler path.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

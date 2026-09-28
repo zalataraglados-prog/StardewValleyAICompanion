@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 
@@ -109,7 +110,11 @@ internal static partial class BootstrapSelfTest
                 "harvest_crop",
                 "24",
                 "(O)24",
-                rank: 1),
+                rank: 1,
+                parameters: new[]
+                {
+                    Parameter("harvest_source_seed_id", "472")
+                }),
             Candidate(
                 "ship-parsnip",
                 "economy.ship_items",
@@ -126,12 +131,42 @@ internal static partial class BootstrapSelfTest
                 "(O)388",
                 rank: 3),
             Candidate(
-                "blocked-exact-output",
+                "wrong-source-same-output",
                 "farm.maintain_crops",
                 "harvest_crop",
                 "24",
                 "(O)24",
                 rank: 4,
+                parameters: new[]
+                {
+                    Parameter("harvest_source_seed_id", "433")
+                }),
+            Candidate(
+                "missing-source-same-output",
+                "farm.maintain_crops",
+                "harvest_crop",
+                "24",
+                "(O)24",
+                rank: 5),
+            Candidate(
+                "duplicate-source-same-output",
+                "farm.maintain_crops",
+                "harvest_crop",
+                "24",
+                "(O)24",
+                rank: 6,
+                parameters: new[]
+                {
+                    Parameter("harvest_source_seed_id", "472"),
+                    Parameter("harvest_source_seed_id", "472")
+                }),
+            Candidate(
+                "blocked-exact-output",
+                "farm.maintain_crops",
+                "harvest_crop",
+                "24",
+                "(O)24",
+                rank: 7,
                 available: false),
             Candidate(
                 "supporting-seed-purchase",
@@ -139,14 +174,14 @@ internal static partial class BootstrapSelfTest
                 "shop_purchase",
                 "472",
                 "(O)472",
-                rank: 5),
+                rank: 8),
             Candidate(
                 "completed-wood",
                 "foraging.clear_obstacles",
                 "clear_obstacle_tile",
                 "388",
                 "(O)388",
-                rank: 6));
+                rank: 9));
         Write(rankingPath, ranking);
 
         var result = CurrentFullShipmentTeacherFrontierBuilder.Build(
@@ -168,7 +203,12 @@ internal static partial class BootstrapSelfTest
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "harvest-parsnip" &&
                     value.BindingKind == "authoritative_acquisition_endpoint" &&
-                    value.MatchedRoutes.Length == 1) &&
+                    value.IdentityEvidence ==
+                        "candidate.qualified_item_id+" +
+                        "candidate.harvest_source_seed_id" &&
+                    value.MatchedRoutes.Length == 1 &&
+                    value.MatchedRoutes[0].RouteKind == "harvests_as" &&
+                    value.MatchedRoutes[0].SourceId == "crop:472") &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "ship-parsnip" &&
                     value.BindingKind == "native_full_shipment_completion"),
@@ -176,6 +216,9 @@ internal static partial class BootstrapSelfTest
         Require(!result.CandidateBindings.Any(value =>
                 value.CandidateId is
                     "wrong-output-same-option" or
+                    "wrong-source-same-output" or
+                    "missing-source-same-output" or
+                    "duplicate-source-same-output" or
                     "blocked-exact-output" or
                     "supporting-seed-purchase" or
                     "completed-wood"),
@@ -397,7 +440,8 @@ internal static partial class BootstrapSelfTest
         string qualifiedItemId,
         int rank,
         bool available = true,
-        bool fullShipmentContribution = false) => new()
+        bool fullShipmentContribution = false,
+        SmallModelActionParameter[]? parameters = null) => new()
     {
         CandidateId = candidateId,
         OptionId = optionId,
@@ -415,6 +459,7 @@ internal static partial class BootstrapSelfTest
         FullShipmentEligible = fullShipmentContribution ? true : null,
         FullShipmentCurrentShippedCount = fullShipmentContribution ? 0 : null,
         FullShipmentAlreadyShipped = fullShipmentContribution ? false : null,
-        FullShipmentContributes = fullShipmentContribution ? true : null
+        FullShipmentContributes = fullShipmentContribution ? true : null,
+        Parameters = parameters ?? Array.Empty<SmallModelActionParameter>()
     };
 }
