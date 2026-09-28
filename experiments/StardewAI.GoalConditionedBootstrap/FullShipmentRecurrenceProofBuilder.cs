@@ -6,6 +6,70 @@ public static partial class FullShipmentRecurrenceProofBuilder
 
     public static FullShipmentRecurrenceProofReceipt Build(string manifestPath)
     {
+        var verified = VerifyManifest(manifestPath, requireComplete: true);
+        return new FullShipmentRecurrenceProofReceipt
+        {
+            Status = "verified_complete_recurrence",
+            GoalId = verified.Inventory.GoalId,
+            ManifestSha256 = verified.ManifestSha256,
+            RequirementInventorySha256 = verified.InventorySha256,
+            AcquisitionLoweringSha256 = verified.LoweringSha256,
+            RequiredItemCount = verified.RequiredItemCount,
+            VerifiedIterationCount = verified.Iterations.Length,
+            InitialStateHash = verified.InitialSnapshot.StateHash,
+            FinalStateHash = verified.FinalSnapshot.StateHash,
+            InitialTotalDay = verified.InitialProgress.TotalDay,
+            TerminalSettlementStartTotalDay =
+                verified.Iterations[^1].SettlementStartTotalDay,
+            FinalTotalDay = verified.FinalProgress.TotalDay,
+            Achievement34Verified = verified.FinalProgress.Achievement34,
+            RecurrenceProofVerified = true,
+            FormalTrainingAuthorized = false,
+            Iterations = verified.Iterations,
+            BlockingReasons = Array.Empty<string>()
+        };
+    }
+
+    public static FullShipmentRecurrencePrefixCheckpoint BuildPrefixCheckpoint(
+        string manifestPath)
+    {
+        var verified = VerifyManifest(manifestPath, requireComplete: false);
+        return new FullShipmentRecurrencePrefixCheckpoint
+        {
+            Status = verified.Complete
+                ? "verified_complete_recurrence"
+                : "verified_recurrence_prefix",
+            GoalId = verified.Inventory.GoalId,
+            ManifestSha256 = verified.ManifestSha256,
+            RequirementInventorySha256 = verified.InventorySha256,
+            AcquisitionLoweringSha256 = verified.LoweringSha256,
+            RequiredItemCount = verified.RequiredItemCount,
+            VerifiedIterationCount = verified.Iterations.Length,
+            RemainingItemCount = verified.RemainingRequirementIds.Length,
+            InitialStateHash = verified.InitialSnapshot.StateHash,
+            FinalStateHash = verified.FinalSnapshot.StateHash,
+            FinalSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
+                verified.FinalSnapshotPath),
+            InitialTotalDay = verified.InitialProgress.TotalDay,
+            FinalTotalDay = verified.FinalProgress.TotalDay,
+            PrefixProofVerified = true,
+            Complete = verified.Complete,
+            Achievement34Verified = verified.FinalProgress.Achievement34,
+            ReadyForNextIteration = !verified.Complete,
+            FormalTrainingAuthorized = false,
+            CompletedRequirementIds = verified.CompletedRequirementIds,
+            RemainingRequirementIds = verified.RemainingRequirementIds,
+            RemainingQualifiedItemIds =
+                verified.FinalProgress.MissingQualifiedItemIds,
+            Iterations = verified.Iterations,
+            BlockingReasons = Array.Empty<string>()
+        };
+    }
+
+    private static VerifiedRecurrence VerifyManifest(
+        string manifestPath,
+        bool requireComplete)
+    {
         var manifestFullPath = Path.GetFullPath(manifestPath);
         var manifest = CurrentTeacherFrontierSupport.Read<
             FullShipmentRecurrenceProofManifest>(
@@ -47,12 +111,19 @@ public static partial class FullShipmentRecurrenceProofBuilder
             group => group.RequirementId,
             group => group.Alternatives.Single().QualifiedItemId,
             StringComparer.Ordinal);
-        Require(
-            iterations.Length == requiredIds.Length,
-            "Full Shipment recurrence must contain exactly one iteration per requirement.");
+        Require(iterations.Length > 0 &&
+                iterations.Length <= requiredIds.Length &&
+                (!requireComplete || iterations.Length == requiredIds.Length),
+            requireComplete
+                ? "Full Shipment recurrence must contain exactly one iteration per requirement."
+                : "Full Shipment recurrence prefix must contain between one and all authoritative requirements.");
 
-        var initialPath = Path.GetFullPath(manifest.InitialSnapshotPath);
-        var anchorSnapshot = ReadSnapshot(initialPath, "initial snapshot");
+        var anchorSnapshotPath = Path.GetFullPath(
+            manifest.InitialSnapshotPath);
+        var anchorSnapshot = ReadSnapshot(
+            anchorSnapshotPath,
+            "initial snapshot");
+        var initialSnapshot = anchorSnapshot;
         var initial = FullShipmentSettlementVerifier.Project(
             requiredIds,
             anchorSnapshot);
@@ -84,7 +155,7 @@ public static partial class FullShipmentRecurrenceProofBuilder
             var acquisition = VerifyAcquisition(
                 proof,
                 anchorSnapshot,
-                initialPath,
+                anchorSnapshotPath,
                 inventorySha,
                 loweringSha,
                 requiredIds);
@@ -94,13 +165,16 @@ public static partial class FullShipmentRecurrenceProofBuilder
                 loweringPath,
                 acquisition.AfterSnapshot,
                 requiredIds);
+            var terminalIteration =
+                iterations.Length == requiredIds.Length &&
+                index == requiredIds.Length - 1;
             var settlement = VerifySettlement(
                 proof,
                 inventoryPath,
                 loweringPath,
                 deposit.AfterSnapshot,
                 requiredIds,
-                index == requiredIds.Length - 1);
+                terminalIteration);
 
             Require(
                 settlement.BeforeShippedItemCount == index &&
@@ -119,61 +193,84 @@ public static partial class FullShipmentRecurrenceProofBuilder
                 settlement.EndTotalDay,
                 settlement.TerminalTransition));
             anchorSnapshot = settlement.AfterSnapshot;
-            initialPath = settlement.AfterSnapshotPath;
+            anchorSnapshotPath = settlement.AfterSnapshotPath;
         }
 
         var final = FullShipmentSettlementVerifier.Project(
             requiredIds,
             anchorSnapshot);
-        VerifySequence(rows, requiredIds.Length, initial.TotalDay);
-        Require(
-            seenRequirements.SetEquals(requirements.Keys) &&
-            seenItems.SetEquals(requiredIds) &&
-            final.Complete &&
-            final.ShippedItemCount == requiredIds.Length &&
-            final.MissingQualifiedItemIds.Length == 0 &&
-            final.Achievement34,
-            "Full Shipment recurrence terminal denominator is incomplete.");
+        var complete = iterations.Length == requiredIds.Length;
+        VerifyPrefixSequence(
+            rows,
+            requiredIds.Length,
+            initial.TotalDay,
+            complete);
+        var remainingRequirements = requirementSet.Groups
+            .Where(group => !seenRequirements.Contains(group.RequirementId))
+            .ToArray();
+        var expectedMissingItems = remainingRequirements
+            .Select(group => group.Alternatives.Single().QualifiedItemId)
+            .ToHashSet(StringComparer.Ordinal);
+        Require(final.ShippedItemCount == rows.Count &&
+                final.MissingQualifiedItemIds.Length ==
+                    requiredIds.Length - rows.Count &&
+                final.MissingQualifiedItemIds.ToHashSet(StringComparer.Ordinal)
+                    .SetEquals(expectedMissingItems) &&
+                (complete
+                    ? seenRequirements.SetEquals(requirements.Keys) &&
+                      seenItems.SetEquals(requiredIds) &&
+                      final.Complete && final.Achievement34
+                    : !final.Complete && !final.Achievement34),
+            complete
+                ? "Full Shipment recurrence terminal denominator is incomplete."
+                : "Full Shipment recurrence prefix denominator drifted.");
 
-        return new FullShipmentRecurrenceProofReceipt
-        {
-            Status = "verified_complete_recurrence",
-            GoalId = inventory.GoalId,
-            ManifestSha256 = CurrentTeacherFrontierSupport.HashFile(
-                manifestFullPath),
-            RequirementInventorySha256 = inventorySha,
-            AcquisitionLoweringSha256 = loweringSha,
-            RequiredItemCount = requiredIds.Length,
-            VerifiedIterationCount = rows.Count,
-            InitialStateHash = ReadSnapshot(
-                Path.GetFullPath(manifest.InitialSnapshotPath),
-                "initial snapshot").StateHash,
-            FinalStateHash = anchorSnapshot.StateHash,
-            InitialTotalDay = initial.TotalDay,
-            TerminalSettlementStartTotalDay = rows[^1].SettlementStartTotalDay,
-            FinalTotalDay = final.TotalDay,
-            Achievement34Verified = final.Achievement34,
-            RecurrenceProofVerified = true,
-            FormalTrainingAuthorized = false,
-            Iterations = rows.ToArray(),
-            BlockingReasons = Array.Empty<string>()
-        };
+        return new VerifiedRecurrence(
+            CurrentTeacherFrontierSupport.HashFile(manifestFullPath),
+            inventory,
+            inventorySha,
+            loweringSha,
+            requiredIds.Length,
+            initialSnapshot,
+            initial,
+            anchorSnapshot,
+            final,
+            anchorSnapshotPath,
+            rows.ToArray(),
+            rows.Select(row => row.RequirementId).ToArray(),
+            remainingRequirements.Select(group => group.RequirementId)
+                .ToArray(),
+            complete);
     }
 
     internal static void VerifySequence(
         IReadOnlyList<FullShipmentRecurrenceIterationEvidence> rows,
         int requiredItemCount,
         int initialTotalDay)
+        => VerifyPrefixSequence(
+            rows,
+            requiredItemCount,
+            initialTotalDay,
+            expectComplete: true);
+
+    internal static void VerifyPrefixSequence(
+        IReadOnlyList<FullShipmentRecurrenceIterationEvidence> rows,
+        int requiredItemCount,
+        int initialTotalDay,
+        bool expectComplete)
     {
-        Require(
-            requiredItemCount > 0 &&
-            rows.Count == requiredItemCount &&
-            initialTotalDay == 0,
+        Require(requiredItemCount > 0 &&
+                rows.Count > 0 &&
+                rows.Count <= requiredItemCount &&
+                initialTotalDay == 0 &&
+                (expectComplete
+                    ? rows.Count == requiredItemCount
+                    : rows.Count < requiredItemCount),
             "Full Shipment recurrence sequence denominator is invalid.");
         for (var index = 0; index < rows.Count; index++)
         {
             var row = rows[index];
-            var terminal = index == rows.Count - 1;
+            var terminal = expectComplete && index == rows.Count - 1;
             var priorEndTotalDay = index == 0
                 ? initialTotalDay
                 : rows[index - 1].SettlementEndTotalDay;
@@ -194,4 +291,20 @@ public static partial class FullShipmentRecurrenceProofBuilder
                 "Full Shipment recurrence sequence order or deadline drifted.");
         }
     }
+
+    private sealed record VerifiedRecurrence(
+        string ManifestSha256,
+        AuthoritativeRequirementInventoryReport Inventory,
+        string InventorySha256,
+        string LoweringSha256,
+        int RequiredItemCount,
+        StardewAI.Contracts.State.SnapshotEnvelope InitialSnapshot,
+        FullShipmentProgressCheckpoint InitialProgress,
+        StardewAI.Contracts.State.SnapshotEnvelope FinalSnapshot,
+        FullShipmentProgressCheckpoint FinalProgress,
+        string FinalSnapshotPath,
+        FullShipmentRecurrenceIterationEvidence[] Iterations,
+        string[] CompletedRequirementIds,
+        string[] RemainingRequirementIds,
+        bool Complete);
 }

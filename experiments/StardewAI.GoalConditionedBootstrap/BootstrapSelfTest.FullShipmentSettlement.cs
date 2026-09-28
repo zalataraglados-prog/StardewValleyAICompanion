@@ -212,6 +212,11 @@ internal static partial class BootstrapSelfTest
             rows,
             requiredItemCount: 3,
             initialTotalDay: 0);
+        FullShipmentRecurrenceProofBuilder.VerifyPrefixSequence(
+            rows.Take(2).ToArray(),
+            requiredItemCount: 3,
+            initialTotalDay: 0,
+            expectComplete: false);
 
         RequireSequenceRejected(
             new[]
@@ -245,6 +250,41 @@ internal static partial class BootstrapSelfTest
                 RecurrenceRow(2, 2, 3, 224, 225, terminal: true)
             },
             "A Full Shipment terminal transition after the Stage-1 deadline was admitted.");
+        RequirePrefixSequenceRejected(
+            new[]
+            {
+                RecurrenceRow(0, 0, 1, 0, 1, terminal: true)
+            },
+            requiredItemCount: 3,
+            expectComplete: false,
+            failureMessage:
+                "An incomplete recurrence prefix admitted a terminal transition.");
+        RequirePrefixSequenceRejected(
+            rows.Take(2).ToArray(),
+            requiredItemCount: 3,
+            expectComplete: true,
+            failureMessage:
+                "An incomplete recurrence prefix was reported as complete.");
+        RequirePrefixSequenceRejected(
+            Array.Empty<FullShipmentRecurrenceIterationEvidence>(),
+            requiredItemCount: 3,
+            expectComplete: false,
+            failureMessage: "An empty recurrence prefix was admitted.");
+        RequirePrefixSequenceRejected(
+            rows,
+            requiredItemCount: 3,
+            expectComplete: false,
+            failureMessage:
+                "A complete recurrence was reported as an incomplete prefix.");
+        RequirePrefixSequenceRejected(
+            new[]
+            {
+                RecurrenceRow(0, 0, 1, 223, 224, terminal: false)
+            },
+            requiredItemCount: 3,
+            expectComplete: false,
+            failureMessage:
+                "A nonterminal recurrence prefix consumed the terminal deadline day.");
     }
 
     private static FullShipmentRecurrenceIterationEvidence RecurrenceRow(
@@ -277,6 +317,28 @@ internal static partial class BootstrapSelfTest
                 rows,
                 rows.Count,
                 initialTotalDay: 0);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected, failureMessage);
+    }
+
+    private static void RequirePrefixSequenceRejected(
+        IReadOnlyList<FullShipmentRecurrenceIterationEvidence> rows,
+        int requiredItemCount,
+        bool expectComplete,
+        string failureMessage)
+    {
+        var rejected = false;
+        try
+        {
+            FullShipmentRecurrenceProofBuilder.VerifyPrefixSequence(
+                rows,
+                requiredItemCount,
+                initialTotalDay: 0,
+                expectComplete: expectComplete);
         }
         catch (InvalidDataException)
         {

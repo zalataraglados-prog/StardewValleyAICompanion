@@ -268,6 +268,15 @@ without gaps; settlement time cannot reverse; and only row 154 may end with achi
 before total day 224. This command verifies supplied artifacts but does not generate the
 154-step fresh-save runtime chain and does not authorize formal training.
 
+`build-full-shipment-recurrence-prefix-checkpoint` reuses that same verifier for incremental native
+collection. It accepts a manifest containing 1 through 154 contiguous iterations rooted at the same
+day-zero, zero-shipment snapshot. Every supplied acquisition, deposit and sleep boundary is rebuilt
+exactly as above. An incomplete prefix must remain nonterminal, preserve achievement 34 as false,
+finish before the terminal deadline day, and expose the exact remaining requirement and item sets.
+The checkpoint binds the final snapshot hash so the next iteration can use that artifact as its root.
+It does not manufacture runtime artifacts, accept a mid-save starting point, count synthetic fixtures
+as product evidence, or authorize training. The whole-recurrence command still requires all 154 rows.
+
 `compile-acquisition-route-dispatch` closes the production boundary between one independently
 selected, atomically reserved acquisition route and the existing Product compilers. In addition to
 the execution-binding inputs, it requires `--ranking`, `--queue-output`, and `--output`. It finds a
