@@ -228,6 +228,53 @@ public sealed class TeacherPreferenceQueueLoaderTests
         Assert.Contains("cannot be combined", error.Message);
     }
 
+    [Fact]
+    public async Task LoadsStrictPrecompiledQueueWithoutTeacherWrapper()
+    {
+        var path = TemporaryPreferencePath(Queue());
+        try
+        {
+            var queue = await TeacherPreferenceQueueLoader.LoadQueueAsync(
+                path,
+                "hash.current",
+                "training_singleplayer");
+
+            Assert.Equal("queue.teacher.1", queue["queue_id"]!.GetValue<string>());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void PrecompiledQueueOptionsRequireBoundedProductEvidenceMode()
+    {
+        var valid = LiveTrainingOptions.Parse(new[]
+        {
+            "--precompiled-queue", "queue.json",
+            "--skip-training",
+            "--use-product-executor",
+            "--max-attempts", "1",
+            "--required-verified-actions", "1",
+            "--max-queue-item-attempts", "8"
+        });
+        Assert.True(valid.UsePrecompiledQueue);
+
+        var error = Assert.Throws<ArgumentException>(() =>
+            LiveTrainingOptions.Parse(new[]
+            {
+                "--precompiled-queue", "queue.json",
+                "--skip-training",
+                "--use-product-executor",
+                "--use-daily-plan",
+                "--max-attempts", "1",
+                "--required-verified-actions", "1",
+                "--max-queue-item-attempts", "8"
+            }));
+        Assert.Contains("cannot be combined", error.Message);
+    }
+
     private static string TemporaryPreferencePath(JsonObject value)
     {
         var path = Path.Combine(

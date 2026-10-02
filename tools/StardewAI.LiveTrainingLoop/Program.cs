@@ -252,7 +252,17 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var resumedSelectedQueueDecision = false;
     JsonObject? dailyPlanRanking = null;
     JsonObject queue;
-    if (options.UseTeacherPreferenceQueue)
+    if (options.UsePrecompiledQueue)
+    {
+        queue = await TeacherPreferenceQueueLoader.LoadQueueAsync(
+            options.PrecompiledQueuePath,
+            lastStateHash,
+            options.TargetExecutionMode);
+        selectedCandidateId =
+            EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(
+                ExecutableQueueItems(queue).FirstOrDefault());
+    }
+    else if (options.UseTeacherPreferenceQueue)
     {
         queue = await TeacherPreferenceQueueLoader.LoadAsync(
             options.TeacherPreferencePath,
@@ -371,7 +381,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
     var queuePath = Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
-    if (options.UseTeacherPreferenceQueue)
+    if (options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue)
     {
         decisionCompiledQueuePath = queuePath;
     }

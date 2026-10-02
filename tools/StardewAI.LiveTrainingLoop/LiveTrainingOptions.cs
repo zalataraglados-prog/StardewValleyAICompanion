@@ -53,6 +53,9 @@ public sealed class LiveTrainingOptions
     public string TeacherPreferencePath { get; set; } = string.Empty;
     public bool UseTeacherPreferenceQueue =>
         !string.IsNullOrWhiteSpace(TeacherPreferencePath);
+    public string PrecompiledQueuePath { get; set; } = string.Empty;
+    public bool UsePrecompiledQueue =>
+        !string.IsNullOrWhiteSpace(PrecompiledQueuePath);
     public string ActionOptionId { get; set; } = string.Empty;
     public List<SmallModelActionParameter> ActionParameters { get; } = new();
     public bool ContinueAfterBlockedQueueItems { get; set; }
@@ -388,6 +391,10 @@ public sealed class LiveTrainingOptions
             {
                 options.TeacherPreferencePath = args[++i];
             }
+            else if (current == "--precompiled-queue" && i + 1 < args.Length)
+            {
+                options.PrecompiledQueuePath = args[++i];
+            }
             else if (current == "--action-option-id" && i + 1 < args.Length)
             {
                 options.ActionOptionId = args[++i];
@@ -530,6 +537,7 @@ public sealed class LiveTrainingOptions
         }
 
         options.ValidateTeacherPreferenceMode();
+        options.ValidatePrecompiledQueueMode();
         options.ValidateQueueExecutionReceiptMode();
 
         return options;
@@ -539,6 +547,13 @@ public sealed class LiveTrainingOptions
     {
         if (!UseTeacherPreferenceQueue)
             return;
+
+        if (UsePrecompiledQueue)
+        {
+            throw new ArgumentException(
+                "--teacher-preference cannot be combined with " +
+                "--precompiled-queue.");
+        }
 
         var incompatibleQueueSourceCount = new[]
         {
@@ -585,9 +600,60 @@ public sealed class LiveTrainingOptions
         }
     }
 
+    public void ValidatePrecompiledQueueMode()
+    {
+        if (!UsePrecompiledQueue)
+            return;
+
+        var incompatibleQueueSourceCount = new[]
+        {
+            UseDailyPlan,
+            UseParameterizedAction,
+            UsePlanOutput,
+            !string.IsNullOrWhiteSpace(ExecutorOptionId)
+        }.Count(value => value);
+        if (incompatibleQueueSourceCount > 0)
+        {
+            throw new ArgumentException(
+                "--precompiled-queue cannot be combined with a planner, " +
+                "parameterized action, plan output, or executor option override.");
+        }
+        if (!SkipTraining || !UseProductExecutor || !RequireExecutorFeedback)
+        {
+            throw new ArgumentException(
+                "--precompiled-queue requires --skip-training, " +
+                "--use-product-executor, and executor feedback.");
+        }
+        if (MaxAttempts != 1 || RequiredVerifiedActions != 1)
+        {
+            throw new ArgumentException(
+                "--precompiled-queue requires --max-attempts 1 and " +
+                "--required-verified-actions 1.");
+        }
+        if (MaxQueueItemAttempts is < 1 or >
+            TeacherEvidenceRolloutLimits.MaxQueueItems)
+        {
+            throw new ArgumentException(
+                "--precompiled-queue requires --max-queue-item-attempts " +
+                "between 1 and " +
+                TeacherEvidenceRolloutLimits.MaxQueueItems + ".");
+        }
+        if (RequireNativeSaveBoundary ||
+            !string.Equals(
+                TargetExecutionMode,
+                ExecutionTargetProfiles.TrainingSingleplayer,
+                StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "--precompiled-queue only supports one isolated " +
+                "training_singleplayer evidence action without a save boundary.");
+        }
+    }
+
     public void ValidateQueueExecutionReceiptMode()
     {
-        if (!EmitQueueExecutionReceipt || UseTeacherPreferenceQueue)
+        if (!EmitQueueExecutionReceipt || UseTeacherPreferenceQueue ||
+            UsePrecompiledQueue)
             return;
 
         if (!UseDailyPlan || !SkipTraining || !RequireExecutorFeedback)

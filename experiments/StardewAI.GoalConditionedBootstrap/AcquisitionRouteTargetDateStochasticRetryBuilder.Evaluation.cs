@@ -18,7 +18,8 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionRouteTargetDateFishingProbability fishingRoute,
         string fishingProbabilityPath,
-        MachineRetryExpansionContext machineExpansion)
+        MachineRetryExpansionContext machineExpansion,
+        AcquisitionWildTreeChopCandidateIndex wildTreeChopCandidates)
     {
         if (!route.ProcessingLeadTimeAxisResolved)
         {
@@ -97,6 +98,14 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 Array.Empty<string>());
         }
 
+        if (staticRoute.RouteKind == "native_wild_tree_chop_drop")
+        {
+            return EvaluateWildTreeChop(
+                route,
+                staticRoute,
+                wildTreeChopCandidates);
+        }
+
         if (IsMachineRoute(staticRoute.RouteKind))
             return EvaluateMachine(route, staticRoute, machineExpansion);
 
@@ -152,6 +161,79 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 "target_location_terminal_probability_evidence_missing:" +
                 staticRoute.RouteKind
             });
+    }
+
+    private static AcquisitionRouteTargetDateStochasticRetry
+        EvaluateWildTreeChop(
+            AcquisitionRouteTargetDateProcessing route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionWildTreeChopCandidateIndex candidates)
+    {
+        if (!candidates.EvidenceComplete)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_bound_guaranteed_output_evidence_missing",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                candidates.BlockingReasons);
+        }
+
+        var matches = candidates.Find(
+            staticRoute.RouteKind,
+            staticRoute.SourceId,
+            staticRoute.QualifiedItemId,
+            staticRoute.RequiredAmount,
+            staticRoute.MinimumQuality);
+        if (matches.Length == 0)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_bound_guaranteed_output_evidence_missing",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                new[]
+                {
+                    "matching_guaranteed_wild_tree_chop_candidate_not_present"
+                });
+        }
+
+        return Result(
+            route,
+            staticRoute.UncertaintyMode,
+            "resolved_source_bound_guaranteed_output",
+            true,
+            true,
+            "source_bound_guaranteed_output",
+            1d,
+            1,
+            false,
+            true,
+            new[]
+            {
+                "state.current_location.terrain_features.value[].tree_chop_authoritative_route_sources",
+                "state.current_location.terrain_features.value[].tree_chop_guaranteed_minimum_outputs",
+                "candidate:foraging.chop_wild_tree"
+            },
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            baselineAttemptCount: 1);
     }
 
     private static AcquisitionRouteTargetDateStochasticRetry EvaluateFishing(

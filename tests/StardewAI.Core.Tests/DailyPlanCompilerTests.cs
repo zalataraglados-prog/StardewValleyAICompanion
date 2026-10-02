@@ -869,6 +869,70 @@ public sealed partial class DailyPlanCompilerTests
         Assert.Equal(13, plan.Steps[1].TargetTileX);
         Assert.Equal(10, plan.Steps[1].TargetTileY);
         Assert.Contains(plan.Steps[1].Preconditions, condition => condition == "target_tile_adjacent=true");
+        Assert.Equal(5, plan.Steps.Sum(step => step.EstimatedMinutes));
+        Assert.Equal(5, Assert.Single(plan.CandidateAudit).CandidateMinutes);
+    }
+
+    [Fact]
+    public void CompileBindsClearObstacleToTeacherRouteStandAndBudget()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "clear:Farm:13,10:tree",
+            Kind = "clear_obstacle_tile",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "Farm",
+            TileX = 13,
+            TileY = 10,
+            ExpectedEffect = "move_to_adjacent=12,10;max_tool_swings=15",
+            EstimatedTicks = 180,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "teacher_route.stand_tile_x",
+                    Value = "13"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "teacher_route.stand_tile_y",
+                    Value = "9"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "teacher_route.movement_game_minutes",
+                    Value = "13"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "teacher_route.terminal_action_game_minutes",
+                    Value = "28"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "teacher_route.guaranteed_elapsed_game_minutes",
+                    Value = "41"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "teacher_route.timing_evidence_id",
+                    Value = "timing:test"
+                }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
+
+        Assert.Equal(2, plan.Steps.Length);
+        Assert.Equal((13, 9),
+            (plan.Steps[0].TargetTileX, plan.Steps[0].TargetTileY));
+        Assert.Equal(13, plan.Steps[0].EstimatedMinutes);
+        Assert.Equal(28, plan.Steps[1].EstimatedMinutes);
+        Assert.Equal(41, Assert.Single(plan.CandidateAudit).CandidateMinutes);
+        Assert.Contains(plan.Steps[1].Parameters, parameter =>
+            parameter.Name == "teacher_route.timing_evidence_id" &&
+            parameter.Value == "timing:test");
     }
 
     [Fact]

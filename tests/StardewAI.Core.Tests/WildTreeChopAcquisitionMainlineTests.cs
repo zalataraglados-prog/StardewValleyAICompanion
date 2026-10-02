@@ -119,7 +119,10 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         var clearance = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.ObstacleClearance.cs"));
         var chop = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.cs"));
         var verification = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.Verification.cs"));
+        var nativeEvidenceIsolation = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.NativeEvidenceIsolation.cs"));
         var terrain = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "CurrentLocationReadAdapter.TerrainExperience.cs"));
+        var bridgeEntry = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "ModEntry.cs"));
+        var trainingLauncher = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "Training", "StardewTrainingSessionLauncher.cs"));
         var smoke = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeClearObstacleSmoke.ps1"));
 
         Assert.Contains("ValidateWildTreeChopExecutionRequest", clearance, StringComparison.Ordinal);
@@ -141,11 +144,20 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         Assert.Contains("axe.GetType() == typeof(Axe)", terrain, StringComparison.Ordinal);
         Assert.Contains("OrderBy(row => row.Key, StringComparer.Ordinal)", verification, StringComparison.Ordinal);
         Assert.Contains("row.Value.ToString(CultureInfo.InvariantCulture)", verification, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_TRAINING_MODE", nativeEvidenceIsolation, StringComparison.Ordinal);
+        Assert.Contains("if (!trainingMode && !explicitlyRequired)", nativeEvidenceIsolation, StringComparison.Ordinal);
+        Assert.Contains("Name = \"STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL\", Value = \"1\"", trainingLauncher, StringComparison.Ordinal);
+        Assert.Contains("profile is \"clearance\"", bridgeEntry, StringComparison.Ordinal);
+        Assert.Contains("\"current_location\"", bridgeEntry, StringComparison.Ordinal);
         var fixture = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.ClearObstacleFixture.cs"));
         Assert.Contains("\"pine_professions\" => \"3\"", fixture, StringComparison.Ordinal);
         Assert.Contains("Game1.player.professions.Add(14)", fixture, StringComparison.Ordinal);
         Assert.Contains("fixture_wild_tree_chop_profile_unknown", fixture, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL", smoke, StringComparison.Ordinal);
+        Assert.Contains("[string] $SnapshotProfile = \"clearance\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("profile=$SnapshotProfile&fresh=true", smoke, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_TRAINING_OUTPUT_DIR", smoke, StringComparison.Ordinal);
+        Assert.DoesNotContain("snapshot?profile=full", smoke, StringComparison.Ordinal);
     }
 
     private static string StateJson(

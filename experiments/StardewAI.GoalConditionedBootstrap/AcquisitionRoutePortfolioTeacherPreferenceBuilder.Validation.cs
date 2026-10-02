@@ -28,7 +28,6 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             context.Opportunity.SchemaVersion !=
                 "acquisition_route_target_date_opportunity_cost.v1" ||
             !context.Opportunity.RouteOccurrenceInventoryComplete ||
-            !context.Opportunity.OpportunityCostAxisResolutionComplete ||
             context.Opportunity.TrainingLabelEligible ||
             context.Opportunity.Routes is null ||
             context.Opportunity.RouteOccurrenceCount !=
@@ -93,6 +92,15 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
             {
                 reasons.Add(
                     "portfolio_teacher_scoped_requirement_incomplete:" + key);
+            }
+            if (!AcquisitionRoutePortfolioBuilder.IsOpportunityScopeComplete(
+                    context.Opportunity,
+                    scope.RequirementSetId,
+                    scope.RequirementId))
+            {
+                reasons.Add(
+                    "portfolio_teacher_scoped_opportunity_denominator_incomplete:" +
+                    key);
             }
         }
         return reasons;

@@ -117,7 +117,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             ledger,
             commit.PortfolioId,
             commit.CommittedLedgerRevision,
-            rankingHash);
+            rankingHash,
+            selectedOpportunity: route);
     }
 
     private static string[] ValidateArtifacts(

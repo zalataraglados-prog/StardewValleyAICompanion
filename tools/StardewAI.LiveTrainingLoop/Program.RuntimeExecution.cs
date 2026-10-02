@@ -642,7 +642,8 @@ static partial class Program
                 : null;
             var nextCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(
                 nextItem);
-            var selectedCandidateCompleted = options.UseTeacherPreferenceQueue
+            var selectedCandidateCompleted =
+                options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue
                 ? string.Equals(
                         executionStatus,
                         "applied",
@@ -687,6 +688,7 @@ static partial class Program
         aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
         if (options.UseTeacherPreferenceQueue ||
+            options.UsePrecompiledQueue ||
             options.EmitQueueExecutionReceipt)
         {
             var receiptSteps = stepResults.OfType<JsonObject>().ToArray();

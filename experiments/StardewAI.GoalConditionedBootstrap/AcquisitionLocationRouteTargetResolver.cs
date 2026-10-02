@@ -7,7 +7,9 @@ internal static class AcquisitionLocationRouteTargetResolver
     public static AcquisitionLocationTargetResolution Resolve(
         AcquisitionRouteTargetDateFestival route,
         AcquisitionRouteCalendarResolution staticRoute,
-        AcquisitionLocationRouteSnapshotState state)
+        AcquisitionLocationRouteSnapshotState state,
+        AcquisitionWildTreeChopCandidateIndex wildTreeChopCandidates,
+        AcquisitionCurrentRouteCandidateIndex currentRouteCandidates)
     {
         var source = route.UpstreamRoute;
         return source.RouteKind switch
@@ -23,6 +25,13 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_location_fish_spawn" or
             "native_location_forage_spawn" =>
                 ResolveLocationSource(source, state),
+            "native_wild_tree_chop_drop" => ResolveWildTreeChop(
+                source,
+                wildTreeChopCandidates),
+            "native_monster_drop_table" or
+            "native_wild_tree_tapper_output" => ResolveCurrentCandidate(
+                source,
+                currentRouteCandidates),
             "native_mine_fishing_override" => Exact(
                 "native_mine_location",
                 source.SourceId,
@@ -33,6 +42,86 @@ internal static class AcquisitionLocationRouteTargetResolver
                 Array.Empty<AcquisitionLocationTarget>(),
                 new[] { "location_route_kind_not_supported:" + source.RouteKind })
         };
+    }
+
+    private static AcquisitionLocationTargetResolution ResolveCurrentCandidate(
+        AcquisitionRouteTargetDateUnlock route,
+        AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (!candidates.TryFind(
+                route.RouteKind,
+                route.SourceId,
+                route.QualifiedItemId,
+                out var matches,
+                out var blockingReasons))
+        {
+            return new AcquisitionLocationTargetResolution(
+                false,
+                Array.Empty<AcquisitionLocationTarget>(),
+                blockingReasons);
+        }
+
+        return new AcquisitionLocationTargetResolution(
+            true,
+            matches.Select(value => new AcquisitionLocationTarget(
+                    "runtime_exact_authoritative_route_candidate",
+                    value.SourceId,
+                    value.LocationId,
+                    new[]
+                    {
+                        "candidate:" + value.OptionId,
+                        "candidate.parameters[authoritative_route_sources_json]"
+                    },
+                    value.TargetTileX,
+                    value.TargetTileY))
+                .ToArray(),
+            matches.Length == 0
+                ? new[]
+                {
+                    "matching_current_authoritative_route_candidate_not_present"
+                }
+                : Array.Empty<string>());
+    }
+
+    private static AcquisitionLocationTargetResolution ResolveWildTreeChop(
+        AcquisitionRouteTargetDateUnlock route,
+        AcquisitionWildTreeChopCandidateIndex candidates)
+    {
+        if (!candidates.EvidenceComplete)
+        {
+            return new AcquisitionLocationTargetResolution(
+                false,
+                Array.Empty<AcquisitionLocationTarget>(),
+                candidates.BlockingReasons);
+        }
+
+        var matches = candidates.Find(
+            route.RouteKind,
+            route.SourceId,
+            route.QualifiedItemId,
+            route.RequiredAmount,
+            route.MinimumQuality);
+        return new AcquisitionLocationTargetResolution(
+            true,
+            matches.Select(value => new AcquisitionLocationTarget(
+                    "runtime_exact_wild_tree_chop_candidate",
+                    value.SourceId,
+                    value.LocationId,
+                    new[]
+                    {
+                        "state.current_location.terrain_features.value[].tree_chop_authoritative_route_sources",
+                        "state.current_location.terrain_features.value[].tree_chop_guaranteed_minimum_outputs",
+                        "candidate:foraging.chop_wild_tree"
+                    },
+                    value.TargetTileX,
+                    value.TargetTileY))
+                .ToArray(),
+            matches.Length == 0
+                ? new[]
+                {
+                    "matching_guaranteed_wild_tree_chop_candidate_not_present"
+                }
+                : Array.Empty<string>());
     }
 
     internal static AcquisitionLocationTargetResolution ResolveMachine(

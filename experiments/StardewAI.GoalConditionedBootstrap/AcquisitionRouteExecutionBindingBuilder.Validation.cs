@@ -42,9 +42,12 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             !string.Equals(
                 report.Status,
                 "complete_target_date_opportunity_cost_axis_downstream_pending",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                report.Status,
+                "partial_target_date_opportunity_cost_axis_blocks",
                 StringComparison.Ordinal) ||
             !report.RouteOccurrenceInventoryComplete ||
-            !report.OpportunityCostAxisResolutionComplete ||
             report.TrainingLabelEligible ||
             report.RouteOccurrenceCount != report.Routes.Length ||
             report.OpportunityCostAxisResolvedCount != report.Routes.Count(
@@ -57,6 +60,13 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     "resolved_opportunity_cost_pareto_dominated"))
         {
             yield return "route_selection_opportunity_frontier_incomplete";
+        }
+        if (!AcquisitionRoutePortfolioBuilder.IsOpportunityScopeComplete(
+                report,
+                requirement.RequirementSetId,
+                requirement.RequirementId))
+        {
+            yield return "route_selection_scoped_opportunity_frontier_incomplete";
         }
         if (!string.Equals(
                 selected.OpportunityCostAxisStatus,

@@ -125,12 +125,15 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             resourceState,
             currencyState,
             AcquisitionProcessingLeadTimeSnapshotState.Read(snapshot));
+        var wildTreeChopCandidates =
+            AcquisitionWildTreeChopCandidateIndex.Read(snapshotFullPath);
         var routes = source.Routes.Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
                 fishingRoutes[route.RouteOccurrenceId],
                 fishingProbabilityPath,
-                machineExpansion))
+                machineExpansion,
+                wildTreeChopCandidates))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>

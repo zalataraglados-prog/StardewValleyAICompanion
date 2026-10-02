@@ -22,7 +22,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         string portfolioId,
         int committedLedgerRevision,
         string rankingHash,
-        SmallModelActionParameter[]? additionalLineage = null)
+        SmallModelActionParameter[]? additionalLineage = null,
+        AcquisitionRouteTargetDateOpportunityCost? selectedOpportunity = null)
     {
         var source = selected.Candidate;
         var routeOptionRole = selected.RouteOptionRole;
@@ -34,6 +35,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             source,
             AcquisitionRouteExecutionBindingBuilder.SelectedCandidateId(
                 requirement.RouteOccurrenceId));
+        var teacherBudgetReasons = BindSelectedOpportunityBudget(
+            candidate,
+            selectedOpportunity);
         var plan = new DailyPlanCompiler().Compile(
             new[] { candidate },
             snapshot.StateHash,
@@ -82,7 +86,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             StabilizeQueueIdentity(queue, compilationIdentity);
         var reasons = annotationReasons
             .Concat(roleReasons)
+            .Concat(teacherBudgetReasons)
             .Concat(PlanReasons(plan))
+            .Concat(TeacherRoutePlanReasons(plan, selectedOpportunity))
             .Concat(queue is null
                 ? Array.Empty<string>()
                 : AcquisitionRouteExecutionBindingBuilder.ValidateQueue(
@@ -129,6 +135,114 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             FormalTrainingAuthorized = false,
             BlockingReasons = reasons
         };
+    }
+
+    private static string[] BindSelectedOpportunityBudget(
+        PolicyEventCandidatePrediction candidate,
+        AcquisitionRouteTargetDateOpportunityCost? opportunity)
+    {
+        if (opportunity is null || candidate.Kind != "clear_obstacle_tile")
+            return Array.Empty<string>();
+
+        var daily = opportunity.UpstreamRoute;
+        var evaluation = daily.Evaluation;
+        var vector = opportunity.CostVector;
+        if (evaluation is null ||
+            daily.DailyTimeEnergyMatchesTargetDate != true ||
+            vector is null ||
+            !evaluation.StandTileX.HasValue ||
+            !evaluation.StandTileY.HasValue ||
+            !evaluation.TargetTileX.HasValue ||
+            !evaluation.TargetTileY.HasValue ||
+            !evaluation.GuaranteedArrivalByTime.HasValue ||
+            !evaluation.TerminalActionGameMinutes.HasValue ||
+            evaluation.TerminalActionGameMinutes.Value <= 0 ||
+            !string.Equals(
+                candidate.LocationId,
+                evaluation.TargetLocationId,
+                StringComparison.OrdinalIgnoreCase) ||
+            candidate.TileX != evaluation.TargetTileX ||
+            candidate.TileY != evaluation.TargetTileY)
+        {
+            return new[] { "selected_teacher_route_budget_binding_incomplete" };
+        }
+
+        var movementMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
+            evaluation.SnapshotStartTime,
+            evaluation.GuaranteedArrivalByTime.Value);
+        var terminalMinutes = evaluation.TerminalActionGameMinutes.Value;
+        if (movementMinutes <= 0 ||
+            movementMinutes + terminalMinutes !=
+                vector.GuaranteedElapsedGameMinutes)
+        {
+            return new[] { "selected_teacher_route_budget_vector_mismatch" };
+        }
+
+        const string prefix = "teacher_route.";
+        var parameters = candidate.Parameters ??
+            Array.Empty<SmallModelActionParameter>();
+        if (parameters.Any(parameter => parameter.Name.StartsWith(
+                prefix,
+                StringComparison.Ordinal)))
+        {
+            return new[] { "selected_candidate_declares_teacher_route_budget" };
+        }
+        candidate.Parameters = parameters.Concat(new[]
+        {
+            Parameter(
+                prefix + "stand_tile_x",
+                evaluation.StandTileX.Value.ToString()),
+            Parameter(
+                prefix + "stand_tile_y",
+                evaluation.StandTileY.Value.ToString()),
+            Parameter(
+                prefix + "movement_game_minutes",
+                movementMinutes.ToString()),
+            Parameter(
+                prefix + "terminal_action_game_minutes",
+                terminalMinutes.ToString()),
+            Parameter(
+                prefix + "guaranteed_elapsed_game_minutes",
+                vector.GuaranteedElapsedGameMinutes.ToString()),
+            Parameter(
+                prefix + "timing_evidence_id",
+                evaluation.TimingEvidenceId)
+        }).ToArray();
+        return Array.Empty<string>();
+    }
+
+    private static string[] TeacherRoutePlanReasons(
+        SmallModelPlanEnvelope plan,
+        AcquisitionRouteTargetDateOpportunityCost? opportunity)
+    {
+        if (opportunity is null ||
+            plan.Steps.Length == 0 ||
+            plan.Steps.All(step => step.Kind != "clear_obstacle"))
+        {
+            return Array.Empty<string>();
+        }
+
+        var evaluation = opportunity.UpstreamRoute.Evaluation;
+        var vector = opportunity.CostVector;
+        if (evaluation is null || vector is null)
+            return new[] { "teacher_route_plan_budget_evidence_missing" };
+        var estimatedMinutes = plan.Steps.Sum(step =>
+            step.EstimatedMinutes ?? 0);
+        var move = plan.Steps.SingleOrDefault(step =>
+            step.Kind == "move_to_tile");
+        var terminal = plan.Steps.SingleOrDefault(step =>
+            step.Kind == "clear_obstacle");
+        if (estimatedMinutes != vector.GuaranteedElapsedGameMinutes ||
+            move is null ||
+            terminal is null ||
+            move.TargetTileX != evaluation.StandTileX ||
+            move.TargetTileY != evaluation.StandTileY ||
+            terminal.TargetTileX != evaluation.TargetTileX ||
+            terminal.TargetTileY != evaluation.TargetTileY)
+        {
+            return new[] { "compiled_queue_teacher_route_budget_mismatch" };
+        }
+        return Array.Empty<string>();
     }
 
     private static string[] AnnotatePlan(

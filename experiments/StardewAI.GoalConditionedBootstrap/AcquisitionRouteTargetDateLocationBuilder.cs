@@ -59,6 +59,10 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             source.GameVersion,
             source.TargetTotalDay,
             timingFullPath);
+        var wildTreeChopCandidates =
+            AcquisitionWildTreeChopCandidateIndex.Read(snapshotFullPath);
+        var currentRouteCandidates =
+            AcquisitionCurrentRouteCandidateIndex.Read(snapshotFullPath);
 
         var activeRoutes = source.Routes
             .Where(IsLocationApplicable)
@@ -69,7 +73,9 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 route => AcquisitionLocationRouteTargetResolver.Resolve(
                     route,
                     staticByOccurrence[route.RouteOccurrenceId],
-                    state),
+                    state,
+                    wildTreeChopCandidates,
+                    currentRouteCandidates),
                 StringComparer.Ordinal)
             : new Dictionary<string, AcquisitionLocationTargetResolution>(
                 StringComparer.Ordinal);

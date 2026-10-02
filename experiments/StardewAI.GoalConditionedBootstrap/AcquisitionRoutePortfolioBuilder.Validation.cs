@@ -26,7 +26,6 @@ public static partial class AcquisitionRoutePortfolioBuilder
         if (opportunity.SchemaVersion !=
                 "acquisition_route_target_date_opportunity_cost.v1" ||
             !opportunity.RouteOccurrenceInventoryComplete ||
-            !opportunity.OpportunityCostAxisResolutionComplete ||
             opportunity.TrainingLabelEligible ||
             opportunity.Routes is null ||
             opportunity.RouteOccurrenceCount != opportunity.Routes.Length)
@@ -69,6 +68,21 @@ public static partial class AcquisitionRoutePortfolioBuilder
             proposal.ScopedRequirements.Length)
         {
             reasons.Add("route_portfolio_requirement_scope_invalid");
+        }
+        else
+        {
+            foreach (var scope in proposal.ScopedRequirements)
+            {
+                if (!IsOpportunityScopeComplete(
+                        opportunity,
+                        scope.RequirementSetId,
+                        scope.RequirementId))
+                {
+                    reasons.Add(
+                        "scoped_opportunity_cost_frontier_incomplete:" +
+                        ScopeKey(scope));
+                }
+            }
         }
         ValidateDistinctIds(
             proposal.SelectedRouteOccurrenceIds,
@@ -292,6 +306,24 @@ public static partial class AcquisitionRoutePortfolioBuilder
         return daily.UpstreamRoute.UpstreamRoute.UpstreamRoute.UpstreamRoute
             .UpstreamRoute.UpstreamRoute.UpstreamRoute.UpstreamRoute
             .UpstreamRoute;
+    }
+
+    internal static bool IsOpportunityScopeComplete(
+        AcquisitionRouteTargetDateOpportunityCostReport opportunity,
+        string requirementSetId,
+        string requirementId)
+    {
+        if (opportunity.Routes is null)
+            return false;
+        var routes = opportunity.Routes.Where(route =>
+        {
+            var requirement = RequirementRoute(route);
+            return requirement.RequirementSetId == requirementSetId &&
+                requirement.RequirementId == requirementId;
+        }).ToArray();
+        return routes.Length > 0 && routes.All(route =>
+            route.OpportunityCostAxisResolved &&
+            route.BlockingReasons is { Length: 0 });
     }
 
     private static AcquisitionRouteTargetDateReservation ReservationRoute(

@@ -582,8 +582,15 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             .Select(Path.GetFullPath)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        var gameAssemblyRoot = Path.Combine(decompileRoot, "StardewValley");
+        if (!Directory.Exists(gameAssemblyRoot))
+        {
+            throw new DirectoryNotFoundException(
+                "Decompiled StardewValley assembly root is missing: " +
+                gameAssemblyRoot);
+        }
         var actualOverrides = Directory
-            .EnumerateFiles(decompileRoot, "*.cs", SearchOption.AllDirectories)
+            .EnumerateFiles(gameAssemblyRoot, "*.cs", SearchOption.AllDirectories)
             .Where(path => File.ReadAllText(path).Contains(
                 "override Item getFish(float millisecondsAfterNibble",
                 StringComparison.Ordinal))

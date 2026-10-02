@@ -54,6 +54,7 @@
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="GenericMovementClearanceBoundarySourceGuardTests.cs" />
+    <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
     <Compile Include="SkullKeySnapshotContractSourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />

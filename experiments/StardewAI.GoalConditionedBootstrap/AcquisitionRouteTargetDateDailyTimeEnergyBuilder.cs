@@ -92,11 +92,14 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             source.GameVersion,
             source.TargetTotalDay,
             timingPath);
+        var wildTreeChopCandidates =
+            AcquisitionWildTreeChopCandidateIndex.Read(snapshotFullPath);
         var routes = source.Routes.Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
                 fishingRoutes[route.RouteOccurrenceId],
-                state))
+                state,
+                wildTreeChopCandidates))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>

@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
@@ -2212,9 +2213,39 @@ static void Write(string path, object value)
     var fullPath = Path.GetFullPath(path);
     Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
     var temporary = fullPath + ".tmp-" + Guid.NewGuid().ToString("N");
-    File.WriteAllText(temporary, JsonSerializer.Serialize(value, JsonDefaults.Options) + Environment.NewLine);
-    File.Move(temporary, fullPath, true);
-    Console.WriteLine(fullPath);
+    try
+    {
+        using (var stream = new FileStream(
+            temporary,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            65536,
+            FileOptions.WriteThrough))
+        using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+        {
+            writer.Write(JsonSerializer.Serialize(value, JsonDefaults.Options));
+            writer.WriteLine();
+            writer.Flush();
+            stream.Flush(flushToDisk: true);
+        }
+
+        ValidateJsonArtifact(temporary);
+        File.Move(temporary, fullPath, true);
+        ValidateJsonArtifact(fullPath);
+        Console.WriteLine(fullPath);
+    }
+    finally
+    {
+        if (File.Exists(temporary))
+            File.Delete(temporary);
+    }
+}
+
+static void ValidateJsonArtifact(string path)
+{
+    using var stream = File.OpenRead(path);
+    using var _ = JsonDocument.Parse(stream);
 }
 
 static void WriteJsonl<T>(string path, IEnumerable<T> values)

@@ -12,7 +12,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         AcquisitionRouteTargetDateStochasticRetry route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionRouteTargetDateFishingProbability fishingRoute,
-        AcquisitionDailyTimeEnergySnapshotState state)
+        AcquisitionDailyTimeEnergySnapshotState state,
+        AcquisitionWildTreeChopCandidateIndex wildTreeChopCandidates)
     {
         if (!route.StochasticRetryAxisResolved)
         {
@@ -59,6 +60,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state),
             "sells" => EvaluateShop(route, staticRoute, state),
+            "native_wild_tree_chop_drop" => EvaluateWildTreeChop(
+                route,
+                staticRoute,
+                state,
+                wildTreeChopCandidates),
             _ => Result(
                 route,
                 "terminal_budget_not_implemented",
@@ -73,6 +79,101 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     staticRoute.RouteKind
                 })
         };
+    }
+
+    private static AcquisitionRouteTargetDateDailyTimeEnergy
+        EvaluateWildTreeChop(
+            AcquisitionRouteTargetDateStochasticRetry route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionDailyTimeEnergySnapshotState state,
+            AcquisitionWildTreeChopCandidateIndex candidates)
+    {
+        if (!candidates.EvidenceComplete)
+        {
+            return Result(
+                route,
+                "native_wild_tree_chop",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                candidates.BlockingReasons);
+        }
+
+        var resolvedTargets = LocationRoute(route).TargetEvaluations
+            .Where(value => value.Status == "resolved_location_route_match")
+            .Select(value => (
+                value.TargetLocationId,
+                value.TargetTileX,
+                value.TargetTileY))
+            .ToHashSet();
+        var candidate = candidates.Find(
+                staticRoute.RouteKind,
+                staticRoute.SourceId,
+                staticRoute.QualifiedItemId,
+                staticRoute.RequiredAmount,
+                staticRoute.MinimumQuality)
+            .FirstOrDefault(value => resolvedTargets.Contains((
+                value.LocationId,
+                (int?)value.TargetTileX,
+                (int?)value.TargetTileY)));
+        if (candidate is null)
+        {
+            return Result(
+                route,
+                "native_wild_tree_chop",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[]
+                {
+                    "upstream_resolved_wild_tree_chop_candidate_not_rebuilt"
+                });
+        }
+        if (!state.AvailableEnergy.HasValue)
+        {
+            return Result(
+                route,
+                "native_wild_tree_chop",
+                "blocked_daily_energy_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                state.EnergyBlockingReasons);
+        }
+
+        var actionTicks = Math.Max(
+            1,
+            candidate.EstimatedTicks - candidate.RouteDistanceTiles * 60);
+        return EvaluateTerminal(
+            route,
+            staticRoute,
+            state,
+            "native_wild_tree_chop",
+            candidate.LocationId,
+            candidate.TargetTileX,
+            candidate.TargetTileY,
+            requireExactTargetTile: false,
+            GameClockBudgetPolicy.TicksToGameMinutes(actionTicks),
+            1,
+            null,
+            state.AvailableEnergy.Value,
+            candidate.EnergyCost,
+            candidate.EnergyCost,
+            0d,
+            "existing_native_clear_obstacle_wild_tree_chop_profile",
+            new[]
+            {
+                "candidate:foraging.chop_wild_tree",
+                "state.current_location.terrain_features.value[].tree_chop_expected_tool_swings",
+                "state.current_location.terrain_features.value[].tree_chop_energy_cost",
+                "compiler:DailyPlanCompiler.ClearPlantSteps",
+                "compiler:ActionQueueCompiler.ClearObstacle"
+            });
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy

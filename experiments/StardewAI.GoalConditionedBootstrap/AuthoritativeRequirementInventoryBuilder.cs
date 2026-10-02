@@ -50,61 +50,34 @@ public static partial class AuthoritativeRequirementInventoryBuilder
             rawRoot,
             manifest,
             "Data/RandomBundles");
-        var objectSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Object.cs");
-        var utilitySourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Utility.cs");
-        var museumSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "LibraryMuseum.cs");
-        var gameLocationSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "GameLocation.cs");
-        var farmAnimalSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "FarmAnimal.cs");
-        var fruitTreeSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "TerrainFeatures", "FruitTree.cs");
-        var wildTreeSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "TerrainFeatures", "Tree.cs");
-        var itemQuerySourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Internal", "ItemQueryResolver.cs");
-        var machineDataUtilitySourcePath = Path.Combine(
-            decompileFullPath,
-            "StardewValley",
-            "StardewValley",
-            "MachineDataUtility.cs");
-        var objectDefinitionSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "ItemTypeDefinitions", "ObjectDataDefinition.cs");
-        var fishPondSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Buildings", "FishPond.cs");
-        var monsterSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Monsters", "Monster.cs");
-        var bushSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "TerrainFeatures", "Bush.cs");
-        var cropSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Crop.cs");
-        var hoeDirtSourcePath = Path.Combine(
-            decompileFullPath,
-            "StardewValley",
-            "StardewValley",
-            "TerrainFeatures",
-            "HoeDirt.cs");
-        var mineShaftSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "MineShaft.cs");
-        var crabPotSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Objects", "CrabPot.cs");
-        var gameStateQuerySourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "GameStateQuery.cs");
-        var farmFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Farm.cs");
-        var islandFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "IslandLocation.cs");
-        var islandSouthEastFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "IslandSouthEast.cs");
-        var railroadFishingSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Locations", "Railroad.cs");
-        var spawnFishDataSourcePath = Path.Combine(
-            decompileFullPath,
-            "StardewValley.GameData",
-            "StardewValley",
-            "GameData",
-            "Locations",
-            "SpawnFishData.cs");
-        var bundleGeneratorSourcePath = Path.Combine(
-            decompileFullPath,
-            "StardewValley",
-            "StardewValley",
-            "BundleGenerator.cs");
-        var game1SourcePath = Path.Combine(
-            decompileFullPath,
-            "StardewValley",
-            "StardewValley",
-            "Game1.cs");
-        var saveGameSourcePath = Path.Combine(
-            decompileFullPath,
-            "StardewValley",
-            "StardewValley",
-            "SaveGame.cs");
-        var shopBuilderSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Internal", "ShopBuilder.cs");
-        var shopMenuSourcePath = Path.Combine(decompileFullPath, "StardewValley", "StardewValley", "Menus", "ShopMenu.cs");
+        var objectSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Object.cs");
+        var utilitySourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Utility.cs");
+        var museumSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "LibraryMuseum.cs", "Locations");
+        var gameLocationSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "GameLocation.cs");
+        var farmAnimalSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "FarmAnimal.cs");
+        var fruitTreeSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "FruitTree.cs", "TerrainFeatures");
+        var wildTreeSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Tree.cs", "TerrainFeatures");
+        var itemQuerySourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "ItemQueryResolver.cs", "Internal");
+        var machineDataUtilitySourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "MachineDataUtility.cs");
+        var objectDefinitionSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "ObjectDataDefinition.cs", "ItemTypeDefinitions");
+        var fishPondSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "FishPond.cs", "Buildings");
+        var monsterSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Monster.cs", "Monsters");
+        var bushSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Bush.cs", "TerrainFeatures");
+        var cropSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Crop.cs");
+        var hoeDirtSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "HoeDirt.cs", "TerrainFeatures");
+        var mineShaftSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "MineShaft.cs", "Locations");
+        var crabPotSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "CrabPot.cs", "Objects");
+        var gameStateQuerySourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "GameStateQuery.cs");
+        var farmFishingSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Farm.cs");
+        var islandFishingSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "IslandLocation.cs", "Locations");
+        var islandSouthEastFishingSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "IslandSouthEast.cs", "Locations");
+        var railroadFishingSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Railroad.cs", "Locations");
+        var spawnFishDataSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley.GameData", "StardewValley", "SpawnFishData.cs", "GameData", "Locations");
+        var bundleGeneratorSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "BundleGenerator.cs");
+        var game1SourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "Game1.cs");
+        var saveGameSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "SaveGame.cs");
+        var shopBuilderSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "ShopBuilder.cs", "Internal");
+        var shopMenuSourcePath = ResolveDecompiledSource(decompileFullPath, "StardewValley", "StardewValley", "ShopMenu.cs", "Menus");
         var accessConstraintIndexPath = Path.Combine(
             Path.GetDirectoryName(graphFullPath)!,
             "access-constraint-index.json");
@@ -621,6 +594,42 @@ public static partial class AuthoritativeRequirementInventoryBuilder
         RequireContains(museumSource, "not_museum_donatable", museumPath);
         RequireContains(museumSource, "item_type_arch", museumPath);
         RequireContains(museumSource, "item_type_minerals", museumPath);
+    }
+
+    private static string ResolveDecompiledSource(
+        string decompileRoot,
+        string assemblyDirectory,
+        string rootNamespace,
+        string fileName,
+        params string[] namespaceSegments)
+    {
+        var legacySegments = new[]
+            {
+                decompileRoot,
+                assemblyDirectory,
+                rootNamespace
+            }
+            .Concat(namespaceSegments)
+            .Append(fileName)
+            .ToArray();
+        var legacyPath = Path.Combine(legacySegments);
+        if (File.Exists(legacyPath))
+            return legacyPath;
+
+        var flattenedNamespace = namespaceSegments.Length == 0
+            ? rootNamespace
+            : rootNamespace + "." + string.Join('.', namespaceSegments);
+        var flattenedPath = Path.Combine(
+            decompileRoot,
+            assemblyDirectory,
+            flattenedNamespace,
+            fileName);
+        if (File.Exists(flattenedPath))
+            return flattenedPath;
+
+        throw new FileNotFoundException(
+            "Required decompiled source is missing from both supported layouts: " +
+            $"legacy={legacyPath}; flattened={flattenedPath}");
     }
 
     private static string ResolveExport(string rawRoot, JsonElement manifest, string assetName)
