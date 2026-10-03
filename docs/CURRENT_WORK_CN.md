@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-04 审计维护：Issue 与文档状态清理
+
+- 新建 #162 跟踪 `scripts/Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1` 的维护性拆分。当前脚本约 1.4k 行，同时承担进程生命周期、快照、规划轴、Teacher、rollout proof、Sap 出货、恢复/睡眠和 recurrence checkpoint 编排。该项定级为 P2 维护债，不阻塞当前证据工作；拆分必须复用既有 planner/compiler/executor/verifier，不得形成第二套运行链。
+- 关闭历史 P0 #7。当前 TransparentBridge 已移除 `ApplyAiControlSettings` 与直接 `Game1.options.*` 写路径；Capability Manifest 从真实 Adapter 与二进制身份构建；event.v2 使用 `observed_snapshot_hash / published_snapshot_hash / snapshot_relation`；Bridge 继续 `CanExecuteCommands=false / CanWriteGameState=false`。
+- #6、#8、#12 经 fresh audit 后继续保持开放。#6 的仓库级 E3/E4 Evidence Index/Build Manifest/Action Capability Matrix 尚未全部闭合；#8 的完整 locked restore + TRX + authoritative materialization + per-commit CI 仍未确认完成；#12 虽已有 material/currency reservation、partial consume、relocation、machine-support intent 等实现，但通用 commitment union、CoopOwnership 与 Interaction Lease 仍未完整闭合。
+- `FORMAL_FULL_TRAINING_READINESS_CN.md` 已补 2026-10-04 当前口径：Full Shipment 保留 154/154 静态全覆盖和完整 recurrence 的游戏/可选验收能力，但训练运行时证据采用 26 个真实执行层的分层抽样；历史 `0/154` 与“154 recurrence 是训练前置”的描述仅作历史记录。
+- 本轮没有发现需要新增 P0/P1 的代码质量回退；当前最明确的新维护债仍是 #162。
+
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
