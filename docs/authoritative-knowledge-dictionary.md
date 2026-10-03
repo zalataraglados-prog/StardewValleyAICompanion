@@ -1,5 +1,9 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-03 Full Shipment validation scope
+
+The dictionary remains exhaustive for all 154 Full Shipment requirements. Exhaustive dictionary and compilation coverage must not be confused with repetitive runtime testing: native evidence is sampled once per route kind and execution signature, while the complete 154-item recurrence is retained only for gameplay and optional final acceptance.
+
 ## Truth order
 
 1. Runtime-loaded game content is authoritative for the exact installed game and mod set.

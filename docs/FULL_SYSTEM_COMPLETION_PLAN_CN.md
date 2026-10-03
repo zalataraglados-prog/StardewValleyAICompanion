@@ -1,5 +1,9 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-03 Full Shipment 运行验证抽样决策
+
+Full Shipment 的 154 个物品继续由权威字典、来源身份、lowering、编译器和运行时绑定做 `154/154` 静态全覆盖；运行时不再要求逐物品生成 154 条 fresh-save 递归证据。准入按 `route_kind + source evidence + endpoint/supporting options + inline support transitions` 归并为分层样本，当前生产清单为 26 层，每层一条精确原生回执即可，已有 smoke 可复用。完整 `154/154` recurrence 仅是 AI 实际完成游戏目标的能力及最终可选验收，不是 Full Shipment Teacher 覆盖或正式训练的前置条件。首个 Sap `1/154` 证据用于验证公共递归链，后续不得机械追跑剩余 153 项。
+
 ## 2026-09-28 Full Shipment 结算恢复链统一
 
 第一阶段 21/21 Teacher 的 Full Shipment 方法继续使用唯一的候选、DailyPlan、动作编译器和产品执行器。出货后到睡眠前不再被错误压缩为同一状态：证明层按既有 recovery 的单连接点滚动重规划逐段验真，并在最终 prefix/recurrence evidence 中哈希绑定每段队列、快照和执行回执。中间段不能睡眠或改变日期、Full Shipment 进度与待结算箱内物品，最终跨日仍由原有 ordinary/terminal 睡眠回执负责。该修复不改变目标顺序，下一项仍是从原生 fresh save 取得 Sap 的真实 `1/154` 前缀。

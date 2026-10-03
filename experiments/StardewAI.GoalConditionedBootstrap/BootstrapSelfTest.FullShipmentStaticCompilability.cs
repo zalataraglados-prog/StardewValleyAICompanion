@@ -148,13 +148,40 @@ internal static partial class BootstrapSelfTest
                 report.AllRequirementGroupsHaveCompilableRoute &&
                 report.StaticCompilabilityComplete &&
                 !report.FreshSaveRecurrenceEvidenceComplete &&
+                report.RuntimeSampleStratumCount == 1 &&
+                !report.RuntimeSampleEvidenceComplete &&
+                !report.FullRecurrenceRequiredForTraining &&
+                report.FullRecurrenceRetainedForAcceptance &&
                 !report.FormalProductTrainingAuthorized &&
                 report.BlockingReasons.Length == 0 &&
                 report.RemainingEvidenceGaps.SequenceEqual(new[]
                 {
-                    "fresh_save_154_step_full_shipment_recurrence_not_supplied"
+                    "stratified_full_shipment_runtime_samples_not_supplied"
                 }, StringComparer.Ordinal),
             "Full Shipment static compilability inventory drifted.");
+        Require(report.RuntimeSampleStrata.Length == 1 &&
+                report.RuntimeSampleStrata[0].RouteKind == "harvests_as" &&
+                report.RuntimeSampleStrata[0].RouteOccurrenceCount == 154 &&
+                report.RuntimeSampleStrata[0].EndpointOptionIds
+                    .SequenceEqual(new[] { "farm.maintain_crops" },
+                        StringComparer.Ordinal) &&
+                report.RuntimeSampleStrata[0].SupportingOptionIds
+                    .SequenceEqual(new[] { "economy.buy_supplies" },
+                        StringComparer.Ordinal),
+            "Full Shipment runtime sampling did not collapse shared behavior.");
+        var distinctRouteKindStrata =
+            FullShipmentStaticCompilabilityInventoryBuilder
+                .BuildRuntimeSampleStrata(new[]
+                {
+                    report.Routes[0],
+                    report.Routes[0] with
+                    {
+                        RouteOccurrenceId = "alternate-route-occurrence",
+                        RouteKind = "native_location_forage_spawn"
+                    }
+                });
+        Require(distinctRouteKindStrata.Length == 2,
+            "Distinct route kinds sharing one executor were under-sampled.");
         Require(report.Routes.All(route =>
                     route.SourceEvidenceMode == "harvest_source_seed_id" &&
                     route.InlineSupportTransitionKinds.SequenceEqual(new[]

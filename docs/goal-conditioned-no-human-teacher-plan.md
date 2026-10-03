@@ -1,5 +1,12 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-03: Full Shipment runtime evidence uses stratified sampling
+
+- The authoritative denominator remains statically complete for all 154 item groups and all 641 acquisition-route occurrences.
+- Native runtime validation is grouped by route kind and execution signature. The current production lowering yields 26 strata; one exact source-bound queue/receipt/fresh-snapshot sample per stratum is sufficient, and already admitted native smokes may be reused.
+- A 154-step fresh-save recurrence is no longer a training or Teacher-coverage prerequisite. The existing whole-recurrence builder remains available for normal AI gameplay and optional final end-to-end acceptance.
+- The Sap `1/154` prefix is retained as common acquisition/deposit/recovery-chain evidence, not as a mandate to execute the remaining 153 items. The next bounded slice is a sample-evidence index that reuses existing artifacts and identifies only uncovered strata.
+
 Status: approved architecture correction, implementation started in an isolated detached
 worktree. This document is the continuity source for the correction. It does not promote
 the local experiment into the product repository or authorize formal training.

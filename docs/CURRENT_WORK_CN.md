@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-10-03 Full Shipment 验证改为分层抽样
+
+- `154/154` 仍是权威静态分母和 AI 实际游玩时必须完成的游戏目标，但不再是开发验证或正式训练准入所需的 154 次重复原生运行。此前 `1/154` 只保留为首轮端到端诊断证据，不作为要求继续逐项跑到 154 的项目进度条。
+- 生产 lowering 中的 `641` 条来源和 `154` 个物品归并为 `26` 个“路线族 + 执行签名”运行时抽样层。每层只需一条精确绑定来源、候选、编译队列、原生回执和 fresh 前后快照的代表证据；同层其余物品由 `154/154` 静态来源身份、参数编译和运行时绑定审计覆盖。已有合格原生 smoke 可以复用，不要求重新从新档重复采集。
+- 完整 `154/154` fresh-save recurrence 构建器继续保留，用于 AI 正常游玩和最终可选的整局成就验收，不再阻塞 Full Shipment Teacher corpus、`4/19 -> 5/19` 或正式训练准入。最终 achievement 34 的 `153/154 -> 154/154` 原生边界仍由现有独立终态 smoke 验证。
+- 当前机器可读清单升级为 `full_shipment_static_compilability_inventory.v2`，显式发布抽样层、`full_recurrence_required_for_training=false` 和 `full_recurrence_retained_for_acceptance=true`。下一步是建立抽样证据索引，先复用已有真实回执，再只补没有代表证据的路线族；不得继续机械执行剩余 153 个物品。
+
 ## 2026-10-03 Full Shipment 真实 fresh-save 首轮前缀闭合
 
 - 隔离原生新档 `ProofFarm_450250338` 已完成第一条真实递归：从 Spring 1 的 `0/154` 出发，复用既有 `foraging.chop_wild_tree` 路线原生砍树、拾取 Sap、投入出货箱、回家并原生睡眠结算。没有 fixture、传送、直接改档或第二套动作执行器。

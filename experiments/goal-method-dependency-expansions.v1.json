@@ -1826,6 +1826,10 @@
             "continue_while": { "path": "world_progress.full_shipment_progress.complete", "operator": "equals", "value": false },
             "proof_manifest_schema": "full_shipment_recurrence_proof_manifest.v1",
             "proof_receipt_builder": "build-full-shipment-recurrence-proof-receipt",
+            "runtime_validation_policy": "stratified_route_kind_and_execution_signature_sampling",
+            "runtime_sample_inventory_schema": "full_shipment_static_compilability_inventory.v2",
+            "full_recurrence_required_for_training": false,
+            "full_recurrence_role": "optional_end_to_end_acceptance_and_normal_gameplay",
             "formal_training_authorized": false,
             "iteration": [
               "refresh native missing requirement set",

@@ -6,7 +6,7 @@ public sealed class FullShipmentStaticCompilabilityInventoryReport
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; init; } =
-        "full_shipment_static_compilability_inventory.v1";
+        "full_shipment_static_compilability_inventory.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; init; } = "blocked";
@@ -59,6 +59,18 @@ public sealed class FullShipmentStaticCompilabilityInventoryReport
     [JsonPropertyName("fresh_save_recurrence_evidence_complete")]
     public bool FreshSaveRecurrenceEvidenceComplete { get; init; }
 
+    [JsonPropertyName("runtime_sample_stratum_count")]
+    public int RuntimeSampleStratumCount { get; init; }
+
+    [JsonPropertyName("runtime_sample_evidence_complete")]
+    public bool RuntimeSampleEvidenceComplete { get; init; }
+
+    [JsonPropertyName("full_recurrence_required_for_training")]
+    public bool FullRecurrenceRequiredForTraining { get; init; }
+
+    [JsonPropertyName("full_recurrence_retained_for_acceptance")]
+    public bool FullRecurrenceRetainedForAcceptance { get; init; }
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; init; }
 
@@ -74,6 +86,10 @@ public sealed class FullShipmentStaticCompilabilityInventoryReport
     public FullShipmentRouteCompilabilityRow[] Routes { get; init; } =
         Array.Empty<FullShipmentRouteCompilabilityRow>();
 
+    [JsonPropertyName("runtime_sample_strata")]
+    public FullShipmentRuntimeSampleStratum[] RuntimeSampleStrata
+    { get; init; } = Array.Empty<FullShipmentRuntimeSampleStratum>();
+
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; init; } = Array.Empty<string>();
 
@@ -83,8 +99,20 @@ public sealed class FullShipmentStaticCompilabilityInventoryReport
 
     [JsonPropertyName("inventory_policy")]
     public string InventoryPolicy { get; init; } =
-        "This inventory reconciles every authoritative Full Shipment route with the exact runtime source-identity contract, registered candidate/compiler/runtime action bindings, and the controller-recomputed five-family supporting-transition lineage gate. Static completeness proves that a fresh live candidate can be compiled when its state prerequisites are satisfied. It does not prove that all 154 items were acquired and shipped on one fresh save, and it never authorizes formal product training.";
+        "This inventory statically reconciles all 154 requirements. Runtime validation is stratified by route kind and shared execution signature, with one exact native sample required per stratum; it does not require 154 repetitive item runs. Whole-save 154/154 recurrence remains an optional end-to-end acceptance test and normal gameplay capability, not a formal-training prerequisite. This inventory alone never authorizes formal product training.";
 }
+
+public sealed record FullShipmentRuntimeSampleStratum(
+    [property: JsonPropertyName("stratum_id")] string StratumId,
+    [property: JsonPropertyName("route_kind")] string RouteKind,
+    [property: JsonPropertyName("source_evidence_mode")] string SourceEvidenceMode,
+    [property: JsonPropertyName("endpoint_option_ids")] string[] EndpointOptionIds,
+    [property: JsonPropertyName("supporting_option_ids")] string[] SupportingOptionIds,
+    [property: JsonPropertyName("inline_support_transition_kinds")] string[] InlineSupportTransitionKinds,
+    [property: JsonPropertyName("route_occurrence_count")] int RouteOccurrenceCount,
+    [property: JsonPropertyName("suggested_route_occurrence_id")] string SuggestedRouteOccurrenceId,
+    [property: JsonPropertyName("suggested_requirement_id")] string SuggestedRequirementId,
+    [property: JsonPropertyName("suggested_qualified_item_id")] string SuggestedQualifiedItemId);
 
 public sealed record FullShipmentSourceContractInventoryRow(
     [property: JsonPropertyName("route_kind")] string RouteKind,
