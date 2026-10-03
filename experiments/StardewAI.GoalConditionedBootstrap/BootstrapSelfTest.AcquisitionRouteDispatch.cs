@@ -119,6 +119,10 @@ internal static partial class BootstrapSelfTest
                     value.Name == "acquisition_source_candidate_id" &&
                     value.Value == faster.CandidateId),
             "Expanded native queue lost its authoritative route lineage.");
+        VerifySequentialNonReboundQueueReceipt(
+            snapshot,
+            queue,
+            faster.CandidateId);
 
         VerifyCropPlantingSupportingTransition();
         VerifyMachineInputSupportingTransition();

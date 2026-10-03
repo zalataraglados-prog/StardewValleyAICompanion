@@ -47,6 +47,12 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         plan.SourceModel =
             "deterministic_teacher.acquisition_route_dispatch.v1";
 
+        var deferredPickupReasons = AppendDeferredNativeDropPickup(
+            plan,
+            requirement,
+            source,
+            snapshot);
+
         var lineage = AcquisitionRouteExecutionBindingBuilder
             .RouteBindingParameters(
                 requirement,
@@ -85,6 +91,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (queue is not null)
             StabilizeQueueIdentity(queue, compilationIdentity);
         var reasons = annotationReasons
+            .Concat(deferredPickupReasons)
             .Concat(roleReasons)
             .Concat(teacherBudgetReasons)
             .Concat(PlanReasons(plan))

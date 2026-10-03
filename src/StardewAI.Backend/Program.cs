@@ -1296,8 +1296,7 @@ public static class SnapshotValidator
         }
 
         var errors = Validate(snapshot, profile);
-        var computed = SnapshotHash.ComputeStateHash(snapshot.State);
-        if (!string.Equals(snapshot.StateHash, computed, StringComparison.OrdinalIgnoreCase))
+        if (!SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash))
         {
             errors.Add("state_hash mismatch");
         }

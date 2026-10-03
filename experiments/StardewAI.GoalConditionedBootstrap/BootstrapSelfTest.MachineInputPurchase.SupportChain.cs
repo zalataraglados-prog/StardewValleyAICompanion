@@ -299,6 +299,7 @@ internal static partial class BootstrapSelfTest
                 OptionId = item.OptionId,
                 SourceStateHash = sourceStateHash,
                 CompiledCommandStateHash = before.StateHash,
+                TeacherPreferenceStateRebound = true,
                 SelectedQueueCandidateCompleted =
                     index == queue.Items.Length - 1,
                 AfterStateHash = afterStateHash,

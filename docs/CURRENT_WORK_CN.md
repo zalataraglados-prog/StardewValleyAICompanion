@@ -11,6 +11,15 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-10-03 Full Shipment 真实 fresh-save 首轮前缀闭合
+
+- 隔离原生新档 `ProofFarm_450250338` 已完成第一条真实递归：从 Spring 1 的 `0/154` 出发，复用既有 `foraging.chop_wild_tree` 路线原生砍树、拾取 Sap、投入出货箱、回家并原生睡眠结算。没有 fixture、传送、直接改档或第二套动作执行器。
+- 野树掉落采用 typed deferred-pickup 合同：编译时绑定树格、权威来源、保证掉落、执行前库存/地面物基线；运行时砍树后只允许在同队列内按 fresh state 重绑定拾取目标。队列收据校验同时覆盖普通连续步骤与显式 Teacher state rebind，未声明的状态重绑定继续 fail-closed。
+- 出货阶段真实运行时，角色走向出货箱途中磁吸到第二个 Sap。Teacher 验证现在只在最后一个精确 `executor.ship_inventory_item_to_bin` 步骤同时证明库存 `2 -> 1`、出货箱 `0 -> 1`、队列最终哈希一致时接受该情况；整队列净库存不再被误当作唯一出货证据，其他库存或箱体漂移仍拒绝。
+- 恢复链暴露了透明桥哈希边界问题：同一 `game_tick=1181` 的两份等价快照仅有 `machine_probe_cache_tick: 1179 -> 1181` 不同。该字段是采样缓存元数据而非游戏语义状态，现不再参与新状态哈希；后端兼容验证旧哈希。旧证据只有在两侧嵌入哈希各自可验证且规范化状态完全一致时才允许连接，真实库存、日期、地点或机器状态变化仍会断链。
+- 离线全轴证明已生成 `full_shipment_recurrence_prefix_checkpoint.v1`：`prefix_proof_verified=true`、`verified_iteration_count=1`、`remaining_item_count=153`、`final_total_day=1`、`ready_for_next_iteration=true`、`complete=false`、`achievement_34_verified=false`。这是首个真实 `1/154` 检查点，不是完整 Full Shipment 训练准入；`formal_training_authorized=false` 保持不变。
+- 下一固定切片从该检查点的 final snapshot 作为唯一递归根，选择下一个权威 acquisition endpoint，继续复用现有候选、编译、原生执行、出货和睡眠链。不得重写已完成动作，也不得把单轮前缀冒充 154 项完整证明。全轴前缀验证目前约需 12 分钟，后续可缓存不变的权威轴输入，但优化不得削弱证据重算与哈希绑定。
+
 ## 2026-09-28 Full Shipment 跨图结算证明修复
 
 - 审计发现 recurrence 证明错误地要求“投入出货箱后的快照”与“最终睡眠前快照”哈希完全相同，但现有 `recovery.stabilize_day` 按设计每次只执行一个原生连接点并刷新快照。角色从农场出货箱走回农舍必然改变状态，因此旧合同实际上只能依赖传送或调试夹具，不能承载真实新档证据。

@@ -405,6 +405,7 @@ internal static partial class BootstrapSelfTest
                 OptionId = item.OptionId,
                 SourceStateHash = stepSources[index],
                 CompiledCommandStateHash = before.StateHash,
+                TeacherPreferenceStateRebound = true,
                 SelectedQueueCandidateCompleted =
                     index == queue.Items.Length - 1,
                 AfterStateHash = stepTargets[index],

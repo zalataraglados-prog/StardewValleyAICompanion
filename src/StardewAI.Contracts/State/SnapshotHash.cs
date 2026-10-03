@@ -9,9 +9,43 @@ namespace StardewAI.Contracts.State
 {
     public static class SnapshotHash
     {
+        private static readonly HashSet<string> NonSemanticPropertyNames =
+            new HashSet<string>(StringComparer.Ordinal)
+            {
+                "machine_probe_cache_tick"
+            };
+
         public static string ComputeStateHash(Dictionary<string, JsonElement> state)
         {
-            var canonical = CanonicalizeState(state);
+            return HashCanonical(CanonicalizeState(state, excludeNonSemanticProperties: true));
+        }
+
+        public static string ComputeLegacyStateHash(Dictionary<string, JsonElement> state)
+        {
+            return HashCanonical(CanonicalizeState(state, excludeNonSemanticProperties: false));
+        }
+
+        public static bool MatchesStateHash(
+            Dictionary<string, JsonElement> state,
+            string stateHash)
+        {
+            if (string.IsNullOrWhiteSpace(stateHash))
+            {
+                return false;
+            }
+
+            return string.Equals(
+                       stateHash,
+                       ComputeStateHash(state),
+                       StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(
+                       stateHash,
+                       ComputeLegacyStateHash(state),
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string HashCanonical(string canonical)
+        {
             byte[] bytes;
             using (var sha256 = SHA256.Create())
             {
@@ -26,7 +60,9 @@ namespace StardewAI.Contracts.State
             return hashBuilder.ToString();
         }
 
-        private static string CanonicalizeState(IReadOnlyDictionary<string, JsonElement> state)
+        private static string CanonicalizeState(
+            IReadOnlyDictionary<string, JsonElement> state,
+            bool excludeNonSemanticProperties)
         {
             var builder = new StringBuilder();
             builder.Append('{');
@@ -41,7 +77,7 @@ namespace StardewAI.Contracts.State
                 first = false;
                 builder.Append(JsonSerializer.Serialize(item.Key));
                 builder.Append(':');
-                WriteCanonical(item.Value, builder);
+                WriteCanonical(item.Value, builder, excludeNonSemanticProperties);
             }
 
             builder.Append('}');
@@ -51,11 +87,14 @@ namespace StardewAI.Contracts.State
         public static string Canonicalize(JsonElement element)
         {
             var builder = new StringBuilder();
-            WriteCanonical(element, builder);
+            WriteCanonical(element, builder, excludeNonSemanticProperties: false);
             return builder.ToString();
         }
 
-        private static void WriteCanonical(JsonElement element, StringBuilder builder)
+        private static void WriteCanonical(
+            JsonElement element,
+            StringBuilder builder,
+            bool excludeNonSemanticProperties)
         {
             switch (element.ValueKind)
             {
@@ -64,6 +103,12 @@ namespace StardewAI.Contracts.State
                     var first = true;
                     foreach (var property in element.EnumerateObject().OrderBy(item => item.Name, StringComparer.Ordinal))
                     {
+                        if (excludeNonSemanticProperties &&
+                            NonSemanticPropertyNames.Contains(property.Name))
+                        {
+                            continue;
+                        }
+
                         if (!first)
                         {
                             builder.Append(',');
@@ -72,7 +117,10 @@ namespace StardewAI.Contracts.State
                         first = false;
                         builder.Append(JsonSerializer.Serialize(property.Name));
                         builder.Append(':');
-                        WriteCanonical(property.Value, builder);
+                        WriteCanonical(
+                            property.Value,
+                            builder,
+                            excludeNonSemanticProperties);
                     }
 
                     builder.Append('}');
@@ -86,7 +134,10 @@ namespace StardewAI.Contracts.State
                             builder.Append(',');
                         }
 
-                        WriteCanonical(element[i], builder);
+                        WriteCanonical(
+                            element[i],
+                            builder,
+                            excludeNonSemanticProperties);
                     }
 
                     builder.Append(']');

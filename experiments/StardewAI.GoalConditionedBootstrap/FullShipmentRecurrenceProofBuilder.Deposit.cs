@@ -66,8 +66,9 @@ public static partial class FullShipmentRecurrenceProofBuilder
                 row.RequirementId == proof.RequirementId &&
                 row.QualifiedItemId == proof.QualifiedItemId &&
                 row.BindingKind == "native_full_shipment_completion" &&
-                row.TransitionKind ==
-                    "exact_pending_native_shipment_increased" &&
+                row.TransitionKind is
+                    "exact_pending_native_shipment_increased" or
+                    "exact_pending_native_shipment_terminal_step_increased" &&
                 row.Verified)
             .ToArray();
         Require(

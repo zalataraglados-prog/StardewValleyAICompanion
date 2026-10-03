@@ -48,6 +48,69 @@ public sealed class SnapshotHashTests
         Assert.Equal(SnapshotHash.ComputeStateHash(first), SnapshotHash.ComputeStateHash(second));
     }
 
+    [Fact]
+    public void StateHashIgnoresMachineProbeCacheTickButNotMachineState()
+    {
+        var first = new Dictionary<string, JsonElement>
+        {
+            ["farm"] = JsonSerializer.SerializeToElement(new
+            {
+                machines = new[]
+                {
+                    new
+                    {
+                        qualified_item_id = "(BC)13",
+                        machine_probe_cache_tick = 1179,
+                        ready_for_harvest = false
+                    }
+                }
+            })
+        };
+        var refreshed = new Dictionary<string, JsonElement>
+        {
+            ["farm"] = JsonSerializer.SerializeToElement(new
+            {
+                machines = new[]
+                {
+                    new
+                    {
+                        qualified_item_id = "(BC)13",
+                        machine_probe_cache_tick = 1181,
+                        ready_for_harvest = false
+                    }
+                }
+            })
+        };
+        var changed = new Dictionary<string, JsonElement>
+        {
+            ["farm"] = JsonSerializer.SerializeToElement(new
+            {
+                machines = new[]
+                {
+                    new
+                    {
+                        qualified_item_id = "(BC)13",
+                        machine_probe_cache_tick = 1181,
+                        ready_for_harvest = true
+                    }
+                }
+            })
+        };
+
+        Assert.Equal(
+            SnapshotHash.ComputeStateHash(first),
+            SnapshotHash.ComputeStateHash(refreshed));
+        Assert.NotEqual(
+            SnapshotHash.ComputeLegacyStateHash(first),
+            SnapshotHash.ComputeLegacyStateHash(refreshed));
+        Assert.NotEqual(
+            SnapshotHash.ComputeStateHash(first),
+            SnapshotHash.ComputeStateHash(changed));
+        Assert.True(SnapshotHash.MatchesStateHash(
+            first,
+            SnapshotHash.ComputeLegacyStateHash(first)));
+    }
+
     private static string ToLowerHex(byte[] bytes)
     {
         var builder = new StringBuilder(bytes.Length * 2);
