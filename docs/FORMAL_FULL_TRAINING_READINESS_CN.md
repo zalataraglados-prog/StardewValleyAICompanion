@@ -1,5 +1,15 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-04 当前准入口径：Full Shipment 分层原生证据
+
+- Full Shipment 的游戏目标与权威静态分母仍是完整 `154/154`；这一点没有降低。当前生产静态清单继续要求全部需求、来源身份、endpoint/supporting option、运行时绑定与 supporting-transition 谱系精确闭合。
+- 由于无法为开发验证稳定生成覆盖 154 个物品、跨季节/年份/特殊条件的完整原生存档集合，正式训练准入不再要求机械执行 154 次 fresh-save recurrence。运行时证据改为按 `route_kind + source_evidence_mode + endpoint options + supporting options + inline support transitions` 分层抽样；当前生产静态清单生成 26 个运行时层，每层要求一条精确原生 acquisition proof。
+- 公共的出货、回家、原生睡眠与次日结算尾链由一条独立重算的 Full Shipment recurrence prefix 证明。Sap 已取得第一条真实 fresh-save `1/154`：原生砍树、debris 拾取、出货、恢复与睡眠结算均通过，prefix 为 `verified_iteration_count=1 / remaining_item_count=153 / ready_for_next_iteration=true`。该 `1/154` 是公共递归链诊断证据，不代表完整 Full Shipment 已完成。
+- `full_shipment_runtime_sample_evidence_index.v1` 会重新构建 supplied acquisition rollout proof，绑定唯一 route occurrence、权威 requirement/lowering 哈希和静态分层签名，并单独重算共享 shipping prefix。只读 smoke 名称、人工声明、重复 layer 或陈旧 receipt 不计覆盖。
+- 完整 `154/154` fresh-save recurrence 构建器继续保留，用于 AI 正常游戏能力和可选最终验收；不再作为 Full Shipment Teacher coverage 或 formal product training 的前置条件。
+- 当前 Goal Method 生产覆盖仍为 `4/19`，`formal_product_training_authorized=false`。分层证据索引完成前不得把 Full Shipment 提升为 coverage-ready；即使 Full Shipment 单项完成，也仍不能绕过其余 criterion、数据分区、checkpoint、Product Executor、版本锁与正式 promotion review。
+- 历史章节中出现的“生产 recurrence 仍为 `0/154`”或“必须完整 154-requirement recurrence 才能训练准入”均只描述当时状态；不得再作为当前口径引用。
+
 ## 2026-09-28 Full Shipment 原生恢复链准入修复
 
 Full Shipment recurrence 的结算证据现在允许在投入出货箱后，先按既有 `recovery.stabilize_day` 完成最多 8 段“一个连接点一次重规划”的原生恢复，再接原有专用睡眠结算回执。每段必须通过共享队列/原生执行回执校验，并保持同一存档与玩家、同一天、相同 Full Shipment 进度和精确的待结算箱内物品；中间睡眠、断链、乱序、重复证据或状态漂移全部拒绝。prefix 回执会记录每段四类证据文件的 SHA-256。该变更修复了真实角色从农场出货箱走回床会被旧证明合同错误拒绝的问题，不新增执行器，也不解除正式训练门；生产 recurrence 仍为 `0/154`。
