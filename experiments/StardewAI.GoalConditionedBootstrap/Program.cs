@@ -85,6 +85,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-portfolio-continuation-settlement-receipt", BuildAcquisitionRoutePortfolioContinuationSettlementReceipt),
     new("build-acquisition-route-portfolio-continuation-rollout-checkpoint", BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint),
     new("build-full-shipment-static-compilability-inventory", BuildFullShipmentStaticCompilabilityInventory),
+    new("build-full-shipment-runtime-sample-evidence-index", BuildFullShipmentRuntimeSampleEvidenceIndex),
     new("build-current-full-shipment-teacher-frontier", BuildCurrentFullShipmentTeacherFrontier),
     new("build-current-community-center-denominator", BuildCurrentCommunityCenterDenominator),
     new("build-current-collection-teacher-frontier", BuildCurrentCollectionTeacherFrontier),
@@ -113,6 +114,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
     new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
     new("self-test-full-shipment-static-compilability", SelfTestFullShipmentStaticCompilability),
+    new("self-test-full-shipment-runtime-sample-evidence", _ => BootstrapSelfTest.RunFullShipmentRuntimeSampleEvidence()),
     new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-machine-material-transfer-terminal-coverage", SelfTestMachineMaterialTransferTerminalCoverage),
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
@@ -2240,6 +2242,16 @@ static void Write(string path, object value)
         if (File.Exists(temporary))
             File.Delete(temporary);
     }
+}
+
+static void BuildFullShipmentRuntimeSampleEvidenceIndex(Arguments options)
+{
+    var report = FullShipmentRuntimeSampleEvidenceIndexBuilder.Build(
+        options.Required("static-inventory"),
+        options.Required("evidence-manifest"));
+    Write(options.Required("output"), report);
+    if (!report.RuntimeSampleEvidenceComplete)
+        Environment.ExitCode = 2;
 }
 
 static void ValidateJsonArtifact(string path)

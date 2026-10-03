@@ -11,6 +11,13 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-10-03 Full Shipment 抽样证据索引基础设施
+
+- 新增 `build-full-shipment-runtime-sample-evidence-index`。它以 `full_shipment_static_compilability_inventory.v2` 的分层结果为唯一分母，重新构建每个 acquisition rollout proof，并精确匹配 `route_occurrence_id`、权威 requirement/lowering 哈希和所属路径族；只读 action smoke、人工声明和同一层内重复物品均不能增加覆盖数。
+- 出货、睡眠结算和 Full Shipment 进度增量是 26 个 acquisition 路径族共享的尾链，只要求一条经 `FullShipmentRecurrenceProofBuilder` 重新计算且与落盘 checkpoint 完全相等的真实 recurrence prefix。每个路径族则只要求一条完整 acquisition proof，不要求再为该层其他物品重复出货。
+- 索引显式区分 `partial_runtime_sample_evidence` 与 `verified_complete_runtime_sample_evidence`，发布已验证数、缺失数和精确缺失层 ID；重复层、重复 route occurrence、陈旧 receipt、错误 authority 哈希、错误路径族及不完整 rollout 均 fail-closed。完整 154 项 recurrence 继续仅用于正常游戏和可选最终验收。
+- Release 构建为 `0 warning / 0 error`；新索引的部分/完整/缺共享尾链/重复样本回归和原静态分层回归均通过。当前尚未把普通历史 smoke 冒充正式样本，Goal Method 生产覆盖仍为 `4/19`；下一步只建立生产静态清单与证据 manifest，先登记 Sap 的精确 proof，再列出真正缺失的路径族。
+
 ## 2026-10-03 Full Shipment 验证改为分层抽样
 
 - `154/154` 仍是权威静态分母和 AI 实际游玩时必须完成的游戏目标，但不再是开发验证或正式训练准入所需的 154 次重复原生运行。此前 `1/154` 只保留为首轮端到端诊断证据，不作为要求继续逐项跑到 154 的项目进度条。

@@ -4,6 +4,8 @@
 
 The dictionary remains exhaustive for all 154 Full Shipment requirements. Exhaustive dictionary and compilation coverage must not be confused with repetitive runtime testing: native evidence is sampled once per route kind and execution signature, while the complete 154-item recurrence is retained only for gameplay and optional final acceptance.
 
+Runtime sample claims are admitted only through `full_shipment_runtime_sample_evidence_index.v1`. The index independently rebuilds the acquisition rollout proof, binds its exact route occurrence to one dictionary-derived stratum, and separately rebuilds one shared shipping/settlement recurrence prefix. Action-only smoke labels are useful discovery hints but are not authoritative coverage evidence.
+
 ## Truth order
 
 1. Runtime-loaded game content is authoritative for the exact installed game and mod set.

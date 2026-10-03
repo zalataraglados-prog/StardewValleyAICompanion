@@ -1,5 +1,18 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-03: machine-verified runtime sample evidence index
+
+- `build-full-shipment-runtime-sample-evidence-index` consumes the v2 static inventory and a small evidence manifest.
+  It independently rebuilds every supplied acquisition rollout proof, binds its exact route occurrence back to one
+  static stratum, and rejects stale receipts, authority-hash drift, duplicate strata, duplicate routes and incomplete
+  rollouts. An action-only smoke claim cannot cover a stratum.
+- The shared shipping/deposit/sleep tail is verified once through an independently rebuilt Full Shipment recurrence
+  prefix checkpoint. Acquisition execution remains sampled once per stratum; other items with the same route kind and
+  execution signature stay covered by the exhaustive static inventory instead of repeated native runs.
+- The report remains partial until both the shared shipping proof and every stratum have exact evidence. It publishes
+  the missing stratum IDs and never authorizes formal training by itself. The infrastructure and aggregation regressions
+  are complete; production evidence registration starts with the existing Sap proof and does not change 4/19 yet.
+
 ## 2026-10-03: Full Shipment runtime evidence uses stratified sampling
 
 - The authoritative denominator remains statically complete for all 154 item groups and all 641 acquisition-route occurrences.
