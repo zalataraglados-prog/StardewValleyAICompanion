@@ -1,5 +1,14 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-04 ordinary crop source identity
+
+For the locked vanilla 1.6.15 runtime, an ordinary planted crop's authoritative seed source is
+`Crop.netSeedIndex`; `Crop.whichForageCrop` belongs only to the wild-seed crop branch. Runtime candidate adapters must
+therefore publish the ordinary source as `harvest_source_seed_id=<netSeedIndex>` and preserve the separate wild-seed
+identity path. The native Parsnip sample bound seed `472` to harvest item `(O)24` and passed exact acquisition rollout
+verification. This runtime sample covers the `harvests_as` execution stratum, while the dictionary remains responsible
+for exhaustive source and parameter coverage across all crop routes.
+
 ## 2026-10-03 Full Shipment validation scope
 
 The dictionary remains exhaustive for all 154 Full Shipment requirements. Exhaustive dictionary and compilation coverage must not be confused with repetitive runtime testing: native evidence is sampled once per route kind and execution signature, while the complete 154-item recurrence is retained only for gameplay and optional final acceptance.

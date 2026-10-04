@@ -1,5 +1,20 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-04: ordinary-crop sample admitted without weakening proof replay
+
+- Vanilla 1.6.15 decompilation establishes `Crop.netSeedIndex` as the ordinary crop's planted-seed identity;
+  `whichForageCrop` is limited to wild-seed crops. The transparent bridge now publishes the exact ordinary source
+  identity, and a source guard prevents the two branches from being collapsed again.
+- The isolated Parsnip sample selected `full_shipment:full_shipment:item:24:0:0`, compiled the existing
+  `farm.maintain_crops -> executor.harvest_crop` path, and verified crop removal, `(O)24 x1` inventory gain and
+  Farming XP `0 -> 8`. Settlement, the initial rollout checkpoint and the final independently rebuilt proof passed.
+- Verified-artifact helpers remove repeated target-date reconstruction from intermediate settlement stages. They
+  accept only schema-valid, dispatch-ready objects whose authority, ledger, snapshot and queue hashes still match.
+  The final rollout proof remains a strict full replay, and self-tests require strict/fast JSON equality.
+- The production index is now `2/26`: `harvests_as` plus `native_wild_tree_chop_drop`; shared shipping evidence is
+  verified and 24 strata remain. Formal training stays disabled. The next bounded slice inventories existing native
+  smokes for those 24 strata and upgrades reusable evidence into this same rollout contract before launching new game runs.
+
 ## 2026-10-03: machine-verified runtime sample evidence index
 
 - `build-full-shipment-runtime-sample-evidence-index` consumes the v2 static inventory and a small evidence manifest.

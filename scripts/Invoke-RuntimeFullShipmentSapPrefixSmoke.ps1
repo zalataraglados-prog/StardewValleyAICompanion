@@ -18,12 +18,16 @@ param(
     [string] $GoalId = "grandpa.maximum_21",
     [string] $KnowledgeDictionaryVersion =
         "game-1.6.15-20260723T093543Z-linux-v24",
+    [ValidateSet("sap_prefix", "parsnip_harvest_sample")]
+    [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
     [int] $BackendPort = 8798,
     [int] $ProductPort = 8768,
     [int] $StartupTimeoutSeconds = 180,
-    [switch] $SkipBuild
+    [switch] $SkipBuild,
+    [switch] $UseExistingBackend,
+    [switch] $UseExistingProduct
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +38,19 @@ if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
 if ([string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
     $ArchivedFreshSaveRoot = Join-Path $ProjectRoot `
         "artifacts\runtime-fresh-save\runtime-fresh-save-20260928-133156\fresh-save-runtime-fresh-save-20260928-133156\ProofFarm_450250338"
+}
+
+$acquisitionProofOnly = $Scenario -eq "parsnip_harvest_sample"
+$sampleRequirementId = if ($acquisitionProofOnly) {
+    "full_shipment:item:24"
+} else {
+    "full_shipment:item:92"
+}
+$sampleQualifiedItemId = if ($acquisitionProofOnly) { "(O)24" } else { "(O)92" }
+$sampleRankingOptionId = if ($acquisitionProofOnly) {
+    "farm.maintain_crops"
+} else {
+    "foraging.chop_wild_tree"
 }
 
 function Resolve-InputPath {
@@ -434,7 +451,14 @@ $snapshotUrl =
 if (-not (Test-Path -LiteralPath $smapi -PathType Leaf)) {
     throw "SMAPI executable is missing: $smapi"
 }
-foreach ($port in @(8765, 8767, $BackendPort, $ProductPort)) {
+$requiredUnusedPorts = @(8765, 8767)
+if (-not $UseExistingBackend) {
+    $requiredUnusedPorts += $BackendPort
+}
+if (-not $UseExistingProduct) {
+    $requiredUnusedPorts += $ProductPort
+}
+foreach ($port in $requiredUnusedPorts) {
     if ($null -ne (Get-NetTCPConnection -State Listen -LocalPort $port `
             -ErrorAction SilentlyContinue)) {
         throw "Sap prefix smoke requires unused port $port."
@@ -464,10 +488,20 @@ $sourceSaveHashBefore = Get-DirectoryContentHash -Path $archivedSavePath
 Copy-Item -LiteralPath $archivedSavePath -Destination $isolatedSavePath `
     -Recurse
 
-& (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
-    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
-& (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
-    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+if ($SkipBuild) {
+    & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild |
+        Out-Null
+    & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild |
+        Out-Null
+}
+else {
+    & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+    & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+}
 foreach ($modName in @(
     "StardewAI.TransparentBridge",
     "StardewAI.RuntimeTestHarness"
@@ -542,13 +576,15 @@ try {
     $env:ALSOFT_DRIVERS = "null"
     $env:SMAPI_MODS_PATH = $isolatedModsPath
 
-    $env:ASPNETCORE_URLS = $backendUrl
-    $backend = Start-Process dotnet -ArgumentList @($backendDll) `
-        -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-        -RedirectStandardOutput (Join-Path $artifactDirectory `
-            "backend.stdout.log") `
-        -RedirectStandardError (Join-Path $artifactDirectory `
-            "backend.stderr.log") -PassThru
+    if (-not $UseExistingBackend) {
+        $env:ASPNETCORE_URLS = $backendUrl
+        $backend = Start-Process dotnet -ArgumentList @($backendDll) `
+            -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
+            -RedirectStandardOutput (Join-Path $artifactDirectory `
+                "backend.stdout.log") `
+            -RedirectStandardError (Join-Path $artifactDirectory `
+                "backend.stderr.log") -PassThru
+    }
     Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
 
     $env:STARDEWAI_PRODUCT_EXECUTOR_URL = $productUrl
@@ -557,12 +593,14 @@ try {
     $env:STARDEWAI_PRODUCT_JOURNAL_ROOT = $productJournalRoot
     $env:STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT = $isolatedSavesPath
     $env:STARDEWAI_PRODUCT_RUN_ID = $RunId
-    $product = Start-Process dotnet -ArgumentList @($productDll) `
-        -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-        -RedirectStandardOutput (Join-Path $artifactDirectory `
-            "product.stdout.log") `
-        -RedirectStandardError (Join-Path $artifactDirectory `
-            "product.stderr.log") -PassThru
+    if (-not $UseExistingProduct) {
+        $product = Start-Process dotnet -ArgumentList @($productDll) `
+            -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
+            -RedirectStandardOutput (Join-Path $artifactDirectory `
+                "product.stdout.log") `
+            -RedirectStandardError (Join-Path $artifactDirectory `
+                "product.stderr.log") -PassThru
+    }
     $productHealth = Wait-Json -Url "$productUrl/health" -TimeoutSeconds 60
     if ([string]$productHealth.status -ne "ready") {
         throw "Product executor did not become ready."
@@ -622,6 +660,39 @@ try {
         throw "Native fresh-save FarmHouse exit failed."
     }
 
+    if ($acquisitionProofOnly) {
+        $cropSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $cropSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_parsnip"
+            before_state_hash = [string]$cropSetupSource.Value.state_hash
+            option_id = "debug.setup_harvest_crop_target"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = 64
+            target_tile_y = 15
+            seed_id = "472"
+            debug_fill_inventory = $false
+        }
+        $cropSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $cropSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-parsnip-request.json") -Value $cropSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-parsnip-result.json") -Value $cropSetupResult.Raw
+        if ([string]$cropSetupResult.Value.status -ne "applied" -or
+            [string]$cropSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready Parsnip proof fixture setup failed."
+        }
+    }
+
     $initial = Get-FreshSnapshot -TimeoutSeconds 60
     $initialSnapshotPath = Join-Path $artifactDirectory `
         "recurrence-initial-snapshot.json"
@@ -637,7 +708,7 @@ try {
     if ([string]::IsNullOrWhiteSpace($ReplayAcquisitionQueue)) {
     $rankingPath = Join-Path $planningDirectory "ranking-acquisition.json"
     Invoke-Ranking -SnapshotStateHash $initial.Value.state_hash `
-        -OutputPath $rankingPath -OptionId "foraging.chop_wild_tree" |
+        -OutputPath $rankingPath -OptionId $sampleRankingOptionId |
         Out-Null
     $ledgerResponse = Invoke-WebRequest -UseBasicParsing -Uri (
         "$backendUrl/api/v1/strategy/commitments/latest?stateHash=" +
@@ -823,13 +894,13 @@ try {
     Write-JsonFile -Path $preferenceRequestPath -Value ([ordered]@{
         schema_version =
             "acquisition_route_portfolio_teacher_preference_request.v1"
-        request_id = "$RunId.sap"
+        request_id = "$RunId.sample"
         goal_id = $GoalId
         snapshot_state_hash = [string]$initial.Value.state_hash
         expected_ledger_revision = [int]$strategyLedger.revision
         scoped_requirements = @([ordered]@{
             requirement_set_id = "full_shipment"
-            requirement_id = "full_shipment:item:92"
+            requirement_id = $sampleRequirementId
         })
     })
     $teacherPreferencePath = Join-Path $planningDirectory `
@@ -875,9 +946,9 @@ try {
     $routeIds = @($proposal.selected_route_occurrence_ids)
     if ($routeIds.Count -ne 1 -or
         -not [string]$routeIds[0].StartsWith(
-            "full_shipment:full_shipment:item:92:",
+            "full_shipment:${sampleRequirementId}:",
             [StringComparison]::Ordinal)) {
-        throw "Sap Teacher did not select exactly one authoritative Sap route."
+        throw "Teacher did not select exactly one requested authoritative route."
     }
     $routeOccurrenceId = [string]$routeIds[0]
 
@@ -954,15 +1025,15 @@ try {
     }
 
     $acquisition = Invoke-PrecompiledQueue `
-        -Name "01-acquire-sap" -QueuePath $queuePath `
+        -Name "01-acquire-sample" -QueuePath $queuePath `
         -BeforePath $initialSnapshotPath
-    $sapInventory = @((Read-StateValue `
+    $acquiredInventory = @((Read-StateValue `
         $acquisition.After "player" "inventory") | Where-Object {
-            [string]$_.qualified_item_id -eq "(O)92" -and
+            [string]$_.qualified_item_id -eq $sampleQualifiedItemId -and
             [int]$_.stack -gt 0
         })
-    if ($sapInventory.Count -eq 0) {
-        throw "Native Sap acquisition produced no transparent Sap inventory."
+    if ($acquiredInventory.Count -eq 0) {
+        throw "Native acquisition produced no requested transparent inventory."
     }
     Assert-FullShipmentState -Snapshot $acquisition.After `
         -Shipped 0 -Missing 154 -SapInBin 0 -Phase "post-acquisition"
@@ -986,7 +1057,7 @@ try {
     $settlementRequestPath = Join-Path $planningDirectory `
         "settlement-request.json"
     Invoke-Bootstrap (@(
-        "build-acquisition-route-portfolio-settlement-request"
+        "build-acquisition-route-portfolio-settlement-request-from-verified-artifacts"
     ) + $executionCommon + @(
         "--action-queue", $queuePath,
         "--execution-binding", $bindingPath,
@@ -1013,7 +1084,7 @@ try {
     $settlementReceiptPath = Join-Path $planningDirectory `
         "settlement-receipt.json"
     Invoke-Bootstrap (@(
-        "build-acquisition-route-portfolio-settlement-receipt"
+        "build-acquisition-route-portfolio-settlement-receipt-from-verified-artifacts"
     ) + $executionCommon + @(
         "--action-queue", $queuePath,
         "--execution-binding", $bindingPath,
@@ -1030,7 +1101,7 @@ try {
     $checkpointPath = Join-Path $planningDirectory `
         "rollout-checkpoint.json"
     Invoke-Bootstrap (@(
-        "build-acquisition-route-portfolio-rollout-checkpoint"
+        "build-acquisition-route-portfolio-rollout-checkpoint-from-verified-artifacts"
     ) + $executionCommon + @(
         "--action-queue", $queuePath,
         "--execution-binding", $bindingPath,
@@ -1148,6 +1219,44 @@ try {
         "--rollout-proof-manifest", $rolloutManifestPath,
         "--output", $rolloutReceiptPath
     )
+
+    if ($acquisitionProofOnly) {
+        $rolloutReceipt = Get-Content -LiteralPath $rolloutReceiptPath -Raw |
+            ConvertFrom-Json
+        if (-not [bool]$rolloutReceipt.proof_chain_verified -or
+            -not [bool]$rolloutReceipt.portfolio_completion_verified -or
+            [bool]$rolloutReceipt.formal_training_authorized) {
+            throw "Parsnip acquisition rollout proof is incomplete."
+        }
+        $sourceSaveHashAfter = Get-DirectoryContentHash -Path $archivedSavePath
+        if ($sourceSaveHashAfter -ne $sourceSaveHashBefore) {
+            throw "Archived fresh save changed during isolated acquisition sample."
+        }
+        $summary = [ordered]@{
+            schema_version =
+                "stardewai.runtime_full_shipment_acquisition_sample.v1"
+            status = "passed"
+            scenario = $Scenario
+            run_id = $RunId
+            save_slot = $SaveSlot
+            archived_source_preserved = $true
+            archived_source_sha256 = $sourceSaveHashBefore
+            fixture_excluded_from_proof_root = $true
+            initial_state_hash = [string]$initial.Value.state_hash
+            requirement_id = $sampleRequirementId
+            qualified_item_id = $sampleQualifiedItemId
+            acquisition_route_occurrence_id = $routeOccurrenceId
+            acquired_stack = [int]$acquiredInventory[0].stack
+            rollout_id = [string]$rolloutReceipt.rollout_id
+            rollout_proof_manifest_path = $rolloutManifestPath
+            rollout_proof_receipt_path = $rolloutReceiptPath
+            isolated_save_root = $isolatedSavesPath
+        }
+        Write-JsonFile -Path (Join-Path $artifactDirectory "summary.json") `
+            -Value $summary
+        $summary | ConvertTo-Json -Depth 24
+        return
+    }
     }
     else {
         $rolloutManifestPath = ""
@@ -1287,7 +1396,7 @@ try {
             run_id = $RunId
             formal_training_authorized = $false
             replayed_acquisition_queue = $true
-            acquired_sap_stack = [int]$sapInventory[0].stack
+            acquired_sap_stack = [int]$acquiredInventory[0].stack
             shipped_item_count = 1
             remaining_item_count = 153
             final_total_day = 1
@@ -1383,7 +1492,7 @@ try {
         archived_source_sha256 = $sourceSaveHashBefore
         initial_state_hash = [string]$initial.Value.state_hash
         acquisition_route_occurrence_id = $routeOccurrenceId
-        acquired_sap_stack = [int]$sapInventory[0].stack
+        acquired_sap_stack = [int]$acquiredInventory[0].stack
         verified_iteration_count = [int]$prefix.verified_iteration_count
         remaining_item_count = [int]$prefix.remaining_item_count
         final_total_day = [int]$prefix.final_total_day

@@ -22,7 +22,7 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
             executorVersion,
             AcquisitionRouteExecutionBindingBuilder.Build(inputs));
 
-    private static AcquisitionRouteFreshTerminalReceiptAdmission
+    internal static AcquisitionRouteFreshTerminalReceiptAdmission
         BuildVerifiedBinding(
             AcquisitionRouteExecutionBindingInputs inputs,
             string executionBindingPath,

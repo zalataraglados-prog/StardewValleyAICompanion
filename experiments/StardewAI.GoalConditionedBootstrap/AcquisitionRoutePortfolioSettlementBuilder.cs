@@ -26,6 +26,41 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             null,
             string.Empty);
 
+    internal static ReservationPortfolioRouteSettlementRequest
+        BuildRequestFromVerifiedArtifacts(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion)
+    {
+        var binding = AcquisitionRouteExecutionBindingBuilder
+            .ReadVerifiedArtifact(inputs, executionBindingPath);
+        var fresh = AcquisitionRouteFreshTerminalReceiptBuilder
+            .BuildVerifiedBinding(
+                inputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                runId,
+                executorVersion,
+                binding);
+        return BuildRequestCore(
+            inputs,
+            executionBindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            freshTerminalReceiptPath,
+            runId,
+            executorVersion,
+            null,
+            string.Empty,
+            binding,
+            fresh);
+    }
+
     private static ReservationPortfolioRouteSettlementRequest
         BuildRequestCore(
             AcquisitionRouteExecutionBindingInputs inputs,
@@ -79,6 +114,47 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             settledLedgerPath,
             null,
             string.Empty);
+
+    internal static AcquisitionRoutePortfolioSettlementReceipt
+        BuildReceiptFromVerifiedArtifacts(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            string settlementRequestPath,
+            string settlementResultPath,
+            string settledLedgerPath)
+    {
+        var binding = AcquisitionRouteExecutionBindingBuilder
+            .ReadVerifiedArtifact(inputs, executionBindingPath);
+        var fresh = AcquisitionRouteFreshTerminalReceiptBuilder
+            .BuildVerifiedBinding(
+                inputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                runId,
+                executorVersion,
+                binding);
+        return BuildReceiptCore(
+            inputs,
+            executionBindingPath,
+            executionReceiptPath,
+            afterSnapshotPath,
+            freshTerminalReceiptPath,
+            runId,
+            executorVersion,
+            settlementRequestPath,
+            settlementResultPath,
+            settledLedgerPath,
+            null,
+            string.Empty,
+            binding,
+            fresh);
+    }
 
     private static AcquisitionRoutePortfolioSettlementReceipt
         BuildReceiptCore(

@@ -254,6 +254,22 @@ internal static partial class BootstrapSelfTest
                 freshTerminalReceiptPath,
                 runId,
                 PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        if (supportingTransition is null)
+        {
+            var fastSettlementRequest =
+                AcquisitionRoutePortfolioSettlementBuilder
+                    .BuildRequestFromVerifiedArtifacts(
+                        inputs,
+                        bindingPath,
+                        executionReceiptPath,
+                        afterSnapshotPath,
+                        freshTerminalReceiptPath,
+                        runId,
+                        PolicyTrajectoryVersionPins
+                            .RuntimeTestHarnessExecutor);
+            Require(EqualJson(settlementRequest, fastSettlementRequest),
+                "Verified-artifact settlement request drifted.");
+        }
         Write(settlementRequestPath, settlementRequest);
         var baseLedger = CurrentTeacherFrontierSupport.Read<
             StrategyCommitmentLedger>(
@@ -285,6 +301,25 @@ internal static partial class BootstrapSelfTest
                 settlementRequestPath,
                 settlementResultPath,
                 settledLedgerPath);
+        if (supportingTransition is null)
+        {
+            var fastSettlementReceipt =
+                AcquisitionRoutePortfolioSettlementBuilder
+                    .BuildReceiptFromVerifiedArtifacts(
+                        inputs,
+                        bindingPath,
+                        executionReceiptPath,
+                        afterSnapshotPath,
+                        freshTerminalReceiptPath,
+                        runId,
+                        PolicyTrajectoryVersionPins
+                            .RuntimeTestHarnessExecutor,
+                        settlementRequestPath,
+                        settlementResultPath,
+                        settledLedgerPath);
+            Require(EqualJson(settlementReceipt, fastSettlementReceipt),
+                "Verified-artifact settlement receipt drifted.");
+        }
         Write(settlementReceiptPath, settlementReceipt);
         Require(settlementReceipt.Status ==
                     "verified_route_reservation_settlement" &&
@@ -317,6 +352,26 @@ internal static partial class BootstrapSelfTest
                 settlementResultPath,
                 settledLedgerPath,
                 settlementReceiptPath);
+        if (supportingTransition is null)
+        {
+            var fastRolloutCheckpoint =
+                AcquisitionRoutePortfolioRolloutCheckpointBuilder
+                    .BuildInitialFromVerifiedArtifacts(
+                        inputs,
+                        bindingPath,
+                        executionReceiptPath,
+                        afterSnapshotPath,
+                        freshTerminalReceiptPath,
+                        runId,
+                        PolicyTrajectoryVersionPins
+                            .RuntimeTestHarnessExecutor,
+                        settlementRequestPath,
+                        settlementResultPath,
+                        settledLedgerPath,
+                        settlementReceiptPath);
+            Require(EqualJson(rolloutCheckpoint, fastRolloutCheckpoint),
+                "Verified-artifact rollout checkpoint drifted.");
+        }
         Write(rolloutCheckpointPath, rolloutCheckpoint);
         Require(rolloutCheckpoint.Status == (expectedPortfolioCompletion
                     ? "verified_initial_portfolio_completion"

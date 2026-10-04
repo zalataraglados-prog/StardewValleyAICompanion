@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-04 Full Shipment 运行抽样进度与下一门
+
+生产抽样索引已经从 `1/26` 提升到 `2/26`。Sap 证明 `native_wild_tree_chop_drop`，防风草证明 `harvests_as`；后者使用 1.6.15 反编译确认的普通作物来源字段 `Crop.netSeedIndex=472`，并通过既有候选、dispatch、动作队列、Product Executor、fresh receipt、组合结算和最终独立 rollout 重放。共享出货/睡眠 recurrence 继续只验证一次。
+
+下一门不是继续跑 152 个 Full Shipment 物品，而是处理剩余 24 个运行时抽样层。优先盘点已有原生 smoke 能否补齐同一 acquisition rollout 合同；只有缺少代表证据的层才启动隔离游戏采集。中间阶段允许复用经过完整哈希校验的落盘绑定以减少重复全轴构建，但每条正式 proof 和最终索引仍必须独立重建一次。26 层未齐前不得把 Full Shipment Goal Method 提升为完成，也不得开启正式全量训练。
+
 ## 2026-10-03 Full Shipment 运行验证抽样决策
 
 Full Shipment 的 154 个物品继续由权威字典、来源身份、lowering、编译器和运行时绑定做 `154/154` 静态全覆盖；运行时不再要求逐物品生成 154 条 fresh-save 递归证据。准入按 `route_kind + source evidence + endpoint/supporting options + inline support transitions` 归并为分层样本，当前生产清单为 26 层，每层一条精确原生回执即可，已有 smoke 可复用。完整 `154/154` recurrence 仅是 AI 实际完成游戏目标的能力及最终可选验收，不是 Full Shipment Teacher 覆盖或正式训练的前置条件。首个 Sap `1/154` 证据用于验证公共递归链，后续不得机械追跑剩余 153 项。

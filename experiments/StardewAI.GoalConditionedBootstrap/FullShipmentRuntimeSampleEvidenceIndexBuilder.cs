@@ -35,13 +35,13 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
 
         var shared = VerifySharedShippingOrNull(inventory, manifest);
         var samples = sources
-            .Select(sample => VerifySample(inventory, sample))
+            .Select(sample => VerifySample(inventory, sample, shared))
             .ToArray();
         return BuildReport(
             inventory,
             CurrentTeacherFrontierSupport.HashFile(inventoryFullPath),
             CurrentTeacherFrontierSupport.HashFile(manifestFullPath),
-            shared,
+            shared?.Evidence,
             samples);
     }
 
@@ -146,7 +146,7 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
         };
     }
 
-    private static FullShipmentVerifiedSharedShippingEvidence?
+    private static SharedShippingVerification?
         VerifySharedShippingOrNull(
             FullShipmentStaticCompilabilityInventoryReport inventory,
             FullShipmentRuntimeSampleEvidenceManifest manifest)
@@ -179,14 +179,41 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
                 actual.AcquisitionLoweringSha256 ==
                     inventory.AcquisitionLoweringSha256,
             "Shared Full Shipment shipping evidence is stale or invalid.");
-        return new FullShipmentVerifiedSharedShippingEvidence(
-            CurrentTeacherFrontierSupport.HashFile(recurrencePath),
-            CurrentTeacherFrontierSupport.HashFile(checkpointPath));
+        var recurrence = CurrentTeacherFrontierSupport.Read<
+            FullShipmentRecurrenceProofManifest>(
+            recurrencePath,
+            "Full Shipment shared shipping recurrence manifest");
+        Require(recurrence.Iterations.Length == actual.Iterations.Length,
+            "Shared Full Shipment shipping evidence iteration count drifted.");
+        var acquisitionReceiptHashes = recurrence.Iterations
+            .Select((iteration, index) =>
+            {
+                var receiptPath = Path.GetFullPath(
+                    iteration.AcquisitionRolloutProofReceiptPath);
+                var receiptSha = CurrentTeacherFrontierSupport.HashFile(
+                    receiptPath);
+                Require(receiptSha ==
+                        actual.Iterations[index].AcquisitionRolloutProofSha256,
+                    "Shared Full Shipment acquisition receipt hash drifted.");
+                return new KeyValuePair<string, string>(
+                    ProofKey(
+                        iteration.AcquisitionRolloutProofManifestPath,
+                        receiptPath),
+                    receiptSha);
+            })
+            .ToDictionary(pair => pair.Key, pair => pair.Value,
+                StringComparer.OrdinalIgnoreCase);
+        return new SharedShippingVerification(
+            new FullShipmentVerifiedSharedShippingEvidence(
+                CurrentTeacherFrontierSupport.HashFile(recurrencePath),
+                CurrentTeacherFrontierSupport.HashFile(checkpointPath)),
+            acquisitionReceiptHashes);
     }
 
     private static FullShipmentVerifiedRuntimeSample VerifySample(
         FullShipmentStaticCompilabilityInventoryReport inventory,
-        FullShipmentRuntimeSampleEvidenceSource source)
+        FullShipmentRuntimeSampleEvidenceSource source,
+        SharedShippingVerification? shared)
     {
         Require(!string.IsNullOrWhiteSpace(source.StratumId) &&
                 !string.IsNullOrWhiteSpace(source.RouteOccurrenceId) &&
@@ -199,13 +226,22 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
             source.AcquisitionRolloutProofManifestPath);
         var receiptPath = Path.GetFullPath(
             source.AcquisitionRolloutProofReceiptPath);
-        var expectedReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
-            .BuildReceipt(manifestPath);
         var actualReceipt = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioRolloutProofReceipt>(
             receiptPath,
             "Full Shipment acquisition rollout proof receipt");
-        Require(EqualJson(actualReceipt, expectedReceipt) &&
+        var receiptSha = CurrentTeacherFrontierSupport.HashFile(receiptPath);
+        var sharedProofVerified = shared is not null &&
+            shared.AcquisitionReceiptHashes.TryGetValue(
+                ProofKey(manifestPath, receiptPath),
+                out var sharedReceiptSha) &&
+            sharedReceiptSha == receiptSha;
+        var exactReceiptVerified = sharedProofVerified ||
+            EqualJson(
+                actualReceipt,
+                AcquisitionRoutePortfolioRolloutProofBuilder.BuildReceipt(
+                    manifestPath));
+        Require(exactReceiptVerified &&
                 actualReceipt.ProofChainVerified &&
                 actualReceipt.PortfolioCompletionVerified &&
                 !actualReceipt.FormalTrainingAuthorized,
@@ -249,9 +285,16 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
             route.RequirementId,
             route.QualifiedItemId,
             CurrentTeacherFrontierSupport.HashFile(manifestPath),
-            CurrentTeacherFrontierSupport.HashFile(receiptPath),
+            receiptSha,
             actualReceipt.RolloutId);
     }
+
+    private static string ProofKey(string manifestPath, string receiptPath) =>
+        Path.GetFullPath(manifestPath) + "\n" + Path.GetFullPath(receiptPath);
+
+    private sealed record SharedShippingVerification(
+        FullShipmentVerifiedSharedShippingEvidence Evidence,
+        IReadOnlyDictionary<string, string> AcquisitionReceiptHashes);
 
     private static IEnumerable<AcquisitionRouteExecutionBindingInputs>
         EnumerateExecutionInputs(

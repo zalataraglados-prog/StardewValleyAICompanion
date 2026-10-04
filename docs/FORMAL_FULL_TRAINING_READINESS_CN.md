@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-04 Full Shipment 作物抽样证据
+
+Full Shipment 静态权威覆盖保持 `154/154`、641 条 route、26 个运行时抽样层。普通作物候选的来源身份已按 1.6.15 原生 `Crop.netSeedIndex` 修复，防风草 `(O)24` 的 `harvests_as` 原生执行、fresh 终态、reservation settlement、rollout checkpoint 和最终严格 proof 均通过。加上既有 Sap 样本，严格索引现为 `2/26`，共享 shipping recurrence 已验证，剩余 24 层。
+
+本结果只解除普通作物来源缺失这一硬阻塞，不解除训练门。`runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false` 保持不变。后续必须按剩余层复用或采集精确原生样本，并继续绑定唯一权威 route、源身份、队列、执行回执和 fresh 快照；不得用只读 smoke 名称、人工声明或同层重复物品计数。
+
 ## 2026-10-04 当前准入口径：Full Shipment 分层原生证据
 
 - Full Shipment 的游戏目标与权威静态分母仍是完整 `154/154`；这一点没有降低。当前生产静态清单继续要求全部需求、来源身份、endpoint/supporting option、运行时绑定与 supporting-transition 谱系精确闭合。

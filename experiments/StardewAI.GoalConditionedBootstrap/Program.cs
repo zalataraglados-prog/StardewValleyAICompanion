@@ -66,8 +66,11 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-supporting-transition-terminal-rollout-checkpoint", BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint),
     new("build-acquisition-route-supporting-transition-terminal-coverage", BuildAcquisitionRouteSupportingTransitionTerminalCoverage),
     new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
+    new("build-acquisition-route-portfolio-settlement-request-from-verified-artifacts", BuildAcquisitionRoutePortfolioSettlementRequestFromVerifiedArtifacts),
     new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
+    new("build-acquisition-route-portfolio-settlement-receipt-from-verified-artifacts", BuildAcquisitionRoutePortfolioSettlementReceiptFromVerifiedArtifacts),
     new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
+    new("build-acquisition-route-portfolio-rollout-checkpoint-from-verified-artifacts", BuildAcquisitionRoutePortfolioRolloutCheckpointFromVerifiedArtifacts),
     new("build-acquisition-route-portfolio-rollout-proof-receipt", BuildAcquisitionRoutePortfolioRolloutProofReceipt),
     new("build-acquisition-route-portfolio-rollout-admission-receipt", BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt),
     new("build-acquisition-route-portfolio-supervision-dataset", BuildAcquisitionRoutePortfolioSupervisionDataset),
@@ -1289,6 +1292,21 @@ static void BuildAcquisitionRoutePortfolioSettlementRequest(Arguments options)
     Write(options.Required("output"), request);
 }
 
+static void BuildAcquisitionRoutePortfolioSettlementRequestFromVerifiedArtifacts(
+    Arguments options)
+{
+    var request = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildRequestFromVerifiedArtifacts(
+            RouteExecutionBindingInputs(options),
+            options.Required("execution-binding"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("fresh-terminal-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"));
+    Write(options.Required("output"), request);
+}
+
 static void BuildAcquisitionRoutePortfolioSettlementReceipt(Arguments options)
 {
     var receipt = AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
@@ -1307,10 +1325,49 @@ static void BuildAcquisitionRoutePortfolioSettlementReceipt(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildAcquisitionRoutePortfolioSettlementReceiptFromVerifiedArtifacts(
+    Arguments options)
+{
+    var receipt = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildReceiptFromVerifiedArtifacts(
+            RouteExecutionBindingInputs(options),
+            options.Required("execution-binding"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("fresh-terminal-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"),
+            options.Required("settlement-request"),
+            options.Required("settlement-result"),
+            options.Required("settled-ledger"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.ReservationLifecycleVerified)
+        Environment.ExitCode = 2;
+}
+
 static void BuildAcquisitionRoutePortfolioRolloutCheckpoint(Arguments options)
 {
     var checkpoint =
         AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial(
+            RouteExecutionBindingInputs(options),
+            options.Required("execution-binding"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("fresh-terminal-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"),
+            options.Required("settlement-request"),
+            options.Required("settlement-result"),
+            options.Required("settled-ledger"),
+            options.Required("settlement-receipt"));
+    Write(options.Required("output"), checkpoint);
+}
+
+static void BuildAcquisitionRoutePortfolioRolloutCheckpointFromVerifiedArtifacts(
+    Arguments options)
+{
+    var checkpoint = AcquisitionRoutePortfolioRolloutCheckpointBuilder
+        .BuildInitialFromVerifiedArtifacts(
             RouteExecutionBindingInputs(options),
             options.Required("execution-binding"),
             options.Required("execution-receipt"),

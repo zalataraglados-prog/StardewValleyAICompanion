@@ -19,6 +19,14 @@
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
+## 2026-10-04 Full Shipment 普通作物运行时样本闭合
+
+- Stardew Valley 1.6.15 反编译复核确认：普通作物的来源种子身份来自 `Crop.netSeedIndex`，`Crop.whichForageCrop` 只适用于野生种子分支。透明桥已按该边界修正，普通防风草实时候选现在发布 `harvest_source_seed_id=472`，不再因来源字段为空被 acquisition dispatch 拒绝。
+- 隔离运行 `runtime-full-shipment-parsnip-sample-20261004-135111` 已沿唯一现有链完成 `farm.maintain_crops -> executor.harvest_crop`：严格 dispatch 成功，原生回执为 `applied/verified`，作物从成熟变为已移除，背包增加 `(O)24 x1`，Farming XP `0 -> 8`。随后结算、checkpoint 与最终独立 rollout proof 全部通过。
+- 生产抽样索引现为 `2/26`：`harvests_as` 由防风草证明，`native_wild_tree_chop_drop` 继续由 Sap 证明；共享出货/睡眠 recurrence 仍通过，剩余 24 层，`formal_product_training_authorized=false`。这不是 `2/154` 进度，也不得退回逐物品重复执行。
+- 中间结算新增 verified-artifact 快路径：复用前必须逐项校验 schema、状态、路线/候选身份和全部源文件 SHA-256；最终 rollout proof 仍执行一次完整独立重建。严格/快路径 JSON 等价回归通过。新增续证脚本只从已完成的原生执行产物接续结算与证明，不重启游戏或重做动作。
+- 验证：GoalConditionedBootstrap 与 Backend Release 构建均为 `0 warning / 0 error`，`self-test-acquisition-route-dispatch` 通过，普通作物来源守卫 `1/1` 通过，严格生产索引发布 `verified=2 / missing=24`。下一固定切片是盘点剩余 24 层中可复用的既有原生 smoke，并逐层生成同一 acquisition rollout 合同；不得新增第二套候选、编译器或执行器。
+
 ## 2026-10-03 Full Shipment 抽样证据索引基础设施
 
 - 新增 `build-full-shipment-runtime-sample-evidence-index`。它以 `full_shipment_static_compilability_inventory.v2` 的分层结果为唯一分母，重新构建每个 acquisition rollout proof，并精确匹配 `route_occurrence_id`、权威 requirement/lowering 哈希和所属路径族；只读 action smoke、人工声明和同一层内重复物品均不能增加覆盖数。

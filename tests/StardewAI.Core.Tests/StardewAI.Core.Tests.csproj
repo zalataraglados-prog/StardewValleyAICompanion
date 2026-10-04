@@ -49,6 +49,7 @@
     <Compile Include="FishingTerminalProbabilitySnapshotProjectorTests.cs" />
     <Compile Include="FishingAttemptBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
+    <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
     <Compile Include="GameClockBudgetPolicyTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
