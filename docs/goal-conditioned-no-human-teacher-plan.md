@@ -1,5 +1,18 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-04: native bush sample staged without a second action chain
+
+- The next production stratum is fixed by the authoritative inventory and lowering as
+  `full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`. The runtime sample reuses the
+  existing `executor.harvest_bush` primitive and berry fixture; it introduces no parallel planner, compiler or executor.
+- Standalone acquisition samples plan against the fixture's live `total_days`. The complete Sap recurrence alone retains
+  the strict day-zero root. Fixture setup remains outside the proof root.
+- Proof resumption now derives requirement, item and route-kind identity from the verified execution binding. Known
+  Parsnip and berry mappings are explicit; every unknown tuple fails closed. Replaying the existing Parsnip artifacts
+  reproduced the same strict proof and summary.
+- Static and game-free validation is complete, but no interactive desktop session was available for MonoGame. The berry
+  runtime receipt is therefore pending and the production index remains `2/26`, not `3/26`.
+
 ## 2026-10-04: ordinary-crop sample admitted without weakening proof replay
 
 - Vanilla 1.6.15 decompilation establishes `Crop.netSeedIndex` as the ordinary crop's planted-seed identity;

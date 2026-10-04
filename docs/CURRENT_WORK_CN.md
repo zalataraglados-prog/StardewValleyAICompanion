@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-04 Full Shipment 灌木采集样本已就绪、待原生运行
+
+- 权威 requirement/lowering 已复核 `(O)296`：`full_shipment:item:296`、`native_bush_shake`、`foraging.harvest_bushes`，与已有 `executor.harvest_bush` 原语及 `berry_standard` 原生夹具一致；没有新增候选、编译器或执行器。
+- `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1` 现支持 `berry_bush_harvest_sample`，按夹具设置后的真实 `total_days` 构建目标日期；仅完整 Sap recurrence 继续强制第 0 天根，因此样本适配没有放宽递归证明。
+- `Resume-RuntimeFullShipmentAcquisitionProof.ps1` 不再写死防风草摘要，而是从已验证 execution binding 读取 requirement、物品和 route kind，并对当前两种样本严格映射。未知组合失败关闭。旧防风草证据已离线完整重放通过。
+- PowerShell 解析、GoalConditionedBootstrap Release、acquisition route dispatch、自包含 Full Shipment 静态可编译性及 Core game-free `124/124` 均通过。当前系统没有可用的交互桌面会话，MonoGame 原生运行没有启动；因此生产索引仍严格保持 `2/26`，不得提前声称 `3/26`。
+- 下一固定动作：出现交互桌面会话后运行一次浆果灌木样本；若原生执行、fresh 终态和最终 rollout proof 全部通过，再登记 `full_shipment.runtime_sample.04.native_bush_shake` 并重建严格索引为预期 `3/26`。
+
 ## 2026-10-04 审计维护：Issue 与文档状态清理
 
 - 新建 #162 跟踪 `scripts/Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1` 的维护性拆分。当前脚本约 1.4k 行，同时承担进程生命周期、快照、规划轴、Teacher、rollout proof、Sap 出货、恢复/睡眠和 recurrence checkpoint 编排。该项定级为 P2 维护债，不阻塞当前证据工作；拆分必须复用既有 planner/compiler/executor/verifier，不得形成第二套运行链。

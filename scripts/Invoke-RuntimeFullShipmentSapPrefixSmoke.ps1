@@ -18,7 +18,10 @@ param(
     [string] $GoalId = "grandpa.maximum_21",
     [string] $KnowledgeDictionaryVersion =
         "game-1.6.15-20260723T093543Z-linux-v24",
-    [ValidateSet("sap_prefix", "parsnip_harvest_sample")]
+    [ValidateSet(
+        "sap_prefix",
+        "parsnip_harvest_sample",
+        "berry_bush_harvest_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -40,17 +43,21 @@ if ([string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
         "artifacts\runtime-fresh-save\runtime-fresh-save-20260928-133156\fresh-save-runtime-fresh-save-20260928-133156\ProofFarm_450250338"
 }
 
-$acquisitionProofOnly = $Scenario -eq "parsnip_harvest_sample"
-$sampleRequirementId = if ($acquisitionProofOnly) {
-    "full_shipment:item:24"
-} else {
-    "full_shipment:item:92"
+$sampleProofOnly = $Scenario -ne "sap_prefix"
+$sampleRequirementId = switch ($Scenario) {
+    "parsnip_harvest_sample" { "full_shipment:item:24" }
+    "berry_bush_harvest_sample" { "full_shipment:item:296" }
+    default { "full_shipment:item:92" }
 }
-$sampleQualifiedItemId = if ($acquisitionProofOnly) { "(O)24" } else { "(O)92" }
-$sampleRankingOptionId = if ($acquisitionProofOnly) {
-    "farm.maintain_crops"
-} else {
-    "foraging.chop_wild_tree"
+$sampleQualifiedItemId = switch ($Scenario) {
+    "parsnip_harvest_sample" { "(O)24" }
+    "berry_bush_harvest_sample" { "(O)296" }
+    default { "(O)92" }
+}
+$sampleRankingOptionId = switch ($Scenario) {
+    "parsnip_harvest_sample" { "farm.maintain_crops" }
+    "berry_bush_harvest_sample" { "foraging.harvest_bushes" }
+    default { "foraging.chop_wild_tree" }
 }
 
 function Resolve-InputPath {
@@ -660,7 +667,7 @@ try {
         throw "Native fresh-save FarmHouse exit failed."
     }
 
-    if ($acquisitionProofOnly) {
+    if ($Scenario -eq "parsnip_harvest_sample") {
         $cropSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
         $cropSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
@@ -692,14 +699,57 @@ try {
             throw "Ready Parsnip proof fixture setup failed."
         }
     }
+    elseif ($Scenario -eq "berry_bush_harvest_sample") {
+        $bushSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $bushSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_berry_bush"
+            before_state_hash = [string]$bushSetupSource.Value.state_hash
+            option_id = "debug.setup_forage_source_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            location_id = "Farm"
+            target_tile_x = 64
+            target_tile_y = 15
+            rule_key = "bush"
+            fixture_bush_profile = "berry_standard"
+            fixture_ginger_profile = ""
+            fixture_fruit_tree_profile = ""
+            fixture_wild_tree_product_profile = ""
+            fixture_garbage_can_profile = ""
+            debug_fill_inventory = $false
+        }
+        $bushSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $bushSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-berry-bush-request.json") -Value $bushSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-berry-bush-result.json") `
+            -Value $bushSetupResult.Raw
+        if ([string]$bushSetupResult.Value.status -ne "applied" -or
+            [string]$bushSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready berry bush proof fixture setup failed."
+        }
+    }
 
     $initial = Get-FreshSnapshot -TimeoutSeconds 60
     $initialSnapshotPath = Join-Path $artifactDirectory `
         "recurrence-initial-snapshot.json"
     Save-SnapshotAndIngest -Path $initialSnapshotPath -Capture $initial
+    $initialTotalDay = [int](Read-StateValue `
+        $initial.Value "time" "total_days")
     if ([string](Read-StateValue $initial.Value "player" "location_id") -ne
-            "Farm" -or
-        [int](Read-StateValue $initial.Value "time" "total_days") -ne 0) {
+            "Farm") {
+        throw "Acquisition root is not on the native Farm map."
+    }
+    if (-not $sampleProofOnly -and $initialTotalDay -ne 0) {
         throw "Recurrence root is not native Spring 1 Farm state."
     }
     Assert-FullShipmentState -Snapshot $initial.Value `
@@ -738,7 +788,7 @@ try {
         "--master-angler-windows", $masterAnglerWindowsPath,
         "--calendar-resolution", $calendarResolutionPath,
         "--snapshot", $initialSnapshotPath,
-        "--target-total-day", "0",
+        "--target-total-day", ([string]$initialTotalDay),
         "--output", $targetCalendarPath
     )
 
@@ -1220,13 +1270,13 @@ try {
         "--output", $rolloutReceiptPath
     )
 
-    if ($acquisitionProofOnly) {
+    if ($sampleProofOnly) {
         $rolloutReceipt = Get-Content -LiteralPath $rolloutReceiptPath -Raw |
             ConvertFrom-Json
         if (-not [bool]$rolloutReceipt.proof_chain_verified -or
             -not [bool]$rolloutReceipt.portfolio_completion_verified -or
             [bool]$rolloutReceipt.formal_training_authorized) {
-            throw "Parsnip acquisition rollout proof is incomplete."
+            throw "Acquisition sample rollout proof is incomplete."
         }
         $sourceSaveHashAfter = Get-DirectoryContentHash -Path $archivedSavePath
         if ($sourceSaveHashAfter -ne $sourceSaveHashBefore) {

@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-04 Full Shipment 灌木样本准入状态
+
+`native_bush_shake` 的权威 requirement、lowering、既有候选/原语复用、样本运行入口和通用断点 proof 已闭合到代码与离线回归。Core game-free 为 `124/124`，旧防风草 proof 重新构建后仍严格通过。当前缺少的唯一材料是交互桌面会话中的新原生浆果采集执行证据；因此 `runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false`，严格索引仍为 `2/26`。只有新回执通过独立 rollout 重建并被生产 manifest 接纳后，才允许提升为 `3/26`。
+
 ## 2026-10-04 Full Shipment 作物抽样证据
 
 Full Shipment 静态权威覆盖保持 `154/154`、641 条 route、26 个运行时抽样层。普通作物候选的来源身份已按 1.6.15 原生 `Crop.netSeedIndex` 修复，防风草 `(O)24` 的 `harvests_as` 原生执行、fresh 终态、reservation settlement、rollout checkpoint 和最终严格 proof 均通过。加上既有 Sap 样本，严格索引现为 `2/26`，共享 shipping recurrence 已验证，剩余 24 层。

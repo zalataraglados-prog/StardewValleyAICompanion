@@ -1,5 +1,13 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-04 native bush sample identity
+
+The locked Full Shipment inventory identifies Salmonberry `(O)296` as requirement `full_shipment:item:296` with route
+kind `native_bush_shake`. Its admitted endpoint is `foraging.harvest_bushes`, which lowers to the existing native bush
+harvest primitive. The representative runtime fixture is `berry_standard`; fixture construction is excluded from the
+acquisition proof root. This dictionary identity is statically verified, but runtime-stratum coverage remains pending
+until a fresh native receipt and independently rebuilt rollout proof are admitted by the production evidence index.
+
 ## 2026-10-04 ordinary crop source identity
 
 For the locked vanilla 1.6.15 runtime, an ordinary planted crop's authoritative seed source is

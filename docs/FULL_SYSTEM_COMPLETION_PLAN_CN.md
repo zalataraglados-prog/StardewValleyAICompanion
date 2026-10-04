@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-04 Full Shipment 下一层：native bush shake
+
+`native_bush_shake` 已完成运行入口与断点证明适配，复用唯一的 `foraging.harvest_bushes -> executor.harvest_bush` 链。权威身份固定为 `full_shipment:item:296 / (O)296`，运行夹具仅建立可采浆果灌木，不能进入证明根。样本日期采用夹具后的真实日期；Sap 完整 recurrence 的第 0 天约束保持不变。
+
+离线回归和旧防风草 proof 重放已通过，但当前没有交互桌面会话，尚未获得新的原生执行回执。生产覆盖因此仍为 `2/26`。下一步只能在交互会话可用时采集该样本，完成后机器登记第 3 层；不得以准备完成、历史 action smoke 或夹具设置回执替代正式 acquisition rollout proof。
+
 ## 2026-10-04 Full Shipment 运行抽样进度与下一门
 
 生产抽样索引已经从 `1/26` 提升到 `2/26`。Sap 证明 `native_wild_tree_chop_drop`，防风草证明 `harvests_as`；后者使用 1.6.15 反编译确认的普通作物来源字段 `Crop.netSeedIndex=472`，并通过既有候选、dispatch、动作队列、Product Executor、fresh receipt、组合结算和最终独立 rollout 重放。共享出货/睡眠 recurrence 继续只验证一次。

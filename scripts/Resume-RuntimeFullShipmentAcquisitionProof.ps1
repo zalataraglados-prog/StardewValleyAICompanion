@@ -178,6 +178,26 @@ $routeOccurrenceId = [string]$binding.route_occurrence_id
 if ([string]::IsNullOrWhiteSpace($routeOccurrenceId)) {
     throw "Execution binding has no route occurrence id."
 }
+$requirementId = [string]$binding.requirement_id
+$qualifiedItemId = [string]$binding.qualified_item_id
+$routeKind = [string]$binding.route_kind
+if ([string]::IsNullOrWhiteSpace($requirementId) -or
+    [string]::IsNullOrWhiteSpace($qualifiedItemId) -or
+    [string]::IsNullOrWhiteSpace($routeKind)) {
+    throw "Execution binding has incomplete acquisition identity."
+}
+$scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
+    "full_shipment:item:24|(O)24|harvests_as" {
+        "parsnip_harvest_sample"
+    }
+    "full_shipment:item:296|(O)296|native_bush_shake" {
+        "berry_bush_harvest_sample"
+    }
+    default {
+        throw "No acquisition sample scenario maps execution binding " +
+            "'$requirementId|$qualifiedItemId|$routeKind'."
+    }
+}
 
 $executionCommon = @(
     "--requirement-inventory", $requirementInventoryPath,
@@ -397,14 +417,14 @@ try {
             schema_version =
                 "stardewai.runtime_full_shipment_acquisition_sample.v1"
             status = "passed"
-            scenario = "parsnip_harvest_sample"
+            scenario = $scenario
             run_id = $runId
             fixture_excluded_from_proof_root = $true
             initial_state_hash = [string](
                 (Get-Content -LiteralPath $initialSnapshotPath -Raw |
                     ConvertFrom-Json).state_hash)
-            requirement_id = "full_shipment:item:24"
-            qualified_item_id = "(O)24"
+            requirement_id = $requirementId
+            qualified_item_id = $qualifiedItemId
             acquisition_route_occurrence_id = $routeOccurrenceId
             rollout_id = [string]$receipt.rollout_id
             rollout_proof_manifest_path = $rolloutManifestPath

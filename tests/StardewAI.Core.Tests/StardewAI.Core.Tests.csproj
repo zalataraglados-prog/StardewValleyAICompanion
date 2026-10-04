@@ -50,6 +50,7 @@
     <Compile Include="FishingAttemptBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
+    <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
     <Compile Include="GameClockBudgetPolicyTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
