@@ -30,7 +30,8 @@ param(
         "location_forage_spawn_sample",
         "fruit_tree_harvest_sample",
         "farm_animal_product_sample",
-        "farm_animal_deluxe_product_sample")]
+        "farm_animal_deluxe_product_sample",
+        "fish_pond_output_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -65,6 +66,7 @@ $sampleRequirementId = switch ($Scenario) {
     "fruit_tree_harvest_sample" { "full_shipment:item:638" }
     "farm_animal_product_sample" { "full_shipment:item:184" }
     "farm_animal_deluxe_product_sample" { "full_shipment:item:186" }
+    "fish_pond_output_sample" { "full_shipment:item:812" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -79,6 +81,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "fruit_tree_harvest_sample" { "(O)638" }
     "farm_animal_product_sample" { "(O)184" }
     "farm_animal_deluxe_product_sample" { "(O)186" }
+    "fish_pond_output_sample" { "(O)812" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -93,6 +96,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "fruit_tree_harvest_sample" { "foraging.harvest_fruit_tree" }
     "farm_animal_product_sample" { "farm.collect_animal_products" }
     "farm_animal_deluxe_product_sample" { "farm.collect_animal_products" }
+    "fish_pond_output_sample" { "fishing.service_fish_ponds" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -238,6 +242,19 @@ $animalFixture = switch ($Scenario) {
             ExpectedAnimalCrackerMultiplier = 1
             TargetTileX = 64
             TargetTileY = 15
+        }
+    }
+    default { $null }
+}
+$fishPondFixture = switch ($Scenario) {
+    "fish_pond_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "fish-pond-output"
+            FishTypeItemId = "(O)698"
+            QualifiedItemId = "(O)812"
+            Quantity = 1
+            TargetTileX = 64
+            TargetTileY = 18
         }
     }
     default { $null }
@@ -966,6 +983,42 @@ try {
             -Value $animalSetupResult.Raw
         if ([string]$animalSetupResult.Value.status -ne "applied" -or
             [string]$animalSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
+    elseif ($null -ne $fishPondFixture) {
+        $fixtureSlug = [string]$fishPondFixture.Slug
+        $fishPondSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $fishPondSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$fishPondSetupSource.Value.state_hash
+            option_id = "debug.setup_fish_pond_output"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$fishPondFixture.TargetTileX
+            target_tile_y = [int]$fishPondFixture.TargetTileY
+            fish_type_item_id = [string]$fishPondFixture.FishTypeItemId
+            qualified_item_id = [string]$fishPondFixture.QualifiedItemId
+            quantity = [int]$fishPondFixture.Quantity
+        }
+        $fishPondSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $fishPondSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $fishPondSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $fishPondSetupResult.Raw
+        if ([string]$fishPondSetupResult.Value.status -ne "applied" -or
+            [string]$fishPondSetupResult.Value.primitive_verification_status -ne
                 "verified") {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }

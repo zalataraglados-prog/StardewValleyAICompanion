@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 鱼塘产物样本复用原生收取链
+
+- `native_fish_pond_output` 的代表采用鱼籽 `full_shipment:item:812 / (O)812 / fishing.service_fish_ponds`，夹具鱼种为鲟鱼 `(O)698`。权威清单包含鲟鱼产生 `(O)812` 的精确 route occurrence，因此没有沿用未被现有 smoke 精确覆盖的建议虚空蛋 `(O)305`。
+- 样本在 proof 根外复用 `debug.setup_fish_pond_output`，随后走唯一的鱼塘透明投影、DailyPlan、编译器、`executor.collect_fish_pond_output` 和 verifier。严格 resume tuple 为 `full_shipment:item:812|(O)812|native_fish_pond_output`。
+- `LZT` 上样本守卫 `13/13`、Core game-free `134/134`、Bootstrap Release `0 warning / 0 error`。历史鱼塘 output smoke 只证明链可复用；本层尚无 fresh Full Shipment acquisition proof，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 高级动物产物样本入口
 
 - `native_farm_animal_deluxe_produce` 的代表采用大瓶牛奶 `full_shipment:item:186 / (O)186 / farm.collect_animal_products`，权威清单中精确来源为 Brown Cow 与 White Cow。

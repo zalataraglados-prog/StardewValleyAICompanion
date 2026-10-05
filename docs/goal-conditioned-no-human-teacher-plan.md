@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native fish-pond-output sample reuses pond collection
+
+- The representative route is
+  `full_shipment:item:812 / (O)812 / native_fish_pond_output / fishing.service_fish_ponds`.
+- The authoritative inventory includes exact Sturgeon occurrences for Roe. The proof-external fixture uses Sturgeon
+  `(O)698`, ready Roe `(O)812`, and quantity one, then reuses the sole pond candidate, DailyPlan, compiler, native
+  executor and verifier. The unproven suggested Void Egg route was not substituted into the fixture.
+- Off-machine guards passed `13/13`, game-free tests passed `134/134`, and Bootstrap Release built cleanly. Historical
+  pond output smoke proves chain reuse only; no fresh Full Shipment receipt exists, so production remains `2/26`.
+
 ## 2026-10-05: native deluxe-animal-product sample shares the animal chain
 
 - The representative route is

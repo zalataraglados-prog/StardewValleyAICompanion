@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 鱼塘产物层接入既有收取链
+
+`native_fish_pond_output` 现以鲟鱼鱼塘的鱼籽 `full_shipment:item:812 / (O)812 / fishing.service_fish_ponds` 作为代表。proof 根外夹具建立 ready output，正式链继续使用现有鱼塘投影、候选、DailyPlan、编译器、原生 `checkAction` 执行和 verifier；鱼塘建造支持项仍由既有静态 lineage 负责。
+
+异机守卫 `13/13`、game-free `134/134`、Bootstrap Release `0 warning / 0 error`。历史鱼塘 smoke 已验证 `(O)812` 收取链，但新的 Full Shipment receipt 与 rollout proof 尚未产生，生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 高级动物产物层复用动物链
 
 `native_farm_animal_deluxe_produce` 现以大瓶牛奶 `full_shipment:item:186 / (O)186 / farm.collect_animal_products` 作为代表。它和普通牛奶共用 proof 根外的 White Cow/Milk Pail 夹具配置以及唯一的动物产物候选、DailyPlan、编译器、原生执行器和 verifier；route kind 与 requirement 仍分别严格绑定。

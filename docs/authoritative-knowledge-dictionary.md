@@ -1,5 +1,13 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native fish-pond-output sample identity
+
+The locked Full Shipment inventory identifies Roe `(O)812` as `full_shipment:item:812`, route kind
+`native_fish_pond_output`, endpoint `fishing.service_fish_ponds`, and multiple authoritative fish-pond sources including
+Sturgeon. The representative fixture uses Sturgeon `(O)698`, output `(O)812`, and quantity one. Historical native pond
+smoke verified collection of that exact output through the original action chain; runtime-stratum admission remains
+pending until a fresh Full Shipment acquisition receipt and independently rebuilt rollout proof are accepted.
+
 ## 2026-10-05 native deluxe-animal-product sample identity
 
 The locked Full Shipment inventory identifies Large Milk `(O)186` as `full_shipment:item:186`, route kind
