@@ -9,6 +9,7 @@
 - 原生样本 runner 的首次 Release 构建不再假设所有项目都被解决方案预恢复；每个实际入口自行恢复并构建，部署与逐项目构建输出写入本次 artifact。干净 worktree 因缺少 `obj/project.assets.json` 失败时不再只剩一个无上下文退出码。
 - `RuntimeEvidenceCommon.Invoke-RuntimeBootstrap` 在 Windows PowerShell 下显式合并捕获原生 stderr，再按退出码判定；bootstrap 的结构化 JSON 错误会保留末尾诊断，不再被全局 `ErrorActionPreference=Stop` 截断为单个 `{`。
 - `Invoke-InteractiveFullShipmentEvidenceMilestone.ps1` 是异机交互桌面的唯一薄入口：先确认与 Explorer 同会话，绑定 F 盘便携 SDK，并把只读权威镜像精确绑定为 inventory 已哈希绑定的 I 盘路径。已有映射仅在目标完全相同时复用且保留，目标不同则失败关闭；只有本次创建的映射才在 `finally` 撤销，进程环境始终恢复，实际工作仍委托给唯一 milestone/runner。
+- 非钓鱼 acquisition 样本的 forecast manifest 现在显式写入 `snapshots: []`；不再让 Windows PowerShell 将条件表达式中的空数组折叠为 `null`，从而满足 `FishingForecastSnapshotReference[]` 的严格输入合同。
 - 当前 `26/26` 是入口与采证计划覆盖，生产证据仍只有 Sap 与放射性矿石可独立复核；必须先导入/重验这两个 anchor，再跑高风险 7 层和其余标准层，最后统一构建 evidence manifest/index。训练授权仍为 `false`。
 
 ## 2026-10-05 Full Shipment runtime 编排边界拆分

@@ -1677,14 +1677,13 @@ try {
 
     $forecastPath = Join-Path $planningDirectory `
         "fishing-forecast-manifest.json"
+    [object[]]$fishingForecastSnapshots = @()
+    if ($null -ne $fishingForecastReference) {
+        $fishingForecastSnapshots = @($fishingForecastReference)
+    }
     Write-JsonFile -Path $forecastPath -Value ([ordered]@{
         schema_version = "fishing_forecast_snapshot_manifest.v1"
-        snapshots = if ($null -eq $fishingForecastReference) {
-            @()
-        }
-        else {
-            @($fishingForecastReference)
-        }
+        snapshots = $fishingForecastSnapshots
     })
     $axis["fishing-probability"] = Join-Path $planningDirectory `
         "target-date-fishing-probability.json"
