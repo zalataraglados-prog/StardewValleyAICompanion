@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 姜采集样本入口与异机验证
+
+- 权威需求构建器与 lowering 已锁定姜 `(O)829` 为 `full_shipment:item:829 / native_ginger_harvest / foraging.harvest_ginger`，来源语义为 `Crop.hitWithHoe` 的 `whichForageCrop 2 => (O)829`。样本复用既有 `debug.setup_forage_source_fixture`、候选、DailyPlan、动作编译器和原生姜采集执行链，没有新增第二套执行器。
+- `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1` 新增 `ginger_harvest_sample`，与浆果样本共用 forage fixture 编排，但分别绑定 `dry_standard` 与 `berry_standard`；`Resume-RuntimeFullShipmentAcquisitionProof.ps1` 只接受精确的 requirement、物品与 route kind 三元组，未知组合仍失败关闭。
+- 为避免本机再次因测试负载卡死，本轮较大验证转移到 `LZT` 隔离测试目录。远端 GoalConditionedBootstrap Release 构建为 `0 warning / 0 error`，acquisition route dispatch 和 Full Shipment 静态可编译性自测通过，Core game-free `125/125` 通过；本机只执行轻量解析、差异与 Git 检查。
+- 这些结果证明样本入口、映射和离线合同没有回退，不是原生游戏运行证据。新电脑当前没有游戏运行环境，因此浆果和姜均仍待 fresh 原生执行、终态核验及独立 rollout proof；生产索引继续严格保持 `2/26`，`formal_product_training_authorized=false`。
+- 下一固定动作：继续为剩余分层准备可复用样本入口；当具备可交互游戏环境时，优先运行浆果，再运行姜。只有每条原生回执被生产 evidence index 接纳后才能逐层增加覆盖数。
+
 ## 2026-10-04 Full Shipment 灌木采集样本已就绪、待原生运行
 
 - 权威 requirement/lowering 已复核 `(O)296`：`full_shipment:item:296`、`native_bush_shake`、`foraging.harvest_bushes`，与已有 `executor.harvest_bush` 原语及 `berry_standard` 原生夹具一致；没有新增候选、编译器或执行器。

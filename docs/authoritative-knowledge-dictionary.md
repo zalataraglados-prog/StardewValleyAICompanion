@@ -1,5 +1,14 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native ginger sample identity
+
+The locked Full Shipment requirement builder identifies Ginger `(O)829` as `full_shipment:item:829` with route kind
+`native_ginger_harvest`. The locked lowering admits `foraging.harvest_ginger`; the native source is
+`Crop.hitWithHoe`, branch `whichForageCrop 2 => (O)829`. The representative runtime fixture is `dry_standard`, and
+fixture construction remains outside the acquisition proof root. This identity and its sample mapping are statically
+guarded, but runtime-stratum coverage remains pending until a fresh native receipt and independently rebuilt rollout
+proof are accepted by the production evidence index.
+
 ## 2026-10-04 native bush sample identity
 
 The locked Full Shipment inventory identifies Salmonberry `(O)296` as requirement `full_shipment:item:296` with route

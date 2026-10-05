@@ -1,5 +1,18 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native ginger sample staged and validated off-machine
+
+- The locked requirement builder and lowering identify Ginger as
+  `full_shipment:item:829 / (O)829 / native_ginger_harvest / foraging.harvest_ginger`, sourced by the native
+  `Crop.hitWithHoe` branch `whichForageCrop 2 => (O)829`.
+- The sample reuses the existing forage-source fixture, candidate, DailyPlan, compiler, native executor and verifier.
+  Berry and ginger share fixture orchestration while retaining distinct `berry_standard` and `dry_standard` profiles;
+  exact resume mappings remain fail-closed.
+- Larger checks were moved to the isolated `LZT` test host after the local machine stalled. Bootstrap Release build,
+  acquisition dispatch, Full Shipment static compilability and Core game-free `125/125` passed there.
+- No fresh MonoGame receipt was produced. Berry and ginger remain pending runtime strata, the production index remains
+  `2/26`, and formal product training remains disabled.
+
 ## 2026-10-04: native bush sample staged without a second action chain
 
 - The next production stratum is fixed by the authoritative inventory and lowering as

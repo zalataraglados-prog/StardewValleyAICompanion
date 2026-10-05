@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 姜分层已完成运行入口适配
+
+`native_ginger_harvest` 的权威身份固定为 `full_shipment:item:829 / (O)829 / foraging.harvest_ginger`。其代表样本使用已有 `dry_standard` 原生夹具和已有姜采集链，夹具只负责建立可验证源，不进入 acquisition proof 根。浆果与姜共用同一 forage fixture 编排、同一 planner/compiler/executor/verifier，不得分别扩展成平行系统。
+
+异机离线验证已通过 Bootstrap Release、route dispatch、Full Shipment 静态可编译性和 Core game-free `125/125`。这只把姜推进到“可采集原生证据”的状态；浆果和姜都没有新的 fresh 游戏回执，生产覆盖仍为 `2/26`。后续先继续准备可复用分层入口，原生环境可用时按“浆果 -> 姜”采集并逐条通过独立 rollout 重建，不能以夹具回执或历史 smoke 直接计数。
+
 ## 2026-10-04 Full Shipment 下一层：native bush shake
 
 `native_bush_shake` 已完成运行入口与断点证明适配，复用唯一的 `foraging.harvest_bushes -> executor.harvest_bush` 链。权威身份固定为 `full_shipment:item:296 / (O)296`，运行夹具仅建立可采浆果灌木，不能进入证明根。样本日期采用夹具后的真实日期；Sap 完整 recurrence 的第 0 天约束保持不变。

@@ -30,7 +30,44 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "fixture_bush_profile = \"berry_standard\"",
+            "rule_key = if ($isBerryBushSample) { \"bush\" } else { \"ginger\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_bush_profile = if ($isBerryBushSample)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"berry_standard\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GingerSampleReusesNativeGingerAcquisitionChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"ginger_harvest_sample\" { \"full_shipment:item:829\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"ginger_harvest_sample\" { \"(O)829\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"ginger_harvest_sample\" { \"foraging.harvest_ginger\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "else { \"ginger\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"dry_standard\"",
             source,
             StringComparison.Ordinal);
     }
@@ -73,6 +110,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:296|(O)296|native_bush_shake",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:829|(O)829|native_ginger_harvest",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 姜样本准入状态
+
+`native_ginger_harvest` 已按 `full_shipment:item:829 / (O)829 / foraging.harvest_ginger` 接入现有 Full Shipment 样本与断点 proof 流程，复用现有原生姜 fixture 和执行链。异机 Bootstrap Release、路由分派、静态可编译性以及 Core game-free `125/125` 已通过。该状态只表示代码可进入原生采证，不表示已取得新回执；浆果与姜均仍为 pending，严格索引保持 `2/26`，`runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false`。
+
 ## 2026-10-04 Full Shipment 灌木样本准入状态
 
 `native_bush_shake` 的权威 requirement、lowering、既有候选/原语复用、样本运行入口和通用断点 proof 已闭合到代码与离线回归。Core game-free 为 `124/124`，旧防风草 proof 重新构建后仍严格通过。当前缺少的唯一材料是交互桌面会话中的新原生浆果采集执行证据；因此 `runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false`，严格索引仍为 `2/26`。只有新回执通过独立 rollout 重建并被生产 manifest 接纳后，才允许提升为 `3/26`。

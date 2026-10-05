@@ -21,7 +21,8 @@ param(
     [ValidateSet(
         "sap_prefix",
         "parsnip_harvest_sample",
-        "berry_bush_harvest_sample")]
+        "berry_bush_harvest_sample",
+        "ginger_harvest_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -47,16 +48,19 @@ $sampleProofOnly = $Scenario -ne "sap_prefix"
 $sampleRequirementId = switch ($Scenario) {
     "parsnip_harvest_sample" { "full_shipment:item:24" }
     "berry_bush_harvest_sample" { "full_shipment:item:296" }
+    "ginger_harvest_sample" { "full_shipment:item:829" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
     "parsnip_harvest_sample" { "(O)24" }
     "berry_bush_harvest_sample" { "(O)296" }
+    "ginger_harvest_sample" { "(O)829" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
     "parsnip_harvest_sample" { "farm.maintain_crops" }
     "berry_bush_harvest_sample" { "foraging.harvest_bushes" }
+    "ginger_harvest_sample" { "foraging.harvest_ginger" }
     default { "foraging.chop_wild_tree" }
 }
 
@@ -699,14 +703,23 @@ try {
             throw "Ready Parsnip proof fixture setup failed."
         }
     }
-    elseif ($Scenario -eq "berry_bush_harvest_sample") {
-        $bushSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
-        $bushSetupRequest = [ordered]@{
+    elseif ($Scenario -in @(
+        "berry_bush_harvest_sample",
+        "ginger_harvest_sample")) {
+        $isBerryBushSample = $Scenario -eq "berry_bush_harvest_sample"
+        $fixtureSlug = if ($isBerryBushSample) {
+            "berry-bush"
+        }
+        else {
+            "ginger"
+        }
+        $forageSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $forageSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId
             queue_id = "$RunId.fixture"
-            queue_item_id = "$RunId.fixture.ready_berry_bush"
-            before_state_hash = [string]$bushSetupSource.Value.state_hash
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$forageSetupSource.Value.state_hash
             option_id = "debug.setup_forage_source_fixture"
             execution_mode = "training_singleplayer"
             actor = "training_farmer.main"
@@ -716,26 +729,37 @@ try {
             location_id = "Farm"
             target_tile_x = 64
             target_tile_y = 15
-            rule_key = "bush"
-            fixture_bush_profile = "berry_standard"
-            fixture_ginger_profile = ""
+            rule_key = if ($isBerryBushSample) { "bush" } else { "ginger" }
+            fixture_bush_profile = if ($isBerryBushSample) {
+                "berry_standard"
+            }
+            else {
+                ""
+            }
+            fixture_ginger_profile = if ($isBerryBushSample) {
+                ""
+            }
+            else {
+                "dry_standard"
+            }
             fixture_fruit_tree_profile = ""
             fixture_wild_tree_product_profile = ""
             fixture_garbage_can_profile = ""
             debug_fill_inventory = $false
         }
-        $bushSetupResult = Invoke-JsonPost `
+        $forageSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `
-            -Body $bushSetupRequest
+            -Body $forageSetupRequest
         Write-JsonFile -Path (Join-Path $artifactDirectory `
-            "fixture-ready-berry-bush-request.json") -Value $bushSetupRequest
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $forageSetupRequest
         Write-Utf8Text -Path (Join-Path $artifactDirectory `
-            "fixture-ready-berry-bush-result.json") `
-            -Value $bushSetupResult.Raw
-        if ([string]$bushSetupResult.Value.status -ne "applied" -or
-            [string]$bushSetupResult.Value.primitive_verification_status -ne
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $forageSetupResult.Raw
+        if ([string]$forageSetupResult.Value.status -ne "applied" -or
+            [string]$forageSetupResult.Value.primitive_verification_status -ne
                 "verified") {
-            throw "Ready berry bush proof fixture setup failed."
+            throw "Ready $fixtureSlug proof fixture setup failed."
         }
     }
 
