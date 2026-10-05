@@ -536,6 +536,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             script,
             StringComparison.Ordinal);
         Assert.DoesNotContain(
+            "-c Release --no-restore",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "release-build-$projectName.log",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "transparent-bridge-deploy.log",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
             "full_shipment",
             common,
             StringComparison.OrdinalIgnoreCase);

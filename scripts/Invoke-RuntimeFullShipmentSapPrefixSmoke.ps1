@@ -745,19 +745,25 @@ $sourceSaveHashBefore = Get-DirectoryContentHash -Path $archivedSavePath
 Copy-Item -LiteralPath $archivedSavePath -Destination $isolatedSavePath `
     -Recurse
 
+$bridgeDeployLog = Join-Path $artifactDirectory `
+    "transparent-bridge-deploy.log"
+$harnessDeployLog = Join-Path $artifactDirectory `
+    "runtime-test-harness-deploy.log"
 if ($SkipBuild) {
     & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
-        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild |
-        Out-Null
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild `
+        *> $bridgeDeployLog
     & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
-        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild |
-        Out-Null
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild `
+        *> $harnessDeployLog
 }
 else {
     & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
-        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot `
+        *> $bridgeDeployLog
     & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
-        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+        -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot `
+        *> $harnessDeployLog
 }
 foreach ($modName in @(
     "StardewAI.TransparentBridge",
@@ -774,9 +780,14 @@ if (-not $SkipBuild) {
         "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj",
         "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
     )) {
-        & dotnet build (Join-Path $ProjectRoot $project) `
-            -c Release --no-restore --nologo | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Release build failed: $project" }
+        $projectPath = Join-Path $ProjectRoot $project
+        $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
+        $buildLog = Join-Path $artifactDirectory `
+            "release-build-$projectName.log"
+        & dotnet build $projectPath -c Release --nologo *> $buildLog
+        if ($LASTEXITCODE -ne 0) {
+            throw "Release build failed: $project. See $buildLog"
+        }
     }
 }
 $backendDll = Join-Path $ProjectRoot `
