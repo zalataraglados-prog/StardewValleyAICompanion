@@ -33,8 +33,17 @@ param(
         "farm_animal_deluxe_product_sample",
         "fish_pond_output_sample",
         "machine_output_sample",
+        "machine_flavored_output_sample",
+        "machine_item_query_output_sample",
+        "wild_tree_tapper_output_sample",
         "solar_panel_output_sample",
         "tree_moss_harvest_sample",
+        "location_artifact_spot_sample",
+        "geode_drop_sample",
+        "community_center_reward_sample",
+        "location_fish_spawn_sample",
+        "shop_purchase_sample",
+        "monster_drop_sample",
         "radioactive_ore_node_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $SnapshotProfile = "",
@@ -50,6 +59,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$runtimeEvidenceCommon = Join-Path $PSScriptRoot `
+    "lib\RuntimeEvidenceCommon.ps1"
+if (-not (Test-Path -LiteralPath $runtimeEvidenceCommon -PathType Leaf)) {
+    throw "Runtime evidence helper is missing: $runtimeEvidenceCommon"
+}
+. $runtimeEvidenceCommon
+
 if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
     $ProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 }
@@ -60,7 +76,9 @@ if ([string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
 
 $sampleProofOnly = $Scenario -ne "sap_prefix"
 if ([string]::IsNullOrWhiteSpace($SnapshotProfile)) {
-    $SnapshotProfile = if ($Scenario -eq "radioactive_ore_node_sample") {
+    $SnapshotProfile = if ($Scenario -in @(
+            "radioactive_ore_node_sample",
+            "monster_drop_sample")) {
         "training_mining"
     }
     else { "full" }
@@ -82,8 +100,17 @@ $sampleRequirementId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "full_shipment:item:186" }
     "fish_pond_output_sample" { "full_shipment:item:812" }
     "machine_output_sample" { "full_shipment:item:257" }
+    "machine_flavored_output_sample" { "full_shipment:item:340" }
+    "machine_item_query_output_sample" { "full_shipment:item:257" }
+    "wild_tree_tapper_output_sample" { "full_shipment:item:725" }
     "solar_panel_output_sample" { "full_shipment:item:787" }
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
+    "location_artifact_spot_sample" { "full_shipment:item:330" }
+    "geode_drop_sample" { "full_shipment:item:386" }
+    "community_center_reward_sample" { "full_shipment:item:336" }
+    "location_fish_spawn_sample" { "full_shipment:item:388" }
+    "shop_purchase_sample" { "full_shipment:item:388" }
+    "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
 }
@@ -101,8 +128,17 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "(O)186" }
     "fish_pond_output_sample" { "(O)812" }
     "machine_output_sample" { "(O)257" }
+    "machine_flavored_output_sample" { "(O)340" }
+    "machine_item_query_output_sample" { "(O)257" }
+    "wild_tree_tapper_output_sample" { "(O)725" }
     "solar_panel_output_sample" { "(O)787" }
     "tree_moss_harvest_sample" { "(O)Moss" }
+    "location_artifact_spot_sample" { "(O)330" }
+    "geode_drop_sample" { "(O)386" }
+    "community_center_reward_sample" { "(O)336" }
+    "location_fish_spawn_sample" { "(O)388" }
+    "shop_purchase_sample" { "(O)388" }
+    "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
 }
@@ -120,8 +156,17 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "native_farm_animal_deluxe_produce" }
     "fish_pond_output_sample" { "native_fish_pond_output" }
     "machine_output_sample" { "machine_output" }
+    "machine_flavored_output_sample" { "native_machine_flavored_output" }
+    "machine_item_query_output_sample" { "native_machine_item_query_output" }
+    "wild_tree_tapper_output_sample" { "native_wild_tree_tapper_output" }
     "solar_panel_output_sample" { "native_solar_panel_output" }
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
+    "location_artifact_spot_sample" { "native_location_artifact_spot" }
+    "geode_drop_sample" { "native_geode_drop" }
+    "community_center_reward_sample" { "creates_reward_item" }
+    "location_fish_spawn_sample" { "native_location_fish_spawn" }
+    "shop_purchase_sample" { "sells" }
+    "monster_drop_sample" { "native_monster_drop_table" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
     default { "native_wild_tree_chop_drop" }
 }
@@ -139,8 +184,19 @@ $sampleRankingOptionId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "farm.collect_animal_products" }
     "fish_pond_output_sample" { "fishing.service_fish_ponds" }
     "machine_output_sample" { "farm.collect_machine_outputs" }
+    "machine_flavored_output_sample" { "farm.collect_machine_outputs" }
+    "machine_item_query_output_sample" { "farm.collect_machine_outputs" }
+    "wild_tree_tapper_output_sample" { "farm.collect_machine_outputs" }
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
+    "location_artifact_spot_sample" { "foraging.excavate_artifact_spots" }
+    "geode_drop_sample" { "processing.crack_geode" }
+    "community_center_reward_sample" {
+        "community_center.donate_bundle_items"
+    }
+    "location_fish_spawn_sample" { "fishing.catch_fish" }
+    "shop_purchase_sample" { "economy.buy_supplies" }
+    "monster_drop_sample" { "mining.reach_depth" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
     default { "foraging.chop_wild_tree" }
 }
@@ -151,6 +207,47 @@ $sampleRankingParameters = switch ($Scenario) {
             [ordered]@{
                 name = "target_location_family"
                 value = "ordinary_mines"
+            }
+        )
+    }
+    "monster_drop_sample" {
+        @(
+            [ordered]@{ name = "target_depth"; value = "46" },
+            [ordered]@{
+                name = "target_location_family"
+                value = "ordinary_mines"
+            }
+        )
+    }
+    "geode_drop_sample" {
+        @(
+            [ordered]@{
+                name = "geode_qualified_item_id"
+                value = "(O)791"
+            },
+            [ordered]@{
+                name = "geode_purpose"
+                value = "open_for_full_shipment"
+            }
+        )
+    }
+    "shop_purchase_sample" {
+        @(
+            [ordered]@{
+                name = "continuation.shop_id"
+                value = "Carpenter"
+            },
+            [ordered]@{
+                name = "continuation.qualified_item_id"
+                value = "(O)388"
+            },
+            [ordered]@{
+                name = "continuation.max_unit_price"
+                value = "10"
+            },
+            [ordered]@{
+                name = "continuation.quantity"
+                value = "1"
             }
         )
     }
@@ -323,6 +420,44 @@ $machineFixture = switch ($Scenario) {
             MachineItemId = "128"
             QualifiedItemId = "(O)257"
             Quantity = 1
+            LastOutputRuleId = "Default"
+            TapperTreeType = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "machine_flavored_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "machine-flavored-output"
+            MachineItemId = "10"
+            QualifiedItemId = "(O)340"
+            Quantity = 1
+            LastOutputRuleId = ""
+            TapperTreeType = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "machine_item_query_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "machine-item-query-output"
+            MachineItemId = "128"
+            QualifiedItemId = "(O)257"
+            Quantity = 1
+            LastOutputRuleId = ""
+            TapperTreeType = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "wild_tree_tapper_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "wild-tree-tapper-output"
+            MachineItemId = "105"
+            QualifiedItemId = "(O)725"
+            Quantity = 1
+            LastOutputRuleId = ""
+            TapperTreeType = "1"
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -333,8 +468,58 @@ $machineFixture = switch ($Scenario) {
             MachineItemId = "231"
             QualifiedItemId = "(O)787"
             Quantity = 1
+            LastOutputRuleId = ""
+            TapperTreeType = ""
             TargetTileX = 64
             TargetTileY = 15
+        }
+    }
+    default { $null }
+}
+$geodeFixture = switch ($Scenario) {
+    "geode_drop_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "geode-drop"
+            InputQualifiedItemId = "(O)791"
+            OutputQualifiedItemId = "(O)386"
+            ExpectedRouteKind = "native_geode_drop"
+            ExpectedSourceId = "geode:791:1:random:6"
+            SearchCounterMax = 511
+        }
+    }
+    default { $null }
+}
+$timeFixture = switch ($Scenario) {
+    "shop_purchase_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "shop-purchase"
+            TargetTime = 900
+        }
+    }
+    default { $null }
+}
+$communityCenterRewardFixture = switch ($Scenario) {
+    "community_center_reward_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "community-center-reward"
+            BundleId = 33
+            BundleDataKey = "Bulletin Board/33"
+            QualifiedItemId = "(O)336"
+            ExpectedRouteKind = "creates_reward_item"
+            ExpectedSourceId = "bundle:Bulletin Board/33:reward"
+        }
+    }
+    default { $null }
+}
+$locationFishingFixture = switch ($Scenario) {
+    "location_fish_spawn_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "location-fish-spawn"
+            LocationId = "Town"
+            QualifiedItemId = "(O)388"
+            ExpectedSource = "Data/Locations:Town"
+            ExpectedSourceIndex = 3
+            ExpectedSourceId = "location_fish:Town:3"
         }
     }
     default { $null }
@@ -344,6 +529,20 @@ $clearObstacleFixture = switch ($Scenario) {
         [pscustomobject][ordered]@{
             Slug = "tree-moss-harvest"
             RuleKey = "tree_moss"
+            QualifiedItemId = ""
+            ExpectedRouteKind = ""
+            ExpectedSourceId = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "location_artifact_spot_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "location-artifact-spot"
+            RuleKey = "artifact_spot"
+            QualifiedItemId = "(O)330"
+            ExpectedRouteKind = "native_location_artifact_spot"
+            ExpectedSourceId = "location:Default:10"
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -356,6 +555,19 @@ $miningFixture = switch ($Scenario) {
             Slug = "radioactive-ore-node"
             MineLevel = 99
             LocationId = "UndergroundMine99"
+            FixtureOptionId = "debug.setup_radioactive_ore_node"
+            QualifiedItemId = ""
+            QuestId = ""
+        }
+    }
+    "monster_drop_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "monster-drop"
+            MineLevel = 45
+            LocationId = "UndergroundMine45"
+            FixtureOptionId = "debug.setup_quest_monster_drop_fixture"
+            QualifiedItemId = "(O)766"
+            QuestId = "stardewai.full-shipment.monster-drop"
         }
     }
     default { $null }
@@ -366,161 +578,41 @@ $acquisitionRootLocationId = if ($null -ne $forageFixture) {
 elseif ($null -ne $miningFixture) {
     [string]$miningFixture.LocationId
 }
+elseif ($null -ne $geodeFixture) {
+    "Blacksmith"
+}
+elseif ($null -ne $communityCenterRewardFixture) {
+    "CommunityCenter"
+}
+elseif ($null -ne $locationFishingFixture) {
+    [string]$locationFishingFixture.LocationId
+}
 else {
     "Farm"
 }
 
 function Resolve-InputPath {
     param([string] $Path)
-    if ([IO.Path]::IsPathRooted($Path)) {
-        return [IO.Path]::GetFullPath($Path)
-    }
-    return [IO.Path]::GetFullPath((Join-Path $ProjectRoot $Path))
-}
-
-function Write-Utf8Text {
-    param([string] $Path, [string] $Value)
-    $parent = Split-Path -Parent $Path
-    if (-not [string]::IsNullOrWhiteSpace($parent)) {
-        New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    }
-    [IO.File]::WriteAllText($Path, $Value, [Text.UTF8Encoding]::new($false))
-}
-
-function Write-JsonFile {
-    param([string] $Path, $Value)
-    Write-Utf8Text -Path $Path -Value (
-        $Value | ConvertTo-Json -Depth 96)
-}
-
-function Get-DirectoryContentHash {
-    param([string] $Path)
-    $root = [IO.Path]::GetFullPath($Path).TrimEnd('\')
-    $rows = @(Get-ChildItem -LiteralPath $root -File -Recurse |
-        Sort-Object FullName | ForEach-Object {
-            if (-not $_.FullName.StartsWith(
-                    $root + '\',
-                    [StringComparison]::OrdinalIgnoreCase)) {
-                throw "File escaped hash root: $($_.FullName)"
-            }
-            $relative = $_.FullName.Substring($root.Length + 1)
-            $hash = (Get-FileHash -LiteralPath $_.FullName `
-                -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$relative`t$($_.Length)`t$hash"
-        })
-    $algorithm = [Security.Cryptography.SHA256]::Create()
-    try {
-        $bytes = [Text.Encoding]::UTF8.GetBytes([string]::Join("`n", $rows))
-        return [BitConverter]::ToString(
-            $algorithm.ComputeHash($bytes)).Replace("-", "").ToLowerInvariant()
-    }
-    finally {
-        $algorithm.Dispose()
-    }
-}
-
-function Read-StateValue {
-    param($Snapshot, [string] $Domain, [string] $Field)
-    $domainNode = $Snapshot.state.$Domain
-    if ($null -eq $domainNode) { return $null }
-    $fieldNode = $domainNode.$Field
-    if ($null -eq $fieldNode) { return $null }
-    return $fieldNode.value
-}
-
-function Wait-Json {
-    param([string] $Url, [int] $TimeoutSeconds)
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastError = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $Url `
-                -TimeoutSec 15
-            if ($response.StatusCode -eq 200) {
-                return $response.Content | ConvertFrom-Json
-            }
-        }
-        catch { $lastError = $_.Exception.Message }
-        Start-Sleep -Seconds 2
-    }
-    throw "Timed out waiting for $Url. Last error: $lastError"
+    return Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $Path
 }
 
 function Get-FreshSnapshot {
     param([int] $TimeoutSeconds)
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastError = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $snapshotUrl `
-                -TimeoutSec 45
-            $snapshot = $response.Content | ConvertFrom-Json
-            $location = [string](Read-StateValue `
-                $snapshot "player" "location_id")
-            if ($response.StatusCode -eq 200 -and
-                -not [string]::IsNullOrWhiteSpace($location)) {
-                return [pscustomobject]@{
-                    Raw = $response.Content
-                    Value = $snapshot
-                }
-            }
-        }
-        catch { $lastError = $_.Exception.Message }
-        Start-Sleep -Seconds 2
-    }
-    throw "Timed out waiting for a fresh world snapshot. Last error: $lastError"
-}
-
-function Invoke-JsonPost {
-    param([string] $Url, $Body, [int] $TimeoutSeconds = 240)
-    $json = if ($Body -is [string]) {
-        $Body
-    }
-    else {
-        $Body | ConvertTo-Json -Depth 96
-    }
-    try {
-        $response = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $Url `
-            -ContentType "application/json; charset=utf-8" -Body $json `
-            -TimeoutSec $TimeoutSeconds
-    }
-    catch {
-        $detail = ""
-        if ($null -ne $_.Exception.Response) {
-            $stream = $_.Exception.Response.GetResponseStream()
-            if ($null -ne $stream) {
-                $reader = [IO.StreamReader]::new($stream)
-                try { $detail = $reader.ReadToEnd() }
-                finally { $reader.Dispose() }
-            }
-        }
-        throw "POST $Url failed: $($_.Exception.Message) $detail"
-    }
-    return [pscustomobject]@{
-        Raw = $response.Content
-        Value = $response.Content | ConvertFrom-Json
-    }
+    return Get-FreshRuntimeSnapshot `
+        -Url $snapshotUrl -TimeoutSeconds $TimeoutSeconds
 }
 
 function Invoke-Bootstrap {
     param([string[]] $Arguments)
-    & dotnet $script:bootstrapDll @Arguments | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Goal-conditioned bootstrap failed: $($Arguments[0])"
-    }
+    Invoke-RuntimeBootstrap `
+        -BootstrapDll $script:bootstrapDll -Arguments $Arguments
 }
 
 function Save-SnapshotAndIngest {
     param([string] $Path, $Capture)
-    Write-Utf8Text -Path $Path -Value $Capture.Raw
-    $ingest = Invoke-JsonPost `
-        -Url "$backendUrl/api/v1/snapshots?profile=$SnapshotProfile" `
-        -Body $Capture.Raw
-    if (-not [bool]$ingest.Value.accepted -or
-        [string]$ingest.Value.state_hash -ne
-            [string]$Capture.Value.state_hash) {
-        throw "Backend rejected or changed snapshot identity for $Path."
-    }
+    Save-RuntimeSnapshotAndIngest -Path $Path -Capture $Capture `
+        -BackendUrl $backendUrl -SnapshotProfile $SnapshotProfile
 }
 
 function Invoke-Ranking {
@@ -530,42 +622,9 @@ function Invoke-Ranking {
         [string] $OptionId,
         [object[]] $Parameters = @()
     )
-    [object[]]$candidates = @()
-    if ($Parameters.Count -gt 0) {
-        $candidates = @([ordered]@{
-            option_id = $OptionId
-            parameters = $Parameters
-            explicit_confirmation_granted = $false
-            invocation_source = 0
-            actor_is_host = $true
-            ownership_authorized = $true
-            adapter_id = "vanilla_native"
-        })
-    }
-    [string[]]$candidateOptionIds = if ($candidates.Count -eq 0) {
-        @($OptionId)
-    }
-    else { @() }
-    $request = [ordered]@{
-        goal_id = $GoalId
-        execution_mode = "training_singleplayer"
-        state_hash = $SnapshotStateHash
-        candidate_option_ids = $candidateOptionIds
-        candidates = $candidates
-        include_blocked_options = $false
-        training_report = [ordered]@{}
-        policy_checkpoint_path = $null
-        require_structured_policy = $false
-    }
-    $response = Invoke-JsonPost `
-        -Url "$backendUrl/api/v1/planner/baseline/rank-options" `
-        -Body $request
-    Write-Utf8Text -Path $OutputPath -Value $response.Raw
-    if ([string]$response.Value.schema_version -ne
-        "availability_policy_prediction.v1") {
-        throw "Unexpected ranking schema for $OptionId."
-    }
-    return $response.Value
+    return Invoke-RuntimeRanking -BackendUrl $backendUrl -GoalId $GoalId `
+        -SnapshotStateHash $SnapshotStateHash -OutputPath $OutputPath `
+        -OptionId $OptionId -Parameters $Parameters
 }
 
 function Invoke-DailyPlanStep {
@@ -576,144 +635,23 @@ function Invoke-DailyPlanStep {
         [string] $CandidateId,
         [string[]] $CandidateParameters = @()
     )
-    $stepRoot = Join-Path $artifactDirectory $Name
-    $capture = Get-FreshSnapshot -TimeoutSeconds 60
-    $sourcePath = Join-Path $stepRoot "source-snapshot.json"
-    Write-Utf8Text -Path $sourcePath -Value $capture.Raw
-    $arguments = [Collections.Generic.List[string]]::new()
-    foreach ($value in @(
-        $loopDll,
-        "--root", $stepRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--execution-snapshot-profile", $SnapshotProfile,
-        "--executor-url", $executorRoot,
-        "--snapshot-file", $sourcePath,
-        "--no-manifest",
-        "--skip-training",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--iterations", "1",
-        "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
-        "--sleep-ms", "0",
-        "--use-daily-plan",
-        "--daily-plan-max-candidates", "1",
-        "--daily-plan-candidate-options", $OptionId,
-        "--daily-plan-candidate-kind", $CandidateKind,
-        "--daily-plan-candidate-id", $CandidateId,
-        "--emit-queue-execution-receipt",
-        "--after-snapshot-wait-ms", "1000",
-        "--after-snapshot-poll-ms", "250",
-        "--continue-after-blocked-queue-items"
-    )) { $arguments.Add([string]$value) }
-    foreach ($parameter in $CandidateParameters) {
-        $arguments.Add("--daily-plan-candidate-parameter")
-        $arguments.Add($parameter)
-    }
-    $stdout = & dotnet $arguments
-    $stdout | Set-Content -LiteralPath (Join-Path $stepRoot "loop.stdout.log") `
-        -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Daily plan step $Name failed with exit $LASTEXITCODE."
-    }
-    return Read-LoopArtifacts -LoopRoot $stepRoot
+    return Invoke-RuntimeDailyPlanStep -Context $runtimeQueueContext `
+        -Name $Name -OptionId $OptionId -CandidateKind $CandidateKind `
+        -CandidateId $CandidateId `
+        -CandidateParameters $CandidateParameters
 }
 
 function Invoke-PrecompiledQueue {
     param([string] $Name, [string] $QueuePath, [string] $BeforePath)
-    $loopRoot = Join-Path $artifactDirectory $Name
-    $arguments = @(
-        $loopDll,
-        "--root", $loopRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--execution-snapshot-profile", $SnapshotProfile,
-        "--snapshot-file", $BeforePath,
-        "--executor-url", $productUrl,
-        "--use-product-executor",
-        "--no-manifest",
-        "--skip-training",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--max-attempts", "1",
-        "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
-        "--precompiled-queue", $QueuePath,
-        "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "1000",
-        "--after-snapshot-poll-ms", "250"
-    )
-    $stdout = & dotnet $arguments
-    $stdout | Set-Content `
-        -LiteralPath (Join-Path $loopRoot "loop.stdout.log") -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Precompiled queue $Name failed with exit $LASTEXITCODE."
-    }
-    return Read-LoopArtifacts -LoopRoot $loopRoot
+    return Invoke-RuntimePrecompiledQueue -Context $runtimeQueueContext `
+        -Name $Name -QueuePath $QueuePath -BeforePath $BeforePath
 }
 
 function Invoke-TeacherPreferenceQueue {
     param([string] $Name, [string] $PreferencePath, [string] $BeforePath)
-    $loopRoot = Join-Path $artifactDirectory $Name
-    $arguments = @(
-        $loopDll,
-        "--root", $loopRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--execution-snapshot-profile", $SnapshotProfile,
-        "--snapshot-file", $BeforePath,
-        "--executor-url", $productUrl,
-        "--use-product-executor",
-        "--no-manifest",
-        "--skip-training",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--max-attempts", "1",
-        "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
-        "--teacher-preference", $PreferencePath,
-        "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "1000",
-        "--after-snapshot-poll-ms", "250"
-    )
-    $stdout = & dotnet $arguments
-    $stdout | Set-Content `
-        -LiteralPath (Join-Path $loopRoot "loop.stdout.log") -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Teacher preference queue $Name failed with exit $LASTEXITCODE."
-    }
-    return Read-LoopArtifacts -LoopRoot $loopRoot
-}
-
-function Read-LoopArtifacts {
-    param([string] $LoopRoot)
-    $root = Join-Path $LoopRoot "runs\$RunId\live-snapshots"
-    $queuePath = Join-Path $root "compiled-queue-0001.json"
-    $beforePath = Join-Path $root "before-snapshot-0001.json"
-    $executionPath = Join-Path $root "execution-0001.json"
-    $afterPath = Join-Path $root "after-snapshot-0001.json"
-    foreach ($path in @($queuePath, $beforePath, $executionPath, $afterPath)) {
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "Missing loop artifact: $path"
-        }
-    }
-    $execution = Get-Content -LiteralPath $executionPath -Raw |
-        ConvertFrom-Json
-    if ([string]$execution.status -ne "applied" -or
-        -not [bool]$execution.after_snapshot_fresh) {
-        throw "Loop execution was not applied with a fresh after snapshot."
-    }
-    return [pscustomobject]@{
-        QueuePath = $queuePath
-        BeforePath = $beforePath
-        ExecutionPath = $executionPath
-        AfterPath = $afterPath
-        Queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
-        Before = Get-Content -LiteralPath $beforePath -Raw | ConvertFrom-Json
-        Execution = $execution
-        After = Get-Content -LiteralPath $afterPath -Raw | ConvertFrom-Json
-    }
+    return Invoke-RuntimeTeacherPreferenceQueue `
+        -Context $runtimeQueueContext -Name $Name `
+        -PreferencePath $PreferencePath -BeforePath $BeforePath
 }
 
 function Assert-FullShipmentState {
@@ -781,12 +719,8 @@ if (-not $UseExistingBackend) {
 if (-not $UseExistingProduct) {
     $requiredUnusedPorts += $ProductPort
 }
-foreach ($port in $requiredUnusedPorts) {
-    if ($null -ne (Get-NetTCPConnection -State Listen -LocalPort $port `
-            -ErrorAction SilentlyContinue)) {
-        throw "Sap prefix smoke requires unused port $port."
-    }
-}
+Assert-RuntimePortsUnused -Ports $requiredUnusedPorts `
+    -OperationName "Sap prefix smoke"
 if ($null -ne (Get-Process -Name "StardewModdingAPI" `
         -ErrorAction SilentlyContinue)) {
     throw "StardewModdingAPI is already running. Refusing to attach."
@@ -853,6 +787,11 @@ $loopDll = Join-Path $ProjectRoot `
     "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
 $script:bootstrapDll = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
+$runtimeQueueContext = New-RuntimeQueueContext -LoopDll $loopDll `
+    -ArtifactDirectory $artifactDirectory -BackendUrl $backendUrl `
+    -SnapshotUrl $snapshotUrl -SnapshotProfile $SnapshotProfile `
+    -ExecutorRoot $executorRoot -ProductUrl $productUrl -RunId $RunId `
+    -IsolatedSavesPath $isolatedSavesPath
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -876,10 +815,7 @@ $environmentNames = @(
     "SMAPI_MODS_PATH",
     "ASPNETCORE_URLS"
 )
-$savedEnvironment = @{}
-foreach ($name in $environmentNames) {
-    $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
-}
+$savedEnvironment = Save-RuntimeProcessEnvironment -Names $environmentNames
 
 $backend = $null
 $product = $null
@@ -901,12 +837,12 @@ try {
 
     if (-not $UseExistingBackend) {
         $env:ASPNETCORE_URLS = $backendUrl
-        $backend = Start-Process dotnet -ArgumentList @($backendDll) `
-            -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-            -RedirectStandardOutput (Join-Path $artifactDirectory `
+        $backend = Start-RuntimeEvidenceProcess -FilePath "dotnet" `
+            -ArgumentList @($backendDll) -WorkingDirectory $ProjectRoot `
+            -StandardOutputPath (Join-Path $artifactDirectory `
                 "backend.stdout.log") `
-            -RedirectStandardError (Join-Path $artifactDirectory `
-                "backend.stderr.log") -PassThru
+            -StandardErrorPath (Join-Path $artifactDirectory `
+                "backend.stderr.log")
     }
     Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
 
@@ -917,24 +853,24 @@ try {
     $env:STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT = $isolatedSavesPath
     $env:STARDEWAI_PRODUCT_RUN_ID = $RunId
     if (-not $UseExistingProduct) {
-        $product = Start-Process dotnet -ArgumentList @($productDll) `
-            -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-            -RedirectStandardOutput (Join-Path $artifactDirectory `
+        $product = Start-RuntimeEvidenceProcess -FilePath "dotnet" `
+            -ArgumentList @($productDll) -WorkingDirectory $ProjectRoot `
+            -StandardOutputPath (Join-Path $artifactDirectory `
                 "product.stdout.log") `
-            -RedirectStandardError (Join-Path $artifactDirectory `
-                "product.stderr.log") -PassThru
+            -StandardErrorPath (Join-Path $artifactDirectory `
+                "product.stderr.log")
     }
     $productHealth = Wait-Json -Url "$productUrl/health" -TimeoutSeconds 60
     if ([string]$productHealth.status -ne "ready") {
         throw "Product executor did not become ready."
     }
 
-    $game = Start-Process -FilePath $smapi -WorkingDirectory $gameDirectory `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput (Join-Path $artifactDirectory `
+    $game = Start-RuntimeEvidenceProcess -FilePath $smapi `
+        -WorkingDirectory $gameDirectory `
+        -StandardOutputPath (Join-Path $artifactDirectory `
             "game.stdout.log") `
-        -RedirectStandardError (Join-Path $artifactDirectory `
-            "game.stderr.log") -PassThru
+        -StandardErrorPath (Join-Path $artifactDirectory `
+            "game.stderr.log")
     Wait-Json -Url "$executorRoot/health" `
         -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
     $inside = Get-FreshSnapshot -TimeoutSeconds $StartupTimeoutSeconds
@@ -1017,6 +953,157 @@ try {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }
     }
+    elseif ($null -ne $communityCenterRewardFixture) {
+        $fixtureSlug = [string]$communityCenterRewardFixture.Slug
+        $rewardSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $rewardSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$rewardSetupSource.Value.state_hash
+            option_id = "debug.setup_community_center_donation"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            community_center_fixture_case = "pending_reward"
+            bundle_id = [int]$communityCenterRewardFixture.BundleId
+        }
+        $rewardSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $rewardSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $rewardSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $rewardSetupResult.Raw
+        if ([string]$rewardSetupResult.Value.status -ne "applied" -or
+            [string]$rewardSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+
+        $rewardProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+        $communityCenter = Read-StateValue `
+            $rewardProjectionCapture.Value `
+            "world_progress" `
+            "community_center"
+        $rewardBundle = @($communityCenter.bundle_rows | Where-Object {
+            [string]$_.bundle_data_key -eq
+                [string]$communityCenterRewardFixture.BundleDataKey
+        } | Select-Object -First 1)[0]
+        $matchingSource = @(
+            $rewardBundle.reward.authoritative_route_sources |
+            Where-Object {
+                [string]$_.route_kind -eq
+                    [string]$communityCenterRewardFixture.ExpectedRouteKind -and
+                [string]$_.source_id -eq
+                    [string]$communityCenterRewardFixture.ExpectedSourceId -and
+                [string]$_.qualified_item_id -eq
+                    [string]$communityCenterRewardFixture.QualifiedItemId
+            }).Count -gt 0
+        if ($null -eq $rewardBundle -or
+            -not [bool]$rewardBundle.reward_available -or
+            [string]$rewardBundle.reward.qualified_item_id -ne
+                [string]$communityCenterRewardFixture.QualifiedItemId -or
+            -not $matchingSource) {
+            throw "Ready $fixtureSlug authoritative reward projection was not found."
+        }
+    }
+    elseif ($null -ne $locationFishingFixture) {
+        $fixtureSlug = [string]$locationFishingFixture.Slug
+        $fishingSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $fishingSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$fishingSetupSource.Value.state_hash
+            option_id = "debug.setup_location_fishing"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            location_id = [string]$locationFishingFixture.LocationId
+        }
+        $fishingSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $fishingSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $fishingSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $fishingSetupResult.Raw
+        if ([string]$fishingSetupResult.Value.status -ne "applied" -or
+            [string]$fishingSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+
+        $fishingProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+        $rodContexts = @(Read-StateValue `
+            $fishingProjectionCapture.Value "fishing" "rod_contexts")
+        $matchingOutputs = @(
+            foreach ($context in $rodContexts) {
+                if (-not [bool]$context.complete) { continue }
+                foreach ($rule in @($context.spawn_rules.rules)) {
+                    if ([string]$rule.source -ne
+                            [string]$locationFishingFixture.ExpectedSource -or
+                        [int]$rule.source_index -ne
+                            [int]$locationFishingFixture.ExpectedSourceIndex -or
+                        -not [bool]$rule.condition_met -or
+                        -not [bool]$rule.eligible_before_random_rolls) {
+                        continue
+                    }
+                    @($rule.outputs) | Where-Object {
+                        [bool]$_.resolution_complete -and
+                        [bool]$_.output_eligible_before_random_rolls -and
+                        [string]$_.qualified_item_id -eq
+                            [string]$locationFishingFixture.QualifiedItemId
+                    }
+                }
+            })
+        if ($matchingOutputs.Count -eq 0) {
+            throw "Ready $fixtureSlug authoritative location fishing projection was not found."
+        }
+    }
+    elseif ($null -ne $timeFixture) {
+        $fixtureSlug = [string]$timeFixture.Slug
+        $timeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $timeSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$timeSetupSource.Value.state_hash
+            option_id = "debug.advance_time_to"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_time = [int]$timeFixture.TargetTime
+        }
+        $timeSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $timeSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $timeSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $timeSetupResult.Raw
+        if ([string]$timeSetupResult.Value.status -ne "applied" -or
+            [string]$timeSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
     elseif ($null -ne $forageFixture) {
         $fixtureSlug = [string]$forageFixture.Slug
         $forageSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
@@ -1061,36 +1148,113 @@ try {
     }
     elseif ($null -ne $clearObstacleFixture) {
         $fixtureSlug = [string]$clearObstacleFixture.Slug
-        $obstacleSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
-        $obstacleSetupRequest = [ordered]@{
-            schema_version = "training_execution_request.v1"
-            run_id = $RunId
-            queue_id = "$RunId.fixture"
-            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
-            before_state_hash = [string]$obstacleSetupSource.Value.state_hash
-            option_id = "debug.setup_clear_obstacle"
-            execution_mode = "training_singleplayer"
-            actor = "training_farmer.main"
-            save_isolation_path = $isolatedSavesPath
-            request_nonce = [guid]::NewGuid().ToString("N")
-            created_at = [DateTimeOffset]::UtcNow.ToString("O")
-            target_tile_x = [int]$clearObstacleFixture.TargetTileX
-            target_tile_y = [int]$clearObstacleFixture.TargetTileY
-            rule_key = [string]$clearObstacleFixture.RuleKey
+        $obstacleSetupAttempts = [Collections.Generic.List[object]]::new()
+        $candidateTiles = if ($Scenario -eq "location_artifact_spot_sample") {
+            @(
+                foreach ($y in 10..22) {
+                    foreach ($x in 56..72) {
+                        [pscustomobject]@{ X = $x; Y = $y }
+                    }
+                })
         }
-        $obstacleSetupResult = Invoke-JsonPost `
-            -Url "$executorRoot/api/v1/training/execute" `
-            -Body $obstacleSetupRequest
+        else {
+            @([pscustomobject]@{
+                X = [int]$clearObstacleFixture.TargetTileX
+                Y = [int]$clearObstacleFixture.TargetTileY
+            })
+        }
+        $obstacleSetupRequest = $null
+        $obstacleSetupResult = $null
+        $obstacleProjectionMatched = $false
+        foreach ($candidateTile in $candidateTiles) {
+            $obstacleSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+            $obstacleSetupRequest = [ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "$RunId.fixture"
+                queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+                before_state_hash = [string]$obstacleSetupSource.Value.state_hash
+                option_id = "debug.setup_clear_obstacle"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $isolatedSavesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at = [DateTimeOffset]::UtcNow.ToString("O")
+                target_tile_x = [int]$candidateTile.X
+                target_tile_y = [int]$candidateTile.Y
+                rule_key = [string]$clearObstacleFixture.RuleKey
+            }
+            $obstacleSetupResult = Invoke-JsonPost `
+                -Url "$executorRoot/api/v1/training/execute" `
+                -Body $obstacleSetupRequest
+            if ([string]$obstacleSetupResult.Value.status -ne "applied" -or
+                [string]$obstacleSetupResult.Value.primitive_verification_status -ne
+                    "verified") {
+                $obstacleSetupAttempts.Add([ordered]@{
+                    tile = "$($candidateTile.X),$($candidateTile.Y)"
+                    status = [string]$obstacleSetupResult.Value.status
+                    projection_match = $false
+                })
+                continue
+            }
+            if ([string]::IsNullOrWhiteSpace(
+                    [string]$clearObstacleFixture.QualifiedItemId)) {
+                $obstacleProjectionMatched = $true
+            }
+            else {
+                $projectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+                $projectedSpot = @((Read-StateValue `
+                    $projectionCapture.Value "current_location" "objects") |
+                    Where-Object {
+                        [int]$_.tile_x -eq [int]$candidateTile.X -and
+                        [int]$_.tile_y -eq [int]$candidateTile.Y -and
+                        [string]$_.clear_kind -eq "artifact_spot"
+                    } | Select-Object -First 1)[0]
+                $matchingOutput = @($projectedSpot.clear_output_items |
+                    Where-Object {
+                        [string]$_.qualified_item_id -eq
+                            [string]$clearObstacleFixture.QualifiedItemId
+                    }).Count -gt 0
+                $matchingSource = @(
+                    $projectedSpot.clear_authoritative_route_sources |
+                    Where-Object {
+                        [string]$_.route_kind -eq
+                            [string]$clearObstacleFixture.ExpectedRouteKind -and
+                        [string]$_.source_id -eq
+                            [string]$clearObstacleFixture.ExpectedSourceId -and
+                        [string]$_.qualified_item_id -eq
+                            [string]$clearObstacleFixture.QualifiedItemId
+                    }).Count -gt 0
+                $obstacleProjectionMatched =
+                    $null -ne $projectedSpot -and
+                    [string]$projectedSpot.clear_obstacle_executor_status -eq
+                        "ready" -and
+                    [string]$projectedSpot.clear_output_projection_status -eq
+                        "exact" -and
+                    $matchingOutput -and $matchingSource
+            }
+            $obstacleSetupAttempts.Add([ordered]@{
+                tile = "$($candidateTile.X),$($candidateTile.Y)"
+                status = [string]$obstacleSetupResult.Value.status
+                projection_match = $obstacleProjectionMatched
+            })
+            if ($obstacleProjectionMatched) {
+                $clearObstacleFixture.TargetTileX = [int]$candidateTile.X
+                $clearObstacleFixture.TargetTileY = [int]$candidateTile.Y
+                break
+            }
+        }
         Write-JsonFile -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-request.json") `
             -Value $obstacleSetupRequest
         Write-Utf8Text -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-result.json") `
             -Value $obstacleSetupResult.Raw
-        if ([string]$obstacleSetupResult.Value.status -ne "applied" -or
-            [string]$obstacleSetupResult.Value.primitive_verification_status -ne
-                "verified") {
-            throw "Ready $fixtureSlug proof fixture setup failed."
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-attempts.json") `
+            -Value @($obstacleSetupAttempts)
+        if (-not $obstacleProjectionMatched) {
+            throw "Ready $fixtureSlug proof fixture projection was not found."
         }
     }
     elseif ($null -ne $miningFixture) {
@@ -1125,33 +1289,40 @@ try {
             throw "Ready $fixtureSlug mine setup failed."
         }
 
-        $nodeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
-        $nodeSetupRequest = [ordered]@{
+        $targetSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $targetSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId
             queue_id = "$RunId.fixture"
             queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
-            before_state_hash = [string]$nodeSetupSource.Value.state_hash
-            option_id = "debug.setup_radioactive_ore_node"
+            before_state_hash = [string]$targetSetupSource.Value.state_hash
+            option_id = [string]$miningFixture.FixtureOptionId
             execution_mode = "training_singleplayer"
             actor = "training_farmer.main"
             save_isolation_path = $isolatedSavesPath
             request_nonce = [guid]::NewGuid().ToString("N")
             created_at = [DateTimeOffset]::UtcNow.ToString("O")
         }
-        $nodeSetupResult = Invoke-JsonPost `
+        if ($Scenario -eq "monster_drop_sample") {
+            $targetSetupRequest.quest_id = [string]$miningFixture.QuestId
+            $targetSetupRequest.quest_family = "ordinary_quest"
+            $targetSetupRequest.quest_expected_target_count = 1
+            $targetSetupRequest.qualified_item_id =
+                [string]$miningFixture.QualifiedItemId
+        }
+        $targetSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `
-            -Body $nodeSetupRequest
+            -Body $targetSetupRequest
         Write-JsonFile -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-request.json") `
-            -Value $nodeSetupRequest
+            -Value $targetSetupRequest
         Write-Utf8Text -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-result.json") `
-            -Value $nodeSetupResult.Raw
-        if ([string]$nodeSetupResult.Value.status -ne "applied" -or
-            [string]$nodeSetupResult.Value.primitive_verification_status -ne
+            -Value $targetSetupResult.Raw
+        if ([string]$targetSetupResult.Value.status -ne "applied" -or
+            [string]$targetSetupResult.Value.primitive_verification_status -ne
                 "verified") {
-            throw "Ready $fixtureSlug node setup failed."
+            throw "Ready $fixtureSlug target setup failed."
         }
     }
     elseif ($null -ne $animalFixture) {
@@ -1228,6 +1399,95 @@ try {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }
     }
+    elseif ($null -ne $geodeFixture) {
+        $fixtureSlug = [string]$geodeFixture.Slug
+        $geodeSetupAttempts = [Collections.Generic.List[object]]::new()
+        $geodeSetupRequest = $null
+        $geodeSetupResult = $null
+        $geodeProjectionMatched = $false
+        foreach ($geodesCrackedBefore in 0..([int]$geodeFixture.SearchCounterMax)) {
+            $geodeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+            $geodeSetupRequest = [ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "$RunId.fixture"
+                queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+                before_state_hash = [string]$geodeSetupSource.Value.state_hash
+                option_id = "debug.setup_geode_processing"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $isolatedSavesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at = [DateTimeOffset]::UtcNow.ToString("O")
+                geode_qualified_item_id =
+                    [string]$geodeFixture.InputQualifiedItemId
+                geode_stack_before = 2
+                geode_money_before = 1000
+                geodes_cracked_before = $geodesCrackedBefore
+                mystery_boxes_opened_before = 0
+                golden_coconut_cracked_before = $true
+                geode_got_mystery_book_mail_before = $true
+                geode_artifact_found_mail_before = $false
+            }
+            $geodeSetupResult = Invoke-JsonPost `
+                -Url "$executorRoot/api/v1/training/execute" `
+                -Body $geodeSetupRequest
+            if ([string]$geodeSetupResult.Value.status -ne "applied" -or
+                [string]$geodeSetupResult.Value.primitive_verification_status -ne
+                    "verified") {
+                $geodeSetupAttempts.Add([ordered]@{
+                    geodes_cracked_before = $geodesCrackedBefore
+                    status = [string]$geodeSetupResult.Value.status
+                    projection_match = $false
+                })
+                continue
+            }
+            $geodeProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+            $geodeProjection = Read-StateValue `
+                $geodeProjectionCapture.Value "player" "geode_processing"
+            $projectedInput = @($geodeProjection.inventory_inputs |
+                Where-Object {
+                    [string]$_.qualified_item_id -eq
+                        [string]$geodeFixture.InputQualifiedItemId
+                } | Select-Object -First 1)[0]
+            $matchingSource = @(
+                $projectedInput.authoritative_route_sources |
+                Where-Object {
+                    [string]$_.route_kind -eq
+                        [string]$geodeFixture.ExpectedRouteKind -and
+                    [string]$_.source_id -eq
+                        [string]$geodeFixture.ExpectedSourceId -and
+                    [string]$_.qualified_item_id -eq
+                        [string]$geodeFixture.OutputQualifiedItemId
+                }).Count -gt 0
+            $geodeProjectionMatched =
+                $null -ne $projectedInput -and
+                [string]$projectedInput.status -eq "available" -and
+                [string]$projectedInput.expected_output.qualified_item_id -eq
+                    [string]$geodeFixture.OutputQualifiedItemId -and
+                $matchingSource
+            $geodeSetupAttempts.Add([ordered]@{
+                geodes_cracked_before = $geodesCrackedBefore
+                status = [string]$geodeSetupResult.Value.status
+                projected_output =
+                    [string]$projectedInput.expected_output.qualified_item_id
+                projection_match = $geodeProjectionMatched
+            })
+            if ($geodeProjectionMatched) { break }
+        }
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $geodeSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $geodeSetupResult.Raw
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-attempts.json") `
+            -Value @($geodeSetupAttempts)
+        if (-not $geodeProjectionMatched) {
+            throw "Ready $fixtureSlug native RNG projection was not found."
+        }
+    }
     elseif ($null -ne $machineFixture) {
         $fixtureSlug = [string]$machineFixture.Slug
         $machineSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
@@ -1252,6 +1512,10 @@ try {
             fixture_machine_harvest_experience_override = $false
             fixture_machine_harvest_experience_raw = ""
             fixture_machine_harvest_skill_profile = "zero"
+            fixture_machine_last_output_rule_id =
+                [string]$machineFixture.LastOutputRuleId
+            fixture_machine_tapper_tree_type =
+                [string]$machineFixture.TapperTreeType
         }
         $machineSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `
@@ -1273,6 +1537,40 @@ try {
     $initialSnapshotPath = Join-Path $artifactDirectory `
         "recurrence-initial-snapshot.json"
     Save-SnapshotAndIngest -Path $initialSnapshotPath -Capture $initial
+    $fishingForecastReference = $null
+    if ($null -ne $locationFishingFixture) {
+        $rod = @((Read-StateValue $initial.Value "fishing" "rod_inventory") |
+            Where-Object { [bool]$_.selected } |
+            Select-Object -First 1)[0]
+        if ($null -eq $rod) {
+            throw "Location fishing sample has no selected transparent rod."
+        }
+        $forecastUrl = ($snapshotUrl -split '\?')[0] +
+            "?profile=fishing_forecast&fresh=true&location_id=" +
+            [Uri]::EscapeDataString(
+                [string]$locationFishingFixture.LocationId) +
+            "&rod_slot_index=" + [int]$rod.slot_index
+        $forecastResponse = Invoke-WebRequest -UseBasicParsing `
+            -Uri $forecastUrl -TimeoutSec 60
+        $forecastValue = $forecastResponse.Content | ConvertFrom-Json
+        if ([string]$forecastValue.state.fishing.forecast_request.status -ne
+                "available" -or
+            -not [bool]$forecastValue.state.fishing.forecast_request.value.request_complete) {
+            throw "Location fishing forecast snapshot was unavailable."
+        }
+        $forecastSnapshotPath = Join-Path $planningDirectory `
+            "fishing-forecast-town.json"
+        Write-Utf8Text -Path $forecastSnapshotPath `
+            -Value $forecastResponse.Content
+        $fishingForecastReference = [ordered]@{
+            request_id = "full-shipment-location-fish-town"
+            target_location_id = [string]$locationFishingFixture.LocationId
+            rod_slot_index = [int]$rod.slot_index
+            snapshot_path = [IO.Path]::GetFileName($forecastSnapshotPath)
+            snapshot_sha256 = (Get-FileHash -Algorithm SHA256 `
+                -LiteralPath $forecastSnapshotPath).Hash.ToLowerInvariant()
+        }
+    }
     $initialTotalDay = [int](Read-StateValue `
         $initial.Value "time" "total_days")
     if ([string](Read-StateValue $initial.Value "player" "location_id") -ne
@@ -1370,7 +1668,12 @@ try {
         "fishing-forecast-manifest.json"
     Write-JsonFile -Path $forecastPath -Value ([ordered]@{
         schema_version = "fishing_forecast_snapshot_manifest.v1"
-        snapshots = @()
+        snapshots = if ($null -eq $fishingForecastReference) {
+            @()
+        }
+        else {
+            @($fishingForecastReference)
+        }
     })
     $axis["fishing-probability"] = Join-Path $planningDirectory `
         "target-date-fishing-probability.json"
@@ -2113,16 +2416,6 @@ try {
     $summary | ConvertTo-Json -Depth 24
 }
 finally {
-    foreach ($name in $savedEnvironment.Keys) {
-        [Environment]::SetEnvironmentVariable(
-            $name,
-            $savedEnvironment[$name],
-            "Process")
-    }
-    foreach ($process in @($game, $product, $backend)) {
-        if ($null -ne $process -and -not $process.HasExited) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-            $process.WaitForExit(10000) | Out-Null
-        }
-    }
+    Restore-RuntimeProcessEnvironment -Values $savedEnvironment
+    Stop-RuntimeEvidenceProcesses -Processes @($game, $product, $backend)
 }

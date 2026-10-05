@@ -78,6 +78,19 @@ public sealed partial class ModEntry
         var started = DateTimeOffset.UtcNow.ToString("O");
         var tile = new Vector2(target.X, target.Y);
         var before = ObstacleLabel(location, target);
+        if (fixtureKind == "artifact_spot")
+        {
+            foreach (var priorSpot in location.objects.Pairs
+                         .Where(pair =>
+                             pair.Value.GetType() ==
+                                 typeof(StardewValley.Object) &&
+                             pair.Value.QualifiedItemId == "(O)590")
+                         .Select(pair => pair.Key)
+                         .ToArray())
+            {
+                location.objects.Remove(priorSpot);
+            }
+        }
         location.terrainFeatures.Remove(tile);
         location.objects.Remove(tile);
         if (fixtureKind == "grass")

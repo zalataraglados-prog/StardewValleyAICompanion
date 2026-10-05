@@ -682,6 +682,21 @@ public sealed partial class ModEntry : Mod
         var beforeMachine = MachineObservedEffect(farm, target);
         ClearReadyMachineOutputsForFixture(farm, tile);
         farm.objects.Remove(tile);
+        farm.terrainFeatures.Remove(tile);
+
+        var fixtureTapperTreeType =
+            request.FixtureMachineTapperTreeType ?? string.Empty;
+        Tree? fixtureTapperTree = null;
+        if (!string.IsNullOrWhiteSpace(fixtureTapperTreeType))
+        {
+            fixtureTapperTree = new Tree(
+                fixtureTapperTreeType,
+                Tree.treeStage);
+            fixtureTapperTree.tapped.Value = true;
+            fixtureTapperTree.hasSeed.Value = false;
+            fixtureTapperTree.wasShakenToday.Value = false;
+            farm.terrainFeatures[tile] = fixtureTapperTree;
+        }
 
         var machineItemId = string.IsNullOrWhiteSpace(request.ExpectedShopId)
             ? "12"
@@ -725,6 +740,26 @@ public sealed partial class ModEntry : Mod
         };
         machine.MinutesUntilReady = 0;
         var machineData = machine.GetMachineData();
+        var fixtureOutputRuleId =
+            request.FixtureMachineLastOutputRuleId ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(fixtureOutputRuleId) &&
+            machineData?.OutputRules?.Count(rule => string.Equals(
+                rule.Id,
+                fixtureOutputRuleId,
+                StringComparison.Ordinal)) != 1)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_output_target",
+                "machine_last_output_rule_id=" + fixtureOutputRuleId,
+                "matching_output_rule_count=" +
+                    (machineData?.OutputRules?.Count(rule => string.Equals(
+                        rule.Id,
+                        fixtureOutputRuleId,
+                        StringComparison.Ordinal)) ?? 0),
+                "fixture_machine_output_rule_id_unavailable");
+        }
+        machine.lastOutputRuleId.Value = fixtureOutputRuleId;
         if (request.FixtureMachineHarvestExperienceOverride)
         {
             if (machineData is null)
@@ -746,6 +781,20 @@ public sealed partial class ModEntry : Mod
         var verified = MachineAt(farm, target) is
             { readyForHarvest.Value: true, heldObject.Value: not null } &&
             machineData is not null &&
+            string.Equals(
+                machine.lastOutputRuleId.Value ?? string.Empty,
+                fixtureOutputRuleId,
+                StringComparison.Ordinal) &&
+            (fixtureTapperTree is null ||
+             machine.IsTapper() &&
+             farm.terrainFeatures.TryGetValue(tile, out var feature) &&
+             ReferenceEquals(feature, fixtureTapperTree) &&
+             fixtureTapperTree.GetType() == typeof(Tree) &&
+             fixtureTapperTree.tapped.Value &&
+             string.Equals(
+                 fixtureTapperTree.treeType.Value,
+                 fixtureTapperTreeType,
+                 StringComparison.Ordinal)) &&
             (!request.FixtureMachineHarvestExperienceOverride ||
              string.Equals(
                  machineData.ExperienceGainOnHarvest ?? string.Empty,
@@ -772,6 +821,9 @@ public sealed partial class ModEntry : Mod
                 ";machine_qualified_item_id=" + machine.QualifiedItemId +
                 ";harvest_experience_raw=" +
                 (machineData?.ExperienceGainOnHarvest ?? string.Empty) +
+                ";last_output_rule_id=" +
+                (machine.lastOutputRuleId.Value ?? string.Empty) +
+                ";tapper_tree_type=" + fixtureTapperTreeType +
                 ";skill_profile=" +
                 request.FixtureMachineHarvestSkillProfile,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_machine_output_not_ready" },

@@ -1,6 +1,7 @@
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using System.Text.Json;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -337,6 +338,19 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return true;
         }
 
+        if (requirement.RouteKind == "native_location_fish_spawn" &&
+            !SnapshotDeclaresFishCollectionSpecies(
+                snapshot,
+                requirement.QualifiedItemId) &&
+            TryMatchCompleteLocationFishingOutcome(
+                requirement.SourceId,
+                requirement.QualifiedItemId,
+                candidate,
+                out evidence))
+        {
+            return true;
+        }
+
         if (requirement.RouteKind is "native_geode_drop" or
                 "native_geode_default_drop" &&
             candidate.Kind == "crack_geode" &&
@@ -435,6 +449,16 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             evidence = "validated_master_angler_source_key";
             return true;
         }
+        if (routeKind == "native_location_fish_spawn" &&
+            !SnapshotDeclaresFishCollectionSpecies(snapshot, qualifiedItemId) &&
+            TryMatchCompleteLocationFishingOutcome(
+                sourceId,
+                qualifiedItemId,
+                candidate,
+                out evidence))
+        {
+            return true;
+        }
         if (routeKind == "native_mine_fishing_override" &&
             MasterAnglerCurrentCandidateMatcher.TryMatch(
                 snapshot,
@@ -487,6 +511,86 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         }
 
         return false;
+    }
+
+    private static bool TryMatchCompleteLocationFishingOutcome(
+        string sourceId,
+        string qualifiedItemId,
+        PolicyEventCandidatePrediction candidate,
+        out string evidence)
+    {
+        evidence = string.Empty;
+        const string sourcePrefix = "location_fish:";
+        if (!sourceId.StartsWith(sourcePrefix, StringComparison.Ordinal) ||
+            candidate.OptionId != "fishing.catch_fish" ||
+            candidate.Kind != "catch_fish" ||
+            !TryReadUniqueParameter(
+                candidate,
+                "outcome_distribution_complete",
+                out var completeText) ||
+            !bool.TryParse(completeText, out var complete) ||
+            !complete ||
+            !TryReadUniqueParameter(
+                candidate,
+                "outcome_distribution_json",
+                out var distributionJson))
+        {
+            return false;
+        }
+
+        var sourceKey = sourceId[sourcePrefix.Length..];
+        var separator = sourceKey.LastIndexOf(':');
+        if (separator <= 0 ||
+            !int.TryParse(sourceKey[(separator + 1)..], out var sourceIndex))
+        {
+            return false;
+        }
+        var expectedRuntimePrefix = "Data/Locations:" +
+            sourceKey[..separator] + "#" + sourceIndex + ":";
+        try
+        {
+            using var document = JsonDocument.Parse(distributionJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                return false;
+            var matched = document.RootElement.EnumerateArray().Any(outcome =>
+                ReadJsonString(outcome, "qualified_item_id") ==
+                    qualifiedItemId &&
+                ReadJsonString(outcome, "source_kind") == "rule" &&
+                (ReadJsonString(outcome, "source_key") == sourceKey ||
+                 ReadJsonString(outcome, "source_key").StartsWith(
+                     expectedRuntimePrefix,
+                     StringComparison.Ordinal)));
+            if (!matched)
+                return false;
+            evidence = "complete_runtime_fishing_outcome_source";
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool SnapshotDeclaresFishCollectionSpecies(
+        SnapshotEnvelope snapshot,
+        string qualifiedItemId)
+    {
+        if (!snapshot.State.TryGetValue("world_progress", out var world) ||
+            world.ValueKind != JsonValueKind.Object ||
+            !world.TryGetProperty("fish_collection_progress", out var field) ||
+            field.ValueKind != JsonValueKind.Object ||
+            !field.TryGetProperty("status", out var status) ||
+            status.ValueKind != JsonValueKind.String ||
+            status.GetString() is not ("available" or "derived") ||
+            !field.TryGetProperty("value", out var progress) ||
+            progress.ValueKind != JsonValueKind.Object ||
+            !progress.TryGetProperty("items", out var items) ||
+            items.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+        return items.EnumerateArray().Any(row =>
+            ReadJsonString(row, "qualified_item_id") == qualifiedItemId);
     }
 
     private static bool CandidateDeclaresAuthoritativeRouteSource(

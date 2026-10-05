@@ -8,30 +8,43 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var script = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var common = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeEvidenceCommon.ps1");
+        var runtimeSurface = script + Environment.NewLine + common;
         var bridge = ReadRepositoryFile(
             "src",
             "StardewAI.TransparentBridge",
             "ModEntry.cs");
 
         Assert.Contains(
-            "$Scenario -eq \"radioactive_ore_node_sample\"",
-            script,
+            "$Scenario -in @(",
+            runtimeSurface,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"radioactive_ore_node_sample\",",
+            runtimeSurface,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"monster_drop_sample\"))",
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"training_mining\"",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"--execution-snapshot-profile\", $SnapshotProfile",
-            script,
+            "\"--execution-snapshot-profile\", $Context.SnapshotProfile",
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"--after-snapshot-poll-ms\", \"250\"",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "profile=$SnapshotProfile&fresh=1",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
 
         Assert.Contains(
@@ -484,6 +497,178 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void RuntimeEvidenceOrchestrationUsesScenarioNeutralSharedHelpers()
+    {
+        var script = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var common = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeEvidenceCommon.ps1");
+
+        Assert.Contains(
+            "lib\\RuntimeEvidenceCommon.ps1",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Invoke-RuntimePrecompiledQueue",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Invoke-RuntimeTeacherPreferenceQueue",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Invoke-RuntimeDailyPlanStep",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Start-RuntimeEvidenceProcess",
+            common,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "function Invoke-JsonPost",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "--precompiled-queue",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "full_shipment",
+            common,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            "sap_prefix",
+            common,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "function Assert-FullShipmentState",
+            script,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MachineQuerySamplesBindDistinctNativeSourceLayers()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+        var contracts = ReadRepositoryFile(
+            "src",
+            "StardewAI.Contracts",
+            "Training",
+            "TrainingExecutionRequest.MachineLifecycle.cs");
+
+        Assert.Contains(
+            "\"machine_flavored_output_sample\" { \"full_shipment:item:340\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_flavored_output_sample\" { \"native_machine_flavored_output\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"machine-flavored-output\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MachineItemId = \"10\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_item_query_output_sample\" { \"full_shipment:item:257\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_item_query_output_sample\" { \"native_machine_item_query_output\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"machine-item-query-output\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "LastOutputRuleId = \"Default\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_machine_last_output_rule_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FixtureMachineLastOutputRuleId",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.lastOutputRuleId.Value = fixtureOutputRuleId",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_machine_last_output_rule_id",
+            contracts,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WildTreeTapperSampleUsesSameTileNativeTreeAndMachineChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+
+        Assert.Contains(
+            "\"wild_tree_tapper_output_sample\" { \"full_shipment:item:725\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_tapper_output_sample\" { \"(O)725\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_tapper_output_sample\" { \"native_wild_tree_tapper_output\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MachineItemId = \"105\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TapperTreeType = \"1\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_machine_tapper_tree_type",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new Tree(",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixtureTapperTree.tapped.Value = true",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.IsTapper()",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReferenceEquals(feature, fixtureTapperTree)",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TreeMossSampleReusesNativeScytheHarvestChain()
     {
         var source = ReadRepositoryFile(
@@ -544,7 +729,11 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
-            "option_id = \"debug.setup_radioactive_ore_node\"",
+            "FixtureOptionId = \"debug.setup_radioactive_ore_node\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = [string]$miningFixture.FixtureOptionId",
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -573,6 +762,284 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain(
             "ItemRegistry.Create<StardewValley.Object>(\"(O)909\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MonsterDropSampleReusesMiningCombatAndDeferredPickupChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.QuestMonsterDropFixture.cs");
+
+        Assert.Contains(
+            "\"monster_drop_sample\" { \"full_shipment:item:766\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"monster_drop_sample\" { \"(O)766\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FixtureOptionId = \"debug.setup_quest_monster_drop_fixture\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QuestId = \"stardewai.full-shipment.monster-drop\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "monsterTarget.objectsToDrop.Add(item.QualifiedItemId)",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new GreenSlime(",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new StardewValley.Tools.MeleeWeapon(\"9\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ArtifactSpotSampleSearchesTransparentNativeProjection()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.ClearObstacleFixture.cs");
+
+        Assert.Contains(
+            "\"location_artifact_spot_sample\" { \"full_shipment:item:330\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_artifact_spot_sample\" { \"(O)330\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedRouteKind = \"native_location_artifact_spot\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceId = \"location:Default:10\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$projectedSpot.clear_authoritative_route_sources",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$projectedSpot.clear_output_items",
+            runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)330\")",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "pair.Value.QualifiedItemId == \"(O)590\"",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GeodeDropSampleSearchesNativeRngAndUsesSharedBlacksmithChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.GeodeProcessingFixture.cs");
+
+        Assert.Contains(
+            "\"geode_drop_sample\" { \"full_shipment:item:386\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"geode_drop_sample\" { \"(O)386\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"geode_drop_sample\" { \"processing.crack_geode\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceId = \"geode:791:1:random:6\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.setup_geode_processing\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$projectedInput.authoritative_route_sources",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "foreach ($geodesCrackedBefore in 0..",
+            runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)386\")",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Game1.currentLocation = blacksmith",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShopPurchaseSampleBindsCarpenterAndUsesSharedPurchaseChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"full_shipment:item:388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"(O)388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"sells\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"economy.buy_supplies\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"continuation.shop_id\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "value = \"Carpenter\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.advance_time_to\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TargetTime = 900",
+            runner,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CommunityCenterRewardSampleUsesExactPendingNativeReward()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.CommunityCenterFixture.cs");
+
+        Assert.Contains(
+            "\"community_center_reward_sample\" { \"full_shipment:item:336\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"community_center_reward_sample\" { \"(O)336\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"community_center_reward_sample\" { \"creates_reward_item\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"community_center.donate_bundle_items\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceId = \"bundle:Bulletin Board/33:reward\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "community_center_fixture_case = \"pending_reward\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$rewardBundle.reward.authoritative_route_sources",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "communityCenter.bundleRewards[target.BundleId] = true",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)336\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LocationFishingSampleUsesNativeTownRuleAndSharedCatchChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.LocationFishingFixture.cs");
+
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"full_shipment:item:388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"(O)388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"native_location_fish_spawn\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"fishing.catch_fish\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSource = \"Data/Locations:Town\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceIndex = 3",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "profile=fishing_forecast&fresh=true&location_id=",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new FishingRod(4)",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)388\")",
             fixture,
             StringComparison.Ordinal);
     }
@@ -689,8 +1156,17 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"farm_animal_deluxe_product_sample\" { \"native_farm_animal_deluxe_produce\" }",
             "\"fish_pond_output_sample\" { \"native_fish_pond_output\" }",
             "\"machine_output_sample\" { \"machine_output\" }",
+            "\"machine_flavored_output_sample\" { \"native_machine_flavored_output\" }",
+            "\"machine_item_query_output_sample\" { \"native_machine_item_query_output\" }",
+            "\"wild_tree_tapper_output_sample\" { \"native_wild_tree_tapper_output\" }",
             "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
+            "\"location_artifact_spot_sample\" { \"native_location_artifact_spot\" }",
+            "\"geode_drop_sample\" { \"native_geode_drop\" }",
+            "\"community_center_reward_sample\" { \"creates_reward_item\" }",
+            "\"location_fish_spawn_sample\" { \"native_location_fish_spawn\" }",
+            "\"shop_purchase_sample\" { \"sells\" }",
+            "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
             "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
             "default { \"native_wild_tree_chop_drop\" }",
         };
@@ -725,6 +1201,40 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "Execution binding selected the wrong authoritative route.",
             source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LocationFishingDispatchSeparatesNonFishOutcomesFromMasterAngler()
+    {
+        var selection = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Selection.cs");
+        var verification = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Verification.cs");
+
+        Assert.Contains(
+            "TryMatchCompleteLocationFishingOutcome",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "outcome_distribution_complete",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "outcome_distribution_json",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SnapshotDeclaresFishCollectionSpecies",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route_dispatch_complete_location_fishing_outcome_missing",
+            verification,
             StringComparison.Ordinal);
     }
 
@@ -813,11 +1323,47 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "full_shipment:item:340|(O)340|native_machine_flavored_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:257|(O)257|native_machine_item_query_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:725|(O)725|native_wild_tree_tapper_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "full_shipment:item:787|(O)787|native_solar_panel_output",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:330|(O)330|native_location_artifact_spot",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:386|(O)386|native_geode_drop",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:336|(O)336|creates_reward_item",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:388|(O)388|native_location_fish_spawn",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:388|(O)388|sells",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:766|(O)766|native_monster_drop_table",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -829,7 +1375,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "$scenario -eq \"radioactive_ore_node_sample\"",
+            "$scenario -in @(",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

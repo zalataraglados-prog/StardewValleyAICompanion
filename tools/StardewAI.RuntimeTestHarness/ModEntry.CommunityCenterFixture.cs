@@ -10,7 +10,7 @@ public sealed partial class ModEntry
 {
     private TrainingExecutionResult ExecuteSetupCommunityCenterDonationFixture(TrainingExecutionRequest request)
     {
-        if (request.CommunityCenterFixtureCase is not ("ordinary" or "complete_bundle" or "complete_area" or "complete_all_areas" or "complete_bulletin_area"))
+        if (request.CommunityCenterFixtureCase is not ("ordinary" or "complete_bundle" or "complete_area" or "complete_all_areas" or "complete_bulletin_area" or "pending_reward"))
         {
             return BlockedWithPrimitive(request, "debug_setup_community_center_donation", "community_center.fixture=ready", "fixture_case=invalid", "community_center_fixture_case_invalid");
         }
@@ -30,8 +30,16 @@ public sealed partial class ModEntry
             }
         }
 
-        var desiredArea = request.CommunityCenterFixtureCase == "complete_bulletin_area" ? 5 : 1;
-        var target = FindCommunityCenterFixtureTarget(communityCenter, desiredArea);
+        int? desiredArea = request.CommunityCenterFixtureCase switch
+        {
+            "complete_bulletin_area" => 5,
+            "pending_reward" => null,
+            _ => 1
+        };
+        var target = FindCommunityCenterFixtureTarget(
+            communityCenter,
+            desiredArea,
+            request.BundleId);
         if (target is null)
         {
             return BlockedWithPrimitive(request, "debug_setup_community_center_donation", "community_center.fixture=ready", "target=unavailable", "community_center_fixture_dynamic_target_unavailable");
@@ -51,7 +59,15 @@ public sealed partial class ModEntry
         }
 
         var targetBits = communityCenter.bundles.FieldDict[target.BundleId];
-        if (request.CommunityCenterFixtureCase != "ordinary")
+        if (request.CommunityCenterFixtureCase == "pending_reward")
+        {
+            for (var index = 0; index < targetBits.Count; index++)
+            {
+                targetBits[index] = true;
+            }
+            communityCenter.bundleRewards[target.BundleId] = true;
+        }
+        else if (request.CommunityCenterFixtureCase != "ordinary")
         {
             var needed = target.RequiredSlots - 1;
             for (var index = 0; index < targetBits.Count && needed > 0; index++)
@@ -147,13 +163,21 @@ public sealed partial class ModEntry
         var interactionTile = CommunityCenterInteractionTileRuntime(communityCenter, target.AreaId, noteTile);
         var standTile = interactionTile.HasValue ? CommunityCenterFixtureStandTile(communityCenter, interactionTile.Value) : null;
         var slot = request.InventorySlotIndex ?? 11;
-        if (!noteTile.HasValue || !interactionTile.HasValue || !standTile.HasValue || slot < 0 || slot >= Game1.player.Items.Count ||
+        var installsIngredient = request.CommunityCenterFixtureCase != "pending_reward";
+        if (!noteTile.HasValue || !interactionTile.HasValue || !standTile.HasValue ||
+            (installsIngredient && (slot < 0 || slot >= Game1.player.Items.Count)) ||
             !communityCenter.shouldNoteAppearInArea(target.AreaId) || !communityCenter.isJunimoNoteAtArea(target.AreaId))
         {
             return BlockedWithPrimitive(request, "debug_setup_community_center_donation", "community_center.fixture=ready", "note_or_slot=unavailable", "community_center_fixture_note_or_slot_unavailable");
         }
 
-        Game1.player.Items[slot] = ItemRegistry.Create(target.QualifiedItemId, target.RequiredStack + 2, target.Quality);
+        if (installsIngredient)
+        {
+            Game1.player.Items[slot] = ItemRegistry.Create(
+                target.QualifiedItemId,
+                target.RequiredStack + 2,
+                target.Quality);
+        }
         if (!MoveCollectionDonationFixtureFarmer(
                 request,
                 communityCenter,
@@ -170,11 +194,23 @@ public sealed partial class ModEntry
                 fixtureMoveReason);
         }
         Game1.player.forceCanMove();
-        Game1.player.CurrentToolIndex = slot;
+        if (installsIngredient)
+        {
+            Game1.player.CurrentToolIndex = slot;
+        }
 
-        var installedItem = Game1.player.Items[slot];
-        var verified = installedItem is not null && installedItem.QualifiedItemId == target.QualifiedItemId &&
-            installedItem.Stack == target.RequiredStack + 2 && !communityCenter.bundles[target.BundleId][target.IngredientIndex] &&
+        var installedItem = installsIngredient ? Game1.player.Items[slot] : null;
+        var targetStateVerified = installsIngredient
+            ? installedItem is not null &&
+                installedItem.QualifiedItemId == target.QualifiedItemId &&
+                installedItem.Stack == target.RequiredStack + 2 &&
+                !communityCenter.bundles[target.BundleId][target.IngredientIndex]
+            : communityCenter.bundles[target.BundleId].All(value => value) &&
+                communityCenter.bundleRewards.TryGetValue(
+                    target.BundleId,
+                    out var rewardAvailable) &&
+                rewardAvailable;
+        var verified = targetStateVerified &&
             ReferenceEquals(Game1.currentLocation, fixtureLocation) &&
             Game1.player.TilePoint == fixtureStand;
         return new TrainingExecutionResult
@@ -200,11 +236,17 @@ public sealed partial class ModEntry
         };
     }
 
-    private static CommunityCenterFixtureTarget? FindCommunityCenterFixtureTarget(CommunityCenter communityCenter, int desiredArea)
+    private static CommunityCenterFixtureTarget? FindCommunityCenterFixtureTarget(
+        CommunityCenter communityCenter,
+        int? desiredArea,
+        int? requestedBundleId = null)
     {
         return Game1.netWorldState.Value.BundleData
             .Select(pair => TryCreateCommunityCenterFixtureTarget(pair.Key, pair.Value, communityCenter))
-            .Where(target => target?.AreaId == desiredArea)
+            .Where(target => target is not null &&
+                (!desiredArea.HasValue || target.AreaId == desiredArea.Value) &&
+                (!requestedBundleId.HasValue ||
+                    target.BundleId == requestedBundleId.Value))
             .OrderBy(target => target!.BundleId)
             .FirstOrDefault();
     }

@@ -227,11 +227,38 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:257|(O)257|machine_output" {
         "machine_output_sample"
     }
+    "full_shipment:item:340|(O)340|native_machine_flavored_output" {
+        "machine_flavored_output_sample"
+    }
+    "full_shipment:item:257|(O)257|native_machine_item_query_output" {
+        "machine_item_query_output_sample"
+    }
+    "full_shipment:item:725|(O)725|native_wild_tree_tapper_output" {
+        "wild_tree_tapper_output_sample"
+    }
     "full_shipment:item:787|(O)787|native_solar_panel_output" {
         "solar_panel_output_sample"
     }
     "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest" {
         "tree_moss_harvest_sample"
+    }
+    "full_shipment:item:330|(O)330|native_location_artifact_spot" {
+        "location_artifact_spot_sample"
+    }
+    "full_shipment:item:386|(O)386|native_geode_drop" {
+        "geode_drop_sample"
+    }
+    "full_shipment:item:336|(O)336|creates_reward_item" {
+        "community_center_reward_sample"
+    }
+    "full_shipment:item:388|(O)388|native_location_fish_spawn" {
+        "location_fish_spawn_sample"
+    }
+    "full_shipment:item:388|(O)388|sells" {
+        "shop_purchase_sample"
+    }
+    "full_shipment:item:766|(O)766|native_monster_drop_table" {
+        "monster_drop_sample"
     }
     "full_shipment:item:909|(O)909|native_radioactive_ore_node" {
         "radioactive_ore_node_sample"
@@ -242,7 +269,9 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     }
 }
 if ([string]::IsNullOrWhiteSpace($SnapshotProfile)) {
-    $SnapshotProfile = if ($scenario -eq "radioactive_ore_node_sample") {
+    $SnapshotProfile = if ($scenario -in @(
+            "radioactive_ore_node_sample",
+            "monster_drop_sample")) {
         "training_mining"
     }
     else { "full" }

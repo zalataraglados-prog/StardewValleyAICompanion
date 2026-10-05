@@ -51,8 +51,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         {
             return Contract(
                 routeKind,
-                "validated_master_angler_location_source",
-                "validated_master_angler_source_key");
+                "complete_runtime_fishing_outcome_source",
+                "candidate.outcome_distribution_complete",
+                "candidate.outcome_distribution_json");
         }
         if (routeKind == "native_mine_fishing_override")
         {
@@ -113,7 +114,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             "harvest_source_seed_id" =>
                 sourceId.StartsWith("crop:", StringComparison.Ordinal) &&
                 sourceId.Length > "crop:".Length,
-            "validated_master_angler_location_source" =>
+            "complete_runtime_fishing_outcome_source" =>
                 sourceId.StartsWith("location_fish:", StringComparison.Ordinal) &&
                 sourceId.Length > "location_fish:".Length,
             "validated_master_angler_mine_override" => true,

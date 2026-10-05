@@ -1,5 +1,54 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment runtime 编排边界拆分
+
+- `scripts/lib/RuntimeEvidenceCommon.ps1` 现统一承载场景无关的 UTF-8/JSON、目录哈希、HTTP、fresh snapshot、环境恢复、隐藏进程生命周期，以及 DailyPlan、Teacher preference、precompiled queue 的现有 LiveTrainingLoop 调用包装。
+- `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1` 只保留 Full Shipment 场景选择、夹具编排、权威来源绑定、Sap/出货/睡眠/recurrence 断言和对通用函数的薄参数绑定；它仍调用原有 planner/compiler/product executor/verifier，没有新增第二套运行时或脚本游戏语义。
+- archived source save 哈希、隔离存档、typed queue/receipt、fresh after snapshot、checkpoint 与 `formal_product_training_authorized=false` 语义保持不变。本次是 #162 的维护性拆分，不增加 production evidence 分子；下一里程碑仍是代表性原生抽样后统一重建 26 层索引。
+
+## 2026-10-05 Full Shipment 地点钓获入口
+
+- 最后一层代表固定为 `full_shipment:item:388 / (O)388 / native_location_fish_spawn / location_fish:Town:3`，复用现有 `fishing.catch_fish -> executor.catch_fish` 原生抛竿、上钩、小游戏和结果回执链。
+- 修正了 dispatch 的旧假设：Full Shipment 中该层是地点钓鱼规则产生的非鱼物品，不能塞进 72 种鱼的 Master Angler 缺失集合。真正鱼种仍要求严格的 Master Angler 窗口；非鱼地点钓获物则必须由透明候选的完整结果分布同时证明物品、地点规则和 source index，错误物品或错误规则行继续 fail closed。
+- 隔离夹具只加载 Town、装备钓竿并选择原生可钓水域，不注入 `(O)388`；runner 同时保存同一状态的需求型 fishing forecast。至此入口配置为 `26/26`，但生产 evidence index 尚未重建，正式训练仍保持 `false`。
+
+## 2026-10-05 Full Shipment 社区中心奖励入口
+
+- 奖励物代表固定为 `full_shipment:item:336 / (O)336 / creates_reward_item / bundle:Bulletin Board/33:reward`，继续复用 `community_center.donate_bundle_items` 下已经存在的待领奖候选、DailyPlan、动作编译器和 `executor.claim_community_center_bundle_reward` 原生菜单执行链。
+- 隔离夹具只把当前原生 `Data/Bundles` 中的精确 bundle 置于“已完成、奖励未领取”状态，并移动到社区中心交互点；它不会创建或注入 `(O)336`。共享 runner 必须从透明快照再次验证 bundle key、奖励物品和精确权威来源，之后产品执行器才可通过原生 Junimo Note 奖励菜单领取。
+- 当前 runner 配置入口达到 `25/26`；只剩 `native_location_fish_spawn`。本轮仍不增加生产 evidence index，正式训练保持 `false`。
+
+## 2026-10-05 Full Shipment 商店购买入口
+
+- 商店购买代表固定为 `full_shipment:item:388 / (O)388 / sells / shop:Carpenter`。候选显式约束 `Carpenter`、木材 `(O)388`、单价不高于 10 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。
+- 隔离夹具只使用既有 `debug.advance_time_to` 把春 1 推进到 9:00；不会打开菜单、生成物品或修改商店库存。候选来源身份由透明商店预览的 `shop_id` 验证，关闭或不可达时仍在上游排除。
+- 当前 runner 配置入口达到 `24/26`；剩余 2 层为奖励物和地点鱼。本轮不增加生产 evidence index，正式训练仍为 `false`。
+
+## 2026-10-05 Full Shipment 晶球掉落入口
+
+- 晶球代表固定为 `full_shipment:item:386 / (O)386 / native_geode_drop / geode:791:1:random:6`，输入为金色椰子 `(O)791`，执行继续复用 `processing.crack_geode -> executor.crack_geode` 的铁匠柜台与原生 `GeodeMenu` 链。
+- 隔离夹具只搜索 `geodes_cracked_before` 以定位能产生目标的原生 RNG 前态；透明桥必须同时投影 `(O)386` 和精确来源，随后产品执行器才会敲开晶球。夹具不生成铱矿，且第一颗金色椰子固定奖励分支被显式排除。
+- 该阶段 runner 配置入口达到 `23/26`，随后商店购买入口使当前总数达到 `24/26`。本轮不增加生产 evidence index，正式训练仍为 `false`。
+
+## 2026-10-05 Full Shipment 蚯蚓地入口
+
+- 蚯蚓地代表固定为 `full_shipment:item:330 / (O)330 / native_location_artifact_spot / location:Default:10`，复用现有 `foraging.excavate_artifact_spots -> executor.clear_obstacle` 原生锄地链。
+- 隔离夹具不会直接生成黏土；它只轮换原生 `(O)590` 蚯蚓地坐标，并通过透明桥的精确输出和权威来源投影选择可产生目标的合法前态。每次尝试前移除上一个夹具蚯蚓地，避免失败样本污染候选池。
+- 该阶段 runner 配置入口达到 `22/26`，随后晶球掉落入口使当前总数达到 `23/26`。本轮仍未启动游戏，生产 evidence index 与训练准入状态不变。
+
+## 2026-10-05 Full Shipment 树液收集器与怪物掉落入口
+
+- 野树树液收集器代表固定为 `full_shipment:item:725 / (O)725 / native_wild_tree_tapper_output / wild_tree:1:0`。夹具在同一格建立原生基础树与 `(BC)105` 树液收集器，并继续复用 `farm.collect_machine_outputs`、统一机器编译器、执行器和 verifier。
+- 怪物掉落代表固定为 `full_shipment:item:766 / (O)766 / native_monster_drop_table / monster:Green Slime`。夹具只建立可归因的原生史莱姆及确定掉落，正式动作继续复用 `mining.reach_depth`、共享自动战斗和延迟拾取链。
+- 该阶段 runner 配置入口达到 `21/26`，随后蚯蚓地入口使当前总数达到 `22/26`。PowerShell 解析、定向守卫 `26/26`、Core game-free `215/215` 与 RuntimeTestHarness `0 warning / 0 error` 均通过。本轮没有启动游戏，生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。
+
+## 2026-10-05 Full Shipment 两类机器查询产物入口
+
+- 已从当前权威 requirement/lowering 重新枚举 26 个运行时分层；此前脚本实际装配 17 层。本轮新增 `native_machine_flavored_output` 与 `native_machine_item_query_output`，该阶段配置入口达到 `19/26`。随后树液收集器与怪物掉落入口使当前总数达到 `21/26`。
+- flavored 代表固定为 `full_shipment:item:340 / (O)340 / machine:(BC)10:rule:0:output:0`；item-query 代表固定为 `full_shipment:item:257 / (O)257 / machine:(BC)128:rule:0:output:2`。两者复用现有机器透明投影、`farm.collect_machine_outputs`、DailyPlan、编译器、产品执行器与 verifier，没有新增机器动作系统。
+- 测试夹具现在显式携带原生 `lastOutputRuleId`。普通 `machine_output` 代表强制 `Default`，两类 legacy query 代表强制空值；非空规则在原生 `Data/Machines` 中不唯一时立即失败关闭，避免三个机器分层在真正运行前串线。
+- PowerShell 解析通过，定向 game-free 守卫 `21/21`，RuntimeTestHarness 使用 E 盘隔离游戏引用编译为 `0 warning / 0 error`。本轮未启动游戏，因此生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。
+
 ## 2026-10-05 原生样本收口与测试制度收缩
 
 - 原生放射性矿石样本已通过：`runtime-full-shipment-radioactive-node-20261005-134024` 在异机 `F:\StardewAI-TestLab` 以 `(O)95 -> GameLocation.breakStone -> (O)909` 完成 `native_radioactive_ore_node`，复用 `mining.reach_depth -> executor.mine_stone -> executor.pickup_debris`，没有第二套采矿执行器。候选身份和同地点目标证据均按目标逐项 fail-closed。
