@@ -124,10 +124,23 @@ public sealed partial class FarmReadAdapter
             requireReadyForHarvest: true);
 
     private static object[] ReadActiveMachineOutputAuthoritativeRouteSources(
-        StardewValley.Object machine) =>
-        ReadOrdinaryMachineOutputAuthoritativeRouteSources(
-            machine,
-            requireReadyForHarvest: false);
+        GameLocation location,
+        Vector2 tile,
+        StardewValley.Object machine)
+    {
+        var specialSources = ReadSolarPanelOutputAuthoritativeRouteSources(
+                machine)
+            .Concat(ReadWildTreeTapperOutputAuthoritativeRouteSources(
+                location,
+                tile,
+                machine))
+            .ToArray();
+        return specialSources.Length > 0
+            ? specialSources
+            : ReadOrdinaryMachineOutputAuthoritativeRouteSources(
+                machine,
+                requireReadyForHarvest: false);
+    }
 
     private static object[]
         ReadOrdinaryMachineOutputAuthoritativeRouteSources(

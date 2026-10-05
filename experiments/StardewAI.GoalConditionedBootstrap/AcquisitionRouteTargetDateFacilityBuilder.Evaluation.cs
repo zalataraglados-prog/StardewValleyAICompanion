@@ -6,6 +6,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
     private const string PreparedCultivation = "prepared_cultivation_slot";
     private const string ExistingCrabPot = "existing_crab_pot";
     private const string ExistingMachine = "existing_machine_source";
+    private const string ExistingCurrentMachine =
+        "existing_current_machine_source";
     private const string DeferredFacility = "facility_binding_pending_upstream";
 
     private static readonly IReadOnlyDictionary<string, string>
@@ -42,7 +44,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             ["native_wild_tree_chop_drop"] = NoFacility,
             ["native_wild_tree_seed"] = NoFacility,
             ["native_wild_tree_seed_drop"] = NoFacility,
-            ["native_wild_tree_tapper_output"] = DeferredFacility,
+            ["native_wild_tree_tapper_output"] = ExistingCurrentMachine,
             ["recipe_output"] = DeferredFacility,
             ["sells"] = NoFacility
         };
@@ -109,6 +111,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
                 route,
                 staticRoute,
                 state),
+            ExistingCurrentMachine => EvaluateExistingCurrentMachine(
+                route,
+                staticRoute,
+                state.MachineFleet),
             PreparedCultivation => EvaluatePreparedCultivation(
                 route,
                 staticRoute,

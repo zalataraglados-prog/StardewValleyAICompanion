@@ -49,6 +49,49 @@ public sealed class WildTreeTapperOutputSourceGuardTests
         Assert.True(fixtureVerification > cacheRefresh);
     }
 
+    [Fact]
+    public void TapperCurrentOutputRemainsConnectedThroughPlanningAxes()
+    {
+        var bridge = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.MachineOutputSources.cs");
+        var candidates = ReadRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "OptionRegistry",
+            "CandidateOptionAvailabilityEvaluator.Machines.cs");
+        var facility = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateFacilityBuilder.Evaluation.cs");
+        var processing = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateProcessingBuilder.Evaluation.cs");
+        var daily = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Evaluation.cs");
+
+        Assert.Contains(
+            "ReadActiveMachineOutputAuthoritativeRouteSources(\n        GameLocation location,\n        Vector2 tile,",
+            bridge.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
+        Assert.Contains("Parameter(\"max_movement_tiles\"", candidates);
+        Assert.Contains(
+            "[\"native_wild_tree_tapper_output\"] = ExistingCurrentMachine",
+            facility);
+        Assert.Contains(
+            "[\"native_wild_tree_tapper_output\"] = CurrentMachineOutput",
+            processing);
+        Assert.Contains(
+            "\"native_wild_tree_tapper_output\" =>\n                EvaluateCurrentRouteCollection",
+            daily.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(

@@ -10,6 +10,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         "native_machine_processing_schedule";
     private const string MachineInputPurchase =
         "upstream_machine_input_purchase";
+    private const string CurrentMachineOutput =
+        "current_machine_output_materialized";
     private const string DeferredProduction =
         "production_lead_time_binding_pending_upstream";
 
@@ -47,7 +49,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             ["native_wild_tree_chop_drop"] = NoDeterministicWait,
             ["native_wild_tree_seed"] = NoDeterministicWait,
             ["native_wild_tree_seed_drop"] = NoDeterministicWait,
-            ["native_wild_tree_tapper_output"] = DeferredProduction,
+            ["native_wild_tree_tapper_output"] = CurrentMachineOutput,
             ["recipe_output"] = NoDeterministicWait,
             ["sells"] = NoDeterministicWait
         };
@@ -116,6 +118,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 route,
                 staticRoute,
                 state,
+                targetTotalDay),
+            CurrentMachineOutput => EvaluateCurrentMachineOutput(
+                route,
+                staticRoute,
                 targetTotalDay),
             _ => Blocked(
                 route,
