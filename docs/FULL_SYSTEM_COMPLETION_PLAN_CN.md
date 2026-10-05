@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 春葱层并入共享 crop 场景
+
+`native_spring_onion_harvest` 已按 `full_shipment:item:399 / (O)399 / foraging.harvest_spring_onions` 接入。防风草和春葱共用同一 crop fixture 编排及 `executor.harvest_crop`，仅场景参数分别绑定普通种子 `472` 与原生 forage crop `1`；这消除了防风草专用分支，没有形成第二套作物链。
+
+异机守卫 `8/8`、game-free `129/129`、Bootstrap Release 通过。EVD-335 的历史原生执行可用于确认复用方向，但本层仍需 fresh Full Shipment acquisition rollout proof，生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 岛屿棕榈层采用精确跨地点根
 
 `native_wild_tree_seed` 已按 `full_shipment:item:88 / (O)88 / wild_tree:6 / foraging.harvest_tree_product` 加入共享样本 runner。场景配置显式绑定 `IslandSouth 20,20`，证明根校验从写死 Farm 改为比较场景的精确地点；非 forage 场景默认仍为 Farm，完整 Sap recurrence 的 Farm 与第 0 天约束均保留。

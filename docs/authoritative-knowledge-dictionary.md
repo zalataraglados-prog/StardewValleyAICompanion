@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native spring-onion sample identity
+
+The locked Full Shipment inventory identifies Spring Onion `(O)399` as `full_shipment:item:399`, route kind
+`native_spring_onion_harvest`, source `Crop.harvest` branch `whichForageCrop 1 => (O)399`, and endpoint
+`foraging.harvest_spring_onions`. The representative fixture uses the native forage-crop constructor rather than an
+ordinary seed identity. Historical EVD-335 proves the action chain, while runtime-stratum admission remains pending.
+
 ## 2026-10-05 native Island palm seed sample identity
 
 The locked Full Shipment inventory identifies Coconut `(O)88` as `full_shipment:item:88`, route kind

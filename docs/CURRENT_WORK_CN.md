@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 春葱样本复用作物采集链
+
+- 权威路线固定为 `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / Crop.harvest / whichForageCrop 1 => (O)399 / foraging.harvest_spring_onions`。既有 EVD-335 原生 DailyPlan smoke 验证 `executor.harvest_crop`、背包增量、作物移除和 Foraging XP `+3`。
+- 防风草与春葱现在由同一 crop 场景表驱动 `debug.setup_harvest_crop_target`：防风草使用 `seed_id=472`，春葱使用 `rule_key=spring_onion`。fixture 仍在 proof 根外，没有新增作物执行器。
+- 严格 resume tuple 为 `full_shipment:item:399|(O)399|native_spring_onion_harvest`。`LZT` 上样本守卫 `8/8`、Core game-free `129/129`、Bootstrap Release `0 warning / 0 error`。
+- 历史 EVD-335 只证明执行链可复用；新的 Full Shipment acquisition proof 待采集，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 岛屿棕榈样本精确地点根
 
 - `native_wild_tree_seed` 的代表路线为 `full_shipment:item:88 / (O)88 / wild_tree:6 / foraging.harvest_tree_product`。匹配的 `island_palm` 原生 smoke 位于 `IslandSouth 20,20`，不能借用 Farm 根。

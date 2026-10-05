@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 春葱样本准入状态
+
+春葱 `(O)399` 已通过共享 crop fixture 接入既有 `foraging.harvest_spring_onions -> executor.harvest_crop` 链，严格 resume tuple 已锁定。异机样本守卫 `8/8`、Core game-free `129/129` 和 Bootstrap Release 已通过。尚无新的 Full Shipment acquisition receipt，因此该层仍为 pending，严格索引与训练授权不变。
+
 ## 2026-10-05 Full Shipment 岛屿棕榈样本准入状态
 
 椰子 `(O)88` 的 `native_wild_tree_seed` 样本已接入现有树产品链，并以精确 `IslandSouth 20,20` 根区别于 Farm 样本。异机样本守卫 `7/7`、Core game-free `128/128` 和 Bootstrap Release 已通过。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引和训练授权均不变。

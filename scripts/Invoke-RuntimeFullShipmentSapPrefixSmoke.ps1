@@ -25,7 +25,8 @@ param(
         "ginger_harvest_sample",
         "tea_bush_harvest_sample",
         "wild_tree_seed_drop_sample",
-        "wild_tree_seed_sample")]
+        "wild_tree_seed_sample",
+        "spring_onion_harvest_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -55,6 +56,7 @@ $sampleRequirementId = switch ($Scenario) {
     "tea_bush_harvest_sample" { "full_shipment:item:815" }
     "wild_tree_seed_drop_sample" { "full_shipment:item:408" }
     "wild_tree_seed_sample" { "full_shipment:item:88" }
+    "spring_onion_harvest_sample" { "full_shipment:item:399" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -64,6 +66,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "tea_bush_harvest_sample" { "(O)815" }
     "wild_tree_seed_drop_sample" { "(O)408" }
     "wild_tree_seed_sample" { "(O)88" }
+    "spring_onion_harvest_sample" { "(O)399" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -73,7 +76,29 @@ $sampleRankingOptionId = switch ($Scenario) {
     "tea_bush_harvest_sample" { "foraging.harvest_bushes" }
     "wild_tree_seed_drop_sample" { "foraging.harvest_tree_product" }
     "wild_tree_seed_sample" { "foraging.harvest_tree_product" }
+    "spring_onion_harvest_sample" { "foraging.harvest_spring_onions" }
     default { "foraging.chop_wild_tree" }
+}
+$cropFixture = switch ($Scenario) {
+    "parsnip_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "parsnip"
+            RuleKey = ""
+            SeedId = "472"
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "spring_onion_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "spring-onion"
+            RuleKey = "spring_onion"
+            SeedId = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    default { $null }
 }
 $forageFixture = switch ($Scenario) {
     "berry_bush_harvest_sample" {
@@ -752,13 +777,14 @@ try {
         throw "Native fresh-save FarmHouse exit failed."
     }
 
-    if ($Scenario -eq "parsnip_harvest_sample") {
+    if ($null -ne $cropFixture) {
+        $fixtureSlug = [string]$cropFixture.Slug
         $cropSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
         $cropSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId
             queue_id = "$RunId.fixture"
-            queue_item_id = "$RunId.fixture.ready_parsnip"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
             before_state_hash = [string]$cropSetupSource.Value.state_hash
             option_id = "debug.setup_harvest_crop_target"
             execution_mode = "training_singleplayer"
@@ -766,22 +792,23 @@ try {
             save_isolation_path = $isolatedSavesPath
             request_nonce = [guid]::NewGuid().ToString("N")
             created_at = [DateTimeOffset]::UtcNow.ToString("O")
-            target_tile_x = 64
-            target_tile_y = 15
-            seed_id = "472"
+            target_tile_x = [int]$cropFixture.TargetTileX
+            target_tile_y = [int]$cropFixture.TargetTileY
+            rule_key = [string]$cropFixture.RuleKey
+            seed_id = [string]$cropFixture.SeedId
             debug_fill_inventory = $false
         }
         $cropSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `
             -Body $cropSetupRequest
         Write-JsonFile -Path (Join-Path $artifactDirectory `
-            "fixture-ready-parsnip-request.json") -Value $cropSetupRequest
+            "fixture-ready-$fixtureSlug-request.json") -Value $cropSetupRequest
         Write-Utf8Text -Path (Join-Path $artifactDirectory `
-            "fixture-ready-parsnip-result.json") -Value $cropSetupResult.Raw
+            "fixture-ready-$fixtureSlug-result.json") -Value $cropSetupResult.Raw
         if ([string]$cropSetupResult.Value.status -ne "applied" -or
             [string]$cropSetupResult.Value.primitive_verification_status -ne
                 "verified") {
-            throw "Ready Parsnip proof fixture setup failed."
+            throw "Ready $fixtureSlug proof fixture setup failed."
         }
     }
     elseif ($null -ne $forageFixture) {

@@ -172,6 +172,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void SpringOnionSampleReusesNativeCropHarvestChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"spring_onion_harvest_sample\" { \"full_shipment:item:399\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"spring_onion_harvest_sample\" { \"(O)399\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"spring_onion_harvest_sample\" { \"foraging.harvest_spring_onions\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"spring-onion\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuleKey = \"spring_onion\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.setup_harvest_crop_target\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -225,6 +258,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:88|(O)88|native_wild_tree_seed",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:399|(O)399|native_spring_onion_harvest",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

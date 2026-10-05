@@ -1,5 +1,14 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native spring-onion sample shares the crop scenario table
+
+- The locked route is
+  `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / foraging.harvest_spring_onions`.
+- Parsnip and spring onion now share `debug.setup_harvest_crop_target` and the existing crop candidate/compiler/executor.
+  The scenario table binds seed `472` for Parsnip and native forage-crop rule `spring_onion` for `(O)399`.
+- Off-machine guards passed `8/8`, game-free tests passed `129/129`, and Bootstrap Release built cleanly.
+- Historical EVD-335 confirms native-chain reuse, not Full Shipment rollout admission. Production remains `2/26`.
+
 ## 2026-10-05: Island palm sample binds an exact cross-location root
 
 - The representative route is
