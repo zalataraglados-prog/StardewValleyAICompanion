@@ -24,6 +24,31 @@ public sealed class WildTreeTapperOutputSourceGuardTests
         Assert.DoesNotContain("TryGetTapperOutput(", source);
     }
 
+    [Fact]
+    public void MachineOutputFixtureRefreshesTransparentMachineCache()
+    {
+        var source = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+
+        var machinePlacement = source.IndexOf(
+            "farm.objects[tile] = machine;",
+            StringComparison.Ordinal);
+        var cacheRefresh = source.IndexOf(
+            "RefreshTransparentMachineProbeCache();",
+            machinePlacement,
+            StringComparison.Ordinal);
+        var fixtureVerification = source.IndexOf(
+            "var verified = MachineAt(farm, target)",
+            machinePlacement,
+            StringComparison.Ordinal);
+
+        Assert.True(machinePlacement >= 0);
+        Assert.True(cacheRefresh > machinePlacement);
+        Assert.True(fixtureVerification > cacheRefresh);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(

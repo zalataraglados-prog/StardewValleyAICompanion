@@ -777,6 +777,7 @@ public sealed partial class ModEntry : Mod
         }
         farm.objects[tile] = machine;
         MoveFixtureFarmerToFarmAdjacent(target);
+        RefreshTransparentMachineProbeCache();
 
         var verified = MachineAt(farm, target) is
             { readyForHarvest.Value: true, heldObject.Value: not null } &&
