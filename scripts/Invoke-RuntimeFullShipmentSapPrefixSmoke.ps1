@@ -40,6 +40,7 @@ param(
         "tree_moss_harvest_sample",
         "location_artifact_spot_sample",
         "geode_drop_sample",
+        "shop_purchase_sample",
         "monster_drop_sample",
         "radioactive_ore_node_sample")]
     [string] $Scenario = "sap_prefix",
@@ -97,6 +98,7 @@ $sampleRequirementId = switch ($Scenario) {
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
     "location_artifact_spot_sample" { "full_shipment:item:330" }
     "geode_drop_sample" { "full_shipment:item:386" }
+    "shop_purchase_sample" { "full_shipment:item:388" }
     "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
@@ -122,6 +124,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "tree_moss_harvest_sample" { "(O)Moss" }
     "location_artifact_spot_sample" { "(O)330" }
     "geode_drop_sample" { "(O)386" }
+    "shop_purchase_sample" { "(O)388" }
     "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
@@ -147,6 +150,7 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
     "location_artifact_spot_sample" { "native_location_artifact_spot" }
     "geode_drop_sample" { "native_geode_drop" }
+    "shop_purchase_sample" { "sells" }
     "monster_drop_sample" { "native_monster_drop_table" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
     default { "native_wild_tree_chop_drop" }
@@ -172,6 +176,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
     "location_artifact_spot_sample" { "foraging.excavate_artifact_spots" }
     "geode_drop_sample" { "processing.crack_geode" }
+    "shop_purchase_sample" { "economy.buy_supplies" }
     "monster_drop_sample" { "mining.reach_depth" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
     default { "foraging.chop_wild_tree" }
@@ -204,6 +209,26 @@ $sampleRankingParameters = switch ($Scenario) {
             [ordered]@{
                 name = "geode_purpose"
                 value = "open_for_full_shipment"
+            }
+        )
+    }
+    "shop_purchase_sample" {
+        @(
+            [ordered]@{
+                name = "continuation.shop_id"
+                value = "Carpenter"
+            },
+            [ordered]@{
+                name = "continuation.qualified_item_id"
+                value = "(O)388"
+            },
+            [ordered]@{
+                name = "continuation.max_unit_price"
+                value = "10"
+            },
+            [ordered]@{
+                name = "continuation.quantity"
+                value = "1"
             }
         )
     }
@@ -441,6 +466,15 @@ $geodeFixture = switch ($Scenario) {
             ExpectedRouteKind = "native_geode_drop"
             ExpectedSourceId = "geode:791:1:random:6"
             SearchCounterMax = 511
+        }
+    }
+    default { $null }
+}
+$timeFixture = switch ($Scenario) {
+    "shop_purchase_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "shop-purchase"
+            TargetTime = 900
         }
     }
     default { $null }
@@ -1149,6 +1183,38 @@ try {
             "fixture-ready-$fixtureSlug-result.json") -Value $cropSetupResult.Raw
         if ([string]$cropSetupResult.Value.status -ne "applied" -or
             [string]$cropSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
+    elseif ($null -ne $timeFixture) {
+        $fixtureSlug = [string]$timeFixture.Slug
+        $timeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $timeSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$timeSetupSource.Value.state_hash
+            option_id = "debug.advance_time_to"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_time = [int]$timeFixture.TargetTime
+        }
+        $timeSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $timeSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $timeSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $timeSetupResult.Raw
+        if ([string]$timeSetupResult.Value.status -ne "applied" -or
+            [string]$timeSetupResult.Value.primitive_verification_status -ne
                 "verified") {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }

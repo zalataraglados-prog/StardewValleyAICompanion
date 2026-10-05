@@ -848,6 +848,47 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void ShopPurchaseSampleBindsCarpenterAndUsesSharedPurchaseChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"full_shipment:item:388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"(O)388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"sells\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"shop_purchase_sample\" { \"economy.buy_supplies\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"continuation.shop_id\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "value = \"Carpenter\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.advance_time_to\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TargetTime = 900",
+            runner,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RadioactiveOreSampleUsesTheSharedPlanningAxes()
     {
         var calendar = ReadRepositoryFile(
@@ -966,6 +1007,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
             "\"location_artifact_spot_sample\" { \"native_location_artifact_spot\" }",
             "\"geode_drop_sample\" { \"native_geode_drop\" }",
+            "\"shop_purchase_sample\" { \"sells\" }",
             "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
             "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
             "default { \"native_wild_tree_chop_drop\" }",
@@ -1114,6 +1156,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:386|(O)386|native_geode_drop",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:388|(O)388|sells",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -1,10 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 商店购买入口
+
+- 商店购买代表固定为 `full_shipment:item:388 / (O)388 / sells / shop:Carpenter`。候选显式约束 `Carpenter`、木材 `(O)388`、单价不高于 10 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。
+- 隔离夹具只使用既有 `debug.advance_time_to` 把春 1 推进到 9:00；不会打开菜单、生成物品或修改商店库存。候选来源身份由透明商店预览的 `shop_id` 验证，关闭或不可达时仍在上游排除。
+- 当前 runner 配置入口达到 `24/26`；剩余 2 层为奖励物和地点鱼。本轮不增加生产 evidence index，正式训练仍为 `false`。
+
 ## 2026-10-05 Full Shipment 晶球掉落入口
 
 - 晶球代表固定为 `full_shipment:item:386 / (O)386 / native_geode_drop / geode:791:1:random:6`，输入为金色椰子 `(O)791`，执行继续复用 `processing.crack_geode -> executor.crack_geode` 的铁匠柜台与原生 `GeodeMenu` 链。
 - 隔离夹具只搜索 `geodes_cracked_before` 以定位能产生目标的原生 RNG 前态；透明桥必须同时投影 `(O)386` 和精确来源，随后产品执行器才会敲开晶球。夹具不生成铱矿，且第一颗金色椰子固定奖励分支被显式排除。
-- 当前 runner 配置入口达到 `23/26`；剩余 3 层为商店购买、奖励物和地点鱼。本轮不增加生产 evidence index，正式训练仍为 `false`。
+- 该阶段 runner 配置入口达到 `23/26`，随后商店购买入口使当前总数达到 `24/26`。本轮不增加生产 evidence index，正式训练仍为 `false`。
 
 ## 2026-10-05 Full Shipment 蚯蚓地入口
 
