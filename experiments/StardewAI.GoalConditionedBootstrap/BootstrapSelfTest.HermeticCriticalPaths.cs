@@ -8,6 +8,7 @@ internal static partial class BootstrapSelfTest
     {
         VerifyHermeticStrategicPolicyAndPortfolio();
         VerifyMachineCalendarResolution();
+        VerifyRadioactiveOreCalendarResolution();
         VerifyMachineFacilityResolution();
         VerifyMachineResourceResolution();
         VerifyMachineInputPurchasePrerequisite();

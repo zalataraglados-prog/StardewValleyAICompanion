@@ -1,4 +1,6 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.OptionRegistry;
 
@@ -52,38 +54,20 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     "current_route_option_evaluation_ambiguous:" + optionId);
                 continue;
             }
-            foreach (var candidate in options[0].EventCandidates.Where(value =>
-                         value.Available && value.BlockReasons.Length == 0))
-            {
-                var parameters = candidate.Parameters
-                    .Where(value => value.Name ==
-                        "authoritative_route_sources_json")
-                    .Select(value => value.Value)
-                    .ToArray();
-                if (parameters.Length == 0)
-                    continue;
-                if (parameters.Length != 1 ||
-                    !TryReadSources(parameters[0], out var sources))
-                {
-                    reasons.Add(
-                        "current_route_candidate_source_invalid:" +
-                        candidate.CandidateId);
-                    continue;
-                }
-                candidates.AddRange(sources.Select(source => new
-                    AcquisitionCurrentRouteCandidate(
-                        candidate.CandidateId,
-                        optionId,
-                        candidate.LocationId,
-                        candidate.TileX,
-                        candidate.TileY,
-                        candidate.EstimatedTicks,
-                        candidate.EnergyCost,
-                        source.RouteKind,
-                        source.SourceId,
-                        source.QualifiedItemId)));
-            }
+            AddCandidateSources(
+                options[0].EventCandidates,
+                optionId,
+                candidates,
+                reasons);
         }
+
+        // Parameterized mining needs a concrete one-floor envelope to expose
+        // the shared current mechanical candidate for route-source matching.
+        AddCandidateSources(
+            BuildRollingMiningCandidates(snapshot),
+            "mining.reach_depth",
+            candidates,
+            reasons);
         return new AcquisitionCurrentRouteCandidateIndex(
             snapshot,
             candidates
@@ -96,6 +80,125 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             reasons.Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
                 .ToArray());
+    }
+
+    private static EventCandidate[] BuildRollingMiningCandidates(
+        SnapshotEnvelope snapshot)
+    {
+        var parameters = BuildRollingMiningParameters(snapshot);
+        if (parameters.Length == 0)
+            return Array.Empty<EventCandidate>();
+        return MiningReachDepthCandidateBuilder.Build(snapshot, parameters);
+    }
+
+    internal static SmallModelActionParameter[] BuildRollingMiningParameters(
+        SnapshotEnvelope snapshot)
+    {
+        if (!TryReadCurrentMine(snapshot, out var depth, out var family))
+            return Array.Empty<SmallModelActionParameter>();
+        return new[]
+        {
+            new SmallModelActionParameter
+            {
+                Name = "target_depth",
+                Value = (depth + 1).ToString(
+                    System.Globalization.CultureInfo.InvariantCulture)
+            },
+            new SmallModelActionParameter
+            {
+                Name = "target_location_family",
+                Value = family
+            }
+        };
+    }
+
+    private static bool TryReadCurrentMine(
+        SnapshotEnvelope snapshot,
+        out int depth,
+        out string family)
+    {
+        depth = 0;
+        family = string.Empty;
+        if (!snapshot.State.TryGetValue("mining", out var section) ||
+            section.ValueKind != JsonValueKind.Object ||
+            !section.TryGetProperty("current_mine", out var field) ||
+            FieldStatus(field) != "available")
+        {
+            return false;
+        }
+        var value = FieldValue(field);
+        if (value.ValueKind != JsonValueKind.Object ||
+            !value.TryGetProperty("mine_level", out var level) ||
+            !level.TryGetInt32(out depth))
+        {
+            return false;
+        }
+        family = ReadString(value, "mine_kind");
+        return depth >= 0 && !string.IsNullOrWhiteSpace(family);
+    }
+
+    private static void AddCandidateSources(
+        IEnumerable<EventCandidate> eventCandidates,
+        string optionId,
+        ICollection<AcquisitionCurrentRouteCandidate> candidates,
+        ICollection<string> reasons)
+    {
+        foreach (var candidate in eventCandidates.Where(value =>
+                     value.Available && value.BlockReasons.Length == 0))
+        {
+            var parameters = candidate.Parameters
+                .Where(value => value.Name ==
+                    "authoritative_route_sources_json")
+                .Select(value => value.Value)
+                .ToArray();
+            if (parameters.Length == 0)
+                continue;
+            if (parameters.Length != 1 ||
+                !TryReadSources(parameters[0], out var sources))
+            {
+                reasons.Add(
+                    "current_route_candidate_source_invalid:" +
+                    candidate.CandidateId);
+                continue;
+            }
+            foreach (var source in sources)
+            {
+                candidates.Add(new AcquisitionCurrentRouteCandidate(
+                    candidate.CandidateId,
+                    optionId,
+                    candidate.LocationId,
+                    ReadIntParameter(candidate, "target_tile_x") ??
+                        candidate.TileX,
+                    ReadIntParameter(candidate, "target_tile_y") ??
+                        candidate.TileY,
+                    ReadIntParameter(candidate, "stand_tile_x"),
+                    ReadIntParameter(candidate, "stand_tile_y"),
+                    ReadIntParameter(candidate, "max_movement_tiles"),
+                    ReadIntParameter(candidate, "max_tool_swings"),
+                    candidate.EstimatedTicks,
+                    candidate.EnergyCost,
+                    source.RouteKind,
+                    source.SourceId,
+                    source.QualifiedItemId));
+            }
+        }
+    }
+
+    private static int? ReadIntParameter(
+        EventCandidate candidate,
+        string name)
+    {
+        var values = candidate.Parameters
+            .Where(value => value.Name == name)
+            .Select(value => value.Value)
+            .ToArray();
+        return values.Length == 1 && int.TryParse(
+            values[0],
+            System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var parsed)
+                ? parsed
+                : null;
     }
 
     public bool TryFind(
@@ -129,16 +232,17 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
     {
         if (routeKind == "native_monster_drop_table")
         {
-            if (TryField("mining", "monsters", out var field) &&
-                ((FieldStatus(field) == "available" &&
-                  FieldValue(field).ValueKind == JsonValueKind.Array) ||
-                 (FieldStatus(field) == "unavailable" &&
-                  ReadString(field, "reason") == "not_loaded_mineshaft")))
-            {
-                return reasons.Count == 0;
-            }
-            reasons.Add("current_mine_monster_terminal_evidence_incomplete");
-            return false;
+            return CanConcludeMineArray(
+                "monsters",
+                "current_mine_monster_terminal_evidence_incomplete",
+                reasons);
+        }
+        if (routeKind == "native_radioactive_ore_node")
+        {
+            return CanConcludeMineArray(
+                "objects",
+                "current_mine_object_terminal_evidence_incomplete",
+                reasons);
         }
         if (routeKind == "native_wild_tree_tapper_output")
         {
@@ -157,6 +261,23 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             return false;
         }
         reasons.Add("current_route_candidate_kind_not_supported:" + routeKind);
+        return false;
+    }
+
+    private bool CanConcludeMineArray(
+        string fieldName,
+        string incompleteReason,
+        ICollection<string> reasons)
+    {
+        if (TryField("mining", fieldName, out var field) &&
+            ((FieldStatus(field) == "available" &&
+              FieldValue(field).ValueKind == JsonValueKind.Array) ||
+             (FieldStatus(field) == "unavailable" &&
+              ReadString(field, "reason") == "not_loaded_mineshaft")))
+        {
+            return reasons.Count == 0;
+        }
+        reasons.Add(incompleteReason);
         return false;
     }
 
@@ -233,6 +354,10 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     string LocationId,
     int? TargetTileX,
     int? TargetTileY,
+    int? StandTileX,
+    int? StandTileY,
+    int? MaxMovementTiles,
+    int? MaxToolSwings,
     int EstimatedTicks,
     int EnergyCost,
     string RouteKind,

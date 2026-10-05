@@ -106,6 +106,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (requirement.RouteKind is not
             ("native_location_fish_spawn" or
              "native_mine_fishing_override" or
+             "native_radioactive_ore_node" or
              "recipe_output"))
         {
             blockingReasons = Array.Empty<string>();
@@ -115,6 +116,39 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                     OptionId = optionId
                 })
                 .ToArray();
+        }
+
+        if (requirement.RouteKind == "native_radioactive_ore_node")
+        {
+            if (!endpointOptionIds.SequenceEqual(
+                    new[] { "mining.reach_depth" },
+                    StringComparer.Ordinal))
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_radioactive_ore_endpoint_invalid"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+            var parameters = AcquisitionCurrentRouteCandidateIndex
+                .BuildRollingMiningParameters(snapshot);
+            if (parameters.Length == 0)
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_current_mine_intent_unavailable"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+            blockingReasons = Array.Empty<string>();
+            return new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "mining.reach_depth",
+                    Parameters = parameters
+                }
+            };
         }
 
         if (requirement.RouteKind == "recipe_output")

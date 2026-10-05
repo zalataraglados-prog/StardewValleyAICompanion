@@ -205,6 +205,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     beforeStateHash, StringComparison.Ordinal) ||
                 !string.Equals(value.Item.NormalizedCommand.ExecutionMode,
                     queue.ExecutionMode, StringComparison.Ordinal) ||
+                !CarriesSelectedCandidate(
+                    value.Item.NormalizedCommand.Parameters,
+                    selectedCandidateId) ||
                 !RouteParametersMatch(
                     value.Item.NormalizedCommand.Parameters,
                     requirement,
@@ -595,6 +598,23 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 expected.Value,
                 StringComparison.Ordinal);
         });
+    }
+
+    private static bool CarriesSelectedCandidate(
+        SmallModelActionParameter[]? parameters,
+        string selectedCandidateId)
+    {
+        var expected = "candidate_id:" + selectedCandidateId;
+        return (parameters ?? Array.Empty<SmallModelActionParameter>())
+            .Count(value =>
+                string.Equals(
+                    value.Name,
+                    "precondition",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    value.Value,
+                    expected,
+                    StringComparison.Ordinal)) == 1;
     }
 
     private static SmallModelActionParameter Parameter(

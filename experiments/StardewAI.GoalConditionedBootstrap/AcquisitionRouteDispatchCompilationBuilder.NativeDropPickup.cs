@@ -10,6 +10,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
 {
     private const string DeferredWildTreePickupKind =
         "native_wild_tree_chop_drop";
+    private const string DeferredRadioactiveOrePickupKind =
+        "native_radioactive_ore_node";
 
     private static string[] AppendDeferredNativeDropPickup(
         SmallModelPlanEnvelope plan,
@@ -17,28 +19,71 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         PolicyEventCandidatePrediction source,
         SnapshotEnvelope snapshot)
     {
-        if (requirement.RouteKind != DeferredWildTreePickupKind)
+        if (requirement.RouteKind is not (
+                DeferredWildTreePickupKind or
+                DeferredRadioactiveOrePickupKind))
             return Array.Empty<string>();
 
-        if (source.OptionId != "foraging.chop_wild_tree" ||
-            source.Kind != "clear_obstacle_tile" ||
-            !source.TileX.HasValue ||
-            !source.TileY.HasValue ||
-            requirement.RequiredAmount <= 0 ||
+        if (requirement.RequiredAmount <= 0 ||
             string.IsNullOrWhiteSpace(requirement.QualifiedItemId))
         {
             return new[] { "native_drop_deferred_pickup_source_invalid" };
         }
 
-        var minimumOutputsJson = UniqueParameter(
-            source,
-            "tree_chop_guaranteed_minimum_outputs_json");
-        if (!TryReadGuaranteedMinimum(
-                minimumOutputsJson,
-                requirement.QualifiedItemId,
-                requirement.MinimumQuality,
-                out var guaranteedMinimum) ||
-            guaranteedMinimum < requirement.RequiredAmount)
+        var targetX = source.TileX;
+        var targetY = source.TileY;
+        var minimumOutputsJson = string.Empty;
+        var guaranteedMinimum = 0;
+        if (requirement.RouteKind == DeferredWildTreePickupKind)
+        {
+            if (source.OptionId != "foraging.chop_wild_tree" ||
+                source.Kind != "clear_obstacle_tile" ||
+                !targetX.HasValue ||
+                !targetY.HasValue)
+            {
+                return new[] { "native_drop_deferred_pickup_source_invalid" };
+            }
+
+            minimumOutputsJson = UniqueParameter(
+                source,
+                "tree_chop_guaranteed_minimum_outputs_json");
+            if (!TryReadGuaranteedMinimum(
+                    minimumOutputsJson,
+                    requirement.QualifiedItemId,
+                    requirement.MinimumQuality,
+                    out guaranteedMinimum))
+            {
+                return new[]
+                {
+                    "native_drop_deferred_pickup_guarantee_insufficient"
+                };
+            }
+        }
+        else
+        {
+            targetX = UniqueIntParameter(source, "target_tile_x");
+            targetY = UniqueIntParameter(source, "target_tile_y");
+            if (source.OptionId != "mining.reach_depth" ||
+                source.Kind != "mining_reach_depth_plan_envelope" ||
+                !targetX.HasValue ||
+                !targetY.HasValue ||
+                !CandidateDeclaresAuthoritativeRouteSource(
+                    source,
+                    requirement.RouteKind,
+                    requirement.SourceId,
+                    requirement.QualifiedItemId) ||
+                !TryReadRadioactiveNodeGuaranteedMinimum(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    requirement,
+                    out guaranteedMinimum))
+            {
+                return new[] { "native_drop_deferred_pickup_source_invalid" };
+            }
+        }
+
+        if (guaranteedMinimum < requirement.RequiredAmount)
         {
             return new[]
             {
@@ -70,12 +115,15 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             TargetLocation = string.IsNullOrWhiteSpace(source.LocationId)
                 ? "current_location"
                 : source.LocationId,
-            TargetTileX = source.TileX,
-            TargetTileY = source.TileY,
+            TargetTileX = targetX,
+            TargetTileY = targetY,
             EstimatedMinutes = 0,
             Preconditions = new[]
             {
-                "prior_native_wild_tree_chop_verified=true",
+                "candidate_id:" +
+                    AcquisitionRouteExecutionBindingBuilder.SelectedCandidateId(
+                        requirement.RouteOccurrenceId),
+                "prior_native_source_execution_verified=true",
                 "guaranteed_target_debris_spawned=true"
             },
             ExpectedEffects = new[]
@@ -105,7 +153,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                         CultureInfo.InvariantCulture)),
                 Parameter(
                     "deferred_pickup_source_kind",
-                    DeferredWildTreePickupKind),
+                    requirement.RouteKind),
                 Parameter(
                     "deferred_pickup_debris_item_total_before",
                     debrisBefore.Value.ToString(
@@ -113,11 +161,15 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 Parameter(
                     "deferred_pickup_guaranteed_minimum_quantity",
                     guaranteedMinimum.ToString(
-                        CultureInfo.InvariantCulture)),
-                Parameter(
-                    "tree_chop_guaranteed_minimum_outputs_json",
-                    minimumOutputsJson)
-            }
+                        CultureInfo.InvariantCulture))
+            }.Concat(requirement.RouteKind == DeferredWildTreePickupKind
+                ? new[]
+                {
+                    Parameter(
+                        "tree_chop_guaranteed_minimum_outputs_json",
+                        minimumOutputsJson)
+                }
+                : Array.Empty<SmallModelActionParameter>()).ToArray()
         };
         plan.Steps = (plan.Steps ?? Array.Empty<SmallModelPlanStep>())
             .Append(pickup)
@@ -135,6 +187,98 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             .Select(value => value.Value)
             .ToArray();
         return values.Length == 1 ? values[0] : string.Empty;
+    }
+
+    private static int? UniqueIntParameter(
+        PolicyEventCandidatePrediction candidate,
+        string name) => int.TryParse(
+            UniqueParameter(candidate, name),
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out var value)
+                ? value
+                : null;
+
+    private static bool TryReadRadioactiveNodeGuaranteedMinimum(
+        SnapshotEnvelope snapshot,
+        int targetX,
+        int targetY,
+        AcquisitionRouteTargetDateUnlock requirement,
+        out int guaranteedMinimum)
+    {
+        guaranteedMinimum = 0;
+        if (requirement.MinimumQuality != 0 ||
+            requirement.RouteKind != DeferredRadioactiveOrePickupKind ||
+            requirement.SourceId != "GameLocation.breakStone" ||
+            requirement.QualifiedItemId != "(O)909")
+        {
+            return false;
+        }
+
+        var objects = StateValue(snapshot, "mining", "objects");
+        if (!objects.HasValue ||
+            objects.Value.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        var matches = objects.Value.EnumerateArray()
+            .Where(value => value.ValueKind == JsonValueKind.Object &&
+                Int(value, "tile_x") == targetX &&
+                Int(value, "tile_y") == targetY)
+            .ToArray();
+        if (matches.Length != 1)
+            return false;
+
+        var node = matches[0];
+        if (String(node, "item_id") != "95" ||
+            String(node, "qualified_item_id") != "(O)95" ||
+            String(node, "drop_rule_branch") !=
+                "game_location_break_stone_direct_node" ||
+            !ArrayContainsExactlyOnce(
+                node,
+                "guaranteed_drop_qualified_item_ids",
+                requirement.QualifiedItemId) ||
+            !RouteSourceExistsExactlyOnce(
+                node,
+                "authoritative_route_sources",
+                requirement.RouteKind,
+                requirement.SourceId,
+                requirement.QualifiedItemId))
+        {
+            return false;
+        }
+
+        guaranteedMinimum = 1;
+        return true;
+    }
+
+    private static bool ArrayContainsExactlyOnce(
+        JsonElement source,
+        string propertyName,
+        string expected)
+    {
+        return source.TryGetProperty(propertyName, out var values) &&
+            values.ValueKind == JsonValueKind.Array &&
+            values.EnumerateArray().Count(value =>
+                value.ValueKind == JsonValueKind.String &&
+                value.GetString() == expected) == 1;
+    }
+
+    private static bool RouteSourceExistsExactlyOnce(
+        JsonElement source,
+        string propertyName,
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId)
+    {
+        return source.TryGetProperty(propertyName, out var rows) &&
+            rows.ValueKind == JsonValueKind.Array &&
+            rows.EnumerateArray().Count(row =>
+                row.ValueKind == JsonValueKind.Object &&
+                String(row, "route_kind") == routeKind &&
+                String(row, "source_id") == sourceId &&
+                String(row, "qualified_item_id") == qualifiedItemId) == 1;
     }
 
     private static bool TryReadGuaranteedMinimum(

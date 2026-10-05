@@ -50,6 +50,7 @@
     <Compile Include="FishingAttemptBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
+    <Compile Include="DailyPlanCompilerSources.cs" />
     <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
     <Compile Include="GameClockBudgetPolicyTests.cs" />
@@ -57,9 +58,12 @@
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="GenericMovementClearanceBoundarySourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
+    <Compile Include="DeferredNativeDropPickupTests.cs" />
     <Compile Include="SkullKeySnapshotContractSourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
+    <Compile Include="NativeShippingSourceGuardTests.cs" />
+    <Compile Include="NativeShippingSourceGuardTests.SleepSettlement.cs" />
     <Compile Include="NativeObjectMechanicsGovernanceTests.cs" />
     <Compile Include="PetCareRuntimeSourceGuardTests.cs" />
     <Compile Include="RuntimeHarnessSources.cs" />

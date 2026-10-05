@@ -4,6 +4,7 @@ param(
     [string] $ArtifactDirectory,
     [string] $ProjectRoot = "",
     [int] $BackendPort = 8798,
+    [string] $SnapshotProfile = "",
     [switch] $SkipBuild
 )
 
@@ -232,10 +233,22 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest" {
         "tree_moss_harvest_sample"
     }
+    "full_shipment:item:909|(O)909|native_radioactive_ore_node" {
+        "radioactive_ore_node_sample"
+    }
     default {
         throw "No acquisition sample scenario maps execution binding " +
             "'$requirementId|$qualifiedItemId|$routeKind'."
     }
+}
+if ([string]::IsNullOrWhiteSpace($SnapshotProfile)) {
+    $SnapshotProfile = if ($scenario -eq "radioactive_ore_node_sample") {
+        "training_mining"
+    }
+    else { "full" }
+}
+if ($SnapshotProfile -notin @("full", "training_mining")) {
+    throw "Unsupported acquisition resume snapshot profile: $SnapshotProfile"
 }
 
 $executionCommon = @(
@@ -325,7 +338,8 @@ try {
     Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
 
     $afterSnapshotRaw = Get-Content -LiteralPath $afterSnapshotPath -Raw
-    Invoke-JsonPost -Url "$backendUrl/api/v1/snapshots?profile=full" `
+    Invoke-JsonPost -Url (
+        "$backendUrl/api/v1/snapshots?profile=$SnapshotProfile") `
         -Body $afterSnapshotRaw | Out-Null
 
     Invoke-Bootstrap (@(
@@ -457,6 +471,7 @@ try {
                 "stardewai.runtime_full_shipment_acquisition_sample.v1"
             status = "passed"
             scenario = $scenario
+            snapshot_profile = $SnapshotProfile
             run_id = $runId
             fixture_excluded_from_proof_root = $true
             initial_state_hash = [string](

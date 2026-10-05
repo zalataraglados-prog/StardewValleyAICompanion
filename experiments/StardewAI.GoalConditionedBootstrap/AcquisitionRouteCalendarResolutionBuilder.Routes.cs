@@ -315,6 +315,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if (route.RouteKind == "native_radioactive_ore_node")
+        {
+            return ResolveRadioactiveOreNodeWindow(
+                qualifiedItemId,
+                route,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind is "native_crab_pot_output" or
             "native_location_fish_spawn" or
             "native_mine_fishing_override")

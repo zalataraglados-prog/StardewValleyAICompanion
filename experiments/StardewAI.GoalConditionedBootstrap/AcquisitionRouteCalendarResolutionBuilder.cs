@@ -15,7 +15,11 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         "native_location_forage_spawn",
         "native_mine_fishing_override",
         "native_machine_flavored_output",
-        "native_machine_item_query_output"
+        "native_machine_item_query_output",
+        "native_monster_drop_table",
+        "native_radioactive_ore_node",
+        "native_wild_tree_chop_drop",
+        "native_wild_tree_tapper_output"
     };
 
     public static AcquisitionRouteCalendarResolutionReport Build(

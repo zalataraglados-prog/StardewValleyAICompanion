@@ -19,7 +19,9 @@ namespace StardewAI.Core.Execution
             int? targetY)
         {
             var reasons = new List<string>();
-            if (sourceKind != "native_wild_tree_chop_drop")
+            if (sourceKind is not (
+                    "native_wild_tree_chop_drop" or
+                    "native_radioactive_ore_node"))
             {
                 reasons.Add("deferred_pickup_source_kind_unsupported");
                 return reasons.ToArray();
@@ -48,20 +50,6 @@ namespace StardewAI.Core.Execution
                 return reasons.ToArray();
             }
 
-            var feature = TerrainFeatureAt(
-                snapshot,
-                targetX.Value,
-                targetY.Value);
-            if (!feature.HasValue ||
-                ReadString(feature.Value, "runtime_type") !=
-                    "StardewValley.TerrainFeatures.Tree" ||
-                ReadString(feature.Value, "tree_chop_acquisition_status") !=
-                    "ready")
-            {
-                reasons.Add("deferred_pickup_source_tree_not_ready");
-                return reasons.ToArray();
-            }
-
             var sourceId = ReadParameter(
                 action,
                 "acquisition_source_id") ?? string.Empty;
@@ -69,27 +57,37 @@ namespace StardewAI.Core.Execution
                 action,
                 "acquisition_route_kind") ?? string.Empty;
             if (routeKind != sourceKind ||
-                string.IsNullOrWhiteSpace(sourceId) ||
-                !TreeDeclaresRouteSource(
-                    feature.Value,
-                    routeKind,
-                    sourceId,
-                    qualifiedItemId))
+                string.IsNullOrWhiteSpace(sourceId))
             {
                 reasons.Add("deferred_pickup_authoritative_source_drifted");
             }
 
-            var guaranteedJson = ReadParameter(
-                action,
-                "tree_chop_guaranteed_minimum_outputs_json") ?? string.Empty;
-            if (!TreeGuaranteeMatches(
-                    feature.Value,
-                    guaranteedJson,
+            if (sourceKind == "native_wild_tree_chop_drop")
+            {
+                ValidateDeferredWildTreePickup(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    routeKind,
+                    sourceId,
                     qualifiedItemId,
                     quality.Value,
-                    guaranteedMinimum.Value))
+                    guaranteedMinimum.Value,
+                    reasons);
+            }
+            else
             {
-                reasons.Add("deferred_pickup_guaranteed_output_drifted");
+                ValidateDeferredRadioactiveOrePickup(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId,
+                    quality.Value,
+                    guaranteedMinimum.Value,
+                    reasons);
             }
             if (SnapshotInventoryCount(
                     snapshot,
@@ -112,6 +110,91 @@ namespace StardewAI.Core.Execution
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 
+        private static void ValidateDeferredWildTreePickup(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId,
+            int quality,
+            int guaranteedMinimum,
+            ICollection<string> reasons)
+        {
+            var feature = TerrainFeatureAt(snapshot, targetX, targetY);
+            if (!feature.HasValue ||
+                ReadString(feature.Value, "runtime_type") !=
+                    "StardewValley.TerrainFeatures.Tree" ||
+                ReadString(feature.Value, "tree_chop_acquisition_status") !=
+                    "ready")
+            {
+                reasons.Add("deferred_pickup_source_tree_not_ready");
+                return;
+            }
+
+            if (!TreeDeclaresRouteSource(
+                    feature.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId))
+            {
+                reasons.Add("deferred_pickup_authoritative_source_drifted");
+            }
+
+            var guaranteedJson = ReadParameter(
+                action,
+                "tree_chop_guaranteed_minimum_outputs_json") ?? string.Empty;
+            if (!TreeGuaranteeMatches(
+                    feature.Value,
+                    guaranteedJson,
+                    qualifiedItemId,
+                    quality,
+                    guaranteedMinimum))
+            {
+                reasons.Add("deferred_pickup_guaranteed_output_drifted");
+            }
+        }
+
+        private static void ValidateDeferredRadioactiveOrePickup(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId,
+            int quality,
+            int guaranteedMinimum,
+            ICollection<string> reasons)
+        {
+            var node = MiningObjectAt(snapshot, targetX, targetY);
+            if (!node.HasValue ||
+                ReadString(node.Value, "item_id") != "95" ||
+                ReadString(node.Value, "qualified_item_id") != "(O)95" ||
+                ReadBool(node.Value, "is_breakable_stone") != true ||
+                ReadString(node.Value, "drop_rule_branch") !=
+                    "game_location_break_stone_direct_node")
+            {
+                reasons.Add("deferred_pickup_source_mining_object_not_ready");
+                return;
+            }
+
+            if (!MiningNodeDeclaresRouteSource(
+                    node.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId))
+            {
+                reasons.Add("deferred_pickup_authoritative_source_drifted");
+            }
+            if (quality != 0 ||
+                guaranteedMinimum != 1 ||
+                !MiningNodeGuaranteesItem(node.Value, qualifiedItemId))
+            {
+                reasons.Add("deferred_pickup_guaranteed_output_drifted");
+            }
+        }
+
         private static JsonElement? TerrainFeatureAt(
             SnapshotEnvelope snapshot,
             int targetX,
@@ -130,6 +213,59 @@ namespace StardewAI.Core.Execution
                     ReadInt(value, "tile_y") == targetY)
                 .ToArray();
             return matches.Length == 1 ? matches[0] : null;
+        }
+
+        private static JsonElement? MiningObjectAt(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY)
+        {
+            var objects = ReadStateFieldValue(snapshot, "mining", "objects");
+            if (!objects.HasValue ||
+                objects.Value.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+            var matches = objects.Value.EnumerateArray()
+                .Where(value => value.ValueKind == JsonValueKind.Object &&
+                    ReadInt(value, "tile_x") == targetX &&
+                    ReadInt(value, "tile_y") == targetY)
+                .ToArray();
+            return matches.Length == 1 ? matches[0] : null;
+        }
+
+        private static bool MiningNodeDeclaresRouteSource(
+            JsonElement node,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId)
+        {
+            if (!node.TryGetProperty(
+                    "authoritative_route_sources",
+                    out var sources) ||
+                sources.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+            return sources.EnumerateArray().Count(value =>
+                value.ValueKind == JsonValueKind.Object &&
+                ReadString(value, "route_kind") == routeKind &&
+                ReadString(value, "source_id") == sourceId &&
+                ReadString(value, "qualified_item_id") ==
+                    qualifiedItemId) == 1;
+        }
+
+        private static bool MiningNodeGuaranteesItem(
+            JsonElement node,
+            string qualifiedItemId)
+        {
+            return node.TryGetProperty(
+                    "guaranteed_drop_qualified_item_ids",
+                    out var drops) &&
+                drops.ValueKind == JsonValueKind.Array &&
+                drops.EnumerateArray().Count(value =>
+                    value.ValueKind == JsonValueKind.String &&
+                    value.GetString() == qualifiedItemId) == 1;
         }
 
         private static bool TreeDeclaresRouteSource(

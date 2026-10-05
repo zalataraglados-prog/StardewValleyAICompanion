@@ -11,7 +11,8 @@ public sealed partial class NativeShippingSourceGuardTests
         var source = RuntimeHarnessSource;
         Assert.Contains("ShipSummaryClosePhase", source, StringComparison.Ordinal);
         Assert.Contains("WaitReady", source, StringComparison.Ordinal);
-        Assert.Contains("PositionVerify", source, StringComparison.Ordinal);
+        Assert.Contains("Press", source, StringComparison.Ordinal);
+        Assert.Contains("Release", source, StringComparison.Ordinal);
         Assert.Contains("WaitClose", source, StringComparison.Ordinal);
     }
 
@@ -21,8 +22,6 @@ public sealed partial class NativeShippingSourceGuardTests
         var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void ApplyShipSummaryInput");
         Assert.Contains("case ShipSummaryClosePhase.WaitReady", summarySlice, StringComparison.Ordinal);
-        Assert.Contains("case ShipSummaryClosePhase.Position", summarySlice, StringComparison.Ordinal);
-        Assert.Contains("case ShipSummaryClosePhase.PositionVerify", summarySlice, StringComparison.Ordinal);
         Assert.Contains("case ShipSummaryClosePhase.Press", summarySlice, StringComparison.Ordinal);
         Assert.Contains("case ShipSummaryClosePhase.Release", summarySlice, StringComparison.Ordinal);
         Assert.Contains("case ShipSummaryClosePhase.WaitClose", summarySlice, StringComparison.Ordinal);
@@ -43,16 +42,16 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void SleepExecutorShippingMenuUsesUiScaleCursorPosition()
+    public void SleepExecutorShippingMenuUsesNativeMenuButtonWithoutCursorMovement()
     {
         var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
-        Assert.Contains("Game1.setMousePosition(target.X, target.Y, ui_scale: true)", inputSlice, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseX(ui_scale: true)", inputSlice, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseY(ui_scale: true)", inputSlice, StringComparison.Ordinal);
-        Assert.Contains("shippingMenu.okButton", inputSlice, StringComparison.Ordinal);
-        Assert.Contains("okButton.bounds", inputSlice, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride", inputSlice, StringComparison.Ordinal);
+        Assert.Contains("SButton.Escape", inputSlice, StringComparison.Ordinal);
         Assert.Contains("is not ShippingMenu", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.getMouseX", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.getMouseY", inputSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("GetProperty", inputSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("GetField", inputSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("GetMethod", inputSlice, StringComparison.Ordinal);
@@ -61,23 +60,23 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void SleepExecutorShippingMenuHasDeferredCursorVerification()
+    public void SleepExecutorShippingMenuDefersPressUntilNativeMenuIsReady()
     {
         var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void ApplyShipSummaryInput");
-        Assert.Contains("!sleep.SummaryPositionVerified", summarySlice, StringComparison.Ordinal);
-        Assert.Contains("ShipSummaryClosePhase.PositionVerify", summarySlice, StringComparison.Ordinal);
-        Assert.Contains("SummaryPositionVerified", summarySlice, StringComparison.Ordinal);
+        Assert.Contains("shippingMenu.CanReceiveInput()", summarySlice, StringComparison.Ordinal);
+        Assert.Contains("shippingMenu.currentPage == -1", summarySlice, StringComparison.Ordinal);
+        Assert.Contains("sleep.SummaryPhase = ShipSummaryClosePhase.Press", summarySlice, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void SleepExecutorShippingMenuHasCursorMismatchCheck()
+    public void SleepExecutorShippingMenuHasNoPhysicalCursorDependency()
     {
         var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
-        Assert.Contains("shipping_summary_cursor_position_mismatch", inputSlice, StringComparison.Ordinal);
-        Assert.Contains("Math.Abs(ax - sleep.SummaryPositionTarget.X)", inputSlice, StringComparison.Ordinal);
-        Assert.Contains("Math.Abs(ay - sleep.SummaryPositionTarget.Y)", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("shipping_summary_cursor_position_mismatch", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("SummaryPositionTarget", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("setMousePosition", inputSlice, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -93,11 +92,13 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void SleepExecutorShippingMenuUsesMouseLeftNotRight()
+    public void SleepExecutorShippingMenuUsesEscapeNotMouseButtons()
     {
         var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
-        Assert.Contains("TryApplySmapiLeftButtonOverride", inputSlice, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride", inputSlice, StringComparison.Ordinal);
+        Assert.Contains("SButton.Escape", inputSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("SButton.MouseLeft", inputSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("SButton.MouseRight", inputSlice, StringComparison.Ordinal);
     }
 
@@ -123,8 +124,6 @@ public sealed partial class NativeShippingSourceGuardTests
         var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void CompleteSleep");
         Assert.Contains("ShippingMenu shippingMenu", summarySlice, StringComparison.Ordinal);
-        Assert.Contains("shippingMenu.okButton", summarySlice, StringComparison.Ordinal);
-        Assert.Contains("okButton.bounds", summarySlice, StringComparison.Ordinal);
         Assert.Contains("shippingMenu.CanReceiveInput()", summarySlice, StringComparison.Ordinal);
         Assert.Contains("shippingMenu.currentPage", summarySlice, StringComparison.Ordinal);
     }
@@ -138,11 +137,11 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void SleepExecutorShippingMenuReleasesLeftButtonOnAllPaths()
+    public void SleepExecutorShippingMenuReleasesMenuButtonOnAllPaths()
     {
         var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
-        Assert.Contains("ReleaseSmapiLeftButtonOverride()", summarySlice, StringComparison.Ordinal);
+        Assert.Contains("ReleaseShippingSummaryMenuButtonOverride()", summarySlice, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -252,11 +251,11 @@ public sealed partial class NativeShippingSourceGuardTests
 
         Assert.Contains("shippingMenu.CanReceiveInput()", recoverySlice, StringComparison.Ordinal);
         Assert.Contains("shippingMenu.currentPage == -1", recoverySlice, StringComparison.Ordinal);
-        Assert.Contains("shippingMenu.okButton", recoverySlice, StringComparison.Ordinal);
-        Assert.Contains("TryApplySmapiLeftButtonOverride", recoverySlice, StringComparison.Ordinal);
-        Assert.Contains("Game1.setMousePosition", recoverySlice, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseX", recoverySlice, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseY", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("SButton.Escape", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.getMouseX", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.getMouseY", recoverySlice, StringComparison.Ordinal);
         Assert.Contains("shipping_summary_close_not_observed_after_retries", recoverySlice, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.exitActiveMenu", recoverySlice, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.activeClickableMenu = null", recoverySlice, StringComparison.Ordinal);
@@ -359,9 +358,6 @@ public sealed partial class NativeShippingSourceGuardTests
         var source = RuntimeHarnessSource;
         var sleepClassSlice = Slice(source, "private sealed class ActiveSleep", "private enum ShipSummaryClosePhase");
         Assert.Contains("SummaryPhase", sleepClassSlice, StringComparison.Ordinal);
-        Assert.Contains("SummaryPositionSet", sleepClassSlice, StringComparison.Ordinal);
-        Assert.Contains("SummaryPositionVerified", sleepClassSlice, StringComparison.Ordinal);
-        Assert.Contains("SummaryPositionTarget", sleepClassSlice, StringComparison.Ordinal);
         Assert.Contains("SummaryButtonPressed", sleepClassSlice, StringComparison.Ordinal);
         Assert.Contains("SummaryButtonReleased", sleepClassSlice, StringComparison.Ordinal);
         Assert.Contains("SummaryReleaseRetries", sleepClassSlice, StringComparison.Ordinal);

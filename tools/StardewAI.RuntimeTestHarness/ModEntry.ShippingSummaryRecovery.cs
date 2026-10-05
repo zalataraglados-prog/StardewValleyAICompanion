@@ -1,4 +1,3 @@
-using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
@@ -22,7 +21,7 @@ public sealed partial class ModEntry
         }
 
         activeShippingSummaryClose = new ActiveShippingSummaryClose(pending, shippingMenu);
-        Monitor.Log("Started native ShippingMenu OK-button recovery.", LogLevel.Info);
+        Monitor.Log("Started native ShippingMenu menu-button recovery.", LogLevel.Info);
     }
 
     private void TickShippingSummaryClose()
@@ -61,18 +60,8 @@ public sealed partial class ModEntry
                 if (shippingMenu.CanReceiveInput() && shippingMenu.currentPage == -1)
                 {
                     ResetShippingSummaryInput(active);
-                    SetShippingSummaryPhase(active, ShipSummaryClosePhase.Position);
-                }
-                break;
-
-            case ShipSummaryClosePhase.Position:
-                if (active.PositionSet && !active.PositionVerified)
-                    SetShippingSummaryPhase(active, ShipSummaryClosePhase.PositionVerify);
-                break;
-
-            case ShipSummaryClosePhase.PositionVerify:
-                if (active.PositionVerified && !active.ButtonPressed)
                     SetShippingSummaryPhase(active, ShipSummaryClosePhase.Press);
+                }
                 break;
 
             case ShipSummaryClosePhase.Press:
@@ -98,7 +87,7 @@ public sealed partial class ModEntry
                         return;
                     }
 
-                    ReleaseSmapiLeftButtonOverride();
+                    ReleaseShippingSummaryMenuButtonOverride();
                     SetShippingSummaryPhase(active, ShipSummaryClosePhase.WaitReady);
                 }
                 break;
@@ -108,53 +97,20 @@ public sealed partial class ModEntry
     private void ApplyShippingSummaryCloseInput(ActiveShippingSummaryClose active)
     {
         if (!ReferenceEquals(Game1.activeClickableMenu, active.InitialMenu) ||
-            Game1.activeClickableMenu is not ShippingMenu shippingMenu)
+            Game1.activeClickableMenu is not ShippingMenu)
         {
             return;
         }
 
         switch (active.Phase)
         {
-            case ShipSummaryClosePhase.Position:
-                if (!active.PositionSet)
-                {
-                    var okButton = shippingMenu.okButton;
-                    if (okButton is null)
-                    {
-                        CompleteBlockedShippingSummaryClose(active, "shipping_summary_ok_button_null");
-                        return;
-                    }
-
-                    active.PositionTarget = new Point(okButton.bounds.Center.X, okButton.bounds.Center.Y);
-                    Game1.setMousePosition(active.PositionTarget.X, active.PositionTarget.Y, ui_scale: true);
-                    active.PositionSet = true;
-                }
-                break;
-
-            case ShipSummaryClosePhase.PositionVerify:
-                if (active.PositionSet && !active.PositionVerified)
-                {
-                    var actualX = Game1.getMouseX(ui_scale: true);
-                    var actualY = Game1.getMouseY(ui_scale: true);
-                    if (Math.Abs(actualX - active.PositionTarget.X) > 2 ||
-                        Math.Abs(actualY - active.PositionTarget.Y) > 2)
-                    {
-                        CompleteBlockedShippingSummaryClose(
-                            active,
-                            "shipping_summary_cursor_position_mismatch:expected=" +
-                            active.PositionTarget.X + "," + active.PositionTarget.Y +
-                            ";actual=" + actualX + "," + actualY);
-                        return;
-                    }
-
-                    active.PositionVerified = true;
-                }
-                break;
-
             case ShipSummaryClosePhase.Press:
                 if (!active.ButtonPressed)
                 {
-                    if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
+                    if (!TryApplySmapiButtonOverride(
+                            SButton.Escape,
+                            pressed: true,
+                            out var pressReason))
                     {
                         CompleteBlockedShippingSummaryClose(active, "shipping_summary_press_failed:" + pressReason);
                         return;
@@ -167,7 +123,10 @@ public sealed partial class ModEntry
             case ShipSummaryClosePhase.Release:
                 if (!active.ButtonReleased)
                 {
-                    if (!TryApplySmapiLeftButtonOverride(pressed: false, out var releaseReason))
+                    if (!TryApplySmapiButtonOverride(
+                            SButton.Escape,
+                            pressed: false,
+                            out var releaseReason))
                     {
                         active.ReleaseRetries++;
                         if (active.ReleaseRetries > 3)
@@ -195,16 +154,19 @@ public sealed partial class ModEntry
 
     private static void ResetShippingSummaryInput(ActiveShippingSummaryClose active)
     {
-        active.PositionSet = false;
-        active.PositionVerified = false;
         active.ButtonPressed = false;
         active.ButtonReleased = false;
         active.ReleaseRetries = 0;
     }
 
+    private void ReleaseShippingSummaryMenuButtonOverride()
+    {
+        TryApplySmapiButtonOverride(SButton.Escape, pressed: false, out _);
+    }
+
     private void CompleteShippingSummaryClose(ActiveShippingSummaryClose active)
     {
-        ReleaseSmapiLeftButtonOverride();
+        ReleaseShippingSummaryMenuButtonOverride();
         activeShippingSummaryClose = null;
         active.Pending.Completion.SetResult(ShippingSummaryCloseResult(
             active,
@@ -217,7 +179,7 @@ public sealed partial class ModEntry
         ActiveShippingSummaryClose active,
         string reason)
     {
-        ReleaseSmapiLeftButtonOverride();
+        ReleaseShippingSummaryMenuButtonOverride();
         activeShippingSummaryClose = null;
         active.Pending.Completion.SetResult(ShippingSummaryCloseResult(
             active,

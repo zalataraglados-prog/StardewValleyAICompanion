@@ -34,8 +34,10 @@ param(
         "fish_pond_output_sample",
         "machine_output_sample",
         "solar_panel_output_sample",
-        "tree_moss_harvest_sample")]
+        "tree_moss_harvest_sample",
+        "radioactive_ore_node_sample")]
     [string] $Scenario = "sap_prefix",
+    [string] $SnapshotProfile = "",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
     [int] $BackendPort = 8798,
@@ -57,6 +59,15 @@ if ([string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
 }
 
 $sampleProofOnly = $Scenario -ne "sap_prefix"
+if ([string]::IsNullOrWhiteSpace($SnapshotProfile)) {
+    $SnapshotProfile = if ($Scenario -eq "radioactive_ore_node_sample") {
+        "training_mining"
+    }
+    else { "full" }
+}
+if ($SnapshotProfile -notin @("full", "training_mining")) {
+    throw "Unsupported acquisition smoke snapshot profile: $SnapshotProfile"
+}
 $sampleRequirementId = switch ($Scenario) {
     "parsnip_harvest_sample" { "full_shipment:item:24" }
     "berry_bush_harvest_sample" { "full_shipment:item:296" }
@@ -73,6 +84,7 @@ $sampleRequirementId = switch ($Scenario) {
     "machine_output_sample" { "full_shipment:item:257" }
     "solar_panel_output_sample" { "full_shipment:item:787" }
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
+    "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -91,6 +103,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "machine_output_sample" { "(O)257" }
     "solar_panel_output_sample" { "(O)787" }
     "tree_moss_harvest_sample" { "(O)Moss" }
+    "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
 }
 $sampleExpectedRouteKind = switch ($Scenario) {
@@ -109,6 +122,7 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "machine_output_sample" { "machine_output" }
     "solar_panel_output_sample" { "native_solar_panel_output" }
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
+    "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
     default { "native_wild_tree_chop_drop" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -127,7 +141,20 @@ $sampleRankingOptionId = switch ($Scenario) {
     "machine_output_sample" { "farm.collect_machine_outputs" }
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
+    "radioactive_ore_node_sample" { "mining.reach_depth" }
     default { "foraging.chop_wild_tree" }
+}
+$sampleRankingParameters = switch ($Scenario) {
+    "radioactive_ore_node_sample" {
+        @(
+            [ordered]@{ name = "target_depth"; value = "100" },
+            [ordered]@{
+                name = "target_location_family"
+                value = "ordinary_mines"
+            }
+        )
+    }
+    default { @() }
 }
 $cropFixture = switch ($Scenario) {
     "parsnip_harvest_sample" {
@@ -323,8 +350,21 @@ $clearObstacleFixture = switch ($Scenario) {
     }
     default { $null }
 }
+$miningFixture = switch ($Scenario) {
+    "radioactive_ore_node_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "radioactive-ore-node"
+            MineLevel = 99
+            LocationId = "UndergroundMine99"
+        }
+    }
+    default { $null }
+}
 $acquisitionRootLocationId = if ($null -ne $forageFixture) {
     [string]$forageFixture.LocationId
+}
+elseif ($null -ne $miningFixture) {
+    [string]$miningFixture.LocationId
 }
 else {
     "Farm"
@@ -474,7 +514,7 @@ function Save-SnapshotAndIngest {
     param([string] $Path, $Capture)
     Write-Utf8Text -Path $Path -Value $Capture.Raw
     $ingest = Invoke-JsonPost `
-        -Url "$backendUrl/api/v1/snapshots?profile=full" `
+        -Url "$backendUrl/api/v1/snapshots?profile=$SnapshotProfile" `
         -Body $Capture.Raw
     if (-not [bool]$ingest.Value.accepted -or
         [string]$ingest.Value.state_hash -ne
@@ -546,6 +586,7 @@ function Invoke-DailyPlanStep {
         "--root", $stepRoot,
         "--backend-url", $backendUrl,
         "--bridge-snapshot-url", $snapshotUrl,
+        "--execution-snapshot-profile", $SnapshotProfile,
         "--executor-url", $executorRoot,
         "--snapshot-file", $sourcePath,
         "--no-manifest",
@@ -563,6 +604,7 @@ function Invoke-DailyPlanStep {
         "--daily-plan-candidate-id", $CandidateId,
         "--emit-queue-execution-receipt",
         "--after-snapshot-wait-ms", "1000",
+        "--after-snapshot-poll-ms", "250",
         "--continue-after-blocked-queue-items"
     )) { $arguments.Add([string]$value) }
     foreach ($parameter in $CandidateParameters) {
@@ -586,6 +628,7 @@ function Invoke-PrecompiledQueue {
         "--root", $loopRoot,
         "--backend-url", $backendUrl,
         "--bridge-snapshot-url", $snapshotUrl,
+        "--execution-snapshot-profile", $SnapshotProfile,
         "--snapshot-file", $BeforePath,
         "--executor-url", $productUrl,
         "--use-product-executor",
@@ -598,7 +641,8 @@ function Invoke-PrecompiledQueue {
         "--max-queue-item-attempts", "8",
         "--precompiled-queue", $QueuePath,
         "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "1000"
+        "--after-snapshot-wait-ms", "1000",
+        "--after-snapshot-poll-ms", "250"
     )
     $stdout = & dotnet $arguments
     $stdout | Set-Content `
@@ -617,6 +661,7 @@ function Invoke-TeacherPreferenceQueue {
         "--root", $loopRoot,
         "--backend-url", $backendUrl,
         "--bridge-snapshot-url", $snapshotUrl,
+        "--execution-snapshot-profile", $SnapshotProfile,
         "--snapshot-file", $BeforePath,
         "--executor-url", $productUrl,
         "--use-product-executor",
@@ -629,7 +674,8 @@ function Invoke-TeacherPreferenceQueue {
         "--max-queue-item-attempts", "8",
         "--teacher-preference", $PreferencePath,
         "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "1000"
+        "--after-snapshot-wait-ms", "1000",
+        "--after-snapshot-poll-ms", "250"
     )
     $stdout = & dotnet $arguments
     $stdout | Set-Content `
@@ -724,7 +770,7 @@ $backendUrl = "http://127.0.0.1:$BackendPort"
 $productUrl = "http://127.0.0.1:$ProductPort"
 $executorRoot = "http://127.0.0.1:8767"
 $snapshotUrl =
-    "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=1"
+    "http://127.0.0.1:8765/api/v1/snapshot?profile=$SnapshotProfile&fresh=1"
 if (-not (Test-Path -LiteralPath $smapi -PathType Leaf)) {
     throw "SMAPI executable is missing: $smapi"
 }
@@ -1047,6 +1093,67 @@ try {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }
     }
+    elseif ($null -ne $miningFixture) {
+        $fixtureSlug = [string]$miningFixture.Slug
+        $mineSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $mineSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.enter_mine"
+            before_state_hash = [string]$mineSetupSource.Value.state_hash
+            option_id = "debug.setup_mining_floor"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            mine_level = [int]$miningFixture.MineLevel
+        }
+        $mineSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $mineSetupRequest -TimeoutSeconds 150
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-mine-request.json") `
+            -Value $mineSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-mine-result.json") `
+            -Value $mineSetupResult.Raw
+        if ([string]$mineSetupResult.Value.status -ne "applied" -or
+            [string]$mineSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug mine setup failed."
+        }
+
+        $nodeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $nodeSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$nodeSetupSource.Value.state_hash
+            option_id = "debug.setup_radioactive_ore_node"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+        }
+        $nodeSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $nodeSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $nodeSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $nodeSetupResult.Raw
+        if ([string]$nodeSetupResult.Value.status -ne "applied" -or
+            [string]$nodeSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug node setup failed."
+        }
+    }
     elseif ($null -ne $animalFixture) {
         $fixtureSlug = [string]$animalFixture.Slug
         $animalSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
@@ -1182,7 +1289,8 @@ try {
     if ([string]::IsNullOrWhiteSpace($ReplayAcquisitionQueue)) {
     $rankingPath = Join-Path $planningDirectory "ranking-acquisition.json"
     Invoke-Ranking -SnapshotStateHash $initial.Value.state_hash `
-        -OutputPath $rankingPath -OptionId $sampleRankingOptionId |
+        -OutputPath $rankingPath -OptionId $sampleRankingOptionId `
+        -Parameters $sampleRankingParameters |
         Out-Null
     $ledgerResponse = Invoke-WebRequest -UseBasicParsing -Uri (
         "$backendUrl/api/v1/strategy/commitments/latest?stateHash=" +
@@ -1546,7 +1654,7 @@ try {
             "--output", $freshReceiptPath
         ))
     $afterAcquisitionRaw = Get-Content -LiteralPath $acquisition.AfterPath -Raw
-    Invoke-JsonPost -Url "$backendUrl/api/v1/snapshots?profile=full" `
+    Invoke-JsonPost -Url "$backendUrl/api/v1/snapshots?profile=$SnapshotProfile" `
         -Body $afterAcquisitionRaw | Out-Null
     $settlementRequestPath = Join-Path $planningDirectory `
         "settlement-request.json"

@@ -19,7 +19,8 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         AcquisitionRouteTargetDateFishingProbability fishingRoute,
         string fishingProbabilityPath,
         MachineRetryExpansionContext machineExpansion,
-        AcquisitionWildTreeChopCandidateIndex wildTreeChopCandidates)
+        AcquisitionWildTreeChopCandidateIndex wildTreeChopCandidates,
+        AcquisitionCurrentRouteCandidateIndex currentRouteCandidates)
     {
         if (!route.ProcessingLeadTimeAxisResolved)
         {
@@ -104,6 +105,14 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 route,
                 staticRoute,
                 wildTreeChopCandidates);
+        }
+
+        if (staticRoute.RouteKind == "native_radioactive_ore_node")
+        {
+            return EvaluateRadioactiveOreNode(
+                route,
+                staticRoute,
+                currentRouteCandidates);
         }
 
         if (IsMachineRoute(staticRoute.RouteKind))
@@ -230,6 +239,77 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 "state.current_location.terrain_features.value[].tree_chop_authoritative_route_sources",
                 "state.current_location.terrain_features.value[].tree_chop_guaranteed_minimum_outputs",
                 "candidate:foraging.chop_wild_tree"
+            },
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            baselineAttemptCount: 1);
+    }
+
+    private static AcquisitionRouteTargetDateStochasticRetry
+        EvaluateRadioactiveOreNode(
+            AcquisitionRouteTargetDateProcessing route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (!candidates.TryFind(
+                staticRoute.RouteKind,
+                staticRoute.SourceId,
+                staticRoute.QualifiedItemId,
+                out var matches,
+                out var blockingReasons))
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_bound_guaranteed_output_evidence_missing",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                blockingReasons);
+        }
+        if (matches.Length == 0)
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_bound_guaranteed_output_evidence_missing",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                new[]
+                {
+                    "matching_guaranteed_radioactive_ore_node_candidate_not_present"
+                });
+        }
+
+        return Result(
+            route,
+            staticRoute.UncertaintyMode,
+            "resolved_source_bound_guaranteed_output",
+            true,
+            true,
+            "source_bound_guaranteed_output",
+            1d,
+            1,
+            false,
+            true,
+            new[]
+            {
+                "state.mining.objects.value[].guaranteed_drop_qualified_item_ids",
+                "state.mining.objects.value[].authoritative_route_sources",
+                "candidate:mining.reach_depth"
             },
             Array.Empty<string>(),
             Array.Empty<string>(),

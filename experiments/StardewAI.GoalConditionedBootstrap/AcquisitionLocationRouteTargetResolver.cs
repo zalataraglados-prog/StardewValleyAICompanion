@@ -29,6 +29,7 @@ internal static class AcquisitionLocationRouteTargetResolver
                 source,
                 wildTreeChopCandidates),
             "native_monster_drop_table" or
+            "native_radioactive_ore_node" or
             "native_wild_tree_tapper_output" => ResolveCurrentCandidate(
                 source,
                 currentRouteCandidates),

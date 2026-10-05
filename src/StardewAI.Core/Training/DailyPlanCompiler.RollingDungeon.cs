@@ -57,6 +57,7 @@ namespace StardewAI.Core.Training
                     EstimatedMinutes = Math.Max(1, CandidateInt(candidate, "estimated_minutes") ?? 1),
                     Preconditions = new[]
                     {
+                        "candidate_id:" + candidate.CandidateId,
                         "fresh_snapshot_state_hash_matches=true",
                         "rolling_dungeon_floor_step_still_matches_transparent_state=true"
                     },

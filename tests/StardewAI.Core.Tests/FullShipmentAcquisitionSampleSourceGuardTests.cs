@@ -3,6 +3,58 @@ namespace StardewAI.Core.Tests;
 public sealed class FullShipmentAcquisitionSampleSourceGuardTests
 {
     [Fact]
+    public void RadioactiveSampleUsesBoundedTrainingMiningSnapshotProfile()
+    {
+        var script = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var bridge = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "ModEntry.cs");
+
+        Assert.Contains(
+            "$Scenario -eq \"radioactive_ore_node_sample\"",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"training_mining\"",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--execution-snapshot-profile\", $SnapshotProfile",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--after-snapshot-poll-ms\", \"250\"",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "profile=$SnapshotProfile&fresh=1",
+            script,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "profile is \"training_mining\"",
+            bridge,
+            StringComparison.Ordinal);
+        foreach (var domain in new[]
+        {
+            "farm",
+            "current_location",
+            "locations",
+            "mining",
+            "world_progress"
+        })
+        {
+            Assert.Contains(
+                $"domains.Add(\"{domain}\")",
+                bridge,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void BerryBushSampleReusesNativeBushAcquisitionChain()
     {
         var source = ReadRepositoryFile(
@@ -465,6 +517,157 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void RadioactiveOreSampleUsesNativeNodeAndMiningChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.RadioactiveOreNodeFixture.cs");
+
+        Assert.Contains(
+            "\"radioactive_ore_node_sample\" { \"full_shipment:item:909\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"radioactive_ore_node_sample\" { \"(O)909\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"radioactive_ore_node_sample\" { \"mining.reach_depth\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.setup_mining_floor\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.setup_radioactive_ore_node\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"target_depth\"; value = \"100\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-Parameters $sampleRankingParameters",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ItemRegistry.Create<StardewValley.Object>(\"(O)95\")",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "mine.objects.Clear()",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "mine.resourceClumps.Clear()",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "mine.objects[tile] = oreNode",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create<StardewValley.Object>(\"(O)909\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RadioactiveOreSampleUsesTheSharedPlanningAxes()
+    {
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.RadioactiveOre.cs");
+        var location = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionLocationRouteTargetResolver.cs");
+        var candidates = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var retry = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Evaluation.cs");
+        var dispatchVerification = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Verification.cs");
+
+        Assert.Contains(
+            "route.SourceId != \"GameLocation.breakStone\"",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route.SourcePath != \"stone 95 => (O)909\"",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RequiresExistingLiveCandidateMatch = true",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_radioactive_ore_node\" or",
+            location,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (routeKind == \"native_radioactive_ore_node\")",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_mine_object_terminal_evidence_incomplete",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildRollingMiningCandidates(snapshot)",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (staticRoute.RouteKind == \"native_radioactive_ore_node\")",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "matching_guaranteed_radioactive_ore_node_candidate_not_present",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "state.mining.objects.value[].guaranteed_drop_qualified_item_ids",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_radioactive_ore_node\" => EvaluateRadioactiveOreNode(",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.parameters[max_movement_tiles]",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.parameters[max_tool_swings]",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildRollingMiningParameters(snapshot)",
+            dispatchVerification,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route_dispatch_current_mine_intent_unavailable",
+            dispatchVerification,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RuntimeSamplesRejectBindingsForTheWrongAcquisitionLayer()
     {
         var source = ReadRepositoryFile(
@@ -488,6 +691,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"machine_output_sample\" { \"machine_output\" }",
             "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
+            "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
             "default { \"native_wild_tree_chop_drop\" }",
         };
         foreach (var mapping in expectedRouteMappings)
@@ -617,7 +821,27 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "full_shipment:item:909|(O)909|native_radioactive_ore_node",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "scenario = $scenario",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$scenario -eq \"radioactive_ore_node_sample\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"training_mining\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "snapshots?profile=$SnapshotProfile",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "snapshots?profile=full",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

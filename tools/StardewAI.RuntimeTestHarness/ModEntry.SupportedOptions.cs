@@ -98,6 +98,7 @@ public sealed partial class ModEntry
             "debug.setup_mine_fishing_floor",
             "debug.setup_mining_combat_fixture",
             "debug.setup_mining_floor",
+            "debug.setup_radioactive_ore_node",
             "debug.setup_mining_resource_clump",
             "debug.setup_museum_donation",
             "debug.setup_field_office_donation",
