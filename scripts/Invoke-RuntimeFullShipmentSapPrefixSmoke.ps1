@@ -33,6 +33,8 @@ param(
         "farm_animal_deluxe_product_sample",
         "fish_pond_output_sample",
         "machine_output_sample",
+        "machine_flavored_output_sample",
+        "machine_item_query_output_sample",
         "solar_panel_output_sample",
         "tree_moss_harvest_sample",
         "radioactive_ore_node_sample")]
@@ -82,6 +84,8 @@ $sampleRequirementId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "full_shipment:item:186" }
     "fish_pond_output_sample" { "full_shipment:item:812" }
     "machine_output_sample" { "full_shipment:item:257" }
+    "machine_flavored_output_sample" { "full_shipment:item:340" }
+    "machine_item_query_output_sample" { "full_shipment:item:257" }
     "solar_panel_output_sample" { "full_shipment:item:787" }
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
@@ -101,6 +105,8 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "(O)186" }
     "fish_pond_output_sample" { "(O)812" }
     "machine_output_sample" { "(O)257" }
+    "machine_flavored_output_sample" { "(O)340" }
+    "machine_item_query_output_sample" { "(O)257" }
     "solar_panel_output_sample" { "(O)787" }
     "tree_moss_harvest_sample" { "(O)Moss" }
     "radioactive_ore_node_sample" { "(O)909" }
@@ -120,6 +126,8 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "native_farm_animal_deluxe_produce" }
     "fish_pond_output_sample" { "native_fish_pond_output" }
     "machine_output_sample" { "machine_output" }
+    "machine_flavored_output_sample" { "native_machine_flavored_output" }
+    "machine_item_query_output_sample" { "native_machine_item_query_output" }
     "solar_panel_output_sample" { "native_solar_panel_output" }
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
@@ -139,6 +147,8 @@ $sampleRankingOptionId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "farm.collect_animal_products" }
     "fish_pond_output_sample" { "fishing.service_fish_ponds" }
     "machine_output_sample" { "farm.collect_machine_outputs" }
+    "machine_flavored_output_sample" { "farm.collect_machine_outputs" }
+    "machine_item_query_output_sample" { "farm.collect_machine_outputs" }
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
@@ -323,6 +333,29 @@ $machineFixture = switch ($Scenario) {
             MachineItemId = "128"
             QualifiedItemId = "(O)257"
             Quantity = 1
+            LastOutputRuleId = "Default"
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "machine_flavored_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "machine-flavored-output"
+            MachineItemId = "10"
+            QualifiedItemId = "(O)340"
+            Quantity = 1
+            LastOutputRuleId = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "machine_item_query_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "machine-item-query-output"
+            MachineItemId = "128"
+            QualifiedItemId = "(O)257"
+            Quantity = 1
+            LastOutputRuleId = ""
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -333,6 +366,7 @@ $machineFixture = switch ($Scenario) {
             MachineItemId = "231"
             QualifiedItemId = "(O)787"
             Quantity = 1
+            LastOutputRuleId = ""
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -1252,6 +1286,8 @@ try {
             fixture_machine_harvest_experience_override = $false
             fixture_machine_harvest_experience_raw = ""
             fixture_machine_harvest_skill_profile = "zero"
+            fixture_machine_last_output_rule_id =
+                [string]$machineFixture.LastOutputRuleId
         }
         $machineSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `

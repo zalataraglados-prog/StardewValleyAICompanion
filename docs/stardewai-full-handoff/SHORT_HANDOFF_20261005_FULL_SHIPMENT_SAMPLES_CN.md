@@ -8,6 +8,7 @@
 - 防风草重放 `runtime-full-shipment-parsnip-refresh-20261005-192710` 因测试收益低被主动停止；产物保留但不可计入生产索引。本轮不宣称 `3/26`，正式训练仍禁用。
 - 远端包装器已取消错误的 `-SkipBuild` 使用。仓库部署脚本同时新增陈旧 DLL 拒绝和部署 SHA-256 校验；Core game-free `212/212`，部署守卫 `3/3`。
 - 后续默认只跑变更链路的原生回放和共享离线回归；26 层索引留到分层/日历/训练准入里程碑统一重建。不要再次为无关小改跑完整日历和全部样本。
+- 当前权威分母为 26 层，runner 已配置 `19/26` 个入口。新增两层为 `native_machine_flavored_output` 的 `(BC)10 -> (O)340` 与 `native_machine_item_query_output` 的 `(BC)128 -> (O)257`；严格生产证据没有因此增长。
 
 ## 树苔藓入口
 
@@ -36,6 +37,8 @@
 - 鱼籽入口已绑定 `full_shipment:item:812 / (O)812 / native_fish_pond_output / fishing.service_fish_ponds`。
 - 蘑菇树桩产物入口已绑定 `full_shipment:item:257 / (O)257 / machine_output / farm.collect_machine_outputs`。
 - 太阳能板产物入口已绑定 `full_shipment:item:787 / (O)787 / native_solar_panel_output / farm.collect_machine_outputs`。
+- 调味机器产物入口已绑定 `full_shipment:item:340 / (O)340 / native_machine_flavored_output / farm.collect_machine_outputs`。
+- 普通机器查询产物入口已绑定 `full_shipment:item:257 / (O)257 / native_machine_item_query_output / farm.collect_machine_outputs`。
 - 树苔藓入口已绑定 `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / foraging.harvest_tree_moss`。
 - 前五者、野山葵与樱桃共用 forage fixture 编排，春葱与既有防风草共用 crop fixture 编排；全部复用现有候选、DailyPlan、动作编译器、产品执行器和 verifier，没有第二套动作系统。
 - 浆果、姜、茶叶、榛子位于 `Farm 64,15`；椰子使用 `wild_tree / island_palm / IslandSouth 20,20`。夹具设置不属于 acquisition proof 根，但 proof 根必须匹配场景的精确地点。
@@ -49,10 +52,10 @@
 
 ## 未完成与退出条件
 
-- 新电脑当前没有可用的星露谷原生运行环境；当前十四个待证样本都没有 fresh Full Shipment MonoGame 回执，不得计入覆盖。历史 action smoke 只能证明可复用性。
-- 原生环境可用时按浆果、姜、茶叶、榛子、椰子、春葱、野山葵、樱桃、牛奶、大瓶牛奶、鱼籽、蘑菇树桩产物、太阳能板产物、苔藓顺序运行。每层必须同时满足：原生执行 `applied/verified`、fresh 终态一致、精确 execution binding、独立 rollout proof 重建通过、生产 evidence index 接纳。
+- 异机 `F:\StardewAI-TestLab` 已有可用原生运行环境。除 Sap 与放射性矿石外，其余已配置入口没有当前版本 fresh Full Shipment MonoGame 回执，不得计入覆盖；历史 action smoke 只能证明链路可复用。
+- 后续仅按变更链路选择代表样本运行。每层必须同时满足：原生执行 `applied/verified`、fresh 终态一致、精确 execution binding、独立 rollout proof 重建通过、生产 evidence index 接纳。
 - 满足一层才把 `2/26` 增加一；在全部 26 层与其余训练门完成前，`formal_product_training_authorized=false`。
 
 ## 下一步
 
-继续从剩余 24 个生产缺失分层中选择可复用既有原生链的样本，沿同一脚本和断点 proof 合同增加入口；不要新增候选、编译器或执行器。大测试继续放到 `LZT`，本机不运行游戏或完整回归。
+按野树树液收集器产物、怪物掉落、地点鱼、蚯蚓地、晶球掉落、商店购买、奖励物的顺序补齐剩余 `7/26` 入口；不要新增平行候选、编译器或执行器。原生大测试继续放到异机 `F:\StardewAI-TestLab`，本机只做 game-free 与编译验证。

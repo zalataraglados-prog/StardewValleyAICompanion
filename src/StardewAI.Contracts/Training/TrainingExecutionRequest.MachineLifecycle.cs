@@ -50,6 +50,10 @@ public sealed partial class TrainingExecutionRequest
     public string FixtureMachineHarvestSkillProfile { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("fixture_machine_last_output_rule_id")]
+    public string FixtureMachineLastOutputRuleId { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("anvil_reforge_utility_metric")]
     public string AnvilReforgeUtilityMetric { get; set; } =
         string.Empty;

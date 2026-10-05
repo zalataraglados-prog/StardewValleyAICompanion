@@ -227,6 +227,12 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:257|(O)257|machine_output" {
         "machine_output_sample"
     }
+    "full_shipment:item:340|(O)340|native_machine_flavored_output" {
+        "machine_flavored_output_sample"
+    }
+    "full_shipment:item:257|(O)257|native_machine_item_query_output" {
+        "machine_item_query_output_sample"
+    }
     "full_shipment:item:787|(O)787|native_solar_panel_output" {
         "solar_panel_output_sample"
     }

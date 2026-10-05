@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 两类机器查询产物入口
+
+- 已从当前权威 requirement/lowering 重新枚举 26 个运行时分层；此前脚本实际装配 17 层。本轮新增 `native_machine_flavored_output` 与 `native_machine_item_query_output`，配置入口达到 `19/26`，剩余 7 层为奖励物、晶球掉落、蚯蚓地、地点鱼、怪物掉落、野树树液收集器产物和商店购买。
+- flavored 代表固定为 `full_shipment:item:340 / (O)340 / machine:(BC)10:rule:0:output:0`；item-query 代表固定为 `full_shipment:item:257 / (O)257 / machine:(BC)128:rule:0:output:2`。两者复用现有机器透明投影、`farm.collect_machine_outputs`、DailyPlan、编译器、产品执行器与 verifier，没有新增机器动作系统。
+- 测试夹具现在显式携带原生 `lastOutputRuleId`。普通 `machine_output` 代表强制 `Default`，两类 legacy query 代表强制空值；非空规则在原生 `Data/Machines` 中不唯一时立即失败关闭，避免三个机器分层在真正运行前串线。
+- PowerShell 解析通过，定向 game-free 守卫 `21/21`，RuntimeTestHarness 使用 E 盘隔离游戏引用编译为 `0 warning / 0 error`。本轮未启动游戏，因此生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。
+
 ## 2026-10-05 原生样本收口与测试制度收缩
 
 - 原生放射性矿石样本已通过：`runtime-full-shipment-radioactive-node-20261005-134024` 在异机 `F:\StardewAI-TestLab` 以 `(O)95 -> GameLocation.breakStone -> (O)909` 完成 `native_radioactive_ore_node`，复用 `mining.reach_depth -> executor.mine_stone -> executor.pickup_debris`，没有第二套采矿执行器。候选身份和同地点目标证据均按目标逐项 fail-closed。

@@ -484,6 +484,72 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void MachineQuerySamplesBindDistinctNativeSourceLayers()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+        var contracts = ReadRepositoryFile(
+            "src",
+            "StardewAI.Contracts",
+            "Training",
+            "TrainingExecutionRequest.MachineLifecycle.cs");
+
+        Assert.Contains(
+            "\"machine_flavored_output_sample\" { \"full_shipment:item:340\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_flavored_output_sample\" { \"native_machine_flavored_output\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"machine-flavored-output\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MachineItemId = \"10\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_item_query_output_sample\" { \"full_shipment:item:257\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_item_query_output_sample\" { \"native_machine_item_query_output\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"machine-item-query-output\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "LastOutputRuleId = \"Default\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_machine_last_output_rule_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FixtureMachineLastOutputRuleId",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.lastOutputRuleId.Value = fixtureOutputRuleId",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_machine_last_output_rule_id",
+            contracts,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TreeMossSampleReusesNativeScytheHarvestChain()
     {
         var source = ReadRepositoryFile(
@@ -689,6 +755,8 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"farm_animal_deluxe_product_sample\" { \"native_farm_animal_deluxe_produce\" }",
             "\"fish_pond_output_sample\" { \"native_fish_pond_output\" }",
             "\"machine_output_sample\" { \"machine_output\" }",
+            "\"machine_flavored_output_sample\" { \"native_machine_flavored_output\" }",
+            "\"machine_item_query_output_sample\" { \"native_machine_item_query_output\" }",
             "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
             "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
@@ -810,6 +878,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:257|(O)257|machine_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:340|(O)340|native_machine_flavored_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:257|(O)257|native_machine_item_query_output",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

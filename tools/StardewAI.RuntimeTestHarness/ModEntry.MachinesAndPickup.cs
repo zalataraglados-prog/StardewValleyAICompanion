@@ -725,6 +725,26 @@ public sealed partial class ModEntry : Mod
         };
         machine.MinutesUntilReady = 0;
         var machineData = machine.GetMachineData();
+        var fixtureOutputRuleId =
+            request.FixtureMachineLastOutputRuleId ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(fixtureOutputRuleId) &&
+            machineData?.OutputRules?.Count(rule => string.Equals(
+                rule.Id,
+                fixtureOutputRuleId,
+                StringComparison.Ordinal)) != 1)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_output_target",
+                "machine_last_output_rule_id=" + fixtureOutputRuleId,
+                "matching_output_rule_count=" +
+                    (machineData?.OutputRules?.Count(rule => string.Equals(
+                        rule.Id,
+                        fixtureOutputRuleId,
+                        StringComparison.Ordinal)) ?? 0),
+                "fixture_machine_output_rule_id_unavailable");
+        }
+        machine.lastOutputRuleId.Value = fixtureOutputRuleId;
         if (request.FixtureMachineHarvestExperienceOverride)
         {
             if (machineData is null)
@@ -746,6 +766,10 @@ public sealed partial class ModEntry : Mod
         var verified = MachineAt(farm, target) is
             { readyForHarvest.Value: true, heldObject.Value: not null } &&
             machineData is not null &&
+            string.Equals(
+                machine.lastOutputRuleId.Value ?? string.Empty,
+                fixtureOutputRuleId,
+                StringComparison.Ordinal) &&
             (!request.FixtureMachineHarvestExperienceOverride ||
              string.Equals(
                  machineData.ExperienceGainOnHarvest ?? string.Empty,
@@ -772,6 +796,8 @@ public sealed partial class ModEntry : Mod
                 ";machine_qualified_item_id=" + machine.QualifiedItemId +
                 ";harvest_experience_raw=" +
                 (machineData?.ExperienceGainOnHarvest ?? string.Empty) +
+                ";last_output_rule_id=" +
+                (machine.lastOutputRuleId.Value ?? string.Empty) +
                 ";skill_profile=" +
                 request.FixtureMachineHarvestSkillProfile,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_machine_output_not_ready" },
