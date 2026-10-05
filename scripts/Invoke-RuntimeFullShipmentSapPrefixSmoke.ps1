@@ -22,7 +22,8 @@ param(
         "sap_prefix",
         "parsnip_harvest_sample",
         "berry_bush_harvest_sample",
-        "ginger_harvest_sample")]
+        "ginger_harvest_sample",
+        "tea_bush_harvest_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -49,19 +50,49 @@ $sampleRequirementId = switch ($Scenario) {
     "parsnip_harvest_sample" { "full_shipment:item:24" }
     "berry_bush_harvest_sample" { "full_shipment:item:296" }
     "ginger_harvest_sample" { "full_shipment:item:829" }
+    "tea_bush_harvest_sample" { "full_shipment:item:815" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
     "parsnip_harvest_sample" { "(O)24" }
     "berry_bush_harvest_sample" { "(O)296" }
     "ginger_harvest_sample" { "(O)829" }
+    "tea_bush_harvest_sample" { "(O)815" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
     "parsnip_harvest_sample" { "farm.maintain_crops" }
     "berry_bush_harvest_sample" { "foraging.harvest_bushes" }
     "ginger_harvest_sample" { "foraging.harvest_ginger" }
+    "tea_bush_harvest_sample" { "foraging.harvest_bushes" }
     default { "foraging.chop_wild_tree" }
+}
+$forageFixture = switch ($Scenario) {
+    "berry_bush_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "berry-bush"
+            RuleKey = "bush"
+            BushProfile = "berry_standard"
+            GingerProfile = ""
+        }
+    }
+    "ginger_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "ginger"
+            RuleKey = "ginger"
+            BushProfile = ""
+            GingerProfile = "dry_standard"
+        }
+    }
+    "tea_bush_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "tea-bush"
+            RuleKey = "bush"
+            BushProfile = "tea_leaf"
+            GingerProfile = ""
+        }
+    }
+    default { $null }
 }
 
 function Resolve-InputPath {
@@ -703,16 +734,8 @@ try {
             throw "Ready Parsnip proof fixture setup failed."
         }
     }
-    elseif ($Scenario -in @(
-        "berry_bush_harvest_sample",
-        "ginger_harvest_sample")) {
-        $isBerryBushSample = $Scenario -eq "berry_bush_harvest_sample"
-        $fixtureSlug = if ($isBerryBushSample) {
-            "berry-bush"
-        }
-        else {
-            "ginger"
-        }
+    elseif ($null -ne $forageFixture) {
+        $fixtureSlug = [string]$forageFixture.Slug
         $forageSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
         $forageSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
@@ -729,19 +752,9 @@ try {
             location_id = "Farm"
             target_tile_x = 64
             target_tile_y = 15
-            rule_key = if ($isBerryBushSample) { "bush" } else { "ginger" }
-            fixture_bush_profile = if ($isBerryBushSample) {
-                "berry_standard"
-            }
-            else {
-                ""
-            }
-            fixture_ginger_profile = if ($isBerryBushSample) {
-                ""
-            }
-            else {
-                "dry_standard"
-            }
+            rule_key = [string]$forageFixture.RuleKey
+            fixture_bush_profile = [string]$forageFixture.BushProfile
+            fixture_ginger_profile = [string]$forageFixture.GingerProfile
             fixture_fruit_tree_profile = ""
             fixture_wild_tree_product_profile = ""
             fixture_garbage_can_profile = ""

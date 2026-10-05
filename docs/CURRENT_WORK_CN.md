@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 茶树样本复用既有灌木链
+
+- 生产清单将茶叶 `(O)815` 精确绑定为 `full_shipment:item:815 / native_tea_bush_harvest / Bush.GetShakeOffItem / foraging.harvest_bushes`。已有 `tea_leaf` 原生 action smoke 验证输出 `(O)815`、原生 `checkAction`、灌木偏移/产物增量和 XP/追踪器合同。
+- Full Shipment runner 新增 `tea_bush_harvest_sample`，复用 `debug.setup_forage_source_fixture` 的 `bush / tea_leaf` 配置及既有灌木候选、DailyPlan、编译器、执行器和 verifier。浆果、姜、茶叶的 fixture 参数现由同一场景配置表生成，避免继续扩展二选一分支。
+- `LZT` 上专项守卫 `5/5`、Core game-free `126/126`、GoalConditionedBootstrap Release `0 warning / 0 error`。首次远端命令因漏传仓库规定的 `GameFreeGovernance=true` 而在 ModBuildConfig 的 GamePath 检查前停止，恢复正确参数后全部通过；这不是代码测试失败。
+- 历史茶树 action smoke 不等于当前 Full Shipment acquisition rollout proof。浆果、姜、茶叶均待 fresh 原生样本和独立 proof，生产索引继续为 `2/26`，正式训练仍禁用。
+
 ## 2026-10-05 Full Shipment 姜采集样本入口与异机验证
 
 - 权威需求构建器与 lowering 已锁定姜 `(O)829` 为 `full_shipment:item:829 / native_ginger_harvest / foraging.harvest_ginger`，来源语义为 `Crop.hitWithHoe` 的 `whichForageCrop 2 => (O)829`。样本复用既有 `debug.setup_forage_source_fixture`、候选、DailyPlan、动作编译器和原生姜采集执行链，没有新增第二套执行器。

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 茶树分层接入共享 forage 配置
+
+`native_tea_bush_harvest` 使用 `full_shipment:item:815 / (O)815 / Bush.GetShakeOffItem / foraging.harvest_bushes`。现有 `tea_leaf` fixture 与 `executor.harvest_bush` 已有原生 action smoke，因此本轮只给同一 Full Shipment 样本 runner 增加场景配置和严格断点映射。浆果、姜、茶叶不各自维护 fixture 分支，也不新增 planner/compiler/executor。
+
+异机 game-free `126/126` 和 Bootstrap Release 通过。茶树仍需新的 Full Shipment acquisition receipt、fresh 终态与独立 rollout proof 才能计入生产分层；当前严格覆盖保持 `2/26`。原生环境可用时的采证顺序扩展为“浆果 -> 姜 -> 茶叶”，每层单独通过 evidence index 后才增加计数。
+
 ## 2026-10-05 Full Shipment 姜分层已完成运行入口适配
 
 `native_ginger_harvest` 的权威身份固定为 `full_shipment:item:829 / (O)829 / foraging.harvest_ginger`。其代表样本使用已有 `dry_standard` 原生夹具和已有姜采集链，夹具只负责建立可验证源，不进入 acquisition proof 根。浆果与姜共用同一 forage fixture 编排、同一 planner/compiler/executor/verifier，不得分别扩展成平行系统。

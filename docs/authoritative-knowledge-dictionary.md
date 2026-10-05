@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native tea-bush sample identity
+
+The locked Full Shipment inventory identifies Tea Leaves `(O)815` as `full_shipment:item:815`, route kind
+`native_tea_bush_harvest`, source `Bush.GetShakeOffItem`, and endpoint `foraging.harvest_bushes`. The representative
+fixture is the existing `tea_leaf` bush profile, whose historical native action smoke produced `(O)815`. That smoke
+does not replace a fresh Full Shipment acquisition rollout proof, so runtime-stratum coverage remains pending.
+
 ## 2026-10-05 native ginger sample identity
 
 The locked Full Shipment requirement builder identifies Ginger `(O)829` as `full_shipment:item:829` with route kind

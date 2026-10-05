@@ -1,5 +1,16 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native tea-bush sample shares the forage scenario table
+
+- Tea Leaf `(O)815` is bound to
+  `full_shipment:item:815 / native_tea_bush_harvest / Bush.GetShakeOffItem / foraging.harvest_bushes`.
+- The Full Shipment runner now selects berry, ginger and tea fixtures from one scenario table. Tea uses the existing
+  `bush / tea_leaf` fixture and native bush executor; no additional candidate, compiler or executor was introduced.
+- The dedicated source guards passed `5/5`, the off-machine game-free suite passed `126/126`, and Bootstrap Release
+  built with zero warnings or errors.
+- The historical native tea action smoke establishes reuse viability only. A fresh Full Shipment acquisition receipt
+  and independent rollout proof are still required, so production remains `2/26` and training remains disabled.
+
 ## 2026-10-05: native ginger sample staged and validated off-machine
 
 - The locked requirement builder and lowering identify Ginger as

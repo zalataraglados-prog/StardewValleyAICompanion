@@ -30,11 +30,11 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "rule_key = if ($isBerryBushSample) { \"bush\" } else { \"ginger\" }",
+            "Slug = \"berry-bush\"",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "fixture_bush_profile = if ($isBerryBushSample)",
+            "BushProfile = \"berry_standard\"",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -63,11 +63,40 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "else { \"ginger\" }",
+            "RuleKey = \"ginger\"",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"dry_standard\"",
+            "GingerProfile = \"dry_standard\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TeaBushSampleReusesNativeBushAcquisitionChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"tea_bush_harvest_sample\" { \"full_shipment:item:815\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"tea_bush_harvest_sample\" { \"(O)815\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"tea_bush_harvest_sample\" { \"foraging.harvest_bushes\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"tea-bush\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BushProfile = \"tea_leaf\"",
             source,
             StringComparison.Ordinal);
     }
@@ -114,6 +143,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:829|(O)829|native_ginger_harvest",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:815|(O)815|native_tea_bush_harvest",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
