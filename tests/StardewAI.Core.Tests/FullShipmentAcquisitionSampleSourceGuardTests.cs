@@ -102,6 +102,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void WildTreeSeedDropSampleReusesNativeTreeProductChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"wild_tree_seed_drop_sample\" { \"full_shipment:item:408\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_seed_drop_sample\" { \"(O)408\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_seed_drop_sample\" { \"foraging.harvest_tree_product\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"wild-tree-seed-drop\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuleKey = \"wild_tree\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "WildTreeProfile = \"fall_hazelnut\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -147,6 +180,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:815|(O)815|native_tea_bush_harvest",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:408|(O)408|native_wild_tree_seed_drop",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

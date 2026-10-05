@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 野树落种样本准入状态
+
+榛子 `(O)408` 已按 `native_wild_tree_seed_drop` 接入共享 forage 场景与既有 `foraging.harvest_tree_product` 链，严格 resume tuple 已锁定。异机样本守卫 `6/6`、Core game-free `127/127` 和 Bootstrap Release 均通过。历史原生树产品 action smoke 只证明执行链可复用；新的 Full Shipment receipt 与 rollout proof 尚未产生，因此该层仍为 pending，严格索引继续为 `2/26`。
+
 ## 2026-10-05 Full Shipment 茶树样本准入状态
 
 茶叶 `(O)815` 已按 `native_tea_bush_harvest` 接入共享 forage fixture 配置与既有 `foraging.harvest_bushes` 链，精确 resume tuple 为 `full_shipment:item:815|(O)815|native_tea_bush_harvest`。异机专项守卫 `5/5`、Core game-free `126/126` 和 Bootstrap Release 已通过。既有茶树 action smoke 不是本次 acquisition rollout proof；茶树仍为 pending，严格索引保持 `2/26`，训练授权不变。

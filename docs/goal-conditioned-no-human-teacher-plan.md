@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: wild-tree seed-drop sample reuses the native tree-product chain
+
+- The representative route is
+  `full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop / wild_tree:2:0 / foraging.harvest_tree_product`.
+- The shared forage scenario table selects the existing `wild_tree / fall_hazelnut` fixture on Farm and reuses the
+  existing candidate, compiler, native executor and verifier. The resume path accepts only the exact route tuple.
+- Off-machine source guards passed `6/6`, the game-free suite passed `127/127`, and Bootstrap Release built cleanly.
+- The historical native tree-product smoke is not an acquisition rollout proof. This stratum remains pending and the
+  production index remains `2/26`. The Island palm route is deferred to an explicit cross-location-root slice.
+
 ## 2026-10-05: native tea-bush sample shares the forage scenario table
 
 - Tea Leaf `(O)815` is bound to

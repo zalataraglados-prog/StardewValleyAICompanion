@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 野树落种样本入口
+
+- `native_wild_tree_seed_drop` 的生产代表为 `full_shipment:item:408 / (O)408 / wild_tree:2:0 / foraging.harvest_tree_product`。已有 `fall_hazelnut` 原生 smoke 在 Farm 精确产出 `(O)408`，验证原生 `checkAction`、种子消耗、完整输出域、零 Foraging XP 与空槽恢复。
+- Full Shipment runner 现通过共享 forage 场景表复用 `wild_tree / fall_hazelnut` fixture 和既有树产品候选、编译器、执行器、verifier；resume 只接受精确 tuple `full_shipment:item:408|(O)408|native_wild_tree_seed_drop`。
+- `LZT` 上样本守卫 `6/6`、Core game-free `127/127`、Bootstrap Release `0 warning / 0 error`。现有 action smoke 仍不替代 fresh Full Shipment acquisition rollout proof，生产索引保持 `2/26`。
+- 岛屿棕榈 `(O)88` 虽有匹配 smoke，但其证明根必须位于 `IslandSouth`，本轮没有放宽 runner 的 Farm 根合同；该层留作独立跨地点切片。
+
 ## 2026-10-05 Full Shipment 茶树样本复用既有灌木链
 
 - 生产清单将茶叶 `(O)815` 精确绑定为 `full_shipment:item:815 / native_tea_bush_harvest / Bush.GetShakeOffItem / foraging.harvest_bushes`。已有 `tea_leaf` 原生 action smoke 验证输出 `(O)815`、原生 `checkAction`、灌木偏移/产物增量和 XP/追踪器合同。

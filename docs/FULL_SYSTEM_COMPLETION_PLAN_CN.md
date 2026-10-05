@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 野树落种层复用原生树产品链
+
+`native_wild_tree_seed_drop` 已按 `full_shipment:item:408 / (O)408 / wild_tree:2:0 / foraging.harvest_tree_product` 加入共享样本 runner，代表 fixture 为 Farm 上的 `wild_tree / fall_hazelnut`。它复用现有树产品候选、DailyPlan、编译器、执行器与 verifier；历史原生 smoke 已证明该动作可精确产出榛子，但不能替代新的 acquisition rollout proof。
+
+异机守卫 `6/6`、game-free `127/127`、Bootstrap Release 通过，生产计数仍为 `2/26`。相邻的 `native_wild_tree_seed` 代表 `(O)88` 需要 `IslandSouth` 根，将在独立切片中显式处理地点合同，不通过把 Farm 断言改成宽松任意地点来顺带放行。
+
 ## 2026-10-05 Full Shipment 茶树分层接入共享 forage 配置
 
 `native_tea_bush_harvest` 使用 `full_shipment:item:815 / (O)815 / Bush.GetShakeOffItem / foraging.harvest_bushes`。现有 `tea_leaf` fixture 与 `executor.harvest_bush` 已有原生 action smoke，因此本轮只给同一 Full Shipment 样本 runner 增加场景配置和严格断点映射。浆果、姜、茶叶不各自维护 fixture 分支，也不新增 planner/compiler/executor。

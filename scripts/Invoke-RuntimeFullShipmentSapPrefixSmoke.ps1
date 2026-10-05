@@ -23,7 +23,8 @@ param(
         "parsnip_harvest_sample",
         "berry_bush_harvest_sample",
         "ginger_harvest_sample",
-        "tea_bush_harvest_sample")]
+        "tea_bush_harvest_sample",
+        "wild_tree_seed_drop_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -51,6 +52,7 @@ $sampleRequirementId = switch ($Scenario) {
     "berry_bush_harvest_sample" { "full_shipment:item:296" }
     "ginger_harvest_sample" { "full_shipment:item:829" }
     "tea_bush_harvest_sample" { "full_shipment:item:815" }
+    "wild_tree_seed_drop_sample" { "full_shipment:item:408" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -58,6 +60,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "berry_bush_harvest_sample" { "(O)296" }
     "ginger_harvest_sample" { "(O)829" }
     "tea_bush_harvest_sample" { "(O)815" }
+    "wild_tree_seed_drop_sample" { "(O)408" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -65,6 +68,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "berry_bush_harvest_sample" { "foraging.harvest_bushes" }
     "ginger_harvest_sample" { "foraging.harvest_ginger" }
     "tea_bush_harvest_sample" { "foraging.harvest_bushes" }
+    "wild_tree_seed_drop_sample" { "foraging.harvest_tree_product" }
     default { "foraging.chop_wild_tree" }
 }
 $forageFixture = switch ($Scenario) {
@@ -74,6 +78,7 @@ $forageFixture = switch ($Scenario) {
             RuleKey = "bush"
             BushProfile = "berry_standard"
             GingerProfile = ""
+            WildTreeProfile = ""
         }
     }
     "ginger_harvest_sample" {
@@ -82,6 +87,7 @@ $forageFixture = switch ($Scenario) {
             RuleKey = "ginger"
             BushProfile = ""
             GingerProfile = "dry_standard"
+            WildTreeProfile = ""
         }
     }
     "tea_bush_harvest_sample" {
@@ -90,6 +96,16 @@ $forageFixture = switch ($Scenario) {
             RuleKey = "bush"
             BushProfile = "tea_leaf"
             GingerProfile = ""
+            WildTreeProfile = ""
+        }
+    }
+    "wild_tree_seed_drop_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "wild-tree-seed-drop"
+            RuleKey = "wild_tree"
+            BushProfile = ""
+            GingerProfile = ""
+            WildTreeProfile = "fall_hazelnut"
         }
     }
     default { $null }
@@ -756,7 +772,7 @@ try {
             fixture_bush_profile = [string]$forageFixture.BushProfile
             fixture_ginger_profile = [string]$forageFixture.GingerProfile
             fixture_fruit_tree_profile = ""
-            fixture_wild_tree_product_profile = ""
+            fixture_wild_tree_product_profile = [string]$forageFixture.WildTreeProfile
             fixture_garbage_can_profile = ""
             debug_fill_inventory = $false
         }

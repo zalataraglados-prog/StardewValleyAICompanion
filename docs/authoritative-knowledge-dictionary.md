@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native wild-tree seed-drop sample identity
+
+The locked Full Shipment inventory identifies Hazelnut `(O)408` as `full_shipment:item:408`, route kind
+`native_wild_tree_seed_drop`, source `wild_tree:2:0`, and endpoint `foraging.harvest_tree_product`. The representative
+fixture is `fall_hazelnut` on Farm. Its historical native action smoke produced `(O)408` and consumed the bound seed,
+but runtime-stratum coverage remains pending until a fresh Full Shipment acquisition proof is accepted.
+
 ## 2026-10-05 native tea-bush sample identity
 
 The locked Full Shipment inventory identifies Tea Leaves `(O)815` as `full_shipment:item:815`, route kind
