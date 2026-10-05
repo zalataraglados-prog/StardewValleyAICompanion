@@ -1,5 +1,13 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native fruit-tree sample identity
+
+The locked Full Shipment inventory identifies Cherry `(O)638` as `full_shipment:item:638`, route kind
+`native_fruit_tree_produce`, source `fruit_tree:628:0`, and endpoint `foraging.harvest_fruit_tree`. Cherry and the other
+fruit-tree outputs share the same runtime stratum. The representative fixture is the existing `fruit_tree / single_normal`
+profile at `Farm 64,15`; its historical native action smoke produced `(O)638` through the original interaction chain.
+Runtime-stratum admission remains pending until a fresh Full Shipment acquisition receipt and rollout proof are accepted.
+
 ## 2026-10-05 native location-forage sample identity
 
 The locked Full Shipment inventory identifies Wild Horseradish `(O)16` as `full_shipment:item:16`, route kind

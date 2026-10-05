@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native fruit-tree sample reuses the existing action chain
+
+- The representative route is
+  `full_shipment:item:638 / (O)638 / native_fruit_tree_produce / foraging.harvest_fruit_tree`.
+- The shared forage table selects the existing `fruit_tree / single_normal` fixture at `Farm 64,15` and reuses the
+  existing candidate, DailyPlan, compiler, native executor and verifier. Cherry is a valid representative of the same
+  runtime stratum; no Apple-specific or parallel execution chain was introduced.
+- Off-machine guards passed `10/10`, game-free tests passed `131/131`, and Bootstrap Release built cleanly. The historical
+  fruit-tree action smoke proves chain reuse only; no fresh Full Shipment receipt exists, so production remains `2/26`.
+
 ## 2026-10-05: native location-forage sample reuses spawned-object execution
 
 - The representative route is

@@ -238,6 +238,35 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void FruitTreeSampleReusesNativeFruitTreeChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"fruit_tree_harvest_sample\" { \"full_shipment:item:638\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"fruit_tree_harvest_sample\" { \"(O)638\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"fruit_tree_harvest_sample\" { \"foraging.harvest_fruit_tree\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuleKey = \"fruit_tree\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FruitTreeProfile = \"single_normal\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -299,6 +328,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:16|(O)16|native_location_forage_spawn",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:638|(O)638|native_fruit_tree_produce",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

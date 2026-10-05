@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 果树产物样本复用原生果树链
+
+- `native_fruit_tree_produce` 的运行时分层代表采用樱桃 `full_shipment:item:638 / (O)638 / foraging.harvest_fruit_tree`。它与清单中的其他果树产物属于同一分层；选择樱桃是因为现有 `fruit_tree / single_normal` 原生夹具和 action smoke 已精确覆盖该物品，不需要为苹果另造执行路径。
+- 共享 forage 场景表新增 `fruit_tree / single_normal / Farm 64,15`，继续复用既有果树候选、DailyPlan、编译器、执行器和 verifier。严格 resume tuple 为 `full_shipment:item:638|(O)638|native_fruit_tree_produce`，未知组合仍失败关闭。
+- `LZT` 上样本守卫 `10/10`、Core game-free `131/131`、Bootstrap Release `0 warning / 0 error`。历史果树 smoke 只证明原生链可复用；尚无本层 fresh Full Shipment acquisition proof，生产索引继续为 `2/26`。
+
 ## 2026-10-05 Full Shipment 地点觅食物样本入口
 
 - `native_location_forage_spawn` 的生产代表为 `full_shipment:item:16 / (O)16 / foraging.collect_spawned_objects`。现有 EVD-211 链覆盖透明 spawned-object 投影、DailyPlan、`executor.collect_spawned_object` 与原生拾取回执。

@@ -27,7 +27,8 @@ param(
         "wild_tree_seed_drop_sample",
         "wild_tree_seed_sample",
         "spring_onion_harvest_sample",
-        "location_forage_spawn_sample")]
+        "location_forage_spawn_sample",
+        "fruit_tree_harvest_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -59,6 +60,7 @@ $sampleRequirementId = switch ($Scenario) {
     "wild_tree_seed_sample" { "full_shipment:item:88" }
     "spring_onion_harvest_sample" { "full_shipment:item:399" }
     "location_forage_spawn_sample" { "full_shipment:item:16" }
+    "fruit_tree_harvest_sample" { "full_shipment:item:638" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -70,6 +72,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "wild_tree_seed_sample" { "(O)88" }
     "spring_onion_harvest_sample" { "(O)399" }
     "location_forage_spawn_sample" { "(O)16" }
+    "fruit_tree_harvest_sample" { "(O)638" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -81,6 +84,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "wild_tree_seed_sample" { "foraging.harvest_tree_product" }
     "spring_onion_harvest_sample" { "foraging.harvest_spring_onions" }
     "location_forage_spawn_sample" { "foraging.collect_spawned_objects" }
+    "fruit_tree_harvest_sample" { "foraging.harvest_fruit_tree" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -113,6 +117,7 @@ $forageFixture = switch ($Scenario) {
             GingerProfile = ""
             WildTreeProfile = ""
             SpawnedObjectProfile = ""
+            FruitTreeProfile = ""
             LocationId = "Farm"
             TargetTileX = 64
             TargetTileY = 15
@@ -126,6 +131,7 @@ $forageFixture = switch ($Scenario) {
             GingerProfile = "dry_standard"
             WildTreeProfile = ""
             SpawnedObjectProfile = ""
+            FruitTreeProfile = ""
             LocationId = "Farm"
             TargetTileX = 64
             TargetTileY = 15
@@ -139,6 +145,7 @@ $forageFixture = switch ($Scenario) {
             GingerProfile = ""
             WildTreeProfile = ""
             SpawnedObjectProfile = ""
+            FruitTreeProfile = ""
             LocationId = "Farm"
             TargetTileX = 64
             TargetTileY = 15
@@ -152,6 +159,7 @@ $forageFixture = switch ($Scenario) {
             GingerProfile = ""
             WildTreeProfile = "fall_hazelnut"
             SpawnedObjectProfile = ""
+            FruitTreeProfile = ""
             LocationId = "Farm"
             TargetTileX = 64
             TargetTileY = 15
@@ -165,6 +173,7 @@ $forageFixture = switch ($Scenario) {
             GingerProfile = ""
             WildTreeProfile = "island_palm"
             SpawnedObjectProfile = ""
+            FruitTreeProfile = ""
             LocationId = "IslandSouth"
             TargetTileX = 20
             TargetTileY = 20
@@ -178,9 +187,24 @@ $forageFixture = switch ($Scenario) {
             GingerProfile = ""
             WildTreeProfile = ""
             SpawnedObjectProfile = "ordinary"
+            FruitTreeProfile = ""
             LocationId = "Forest"
             TargetTileX = 40
             TargetTileY = 20
+        }
+    }
+    "fruit_tree_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "fruit-tree"
+            RuleKey = "fruit_tree"
+            BushProfile = ""
+            GingerProfile = ""
+            WildTreeProfile = ""
+            SpawnedObjectProfile = ""
+            FruitTreeProfile = "single_normal"
+            LocationId = "Farm"
+            TargetTileX = 64
+            TargetTileY = 15
         }
     }
     default { $null }
@@ -854,7 +878,7 @@ try {
             rule_key = [string]$forageFixture.RuleKey
             fixture_bush_profile = [string]$forageFixture.BushProfile
             fixture_ginger_profile = [string]$forageFixture.GingerProfile
-            fixture_fruit_tree_profile = ""
+            fixture_fruit_tree_profile = [string]$forageFixture.FruitTreeProfile
             fixture_wild_tree_product_profile = [string]$forageFixture.WildTreeProfile
             fixture_garbage_can_profile = ""
             fixture_spawned_object_profile = [string]$forageFixture.SpawnedObjectProfile

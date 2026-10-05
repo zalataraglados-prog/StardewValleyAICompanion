@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 果树产物层接入既有原生链
+
+`native_fruit_tree_produce` 现以樱桃 `full_shipment:item:638 / (O)638 / foraging.harvest_fruit_tree` 作为运行时分层代表。共享 forage 场景使用现有 `fruit_tree / single_normal / Farm 64,15` 夹具及唯一的果树候选、DailyPlan、编译器、执行器和 verifier；没有为苹果或樱桃创建第二套动作实现。
+
+异机守卫 `10/10`、game-free `131/131`、Bootstrap Release `0 warning / 0 error`。既有果树 action smoke 证明底层链可精确产出 `(O)638`，但不等于新的 Full Shipment rollout proof；生产覆盖仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 地点觅食物层接入 spawned-object 链
 
 `native_location_forage_spawn` 已按 `full_shipment:item:16 / (O)16 / foraging.collect_spawned_objects` 加入共享 forage 场景。普通 profile 在 Forest 建立原生 spawned object，随后仍由现有候选、DailyPlan、编译器、执行器和 fresh verifier 完成，不新增拾取实现。

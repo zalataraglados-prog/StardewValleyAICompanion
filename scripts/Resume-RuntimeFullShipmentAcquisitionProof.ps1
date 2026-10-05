@@ -211,6 +211,9 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:16|(O)16|native_location_forage_spawn" {
         "location_forage_spawn_sample"
     }
+    "full_shipment:item:638|(O)638|native_fruit_tree_produce" {
+        "fruit_tree_harvest_sample"
+    }
     default {
         throw "No acquisition sample scenario maps execution binding " +
             "'$requirementId|$qualifiedItemId|$routeKind'."

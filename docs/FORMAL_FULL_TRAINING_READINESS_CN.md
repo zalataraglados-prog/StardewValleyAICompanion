@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 果树产物样本准入状态
+
+樱桃 `(O)638` 已按 `native_fruit_tree_produce` 接入现有 `foraging.harvest_fruit_tree` 原生链，严格 resume tuple 为 `full_shipment:item:638|(O)638|native_fruit_tree_produce`。`LZT` 样本守卫 `10/10`、Core game-free `131/131`、Bootstrap Release `0 warning / 0 error`。历史果树 action smoke 不能替代 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
 ## 2026-10-05 Full Shipment 地点觅食物样本准入状态
 
 野山葵 `(O)16` 已按 `native_location_forage_spawn` 接入 EVD-211 的现有 spawned-object 采集链，精确 resume tuple 已锁定。异机样本守卫 `9/9`、Core game-free `130/130` 和 Bootstrap Release 已通过。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引与训练授权不变。
