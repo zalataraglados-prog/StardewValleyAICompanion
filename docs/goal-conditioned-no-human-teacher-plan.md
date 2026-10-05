@@ -1,5 +1,14 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: runtime samples reject the wrong acquisition layer before execution
+
+- Every configured sample now declares one expected `route_kind`. After the execution binding is built and before any
+  game action runs, the runner compares the exact `requirement_id / qualified_item_id / route_kind` tuple.
+- Selecting the right requirement through a competing source is therefore rejected before expensive native execution;
+  the existing resume tuple check remains a second independent gate.
+- Off-machine guards passed `16/16`, game-free tests passed `137/137`, and Bootstrap Release built cleanly. This is a
+  control-plane correction, not new native evidence, so production remains `2/26`.
+
 ## 2026-10-05: native solar-panel sample preserves its dedicated source
 
 - The representative route is

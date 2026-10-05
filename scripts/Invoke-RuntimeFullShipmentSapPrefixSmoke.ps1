@@ -90,6 +90,23 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "solar_panel_output_sample" { "(O)787" }
     default { "(O)92" }
 }
+$sampleExpectedRouteKind = switch ($Scenario) {
+    "parsnip_harvest_sample" { "harvests_as" }
+    "berry_bush_harvest_sample" { "native_bush_shake" }
+    "ginger_harvest_sample" { "native_ginger_harvest" }
+    "tea_bush_harvest_sample" { "native_tea_bush_harvest" }
+    "wild_tree_seed_drop_sample" { "native_wild_tree_seed_drop" }
+    "wild_tree_seed_sample" { "native_wild_tree_seed" }
+    "spring_onion_harvest_sample" { "native_spring_onion_harvest" }
+    "location_forage_spawn_sample" { "native_location_forage_spawn" }
+    "fruit_tree_harvest_sample" { "native_fruit_tree_produce" }
+    "farm_animal_product_sample" { "native_farm_animal_produce" }
+    "farm_animal_deluxe_product_sample" { "native_farm_animal_deluxe_produce" }
+    "fish_pond_output_sample" { "native_fish_pond_output" }
+    "machine_output_sample" { "machine_output" }
+    "solar_panel_output_sample" { "native_solar_panel_output" }
+    default { "native_wild_tree_chop_drop" }
+}
 $sampleRankingOptionId = switch ($Scenario) {
     "parsnip_harvest_sample" { "farm.maintain_crops" }
     "berry_bush_harvest_sample" { "foraging.harvest_bushes" }
@@ -1409,6 +1426,26 @@ try {
             "--action-queue", $queuePath,
             "--output", $bindingPath
         ))
+    $executionBinding = Get-Content -LiteralPath $bindingPath -Raw |
+        ConvertFrom-Json
+    $actualBindingTuple = @(
+        [string]$executionBinding.requirement_id,
+        [string]$executionBinding.qualified_item_id,
+        [string]$executionBinding.route_kind
+    ) -join "|"
+    $expectedBindingTuple = @(
+        $sampleRequirementId,
+        $sampleQualifiedItemId,
+        $sampleExpectedRouteKind
+    ) -join "|"
+    if (-not [string]::Equals(
+            $actualBindingTuple,
+            $expectedBindingTuple,
+            [StringComparison]::Ordinal)) {
+        throw (
+            "Execution binding selected the wrong authoritative route. " +
+            "Expected '$expectedBindingTuple'; actual '$actualBindingTuple'.")
+    }
     }
     else {
         if (-not $DownstreamSmokeOnly) {

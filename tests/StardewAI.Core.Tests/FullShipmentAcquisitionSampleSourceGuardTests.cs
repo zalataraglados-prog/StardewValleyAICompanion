@@ -432,6 +432,65 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void RuntimeSamplesRejectBindingsForTheWrongAcquisitionLayer()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        var expectedRouteMappings = new[]
+        {
+            "\"parsnip_harvest_sample\" { \"harvests_as\" }",
+            "\"berry_bush_harvest_sample\" { \"native_bush_shake\" }",
+            "\"ginger_harvest_sample\" { \"native_ginger_harvest\" }",
+            "\"tea_bush_harvest_sample\" { \"native_tea_bush_harvest\" }",
+            "\"wild_tree_seed_drop_sample\" { \"native_wild_tree_seed_drop\" }",
+            "\"wild_tree_seed_sample\" { \"native_wild_tree_seed\" }",
+            "\"spring_onion_harvest_sample\" { \"native_spring_onion_harvest\" }",
+            "\"location_forage_spawn_sample\" { \"native_location_forage_spawn\" }",
+            "\"fruit_tree_harvest_sample\" { \"native_fruit_tree_produce\" }",
+            "\"farm_animal_product_sample\" { \"native_farm_animal_produce\" }",
+            "\"farm_animal_deluxe_product_sample\" { \"native_farm_animal_deluxe_produce\" }",
+            "\"fish_pond_output_sample\" { \"native_fish_pond_output\" }",
+            "\"machine_output_sample\" { \"machine_output\" }",
+            "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
+            "default { \"native_wild_tree_chop_drop\" }",
+        };
+        foreach (var mapping in expectedRouteMappings)
+        {
+            Assert.Contains(
+                mapping,
+                source,
+                StringComparison.Ordinal);
+        }
+
+        Assert.Contains(
+            "$actualBindingTuple = @(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$executionBinding.requirement_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$executionBinding.qualified_item_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$executionBinding.route_kind",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sampleExpectedRouteKind",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Execution binding selected the wrong authoritative route.",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(

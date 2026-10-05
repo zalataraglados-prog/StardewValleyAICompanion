@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 样本执行绑定按路线类型失败关闭
+
+- 每个现有样本场景现在显式声明唯一预期 `route_kind`；生成 execution binding 后、进入任何游戏动作前，runner 会逐字段核对 `requirement_id / qualified_item_id / route_kind`。
+- 同一需求或物品存在多条来源时，Teacher 即使选中了正确 requirement，只要来源层不符也会立即失败，不再把错误路线带入昂贵的原生运行。resume 端原有严格 tuple 校验继续保留，形成执行前与断点恢复双门。
+- `LZT` 上样本守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。这是防误跑与节省测试资源的控制改进，不产生新的原生回执，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 太阳能板产物样本入口
 
 - `native_solar_panel_output` 的唯一权威身份为 `full_shipment:item:787 / (O)787 / machine:(BC)231:OutputSolarPanel / farm.collect_machine_outputs`。

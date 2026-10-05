@@ -1,5 +1,11 @@
 # Full Shipment 分层样本短交接（2026-10-05）
 
+## 最新控制修正
+
+- runner 现为每个样本声明预期 `route_kind`，并在 execution binding 生成后、进入游戏执行前核对 `requirement_id / qualified_item_id / route_kind` 完整三元组；resume 端继续独立复核。
+- 同物品多来源不再可能仅因 requirement 相同而串层。远端守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。
+- 该修正没有产生新原生证据：当前十三个待证样本与生产 `2/26` 均不变。
+
 ## 当前事实
 
 - 生产运行时分层索引严格为 `2/26`：防风草覆盖 `harvests_as`，Sap 覆盖 `native_wild_tree_chop_drop`。

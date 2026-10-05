@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 runtime sample identity binding rule
+
+An executable Full Shipment sample identity is the exact tuple `requirement_id / qualified_item_id / route_kind`, not
+the requirement alone. The shared runner now compares that tuple against the generated execution binding before native
+execution. This preserves distinct authoritative sources when one item is obtainable through several route kinds; the
+resume proof independently repeats the same fail-closed check.
+
 ## 2026-10-05 native solar-panel-output sample identity
 
 The locked Full Shipment inventory identifies Battery Pack `(O)787` as `full_shipment:item:787`, route kind

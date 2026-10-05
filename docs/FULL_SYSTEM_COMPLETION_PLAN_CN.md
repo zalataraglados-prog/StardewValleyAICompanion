@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 样本路线类型前置门
+
+共享样本 runner 已把场景身份扩展为 `requirement_id + qualified_item_id + expected route_kind`，并在 execution binding 建成后、调用游戏执行器前核对完整三元组。该门专门阻止同一物品的多来源路线串层；错误选择不会再消耗原生运行时间，也不能依赖后续 resume 才暴露。
+
+异机守卫 `16/16`、game-free `137/137`、Bootstrap Release `0 warning / 0 error`。此控制门不改变 `2/26` 的生产证据分子，也不放宽任何训练准入条件。
+
 ## 2026-10-05 Full Shipment 太阳能板产物层接入共享机器收取链
 
 `native_solar_panel_output` 现按唯一身份 `machine:(BC)231:OutputSolarPanel -> (O)787` 接入，requirement 为 `full_shipment:item:787`，endpoint 为 `farm.collect_machine_outputs`。透明桥保留专用太阳能板状态和权威来源，动作层复用共享机器收取链；夹具不伪造太阳能板建造支持项。

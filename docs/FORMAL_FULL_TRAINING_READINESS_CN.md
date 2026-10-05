@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment acquisition 路线类型前置校验
+
+所有已配置运行时样本均在执行前绑定并核对精确 `requirement_id|qualified_item_id|route_kind`。只匹配 requirement、不匹配来源层的 Teacher 选择现在失败关闭；resume 端仍再次按同一三元组验证。`LZT` 样本守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。本项没有新增 fresh receipt 或 rollout proof，严格索引保持 `2/26`，`formal_product_training_authorized=false`。
+
 ## 2026-10-05 Full Shipment 太阳能板产物样本准入状态
 
 电池组 `(O)787` 已按 `native_solar_panel_output` 接入现有 `farm.collect_machine_outputs -> executor.collect_machine_output` 链，严格 resume tuple 为 `full_shipment:item:787|(O)787|native_solar_panel_output`。`LZT` 样本守卫 `15/15`、Core game-free `136/136`、Bootstrap Release `0 warning / 0 error`。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
