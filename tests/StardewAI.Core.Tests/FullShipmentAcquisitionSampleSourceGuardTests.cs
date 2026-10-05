@@ -555,6 +555,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "transparent-bridge-deploy.log",
             script,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "[object[]]$fishingForecastSnapshots = @()",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "snapshots = $fishingForecastSnapshots",
+            script,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "full_shipment",
             common,
