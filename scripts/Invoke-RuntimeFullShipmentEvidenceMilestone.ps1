@@ -2,7 +2,16 @@
 param(
     [string] $ProjectRoot = "",
     [string] $RuntimeRoot = "F:\StardewAI-TestLab\runtime",
-    [string] $ArchivedFreshSaveRoot = "",
+    [string] $ArchivedFreshSaveRoot =
+        "F:\StardewAI-TestLab\inputs\fresh-save\ProofFarm_450250338",
+    [string] $RequirementInventory =
+        "F:\StardewAI-TestLab\inputs\authoritative-requirement-inventory-v1.json",
+    [string] $AcquisitionLowering =
+        "F:\StardewAI-TestLab\inputs\acquisition-route-option-lowering-v1.json",
+    [string] $MasterAnglerWindows =
+        "F:\StardewAI-TestLab\inputs\master-angler-stage-one-window-index-v1.json",
+    [string] $RouteTimingCalibration =
+        "F:\StardewAI-TestLab\route-timing-calibration.json",
     [string] $StaticInventory =
         "local-data\full-shipment-evidence-milestone\static-inventory.json",
     [string] $Plan =
@@ -297,6 +306,10 @@ foreach ($entry in $selectedEntries) {
         OutputRoot = $milestoneRoot
         Scenario = $scenario
         SkipBuild = $builtOnce
+        RequirementInventory = $RequirementInventory
+        AcquisitionLowering = $AcquisitionLowering
+        MasterAnglerWindows = $MasterAnglerWindows
+        RouteTimingCalibration = $RouteTimingCalibration
     }
     if (-not [string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
         $parameters.ArchivedFreshSaveRoot = $ArchivedFreshSaveRoot

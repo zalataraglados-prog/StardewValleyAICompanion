@@ -611,6 +611,20 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
+            "F:\\StardewAI-TestLab\\inputs\\fresh-save\\ProofFarm_450250338",
+            milestone,
+            StringComparison.Ordinal);
+        foreach (var inputBinding in new[]
+        {
+            "RequirementInventory = $RequirementInventory",
+            "AcquisitionLowering = $AcquisitionLowering",
+            "MasterAnglerWindows = $MasterAnglerWindows",
+            "RouteTimingCalibration = $RouteTimingCalibration"
+        })
+        {
+            Assert.Contains(inputBinding, milestone, StringComparison.Ordinal);
+        }
+        Assert.Contains(
             "Write-MilestoneState -Status \"failed\"",
             milestone,
             StringComparison.Ordinal);
