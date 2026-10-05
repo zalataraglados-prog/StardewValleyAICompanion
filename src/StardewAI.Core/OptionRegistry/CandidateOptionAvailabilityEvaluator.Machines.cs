@@ -504,6 +504,19 @@ namespace StardewAI.Core.OptionRegistry
                             ReadArray(machine, "output_authoritative_route_sources"))),
                         Parameter("output_context_tags_json", JsonSerializer.Serialize(outputContextTags))
                     };
+                    if (standTile.Tile is not null)
+                    {
+                        parameters.Add(Parameter("target_tile_x", x.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                        parameters.Add(Parameter("target_tile_y", y.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                        parameters.Add(Parameter("stand_tile_x", standTile.Tile.X.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                        parameters.Add(Parameter("stand_tile_y", standTile.Tile.Y.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                        parameters.Add(Parameter("max_movement_tiles", distance.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                    }
                     if (positiveExperienceDeltas.Length == 1)
                     {
                         var delta = positiveExperienceDeltas[0];

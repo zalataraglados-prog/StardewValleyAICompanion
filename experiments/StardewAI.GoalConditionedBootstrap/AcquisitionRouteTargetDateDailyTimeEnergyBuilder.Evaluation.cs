@@ -71,6 +71,12 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_wild_tree_tapper_output" =>
+                EvaluateCurrentRouteCollection(
+                    route,
+                    staticRoute,
+                    state,
+                    currentRouteCandidates),
             _ => Result(
                 route,
                 "terminal_budget_not_implemented",
