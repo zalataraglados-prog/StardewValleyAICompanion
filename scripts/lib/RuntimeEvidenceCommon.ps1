@@ -141,9 +141,24 @@ function Invoke-RuntimeBootstrap {
         [Parameter(Mandatory)] [string] $BootstrapDll,
         [Parameter(Mandatory)] [string[]] $Arguments
     )
-    & dotnet $BootstrapDll @Arguments | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Goal-conditioned bootstrap failed: $($Arguments[0])"
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        # Windows PowerShell turns native stderr into ErrorRecord instances.
+        # Capture it before the caller's Stop preference truncates JSON errors.
+        $ErrorActionPreference = "Continue"
+        $nativeOutput = @(& dotnet $BootstrapDll @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($exitCode -ne 0) {
+        $detail = @($nativeOutput |
+            ForEach-Object { [string]$_ } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -Last 20) -join "`n"
+        throw "Goal-conditioned bootstrap failed: $($Arguments[0]) " +
+            "(exit $exitCode). $detail"
     }
 }
 

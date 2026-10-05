@@ -527,6 +527,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "function Start-RuntimeEvidenceProcess",
             common,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "$nativeOutput = @(& dotnet $BootstrapDll @Arguments 2>&1)",
+            common,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "& dotnet $BootstrapDll @Arguments | Out-Null",
+            common,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "function Invoke-JsonPost",
             script,

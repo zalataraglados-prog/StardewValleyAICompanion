@@ -7,6 +7,7 @@
 - `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 先执行 7 个高风险原生样本，逐场景写 checkpoint，成功可续跑、失败立即停止且不自动重试；`-PlanOnly` 只验证计划。默认高负载游戏运行目录为异机 `F:\StardewAI-TestLab\runtime`，其测试实验根仍为 `F:\StardewAI-TestLab`，本机不启动游戏。
 - 里程碑编排器显式绑定异机 `F:\StardewAI-TestLab\inputs` 下的基准存档、requirement/lowering/Master Angler 输入和实验根下的移动计时校准；这些参数逐项透传给唯一原生样本 runner，不再依赖旧工作区的未提交文件或本机 I 盘默认路径。
 - 原生样本 runner 的首次 Release 构建不再假设所有项目都被解决方案预恢复；每个实际入口自行恢复并构建，部署与逐项目构建输出写入本次 artifact。干净 worktree 因缺少 `obj/project.assets.json` 失败时不再只剩一个无上下文退出码。
+- `RuntimeEvidenceCommon.Invoke-RuntimeBootstrap` 在 Windows PowerShell 下显式合并捕获原生 stderr，再按退出码判定；bootstrap 的结构化 JSON 错误会保留末尾诊断，不再被全局 `ErrorActionPreference=Stop` 截断为单个 `{`。
 - 当前 `26/26` 是入口与采证计划覆盖，生产证据仍只有 Sap 与放射性矿石可独立复核；必须先导入/重验这两个 anchor，再跑高风险 7 层和其余标准层，最后统一构建 evidence manifest/index。训练授权仍为 `false`。
 
 ## 2026-10-05 Full Shipment runtime 编排边界拆分
