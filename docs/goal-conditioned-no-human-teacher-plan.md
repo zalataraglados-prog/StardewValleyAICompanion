@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: Island palm sample binds an exact cross-location root
+
+- The representative route is
+  `full_shipment:item:88 / (O)88 / native_wild_tree_seed / wild_tree:6 / foraging.harvest_tree_product`.
+- Forage scenarios now bind an exact location and tile. Existing samples remain on `Farm 64,15`; Island palm uses
+  `IslandSouth 20,20`. The acquisition root must match that binding, while the complete Sap recurrence still requires
+  Farm and day zero.
+- Off-machine guards passed `7/7`, game-free tests passed `128/128`, and Bootstrap Release built cleanly.
+- No fresh Full Shipment receipt exists for this sample, so the production index remains `2/26`.
+
 ## 2026-10-05: wild-tree seed-drop sample reuses the native tree-product chain
 
 - The representative route is

@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native Island palm seed sample identity
+
+The locked Full Shipment inventory identifies Coconut `(O)88` as `full_shipment:item:88`, route kind
+`native_wild_tree_seed`, source `wild_tree:6`, and endpoint `foraging.harvest_tree_product`. Its representative native
+fixture is `island_palm` at `IslandSouth 20,20`; using a Farm root would not preserve the native island-context branch.
+The historical action smoke is reusable evidence discovery, but runtime-stratum coverage remains pending.
+
 ## 2026-10-05 native wild-tree seed-drop sample identity
 
 The locked Full Shipment inventory identifies Hazelnut `(O)408` as `full_shipment:item:408`, route kind

@@ -135,6 +135,43 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void IslandWildTreeSeedSampleUsesExactIslandRoot()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"wild_tree_seed_sample\" { \"full_shipment:item:88\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_seed_sample\" { \"(O)88\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_seed_sample\" { \"foraging.harvest_tree_product\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "WildTreeProfile = \"island_palm\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "LocationId = \"IslandSouth\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$acquisitionRootLocationId = if ($null -ne $forageFixture)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (-not $sampleProofOnly -and $initialTotalDay -ne 0)",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -184,6 +221,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:408|(O)408|native_wild_tree_seed_drop",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:88|(O)88|native_wild_tree_seed",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

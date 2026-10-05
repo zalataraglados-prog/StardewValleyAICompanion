@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 岛屿棕榈样本准入状态
+
+椰子 `(O)88` 的 `native_wild_tree_seed` 样本已接入现有树产品链，并以精确 `IslandSouth 20,20` 根区别于 Farm 样本。异机样本守卫 `7/7`、Core game-free `128/128` 和 Bootstrap Release 已通过。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引和训练授权均不变。
+
 ## 2026-10-05 Full Shipment 野树落种样本准入状态
 
 榛子 `(O)408` 已按 `native_wild_tree_seed_drop` 接入共享 forage 场景与既有 `foraging.harvest_tree_product` 链，严格 resume tuple 已锁定。异机样本守卫 `6/6`、Core game-free `127/127` 和 Bootstrap Release 均通过。历史原生树产品 action smoke 只证明执行链可复用；新的 Full Shipment receipt 与 rollout proof 尚未产生，因此该层仍为 pending，严格索引继续为 `2/26`。

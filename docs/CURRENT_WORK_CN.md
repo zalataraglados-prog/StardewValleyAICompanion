@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 岛屿棕榈样本精确地点根
+
+- `native_wild_tree_seed` 的代表路线为 `full_shipment:item:88 / (O)88 / wild_tree:6 / foraging.harvest_tree_product`。匹配的 `island_palm` 原生 smoke 位于 `IslandSouth 20,20`，不能借用 Farm 根。
+- 共享 forage 场景配置现显式携带 `LocationId / TargetTileX / TargetTileY`。现有样本继续绑定 `Farm 64,15`，岛屿棕榈单独绑定 `IslandSouth 20,20`；acquisition 根必须等于场景声明的精确地点。完整 Sap recurrence 仍要求 Farm 且 `total_day=0`，没有被放宽。
+- 严格 resume tuple 为 `full_shipment:item:88|(O)88|native_wild_tree_seed`。`LZT` 上样本守卫 `7/7`、Core game-free `128/128`、Bootstrap Release `0 warning / 0 error`。
+- 这只完成跨地点样本入口。新 Full Shipment 原生回执尚未产生，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 野树落种样本入口
 
 - `native_wild_tree_seed_drop` 的生产代表为 `full_shipment:item:408 / (O)408 / wild_tree:2:0 / foraging.harvest_tree_product`。已有 `fall_hazelnut` 原生 smoke 在 Farm 精确产出 `(O)408`，验证原生 `checkAction`、种子消耗、完整输出域、零 Foraging XP 与空槽恢复。

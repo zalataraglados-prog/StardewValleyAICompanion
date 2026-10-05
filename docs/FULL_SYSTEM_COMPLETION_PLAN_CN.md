@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 岛屿棕榈层采用精确跨地点根
+
+`native_wild_tree_seed` 已按 `full_shipment:item:88 / (O)88 / wild_tree:6 / foraging.harvest_tree_product` 加入共享样本 runner。场景配置显式绑定 `IslandSouth 20,20`，证明根校验从写死 Farm 改为比较场景的精确地点；非 forage 场景默认仍为 Farm，完整 Sap recurrence 的 Farm 与第 0 天约束均保留。
+
+异机守卫 `7/7`、game-free `128/128`、Bootstrap Release 通过。该改动不能把历史岛屿棕榈 action smoke 计为 Full Shipment proof；生产覆盖继续为 `2/26`，待原生环境可用后单独采集并重建 rollout。
+
 ## 2026-10-05 Full Shipment 野树落种层复用原生树产品链
 
 `native_wild_tree_seed_drop` 已按 `full_shipment:item:408 / (O)408 / wild_tree:2:0 / foraging.harvest_tree_product` 加入共享样本 runner，代表 fixture 为 Farm 上的 `wild_tree / fall_hazelnut`。它复用现有树产品候选、DailyPlan、编译器、执行器与 verifier；历史原生 smoke 已证明该动作可精确产出榛子，但不能替代新的 acquisition rollout proof。

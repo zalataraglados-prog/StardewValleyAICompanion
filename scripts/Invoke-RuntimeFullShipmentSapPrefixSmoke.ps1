@@ -24,7 +24,8 @@ param(
         "berry_bush_harvest_sample",
         "ginger_harvest_sample",
         "tea_bush_harvest_sample",
-        "wild_tree_seed_drop_sample")]
+        "wild_tree_seed_drop_sample",
+        "wild_tree_seed_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -53,6 +54,7 @@ $sampleRequirementId = switch ($Scenario) {
     "ginger_harvest_sample" { "full_shipment:item:829" }
     "tea_bush_harvest_sample" { "full_shipment:item:815" }
     "wild_tree_seed_drop_sample" { "full_shipment:item:408" }
+    "wild_tree_seed_sample" { "full_shipment:item:88" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -61,6 +63,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "ginger_harvest_sample" { "(O)829" }
     "tea_bush_harvest_sample" { "(O)815" }
     "wild_tree_seed_drop_sample" { "(O)408" }
+    "wild_tree_seed_sample" { "(O)88" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -69,6 +72,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "ginger_harvest_sample" { "foraging.harvest_ginger" }
     "tea_bush_harvest_sample" { "foraging.harvest_bushes" }
     "wild_tree_seed_drop_sample" { "foraging.harvest_tree_product" }
+    "wild_tree_seed_sample" { "foraging.harvest_tree_product" }
     default { "foraging.chop_wild_tree" }
 }
 $forageFixture = switch ($Scenario) {
@@ -79,6 +83,9 @@ $forageFixture = switch ($Scenario) {
             BushProfile = "berry_standard"
             GingerProfile = ""
             WildTreeProfile = ""
+            LocationId = "Farm"
+            TargetTileX = 64
+            TargetTileY = 15
         }
     }
     "ginger_harvest_sample" {
@@ -88,6 +95,9 @@ $forageFixture = switch ($Scenario) {
             BushProfile = ""
             GingerProfile = "dry_standard"
             WildTreeProfile = ""
+            LocationId = "Farm"
+            TargetTileX = 64
+            TargetTileY = 15
         }
     }
     "tea_bush_harvest_sample" {
@@ -97,6 +107,9 @@ $forageFixture = switch ($Scenario) {
             BushProfile = "tea_leaf"
             GingerProfile = ""
             WildTreeProfile = ""
+            LocationId = "Farm"
+            TargetTileX = 64
+            TargetTileY = 15
         }
     }
     "wild_tree_seed_drop_sample" {
@@ -106,9 +119,30 @@ $forageFixture = switch ($Scenario) {
             BushProfile = ""
             GingerProfile = ""
             WildTreeProfile = "fall_hazelnut"
+            LocationId = "Farm"
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "wild_tree_seed_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "wild-tree-seed"
+            RuleKey = "wild_tree"
+            BushProfile = ""
+            GingerProfile = ""
+            WildTreeProfile = "island_palm"
+            LocationId = "IslandSouth"
+            TargetTileX = 20
+            TargetTileY = 20
         }
     }
     default { $null }
+}
+$acquisitionRootLocationId = if ($null -ne $forageFixture) {
+    [string]$forageFixture.LocationId
+}
+else {
+    "Farm"
 }
 
 function Resolve-InputPath {
@@ -765,9 +799,9 @@ try {
             save_isolation_path = $isolatedSavesPath
             request_nonce = [guid]::NewGuid().ToString("N")
             created_at = [DateTimeOffset]::UtcNow.ToString("O")
-            location_id = "Farm"
-            target_tile_x = 64
-            target_tile_y = 15
+            location_id = [string]$forageFixture.LocationId
+            target_tile_x = [int]$forageFixture.TargetTileX
+            target_tile_y = [int]$forageFixture.TargetTileY
             rule_key = [string]$forageFixture.RuleKey
             fixture_bush_profile = [string]$forageFixture.BushProfile
             fixture_ginger_profile = [string]$forageFixture.GingerProfile
@@ -799,8 +833,9 @@ try {
     $initialTotalDay = [int](Read-StateValue `
         $initial.Value "time" "total_days")
     if ([string](Read-StateValue $initial.Value "player" "location_id") -ne
-            "Farm") {
-        throw "Acquisition root is not on the native Farm map."
+            $acquisitionRootLocationId) {
+        throw "Acquisition root is not on the expected native " +
+            "$acquisitionRootLocationId map."
     }
     if (-not $sampleProofOnly -and $initialTotalDay -ne 0) {
         throw "Recurrence root is not native Spring 1 Farm state."
