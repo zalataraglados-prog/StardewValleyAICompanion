@@ -186,6 +186,33 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             };
         }
 
+        if (requirement.RouteKind == "native_location_fish_spawn" &&
+            !SnapshotDeclaresFishCollectionSpecies(
+                snapshot,
+                requirement.QualifiedItemId))
+        {
+            if (!supplied.Any(candidate =>
+                    TryMatchCompleteLocationFishingOutcome(
+                        requirement.SourceId,
+                        requirement.QualifiedItemId,
+                        candidate,
+                        out _)))
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_complete_location_fishing_outcome_missing"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+            blockingReasons = Array.Empty<string>();
+            return endpointOptionIds
+                .Select(optionId => new OptionAvailabilityCandidate
+                {
+                    OptionId = optionId
+                })
+                .ToArray();
+        }
+
         var intents = supplied
             .Select(candidate =>
             {

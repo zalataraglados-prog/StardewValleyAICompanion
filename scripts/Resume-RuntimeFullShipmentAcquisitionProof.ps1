@@ -248,6 +248,12 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:386|(O)386|native_geode_drop" {
         "geode_drop_sample"
     }
+    "full_shipment:item:336|(O)336|creates_reward_item" {
+        "community_center_reward_sample"
+    }
+    "full_shipment:item:388|(O)388|native_location_fish_spawn" {
+        "location_fish_spawn_sample"
+    }
     "full_shipment:item:388|(O)388|sells" {
         "shop_purchase_sample"
     }

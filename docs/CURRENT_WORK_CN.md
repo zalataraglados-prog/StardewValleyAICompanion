@@ -1,5 +1,17 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 地点钓获入口
+
+- 最后一层代表固定为 `full_shipment:item:388 / (O)388 / native_location_fish_spawn / location_fish:Town:3`，复用现有 `fishing.catch_fish -> executor.catch_fish` 原生抛竿、上钩、小游戏和结果回执链。
+- 修正了 dispatch 的旧假设：Full Shipment 中该层是地点钓鱼规则产生的非鱼物品，不能塞进 72 种鱼的 Master Angler 缺失集合。真正鱼种仍要求严格的 Master Angler 窗口；非鱼地点钓获物则必须由透明候选的完整结果分布同时证明物品、地点规则和 source index，错误物品或错误规则行继续 fail closed。
+- 隔离夹具只加载 Town、装备钓竿并选择原生可钓水域，不注入 `(O)388`；runner 同时保存同一状态的需求型 fishing forecast。至此入口配置为 `26/26`，但生产 evidence index 尚未重建，正式训练仍保持 `false`。
+
+## 2026-10-05 Full Shipment 社区中心奖励入口
+
+- 奖励物代表固定为 `full_shipment:item:336 / (O)336 / creates_reward_item / bundle:Bulletin Board/33:reward`，继续复用 `community_center.donate_bundle_items` 下已经存在的待领奖候选、DailyPlan、动作编译器和 `executor.claim_community_center_bundle_reward` 原生菜单执行链。
+- 隔离夹具只把当前原生 `Data/Bundles` 中的精确 bundle 置于“已完成、奖励未领取”状态，并移动到社区中心交互点；它不会创建或注入 `(O)336`。共享 runner 必须从透明快照再次验证 bundle key、奖励物品和精确权威来源，之后产品执行器才可通过原生 Junimo Note 奖励菜单领取。
+- 当前 runner 配置入口达到 `25/26`；只剩 `native_location_fish_spawn`。本轮仍不增加生产 evidence index，正式训练保持 `false`。
+
 ## 2026-10-05 Full Shipment 商店购买入口
 
 - 商店购买代表固定为 `full_shipment:item:388 / (O)388 / sells / shop:Carpenter`。候选显式约束 `Carpenter`、木材 `(O)388`、单价不高于 10 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。

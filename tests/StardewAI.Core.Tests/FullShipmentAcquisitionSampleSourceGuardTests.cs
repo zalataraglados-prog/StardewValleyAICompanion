@@ -889,6 +889,104 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void CommunityCenterRewardSampleUsesExactPendingNativeReward()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.CommunityCenterFixture.cs");
+
+        Assert.Contains(
+            "\"community_center_reward_sample\" { \"full_shipment:item:336\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"community_center_reward_sample\" { \"(O)336\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"community_center_reward_sample\" { \"creates_reward_item\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"community_center.donate_bundle_items\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceId = \"bundle:Bulletin Board/33:reward\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "community_center_fixture_case = \"pending_reward\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$rewardBundle.reward.authoritative_route_sources",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "communityCenter.bundleRewards[target.BundleId] = true",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)336\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LocationFishingSampleUsesNativeTownRuleAndSharedCatchChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.LocationFishingFixture.cs");
+
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"full_shipment:item:388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"(O)388\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"native_location_fish_spawn\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_fish_spawn_sample\" { \"fishing.catch_fish\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSource = \"Data/Locations:Town\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceIndex = 3",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "profile=fishing_forecast&fresh=true&location_id=",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new FishingRod(4)",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)388\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RadioactiveOreSampleUsesTheSharedPlanningAxes()
     {
         var calendar = ReadRepositoryFile(
@@ -1007,6 +1105,8 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
             "\"location_artifact_spot_sample\" { \"native_location_artifact_spot\" }",
             "\"geode_drop_sample\" { \"native_geode_drop\" }",
+            "\"community_center_reward_sample\" { \"creates_reward_item\" }",
+            "\"location_fish_spawn_sample\" { \"native_location_fish_spawn\" }",
             "\"shop_purchase_sample\" { \"sells\" }",
             "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
             "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
@@ -1043,6 +1143,40 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "Execution binding selected the wrong authoritative route.",
             source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LocationFishingDispatchSeparatesNonFishOutcomesFromMasterAngler()
+    {
+        var selection = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Selection.cs");
+        var verification = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Verification.cs");
+
+        Assert.Contains(
+            "TryMatchCompleteLocationFishingOutcome",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "outcome_distribution_complete",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "outcome_distribution_json",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SnapshotDeclaresFishCollectionSpecies",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route_dispatch_complete_location_fishing_outcome_missing",
+            verification,
             StringComparison.Ordinal);
     }
 
@@ -1156,6 +1290,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:386|(O)386|native_geode_drop",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:336|(O)336|creates_reward_item",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:388|(O)388|native_location_fish_spawn",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

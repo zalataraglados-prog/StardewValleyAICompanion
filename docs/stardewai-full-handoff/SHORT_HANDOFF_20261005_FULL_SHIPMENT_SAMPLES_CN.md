@@ -1,5 +1,15 @@
 # Full Shipment 分层样本短交接（2026-10-05）
 
+## 入口配置完成
+
+- 共享 runner 已配置 `26/26` 个权威运行时入口。最后一层为 `location_fish:Town:3 -> (O)388`，使用完整透明钓获分布和既有原生 `catch_fish` 链。
+- `26/26` 是编排入口覆盖，不是生产证据覆盖。当前可独立验收的新版本生产证明仍只有 Sap 和放射性矿石；下一步先做 runner 有界拆分和里程碑抽样，再统一重建 production evidence index，训练准入仍为 `false`。
+
+## 接续状态更新
+
+- 当前权威分母为 26 层，runner 已配置 `25/26` 个入口。新增代表为 `bundle:Bulletin Board/33:reward -> (O)336` 的 `creates_reward_item`，复用现有社区中心原生领奖链；严格生产证据没有因此增长。
+- 剩余入口严格为 1 层：`native_location_fish_spawn`。配置入口完成不等于原生生产证明；训练准入仍为 `false`。
+
 ## 最新可接续状态
 
 - 源码在 `I:\StardewValleyAICompanion`；本机轻量/历史测试在 `E:`；高负载隔离运行环境在异机 `F:\StardewAI-TestLab`。异机已有完整游戏运行时，不再沿用“新电脑无运行环境”的旧描述。

@@ -825,6 +825,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_location_fishing")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupLocationFishing(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_fish_pond")
             {
                 pending.Completion.SetResult(ExecuteSetupFishPond(pending.Request));

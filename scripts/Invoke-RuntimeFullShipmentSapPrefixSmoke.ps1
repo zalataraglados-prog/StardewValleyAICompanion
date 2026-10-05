@@ -40,6 +40,8 @@ param(
         "tree_moss_harvest_sample",
         "location_artifact_spot_sample",
         "geode_drop_sample",
+        "community_center_reward_sample",
+        "location_fish_spawn_sample",
         "shop_purchase_sample",
         "monster_drop_sample",
         "radioactive_ore_node_sample")]
@@ -98,6 +100,8 @@ $sampleRequirementId = switch ($Scenario) {
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
     "location_artifact_spot_sample" { "full_shipment:item:330" }
     "geode_drop_sample" { "full_shipment:item:386" }
+    "community_center_reward_sample" { "full_shipment:item:336" }
+    "location_fish_spawn_sample" { "full_shipment:item:388" }
     "shop_purchase_sample" { "full_shipment:item:388" }
     "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
@@ -124,6 +128,8 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "tree_moss_harvest_sample" { "(O)Moss" }
     "location_artifact_spot_sample" { "(O)330" }
     "geode_drop_sample" { "(O)386" }
+    "community_center_reward_sample" { "(O)336" }
+    "location_fish_spawn_sample" { "(O)388" }
     "shop_purchase_sample" { "(O)388" }
     "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
@@ -150,6 +156,8 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
     "location_artifact_spot_sample" { "native_location_artifact_spot" }
     "geode_drop_sample" { "native_geode_drop" }
+    "community_center_reward_sample" { "creates_reward_item" }
+    "location_fish_spawn_sample" { "native_location_fish_spawn" }
     "shop_purchase_sample" { "sells" }
     "monster_drop_sample" { "native_monster_drop_table" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
@@ -176,6 +184,10 @@ $sampleRankingOptionId = switch ($Scenario) {
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
     "location_artifact_spot_sample" { "foraging.excavate_artifact_spots" }
     "geode_drop_sample" { "processing.crack_geode" }
+    "community_center_reward_sample" {
+        "community_center.donate_bundle_items"
+    }
+    "location_fish_spawn_sample" { "fishing.catch_fish" }
     "shop_purchase_sample" { "economy.buy_supplies" }
     "monster_drop_sample" { "mining.reach_depth" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
@@ -479,6 +491,32 @@ $timeFixture = switch ($Scenario) {
     }
     default { $null }
 }
+$communityCenterRewardFixture = switch ($Scenario) {
+    "community_center_reward_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "community-center-reward"
+            BundleId = 33
+            BundleDataKey = "Bulletin Board/33"
+            QualifiedItemId = "(O)336"
+            ExpectedRouteKind = "creates_reward_item"
+            ExpectedSourceId = "bundle:Bulletin Board/33:reward"
+        }
+    }
+    default { $null }
+}
+$locationFishingFixture = switch ($Scenario) {
+    "location_fish_spawn_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "location-fish-spawn"
+            LocationId = "Town"
+            QualifiedItemId = "(O)388"
+            ExpectedSource = "Data/Locations:Town"
+            ExpectedSourceIndex = 3
+            ExpectedSourceId = "location_fish:Town:3"
+        }
+    }
+    default { $null }
+}
 $clearObstacleFixture = switch ($Scenario) {
     "tree_moss_harvest_sample" {
         [pscustomobject][ordered]@{
@@ -535,6 +573,12 @@ elseif ($null -ne $miningFixture) {
 }
 elseif ($null -ne $geodeFixture) {
     "Blacksmith"
+}
+elseif ($null -ne $communityCenterRewardFixture) {
+    "CommunityCenter"
+}
+elseif ($null -ne $locationFishingFixture) {
+    [string]$locationFishingFixture.LocationId
 }
 else {
     "Farm"
@@ -1187,6 +1231,125 @@ try {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }
     }
+    elseif ($null -ne $communityCenterRewardFixture) {
+        $fixtureSlug = [string]$communityCenterRewardFixture.Slug
+        $rewardSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $rewardSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$rewardSetupSource.Value.state_hash
+            option_id = "debug.setup_community_center_donation"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            community_center_fixture_case = "pending_reward"
+            bundle_id = [int]$communityCenterRewardFixture.BundleId
+        }
+        $rewardSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $rewardSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $rewardSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $rewardSetupResult.Raw
+        if ([string]$rewardSetupResult.Value.status -ne "applied" -or
+            [string]$rewardSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+
+        $rewardProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+        $communityCenter = Read-StateValue `
+            $rewardProjectionCapture.Value `
+            "world_progress" `
+            "community_center"
+        $rewardBundle = @($communityCenter.bundle_rows | Where-Object {
+            [string]$_.bundle_data_key -eq
+                [string]$communityCenterRewardFixture.BundleDataKey
+        } | Select-Object -First 1)[0]
+        $matchingSource = @(
+            $rewardBundle.reward.authoritative_route_sources |
+            Where-Object {
+                [string]$_.route_kind -eq
+                    [string]$communityCenterRewardFixture.ExpectedRouteKind -and
+                [string]$_.source_id -eq
+                    [string]$communityCenterRewardFixture.ExpectedSourceId -and
+                [string]$_.qualified_item_id -eq
+                    [string]$communityCenterRewardFixture.QualifiedItemId
+            }).Count -gt 0
+        if ($null -eq $rewardBundle -or
+            -not [bool]$rewardBundle.reward_available -or
+            [string]$rewardBundle.reward.qualified_item_id -ne
+                [string]$communityCenterRewardFixture.QualifiedItemId -or
+            -not $matchingSource) {
+            throw "Ready $fixtureSlug authoritative reward projection was not found."
+        }
+    }
+    elseif ($null -ne $locationFishingFixture) {
+        $fixtureSlug = [string]$locationFishingFixture.Slug
+        $fishingSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $fishingSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$fishingSetupSource.Value.state_hash
+            option_id = "debug.setup_location_fishing"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            location_id = [string]$locationFishingFixture.LocationId
+        }
+        $fishingSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $fishingSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $fishingSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $fishingSetupResult.Raw
+        if ([string]$fishingSetupResult.Value.status -ne "applied" -or
+            [string]$fishingSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+
+        $fishingProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+        $rodContexts = @(Read-StateValue `
+            $fishingProjectionCapture.Value "fishing" "rod_contexts")
+        $matchingOutputs = @(
+            foreach ($context in $rodContexts) {
+                if (-not [bool]$context.complete) { continue }
+                foreach ($rule in @($context.spawn_rules.rules)) {
+                    if ([string]$rule.source -ne
+                            [string]$locationFishingFixture.ExpectedSource -or
+                        [int]$rule.source_index -ne
+                            [int]$locationFishingFixture.ExpectedSourceIndex -or
+                        -not [bool]$rule.condition_met -or
+                        -not [bool]$rule.eligible_before_random_rolls) {
+                        continue
+                    }
+                    @($rule.outputs) | Where-Object {
+                        [bool]$_.resolution_complete -and
+                        [bool]$_.output_eligible_before_random_rolls -and
+                        [string]$_.qualified_item_id -eq
+                            [string]$locationFishingFixture.QualifiedItemId
+                    }
+                }
+            })
+        if ($matchingOutputs.Count -eq 0) {
+            throw "Ready $fixtureSlug authoritative location fishing projection was not found."
+        }
+    }
     elseif ($null -ne $timeFixture) {
         $fixtureSlug = [string]$timeFixture.Slug
         $timeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
@@ -1652,6 +1815,40 @@ try {
     $initialSnapshotPath = Join-Path $artifactDirectory `
         "recurrence-initial-snapshot.json"
     Save-SnapshotAndIngest -Path $initialSnapshotPath -Capture $initial
+    $fishingForecastReference = $null
+    if ($null -ne $locationFishingFixture) {
+        $rod = @((Read-StateValue $initial.Value "fishing" "rod_inventory") |
+            Where-Object { [bool]$_.selected } |
+            Select-Object -First 1)[0]
+        if ($null -eq $rod) {
+            throw "Location fishing sample has no selected transparent rod."
+        }
+        $forecastUrl = ($snapshotUrl -split '\?')[0] +
+            "?profile=fishing_forecast&fresh=true&location_id=" +
+            [Uri]::EscapeDataString(
+                [string]$locationFishingFixture.LocationId) +
+            "&rod_slot_index=" + [int]$rod.slot_index
+        $forecastResponse = Invoke-WebRequest -UseBasicParsing `
+            -Uri $forecastUrl -TimeoutSec 60
+        $forecastValue = $forecastResponse.Content | ConvertFrom-Json
+        if ([string]$forecastValue.state.fishing.forecast_request.status -ne
+                "available" -or
+            -not [bool]$forecastValue.state.fishing.forecast_request.value.request_complete) {
+            throw "Location fishing forecast snapshot was unavailable."
+        }
+        $forecastSnapshotPath = Join-Path $planningDirectory `
+            "fishing-forecast-town.json"
+        Write-Utf8Text -Path $forecastSnapshotPath `
+            -Value $forecastResponse.Content
+        $fishingForecastReference = [ordered]@{
+            request_id = "full-shipment-location-fish-town"
+            target_location_id = [string]$locationFishingFixture.LocationId
+            rod_slot_index = [int]$rod.slot_index
+            snapshot_path = [IO.Path]::GetFileName($forecastSnapshotPath)
+            snapshot_sha256 = (Get-FileHash -Algorithm SHA256 `
+                -LiteralPath $forecastSnapshotPath).Hash.ToLowerInvariant()
+        }
+    }
     $initialTotalDay = [int](Read-StateValue `
         $initial.Value "time" "total_days")
     if ([string](Read-StateValue $initial.Value "player" "location_id") -ne
@@ -1749,7 +1946,12 @@ try {
         "fishing-forecast-manifest.json"
     Write-JsonFile -Path $forecastPath -Value ([ordered]@{
         schema_version = "fishing_forecast_snapshot_manifest.v1"
-        snapshots = @()
+        snapshots = if ($null -eq $fishingForecastReference) {
+            @()
+        }
+        else {
+            @($fishingForecastReference)
+        }
     })
     $axis["fishing-probability"] = Join-Path $planningDirectory `
         "target-date-fishing-probability.json"

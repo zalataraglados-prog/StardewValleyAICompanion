@@ -1,5 +1,17 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 入口配置完成
+
+26 个权威运行时分层均已接入共享样本 runner，当前配置覆盖为 `26/26`。最后的 `native_location_fish_spawn` 通过透明完整钓获分布绑定 `location_fish:Town:3 -> (O)388`，没有把非鱼物品伪装成 Master Angler 鱼种，也没有建立第二套钓鱼执行器。
+
+下一阶段不是继续增加入口，而是拆分过大的共享 runner、运行有边界的全量离线回归与代表性原生抽样，然后在训练准入里程碑统一重建 26 层 production evidence index。只有新索引全部独立验收，才能改变 `formal_product_training_authorized=false`。
+
+## 2026-10-05 Full Shipment 入口补齐状态更新
+
+权威 requirement/lowering 的 26 个运行时分层仍是唯一分母。社区中心奖励已按 `bundle:Bulletin Board/33:reward -> (O)336` 接入共享样本 runner，复用唯一的原生领奖链；当前为 `25/26` 个可运行入口、1 个入口缺失。这只是编排覆盖，不是生产证据覆盖。
+
+后续只剩 `native_location_fish_spawn`。先证明现有钓鱼产品动作可表达权威来源；只有现有动作确实缺少必要原生交互时才补动作，不得为 Full Shipment 另建执行器。入口全部装配后再按三层测试制度抽样回放，并仅在训练准入里程碑统一重建 26 层 production evidence index。
+
 ## 2026-10-05 Full Shipment 入口补齐状态
 
 权威 requirement/lowering 的 26 个运行时分层已重新枚举并作为唯一分母。机器 flavored/query、野树树液收集器、怪物掉落、地点蚯蚓地、晶球掉落和商店购买已加入共享样本 runner，当前为 `24/26` 个可运行入口、2 个入口缺失；这只是编排覆盖，不是生产证据覆盖。商店入口按透明 `shop_id` 与物品身份约束，复用唯一购买执行链。

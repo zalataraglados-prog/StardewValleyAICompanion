@@ -69,6 +69,7 @@ public sealed partial class ModEntry
             "debug.setup_special_order_acceptance",
             "debug.setup_farm_resource_clump",
             "debug.setup_fish_frenzy",
+            "debug.setup_location_fishing",
             "debug.setup_fish_pond",
             "debug.setup_fish_pond_output",
             "debug.setup_fish_pond_request",

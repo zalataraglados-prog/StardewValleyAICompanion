@@ -247,6 +247,54 @@ internal static partial class BootstrapSelfTest
                     new[] { contradictoryChopCandidate }).Length == 0,
             "A broad native chop source overrode a contradictory candidate item identity.");
 
+        var locationFishingCandidate = CloneCandidate(faster);
+        locationFishingCandidate.OptionId = "fishing.catch_fish";
+        locationFishingCandidate.Kind = "catch_fish";
+        locationFishingCandidate.QualifiedItemId = string.Empty;
+        locationFishingCandidate.Parameters = new[]
+        {
+            Parameter("outcome_distribution_complete", "true"),
+            Parameter(
+                "outcome_distribution_json",
+                "[{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Town#3:0\",\"qualified_item_id\":\"(O)388\"},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Town#3:1\",\"qualified_item_id\":\"(O)390\"}]")
+        };
+        var locationFishingRequirement = requirement with
+        {
+            QualifiedItemId = "(O)388",
+            RouteKind = "native_location_fish_spawn",
+            SourceId = "location_fish:Town:3"
+        };
+        var locationFishingLowering = lowered with
+        {
+            RouteKind = locationFishingRequirement.RouteKind,
+            SourceId = locationFishingRequirement.SourceId,
+            EndpointOptionIds = new[] { "fishing.catch_fish" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement,
+                    locationFishingLowering,
+                    snapshot,
+                    new[] { locationFishingCandidate }).Length == 1,
+            "A complete non-fish location fishing outcome was rejected.");
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement with
+                    {
+                        SourceId = "location_fish:Town:2"
+                    },
+                    locationFishingLowering,
+                    snapshot,
+                    new[] { locationFishingCandidate }).Length == 0,
+            "A non-fish location fishing outcome from the wrong source row was admitted.");
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement with
+                    {
+                        QualifiedItemId = "(O)393"
+                    },
+                    locationFishingLowering,
+                    snapshot,
+                    new[] { locationFishingCandidate }).Length == 0,
+            "A non-fish location fishing outcome with the wrong item was admitted.");
+
         var geodeCandidate = CloneCandidate(animalCandidate);
         geodeCandidate.OptionId = "processing.crack_geode";
         geodeCandidate.Kind = "crack_geode";
