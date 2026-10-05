@@ -52,8 +52,15 @@ foreach ($path in $requiredPaths) {
         throw "Interactive milestone input is missing: $path"
     }
 }
-if (Test-Path -LiteralPath "I:\") {
-    throw "I: already exists; refusing to replace it with the authority mirror."
+$expectedAuthorityMapping = "I:\: => $authorityMirror"
+$authorityMappingLines = @(
+    & "$env:SystemRoot\System32\subst.exe" |
+        ForEach-Object { ([string]$_).Trim() }
+)
+$authorityMappingPresent = @($authorityMappingLines |
+    Where-Object { $_ -ieq $expectedAuthorityMapping }).Count -eq 1
+if ((Test-Path -LiteralPath "I:\") -and -not $authorityMappingPresent) {
+    throw "I: exists but is not the expected authority mirror mapping."
 }
 
 $environmentNames = @(
@@ -73,11 +80,13 @@ try {
     $env:NUGET_PACKAGES = Join-Path $TestLabRoot "nuget"
     $env:PATH = $dotnetRoot + ";" + $env:PATH
 
-    & "$env:SystemRoot\System32\subst.exe" I: $authorityMirror | Out-Null
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath "I:\")) {
-        throw "Failed to mount the portable authority mirror as I:."
+    if (-not $authorityMappingPresent) {
+        & "$env:SystemRoot\System32\subst.exe" I: $authorityMirror | Out-Null
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath "I:\")) {
+            throw "Failed to mount the portable authority mirror as I:."
+        }
+        $substCreated = $true
     }
-    $substCreated = $true
 
     & $milestone -ProjectRoot $ProjectRoot -OutputRoot $OutputRoot `
         -Batch $Batch -MaxScenarios $MaxScenarios `
