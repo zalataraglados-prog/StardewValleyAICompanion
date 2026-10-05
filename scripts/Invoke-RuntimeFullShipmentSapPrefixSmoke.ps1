@@ -35,8 +35,10 @@ param(
         "machine_output_sample",
         "machine_flavored_output_sample",
         "machine_item_query_output_sample",
+        "wild_tree_tapper_output_sample",
         "solar_panel_output_sample",
         "tree_moss_harvest_sample",
+        "monster_drop_sample",
         "radioactive_ore_node_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $SnapshotProfile = "",
@@ -62,7 +64,9 @@ if ([string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
 
 $sampleProofOnly = $Scenario -ne "sap_prefix"
 if ([string]::IsNullOrWhiteSpace($SnapshotProfile)) {
-    $SnapshotProfile = if ($Scenario -eq "radioactive_ore_node_sample") {
+    $SnapshotProfile = if ($Scenario -in @(
+            "radioactive_ore_node_sample",
+            "monster_drop_sample")) {
         "training_mining"
     }
     else { "full" }
@@ -86,8 +90,10 @@ $sampleRequirementId = switch ($Scenario) {
     "machine_output_sample" { "full_shipment:item:257" }
     "machine_flavored_output_sample" { "full_shipment:item:340" }
     "machine_item_query_output_sample" { "full_shipment:item:257" }
+    "wild_tree_tapper_output_sample" { "full_shipment:item:725" }
     "solar_panel_output_sample" { "full_shipment:item:787" }
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
+    "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
 }
@@ -107,8 +113,10 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "machine_output_sample" { "(O)257" }
     "machine_flavored_output_sample" { "(O)340" }
     "machine_item_query_output_sample" { "(O)257" }
+    "wild_tree_tapper_output_sample" { "(O)725" }
     "solar_panel_output_sample" { "(O)787" }
     "tree_moss_harvest_sample" { "(O)Moss" }
+    "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
 }
@@ -128,8 +136,10 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "machine_output_sample" { "machine_output" }
     "machine_flavored_output_sample" { "native_machine_flavored_output" }
     "machine_item_query_output_sample" { "native_machine_item_query_output" }
+    "wild_tree_tapper_output_sample" { "native_wild_tree_tapper_output" }
     "solar_panel_output_sample" { "native_solar_panel_output" }
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
+    "monster_drop_sample" { "native_monster_drop_table" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
     default { "native_wild_tree_chop_drop" }
 }
@@ -149,8 +159,10 @@ $sampleRankingOptionId = switch ($Scenario) {
     "machine_output_sample" { "farm.collect_machine_outputs" }
     "machine_flavored_output_sample" { "farm.collect_machine_outputs" }
     "machine_item_query_output_sample" { "farm.collect_machine_outputs" }
+    "wild_tree_tapper_output_sample" { "farm.collect_machine_outputs" }
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
+    "monster_drop_sample" { "mining.reach_depth" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
     default { "foraging.chop_wild_tree" }
 }
@@ -158,6 +170,15 @@ $sampleRankingParameters = switch ($Scenario) {
     "radioactive_ore_node_sample" {
         @(
             [ordered]@{ name = "target_depth"; value = "100" },
+            [ordered]@{
+                name = "target_location_family"
+                value = "ordinary_mines"
+            }
+        )
+    }
+    "monster_drop_sample" {
+        @(
+            [ordered]@{ name = "target_depth"; value = "46" },
             [ordered]@{
                 name = "target_location_family"
                 value = "ordinary_mines"
@@ -334,6 +355,7 @@ $machineFixture = switch ($Scenario) {
             QualifiedItemId = "(O)257"
             Quantity = 1
             LastOutputRuleId = "Default"
+            TapperTreeType = ""
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -345,6 +367,7 @@ $machineFixture = switch ($Scenario) {
             QualifiedItemId = "(O)340"
             Quantity = 1
             LastOutputRuleId = ""
+            TapperTreeType = ""
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -356,6 +379,19 @@ $machineFixture = switch ($Scenario) {
             QualifiedItemId = "(O)257"
             Quantity = 1
             LastOutputRuleId = ""
+            TapperTreeType = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "wild_tree_tapper_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "wild-tree-tapper-output"
+            MachineItemId = "105"
+            QualifiedItemId = "(O)725"
+            Quantity = 1
+            LastOutputRuleId = ""
+            TapperTreeType = "1"
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -367,6 +403,7 @@ $machineFixture = switch ($Scenario) {
             QualifiedItemId = "(O)787"
             Quantity = 1
             LastOutputRuleId = ""
+            TapperTreeType = ""
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -390,6 +427,19 @@ $miningFixture = switch ($Scenario) {
             Slug = "radioactive-ore-node"
             MineLevel = 99
             LocationId = "UndergroundMine99"
+            FixtureOptionId = "debug.setup_radioactive_ore_node"
+            QualifiedItemId = ""
+            QuestId = ""
+        }
+    }
+    "monster_drop_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "monster-drop"
+            MineLevel = 45
+            LocationId = "UndergroundMine45"
+            FixtureOptionId = "debug.setup_quest_monster_drop_fixture"
+            QualifiedItemId = "(O)766"
+            QuestId = "stardewai.full-shipment.monster-drop"
         }
     }
     default { $null }
@@ -1159,33 +1209,40 @@ try {
             throw "Ready $fixtureSlug mine setup failed."
         }
 
-        $nodeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
-        $nodeSetupRequest = [ordered]@{
+        $targetSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $targetSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId
             queue_id = "$RunId.fixture"
             queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
-            before_state_hash = [string]$nodeSetupSource.Value.state_hash
-            option_id = "debug.setup_radioactive_ore_node"
+            before_state_hash = [string]$targetSetupSource.Value.state_hash
+            option_id = [string]$miningFixture.FixtureOptionId
             execution_mode = "training_singleplayer"
             actor = "training_farmer.main"
             save_isolation_path = $isolatedSavesPath
             request_nonce = [guid]::NewGuid().ToString("N")
             created_at = [DateTimeOffset]::UtcNow.ToString("O")
         }
-        $nodeSetupResult = Invoke-JsonPost `
+        if ($Scenario -eq "monster_drop_sample") {
+            $targetSetupRequest.quest_id = [string]$miningFixture.QuestId
+            $targetSetupRequest.quest_family = "ordinary_quest"
+            $targetSetupRequest.quest_expected_target_count = 1
+            $targetSetupRequest.qualified_item_id =
+                [string]$miningFixture.QualifiedItemId
+        }
+        $targetSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `
-            -Body $nodeSetupRequest
+            -Body $targetSetupRequest
         Write-JsonFile -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-request.json") `
-            -Value $nodeSetupRequest
+            -Value $targetSetupRequest
         Write-Utf8Text -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-result.json") `
-            -Value $nodeSetupResult.Raw
-        if ([string]$nodeSetupResult.Value.status -ne "applied" -or
-            [string]$nodeSetupResult.Value.primitive_verification_status -ne
+            -Value $targetSetupResult.Raw
+        if ([string]$targetSetupResult.Value.status -ne "applied" -or
+            [string]$targetSetupResult.Value.primitive_verification_status -ne
                 "verified") {
-            throw "Ready $fixtureSlug node setup failed."
+            throw "Ready $fixtureSlug target setup failed."
         }
     }
     elseif ($null -ne $animalFixture) {
@@ -1288,6 +1345,8 @@ try {
             fixture_machine_harvest_skill_profile = "zero"
             fixture_machine_last_output_rule_id =
                 [string]$machineFixture.LastOutputRuleId
+            fixture_machine_tapper_tree_type =
+                [string]$machineFixture.TapperTreeType
         }
         $machineSetupResult = Invoke-JsonPost `
             -Url "$executorRoot/api/v1/training/execute" `

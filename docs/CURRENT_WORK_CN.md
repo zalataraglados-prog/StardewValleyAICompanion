@@ -1,8 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 树液收集器与怪物掉落入口
+
+- 野树树液收集器代表固定为 `full_shipment:item:725 / (O)725 / native_wild_tree_tapper_output / wild_tree:1:0`。夹具在同一格建立原生基础树与 `(BC)105` 树液收集器，并继续复用 `farm.collect_machine_outputs`、统一机器编译器、执行器和 verifier。
+- 怪物掉落代表固定为 `full_shipment:item:766 / (O)766 / native_monster_drop_table / monster:Green Slime`。夹具只建立可归因的原生史莱姆及确定掉落，正式动作继续复用 `mining.reach_depth`、共享自动战斗和延迟拾取链。
+- 当前 runner 已配置 `21/26` 个权威运行时分层入口；剩余 5 层为地点鱼、蚯蚓地、晶球掉落、商店购买和奖励物。PowerShell 解析、定向守卫 `26/26`、Core game-free `215/215` 与 RuntimeTestHarness `0 warning / 0 error` 均通过。本轮没有启动游戏，生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。
+
 ## 2026-10-05 Full Shipment 两类机器查询产物入口
 
-- 已从当前权威 requirement/lowering 重新枚举 26 个运行时分层；此前脚本实际装配 17 层。本轮新增 `native_machine_flavored_output` 与 `native_machine_item_query_output`，配置入口达到 `19/26`，剩余 7 层为奖励物、晶球掉落、蚯蚓地、地点鱼、怪物掉落、野树树液收集器产物和商店购买。
+- 已从当前权威 requirement/lowering 重新枚举 26 个运行时分层；此前脚本实际装配 17 层。本轮新增 `native_machine_flavored_output` 与 `native_machine_item_query_output`，该阶段配置入口达到 `19/26`。随后树液收集器与怪物掉落入口使当前总数达到 `21/26`。
 - flavored 代表固定为 `full_shipment:item:340 / (O)340 / machine:(BC)10:rule:0:output:0`；item-query 代表固定为 `full_shipment:item:257 / (O)257 / machine:(BC)128:rule:0:output:2`。两者复用现有机器透明投影、`farm.collect_machine_outputs`、DailyPlan、编译器、产品执行器与 verifier，没有新增机器动作系统。
 - 测试夹具现在显式携带原生 `lastOutputRuleId`。普通 `machine_output` 代表强制 `Default`，两类 legacy query 代表强制空值；非空规则在原生 `Data/Machines` 中不唯一时立即失败关闭，避免三个机器分层在真正运行前串线。
 - PowerShell 解析通过，定向 game-free 守卫 `21/21`，RuntimeTestHarness 使用 E 盘隔离游戏引用编译为 `0 warning / 0 error`。本轮未启动游戏，因此生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。

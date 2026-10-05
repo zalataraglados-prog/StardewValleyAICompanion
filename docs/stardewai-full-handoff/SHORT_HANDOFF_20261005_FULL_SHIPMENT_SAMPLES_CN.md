@@ -8,7 +8,8 @@
 - 防风草重放 `runtime-full-shipment-parsnip-refresh-20261005-192710` 因测试收益低被主动停止；产物保留但不可计入生产索引。本轮不宣称 `3/26`，正式训练仍禁用。
 - 远端包装器已取消错误的 `-SkipBuild` 使用。仓库部署脚本同时新增陈旧 DLL 拒绝和部署 SHA-256 校验；Core game-free `212/212`，部署守卫 `3/3`。
 - 后续默认只跑变更链路的原生回放和共享离线回归；26 层索引留到分层/日历/训练准入里程碑统一重建。不要再次为无关小改跑完整日历和全部样本。
-- 当前权威分母为 26 层，runner 已配置 `19/26` 个入口。新增两层为 `native_machine_flavored_output` 的 `(BC)10 -> (O)340` 与 `native_machine_item_query_output` 的 `(BC)128 -> (O)257`；严格生产证据没有因此增长。
+- 当前权威分母为 26 层，runner 已配置 `21/26` 个入口。机器 flavored/query 两层之外，已增加 `(BC)105 + tree 1 -> (O)725` 的 `native_wild_tree_tapper_output`，以及 `Green Slime -> (O)766` 的 `native_monster_drop_table`；严格生产证据没有因此增长。
+- 剩余入口严格为 5 层：地点鱼、蚯蚓地、晶球掉落、商店购买和奖励物。配置入口完成不等于原生生产证明；本轮定向守卫 `26/26`、Core game-free `215/215`、RuntimeTestHarness clean，训练准入仍为 `false`。
 
 ## 树苔藓入口
 

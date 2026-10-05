@@ -14,7 +14,15 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "ModEntry.cs");
 
         Assert.Contains(
-            "$Scenario -eq \"radioactive_ore_node_sample\"",
+            "$Scenario -in @(",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"radioactive_ore_node_sample\",",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"monster_drop_sample\"))",
             script,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -550,6 +558,59 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void WildTreeTapperSampleUsesSameTileNativeTreeAndMachineChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+
+        Assert.Contains(
+            "\"wild_tree_tapper_output_sample\" { \"full_shipment:item:725\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_tapper_output_sample\" { \"(O)725\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"wild_tree_tapper_output_sample\" { \"native_wild_tree_tapper_output\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MachineItemId = \"105\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TapperTreeType = \"1\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_machine_tapper_tree_type",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new Tree(",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixtureTapperTree.tapped.Value = true",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.IsTapper()",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReferenceEquals(feature, fixtureTapperTree)",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TreeMossSampleReusesNativeScytheHarvestChain()
     {
         var source = ReadRepositoryFile(
@@ -610,7 +671,11 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
-            "option_id = \"debug.setup_radioactive_ore_node\"",
+            "FixtureOptionId = \"debug.setup_radioactive_ore_node\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = [string]$miningFixture.FixtureOptionId",
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -639,6 +704,51 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain(
             "ItemRegistry.Create<StardewValley.Object>(\"(O)909\")",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MonsterDropSampleReusesMiningCombatAndDeferredPickupChain()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.QuestMonsterDropFixture.cs");
+
+        Assert.Contains(
+            "\"monster_drop_sample\" { \"full_shipment:item:766\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"monster_drop_sample\" { \"(O)766\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FixtureOptionId = \"debug.setup_quest_monster_drop_fixture\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QuestId = \"stardewai.full-shipment.monster-drop\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "monsterTarget.objectsToDrop.Add(item.QualifiedItemId)",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new GreenSlime(",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new StardewValley.Tools.MeleeWeapon(\"9\")",
             fixture,
             StringComparison.Ordinal);
     }
@@ -757,8 +867,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"machine_output_sample\" { \"machine_output\" }",
             "\"machine_flavored_output_sample\" { \"native_machine_flavored_output\" }",
             "\"machine_item_query_output_sample\" { \"native_machine_item_query_output\" }",
+            "\"wild_tree_tapper_output_sample\" { \"native_wild_tree_tapper_output\" }",
             "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
+            "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
             "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
             "default { \"native_wild_tree_chop_drop\" }",
         };
@@ -889,11 +1001,19 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "full_shipment:item:725|(O)725|native_wild_tree_tapper_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "full_shipment:item:787|(O)787|native_solar_panel_output",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:766|(O)766|native_monster_drop_table",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -905,7 +1025,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "$scenario -eq \"radioactive_ore_node_sample\"",
+            "$scenario -in @(",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

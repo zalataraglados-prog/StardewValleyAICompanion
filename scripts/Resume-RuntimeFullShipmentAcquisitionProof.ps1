@@ -233,11 +233,17 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:257|(O)257|native_machine_item_query_output" {
         "machine_item_query_output_sample"
     }
+    "full_shipment:item:725|(O)725|native_wild_tree_tapper_output" {
+        "wild_tree_tapper_output_sample"
+    }
     "full_shipment:item:787|(O)787|native_solar_panel_output" {
         "solar_panel_output_sample"
     }
     "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest" {
         "tree_moss_harvest_sample"
+    }
+    "full_shipment:item:766|(O)766|native_monster_drop_table" {
+        "monster_drop_sample"
     }
     "full_shipment:item:909|(O)909|native_radioactive_ore_node" {
         "radioactive_ore_node_sample"
@@ -248,7 +254,9 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     }
 }
 if ([string]::IsNullOrWhiteSpace($SnapshotProfile)) {
-    $SnapshotProfile = if ($scenario -eq "radioactive_ore_node_sample") {
+    $SnapshotProfile = if ($scenario -in @(
+            "radioactive_ore_node_sample",
+            "monster_drop_sample")) {
         "training_mining"
     }
     else { "full" }
