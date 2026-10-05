@@ -754,6 +754,51 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void ArtifactSpotSampleSearchesTransparentNativeProjection()
+    {
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.ClearObstacleFixture.cs");
+
+        Assert.Contains(
+            "\"location_artifact_spot_sample\" { \"full_shipment:item:330\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_artifact_spot_sample\" { \"(O)330\" }",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedRouteKind = \"native_location_artifact_spot\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ExpectedSourceId = \"location:Default:10\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$projectedSpot.clear_authoritative_route_sources",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$projectedSpot.clear_output_items",
+            runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ItemRegistry.Create(\"(O)330\")",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "pair.Value.QualifiedItemId == \"(O)590\"",
+            fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RadioactiveOreSampleUsesTheSharedPlanningAxes()
     {
         var calendar = ReadRepositoryFile(
@@ -870,6 +915,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"wild_tree_tapper_output_sample\" { \"native_wild_tree_tapper_output\" }",
             "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
             "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
+            "\"location_artifact_spot_sample\" { \"native_location_artifact_spot\" }",
             "\"monster_drop_sample\" { \"native_monster_drop_table\" }",
             "\"radioactive_ore_node_sample\" { \"native_radioactive_ore_node\" }",
             "default { \"native_wild_tree_chop_drop\" }",
@@ -1010,6 +1056,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:330|(O)330|native_location_artifact_spot",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -38,6 +38,7 @@ param(
         "wild_tree_tapper_output_sample",
         "solar_panel_output_sample",
         "tree_moss_harvest_sample",
+        "location_artifact_spot_sample",
         "monster_drop_sample",
         "radioactive_ore_node_sample")]
     [string] $Scenario = "sap_prefix",
@@ -93,6 +94,7 @@ $sampleRequirementId = switch ($Scenario) {
     "wild_tree_tapper_output_sample" { "full_shipment:item:725" }
     "solar_panel_output_sample" { "full_shipment:item:787" }
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
+    "location_artifact_spot_sample" { "full_shipment:item:330" }
     "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
@@ -116,6 +118,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "wild_tree_tapper_output_sample" { "(O)725" }
     "solar_panel_output_sample" { "(O)787" }
     "tree_moss_harvest_sample" { "(O)Moss" }
+    "location_artifact_spot_sample" { "(O)330" }
     "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
@@ -139,6 +142,7 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "wild_tree_tapper_output_sample" { "native_wild_tree_tapper_output" }
     "solar_panel_output_sample" { "native_solar_panel_output" }
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
+    "location_artifact_spot_sample" { "native_location_artifact_spot" }
     "monster_drop_sample" { "native_monster_drop_table" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
     default { "native_wild_tree_chop_drop" }
@@ -162,6 +166,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "wild_tree_tapper_output_sample" { "farm.collect_machine_outputs" }
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
+    "location_artifact_spot_sample" { "foraging.excavate_artifact_spots" }
     "monster_drop_sample" { "mining.reach_depth" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
     default { "foraging.chop_wild_tree" }
@@ -415,6 +420,20 @@ $clearObstacleFixture = switch ($Scenario) {
         [pscustomobject][ordered]@{
             Slug = "tree-moss-harvest"
             RuleKey = "tree_moss"
+            QualifiedItemId = ""
+            ExpectedRouteKind = ""
+            ExpectedSourceId = ""
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "location_artifact_spot_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "location-artifact-spot"
+            RuleKey = "artifact_spot"
+            QualifiedItemId = "(O)330"
+            ExpectedRouteKind = "native_location_artifact_spot"
+            ExpectedSourceId = "location:Default:10"
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -1145,36 +1164,113 @@ try {
     }
     elseif ($null -ne $clearObstacleFixture) {
         $fixtureSlug = [string]$clearObstacleFixture.Slug
-        $obstacleSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
-        $obstacleSetupRequest = [ordered]@{
-            schema_version = "training_execution_request.v1"
-            run_id = $RunId
-            queue_id = "$RunId.fixture"
-            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
-            before_state_hash = [string]$obstacleSetupSource.Value.state_hash
-            option_id = "debug.setup_clear_obstacle"
-            execution_mode = "training_singleplayer"
-            actor = "training_farmer.main"
-            save_isolation_path = $isolatedSavesPath
-            request_nonce = [guid]::NewGuid().ToString("N")
-            created_at = [DateTimeOffset]::UtcNow.ToString("O")
-            target_tile_x = [int]$clearObstacleFixture.TargetTileX
-            target_tile_y = [int]$clearObstacleFixture.TargetTileY
-            rule_key = [string]$clearObstacleFixture.RuleKey
+        $obstacleSetupAttempts = [Collections.Generic.List[object]]::new()
+        $candidateTiles = if ($Scenario -eq "location_artifact_spot_sample") {
+            @(
+                foreach ($y in 10..22) {
+                    foreach ($x in 56..72) {
+                        [pscustomobject]@{ X = $x; Y = $y }
+                    }
+                })
         }
-        $obstacleSetupResult = Invoke-JsonPost `
-            -Url "$executorRoot/api/v1/training/execute" `
-            -Body $obstacleSetupRequest
+        else {
+            @([pscustomobject]@{
+                X = [int]$clearObstacleFixture.TargetTileX
+                Y = [int]$clearObstacleFixture.TargetTileY
+            })
+        }
+        $obstacleSetupRequest = $null
+        $obstacleSetupResult = $null
+        $obstacleProjectionMatched = $false
+        foreach ($candidateTile in $candidateTiles) {
+            $obstacleSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+            $obstacleSetupRequest = [ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "$RunId.fixture"
+                queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+                before_state_hash = [string]$obstacleSetupSource.Value.state_hash
+                option_id = "debug.setup_clear_obstacle"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $isolatedSavesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at = [DateTimeOffset]::UtcNow.ToString("O")
+                target_tile_x = [int]$candidateTile.X
+                target_tile_y = [int]$candidateTile.Y
+                rule_key = [string]$clearObstacleFixture.RuleKey
+            }
+            $obstacleSetupResult = Invoke-JsonPost `
+                -Url "$executorRoot/api/v1/training/execute" `
+                -Body $obstacleSetupRequest
+            if ([string]$obstacleSetupResult.Value.status -ne "applied" -or
+                [string]$obstacleSetupResult.Value.primitive_verification_status -ne
+                    "verified") {
+                $obstacleSetupAttempts.Add([ordered]@{
+                    tile = "$($candidateTile.X),$($candidateTile.Y)"
+                    status = [string]$obstacleSetupResult.Value.status
+                    projection_match = $false
+                })
+                continue
+            }
+            if ([string]::IsNullOrWhiteSpace(
+                    [string]$clearObstacleFixture.QualifiedItemId)) {
+                $obstacleProjectionMatched = $true
+            }
+            else {
+                $projectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+                $projectedSpot = @((Read-StateValue `
+                    $projectionCapture.Value "current_location" "objects") |
+                    Where-Object {
+                        [int]$_.tile_x -eq [int]$candidateTile.X -and
+                        [int]$_.tile_y -eq [int]$candidateTile.Y -and
+                        [string]$_.clear_kind -eq "artifact_spot"
+                    } | Select-Object -First 1)[0]
+                $matchingOutput = @($projectedSpot.clear_output_items |
+                    Where-Object {
+                        [string]$_.qualified_item_id -eq
+                            [string]$clearObstacleFixture.QualifiedItemId
+                    }).Count -gt 0
+                $matchingSource = @(
+                    $projectedSpot.clear_authoritative_route_sources |
+                    Where-Object {
+                        [string]$_.route_kind -eq
+                            [string]$clearObstacleFixture.ExpectedRouteKind -and
+                        [string]$_.source_id -eq
+                            [string]$clearObstacleFixture.ExpectedSourceId -and
+                        [string]$_.qualified_item_id -eq
+                            [string]$clearObstacleFixture.QualifiedItemId
+                    }).Count -gt 0
+                $obstacleProjectionMatched =
+                    $null -ne $projectedSpot -and
+                    [string]$projectedSpot.clear_obstacle_executor_status -eq
+                        "ready" -and
+                    [string]$projectedSpot.clear_output_projection_status -eq
+                        "exact" -and
+                    $matchingOutput -and $matchingSource
+            }
+            $obstacleSetupAttempts.Add([ordered]@{
+                tile = "$($candidateTile.X),$($candidateTile.Y)"
+                status = [string]$obstacleSetupResult.Value.status
+                projection_match = $obstacleProjectionMatched
+            })
+            if ($obstacleProjectionMatched) {
+                $clearObstacleFixture.TargetTileX = [int]$candidateTile.X
+                $clearObstacleFixture.TargetTileY = [int]$candidateTile.Y
+                break
+            }
+        }
         Write-JsonFile -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-request.json") `
             -Value $obstacleSetupRequest
         Write-Utf8Text -Path (Join-Path $artifactDirectory `
             "fixture-ready-$fixtureSlug-result.json") `
             -Value $obstacleSetupResult.Raw
-        if ([string]$obstacleSetupResult.Value.status -ne "applied" -or
-            [string]$obstacleSetupResult.Value.primitive_verification_status -ne
-                "verified") {
-            throw "Ready $fixtureSlug proof fixture setup failed."
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-attempts.json") `
+            -Value @($obstacleSetupAttempts)
+        if (-not $obstacleProjectionMatched) {
+            throw "Ready $fixtureSlug proof fixture projection was not found."
         }
     }
     elseif ($null -ne $miningFixture) {

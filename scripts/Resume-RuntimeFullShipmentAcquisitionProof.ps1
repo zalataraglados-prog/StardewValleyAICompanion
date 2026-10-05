@@ -242,6 +242,9 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest" {
         "tree_moss_harvest_sample"
     }
+    "full_shipment:item:330|(O)330|native_location_artifact_spot" {
+        "location_artifact_spot_sample"
+    }
     "full_shipment:item:766|(O)766|native_monster_drop_table" {
         "monster_drop_sample"
     }

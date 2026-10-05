@@ -1,10 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 蚯蚓地入口
+
+- 蚯蚓地代表固定为 `full_shipment:item:330 / (O)330 / native_location_artifact_spot / location:Default:10`，复用现有 `foraging.excavate_artifact_spots -> executor.clear_obstacle` 原生锄地链。
+- 隔离夹具不会直接生成黏土；它只轮换原生 `(O)590` 蚯蚓地坐标，并通过透明桥的精确输出和权威来源投影选择可产生目标的合法前态。每次尝试前移除上一个夹具蚯蚓地，避免失败样本污染候选池。
+- 当前 runner 配置入口达到 `22/26`；剩余 4 层为地点鱼、晶球掉落、商店购买和奖励物。本轮仍未启动游戏，生产 evidence index 与训练准入状态不变。
+
 ## 2026-10-05 Full Shipment 树液收集器与怪物掉落入口
 
 - 野树树液收集器代表固定为 `full_shipment:item:725 / (O)725 / native_wild_tree_tapper_output / wild_tree:1:0`。夹具在同一格建立原生基础树与 `(BC)105` 树液收集器，并继续复用 `farm.collect_machine_outputs`、统一机器编译器、执行器和 verifier。
 - 怪物掉落代表固定为 `full_shipment:item:766 / (O)766 / native_monster_drop_table / monster:Green Slime`。夹具只建立可归因的原生史莱姆及确定掉落，正式动作继续复用 `mining.reach_depth`、共享自动战斗和延迟拾取链。
-- 当前 runner 已配置 `21/26` 个权威运行时分层入口；剩余 5 层为地点鱼、蚯蚓地、晶球掉落、商店购买和奖励物。PowerShell 解析、定向守卫 `26/26`、Core game-free `215/215` 与 RuntimeTestHarness `0 warning / 0 error` 均通过。本轮没有启动游戏，生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。
+- 该阶段 runner 配置入口达到 `21/26`，随后蚯蚓地入口使当前总数达到 `22/26`。PowerShell 解析、定向守卫 `26/26`、Core game-free `215/215` 与 RuntimeTestHarness `0 warning / 0 error` 均通过。本轮没有启动游戏，生产 evidence index 不增加，当前可独立验收的新版本原生证明仍只有 Sap 与放射性矿石，正式训练仍为 `false`。
 
 ## 2026-10-05 Full Shipment 两类机器查询产物入口
 
