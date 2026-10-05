@@ -1,5 +1,16 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: direct machine-output sample binds the Mushroom Log
+
+- The representative route is
+  `full_shipment:item:257 / (O)257 / machine_output / farm.collect_machine_outputs`, with authoritative source
+  `machine:(BC)128:rule:Default`.
+- The proof-external fixture binds both machine ID `128` and output `(O)257`, then reuses the sole machine projection,
+  candidate, DailyPlan, compiler, output executor and verifier. The neighboring `native_machine_item_query_output`
+  stratum remains separate and was not claimed by this setup.
+- Off-machine guards passed `14/14`, game-free tests passed `135/135`, and Bootstrap Release built cleanly. No fresh
+  Full Shipment receipt exists for this stratum, so production remains `2/26`.
+
 ## 2026-10-05: native fish-pond-output sample reuses pond collection
 
 - The representative route is

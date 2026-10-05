@@ -1,5 +1,13 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 direct machine-output sample identity
+
+The locked Full Shipment inventory identifies `(O)257` as `full_shipment:item:257`, route kind `machine_output`, source
+`machine:(BC)128:rule:Default`, and endpoint `farm.collect_machine_outputs`. The representative fixture binds machine
+ID `128` and output `(O)257`; it does not stand in for the separate `native_machine_item_query_output` occurrence of the
+same item. Runtime-stratum admission remains pending until a fresh native receipt and independently rebuilt rollout
+proof are accepted.
+
 ## 2026-10-05 native fish-pond-output sample identity
 
 The locked Full Shipment inventory identifies Roe `(O)812` as `full_shipment:item:812`, route kind

@@ -31,7 +31,8 @@ param(
         "fruit_tree_harvest_sample",
         "farm_animal_product_sample",
         "farm_animal_deluxe_product_sample",
-        "fish_pond_output_sample")]
+        "fish_pond_output_sample",
+        "machine_output_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -67,6 +68,7 @@ $sampleRequirementId = switch ($Scenario) {
     "farm_animal_product_sample" { "full_shipment:item:184" }
     "farm_animal_deluxe_product_sample" { "full_shipment:item:186" }
     "fish_pond_output_sample" { "full_shipment:item:812" }
+    "machine_output_sample" { "full_shipment:item:257" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -82,6 +84,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "farm_animal_product_sample" { "(O)184" }
     "farm_animal_deluxe_product_sample" { "(O)186" }
     "fish_pond_output_sample" { "(O)812" }
+    "machine_output_sample" { "(O)257" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -97,6 +100,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "farm_animal_product_sample" { "farm.collect_animal_products" }
     "farm_animal_deluxe_product_sample" { "farm.collect_animal_products" }
     "fish_pond_output_sample" { "fishing.service_fish_ponds" }
+    "machine_output_sample" { "farm.collect_machine_outputs" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -255,6 +259,19 @@ $fishPondFixture = switch ($Scenario) {
             Quantity = 1
             TargetTileX = 64
             TargetTileY = 18
+        }
+    }
+    default { $null }
+}
+$machineFixture = switch ($Scenario) {
+    "machine_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "machine-output"
+            MachineItemId = "128"
+            QualifiedItemId = "(O)257"
+            Quantity = 1
+            TargetTileX = 64
+            TargetTileY = 15
         }
     }
     default { $null }
@@ -1019,6 +1036,46 @@ try {
             -Value $fishPondSetupResult.Raw
         if ([string]$fishPondSetupResult.Value.status -ne "applied" -or
             [string]$fishPondSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
+    elseif ($null -ne $machineFixture) {
+        $fixtureSlug = [string]$machineFixture.Slug
+        $machineSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $machineSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$machineSetupSource.Value.state_hash
+            option_id = "debug.setup_machine_output_target"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$machineFixture.TargetTileX
+            target_tile_y = [int]$machineFixture.TargetTileY
+            expected_shop_id = [string]$machineFixture.MachineItemId
+            qualified_item_id = [string]$machineFixture.QualifiedItemId
+            quantity = [int]$machineFixture.Quantity
+            fixture_machine_harvest_use_native_config = $false
+            fixture_machine_harvest_experience_override = $false
+            fixture_machine_harvest_experience_raw = ""
+            fixture_machine_harvest_skill_profile = "zero"
+        }
+        $machineSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $machineSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $machineSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $machineSetupResult.Raw
+        if ([string]$machineSetupResult.Value.status -ne "applied" -or
+            [string]$machineSetupResult.Value.primitive_verification_status -ne
                 "verified") {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }

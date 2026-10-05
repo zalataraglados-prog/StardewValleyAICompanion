@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 机器直接产物层接入现有机器链
+
+`machine_output` 现以蘑菇树桩 `(BC)128` 的 `(O)257` 作为代表，绑定 `full_shipment:item:257 / farm.collect_machine_outputs`。样本只在 proof 根外建立 ready machine；正式路径继续复用唯一的机器投影、候选、DailyPlan、编译器、输出收取执行器和 verifier。采购、转移、容量、投料和加工支持 lineage 不在夹具中伪造完成。
+
+异机守卫 `14/14`、game-free `135/135`、Bootstrap Release `0 warning / 0 error`。`machine_output` 与 `native_machine_item_query_output` 保持独立分层；后者尚未装配。当前层仍需 fresh receipt 与 rollout proof，生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 鱼塘产物层接入既有收取链
 
 `native_fish_pond_output` 现以鲟鱼鱼塘的鱼籽 `full_shipment:item:812 / (O)812 / fishing.service_fish_ponds` 作为代表。proof 根外夹具建立 ready output，正式链继续使用现有鱼塘投影、候选、DailyPlan、编译器、原生 `checkAction` 执行和 verifier；鱼塘建造支持项仍由既有静态 lineage 负责。

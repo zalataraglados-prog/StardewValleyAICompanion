@@ -366,6 +366,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void MachineOutputSampleBindsMushroomLogSource()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"machine_output_sample\" { \"full_shipment:item:257\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_output_sample\" { \"(O)257\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"machine_output_sample\" { \"farm.collect_machine_outputs\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.setup_machine_output_target\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MachineItemId = \"128\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QualifiedItemId = \"(O)257\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -443,6 +476,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:812|(O)812|native_fish_pond_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:257|(O)257|machine_output",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

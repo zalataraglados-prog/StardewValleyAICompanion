@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 机器直接产物样本入口
+
+- `machine_output` 的代表采用 `full_shipment:item:257 / (O)257 / farm.collect_machine_outputs`，权威来源固定为蘑菇树桩 `machine:(BC)128:rule:Default`。
+- proof 根外夹具同时锁定机器 ID `128` 与输出 `(O)257`，随后复用现有机器投影、候选、DailyPlan、编译器、`executor.collect_machine_output` 和 verifier。严格 resume tuple 为 `full_shipment:item:257|(O)257|machine_output`；没有把相邻的 `native_machine_item_query_output` 混入本层。
+- `LZT` 上样本守卫 `14/14`、Core game-free `135/135`、Bootstrap Release `0 warning / 0 error`。本层尚无 fresh Full Shipment acquisition proof，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 鱼塘产物样本复用原生收取链
 
 - `native_fish_pond_output` 的代表采用鱼籽 `full_shipment:item:812 / (O)812 / fishing.service_fish_ponds`，夹具鱼种为鲟鱼 `(O)698`。权威清单包含鲟鱼产生 `(O)812` 的精确 route occurrence，因此没有沿用未被现有 smoke 精确覆盖的建议虚空蛋 `(O)305`。

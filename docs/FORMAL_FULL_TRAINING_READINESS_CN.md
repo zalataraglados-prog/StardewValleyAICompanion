@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 机器直接产物样本准入状态
+
+蘑菇树桩 `(BC)128` 的 `(O)257` 已按 `machine_output` 接入现有 `farm.collect_machine_outputs -> executor.collect_machine_output` 链，严格 resume tuple 为 `full_shipment:item:257|(O)257|machine_output`。`LZT` 样本守卫 `14/14`、Core game-free `135/135`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
 ## 2026-10-05 Full Shipment 鱼塘产物样本准入状态
 
 鱼籽 `(O)812` 已按 `native_fish_pond_output` 接入现有 `fishing.service_fish_ponds -> executor.collect_fish_pond_output` 链，严格 resume tuple 为 `full_shipment:item:812|(O)812|native_fish_pond_output`。`LZT` 样本守卫 `13/13`、Core game-free `134/134`、Bootstrap Release `0 warning / 0 error`。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
