@@ -1,10 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 晶球掉落入口
+
+- 晶球代表固定为 `full_shipment:item:386 / (O)386 / native_geode_drop / geode:791:1:random:6`，输入为金色椰子 `(O)791`，执行继续复用 `processing.crack_geode -> executor.crack_geode` 的铁匠柜台与原生 `GeodeMenu` 链。
+- 隔离夹具只搜索 `geodes_cracked_before` 以定位能产生目标的原生 RNG 前态；透明桥必须同时投影 `(O)386` 和精确来源，随后产品执行器才会敲开晶球。夹具不生成铱矿，且第一颗金色椰子固定奖励分支被显式排除。
+- 当前 runner 配置入口达到 `23/26`；剩余 3 层为商店购买、奖励物和地点鱼。本轮不增加生产 evidence index，正式训练仍为 `false`。
+
 ## 2026-10-05 Full Shipment 蚯蚓地入口
 
 - 蚯蚓地代表固定为 `full_shipment:item:330 / (O)330 / native_location_artifact_spot / location:Default:10`，复用现有 `foraging.excavate_artifact_spots -> executor.clear_obstacle` 原生锄地链。
 - 隔离夹具不会直接生成黏土；它只轮换原生 `(O)590` 蚯蚓地坐标，并通过透明桥的精确输出和权威来源投影选择可产生目标的合法前态。每次尝试前移除上一个夹具蚯蚓地，避免失败样本污染候选池。
-- 当前 runner 配置入口达到 `22/26`；剩余 4 层为地点鱼、晶球掉落、商店购买和奖励物。本轮仍未启动游戏，生产 evidence index 与训练准入状态不变。
+- 该阶段 runner 配置入口达到 `22/26`，随后晶球掉落入口使当前总数达到 `23/26`。本轮仍未启动游戏，生产 evidence index 与训练准入状态不变。
 
 ## 2026-10-05 Full Shipment 树液收集器与怪物掉落入口
 

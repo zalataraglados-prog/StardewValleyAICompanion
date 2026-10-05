@@ -8,8 +8,8 @@
 - 防风草重放 `runtime-full-shipment-parsnip-refresh-20261005-192710` 因测试收益低被主动停止；产物保留但不可计入生产索引。本轮不宣称 `3/26`，正式训练仍禁用。
 - 远端包装器已取消错误的 `-SkipBuild` 使用。仓库部署脚本同时新增陈旧 DLL 拒绝和部署 SHA-256 校验；Core game-free `212/212`，部署守卫 `3/3`。
 - 后续默认只跑变更链路的原生回放和共享离线回归；26 层索引留到分层/日历/训练准入里程碑统一重建。不要再次为无关小改跑完整日历和全部样本。
-- 当前权威分母为 26 层，runner 已配置 `22/26` 个入口。机器 flavored/query、野树树液收集器和怪物掉落之外，已增加 `location:Default:10 -> (O)330` 的 `native_location_artifact_spot`；严格生产证据没有因此增长。
-- 剩余入口严格为 4 层：地点鱼、晶球掉落、商店购买和奖励物。配置入口完成不等于原生生产证明；训练准入仍为 `false`。
+- 当前权威分母为 26 层，runner 已配置 `23/26` 个入口。地点蚯蚓地之外，已增加 `(O)791 / geode:791:1:random:6 -> (O)386` 的 `native_geode_drop`；严格生产证据没有因此增长。
+- 剩余入口严格为 3 层：商店购买、奖励物和地点鱼。配置入口完成不等于原生生产证明；训练准入仍为 `false`。
 
 ## 树苔藓入口
 
@@ -42,6 +42,7 @@
 - 普通机器查询产物入口已绑定 `full_shipment:item:257 / (O)257 / native_machine_item_query_output / farm.collect_machine_outputs`。
 - 树苔藓入口已绑定 `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / foraging.harvest_tree_moss`。
 - 蚯蚓地入口已绑定 `full_shipment:item:330 / (O)330 / native_location_artifact_spot / foraging.excavate_artifact_spots`；夹具按透明输出与 `location:Default:10` 来源搜索合法坐标。
+- 晶球入口已绑定 `full_shipment:item:386 / (O)386 / native_geode_drop / processing.crack_geode`；夹具搜索原生计数器前态，正式动作通过铁匠柜台和 `GeodeMenu` 完成。
 - 前五者、野山葵与樱桃共用 forage fixture 编排，春葱与既有防风草共用 crop fixture 编排；全部复用现有候选、DailyPlan、动作编译器、产品执行器和 verifier，没有第二套动作系统。
 - 浆果、姜、茶叶、榛子位于 `Farm 64,15`；椰子使用 `wild_tree / island_palm / IslandSouth 20,20`。夹具设置不属于 acquisition proof 根，但 proof 根必须匹配场景的精确地点。
 

@@ -39,6 +39,7 @@ param(
         "solar_panel_output_sample",
         "tree_moss_harvest_sample",
         "location_artifact_spot_sample",
+        "geode_drop_sample",
         "monster_drop_sample",
         "radioactive_ore_node_sample")]
     [string] $Scenario = "sap_prefix",
@@ -95,6 +96,7 @@ $sampleRequirementId = switch ($Scenario) {
     "solar_panel_output_sample" { "full_shipment:item:787" }
     "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
     "location_artifact_spot_sample" { "full_shipment:item:330" }
+    "geode_drop_sample" { "full_shipment:item:386" }
     "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
@@ -119,6 +121,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "solar_panel_output_sample" { "(O)787" }
     "tree_moss_harvest_sample" { "(O)Moss" }
     "location_artifact_spot_sample" { "(O)330" }
+    "geode_drop_sample" { "(O)386" }
     "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
@@ -143,6 +146,7 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "solar_panel_output_sample" { "native_solar_panel_output" }
     "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
     "location_artifact_spot_sample" { "native_location_artifact_spot" }
+    "geode_drop_sample" { "native_geode_drop" }
     "monster_drop_sample" { "native_monster_drop_table" }
     "radioactive_ore_node_sample" { "native_radioactive_ore_node" }
     default { "native_wild_tree_chop_drop" }
@@ -167,6 +171,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
     "location_artifact_spot_sample" { "foraging.excavate_artifact_spots" }
+    "geode_drop_sample" { "processing.crack_geode" }
     "monster_drop_sample" { "mining.reach_depth" }
     "radioactive_ore_node_sample" { "mining.reach_depth" }
     default { "foraging.chop_wild_tree" }
@@ -187,6 +192,18 @@ $sampleRankingParameters = switch ($Scenario) {
             [ordered]@{
                 name = "target_location_family"
                 value = "ordinary_mines"
+            }
+        )
+    }
+    "geode_drop_sample" {
+        @(
+            [ordered]@{
+                name = "geode_qualified_item_id"
+                value = "(O)791"
+            },
+            [ordered]@{
+                name = "geode_purpose"
+                value = "open_for_full_shipment"
             }
         )
     }
@@ -415,6 +432,19 @@ $machineFixture = switch ($Scenario) {
     }
     default { $null }
 }
+$geodeFixture = switch ($Scenario) {
+    "geode_drop_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "geode-drop"
+            InputQualifiedItemId = "(O)791"
+            OutputQualifiedItemId = "(O)386"
+            ExpectedRouteKind = "native_geode_drop"
+            ExpectedSourceId = "geode:791:1:random:6"
+            SearchCounterMax = 511
+        }
+    }
+    default { $null }
+}
 $clearObstacleFixture = switch ($Scenario) {
     "tree_moss_harvest_sample" {
         [pscustomobject][ordered]@{
@@ -468,6 +498,9 @@ $acquisitionRootLocationId = if ($null -ne $forageFixture) {
 }
 elseif ($null -ne $miningFixture) {
     [string]$miningFixture.LocationId
+}
+elseif ($null -ne $geodeFixture) {
+    "Blacksmith"
 }
 else {
     "Farm"
@@ -1413,6 +1446,95 @@ try {
             [string]$fishPondSetupResult.Value.primitive_verification_status -ne
                 "verified") {
             throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
+    elseif ($null -ne $geodeFixture) {
+        $fixtureSlug = [string]$geodeFixture.Slug
+        $geodeSetupAttempts = [Collections.Generic.List[object]]::new()
+        $geodeSetupRequest = $null
+        $geodeSetupResult = $null
+        $geodeProjectionMatched = $false
+        foreach ($geodesCrackedBefore in 0..([int]$geodeFixture.SearchCounterMax)) {
+            $geodeSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+            $geodeSetupRequest = [ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "$RunId.fixture"
+                queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+                before_state_hash = [string]$geodeSetupSource.Value.state_hash
+                option_id = "debug.setup_geode_processing"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $isolatedSavesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at = [DateTimeOffset]::UtcNow.ToString("O")
+                geode_qualified_item_id =
+                    [string]$geodeFixture.InputQualifiedItemId
+                geode_stack_before = 2
+                geode_money_before = 1000
+                geodes_cracked_before = $geodesCrackedBefore
+                mystery_boxes_opened_before = 0
+                golden_coconut_cracked_before = $true
+                geode_got_mystery_book_mail_before = $true
+                geode_artifact_found_mail_before = $false
+            }
+            $geodeSetupResult = Invoke-JsonPost `
+                -Url "$executorRoot/api/v1/training/execute" `
+                -Body $geodeSetupRequest
+            if ([string]$geodeSetupResult.Value.status -ne "applied" -or
+                [string]$geodeSetupResult.Value.primitive_verification_status -ne
+                    "verified") {
+                $geodeSetupAttempts.Add([ordered]@{
+                    geodes_cracked_before = $geodesCrackedBefore
+                    status = [string]$geodeSetupResult.Value.status
+                    projection_match = $false
+                })
+                continue
+            }
+            $geodeProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+            $geodeProjection = Read-StateValue `
+                $geodeProjectionCapture.Value "player" "geode_processing"
+            $projectedInput = @($geodeProjection.inventory_inputs |
+                Where-Object {
+                    [string]$_.qualified_item_id -eq
+                        [string]$geodeFixture.InputQualifiedItemId
+                } | Select-Object -First 1)[0]
+            $matchingSource = @(
+                $projectedInput.authoritative_route_sources |
+                Where-Object {
+                    [string]$_.route_kind -eq
+                        [string]$geodeFixture.ExpectedRouteKind -and
+                    [string]$_.source_id -eq
+                        [string]$geodeFixture.ExpectedSourceId -and
+                    [string]$_.qualified_item_id -eq
+                        [string]$geodeFixture.OutputQualifiedItemId
+                }).Count -gt 0
+            $geodeProjectionMatched =
+                $null -ne $projectedInput -and
+                [string]$projectedInput.status -eq "available" -and
+                [string]$projectedInput.expected_output.qualified_item_id -eq
+                    [string]$geodeFixture.OutputQualifiedItemId -and
+                $matchingSource
+            $geodeSetupAttempts.Add([ordered]@{
+                geodes_cracked_before = $geodesCrackedBefore
+                status = [string]$geodeSetupResult.Value.status
+                projected_output =
+                    [string]$projectedInput.expected_output.qualified_item_id
+                projection_match = $geodeProjectionMatched
+            })
+            if ($geodeProjectionMatched) { break }
+        }
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $geodeSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $geodeSetupResult.Raw
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-attempts.json") `
+            -Value @($geodeSetupAttempts)
+        if (-not $geodeProjectionMatched) {
+            throw "Ready $fixtureSlug native RNG projection was not found."
         }
     }
     elseif ($null -ne $machineFixture) {

@@ -245,6 +245,9 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:330|(O)330|native_location_artifact_spot" {
         "location_artifact_spot_sample"
     }
+    "full_shipment:item:386|(O)386|native_geode_drop" {
+        "geode_drop_sample"
+    }
     "full_shipment:item:766|(O)766|native_monster_drop_table" {
         "monster_drop_sample"
     }
