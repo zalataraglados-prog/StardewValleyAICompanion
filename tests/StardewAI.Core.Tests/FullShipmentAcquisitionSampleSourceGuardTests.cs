@@ -578,6 +578,9 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var milestone = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1");
+        var interactive = ReadRepositoryFile(
+            "scripts",
+            "Invoke-InteractiveFullShipmentEvidenceMilestone.ps1");
         var planJson = ReadRepositoryFile(
             "catalogs",
             "vanilla-1.6.15",
@@ -652,6 +655,22 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1",
             milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Where-Object SessionId -eq $currentSessionId",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "subst.exe\" I: $authorityMirror",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1",
+            interactive,
             StringComparison.Ordinal);
     }
 
