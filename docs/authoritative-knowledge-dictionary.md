@@ -1,5 +1,21 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native Radioactive Ore source identity
+
+The locked Full Shipment identity is `full_shipment:item:909 / (O)909 / native_radioactive_ore_node`, with route
+occurrence `full_shipment:full_shipment:item:909:0:0`. The exact vanilla source is stone `(O)95`, resolved through
+`GameLocation.breakStone` to Radioactive Ore `(O)909`; the branch identity is `game_location_break_stone_direct_node`.
+Execution reuses `mining.reach_depth -> executor.mine_stone -> executor.pickup_debris`. Same-location evidence is bound
+per target, and the selected candidate identity must survive into the action queue. The accepted native proof is
+`runtime-full-shipment-radioactive-node-20261005-134024`.
+
+## 2026-10-05 evidence rematerialization rule
+
+A runtime sample is current only when its authoritative calendar fingerprint, exact route identity, action queue,
+execution receipt, fresh terminal snapshot, settlement chain, and rollout proof are rebuilt from one coherent run.
+An interrupted run or a proof built against an older global calendar remains diagnostic evidence only. Runtime source,
+build output, and deployed Mods DLL must also pass freshness and SHA-256 equality checks before the run is admissible.
+
 ## 2026-10-05 native tree-moss sample identity
 
 The locked Full Shipment inventory identifies Moss `(O)Moss` as `full_shipment:item:Moss`, route kind

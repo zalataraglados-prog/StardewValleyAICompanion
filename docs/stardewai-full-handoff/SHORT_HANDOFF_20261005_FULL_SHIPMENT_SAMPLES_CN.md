@@ -1,5 +1,14 @@
 # Full Shipment 分层样本短交接（2026-10-05）
 
+## 最新可接续状态
+
+- 源码在 `I:\StardewValleyAICompanion`；本机轻量/历史测试在 `E:`；高负载隔离运行环境在异机 `F:\StardewAI-TestLab`。异机已有完整游戏运行时，不再沿用“新电脑无运行环境”的旧描述。
+- Sap 当前版本证明 `runtime-full-shipment-sap-refresh-20261005-183733` 已通过全部四阶段。睡眠 `applied/verified`，日期 `1 -> 2`，菜单关闭，recurrence checkpoint 与 rollout proof 均通过，旧光标错误为零。
+- 放射性矿石证明 `runtime-full-shipment-radioactive-node-20261005-134024` 已通过，精确来源为 `(O)95 -> GameLocation.breakStone -> (O)909`，复用共享采矿/拾取链。
+- 防风草重放 `runtime-full-shipment-parsnip-refresh-20261005-192710` 因测试收益低被主动停止；产物保留但不可计入生产索引。本轮不宣称 `3/26`，正式训练仍禁用。
+- 远端包装器已取消错误的 `-SkipBuild` 使用。仓库部署脚本同时新增陈旧 DLL 拒绝和部署 SHA-256 校验；Core game-free `212/212`，部署守卫 `3/3`。
+- 后续默认只跑变更链路的原生回放和共享离线回归；26 层索引留到分层/日历/训练准入里程碑统一重建。不要再次为无关小改跑完整日历和全部样本。
+
 ## 树苔藓入口
 
 - 苔藓已绑定 `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / foraging.harvest_tree_moss`，复用 `debug.setup_clear_obstacle(tree_moss)`、现有透明苔藓投影、DailyPlan、`executor.clear_obstacle` 与原生镰刀回执。

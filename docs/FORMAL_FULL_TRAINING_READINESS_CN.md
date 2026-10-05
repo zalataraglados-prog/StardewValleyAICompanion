@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 当前准入结论与证据边界
+
+- `formal_product_training_authorized=false` 保持不变。Sap 与放射性矿石已有当前版本 fresh 原生证明，但防风草因停止低收益的全量重放，没有形成可接纳的新版本证明，因此本轮不得宣称严格索引已升至 `3/26`。
+- Sap 证明：`F:\StardewAI-TestLab\artifacts\runtime-full-shipment-sap-refresh\runtime-full-shipment-sap-refresh-20261005-183733`。原生睡眠 `applied/verified`，新日、存档提交、菜单关闭和世界稳定均被验证，recurrence prefix checkpoint 通过。
+- 放射性矿石证明：`F:\StardewAI-TestLab\artifacts\runtime-full-shipment-radioactive-node\runtime-full-shipment-radioactive-node-20261005-134024`，来源固定为 `(O)95 -> GameLocation.breakStone -> (O)909`，route occurrence 为 `full_shipment:full_shipment:item:909:0:0`。
+- 生产索引只在证据集合稳定后统一重建。日常开发采用定向原生回放加 game-free 全套，不再为与改动无关的层重复生成全部日历轴。任何被中断或日历指纹漂移的旧证明都只能保留为诊断材料，不能进入正式训练准入。
+- 部署准入新增硬门：`-NoBuild` 只能使用不早于源码的构建产物，部署后源/目标 SHA-256 必须一致。本轮守卫 `3/3`、Core game-free `212/212`。
+
 ## 2026-10-05 Full Shipment 树苔藓样本准入状态
 
 苔藓 `(O)Moss` 已按 `native_tree_moss_harvest` 接入现有 `foraging.harvest_tree_moss -> executor.clear_obstacle` 原生镰刀链，严格 resume tuple 为 `full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest`。`LZT` 样本守卫 `17/17`、Core game-free `138/138`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending；已装配待运行 14 层、未装配 10 层、严格索引 `2/26`，训练授权不变。

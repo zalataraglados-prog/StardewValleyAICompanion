@@ -8,11 +8,18 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "Deploy.Common.ps1")
 
 $sourceDir = Join-Path $ProjectRoot "tools\StardewAI.RuntimeTestHarness\bin\Debug\net6.0"
 $targetDir = Join-Path $RuntimeModsDir "StardewAI.RuntimeTestHarness"
 $contractSource = Join-Path $ProjectRoot "src\StardewAI.Contracts\bin\Debug\netstandard2.1\StardewAI.Contracts.dll"
 $runtimePrimitivesSource = Join-Path $ProjectRoot "src\StardewAI.RuntimePrimitives\bin\Debug\netstandard2.1\StardewAI.RuntimePrimitives.dll"
+$harnessAssembly = Join-Path $sourceDir "StardewAI.RuntimeTestHarness.dll"
+$buildConfigurationInputs = @(
+    (Join-Path $ProjectRoot "Directory.Build.props"),
+    (Join-Path $ProjectRoot "Directory.Build.targets"),
+    (Join-Path $ProjectRoot "Directory.Packages.props")
+)
 $requiredFiles = @(
     "manifest.json",
     "StardewAI.RuntimeTestHarness.dll",
@@ -44,6 +51,25 @@ if (-not (Test-Path -LiteralPath $runtimePrimitivesSource)) {
     throw "Required runtime primitives output missing: $runtimePrimitivesSource"
 }
 
+if ($NoBuild -and -not $DryRun) {
+    Assert-StardewAIBuildOutputFresh `
+        -OutputPath $harnessAssembly `
+        -InputRoots @(
+            (Join-Path $ProjectRoot "tools\StardewAI.RuntimeTestHarness"),
+            (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
+            (Join-Path $ProjectRoot "src\StardewAI.RuntimePrimitives")
+        ) `
+        -InputFiles $buildConfigurationInputs
+    Assert-StardewAIBuildOutputFresh `
+        -OutputPath $contractSource `
+        -InputRoots @((Join-Path $ProjectRoot "src\StardewAI.Contracts")) `
+        -InputFiles $buildConfigurationInputs
+    Assert-StardewAIBuildOutputFresh `
+        -OutputPath $runtimePrimitivesSource `
+        -InputRoots @((Join-Path $ProjectRoot "src\StardewAI.RuntimePrimitives")) `
+        -InputFiles $buildConfigurationInputs
+}
+
 if ($DryRun) {
     [pscustomobject]@{
         status = "dry_run"
@@ -56,16 +82,24 @@ if ($DryRun) {
 }
 
 New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+$deployedHashes = [ordered]@{}
 foreach ($file in $requiredFiles) {
-    Copy-Item -LiteralPath (Join-Path $sourceDir $file) -Destination (Join-Path $targetDir $file) -Force
+    $deployedHashes[$file] = Copy-StardewAIVerifiedFile `
+        -SourcePath (Join-Path $sourceDir $file) `
+        -DestinationPath (Join-Path $targetDir $file)
 }
-Copy-Item -LiteralPath $contractSource -Destination (Join-Path $targetDir "StardewAI.Contracts.dll") -Force
-Copy-Item -LiteralPath $runtimePrimitivesSource -Destination (Join-Path $targetDir "StardewAI.RuntimePrimitives.dll") -Force
+$deployedHashes["StardewAI.Contracts.dll"] = Copy-StardewAIVerifiedFile `
+    -SourcePath $contractSource `
+    -DestinationPath (Join-Path $targetDir "StardewAI.Contracts.dll")
+$deployedHashes["StardewAI.RuntimePrimitives.dll"] = Copy-StardewAIVerifiedFile `
+    -SourcePath $runtimePrimitivesSource `
+    -DestinationPath (Join-Path $targetDir "StardewAI.RuntimePrimitives.dll")
 
 [pscustomobject]@{
     status = "deployed"
     source_dir = $sourceDir
     target_dir = $targetDir
     files = $requiredFiles + @("StardewAI.Contracts.dll", "StardewAI.RuntimePrimitives.dll")
+    deployed_sha256 = $deployedHashes
     preserves = "config.json"
 } | ConvertTo-Json -Depth 4

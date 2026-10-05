@@ -1,5 +1,19 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: bounded runtime verification replaces per-change full replay
+
+- Current-version Sap proof `runtime-full-shipment-sap-refresh-20261005-183733` verified acquisition, shipping, return,
+  native sleep, day rollover, save commit, menu closure, recurrence checkpoint, and independent rollout proof.
+- Current-version Radioactive Ore proof `runtime-full-shipment-radioactive-node-20261005-134024` verified the exact
+  `(O)95 -> GameLocation.breakStone -> (O)909` source through the shared mining and debris-pickup chain.
+- The Parsnip rematerialization was intentionally stopped because it did not exercise the changed shipping/menu path.
+  Its partial artifacts are diagnostic only and cannot enter the production evidence index.
+- Runtime verification is now tiered: replay the changed native chain, run the full game-free contract suite for shared
+  code, and rebuild the 26-stratum production index only when a stratum, authoritative calendar fingerprint, or formal
+  training gate changes. Formal training remains unauthorized.
+- Deployment now fails closed when `-NoBuild` points at an output older than source inputs and verifies SHA-256 after
+  copying every mod file. This prevents a fresh source tree from being tested through a stale runtime DLL.
+
 ## 2026-10-05: native tree-moss sample reuses the scythe chain
 
 - The representative identity is

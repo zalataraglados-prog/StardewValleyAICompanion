@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-05 原生样本收口与测试制度收缩
+
+- 原生放射性矿石样本已通过：`runtime-full-shipment-radioactive-node-20261005-134024` 在异机 `F:\StardewAI-TestLab` 以 `(O)95 -> GameLocation.breakStone -> (O)909` 完成 `native_radioactive_ore_node`，复用 `mining.reach_depth -> executor.mine_stone -> executor.pickup_debris`，没有第二套采矿执行器。候选身份和同地点目标证据均按目标逐项 fail-closed。
+- Sap 当前版本重放已通过：`runtime-full-shipment-sap-refresh-20261005-183733` 完成采集、入箱、回家、原生睡眠与次日结算；睡眠为 `applied/verified`，日期 `1 -> 2`、`total_days 0 -> 1`、`active_menu=none`，recurrence checkpoint 为 `1` 次验证且剩余 `153`，rollout proof 独立重建通过。
+- ShippingMenu 后台关闭不再移动系统光标。执行器使用 SMAPI `Escape` 按键覆盖并等待原生菜单关闭；本轮产物中旧错误 `shipping_summary_cursor_position_mismatch` 命中数为 `0`。
+- 本轮还暴露并修正了部署漂移：此前远端源码/Release DLL 已更新，但 Mods 仍加载旧 Debug DLL。两个部署脚本现在对 `-NoBuild` 执行源码时间戳防陈旧检查，并对每个部署文件校验源/目标 SHA-256。定向守卫 `3/3`、Core game-free `212/212`；此前 Backend `225/225`、Bootstrap/Harness clean 继续有效。
+- 防风草当前版本全量证明因低边际覆盖主动停止，已有产物保留但不得计入新证据。严格生产索引本轮不宣称 `3/26`；当前可独立验收的新版本原生证明为 Sap 与放射性矿石两层，正式训练仍为 `false`。
+- 测试改为三层：动作/执行器改动只跑对应原生链路；共享代码跑离线全套和少量代表性原生回放；26 层生产索引只在分层新增、权威字典/日历变化或训练准入里程碑重建，不再随每次小改重复展开。
+- 拓扑固定：源码仓库 `I:\StardewValleyAICompanion`，本机轻量/历史运行数据在 `E:`，高负载隔离游戏测试在异机 `F:\StardewAI-TestLab`。
+
 ## 2026-10-05 Full Shipment 树苔藓样本复用原生镰刀链
 
 - `(O)Moss` 已按唯一权威身份 `full_shipment:item:Moss / native_tree_moss_harvest / Tree.CreateMossItem / foraging.harvest_tree_moss` 接入共享样本 runner。

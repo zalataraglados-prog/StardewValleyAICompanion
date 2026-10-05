@@ -51,6 +51,7 @@
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />
+    <Compile Include="DeployScriptSourceGuardTests.cs" />
     <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
     <Compile Include="GameClockBudgetPolicyTests.cs" />

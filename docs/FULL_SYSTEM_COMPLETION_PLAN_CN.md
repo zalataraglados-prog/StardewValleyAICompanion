@@ -1,5 +1,15 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 验证路径与退出条件修正
+
+全量运行时证明不再作为每次代码改动的默认测试。后续固定采用以下顺序：
+
+1. **定向原生回放**：只覆盖本次变更触及的执行器、菜单或来源分层；通过条件是原生动作 `applied/verified`、fresh 终态一致、无超时/输入泄漏。
+2. **共享契约回归**：候选、DailyPlan、编译器、证据索引或部署代码变更时运行 game-free 全套；共享执行器变更再抽取一个代表性原生样本，不为同构物品重复跑完整日历。
+3. **里程碑索引重建**：仅当新增 Full Shipment 分层、权威字典/日历指纹改变，或准备改变训练准入状态时，重建 26 层 production evidence index。未完成重建时保持旧索引和 `formal_product_training_authorized=false`，不得用局部成功冒充全量准入。
+
+本轮 Sap 当前版本证明 `runtime-full-shipment-sap-refresh-20261005-183733` 已完整通过；放射性矿石证明 `runtime-full-shipment-radioactive-node-20261005-134024` 已通过。防风草重放被主动停止且不计入新索引。部署层新增 `-NoBuild` 陈旧产物拒绝与部署 SHA-256 校验，以保证测试源码、构建输出和实际 Mods DLL 是同一版本。
+
 ## 2026-10-05 Full Shipment 树苔藓层接入共享清障内核
 
 `native_tree_moss_harvest` 现以 `(O)Moss`、`Tree.CreateMossItem` 和 `foraging.harvest_tree_moss` 为唯一代表身份。样本夹具只建立合法原生前态；规划、编译、移动、镰刀生命周期、苔藓掉落和回执全部复用现有树苔藓链。该层不会与普通树产物或砍树层合并，也不新增并行动作实现。
