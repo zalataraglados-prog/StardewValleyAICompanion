@@ -8,6 +8,11 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var script = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var common = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeEvidenceCommon.ps1");
+        var runtimeSurface = script + Environment.NewLine + common;
         var bridge = ReadRepositoryFile(
             "src",
             "StardewAI.TransparentBridge",
@@ -15,31 +20,31 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
 
         Assert.Contains(
             "$Scenario -in @(",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"radioactive_ore_node_sample\",",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"monster_drop_sample\"))",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"training_mining\"",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"--execution-snapshot-profile\", $SnapshotProfile",
-            script,
+            "\"--execution-snapshot-profile\", $Context.SnapshotProfile",
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"--after-snapshot-poll-ms\", \"250\"",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
         Assert.Contains(
             "profile=$SnapshotProfile&fresh=1",
-            script,
+            runtimeSurface,
             StringComparison.Ordinal);
 
         Assert.Contains(
@@ -488,6 +493,59 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "QualifiedItemId = \"(O)787\"",
             source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeEvidenceOrchestrationUsesScenarioNeutralSharedHelpers()
+    {
+        var script = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var common = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeEvidenceCommon.ps1");
+
+        Assert.Contains(
+            "lib\\RuntimeEvidenceCommon.ps1",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Invoke-RuntimePrecompiledQueue",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Invoke-RuntimeTeacherPreferenceQueue",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Invoke-RuntimeDailyPlanStep",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "function Start-RuntimeEvidenceProcess",
+            common,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "function Invoke-JsonPost",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "--precompiled-queue",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "full_shipment",
+            common,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            "sap_prefix",
+            common,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "function Assert-FullShipmentState",
+            script,
             StringComparison.Ordinal);
     }
 

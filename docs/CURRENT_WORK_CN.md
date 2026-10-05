@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment runtime 编排边界拆分
+
+- `scripts/lib/RuntimeEvidenceCommon.ps1` 现统一承载场景无关的 UTF-8/JSON、目录哈希、HTTP、fresh snapshot、环境恢复、隐藏进程生命周期，以及 DailyPlan、Teacher preference、precompiled queue 的现有 LiveTrainingLoop 调用包装。
+- `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1` 只保留 Full Shipment 场景选择、夹具编排、权威来源绑定、Sap/出货/睡眠/recurrence 断言和对通用函数的薄参数绑定；它仍调用原有 planner/compiler/product executor/verifier，没有新增第二套运行时或脚本游戏语义。
+- archived source save 哈希、隔离存档、typed queue/receipt、fresh after snapshot、checkpoint 与 `formal_product_training_authorized=false` 语义保持不变。本次是 #162 的维护性拆分，不增加 production evidence 分子；下一里程碑仍是代表性原生抽样后统一重建 26 层索引。
+
 ## 2026-10-05 Full Shipment 地点钓获入口
 
 - 最后一层代表固定为 `full_shipment:item:388 / (O)388 / native_location_fish_spawn / location_fish:Town:3`，复用现有 `fishing.catch_fish -> executor.catch_fish` 原生抛竿、上钩、小游戏和结果回执链。

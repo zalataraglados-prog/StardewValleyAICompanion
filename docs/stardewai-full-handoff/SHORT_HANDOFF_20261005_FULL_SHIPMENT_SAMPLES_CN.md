@@ -1,5 +1,11 @@
 # Full Shipment 分层样本短交接（2026-10-05）
 
+## runner 维护边界
+
+- 场景无关的 JSON/快照/HTTP、存档哈希、进程与环境恢复、DailyPlan/Teacher/precompiled queue 包装已迁到 `scripts/lib/RuntimeEvidenceCommon.ps1`。
+- 主 runner 仍是唯一 Full Shipment 场景组合层，保留所有来源、物品、夹具、出货、睡眠与 recurrence 断言；共享库不得出现 `full_shipment` 或 `sap_prefix` 规则。
+- 拆分没有新增执行路径或生产证据。接续时先跑 PowerShell/source guard/game-free 离线回归，再做少量代表性原生抽样，最后统一重建 26 层 production evidence index。
+
 ## 入口配置完成
 
 - 共享 runner 已配置 `26/26` 个权威运行时入口。最后一层为 `location_fish:Town:3 -> (O)388`，使用完整透明钓获分布和既有原生 `catch_fish` 链。

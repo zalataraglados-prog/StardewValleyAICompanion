@@ -59,6 +59,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$runtimeEvidenceCommon = Join-Path $PSScriptRoot `
+    "lib\RuntimeEvidenceCommon.ps1"
+if (-not (Test-Path -LiteralPath $runtimeEvidenceCommon -PathType Leaf)) {
+    throw "Runtime evidence helper is missing: $runtimeEvidenceCommon"
+}
+. $runtimeEvidenceCommon
+
 if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
     $ProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 }
@@ -586,155 +593,26 @@ else {
 
 function Resolve-InputPath {
     param([string] $Path)
-    if ([IO.Path]::IsPathRooted($Path)) {
-        return [IO.Path]::GetFullPath($Path)
-    }
-    return [IO.Path]::GetFullPath((Join-Path $ProjectRoot $Path))
-}
-
-function Write-Utf8Text {
-    param([string] $Path, [string] $Value)
-    $parent = Split-Path -Parent $Path
-    if (-not [string]::IsNullOrWhiteSpace($parent)) {
-        New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    }
-    [IO.File]::WriteAllText($Path, $Value, [Text.UTF8Encoding]::new($false))
-}
-
-function Write-JsonFile {
-    param([string] $Path, $Value)
-    Write-Utf8Text -Path $Path -Value (
-        $Value | ConvertTo-Json -Depth 96)
-}
-
-function Get-DirectoryContentHash {
-    param([string] $Path)
-    $root = [IO.Path]::GetFullPath($Path).TrimEnd('\')
-    $rows = @(Get-ChildItem -LiteralPath $root -File -Recurse |
-        Sort-Object FullName | ForEach-Object {
-            if (-not $_.FullName.StartsWith(
-                    $root + '\',
-                    [StringComparison]::OrdinalIgnoreCase)) {
-                throw "File escaped hash root: $($_.FullName)"
-            }
-            $relative = $_.FullName.Substring($root.Length + 1)
-            $hash = (Get-FileHash -LiteralPath $_.FullName `
-                -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$relative`t$($_.Length)`t$hash"
-        })
-    $algorithm = [Security.Cryptography.SHA256]::Create()
-    try {
-        $bytes = [Text.Encoding]::UTF8.GetBytes([string]::Join("`n", $rows))
-        return [BitConverter]::ToString(
-            $algorithm.ComputeHash($bytes)).Replace("-", "").ToLowerInvariant()
-    }
-    finally {
-        $algorithm.Dispose()
-    }
-}
-
-function Read-StateValue {
-    param($Snapshot, [string] $Domain, [string] $Field)
-    $domainNode = $Snapshot.state.$Domain
-    if ($null -eq $domainNode) { return $null }
-    $fieldNode = $domainNode.$Field
-    if ($null -eq $fieldNode) { return $null }
-    return $fieldNode.value
-}
-
-function Wait-Json {
-    param([string] $Url, [int] $TimeoutSeconds)
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastError = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $Url `
-                -TimeoutSec 15
-            if ($response.StatusCode -eq 200) {
-                return $response.Content | ConvertFrom-Json
-            }
-        }
-        catch { $lastError = $_.Exception.Message }
-        Start-Sleep -Seconds 2
-    }
-    throw "Timed out waiting for $Url. Last error: $lastError"
+    return Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $Path
 }
 
 function Get-FreshSnapshot {
     param([int] $TimeoutSeconds)
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastError = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $snapshotUrl `
-                -TimeoutSec 45
-            $snapshot = $response.Content | ConvertFrom-Json
-            $location = [string](Read-StateValue `
-                $snapshot "player" "location_id")
-            if ($response.StatusCode -eq 200 -and
-                -not [string]::IsNullOrWhiteSpace($location)) {
-                return [pscustomobject]@{
-                    Raw = $response.Content
-                    Value = $snapshot
-                }
-            }
-        }
-        catch { $lastError = $_.Exception.Message }
-        Start-Sleep -Seconds 2
-    }
-    throw "Timed out waiting for a fresh world snapshot. Last error: $lastError"
-}
-
-function Invoke-JsonPost {
-    param([string] $Url, $Body, [int] $TimeoutSeconds = 240)
-    $json = if ($Body -is [string]) {
-        $Body
-    }
-    else {
-        $Body | ConvertTo-Json -Depth 96
-    }
-    try {
-        $response = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $Url `
-            -ContentType "application/json; charset=utf-8" -Body $json `
-            -TimeoutSec $TimeoutSeconds
-    }
-    catch {
-        $detail = ""
-        if ($null -ne $_.Exception.Response) {
-            $stream = $_.Exception.Response.GetResponseStream()
-            if ($null -ne $stream) {
-                $reader = [IO.StreamReader]::new($stream)
-                try { $detail = $reader.ReadToEnd() }
-                finally { $reader.Dispose() }
-            }
-        }
-        throw "POST $Url failed: $($_.Exception.Message) $detail"
-    }
-    return [pscustomobject]@{
-        Raw = $response.Content
-        Value = $response.Content | ConvertFrom-Json
-    }
+    return Get-FreshRuntimeSnapshot `
+        -Url $snapshotUrl -TimeoutSeconds $TimeoutSeconds
 }
 
 function Invoke-Bootstrap {
     param([string[]] $Arguments)
-    & dotnet $script:bootstrapDll @Arguments | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Goal-conditioned bootstrap failed: $($Arguments[0])"
-    }
+    Invoke-RuntimeBootstrap `
+        -BootstrapDll $script:bootstrapDll -Arguments $Arguments
 }
 
 function Save-SnapshotAndIngest {
     param([string] $Path, $Capture)
-    Write-Utf8Text -Path $Path -Value $Capture.Raw
-    $ingest = Invoke-JsonPost `
-        -Url "$backendUrl/api/v1/snapshots?profile=$SnapshotProfile" `
-        -Body $Capture.Raw
-    if (-not [bool]$ingest.Value.accepted -or
-        [string]$ingest.Value.state_hash -ne
-            [string]$Capture.Value.state_hash) {
-        throw "Backend rejected or changed snapshot identity for $Path."
-    }
+    Save-RuntimeSnapshotAndIngest -Path $Path -Capture $Capture `
+        -BackendUrl $backendUrl -SnapshotProfile $SnapshotProfile
 }
 
 function Invoke-Ranking {
@@ -744,42 +622,9 @@ function Invoke-Ranking {
         [string] $OptionId,
         [object[]] $Parameters = @()
     )
-    [object[]]$candidates = @()
-    if ($Parameters.Count -gt 0) {
-        $candidates = @([ordered]@{
-            option_id = $OptionId
-            parameters = $Parameters
-            explicit_confirmation_granted = $false
-            invocation_source = 0
-            actor_is_host = $true
-            ownership_authorized = $true
-            adapter_id = "vanilla_native"
-        })
-    }
-    [string[]]$candidateOptionIds = if ($candidates.Count -eq 0) {
-        @($OptionId)
-    }
-    else { @() }
-    $request = [ordered]@{
-        goal_id = $GoalId
-        execution_mode = "training_singleplayer"
-        state_hash = $SnapshotStateHash
-        candidate_option_ids = $candidateOptionIds
-        candidates = $candidates
-        include_blocked_options = $false
-        training_report = [ordered]@{}
-        policy_checkpoint_path = $null
-        require_structured_policy = $false
-    }
-    $response = Invoke-JsonPost `
-        -Url "$backendUrl/api/v1/planner/baseline/rank-options" `
-        -Body $request
-    Write-Utf8Text -Path $OutputPath -Value $response.Raw
-    if ([string]$response.Value.schema_version -ne
-        "availability_policy_prediction.v1") {
-        throw "Unexpected ranking schema for $OptionId."
-    }
-    return $response.Value
+    return Invoke-RuntimeRanking -BackendUrl $backendUrl -GoalId $GoalId `
+        -SnapshotStateHash $SnapshotStateHash -OutputPath $OutputPath `
+        -OptionId $OptionId -Parameters $Parameters
 }
 
 function Invoke-DailyPlanStep {
@@ -790,144 +635,23 @@ function Invoke-DailyPlanStep {
         [string] $CandidateId,
         [string[]] $CandidateParameters = @()
     )
-    $stepRoot = Join-Path $artifactDirectory $Name
-    $capture = Get-FreshSnapshot -TimeoutSeconds 60
-    $sourcePath = Join-Path $stepRoot "source-snapshot.json"
-    Write-Utf8Text -Path $sourcePath -Value $capture.Raw
-    $arguments = [Collections.Generic.List[string]]::new()
-    foreach ($value in @(
-        $loopDll,
-        "--root", $stepRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--execution-snapshot-profile", $SnapshotProfile,
-        "--executor-url", $executorRoot,
-        "--snapshot-file", $sourcePath,
-        "--no-manifest",
-        "--skip-training",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--iterations", "1",
-        "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
-        "--sleep-ms", "0",
-        "--use-daily-plan",
-        "--daily-plan-max-candidates", "1",
-        "--daily-plan-candidate-options", $OptionId,
-        "--daily-plan-candidate-kind", $CandidateKind,
-        "--daily-plan-candidate-id", $CandidateId,
-        "--emit-queue-execution-receipt",
-        "--after-snapshot-wait-ms", "1000",
-        "--after-snapshot-poll-ms", "250",
-        "--continue-after-blocked-queue-items"
-    )) { $arguments.Add([string]$value) }
-    foreach ($parameter in $CandidateParameters) {
-        $arguments.Add("--daily-plan-candidate-parameter")
-        $arguments.Add($parameter)
-    }
-    $stdout = & dotnet $arguments
-    $stdout | Set-Content -LiteralPath (Join-Path $stepRoot "loop.stdout.log") `
-        -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Daily plan step $Name failed with exit $LASTEXITCODE."
-    }
-    return Read-LoopArtifacts -LoopRoot $stepRoot
+    return Invoke-RuntimeDailyPlanStep -Context $runtimeQueueContext `
+        -Name $Name -OptionId $OptionId -CandidateKind $CandidateKind `
+        -CandidateId $CandidateId `
+        -CandidateParameters $CandidateParameters
 }
 
 function Invoke-PrecompiledQueue {
     param([string] $Name, [string] $QueuePath, [string] $BeforePath)
-    $loopRoot = Join-Path $artifactDirectory $Name
-    $arguments = @(
-        $loopDll,
-        "--root", $loopRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--execution-snapshot-profile", $SnapshotProfile,
-        "--snapshot-file", $BeforePath,
-        "--executor-url", $productUrl,
-        "--use-product-executor",
-        "--no-manifest",
-        "--skip-training",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--max-attempts", "1",
-        "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
-        "--precompiled-queue", $QueuePath,
-        "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "1000",
-        "--after-snapshot-poll-ms", "250"
-    )
-    $stdout = & dotnet $arguments
-    $stdout | Set-Content `
-        -LiteralPath (Join-Path $loopRoot "loop.stdout.log") -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Precompiled queue $Name failed with exit $LASTEXITCODE."
-    }
-    return Read-LoopArtifacts -LoopRoot $loopRoot
+    return Invoke-RuntimePrecompiledQueue -Context $runtimeQueueContext `
+        -Name $Name -QueuePath $QueuePath -BeforePath $BeforePath
 }
 
 function Invoke-TeacherPreferenceQueue {
     param([string] $Name, [string] $PreferencePath, [string] $BeforePath)
-    $loopRoot = Join-Path $artifactDirectory $Name
-    $arguments = @(
-        $loopDll,
-        "--root", $loopRoot,
-        "--backend-url", $backendUrl,
-        "--bridge-snapshot-url", $snapshotUrl,
-        "--execution-snapshot-profile", $SnapshotProfile,
-        "--snapshot-file", $BeforePath,
-        "--executor-url", $productUrl,
-        "--use-product-executor",
-        "--no-manifest",
-        "--skip-training",
-        "--run-id", $RunId,
-        "--save-isolation-path", $isolatedSavesPath,
-        "--max-attempts", "1",
-        "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
-        "--teacher-preference", $PreferencePath,
-        "--sleep-ms", "0",
-        "--after-snapshot-wait-ms", "1000",
-        "--after-snapshot-poll-ms", "250"
-    )
-    $stdout = & dotnet $arguments
-    $stdout | Set-Content `
-        -LiteralPath (Join-Path $loopRoot "loop.stdout.log") -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Teacher preference queue $Name failed with exit $LASTEXITCODE."
-    }
-    return Read-LoopArtifacts -LoopRoot $loopRoot
-}
-
-function Read-LoopArtifacts {
-    param([string] $LoopRoot)
-    $root = Join-Path $LoopRoot "runs\$RunId\live-snapshots"
-    $queuePath = Join-Path $root "compiled-queue-0001.json"
-    $beforePath = Join-Path $root "before-snapshot-0001.json"
-    $executionPath = Join-Path $root "execution-0001.json"
-    $afterPath = Join-Path $root "after-snapshot-0001.json"
-    foreach ($path in @($queuePath, $beforePath, $executionPath, $afterPath)) {
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "Missing loop artifact: $path"
-        }
-    }
-    $execution = Get-Content -LiteralPath $executionPath -Raw |
-        ConvertFrom-Json
-    if ([string]$execution.status -ne "applied" -or
-        -not [bool]$execution.after_snapshot_fresh) {
-        throw "Loop execution was not applied with a fresh after snapshot."
-    }
-    return [pscustomobject]@{
-        QueuePath = $queuePath
-        BeforePath = $beforePath
-        ExecutionPath = $executionPath
-        AfterPath = $afterPath
-        Queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
-        Before = Get-Content -LiteralPath $beforePath -Raw | ConvertFrom-Json
-        Execution = $execution
-        After = Get-Content -LiteralPath $afterPath -Raw | ConvertFrom-Json
-    }
+    return Invoke-RuntimeTeacherPreferenceQueue `
+        -Context $runtimeQueueContext -Name $Name `
+        -PreferencePath $PreferencePath -BeforePath $BeforePath
 }
 
 function Assert-FullShipmentState {
@@ -995,12 +719,8 @@ if (-not $UseExistingBackend) {
 if (-not $UseExistingProduct) {
     $requiredUnusedPorts += $ProductPort
 }
-foreach ($port in $requiredUnusedPorts) {
-    if ($null -ne (Get-NetTCPConnection -State Listen -LocalPort $port `
-            -ErrorAction SilentlyContinue)) {
-        throw "Sap prefix smoke requires unused port $port."
-    }
-}
+Assert-RuntimePortsUnused -Ports $requiredUnusedPorts `
+    -OperationName "Sap prefix smoke"
 if ($null -ne (Get-Process -Name "StardewModdingAPI" `
         -ErrorAction SilentlyContinue)) {
     throw "StardewModdingAPI is already running. Refusing to attach."
@@ -1067,6 +787,11 @@ $loopDll = Join-Path $ProjectRoot `
     "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
 $script:bootstrapDll = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
+$runtimeQueueContext = New-RuntimeQueueContext -LoopDll $loopDll `
+    -ArtifactDirectory $artifactDirectory -BackendUrl $backendUrl `
+    -SnapshotUrl $snapshotUrl -SnapshotProfile $SnapshotProfile `
+    -ExecutorRoot $executorRoot -ProductUrl $productUrl -RunId $RunId `
+    -IsolatedSavesPath $isolatedSavesPath
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -1090,10 +815,7 @@ $environmentNames = @(
     "SMAPI_MODS_PATH",
     "ASPNETCORE_URLS"
 )
-$savedEnvironment = @{}
-foreach ($name in $environmentNames) {
-    $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
-}
+$savedEnvironment = Save-RuntimeProcessEnvironment -Names $environmentNames
 
 $backend = $null
 $product = $null
@@ -1115,12 +837,12 @@ try {
 
     if (-not $UseExistingBackend) {
         $env:ASPNETCORE_URLS = $backendUrl
-        $backend = Start-Process dotnet -ArgumentList @($backendDll) `
-            -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-            -RedirectStandardOutput (Join-Path $artifactDirectory `
+        $backend = Start-RuntimeEvidenceProcess -FilePath "dotnet" `
+            -ArgumentList @($backendDll) -WorkingDirectory $ProjectRoot `
+            -StandardOutputPath (Join-Path $artifactDirectory `
                 "backend.stdout.log") `
-            -RedirectStandardError (Join-Path $artifactDirectory `
-                "backend.stderr.log") -PassThru
+            -StandardErrorPath (Join-Path $artifactDirectory `
+                "backend.stderr.log")
     }
     Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
 
@@ -1131,24 +853,24 @@ try {
     $env:STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT = $isolatedSavesPath
     $env:STARDEWAI_PRODUCT_RUN_ID = $RunId
     if (-not $UseExistingProduct) {
-        $product = Start-Process dotnet -ArgumentList @($productDll) `
-            -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-            -RedirectStandardOutput (Join-Path $artifactDirectory `
+        $product = Start-RuntimeEvidenceProcess -FilePath "dotnet" `
+            -ArgumentList @($productDll) -WorkingDirectory $ProjectRoot `
+            -StandardOutputPath (Join-Path $artifactDirectory `
                 "product.stdout.log") `
-            -RedirectStandardError (Join-Path $artifactDirectory `
-                "product.stderr.log") -PassThru
+            -StandardErrorPath (Join-Path $artifactDirectory `
+                "product.stderr.log")
     }
     $productHealth = Wait-Json -Url "$productUrl/health" -TimeoutSeconds 60
     if ([string]$productHealth.status -ne "ready") {
         throw "Product executor did not become ready."
     }
 
-    $game = Start-Process -FilePath $smapi -WorkingDirectory $gameDirectory `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput (Join-Path $artifactDirectory `
+    $game = Start-RuntimeEvidenceProcess -FilePath $smapi `
+        -WorkingDirectory $gameDirectory `
+        -StandardOutputPath (Join-Path $artifactDirectory `
             "game.stdout.log") `
-        -RedirectStandardError (Join-Path $artifactDirectory `
-            "game.stderr.log") -PassThru
+        -StandardErrorPath (Join-Path $artifactDirectory `
+            "game.stderr.log")
     Wait-Json -Url "$executorRoot/health" `
         -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
     $inside = Get-FreshSnapshot -TimeoutSeconds $StartupTimeoutSeconds
@@ -2694,16 +2416,6 @@ try {
     $summary | ConvertTo-Json -Depth 24
 }
 finally {
-    foreach ($name in $savedEnvironment.Keys) {
-        [Environment]::SetEnvironmentVariable(
-            $name,
-            $savedEnvironment[$name],
-            "Process")
-    }
-    foreach ($process in @($game, $product, $backend)) {
-        if ($null -ne $process -and -not $process.HasExited) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-            $process.WaitForExit(10000) | Out-Null
-        }
-    }
+    Restore-RuntimeProcessEnvironment -Values $savedEnvironment
+    Stop-RuntimeEvidenceProcesses -Processes @($game, $product, $backend)
 }

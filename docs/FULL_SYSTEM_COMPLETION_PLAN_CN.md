@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 runtime evidence 编排边界
+
+共享运行时证据基础设施位于 `scripts/lib/RuntimeEvidenceCommon.ps1`：只负责文件与 JSON、快照/HTTP、环境与进程生命周期，以及对唯一 LiveTrainingLoop 队列入口的参数化调用。Full Shipment/Sap 的目标语义、权威来源身份、夹具、出货和 recurrence 断言继续留在 `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1`。后续样本可以复用通用基础设施，但不得复制 planner/compiler/executor/verifier，也不得把物品或目标规则下沉到通用库。
+
+该拆分不改变训练准入：`26/26` 仍仅表示 runner 入口配置完整。先做代表性原生抽样和共享离线回归，再在里程碑统一重建 production evidence index；索引与其他训练门未完整验收前，`formal_product_training_authorized=false`。
+
 ## 2026-10-05 Full Shipment 入口配置完成
 
 26 个权威运行时分层均已接入共享样本 runner，当前配置覆盖为 `26/26`。最后的 `native_location_fish_spawn` 通过透明完整钓获分布绑定 `location_fish:Town:3 -> (O)388`，没有把非鱼物品伪装成 Master Angler 鱼种，也没有建立第二套钓鱼执行器。
