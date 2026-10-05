@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 高级动物产物样本准入状态
+
+大瓶牛奶 `(O)186` 已按 `native_farm_animal_deluxe_produce` 接入现有动物产物链，严格 resume tuple 为 `full_shipment:item:186|(O)186|native_farm_animal_deluxe_produce`。`LZT` 样本守卫 `12/12`、Core game-free `133/133`、Bootstrap Release `0 warning / 0 error`。尚无本物品 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
 ## 2026-10-05 Full Shipment 基础动物产物样本准入状态
 
 牛奶 `(O)184` 已按 `native_farm_animal_produce` 接入现有 `farm.collect_animal_products -> executor.collect_animal_product` 链，严格 resume tuple 为 `full_shipment:item:184|(O)184|native_farm_animal_produce`。`LZT` 样本守卫 `11/11`、Core game-free `132/132`、Bootstrap Release `0 warning / 0 error`。EVD-222 不能替代本层 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 高级动物产物层复用动物链
+
+`native_farm_animal_deluxe_produce` 现以大瓶牛奶 `full_shipment:item:186 / (O)186 / farm.collect_animal_products` 作为代表。它和普通牛奶共用 proof 根外的 White Cow/Milk Pail 夹具配置以及唯一的动物产物候选、DailyPlan、编译器、原生执行器和 verifier；route kind 与 requirement 仍分别严格绑定。
+
+异机守卫 `12/12`、game-free `133/133`、Bootstrap Release `0 warning / 0 error`。本次只完成可采证入口，尚无 `(O)186` 的 fresh Full Shipment receipt 与 rollout proof，生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 基础动物产物层接入既有挤奶链
 
 `native_farm_animal_produce` 现以牛奶 `full_shipment:item:184 / (O)184 / farm.collect_animal_products` 作为运行时分层代表。权威 route occurrence 来自 Brown Cow/White Cow；样本复用现有动物透明投影、DailyPlan、动作编译器、Milk Pail 原生执行和 verifier，不增加鸡蛋专用或并行动物系统。建筑与购买支持项仍由原有静态 lineage 负责，夹具设置不进入 acquisition proof 根。

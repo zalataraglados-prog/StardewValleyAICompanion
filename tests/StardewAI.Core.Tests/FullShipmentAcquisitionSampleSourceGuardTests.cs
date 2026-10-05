@@ -304,6 +304,35 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void DeluxeFarmAnimalProductSampleReusesNativeMilkPailChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"farm_animal_deluxe_product_sample\" { \"full_shipment:item:186\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"farm_animal_deluxe_product_sample\" { \"(O)186\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"farm_animal_deluxe_product_sample\" { \"farm.collect_animal_products\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"farm-animal-deluxe-product\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QualifiedItemId = \"(O)186\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -373,6 +402,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:184|(O)184|native_farm_animal_produce",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:186|(O)186|native_farm_animal_deluxe_produce",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

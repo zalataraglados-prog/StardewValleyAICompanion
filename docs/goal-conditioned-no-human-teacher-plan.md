@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native deluxe-animal-product sample shares the animal chain
+
+- The representative route is
+  `full_shipment:item:186 / (O)186 / native_farm_animal_deluxe_produce / farm.collect_animal_products`.
+- The locked inventory binds exact Brown Cow and White Cow sources. The scenario shares the proof-external White Cow /
+  Milk Pail fixture table and the sole animal-product candidate, DailyPlan, compiler, executor and verifier while keeping
+  a distinct fail-closed requirement/item/route tuple.
+- Off-machine guards passed `12/12`, game-free tests passed `133/133`, and Bootstrap Release built cleanly. No fresh
+  `(O)186` Full Shipment receipt exists, so this stratum is still pending and production remains `2/26`.
+
 ## 2026-10-05: native base-animal-product sample reuses the Milk Pail chain
 
 - The representative route is

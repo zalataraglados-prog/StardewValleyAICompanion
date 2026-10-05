@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 高级动物产物样本入口
+
+- `native_farm_animal_deluxe_produce` 的代表采用大瓶牛奶 `full_shipment:item:186 / (O)186 / farm.collect_animal_products`，权威清单中精确来源为 Brown Cow 与 White Cow。
+- 样本与普通牛奶共用 `debug.setup_animal_product_target` 配置表、Milk Pail、唯一候选/编译/执行/verifier 链；严格 resume tuple 为 `full_shipment:item:186|(O)186|native_farm_animal_deluxe_produce`，没有新增高级产物执行器。
+- `LZT` 上样本守卫 `12/12`、Core game-free `133/133`、Bootstrap Release `0 warning / 0 error`。现有 EVD-222 证明 Milk Pail 链可复用，但不构成 `(O)186` 的 Full Shipment 原生回执；生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 基础动物产物样本复用挤奶链
 
 - `native_farm_animal_produce` 的运行时分层代表采用牛奶 `full_shipment:item:184 / (O)184 / farm.collect_animal_products`。该 requirement 在权威清单中精确绑定 Brown Cow 与 White Cow，避免把建议鸡蛋 `(O)176` 错配到只验证过挤奶/剪毛的夹具。

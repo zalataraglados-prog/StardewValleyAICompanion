@@ -29,7 +29,8 @@ param(
         "spring_onion_harvest_sample",
         "location_forage_spawn_sample",
         "fruit_tree_harvest_sample",
-        "farm_animal_product_sample")]
+        "farm_animal_product_sample",
+        "farm_animal_deluxe_product_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -63,6 +64,7 @@ $sampleRequirementId = switch ($Scenario) {
     "location_forage_spawn_sample" { "full_shipment:item:16" }
     "fruit_tree_harvest_sample" { "full_shipment:item:638" }
     "farm_animal_product_sample" { "full_shipment:item:184" }
+    "farm_animal_deluxe_product_sample" { "full_shipment:item:186" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -76,6 +78,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "location_forage_spawn_sample" { "(O)16" }
     "fruit_tree_harvest_sample" { "(O)638" }
     "farm_animal_product_sample" { "(O)184" }
+    "farm_animal_deluxe_product_sample" { "(O)186" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -89,6 +92,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "location_forage_spawn_sample" { "foraging.collect_spawned_objects" }
     "fruit_tree_harvest_sample" { "foraging.harvest_fruit_tree" }
     "farm_animal_product_sample" { "farm.collect_animal_products" }
+    "farm_animal_deluxe_product_sample" { "farm.collect_animal_products" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -219,6 +223,17 @@ $animalFixture = switch ($Scenario) {
             Slug = "farm-animal-product"
             RequiredToolKind = "Milk Pail"
             QualifiedItemId = "(O)184"
+            ExpectedOutputQuality = 2
+            ExpectedAnimalCrackerMultiplier = 1
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "farm_animal_deluxe_product_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "farm-animal-deluxe-product"
+            RequiredToolKind = "Milk Pail"
+            QualifiedItemId = "(O)186"
             ExpectedOutputQuality = 2
             ExpectedAnimalCrackerMultiplier = 1
             TargetTileX = 64

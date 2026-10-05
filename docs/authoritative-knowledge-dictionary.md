@@ -1,5 +1,13 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native deluxe-animal-product sample identity
+
+The locked Full Shipment inventory identifies Large Milk `(O)186` as `full_shipment:item:186`, route kind
+`native_farm_animal_deluxe_produce`, sources `farm_animal:Brown Cow:0` and `farm_animal:White Cow:0`, and endpoint
+`farm.collect_animal_products`. Its representative scenario uses the same White Cow and Milk Pail fixture mechanism as
+base Milk while preserving the distinct output and route kind. Runtime-stratum admission remains pending until a fresh
+native receipt and independently rebuilt Full Shipment rollout proof are accepted.
+
 ## 2026-10-05 native base-animal-product sample identity
 
 The locked Full Shipment inventory identifies Milk `(O)184` as `full_shipment:item:184`, route kind
