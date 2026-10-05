@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 太阳能板产物样本入口
+
+- `native_solar_panel_output` 的唯一权威身份为 `full_shipment:item:787 / (O)787 / machine:(BC)231:OutputSolarPanel / farm.collect_machine_outputs`。
+- proof 根外夹具锁定太阳能板机器 ID `231` 与电池组 `(O)787`，随后复用现有专用透明投影、共享机器候选、DailyPlan、编译器、`executor.collect_machine_output` 和 verifier。严格 resume tuple 为 `full_shipment:item:787|(O)787|native_solar_panel_output`。
+- `LZT` 上样本守卫 `15/15`、Core game-free `136/136`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment acquisition proof，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 机器直接产物样本入口
 
 - `machine_output` 的代表采用 `full_shipment:item:257 / (O)257 / farm.collect_machine_outputs`，权威来源固定为蘑菇树桩 `machine:(BC)128:rule:Default`。

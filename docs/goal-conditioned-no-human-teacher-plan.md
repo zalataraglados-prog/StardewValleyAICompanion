@@ -1,5 +1,16 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native solar-panel sample preserves its dedicated source
+
+- The representative route is
+  `full_shipment:item:787 / (O)787 / native_solar_panel_output / farm.collect_machine_outputs`, with the sole source
+  `machine:(BC)231:OutputSolarPanel`.
+- The proof-external fixture binds machine ID `231` and Battery Pack `(O)787`. The transparent bridge keeps the dedicated
+  solar-panel state and source identity, while planning, compilation, native collection and verification reuse the shared
+  machine-output chain. Construction support is not forged by the fixture.
+- Off-machine guards passed `15/15`, game-free tests passed `136/136`, and Bootstrap Release built cleanly. No fresh
+  Full Shipment receipt exists, so production remains `2/26`.
+
 ## 2026-10-05: direct machine-output sample binds the Mushroom Log
 
 - The representative route is

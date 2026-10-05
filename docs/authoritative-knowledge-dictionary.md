@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native solar-panel-output sample identity
+
+The locked Full Shipment inventory identifies Battery Pack `(O)787` as `full_shipment:item:787`, route kind
+`native_solar_panel_output`, source `machine:(BC)231:OutputSolarPanel`, and endpoint `farm.collect_machine_outputs`.
+The representative fixture binds machine ID `231` and output `(O)787`; the transparent projection retains the dedicated
+solar-panel source rather than collapsing it into generic machine output. Runtime-stratum admission remains pending.
+
 ## 2026-10-05 direct machine-output sample identity
 
 The locked Full Shipment inventory identifies `(O)257` as `full_shipment:item:257`, route kind `machine_output`, source

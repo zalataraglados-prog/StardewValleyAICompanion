@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 太阳能板产物层接入共享机器收取链
+
+`native_solar_panel_output` 现按唯一身份 `machine:(BC)231:OutputSolarPanel -> (O)787` 接入，requirement 为 `full_shipment:item:787`，endpoint 为 `farm.collect_machine_outputs`。透明桥保留专用太阳能板状态和权威来源，动作层复用共享机器收取链；夹具不伪造太阳能板建造支持项。
+
+异机守卫 `15/15`、game-free `136/136`、Bootstrap Release `0 warning / 0 error`。该入口尚未产生 fresh Full Shipment receipt 与 rollout proof，生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 机器直接产物层接入现有机器链
 
 `machine_output` 现以蘑菇树桩 `(BC)128` 的 `(O)257` 作为代表，绑定 `full_shipment:item:257 / farm.collect_machine_outputs`。样本只在 proof 根外建立 ready machine；正式路径继续复用唯一的机器投影、候选、DailyPlan、编译器、输出收取执行器和 verifier。采购、转移、容量、投料和加工支持 lineage 不在夹具中伪造完成。

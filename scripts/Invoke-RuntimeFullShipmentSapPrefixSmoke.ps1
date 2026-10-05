@@ -32,7 +32,8 @@ param(
         "farm_animal_product_sample",
         "farm_animal_deluxe_product_sample",
         "fish_pond_output_sample",
-        "machine_output_sample")]
+        "machine_output_sample",
+        "solar_panel_output_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -69,6 +70,7 @@ $sampleRequirementId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "full_shipment:item:186" }
     "fish_pond_output_sample" { "full_shipment:item:812" }
     "machine_output_sample" { "full_shipment:item:257" }
+    "solar_panel_output_sample" { "full_shipment:item:787" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -85,6 +87,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "(O)186" }
     "fish_pond_output_sample" { "(O)812" }
     "machine_output_sample" { "(O)257" }
+    "solar_panel_output_sample" { "(O)787" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -101,6 +104,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "farm_animal_deluxe_product_sample" { "farm.collect_animal_products" }
     "fish_pond_output_sample" { "fishing.service_fish_ponds" }
     "machine_output_sample" { "farm.collect_machine_outputs" }
+    "solar_panel_output_sample" { "farm.collect_machine_outputs" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -269,6 +273,16 @@ $machineFixture = switch ($Scenario) {
             Slug = "machine-output"
             MachineItemId = "128"
             QualifiedItemId = "(O)257"
+            Quantity = 1
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    "solar_panel_output_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "solar-panel-output"
+            MachineItemId = "231"
+            QualifiedItemId = "(O)787"
             Quantity = 1
             TargetTileX = 64
             TargetTileY = 15

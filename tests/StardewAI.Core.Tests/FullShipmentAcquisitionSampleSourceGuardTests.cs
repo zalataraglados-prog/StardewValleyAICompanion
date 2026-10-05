@@ -399,6 +399,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void SolarPanelOutputSampleBindsNativeSolarPanelSource()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"solar_panel_output_sample\" { \"full_shipment:item:787\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"solar_panel_output_sample\" { \"(O)787\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"solar_panel_output_sample\" { \"farm.collect_machine_outputs\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"solar-panel-output\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MachineItemId = \"231\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QualifiedItemId = \"(O)787\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -480,6 +513,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:257|(O)257|machine_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:787|(O)787|native_solar_panel_output",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
