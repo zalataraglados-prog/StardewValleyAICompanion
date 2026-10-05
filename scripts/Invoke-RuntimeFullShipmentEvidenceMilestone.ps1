@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string] $ProjectRoot = "",
-    [string] $RuntimeRoot = "F:\StardewAI-TestLab",
+    [string] $RuntimeRoot = "F:\StardewAI-TestLab\runtime",
     [string] $ArchivedFreshSaveRoot = "",
     [string] $StaticInventory =
         "local-data\full-shipment-evidence-milestone\static-inventory.json",

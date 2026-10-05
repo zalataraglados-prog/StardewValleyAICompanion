@@ -607,6 +607,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
 
         Assert.Contains("[switch] $PlanOnly", milestone, StringComparison.Ordinal);
         Assert.Contains(
+            "[string] $RuntimeRoot = \"F:\\StardewAI-TestLab\\runtime\"",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Write-MilestoneState -Status \"failed\"",
             milestone,
             StringComparison.Ordinal);
