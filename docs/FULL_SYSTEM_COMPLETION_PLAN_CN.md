@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 里程碑采证执行顺序
+
+当前静态分母已重新计算为 `154/641/26` 且没有 blocker；26 个 runner 场景经完整执行签名对账后恰好覆盖 26 层。原生采证不再人工逐条展开，而由 `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 执行：先导入并重新校验 Sap/放射性矿石 anchor，再跑树液收集器、怪物掉落、地点钓获、蚯蚓地、晶球、商店和社区中心奖励 7 个高风险层；全部通过后再批量补标准层。每层失败即停、无自动重试、保留 checkpoint 与完整产物。
+
+退出条件不是“脚本跑完”，而是每个 stratum 都有精确 route occurrence、原生 `applied/verified`、fresh 终态、独立 rollout proof，且最终 `full_shipment_runtime_sample_evidence_index.v1` 重新计算为 `26/26`。在此之前 `formal_product_training_authorized=false`。
+
 ## 2026-10-05 runtime evidence 编排边界
 
 共享运行时证据基础设施位于 `scripts/lib/RuntimeEvidenceCommon.ps1`：只负责文件与 JSON、快照/HTTP、环境与进程生命周期，以及对唯一 LiveTrainingLoop 队列入口的参数化调用。Full Shipment/Sap 的目标语义、权威来源身份、夹具、出货和 recurrence 断言继续留在 `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1`。后续样本可以复用通用基础设施，但不得复制 planner/compiler/executor/verifier，也不得把物品或目标规则下沉到通用库。

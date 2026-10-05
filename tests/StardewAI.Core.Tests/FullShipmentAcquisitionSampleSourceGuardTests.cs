@@ -550,6 +550,74 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void RuntimeSamplePlanCoversEveryRunnerScenarioExactlyOnce()
+    {
+        var script = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var milestone = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1");
+        var planJson = ReadRepositoryFile(
+            "catalogs",
+            "vanilla-1.6.15",
+            "full-shipment-runtime-sample-plan.json");
+        using var document = System.Text.Json.JsonDocument.Parse(planJson);
+        var root = document.RootElement;
+        var entries = root.GetProperty("entries")
+            .EnumerateArray()
+            .ToArray();
+
+        Assert.Equal(
+            "full_shipment_runtime_sample_plan.v1",
+            root.GetProperty("schema_version").GetString());
+        Assert.Equal(26, root.GetProperty("expected_stratum_count").GetInt32());
+        Assert.False(root.GetProperty("formal_training_authorized").GetBoolean());
+        Assert.Equal(26, entries.Length);
+        Assert.Equal(26, entries.Select(entry =>
+                entry.GetProperty("scenario").GetString())
+            .Distinct(StringComparer.Ordinal)
+            .Count());
+        Assert.Equal(26, entries.Select(entry =>
+                entry.GetProperty("route_kind").GetString())
+            .Distinct(StringComparer.Ordinal)
+            .Count());
+        Assert.Equal(7, entries.Count(entry =>
+            entry.GetProperty("run_batch").GetString() == "high_risk"));
+        Assert.Single(entries.Where(entry =>
+            entry.GetProperty("shared_shipping_anchor").GetBoolean()));
+
+        foreach (var entry in entries)
+        {
+            foreach (var property in new[]
+            {
+                "scenario",
+                "requirement_id",
+                "qualified_item_id",
+                "route_kind",
+                "endpoint_option_id"
+            })
+            {
+                Assert.Contains(
+                    entry.GetProperty(property).GetString()!,
+                    script,
+                    StringComparison.Ordinal);
+            }
+        }
+
+        Assert.Contains("[switch] $PlanOnly", milestone, StringComparison.Ordinal);
+        Assert.Contains(
+            "Write-MilestoneState -Status \"failed\"",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("retry", milestone, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1",
+            milestone,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MachineQuerySamplesBindDistinctNativeSourceLayers()
     {
         var source = ReadRepositoryFile(

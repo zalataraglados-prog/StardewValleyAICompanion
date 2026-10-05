@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 采证里程碑计划
+
+- 已从当前权威 requirement/lowering、动作 reconciliation 与支持终端覆盖重建 `full_shipment_static_compilability_inventory.v2`：`154` 个需求、`641` 条来源、`26` 个运行层、`0` blocker。
+- `catalogs/vanilla-1.6.15/full-shipment-runtime-sample-plan.json` 为 26 层各绑定一个 runner 场景；`Test-FullShipmentRuntimeSamplePlan.ps1` 按完整执行签名核对，不把同层多来源误判为多个层，也不允许一个场景跨层。
+- `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 先执行 7 个高风险原生样本，逐场景写 checkpoint，成功可续跑、失败立即停止且不自动重试；`-PlanOnly` 只验证计划。默认高负载根为异机 `F:\StardewAI-TestLab`，本机不启动游戏。
+- 当前 `26/26` 是入口与采证计划覆盖，生产证据仍只有 Sap 与放射性矿石可独立复核；必须先导入/重验这两个 anchor，再跑高风险 7 层和其余标准层，最后统一构建 evidence manifest/index。训练授权仍为 `false`。
+
 ## 2026-10-05 Full Shipment runtime 编排边界拆分
 
 - `scripts/lib/RuntimeEvidenceCommon.ps1` 现统一承载场景无关的 UTF-8/JSON、目录哈希、HTTP、fresh snapshot、环境恢复、隐藏进程生命周期，以及 DailyPlan、Teacher preference、precompiled queue 的现有 LiveTrainingLoop 调用包装。
