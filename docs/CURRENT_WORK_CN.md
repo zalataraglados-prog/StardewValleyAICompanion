@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 地点觅食物样本入口
+
+- `native_location_forage_spawn` 的生产代表为 `full_shipment:item:16 / (O)16 / foraging.collect_spawned_objects`。现有 EVD-211 链覆盖透明 spawned-object 投影、DailyPlan、`executor.collect_spawned_object` 与原生拾取回执。
+- 共享 forage 场景表新增 `spawned_object / ordinary / Forest`，请求 `debug.setup_forage_source_fixture` 在 proof 根外建立 `(O)16`；实际合法格由 fixture 验证并通过 fresh snapshot 进入候选，不把请求坐标冒充最终坐标。
+- 严格 resume tuple 为 `full_shipment:item:16|(O)16|native_location_forage_spawn`。`LZT` 上样本守卫 `9/9`、Core game-free `130/130`、Bootstrap Release `0 warning / 0 error`。
+- 尚无本层 fresh Full Shipment acquisition proof，生产索引继续为 `2/26`。
+
 ## 2026-10-05 Full Shipment 春葱样本复用作物采集链
 
 - 权威路线固定为 `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / Crop.harvest / whichForageCrop 1 => (O)399 / foraging.harvest_spring_onions`。既有 EVD-335 原生 DailyPlan smoke 验证 `executor.harvest_crop`、背包增量、作物移除和 Foraging XP `+3`。

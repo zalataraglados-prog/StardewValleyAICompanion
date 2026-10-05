@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 地点觅食物样本准入状态
+
+野山葵 `(O)16` 已按 `native_location_forage_spawn` 接入 EVD-211 的现有 spawned-object 采集链，精确 resume tuple 已锁定。异机样本守卫 `9/9`、Core game-free `130/130` 和 Bootstrap Release 已通过。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引与训练授权不变。
+
 ## 2026-10-05 Full Shipment 春葱样本准入状态
 
 春葱 `(O)399` 已通过共享 crop fixture 接入既有 `foraging.harvest_spring_onions -> executor.harvest_crop` 链，严格 resume tuple 已锁定。异机样本守卫 `8/8`、Core game-free `129/129` 和 Bootstrap Release 已通过。尚无新的 Full Shipment acquisition receipt，因此该层仍为 pending，严格索引与训练授权不变。

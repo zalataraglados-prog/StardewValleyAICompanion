@@ -1,5 +1,14 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native location-forage sample reuses spawned-object execution
+
+- The representative route is
+  `full_shipment:item:16 / (O)16 / native_location_forage_spawn / foraging.collect_spawned_objects`.
+- The shared forage table uses the existing `spawned_object / ordinary` fixture in Forest. The fixture's verified legal
+  tile is reread from the fresh snapshot; the requested tile is not treated as authoritative output.
+- Off-machine guards passed `9/9`, game-free tests passed `130/130`, and Bootstrap Release built cleanly.
+- EVD-211 proves the reusable native chain, not this Full Shipment rollout. Production remains `2/26`.
+
 ## 2026-10-05: native spring-onion sample shares the crop scenario table
 
 - The locked route is

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 地点觅食物层接入 spawned-object 链
+
+`native_location_forage_spawn` 已按 `full_shipment:item:16 / (O)16 / foraging.collect_spawned_objects` 加入共享 forage 场景。普通 profile 在 Forest 建立原生 spawned object，随后仍由现有候选、DailyPlan、编译器、执行器和 fresh verifier 完成，不新增拾取实现。
+
+异机守卫 `9/9`、game-free `130/130`、Bootstrap Release 通过。EVD-211 证明底层链可复用，但本层仍需新的 Full Shipment rollout proof；生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 春葱层并入共享 crop 场景
 
 `native_spring_onion_harvest` 已按 `full_shipment:item:399 / (O)399 / foraging.harvest_spring_onions` 接入。防风草和春葱共用同一 crop fixture 编排及 `executor.harvest_crop`，仅场景参数分别绑定普通种子 `472` 与原生 forage crop `1`；这消除了防风草专用分支，没有形成第二套作物链。

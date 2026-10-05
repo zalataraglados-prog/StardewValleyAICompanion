@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native location-forage sample identity
+
+The locked Full Shipment inventory identifies Wild Horseradish `(O)16` as `full_shipment:item:16`, route kind
+`native_location_forage_spawn`, and endpoint `foraging.collect_spawned_objects`. The representative runtime fixture is
+the ordinary spawned-object profile in Forest. Its actual legal tile is runtime-selected and must be reread from the
+fresh transparent snapshot; runtime-stratum admission remains pending.
+
 ## 2026-10-05 native spring-onion sample identity
 
 The locked Full Shipment inventory identifies Spring Onion `(O)399` as `full_shipment:item:399`, route kind

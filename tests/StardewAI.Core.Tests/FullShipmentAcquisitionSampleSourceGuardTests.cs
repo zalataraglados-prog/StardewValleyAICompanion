@@ -205,6 +205,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void LocationForageSampleReusesNativeSpawnedObjectChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"location_forage_spawn_sample\" { \"full_shipment:item:16\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_forage_spawn_sample\" { \"(O)16\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"location_forage_spawn_sample\" { \"foraging.collect_spawned_objects\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuleKey = \"spawned_object\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SpawnedObjectProfile = \"ordinary\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "LocationId = \"Forest\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SampleDateDoesNotRelaxNativeSapRecurrenceRoot()
     {
         var source = ReadRepositoryFile(
@@ -262,6 +295,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:399|(O)399|native_spring_onion_harvest",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:16|(O)16|native_location_forage_spawn",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
