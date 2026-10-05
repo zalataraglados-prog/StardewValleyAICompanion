@@ -1,5 +1,13 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native base-animal-product sample identity
+
+The locked Full Shipment inventory identifies Milk `(O)184` as `full_shipment:item:184`, route kind
+`native_farm_animal_produce`, sources `farm_animal:Brown Cow:0` and `farm_animal:White Cow:0`, and endpoint
+`farm.collect_animal_products`. The representative fixture uses White Cow, Milk Pail, quality 2 and cracker multiplier
+one. Historical EVD-222 verified the native tool lifecycle and all projected side effects for `(O)184`; runtime-stratum
+admission remains pending until a fresh Full Shipment acquisition receipt and rollout proof are accepted.
+
 ## 2026-10-05 native fruit-tree sample identity
 
 The locked Full Shipment inventory identifies Cherry `(O)638` as `full_shipment:item:638`, route kind

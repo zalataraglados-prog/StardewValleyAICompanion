@@ -28,7 +28,8 @@ param(
         "wild_tree_seed_sample",
         "spring_onion_harvest_sample",
         "location_forage_spawn_sample",
-        "fruit_tree_harvest_sample")]
+        "fruit_tree_harvest_sample",
+        "farm_animal_product_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -61,6 +62,7 @@ $sampleRequirementId = switch ($Scenario) {
     "spring_onion_harvest_sample" { "full_shipment:item:399" }
     "location_forage_spawn_sample" { "full_shipment:item:16" }
     "fruit_tree_harvest_sample" { "full_shipment:item:638" }
+    "farm_animal_product_sample" { "full_shipment:item:184" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -73,6 +75,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "spring_onion_harvest_sample" { "(O)399" }
     "location_forage_spawn_sample" { "(O)16" }
     "fruit_tree_harvest_sample" { "(O)638" }
+    "farm_animal_product_sample" { "(O)184" }
     default { "(O)92" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -85,6 +88,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "spring_onion_harvest_sample" { "foraging.harvest_spring_onions" }
     "location_forage_spawn_sample" { "foraging.collect_spawned_objects" }
     "fruit_tree_harvest_sample" { "foraging.harvest_fruit_tree" }
+    "farm_animal_product_sample" { "farm.collect_animal_products" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -203,6 +207,20 @@ $forageFixture = switch ($Scenario) {
             SpawnedObjectProfile = ""
             FruitTreeProfile = "single_normal"
             LocationId = "Farm"
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    default { $null }
+}
+$animalFixture = switch ($Scenario) {
+    "farm_animal_product_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "farm-animal-product"
+            RequiredToolKind = "Milk Pail"
+            QualifiedItemId = "(O)184"
+            ExpectedOutputQuality = 2
+            ExpectedAnimalCrackerMultiplier = 1
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -895,6 +913,44 @@ try {
             -Value $forageSetupResult.Raw
         if ([string]$forageSetupResult.Value.status -ne "applied" -or
             [string]$forageSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
+    elseif ($null -ne $animalFixture) {
+        $fixtureSlug = [string]$animalFixture.Slug
+        $animalSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $animalSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$animalSetupSource.Value.state_hash
+            option_id = "debug.setup_animal_product_target"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$animalFixture.TargetTileX
+            target_tile_y = [int]$animalFixture.TargetTileY
+            required_tool_kind = [string]$animalFixture.RequiredToolKind
+            qualified_item_id = [string]$animalFixture.QualifiedItemId
+            expected_output_quality = [int]$animalFixture.ExpectedOutputQuality
+            expected_animal_cracker_multiplier =
+                [int]$animalFixture.ExpectedAnimalCrackerMultiplier
+        }
+        $animalSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $animalSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $animalSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $animalSetupResult.Raw
+        if ([string]$animalSetupResult.Value.status -ne "applied" -or
+            [string]$animalSetupResult.Value.primitive_verification_status -ne
                 "verified") {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }

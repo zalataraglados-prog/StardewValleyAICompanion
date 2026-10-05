@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 基础动物产物样本复用挤奶链
+
+- `native_farm_animal_produce` 的运行时分层代表采用牛奶 `full_shipment:item:184 / (O)184 / farm.collect_animal_products`。该 requirement 在权威清单中精确绑定 Brown Cow 与 White Cow，避免把建议鸡蛋 `(O)176` 错配到只验证过挤奶/剪毛的夹具。
+- 样本在 proof 根外使用既有 `debug.setup_animal_product_target` 建立 `White Cow / Milk Pail / (O)184 / quality 2 / cracker x1`，随后复用唯一的候选、DailyPlan、编译器、`executor.collect_animal_product` 和 fresh verifier。严格 resume tuple 为 `full_shipment:item:184|(O)184|native_farm_animal_produce`。
+- `LZT` 上样本守卫 `11/11`、Core game-free `132/132`、Bootstrap Release `0 warning / 0 error`。EVD-222 的精确牛奶回执只证明链可复用；本层尚无 fresh Full Shipment acquisition proof，生产索引仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 果树产物样本复用原生果树链
 
 - `native_fruit_tree_produce` 的运行时分层代表采用樱桃 `full_shipment:item:638 / (O)638 / foraging.harvest_fruit_tree`。它与清单中的其他果树产物属于同一分层；选择樱桃是因为现有 `fruit_tree / single_normal` 原生夹具和 action smoke 已精确覆盖该物品，不需要为苹果另造执行路径。

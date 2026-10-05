@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native base-animal-product sample reuses the Milk Pail chain
+
+- The representative route is
+  `full_shipment:item:184 / (O)184 / native_farm_animal_produce / farm.collect_animal_products`.
+- The locked inventory contains exact Brown Cow and White Cow occurrences for this requirement. The proof-external
+  fixture selects the existing White Cow / Milk Pail / quality 2 / cracker x1 setup and then reuses the sole candidate,
+  DailyPlan, compiler, native executor and verifier. No egg-specific or parallel animal-product path was introduced.
+- Off-machine guards passed `11/11`, game-free tests passed `132/132`, and Bootstrap Release built cleanly. EVD-222
+  proves exact `(O)184` chain reuse only; without a fresh Full Shipment receipt, production remains `2/26`.
+
 ## 2026-10-05: native fruit-tree sample reuses the existing action chain
 
 - The representative route is

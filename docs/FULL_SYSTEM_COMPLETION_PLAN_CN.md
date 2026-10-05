@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 基础动物产物层接入既有挤奶链
+
+`native_farm_animal_produce` 现以牛奶 `full_shipment:item:184 / (O)184 / farm.collect_animal_products` 作为运行时分层代表。权威 route occurrence 来自 Brown Cow/White Cow；样本复用现有动物透明投影、DailyPlan、动作编译器、Milk Pail 原生执行和 verifier，不增加鸡蛋专用或并行动物系统。建筑与购买支持项仍由原有静态 lineage 负责，夹具设置不进入 acquisition proof 根。
+
+异机守卫 `11/11`、game-free `132/132`、Bootstrap Release `0 warning / 0 error`。EVD-222 已精确验证 `(O)184` 的原生工具生命周期，但新的 Full Shipment rollout proof 仍待采集，生产覆盖保持 `2/26`。
+
 ## 2026-10-05 Full Shipment 果树产物层接入既有原生链
 
 `native_fruit_tree_produce` 现以樱桃 `full_shipment:item:638 / (O)638 / foraging.harvest_fruit_tree` 作为运行时分层代表。共享 forage 场景使用现有 `fruit_tree / single_normal / Farm 64,15` 夹具及唯一的果树候选、DailyPlan、编译器、执行器和 verifier；没有为苹果或樱桃创建第二套动作实现。

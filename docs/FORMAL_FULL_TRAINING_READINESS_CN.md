@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 基础动物产物样本准入状态
+
+牛奶 `(O)184` 已按 `native_farm_animal_produce` 接入现有 `farm.collect_animal_products -> executor.collect_animal_product` 链，严格 resume tuple 为 `full_shipment:item:184|(O)184|native_farm_animal_produce`。`LZT` 样本守卫 `11/11`、Core game-free `132/132`、Bootstrap Release `0 warning / 0 error`。EVD-222 不能替代本层 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
 ## 2026-10-05 Full Shipment 果树产物样本准入状态
 
 樱桃 `(O)638` 已按 `native_fruit_tree_produce` 接入现有 `foraging.harvest_fruit_tree` 原生链，严格 resume tuple 为 `full_shipment:item:638|(O)638|native_fruit_tree_produce`。`LZT` 样本守卫 `10/10`、Core game-free `131/131`、Bootstrap Release `0 warning / 0 error`。历史果树 action smoke 不能替代 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
