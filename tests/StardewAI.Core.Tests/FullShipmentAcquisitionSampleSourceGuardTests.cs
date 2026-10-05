@@ -432,6 +432,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void TreeMossSampleReusesNativeScytheHarvestChain()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "\"tree_moss_harvest_sample\" { \"full_shipment:item:Moss\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"tree_moss_harvest_sample\" { \"(O)Moss\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"tree_moss_harvest_sample\" { \"foraging.harvest_tree_moss\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"debug.setup_clear_obstacle\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Slug = \"tree-moss-harvest\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuleKey = \"tree_moss\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RuntimeSamplesRejectBindingsForTheWrongAcquisitionLayer()
     {
         var source = ReadRepositoryFile(
@@ -454,6 +487,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"fish_pond_output_sample\" { \"native_fish_pond_output\" }",
             "\"machine_output_sample\" { \"machine_output\" }",
             "\"solar_panel_output_sample\" { \"native_solar_panel_output\" }",
+            "\"tree_moss_harvest_sample\" { \"native_tree_moss_harvest\" }",
             "default { \"native_wild_tree_chop_drop\" }",
         };
         foreach (var mapping in expectedRouteMappings)
@@ -576,6 +610,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "full_shipment:item:787|(O)787|native_solar_panel_output",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

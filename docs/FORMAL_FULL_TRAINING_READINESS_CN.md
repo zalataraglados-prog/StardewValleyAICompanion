@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 Full Shipment 树苔藓样本准入状态
+
+苔藓 `(O)Moss` 已按 `native_tree_moss_harvest` 接入现有 `foraging.harvest_tree_moss -> executor.clear_obstacle` 原生镰刀链，严格 resume tuple 为 `full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest`。`LZT` 样本守卫 `17/17`、Core game-free `138/138`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending；已装配待运行 14 层、未装配 10 层、严格索引 `2/26`，训练授权不变。
+
 ## 2026-10-05 Full Shipment acquisition 路线类型前置校验
 
 所有已配置运行时样本均在执行前绑定并核对精确 `requirement_id|qualified_item_id|route_kind`。只匹配 requirement、不匹配来源层的 Teacher 选择现在失败关闭；resume 端仍再次按同一三元组验证。`LZT` 样本守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。本项没有新增 fresh receipt 或 rollout proof，严格索引保持 `2/26`，`formal_product_training_authorized=false`。

@@ -33,7 +33,8 @@ param(
         "farm_animal_deluxe_product_sample",
         "fish_pond_output_sample",
         "machine_output_sample",
-        "solar_panel_output_sample")]
+        "solar_panel_output_sample",
+        "tree_moss_harvest_sample")]
     [string] $Scenario = "sap_prefix",
     [string] $ReplayAcquisitionQueue = "",
     [switch] $DownstreamSmokeOnly,
@@ -71,6 +72,7 @@ $sampleRequirementId = switch ($Scenario) {
     "fish_pond_output_sample" { "full_shipment:item:812" }
     "machine_output_sample" { "full_shipment:item:257" }
     "solar_panel_output_sample" { "full_shipment:item:787" }
+    "tree_moss_harvest_sample" { "full_shipment:item:Moss" }
     default { "full_shipment:item:92" }
 }
 $sampleQualifiedItemId = switch ($Scenario) {
@@ -88,6 +90,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "fish_pond_output_sample" { "(O)812" }
     "machine_output_sample" { "(O)257" }
     "solar_panel_output_sample" { "(O)787" }
+    "tree_moss_harvest_sample" { "(O)Moss" }
     default { "(O)92" }
 }
 $sampleExpectedRouteKind = switch ($Scenario) {
@@ -105,6 +108,7 @@ $sampleExpectedRouteKind = switch ($Scenario) {
     "fish_pond_output_sample" { "native_fish_pond_output" }
     "machine_output_sample" { "machine_output" }
     "solar_panel_output_sample" { "native_solar_panel_output" }
+    "tree_moss_harvest_sample" { "native_tree_moss_harvest" }
     default { "native_wild_tree_chop_drop" }
 }
 $sampleRankingOptionId = switch ($Scenario) {
@@ -122,6 +126,7 @@ $sampleRankingOptionId = switch ($Scenario) {
     "fish_pond_output_sample" { "fishing.service_fish_ponds" }
     "machine_output_sample" { "farm.collect_machine_outputs" }
     "solar_panel_output_sample" { "farm.collect_machine_outputs" }
+    "tree_moss_harvest_sample" { "foraging.harvest_tree_moss" }
     default { "foraging.chop_wild_tree" }
 }
 $cropFixture = switch ($Scenario) {
@@ -301,6 +306,17 @@ $machineFixture = switch ($Scenario) {
             MachineItemId = "231"
             QualifiedItemId = "(O)787"
             Quantity = 1
+            TargetTileX = 64
+            TargetTileY = 15
+        }
+    }
+    default { $null }
+}
+$clearObstacleFixture = switch ($Scenario) {
+    "tree_moss_harvest_sample" {
+        [pscustomobject][ordered]@{
+            Slug = "tree-moss-harvest"
+            RuleKey = "tree_moss"
             TargetTileX = 64
             TargetTileY = 15
         }
@@ -993,6 +1009,40 @@ try {
             -Value $forageSetupResult.Raw
         if ([string]$forageSetupResult.Value.status -ne "applied" -or
             [string]$forageSetupResult.Value.primitive_verification_status -ne
+                "verified") {
+            throw "Ready $fixtureSlug proof fixture setup failed."
+        }
+    }
+    elseif ($null -ne $clearObstacleFixture) {
+        $fixtureSlug = [string]$clearObstacleFixture.Slug
+        $obstacleSetupSource = Get-FreshSnapshot -TimeoutSeconds 60
+        $obstacleSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.ready_$($fixtureSlug.Replace('-', '_'))"
+            before_state_hash = [string]$obstacleSetupSource.Value.state_hash
+            option_id = "debug.setup_clear_obstacle"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $isolatedSavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$clearObstacleFixture.TargetTileX
+            target_tile_y = [int]$clearObstacleFixture.TargetTileY
+            rule_key = [string]$clearObstacleFixture.RuleKey
+        }
+        $obstacleSetupResult = Invoke-JsonPost `
+            -Url "$executorRoot/api/v1/training/execute" `
+            -Body $obstacleSetupRequest
+        Write-JsonFile -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-request.json") `
+            -Value $obstacleSetupRequest
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-result.json") `
+            -Value $obstacleSetupResult.Raw
+        if ([string]$obstacleSetupResult.Value.status -ne "applied" -or
+            [string]$obstacleSetupResult.Value.primitive_verification_status -ne
                 "verified") {
             throw "Ready $fixtureSlug proof fixture setup failed."
         }

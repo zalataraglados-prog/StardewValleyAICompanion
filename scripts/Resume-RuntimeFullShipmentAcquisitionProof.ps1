@@ -229,6 +229,9 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:787|(O)787|native_solar_panel_output" {
         "solar_panel_output_sample"
     }
+    "full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest" {
+        "tree_moss_harvest_sample"
+    }
     default {
         throw "No acquisition sample scenario maps execution binding " +
             "'$requirementId|$qualifiedItemId|$routeKind'."

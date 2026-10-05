@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-05 Full Shipment 树苔藓层接入共享清障内核
+
+`native_tree_moss_harvest` 现以 `(O)Moss`、`Tree.CreateMossItem` 和 `foraging.harvest_tree_moss` 为唯一代表身份。样本夹具只建立合法原生前态；规划、编译、移动、镰刀生命周期、苔藓掉落和回执全部复用现有树苔藓链。该层不会与普通树产物或砍树层合并，也不新增并行动作实现。
+
+异机守卫 `17/17`、game-free `138/138`、Bootstrap Release clean。已装配待原生运行的分层为 14，尚未装配 10；生产 coverage 仍为 `2/26`。
+
 ## 2026-10-05 Full Shipment 样本路线类型前置门
 
 共享样本 runner 已把场景身份扩展为 `requirement_id + qualified_item_id + expected route_kind`，并在 execution binding 建成后、调用游戏执行器前核对完整三元组。该门专门阻止同一物品的多来源路线串层；错误选择不会再消耗原生运行时间，也不能依赖后续 resume 才暴露。

@@ -1,5 +1,12 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native tree-moss sample identity
+
+The locked Full Shipment inventory identifies Moss `(O)Moss` as `full_shipment:item:Moss`, route kind
+`native_tree_moss_harvest`, source `Tree.CreateMossItem`, endpoint `foraging.harvest_tree_moss`, and supporting option
+`foraging.harvest_tree_product`. The representative setup is a mature, seedless, mossy base `Tree`; collection must use
+the existing native scythe lifecycle and retain the exact route kind. Runtime-stratum admission remains pending.
+
 ## 2026-10-05 runtime sample identity binding rule
 
 An executable Full Shipment sample identity is the exact tuple `requirement_id / qualified_item_id / route_kind`, not

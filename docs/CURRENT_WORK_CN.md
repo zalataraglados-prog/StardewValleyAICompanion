@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-05 Full Shipment 树苔藓样本复用原生镰刀链
+
+- `(O)Moss` 已按唯一权威身份 `full_shipment:item:Moss / native_tree_moss_harvest / Tree.CreateMossItem / foraging.harvest_tree_moss` 接入共享样本 runner。
+- proof 根外只用现有 `debug.setup_clear_obstacle` 建立成熟、无种子、带苔藓的 base `Tree` 和原生镰刀；正式 acquisition 继续复用既有透明投影、候选、DailyPlan、`executor.clear_obstacle`、原生 `Tree.performToolAction -> Tree.CreateMossItem` 与严格回执，没有新增第二套苔藓执行器。
+- 严格 resume tuple 为 `full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest`。`LZT` 样本守卫 `17/17`、Core game-free `138/138`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment receipt，生产索引仍为 `2/26`；当前已装配待运行 14 层、未装配 10 层。
+
 ## 2026-10-05 Full Shipment 样本执行绑定按路线类型失败关闭
 
 - 每个现有样本场景现在显式声明唯一预期 `route_kind`；生成 execution binding 后、进入任何游戏动作前，runner 会逐字段核对 `requirement_id / qualified_item_id / route_kind`。

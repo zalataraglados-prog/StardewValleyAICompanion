@@ -1,5 +1,15 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: native tree-moss sample reuses the scythe chain
+
+- The representative identity is
+  `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / Tree.CreateMossItem / foraging.harvest_tree_moss`.
+- The proof-external fixture creates only a legal mature, seedless, mossy base tree and a native scythe. The acquisition
+  path reuses the existing projection, candidate, DailyPlan, `executor.clear_obstacle`, native tree tool lifecycle and
+  strict receipt; it does not introduce a second moss executor.
+- Off-machine guards passed `17/17`, game-free tests passed `138/138`, and Bootstrap Release built cleanly. Fourteen
+  strata are staged and ten remain unstaged; without a fresh Full Shipment receipt, production remains `2/26`.
+
 ## 2026-10-05: runtime samples reject the wrong acquisition layer before execution
 
 - Every configured sample now declares one expected `route_kind`. After the execution binding is built and before any
