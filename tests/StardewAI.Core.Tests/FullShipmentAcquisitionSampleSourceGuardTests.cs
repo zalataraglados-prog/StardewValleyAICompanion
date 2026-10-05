@@ -665,6 +665,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             interactive,
             StringComparison.Ordinal);
         Assert.Contains(
+            "$expectedAuthorityMapping = \"I:\\: => $authorityMirror\"",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (-not $authorityMappingPresent)",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1",
             interactive,
             StringComparison.Ordinal);
