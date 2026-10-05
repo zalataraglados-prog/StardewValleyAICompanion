@@ -727,7 +727,7 @@ public sealed partial class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "daily" or "clock" or "identity" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "fishing" or "fishing_forecast" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "clock" or "identity" or "clearance" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "training_mining" or "fishing" or "fishing_forecast" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static string? SnapshotFishingLocationId(
@@ -820,6 +820,18 @@ public sealed partial class ModEntry : Mod
             };
         }
 
+        if (profile is "clearance")
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "world",
+                "player",
+                "menus",
+                "current_location",
+                "unavailable_fields",
+            };
+        }
+
         var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "world",
@@ -861,6 +873,15 @@ public sealed partial class ModEntry : Mod
             domains.Add("world_progress");
             domains.Add("mods");
             domains.Add("modded_state");
+        }
+
+        if (profile is "training_mining")
+        {
+            domains.Add("farm");
+            domains.Add("current_location");
+            domains.Add("locations");
+            domains.Add("mining");
+            domains.Add("world_progress");
         }
 
         if (profile is "fishing")

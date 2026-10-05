@@ -8,19 +8,26 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
 {
     private static PolicyTeacherRequirementTransition[] VerifyTransitions(
         CurrentStageOneCollectionTeacherPreferenceLabel preference,
+        QueueExecutionReceiptEnvelope? receipt,
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
         var selected = preference.SelectedCandidate!;
         var queueItems = preference.CompiledQueue!.Items;
         return selected.RequirementCredits
-            .Select(credit => VerifyTransition(credit, queueItems, before, after))
+            .Select(credit => VerifyTransition(
+                credit,
+                queueItems,
+                receipt,
+                before,
+                after))
             .ToArray();
     }
 
     private static PolicyTeacherRequirementTransition VerifyTransition(
         CurrentCollectionRequirementCredit credit,
         ActionQueueItem[] queueItems,
+        QueueExecutionReceiptEnvelope? receipt,
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
@@ -32,6 +39,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 after),
             "native_full_shipment_completion" => VerifyFullShipment(
                 credit,
+                queueItems,
+                receipt,
                 before,
                 after),
             "native_museum_donation_completion" => VerifyCollectionBoolean(
@@ -102,6 +111,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
 
     private static PolicyTeacherRequirementTransition VerifyFullShipment(
         CurrentCollectionRequirementCredit credit,
+        ActionQueueItem[] queueItems,
+        QueueExecutionReceiptEnvelope? receipt,
         SnapshotEnvelope before,
         SnapshotEnvelope after)
     {
@@ -132,14 +143,156 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             afterPending.Value > beforePending.Value &&
             beforeInventory.Value - afterInventory.Value >=
                 afterPending.Value - beforePending.Value;
+        var terminalBefore = "not_required";
+        var terminalAfter = "not_required";
+        var terminalStepPending = !settled && !pending &&
+            VerifyPendingShipmentTerminalStep(
+                credit,
+                queueItems,
+                receipt,
+                beforePending,
+                afterPending,
+                beforeInventory,
+                afterInventory,
+                after,
+                out terminalBefore,
+                out terminalAfter);
         return Transition(
             credit,
             settled
                 ? "native_full_shipment_false_to_true"
-                : "exact_pending_native_shipment_increased",
-            $"shipped={BooleanText(beforeShipped)};pending={CountText(beforePending)};inventory={CountText(beforeInventory)}",
-            $"shipped={BooleanText(afterShipped)};pending={CountText(afterPending)};inventory={CountText(afterInventory)}",
-            settled || pending);
+                : terminalStepPending
+                    ? "exact_pending_native_shipment_terminal_step_increased"
+                    : "exact_pending_native_shipment_increased",
+            $"shipped={BooleanText(beforeShipped)};pending={CountText(beforePending)};inventory={CountText(beforeInventory)};terminal={terminalBefore}",
+            $"shipped={BooleanText(afterShipped)};pending={CountText(afterPending)};inventory={CountText(afterInventory)};terminal={terminalAfter}",
+            settled || pending || terminalStepPending);
+    }
+
+    private static bool VerifyPendingShipmentTerminalStep(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem[] queueItems,
+        QueueExecutionReceiptEnvelope? receipt,
+        int? queueBeforePending,
+        int? queueAfterPending,
+        int? queueBeforeInventory,
+        int? queueAfterInventory,
+        SnapshotEnvelope after,
+        out string terminalBefore,
+        out string terminalAfter)
+    {
+        terminalBefore = "unavailable";
+        terminalAfter = "unavailable";
+        if (receipt is null || credit.RequiredQuantity <= 0 ||
+            queueItems.Length == 0 ||
+            receipt.StepResults.Length != queueItems.Length)
+            return false;
+
+        var matches = queueItems
+            .Select((item, index) => (Item: item, Index: index))
+            .Where(value => string.Equals(
+                    value.Item.OptionId,
+                    "executor.ship_inventory_item_to_bin",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(value.Item, "qualified_item_id"),
+                    credit.QualifiedItemId,
+                    StringComparison.Ordinal))
+            .ToArray();
+        if (matches.Length != 1 ||
+            matches[0].Index != queueItems.Length - 1)
+            return false;
+
+        var terminal = receipt.StepResults.SingleOrDefault(step =>
+            step.QueueItemIndex == matches[0].Index &&
+            string.Equals(
+                step.QueueItemId,
+                matches[0].Item.QueueItemId,
+                StringComparison.Ordinal));
+        if (terminal is null ||
+            !terminal.SelectedQueueCandidateCompleted ||
+            !string.Equals(terminal.Status, "applied", StringComparison.Ordinal) ||
+            !string.Equals(
+                terminal.PrimitiveKind,
+                "ship_inventory_item_to_bin",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                terminal.PrimitiveVerificationStatus,
+                "verified",
+                StringComparison.Ordinal) ||
+            !string.Equals(terminal.AfterStateHash, after.StateHash,
+                StringComparison.Ordinal))
+            return false;
+
+        var inventoryPath = "player.inventory." +
+            credit.QualifiedItemId + ".count";
+        var shippingPath = "farm.shipping_bin." +
+            credit.QualifiedItemId + ".count";
+        if (!TryReadChangedFactCounts(
+                terminal.ChangedFacts,
+                inventoryPath,
+                out var terminalInventoryBefore,
+                out var terminalInventoryAfter) ||
+            !TryReadChangedFactCounts(
+                terminal.ChangedFacts,
+                shippingPath,
+                out var terminalPendingBefore,
+                out var terminalPendingAfter))
+            return false;
+
+        terminalBefore =
+            $"pending={terminalPendingBefore};inventory={terminalInventoryBefore}";
+        terminalAfter =
+            $"pending={terminalPendingAfter};inventory={terminalInventoryAfter}";
+        return terminalInventoryBefore - terminalInventoryAfter ==
+                credit.RequiredQuantity &&
+            terminalPendingAfter - terminalPendingBefore ==
+                credit.RequiredQuantity &&
+            queueBeforePending == terminalPendingBefore &&
+            queueAfterPending == terminalPendingAfter &&
+            queueBeforeInventory.HasValue &&
+            terminalInventoryBefore >= queueBeforeInventory.Value &&
+            queueAfterInventory == terminalInventoryAfter;
+    }
+
+    private static bool TryReadChangedFactCounts(
+        System.Text.Json.JsonElement changedFacts,
+        string path,
+        out int before,
+        out int after)
+    {
+        before = 0;
+        after = 0;
+        if (changedFacts.ValueKind !=
+            System.Text.Json.JsonValueKind.Array)
+            return false;
+        var matches = changedFacts.EnumerateArray()
+            .Where(value => string.Equals(
+                ReadString(value, "path"),
+                path,
+                StringComparison.Ordinal))
+            .ToArray();
+        return matches.Length == 1 &&
+            TryReadChangedFactInt(matches[0], "before", out before) &&
+            TryReadChangedFactInt(matches[0], "after", out after);
+    }
+
+    private static bool TryReadChangedFactInt(
+        System.Text.Json.JsonElement fact,
+        string property,
+        out int result)
+    {
+        result = 0;
+        if (!fact.TryGetProperty(property, out var value))
+            return false;
+        return value.ValueKind switch
+        {
+            System.Text.Json.JsonValueKind.Number =>
+                value.TryGetInt32(out result),
+            System.Text.Json.JsonValueKind.String =>
+                int.TryParse(value.GetString(), out result),
+            _ => false
+        };
     }
 
     private static PolicyTeacherRequirementTransition VerifyCollectionBoolean(

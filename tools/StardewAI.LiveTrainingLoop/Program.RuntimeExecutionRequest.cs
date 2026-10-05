@@ -447,6 +447,15 @@ static partial class Program
         var harvestMethod = ReadQueueParameterString(item, "harvest_method");
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
         var debrisIndex = ReadQueueParameterInt(item, "debris_index");
+        var deferredPickupSourceKind = ReadQueueParameterString(
+            item,
+            "deferred_pickup_source_kind");
+        var deferredPickupDebrisItemTotalBefore = ReadQueueParameterInt(
+            item,
+            "deferred_pickup_debris_item_total_before");
+        var deferredPickupGuaranteedMinimumQuantity = ReadQueueParameterInt(
+            item,
+            "deferred_pickup_guaranteed_minimum_quantity");
         var inputSlotIndex = ReadQueueParameterInt(item, "input_slot_index");
         var machinePredictionContractFingerprint =
             ReadQueueParameterString(
@@ -1073,6 +1082,12 @@ static partial class Program
         {
             executionRequest.DebrisIndex = debrisIndex.Value;
         }
+        executionRequest.DeferredPickupSourceKind =
+            deferredPickupSourceKind;
+        executionRequest.DeferredPickupDebrisItemTotalBefore =
+            deferredPickupDebrisItemTotalBefore;
+        executionRequest.DeferredPickupGuaranteedMinimumQuantity =
+            deferredPickupGuaranteedMinimumQuantity;
         if (inputSlotIndex.HasValue)
         {
             executionRequest.InputSlotIndex = inputSlotIndex.Value;

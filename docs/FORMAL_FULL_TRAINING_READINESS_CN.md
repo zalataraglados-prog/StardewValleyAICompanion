@@ -1,5 +1,89 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-05 当前准入结论与证据边界
+
+- `formal_product_training_authorized=false` 保持不变。Sap 与放射性矿石已有当前版本 fresh 原生证明，但防风草因停止低收益的全量重放，没有形成可接纳的新版本证明，因此本轮不得宣称严格索引已升至 `3/26`。
+- Sap 证明：`F:\StardewAI-TestLab\artifacts\runtime-full-shipment-sap-refresh\runtime-full-shipment-sap-refresh-20261005-183733`。原生睡眠 `applied/verified`，新日、存档提交、菜单关闭和世界稳定均被验证，recurrence prefix checkpoint 通过。
+- 放射性矿石证明：`F:\StardewAI-TestLab\artifacts\runtime-full-shipment-radioactive-node\runtime-full-shipment-radioactive-node-20261005-134024`，来源固定为 `(O)95 -> GameLocation.breakStone -> (O)909`，route occurrence 为 `full_shipment:full_shipment:item:909:0:0`。
+- 生产索引只在证据集合稳定后统一重建。日常开发采用定向原生回放加 game-free 全套，不再为与改动无关的层重复生成全部日历轴。任何被中断或日历指纹漂移的旧证明都只能保留为诊断材料，不能进入正式训练准入。
+- 部署准入新增硬门：`-NoBuild` 只能使用不早于源码的构建产物，部署后源/目标 SHA-256 必须一致。本轮守卫 `3/3`、Core game-free `212/212`。
+
+## 2026-10-05 Full Shipment 树苔藓样本准入状态
+
+苔藓 `(O)Moss` 已按 `native_tree_moss_harvest` 接入现有 `foraging.harvest_tree_moss -> executor.clear_obstacle` 原生镰刀链，严格 resume tuple 为 `full_shipment:item:Moss|(O)Moss|native_tree_moss_harvest`。`LZT` 样本守卫 `17/17`、Core game-free `138/138`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending；已装配待运行 14 层、未装配 10 层、严格索引 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment acquisition 路线类型前置校验
+
+所有已配置运行时样本均在执行前绑定并核对精确 `requirement_id|qualified_item_id|route_kind`。只匹配 requirement、不匹配来源层的 Teacher 选择现在失败关闭；resume 端仍再次按同一三元组验证。`LZT` 样本守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。本项没有新增 fresh receipt 或 rollout proof，严格索引保持 `2/26`，`formal_product_training_authorized=false`。
+
+## 2026-10-05 Full Shipment 太阳能板产物样本准入状态
+
+电池组 `(O)787` 已按 `native_solar_panel_output` 接入现有 `farm.collect_machine_outputs -> executor.collect_machine_output` 链，严格 resume tuple 为 `full_shipment:item:787|(O)787|native_solar_panel_output`。`LZT` 样本守卫 `15/15`、Core game-free `136/136`、Bootstrap Release `0 warning / 0 error`。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 机器直接产物样本准入状态
+
+蘑菇树桩 `(BC)128` 的 `(O)257` 已按 `machine_output` 接入现有 `farm.collect_machine_outputs -> executor.collect_machine_output` 链，严格 resume tuple 为 `full_shipment:item:257|(O)257|machine_output`。`LZT` 样本守卫 `14/14`、Core game-free `135/135`、Bootstrap Release `0 warning / 0 error`。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 鱼塘产物样本准入状态
+
+鱼籽 `(O)812` 已按 `native_fish_pond_output` 接入现有 `fishing.service_fish_ponds -> executor.collect_fish_pond_output` 链，严格 resume tuple 为 `full_shipment:item:812|(O)812|native_fish_pond_output`。`LZT` 样本守卫 `13/13`、Core game-free `134/134`、Bootstrap Release `0 warning / 0 error`。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 高级动物产物样本准入状态
+
+大瓶牛奶 `(O)186` 已按 `native_farm_animal_deluxe_produce` 接入现有动物产物链，严格 resume tuple 为 `full_shipment:item:186|(O)186|native_farm_animal_deluxe_produce`。`LZT` 样本守卫 `12/12`、Core game-free `133/133`、Bootstrap Release `0 warning / 0 error`。尚无本物品 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 基础动物产物样本准入状态
+
+牛奶 `(O)184` 已按 `native_farm_animal_produce` 接入现有 `farm.collect_animal_products -> executor.collect_animal_product` 链，严格 resume tuple 为 `full_shipment:item:184|(O)184|native_farm_animal_produce`。`LZT` 样本守卫 `11/11`、Core game-free `132/132`、Bootstrap Release `0 warning / 0 error`。EVD-222 不能替代本层 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 果树产物样本准入状态
+
+樱桃 `(O)638` 已按 `native_fruit_tree_produce` 接入现有 `foraging.harvest_fruit_tree` 原生链，严格 resume tuple 为 `full_shipment:item:638|(O)638|native_fruit_tree_produce`。`LZT` 样本守卫 `10/10`、Core game-free `131/131`、Bootstrap Release `0 warning / 0 error`。历史果树 action smoke 不能替代 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 地点觅食物样本准入状态
+
+野山葵 `(O)16` 已按 `native_location_forage_spawn` 接入 EVD-211 的现有 spawned-object 采集链，精确 resume tuple 已锁定。异机样本守卫 `9/9`、Core game-free `130/130` 和 Bootstrap Release 已通过。尚无 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引与训练授权不变。
+
+## 2026-10-05 Full Shipment 春葱样本准入状态
+
+春葱 `(O)399` 已通过共享 crop fixture 接入既有 `foraging.harvest_spring_onions -> executor.harvest_crop` 链，严格 resume tuple 已锁定。异机样本守卫 `8/8`、Core game-free `129/129` 和 Bootstrap Release 已通过。尚无新的 Full Shipment acquisition receipt，因此该层仍为 pending，严格索引与训练授权不变。
+
+## 2026-10-05 Full Shipment 岛屿棕榈样本准入状态
+
+椰子 `(O)88` 的 `native_wild_tree_seed` 样本已接入现有树产品链，并以精确 `IslandSouth 20,20` 根区别于 Farm 样本。异机样本守卫 `7/7`、Core game-free `128/128` 和 Bootstrap Release 已通过。没有 fresh Full Shipment acquisition receipt，因此该层仍为 pending，严格索引和训练授权均不变。
+
+## 2026-10-05 Full Shipment 野树落种样本准入状态
+
+榛子 `(O)408` 已按 `native_wild_tree_seed_drop` 接入共享 forage 场景与既有 `foraging.harvest_tree_product` 链，严格 resume tuple 已锁定。异机样本守卫 `6/6`、Core game-free `127/127` 和 Bootstrap Release 均通过。历史原生树产品 action smoke 只证明执行链可复用；新的 Full Shipment receipt 与 rollout proof 尚未产生，因此该层仍为 pending，严格索引继续为 `2/26`。
+
+## 2026-10-05 Full Shipment 茶树样本准入状态
+
+茶叶 `(O)815` 已按 `native_tea_bush_harvest` 接入共享 forage fixture 配置与既有 `foraging.harvest_bushes` 链，精确 resume tuple 为 `full_shipment:item:815|(O)815|native_tea_bush_harvest`。异机专项守卫 `5/5`、Core game-free `126/126` 和 Bootstrap Release 已通过。既有茶树 action smoke 不是本次 acquisition rollout proof；茶树仍为 pending，严格索引保持 `2/26`，训练授权不变。
+
+## 2026-10-05 Full Shipment 姜样本准入状态
+
+`native_ginger_harvest` 已按 `full_shipment:item:829 / (O)829 / foraging.harvest_ginger` 接入现有 Full Shipment 样本与断点 proof 流程，复用现有原生姜 fixture 和执行链。异机 Bootstrap Release、路由分派、静态可编译性以及 Core game-free `125/125` 已通过。该状态只表示代码可进入原生采证，不表示已取得新回执；浆果与姜均仍为 pending，严格索引保持 `2/26`，`runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false`。
+
+## 2026-10-04 Full Shipment 灌木样本准入状态
+
+`native_bush_shake` 的权威 requirement、lowering、既有候选/原语复用、样本运行入口和通用断点 proof 已闭合到代码与离线回归。Core game-free 为 `124/124`，旧防风草 proof 重新构建后仍严格通过。当前缺少的唯一材料是交互桌面会话中的新原生浆果采集执行证据；因此 `runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false`，严格索引仍为 `2/26`。只有新回执通过独立 rollout 重建并被生产 manifest 接纳后，才允许提升为 `3/26`。
+
+## 2026-10-04 Full Shipment 作物抽样证据
+
+Full Shipment 静态权威覆盖保持 `154/154`、641 条 route、26 个运行时抽样层。普通作物候选的来源身份已按 1.6.15 原生 `Crop.netSeedIndex` 修复，防风草 `(O)24` 的 `harvests_as` 原生执行、fresh 终态、reservation settlement、rollout checkpoint 和最终严格 proof 均通过。加上既有 Sap 样本，严格索引现为 `2/26`，共享 shipping recurrence 已验证，剩余 24 层。
+
+本结果只解除普通作物来源缺失这一硬阻塞，不解除训练门。`runtime_sample_evidence_complete=false`、`formal_product_training_authorized=false` 保持不变。后续必须按剩余层复用或采集精确原生样本，并继续绑定唯一权威 route、源身份、队列、执行回执和 fresh 快照；不得用只读 smoke 名称、人工声明或同层重复物品计数。
+
+## 2026-10-04 当前准入口径：Full Shipment 分层原生证据
+
+- Full Shipment 的游戏目标与权威静态分母仍是完整 `154/154`；这一点没有降低。当前生产静态清单继续要求全部需求、来源身份、endpoint/supporting option、运行时绑定与 supporting-transition 谱系精确闭合。
+- 由于无法为开发验证稳定生成覆盖 154 个物品、跨季节/年份/特殊条件的完整原生存档集合，正式训练准入不再要求机械执行 154 次 fresh-save recurrence。运行时证据改为按 `route_kind + source_evidence_mode + endpoint options + supporting options + inline support transitions` 分层抽样；当前生产静态清单生成 26 个运行时层，每层要求一条精确原生 acquisition proof。
+- 公共的出货、回家、原生睡眠与次日结算尾链由一条独立重算的 Full Shipment recurrence prefix 证明。Sap 已取得第一条真实 fresh-save `1/154`：原生砍树、debris 拾取、出货、恢复与睡眠结算均通过，prefix 为 `verified_iteration_count=1 / remaining_item_count=153 / ready_for_next_iteration=true`。该 `1/154` 是公共递归链诊断证据，不代表完整 Full Shipment 已完成。
+- `full_shipment_runtime_sample_evidence_index.v1` 会重新构建 supplied acquisition rollout proof，绑定唯一 route occurrence、权威 requirement/lowering 哈希和静态分层签名，并单独重算共享 shipping prefix。只读 smoke 名称、人工声明、重复 layer 或陈旧 receipt 不计覆盖。
+- 完整 `154/154` fresh-save recurrence 构建器继续保留，用于 AI 正常游戏能力和可选最终验收；不再作为 Full Shipment Teacher coverage 或 formal product training 的前置条件。
+- 当前 Goal Method 生产覆盖仍为 `4/19`，`formal_product_training_authorized=false`。分层证据索引完成前不得把 Full Shipment 提升为 coverage-ready；即使 Full Shipment 单项完成，也仍不能绕过其余 criterion、数据分区、checkpoint、Product Executor、版本锁与正式 promotion review。
+- 历史章节中出现的“生产 recurrence 仍为 `0/154`”或“必须完整 154-requirement recurrence 才能训练准入”均只描述当时状态；不得再作为当前口径引用。
+
 ## 2026-09-28 Full Shipment 原生恢复链准入修复
 
 Full Shipment recurrence 的结算证据现在允许在投入出货箱后，先按既有 `recovery.stabilize_day` 完成最多 8 段“一个连接点一次重规划”的原生恢复，再接原有专用睡眠结算回执。每段必须通过共享队列/原生执行回执校验，并保持同一存档与玩家、同一天、相同 Full Shipment 进度和精确的待结算箱内物品；中间睡眠、断链、乱序、重复证据或状态漂移全部拒绝。prefix 回执会记录每段四类证据文件的 SHA-256。该变更修复了真实角色从农场出货箱走回床会被旧证明合同错误拒绝的问题，不新增执行器，也不解除正式训练门；生产 recurrence 仍为 `0/154`。

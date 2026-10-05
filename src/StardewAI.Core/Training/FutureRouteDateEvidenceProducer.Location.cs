@@ -82,6 +82,27 @@ namespace StardewAI.Core.Training
                         "future_location_route_batch_contains_invalid_request"))
                     .ToArray();
             }
+            var results = new FutureLocationRouteDateEvidenceProduction[
+                materialized.Length];
+            var routedRequestIndexes = new List<int>();
+            for (var index = 0; index < materialized.Length; index++)
+            {
+                var request = materialized[index];
+                if (string.Equals(
+                        request.StartLocation,
+                        request.TargetLocation,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    results[index] = AlreadyAtLocation(request, timing);
+                }
+                else
+                {
+                    routedRequestIndexes.Add(index);
+                }
+            }
+            if (routedRequestIndexes.Count == 0)
+                return results;
+
             if (!TryCreateContext(
                     routeGraph,
                     socialRouteDateEvidence,
@@ -89,17 +110,19 @@ namespace StardewAI.Core.Training
                     out var context,
                     out var contextBlocks))
             {
-                return materialized
-                    .Select(_ => BlockedLocation(contextBlocks))
-                    .ToArray();
+                foreach (var index in routedRequestIndexes)
+                    results[index] = BlockedLocation(contextBlocks);
+                return results;
             }
 
-            return materialized
-                .Select(request => ProduceLocationArrival(
+            foreach (var index in routedRequestIndexes)
+            {
+                results[index] = ProduceLocationArrival(
                     context,
-                    request,
-                    timing))
-                .ToArray();
+                    materialized[index],
+                    timing);
+            }
+            return results;
         }
 
         private static FutureLocationRouteDateEvidenceProduction
@@ -108,6 +131,14 @@ namespace StardewAI.Core.Training
                 FutureLocationRouteDateEvidenceRequest request,
                 FutureRouteTimingCalibration timing)
         {
+            if (string.Equals(
+                    request.StartLocation,
+                    request.TargetLocation,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return AlreadyAtLocation(request, timing);
+            }
+
             var search = SearchFeasibleLocationRoute(
                 context.Graph,
                 context.DateIndex,
@@ -127,6 +158,19 @@ namespace StardewAI.Core.Training
                 SegmentEvidence = search.Segments
             };
         }
+
+        private static FutureLocationRouteDateEvidenceProduction
+            AlreadyAtLocation(
+                FutureLocationRouteDateEvidenceRequest request,
+                FutureRouteTimingCalibration timing) => new()
+            {
+                Status = FutureRouteDateEvidenceProductionStatus.Produced,
+                GuaranteedArrivalByTime = request.EarliestDepartureTime,
+                TimingEvidenceKind = timing.EvidenceKind,
+                TimingEvidenceId = timing.EvidenceId,
+                Path = Array.Empty<TransparentRouteEdge>(),
+                SegmentEvidence = Array.Empty<FutureRouteSegmentEvidence>()
+            };
 
         private static string? ValidateLocationInputs(
             FutureLocationRouteDateEvidenceRequest request,

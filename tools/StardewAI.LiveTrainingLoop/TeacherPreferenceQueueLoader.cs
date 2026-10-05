@@ -29,6 +29,24 @@ public static class TeacherPreferenceQueueLoader
         return JsonNode.Parse(queue.ToJsonString())!.AsObject();
     }
 
+    public static async Task<JsonObject> LoadQueueAsync(
+        string path,
+        string currentStateHash,
+        string executionMode)
+    {
+        var fullPath = Path.GetFullPath(path);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException(
+                "Precompiled queue artifact was not found.",
+                fullPath);
+
+        var queue = JsonNode.Parse(await File.ReadAllTextAsync(fullPath))
+            as JsonObject ?? throw new InvalidDataException(
+                "Precompiled queue artifact must contain one JSON object.");
+        Validate(queue, currentStateHash, executionMode);
+        return JsonNode.Parse(queue.ToJsonString())!.AsObject();
+    }
+
     public static void Validate(
         JsonObject queue,
         string currentStateHash,

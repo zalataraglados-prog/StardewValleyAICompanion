@@ -53,25 +53,67 @@ public sealed partial class ModEntry : Mod
         var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var beforeObserved = DebrisObservedEffect(location, target, request.DebrisIndex);
+        var deferredNativeDrop = request.DeferredPickupSourceKind is
+            "native_wild_tree_chop_drop" or
+            "native_radioactive_ore_node";
         if (string.IsNullOrWhiteSpace(request.QualifiedItemId))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));
             return;
         }
-        if (!TryRebindPickupDebris(
+        if (deferredNativeDrop)
+        {
+            var inventoryNow = CountInventoryItem(request.QualifiedItemId);
+            var debrisNow = CountLocationDebrisChunks(
+                location,
+                request.QualifiedItemId);
+            if (!request.InventoryItemTotalBefore.HasValue ||
+                !request.DeferredPickupDebrisItemTotalBefore.HasValue ||
+                !request.DeferredPickupGuaranteedMinimumQuantity.HasValue ||
+                request.DeferredPickupGuaranteedMinimumQuantity.Value <= 0 ||
+                Math.Max(
+                    0,
+                    inventoryNow - request.InventoryItemTotalBefore.Value) +
+                Math.Max(
+                    0,
+                    debrisNow -
+                    request.DeferredPickupDebrisItemTotalBefore.Value) <
+                request.DeferredPickupGuaranteedMinimumQuantity.Value)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "pickup_debris",
+                    DebrisRequestedEffect(request),
+                    beforeObserved,
+                    "deferred_pickup_native_output_conservation_mismatch"));
+                return;
+            }
+        }
+        Debris debris;
+        Chunk chunk;
+        var rebound = deferredNativeDrop
+            ? TryRebindDeferredPickupDebris(
+                location,
+                target,
+                request.QualifiedItemId,
+                out debris,
+                out chunk)
+            : TryRebindPickupDebris(
                 location,
                 target,
                 request.DebrisIndex,
                 request.QualifiedItemId,
-                out var debris,
-                out var chunk))
+                out debris,
+                out chunk);
+        if (!rebound)
         {
             var itemCountAfterNativeCollection = CountInventoryItem(
                 request.QualifiedItemId);
             if (request.InventoryItemTotalBefore.HasValue &&
                 itemCountAfterNativeCollection >
                     request.InventoryItemTotalBefore.Value &&
-                ManhattanDistance(Game1.player.TilePoint, target) <= 3)
+                ManhattanDistance(Game1.player.TilePoint, target) <=
+                    (deferredNativeDrop ? 12 : 3))
             {
                 pending.Completion.SetResult(
                     CompletePickupDebrisAlreadyCollected(
@@ -494,6 +536,64 @@ public sealed partial class ModEntry : Mod
         return true;
     }
 
+    private static bool TryRebindDeferredPickupDebris(
+        GameLocation location,
+        Point sourceTile,
+        string qualifiedItemId,
+        out Debris debris,
+        out Chunk chunk)
+    {
+        const int maximumNativeDropDistanceTiles = 12;
+        var candidate = location.debris
+            .Select((value, debrisIndex) => new
+            {
+                Debris = value,
+                DebrisIndex = debrisIndex
+            })
+            .Where(value => string.Equals(
+                DebrisQualifiedItemId(value.Debris),
+                qualifiedItemId,
+                StringComparison.OrdinalIgnoreCase))
+            .SelectMany(value => value.Debris.Chunks.Select(
+                (candidateChunk, chunkIndex) => new
+                {
+                    value.Debris,
+                    value.DebrisIndex,
+                    Chunk = candidateChunk,
+                    ChunkIndex = chunkIndex,
+                    Tile = DebrisChunkTile(candidateChunk),
+                    Distance = ManhattanDistance(
+                        sourceTile,
+                        DebrisChunkTile(candidateChunk))
+                }))
+            .Where(value => value.Distance <=
+                maximumNativeDropDistanceTiles)
+            .OrderBy(value => value.Distance)
+            .ThenBy(value => value.Tile.Y)
+            .ThenBy(value => value.Tile.X)
+            .ThenBy(value => value.DebrisIndex)
+            .ThenBy(value => value.ChunkIndex)
+            .FirstOrDefault();
+        if (candidate is null)
+        {
+            debris = null!;
+            chunk = null!;
+            return false;
+        }
+        debris = candidate.Debris;
+        chunk = candidate.Chunk;
+        return true;
+    }
+
+    private static int CountLocationDebrisChunks(
+        GameLocation location,
+        string qualifiedItemId) => location.debris
+        .Where(value => string.Equals(
+            DebrisQualifiedItemId(value),
+            qualifiedItemId,
+            StringComparison.OrdinalIgnoreCase))
+        .Sum(value => value.Chunks.Count);
+
     private static Chunk? NearestDebrisChunk(
         Debris debris,
         Point target,
@@ -527,7 +627,10 @@ public sealed partial class ModEntry : Mod
 
     private static string DebrisRequestedEffect(TrainingExecutionRequest request)
     {
-        return "location.debris[" + (request.DebrisIndex.HasValue ? request.DebrisIndex.Value.ToString() : request.TargetTileX + "," + request.TargetTileY) + "].chunk_count_decreases_or_removed=true;player.inventory.updated;collection=native_proximity";
+        return "location.debris[" + (request.DebrisIndex.HasValue ? request.DebrisIndex.Value.ToString() : request.TargetTileX + "," + request.TargetTileY) + "].chunk_count_decreases_or_removed=true;player.inventory.updated;collection=native_proximity" +
+            (string.IsNullOrWhiteSpace(request.DeferredPickupSourceKind)
+                ? string.Empty
+                : ";deferred_source=" + request.DeferredPickupSourceKind);
     }
 
     private static string DebrisObservedEffect(GameLocation location, Point target, int? debrisIndex)

@@ -1,0 +1,58 @@
+# Full Shipment 分层样本短交接（2026-10-05）
+
+## 最新可接续状态
+
+- 源码在 `I:\StardewValleyAICompanion`；本机轻量/历史测试在 `E:`；高负载隔离运行环境在异机 `F:\StardewAI-TestLab`。异机已有完整游戏运行时，不再沿用“新电脑无运行环境”的旧描述。
+- Sap 当前版本证明 `runtime-full-shipment-sap-refresh-20261005-183733` 已通过全部四阶段。睡眠 `applied/verified`，日期 `1 -> 2`，菜单关闭，recurrence checkpoint 与 rollout proof 均通过，旧光标错误为零。
+- 放射性矿石证明 `runtime-full-shipment-radioactive-node-20261005-134024` 已通过，精确来源为 `(O)95 -> GameLocation.breakStone -> (O)909`，复用共享采矿/拾取链。
+- 防风草重放 `runtime-full-shipment-parsnip-refresh-20261005-192710` 因测试收益低被主动停止；产物保留但不可计入生产索引。本轮不宣称 `3/26`，正式训练仍禁用。
+- 远端包装器已取消错误的 `-SkipBuild` 使用。仓库部署脚本同时新增陈旧 DLL 拒绝和部署 SHA-256 校验；Core game-free `212/212`，部署守卫 `3/3`。
+- 后续默认只跑变更链路的原生回放和共享离线回归；26 层索引留到分层/日历/训练准入里程碑统一重建。不要再次为无关小改跑完整日历和全部样本。
+
+## 树苔藓入口
+
+- 苔藓已绑定 `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / foraging.harvest_tree_moss`，复用 `debug.setup_clear_obstacle(tree_moss)`、现有透明苔藓投影、DailyPlan、`executor.clear_obstacle` 与原生镰刀回执。
+- 最新异机守卫 `17/17`、Core game-free `138/138`、Bootstrap Release clean。已装配待运行 14 层、未装配 10 层，生产证据仍 `2/26`。
+
+## 最新控制修正
+
+- runner 现为每个样本声明预期 `route_kind`，并在 execution binding 生成后、进入游戏执行前核对 `requirement_id / qualified_item_id / route_kind` 完整三元组；resume 端继续独立复核。
+- 同物品多来源不再可能仅因 requirement 相同而串层。远端守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。
+- 该修正本身没有产生新原生证据；随后新增苔藓入口后，当前十四个待证样本、生产 `2/26`。
+
+## 当前事实
+
+- 生产运行时分层索引严格为 `2/26`：防风草覆盖 `harvests_as`，Sap 覆盖 `native_wild_tree_chop_drop`。
+- 浆果入口已绑定 `full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`。
+- 姜入口已绑定 `full_shipment:item:829 / (O)829 / native_ginger_harvest / foraging.harvest_ginger`。
+- 茶叶入口已绑定 `full_shipment:item:815 / (O)815 / native_tea_bush_harvest / foraging.harvest_bushes`。
+- 榛子入口已绑定 `full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop / foraging.harvest_tree_product`。
+- 椰子入口已绑定 `full_shipment:item:88 / (O)88 / native_wild_tree_seed / foraging.harvest_tree_product`。
+- 春葱入口已绑定 `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / foraging.harvest_spring_onions`。
+- 野山葵入口已绑定 `full_shipment:item:16 / (O)16 / native_location_forage_spawn / foraging.collect_spawned_objects`。
+- 樱桃入口已绑定 `full_shipment:item:638 / (O)638 / native_fruit_tree_produce / foraging.harvest_fruit_tree`。
+- 牛奶入口已绑定 `full_shipment:item:184 / (O)184 / native_farm_animal_produce / farm.collect_animal_products`。
+- 大瓶牛奶入口已绑定 `full_shipment:item:186 / (O)186 / native_farm_animal_deluxe_produce / farm.collect_animal_products`。
+- 鱼籽入口已绑定 `full_shipment:item:812 / (O)812 / native_fish_pond_output / fishing.service_fish_ponds`。
+- 蘑菇树桩产物入口已绑定 `full_shipment:item:257 / (O)257 / machine_output / farm.collect_machine_outputs`。
+- 太阳能板产物入口已绑定 `full_shipment:item:787 / (O)787 / native_solar_panel_output / farm.collect_machine_outputs`。
+- 树苔藓入口已绑定 `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / foraging.harvest_tree_moss`。
+- 前五者、野山葵与樱桃共用 forage fixture 编排，春葱与既有防风草共用 crop fixture 编排；全部复用现有候选、DailyPlan、动作编译器、产品执行器和 verifier，没有第二套动作系统。
+- 浆果、姜、茶叶、榛子位于 `Farm 64,15`；椰子使用 `wild_tree / island_palm / IslandSouth 20,20`。夹具设置不属于 acquisition proof 根，但 proof 根必须匹配场景的精确地点。
+
+## 已验证
+
+- `LZT` 隔离测试机上：GoalConditionedBootstrap Release `0 warning / 0 error`。
+- acquisition route dispatch 与 Full Shipment 静态可编译性自测通过。
+- 最新样本守卫 `17/17`、Core game-free `138/138` 通过。
+- 本机仅做轻量解析和 Git 检查，避免再次因大测试卡死。
+
+## 未完成与退出条件
+
+- 新电脑当前没有可用的星露谷原生运行环境；当前十四个待证样本都没有 fresh Full Shipment MonoGame 回执，不得计入覆盖。历史 action smoke 只能证明可复用性。
+- 原生环境可用时按浆果、姜、茶叶、榛子、椰子、春葱、野山葵、樱桃、牛奶、大瓶牛奶、鱼籽、蘑菇树桩产物、太阳能板产物、苔藓顺序运行。每层必须同时满足：原生执行 `applied/verified`、fresh 终态一致、精确 execution binding、独立 rollout proof 重建通过、生产 evidence index 接纳。
+- 满足一层才把 `2/26` 增加一；在全部 26 层与其余训练门完成前，`formal_product_training_authorized=false`。
+
+## 下一步
+
+继续从剩余 24 个生产缺失分层中选择可复用既有原生链的样本，沿同一脚本和断点 proof 合同增加入口；不要新增候选、编译器或执行器。大测试继续放到 `LZT`，本机不运行游戏或完整回归。

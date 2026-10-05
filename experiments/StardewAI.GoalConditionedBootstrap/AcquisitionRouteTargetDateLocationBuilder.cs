@@ -59,20 +59,23 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             source.GameVersion,
             source.TargetTotalDay,
             timingFullPath);
+        var wildTreeChopCandidates =
+            AcquisitionWildTreeChopCandidateIndex.Read(snapshotFullPath);
+        var currentRouteCandidates =
+            AcquisitionCurrentRouteCandidateIndex.Read(snapshotFullPath);
 
         var activeRoutes = source.Routes
             .Where(IsLocationApplicable)
             .ToArray();
-        var targetByOccurrence = state.RouteEvidenceAvailable
-            ? activeRoutes.ToDictionary(
-                route => route.RouteOccurrenceId,
-                route => AcquisitionLocationRouteTargetResolver.Resolve(
-                    route,
-                    staticByOccurrence[route.RouteOccurrenceId],
-                    state),
-                StringComparer.Ordinal)
-            : new Dictionary<string, AcquisitionLocationTargetResolution>(
-                StringComparer.Ordinal);
+        var targetByOccurrence = activeRoutes.ToDictionary(
+            route => route.RouteOccurrenceId,
+            route => AcquisitionLocationRouteTargetResolver.Resolve(
+                route,
+                staticByOccurrence[route.RouteOccurrenceId],
+                state,
+                wildTreeChopCandidates,
+                currentRouteCandidates),
+            StringComparer.Ordinal);
         var routeByLocation = ProduceLocationRoutes(
             targetByOccurrence.Values,
             state,
@@ -139,13 +142,6 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
             AcquisitionLocationRouteSnapshotState state,
             int targetTotalDay)
     {
-        if (!state.RouteEvidenceAvailable)
-        {
-            return new Dictionary<string,
-                FutureLocationRouteDateEvidenceProduction>(
-                    StringComparer.OrdinalIgnoreCase);
-        }
-
         var locations = resolutions
             .Where(resolution => resolution.EvidenceComplete)
             .SelectMany(resolution => resolution.Targets)

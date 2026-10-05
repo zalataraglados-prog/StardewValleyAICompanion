@@ -591,23 +591,11 @@ public sealed partial class ModEntry : Mod
                 {
                     if (shippingMenu.CanReceiveInput() && shippingMenu.currentPage == -1)
                     {
-                        sleep.SummaryPhase = ShipSummaryClosePhase.Position;
-                        sleep.SummaryPositionSet = false;
-                        sleep.SummaryPositionVerified = false;
+                        sleep.SummaryPhase = ShipSummaryClosePhase.Press;
                         sleep.SummaryButtonPressed = false;
                         sleep.SummaryButtonReleased = false;
                     }
                 }
-                break;
-
-            case ShipSummaryClosePhase.Position:
-                if (sleep.SummaryPositionSet && !sleep.SummaryPositionVerified)
-                    sleep.SummaryPhase = ShipSummaryClosePhase.PositionVerify;
-                break;
-
-            case ShipSummaryClosePhase.PositionVerify:
-                if (sleep.SummaryPositionVerified && !sleep.SummaryButtonPressed)
-                    sleep.SummaryPhase = ShipSummaryClosePhase.Press;
                 break;
 
             case ShipSummaryClosePhase.Press:
@@ -620,8 +608,6 @@ public sealed partial class ModEntry : Mod
                 {
                     sleep.SummaryButtonPressed = false;
                     sleep.SummaryButtonReleased = false;
-                    sleep.SummaryPositionSet = false;
-                    sleep.SummaryPositionVerified = false;
                     sleep.SummaryPhase = ShipSummaryClosePhase.WaitClose;
                 }
                 break;
@@ -637,46 +623,15 @@ public sealed partial class ModEntry : Mod
 
         switch (sleep.SummaryPhase)
         {
-            case ShipSummaryClosePhase.Position:
-                if (!sleep.SummaryPositionSet)
-                {
-                    var okButton = shippingMenu.okButton;
-                    if (okButton is null)
-                    {
-                        ReleaseSmapiLeftButtonOverride();
-                        CompleteBlockedSleep(sleep, "shipping_summary_ok_button_null");
-                        return;
-                    }
-                    var bounds = okButton.bounds;
-                    var target = new Point(bounds.Center.X, bounds.Center.Y);
-                    Game1.setMousePosition(target.X, target.Y, ui_scale: true);
-                    sleep.SummaryPositionTarget = target;
-                    sleep.SummaryPositionSet = true;
-                }
-                break;
-
-            case ShipSummaryClosePhase.PositionVerify:
-                if (sleep.SummaryPositionSet && !sleep.SummaryPositionVerified)
-                {
-                    var ax = Game1.getMouseX(ui_scale: true);
-                    var ay = Game1.getMouseY(ui_scale: true);
-                    if (Math.Abs(ax - sleep.SummaryPositionTarget.X) > 2 || Math.Abs(ay - sleep.SummaryPositionTarget.Y) > 2)
-                    {
-                        ReleaseSmapiLeftButtonOverride();
-                        CompleteBlockedSleep(sleep,
-                            "shipping_summary_cursor_position_mismatch:expected=" + sleep.SummaryPositionTarget.X + "," + sleep.SummaryPositionTarget.Y + ";actual=" + ax + "," + ay);
-                        return;
-                    }
-                    sleep.SummaryPositionVerified = true;
-                }
-                break;
-
             case ShipSummaryClosePhase.Press:
                 if (!sleep.SummaryButtonPressed)
                 {
-                    if (!TryApplySmapiLeftButtonOverride(pressed: true, out var reason))
+                    if (!TryApplySmapiButtonOverride(
+                            SButton.Escape,
+                            pressed: true,
+                            out var reason))
                     {
-                        ReleaseSmapiLeftButtonOverride();
+                        ReleaseShippingSummaryMenuButtonOverride();
                         CompleteBlockedSleep(sleep, "shipping_summary_press_failed:" + reason);
                         return;
                     }
@@ -687,12 +642,15 @@ public sealed partial class ModEntry : Mod
             case ShipSummaryClosePhase.Release:
                 if (!sleep.SummaryButtonReleased)
                 {
-                    if (!TryApplySmapiLeftButtonOverride(pressed: false, out var relReason))
+                    if (!TryApplySmapiButtonOverride(
+                            SButton.Escape,
+                            pressed: false,
+                            out var relReason))
                     {
                         sleep.SummaryReleaseRetries++;
                         if (sleep.SummaryReleaseRetries > 3)
                         {
-                            ReleaseSmapiLeftButtonOverride();
+                            ReleaseShippingSummaryMenuButtonOverride();
                             CompleteBlockedSleep(sleep, "shipping_summary_release_failed_after_retries:" + relReason);
                             return;
                         }
@@ -708,6 +666,7 @@ public sealed partial class ModEntry : Mod
     {
         ReleaseSleepConfirmInput(sleep);
         ReleaseSmapiLeftButtonOverride();
+        ReleaseShippingSummaryMenuButtonOverride();
         StopAllMovement();
         activeSleep = null;
         sleep.Pending.Completion.SetResult(CompletedSleep(sleep, verificationStatus, verificationReasons));
@@ -717,6 +676,7 @@ public sealed partial class ModEntry : Mod
     {
         ReleaseSleepConfirmInput(sleep);
         ReleaseSmapiLeftButtonOverride();
+        ReleaseShippingSummaryMenuButtonOverride();
         StopAllMovement();
         activeSleep = null;
         sleep.Pending.Completion.SetResult(BlockedWithPrimitive(

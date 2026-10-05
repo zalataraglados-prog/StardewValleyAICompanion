@@ -87,9 +87,6 @@ public sealed partial class ModEntry : Mod
         public int MaxTicks { get; }
         public ShipSummaryClosePhase SummaryPhase { get; set; }
         public int SummaryPhaseStartTick { get; set; }
-        public bool SummaryPositionSet { get; set; }
-        public bool SummaryPositionVerified { get; set; }
-        public Point SummaryPositionTarget { get; set; }
         public bool SummaryButtonPressed { get; set; }
         public bool SummaryButtonReleased { get; set; }
         public int SummaryReleaseRetries { get; set; }
@@ -98,8 +95,6 @@ public sealed partial class ModEntry : Mod
     private enum ShipSummaryClosePhase
     {
         WaitReady,
-        Position,
-        PositionVerify,
         Press,
         Release,
         WaitClose
@@ -286,9 +281,6 @@ public sealed partial class ModEntry : Mod
         public int MaxTicks { get; } = 1200;
         public ShipSummaryClosePhase Phase { get; set; } = ShipSummaryClosePhase.WaitReady;
         public int PhaseStartTick { get; set; }
-        public bool PositionSet { get; set; }
-        public bool PositionVerified { get; set; }
-        public Point PositionTarget { get; set; }
         public bool ButtonPressed { get; set; }
         public bool ButtonReleased { get; set; }
         public int ReleaseRetries { get; set; }

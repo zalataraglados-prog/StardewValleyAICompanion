@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.Capabilities;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -113,13 +114,62 @@ public sealed class WildTreeChopAcquisitionMainlineTests
     }
 
     [Fact]
+    public void DeferredNativeDropPickupReusesSharedPrimitiveWithExactSourceProof()
+    {
+        var snapshot = Snapshot(StateJson(
+            "ready",
+            hasSeed: false,
+            hasMoss: false));
+        var request = DeferredPickupRequest(snapshot.StateHash);
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.pickup_debris", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        Assert.Equal(
+            "pickup_debris",
+            Assert.Single(item.NormalizedCommand.Steps).StepType);
+    }
+
+    [Fact]
+    public void DeferredNativeDropPickupRejectsAuthoritativeSourceDrift()
+    {
+        var snapshot = Snapshot(StateJson(
+            "ready",
+            hasSeed: false,
+            hasMoss: false));
+        var request = DeferredPickupRequest(snapshot.StateHash);
+        request.Actions[0].Parameters = request.Actions[0].Parameters
+            .Select(parameter => parameter.Name == "acquisition_source_id"
+                ? new SmallModelActionParameter
+                {
+                    Name = parameter.Name,
+                    Value = "wild_tree:2:0"
+                }
+                : parameter)
+            .ToArray();
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "deferred_pickup_authoritative_source_drifted",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
     public void RuntimeSourceKeepsOneClearObstacleStateMachineAndNativeReceipts()
     {
         var root = FindRepositoryRoot();
         var clearance = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.ObstacleClearance.cs"));
         var chop = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.cs"));
         var verification = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.Verification.cs"));
+        var nativeEvidenceIsolation = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.NativeEvidenceIsolation.cs"));
         var terrain = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "CurrentLocationReadAdapter.TerrainExperience.cs"));
+        var bridgeEntry = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "ModEntry.cs"));
+        var trainingLauncher = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "Training", "StardewTrainingSessionLauncher.cs"));
         var smoke = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeClearObstacleSmoke.ps1"));
 
         Assert.Contains("ValidateWildTreeChopExecutionRequest", clearance, StringComparison.Ordinal);
@@ -141,11 +191,20 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         Assert.Contains("axe.GetType() == typeof(Axe)", terrain, StringComparison.Ordinal);
         Assert.Contains("OrderBy(row => row.Key, StringComparer.Ordinal)", verification, StringComparison.Ordinal);
         Assert.Contains("row.Value.ToString(CultureInfo.InvariantCulture)", verification, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_TRAINING_MODE", nativeEvidenceIsolation, StringComparison.Ordinal);
+        Assert.Contains("if (!trainingMode && !explicitlyRequired)", nativeEvidenceIsolation, StringComparison.Ordinal);
+        Assert.Contains("Name = \"STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL\", Value = \"1\"", trainingLauncher, StringComparison.Ordinal);
+        Assert.Contains("profile is \"clearance\"", bridgeEntry, StringComparison.Ordinal);
+        Assert.Contains("\"current_location\"", bridgeEntry, StringComparison.Ordinal);
         var fixture = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.ClearObstacleFixture.cs"));
         Assert.Contains("\"pine_professions\" => \"3\"", fixture, StringComparison.Ordinal);
         Assert.Contains("Game1.player.professions.Add(14)", fixture, StringComparison.Ordinal);
         Assert.Contains("fixture_wild_tree_chop_profile_unknown", fixture, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL", smoke, StringComparison.Ordinal);
+        Assert.Contains("[string] $SnapshotProfile = \"clearance\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("profile=$SnapshotProfile&fresh=true", smoke, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_TRAINING_OUTPUT_DIR", smoke, StringComparison.Ordinal);
+        Assert.DoesNotContain("snapshot?profile=full", smoke, StringComparison.Ordinal);
     }
 
     private static string StateJson(
@@ -158,6 +217,7 @@ public sealed class WildTreeChopAcquisitionMainlineTests
       "player": {
         "location_id":{"value":"Farm","status":"available"}, "tile_x":{"value":10,"status":"available"}, "tile_y":{"value":10,"status":"available"},
         "energy":{"value":270,"status":"available"}, "inventory":{"value":[],"status":"available"},
+        "inventory_capacity":{"value":{"has_empty_slot":true,"empty_slots":12},"status":"available"},
         "skills_detail":{"value":{"foraging":{"level":4,"experience":620}},"status":"available"}
       },
       "time":{"time":{"value":900,"status":"available"}},
@@ -192,6 +252,62 @@ public sealed class WildTreeChopAcquisitionMainlineTests
             State = state
         };
     }
+
+    private static SmallModelActionEnvelope DeferredPickupRequest(
+        string stateHash) => new()
+        {
+            ModelOutputId = "wild-tree-deferred-pickup-test",
+            StateHash = stateHash,
+            GoalId = "test",
+            ExecutionMode = "training_singleplayer",
+            Actor = new ActionActorRef
+            {
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
+            },
+            Actions = new[]
+            {
+                new SmallModelAction
+                {
+                    ActionId = "pickup-sap-after-tree",
+                    OptionId = "executor.pickup_debris",
+                    Parameters = new[]
+                    {
+                        Parameter("target_location", "Farm"),
+                        Parameter("target_tile_x", "12"),
+                        Parameter("target_tile_y", "10"),
+                        Parameter("qualified_item_id", "(O)92"),
+                        Parameter("item_quality", "0"),
+                        Parameter("inventory_item_total_before", "0"),
+                        Parameter(
+                            "deferred_pickup_source_kind",
+                            "native_wild_tree_chop_drop"),
+                        Parameter(
+                            "deferred_pickup_debris_item_total_before",
+                            "0"),
+                        Parameter(
+                            "deferred_pickup_guaranteed_minimum_quantity",
+                            "6"),
+                        Parameter(
+                            "tree_chop_guaranteed_minimum_outputs_json",
+                            "[{\"qualifiedItemId\":\"(O)388\",\"quality\":0,\"quantityMin\":17},{\"qualifiedItemId\":\"(O)92\",\"quality\":0,\"quantityMin\":6}]"),
+                        Parameter(
+                            "acquisition_route_kind",
+                            "native_wild_tree_chop_drop"),
+                        Parameter("acquisition_source_id", "wild_tree:1:0")
+                    }
+                }
+            }
+        };
+
+    private static SmallModelActionParameter Parameter(
+        string name,
+        string value) => new()
+        {
+            Name = name,
+            Value = value
+        };
 
     private static string FindRepositoryRoot()
     {

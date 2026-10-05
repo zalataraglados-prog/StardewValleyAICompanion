@@ -42,9 +42,12 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             !string.Equals(
                 report.Status,
                 "complete_target_date_opportunity_cost_axis_downstream_pending",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                report.Status,
+                "partial_target_date_opportunity_cost_axis_blocks",
                 StringComparison.Ordinal) ||
             !report.RouteOccurrenceInventoryComplete ||
-            !report.OpportunityCostAxisResolutionComplete ||
             report.TrainingLabelEligible ||
             report.RouteOccurrenceCount != report.Routes.Length ||
             report.OpportunityCostAxisResolvedCount != report.Routes.Count(
@@ -57,6 +60,13 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     "resolved_opportunity_cost_pareto_dominated"))
         {
             yield return "route_selection_opportunity_frontier_incomplete";
+        }
+        if (!AcquisitionRoutePortfolioBuilder.IsOpportunityScopeComplete(
+                report,
+                requirement.RequirementSetId,
+                requirement.RequirementId))
+        {
+            yield return "route_selection_scoped_opportunity_frontier_incomplete";
         }
         if (!string.Equals(
                 selected.OpportunityCostAxisStatus,
@@ -195,6 +205,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     beforeStateHash, StringComparison.Ordinal) ||
                 !string.Equals(value.Item.NormalizedCommand.ExecutionMode,
                     queue.ExecutionMode, StringComparison.Ordinal) ||
+                !CarriesSelectedCandidate(
+                    value.Item.NormalizedCommand.Parameters,
+                    selectedCandidateId) ||
                 !RouteParametersMatch(
                     value.Item.NormalizedCommand.Parameters,
                     requirement,
@@ -585,6 +598,23 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 expected.Value,
                 StringComparison.Ordinal);
         });
+    }
+
+    private static bool CarriesSelectedCandidate(
+        SmallModelActionParameter[]? parameters,
+        string selectedCandidateId)
+    {
+        var expected = "candidate_id:" + selectedCandidateId;
+        return (parameters ?? Array.Empty<SmallModelActionParameter>())
+            .Count(value =>
+                string.Equals(
+                    value.Name,
+                    "precondition",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    value.Value,
+                    expected,
+                    StringComparison.Ordinal)) == 1;
     }
 
     private static SmallModelActionParameter Parameter(

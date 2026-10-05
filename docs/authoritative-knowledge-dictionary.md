@@ -1,5 +1,149 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-05 native Radioactive Ore source identity
+
+The locked Full Shipment identity is `full_shipment:item:909 / (O)909 / native_radioactive_ore_node`, with route
+occurrence `full_shipment:full_shipment:item:909:0:0`. The exact vanilla source is stone `(O)95`, resolved through
+`GameLocation.breakStone` to Radioactive Ore `(O)909`; the branch identity is `game_location_break_stone_direct_node`.
+Execution reuses `mining.reach_depth -> executor.mine_stone -> executor.pickup_debris`. Same-location evidence is bound
+per target, and the selected candidate identity must survive into the action queue. The accepted native proof is
+`runtime-full-shipment-radioactive-node-20261005-134024`.
+
+## 2026-10-05 evidence rematerialization rule
+
+A runtime sample is current only when its authoritative calendar fingerprint, exact route identity, action queue,
+execution receipt, fresh terminal snapshot, settlement chain, and rollout proof are rebuilt from one coherent run.
+An interrupted run or a proof built against an older global calendar remains diagnostic evidence only. Runtime source,
+build output, and deployed Mods DLL must also pass freshness and SHA-256 equality checks before the run is admissible.
+
+## 2026-10-05 native tree-moss sample identity
+
+The locked Full Shipment inventory identifies Moss `(O)Moss` as `full_shipment:item:Moss`, route kind
+`native_tree_moss_harvest`, source `Tree.CreateMossItem`, endpoint `foraging.harvest_tree_moss`, and supporting option
+`foraging.harvest_tree_product`. The representative setup is a mature, seedless, mossy base `Tree`; collection must use
+the existing native scythe lifecycle and retain the exact route kind. Runtime-stratum admission remains pending.
+
+## 2026-10-05 runtime sample identity binding rule
+
+An executable Full Shipment sample identity is the exact tuple `requirement_id / qualified_item_id / route_kind`, not
+the requirement alone. The shared runner now compares that tuple against the generated execution binding before native
+execution. This preserves distinct authoritative sources when one item is obtainable through several route kinds; the
+resume proof independently repeats the same fail-closed check.
+
+## 2026-10-05 native solar-panel-output sample identity
+
+The locked Full Shipment inventory identifies Battery Pack `(O)787` as `full_shipment:item:787`, route kind
+`native_solar_panel_output`, source `machine:(BC)231:OutputSolarPanel`, and endpoint `farm.collect_machine_outputs`.
+The representative fixture binds machine ID `231` and output `(O)787`; the transparent projection retains the dedicated
+solar-panel source rather than collapsing it into generic machine output. Runtime-stratum admission remains pending.
+
+## 2026-10-05 direct machine-output sample identity
+
+The locked Full Shipment inventory identifies `(O)257` as `full_shipment:item:257`, route kind `machine_output`, source
+`machine:(BC)128:rule:Default`, and endpoint `farm.collect_machine_outputs`. The representative fixture binds machine
+ID `128` and output `(O)257`; it does not stand in for the separate `native_machine_item_query_output` occurrence of the
+same item. Runtime-stratum admission remains pending until a fresh native receipt and independently rebuilt rollout
+proof are accepted.
+
+## 2026-10-05 native fish-pond-output sample identity
+
+The locked Full Shipment inventory identifies Roe `(O)812` as `full_shipment:item:812`, route kind
+`native_fish_pond_output`, endpoint `fishing.service_fish_ponds`, and multiple authoritative fish-pond sources including
+Sturgeon. The representative fixture uses Sturgeon `(O)698`, output `(O)812`, and quantity one. Historical native pond
+smoke verified collection of that exact output through the original action chain; runtime-stratum admission remains
+pending until a fresh Full Shipment acquisition receipt and independently rebuilt rollout proof are accepted.
+
+## 2026-10-05 native deluxe-animal-product sample identity
+
+The locked Full Shipment inventory identifies Large Milk `(O)186` as `full_shipment:item:186`, route kind
+`native_farm_animal_deluxe_produce`, sources `farm_animal:Brown Cow:0` and `farm_animal:White Cow:0`, and endpoint
+`farm.collect_animal_products`. Its representative scenario uses the same White Cow and Milk Pail fixture mechanism as
+base Milk while preserving the distinct output and route kind. Runtime-stratum admission remains pending until a fresh
+native receipt and independently rebuilt Full Shipment rollout proof are accepted.
+
+## 2026-10-05 native base-animal-product sample identity
+
+The locked Full Shipment inventory identifies Milk `(O)184` as `full_shipment:item:184`, route kind
+`native_farm_animal_produce`, sources `farm_animal:Brown Cow:0` and `farm_animal:White Cow:0`, and endpoint
+`farm.collect_animal_products`. The representative fixture uses White Cow, Milk Pail, quality 2 and cracker multiplier
+one. Historical EVD-222 verified the native tool lifecycle and all projected side effects for `(O)184`; runtime-stratum
+admission remains pending until a fresh Full Shipment acquisition receipt and rollout proof are accepted.
+
+## 2026-10-05 native fruit-tree sample identity
+
+The locked Full Shipment inventory identifies Cherry `(O)638` as `full_shipment:item:638`, route kind
+`native_fruit_tree_produce`, source `fruit_tree:628:0`, and endpoint `foraging.harvest_fruit_tree`. Cherry and the other
+fruit-tree outputs share the same runtime stratum. The representative fixture is the existing `fruit_tree / single_normal`
+profile at `Farm 64,15`; its historical native action smoke produced `(O)638` through the original interaction chain.
+Runtime-stratum admission remains pending until a fresh Full Shipment acquisition receipt and rollout proof are accepted.
+
+## 2026-10-05 native location-forage sample identity
+
+The locked Full Shipment inventory identifies Wild Horseradish `(O)16` as `full_shipment:item:16`, route kind
+`native_location_forage_spawn`, and endpoint `foraging.collect_spawned_objects`. The representative runtime fixture is
+the ordinary spawned-object profile in Forest. Its actual legal tile is runtime-selected and must be reread from the
+fresh transparent snapshot; runtime-stratum admission remains pending.
+
+## 2026-10-05 native spring-onion sample identity
+
+The locked Full Shipment inventory identifies Spring Onion `(O)399` as `full_shipment:item:399`, route kind
+`native_spring_onion_harvest`, source `Crop.harvest` branch `whichForageCrop 1 => (O)399`, and endpoint
+`foraging.harvest_spring_onions`. The representative fixture uses the native forage-crop constructor rather than an
+ordinary seed identity. Historical EVD-335 proves the action chain, while runtime-stratum admission remains pending.
+
+## 2026-10-05 native Island palm seed sample identity
+
+The locked Full Shipment inventory identifies Coconut `(O)88` as `full_shipment:item:88`, route kind
+`native_wild_tree_seed`, source `wild_tree:6`, and endpoint `foraging.harvest_tree_product`. Its representative native
+fixture is `island_palm` at `IslandSouth 20,20`; using a Farm root would not preserve the native island-context branch.
+The historical action smoke is reusable evidence discovery, but runtime-stratum coverage remains pending.
+
+## 2026-10-05 native wild-tree seed-drop sample identity
+
+The locked Full Shipment inventory identifies Hazelnut `(O)408` as `full_shipment:item:408`, route kind
+`native_wild_tree_seed_drop`, source `wild_tree:2:0`, and endpoint `foraging.harvest_tree_product`. The representative
+fixture is `fall_hazelnut` on Farm. Its historical native action smoke produced `(O)408` and consumed the bound seed,
+but runtime-stratum coverage remains pending until a fresh Full Shipment acquisition proof is accepted.
+
+## 2026-10-05 native tea-bush sample identity
+
+The locked Full Shipment inventory identifies Tea Leaves `(O)815` as `full_shipment:item:815`, route kind
+`native_tea_bush_harvest`, source `Bush.GetShakeOffItem`, and endpoint `foraging.harvest_bushes`. The representative
+fixture is the existing `tea_leaf` bush profile, whose historical native action smoke produced `(O)815`. That smoke
+does not replace a fresh Full Shipment acquisition rollout proof, so runtime-stratum coverage remains pending.
+
+## 2026-10-05 native ginger sample identity
+
+The locked Full Shipment requirement builder identifies Ginger `(O)829` as `full_shipment:item:829` with route kind
+`native_ginger_harvest`. The locked lowering admits `foraging.harvest_ginger`; the native source is
+`Crop.hitWithHoe`, branch `whichForageCrop 2 => (O)829`. The representative runtime fixture is `dry_standard`, and
+fixture construction remains outside the acquisition proof root. This identity and its sample mapping are statically
+guarded, but runtime-stratum coverage remains pending until a fresh native receipt and independently rebuilt rollout
+proof are accepted by the production evidence index.
+
+## 2026-10-04 native bush sample identity
+
+The locked Full Shipment inventory identifies Salmonberry `(O)296` as requirement `full_shipment:item:296` with route
+kind `native_bush_shake`. Its admitted endpoint is `foraging.harvest_bushes`, which lowers to the existing native bush
+harvest primitive. The representative runtime fixture is `berry_standard`; fixture construction is excluded from the
+acquisition proof root. This dictionary identity is statically verified, but runtime-stratum coverage remains pending
+until a fresh native receipt and independently rebuilt rollout proof are admitted by the production evidence index.
+
+## 2026-10-04 ordinary crop source identity
+
+For the locked vanilla 1.6.15 runtime, an ordinary planted crop's authoritative seed source is
+`Crop.netSeedIndex`; `Crop.whichForageCrop` belongs only to the wild-seed crop branch. Runtime candidate adapters must
+therefore publish the ordinary source as `harvest_source_seed_id=<netSeedIndex>` and preserve the separate wild-seed
+identity path. The native Parsnip sample bound seed `472` to harvest item `(O)24` and passed exact acquisition rollout
+verification. This runtime sample covers the `harvests_as` execution stratum, while the dictionary remains responsible
+for exhaustive source and parameter coverage across all crop routes.
+
+## 2026-10-03 Full Shipment validation scope
+
+The dictionary remains exhaustive for all 154 Full Shipment requirements. Exhaustive dictionary and compilation coverage must not be confused with repetitive runtime testing: native evidence is sampled once per route kind and execution signature, while the complete 154-item recurrence is retained only for gameplay and optional final acceptance.
+
+Runtime sample claims are admitted only through `full_shipment_runtime_sample_evidence_index.v1`. The index independently rebuilds the acquisition rollout proof, binds its exact route occurrence to one dictionary-derived stratum, and separately rebuilds one shared shipping/settlement recurrence prefix. Action-only smoke labels are useful discovery hints but are not authoritative coverage evidence.
+
 ## Truth order
 
 1. Runtime-loaded game content is authoritative for the exact installed game and mod set.

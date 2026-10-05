@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
@@ -65,8 +66,11 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-supporting-transition-terminal-rollout-checkpoint", BuildAcquisitionRouteSupportingTransitionTerminalRolloutCheckpoint),
     new("build-acquisition-route-supporting-transition-terminal-coverage", BuildAcquisitionRouteSupportingTransitionTerminalCoverage),
     new("build-acquisition-route-portfolio-settlement-request", BuildAcquisitionRoutePortfolioSettlementRequest),
+    new("build-acquisition-route-portfolio-settlement-request-from-verified-artifacts", BuildAcquisitionRoutePortfolioSettlementRequestFromVerifiedArtifacts),
     new("build-acquisition-route-portfolio-settlement-receipt", BuildAcquisitionRoutePortfolioSettlementReceipt),
+    new("build-acquisition-route-portfolio-settlement-receipt-from-verified-artifacts", BuildAcquisitionRoutePortfolioSettlementReceiptFromVerifiedArtifacts),
     new("build-acquisition-route-portfolio-rollout-checkpoint", BuildAcquisitionRoutePortfolioRolloutCheckpoint),
+    new("build-acquisition-route-portfolio-rollout-checkpoint-from-verified-artifacts", BuildAcquisitionRoutePortfolioRolloutCheckpointFromVerifiedArtifacts),
     new("build-acquisition-route-portfolio-rollout-proof-receipt", BuildAcquisitionRoutePortfolioRolloutProofReceipt),
     new("build-acquisition-route-portfolio-rollout-admission-receipt", BuildAcquisitionRoutePortfolioRolloutAdmissionReceipt),
     new("build-acquisition-route-portfolio-supervision-dataset", BuildAcquisitionRoutePortfolioSupervisionDataset),
@@ -84,6 +88,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-portfolio-continuation-settlement-receipt", BuildAcquisitionRoutePortfolioContinuationSettlementReceipt),
     new("build-acquisition-route-portfolio-continuation-rollout-checkpoint", BuildAcquisitionRoutePortfolioContinuationRolloutCheckpoint),
     new("build-full-shipment-static-compilability-inventory", BuildFullShipmentStaticCompilabilityInventory),
+    new("build-full-shipment-runtime-sample-evidence-index", BuildFullShipmentRuntimeSampleEvidenceIndex),
     new("build-current-full-shipment-teacher-frontier", BuildCurrentFullShipmentTeacherFrontier),
     new("build-current-community-center-denominator", BuildCurrentCommunityCenterDenominator),
     new("build-current-collection-teacher-frontier", BuildCurrentCollectionTeacherFrontier),
@@ -112,6 +117,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
     new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
     new("self-test-full-shipment-static-compilability", SelfTestFullShipmentStaticCompilability),
+    new("self-test-full-shipment-runtime-sample-evidence", _ => BootstrapSelfTest.RunFullShipmentRuntimeSampleEvidence()),
     new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-machine-material-transfer-terminal-coverage", SelfTestMachineMaterialTransferTerminalCoverage),
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
@@ -1286,6 +1292,21 @@ static void BuildAcquisitionRoutePortfolioSettlementRequest(Arguments options)
     Write(options.Required("output"), request);
 }
 
+static void BuildAcquisitionRoutePortfolioSettlementRequestFromVerifiedArtifacts(
+    Arguments options)
+{
+    var request = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildRequestFromVerifiedArtifacts(
+            RouteExecutionBindingInputs(options),
+            options.Required("execution-binding"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("fresh-terminal-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"));
+    Write(options.Required("output"), request);
+}
+
 static void BuildAcquisitionRoutePortfolioSettlementReceipt(Arguments options)
 {
     var receipt = AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
@@ -1304,10 +1325,49 @@ static void BuildAcquisitionRoutePortfolioSettlementReceipt(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildAcquisitionRoutePortfolioSettlementReceiptFromVerifiedArtifacts(
+    Arguments options)
+{
+    var receipt = AcquisitionRoutePortfolioSettlementBuilder
+        .BuildReceiptFromVerifiedArtifacts(
+            RouteExecutionBindingInputs(options),
+            options.Required("execution-binding"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("fresh-terminal-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"),
+            options.Required("settlement-request"),
+            options.Required("settlement-result"),
+            options.Required("settled-ledger"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.ReservationLifecycleVerified)
+        Environment.ExitCode = 2;
+}
+
 static void BuildAcquisitionRoutePortfolioRolloutCheckpoint(Arguments options)
 {
     var checkpoint =
         AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial(
+            RouteExecutionBindingInputs(options),
+            options.Required("execution-binding"),
+            options.Required("execution-receipt"),
+            options.Required("after-snapshot"),
+            options.Required("fresh-terminal-receipt"),
+            options.Required("run-id"),
+            options.Required("executor-version"),
+            options.Required("settlement-request"),
+            options.Required("settlement-result"),
+            options.Required("settled-ledger"),
+            options.Required("settlement-receipt"));
+    Write(options.Required("output"), checkpoint);
+}
+
+static void BuildAcquisitionRoutePortfolioRolloutCheckpointFromVerifiedArtifacts(
+    Arguments options)
+{
+    var checkpoint = AcquisitionRoutePortfolioRolloutCheckpointBuilder
+        .BuildInitialFromVerifiedArtifacts(
             RouteExecutionBindingInputs(options),
             options.Required("execution-binding"),
             options.Required("execution-receipt"),
@@ -2212,9 +2272,49 @@ static void Write(string path, object value)
     var fullPath = Path.GetFullPath(path);
     Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
     var temporary = fullPath + ".tmp-" + Guid.NewGuid().ToString("N");
-    File.WriteAllText(temporary, JsonSerializer.Serialize(value, JsonDefaults.Options) + Environment.NewLine);
-    File.Move(temporary, fullPath, true);
-    Console.WriteLine(fullPath);
+    try
+    {
+        using (var stream = new FileStream(
+            temporary,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            65536,
+            FileOptions.WriteThrough))
+        using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+        {
+            writer.Write(JsonSerializer.Serialize(value, JsonDefaults.Options));
+            writer.WriteLine();
+            writer.Flush();
+            stream.Flush(flushToDisk: true);
+        }
+
+        ValidateJsonArtifact(temporary);
+        File.Move(temporary, fullPath, true);
+        ValidateJsonArtifact(fullPath);
+        Console.WriteLine(fullPath);
+    }
+    finally
+    {
+        if (File.Exists(temporary))
+            File.Delete(temporary);
+    }
+}
+
+static void BuildFullShipmentRuntimeSampleEvidenceIndex(Arguments options)
+{
+    var report = FullShipmentRuntimeSampleEvidenceIndexBuilder.Build(
+        options.Required("static-inventory"),
+        options.Required("evidence-manifest"));
+    Write(options.Required("output"), report);
+    if (!report.RuntimeSampleEvidenceComplete)
+        Environment.ExitCode = 2;
+}
+
+static void ValidateJsonArtifact(string path)
+{
+    using var stream = File.OpenRead(path);
+    using var _ = JsonDocument.Parse(stream);
 }
 
 static void WriteJsonl<T>(string path, IEnumerable<T> values)

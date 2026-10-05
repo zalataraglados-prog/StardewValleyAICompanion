@@ -579,6 +579,20 @@ namespace StardewAI.Core.Execution
                 reasons.Add("pickup_debris_target_location_mismatch");
             }
 
+            var deferredSourceKind = ReadParameter(
+                action,
+                "deferred_pickup_source_kind");
+            if (!string.IsNullOrWhiteSpace(deferredSourceKind))
+            {
+                reasons.AddRange(ValidateDeferredPickupPlan(
+                    action,
+                    snapshot,
+                    deferredSourceKind,
+                    targetX,
+                    targetY));
+                return reasons.Distinct(StringComparer.Ordinal).ToArray();
+            }
+
             JsonElement? targetDebris = null;
             if (targetX.HasValue && targetY.HasValue)
             {

@@ -8,9 +8,17 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "Deploy.Common.ps1")
 
 $sourceDir = Join-Path $ProjectRoot "src\StardewAI.TransparentBridge\bin\Debug\net6.0"
 $targetDir = Join-Path $RuntimeModsDir "StardewAI.TransparentBridge"
+$bridgeAssembly = Join-Path $sourceDir "StardewAI.TransparentBridge.dll"
+$contractAssembly = Join-Path $sourceDir "StardewAI.Contracts.dll"
+$buildConfigurationInputs = @(
+    (Join-Path $ProjectRoot "Directory.Build.props"),
+    (Join-Path $ProjectRoot "Directory.Build.targets"),
+    (Join-Path $ProjectRoot "Directory.Packages.props")
+)
 $requiredFiles = @(
     "manifest.json",
     "StardewAI.TransparentBridge.dll",
@@ -36,6 +44,20 @@ foreach ($file in $requiredFiles) {
     }
 }
 
+if ($NoBuild -and -not $DryRun) {
+    Assert-StardewAIBuildOutputFresh `
+        -OutputPath $bridgeAssembly `
+        -InputRoots @(
+            (Join-Path $ProjectRoot "src\StardewAI.TransparentBridge"),
+            (Join-Path $ProjectRoot "src\StardewAI.Contracts")
+        ) `
+        -InputFiles $buildConfigurationInputs
+    Assert-StardewAIBuildOutputFresh `
+        -OutputPath $contractAssembly `
+        -InputRoots @((Join-Path $ProjectRoot "src\StardewAI.Contracts")) `
+        -InputFiles $buildConfigurationInputs
+}
+
 if ($DryRun) {
     [pscustomobject]@{
         status = "dry_run"
@@ -48,8 +70,11 @@ if ($DryRun) {
 }
 
 New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+$deployedHashes = [ordered]@{}
 foreach ($file in $requiredFiles) {
-    Copy-Item -LiteralPath (Join-Path $sourceDir $file) -Destination (Join-Path $targetDir $file) -Force
+    $deployedHashes[$file] = Copy-StardewAIVerifiedFile `
+        -SourcePath (Join-Path $sourceDir $file) `
+        -DestinationPath (Join-Path $targetDir $file)
 }
 
 [pscustomobject]@{
@@ -57,5 +82,6 @@ foreach ($file in $requiredFiles) {
     source_dir = $sourceDir
     target_dir = $targetDir
     files = $requiredFiles
+    deployed_sha256 = $deployedHashes
     preserves = "config.json"
 } | ConvertTo-Json -Depth 4

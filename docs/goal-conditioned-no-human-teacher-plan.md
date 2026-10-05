@@ -1,5 +1,210 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-05: bounded runtime verification replaces per-change full replay
+
+- Current-version Sap proof `runtime-full-shipment-sap-refresh-20261005-183733` verified acquisition, shipping, return,
+  native sleep, day rollover, save commit, menu closure, recurrence checkpoint, and independent rollout proof.
+- Current-version Radioactive Ore proof `runtime-full-shipment-radioactive-node-20261005-134024` verified the exact
+  `(O)95 -> GameLocation.breakStone -> (O)909` source through the shared mining and debris-pickup chain.
+- The Parsnip rematerialization was intentionally stopped because it did not exercise the changed shipping/menu path.
+  Its partial artifacts are diagnostic only and cannot enter the production evidence index.
+- Runtime verification is now tiered: replay the changed native chain, run the full game-free contract suite for shared
+  code, and rebuild the 26-stratum production index only when a stratum, authoritative calendar fingerprint, or formal
+  training gate changes. Formal training remains unauthorized.
+- Deployment now fails closed when `-NoBuild` points at an output older than source inputs and verifies SHA-256 after
+  copying every mod file. This prevents a fresh source tree from being tested through a stale runtime DLL.
+
+## 2026-10-05: native tree-moss sample reuses the scythe chain
+
+- The representative identity is
+  `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / Tree.CreateMossItem / foraging.harvest_tree_moss`.
+- The proof-external fixture creates only a legal mature, seedless, mossy base tree and a native scythe. The acquisition
+  path reuses the existing projection, candidate, DailyPlan, `executor.clear_obstacle`, native tree tool lifecycle and
+  strict receipt; it does not introduce a second moss executor.
+- Off-machine guards passed `17/17`, game-free tests passed `138/138`, and Bootstrap Release built cleanly. Fourteen
+  strata are staged and ten remain unstaged; without a fresh Full Shipment receipt, production remains `2/26`.
+
+## 2026-10-05: runtime samples reject the wrong acquisition layer before execution
+
+- Every configured sample now declares one expected `route_kind`. After the execution binding is built and before any
+  game action runs, the runner compares the exact `requirement_id / qualified_item_id / route_kind` tuple.
+- Selecting the right requirement through a competing source is therefore rejected before expensive native execution;
+  the existing resume tuple check remains a second independent gate.
+- Off-machine guards passed `16/16`, game-free tests passed `137/137`, and Bootstrap Release built cleanly. This is a
+  control-plane correction, not new native evidence, so production remains `2/26`.
+
+## 2026-10-05: native solar-panel sample preserves its dedicated source
+
+- The representative route is
+  `full_shipment:item:787 / (O)787 / native_solar_panel_output / farm.collect_machine_outputs`, with the sole source
+  `machine:(BC)231:OutputSolarPanel`.
+- The proof-external fixture binds machine ID `231` and Battery Pack `(O)787`. The transparent bridge keeps the dedicated
+  solar-panel state and source identity, while planning, compilation, native collection and verification reuse the shared
+  machine-output chain. Construction support is not forged by the fixture.
+- Off-machine guards passed `15/15`, game-free tests passed `136/136`, and Bootstrap Release built cleanly. No fresh
+  Full Shipment receipt exists, so production remains `2/26`.
+
+## 2026-10-05: direct machine-output sample binds the Mushroom Log
+
+- The representative route is
+  `full_shipment:item:257 / (O)257 / machine_output / farm.collect_machine_outputs`, with authoritative source
+  `machine:(BC)128:rule:Default`.
+- The proof-external fixture binds both machine ID `128` and output `(O)257`, then reuses the sole machine projection,
+  candidate, DailyPlan, compiler, output executor and verifier. The neighboring `native_machine_item_query_output`
+  stratum remains separate and was not claimed by this setup.
+- Off-machine guards passed `14/14`, game-free tests passed `135/135`, and Bootstrap Release built cleanly. No fresh
+  Full Shipment receipt exists for this stratum, so production remains `2/26`.
+
+## 2026-10-05: native fish-pond-output sample reuses pond collection
+
+- The representative route is
+  `full_shipment:item:812 / (O)812 / native_fish_pond_output / fishing.service_fish_ponds`.
+- The authoritative inventory includes exact Sturgeon occurrences for Roe. The proof-external fixture uses Sturgeon
+  `(O)698`, ready Roe `(O)812`, and quantity one, then reuses the sole pond candidate, DailyPlan, compiler, native
+  executor and verifier. The unproven suggested Void Egg route was not substituted into the fixture.
+- Off-machine guards passed `13/13`, game-free tests passed `134/134`, and Bootstrap Release built cleanly. Historical
+  pond output smoke proves chain reuse only; no fresh Full Shipment receipt exists, so production remains `2/26`.
+
+## 2026-10-05: native deluxe-animal-product sample shares the animal chain
+
+- The representative route is
+  `full_shipment:item:186 / (O)186 / native_farm_animal_deluxe_produce / farm.collect_animal_products`.
+- The locked inventory binds exact Brown Cow and White Cow sources. The scenario shares the proof-external White Cow /
+  Milk Pail fixture table and the sole animal-product candidate, DailyPlan, compiler, executor and verifier while keeping
+  a distinct fail-closed requirement/item/route tuple.
+- Off-machine guards passed `12/12`, game-free tests passed `133/133`, and Bootstrap Release built cleanly. No fresh
+  `(O)186` Full Shipment receipt exists, so this stratum is still pending and production remains `2/26`.
+
+## 2026-10-05: native base-animal-product sample reuses the Milk Pail chain
+
+- The representative route is
+  `full_shipment:item:184 / (O)184 / native_farm_animal_produce / farm.collect_animal_products`.
+- The locked inventory contains exact Brown Cow and White Cow occurrences for this requirement. The proof-external
+  fixture selects the existing White Cow / Milk Pail / quality 2 / cracker x1 setup and then reuses the sole candidate,
+  DailyPlan, compiler, native executor and verifier. No egg-specific or parallel animal-product path was introduced.
+- Off-machine guards passed `11/11`, game-free tests passed `132/132`, and Bootstrap Release built cleanly. EVD-222
+  proves exact `(O)184` chain reuse only; without a fresh Full Shipment receipt, production remains `2/26`.
+
+## 2026-10-05: native fruit-tree sample reuses the existing action chain
+
+- The representative route is
+  `full_shipment:item:638 / (O)638 / native_fruit_tree_produce / foraging.harvest_fruit_tree`.
+- The shared forage table selects the existing `fruit_tree / single_normal` fixture at `Farm 64,15` and reuses the
+  existing candidate, DailyPlan, compiler, native executor and verifier. Cherry is a valid representative of the same
+  runtime stratum; no Apple-specific or parallel execution chain was introduced.
+- Off-machine guards passed `10/10`, game-free tests passed `131/131`, and Bootstrap Release built cleanly. The historical
+  fruit-tree action smoke proves chain reuse only; no fresh Full Shipment receipt exists, so production remains `2/26`.
+
+## 2026-10-05: native location-forage sample reuses spawned-object execution
+
+- The representative route is
+  `full_shipment:item:16 / (O)16 / native_location_forage_spawn / foraging.collect_spawned_objects`.
+- The shared forage table uses the existing `spawned_object / ordinary` fixture in Forest. The fixture's verified legal
+  tile is reread from the fresh snapshot; the requested tile is not treated as authoritative output.
+- Off-machine guards passed `9/9`, game-free tests passed `130/130`, and Bootstrap Release built cleanly.
+- EVD-211 proves the reusable native chain, not this Full Shipment rollout. Production remains `2/26`.
+
+## 2026-10-05: native spring-onion sample shares the crop scenario table
+
+- The locked route is
+  `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / foraging.harvest_spring_onions`.
+- Parsnip and spring onion now share `debug.setup_harvest_crop_target` and the existing crop candidate/compiler/executor.
+  The scenario table binds seed `472` for Parsnip and native forage-crop rule `spring_onion` for `(O)399`.
+- Off-machine guards passed `8/8`, game-free tests passed `129/129`, and Bootstrap Release built cleanly.
+- Historical EVD-335 confirms native-chain reuse, not Full Shipment rollout admission. Production remains `2/26`.
+
+## 2026-10-05: Island palm sample binds an exact cross-location root
+
+- The representative route is
+  `full_shipment:item:88 / (O)88 / native_wild_tree_seed / wild_tree:6 / foraging.harvest_tree_product`.
+- Forage scenarios now bind an exact location and tile. Existing samples remain on `Farm 64,15`; Island palm uses
+  `IslandSouth 20,20`. The acquisition root must match that binding, while the complete Sap recurrence still requires
+  Farm and day zero.
+- Off-machine guards passed `7/7`, game-free tests passed `128/128`, and Bootstrap Release built cleanly.
+- No fresh Full Shipment receipt exists for this sample, so the production index remains `2/26`.
+
+## 2026-10-05: wild-tree seed-drop sample reuses the native tree-product chain
+
+- The representative route is
+  `full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop / wild_tree:2:0 / foraging.harvest_tree_product`.
+- The shared forage scenario table selects the existing `wild_tree / fall_hazelnut` fixture on Farm and reuses the
+  existing candidate, compiler, native executor and verifier. The resume path accepts only the exact route tuple.
+- Off-machine source guards passed `6/6`, the game-free suite passed `127/127`, and Bootstrap Release built cleanly.
+- The historical native tree-product smoke is not an acquisition rollout proof. This stratum remains pending and the
+  production index remains `2/26`. The Island palm route is deferred to an explicit cross-location-root slice.
+
+## 2026-10-05: native tea-bush sample shares the forage scenario table
+
+- Tea Leaf `(O)815` is bound to
+  `full_shipment:item:815 / native_tea_bush_harvest / Bush.GetShakeOffItem / foraging.harvest_bushes`.
+- The Full Shipment runner now selects berry, ginger and tea fixtures from one scenario table. Tea uses the existing
+  `bush / tea_leaf` fixture and native bush executor; no additional candidate, compiler or executor was introduced.
+- The dedicated source guards passed `5/5`, the off-machine game-free suite passed `126/126`, and Bootstrap Release
+  built with zero warnings or errors.
+- The historical native tea action smoke establishes reuse viability only. A fresh Full Shipment acquisition receipt
+  and independent rollout proof are still required, so production remains `2/26` and training remains disabled.
+
+## 2026-10-05: native ginger sample staged and validated off-machine
+
+- The locked requirement builder and lowering identify Ginger as
+  `full_shipment:item:829 / (O)829 / native_ginger_harvest / foraging.harvest_ginger`, sourced by the native
+  `Crop.hitWithHoe` branch `whichForageCrop 2 => (O)829`.
+- The sample reuses the existing forage-source fixture, candidate, DailyPlan, compiler, native executor and verifier.
+  Berry and ginger share fixture orchestration while retaining distinct `berry_standard` and `dry_standard` profiles;
+  exact resume mappings remain fail-closed.
+- Larger checks were moved to the isolated `LZT` test host after the local machine stalled. Bootstrap Release build,
+  acquisition dispatch, Full Shipment static compilability and Core game-free `125/125` passed there.
+- No fresh MonoGame receipt was produced. Berry and ginger remain pending runtime strata, the production index remains
+  `2/26`, and formal product training remains disabled.
+
+## 2026-10-04: native bush sample staged without a second action chain
+
+- The next production stratum is fixed by the authoritative inventory and lowering as
+  `full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`. The runtime sample reuses the
+  existing `executor.harvest_bush` primitive and berry fixture; it introduces no parallel planner, compiler or executor.
+- Standalone acquisition samples plan against the fixture's live `total_days`. The complete Sap recurrence alone retains
+  the strict day-zero root. Fixture setup remains outside the proof root.
+- Proof resumption now derives requirement, item and route-kind identity from the verified execution binding. Known
+  Parsnip and berry mappings are explicit; every unknown tuple fails closed. Replaying the existing Parsnip artifacts
+  reproduced the same strict proof and summary.
+- Static and game-free validation is complete, but no interactive desktop session was available for MonoGame. The berry
+  runtime receipt is therefore pending and the production index remains `2/26`, not `3/26`.
+
+## 2026-10-04: ordinary-crop sample admitted without weakening proof replay
+
+- Vanilla 1.6.15 decompilation establishes `Crop.netSeedIndex` as the ordinary crop's planted-seed identity;
+  `whichForageCrop` is limited to wild-seed crops. The transparent bridge now publishes the exact ordinary source
+  identity, and a source guard prevents the two branches from being collapsed again.
+- The isolated Parsnip sample selected `full_shipment:full_shipment:item:24:0:0`, compiled the existing
+  `farm.maintain_crops -> executor.harvest_crop` path, and verified crop removal, `(O)24 x1` inventory gain and
+  Farming XP `0 -> 8`. Settlement, the initial rollout checkpoint and the final independently rebuilt proof passed.
+- Verified-artifact helpers remove repeated target-date reconstruction from intermediate settlement stages. They
+  accept only schema-valid, dispatch-ready objects whose authority, ledger, snapshot and queue hashes still match.
+  The final rollout proof remains a strict full replay, and self-tests require strict/fast JSON equality.
+- The production index is now `2/26`: `harvests_as` plus `native_wild_tree_chop_drop`; shared shipping evidence is
+  verified and 24 strata remain. Formal training stays disabled. The next bounded slice inventories existing native
+  smokes for those 24 strata and upgrades reusable evidence into this same rollout contract before launching new game runs.
+
+## 2026-10-03: machine-verified runtime sample evidence index
+
+- `build-full-shipment-runtime-sample-evidence-index` consumes the v2 static inventory and a small evidence manifest.
+  It independently rebuilds every supplied acquisition rollout proof, binds its exact route occurrence back to one
+  static stratum, and rejects stale receipts, authority-hash drift, duplicate strata, duplicate routes and incomplete
+  rollouts. An action-only smoke claim cannot cover a stratum.
+- The shared shipping/deposit/sleep tail is verified once through an independently rebuilt Full Shipment recurrence
+  prefix checkpoint. Acquisition execution remains sampled once per stratum; other items with the same route kind and
+  execution signature stay covered by the exhaustive static inventory instead of repeated native runs.
+- The report remains partial until both the shared shipping proof and every stratum have exact evidence. It publishes
+  the missing stratum IDs and never authorizes formal training by itself. The infrastructure and aggregation regressions
+  are complete; production evidence registration starts with the existing Sap proof and does not change 4/19 yet.
+
+## 2026-10-03: Full Shipment runtime evidence uses stratified sampling
+
+- The authoritative denominator remains statically complete for all 154 item groups and all 641 acquisition-route occurrences.
+- Native runtime validation is grouped by route kind and execution signature. The current production lowering yields 26 strata; one exact source-bound queue/receipt/fresh-snapshot sample per stratum is sufficient, and already admitted native smokes may be reused.
+- A 154-step fresh-save recurrence is no longer a training or Teacher-coverage prerequisite. The existing whole-recurrence builder remains available for normal AI gameplay and optional final end-to-end acceptance.
+- The Sap `1/154` prefix is retained as common acquisition/deposit/recovery-chain evidence, not as a mandate to execute the remaining 153 items. The next bounded slice is a sample-evidence index that reuses existing artifacts and identifies only uncovered strata.
+
 Status: approved architecture correction, implementation started in an isolated detached
 worktree. This document is the continuity source for the correction. It does not promote
 the local experiment into the product repository or authorize formal training.

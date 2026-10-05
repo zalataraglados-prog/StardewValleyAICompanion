@@ -74,6 +74,27 @@ public sealed class MiningSnapshotValidationTests
     }
 
     [Fact]
+    public void SnapshotValidatorAcceptsTrainingMiningProfileAndKeepsItsDomainSetFailClosed()
+    {
+        var accepted = SnapshotValidator.ValidateRaw(
+            PurposeLimitedSnapshotJson(TrainingMiningProfileDomains),
+            out var snapshot,
+            "training_mining");
+
+        Assert.Empty(accepted);
+        Assert.NotNull(snapshot);
+        Assert.Equal(
+            TrainingMiningProfileDomains.OrderBy(value => value),
+            snapshot!.State.Keys.OrderBy(value => value));
+
+        var rejected = SnapshotValidator.ValidateRaw(
+            PurposeLimitedSnapshotJson(TrainingMiningProfileDomains, "mining"),
+            out _,
+            "training_mining");
+        Assert.Contains("missing state domain: mining", rejected);
+    }
+
+    [Fact]
     public void SnapshotValidatorRejectsUnknownPurposeProfile()
     {
         var errors = SnapshotValidator.ValidateRaw(
@@ -362,6 +383,22 @@ public sealed class MiningSnapshotValidationTests
         "world_progress",
         "mods",
         "modded_state"
+    };
+
+    private static readonly string[] TrainingMiningProfileDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "farm",
+        "current_location",
+        "locations",
+        "mining",
+        "world_progress"
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

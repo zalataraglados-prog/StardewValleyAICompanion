@@ -6,10 +6,15 @@ public sealed partial class ModEntry
 {
     private void ApplyExternalNativeEvidenceIsolation()
     {
-        if (!string.Equals(
-                Environment.GetEnvironmentVariable("STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL"),
-                "1",
-                StringComparison.Ordinal))
+        var trainingMode = string.Equals(
+            Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_MODE"),
+            "1",
+            StringComparison.Ordinal);
+        var explicitlyRequired = string.Equals(
+            Environment.GetEnvironmentVariable("STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL"),
+            "1",
+            StringComparison.Ordinal);
+        if (!trainingMode && !explicitlyRequired)
         {
             return;
         }

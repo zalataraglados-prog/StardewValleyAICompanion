@@ -8,6 +8,8 @@ param(
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
     [int] $MaxToolSwings = 8,
+    [ValidateSet("clearance", "daily", "full")]
+    [string] $SnapshotProfile = "clearance",
     [ValidateSet("grass", "twig", "seed_spot", "artifact_spot", "tree_moss", "tree_chop")]
     [string] $FixtureKind = "grass",
     [ValidateSet("ordinary", "pine_professions", "mushroom", "mahogany", "fern", "mystic")]
@@ -77,20 +79,14 @@ function Wait-WorldSnapshot {
             $saveReadable = $snapshot.save_id.status -in @("available", "derived")
             $timeReadable = $snapshot.in_game_time.status -in @("available", "derived")
             $locationReadable = $false
-            $objectsReadable = $false
             if ($null -ne $snapshot.state -and
                 $snapshot.state.PSObject.Properties.Name -contains "player" -and
                 $snapshot.state.player.PSObject.Properties.Name -contains "location_id") {
                 $locationReadable = $snapshot.state.player.location_id.status -in @("available", "derived")
             }
-            if ($null -ne $snapshot.state -and
-                $snapshot.state.PSObject.Properties.Name -contains "current_location" -and
-                $snapshot.state.current_location.PSObject.Properties.Name -contains "objects") {
-                $objectsReadable = $snapshot.state.current_location.objects.status -in @("available", "derived")
-            }
 
-            $lastStatus = "save_id=$($snapshot.save_id.status);in_game_time=$($snapshot.in_game_time.status);location_id_readable=$locationReadable;objects_readable=$objectsReadable;completeness=$($snapshot.completeness)"
-            if ($saveReadable -and $timeReadable -and $locationReadable -and $objectsReadable) {
+            $lastStatus = "save_id=$($snapshot.save_id.status);in_game_time=$($snapshot.in_game_time.status);location_id_readable=$locationReadable;completeness=$($snapshot.completeness)"
+            if ($saveReadable -and $timeReadable -and $locationReadable) {
                 return $snapshot
             }
         }
@@ -162,6 +158,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_TRAINING_OUTPUT_DIR = $env:STARDEWAI_TRAINING_OUTPUT_DIR
     STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL = $env:STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
@@ -174,6 +171,7 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_TRAINING_OUTPUT_DIR = $runDirectory
     $env:STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
@@ -181,7 +179,8 @@ try {
     $process = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle Hidden -PassThru
 
     $executorHealth = Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30
-    $beforeSnapshot = Wait-WorldSnapshot -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -TimeoutSeconds $StartupTimeoutSeconds
+    $snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=$SnapshotProfile&fresh=true"
+    $beforeSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
 
     $baseRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
@@ -209,7 +208,7 @@ try {
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
 
-    $readySnapshot = Wait-WorldSnapshot -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -TimeoutSeconds 30
+    $readySnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $targetObject = if ($FixtureKind -in @("tree_moss", "tree_chop")) {
         Find-TargetTerrainFeature -Snapshot $readySnapshot
     }
@@ -315,7 +314,7 @@ try {
     }
     $clearResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $clearRequest -TimeoutSeconds 120
 
-    $afterSnapshot = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -Headers @{ "Accept" = "application/json" } -TimeoutSec 10
+    $afterSnapshot = Invoke-RestMethod -Method Get -Uri $snapshotUrl -Headers @{ "Accept" = "application/json" } -TimeoutSec 10
     $targetObjectAfter = if ($FixtureKind -in @("tree_moss", "tree_chop")) {
         Find-TargetTerrainFeature -Snapshot $afterSnapshot
     }
@@ -344,6 +343,7 @@ try {
         bridge_state_hash_after = $afterSnapshot.state_hash
         target_tile = "$TargetTileX,$TargetTileY"
         fixture_kind = $FixtureKind
+        snapshot_profile = $SnapshotProfile
         target_qualified_item_id = if ($null -eq $targetObject) { "" } else { [string]$targetObject.qualified_item_id }
         target_projection_status = if ($null -eq $targetObject) { "not_applicable" } elseif ($FixtureKind -eq "tree_moss") { [string]$targetObject.moss_harvest_status } elseif ($FixtureKind -eq "tree_chop") { [string]$targetObject.tree_chop_acquisition_status } else { [string]$targetObject.clear_obstacle_executor_status }
         target_present_after = $null -ne $targetObjectAfter

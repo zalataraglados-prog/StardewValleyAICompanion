@@ -162,7 +162,9 @@ internal static class QueueExecutionReceiptValidator
                 !ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(
                     effective,
                     expectedItem,
-                    expectedStateHash))
+                    step.TeacherPreferenceStateRebound
+                        ? expectedStateHash
+                        : step.CompiledCommandStateHash))
                 reasons.Add("execution_receipt_effective_queue_item_mismatch:" + index);
             expectedStateHash = step.AfterStateHash;
             expectedTick = step.AfterGameTick;

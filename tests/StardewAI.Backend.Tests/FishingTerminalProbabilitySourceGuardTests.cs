@@ -66,13 +66,13 @@ public sealed class FishingTerminalProbabilitySourceGuardTests
         var forecastDomainsStart = entry.IndexOf(
             "if (profile is \"fishing_forecast\")",
             StringComparison.Ordinal);
-        var defaultDomainsStart = entry.IndexOf(
-            "var domains = new HashSet<string>",
+        var nextProfileStart = entry.IndexOf(
+            "if (profile is \"clearance\")",
             forecastDomainsStart,
             StringComparison.Ordinal);
         Assert.True(forecastDomainsStart >= 0 &&
-                    defaultDomainsStart > forecastDomainsStart);
-        var forecastDomains = entry[forecastDomainsStart..defaultDomainsStart];
+                    nextProfileStart > forecastDomainsStart);
+        var forecastDomains = entry[forecastDomainsStart..nextProfileStart];
         Assert.Contains("\"world\"", forecastDomains);
         Assert.Contains("\"fishing\"", forecastDomains);
         Assert.Contains("\"unavailable_fields\"", forecastDomains);

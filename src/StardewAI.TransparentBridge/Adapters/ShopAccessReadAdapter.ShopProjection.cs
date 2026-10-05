@@ -33,8 +33,27 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
     private static ShopAccessSummary ReadShopSummary(string shopId, ShopData shopData)
     {
+        var liveRandom = Game1.random;
+        try
+        {
+            // GameStateQuery RANDOM clauses use Game1.random even though
+            // ShopBuilder uses a day/save RNG for item queries. Isolate the
+            // native projection so a read cannot advance gameplay RNG.
+            Game1.random = Utility.CreateDaySaveRandom();
+            return ReadShopSummaryWithIsolatedRandom(shopId, shopData);
+        }
+        finally
+        {
+            Game1.random = liveRandom;
+        }
+    }
+
+    private static ShopAccessSummary ReadShopSummaryWithIsolatedRandom(
+        string shopId,
+        ShopData shopData)
+    {
         var ownerEntries = ReadEnumerableProperty(shopData, "Owners");
-        var currentOwners = ShopBuilder.GetCurrentOwners((StardewValley.GameData.Shops.ShopData)shopData)
+        var currentOwners = ShopBuilder.GetCurrentOwners(shopData)
             .Select(owner => new
             {
                 name = ReadStringProperty(owner, "Name"),
@@ -101,15 +120,26 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
     private static object ReadShopStockPreview(string shopId, ShopData shopData)
     {
         var currency = ReadIntProperty(shopData, "Currency") ?? 0;
+        var stochasticRuleIds = (shopData.Items ?? new List<ShopItemData>())
+            .Where(item => HasRandomStateQuery(item.Condition))
+            .Select(item => item.Id)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
         var stock = ShopBuilder.GetShopStock(shopId, shopData)
             .OrderBy(entry => entry.Key.QualifiedItemId, StringComparer.Ordinal)
             .ThenBy(entry => entry.Key.DisplayName, StringComparer.Ordinal)
             .Select(entry =>
             {
+                var stochasticProjection = stochasticRuleIds.Any(id =>
+                    string.Equals(entry.Value.SyncedKey, id, StringComparison.Ordinal) ||
+                    entry.Value.SyncedKey?.StartsWith(id, StringComparison.Ordinal) == true);
                 var blockReasons = ShopStockPreviewBlockReasons(
                     entry.Key,
                     entry.Value,
-                    currency);
+                    currency,
+                    stochasticProjection);
                 return new
                 {
                     item_id = entry.Key is Item item ? item.ItemId : entry.Key.QualifiedItemId,
@@ -133,6 +163,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     effective_trade_item_count = entry.Value.TradeItem is null ? (int?)null : entry.Value.TradeItemCount ?? 5,
                     limited_stock_mode = entry.Value.LimitedStockMode.ToString(),
                     synced_key = entry.Value.SyncedKey,
+                    stochastic_projection = stochasticProjection,
                     action_on_purchase_count = entry.Value.ActionsOnPurchase?.Count ?? 0,
                     can_buy_item = entry.Key.CanBuyItem(Game1.player),
                     total_price_for_one_purchase = entry.Value.Price,
@@ -160,6 +191,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             shop_id = shopId,
             currency,
             source = "ShopBuilder.GetShopStock(shopId, shopData)",
+            random_projection_policy =
+                "isolated_day_save_rng;live_Game1.random_restored;" +
+                "RANDOM_condition_entries_require_runtime_menu_recheck",
+            stochastic_item_rule_count = stochasticRuleIds.Length,
+            stochastic_item_rule_ids = stochasticRuleIds,
             runtime_menu_recheck_required = true,
             executor_purchase_preview_enabled = anyEnabled,
             executor_block_reason = anyEnabled ? "" : "no_safe_executor_purchase_preview_candidate",
@@ -171,9 +207,15 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
     private static string[] ShopStockPreviewBlockReasons(
         ISalable item,
         ItemStockInformation stock,
-        int currency)
+        int currency,
+        bool stochasticProjection)
     {
         var reasons = new List<string>();
+
+        if (stochasticProjection)
+        {
+            reasons.Add("stochastic_stock_requires_native_menu_recheck");
+        }
 
         if (currency != 0)
         {
@@ -234,6 +276,24 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         }
 
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool HasRandomStateQuery(string? condition)
+    {
+        if (string.IsNullOrWhiteSpace(condition))
+        {
+            return false;
+        }
+
+        return condition
+            .Split(
+                new[] { ' ', '\t', '\r', '\n', '(', ')', '[', ']', ',' },
+                StringSplitOptions.RemoveEmptyEntries)
+            .Select(token => token.TrimStart('!'))
+            .Any(token => string.Equals(
+                token,
+                "RANDOM",
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private static int CountAvailableTradeItem(string qualifiedOrUnqualifiedItemId)

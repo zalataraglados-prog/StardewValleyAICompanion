@@ -711,6 +711,7 @@ namespace StardewAI.Core.Training
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_TEST_SAVES", Value = request.SaveIsolationPath ?? string.Empty },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_TEST_SLOT", Value = request.SaveSlot?.Trim() ?? string.Empty },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_TEST_AUTO_LOAD", Value = string.IsNullOrWhiteSpace(request.SaveSlot) ? "false" : "true" },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL", Value = "1" },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_PRODUCT_EXECUTOR_URL", Value = request.ProductExecutorUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_NATIVE_EXECUTOR_URL", Value = request.NativeExecutorUrl },
                 new TrainingEnvironmentOverride { Name = "SDL_AUDIODRIVER", Value = "dummy" },

@@ -109,8 +109,17 @@ public static partial class FullShipmentRecurrenceProofBuilder
             .ToList();
         if (!IsIntermediateRecoveryQueue(queue, selectedCandidateId))
             reasons.Add("full_shipment_recovery_queue_not_native_stabilization");
-        if (string.IsNullOrWhiteSpace(expectedBefore.StateHash) ||
-            expectedBefore.StateHash != before.StateHash)
+        var exactStateHashChain =
+            !string.IsNullOrWhiteSpace(expectedBefore.StateHash) &&
+            expectedBefore.StateHash == before.StateHash;
+        var verifiedSemanticStateChain =
+            SnapshotHash.MatchesStateHash(
+                expectedBefore.State,
+                expectedBefore.StateHash) &&
+            SnapshotHash.MatchesStateHash(before.State, before.StateHash) &&
+            SnapshotHash.ComputeStateHash(expectedBefore.State) ==
+                SnapshotHash.ComputeStateHash(before.State);
+        if (!exactStateHashChain && !verifiedSemanticStateChain)
         {
             reasons.Add("full_shipment_recovery_state_hash_chain_broken");
         }

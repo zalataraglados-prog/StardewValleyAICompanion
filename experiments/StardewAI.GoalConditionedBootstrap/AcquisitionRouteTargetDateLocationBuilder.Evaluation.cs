@@ -89,19 +89,6 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                     .ToArray());
         }
 
-        if (!state.RouteEvidenceAvailable)
-        {
-            return Result(
-                route,
-                "blocked_location_route_evidence",
-                false,
-                null,
-                Array.Empty<AcquisitionLocationRouteTargetEvaluation>(),
-                Array.Empty<string>(),
-                state.RouteEvidenceBlockingReasons.Length > 0
-                    ? state.RouteEvidenceBlockingReasons
-                    : new[] { "location_route_evidence_unavailable" });
-        }
         if (!targetByOccurrence.TryGetValue(
                 route.RouteOccurrenceId,
                 out var targetResolution) ||

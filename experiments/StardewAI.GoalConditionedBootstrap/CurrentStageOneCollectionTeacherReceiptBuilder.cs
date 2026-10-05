@@ -112,13 +112,14 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             "After snapshot");
         var receiptSchema = ReadReceiptSchema(receiptFullPath);
         PlanExecutionEpisodeEnvelope receipt;
+        QueueExecutionReceiptEnvelope? queueReceipt = null;
         string[] receiptReasons;
         if (string.Equals(
                 receiptSchema,
                 "queue_execution_receipt.v1",
                 StringComparison.Ordinal))
         {
-            var queueReceipt = CurrentTeacherFrontierSupport.Read<
+            queueReceipt = CurrentTeacherFrontierSupport.Read<
                 QueueExecutionReceiptEnvelope>(
                 receiptFullPath,
                 "Queue execution receipt");
@@ -156,7 +157,11 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
 
         var selectedCandidate = preference.SelectedCandidate!;
         var compiledQueue = preference.CompiledQueue!;
-        var transitions = VerifyTransitions(preference, before, after);
+        var transitions = VerifyTransitions(
+            preference,
+            queueReceipt,
+            before,
+            after);
         var failedTransitions = transitions
             .Where(value => !value.Verified)
             .Select(value =>

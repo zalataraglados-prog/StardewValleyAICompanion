@@ -55,8 +55,9 @@ public static partial class FullShipmentRecurrenceProofBuilder
                 CurrentTeacherFrontierSupport.HashFile(anchorSnapshotPath),
             "Full Shipment acquisition rollout does not start at the prior settlement artifact.");
 
-        var expected = AcquisitionRoutePortfolioRolloutProofBuilder.BuildReceipt(
-            manifestPath);
+        var rebuilt = AcquisitionRoutePortfolioRolloutProofBuilder
+            .BuildVerifiedReceipt(manifestPath);
+        var expected = rebuilt.Receipt;
         var actual = CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioRolloutProofReceipt>(
             actualPath,
@@ -67,8 +68,7 @@ public static partial class FullShipmentRecurrenceProofBuilder
             actual.PortfolioCompletionVerified &&
             !actual.FormalTrainingAuthorized,
             "Full Shipment acquisition rollout proof is not complete and exact.");
-        var latest = AcquisitionRoutePortfolioRolloutProofBuilder.Verify(
-            manifestPath);
+        var latest = rebuilt.Latest;
         Require(
             latest.Checkpoint.ScopedProgress.Length == 1 &&
             latest.Checkpoint.ScopedProgress[0].RequirementSetId ==

@@ -856,6 +856,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_radioactive_ore_node")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupRadioactiveOreNode(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_skull_cavern_shaft")
             {
                 StartSetupSkullCavernShaft(pending);

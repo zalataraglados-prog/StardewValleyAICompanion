@@ -16,10 +16,30 @@ namespace StardewAI.Core.Training
             }
 
             var steps = new List<SmallModelPlanStep>();
-            var standTile = ParseCoordinate(candidate.ExpectedEffect, "move_to_adjacent=");
+            var teacherStandX = CandidateInt(
+                candidate,
+                "teacher_route.stand_tile_x");
+            var teacherStandY = CandidateInt(
+                candidate,
+                "teacher_route.stand_tile_y");
+            var standTile = teacherStandX.HasValue && teacherStandY.HasValue
+                ? (teacherStandX.Value, teacherStandY.Value)
+                : ParseCoordinate(candidate.ExpectedEffect, "move_to_adjacent=");
             var routeDistance = CandidateInt(
                 candidate,
                 "route_distance_tiles");
+            var totalMinutes = TicksToMinutes(candidate.EstimatedTicks);
+            var movementMinutes = CandidateInt(
+                candidate,
+                "teacher_route.movement_game_minutes") ??
+                DefaultMovementMinutes(
+                    totalMinutes,
+                    routeDistance,
+                    standTile.HasValue);
+            var terminalMinutes = CandidateInt(
+                candidate,
+                "teacher_route.terminal_action_game_minutes") ??
+                Math.Max(1, totalMinutes - movementMinutes);
             if (standTile.HasValue && routeDistance != 0)
             {
                 steps.Add(new SmallModelPlanStep
@@ -29,7 +49,7 @@ namespace StardewAI.Core.Training
                     TargetLocation = string.IsNullOrWhiteSpace(candidate.LocationId) ? "current_location" : candidate.LocationId,
                     TargetTileX = standTile.Value.X,
                     TargetTileY = standTile.Value.Y,
-                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                    EstimatedMinutes = movementMinutes,
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId },
                     ExpectedEffects = new[] { "player.tile=" + standTile.Value.X + "," + standTile.Value.Y },
                     SafetyConstraints = new[] { "collision_checked_by_action_queue_compiler" },
@@ -115,6 +135,7 @@ namespace StardewAI.Core.Training
             parameters.AddRange(candidate.Parameters.Where(parameter =>
                 parameter.Name.StartsWith("quest_", StringComparison.Ordinal) ||
                 parameter.Name.StartsWith("continuation.", StringComparison.Ordinal) ||
+                parameter.Name.StartsWith("teacher_route.", StringComparison.Ordinal) ||
                 parameter.Name.StartsWith(
                     "route_repair.",
                     StringComparison.Ordinal)));
@@ -127,7 +148,7 @@ namespace StardewAI.Core.Training
                     TargetLocation = string.IsNullOrWhiteSpace(candidate.LocationId) ? "current_location" : candidate.LocationId,
                     TargetTileX = candidate.TileX,
                     TargetTileY = candidate.TileY,
-                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                    EstimatedMinutes = terminalMinutes,
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "target_obstacle_clearable=true", "target_tile_adjacent=true" },
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
                     SafetyConstraints = new[] { "target_obstacle_from_transparent_location_state", "executor_requires_adjacent_target" },
@@ -136,6 +157,26 @@ namespace StardewAI.Core.Training
                 });
 
             return steps;
+        }
+
+        private static int DefaultMovementMinutes(
+            int totalMinutes,
+            int? routeDistance,
+            bool hasStandTile)
+        {
+            if (!hasStandTile)
+            {
+                return 0;
+            }
+            if (routeDistance.HasValue && routeDistance.Value > 0)
+            {
+                return Math.Max(
+                    1,
+                    Math.Min(
+                        Math.Max(1, totalMinutes - 1),
+                        TicksToMinutes(routeDistance.Value * 60)));
+            }
+            return Math.Max(1, totalMinutes / 2);
         }
 
         private static IEnumerable<SmallModelPlanStep> ClearFarmResourceClumpSteps(PolicyEventCandidatePrediction candidate)

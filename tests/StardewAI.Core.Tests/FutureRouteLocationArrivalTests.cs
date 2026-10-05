@@ -104,6 +104,35 @@ public sealed partial class FutureRouteDateEvidenceProducerTests
     }
 
     [Fact]
+    public void LocationArrivalAlreadyAtDynamicTargetDoesNotRequireFutureMap()
+    {
+        var result = new FutureRouteDateEvidenceProducer()
+            .ProduceLocationArrival(
+                default,
+                default,
+                new FutureLocationRouteDateEvidenceRequest
+                {
+                    TotalDays = 12,
+                    StartLocation = "UndergroundMine99",
+                    StartTileX = 4,
+                    StartTileY = 4,
+                    EarliestDepartureTime = 600,
+                    TargetLocation = "undergroundmine99"
+                },
+                Timing());
+
+        Assert.Equal(
+            FutureRouteDateEvidenceProductionStatus.Produced,
+            result.Status);
+        Assert.Equal(600, result.GuaranteedArrivalByTime);
+        Assert.Equal(Timing().EvidenceKind, result.TimingEvidenceKind);
+        Assert.Equal(Timing().EvidenceId, result.TimingEvidenceId);
+        Assert.Empty(result.Path);
+        Assert.Empty(result.SegmentEvidence);
+        Assert.Empty(result.BlockingReasons);
+    }
+
+    [Fact]
     public void LocationArrivalBatchFailsClosedWithoutMislabelingValidRows()
     {
         var results = new FutureRouteDateEvidenceProducer()

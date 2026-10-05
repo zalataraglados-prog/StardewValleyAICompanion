@@ -34,10 +34,12 @@ internal static class CropHarvestIdentityResolver
                 string.Empty);
         }
 
-        var sourceSeedId = crop.whichForageCrop.Value ?? string.Empty;
+        var wildSeedSourceId = crop.whichForageCrop.Value ?? string.Empty;
         if (crop.GetType() == typeof(Crop) &&
             crop.isWildSeedCrop() &&
-            NativeWildSeedOutputs.TryGetValue(sourceSeedId, out var domain))
+            NativeWildSeedOutputs.TryGetValue(
+                wildSeedSourceId,
+                out var domain))
         {
             var resolvedOutput = crop.replaceWithObjectOnFullGrown.Value ??
                 string.Empty;
@@ -48,7 +50,7 @@ internal static class CropHarvestIdentityResolver
                     UnqualifyObjectId(qualifiedOutput),
                     "exact_from_live_native_wild_seed_replacement",
                     true,
-                    sourceSeedId);
+                    wildSeedSourceId);
             }
 
             return new CropHarvestIdentity(
@@ -59,10 +61,11 @@ internal static class CropHarvestIdentityResolver
                     : "unavailable_native_wild_seed_replacement_outside_decompiled_domain",
                 true,
                 false,
-                sourceSeedId);
+                wildSeedSourceId);
         }
 
         var itemId = crop.indexOfHarvest.Value ?? string.Empty;
+        var sourceSeedId = crop.netSeedIndex.Value ?? string.Empty;
         return string.IsNullOrWhiteSpace(itemId)
             ? new CropHarvestIdentity(
                 string.Empty,
@@ -75,7 +78,7 @@ internal static class CropHarvestIdentityResolver
                 itemId,
                 "exact_from_live_index_of_harvest",
                 false,
-                string.Empty);
+                sourceSeedId);
     }
 
     private static CropHarvestIdentity Exact(

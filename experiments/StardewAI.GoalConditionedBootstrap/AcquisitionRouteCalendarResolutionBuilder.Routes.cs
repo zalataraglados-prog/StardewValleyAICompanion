@@ -300,6 +300,29 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if (route.RouteKind is "native_wild_tree_chop_drop" or
+            "native_wild_tree_tapper_output")
+        {
+            return ResolveWildTreeWindow(
+                route,
+                deadlineTotalDayExclusive);
+        }
+
+        if (route.RouteKind == "native_monster_drop_table")
+        {
+            return ResolveMonsterDropWindow(
+                route,
+                deadlineTotalDayExclusive);
+        }
+
+        if (route.RouteKind == "native_radioactive_ore_node")
+        {
+            return ResolveRadioactiveOreNodeWindow(
+                qualifiedItemId,
+                route,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind is "native_crab_pot_output" or
             "native_location_fish_spawn" or
             "native_mine_fishing_override")
@@ -332,6 +355,123 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             Array.Empty<AuthoritativeCalendarSourceWindow>(),
             new[] { "route_kind_calendar_parser_not_implemented" });
     }
+
+    private static CalendarSourceResolution ResolveWildTreeWindow(
+        AcquisitionRequirementRouteLowering route,
+        int deadlineTotalDayExclusive)
+    {
+        const string sourcePrefix = "wild_tree:";
+        if (route.SourceAsset != "Data/WildTrees" ||
+            !route.SourceId.StartsWith(sourcePrefix, StringComparison.Ordinal))
+        {
+            return BlockLiveSourceCalendar(
+                "blocked_authoritative_wild_tree_source_invalid",
+                "wild_tree_authoritative_source_identity_invalid");
+        }
+
+        var sourceParts = route.SourceId[sourcePrefix.Length..].Split(':');
+        var rowName = route.RouteKind == "native_wild_tree_chop_drop"
+            ? "ChopItems"
+            : "TapItems";
+        if (sourceParts.Length != 2 ||
+            sourceParts.Any(string.IsNullOrWhiteSpace) ||
+            route.SourcePath != "payload." + sourceParts[0] +
+                "." + rowName + "[" + sourceParts[1] + "].ItemId")
+        {
+            return BlockLiveSourceCalendar(
+                "blocked_authoritative_wild_tree_source_invalid",
+                "wild_tree_authoritative_source_path_mismatch");
+        }
+        Require(deadlineTotalDayExclusive > 0,
+            "Wild-tree calendar deadline must be positive.");
+        var sourceKind = route.RouteKind == "native_wild_tree_chop_drop"
+            ? "wild_tree_chop_row"
+            : "wild_tree_tapper_row";
+        return new CalendarSourceResolution(
+            ResolvedStatus,
+            "authoritative_" + sourceKind + "_calendar_invariant",
+            new[]
+            {
+                new AuthoritativeCalendarSourceWindow
+                {
+                    SourceKind = sourceKind,
+                    SourceKey = route.SourceId,
+                    RuleId = sourceParts[1],
+                    FirstTotalDay = 0,
+                    LastTotalDay = deadlineTotalDayExclusive - 1,
+                    TimeWindows = NativeCalendarConstraintNormalizer.AllDay,
+                    WeatherModes =
+                        NativeCalendarConstraintNormalizer.AllWeatherModes,
+                    RequiresLocationAccessEvidence = true,
+                    RequiresExistingLiveCandidateMatch = true,
+                    StochasticOutcome = true
+                }
+            },
+            Array.Empty<string>());
+    }
+
+    private static CalendarSourceResolution ResolveMonsterDropWindow(
+        AcquisitionRequirementRouteLowering route,
+        int deadlineTotalDayExclusive)
+    {
+        const string sourcePrefix = "monster:";
+        if (route.SourceAsset != "Data/Monsters" ||
+            !route.SourceId.StartsWith(sourcePrefix, StringComparison.Ordinal))
+        {
+            return BlockLiveSourceCalendar(
+                "blocked_authoritative_monster_source_invalid",
+                "monster_authoritative_source_identity_invalid");
+        }
+
+        var monsterName = route.SourceId[sourcePrefix.Length..];
+        var sourcePathPrefix = "payload." + monsterName + "[6:drop_pair:";
+        if (string.IsNullOrWhiteSpace(monsterName) ||
+            !route.SourcePath.StartsWith(
+                sourcePathPrefix,
+                StringComparison.Ordinal) ||
+            !route.SourcePath.EndsWith(']') ||
+            !int.TryParse(
+                route.SourcePath[sourcePathPrefix.Length..^1],
+                out var dropPairIndex) ||
+            dropPairIndex < 0)
+        {
+            return BlockLiveSourceCalendar(
+                "blocked_authoritative_monster_source_invalid",
+                "monster_authoritative_source_path_mismatch");
+        }
+        Require(deadlineTotalDayExclusive > 0,
+            "Monster-drop calendar deadline must be positive.");
+        return new CalendarSourceResolution(
+            ResolvedStatus,
+            "authoritative_monster_drop_row_calendar_invariant",
+            new[]
+            {
+                new AuthoritativeCalendarSourceWindow
+                {
+                    SourceKind = "monster_drop_row",
+                    SourceKey = route.SourceId,
+                    RuleId = dropPairIndex.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture),
+                    FirstTotalDay = 0,
+                    LastTotalDay = deadlineTotalDayExclusive - 1,
+                    TimeWindows = NativeCalendarConstraintNormalizer.AllDay,
+                    WeatherModes =
+                        NativeCalendarConstraintNormalizer.AllWeatherModes,
+                    RequiresLocationAccessEvidence = true,
+                    RequiresExistingLiveCandidateMatch = true,
+                    StochasticOutcome = true
+                }
+            },
+            Array.Empty<string>());
+    }
+
+    private static CalendarSourceResolution BlockLiveSourceCalendar(
+        string status,
+        string reason) => new(
+            status,
+            string.Empty,
+            Array.Empty<AuthoritativeCalendarSourceWindow>(),
+            new[] { reason });
 
     private static CalendarSourceResolution ResolveFishWindows(
         string qualifiedItemId,

@@ -124,6 +124,7 @@ public static class FullShipmentStaticCompilabilityInventoryBuilder
         var staticComplete = sourceComplete && endpointsComplete &&
             supportingComplete && lineageComplete && groupReady &&
             optionRows.All(row => row.StaticCompilationReady);
+        var runtimeSampleStrata = BuildRuntimeSampleStrata(routes);
         var blockers = routes
             .SelectMany(route => route.BlockingReasons.Select(reason =>
                 route.RouteOccurrenceId + ":" + reason))
@@ -161,17 +162,60 @@ public static class FullShipmentStaticCompilabilityInventoryBuilder
             AllRequirementGroupsHaveCompilableRoute = groupReady,
             StaticCompilabilityComplete = staticComplete,
             FreshSaveRecurrenceEvidenceComplete = false,
+            RuntimeSampleStratumCount = runtimeSampleStrata.Length,
+            RuntimeSampleEvidenceComplete = false,
+            FullRecurrenceRequiredForTraining = false,
+            FullRecurrenceRetainedForAcceptance = true,
             FormalProductTrainingAuthorized = false,
             SourceContracts = sourceRows,
             Options = optionRows,
             Routes = routes,
+            RuntimeSampleStrata = runtimeSampleStrata,
             BlockingReasons = blockers,
             RemainingEvidenceGaps = new[]
             {
-                "fresh_save_154_step_full_shipment_recurrence_not_supplied"
+                "stratified_full_shipment_runtime_samples_not_supplied"
             }
         };
     }
+
+    internal static FullShipmentRuntimeSampleStratum[] BuildRuntimeSampleStrata(
+        IReadOnlyCollection<FullShipmentRouteCompilabilityRow> routes) =>
+        routes
+            .GroupBy(RuntimeSampleSignature, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select((group, index) =>
+            {
+                var rows = group
+                    .OrderBy(row => row.RequirementId, StringComparer.Ordinal)
+                    .ThenBy(row => row.QualifiedItemId, StringComparer.Ordinal)
+                    .ThenBy(row => row.SourceId, StringComparer.Ordinal)
+                    .ToArray();
+                var sample = rows[0];
+                return new FullShipmentRuntimeSampleStratum(
+                    "full_shipment.runtime_sample." +
+                        (index + 1).ToString("D2") + "." + sample.RouteKind,
+                    sample.RouteKind,
+                    sample.SourceEvidenceMode,
+                    sample.EndpointOptionIds,
+                    sample.SupportingOptionIds,
+                    sample.InlineSupportTransitionKinds,
+                    rows.Length,
+                    sample.RouteOccurrenceId,
+                    sample.RequirementId,
+                    sample.QualifiedItemId);
+            })
+            .ToArray();
+
+    private static string RuntimeSampleSignature(
+        FullShipmentRouteCompilabilityRow route) =>
+        route.RouteKind + "|" + route.SourceEvidenceMode + "|" +
+        string.Join(",", route.EndpointOptionIds.Order(StringComparer.Ordinal)) +
+        "|" +
+        string.Join(",", route.SupportingOptionIds.Order(StringComparer.Ordinal)) +
+        "|" +
+        string.Join(",", route.InlineSupportTransitionKinds.Order(
+            StringComparer.Ordinal));
 
     private static FullShipmentRouteCompilabilityRow[] BuildRoutes(
         GoalRequirementSet inventorySet,

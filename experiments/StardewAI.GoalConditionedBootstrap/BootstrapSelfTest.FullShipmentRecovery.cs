@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -41,6 +42,54 @@ internal static partial class BootstrapSelfTest
             reasons.Length == 0,
             "A native Full Shipment recovery transition was rejected: " +
             string.Join(",", reasons));
+
+        var legacyExpected = RecoverySnapshot(
+            string.Empty,
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1);
+        legacyExpected.State["machine_probe_fixture"] =
+            JsonSerializer.SerializeToElement(new
+            {
+                machine_probe_cache_tick = 1179,
+                ready_for_harvest = false
+            });
+        legacyExpected.StateHash = SnapshotHash.ComputeLegacyStateHash(
+            legacyExpected.State);
+        var legacyBefore = RecoverySnapshot(
+            string.Empty,
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1);
+        legacyBefore.State["machine_probe_fixture"] =
+            JsonSerializer.SerializeToElement(new
+            {
+                machine_probe_cache_tick = 1181,
+                ready_for_harvest = false
+            });
+        legacyBefore.StateHash = SnapshotHash.ComputeLegacyStateHash(
+            legacyBefore.State);
+        Require(
+            legacyExpected.StateHash != legacyBefore.StateHash,
+            "Legacy machine-probe cache metadata did not perturb the fixture hash.");
+        var legacyEquivalent = RecoveryFixture(
+            legacyBefore,
+            after,
+            "executor.traverse_connector",
+            "traverse_connector");
+        var legacyEquivalentReasons = ValidateRecovery(
+            legacyEquivalent.Queue,
+            legacyBefore,
+            legacyEquivalent.Receipt,
+            after,
+            legacyExpected,
+            required);
+        Require(
+            !legacyEquivalentReasons.Contains(
+                "full_shipment_recovery_state_hash_chain_broken",
+                StringComparer.Ordinal),
+            "Equivalent legacy snapshots were disconnected by cache metadata: " +
+            string.Join(",", legacyEquivalentReasons));
 
         var sleep = RecoveryFixture(
             before,

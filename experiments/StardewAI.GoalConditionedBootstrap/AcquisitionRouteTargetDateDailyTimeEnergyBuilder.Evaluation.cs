@@ -12,7 +12,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         AcquisitionRouteTargetDateStochasticRetry route,
         AcquisitionRouteCalendarResolution staticRoute,
         AcquisitionRouteTargetDateFishingProbability fishingRoute,
-        AcquisitionDailyTimeEnergySnapshotState state)
+        AcquisitionDailyTimeEnergySnapshotState state,
+        AcquisitionWildTreeChopCandidateIndex wildTreeChopCandidates,
+        AcquisitionCurrentRouteCandidateIndex currentRouteCandidates)
     {
         if (!route.StochasticRetryAxisResolved)
         {
@@ -59,6 +61,16 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state),
             "sells" => EvaluateShop(route, staticRoute, state),
+            "native_wild_tree_chop_drop" => EvaluateWildTreeChop(
+                route,
+                staticRoute,
+                state,
+                wildTreeChopCandidates),
+            "native_radioactive_ore_node" => EvaluateRadioactiveOreNode(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             _ => Result(
                 route,
                 "terminal_budget_not_implemented",
@@ -73,6 +85,288 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     staticRoute.RouteKind
                 })
         };
+    }
+
+    private static AcquisitionRouteTargetDateDailyTimeEnergy
+        EvaluateRadioactiveOreNode(
+            AcquisitionRouteTargetDateStochasticRetry route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionDailyTimeEnergySnapshotState state,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (!candidates.TryFind(
+                staticRoute.RouteKind,
+                staticRoute.SourceId,
+                staticRoute.QualifiedItemId,
+                out var matches,
+                out var blockingReasons))
+        {
+            return Result(
+                route,
+                "native_radioactive_ore_node",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                blockingReasons);
+        }
+
+        var resolvedTargets = LocationRoute(route).TargetEvaluations
+            .Where(value => value.Status == "resolved_location_route_match")
+            .Select(value => (
+                value.TargetLocationId,
+                value.TargetTileX,
+                value.TargetTileY))
+            .ToHashSet();
+        var candidate = matches.FirstOrDefault(value =>
+            resolvedTargets.Contains((
+                value.LocationId,
+                value.TargetTileX,
+                value.TargetTileY)));
+        if (candidate is null ||
+            !candidate.TargetTileX.HasValue ||
+            !candidate.TargetTileY.HasValue ||
+            !candidate.StandTileX.HasValue ||
+            !candidate.StandTileY.HasValue ||
+            !candidate.MaxMovementTiles.HasValue ||
+            candidate.MaxMovementTiles.Value < 0 ||
+            !candidate.MaxToolSwings.HasValue ||
+            candidate.MaxToolSwings.Value <= 0 ||
+            !string.Equals(
+                state.RouteState.CurrentLocationId,
+                candidate.LocationId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return Result(
+                route,
+                "native_radioactive_ore_node",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[]
+                {
+                    "current_radioactive_ore_node_budget_candidate_incomplete"
+                });
+        }
+        if (!state.AvailableEnergy.HasValue)
+        {
+            return Result(
+                route,
+                "native_radioactive_ore_node",
+                "blocked_daily_energy_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                state.EnergyBlockingReasons);
+        }
+        if (state.RouteState.Timing is null)
+        {
+            return Result(
+                route,
+                "native_radioactive_ore_node",
+                "blocked_daily_route_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[] { "route_timing_calibration_incomplete" });
+        }
+
+        var actionTicks = checked(
+            (candidate.MaxMovementTiles.Value +
+             candidate.MaxToolSwings.Value) * 60);
+        var terminalMinutes =
+            GameClockBudgetPolicy.TicksToGameMinutes(actionTicks);
+        var requiredEnergy = candidate.MaxToolSwings.Value * 2d;
+        var start = state.RouteState.CurrentTime;
+        var window = RequirementRoute(route).MatchingWindows
+            .Where(value => string.IsNullOrWhiteSpace(value.LocationId) ||
+                string.Equals(
+                    value.LocationId,
+                    candidate.LocationId,
+                    StringComparison.OrdinalIgnoreCase))
+            .SelectMany(value => value.TimeWindows)
+            .Select(value => new
+            {
+                Window = value,
+                Start = Math.Max(start, value.StartTime),
+                AvailableMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
+                    Math.Max(start, value.StartTime),
+                    value.EndTime)
+            })
+            .Where(value => value.AvailableMinutes >= terminalMinutes)
+            .OrderBy(value => value.Start)
+            .ThenBy(value => value.Window.EndTime)
+            .FirstOrDefault();
+        var timeMatches = window is not null;
+        var energyMatches = state.AvailableEnergy.Value >= requiredEnergy;
+        var evaluation = new AcquisitionDailyTimeEnergyEvaluation(
+            candidate.LocationId,
+            candidate.TargetTileX,
+            candidate.TargetTileY,
+            candidate.StandTileX,
+            candidate.StandTileY,
+            start,
+            start,
+            window?.Window.StartTime,
+            window?.Window.EndTime,
+            terminalMinutes,
+            window is null
+                ? null
+                : GameClockBudgetPolicy.AddClockMinutes(
+                    window.Start,
+                    terminalMinutes),
+            1,
+            null,
+            state.AvailableEnergy.Value,
+            requiredEnergy,
+            requiredEnergy,
+            0d,
+            timeMatches,
+            energyMatches,
+            "existing_native_mine_stone_profile",
+            state.RouteState.Timing.EvidenceId,
+            new[]
+            {
+                "candidate:mining.reach_depth",
+                "candidate.parameters[max_movement_tiles]",
+                "candidate.parameters[max_tool_swings]",
+                "state.mining.objects.value[].best_pickaxe_hits_remaining",
+                "state.player.energy.value",
+                "compiler:MiningFloorStepCompiler"
+            });
+        if (!timeMatches)
+        {
+            return Result(
+                route,
+                "native_radioactive_ore_node",
+                "resolved_daily_time_budget_miss",
+                true,
+                false,
+                evaluation,
+                new[] { "terminal_duration_does_not_fit_source_window" },
+                Array.Empty<string>());
+        }
+        if (!energyMatches)
+        {
+            return Result(
+                route,
+                "native_radioactive_ore_node",
+                "resolved_daily_energy_budget_miss",
+                true,
+                false,
+                evaluation,
+                new[] { "available_energy_below_required_cost_and_reserve" },
+                Array.Empty<string>());
+        }
+        return Result(
+            route,
+            "native_radioactive_ore_node",
+            "resolved_daily_time_energy_budget_match",
+            true,
+            true,
+            evaluation,
+            Array.Empty<string>(),
+            Array.Empty<string>());
+    }
+
+    private static AcquisitionRouteTargetDateDailyTimeEnergy
+        EvaluateWildTreeChop(
+            AcquisitionRouteTargetDateStochasticRetry route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionDailyTimeEnergySnapshotState state,
+            AcquisitionWildTreeChopCandidateIndex candidates)
+    {
+        if (!candidates.EvidenceComplete)
+        {
+            return Result(
+                route,
+                "native_wild_tree_chop",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                candidates.BlockingReasons);
+        }
+
+        var resolvedTargets = LocationRoute(route).TargetEvaluations
+            .Where(value => value.Status == "resolved_location_route_match")
+            .Select(value => (
+                value.TargetLocationId,
+                value.TargetTileX,
+                value.TargetTileY))
+            .ToHashSet();
+        var candidate = candidates.Find(
+                staticRoute.RouteKind,
+                staticRoute.SourceId,
+                staticRoute.QualifiedItemId,
+                staticRoute.RequiredAmount,
+                staticRoute.MinimumQuality)
+            .FirstOrDefault(value => resolvedTargets.Contains((
+                value.LocationId,
+                (int?)value.TargetTileX,
+                (int?)value.TargetTileY)));
+        if (candidate is null)
+        {
+            return Result(
+                route,
+                "native_wild_tree_chop",
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[]
+                {
+                    "upstream_resolved_wild_tree_chop_candidate_not_rebuilt"
+                });
+        }
+        if (!state.AvailableEnergy.HasValue)
+        {
+            return Result(
+                route,
+                "native_wild_tree_chop",
+                "blocked_daily_energy_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                state.EnergyBlockingReasons);
+        }
+
+        var actionTicks = Math.Max(
+            1,
+            candidate.EstimatedTicks - candidate.RouteDistanceTiles * 60);
+        return EvaluateTerminal(
+            route,
+            staticRoute,
+            state,
+            "native_wild_tree_chop",
+            candidate.LocationId,
+            candidate.TargetTileX,
+            candidate.TargetTileY,
+            requireExactTargetTile: false,
+            GameClockBudgetPolicy.TicksToGameMinutes(actionTicks),
+            1,
+            null,
+            state.AvailableEnergy.Value,
+            candidate.EnergyCost,
+            candidate.EnergyCost,
+            0d,
+            "existing_native_clear_obstacle_wild_tree_chop_profile",
+            new[]
+            {
+                "candidate:foraging.chop_wild_tree",
+                "state.current_location.terrain_features.value[].tree_chop_expected_tool_swings",
+                "state.current_location.terrain_features.value[].tree_chop_energy_cost",
+                "compiler:DailyPlanCompiler.ClearPlantSteps",
+                "compiler:ActionQueueCompiler.ClearObstacle"
+            });
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy

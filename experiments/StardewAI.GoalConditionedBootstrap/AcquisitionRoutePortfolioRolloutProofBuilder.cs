@@ -6,11 +6,17 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
 {
     public static AcquisitionRoutePortfolioRolloutProofReceipt BuildReceipt(
         string manifestPath)
+        => BuildVerifiedReceipt(manifestPath).Receipt;
+
+    internal static (
+        AcquisitionRoutePortfolioRolloutProofReceipt Receipt,
+        AcquisitionRoutePortfolioVerifiedCheckpoint Latest)
+        BuildVerifiedReceipt(string manifestPath)
     {
         var manifestFullPath = Path.GetFullPath(manifestPath);
         var manifest = ReadManifest(manifestFullPath);
         var latest = Verify(manifest, manifestFullPath);
-        return new AcquisitionRoutePortfolioRolloutProofReceipt
+        var receipt = new AcquisitionRoutePortfolioRolloutProofReceipt
         {
             Status = latest.Checkpoint.PortfolioCompletionVerified
                 ? "verified_complete_rollout_proof_chain"
@@ -35,6 +41,7 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
             ProofChainVerified = true,
             FormalTrainingAuthorized = false
         };
+        return (receipt, latest);
     }
 
     internal static AcquisitionRoutePortfolioVerifiedCheckpoint
