@@ -1,0 +1,241 @@
+{
+  "schema_version": "full_shipment_runtime_sample_plan.v1",
+  "expected_stratum_count": 26,
+  "formal_training_authorized": false,
+  "entries": [
+    {
+      "scenario": "sap_prefix",
+      "requirement_id": "full_shipment:item:92",
+      "qualified_item_id": "(O)92",
+      "route_kind": "native_wild_tree_chop_drop",
+      "endpoint_option_id": "foraging.chop_wild_tree",
+      "run_batch": "anchor",
+      "shared_shipping_anchor": true
+    },
+    {
+      "scenario": "radioactive_ore_node_sample",
+      "requirement_id": "full_shipment:item:909",
+      "qualified_item_id": "(O)909",
+      "route_kind": "native_radioactive_ore_node",
+      "endpoint_option_id": "mining.reach_depth",
+      "run_batch": "anchor",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "wild_tree_tapper_output_sample",
+      "requirement_id": "full_shipment:item:725",
+      "qualified_item_id": "(O)725",
+      "route_kind": "native_wild_tree_tapper_output",
+      "endpoint_option_id": "farm.collect_machine_outputs",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "monster_drop_sample",
+      "requirement_id": "full_shipment:item:766",
+      "qualified_item_id": "(O)766",
+      "route_kind": "native_monster_drop_table",
+      "endpoint_option_id": "mining.reach_depth",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "location_fish_spawn_sample",
+      "requirement_id": "full_shipment:item:388",
+      "qualified_item_id": "(O)388",
+      "route_kind": "native_location_fish_spawn",
+      "endpoint_option_id": "fishing.catch_fish",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "location_artifact_spot_sample",
+      "requirement_id": "full_shipment:item:330",
+      "qualified_item_id": "(O)330",
+      "route_kind": "native_location_artifact_spot",
+      "endpoint_option_id": "foraging.excavate_artifact_spots",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "geode_drop_sample",
+      "requirement_id": "full_shipment:item:386",
+      "qualified_item_id": "(O)386",
+      "route_kind": "native_geode_drop",
+      "endpoint_option_id": "processing.crack_geode",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "shop_purchase_sample",
+      "requirement_id": "full_shipment:item:388",
+      "qualified_item_id": "(O)388",
+      "route_kind": "sells",
+      "endpoint_option_id": "economy.buy_supplies",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "community_center_reward_sample",
+      "requirement_id": "full_shipment:item:336",
+      "qualified_item_id": "(O)336",
+      "route_kind": "creates_reward_item",
+      "endpoint_option_id": "community_center.donate_bundle_items",
+      "run_batch": "high_risk",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "parsnip_harvest_sample",
+      "requirement_id": "full_shipment:item:24",
+      "qualified_item_id": "(O)24",
+      "route_kind": "harvests_as",
+      "endpoint_option_id": "farm.maintain_crops",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "berry_bush_harvest_sample",
+      "requirement_id": "full_shipment:item:296",
+      "qualified_item_id": "(O)296",
+      "route_kind": "native_bush_shake",
+      "endpoint_option_id": "foraging.harvest_bushes",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "ginger_harvest_sample",
+      "requirement_id": "full_shipment:item:829",
+      "qualified_item_id": "(O)829",
+      "route_kind": "native_ginger_harvest",
+      "endpoint_option_id": "foraging.harvest_ginger",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "tea_bush_harvest_sample",
+      "requirement_id": "full_shipment:item:815",
+      "qualified_item_id": "(O)815",
+      "route_kind": "native_tea_bush_harvest",
+      "endpoint_option_id": "foraging.harvest_bushes",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "wild_tree_seed_drop_sample",
+      "requirement_id": "full_shipment:item:408",
+      "qualified_item_id": "(O)408",
+      "route_kind": "native_wild_tree_seed_drop",
+      "endpoint_option_id": "foraging.harvest_tree_product",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "wild_tree_seed_sample",
+      "requirement_id": "full_shipment:item:88",
+      "qualified_item_id": "(O)88",
+      "route_kind": "native_wild_tree_seed",
+      "endpoint_option_id": "foraging.harvest_tree_product",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "spring_onion_harvest_sample",
+      "requirement_id": "full_shipment:item:399",
+      "qualified_item_id": "(O)399",
+      "route_kind": "native_spring_onion_harvest",
+      "endpoint_option_id": "foraging.harvest_spring_onions",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "location_forage_spawn_sample",
+      "requirement_id": "full_shipment:item:16",
+      "qualified_item_id": "(O)16",
+      "route_kind": "native_location_forage_spawn",
+      "endpoint_option_id": "foraging.collect_spawned_objects",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "fruit_tree_harvest_sample",
+      "requirement_id": "full_shipment:item:638",
+      "qualified_item_id": "(O)638",
+      "route_kind": "native_fruit_tree_produce",
+      "endpoint_option_id": "foraging.harvest_fruit_tree",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "farm_animal_product_sample",
+      "requirement_id": "full_shipment:item:184",
+      "qualified_item_id": "(O)184",
+      "route_kind": "native_farm_animal_produce",
+      "endpoint_option_id": "farm.collect_animal_products",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "farm_animal_deluxe_product_sample",
+      "requirement_id": "full_shipment:item:186",
+      "qualified_item_id": "(O)186",
+      "route_kind": "native_farm_animal_deluxe_produce",
+      "endpoint_option_id": "farm.collect_animal_products",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "fish_pond_output_sample",
+      "requirement_id": "full_shipment:item:812",
+      "qualified_item_id": "(O)812",
+      "route_kind": "native_fish_pond_output",
+      "endpoint_option_id": "fishing.service_fish_ponds",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "machine_output_sample",
+      "requirement_id": "full_shipment:item:257",
+      "qualified_item_id": "(O)257",
+      "route_kind": "machine_output",
+      "endpoint_option_id": "farm.collect_machine_outputs",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "machine_flavored_output_sample",
+      "requirement_id": "full_shipment:item:340",
+      "qualified_item_id": "(O)340",
+      "route_kind": "native_machine_flavored_output",
+      "endpoint_option_id": "farm.collect_machine_outputs",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "machine_item_query_output_sample",
+      "requirement_id": "full_shipment:item:257",
+      "qualified_item_id": "(O)257",
+      "route_kind": "native_machine_item_query_output",
+      "endpoint_option_id": "farm.collect_machine_outputs",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "solar_panel_output_sample",
+      "requirement_id": "full_shipment:item:787",
+      "qualified_item_id": "(O)787",
+      "route_kind": "native_solar_panel_output",
+      "endpoint_option_id": "farm.collect_machine_outputs",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    },
+    {
+      "scenario": "tree_moss_harvest_sample",
+      "requirement_id": "full_shipment:item:Moss",
+      "qualified_item_id": "(O)Moss",
+      "route_kind": "native_tree_moss_harvest",
+      "endpoint_option_id": "foraging.harvest_tree_moss",
+      "run_batch": "standard",
+      "shared_shipping_anchor": false
+    }
+  ]
+}
