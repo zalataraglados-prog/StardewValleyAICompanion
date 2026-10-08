@@ -5,6 +5,7 @@ param(
     [string] $ProjectRoot = "",
     [int] $BackendPort = 8798,
     [string] $SnapshotProfile = "",
+    [switch] $RebuildPlanning,
     [switch] $SkipBuild
 )
 
@@ -16,8 +17,13 @@ if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
 $ArtifactDirectory = [IO.Path]::GetFullPath($ArtifactDirectory)
 $planningDirectory = Join-Path $ArtifactDirectory "planning"
-$runId = Split-Path -Leaf $ArtifactDirectory
 $backendUrl = "http://127.0.0.1:$BackendPort"
+$planningRebuildSupport = Join-Path $PSScriptRoot `
+    "lib\RuntimeFullShipmentAcquisitionProofRebuild.ps1"
+if (-not (Test-Path -LiteralPath $planningRebuildSupport -PathType Leaf)) {
+    throw "Full Shipment acquisition proof rebuild support is missing."
+}
+. $planningRebuildSupport
 
 function Require-File {
     param([string] $Path)
@@ -105,20 +111,35 @@ function Invoke-Bootstrap {
 
 $initialSnapshotPath = Require-File (Join-Path $ArtifactDirectory `
     "recurrence-initial-snapshot.json")
+$sourceSummaryPath = Require-File (Join-Path $ArtifactDirectory "summary.json")
+$sourceSummary = Get-Content -LiteralPath $sourceSummaryPath -Raw |
+    ConvertFrom-Json
+$sourceRolloutManifestPath = Require-File (Join-Path $planningDirectory `
+    "rollout-proof-manifest.json")
+$sourceRolloutManifest = Get-Content -LiteralPath $sourceRolloutManifestPath `
+    -Raw | ConvertFrom-Json
+$sourceProof = $sourceRolloutManifest.initial_checkpoint_proof
+$sourceExecutionInputs = $sourceProof.execution_inputs
+$runId = [string]$sourceProof.run_id
+if ([string]::IsNullOrWhiteSpace($runId)) {
+    throw "Source rollout proof manifest has no run id."
+}
 $afterSnapshotPath = Require-File (Join-Path $ArtifactDirectory `
     "01-acquire-sample\runs\$runId\live-snapshots\after-snapshot-0001.json")
 $executionReceiptPath = Require-File (Join-Path $ArtifactDirectory `
     "01-acquire-sample\runs\$runId\live-snapshots\execution-0001.json")
-$requirementInventoryPath = Require-File (Join-Path $ProjectRoot `
-    "experiments\local-data\output\authoritative-requirement-inventory-v1.json")
-$acquisitionLoweringPath = Require-File (Join-Path $ProjectRoot `
-    "experiments\local-data\output\acquisition-route-option-lowering-v1.json")
-$masterAnglerWindowsPath = Require-File (Join-Path $ProjectRoot `
-    "experiments\local-data\output\master-angler-stage-one-window-index-v1.json")
+$requirementInventoryPath = Require-File `
+    ([string]$sourceExecutionInputs.requirement_inventory_path)
+$acquisitionLoweringPath = Require-File `
+    ([string]$sourceExecutionInputs.acquisition_lowering_path)
+$masterAnglerWindowsPath = Require-File `
+    ([string]$sourceExecutionInputs.master_angler_windows_path)
 $routeTimingPath = Require-File `
-    "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json"
+    ([string]$sourceExecutionInputs.route_timing_calibration_path)
 
 $paths = @{
+    ranking = Require-File (Join-Path $planningDirectory `
+        "ranking-acquisition.json")
     calendar = Require-File (Join-Path $planningDirectory `
         "calendar-resolution.json")
     target_calendar = Require-File (Join-Path $planningDirectory `
@@ -167,6 +188,7 @@ $paths = @{
         "portfolio-commit-result.json")
     action_queue = Require-File (Join-Path $planningDirectory `
         "action-queue.json")
+    dispatch = Join-Path $planningDirectory "dispatch-compilation.json"
     execution_binding = Require-File (Join-Path $planningDirectory `
         "execution-binding.json")
     fresh_terminal = Require-File (Join-Path $planningDirectory `
@@ -188,6 +210,9 @@ if ([string]::IsNullOrWhiteSpace($requirementId) -or
     throw "Execution binding has incomplete acquisition identity."
 }
 $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
+    "full_shipment:item:92|(O)92|native_wild_tree_chop_drop" {
+        "sap_prefix"
+    }
     "full_shipment:item:24|(O)24|harvests_as" {
         "parsnip_harvest_sample"
     }
@@ -280,7 +305,7 @@ if ($SnapshotProfile -notin @("full", "training_mining")) {
     throw "Unsupported acquisition resume snapshot profile: $SnapshotProfile"
 }
 
-$executionCommon = @(
+$planningCommon = @(
     "--requirement-inventory", $requirementInventoryPath,
     "--acquisition-lowering", $acquisitionLoweringPath,
     "--master-angler-windows", $masterAnglerWindowsPath,
@@ -301,7 +326,9 @@ $executionCommon = @(
     "--fishing-forecast-manifest", $paths.forecast,
     "--strategy-ledger", $paths.strategy_ledger,
     "--snapshot", $initialSnapshotPath,
-    "--route-timing-calibration", $routeTimingPath,
+    "--route-timing-calibration", $routeTimingPath
+)
+$executionCommon = $planningCommon + @(
     "--portfolio-proposal", $paths.proposal,
     "--portfolio-admission", $paths.admission,
     "--portfolio-preference-request", $paths.preference_request,
@@ -346,7 +373,13 @@ finally {
 }
 $resumeLedgerRoot = Join-Path $planningDirectory "resume-strategy-ledger"
 New-Item -ItemType Directory -Force -Path $resumeLedgerRoot | Out-Null
-Copy-Item -LiteralPath $paths.committed_ledger `
+$ledgerSeedPath = if ($RebuildPlanning) {
+    $paths.strategy_ledger
+}
+else {
+    $paths.committed_ledger
+}
+Copy-Item -LiteralPath $ledgerSeedPath `
     -Destination (Join-Path $resumeLedgerRoot $ledgerFileName) -Force
 
 if ($null -ne (Get-NetTCPConnection -State Listen -LocalPort $BackendPort `
@@ -365,6 +398,23 @@ try {
         -RedirectStandardError (Join-Path $ArtifactDirectory `
             "resume-backend.stderr.log") -PassThru
     Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
+
+    if ($RebuildPlanning) {
+        Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild `
+            -BackendUrl $backendUrl -SnapshotProfile $SnapshotProfile `
+            -InitialSnapshotPath $initialSnapshotPath `
+            -RequirementInventoryPath $requirementInventoryPath `
+            -AcquisitionLoweringPath $acquisitionLoweringPath `
+            -MasterAnglerWindowsPath $masterAnglerWindowsPath `
+            -RouteTimingPath $routeTimingPath -Paths $paths `
+            -PlanningCommon $planningCommon `
+            -ExecutionCommon $executionCommon `
+            -RouteOccurrenceId $routeOccurrenceId `
+            -RequirementId $requirementId `
+            -QualifiedItemId $qualifiedItemId -RouteKind $routeKind `
+            -ExecutionReceiptPath $executionReceiptPath `
+            -AfterSnapshotPath $afterSnapshotPath -RunId $runId
+    }
 
     $afterSnapshotRaw = Get-Content -LiteralPath $afterSnapshotPath -Raw
     Invoke-JsonPost -Url (
@@ -494,8 +544,86 @@ try {
         [bool]$receipt.formal_training_authorized) {
         throw "Resumed acquisition rollout proof is incomplete."
     }
-    Write-JsonFile -Path (Join-Path $ArtifactDirectory "summary.json") `
-        -Value ([ordered]@{
+
+    $summaryPath = Join-Path $ArtifactDirectory "summary.json"
+    if ([string]$sourceSummary.schema_version -eq
+            "stardewai.runtime_full_shipment_sap_prefix_smoke.v1") {
+        if ($scenario -ne "sap_prefix") {
+            throw "A Sap recurrence summary does not bind the Sap route."
+        }
+        $sourceRecurrencePath = Require-File `
+            ([string]$sourceSummary.recurrence_manifest_path)
+        $recurrence = Get-Content -LiteralPath $sourceRecurrencePath -Raw |
+            ConvertFrom-Json
+        $matchingIterations = @($recurrence.iterations | Where-Object {
+            [string]$_.requirement_id -eq $requirementId -and
+            [string]$_.qualified_item_id -eq $qualifiedItemId
+        })
+        if ($matchingIterations.Count -ne 1 -or
+            [string]$matchingIterations[0].acquisition_rollout_proof_receipt_path `
+                -ne [string]$sourceSummary.acquisition_rollout_receipt_path) {
+            throw "Source Sap recurrence does not bind one source acquisition proof."
+        }
+        $recurrence.requirement_inventory_path = $requirementInventoryPath
+        $recurrence.acquisition_lowering_path = $acquisitionLoweringPath
+        $recurrence.initial_snapshot_path = $initialSnapshotPath
+        $matchingIterations[0].acquisition_rollout_proof_manifest_path =
+            $rolloutManifestPath
+        $matchingIterations[0].acquisition_rollout_proof_receipt_path =
+            $rolloutReceiptPath
+        $matchingIterations[0].acquisition_after_snapshot_path =
+            $afterSnapshotPath
+        $recurrenceManifestPath = Join-Path $ArtifactDirectory `
+            "full-shipment-recurrence-prefix-manifest.json"
+        $prefixCheckpointPath = Join-Path $ArtifactDirectory `
+            "full-shipment-recurrence-prefix-checkpoint.json"
+        Write-JsonFile -Path $recurrenceManifestPath -Value $recurrence
+        Invoke-Bootstrap @(
+            "build-full-shipment-recurrence-prefix-checkpoint",
+            "--manifest", $recurrenceManifestPath,
+            "--output", $prefixCheckpointPath
+        )
+        $prefix = Get-Content -LiteralPath $prefixCheckpointPath -Raw |
+            ConvertFrom-Json
+        if (-not [bool]$prefix.prefix_proof_verified -or
+            [bool]$prefix.formal_training_authorized -or
+            [int]$prefix.verified_iteration_count -lt 1) {
+            throw "Rebased Sap recurrence prefix is incomplete."
+        }
+        Write-JsonFile -Path $summaryPath -Value ([ordered]@{
+            schema_version =
+                "stardewai.runtime_full_shipment_sap_prefix_smoke.v1"
+            status = "passed"
+            run_id = $runId
+            save_slot = [string]$sourceSummary.save_slot
+            archived_source_preserved =
+                [bool]$sourceSummary.archived_source_preserved
+            archived_source_sha256 =
+                [string]$sourceSummary.archived_source_sha256
+            initial_state_hash = [string](
+                (Get-Content -LiteralPath $initialSnapshotPath -Raw |
+                    ConvertFrom-Json).state_hash)
+            acquisition_route_occurrence_id = $routeOccurrenceId
+            acquired_sap_stack = [int]$sourceSummary.acquired_sap_stack
+            verified_iteration_count =
+                [int]$prefix.verified_iteration_count
+            remaining_item_count = [int]$prefix.remaining_item_count
+            final_total_day = [int]$prefix.final_total_day
+            ready_for_next_iteration =
+                [bool]$prefix.ready_for_next_iteration
+            complete = [bool]$prefix.complete
+            achievement_34_verified =
+                [bool]$prefix.achievement_34_verified
+            prefix_checkpoint_path = $prefixCheckpointPath
+            recurrence_manifest_path = $recurrenceManifestPath
+            acquisition_rollout_receipt_path = $rolloutReceiptPath
+            isolated_save_root = Join-Path $ArtifactDirectory "isolated-saves"
+            resumed_from_verified_execution_artifacts = $true
+            planning_rebuilt = [bool]$RebuildPlanning
+        })
+    }
+    else {
+        Write-JsonFile -Path $summaryPath -Value ([ordered]@{
             schema_version =
                 "stardewai.runtime_full_shipment_acquisition_sample.v1"
             status = "passed"
@@ -513,8 +641,10 @@ try {
             rollout_proof_manifest_path = $rolloutManifestPath
             rollout_proof_receipt_path = $rolloutReceiptPath
             resumed_from_verified_execution_artifacts = $true
+            planning_rebuilt = [bool]$RebuildPlanning
         })
-    Get-Content -LiteralPath (Join-Path $ArtifactDirectory "summary.json") -Raw
+    }
+    Get-Content -LiteralPath $summaryPath -Raw
 }
 finally {
     if ($null -ne $backend -and -not $backend.HasExited) {

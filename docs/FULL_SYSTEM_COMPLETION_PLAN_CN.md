@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-08 确定性规则升级后的证据重基
+
+已验证的原生动作不会因为上游确定性规则升级而被直接丢弃，也不能继续引用已经漂移的规划产物。标准处理顺序是：复制原 artifact，使用 `Resume-RuntimeFullShipmentAcquisitionProof.ps1 -RebuildPlanning` 从证明自身绑定的权威输入重建规划与承诺，强制保留同一 route occurrence，再用新队列严格复核旧原生 execution receipt。Sap 还必须重新验证获取、投递、睡眠结算的 recurrence prefix。任一身份、动作或状态变化不匹配时均失败关闭，并改为安排新的交互式原生采证。
+
+当前 Sap 与放射性矿 anchor 已按此流程重基，并由独立 production evidence index 复核为 `anchor_evidence_verified`。这只恢复了两个 anchor 的当前有效性，不代表 7 个 high-risk 和其余 standard 分层已完成，也不改变训练授权为 `false` 的状态。
+
 ## 2026-10-05 Full Shipment 里程碑采证执行顺序
 
 “重新校验 anchor”严格指 production evidence index 在首个非 anchor 游戏场景前独立重建共享 settlement、rollout receipt、权威输入哈希和精确 stratum/route identity；仅有 summary 或引用文件不构成准入。`all` 批次可从零生成两个 anchor，但同样必须先通过这道前置验真，才会进入高风险层。

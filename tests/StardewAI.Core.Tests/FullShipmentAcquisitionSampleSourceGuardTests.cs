@@ -1572,6 +1572,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "full_shipment:item:92|(O)92|native_wild_tree_chop_drop",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "full_shipment:item:296|(O)296|native_bush_shake",
             source,
             StringComparison.Ordinal);
@@ -1697,6 +1701,64 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain(
             "requirement_id = \"full_shipment:item:24\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ResumeProofCanRebuildPlanningWithoutReplayingNativeExecution()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Resume-RuntimeFullShipmentAcquisitionProof.ps1");
+        var rebuild = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeFullShipmentAcquisitionProofRebuild.ps1");
+
+        Assert.Contains(
+            "[switch] $RebuildPlanning",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sourceExecutionInputs.requirement_inventory_path",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sourceExecutionInputs.route_timing_calibration_path",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$runId = [string]$sourceProof.run_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuntimeFullShipmentAcquisitionProofRebuild.ps1",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Rebuilt teacher preference did not preserve the source route.",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "build-acquisition-route-fresh-terminal-receipt",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "build-full-shipment-recurrence-prefix-checkpoint",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "planning_rebuilt = [bool]$RebuildPlanning",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "experiments\\local-data\\output\\" +
+            "authoritative-requirement-inventory-v1.json",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "$runId = Split-Path -Leaf $ArtifactDirectory",
             source,
             StringComparison.Ordinal);
     }
