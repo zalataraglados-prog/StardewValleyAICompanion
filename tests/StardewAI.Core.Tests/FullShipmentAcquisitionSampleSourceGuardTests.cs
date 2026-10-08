@@ -685,11 +685,15 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
+            "function Assert-CompletedHighRiskEvidence",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "verified_exact_native_sample",
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
-            "Imported Full Shipment anchor evidence failed exact proof verification",
+            "evidence failed exact proof verification",
             milestone,
             StringComparison.Ordinal);
         Assert.True(
@@ -701,6 +705,25 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
                 StringComparison.Ordinal));
         Assert.Contains(
             "[string]$entry.run_batch -ne \"anchor\"",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Milestone standard batch requires completed high-risk evidence",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$entry.run_batch -eq \"standard\"",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.True(
+            milestone.IndexOf(
+                "if (-not $highRiskEvidenceVerified",
+                StringComparison.Ordinal) <
+            milestone.IndexOf(
+                "$stdout = & $runner @parameters",
+                StringComparison.Ordinal));
+        Assert.Contains(
+            "$selectedBatchStartsWithStandard",
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
