@@ -2,6 +2,8 @@
 
 ## 2026-10-05 Full Shipment 里程碑采证执行顺序
 
+“重新校验 anchor”严格指 production evidence index 在首个非 anchor 游戏场景前独立重建共享 settlement、rollout receipt、权威输入哈希和精确 stratum/route identity；仅有 summary 或引用文件不构成准入。`all` 批次可从零生成两个 anchor，但同样必须先通过这道前置验真，才会进入高风险层。
+
 当前静态分母已重新计算为 `154/641/26` 且没有 blocker；26 个 runner 场景经完整执行签名对账后恰好覆盖 26 层。原生采证不再人工逐条展开，而由 `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 执行：先导入并重新校验 Sap/放射性矿石 anchor，再跑树液收集器、怪物掉落、地点钓获、蚯蚓地、晶球、商店和社区中心奖励 7 个高风险层；全部通过后再批量补标准层。每层失败即停、无自动重试、保留 checkpoint 与完整产物。
 
 退出条件不是“脚本跑完”，而是每个 stratum 都有精确 route occurrence、原生 `applied/verified`、fresh 终态、独立 rollout proof，且最终 `full_shipment_runtime_sample_evidence_index.v1` 重新计算为 `26/26`。在此之前 `formal_product_training_authorized=false`。
@@ -16,7 +18,7 @@
 
 26 个权威运行时分层均已接入共享样本 runner，当前配置覆盖为 `26/26`。最后的 `native_location_fish_spawn` 通过透明完整钓获分布绑定 `location_fish:Town:3 -> (O)388`，没有把非鱼物品伪装成 Master Angler 鱼种，也没有建立第二套钓鱼执行器。
 
-下一阶段不是继续增加入口，而是拆分过大的共享 runner、运行有边界的全量离线回归与代表性原生抽样，然后在训练准入里程碑统一重建 26 层 production evidence index。只有新索引全部独立验收，才能改变 `formal_product_training_authorized=false`。
+共享 runner 的场景无关编排拆分已经完成。下一阶段不是继续增加入口，而是先导入并独立重验两个 anchor，再按高风险、标准批次执行代表性原生抽样，最后统一重建 26 层 production evidence index。只有新索引全部独立验收，才能改变 `formal_product_training_authorized=false`。
 
 ## 2026-10-05 Full Shipment 入口补齐状态更新
 
