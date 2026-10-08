@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-08 Full Shipment anchor 证明重基
+
+- 10 月 8 日的机器首个有效输出修复把 34 条机器路线从错误的确定性通过改为显式阻塞。Sap 与放射性矿目标路线本身没有变化，但旧证明中的全局日历因此按设计失效，production evidence preflight 会以 `Calendar resolution drifted from deterministic source compilation` 失败关闭。
+- `Resume-RuntimeFullShipmentAcquisitionProof.ps1 -RebuildPlanning` 现在可在不启动游戏的情况下，从原 rollout manifest 读取权威 inventory/lowering/Master Angler/计时输入和原始 `run_id`，重建日历、全部目标日约束轴、Teacher 选路、承诺、动作队列、execution binding、fresh terminal、结算和 rollout proof。它必须重新选择与旧证据完全相同的 route occurrence，并让旧原生执行回执通过新队列校验，否则立即拒绝。
+- Sap 特殊链会额外重绑 recurrence manifest，并重新计算 prefix checkpoint；不是只改 summary 或文件指针。重基应在原 artifact 的副本上执行，历史证据目录保持不变。
+- 异机无游戏验证已完成：Sap 和放射性矿两个重基证明均通过，随后 milestone 以 `-EvidencePreflightOnly` 独立重建 production evidence index，checkpoint 为 `anchor_evidence_verified`。下一批仍是原计划中的 7 个 high-risk 场景；`formal_product_training_authorized` 继续保持 `false`。
+
 ## 2026-10-05 Full Shipment 采证里程碑计划
 
 - 执行批次不再把“anchor 摘要及其引用文件存在”当成验真。默认 `high_risk/standard/all_missing` 会在启动首个游戏场景前，用 production evidence index 独立重建 Sap 共享出货/睡眠证明和两个 anchor 的精确 rollout proof；`all` 从零运行时则在两个 anchor 生成完、进入首个非 anchor 场景前执行同一验真。任何漂移立即写入失败 checkpoint 并停止，不消耗后续原生场景运行。
