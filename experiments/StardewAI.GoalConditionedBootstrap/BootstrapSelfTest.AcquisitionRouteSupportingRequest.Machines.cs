@@ -212,6 +212,26 @@ internal static partial class BootstrapSelfTest
                     "machine_input_candidate_material_claim_mismatch",
                     StringComparer.Ordinal),
             "A machine support candidate escaped its exact reserved input slot.");
+
+        var wrongNodeClaim = materialClaim.WithNode("chest:Farm:10:10");
+        var wrongNodeReservation = reservation.WithClaim(
+            new[] { wrongNodeClaim });
+        var wrongNode = AcquisitionRouteSupportingTransitionRequestBuilder
+            .BuildCore(
+                "grandpa.stage1.21_points",
+                requirement,
+                lowering,
+                wrongNodeReservation,
+                processing.WithReservation(wrongNodeReservation),
+                snapshot,
+                ledger,
+                support,
+                supportDeadlineTotalDay: 2);
+        Require(!wrongNode.SupportRequestReady &&
+                wrongNode.BlockingReasons.Contains(
+                    "machine_input_candidate_material_claim_mismatch",
+                    StringComparer.Ordinal),
+            "A machine load consumed a player slot while binding a chest claim.");
     }
 
     private static void VerifyMachineInputSupportingReceipt(

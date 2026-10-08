@@ -236,7 +236,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         var claimBound = CandidateCoveredByClaim(
             candidate,
             reservation.ClaimSet,
-            "crop_planting");
+            "crop_planting",
+            string.Empty);
         if (!claimBound)
             reasons.Add("crop_planting_candidate_seed_claim_mismatch");
         var cropConsumptions = claimBound
@@ -486,7 +487,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         var claimBound = CandidateCoveredByClaim(
             candidate,
             reservation.ClaimSet,
-            "machine_input_load");
+            "machine_input_load",
+            CurrentPlayerInventoryNodeId(snapshot));
         if (!claimBound)
             reasons.Add("machine_input_candidate_material_claim_mismatch");
         var consumptions = schedule is not null &&

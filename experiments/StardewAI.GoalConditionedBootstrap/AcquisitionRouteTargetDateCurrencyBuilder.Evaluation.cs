@@ -144,7 +144,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                 quote.TradeItemQualifiedId is null &&
                 quote.Price > 0 &&
                 quote.CanBuyItem &&
-                quote.ExecutorPurchaseEnabled)
+                CurrencyEvaluationCanUseQuote(quote))
             .Select(quote => new
             {
                 Quote = quote,
@@ -223,6 +223,13 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                 "required_currency_amount_unavailable:" +
                 balance.CurrencyKey);
     }
+
+    private static bool CurrencyEvaluationCanUseQuote(
+        AcquisitionShopQuote quote) =>
+        quote.ExecutorPurchaseEnabled ||
+        quote.ExecutorBlockReasons.SequenceEqual(
+            new[] { "insufficient_currency_for_purchase" },
+            StringComparer.Ordinal);
 
     private static AcquisitionRouteTargetDateCurrency
         NotApplicableResourceMiss(
