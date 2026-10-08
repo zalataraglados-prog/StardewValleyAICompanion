@@ -50,6 +50,34 @@ public sealed class WildTreeTapperOutputSourceGuardTests
     }
 
     [Fact]
+    public void TapperCollectionAcceptsOnlyARescheduledNativeTreeCycle()
+    {
+        var source = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+
+        Assert.Contains("machine.IsTapper()", source);
+        Assert.Contains("machine.MinutesUntilReady > 0", source);
+        Assert.Contains(
+            "!ReferenceEquals(machine.heldObject.Value, output)",
+            source);
+        Assert.Contains(
+            "location.terrainFeatures.TryGetValue(new Vector2(target.X, target.Y)",
+            source);
+        Assert.Contains("tree.GetType() == typeof(Tree)", source);
+        Assert.Contains("tree.tapped.Value", source);
+        Assert.Contains(
+            "machine.heldObject.Value is null || tapperCycleRescheduled",
+            source);
+        Assert.Contains("afterItemCount > beforeItemCount", source);
+        Assert.Contains("tapper_output_cycle_rescheduled", source);
+        Assert.DoesNotContain(
+            "machine.heldObject.Value is null &&\n            !machine.readyForHarvest.Value",
+            source.Replace("\r\n", "\n", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void TapperCurrentOutputRemainsConnectedThroughPlanningAxes()
     {
         var bridge = ReadRepositoryFile(

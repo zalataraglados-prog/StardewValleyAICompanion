@@ -793,6 +793,34 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void InteractiveSampleWrapperRunsOneNativeScenarioWithoutMilestonePreflight()
+    {
+        var interactive = ReadRepositoryFile(
+            "scripts",
+            "Invoke-InteractiveRuntimeFullShipmentSample.ps1");
+
+        Assert.Contains(
+            "Where-Object SessionId -eq $currentSessionId",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$expectedAuthorityMapping = \"I:\\: => $authorityMirror\"",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1",
+            interactive,
+            StringComparison.Ordinal);
+        Assert.Contains("-Scenario $Scenario", interactive, StringComparison.Ordinal);
+        Assert.Contains("-RunId $RunId", interactive, StringComparison.Ordinal);
+        Assert.Contains("-OutputRoot $OutputRoot", interactive, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1",
+            interactive,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MachineQuerySamplesBindDistinctNativeSourceLayers()
     {
         var source = ReadRepositoryFile(
