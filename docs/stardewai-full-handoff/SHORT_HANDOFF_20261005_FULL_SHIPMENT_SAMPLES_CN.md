@@ -8,8 +8,9 @@
 
 ## 入口配置完成
 
+- milestone 已将 production evidence index 验真前移：导入摘要后必须独立重建并确认 Sap 共享 settlement、两个 anchor 的 exact native sample、route occurrence 与 requirement/item 身份，才允许启动首个非 anchor 游戏场景。`-Batch all` 从零生成 anchor 后也在跨入高风险层前执行同一门；失败写 checkpoint 后立即停止。
 - 共享 runner 已配置 `26/26` 个权威运行时入口。最后一层为 `location_fish:Town:3 -> (O)388`，使用完整透明钓获分布和既有原生 `catch_fish` 链。
-- `26/26` 是编排入口覆盖，不是生产证据覆盖。当前可独立验收的新版本生产证明仍只有 Sap 和放射性矿石；下一步先做 runner 有界拆分和里程碑抽样，再统一重建 production evidence index，训练准入仍为 `false`。
+- `26/26` 是编排入口覆盖，不是生产证据覆盖。runner 的场景无关编排拆分已经完成；当前可独立验收的新版本生产证明仍只有 Sap 和放射性矿石。下一步先导入并独立重验这两个 anchor，再执行高风险与标准里程碑抽样，最后统一重建 production evidence index；训练准入仍为 `false`。
 
 ## 接续状态更新
 

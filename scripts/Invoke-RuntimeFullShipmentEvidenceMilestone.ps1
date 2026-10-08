@@ -217,6 +217,61 @@ function Build-CurrentEvidenceIndex {
     return Read-JsonArtifact $indexPath
 }
 
+function Initialize-EvidenceIndexer {
+    $bootstrapProject = Join-Path $ProjectRoot `
+        "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
+    $bootstrapDll = Join-Path $ProjectRoot `
+        "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
+    if ($SkipBuild) {
+        if (-not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
+            throw "Goal-conditioned bootstrap Release DLL is missing: $bootstrapDll"
+        }
+        return
+    }
+
+    & dotnet build $bootstrapProject -c Release
+    if ($LASTEXITCODE -ne 0 -or
+        -not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
+        throw "Goal-conditioned bootstrap Release build failed."
+    }
+}
+
+function Assert-ImportedAnchorEvidence {
+    param(
+        [Parameter(Mandatory)] $EvidenceIndex,
+        [Parameter(Mandatory)] [object[]] $AnchorEntries,
+        [Parameter(Mandatory)] [hashtable] $RowsByScenario,
+        [Parameter(Mandatory)] [object[]] $Records
+    )
+
+    if ([bool]$EvidenceIndex.formal_product_training_authorized -or
+        -not [bool]$EvidenceIndex.shared_shipping_evidence_verified) {
+        throw "Imported Full Shipment anchor evidence failed shared settlement verification."
+    }
+    foreach ($entry in $AnchorEntries) {
+        $scenario = [string]$entry.scenario
+        $record = @($Records | Where-Object scenario -eq $scenario)
+        if ($record.Count -ne 1) {
+            throw "Imported Full Shipment anchor evidence is missing or duplicated: $scenario"
+        }
+        $stratumId = [string]$RowsByScenario[$scenario].stratum_id
+        $verified = @($EvidenceIndex.strata | Where-Object {
+            [string]$_.stratum_id -eq $stratumId
+        })
+        if ($verified.Count -ne 1 -or
+            [string]$verified[0].evidence_status -ne
+                "verified_exact_native_sample" -or
+            [string]$verified[0].verified_route_occurrence_id -ne
+                [string]$record[0].route_occurrence_id -or
+            [string]$verified[0].verified_requirement_id -ne
+                [string]$entry.requirement_id -or
+            [string]$verified[0].verified_qualified_item_id -ne
+                [string]$entry.qualified_item_id) {
+            throw "Imported Full Shipment anchor evidence failed exact proof verification: $scenario"
+        }
+    }
+}
+
 $staticInventoryPath = Resolve-MilestonePath $StaticInventory
 $planPath = Resolve-MilestonePath $Plan
 $requirementInventoryPath = Resolve-MilestonePath $RequirementInventory
@@ -319,22 +374,21 @@ foreach ($inputPath in $ExistingSummaryPaths) {
     $records = @($records | Where-Object scenario -ne $scenario) + @($record)
 }
 
-$requiredAnchorScenarios = @($entries |
-    Where-Object run_batch -eq "anchor" |
+$requiredAnchorEntries = @($entries |
+    Where-Object run_batch -eq "anchor")
+$requiredAnchorScenarios = @($requiredAnchorEntries |
     ForEach-Object { [string]$_.scenario })
-if ($Batch -ne "all") {
-    $completedAnchorScenarios = @($records |
-        Where-Object {
-            [string]$_.scenario -in $requiredAnchorScenarios -and
-            (Test-Path -LiteralPath ([string]$_.summary_path) -PathType Leaf)
-        } |
-        ForEach-Object { [string]$_.scenario })
-    $missingAnchorScenarios = @($requiredAnchorScenarios |
-        Where-Object { $_ -notin $completedAnchorScenarios })
-    if ($missingAnchorScenarios.Count -gt 0) {
-        throw "Milestone batch requires completed anchor evidence: " +
-            ($missingAnchorScenarios -join ",")
-    }
+$completedAnchorScenarios = @($records |
+    Where-Object {
+        [string]$_.scenario -in $requiredAnchorScenarios -and
+        (Test-Path -LiteralPath ([string]$_.summary_path) -PathType Leaf)
+    } |
+    ForEach-Object { [string]$_.scenario })
+$missingAnchorScenarios = @($requiredAnchorScenarios |
+    Where-Object { $_ -notin $completedAnchorScenarios })
+if ($Batch -ne "all" -and $missingAnchorScenarios.Count -gt 0) {
+    throw "Milestone batch requires completed anchor evidence: " +
+        ($missingAnchorScenarios -join ",")
 }
 
 $selectedEntries = switch ($Batch) {
@@ -365,8 +419,37 @@ if ($PlanOnly) {
     return
 }
 
+function Confirm-ImportedAnchorEvidence {
+    try {
+        Initialize-EvidenceIndexer
+        $anchorEvidenceIndex = Build-CurrentEvidenceIndex
+        Assert-ImportedAnchorEvidence -EvidenceIndex $anchorEvidenceIndex `
+            -AnchorEntries $requiredAnchorEntries `
+            -RowsByScenario $rowsByScenario -Records $records
+        Write-MilestoneState -Status "anchor_evidence_verified" `
+            -Records $records -SelectedScenarios $selectedScenarios
+    }
+    catch {
+        Write-MilestoneState -Status "failed" -Records $records `
+            -SelectedScenarios $selectedScenarios `
+            -LastError $_.Exception.Message
+        throw
+    }
+}
+
+$anchorEvidenceVerified = $false
+if ($missingAnchorScenarios.Count -eq 0) {
+    Confirm-ImportedAnchorEvidence
+    $anchorEvidenceVerified = $true
+}
+
 foreach ($entry in $selectedEntries) {
     $scenario = [string]$entry.scenario
+    if (-not $anchorEvidenceVerified -and
+        [string]$entry.run_batch -ne "anchor") {
+        Confirm-ImportedAnchorEvidence
+        $anchorEvidenceVerified = $true
+    }
     $existing = @($records | Where-Object scenario -eq $scenario)
     if ($existing.Count -eq 1 -and
         (Test-Path -LiteralPath $existing[0].summary_path -PathType Leaf)) {

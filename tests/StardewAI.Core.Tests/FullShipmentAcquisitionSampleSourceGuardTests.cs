@@ -681,6 +681,29 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
+            "function Assert-ImportedAnchorEvidence",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "verified_exact_native_sample",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Imported Full Shipment anchor evidence failed exact proof verification",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.True(
+            milestone.IndexOf(
+                "$anchorEvidenceIndex = Build-CurrentEvidenceIndex",
+                StringComparison.Ordinal) <
+            milestone.IndexOf(
+                "foreach ($entry in $selectedEntries)",
+                StringComparison.Ordinal));
+        Assert.Contains(
+            "[string]$entry.run_batch -ne \"anchor\"",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Write-MilestoneState -Status \"failed\"",
             milestone,
             StringComparison.Ordinal);
