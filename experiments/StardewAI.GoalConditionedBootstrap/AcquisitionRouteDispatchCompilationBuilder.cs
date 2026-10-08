@@ -97,6 +97,45 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             lowered,
             snapshot,
             candidates);
+        if (requirement.RouteKind == "native_wild_tree_tapper_output")
+        {
+            var target = route.UpstreamRoute.Evaluation;
+            if (target?.TargetTileX is not int targetTileX ||
+                target.TargetTileY is not int targetTileY ||
+                string.IsNullOrWhiteSpace(target.TargetLocationId))
+            {
+                return Blocked(
+                    opportunity.GoalId,
+                    requirement,
+                    snapshot.StateHash,
+                    rankingHash,
+                    new[]
+                    {
+                        "current_machine_output_dispatch_target_missing"
+                    });
+            }
+            matches = matches.Where(match =>
+                    string.Equals(
+                        match.Candidate.LocationId,
+                        target.TargetLocationId,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    match.Candidate.TileX == targetTileX &&
+                    match.Candidate.TileY == targetTileY)
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                return Blocked(
+                    opportunity.GoalId,
+                    requirement,
+                    snapshot.StateHash,
+                    rankingHash,
+                    new[]
+                    {
+                        "current_machine_output_dispatch_candidate_count:" +
+                        matches.Length
+                    });
+            }
+        }
         if (matches.Length == 0)
         {
             return Blocked(

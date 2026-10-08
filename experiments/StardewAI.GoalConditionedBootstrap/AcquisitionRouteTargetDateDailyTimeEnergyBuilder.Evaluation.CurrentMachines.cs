@@ -29,15 +29,19 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 blockingReasons);
         }
 
-        var resolvedTargets = LocationRoute(route).TargetEvaluations
-            .Where(value => value.Status == "resolved_location_route_match")
+        var dispatchableTargets = AcquisitionCurrentMachineOutputTargetSelector
+            .SelectDispatchable(
+                FacilityRoute(route).TargetEvaluations,
+                staticRoute.QualifiedItemId,
+                staticRoute.RequiredAmount,
+                staticRoute.MinimumQuality)
             .Select(value => (
                 value.TargetLocationId,
                 value.TargetTileX,
                 value.TargetTileY))
             .ToHashSet();
         var candidate = matches.FirstOrDefault(value =>
-            resolvedTargets.Contains((
+            dispatchableTargets.Contains((
                 value.LocationId,
                 value.TargetTileX,
                 value.TargetTileY)));
@@ -93,4 +97,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "compiler:ActionQueueCompiler.CollectMachineOutput"
             });
     }
+
+    private static AcquisitionRouteTargetDateFacility FacilityRoute(
+        AcquisitionRouteTargetDateStochasticRetry route) =>
+        route.UpstreamRoute.UpstreamRoute.UpstreamRoute.UpstreamRoute
+            .UpstreamRoute;
 }

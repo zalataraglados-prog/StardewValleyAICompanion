@@ -9,17 +9,10 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             int targetTotalDay)
     {
         var facility = route.UpstreamRoute.UpstreamRoute.UpstreamRoute;
-        var targets = facility.TargetEvaluations.Where(value =>
-                value.Status ==
-                    "resolved_existing_current_machine_capacity_match" &&
-                value.MachineSourceMatches == true &&
-                value.MachineActiveOutputEvidenceAvailable == true &&
-                value.MachineActiveOutputRouteMatches == true &&
-                value.MachineActiveOutputQualifiedItemId ==
-                    staticRoute.QualifiedItemId &&
-                value.MachineActiveOutputStack is > 0 &&
-                value.MachineActiveOutputQuality is >= 0)
-            .ToArray();
+        var targets = AcquisitionCurrentMachineOutputTargetSelector
+            .SelectMatching(
+                facility.TargetEvaluations,
+                staticRoute.QualifiedItemId);
         if (targets.Length == 0)
         {
             return Blocked(
@@ -28,7 +21,16 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 "current_machine_materialized_output_evidence_missing");
         }
 
-        var evaluations = targets.Select(target =>
+        var dispatchableTargets = AcquisitionCurrentMachineOutputTargetSelector
+            .SelectDispatchable(
+                targets,
+                staticRoute.QualifiedItemId,
+                staticRoute.RequiredAmount,
+                staticRoute.MinimumQuality);
+        var evaluatedTargets = dispatchableTargets.Length > 0
+            ? dispatchableTargets
+            : targets;
+        var evaluations = evaluatedTargets.Select(target =>
                 new AcquisitionProcessingLeadTimeEvaluation(
                     target.TargetLocationId,
                     "current_machine_ready_output",
@@ -49,16 +51,20 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                     Array.Empty<string>(),
                     OutputMaterializedAtSnapshot: true))
             .ToArray();
-        var provenQuantity = AcquisitionOutputProof.ReadyQuantity(
-            evaluations,
-            staticRoute.MinimumQuality);
-        return provenQuantity >= staticRoute.RequiredAmount
+        var largestProvenQuantity = targets
+            .Where(target =>
+                target.MachineActiveOutputQuality >=
+                    staticRoute.MinimumQuality)
+            .Select(target => target.MachineActiveOutputStack ?? 0)
+            .DefaultIfEmpty(0)
+            .Max();
+        return dispatchableTargets.Length > 0
             ? ResolvedMatch(route, CurrentMachineOutput, evaluations)
             : ResolvedMiss(
                 route,
                 CurrentMachineOutput,
                 evaluations,
-                "current_machine_materialized_output_shortfall:" +
-                provenQuantity + ":" + staticRoute.RequiredAmount);
+                "current_machine_single_output_shortfall:" +
+                largestProvenQuantity + ":" + staticRoute.RequiredAmount);
     }
 }
