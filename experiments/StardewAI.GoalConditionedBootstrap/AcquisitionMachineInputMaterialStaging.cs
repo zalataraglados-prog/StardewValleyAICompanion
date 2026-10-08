@@ -220,6 +220,7 @@ internal static class AcquisitionMachineInputMaterialStaging
         [
             {
                 AccessKind: "placed_chest",
+                IsPlayerChest: true,
                 SpecialChestType: "None",
                 LockedByOtherPlayer: false,
                 LocationIsCurrent: true,

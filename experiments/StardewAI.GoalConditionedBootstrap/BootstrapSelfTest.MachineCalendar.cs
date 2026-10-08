@@ -36,6 +36,20 @@ internal static partial class BootstrapSelfTest
                     "StackModifiers": null,
                     "QualityModifierMode": 0,
                     "QualityModifiers": null
+                  }, {
+                    "ItemId": "(O)334",
+                    "OutputMethod": null,
+                    "Condition": null,
+                    "PerItemCondition": null,
+                    "RandomItemId": null,
+                    "MinStack": 1,
+                    "MaxStack": 1,
+                    "Quality": 0,
+                    "CopyQuality": false,
+                    "StackModifierMode": 0,
+                    "StackModifiers": null,
+                    "QualityModifierMode": 0,
+                    "QualityModifiers": null
                   }],
                   "MinutesUntilReady": 30,
                   "DaysUntilReady": -1,
@@ -175,6 +189,22 @@ internal static partial class BootstrapSelfTest
                 deterministic.Windows.Single().DynamicConditions.SequenceEqual(
                     new[] { "PLAYER_HAS_PROFESSION Current 4" }),
             "Deterministic machine calendar evidence drifted.");
+
+        var orderedOutputBlocked = AcquisitionRouteCalendarResolutionBuilder
+            .ResolveMachineWindows(
+                "(O)334",
+                MachineRoute(
+                    "native_machine_item_query_output",
+                    "machine:(BC)114:rule:0:output:1",
+                    "payload.(BC)114.OutputRules[0].OutputItem[1].ItemId"),
+                machines,
+                337);
+        Require(orderedOutputBlocked.Status ==
+                    "blocked_machine_output_selection_order_unresolved" &&
+                orderedOutputBlocked.BlockingReasons.Contains(
+                    "machine_first_valid_output_preceding_rows_not_represented",
+                    StringComparer.Ordinal),
+            "A later first-valid machine output row was admitted independently.");
 
         var stochastic = AcquisitionRouteCalendarResolutionBuilder
             .ResolveMachineWindows(

@@ -45,8 +45,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         var source = staticRoute.MachineSource!;
         if (!route.RequiredAttemptCount.HasValue ||
             route.RequiredAttemptCount < 0 ||
-            source.DaysUntilReady >= 0 ||
-            source.MinutesUntilReady < 0)
+            route.RequiredAttemptCount > 0 &&
+            (source.DaysUntilReady >= 0 ||
+             source.MinutesUntilReady < 0))
         {
             return MachineBlocked(
                 route,

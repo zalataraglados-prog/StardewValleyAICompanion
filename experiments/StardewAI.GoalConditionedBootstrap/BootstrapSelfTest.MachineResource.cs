@@ -115,6 +115,16 @@ internal static partial class BootstrapSelfTest
                     [{ RequiresPlayerStaging: true }]),
             "Stageable current-location chest stock was not preserved as an explicit machine-input prerequisite.");
 
+        var nonPlayerChest = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
+            MachineResourceFacilityRoute(itemRoute),
+            itemRoute,
+            MachineResourceStateWithChestOnly(
+                isPlayerChest: false,
+                MachineResourceSlot(0, "(O)262", 2),
+                MachineResourceSlot(1, "(O)382", 2)));
+        Require(nonPlayerChest.ResourceInputsMatchTargetDate == false,
+            "A non-player chest was admitted as executable staging stock.");
+
         var tagSource = itemSource with
         {
             Triggers = new[]
@@ -264,6 +274,12 @@ internal static partial class BootstrapSelfTest
     private static AcquisitionResourceInputSnapshotState
         MachineResourceStateWithChestOnly(
             params MaterialInventorySlot[] chestSlots)
+        => MachineResourceStateWithChestOnly(true, chestSlots);
+
+    private static AcquisitionResourceInputSnapshotState
+        MachineResourceStateWithChestOnly(
+            bool isPlayerChest,
+            params MaterialInventorySlot[] chestSlots)
     {
         var graph = new MaterialInventoryGraph
         {
@@ -310,7 +326,7 @@ internal static partial class BootstrapSelfTest
                     TileY = 5,
                     SpecialChestType = "None",
                     OwnerPlayerId = 42,
-                    IsPlayerChest = true
+                    IsPlayerChest = isPlayerChest
                 }
             },
             AccessPointCount = 1,

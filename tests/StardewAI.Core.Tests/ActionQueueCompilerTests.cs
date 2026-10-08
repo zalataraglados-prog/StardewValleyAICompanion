@@ -761,7 +761,7 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompileBuyShopItemAliasesContinuationPriceWithoutOpenStock()
+    public void CompileBuyShopItemPreservesContinuationPriceCeilingWithoutOpenStock()
     {
         var snapshot = Snapshot("""
         {
@@ -789,8 +789,10 @@ public sealed partial class ActionQueueCompilerTests
         var item = Assert.Single(queue.Items);
 
         Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
-            parameter.Name == "expected_unit_price" &&
+            parameter.Name == "max_unit_price" &&
             parameter.Value == "75");
+        Assert.DoesNotContain(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "expected_unit_price");
     }
 
     [Fact]

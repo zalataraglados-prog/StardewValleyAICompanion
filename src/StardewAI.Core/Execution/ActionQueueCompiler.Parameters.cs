@@ -138,7 +138,7 @@ namespace StardewAI.Core.Execution
             AddAliasedPurchaseParameter(
                 parameters,
                 action,
-                "expected_unit_price",
+                "max_unit_price",
                 "continuation.max_unit_price");
             if (ReadIntParameter(action, "quantity") is null)
             {

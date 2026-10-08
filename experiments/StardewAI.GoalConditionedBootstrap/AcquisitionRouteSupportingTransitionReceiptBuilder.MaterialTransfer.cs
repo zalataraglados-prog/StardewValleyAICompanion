@@ -163,6 +163,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             reasons.Add(
                 "supporting_transition_material_transfer_quantity_unavailable");
         }
+        var sourceRuntimeType = string.Empty;
         if (intent is not null &&
             (!TryMaterialSlotIdentityQuantity(
                  before,
@@ -170,14 +171,17 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                  intent.SourceSlotIndex,
                  intent.QualifiedItemId,
                  intent.Quality,
-                 out var exactSourceBefore) ||
+                 out var exactSourceBefore,
+                 out sourceRuntimeType) ||
              !TryMaterialSlotIdentityQuantity(
                  after,
                  intent.SourceNodeId,
                  intent.SourceSlotIndex,
                  intent.QualifiedItemId,
                  intent.Quality,
-                 out var exactSourceAfter) ||
+                 out var exactSourceAfter,
+                 out _) ||
+             string.IsNullOrWhiteSpace(sourceRuntimeType) ||
              exactSourceBefore != intent.ExpectedSourceStack ||
              exactSourceAfter != projection?.SourceStackAfter))
         {
@@ -191,14 +195,20 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                  destination.SlotIndex,
                  intent.QualifiedItemId,
                  intent.Quality,
-                 out var exactDestinationBefore) ||
+                 out var exactDestinationBefore,
+                 out _) ||
              !TryMaterialSlotIdentityQuantity(
                  after,
                  intent.DestinationNodeId,
                  destination.SlotIndex,
                  intent.QualifiedItemId,
                  intent.Quality,
-                 out var exactDestinationAfter) ||
+                 out var exactDestinationAfter,
+                 out var destinationRuntimeType) ||
+             !string.Equals(
+                 sourceRuntimeType,
+                 destinationRuntimeType,
+                 StringComparison.Ordinal) ||
              exactDestinationBefore != destination.StackBefore ||
              exactDestinationAfter != destination.StackAfter))
         {
@@ -304,9 +314,11 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         int slotIndex,
         string qualifiedItemId,
         int quality,
-        out int quantity)
+        out int quantity,
+        out string runtimeType)
     {
         quantity = 0;
+        runtimeType = string.Empty;
         if (!AcquisitionMachineInputMaterialStaging.TryReadGraph(
                 snapshot,
                 out var graph))
@@ -325,11 +337,13 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             return true;
         if (slots.Length != 1 ||
             slots[0].QualifiedItemId != qualifiedItemId ||
-            slots[0].Quality != quality)
+            slots[0].Quality != quality ||
+            string.IsNullOrWhiteSpace(slots[0].RuntimeType))
         {
             return false;
         }
         quantity = slots[0].Stack;
+        runtimeType = slots[0].RuntimeType;
         return quantity >= 0;
     }
 }
