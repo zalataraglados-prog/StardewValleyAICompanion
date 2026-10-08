@@ -13,6 +13,7 @@ internal static partial class BootstrapSelfTest
         VerifyMachineResourceResolution();
         VerifyMachineInputPurchasePrerequisite();
         VerifyMachineProcessingResolution();
+        VerifyCurrentMachineOutputSingleDispatchSelection();
         RunAcquisitionRouteDispatch();
         VerifyCommunityCenterActiveRouteKindScope();
         VerifyFormalTrainingAdmissionPolicy();

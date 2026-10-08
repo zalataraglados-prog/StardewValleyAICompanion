@@ -92,6 +92,45 @@ public sealed class WildTreeTapperOutputSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void TapperCurrentOutputCannotAggregateAcrossSingularDispatchTargets()
+    {
+        var selector = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentMachineOutputTargetSelector.cs");
+        var processing = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateProcessingBuilder.Evaluation.CurrentMachines.cs");
+        var daily = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Evaluation.CurrentMachines.cs");
+        var dispatch = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.cs");
+
+        Assert.Contains(
+            "value.MachineActiveOutputStack >= requiredAmount",
+            selector);
+        Assert.Contains("SelectDispatchable(", processing);
+        Assert.DoesNotContain(
+            "AcquisitionOutputProof.ReadyQuantity(",
+            processing);
+        Assert.Contains("SelectDispatchable(", daily);
+        Assert.Contains(
+            "current_machine_output_dispatch_candidate_count:",
+            dispatch);
+        Assert.Contains(
+            "match.Candidate.TileX == targetTileX",
+            dispatch);
+        Assert.Contains(
+            "match.Candidate.TileY == targetTileY",
+            dispatch);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(
