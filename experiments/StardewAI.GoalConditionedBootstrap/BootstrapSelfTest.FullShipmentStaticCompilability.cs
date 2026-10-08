@@ -14,7 +14,7 @@ internal static partial class BootstrapSelfTest
         var groups = Enumerable.Range(0, 154)
             .Select(index => FullShipmentStaticGroup(index))
             .ToArray();
-        Write(inventoryPath, new AuthoritativeRequirementInventoryReport
+        var inventoryReport = new AuthoritativeRequirementInventoryReport
         {
             Status = "complete",
             GoalId = "grandpa.maximum_21",
@@ -34,7 +34,8 @@ internal static partial class BootstrapSelfTest
                     Groups = groups
                 }
             }
-        });
+        };
+        Write(inventoryPath, inventoryReport);
 
         var loweredGroups = groups.Select(group =>
             new AcquisitionRequirementGroupLowering(
@@ -134,7 +135,8 @@ internal static partial class BootstrapSelfTest
             inventoryPath,
             loweringPath,
             reconciliationPath,
-            supportCoveragePath);
+            supportCoveragePath,
+            supportCoverageSourcesAlreadyValidated: true);
         Require(report.Status == "complete_static_compilability_inventory" &&
                 report.RequiredGroupCount == 154 &&
                 report.RouteOccurrenceCount == 154 &&
@@ -246,6 +248,35 @@ internal static partial class BootstrapSelfTest
                         null),
             "An authoritative acquisition route kind lacks a source contract.");
 
+        inventoryReport.GoalId = "synthetic.full_shipment";
+        loweringReport.GoalId = inventoryReport.GoalId;
+        Write(inventoryPath, inventoryReport);
+        loweringReport.RequirementInventorySha256 =
+            CurrentTeacherFrontierSupport.HashFile(inventoryPath);
+        Write(loweringPath, loweringReport);
+        var wrongAuthorityRejected = false;
+        try
+        {
+            FullShipmentStaticCompilabilityInventoryBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                reconciliationPath,
+                supportCoveragePath,
+                supportCoverageSourcesAlreadyValidated: true);
+        }
+        catch (InvalidDataException)
+        {
+            wrongAuthorityRejected = true;
+        }
+        Require(wrongAuthorityRejected,
+            "A structurally valid non-authoritative Full Shipment goal was admitted.");
+        inventoryReport.GoalId = GoalMethodTeacherCoverageGoalIds.Authoritative;
+        loweringReport.GoalId = inventoryReport.GoalId;
+        Write(inventoryPath, inventoryReport);
+        loweringReport.RequirementInventorySha256 =
+            CurrentTeacherFrontierSupport.HashFile(inventoryPath);
+        Write(loweringPath, loweringReport);
+
         loweringReport.RouteOccurrenceCount = 153;
         Write(loweringPath, loweringReport);
         var staleSummaryRejected = false;
@@ -255,7 +286,8 @@ internal static partial class BootstrapSelfTest
                 inventoryPath,
                 loweringPath,
                 reconciliationPath,
-                supportCoveragePath);
+                supportCoveragePath,
+                supportCoverageSourcesAlreadyValidated: true);
         }
         catch (InvalidDataException)
         {
@@ -271,7 +303,8 @@ internal static partial class BootstrapSelfTest
             inventoryPath,
             loweringPath,
             reconciliationPath,
-            supportCoveragePath);
+            supportCoveragePath,
+            supportCoverageSourcesAlreadyValidated: true);
         Require(!blocked.StaticCompilabilityComplete &&
                 !blocked.EndpointOptionCompilationComplete &&
                 blocked.Options.Single(option =>
@@ -281,6 +314,22 @@ internal static partial class BootstrapSelfTest
                     "endpoint_option_not_static_compilation_ready",
                     StringComparison.Ordinal)),
             "An unbound endpoint compiler was reported as compilable.");
+
+        var callerAssertedCoverageRejected = false;
+        try
+        {
+            FullShipmentStaticCompilabilityInventoryBuilder.Build(
+                inventoryPath,
+                loweringPath,
+                reconciliationPath,
+                supportCoveragePath);
+        }
+        catch (InvalidDataException)
+        {
+            callerAssertedCoverageRejected = true;
+        }
+        Require(callerAssertedCoverageRejected,
+            "Caller-asserted support coverage without source artifacts was admitted.");
     }
 
     private static GoalRequirementGroup FullShipmentStaticGroup(int index)

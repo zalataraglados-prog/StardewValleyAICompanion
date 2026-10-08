@@ -6,14 +6,19 @@ public static class
     public static AcquisitionRouteSupportingTransitionTerminalCoverageReport
         Build(string requestPath)
     {
+        var requestFullPath = Path.GetFullPath(requestPath);
         var request = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteSupportingTransitionTerminalCoverageRequest>(
-            Path.GetFullPath(requestPath),
+            requestFullPath,
             "Support terminal coverage request");
         Require(request.SchemaVersion ==
                 "acquisition_route_supporting_transition_terminal_coverage_request.v1",
             "Support terminal coverage request schema is invalid.");
-        return Build(request.Sources);
+        var report = Build(request.Sources);
+        report.SourceRequestPath = requestFullPath;
+        report.SourceRequestSha256 =
+            CurrentTeacherFrontierSupport.HashFile(requestFullPath);
+        return report;
     }
 
     public static AcquisitionRouteSupportingTransitionTerminalCoverageReport

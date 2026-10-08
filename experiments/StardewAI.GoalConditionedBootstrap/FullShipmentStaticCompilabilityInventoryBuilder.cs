@@ -23,7 +23,19 @@ public static class FullShipmentStaticCompilabilityInventoryBuilder
         string requirementInventoryPath,
         string acquisitionLoweringPath,
         string actionReconciliationPath,
-        string supportTerminalCoveragePath)
+        string supportTerminalCoveragePath) => Build(
+            requirementInventoryPath,
+            acquisitionLoweringPath,
+            actionReconciliationPath,
+            supportTerminalCoveragePath,
+            supportCoverageSourcesAlreadyValidated: false);
+
+    internal static FullShipmentStaticCompilabilityInventoryReport Build(
+        string requirementInventoryPath,
+        string acquisitionLoweringPath,
+        string actionReconciliationPath,
+        string supportTerminalCoveragePath,
+        bool supportCoverageSourcesAlreadyValidated)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -45,22 +57,28 @@ public static class FullShipmentStaticCompilabilityInventoryBuilder
         var options = ReadActionReconciliation(reconciliationFullPath);
 
         Require(inventory.SchemaVersion ==
-                    "authoritative_goal_requirement_inventory.v1" &&
-                inventory.DenominatorComplete &&
-                inventory.AcquisitionRoutesComplete,
-            "Full Shipment authority inventory is incomplete.");
+                    "authoritative_goal_requirement_inventory.v1",
+            "Full Shipment authority inventory schema is invalid.");
+        CurrentTeacherFrontierSupport.ValidateAuthority(
+            inventoryFullPath,
+            inventory,
+            lowering,
+            "Full Shipment static compilability");
         Require(lowering.SchemaVersion ==
-                    "acquisition_route_option_lowering.v1" &&
-                lowering.Status == "complete" &&
-                lowering.RequirementInventorySha256 ==
-                    CurrentTeacherFrontierSupport.HashFile(inventoryFullPath),
+                    "acquisition_route_option_lowering.v1",
             "Full Shipment acquisition lowering is stale or incomplete.");
         ValidateLoweringSummary(lowering);
-        ValidateSupportCoverage(supportCoverage);
+        ValidateSupportCoverage(
+            supportCoverage,
+            supportCoverageSourcesAlreadyValidated);
 
         var inventorySet = SingleFullShipmentSet(inventory.RequirementSets);
         var loweringSet = SingleFullShipmentSet(lowering.RequirementSets);
-        Require(inventorySet.RequiredGroupCount == 154 &&
+        Require(inventory.GoalId ==
+                    GoalMethodTeacherCoverageGoalIds.Authoritative &&
+                inventorySet.CriterionId == "achievement_full_shipment" &&
+                inventorySet.DenominatorStatus == "complete" &&
+                inventorySet.RequiredGroupCount == 154 &&
                 inventorySet.Groups.Length == 154 &&
                 inventorySet.RouteCoveredGroupCount == 154 &&
                 inventorySet.AcquisitionRoutesComplete &&
@@ -431,8 +449,9 @@ public static class FullShipmentStaticCompilabilityInventoryBuilder
             StringComparer.Ordinal);
     }
 
-    private static void ValidateSupportCoverage(
-        AcquisitionRouteSupportingTransitionTerminalCoverageReport report)
+    internal static void ValidateSupportCoverage(
+        AcquisitionRouteSupportingTransitionTerminalCoverageReport report,
+        bool sourceArtifactsAlreadyValidated)
     {
         var rebuilt = AcquisitionRouteSupportingTransitionTerminalCoverageBuilder
             .BuildReport(report.Rows);
@@ -446,6 +465,21 @@ public static class FullShipmentStaticCompilabilityInventoryBuilder
                     StringComparer.Ordinal) &&
                 rebuilt.BlockingReasons.Length == 0,
             "Supporting-transition terminal lineage is incomplete.");
+        if (sourceArtifactsAlreadyValidated)
+            return;
+
+        Require(!string.IsNullOrWhiteSpace(report.SourceRequestPath) &&
+                !string.IsNullOrWhiteSpace(report.SourceRequestSha256) &&
+                File.Exists(report.SourceRequestPath) &&
+                CurrentTeacherFrontierSupport.HashFile(
+                    report.SourceRequestPath) == report.SourceRequestSha256,
+            "Supporting-transition coverage source request is missing or stale.");
+        var recomputed =
+            AcquisitionRouteSupportingTransitionTerminalCoverageBuilder.Build(
+                report.SourceRequestPath);
+        Require(JsonSerializer.Serialize(report) ==
+                JsonSerializer.Serialize(recomputed),
+            "Supporting-transition coverage did not recompute from source artifacts.");
     }
 
     private static void ValidateLoweringSummary(

@@ -78,6 +78,12 @@ public sealed class AcquisitionRouteSupportingTransitionTerminalCoverageReport
     [JsonPropertyName("status")]
     public string Status { get; init; } = "blocked";
 
+    [JsonPropertyName("source_request_path")]
+    public string SourceRequestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_request_sha256")]
+    public string SourceRequestSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("required_support_transition_kinds")]
     public string[] RequiredSupportTransitionKinds { get; init; } =
         Array.Empty<string>();

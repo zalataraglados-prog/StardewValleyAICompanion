@@ -294,6 +294,14 @@ public static partial class FullShipmentRecurrenceProofBuilder
                         StageOneDeadlineTotalDayExclusive),
                 "Full Shipment recurrence sequence order or deadline drifted.");
         }
+        if (!expectComplete)
+        {
+            var remainingSettlementCount = requiredItemCount - rows.Count;
+            Require(
+                rows[^1].SettlementEndTotalDay + remainingSettlementCount <=
+                    StageOneDeadlineTotalDayExclusive,
+                "Full Shipment recurrence prefix cannot finish before the Stage-1 deadline.");
+        }
     }
 
     private sealed record VerifiedRecurrence(
