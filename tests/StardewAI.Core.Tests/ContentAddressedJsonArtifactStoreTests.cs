@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Core.Infrastructure;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
@@ -27,6 +28,7 @@ public sealed class ContentAddressedJsonArtifactStoreTests
             ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
 
         Assert.Equal(first, ContentAddressedJsonArtifactStore.ReadAllText(firstPath));
+        Assert.Equal(first, ContentAddressedJsonArtifactReader.ReadAllText(firstPath));
         Assert.Equal(second, await ContentAddressedJsonArtifactStore.ReadAllTextAsync(secondPath));
         using var manifest = JsonDocument.Parse(File.ReadAllText(firstPath));
         Assert.Equal(

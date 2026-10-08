@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -143,7 +144,9 @@ internal static class CurrentTeacherFrontierSupport
     }
 
     public static T Read<T>(string path, string label) =>
-        JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonDefaults.Options)
+        JsonSerializer.Deserialize<T>(
+            ContentAddressedJsonArtifactReader.ReadAllText(path),
+            JsonDefaults.Options)
         ?? throw new InvalidDataException(label + " is null.");
 
     public static string RequiredString(JsonElement value, string property)

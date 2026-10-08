@@ -1407,8 +1407,20 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             selection,
             StringComparison.Ordinal);
         Assert.Contains(
-            "SnapshotDeclaresFishCollectionSpecies",
+            "SnapshotFishCollectionSpeciesStatus",
             selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FishCollectionSpeciesStatus.Unavailable",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FishCollectionSpeciesStatus.Absent",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route_dispatch_fish_collection_catalog_unavailable",
+            verification,
             StringComparison.Ordinal);
         Assert.Contains(
             "route_dispatch_complete_location_fishing_outcome_missing",

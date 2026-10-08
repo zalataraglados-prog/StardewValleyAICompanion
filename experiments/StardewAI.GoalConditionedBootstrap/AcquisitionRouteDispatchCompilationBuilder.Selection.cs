@@ -313,10 +313,23 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         out string evidence)
     {
         evidence = string.Empty;
+        var locationFishSpeciesStatus = requirement.RouteKind ==
+                "native_location_fish_spawn"
+            ? SnapshotFishCollectionSpeciesStatus(
+                snapshot,
+                requirement.QualifiedItemId)
+            : FishCollectionSpeciesStatus.Unavailable;
+        if (requirement.RouteKind == "native_location_fish_spawn" &&
+            locationFishSpeciesStatus == FishCollectionSpeciesStatus.Unavailable)
+        {
+            return false;
+        }
         if (string.Equals(
                 candidate.QualifiedItemId,
                 requirement.QualifiedItemId,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal) &&
+            (requirement.RouteKind != "native_location_fish_spawn" ||
+             locationFishSpeciesStatus == FishCollectionSpeciesStatus.Absent))
         {
             evidence = "candidate.qualified_item_id";
             return true;
@@ -339,9 +352,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         }
 
         if (requirement.RouteKind == "native_location_fish_spawn" &&
-            !SnapshotDeclaresFishCollectionSpecies(
-                snapshot,
-                requirement.QualifiedItemId) &&
+            locationFishSpeciesStatus == FishCollectionSpeciesStatus.Absent &&
             TryMatchCompleteLocationFishingOutcome(
                 requirement.SourceId,
                 requirement.QualifiedItemId,
@@ -403,6 +414,15 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         var sourceContract = DescribeAuthoritativeSourceContract(routeKind);
         if (sourceContract is null)
             return false;
+        var locationFishSpeciesStatus = routeKind ==
+                "native_location_fish_spawn"
+            ? SnapshotFishCollectionSpeciesStatus(snapshot, qualifiedItemId)
+            : FishCollectionSpeciesStatus.Unavailable;
+        if (routeKind == "native_location_fish_spawn" &&
+            locationFishSpeciesStatus == FishCollectionSpeciesStatus.Unavailable)
+        {
+            return false;
+        }
 
         if (routeKind == "sells" &&
             sourceId.StartsWith("shop:", StringComparison.Ordinal) &&
@@ -450,7 +470,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return true;
         }
         if (routeKind == "native_location_fish_spawn" &&
-            !SnapshotDeclaresFishCollectionSpecies(snapshot, qualifiedItemId) &&
+            locationFishSpeciesStatus == FishCollectionSpeciesStatus.Absent &&
             TryMatchCompleteLocationFishingOutcome(
                 sourceId,
                 qualifiedItemId,
@@ -571,7 +591,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         }
     }
 
-    private static bool SnapshotDeclaresFishCollectionSpecies(
+    private static FishCollectionSpeciesStatus
+        SnapshotFishCollectionSpeciesStatus(
         SnapshotEnvelope snapshot,
         string qualifiedItemId)
     {
@@ -587,10 +608,40 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             !progress.TryGetProperty("items", out var items) ||
             items.ValueKind != JsonValueKind.Array)
         {
-            return false;
+            return FishCollectionSpeciesStatus.Unavailable;
         }
-        return items.EnumerateArray().Any(row =>
-            ReadJsonString(row, "qualified_item_id") == qualifiedItemId);
+        if (!progress.TryGetProperty(
+                "eligible_species_count",
+                out var eligibleSpeciesCount) ||
+            !eligibleSpeciesCount.TryGetInt32(out var expectedCount) ||
+            expectedCount < 0)
+        {
+            return FishCollectionSpeciesStatus.Unavailable;
+        }
+        var qualifiedItemIds = items.EnumerateArray()
+            .Select(row => row.ValueKind == JsonValueKind.Object
+                ? ReadJsonString(row, "qualified_item_id")
+                : string.Empty)
+            .ToArray();
+        if (qualifiedItemIds.Length != expectedCount ||
+            qualifiedItemIds.Any(string.IsNullOrWhiteSpace) ||
+            qualifiedItemIds.Distinct(StringComparer.Ordinal).Count() !=
+                qualifiedItemIds.Length)
+        {
+            return FishCollectionSpeciesStatus.Unavailable;
+        }
+        return qualifiedItemIds.Contains(
+            qualifiedItemId,
+            StringComparer.Ordinal)
+                ? FishCollectionSpeciesStatus.Present
+                : FishCollectionSpeciesStatus.Absent;
+    }
+
+    private enum FishCollectionSpeciesStatus
+    {
+        Unavailable,
+        Present,
+        Absent
     }
 
     private static bool CandidateDeclaresAuthoritativeRouteSource(

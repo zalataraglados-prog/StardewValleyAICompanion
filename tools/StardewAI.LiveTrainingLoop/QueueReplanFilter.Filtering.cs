@@ -428,7 +428,7 @@ public static partial class QueueReplanFilter
                         continuation,
                         "stock_id")) ||
                     string.Equals(
-                        ReadParameter(queueItem, "expected_unit_price"),
+                        ReadParameter(queueItem, "max_unit_price"),
                         ReadString(continuation, "max_unit_price"),
                         StringComparison.Ordinal));
         }
