@@ -305,6 +305,27 @@ internal static partial class BootstrapSelfTest
                     incompleteFishCatalogSnapshot,
                     new[] { locationFishingCandidate }).Length == 0,
             "An incomplete fish catalog was treated as authoritative absence.");
+        var emptyFishCatalogSnapshot = AcquisitionDispatchSnapshot();
+        var emptyWorld = JsonNode.Parse(
+            emptyFishCatalogSnapshot.State["world_progress"]
+                .GetRawText())!.AsObject();
+        emptyWorld["fish_collection_progress"]!["value"] = new JsonObject
+        {
+            ["eligible_species_count"] = 0,
+            ["items"] = new JsonArray()
+        };
+        emptyFishCatalogSnapshot.State["world_progress"] =
+            JsonSerializer.SerializeToElement(
+                emptyWorld,
+                JsonDefaults.Options);
+        emptyFishCatalogSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            emptyFishCatalogSnapshot.State);
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement,
+                    locationFishingLowering,
+                    emptyFishCatalogSnapshot,
+                    new[] { locationFishingCandidate }).Length == 0,
+            "An empty fish catalog was treated as authoritative absence.");
         Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
                     locationFishingRequirement with
                     {

@@ -38,7 +38,7 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
             "Fishing forecast manifest identities are invalid or duplicate.");
 
         using var baseDocument = JsonDocument.Parse(
-            File.ReadAllText(baseSnapshotPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(baseSnapshotPath));
         var baseRoot = baseDocument.RootElement;
         var baseStateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             baseRoot,
@@ -72,7 +72,8 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
                     StringComparison.OrdinalIgnoreCase),
                 "Fishing forecast snapshot digest mismatch: " +
                 reference.RequestId);
-            using var document = JsonDocument.Parse(File.ReadAllText(snapshotPath));
+            using var document = JsonDocument.Parse(
+                CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
             var root = document.RootElement;
             AcquisitionTargetDateSnapshotValidator.Validate(
                 root,

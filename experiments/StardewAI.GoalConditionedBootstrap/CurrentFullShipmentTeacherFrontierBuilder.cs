@@ -30,7 +30,8 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
         var snapshotEnvelope = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotFullPath,
             "Full Shipment snapshot");
-        using var snapshot = JsonDocument.Parse(File.ReadAllText(snapshotFullPath));
+        using var snapshot = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
 
         CurrentTeacherFrontierSupport.ValidateAuthority(
             inventoryFullPath,

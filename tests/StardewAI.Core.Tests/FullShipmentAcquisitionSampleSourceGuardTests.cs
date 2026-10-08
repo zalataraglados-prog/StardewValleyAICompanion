@@ -1419,12 +1419,54 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             selection,
             StringComparison.Ordinal);
         Assert.Contains(
+            "expectedCount <= 0",
+            selection,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "route_dispatch_fish_collection_catalog_unavailable",
             verification,
             StringComparison.Ordinal);
         Assert.Contains(
             "route_dispatch_complete_location_fishing_outcome_missing",
             verification,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SnapshotConsumersUseContentAddressedAwareReads()
+    {
+        var support = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "CurrentTeacherFrontierSupport.cs");
+        var fullShipment = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "CurrentFullShipmentTeacherFrontierBuilder.cs");
+        var portfolio = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRoutePortfolioBuilder.cs");
+
+        Assert.Contains(
+            "ContentAddressedJsonArtifactReader.ReadAllText(path)",
+            support,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadArtifactText(snapshotFullPath)",
+            fullShipment,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadArtifactText(snapshotPath)",
+            portfolio,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "File.ReadAllText(snapshotFullPath)",
+            fullShipment,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "File.ReadAllText(snapshotPath)",
+            portfolio,
             StringComparison.Ordinal);
     }
 

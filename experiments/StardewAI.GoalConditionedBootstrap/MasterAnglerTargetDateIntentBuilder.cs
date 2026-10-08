@@ -27,7 +27,8 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 index.Species.Length == 72 && index.UnresolvedSpeciesIds.Length == 0,
             "Master Angler Stage 1 window index is not complete.");
 
-        using var snapshot = JsonDocument.Parse(File.ReadAllText(fullSnapshotPath));
+        using var snapshot = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(fullSnapshotPath));
         var root = snapshot.RootElement;
         var state = RequiredObject(root, "state");
         var currentTotalDay = RequiredFieldInt(state, "time", "total_days");

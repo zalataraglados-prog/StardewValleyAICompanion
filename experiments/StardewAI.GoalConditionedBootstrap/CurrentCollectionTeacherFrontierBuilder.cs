@@ -45,7 +45,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             rankingFullPath,
             "Availability-aware ranking");
         using var snapshot = JsonDocument.Parse(
-            File.ReadAllText(snapshotFullPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
 
         CurrentTeacherFrontierSupport.ValidateAuthority(
             inventoryFullPath,

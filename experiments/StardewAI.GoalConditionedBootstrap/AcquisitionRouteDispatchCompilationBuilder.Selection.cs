@@ -614,7 +614,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 "eligible_species_count",
                 out var eligibleSpeciesCount) ||
             !eligibleSpeciesCount.TryGetInt32(out var expectedCount) ||
-            expectedCount < 0)
+            expectedCount <= 0)
         {
             return FishCollectionSpeciesStatus.Unavailable;
         }

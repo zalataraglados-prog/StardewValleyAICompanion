@@ -78,7 +78,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
                 snapshot,
                 snapshotSha256);
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var ledgerState = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
             snapshotDocument.RootElement);

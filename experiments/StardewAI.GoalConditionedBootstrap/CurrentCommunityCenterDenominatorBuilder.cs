@@ -20,7 +20,8 @@ public static partial class CurrentCommunityCenterDenominatorBuilder
             "Authoritative requirement inventory");
         ValidateCatalog(inventory);
 
-        using var snapshot = JsonDocument.Parse(File.ReadAllText(snapshotFullPath));
+        using var snapshot = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
         var root = snapshot.RootElement;
         var stateHash = CurrentTeacherFrontierSupport.RequiredString(
             root,

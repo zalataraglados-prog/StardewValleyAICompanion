@@ -143,9 +143,12 @@ internal static class CurrentTeacherFrontierSupport
             int.TryParse(text, out value);
     }
 
+    public static string ReadArtifactText(string path) =>
+        ContentAddressedJsonArtifactReader.ReadAllText(path);
+
     public static T Read<T>(string path, string label) =>
         JsonSerializer.Deserialize<T>(
-            ContentAddressedJsonArtifactReader.ReadAllText(path),
+            ReadArtifactText(path),
             JsonDefaults.Options)
         ?? throw new InvalidDataException(label + " is null.");
 

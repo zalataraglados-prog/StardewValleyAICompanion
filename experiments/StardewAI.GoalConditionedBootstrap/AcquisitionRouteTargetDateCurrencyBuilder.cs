@@ -48,7 +48,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
             "Acquisition route static calendar resolution");
         var staticRoutes = ValidateStaticSource(staticSource, source);
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotFullPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
         var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             snapshot,

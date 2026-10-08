@@ -49,7 +49,7 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             rankingPath,
             "Acquisition support compilation ranking");
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             committedPath,
             snapshotDocument.RootElement).Ledger;

@@ -78,7 +78,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             afterPath,
             "Acquisition support settlement after snapshot");
-        using var afterDocument = JsonDocument.Parse(File.ReadAllText(afterPath));
+        using var afterDocument = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(afterPath));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
             afterDocument.RootElement).Ledger;
