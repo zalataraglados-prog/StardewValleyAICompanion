@@ -236,23 +236,23 @@ function Initialize-EvidenceIndexer {
     }
 }
 
-function Assert-ImportedAnchorEvidence {
+function Assert-VerifiedEvidenceEntries {
     param(
         [Parameter(Mandatory)] $EvidenceIndex,
-        [Parameter(Mandatory)] [object[]] $AnchorEntries,
+        [Parameter(Mandatory)] [object[]] $PlanEntries,
         [Parameter(Mandatory)] [hashtable] $RowsByScenario,
-        [Parameter(Mandatory)] [object[]] $Records
+        [Parameter(Mandatory)] [object[]] $Records,
+        [Parameter(Mandatory)] [string] $StageName
     )
 
-    if ([bool]$EvidenceIndex.formal_product_training_authorized -or
-        -not [bool]$EvidenceIndex.shared_shipping_evidence_verified) {
-        throw "Imported Full Shipment anchor evidence failed shared settlement verification."
+    if ([bool]$EvidenceIndex.formal_product_training_authorized) {
+        throw "$StageName evidence unexpectedly authorized formal training."
     }
-    foreach ($entry in $AnchorEntries) {
+    foreach ($entry in $PlanEntries) {
         $scenario = [string]$entry.scenario
         $record = @($Records | Where-Object scenario -eq $scenario)
         if ($record.Count -ne 1) {
-            throw "Imported Full Shipment anchor evidence is missing or duplicated: $scenario"
+            throw "$StageName evidence is missing or duplicated: $scenario"
         }
         $stratumId = [string]$RowsByScenario[$scenario].stratum_id
         $verified = @($EvidenceIndex.strata | Where-Object {
@@ -267,9 +267,42 @@ function Assert-ImportedAnchorEvidence {
                 [string]$entry.requirement_id -or
             [string]$verified[0].verified_qualified_item_id -ne
                 [string]$entry.qualified_item_id) {
-            throw "Imported Full Shipment anchor evidence failed exact proof verification: $scenario"
+            throw "$StageName evidence failed exact proof verification: $scenario"
         }
     }
+}
+
+function Assert-ImportedAnchorEvidence {
+    param(
+        [Parameter(Mandatory)] $EvidenceIndex,
+        [Parameter(Mandatory)] [object[]] $AnchorEntries,
+        [Parameter(Mandatory)] [hashtable] $RowsByScenario,
+        [Parameter(Mandatory)] [object[]] $Records
+    )
+
+    if (-not [bool]$EvidenceIndex.shared_shipping_evidence_verified) {
+        throw "Imported Full Shipment anchor evidence failed shared settlement verification."
+    }
+    Assert-VerifiedEvidenceEntries -EvidenceIndex $EvidenceIndex `
+        -PlanEntries $AnchorEntries -RowsByScenario $RowsByScenario `
+        -Records $Records -StageName "Imported Full Shipment anchor"
+}
+
+function Assert-CompletedHighRiskEvidence {
+    param(
+        [Parameter(Mandatory)] $EvidenceIndex,
+        [Parameter(Mandatory)] [object[]] $AnchorEntries,
+        [Parameter(Mandatory)] [object[]] $HighRiskEntries,
+        [Parameter(Mandatory)] [hashtable] $RowsByScenario,
+        [Parameter(Mandatory)] [object[]] $Records
+    )
+
+    Assert-ImportedAnchorEvidence -EvidenceIndex $EvidenceIndex `
+        -AnchorEntries $AnchorEntries -RowsByScenario $RowsByScenario `
+        -Records $Records
+    Assert-VerifiedEvidenceEntries -EvidenceIndex $EvidenceIndex `
+        -PlanEntries $HighRiskEntries -RowsByScenario $RowsByScenario `
+        -Records $Records -StageName "Completed Full Shipment high-risk"
 }
 
 $staticInventoryPath = Resolve-MilestonePath $StaticInventory
@@ -390,6 +423,22 @@ if ($Batch -ne "all" -and $missingAnchorScenarios.Count -gt 0) {
     throw "Milestone batch requires completed anchor evidence: " +
         ($missingAnchorScenarios -join ",")
 }
+$requiredHighRiskEntries = @($entries |
+    Where-Object run_batch -eq "high_risk")
+$requiredHighRiskScenarios = @($requiredHighRiskEntries |
+    ForEach-Object { [string]$_.scenario })
+$completedHighRiskScenarios = @($records |
+    Where-Object {
+        [string]$_.scenario -in $requiredHighRiskScenarios -and
+        (Test-Path -LiteralPath ([string]$_.summary_path) -PathType Leaf)
+    } |
+    ForEach-Object { [string]$_.scenario })
+$missingHighRiskScenarios = @($requiredHighRiskScenarios |
+    Where-Object { $_ -notin $completedHighRiskScenarios })
+if ($Batch -eq "standard" -and $missingHighRiskScenarios.Count -gt 0) {
+    throw "Milestone standard batch requires completed high-risk evidence: " +
+        ($missingHighRiskScenarios -join ",")
+}
 
 $selectedEntries = switch ($Batch) {
     "high_risk" { @($entries | Where-Object run_batch -eq "high_risk") }
@@ -406,6 +455,10 @@ if ($MaxScenarios -gt 0) {
 }
 $selectedScenarios = @($selectedEntries.scenario |
     ForEach-Object { [string]$_ })
+$firstSelectedEntry = @($selectedEntries | Select-Object -First 1)
+$selectedBatchStartsWithStandard =
+    $firstSelectedEntry.Count -eq 1 -and
+    [string]$firstSelectedEntry[0].run_batch -eq "standard"
 
 $runner = Join-Path $PSScriptRoot `
     "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1"
@@ -437,8 +490,35 @@ function Confirm-ImportedAnchorEvidence {
     }
 }
 
+function Confirm-CompletedHighRiskEvidence {
+    try {
+        Initialize-EvidenceIndexer
+        $highRiskEvidenceIndex = Build-CurrentEvidenceIndex
+        Assert-CompletedHighRiskEvidence `
+            -EvidenceIndex $highRiskEvidenceIndex `
+            -AnchorEntries $requiredAnchorEntries `
+            -HighRiskEntries $requiredHighRiskEntries `
+            -RowsByScenario $rowsByScenario -Records $records
+        Write-MilestoneState -Status "high_risk_evidence_verified" `
+            -Records $records -SelectedScenarios $selectedScenarios
+    }
+    catch {
+        Write-MilestoneState -Status "failed" -Records $records `
+            -SelectedScenarios $selectedScenarios `
+            -LastError $_.Exception.Message
+        throw
+    }
+}
+
 $anchorEvidenceVerified = $false
-if ($missingAnchorScenarios.Count -eq 0) {
+$highRiskEvidenceVerified = $false
+if ($missingHighRiskScenarios.Count -eq 0 -and
+    ($Batch -eq "standard" -or $selectedBatchStartsWithStandard)) {
+    Confirm-CompletedHighRiskEvidence
+    $anchorEvidenceVerified = $true
+    $highRiskEvidenceVerified = $true
+}
+elseif ($missingAnchorScenarios.Count -eq 0) {
     Confirm-ImportedAnchorEvidence
     $anchorEvidenceVerified = $true
 }
@@ -449,6 +529,12 @@ foreach ($entry in $selectedEntries) {
         [string]$entry.run_batch -ne "anchor") {
         Confirm-ImportedAnchorEvidence
         $anchorEvidenceVerified = $true
+    }
+    if (-not $highRiskEvidenceVerified -and
+        [string]$entry.run_batch -eq "standard") {
+        Confirm-CompletedHighRiskEvidence
+        $anchorEvidenceVerified = $true
+        $highRiskEvidenceVerified = $true
     }
     $existing = @($records | Where-Object scenario -eq $scenario)
     if ($existing.Count -eq 1 -and
