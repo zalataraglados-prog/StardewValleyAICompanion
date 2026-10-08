@@ -6,6 +6,8 @@
 
 高风险与标准批次之间还有第二道同构阶段门：7 个高风险摘要必须齐全，且 production evidence index 必须逐层接纳其 exact native sample，首个 standard 场景才可启动。`standard`、`all_missing` 与 `all` 都不能绕过该门。
 
+无交互桌面或 SSH 会话只允许使用 `-EvidencePreflightOnly` 重建并验收现有 evidence；该模式在任何游戏 runner 前退出，不能生成新的原生样本。`-PlanOnly` 仍只核对计划和摘要入口，不得被解释为 production evidence 验真。
+
 当前静态分母已重新计算为 `154/641/26` 且没有 blocker；26 个 runner 场景经完整执行签名对账后恰好覆盖 26 层。原生采证不再人工逐条展开，而由 `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 执行：先导入并重新校验 Sap/放射性矿石 anchor，再跑树液收集器、怪物掉落、地点钓获、蚯蚓地、晶球、商店和社区中心奖励 7 个高风险层；全部通过后再批量补标准层。每层失败即停、无自动重试、保留 checkpoint 与完整产物。
 
 退出条件不是“脚本跑完”，而是每个 stratum 都有精确 route occurrence、原生 `applied/verified`、fresh 终态、独立 rollout proof，且最终 `full_shipment_runtime_sample_evidence_index.v1` 重新计算为 `26/26`。在此之前 `formal_product_training_authorized=false`。

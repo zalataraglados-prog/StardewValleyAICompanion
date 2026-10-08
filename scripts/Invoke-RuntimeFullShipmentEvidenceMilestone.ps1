@@ -23,10 +23,14 @@ param(
     [string[]] $ExistingSummaryPaths = @(),
     [int] $MaxScenarios = 0,
     [switch] $PlanOnly,
+    [switch] $EvidencePreflightOnly,
     [switch] $SkipBuild
 )
 
 $ErrorActionPreference = "Stop"
+if ($PlanOnly -and $EvidencePreflightOnly) {
+    throw "PlanOnly and EvidencePreflightOnly are mutually exclusive."
+}
 
 if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
     $ProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
@@ -229,7 +233,7 @@ function Initialize-EvidenceIndexer {
         return
     }
 
-    & dotnet build $bootstrapProject -c Release
+    & dotnet build $bootstrapProject -c Release | Out-Host
     if ($LASTEXITCODE -ne 0 -or
         -not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
         throw "Goal-conditioned bootstrap Release build failed."
@@ -419,7 +423,8 @@ $completedAnchorScenarios = @($records |
     ForEach-Object { [string]$_.scenario })
 $missingAnchorScenarios = @($requiredAnchorScenarios |
     Where-Object { $_ -notin $completedAnchorScenarios })
-if ($Batch -ne "all" -and $missingAnchorScenarios.Count -gt 0) {
+if (($Batch -ne "all" -or $EvidencePreflightOnly) -and
+    $missingAnchorScenarios.Count -gt 0) {
     throw "Milestone batch requires completed anchor evidence: " +
         ($missingAnchorScenarios -join ",")
 }
@@ -481,6 +486,7 @@ function Confirm-ImportedAnchorEvidence {
             -RowsByScenario $rowsByScenario -Records $records
         Write-MilestoneState -Status "anchor_evidence_verified" `
             -Records $records -SelectedScenarios $selectedScenarios
+        return $anchorEvidenceIndex
     }
     catch {
         Write-MilestoneState -Status "failed" -Records $records `
@@ -501,6 +507,7 @@ function Confirm-CompletedHighRiskEvidence {
             -RowsByScenario $rowsByScenario -Records $records
         Write-MilestoneState -Status "high_risk_evidence_verified" `
             -Records $records -SelectedScenarios $selectedScenarios
+        return $highRiskEvidenceIndex
     }
     catch {
         Write-MilestoneState -Status "failed" -Records $records `
@@ -512,27 +519,39 @@ function Confirm-CompletedHighRiskEvidence {
 
 $anchorEvidenceVerified = $false
 $highRiskEvidenceVerified = $false
+$evidencePreflightIndex = $null
 if ($missingHighRiskScenarios.Count -eq 0 -and
     ($Batch -eq "standard" -or $selectedBatchStartsWithStandard)) {
-    Confirm-CompletedHighRiskEvidence
+    $evidencePreflightIndex = Confirm-CompletedHighRiskEvidence
     $anchorEvidenceVerified = $true
     $highRiskEvidenceVerified = $true
 }
 elseif ($missingAnchorScenarios.Count -eq 0) {
-    Confirm-ImportedAnchorEvidence
+    $evidencePreflightIndex = Confirm-ImportedAnchorEvidence
     $anchorEvidenceVerified = $true
+}
+
+if ($EvidencePreflightOnly) {
+    if ($null -eq $evidencePreflightIndex) {
+        throw "Milestone evidence preflight did not produce an evidence index."
+    }
+    [ordered]@{
+        checkpoint = Read-JsonArtifact $checkpointPath
+        evidence_index = $evidencePreflightIndex
+    } | ConvertTo-Json -Depth 24
+    return
 }
 
 foreach ($entry in $selectedEntries) {
     $scenario = [string]$entry.scenario
     if (-not $anchorEvidenceVerified -and
         [string]$entry.run_batch -ne "anchor") {
-        Confirm-ImportedAnchorEvidence
+        $evidencePreflightIndex = Confirm-ImportedAnchorEvidence
         $anchorEvidenceVerified = $true
     }
     if (-not $highRiskEvidenceVerified -and
         [string]$entry.run_batch -eq "standard") {
-        Confirm-CompletedHighRiskEvidence
+        $evidencePreflightIndex = Confirm-CompletedHighRiskEvidence
         $anchorEvidenceVerified = $true
         $highRiskEvidenceVerified = $true
     }
