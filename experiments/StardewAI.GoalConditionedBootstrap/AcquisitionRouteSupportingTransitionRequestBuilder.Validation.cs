@@ -1,4 +1,5 @@
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -181,7 +182,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
     private static bool CandidateCoveredByClaim(
         PolicyEventCandidatePrediction candidate,
         AcquisitionRouteReservationClaimSet? claimSet,
-        string supportTransitionKind)
+        string supportTransitionKind,
+        string playerInventoryNodeId)
     {
         if (supportTransitionKind == "machine_capacity_establishment")
         {
@@ -227,13 +229,24 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         return candidate.SlotIndex.HasValue &&
             requiredQuantity.HasValue &&
             candidate.Quantity >= requiredQuantity.Value &&
+            (supportTransitionKind != "machine_input_load" ||
+             !string.IsNullOrWhiteSpace(playerInventoryNodeId)) &&
             claimSet is not null &&
             claimSet.MaterialClaims.Any(claim =>
+                (supportTransitionKind != "machine_input_load" ||
+                 claim.NodeId == playerInventoryNodeId) &&
                 claim.SlotIndex == candidate.SlotIndex.Value &&
                 claim.QualifiedItemId == candidate.QualifiedItemId &&
                 claim.Quantity >= requiredQuantity.Value) &&
             claimSet.CurrencyClaims.Length == 0;
     }
+
+    private static string CurrentPlayerInventoryNodeId(
+        SnapshotEnvelope snapshot) =>
+        snapshot.PlayerId.Status is "available" or "derived" &&
+        !string.IsNullOrWhiteSpace(snapshot.PlayerId.Value)
+            ? "player:" + snapshot.PlayerId.Value
+            : string.Empty;
 
     private static void ValidateClaimIdentity(
         AcquisitionRouteReservationClaimSet? claimSet,

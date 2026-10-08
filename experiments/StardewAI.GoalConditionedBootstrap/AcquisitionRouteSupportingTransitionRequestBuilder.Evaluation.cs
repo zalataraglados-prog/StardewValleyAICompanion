@@ -35,13 +35,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             out var parsedDay)
                 ? parsedDay
                 : (int?)null;
+        var playerInventoryNodeId = CurrentPlayerInventoryNodeId(snapshot);
         var selected = matches.FirstOrDefault(match =>
                 CandidateCoveredByClaim(
                     match.Candidate,
                     reservation.ClaimSet,
                     SupportingTransitionKind(
                         requirement,
-                        match.Candidate))) ??
+                        match.Candidate),
+                    playerInventoryNodeId)) ??
             matches.FirstOrDefault();
         var candidate = selected?.Candidate;
         var supportTransitionKind = SupportingTransitionKind(

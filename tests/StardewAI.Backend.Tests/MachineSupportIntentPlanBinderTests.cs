@@ -184,6 +184,112 @@ public sealed class MachineSupportIntentPlanBinderTests
             Value(step, "machine_support_demand_class"));
     }
 
+    [Fact]
+    public void BindsAcquisitionCraftWithAcquisitionIntentClassification()
+    {
+        const string supportJson =
+            "{\"goal_id\":\"full_shipment\",\"route_occurrence_id\":" +
+            "\"route:keg\",\"route_kind\":\"machine_output\"," +
+            "\"source_id\":\"Data/Machines:keg\"," +
+            "\"output_qualified_item_id\":\"(O)346\"," +
+            "\"machine_qualified_item_id\":\"(BC)12\"}";
+        var repository = new CapturingRepository();
+        var snapshot = new SnapshotEnvelope { StateHash = "state:acquisition" };
+        var step = new SmallModelPlanStep
+        {
+            StepId = "step:craft-acquisition-machine",
+            Kind = "craft_machine_item",
+            Preconditions = ["candidate_id:machine-craft:keg"],
+            Parameters =
+            [
+                Parameter(
+                    "goal_support_status",
+                    "supported_exact_acquisition_route"),
+                Parameter(
+                    "machine_support_intent_id",
+                    "machine-support:acquisition:keg"),
+                Parameter("goal_support_parent_goal_id", "full_shipment"),
+                Parameter("output_qualified_item_id", "(BC)12"),
+                Parameter("output_item_id", "12"),
+                Parameter(
+                    "machine_demand_class",
+                    "production_capacity_requirement"),
+                Parameter(
+                    "machine_acquisition_route_support_json",
+                    supportJson),
+                Parameter("commitment_ledger_revision", "7"),
+                Parameter("machine_support_intent_revision", ""),
+                Parameter("machine_support_intent_stage", ""),
+                Parameter("machine_support_intent_source_state_hash", "")
+            ]
+        };
+
+        var result = MachineSupportIntentPlanBinder.Bind(
+            new SmallModelPlanEnvelope { Steps = [step] },
+            snapshot,
+            repository);
+
+        Assert.NotNull(result);
+        Assert.True(result.Accepted);
+        var request = Assert.IsType<MachineSupportIntentUpsertRequest>(
+            repository.Request);
+        Assert.Equal("full_shipment", request.GoalId);
+        Assert.Equal("acquisition_route_requirement", request.DemandClass);
+        Assert.Equal("machine_capacity_acquisition_route", request.SupportKind);
+        Assert.Equal(supportJson, request.EvidenceStatus);
+        Assert.Equal(supportJson, request.SupportSourcesJson);
+        Assert.Equal(0, request.NetBenefit);
+        Assert.Equal(0.12, request.SupportScore);
+        Assert.Equal(1, request.RequiredAdditionalMachineCount);
+    }
+
+    [Fact]
+    public void PreservesAcquisitionContinuationReasonAfterPlacementBinding()
+    {
+        const string supportJson = "{\"goal_id\":\"full_shipment\"}";
+        var repository = new CapturingRepository();
+        var step = new SmallModelPlanStep
+        {
+            StepId = "step:place-acquisition-machine",
+            Kind = "place_machine_item",
+            TargetLocation = "Farm",
+            TargetTileX = 20,
+            TargetTileY = 21,
+            Preconditions = ["candidate_id:machine-place:acquisition"],
+            Parameters =
+            [
+                Parameter(
+                    "machine_support_intent_id",
+                    "machine-support:acquisition:keg"),
+                Parameter("machine_support_goal_id", "full_shipment"),
+                Parameter(
+                    "machine_support_demand_class",
+                    "acquisition_route_requirement"),
+                Parameter("machine_support_sources_json", supportJson),
+                Parameter("qualified_item_id", "(BC)12"),
+                Parameter("item_id", "12"),
+                Parameter("commitment_ledger_revision", "7"),
+                Parameter("machine_support_intent_revision", ""),
+                Parameter("machine_support_intent_stage", ""),
+                Parameter("machine_support_intent_source_state_hash", ""),
+                Parameter("machine_support_continuation_status", "active"),
+                Parameter("machine_support_continuation_kind", ""),
+                Parameter("machine_support_continuation_reason", "")
+            ]
+        };
+
+        var result = MachineSupportIntentPlanBinder.Bind(
+            new SmallModelPlanEnvelope { Steps = [step] },
+            new SnapshotEnvelope { StateHash = "state:placement" },
+            repository);
+
+        Assert.NotNull(result);
+        Assert.True(result.Accepted);
+        Assert.Equal(
+            "continue_committed_acquisition_route_machine_capacity",
+            Value(step, "machine_support_continuation_reason"));
+    }
+
     private static SmallModelActionParameter Parameter(
         string name,
         string value) => new()
@@ -242,8 +348,13 @@ public sealed class MachineSupportIntentPlanBinderTests
                         SupportKind = request.SupportKind,
                         EvidenceStatus = request.EvidenceStatus,
                         TaskSourcesJson = request.TaskSourcesJson,
+                        SupportSourcesJson = request.SupportSourcesJson,
+                        GrossBenefit = request.GrossBenefit,
+                        OpportunityCost = request.OpportunityCost,
                         NetBenefit = request.NetBenefit,
-                        SupportScore = request.SupportScore
+                        SupportScore = request.SupportScore,
+                        RequiredAdditionalMachineCount =
+                            request.RequiredAdditionalMachineCount
                     }
                 ]
             };

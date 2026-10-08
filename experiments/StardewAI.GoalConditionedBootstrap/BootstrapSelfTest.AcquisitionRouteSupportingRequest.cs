@@ -228,6 +228,22 @@ internal static partial class BootstrapSelfTest
             Purpose = source.Purpose
         };
 
+    private static MaterialReservationUpsertRequest WithNode(
+        this MaterialReservationUpsertRequest source,
+        string nodeId) => new()
+        {
+            StateHash = source.StateHash,
+            ExpectedLedgerRevision = source.ExpectedLedgerRevision,
+            ReservationId = source.ReservationId,
+            SourceDecisionId = source.SourceDecisionId,
+            GoalId = source.GoalId,
+            NodeId = nodeId,
+            SlotIndex = source.SlotIndex,
+            QualifiedItemId = source.QualifiedItemId,
+            Quantity = source.Quantity,
+            Purpose = source.Purpose
+        };
+
     private static AcquisitionRouteTargetDateReservation WithClaim(
         this AcquisitionRouteTargetDateReservation source,
         MaterialReservationUpsertRequest[] materialClaims) => source with

@@ -95,7 +95,13 @@ public static class MachineSupportIntentPlanBinder
     private static MachineSupportIntentUpsertRequest CraftRequest(
         SmallModelPlanStep step,
         SnapshotEnvelope snapshot,
-        StrategyCommitmentLedger ledger) => new()
+        StrategyCommitmentLedger ledger)
+    {
+        var acquisitionSupport = string.Equals(
+            Parameter(step, "goal_support_status"),
+            "supported_exact_acquisition_route",
+            StringComparison.Ordinal);
+        return new MachineSupportIntentUpsertRequest
         {
             StateHash = snapshot.StateHash,
             ExpectedLedgerRevision = ledger.Revision,
@@ -111,35 +117,40 @@ public static class MachineSupportIntentPlanBinder
                 step,
                 "output_qualified_item_id"),
             ItemId = Parameter(step, "output_item_id"),
-            DemandClass = Parameter(
-                step,
-                "machine_demand_class"),
-            SupportKind = Parameter(step, "goal_support_kind"),
-            EvidenceStatus = Parameter(
-                step,
-                "goal_support_evidence_status"),
+            DemandClass = acquisitionSupport
+                ? "acquisition_route_requirement"
+                : Parameter(step, "machine_demand_class"),
+            SupportKind = acquisitionSupport
+                ? "machine_capacity_acquisition_route"
+                : Parameter(step, "goal_support_kind"),
+            EvidenceStatus = acquisitionSupport
+                ? Parameter(
+                    step,
+                    "machine_acquisition_route_support_json")
+                : Parameter(step, "goal_support_evidence_status"),
             TaskSourcesJson = Parameter(
                 step,
                 "priority_task_sources_json"),
             SupportSourcesJson = Parameter(
                 step,
                 "machine_acquisition_route_support_json"),
-            GrossBenefit = IntParameter(
-                step,
-                "goal_support_gross_benefit"),
-            OpportunityCost = IntParameter(
-                step,
-                "goal_support_opportunity_cost"),
-            NetBenefit = IntParameter(
-                step,
-                "goal_support_net_benefit"),
-            SupportScore = DoubleParameter(
-                step,
-                "goal_support_score"),
-            RequiredAdditionalMachineCount = IntParameter(
-                step,
-                "required_additional_machine_count")
+            GrossBenefit = acquisitionSupport
+                ? 0
+                : IntParameter(step, "goal_support_gross_benefit"),
+            OpportunityCost = acquisitionSupport
+                ? 0
+                : IntParameter(step, "goal_support_opportunity_cost"),
+            NetBenefit = acquisitionSupport
+                ? 0
+                : IntParameter(step, "goal_support_net_benefit"),
+            SupportScore = acquisitionSupport
+                ? 0.12
+                : DoubleParameter(step, "goal_support_score"),
+            RequiredAdditionalMachineCount = acquisitionSupport
+                ? 1
+                : IntParameter(step, "required_additional_machine_count")
         };
+    }
 
     private static MachineSupportIntentUpsertRequest? PlacementRequest(
         SmallModelPlanStep step,
@@ -342,14 +353,19 @@ public static class MachineSupportIntentPlanBinder
             Set(
                 supportStep,
                 "machine_support_continuation_reason",
-                string.Equals(
-                    intent.DemandClass,
-                    "priority_task_requirement",
-                    StringComparison.Ordinal)
-                        ? "continue_committed_task_machine_capacity"
-                        : "continue_committed_positive_machine_capacity");
+                ContinuationReason(intent.DemandClass));
         }
     }
+
+    private static string ContinuationReason(string demandClass) =>
+        demandClass switch
+        {
+            "acquisition_route_requirement" =>
+                "continue_committed_acquisition_route_machine_capacity",
+            "priority_task_requirement" =>
+                "continue_committed_task_machine_capacity",
+            _ => "continue_committed_positive_machine_capacity"
+        };
 
     private static void SetIfPresent(
         SmallModelPlanStep step,

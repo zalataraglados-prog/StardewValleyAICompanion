@@ -185,13 +185,35 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
             return Array.Empty<AcquisitionResourceInputEvaluation>();
         }
 
+        var purchasedInput = matchingInputs[0];
+        var unresolvedOtherInputs = route.UpstreamRoute.InputEvaluations
+            .Where(input => input.RequiredQuantity > 0 &&
+                input != purchasedInput &&
+                (input.Status != "resolved_resource_input_match" ||
+                 !input.AvailableQuantity.HasValue ||
+                 input.AvailableQuantity.Value < input.RequiredQuantity))
+            .ToArray();
+        if (unresolvedOtherInputs.Length > 0)
+        {
+            blockingReasons = unresolvedOtherInputs
+                .Select(input =>
+                    "machine_input_purchase_other_input_unresolved:" +
+                    input.InputKind + ":" + input.QualifiedItemId)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+            return Array.Empty<AcquisitionResourceInputEvaluation>();
+        }
+
         blockingReasons = Array.Empty<string>();
         return route.UpstreamRoute.InputEvaluations
             .Select(input => input with
             {
-                RequiredQuantity = Math.Min(
-                    input.RequiredQuantity,
-                    Math.Max(0, input.AvailableQuantity ?? 0))
+                RequiredQuantity = input == purchasedInput
+                    ? Math.Min(
+                        input.RequiredQuantity,
+                        Math.Max(0, input.AvailableQuantity ?? 0))
+                    : input.RequiredQuantity
             })
             .Where(input => input.RequiredQuantity > 0)
             .ToArray();

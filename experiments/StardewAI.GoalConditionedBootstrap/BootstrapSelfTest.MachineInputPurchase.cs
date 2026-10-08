@@ -44,7 +44,15 @@ internal static partial class BootstrapSelfTest
                 MachineResourceState(
                     MachineResourceSlot(0, "(O)262", 1))),
             route,
-            MachineInputPurchaseCurrencyState(100));
+            MachineInputPurchaseCurrencyState(
+                10,
+                new MachineInputPurchaseQuoteFixture(
+                    "SeedShop",
+                    "wheat-seed",
+                    80,
+                    1,
+                    false,
+                    new[] { "insufficient_currency_for_purchase" })));
         Require(insufficient.CurrencyBudgetMatchesTargetDate == false &&
                 insufficient.CurrencyEvaluation?.PurchasePrerequisite is
                 {
@@ -57,8 +65,64 @@ internal static partial class BootstrapSelfTest
                     "required_currency_amount_unavailable:money",
                     StringComparer.Ordinal),
             "Insufficient machine-input purchase funds were admitted or lost their exact quote binding.");
+        VerifyPurchaseDoesNotMaskOtherMissingInput(route, facility);
         VerifyMachineInputPurchaseReceipt();
         VerifyMachineInputPurchaseSupportChain();
+    }
+
+    private static void VerifyPurchaseDoesNotMaskOtherMissingInput(
+        AcquisitionRouteCalendarResolution route,
+        AcquisitionRouteTargetDateFacility facility)
+    {
+        var resources = MachineResourceState(
+            MachineResourceSlot(0, "(O)262", 1));
+        var baseResource = AcquisitionRouteTargetDateResourceBuilder.Evaluate(
+            facility,
+            route,
+            resources);
+        var resource = baseResource with
+        {
+            InputEvaluations = baseResource.InputEvaluations
+                .Append(new AcquisitionResourceInputEvaluation(
+                    "zz_unresolved_machine_input",
+                    "(O)388",
+                    5,
+                    0,
+                    "resolved_resource_input_miss",
+                    new[] { "fixture" },
+                    Array.Empty<string>()))
+                .ToArray()
+        };
+        var currency = AcquisitionRouteTargetDateCurrencyBuilder.Evaluate(
+            resource,
+            route,
+            MachineInputPurchaseCurrencyState(1_000));
+        Require(currency.CurrencyBudgetMatchesTargetDate == true,
+            "The fixture did not bind its primary-input purchase quote.");
+
+        var stateHash = new string('f', 64);
+        var reservation = AcquisitionRouteTargetDateReservationBuilder
+            .Evaluate(
+                currency,
+                "grandpa.stage1.21_points",
+                stateHash,
+                new AcquisitionStrategyLedgerState(
+                    new StrategyCommitmentLedger
+                    {
+                        LedgerId = "multi-input-purchase-ledger",
+                        SaveId = "multi-input-purchase-save",
+                        PlayerId = "42",
+                        SourceStateHash = stateHash
+                    },
+                    42),
+                resources,
+                MachineInputPurchaseCurrencyState(1_000));
+        Require(!reservation.ReservationAxisResolved &&
+                reservation.BlockingReasons.Contains(
+                    "machine_input_purchase_other_input_unresolved:" +
+                    "zz_unresolved_machine_input:(O)388",
+                    StringComparer.Ordinal),
+            "A bound purchase incorrectly masked another missing machine input.");
     }
 
     private static void VerifyExecutorEligibleQuoteSelection(
