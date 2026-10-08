@@ -29,7 +29,7 @@ public sealed partial class ProgressQuestReadAdapter : ReadAdapterBase
         this.mapper = mapper;
     }
 
-    public override string Domain => "quests_progress";
+    public override string Domain => "quests";
     public override int Priority => 60;
 
     public override StateAdapterResult Collect(long tick)

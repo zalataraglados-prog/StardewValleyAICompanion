@@ -854,7 +854,7 @@ public sealed partial class ModEntry : Mod
 
         if (profile is "social" or "social_future")
         {
-            domains.Add("quests_progress");
+            domains.Add("quests");
             domains.Add("world_progress");
         }
 
@@ -869,7 +869,7 @@ public sealed partial class ModEntry : Mod
             domains.Add("current_location");
             domains.Add("locations");
             domains.Add("npcs");
-            domains.Add("quests_progress");
+            domains.Add("quests");
             domains.Add("world_progress");
             domains.Add("mods");
             domains.Add("modded_state");
@@ -891,7 +891,7 @@ public sealed partial class ModEntry : Mod
             domains.Add("locations");
             domains.Add("farm");
             domains.Add("npcs");
-            domains.Add("quests_progress");
+            domains.Add("quests");
             domains.Add("world_progress");
             domains.Add("mods");
             domains.Add("modded_state");

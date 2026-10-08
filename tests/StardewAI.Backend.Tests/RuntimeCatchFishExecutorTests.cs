@@ -313,7 +313,7 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("publishSnapshotEvent: true", source);
         Assert.DoesNotContain("return RefreshSnapshotCache(profile, publishSnapshotEvent: true);", source, StringComparison.Ordinal);
         Assert.Contains("if (profile is \"fishing\")", source);
-        Assert.Contains("domains.Add(\"quests_progress\")", source);
+        Assert.Contains("domains.Add(\"quests\")", source);
         Assert.Contains("domains.Add(\"modded_state\")", source);
         Assert.Contains("\"daily\" or \"clock\"", source, StringComparison.Ordinal);
         Assert.Contains("\"clock\" or \"identity\"", source, StringComparison.Ordinal);

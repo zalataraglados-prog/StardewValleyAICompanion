@@ -46,7 +46,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             routeState,
             canReadJunimoText,
             rowCountExact);
-        if (rewardCandidates.Length > 0)
+        if (rewardCandidates.Any(candidate => candidate.Available))
         {
             return rewardCandidates;
         }
@@ -60,7 +60,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             rowCountExact);
         if (ReadBool(progressRow, "community_center_is_current_location") != true)
         {
-            return moneyPaymentCandidates
+            return rewardCandidates
+                .Concat(moneyPaymentCandidates)
                 .Concat(CommunityCenterDonationRouteCandidates(
                     snapshot,
                     progressRow,
@@ -74,7 +75,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-        var result = new List<EventCandidate>(moneyPaymentCandidates);
+        var result = new List<EventCandidate>(rewardCandidates);
+        result.AddRange(moneyPaymentCandidates);
 
         foreach (var bundle in bundles.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object))
         {

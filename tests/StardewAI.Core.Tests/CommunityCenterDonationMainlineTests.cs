@@ -12,6 +12,73 @@ namespace StardewAI.Core.Tests;
 public sealed class CommunityCenterDonationMainlineTests
 {
     [Fact]
+    public void BlockedRewardDoesNotHideAvailableDonation()
+    {
+        var original = Snapshot(completedBefore: 1);
+        var root = JsonSerializer.SerializeToNode(
+            original.State,
+            JsonOptions)!.AsObject();
+        var progress = root["world_progress"]!["community_center"]!["value"]!;
+        progress["bundle_data_row_count"] = 2;
+        progress["projected_bundle_row_count"] = 2;
+        progress["bundle_rows"]!.AsArray().Add(JsonNode.Parse("""
+        {
+          "projection_status":"exact",
+          "bundle_data_key":"Crafts Room/13",
+          "bundle_id":13,
+          "area_id":1,
+          "area_name":"Crafts Room",
+          "complete":true,
+          "reward_available":true,
+          "note_appears":true,
+          "note_tile_x":12,
+          "note_tile_y":10,
+          "interaction_tile_x":12,
+          "interaction_tile_y":10,
+          "area_mutex_locked":false,
+          "reward":{
+            "projection_status":"exact",
+            "item_id":"465",
+            "qualified_item_id":"(O)465",
+            "runtime_type":"StardewValley.Object",
+            "quality":0,
+            "stack":20,
+            "inventory_accepts_reward":false,
+            "claim_mode":"junimo_note_present_button",
+            "interaction_tile_x":12,
+            "interaction_tile_y":10,
+            "action_status":"ready"
+          },
+          "ingredients":[],
+          "donation_candidates":[]
+        }
+        """));
+        var state = root.Deserialize<Dictionary<string, JsonElement>>(
+            JsonOptions)!;
+        var snapshot = new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = original.GameTick,
+            RealTimestamp = original.RealTimestamp,
+            Completeness = original.Completeness,
+            State = state
+        };
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[] { "community_center.donate_bundle_items" },
+            true);
+        var candidates = Assert.Single(availability.Options).EventCandidates;
+
+        Assert.Contains(candidates, candidate =>
+            candidate.Kind == "claim_community_center_bundle_reward" &&
+            !candidate.Available);
+        Assert.Contains(candidates, candidate =>
+            candidate.Kind == "donate_community_center_item" &&
+            candidate.Available);
+    }
+
+    [Fact]
     public void DonationParameterProtocolRejectsDuplicateOrMalformedIdentity()
     {
         var parameters = new[]

@@ -19,6 +19,10 @@ public sealed class MachineOutputRouteSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("ReadLegacyMachineOutputRowSources", bridge,
             StringComparison.Ordinal);
+        Assert.Contains("ReadMachineOutputRowSources", bridge,
+            StringComparison.Ordinal);
+        Assert.Contains("selectedRules[0]", bridge,
+            StringComparison.Ordinal);
         Assert.Contains("native_machine_flavored_output", bridge,
             StringComparison.Ordinal);
         Assert.Contains("native_machine_item_query_output", bridge,

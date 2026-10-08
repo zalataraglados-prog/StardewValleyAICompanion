@@ -198,6 +198,56 @@ public sealed partial class ReservationPortfolioLedgerTests
         Assert.Same(support.Ledger, result.Ledger);
     }
 
+    [Fact]
+    public void SupportingTransitionMergesCompatibleClaimsIntoOneDestination()
+    {
+        var before = RelocationSnapshot(afterTransfer: false);
+        var after = RelocationSnapshot(afterTransfer: true, transferredStack: 3);
+        var (service, support) = CommittedRelocationSupport(before);
+        support.Ledger!.MaterialReservations = support.Ledger
+            .MaterialReservations.Append(new MaterialReservation
+            {
+                ReservationId = "route-a-additional",
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                SourceDecisionId = "route:a",
+                SourceStateHash = before.StateHash,
+                GoalId = "goal.grandpa_21",
+                OwnerPlayerId = 123,
+                NodeId = "chest:Farm:6,5",
+                SlotIndex = 0,
+                QualifiedItemId = "(O)388",
+                Quantity = 1,
+                Purpose = "test merged relocation"
+            }).ToArray();
+        var request = RelocationSettlementRequest(after);
+        request.MaterialRelocations = request.MaterialRelocations.Append(
+            new ReservationPortfolioMaterialRelocation
+            {
+                MaterialReservationId = "route-a-additional",
+                SourceNodeId = "chest:Farm:6,5",
+                SourceSlotIndex = 0,
+                DestinationNodeId = "player:123",
+                DestinationSlotIndex = 0,
+                QualifiedItemId = "(O)388",
+                Quantity = 1
+            }).ToArray();
+
+        var result = service.SettleSupportingTransition(
+            support.Ledger,
+            after,
+            request,
+            "2026-09-27T02:02:00Z");
+
+        Assert.True(result.Accepted, string.Join(";", result.Errors));
+        Assert.Equal(2, result.MaterialRelocations.Length);
+        Assert.All(result.Ledger!.MaterialReservations, claim =>
+        {
+            Assert.Equal("player:123", claim.NodeId);
+            Assert.Equal(0, claim.SlotIndex);
+        });
+    }
+
     private static (
         ReservationPortfolioLedgerService Service,
         ReservationPortfolioCommitResult Support)
@@ -275,7 +325,9 @@ public sealed partial class ReservationPortfolioLedgerTests
             }
         };
 
-    private static SnapshotEnvelope RelocationSnapshot(bool afterTransfer)
+    private static SnapshotEnvelope RelocationSnapshot(
+        bool afterTransfer,
+        int transferredStack = 2)
     {
         var playerSlots = afterTransfer
             ? new object[]
@@ -285,7 +337,7 @@ public sealed partial class ReservationPortfolioLedgerTests
                     slot_index = 0,
                     item_id = "388",
                     qualified_item_id = "(O)388",
-                    stack = 2,
+                    stack = transferredStack,
                     maximum_stack_size = 999,
                     quality = 0
                 }

@@ -761,6 +761,39 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileBuyShopItemAliasesContinuationPriceWithoutOpenStock()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "money": {"value":500,"status":"available"},
+            "inventory": {"value":[],"status":"available"}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available"}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "executor.buy_shop_item");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)378" },
+            new SmallModelActionParameter { Name = "quantity", Value = "1" },
+            new SmallModelActionParameter { Name = "continuation.stock_id", Value = "blacksmith-copper" },
+            new SmallModelActionParameter { Name = "continuation.output_stack_per_purchase", Value = "1" },
+            new SmallModelActionParameter { Name = "continuation.output_quality", Value = "0" },
+            new SmallModelActionParameter { Name = "continuation.max_unit_price", Value = "75" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "expected_unit_price" &&
+            parameter.Value == "75");
+    }
+
+    [Fact]
     public void CompileBuyShopItemBlocksWhenExpectedShopDoesNotMatchOpenMenu()
     {
         var snapshot = Snapshot("""
