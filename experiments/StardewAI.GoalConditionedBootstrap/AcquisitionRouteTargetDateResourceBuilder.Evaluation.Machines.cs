@@ -189,6 +189,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                     .ToArray();
                 return access.Length == 1 &&
                     access[0].AccessKind == "placed_chest" &&
+                    access[0].IsPlayerChest &&
                     access[0].SpecialChestType == "None" &&
                     !access[0].LockedByOtherPlayer &&
                     access[0].LocationIsCurrent &&

@@ -138,6 +138,12 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             rule,
             "UseFirstValidOutput",
             MachineKey(machineId, ruleIndex));
+        if (useFirstValidOutput && outputIndex > 0)
+        {
+            return BlockMachine(
+                "blocked_machine_output_selection_order_unresolved",
+                "machine_first_valid_output_preceding_rows_not_represented");
+        }
         var minimumStack = ReadRequiredMachineInt(
             output,
             "MinStack",

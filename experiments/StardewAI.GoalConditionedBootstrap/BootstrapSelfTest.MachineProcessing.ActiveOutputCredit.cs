@@ -194,6 +194,55 @@ internal static partial class BootstrapSelfTest
                     .Select(value => value.ActionKind)
                     .SequenceEqual(new[] { "collect_machine_output" }),
             "Fully credited machine output did not compile to collect-only.");
+
+        var productionUnsupportedRoute = fullyCreditedDailyRoute with
+        {
+            MachineSource = fullyCreditedDailyRoute.MachineSource! with
+            {
+                DaysUntilReady = 1,
+                MinutesUntilReady = -1,
+                OnlyCompleteOvernight = true
+            }
+        };
+        var productionUnsupportedMachines = new[]
+        {
+            MachineProcessingRow(
+                productionUnsupportedRoute,
+                2,
+                6,
+                30,
+                productionUnsupportedRoute.QualifiedItemId,
+                includeActiveSource: true)
+        };
+        var collectOnlyProcessing =
+            AcquisitionRouteTargetDateProcessingBuilder.EvaluateMachine(
+                MachineProcessingReservation(
+                    productionUnsupportedRoute,
+                    productionUnsupportedMachines),
+                productionUnsupportedRoute,
+                MachineProcessingState(900, productionUnsupportedMachines),
+                0);
+        var collectOnlyRetry =
+            AcquisitionRouteTargetDateStochasticRetryBuilder.EvaluateMachine(
+                collectOnlyProcessing,
+                productionUnsupportedRoute);
+        var collectOnlyBudget =
+            AcquisitionRouteTargetDateDailyTimeEnergyBuilder.EvaluateMachine(
+                collectOnlyRetry,
+                productionUnsupportedRoute,
+                MachineDailyTimeEnergyState(
+                    productionUnsupportedMachines,
+                    emptyInventorySlots: 1));
+        Require(collectOnlyProcessing.ProcessingLeadTimeMatchesTargetDate ==
+                    true &&
+                collectOnlyBudget.DailyTimeEnergyMatchesTargetDate == true &&
+                collectOnlyBudget.Evaluation is
+                {
+                    RequiredAttemptCount: 0,
+                    TerminalRouteSteps:
+                    [{ ActionKind: "collect_machine_output" }]
+                },
+            "Collect-only credit was rejected by unused production semantics.");
     }
 
     private static void VerifyMachineActiveOutputCreditRetry(

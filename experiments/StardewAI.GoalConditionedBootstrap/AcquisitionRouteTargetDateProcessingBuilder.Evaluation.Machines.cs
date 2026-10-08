@@ -14,11 +14,6 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         if (source is null)
             return Blocked(route, MachineProduction,
                 "authoritative_machine_source_missing");
-        var staticBlocking = ValidateMachineProcessingSource(
-            source,
-            staticRoute.MinimumQuality);
-        if (staticBlocking.Length > 0)
-            return Blocked(route, MachineProduction, staticBlocking);
         if (!state.MachineFleet.EvidenceAvailable)
         {
             return Blocked(
@@ -76,6 +71,25 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 route,
                 MachineProduction,
                 "machine_mixed_trigger_processing_requires_route_expansion");
+        }
+        var requiredAttemptCounts = route.UpstreamRoute.UpstreamRoute
+            .InputEvaluations
+            .Select(evaluation =>
+                evaluation.MachineBinding?.RequiredAttemptCount)
+            .Where(value => value.HasValue)
+            .Select(value => value!.Value)
+            .Distinct()
+            .ToArray();
+        var productionRequired = inputTriggers.Length == 0 ||
+            requiredAttemptCounts.Length != 1 ||
+            requiredAttemptCounts[0] != 0;
+        if (productionRequired)
+        {
+            var staticBlocking = ValidateMachineProcessingSource(
+                source,
+                staticRoute.MinimumQuality);
+            if (staticBlocking.Length > 0)
+                return Blocked(route, MachineProduction, staticBlocking);
         }
         return inputTriggers.Length > 0
             ? EvaluateManualMachineSchedule(

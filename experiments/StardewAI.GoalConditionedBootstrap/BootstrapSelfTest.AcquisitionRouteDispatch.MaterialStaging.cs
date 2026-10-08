@@ -280,6 +280,34 @@ internal static partial class BootstrapSelfTest
             "Machine staging receipt did not verify the exact native move: " +
             string.Join(",", transition.BlockingReasons));
 
+        var driftedAfterNode = JsonSerializer.SerializeToNode(
+            after,
+            JsonDefaults.Options)!.AsObject();
+        driftedAfterNode["state"]!["farm"]!["material_inventory_graph"]!
+            ["value"]!["inventory_nodes"]![0]!["slots"]![0]!
+            ["runtime_type"] = "Modded.IncompatibleObject";
+        var driftedAfter = driftedAfterNode.Deserialize<SnapshotEnvelope>(
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+            "Machine staging runtime-type drift snapshot is null.");
+        driftedAfter.StateHash = SnapshotHash.ComputeStateHash(
+            driftedAfter.State);
+        var driftedTransition =
+            AcquisitionRouteSupportingTransitionReceiptBuilder.BuildCore(
+                compilation,
+                before,
+                MaterialStagingExecutionReceipt(
+                    compilation,
+                    before,
+                    driftedAfter),
+                driftedAfter,
+                "run.machine-staging.self-test",
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Require(!driftedTransition.SupportingTransitionVerified &&
+                driftedTransition.BlockingReasons.Contains(
+                    "supporting_transition_material_transfer_destination_drifted",
+                    StringComparer.Ordinal),
+            "Material transfer accepted a destination runtime-type drift.");
+
         var transitionHash = new string('8', 64);
         var settlementRequest =
             AcquisitionRouteSupportingTransitionSettlementBuilder
