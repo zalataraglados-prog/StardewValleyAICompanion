@@ -45,7 +45,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
         var staticRoutes = ValidateStaticSource(staticSource, source);
 
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotFullPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
         var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             snapshot,

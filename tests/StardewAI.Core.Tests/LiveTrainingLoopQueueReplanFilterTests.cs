@@ -658,7 +658,9 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         buy["normalized_command"]!["parameters"]!.AsArray().Add(
             Parameter("expected_output_quality", "0"));
         buy["normalized_command"]!["parameters"]!.AsArray().Add(
-            Parameter("expected_unit_price", "150"));
+            Parameter("max_unit_price", "150"));
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_unit_price", "80"));
         Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
             buy,
             continuation,
@@ -667,6 +669,15 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             buy,
             continuation,
             "blocked"));
+        buy["normalized_command"]!["parameters"]!.AsArray()
+            .Select(node => node!.AsObject())
+            .Single(parameter =>
+                parameter["name"]!.GetValue<string>() ==
+                    "max_unit_price")["value"] = "149";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            buy,
+            continuation,
+            "applied"));
     }
 
     [Fact]

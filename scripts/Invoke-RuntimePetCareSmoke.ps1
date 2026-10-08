@@ -152,6 +152,19 @@ function Invoke-PetInteractionCase([string] $CaseName, [int] $Friendship, [bool]
     $request.max_movement_tiles = 512
     $result = Invoke-JsonPost $executorUrl $request
     $result | ConvertTo-Json -Depth 64 | Set-Content -LiteralPath $resultPath -Encoding utf8
+    if ($result.status -ne "applied" -or $result.primitive_verification_status -ne "verified") {
+        return [ordered]@{
+            case = $CaseName; status = $result.status; verification = $result.primitive_verification_status
+            friendship_before = $result.pet_friendship_before; friendship_after = $result.pet_friendship_after
+            times_pet_before = $result.pet_times_pet_before; times_pet_after = $result.pet_times_pet_after
+            pet_id = $result.pet_id; pet_love_mail_before = $result.pet_love_mail_before; pet_love_mail_after = $result.pet_love_mail_after
+            gift_trigger_expected = $result.pet_gift_trigger_expected
+            gift_debris_before = $result.pet_gift_debris_count_before; gift_debris_after = $result.pet_gift_debris_count_after
+            before_snapshot_path = $beforePath; after_snapshot_path = ""; execution_result_path = $resultPath
+            before_state_hash = $before.state_hash; after_state_hash = ""
+            reasons = @($result.primitive_verification_reasons); block_reasons = @($result.block_reasons)
+        }
+    }
     $after = Wait-PetInteractionAfterSnapshot `
         $before.state_hash `
         ([string]$result.pet_id) `

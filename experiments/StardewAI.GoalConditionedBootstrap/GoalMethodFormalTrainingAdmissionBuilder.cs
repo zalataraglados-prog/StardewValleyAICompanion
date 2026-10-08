@@ -219,13 +219,17 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
             GoalMethodTeacherCoverageRequest>(
             coverageRequestPath,
             "Formal admission Teacher coverage request");
+        var fullCorpusManifestPath = Path.GetFullPath(corpusManifestPath);
+        var pathComparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
         var matches = request.Sources.Where(source =>
                 source.SourceKind == GoalMethodTeacherCoverageSourceKinds
                     .AcquisitionRoutePortfolioCorpus &&
                 string.Equals(
                     Path.GetFullPath(source.ArtifactPath),
-                    corpusManifestPath,
-                    StringComparison.OrdinalIgnoreCase))
+                    fullCorpusManifestPath,
+                    pathComparison))
             .ToArray();
         if (matches.Length != 1)
         {

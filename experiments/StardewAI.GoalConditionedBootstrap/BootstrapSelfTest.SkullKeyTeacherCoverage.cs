@@ -171,6 +171,32 @@ internal static partial class BootstrapSelfTest
             "Skull Key fixture did not cover all independent partitions.");
         Write(corpusPath, corpus);
         SkullKeyTeacherCorpusBuilder.Verify(corpusPath);
+        var malformedTotalDay = SkullKeySnapshot(
+            "skull-key-malformed-total-day",
+            "skull-key-player",
+            120,
+            gameTick: 100,
+            hasSkullKey: false,
+            hasRewardChest: true,
+            legacySnapshotShape: false);
+        var malformedTime = JsonNode.Parse(
+            malformedTotalDay.State["time"].GetRawText())!.AsObject();
+        malformedTime["total_days"]!["value"] = "120";
+        malformedTotalDay.State["time"] = JsonSerializer.SerializeToElement(
+            malformedTime,
+            JsonDefaults.Options);
+        var malformedRejected = false;
+        try
+        {
+            _ = SkullKeyTeacherCorpusBuilder.ReadSnapshotTotalDay(
+                malformedTotalDay);
+        }
+        catch (InvalidDataException)
+        {
+            malformedRejected = true;
+        }
+        Require(malformedRejected,
+            "A present malformed Skull Key total_days value used legacy fallback.");
         RequireSkullKeyEpisodeTamperRejected(
             fixtureRoot,
             sources[0],

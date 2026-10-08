@@ -31,7 +31,7 @@ public static partial class AcquisitionRouteTargetDateFestivalBuilder
         ValidateSource(source);
 
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotFullPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
         var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             snapshot,

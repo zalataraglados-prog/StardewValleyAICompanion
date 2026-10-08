@@ -70,6 +70,14 @@ public sealed class PetCareRuntimeSourceGuardTests
         Assert.Contains("Invoke-PetInteractionCase \"pet-love-terminal\" 994 $false", SmokeSource, StringComparison.Ordinal);
         Assert.Contains("$CaseName + \"-after-snapshot.json\"", SmokeSource, StringComparison.Ordinal);
         Assert.Contains("Wait-PetInteractionAfterSnapshot", SmokeSource, StringComparison.Ordinal);
+        var resultGuard = SmokeSource.IndexOf(
+            "$result.status -ne \"applied\" -or $result.primitive_verification_status -ne \"verified\"",
+            StringComparison.Ordinal);
+        var afterPoll = SmokeSource.IndexOf(
+            "$after = Wait-PetInteractionAfterSnapshot",
+            StringComparison.Ordinal);
+        Assert.True(resultGuard >= 0 && afterPoll > resultGuard);
+        Assert.Contains("after_snapshot_path = \"\"", SmokeSource, StringComparison.Ordinal);
         Assert.Contains("[IO.File]::WriteAllText(", SmokeSource, StringComparison.Ordinal);
         Assert.Contains("Invoke-WebRequest -UseBasicParsing", SmokeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("$before | ConvertTo-Json", SmokeSource, StringComparison.Ordinal);

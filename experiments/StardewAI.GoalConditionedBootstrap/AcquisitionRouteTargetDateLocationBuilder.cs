@@ -43,7 +43,7 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
         var staticByOccurrence = ValidateStaticSource(source, staticReport);
 
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotFullPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
         var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             snapshot,

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -276,6 +277,55 @@ internal static partial class BootstrapSelfTest
                     snapshot,
                     new[] { locationFishingCandidate }).Length == 1,
             "A complete non-fish location fishing outcome was rejected.");
+        var missingFishCatalogSnapshot = AcquisitionDispatchSnapshot();
+        missingFishCatalogSnapshot.State.Remove("world_progress");
+        missingFishCatalogSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            missingFishCatalogSnapshot.State);
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement,
+                    locationFishingLowering,
+                    missingFishCatalogSnapshot,
+                    new[] { locationFishingCandidate }).Length == 0,
+            "A location fishing outcome was admitted without a fish catalog.");
+        var incompleteFishCatalogSnapshot = AcquisitionDispatchSnapshot();
+        var incompleteWorld = JsonNode.Parse(
+            incompleteFishCatalogSnapshot.State["world_progress"]
+                .GetRawText())!.AsObject();
+        incompleteWorld["fish_collection_progress"]!["value"]!
+            ["eligible_species_count"] = 2;
+        incompleteFishCatalogSnapshot.State["world_progress"] =
+            JsonSerializer.SerializeToElement(
+                incompleteWorld,
+                JsonDefaults.Options);
+        incompleteFishCatalogSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            incompleteFishCatalogSnapshot.State);
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement,
+                    locationFishingLowering,
+                    incompleteFishCatalogSnapshot,
+                    new[] { locationFishingCandidate }).Length == 0,
+            "An incomplete fish catalog was treated as authoritative absence.");
+        var emptyFishCatalogSnapshot = AcquisitionDispatchSnapshot();
+        var emptyWorld = JsonNode.Parse(
+            emptyFishCatalogSnapshot.State["world_progress"]
+                .GetRawText())!.AsObject();
+        emptyWorld["fish_collection_progress"]!["value"] = new JsonObject
+        {
+            ["eligible_species_count"] = 0,
+            ["items"] = new JsonArray()
+        };
+        emptyFishCatalogSnapshot.State["world_progress"] =
+            JsonSerializer.SerializeToElement(
+                emptyWorld,
+                JsonDefaults.Options);
+        emptyFishCatalogSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            emptyFishCatalogSnapshot.State);
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    locationFishingRequirement,
+                    locationFishingLowering,
+                    emptyFishCatalogSnapshot,
+                    new[] { locationFishingCandidate }).Length == 0,
+            "An empty fish catalog was treated as authoritative absence.");
         Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
                     locationFishingRequirement with
                     {
@@ -983,6 +1033,9 @@ internal static partial class BootstrapSelfTest
               "bush_foraging_experience_on_success_min":7,"bush_foraging_experience_on_success_max":7,
               "bush_nut_key":"","bush_nut_collected_before":false,"bush_nut_collected_expected_after":false}],
               "status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "world_progress":{
+            "fish_collection_progress":{"value":{"eligible_species_count":1,"items":[{"qualified_item_id":"(O)128"}]},"status":"available"}
           },
           "locations":{
             "collision_grid":{"value":{"location_id":"Forest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},

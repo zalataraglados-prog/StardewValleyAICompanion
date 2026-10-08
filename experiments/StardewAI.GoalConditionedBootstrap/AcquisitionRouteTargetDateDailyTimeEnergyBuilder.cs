@@ -72,7 +72,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             fishingPath);
 
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotFullPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotFullPath));
         var snapshot = snapshotDocument.RootElement;
         var stateHash = AcquisitionTargetDateSnapshotValidator.Validate(
             snapshot,

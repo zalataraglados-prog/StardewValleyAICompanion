@@ -257,7 +257,9 @@ internal static partial class BootstrapSelfTest
         var execution = MaterialStagingExecutionReceipt(
             compilation,
             before,
-            after);
+            after,
+            "player:123",
+            2);
         var transition = AcquisitionRouteSupportingTransitionReceiptBuilder
             .BuildCore(
                 compilation,
@@ -298,7 +300,9 @@ internal static partial class BootstrapSelfTest
                 MaterialStagingExecutionReceipt(
                     compilation,
                     before,
-                    driftedAfter),
+                    driftedAfter,
+                    "player:123",
+                    2),
                 driftedAfter,
                 "run.machine-staging.self-test",
                 PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
@@ -583,7 +587,9 @@ internal static partial class BootstrapSelfTest
         MaterialStagingExecutionReceipt(
             AcquisitionRouteDispatchCompilation compilation,
             SnapshotEnvelope before,
-            SnapshotEnvelope after)
+            SnapshotEnvelope after,
+            string destinationNodeId,
+            int destinationStackAfter)
     {
         var queue = compilation.ActionQueue ?? throw new InvalidDataException(
             "Machine staging queue is null.");
@@ -677,7 +683,9 @@ internal static partial class BootstrapSelfTest
                     ChangedFacts = JsonSerializer.SerializeToElement(new[]
                     {
                         "farm.material_inventory_graph[chest:Farm:4,5,0].stack=0",
-                        "farm.material_inventory_graph[player:123,0].stack=2"
+                        "farm.material_inventory_graph[" +
+                        destinationNodeId + ",0].stack=" +
+                        destinationStackAfter
                     })
                 }
             }

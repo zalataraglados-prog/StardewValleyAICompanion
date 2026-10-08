@@ -195,7 +195,8 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
             .Order(StringComparer.Ordinal)
             .ToArray();
         using var afterDocument = JsonDocument.Parse(
-            File.ReadAllText(Path.GetFullPath(afterSnapshotPath)));
+            CurrentTeacherFrontierSupport.ReadArtifactText(
+                Path.GetFullPath(afterSnapshotPath)));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             Path.GetFullPath(settledLedgerPath),
             afterDocument.RootElement).Ledger;

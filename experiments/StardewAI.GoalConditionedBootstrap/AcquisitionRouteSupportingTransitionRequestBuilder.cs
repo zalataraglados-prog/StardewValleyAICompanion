@@ -56,7 +56,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             rankingPath,
             "Acquisition support live ranking");
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
             snapshotDocument.RootElement).Ledger;

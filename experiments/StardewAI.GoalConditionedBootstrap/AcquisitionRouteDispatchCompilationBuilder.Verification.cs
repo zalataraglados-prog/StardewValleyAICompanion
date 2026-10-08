@@ -186,10 +186,23 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             };
         }
 
-        if (requirement.RouteKind == "native_location_fish_spawn" &&
-            !SnapshotDeclaresFishCollectionSpecies(
+        var locationFishSpeciesStatus = requirement.RouteKind ==
+                "native_location_fish_spawn"
+            ? SnapshotFishCollectionSpeciesStatus(
                 snapshot,
-                requirement.QualifiedItemId))
+                requirement.QualifiedItemId)
+            : FishCollectionSpeciesStatus.Unavailable;
+        if (requirement.RouteKind == "native_location_fish_spawn" &&
+            locationFishSpeciesStatus == FishCollectionSpeciesStatus.Unavailable)
+        {
+            blockingReasons = new[]
+            {
+                "route_dispatch_fish_collection_catalog_unavailable"
+            };
+            return Array.Empty<OptionAvailabilityCandidate>();
+        }
+        if (requirement.RouteKind == "native_location_fish_spawn" &&
+            locationFishSpeciesStatus == FishCollectionSpeciesStatus.Absent)
         {
             if (!supplied.Any(candidate =>
                     TryMatchCompleteLocationFishingOutcome(

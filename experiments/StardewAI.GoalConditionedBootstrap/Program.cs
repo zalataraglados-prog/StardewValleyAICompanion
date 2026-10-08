@@ -206,7 +206,9 @@ static void AuditSchedules(Arguments options)
 
 static void AuditCurrentSchedules(Arguments options)
 {
-    using var snapshot = JsonDocument.Parse(File.ReadAllText(options.Required("snapshot")));
+    using var snapshot = JsonDocument.Parse(
+        CurrentTeacherFrontierSupport.ReadArtifactText(
+            options.Required("snapshot")));
     var report = new NpcCurrentScheduleSnapshotAuditor().Audit(snapshot.RootElement);
     Write(options.Required("output"), report);
     if (report.Status != "pass")
@@ -215,8 +217,12 @@ static void AuditCurrentSchedules(Arguments options)
 
 static void AuditFriendshipDayTransition(Arguments options)
 {
-    using var before = JsonDocument.Parse(File.ReadAllText(options.Required("before")));
-    using var after = JsonDocument.Parse(File.ReadAllText(options.Required("after")));
+    using var before = JsonDocument.Parse(
+        CurrentTeacherFrontierSupport.ReadArtifactText(
+            options.Required("before")));
+    using var after = JsonDocument.Parse(
+        CurrentTeacherFrontierSupport.ReadArtifactText(
+            options.Required("after")));
     var report = new FriendshipDayTransitionSnapshotAuditor().Audit(
         before.RootElement,
         after.RootElement);
@@ -229,7 +235,8 @@ static void ValidateRouteTiming(Arguments options)
 {
     var artifactPath = Path.GetFullPath(options.Required("artifact"));
     var snapshotPath = Path.GetFullPath(options.Required("snapshot"));
-    using var snapshot = JsonDocument.Parse(File.ReadAllText(snapshotPath));
+    using var snapshot = JsonDocument.Parse(
+        CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
     var root = snapshot.RootElement;
     var gameVersion = root.GetProperty("game_version").GetString()
         ?? throw new InvalidDataException("Snapshot game_version is missing.");
@@ -268,7 +275,7 @@ static void ValidateRouteTiming(Arguments options)
 static void AuditCurrentSocialFrontier(Arguments options)
 {
     using var snapshot = JsonDocument.Parse(
-        File.ReadAllText(options.Required("snapshot")));
+        CurrentTeacherFrontierSupport.ReadArtifactText(options.Required("snapshot")));
     var frontier = new CurrentSocialContactFrontierProducer().Produce(
         snapshot.RootElement,
         File.ReadAllText(options.Required("calibration")));
@@ -280,7 +287,7 @@ static void AuditCurrentSocialFrontier(Arguments options)
 static void PlanCurrentSocialDay(Arguments options)
 {
     using var snapshot = JsonDocument.Parse(
-        File.ReadAllText(options.Required("snapshot")));
+        CurrentTeacherFrontierSupport.ReadArtifactText(options.Required("snapshot")));
     var plan = new CurrentSocialDayItineraryPlanner().Plan(
         snapshot.RootElement,
         File.ReadAllText(options.Required("calibration")));
@@ -295,7 +302,7 @@ static void PlanCurrentSocialDay(Arguments options)
 static void BuildCurrentSocialTeacherLabel(Arguments options)
 {
     using var snapshot = JsonDocument.Parse(
-        File.ReadAllText(options.Required("snapshot")));
+        CurrentTeacherFrontierSupport.ReadArtifactText(options.Required("snapshot")));
     var label = new CurrentSocialDayTeacherLabelBuilder().Build(
         snapshot.RootElement,
         File.ReadAllText(options.Required("calibration")));

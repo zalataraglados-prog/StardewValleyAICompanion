@@ -29,7 +29,7 @@ public static class AcquisitionRouteSupportingTransitionCommitReceiptBuilder
             snapshotPath,
             "Acquisition support commit snapshot");
         using var snapshotDocument = JsonDocument.Parse(
-            File.ReadAllText(snapshotPath));
+            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var baseLedger = AcquisitionStrategyLedgerReader.Read(
             baseLedgerPath,
             snapshotDocument.RootElement).Ledger;

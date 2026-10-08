@@ -93,7 +93,9 @@ internal static partial class BootstrapSelfTest
                     MaterialStagingExecutionReceipt(
                         compilation,
                         before,
-                        after));
+                        after,
+                        "player:1",
+                        1));
             });
         Require(built.Request.SupportTransitionKind ==
                     AcquisitionRouteSupportingTransitionKinds

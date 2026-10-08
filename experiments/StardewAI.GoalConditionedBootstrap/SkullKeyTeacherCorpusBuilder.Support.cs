@@ -62,16 +62,36 @@ public static partial class SkullKeyTeacherCorpusBuilder
         string section,
         string field) => ReadEnvelopeValue(snapshot, section, field).GetBoolean();
 
-    private static int ReadSnapshotTotalDay(SnapshotEnvelope snapshot)
+    internal static int ReadSnapshotTotalDay(SnapshotEnvelope snapshot)
     {
-        if (TryReadEnvelopeValue(
-                snapshot,
-                "time",
-                "total_days",
-                out var totalDays) &&
-            totalDays.TryGetInt32(out var directTotalDay))
+        if (snapshot.State.TryGetValue("time", out var time) &&
+            time.ValueKind == JsonValueKind.Object &&
+            time.TryGetProperty("total_days", out var envelope))
         {
-            return directTotalDay;
+            if (envelope.ValueKind != JsonValueKind.Object ||
+                !envelope.TryGetProperty("status", out var status) ||
+                status.ValueKind != JsonValueKind.String)
+            {
+                throw new InvalidDataException(
+                    "Skull Key snapshot field time.total_days is malformed.");
+            }
+            var statusValue = status.GetString();
+            if (!FieldStatus.IsKnown(statusValue))
+            {
+                throw new InvalidDataException(
+                    "Skull Key snapshot field time.total_days has an unknown status.");
+            }
+            if (statusValue is FieldStatus.Available or
+                    FieldStatus.Derived)
+            {
+                if (!envelope.TryGetProperty("value", out var totalDays) ||
+                    !totalDays.TryGetInt32(out var directTotalDay))
+                {
+                    throw new InvalidDataException(
+                        "Skull Key snapshot field time.total_days is not an integer.");
+                }
+                return directTotalDay;
+            }
         }
 
         var year = ReadEnvelopeInt(snapshot, "time", "year");
