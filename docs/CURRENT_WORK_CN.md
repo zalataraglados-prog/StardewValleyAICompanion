@@ -4,6 +4,7 @@
 
 - 执行批次不再把“anchor 摘要及其引用文件存在”当成验真。默认 `high_risk/standard/all_missing` 会在启动首个游戏场景前，用 production evidence index 独立重建 Sap 共享出货/睡眠证明和两个 anchor 的精确 rollout proof；`all` 从零运行时则在两个 anchor 生成完、进入首个非 anchor 场景前执行同一验真。任何漂移立即写入失败 checkpoint 并停止，不消耗后续原生场景运行。
 - `standard` 也不能绕过高风险批次：单独执行时要求 7 个高风险摘要齐全，并在启动游戏前用同一 production evidence index 验证其 exact native sample；`all/all_missing` 则在进入首个 standard 场景前执行同一阶段门。仅有摘要和引用文件仍不算通过。
+- `-EvidencePreflightOnly` 支持 SSH/无交互桌面验真：它执行当前批次所需的 anchor 或 high-risk production index 重建，输出 checkpoint/index 后在原生 runner 循环前退出；它与仅核对计划的 `-PlanOnly` 互斥，也不能绕过缺失的前置阶段。
 - 已从当前权威 requirement/lowering、动作 reconciliation 与支持终端覆盖重建 `full_shipment_static_compilability_inventory.v2`：`154` 个需求、`641` 条来源、`26` 个运行层、`0` blocker。
 - `catalogs/vanilla-1.6.15/full-shipment-runtime-sample-plan.json` 为 26 层各绑定一个 runner 场景；`Test-FullShipmentRuntimeSamplePlan.ps1` 按完整执行签名核对，不把同层多来源误判为多个层，也不允许一个场景跨层。
 - `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 先执行 7 个高风险原生样本，逐场景写 checkpoint，成功可续跑、失败立即停止且不自动重试；`-PlanOnly` 只验证计划。默认高负载游戏运行目录为异机 `F:\StardewAI-TestLab\runtime`，其测试实验根仍为 `F:\StardewAI-TestLab`，本机不启动游戏。

@@ -638,6 +638,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
 
         Assert.Contains("[switch] $PlanOnly", milestone, StringComparison.Ordinal);
         Assert.Contains(
+            "[switch] $EvidencePreflightOnly",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "PlanOnly and EvidencePreflightOnly are mutually exclusive",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "[string] $RuntimeRoot = \"F:\\StardewAI-TestLab\\runtime\"",
             milestone,
             StringComparison.Ordinal);
@@ -724,6 +732,17 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
                 StringComparison.Ordinal));
         Assert.Contains(
             "$selectedBatchStartsWithStandard",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.True(
+            milestone.IndexOf(
+                "if ($EvidencePreflightOnly)",
+                StringComparison.Ordinal) <
+            milestone.IndexOf(
+                "foreach ($entry in $selectedEntries)",
+                StringComparison.Ordinal));
+        Assert.Contains(
+            "evidence_index = $evidencePreflightIndex",
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
