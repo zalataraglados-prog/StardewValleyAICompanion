@@ -46,7 +46,11 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains("full_shipment_shipped_item_count = 0", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("Copy-Item", source, StringComparison.Ordinal);
+        Assert.Contains("$env:SMAPI_MODS_PATH = $smokeModsPath", source, StringComparison.Ordinal);
+        Assert.Contains("loaded_mod_allowlist = $loadedModAllowlist", source, StringComparison.Ordinal);
+        Assert.Contains("$harnessConfig.SlotName = \"\"", source, StringComparison.Ordinal);
+        Assert.Contains("StardewAI.TransparentBridge", source, StringComparison.Ordinal);
+        Assert.Contains("StardewAI.RuntimeTestHarness", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", source, StringComparison.Ordinal);
     }
 

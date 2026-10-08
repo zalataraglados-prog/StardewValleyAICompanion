@@ -89,6 +89,17 @@ try {
     }
 
     & $milestone -ProjectRoot $ProjectRoot -OutputRoot $OutputRoot `
+        -RuntimeRoot (Join-Path $TestLabRoot "runtime") `
+        -ArchivedFreshSaveRoot (Join-Path $TestLabRoot `
+            "inputs\fresh-save\ProofFarm_450250338") `
+        -RequirementInventory (Join-Path $TestLabRoot `
+            "inputs\authoritative-requirement-inventory-v1.json") `
+        -AcquisitionLowering (Join-Path $TestLabRoot `
+            "inputs\acquisition-route-option-lowering-v1.json") `
+        -MasterAnglerWindows (Join-Path $TestLabRoot `
+            "inputs\master-angler-stage-one-window-index-v1.json") `
+        -RouteTimingCalibration (Join-Path $TestLabRoot `
+            "route-timing-calibration.json") `
         -Batch $Batch -MaxScenarios $MaxScenarios `
         -ExistingSummaryPaths $ExistingSummaryPaths
 }
