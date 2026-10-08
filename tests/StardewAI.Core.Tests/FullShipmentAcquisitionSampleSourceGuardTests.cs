@@ -647,14 +647,31 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         foreach (var inputBinding in new[]
         {
-            "RequirementInventory = $RequirementInventory",
-            "AcquisitionLowering = $AcquisitionLowering",
-            "MasterAnglerWindows = $MasterAnglerWindows",
-            "RouteTimingCalibration = $RouteTimingCalibration"
+            "RequirementInventory = $requirementInventoryPath",
+            "AcquisitionLowering = $acquisitionLoweringPath",
+            "MasterAnglerWindows = $masterAnglerWindowsPath",
+            "RouteTimingCalibration = $routeTimingCalibrationPath"
         })
         {
             Assert.Contains(inputBinding, milestone, StringComparison.Ordinal);
         }
+        foreach (var checkpointHash in new[]
+        {
+            "requirement_inventory_sha256",
+            "acquisition_lowering_sha256",
+            "master_angler_windows_sha256",
+            "route_timing_calibration_sha256"
+        })
+        {
+            Assert.Contains(checkpointHash, milestone, StringComparison.Ordinal);
+        }
+        Assert.True(
+            milestone.IndexOf("$completedScenarios", StringComparison.Ordinal) <
+            milestone.IndexOf("Select-Object -First $MaxScenarios", StringComparison.Ordinal));
+        Assert.Contains(
+            "Milestone batch requires completed anchor evidence",
+            milestone,
+            StringComparison.Ordinal);
         Assert.Contains(
             "Write-MilestoneState -Status \"failed\"",
             milestone,
@@ -684,6 +701,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1",
             interactive,
             StringComparison.Ordinal);
+        foreach (var forwardedRoot in new[]
+        {
+            "-RuntimeRoot (Join-Path $TestLabRoot \"runtime\")",
+            "-ArchivedFreshSaveRoot (Join-Path $TestLabRoot",
+            "-RequirementInventory (Join-Path $TestLabRoot",
+            "-AcquisitionLowering (Join-Path $TestLabRoot",
+            "-MasterAnglerWindows (Join-Path $TestLabRoot",
+            "-RouteTimingCalibration (Join-Path $TestLabRoot"
+        })
+        {
+            Assert.Contains(forwardedRoot, interactive, StringComparison.Ordinal);
+        }
         Assert.DoesNotContain(
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1",
             interactive,

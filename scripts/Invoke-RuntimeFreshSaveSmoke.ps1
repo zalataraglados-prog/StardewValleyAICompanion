@@ -124,13 +124,43 @@ $artifactDirectory = Join-Path $ProjectRoot (
 $isolatedSavesPath = Join-Path $artifactDirectory (
     "fresh-save-" + $RunId)
 $trainingOutputDirectory = Join-Path $artifactDirectory "training-output"
+$smokeModsPath = Join-Path $artifactDirectory "smoke-mods"
 New-Item -ItemType Directory -Path $isolatedSavesPath | Out-Null
 New-Item -ItemType Directory -Path $trainingOutputDirectory | Out-Null
+New-Item -ItemType Directory -Path $smokeModsPath | Out-Null
 
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
     -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
     -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+
+$loadedModAllowlist = @(
+    "StardewAI.TransparentBridge",
+    "StardewAI.RuntimeTestHarness"
+)
+foreach ($modName in $loadedModAllowlist) {
+    $sourceMod = Join-Path (Join-Path $gameDirectory "Mods") $modName
+    $targetMod = Join-Path $smokeModsPath $modName
+    if (-not (Test-Path -LiteralPath $sourceMod -PathType Container)) {
+        throw "Required fresh-save smoke mod is missing: $sourceMod"
+    }
+    New-Item -ItemType Directory -Path $targetMod | Out-Null
+    Copy-Item -Path (Join-Path $sourceMod "*") -Destination $targetMod `
+        -Recurse -Force
+}
+
+$harnessConfigPath = Join-Path (
+    Join-Path $smokeModsPath "StardewAI.RuntimeTestHarness"
+) "config.json"
+if (Test-Path -LiteralPath $harnessConfigPath -PathType Leaf) {
+    $harnessConfig = Get-Content -LiteralPath $harnessConfigPath -Raw |
+        ConvertFrom-Json
+    $harnessConfig.SlotName = ""
+    [IO.File]::WriteAllText(
+        $harnessConfigPath,
+        ($harnessConfig | ConvertTo-Json -Depth 32),
+        [Text.UTF8Encoding]::new($false))
+}
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -146,7 +176,8 @@ $environmentNames = @(
     "STARDEWAI_TRAINING_OUTPUT_DIR",
     "STARDEWAI_SUPPRESS_LOCAL_RENDER",
     "SDL_AUDIODRIVER",
-    "ALSOFT_DRIVERS"
+    "ALSOFT_DRIVERS",
+    "SMAPI_MODS_PATH"
 )
 $savedEnvironment = @{}
 foreach ($name in $environmentNames) {
@@ -170,6 +201,7 @@ try {
     $env:STARDEWAI_SUPPRESS_LOCAL_RENDER = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $smokeModsPath
 
     $game = Start-Process -FilePath $smapi `
         -WorkingDirectory $gameDirectory -WindowStyle Hidden `
@@ -211,6 +243,8 @@ try {
         full_shipment_shipped_item_count = 0
         full_shipment_missing_item_count = 154
         achievement_34 = $false
+        loaded_mod_allowlist = $loadedModAllowlist
+        smapi_mods_path = $smokeModsPath
         snapshot_path = $snapshotPath
     }
     $summary | ConvertTo-Json -Depth 8 |

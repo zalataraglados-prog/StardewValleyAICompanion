@@ -123,6 +123,10 @@ public static partial class FullShipmentRecurrenceProofBuilder
         {
             reasons.Add("full_shipment_recovery_state_hash_chain_broken");
         }
+        if (expectedBefore.GameTick != before.GameTick)
+        {
+            reasons.Add("full_shipment_recovery_game_tick_chain_broken");
+        }
         if (!SameActor(expectedBefore, before) ||
             !SameActor(before, after))
         {
@@ -170,16 +174,26 @@ public static partial class FullShipmentRecurrenceProofBuilder
         var items = queue.Items ?? Array.Empty<ActionQueueItem>();
         if (items.Length != 1)
             return false;
-        return (selectedCandidateId, items[0].OptionId) switch
+        var steps = items[0].NormalizedCommand?.Steps ??
+            Array.Empty<CompiledActionStep>();
+        if (steps.Length != 1)
+            return false;
+        return (selectedCandidateId, items[0].OptionId, steps[0].StepType)
+            switch
         {
             ("recovery:native_save_boundary",
-                "executor.traverse_connector") => true,
+                "executor.traverse_connector",
+                "traverse_connector") => true,
             ("recovery:return_home",
-                "executor.traverse_connector") => true,
+                "executor.traverse_connector",
+                "traverse_connector") => true,
             ("recovery:close_blocking_menu",
-                "executor.close_menu") => true,
+                "executor.close_menu",
+                "close_menu") => true,
             ("recovery:refresh_plan_after_stabilization",
-                "executor.wait_ticks") => true,
+                "executor.wait_ticks",
+                "wait_ticks") => steps[0].Target == "30" &&
+                    steps[0].EstimatedTicks == 30,
             _ => false
         };
     }

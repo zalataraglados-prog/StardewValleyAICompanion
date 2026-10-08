@@ -25,6 +25,9 @@ internal static partial class BootstrapSelfTest
                 "support-terminal-coverage-report.json"),
             complete);
         Require(complete.TerminalLineageCoverageComplete &&
+                complete.SourceRequestPath == Path.GetFullPath(requestPath) &&
+                complete.SourceRequestSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(requestPath) &&
                 !complete.FormalProductTrainingAuthorized &&
                 complete.CoveredSupportTransitionKinds.SequenceEqual(
                     AcquisitionRouteSupportingTransitionKinds.All,
@@ -36,6 +39,9 @@ internal static partial class BootstrapSelfTest
                     row.CoverageVerified &&
                     row.SupportExcludedFromTerminalOutcomes),
             "Complete support-family terminal coverage was misreported.");
+        FullShipmentStaticCompilabilityInventoryBuilder.ValidateSupportCoverage(
+            complete,
+            sourceArtifactsAlreadyValidated: false);
 
         var duplicate =
             AcquisitionRouteSupportingTransitionTerminalCoverageBuilder

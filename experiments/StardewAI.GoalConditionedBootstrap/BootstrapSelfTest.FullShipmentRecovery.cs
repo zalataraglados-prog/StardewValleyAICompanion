@@ -189,6 +189,60 @@ internal static partial class BootstrapSelfTest
             "full_shipment_recovery_state_hash_chain_broken",
             "A reordered or disconnected recovery transition was admitted.");
 
+        var staleTickBefore = RecoverySnapshot(
+            before.StateHash,
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1);
+        staleTickBefore.GameTick = before.GameTick - 1;
+        RequireRecoveryRejected(
+            ValidateRecovery(
+                valid.Queue,
+                before,
+                valid.Receipt,
+                after,
+                staleTickBefore,
+                required),
+            "full_shipment_recovery_game_tick_chain_broken",
+            "A repeated state hash at a stale game tick was admitted.");
+
+        var wrongPrimitive = RecoveryFixture(
+            before,
+            after,
+            "executor.traverse_connector",
+            "interact");
+        RequireRecoveryRejected(
+            ValidateRecovery(
+                wrongPrimitive.Queue,
+                before,
+                wrongPrimitive.Receipt,
+                after,
+                before,
+                required),
+            "full_shipment_recovery_queue_not_native_stabilization",
+            "A recovery label admitted an unrelated compiled primitive.");
+
+        var oversizedWait = RecoveryFixture(
+            before,
+            after,
+            "executor.wait_ticks",
+            "wait_ticks",
+            waitTicks: 600);
+        RequireRecoveryRejected(
+            FullShipmentRecurrenceProofBuilder.ValidateRecoveryTransition(
+                oversizedWait.Queue,
+                before,
+                oversizedWait.Receipt,
+                after,
+                before,
+                required,
+                "(O)24",
+                FullShipmentRecoveryRun,
+                PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                "recovery:refresh_plan_after_stabilization"),
+            "full_shipment_recovery_queue_not_native_stabilization",
+            "An unbounded recovery refresh wait was admitted.");
+
         after.PlayerId = new FieldEnvelope<string?>
         {
             Value = "other-player",
@@ -224,7 +278,8 @@ internal static partial class BootstrapSelfTest
         SnapshotEnvelope before,
         SnapshotEnvelope after,
         string optionId,
-        string primitiveKind)
+        string primitiveKind,
+        int waitTicks = 30)
     {
         var item = new ActionQueueItem
         {
@@ -241,7 +296,12 @@ internal static partial class BootstrapSelfTest
                     {
                         StepId = "primitive.full-shipment-recovery.0",
                         StepType = primitiveKind,
-                        EstimatedTicks = 1
+                        Target = primitiveKind == "wait_ticks"
+                            ? waitTicks.ToString()
+                            : string.Empty,
+                        EstimatedTicks = primitiveKind == "wait_ticks"
+                            ? waitTicks
+                            : 1
                     }
                 }
             }

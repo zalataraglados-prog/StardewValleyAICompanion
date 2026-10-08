@@ -297,6 +297,15 @@ internal static partial class BootstrapSelfTest
             expectComplete: false,
             failureMessage:
                 "A nonterminal recurrence prefix consumed the terminal deadline day.");
+        RequirePrefixSequenceRejected(
+            new[]
+            {
+                RecurrenceRow(0, 0, 1, 222, 223, terminal: false)
+            },
+            requiredItemCount: 3,
+            expectComplete: false,
+            failureMessage:
+                "A recurrence prefix with insufficient remaining days was admitted.");
     }
 
     private static FullShipmentRecurrenceIterationEvidence RecurrenceRow(

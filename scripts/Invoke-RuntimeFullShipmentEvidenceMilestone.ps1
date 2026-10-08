@@ -153,6 +153,10 @@ function Write-MilestoneState {
         static_inventory_sha256 =
             [string]$reconciliation.static_inventory_sha256
         sample_plan_sha256 = [string]$reconciliation.sample_plan_sha256
+        requirement_inventory_sha256 = $requirementInventorySha256
+        acquisition_lowering_sha256 = $acquisitionLoweringSha256
+        master_angler_windows_sha256 = $masterAnglerWindowsSha256
+        route_timing_calibration_sha256 = $routeTimingCalibrationSha256
         selected_scenario_count = $SelectedScenarios.Count
         completed_scenario_count = @($completed | Where-Object {
             $_ -in $SelectedScenarios
@@ -215,6 +219,28 @@ function Build-CurrentEvidenceIndex {
 
 $staticInventoryPath = Resolve-MilestonePath $StaticInventory
 $planPath = Resolve-MilestonePath $Plan
+$requirementInventoryPath = Resolve-MilestonePath $RequirementInventory
+$acquisitionLoweringPath = Resolve-MilestonePath $AcquisitionLowering
+$masterAnglerWindowsPath = Resolve-MilestonePath $MasterAnglerWindows
+$routeTimingCalibrationPath = Resolve-MilestonePath $RouteTimingCalibration
+foreach ($inputPath in @(
+    $requirementInventoryPath,
+    $acquisitionLoweringPath,
+    $masterAnglerWindowsPath,
+    $routeTimingCalibrationPath
+)) {
+    if (-not (Test-Path -LiteralPath $inputPath -PathType Leaf)) {
+        throw "Milestone evidence input is missing: $inputPath"
+    }
+}
+$requirementInventorySha256 = (Get-FileHash -LiteralPath `
+    $requirementInventoryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$acquisitionLoweringSha256 = (Get-FileHash -LiteralPath `
+    $acquisitionLoweringPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$masterAnglerWindowsSha256 = (Get-FileHash -LiteralPath `
+    $masterAnglerWindowsPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$routeTimingCalibrationSha256 = (Get-FileHash -LiteralPath `
+    $routeTimingCalibrationPath -Algorithm SHA256).Hash.ToLowerInvariant()
 $milestoneRoot = Resolve-MilestonePath $OutputRoot
 New-Item -ItemType Directory -Force -Path $milestoneRoot | Out-Null
 $reconciliationPath = Join-Path $milestoneRoot "plan-reconciliation.json"
@@ -237,26 +263,22 @@ foreach ($entry in $entries) {
     $entriesByScenario[[string]$entry.scenario] = $entry
 }
 
-$selectedEntries = switch ($Batch) {
-    "high_risk" { @($entries | Where-Object run_batch -eq "high_risk") }
-    "standard" { @($entries | Where-Object run_batch -eq "standard") }
-    "all_missing" { @($entries | Where-Object run_batch -ne "anchor") }
-    "all" { @($entries) }
-}
-if ($MaxScenarios -gt 0) {
-    $selectedEntries = @($selectedEntries | Select-Object -First $MaxScenarios)
-}
-$selectedScenarios = @($selectedEntries.scenario |
-    ForEach-Object { [string]$_ })
-
 [object[]]$records = @()
 if (Test-Path -LiteralPath $checkpointPath -PathType Leaf) {
     $existingCheckpoint = Read-JsonArtifact $checkpointPath
     if ([string]$existingCheckpoint.static_inventory_sha256 -ne
             [string]$reconciliation.static_inventory_sha256 -or
         [string]$existingCheckpoint.sample_plan_sha256 -ne
-            [string]$reconciliation.sample_plan_sha256) {
-        throw "Milestone checkpoint belongs to a different inventory or plan."
+            [string]$reconciliation.sample_plan_sha256 -or
+        [string]$existingCheckpoint.requirement_inventory_sha256 -ne
+            $requirementInventorySha256 -or
+        [string]$existingCheckpoint.acquisition_lowering_sha256 -ne
+            $acquisitionLoweringSha256 -or
+        [string]$existingCheckpoint.master_angler_windows_sha256 -ne
+            $masterAnglerWindowsSha256 -or
+        [string]$existingCheckpoint.route_timing_calibration_sha256 -ne
+            $routeTimingCalibrationSha256) {
+        throw "Milestone checkpoint belongs to different evidence inputs."
     }
     $records = @($existingCheckpoint.records)
 }
@@ -277,6 +299,40 @@ foreach ($inputPath in $ExistingSummaryPaths) {
         -ReconciliationRow $rowsByScenario[$scenario]
     $records = @($records | Where-Object scenario -ne $scenario) + @($record)
 }
+
+$requiredAnchorScenarios = @($entries |
+    Where-Object run_batch -eq "anchor" |
+    ForEach-Object { [string]$_.scenario })
+if ($Batch -ne "all") {
+    $completedAnchorScenarios = @($records |
+        Where-Object {
+            [string]$_.scenario -in $requiredAnchorScenarios -and
+            (Test-Path -LiteralPath ([string]$_.summary_path) -PathType Leaf)
+        } |
+        ForEach-Object { [string]$_.scenario })
+    $missingAnchorScenarios = @($requiredAnchorScenarios |
+        Where-Object { $_ -notin $completedAnchorScenarios })
+    if ($missingAnchorScenarios.Count -gt 0) {
+        throw "Milestone batch requires completed anchor evidence: " +
+            ($missingAnchorScenarios -join ",")
+    }
+}
+
+$selectedEntries = switch ($Batch) {
+    "high_risk" { @($entries | Where-Object run_batch -eq "high_risk") }
+    "standard" { @($entries | Where-Object run_batch -eq "standard") }
+    "all_missing" { @($entries | Where-Object run_batch -ne "anchor") }
+    "all" { @($entries) }
+}
+$completedScenarios = @($records.scenario | ForEach-Object { [string]$_ })
+$selectedEntries = @($selectedEntries | Where-Object {
+    [string]$_.scenario -notin $completedScenarios
+})
+if ($MaxScenarios -gt 0) {
+    $selectedEntries = @($selectedEntries | Select-Object -First $MaxScenarios)
+}
+$selectedScenarios = @($selectedEntries.scenario |
+    ForEach-Object { [string]$_ })
 
 $runner = Join-Path $PSScriptRoot `
     "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1"
@@ -306,10 +362,10 @@ foreach ($entry in $selectedEntries) {
         OutputRoot = $milestoneRoot
         Scenario = $scenario
         SkipBuild = $builtOnce
-        RequirementInventory = $RequirementInventory
-        AcquisitionLowering = $AcquisitionLowering
-        MasterAnglerWindows = $MasterAnglerWindows
-        RouteTimingCalibration = $RouteTimingCalibration
+        RequirementInventory = $requirementInventoryPath
+        AcquisitionLowering = $acquisitionLoweringPath
+        MasterAnglerWindows = $masterAnglerWindowsPath
+        RouteTimingCalibration = $routeTimingCalibrationPath
     }
     if (-not [string]::IsNullOrWhiteSpace($ArchivedFreshSaveRoot)) {
         $parameters.ArchivedFreshSaveRoot = $ArchivedFreshSaveRoot
