@@ -312,6 +312,68 @@ public sealed partial class ReservationPortfolioLedgerTests
         Assert.Same(supportCommit.Ledger, overflowResult.Ledger);
     }
 
+    [Fact]
+    public void SupportingTransitionRejectsNullMaterialRowsAtomically()
+    {
+        var snapshot = Snapshot();
+        var service = new ReservationPortfolioLedgerService();
+        var committed = service.Commit(
+            null,
+            snapshot,
+            Request(snapshot, materialQuantity: 2, moneyAmount: 300),
+            "2026-09-26T00:00:00Z");
+        var supportCommit = service.Commit(
+            committed.Ledger,
+            snapshot,
+            new ReservationPortfolioCommitRequest
+            {
+                StateHash = snapshot.StateHash,
+                ExpectedLedgerRevision = 1,
+                PortfolioId = "support:route-a",
+                GoalId = "goal.grandpa_21",
+                SourceDecisionId = "support:route-a"
+            },
+            "2026-09-26T00:01:00Z");
+
+        var nullConsumption = SupportingSettlementRequest(snapshot, 2);
+        nullConsumption.MaterialReservationId = string.Empty;
+        nullConsumption.NodeId = string.Empty;
+        nullConsumption.QualifiedItemId = string.Empty;
+        nullConsumption.ConsumedQuantity = 0;
+        nullConsumption.MaterialConsumptions =
+            new ReservationPortfolioMaterialConsumption[] { null! };
+        var consumptionResult = service.SettleSupportingTransition(
+            supportCommit.Ledger,
+            snapshot,
+            nullConsumption,
+            "2026-09-26T00:02:00Z");
+
+        Assert.False(consumptionResult.Accepted);
+        Assert.Contains(
+            "supporting_transition_consumed_claim_invalid",
+            consumptionResult.Errors);
+        Assert.Same(supportCommit.Ledger, consumptionResult.Ledger);
+
+        var nullRelocation = SupportingSettlementRequest(snapshot, 2);
+        nullRelocation.MaterialReservationId = string.Empty;
+        nullRelocation.NodeId = string.Empty;
+        nullRelocation.QualifiedItemId = string.Empty;
+        nullRelocation.ConsumedQuantity = 0;
+        nullRelocation.MaterialRelocations =
+            new ReservationPortfolioMaterialRelocation[] { null! };
+        var relocationResult = service.SettleSupportingTransition(
+            supportCommit.Ledger,
+            snapshot,
+            nullRelocation,
+            "2026-09-26T00:02:00Z");
+
+        Assert.False(relocationResult.Accepted);
+        Assert.Contains(
+            "supporting_transition_relocated_claim_invalid",
+            relocationResult.Errors);
+        Assert.Same(supportCommit.Ledger, relocationResult.Ledger);
+    }
+
     private static ReservationPortfolioSupportingTransitionSettlementRequest
         SupportingSettlementRequest(
             StardewAI.Contracts.State.SnapshotEnvelope snapshot,

@@ -18,7 +18,7 @@ These domains must be implemented before full-runtime acceptance starts:
 - `farm`: farm identity, visible farm objects, terrain features, crops, buildings, animals, machines, chests, resource clumps, debris counts or item summaries where safe.
 - `current_location`: current location identity, display name, outdoors/farm flags, objects, terrain features, characters, warps, map size/layers as read-only metadata.
 - `npcs`: current visible/location NPC identity, tile, facing, friendship summary only when verified read-only; schedules are separate and must remain unavailable until verified.
-- `quests_progress`: active quests, completed quests, mail flags, special orders, community center/Joja/museum/collections/progress facts when verified read-only.
+- `quests`: active quests, completed quests, mail flags, special orders, community center/Joja/museum/collections/progress facts when verified read-only.
 - `menus`: active menu type and safe menu context only; no UI automation.
 - `mods`: installed mods and adapter capabilities.
 - `modded_state`: per-mod adapter registry and capability declarations; mod-specific data remains unavailable unless a verified adapter exists.

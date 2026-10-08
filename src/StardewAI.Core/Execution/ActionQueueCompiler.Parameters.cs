@@ -130,6 +130,16 @@ namespace StardewAI.Core.Execution
                 action,
                 "expected_output_quality",
                 "continuation.output_quality");
+            AddAliasedPurchaseParameter(
+                parameters,
+                action,
+                "expected_unit_price",
+                "continuation.expected_unit_price");
+            AddAliasedPurchaseParameter(
+                parameters,
+                action,
+                "expected_unit_price",
+                "continuation.max_unit_price");
             if (ReadIntParameter(action, "quantity") is null)
             {
                 parameters.Add(Parameter("quantity", "1"));

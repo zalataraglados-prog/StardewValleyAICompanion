@@ -669,6 +669,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             milestone.IndexOf("$completedScenarios", StringComparison.Ordinal) <
             milestone.IndexOf("Select-Object -First $MaxScenarios", StringComparison.Ordinal));
         Assert.Contains(
+            "$validatedRecords = foreach ($record in $records)",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Discarding stale milestone checkpoint record",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Milestone batch requires completed anchor evidence",
             milestone,
             StringComparison.Ordinal);

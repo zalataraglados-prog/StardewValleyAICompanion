@@ -58,18 +58,16 @@ public sealed partial class FarmReadAdapter
         int outputIndex,
         string qualifiedItemId)
     {
+        var sources = new List<object>();
         if (!string.IsNullOrWhiteSpace(outputRule.Id))
         {
-            return new object[]
+            sources.Add(new
             {
-                new
-                {
-                    route_kind = "machine_output",
-                    source_id = "machine:" + machineQualifiedItemId +
-                        ":rule:" + outputRule.Id,
-                    qualified_item_id = qualifiedItemId
-                }
-            };
+                route_kind = "machine_output",
+                source_id = "machine:" + machineQualifiedItemId +
+                    ":rule:" + outputRule.Id,
+                qualified_item_id = qualifiedItemId
+            });
         }
 
         var query = outputData.ItemId ?? string.Empty;
@@ -78,24 +76,22 @@ public sealed partial class FarmReadAdapter
                 outputItemId,
                 StringComparer.Ordinal))
         {
-            return Array.Empty<object>();
+            return sources.ToArray();
         }
 
-        return new object[]
+        sources.Add(new
         {
-            new
-            {
-                route_kind = query.StartsWith(
-                    "FLAVORED_ITEM ",
-                    StringComparison.Ordinal)
-                        ? "native_machine_flavored_output"
-                        : "native_machine_item_query_output",
-                source_id = "machine:" + machineQualifiedItemId +
-                    ":rule:" + ruleIndex +
-                    ":output:" + outputIndex,
-                qualified_item_id = qualifiedItemId
-            }
-        };
+            route_kind = query.StartsWith(
+                "FLAVORED_ITEM ",
+                StringComparison.Ordinal)
+                    ? "native_machine_flavored_output"
+                    : "native_machine_item_query_output",
+            source_id = "machine:" + machineQualifiedItemId +
+                ":rule:" + ruleIndex +
+                ":output:" + outputIndex,
+            qualified_item_id = qualifiedItemId
+        });
+        return sources.ToArray();
     }
 
     private static object[] ReadMachineOutputAuthoritativeRouteSources(
@@ -168,7 +164,7 @@ public sealed partial class FarmReadAdapter
             if (selectedRules.Length != 1)
                 return Array.Empty<object>();
 
-            return new object[]
+            var sources = new List<object>
             {
                 new
                 {
@@ -178,6 +174,17 @@ public sealed partial class FarmReadAdapter
                     qualified_item_id = output.QualifiedItemId
                 }
             };
+            var selectedRuleIndex = data.OutputRules.FindIndex(rule =>
+                ReferenceEquals(rule, selectedRules[0]));
+            if (selectedRuleIndex >= 0)
+            {
+                sources.AddRange(ReadMachineOutputRowSources(
+                    machine.QualifiedItemId,
+                    selectedRules[0],
+                    selectedRuleIndex,
+                    output.QualifiedItemId));
+            }
+            return sources.ToArray();
         }
 
         return ReadLegacyMachineOutputRowSources(
@@ -198,41 +205,60 @@ public sealed partial class FarmReadAdapter
             return Array.Empty<object>();
         }
 
-        var outputItemId = outputQualifiedItemId[3..];
         var sources = new List<object>();
         for (var ruleIndex = 0;
             ruleIndex < data.OutputRules.Count;
             ruleIndex++)
         {
-            var outputs = data.OutputRules[ruleIndex].OutputItem;
-            if (outputs is null)
-                continue;
+            sources.AddRange(ReadMachineOutputRowSources(
+                machineQualifiedItemId,
+                data.OutputRules[ruleIndex],
+                ruleIndex,
+                outputQualifiedItemId));
+        }
+        return sources.ToArray();
+    }
 
-            for (var outputIndex = 0;
-                outputIndex < outputs.Count;
-                outputIndex++)
+    private static object[] ReadMachineOutputRowSources(
+        string machineQualifiedItemId,
+        MachineOutputRule rule,
+        int ruleIndex,
+        string outputQualifiedItemId)
+    {
+        if (!outputQualifiedItemId.StartsWith(
+                "(O)",
+                StringComparison.Ordinal) ||
+            rule.OutputItem is null)
+        {
+            return Array.Empty<object>();
+        }
+
+        var outputItemId = outputQualifiedItemId[3..];
+        var sources = new List<object>();
+        for (var outputIndex = 0;
+            outputIndex < rule.OutputItem.Count;
+            outputIndex++)
+        {
+            var query = rule.OutputItem[outputIndex].ItemId ?? string.Empty;
+            if (!MachineOutputQueryItemIds(query).Contains(
+                    outputItemId,
+                    StringComparer.Ordinal))
             {
-                var query = outputs[outputIndex].ItemId ?? string.Empty;
-                if (!MachineOutputQueryItemIds(query).Contains(
-                        outputItemId,
-                        StringComparer.Ordinal))
-                {
-                    continue;
-                }
-
-                sources.Add(new
-                {
-                    route_kind = query.StartsWith(
-                        "FLAVORED_ITEM ",
-                        StringComparison.Ordinal)
-                            ? "native_machine_flavored_output"
-                            : "native_machine_item_query_output",
-                    source_id = "machine:" + machineQualifiedItemId +
-                        ":rule:" + ruleIndex +
-                        ":output:" + outputIndex,
-                    qualified_item_id = outputQualifiedItemId
-                });
+                continue;
             }
+
+            sources.Add(new
+            {
+                route_kind = query.StartsWith(
+                    "FLAVORED_ITEM ",
+                    StringComparison.Ordinal)
+                        ? "native_machine_flavored_output"
+                        : "native_machine_item_query_output",
+                source_id = "machine:" + machineQualifiedItemId +
+                    ":rule:" + ruleIndex +
+                    ":output:" + outputIndex,
+                qualified_item_id = outputQualifiedItemId
+            });
         }
         return sources.ToArray();
     }

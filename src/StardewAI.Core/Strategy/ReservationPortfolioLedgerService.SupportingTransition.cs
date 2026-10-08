@@ -23,10 +23,14 @@ public sealed partial class ReservationPortfolioLedgerService
             request.StateHash,
             request.ExpectedLedgerRevision);
         var consumptions = MaterialConsumptions(request, errors);
-        var relocations = request.MaterialRelocations ??
-            Array.Empty<ReservationPortfolioMaterialRelocation>();
-        var currencyConsumptions = request.CurrencyConsumptions ??
-            Array.Empty<ReservationPortfolioCurrencyConsumption>();
+        var relocations = NonNullEntries(
+            request.MaterialRelocations,
+            "supporting_transition_relocated_claim_invalid",
+            errors);
+        var currencyConsumptions = NonNullEntries(
+            request.CurrencyConsumptions,
+            "supporting_transition_currency_claim_invalid",
+            errors);
         var rebindIds = request.RebindActiveReservationIds ??
             Array.Empty<string>();
         var rebindMachineIntent =
@@ -388,11 +392,7 @@ public sealed partial class ReservationPortfolioLedgerService
             relocations.Select(value => value.MaterialReservationId)
                 .Distinct(StringComparer.Ordinal).Count() !=
                 relocations.Length ||
-            relocations.Select(value =>
-                    value.DestinationNodeId + ":" +
-                    value.DestinationSlotIndex)
-                .Distinct(StringComparer.Ordinal).Count() !=
-                relocations.Length))
+            relocations.Sum(value => (long)value.Quantity) > int.MaxValue))
         {
             errors.Add("supporting_transition_relocated_claim_invalid");
         }
@@ -490,12 +490,12 @@ public sealed partial class ReservationPortfolioLedgerService
             {
                 errors.Add("supporting_transition_relocated_claim_mismatch");
             }
-            ValidateRelocationDestination(
-                current,
-                snapshot,
-                relocation,
-                errors);
         }
+        ValidateRelocationDestinations(
+            current,
+            snapshot,
+            relocations,
+            errors);
         foreach (var consumption in currencyConsumptions)
         {
             var claims = current.CurrencyReservations.Where(row =>
@@ -564,12 +564,15 @@ public sealed partial class ReservationPortfolioLedgerService
         }
     }
 
-    private static void ValidateRelocationDestination(
+    private static void ValidateRelocationDestinations(
         StrategyCommitmentLedger current,
         SnapshotEnvelope snapshot,
-        ReservationPortfolioMaterialRelocation relocation,
+        ReservationPortfolioMaterialRelocation[] relocations,
         ICollection<string> errors)
     {
+        if (relocations.Length == 0)
+            return;
+
         var value = ReadStateFieldValue(
             snapshot,
             "farm",
@@ -600,37 +603,57 @@ public sealed partial class ReservationPortfolioLedgerService
                 Status: "available"
             } &&
             graph.PlayerId == actorPlayerId;
-        var nodes = graph?.InventoryNodes.Where(node =>
-                node.NodeId == relocation.DestinationNodeId &&
-                node.InventoryKind == "player_inventory" &&
-                node.SupplyState == "available" &&
-                node.ActorUseAuthorized &&
-                node.OwnerPlayerId == graph.PlayerId)
-            .ToArray() ?? Array.Empty<MaterialInventoryNode>();
-        var slots = nodes.Length == 1
-            ? nodes[0].Slots.Where(slot =>
-                    slot.SlotIndex == relocation.DestinationSlotIndex &&
-                    slot.QualifiedItemId == relocation.QualifiedItemId)
-                .ToArray()
-            : Array.Empty<MaterialInventorySlot>();
-        var otherDestinationClaims = current.MaterialReservations.Where(row =>
-                row.Status == StrategyCommitmentStatuses.Active &&
-                row.ReservationId != relocation.MaterialReservationId &&
-                row.NodeId == relocation.DestinationNodeId &&
-                row.SlotIndex == relocation.DestinationSlotIndex)
-            .ToArray();
-        var otherReserved = otherDestinationClaims.Where(row =>
-                row.QualifiedItemId == relocation.QualifiedItemId)
-            .Sum(row => (long)row.Quantity);
-        if (!graphMatchesActor ||
-            nodes.Length != 1 ||
-            slots.Length != 1 ||
-            otherDestinationClaims.Any(row =>
-                row.QualifiedItemId != relocation.QualifiedItemId) ||
-            otherReserved + relocation.Quantity > slots[0].Stack)
+        var inventoryNodes = graph?.InventoryNodes ??
+            Array.Empty<MaterialInventoryNode>();
+        var relocatingIds = relocations.Select(row => row.MaterialReservationId)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var group in relocations.GroupBy(row => (
+                     row.DestinationNodeId,
+                     row.DestinationSlotIndex)))
         {
-            errors.Add(
-                "supporting_transition_relocation_destination_unavailable");
+            var qualifiedItemIds = group
+                .Select(row => row.QualifiedItemId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            var qualifiedItemId = qualifiedItemIds.Length == 1
+                ? qualifiedItemIds[0]
+                : string.Empty;
+            var nodes = inventoryNodes.Where(node =>
+                    node.NodeId == group.Key.DestinationNodeId &&
+                    node.InventoryKind == "player_inventory" &&
+                    node.SupplyState == "available" &&
+                    node.ActorUseAuthorized &&
+                    node.OwnerPlayerId == graph!.PlayerId)
+                .ToArray();
+            var slots = nodes.Length == 1
+                ? (nodes[0].Slots ?? Array.Empty<MaterialInventorySlot>())
+                    .Where(slot =>
+                        slot.SlotIndex == group.Key.DestinationSlotIndex &&
+                        slot.QualifiedItemId == qualifiedItemId)
+                    .ToArray()
+                : Array.Empty<MaterialInventorySlot>();
+            var otherDestinationClaims = current.MaterialReservations
+                .Where(row =>
+                    row.Status == StrategyCommitmentStatuses.Active &&
+                    !relocatingIds.Contains(row.ReservationId) &&
+                    row.NodeId == group.Key.DestinationNodeId &&
+                    row.SlotIndex == group.Key.DestinationSlotIndex)
+                .ToArray();
+            var otherReserved = otherDestinationClaims.Where(row =>
+                    row.QualifiedItemId == qualifiedItemId)
+                .Sum(row => (long)row.Quantity);
+            var incoming = group.Sum(row => (long)row.Quantity);
+            if (!graphMatchesActor ||
+                qualifiedItemIds.Length != 1 ||
+                nodes.Length != 1 ||
+                slots.Length != 1 ||
+                otherDestinationClaims.Any(row =>
+                    row.QualifiedItemId != qualifiedItemId) ||
+                otherReserved + incoming > slots[0].Stack)
+            {
+                errors.Add(
+                    "supporting_transition_relocation_destination_unavailable");
+            }
         }
     }
 
@@ -639,8 +662,10 @@ public sealed partial class ReservationPortfolioLedgerService
             ReservationPortfolioSupportingTransitionSettlementRequest request,
             ICollection<string> errors)
     {
-        var values = request.MaterialConsumptions ??
-            Array.Empty<ReservationPortfolioMaterialConsumption>();
+        var values = NonNullEntries(
+            request.MaterialConsumptions,
+            "supporting_transition_consumed_claim_invalid",
+            errors);
         var legacyPresent =
             !string.IsNullOrWhiteSpace(request.MaterialReservationId) ||
             !string.IsNullOrWhiteSpace(request.NodeId) ||
@@ -666,6 +691,18 @@ public sealed partial class ReservationPortfolioLedgerService
                 }
             }
             : Array.Empty<ReservationPortfolioMaterialConsumption>();
+    }
+
+    private static T[] NonNullEntries<T>(
+        T[]? values,
+        string error,
+        ICollection<string> errors)
+        where T : class
+    {
+        var supplied = values ?? Array.Empty<T>();
+        if (supplied.Any(value => value is null))
+            errors.Add(error);
+        return supplied.OfType<T>().ToArray();
     }
 
     private static ReservationPortfolioSupportingTransitionSettlementResult

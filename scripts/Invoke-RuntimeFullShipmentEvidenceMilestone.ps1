@@ -281,6 +281,25 @@ if (Test-Path -LiteralPath $checkpointPath -PathType Leaf) {
         throw "Milestone checkpoint belongs to different evidence inputs."
     }
     $records = @($existingCheckpoint.records)
+    $validatedRecords = foreach ($record in $records) {
+        $scenario = [string]$record.scenario
+        if (-not $entriesByScenario.ContainsKey($scenario) -or
+            -not $rowsByScenario.ContainsKey($scenario)) {
+            continue
+        }
+        try {
+            Get-SummaryRecord `
+                -SummaryPath ([string]$record.summary_path) `
+                -PlanEntry $entriesByScenario[$scenario] `
+                -ReconciliationRow $rowsByScenario[$scenario]
+        }
+        catch {
+            Write-Warning (
+                "Discarding stale milestone checkpoint record for " +
+                "${scenario}: $($_.Exception.Message)")
+        }
+    }
+    $records = @($validatedRecords)
 }
 
 foreach ($inputPath in $ExistingSummaryPaths) {
