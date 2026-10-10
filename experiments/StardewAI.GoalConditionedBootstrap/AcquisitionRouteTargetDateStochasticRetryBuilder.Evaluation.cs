@@ -115,6 +115,14 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 currentRouteCandidates);
         }
 
+        if (staticRoute.RouteKind == "native_monster_drop_table")
+        {
+            return EvaluateMonsterDrop(
+                route,
+                staticRoute,
+                currentRouteCandidates);
+        }
+
         if (IsMachineRoute(staticRoute.RouteKind))
             return EvaluateMachine(route, staticRoute, machineExpansion);
 

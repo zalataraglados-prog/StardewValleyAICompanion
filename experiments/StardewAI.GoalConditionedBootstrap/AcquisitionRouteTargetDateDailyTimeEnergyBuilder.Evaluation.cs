@@ -71,6 +71,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_monster_drop_table" => EvaluateMonsterDrop(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_wild_tree_tapper_output" =>
                 EvaluateCurrentRouteCollection(
                     route,

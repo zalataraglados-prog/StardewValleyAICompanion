@@ -257,6 +257,13 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     ReadIntParameter(candidate, "stand_tile_y"),
                     ReadIntParameter(candidate, "max_movement_tiles"),
                     ReadIntParameter(candidate, "max_tool_swings"),
+                    ReadIntParameter(candidate, "max_attacks"),
+                    ReadDoubleParameter(candidate, "estimated_target_cost_ms"),
+                    ReadStringParameter(candidate, "source_match_status"),
+                    ReadDoubleParameter(candidate, "target_drop_chance_preview"),
+                    ReadStringParameter(
+                        candidate,
+                        "target_drop_probability_status"),
                     candidate.EstimatedTicks,
                     candidate.EnergyCost,
                     source.RouteKind,
@@ -281,6 +288,34 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             out var parsed)
                 ? parsed
                 : null;
+    }
+
+    private static double? ReadDoubleParameter(
+        EventCandidate candidate,
+        string name)
+    {
+        var values = candidate.Parameters
+            .Where(value => value.Name == name)
+            .Select(value => value.Value)
+            .ToArray();
+        return values.Length == 1 && double.TryParse(
+            values[0],
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var parsed)
+                ? parsed
+                : null;
+    }
+
+    private static string ReadStringParameter(
+        EventCandidate candidate,
+        string name)
+    {
+        var values = candidate.Parameters
+            .Where(value => value.Name == name)
+            .Select(value => value.Value)
+            .ToArray();
+        return values.Length == 1 ? values[0] : string.Empty;
     }
 
     public bool TryFind(
@@ -440,6 +475,11 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     int? StandTileY,
     int? MaxMovementTiles,
     int? MaxToolSwings,
+    int? MaxAttacks,
+    double? EstimatedTargetCostMs,
+    string SourceMatchStatus,
+    double? TargetDropChancePreview,
+    string TargetDropProbabilityStatus,
     int EstimatedTicks,
     int EnergyCost,
     string RouteKind,
