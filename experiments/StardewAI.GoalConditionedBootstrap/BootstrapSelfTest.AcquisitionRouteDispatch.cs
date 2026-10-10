@@ -39,6 +39,7 @@ internal static partial class BootstrapSelfTest
                 out var rebuildReasons);
         Require(rebuilt.Length == ranked.Length && rebuildReasons.Length == 0,
             "Untampered live ranking did not reproduce from the transparent snapshot.");
+        VerifyMonsterDropRankingRebuild();
         var driftedRanking = ranked.Select(CloneCandidate).ToArray();
         driftedRanking[0].Parameters = driftedRanking[0].Parameters
             .Select(parameter => parameter.Name == "target_tile_x"
