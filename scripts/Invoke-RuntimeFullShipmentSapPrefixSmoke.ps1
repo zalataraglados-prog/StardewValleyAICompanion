@@ -223,7 +223,7 @@ $sampleRankingParameters = switch ($Scenario) {
             },
             [ordered]@{
                 name = "acquisition_target_source_id"
-                value = "monster:Green Slime"
+                value = "monster:Frost Jelly"
             },
             [ordered]@{
                 name = "acquisition_target_qualified_item_id"

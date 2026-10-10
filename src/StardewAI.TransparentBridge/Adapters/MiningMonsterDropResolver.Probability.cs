@@ -9,25 +9,60 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 internal static partial class MiningMonsterDropResolver
 {
+    public static string[] ReadNativeMonsterDataQualifiedItemIds(
+        Monster monster)
+    {
+        return ReadNativeMonsterDataDrops(monster)
+            .Where(drop => drop.Chance > 0d)
+            .Select(drop => drop.QualifiedItemId)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(itemId => itemId, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static NativeMonsterDataDrop[] ReadNativeMonsterDataDrops(
+        Monster monster)
+    {
+        if (!DataLoader.Monsters(Game1.content).TryGetValue(
+                monster.Name,
+                out var data))
+        {
+            return Array.Empty<NativeMonsterDataDrop>();
+        }
+
+        var fields = data.Split('/');
+        if (fields.Length <= 6)
+        {
+            return Array.Empty<NativeMonsterDataDrop>();
+        }
+
+        var tokens = ArgUtility.SplitBySpace(fields[6]);
+        var drops = new List<NativeMonsterDataDrop>();
+        for (var i = 0; i + 1 < tokens.Length; i += 2)
+        {
+            if (TryReadDataChance(tokens[i + 1], out var chance))
+            {
+                drops.Add(new NativeMonsterDataDrop(
+                    i / 2,
+                    QualifyDropId(tokens[i]),
+                    EffectiveChance(chance)));
+            }
+        }
+        return drops.ToArray();
+    }
+
     private static void AddBaseMonsterDropPossibilities(
         Monster monster,
         Farmer player,
         HashSet<string> conditional,
         HashSet<string> conditionalCatalogKeys)
     {
-        if (player.isWearingRing("526") && DataLoader.Monsters(Game1.content).TryGetValue(monster.Name, out var data))
+        if (player.isWearingRing("526"))
         {
-            var fields = data.Split('/');
-            if (fields.Length > 6)
+            foreach (var drop in ReadNativeMonsterDataDrops(monster)
+                         .Where(drop => drop.Chance > 0d))
             {
-                var dropTokens = ArgUtility.SplitBySpace(fields[6]);
-                for (var i = 0; i + 1 < dropTokens.Length; i += 2)
-                {
-                    if (TryReadDataChance(dropTokens[i + 1], out var chance) && EffectiveChance(chance) > 0d)
-                    {
-                        conditional.Add(QualifyDropId(dropTokens[i]));
-                    }
-                }
+                conditional.Add(drop.QualifiedItemId);
             }
         }
 
@@ -519,36 +554,30 @@ internal static partial class MiningMonsterDropResolver
         double baseBranchChance,
         List<MiningMonsterDropProbabilityRule> rules)
     {
-        if (!player.isWearingRing("526") || !DataLoader.Monsters(Game1.content).TryGetValue(monster.Name, out var data))
+        if (!player.isWearingRing("526"))
         {
             return;
         }
-        var fields = data.Split('/');
-        if (fields.Length <= 6)
+        foreach (var drop in ReadNativeMonsterDataDrops(monster))
         {
-            return;
-        }
-        var tokens = ArgUtility.SplitBySpace(fields[6]);
-        for (var i = 0; i + 1 < tokens.Length; i += 2)
-        {
-            if (!TryReadDataChance(tokens[i + 1], out var chance))
-            {
-                continue;
-            }
-            chance = EffectiveChance(chance);
             var rule = ProbabilityRule(
-                "burglar_ring_monster_data_" + (i / 2),
-                new[] { QualifyDropId(tokens[i]) },
+                "burglar_ring_monster_data_" + drop.Index,
+                new[] { drop.QualifiedItemId },
                 string.Empty,
-                chance,
-                baseBranchChance * chance,
-                baseBranchChance * chance,
+                drop.Chance,
+                baseBranchChance * drop.Chance,
+                baseBranchChance * drop.Chance,
                 "fixed_identity_independent_data_roll",
                 "GameLocation.monsterDrop/Data/Monsters");
             rule.BookVoidDuplicationEligible = true;
             rules.Add(rule);
         }
     }
+
+    private sealed record NativeMonsterDataDrop(
+        int Index,
+        string QualifiedItemId,
+        double Chance);
 
     private static void AddFixedProbabilityRule(
         List<MiningMonsterDropProbabilityRule> rules,
