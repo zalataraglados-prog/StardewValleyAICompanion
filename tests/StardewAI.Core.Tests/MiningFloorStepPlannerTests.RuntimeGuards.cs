@@ -421,7 +421,18 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("game_update_naturally_collected_chunk", pickupSource, StringComparison.Ordinal);
         Assert.Contains("target_chunk_absent_after_native_proximity_collection", pickupSource, StringComparison.Ordinal);
         Assert.Contains("inventory_item_count_increased_since_snapshot", pickupSource, StringComparison.Ordinal);
-        Assert.Contains("ManhattanDistance(Game1.player.TilePoint, target) <= 3", pickupSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "ManhattanDistance(Game1.player.TilePoint, target) <=",
+            pickupSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "(deferredNativeDrop ? 12 : 3)",
+            pickupSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_monster_drop_table\"",
+            pickupSource,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(".collect(", pickupSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Chunks.Remove", pickupSource, StringComparison.Ordinal);
         Assert.DoesNotContain("debris.Remove", pickupSource, StringComparison.Ordinal);

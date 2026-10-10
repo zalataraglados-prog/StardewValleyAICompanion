@@ -21,7 +21,8 @@ namespace StardewAI.Core.Execution
             var reasons = new List<string>();
             if (sourceKind is not (
                     "native_wild_tree_chop_drop" or
-                    "native_radioactive_ore_node"))
+                    "native_radioactive_ore_node" or
+                    "native_monster_drop_table"))
             {
                 reasons.Add("deferred_pickup_source_kind_unsupported");
                 return reasons.ToArray();
@@ -76,9 +77,22 @@ namespace StardewAI.Core.Execution
                     guaranteedMinimum.Value,
                     reasons);
             }
-            else
+            else if (sourceKind == "native_radioactive_ore_node")
             {
                 ValidateDeferredRadioactiveOrePickup(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId,
+                    quality.Value,
+                    guaranteedMinimum.Value,
+                    reasons);
+            }
+            else
+            {
+                ValidateDeferredMonsterDropPickup(
                     snapshot,
                     targetX.Value,
                     targetY.Value,

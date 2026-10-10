@@ -6,7 +6,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class DeferredNativeDropPickupTests
+public sealed partial class DeferredNativeDropPickupTests
 {
     [Fact]
     public void RadioactiveOrePickupReusesSharedDeferredDebrisPrimitive()

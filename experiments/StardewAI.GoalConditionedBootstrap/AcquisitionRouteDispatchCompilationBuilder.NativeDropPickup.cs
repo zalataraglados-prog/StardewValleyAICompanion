@@ -12,8 +12,10 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         "native_wild_tree_chop_drop";
     private const string DeferredRadioactiveOrePickupKind =
         "native_radioactive_ore_node";
+    private const string DeferredMonsterDropPickupKind =
+        "native_monster_drop_table";
 
-    private static string[] AppendDeferredNativeDropPickup(
+    internal static string[] AppendDeferredNativeDropPickup(
         SmallModelPlanEnvelope plan,
         AcquisitionRouteTargetDateUnlock requirement,
         PolicyEventCandidatePrediction source,
@@ -21,7 +23,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
     {
         if (requirement.RouteKind is not (
                 DeferredWildTreePickupKind or
-                DeferredRadioactiveOrePickupKind))
+                DeferredRadioactiveOrePickupKind or
+                DeferredMonsterDropPickupKind))
             return Array.Empty<string>();
 
         if (requirement.RequiredAmount <= 0 ||
@@ -59,7 +62,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 };
             }
         }
-        else
+        else if (requirement.RouteKind == DeferredRadioactiveOrePickupKind)
         {
             targetX = UniqueIntParameter(source, "target_tile_x");
             targetY = UniqueIntParameter(source, "target_tile_y");
@@ -76,6 +79,30 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                     snapshot,
                     targetX.Value,
                     targetY.Value,
+                    requirement,
+                    out guaranteedMinimum))
+            {
+                return new[] { "native_drop_deferred_pickup_source_invalid" };
+            }
+        }
+        else
+        {
+            targetX = UniqueIntParameter(source, "target_tile_x");
+            targetY = UniqueIntParameter(source, "target_tile_y");
+            if (source.OptionId != "mining.reach_depth" ||
+                source.Kind != "mining_reach_depth_plan_envelope" ||
+                !targetX.HasValue ||
+                !targetY.HasValue ||
+                !CandidateDeclaresAuthoritativeRouteSource(
+                    source,
+                    requirement.RouteKind,
+                    requirement.SourceId,
+                    requirement.QualifiedItemId) ||
+                !TryReadMonsterDropGuaranteedMinimum(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    source,
                     requirement,
                     out guaranteedMinimum))
             {
