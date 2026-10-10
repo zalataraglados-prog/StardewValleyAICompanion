@@ -1421,8 +1421,20 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "new FishingRod(4)",
             fixture,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "player.fishCaught.Add(\"(O)145\", new[] { 1, 1 })",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_satisfied_native_tutorial_gate_with_non_target_prior_catch",
+            fixture,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "ItemRegistry.Create(\"(O)388\")",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "player.fishCaught.Add(\"(O)388\"",
             fixture,
             StringComparison.Ordinal);
     }
