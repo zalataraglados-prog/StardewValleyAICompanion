@@ -138,11 +138,22 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             rule,
             "UseFirstValidOutput",
             MachineKey(machineId, ruleIndex));
-        if (useFirstValidOutput && outputIndex > 0)
+        var precedingOutputRows = outputSelectionRows.Take(outputIndex).ToArray();
+        var relevantOutputRows = useFirstValidOutput
+            ? outputSelectionRows.Take(outputIndex + 1)
+            : outputSelectionRows;
+        var unresolvedPrecedingOutput = useFirstValidOutput
+            ? precedingOutputRows.FirstOrDefault(row =>
+                !AcquisitionMachineConditionProbability.TryResolveSimple(
+                    row.Condition,
+                    out _))
+            : null;
+        if (unresolvedPrecedingOutput is not null)
         {
             return BlockMachine(
                 "blocked_machine_output_selection_order_unresolved",
-                "machine_first_valid_output_preceding_rows_not_represented");
+                "machine_first_valid_output_preceding_condition_probability_unresolved:" +
+                unresolvedPrecedingOutput.OutputIndex);
         }
         var minimumStack = ReadRequiredMachineInt(
             output,
@@ -155,9 +166,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var allConditions = new[]
             {
                 ruleCondition,
-                outputCondition,
                 perItemCondition
             }
+            .Concat(relevantOutputRows.Select(value => value.Condition))
             .Concat(triggers.Select(value => value.Condition))
             .Concat(readyTimeModifiers.Select(value => value.Condition))
             .Concat(stackModifiers.Select(value => value.Condition))
