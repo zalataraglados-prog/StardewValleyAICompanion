@@ -1069,6 +1069,9 @@ try {
         }
 
         $fishingProjectionCapture = Get-FreshSnapshot -TimeoutSeconds 60
+        Write-Utf8Text -Path (Join-Path $artifactDirectory `
+            "fixture-ready-$fixtureSlug-snapshot.json") `
+            -Value $fishingProjectionCapture.Raw
         $rodContexts = @(Read-StateValue `
             $fishingProjectionCapture.Value "fishing" "rod_contexts")
         $matchingOutputs = @(
