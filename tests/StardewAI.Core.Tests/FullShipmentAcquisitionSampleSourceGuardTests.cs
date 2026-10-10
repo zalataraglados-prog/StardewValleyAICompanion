@@ -3,6 +3,40 @@ namespace StardewAI.Core.Tests;
 public sealed class FullShipmentAcquisitionSampleSourceGuardTests
 {
     [Fact]
+    public void SuppressedRuntimeEvidenceHidesGameOwnedWindows()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeEvidenceCommon.ps1");
+
+        Assert.Contains(
+            "StardewAI.RuntimeEvidence.WindowSuppressor",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GetWindowThreadProcessId",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ShowWindowAsync(window, 0)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "STARDEWAI_SUPPRESS_LOCAL_RENDER",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "StardewModdingAPI.exe",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$process.Id,",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RadioactiveSampleUsesBoundedTrainingMiningSnapshotProfile()
     {
         var script = ReadRepositoryFile(
