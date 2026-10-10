@@ -1463,6 +1463,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "fixture_satisfied_native_tutorial_gate_with_non_target_prior_catch",
             fixture,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "player.Money = 0",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fixture_excluded_money_purchase_alternative",
+            fixture,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "ItemRegistry.Create(\"(O)388\")",
             fixture,
