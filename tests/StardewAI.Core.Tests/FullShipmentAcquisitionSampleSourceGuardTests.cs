@@ -1414,6 +1414,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
+            "fixture-ready-$fixtureSlug-snapshot.json",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "new FishingRod(4)",
             fixture,
             StringComparison.Ordinal);
