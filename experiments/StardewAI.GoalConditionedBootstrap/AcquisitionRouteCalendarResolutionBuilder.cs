@@ -10,6 +10,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         "machine_output",
         "sells",
         "native_crab_pot_output",
+        "native_fish_pond_output",
         "native_location_artifact_spot",
         "native_location_fish_spawn",
         "native_location_forage_spawn",

@@ -323,6 +323,13 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if (route.RouteKind == "native_fish_pond_output")
+        {
+            return ResolveFishPondOutputWindow(
+                route,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind is "native_crab_pot_output" or
             "native_location_fish_spawn" or
             "native_mine_fishing_override")

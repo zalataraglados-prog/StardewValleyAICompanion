@@ -1051,6 +1051,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "experiments",
             "StardewAI.GoalConditionedBootstrap",
             "AcquisitionCurrentRouteCandidateIndex.cs");
+        var fishPondCalendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.FishPond.cs");
+        var monsterRetry = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.MonsterDrop.cs");
+        var monsterDailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.MonsterDrop.cs");
         var dispatchVerification = ReadRepositoryFile(
             "experiments",
             "StardewAI.GoalConditionedBootstrap",
@@ -1101,8 +1113,40 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             candidateIndex,
             StringComparison.Ordinal);
         Assert.Contains(
+            "ReadDoubleParameter(candidate, \"estimated_target_cost_ms\")",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadDoubleParameter(candidate, \"target_drop_chance_preview\")",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "excludedRouteKind: \"native_monster_drop_table\"",
             candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "authoritative_fish_pond_output_row_calendar_invariant",
+            fishPondCalendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RequiresExistingLiveCandidateMatch = true",
+            fishPondCalendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.SourceMatchStatus == \"guaranteed_monster_drop\"",
+            monsterRetry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "matching_monster_drop_not_guaranteed_by_live_projection",
+            monsterRetry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.EstimatedTargetCostMs.Value /",
+            monsterDailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "existing_native_mining_combat_profile",
+            monsterDailyBudget,
             StringComparison.Ordinal);
         Assert.Contains(
             "requirement.RouteKind is\n            \"native_radioactive_ore_node\" or\n            \"native_monster_drop_table\"",
