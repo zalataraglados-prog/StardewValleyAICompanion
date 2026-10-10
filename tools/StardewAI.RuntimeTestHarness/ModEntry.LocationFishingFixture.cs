@@ -34,6 +34,7 @@ public sealed partial class ModEntry
         }
 
         var player = Game1.player;
+        var moneyBefore = player.Money;
         var initializedTutorialPrerequisite = false;
         if (player.fishCaught.Length == 0)
         {
@@ -71,6 +72,7 @@ public sealed partial class ModEntry
             15000);
         player.fishingLevel.Value = Math.Max(player.fishingLevel.Value, 10);
         player.Stamina = Math.Max(player.Stamina, 200f);
+        player.Money = 0;
         player.forceCanMove();
 
         var verified = ReferenceEquals(Game1.currentLocation, location) &&
@@ -78,6 +80,7 @@ public sealed partial class ModEntry
             player.TilePoint == stand &&
             player.CurrentTool is FishingRod &&
             player.fishCaught.Length > 0 &&
+            player.Money == 0 &&
             location.isTileFishable(bobber.X, bobber.Y);
         return new TrainingExecutionResult
         {
@@ -99,6 +102,7 @@ public sealed partial class ModEntry
                 {
                     "fixture_equipped_rod_without_injecting_catch_output",
                     "fixture_satisfied_native_tutorial_gate_with_non_target_prior_catch",
+                    "fixture_excluded_money_purchase_alternative",
                     "fixture_selected_native_fishable_tile",
                     "fixture_transition_is_not_training_eligible"
                 }
@@ -109,6 +113,7 @@ public sealed partial class ModEntry
                 ";stand=" + stand.X + "," + stand.Y +
                 ";bobber=" + bobber.X + "," + bobber.Y +
                 ";rod_slot=" + player.CurrentToolIndex +
+                ";money=" + moneyBefore + "->" + player.Money +
                 ";initialized_tutorial_prerequisite=" +
                 initializedTutorialPrerequisite,
             TargetLocation = location.NameOrUniqueName,
