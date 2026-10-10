@@ -1,11 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Globalization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -148,6 +150,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         PolicyEventCandidatePrediction candidate,
         AcquisitionRouteTargetDateOpportunityCost? opportunity)
     {
+        if (candidate.Kind == "catch_fish")
+            return BindFishingRetryBudget(candidate, opportunity);
         if (opportunity is null || candidate.Kind != "clear_obstacle_tile")
             return Array.Empty<string>();
 
@@ -216,6 +220,89 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 evaluation.TimingEvidenceId)
         }).ToArray();
         return Array.Empty<string>();
+    }
+
+    private static string[] BindFishingRetryBudget(
+        PolicyEventCandidatePrediction candidate,
+        AcquisitionRouteTargetDateOpportunityCost? opportunity)
+    {
+        if (opportunity is null)
+            return new[] { "selected_fishing_retry_budget_missing" };
+
+        var daily = opportunity.UpstreamRoute;
+        var retry = daily.UpstreamRoute;
+        var evaluation = daily.Evaluation;
+        var attempts = evaluation?.RequiredAttemptCount;
+        var movementItems = TryReadPositiveIntParameter(
+                candidate,
+                "route_distance_tiles")
+            ? 1
+            : 0;
+        if (daily.DailyTimeEnergyMatchesTargetDate != true ||
+            evaluation is null ||
+            !attempts.HasValue ||
+            attempts.Value <= 0 ||
+            retry.StochasticRetryAxisResolved != true ||
+            retry.StochasticRetryBudgetMatchesTargetDate != true ||
+            retry.RetryBudgetKind != "independent_binomial_retry_budget" ||
+            retry.RequiredAttemptCount != attempts ||
+            retry.SingleAttemptSuccessProbability is not > 0d or > 1d ||
+            retry.TargetSuccessProbability is <= 0d or > 1d ||
+            !retry.RetryExpandedReservationRevalidated)
+        {
+            return new[] { "selected_fishing_retry_budget_incomplete" };
+        }
+        if (attempts.Value + movementItems >
+            TeacherEvidenceRolloutLimits.MaxQueueItems)
+        {
+            return new[] { "selected_fishing_retry_budget_exceeds_queue_capacity" };
+        }
+
+        const string prefix = "acquisition_retry_";
+        var parameters = candidate.Parameters ??
+            Array.Empty<SmallModelActionParameter>();
+        if (parameters.Any(parameter => parameter.Name.StartsWith(
+                prefix,
+                StringComparison.Ordinal)))
+        {
+            return new[] { "selected_candidate_declares_acquisition_retry_budget" };
+        }
+        candidate.Parameters = parameters.Concat(new[]
+        {
+            Parameter(prefix + "budget_kind", retry.RetryBudgetKind),
+            Parameter(
+                prefix + "required_attempt_count",
+                attempts.Value.ToString(CultureInfo.InvariantCulture)),
+            Parameter(
+                prefix + "single_attempt_success_probability",
+                retry.SingleAttemptSuccessProbability.Value.ToString(
+                    "0.################",
+                    CultureInfo.InvariantCulture)),
+            Parameter(
+                prefix + "target_success_probability",
+                retry.TargetSuccessProbability.ToString(
+                    "0.################",
+                    CultureInfo.InvariantCulture))
+        }).ToArray();
+        return Array.Empty<string>();
+    }
+
+    private static bool TryReadPositiveIntParameter(
+        PolicyEventCandidatePrediction candidate,
+        string name)
+    {
+        var values = (candidate.Parameters ??
+                Array.Empty<SmallModelActionParameter>())
+            .Where(parameter => parameter.Name == name)
+            .Select(parameter => parameter.Value)
+            .ToArray();
+        return values.Length == 1 &&
+            int.TryParse(
+                values[0],
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var value) &&
+            value > 0;
     }
 
     private static string[] TeacherRoutePlanReasons(

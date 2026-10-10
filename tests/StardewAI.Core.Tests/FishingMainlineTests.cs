@@ -136,6 +136,44 @@ public sealed class FishingMainlineTests
     }
 
     [Fact]
+    public void VerifiedRetryBudgetExpandsToRepeatedNativeCatchSteps()
+    {
+        var snapshot = Snapshot(BaseState());
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[] { "fishing.catch_fish" });
+        var source = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+        source.Parameters = source.Parameters.Concat(new[]
+        {
+            Parameter("acquisition_retry_budget_kind",
+                "independent_binomial_retry_budget"),
+            Parameter("acquisition_retry_required_attempt_count", "3"),
+            Parameter("acquisition_retry_single_attempt_success_probability",
+                "0.4"),
+            Parameter("acquisition_retry_target_success_probability", "0.95")
+        }).ToArray();
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability);
+
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            snapshot.StateHash);
+
+        Assert.Equal(4, plan.Steps.Length);
+        Assert.Equal("move_to_tile", plan.Steps[0].Kind);
+        var catches = plan.Steps.Skip(1).ToArray();
+        Assert.All(catches, step => Assert.Equal("catch_fish", step.Kind));
+        Assert.Equal(3, catches.Select(step => step.StepId).Distinct().Count());
+        Assert.Equal(
+            new[] { "1", "2", "3" },
+            catches.Select(step => ParameterValue(
+                step.Parameters,
+                "acquisition_retry_attempt_ordinal")));
+    }
+
+    [Fact]
     public void FractionalPlayerEnergyKeepsFishingCompilable()
     {
         var snapshot = Snapshot(BaseState().Replace(
