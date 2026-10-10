@@ -161,9 +161,8 @@ public sealed class FishingMainlineTests
             ranked,
             snapshot.StateHash);
 
-        Assert.Equal(4, plan.Steps.Length);
-        Assert.Equal("move_to_tile", plan.Steps[0].Kind);
-        var catches = plan.Steps.Skip(1).ToArray();
+        var catches = plan.Steps;
+        Assert.Equal(3, catches.Length);
         Assert.All(catches, step => Assert.Equal("catch_fish", step.Kind));
         Assert.Equal(3, catches.Select(step => step.StepId).Distinct().Count());
         Assert.Equal(
