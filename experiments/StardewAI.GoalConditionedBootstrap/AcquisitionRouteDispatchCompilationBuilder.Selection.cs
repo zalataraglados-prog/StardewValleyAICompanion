@@ -284,11 +284,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         PolicyEventCandidatePrediction candidate)
     {
         if (string.IsNullOrWhiteSpace(candidate.CandidateId) ||
-            (candidate.Parameters ?? Array.Empty<
-                StardewAI.Contracts.Execution.SmallModelActionParameter>())
-            .Any(parameter => parameter.Name.StartsWith(
-                "acquisition_",
-                StringComparison.Ordinal)))
+            !HasValidTerminalAcquisitionIntent(requirement, candidate))
         {
             return null;
         }
