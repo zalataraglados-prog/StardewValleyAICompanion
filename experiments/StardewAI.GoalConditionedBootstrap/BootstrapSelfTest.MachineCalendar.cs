@@ -75,7 +75,7 @@ internal static partial class BootstrapSelfTest
                     "RequiredCount": 1,
                     "Condition": null
                   }],
-                  "UseFirstValidOutput": false,
+                  "UseFirstValidOutput": true,
                   "OutputItem": [{
                     "ItemId": "(O)466",
                     "OutputMethod": null,
@@ -202,9 +202,9 @@ internal static partial class BootstrapSelfTest
         Require(orderedOutputBlocked.Status ==
                     "blocked_machine_output_selection_order_unresolved" &&
                 orderedOutputBlocked.BlockingReasons.Contains(
-                    "machine_first_valid_output_preceding_rows_not_represented",
+                    "machine_first_valid_output_preceding_condition_probability_unresolved:0",
                     StringComparer.Ordinal),
-            "A later first-valid machine output row was admitted independently.");
+            "A later first-valid machine output row with an unresolved preceding condition was admitted.");
 
         var stochastic = AcquisitionRouteCalendarResolutionBuilder
             .ResolveMachineWindows(
@@ -225,6 +225,32 @@ internal static partial class BootstrapSelfTest
                 stochastic.Windows.Single().DynamicConditions.Length == 0 &&
                 stochastic.Windows.Single().StochasticOutcome,
             "Stochastic machine output evidence drifted.");
+
+        var stochasticFallback = AcquisitionRouteCalendarResolutionBuilder
+            .ResolveMachineWindows(
+                "(O)465",
+                MachineRoute(
+                    "native_machine_item_query_output",
+                    "machine:(BC)90:rule:0:output:1",
+                    "payload.(BC)90.OutputRules[0].OutputItem[1].ItemId"),
+                machines,
+                337);
+        Require(stochasticFallback.Status ==
+                    "resolved_static_source_window_target_date_pending" &&
+                stochasticFallback.MachineSource is
+                {
+                    OutputIndex: 1,
+                    UseFirstValidOutput: true,
+                    StochasticOutcome: true
+                } &&
+                stochasticFallback.Windows.Single().DynamicConditions.Length == 0 &&
+                AcquisitionRouteTargetDateStochasticRetryBuilder
+                    .TryMachineSingleAttemptProbability(
+                        MachineCalendarRoute(stochasticFallback),
+                        out var fallbackProbability,
+                        out _) &&
+                Math.Abs(fallbackProbability - 0.9d) < 1e-12,
+            "A probabilistically exact later first-valid machine output did not preserve native selection order.");
 
         var flavored = AcquisitionRouteCalendarResolutionBuilder
             .ResolveMachineWindows(

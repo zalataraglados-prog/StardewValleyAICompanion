@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
@@ -64,7 +62,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             probability = 1d;
             for (var index = 0; index <= source.OutputIndex; index++)
             {
-                if (!TrySimpleMachineConditionProbability(
+                if (!AcquisitionMachineConditionProbability.TryResolveSimple(
                         ordered[index].Condition,
                         out var conditionProbability))
                 {
@@ -83,7 +81,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
 
         if (ordered.Length == 1)
         {
-            if (TrySimpleMachineConditionProbability(
+            if (AcquisitionMachineConditionProbability.TryResolveSimple(
                     ordered[0].Condition,
                     out probability))
             {
@@ -95,7 +93,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             return false;
         }
         if (ordered.Any(row =>
-                !TrySimpleMachineConditionProbability(
+                !AcquisitionMachineConditionProbability.TryResolveSimple(
                     row.Condition,
                     out var rowProbability) ||
                 rowProbability != 1d))
@@ -137,7 +135,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         }
         foreach (var condition in stochastic)
         {
-            if (!TrySimpleMachineConditionProbability(
+            if (!AcquisitionMachineConditionProbability.TryResolveSimple(
                     condition,
                     out var conditionProbability))
             {
@@ -150,28 +148,4 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         return true;
     }
 
-    private static bool TrySimpleMachineConditionProbability(
-        string condition,
-        out double probability)
-    {
-        probability = 0d;
-        if (string.IsNullOrWhiteSpace(condition) ||
-            string.Equals(condition.Trim(), "TRUE", StringComparison.Ordinal))
-        {
-            probability = 1d;
-            return true;
-        }
-        var parts = condition.Split(
-            (char[]?)null,
-            StringSplitOptions.RemoveEmptyEntries |
-            StringSplitOptions.TrimEntries);
-        return parts.Length == 2 &&
-            string.Equals(parts[0], "RANDOM", StringComparison.OrdinalIgnoreCase) &&
-            double.TryParse(
-                parts[1],
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out probability) &&
-            probability >= 0d && probability <= 1d;
-    }
 }
