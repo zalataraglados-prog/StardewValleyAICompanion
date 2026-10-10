@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #195 Phase 0 validation trace 基线
+
+- #197 已完成默认关闭的 validation trace：Bootstrap 可用 `--validation-trace PATH` 与 `--validation-trace-scenario NAME` 输出独立 JSON；运行时脚本仅在显式设置 `STARDEWAI_VALIDATION_TRACE_DIR` 时为子进程采集 trace。追踪失败不会改变命令结果、stdout 协议或既有 fail-closed 门禁，所有记录固定 `cache_hit=false`。
+- 五个冻结代表场景已覆盖：单次低风险决策、机器 supporting-transition/portfolio、Full Shipment 单层 proof、anchor/high-risk preflight、Teacher dataset generation/relabel。聚合基线为 `complete`、`5/5`、零缓存命中，总墙钟 30.04 分钟。
+- 完整 Stage 1 Teacher 链占 29.99 分钟并读取 183.27 GiB：同一命令内出现 616729 次 content-addressed JSON read、454111 次 JSON deserialize 与 857757 次 frontier file hash。热点来自严格重建的重复只读工作，不是原生游戏执行。
+- 追踪记录按同一路径/producer/operation 聚合，保留首尾 operation ID、调用次数、累计时间/字节/哈希/解析成本以及有界 artifact ID，避免观测本身产生数百 MB 输出。完整链追踪由此前失败样本的 551 MB 降为约 2.1 MB；业务校验次数没有减少。
+- 路线证据负例同步修正：移除全局 social route evidence 后，当前 Farm 上的 3 条原生作物路线仍可由实时当前位置证明；Beach/FixtureShop 两条跨图路线必须以 `social_route_date_evidence_unavailable` 阻断。整体仍为 partial、不可训练。完整 `self-test-current-stage-one-collection` 已以退出码 0 覆盖该边界。
+- 下一顺序固定为 #198 本地 fast-check advisory，再做 #199 单次 invocation 内 immutable read/parse/hash 去重。不得先引入跨 run 或跨 snapshot cache，也不得缩小 GitHub PR 全量 quality、fresh snapshot、ownership、lease、execution receipt 或 formal-training 门禁。详见 `docs/validation-trace-phase0.md` 与机器可读基线 `docs/validation-trace-phase0-baseline.json`。
+
 ## 2026-10-08 Full Shipment anchor 证明重基
 
 - 10 月 8 日的机器首个有效输出修复把 34 条机器路线从错误的确定性通过改为显式阻塞。Sap 与放射性矿目标路线本身没有变化，但旧证明中的全局日历因此按设计失效，production evidence preflight 会以 `Calendar resolution drifted from deterministic source compilation` 失败关闭。

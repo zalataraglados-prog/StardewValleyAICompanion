@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
@@ -14,91 +15,162 @@ public static class ContentAddressedJsonArtifactReader
         "stardewai.content_addressed_json.v1";
 
     private const string BlobDirectoryName = "_snapshot-blobs";
+    private const string TraceProducerId =
+        "StardewAI.Core.ContentAddressedJsonArtifactReader";
+    private const string TraceProducerVersion = "v1";
     private static readonly UTF8Encoding Utf8WithoutBom = new(false);
 
     public static string ReadAllText(string logicalPath)
     {
+        using var operation = ValidationTraceSession.BeginOperation(
+            "content_addressed_json_read",
+            TraceProducerId,
+            TraceProducerVersion,
+            logicalPath);
         var stored = File.ReadAllText(logicalPath, Utf8WithoutBom);
-        return MaterializeIfNeeded(logicalPath, stored);
+        try
+        {
+            operation.AddBytesRead(new FileInfo(logicalPath).Length);
+        }
+        catch
+        {
+            // Diagnostic byte accounting must not change read semantics.
+        }
+        return MaterializeIfNeeded(logicalPath, stored, operation);
     }
 
     public static string MaterializeIfNeeded(
         string logicalPath,
         string stored)
     {
-        using var document = JsonDocument.Parse(stored);
-        var root = document.RootElement;
-        if (root.ValueKind != JsonValueKind.Object ||
-            !root.TryGetProperty("schema_version", out var schema) ||
-            schema.GetString() != ManifestSchemaVersion)
-        {
-            return stored;
-        }
+        using var operation = ValidationTraceSession.BeginOperation(
+            "content_addressed_json_materialize",
+            TraceProducerId,
+            TraceProducerVersion,
+            logicalPath);
+        return MaterializeIfNeeded(logicalPath, stored, operation);
+    }
 
-        if (!root.TryGetProperty("blob_directory", out var blobDirectory) ||
-            blobDirectory.GetString() != BlobDirectoryName)
+    private static string MaterializeIfNeeded(
+        string logicalPath,
+        string stored,
+        ValidationTraceOperation operation)
+    {
+        var parseClock = operation.IsEnabled ? Stopwatch.StartNew() : null;
+        JsonDocument document;
+        try
         {
-            throw new InvalidDataException(
-                "Content-addressed JSON blob directory is invalid.");
+            document = JsonDocument.Parse(stored);
         }
-
-        var logicalDirectory = Path.GetDirectoryName(
-            Path.GetFullPath(logicalPath)) ?? throw new InvalidDataException(
-                "Content-addressed JSON directory is unavailable.");
-        var blobRoot = Path.Combine(logicalDirectory, BlobDirectoryName);
-        using var output = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(output))
+        finally
         {
-            writer.WriteStartObject();
-            foreach (var property in root.GetProperty("root_properties")
-                         .EnumerateArray())
+            parseClock?.Stop();
+            if (parseClock is not null)
             {
-                var name = RequiredString(property, "name");
-                writer.WritePropertyName(name);
-                var kind = RequiredString(property, "kind");
-                if (kind == "value")
-                {
-                    writer.WriteRawValue(ReadAndVerifyBlob(blobRoot, property));
-                    continue;
-                }
+                operation.AddJsonParseMilliseconds(
+                    parseClock.Elapsed.TotalMilliseconds);
+            }
+        }
+        using (document)
+        {
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("schema_version", out var schema) ||
+                schema.GetString() != ManifestSchemaVersion)
+            {
+                return stored;
+            }
 
-                if (kind != "object")
+            var materializeClock = operation.IsEnabled
+                ? Stopwatch.StartNew()
+                : null;
+            try
+            {
+
+                if (!root.TryGetProperty("blob_directory", out var blobDirectory) ||
+                    blobDirectory.GetString() != BlobDirectoryName)
                 {
                     throw new InvalidDataException(
-                        "Unknown content-addressed JSON chunk kind.");
+                        "Content-addressed JSON blob directory is invalid.");
                 }
-                writer.WriteStartObject();
-                foreach (var child in property.GetProperty("properties")
-                             .EnumerateArray())
+
+                var logicalDirectory = Path.GetDirectoryName(
+                    Path.GetFullPath(logicalPath)) ?? throw new InvalidDataException(
+                        "Content-addressed JSON directory is unavailable.");
+                var blobRoot = Path.Combine(logicalDirectory, BlobDirectoryName);
+                using var output = new MemoryStream();
+                using (var writer = new Utf8JsonWriter(output))
                 {
-                    writer.WritePropertyName(RequiredString(child, "name"));
-                    writer.WriteRawValue(ReadAndVerifyBlob(blobRoot, child));
+                    writer.WriteStartObject();
+                    foreach (var property in root.GetProperty("root_properties")
+                                 .EnumerateArray())
+                    {
+                        var name = RequiredString(property, "name");
+                        writer.WritePropertyName(name);
+                        var kind = RequiredString(property, "kind");
+                        if (kind == "value")
+                        {
+                            writer.WriteRawValue(ReadAndVerifyBlob(
+                                blobRoot,
+                                property,
+                                operation));
+                            continue;
+                        }
+
+                        if (kind != "object")
+                        {
+                            throw new InvalidDataException(
+                                "Unknown content-addressed JSON chunk kind.");
+                        }
+                        writer.WriteStartObject();
+                        foreach (var child in property.GetProperty("properties")
+                                     .EnumerateArray())
+                        {
+                            writer.WritePropertyName(RequiredString(child, "name"));
+                            writer.WriteRawValue(ReadAndVerifyBlob(
+                                blobRoot,
+                                child,
+                                operation));
+                        }
+                        writer.WriteEndObject();
+                    }
+                    writer.WriteEndObject();
                 }
-                writer.WriteEndObject();
+
+                var materialized = output.ToArray();
+                var expectedBytes = root.GetProperty("logical_bytes").GetInt64();
+                var expectedSha256 = RequiredString(root, "logical_sha256");
+                var actualSha256 = Sha256(materialized);
+                operation.AddHashBytes(materialized.LongLength);
+                operation.AddArtifactId(expectedSha256);
+                if (materialized.LongLength != expectedBytes ||
+                    !string.Equals(
+                        actualSha256,
+                        expectedSha256,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        "Content-addressed JSON materialization does not match its manifest.");
+                }
+
+                return Utf8WithoutBom.GetString(materialized);
             }
-            writer.WriteEndObject();
+            finally
+            {
+                materializeClock?.Stop();
+                if (materializeClock is not null)
+                {
+                    operation.AddMaterializeMilliseconds(
+                        materializeClock.Elapsed.TotalMilliseconds);
+                }
+            }
         }
-
-        var materialized = output.ToArray();
-        var expectedBytes = root.GetProperty("logical_bytes").GetInt64();
-        var expectedSha256 = RequiredString(root, "logical_sha256");
-        var actualSha256 = Sha256(materialized);
-        if (materialized.LongLength != expectedBytes ||
-            !string.Equals(
-                actualSha256,
-                expectedSha256,
-                StringComparison.Ordinal))
-        {
-            throw new InvalidDataException(
-                "Content-addressed JSON materialization does not match its manifest.");
-        }
-
-        return Utf8WithoutBom.GetString(materialized);
     }
 
     private static byte[] ReadAndVerifyBlob(
         string blobRoot,
-        JsonElement reference)
+        JsonElement reference,
+        ValidationTraceOperation operation)
     {
         var sha256 = RequiredString(reference, "sha256");
         if (sha256.Length != 64 || sha256.Any(character =>
@@ -120,6 +192,7 @@ public static class ContentAddressedJsonArtifactReader
         }
 
         using var input = File.OpenRead(blobPath);
+        operation.AddBytesRead(input.Length);
         using var gzip = new GZipStream(input, CompressionMode.Decompress);
         using var output = new MemoryStream();
         gzip.CopyTo(output);
@@ -127,6 +200,8 @@ public static class ContentAddressedJsonArtifactReader
         var expectedBytes = reference.GetProperty("uncompressed_bytes")
             .GetInt64();
         var actualSha256 = Sha256(bytes);
+        operation.AddHashBytes(bytes.LongLength);
+        operation.AddArtifactId(sha256);
         if (bytes.LongLength != expectedBytes ||
             !string.Equals(actualSha256, sha256, StringComparison.Ordinal))
         {

@@ -1,0 +1,144 @@
+{
+  "schema_version": "stardewai.validation_trace_baseline.v1",
+  "status": "complete",
+  "trace_root": "artifacts/validation-trace-phase0-baseline-20261011/traces",
+  "trace_count": 5,
+  "cache_hit_count": 0,
+  "operation_cpu_sampling_rates": [
+    256
+  ],
+  "covered_scenarios": [
+    "anchor_high_risk_evidence_preflight",
+    "full_shipment_single_layer_proof",
+    "machine_supporting_transition_portfolio",
+    "single_low_risk_decision",
+    "teacher_dataset_generation_relabel"
+  ],
+  "missing_representative_scenarios": [],
+  "representative_coverage_complete": true,
+  "total_wall_ms": 1802236.068,
+  "total_cpu_ms": 1847750,
+  "total_bytes_read": 196793249100,
+  "total_hash_bytes": 102652158001,
+  "top_commands": [
+    {
+      "operation_kind": "command",
+      "producer_id": "StardewAI.GoalConditionedBootstrap",
+      "producer_version": "1.0.0.0",
+      "command": "self-test-current-stage-one-collection",
+      "invocation_count": 1,
+      "cumulative_wall_ms": 1799630.309,
+      "cumulative_cpu_ms": 1845171.875,
+      "bytes_read": 196788805556,
+      "hash_bytes": 102650071362,
+      "json_parse_ms": 659583.149,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "command",
+      "producer_id": "StardewAI.GoalConditionedBootstrap",
+      "producer_version": "1.0.0.0",
+      "command": "self-test-bootstrap-hermetic",
+      "invocation_count": 1,
+      "cumulative_wall_ms": 1395.713,
+      "cumulative_cpu_ms": 1390.625,
+      "bytes_read": 0,
+      "hash_bytes": 0,
+      "json_parse_ms": 0,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "command",
+      "producer_id": "StardewAI.GoalConditionedBootstrap",
+      "producer_version": "1.0.0.0",
+      "command": "self-test-acquisition-route-dispatch",
+      "invocation_count": 1,
+      "cumulative_wall_ms": 906.992,
+      "cumulative_cpu_ms": 906.25,
+      "bytes_read": 0,
+      "hash_bytes": 0,
+      "json_parse_ms": 0,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "command",
+      "producer_id": "StardewAI.GoalConditionedBootstrap",
+      "producer_version": "1.0.0.0",
+      "command": "self-test-full-shipment-static-compilability",
+      "invocation_count": 1,
+      "cumulative_wall_ms": 291.826,
+      "cumulative_cpu_ms": 265.625,
+      "bytes_read": 4443544,
+      "hash_bytes": 2086639,
+      "json_parse_ms": 69.604,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "command",
+      "producer_id": "StardewAI.GoalConditionedBootstrap",
+      "producer_version": "1.0.0.0",
+      "command": "self-test-full-shipment-runtime-sample-evidence",
+      "invocation_count": 1,
+      "cumulative_wall_ms": 11.228,
+      "cumulative_cpu_ms": 15.625,
+      "bytes_read": 0,
+      "hash_bytes": 0,
+      "json_parse_ms": 0,
+      "materialize_ms": 0
+    }
+  ],
+  "top_operations": [
+    {
+      "operation_kind": "content_addressed_json_read",
+      "producer_id": "StardewAI.Core.ContentAddressedJsonArtifactReader",
+      "producer_version": "v1",
+      "command": "",
+      "invocation_count": 616729,
+      "cumulative_wall_ms": 578476.125,
+      "cumulative_cpu_ms": 616000,
+      "bytes_read": 94141091099,
+      "hash_bytes": 0,
+      "json_parse_ms": 206246.577,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "json_deserialize",
+      "producer_id": "StardewAI.GoalConditionedBootstrap.CurrentTeacherFrontierSupport",
+      "producer_version": "v1",
+      "command": "",
+      "invocation_count": 454111,
+      "cumulative_wall_ms": 453521.674,
+      "cumulative_cpu_ms": 476000,
+      "bytes_read": 0,
+      "hash_bytes": 0,
+      "json_parse_ms": 453406.176,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "file_hash",
+      "producer_id": "StardewAI.GoalConditionedBootstrap.CurrentTeacherFrontierSupport",
+      "producer_version": "v1",
+      "command": "",
+      "invocation_count": 857757,
+      "cumulative_wall_ms": 371665.92,
+      "cumulative_cpu_ms": 448000,
+      "bytes_read": 100761393738,
+      "hash_bytes": 100761393738,
+      "json_parse_ms": 0,
+      "materialize_ms": 0
+    },
+    {
+      "operation_kind": "file_hash",
+      "producer_id": "StardewAI.GoalConditionedBootstrap.ContentInventoryVerifier",
+      "producer_version": "v1",
+      "command": "",
+      "invocation_count": 14997,
+      "cumulative_wall_ms": 6924.617,
+      "cumulative_cpu_ms": 8000,
+      "bytes_read": 1890764263,
+      "hash_bytes": 1890764263,
+      "json_parse_ms": 0,
+      "materialize_ms": 0
+    }
+  ]
+}

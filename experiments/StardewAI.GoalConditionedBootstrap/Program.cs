@@ -1,12 +1,30 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
+using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 
 var command = args.FirstOrDefault() ?? string.Empty;
 var options = Arguments.Parse(args.Skip(1).ToArray());
+var validationTracePath = options.Optional("validation-trace") ??
+    Environment.GetEnvironmentVariable("STARDEWAI_VALIDATION_TRACE");
+var processStartMilliseconds = string.IsNullOrWhiteSpace(validationTracePath)
+    ? 0
+    : TraceProcessStartMilliseconds();
+using var validationTrace = ValidationTraceSession.TryStart(
+    validationTracePath,
+    command,
+    "StardewAI.GoalConditionedBootstrap",
+    typeof(CommandDefinition).Assembly.GetName().Version?.ToString() ?? "unknown",
+    options.Optional("validation-trace-scenario") ??
+        Environment.GetEnvironmentVariable("STARDEWAI_VALIDATION_TRACE_SCENARIO"),
+    string.IsNullOrWhiteSpace(validationTracePath)
+        ? null
+        : options.ExistingInputFiles(),
+    processStartMilliseconds);
 var commandDefinitions = new CommandDefinition[]
 {
     new("audit-knowledge", AuditKnowledge),
@@ -104,6 +122,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
+    new("build-validation-trace-baseline", BuildValidationTraceBaseline),
     new("rehash-content", RehashContent),
     new("teacher-plan", BuildTeacherPlan),
     new("import-legacy", ImportLegacy),
@@ -148,6 +167,25 @@ catch (Exception ex)
         message = ex.Message
     }, JsonDefaults.Options));
     Environment.ExitCode = 1;
+}
+finally
+{
+    validationTrace?.Complete(Environment.ExitCode);
+}
+
+static double TraceProcessStartMilliseconds()
+{
+    try
+    {
+        return Math.Max(
+            0,
+            (DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime())
+                .TotalMilliseconds);
+    }
+    catch
+    {
+        return 0;
+    }
 }
 
 static void AuditKnowledge(Arguments options)
@@ -2274,6 +2312,10 @@ static void SelfTestGoalMethodTeacherCoverage(Arguments options)
         options.Required("corpus-manifest"),
         options.Required("output-root"));
 
+static void BuildValidationTraceBaseline(Arguments options) => Write(
+    options.Required("output"),
+    ValidationTraceBaselineBuilder.Build(options.Required("trace-root")));
+
 static void Write(string path, object value)
 {
     var fullPath = Path.GetFullPath(path);
@@ -2388,6 +2430,43 @@ internal sealed class Arguments
         values.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value
             : null;
+
+    public ValidationTraceInput[] ExistingInputFiles()
+    {
+        var result = new List<ValidationTraceInput>();
+        foreach (var pair in values)
+        {
+            if (string.Equals(
+                    pair.Key,
+                    "validation-trace",
+                    StringComparison.Ordinal) ||
+                pair.Key.Contains("output", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (File.Exists(pair.Value))
+                {
+                    result.Add(new ValidationTraceInput
+                    {
+                        ArgumentName = pair.Key,
+                        Path = Path.GetFullPath(pair.Value)
+                    });
+                }
+            }
+            catch
+            {
+                // Input discovery is diagnostic-only.
+            }
+        }
+
+        return result
+            .OrderBy(value => value.ArgumentName, StringComparer.Ordinal)
+            .ThenBy(value => value.Path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
 }
 
 internal static class JsonDefaults

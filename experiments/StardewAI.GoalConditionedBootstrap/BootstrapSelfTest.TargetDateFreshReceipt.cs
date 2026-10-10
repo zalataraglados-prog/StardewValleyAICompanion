@@ -83,7 +83,13 @@ internal static partial class BootstrapSelfTest
                     .RouteBindingParameters(
                         requirement,
                         portfolioReceipt.PortfolioId,
-                        portfolioReceipt.CommittedLedgerRevision),
+                        portfolioReceipt.CommittedLedgerRevision)
+                    .Append(new SmallModelActionParameter
+                    {
+                        Name = "precondition",
+                        Value = "candidate_id:" + selectedCandidateId
+                    })
+                    .ToArray(),
                 Steps = new[]
                 {
                     new CompiledActionStep

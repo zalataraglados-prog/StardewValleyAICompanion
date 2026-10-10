@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Diagnostics;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
@@ -147,10 +148,7 @@ internal static class CurrentTeacherFrontierSupport
         ContentAddressedJsonArtifactReader.ReadAllText(path);
 
     public static T Read<T>(string path, string label) =>
-        JsonSerializer.Deserialize<T>(
-            ReadArtifactText(path),
-            JsonDefaults.Options)
-        ?? throw new InvalidDataException(label + " is null.");
+        ReadJson<T>(path, label);
 
     public static string RequiredString(JsonElement value, string property)
     {
@@ -166,8 +164,39 @@ internal static class CurrentTeacherFrontierSupport
 
     public static string HashFile(string path)
     {
+        using var operation = ValidationTraceSession.BeginOperation(
+            "file_hash",
+            "StardewAI.GoalConditionedBootstrap.CurrentTeacherFrontierSupport",
+            "v1",
+            path);
         using var stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+        operation.AddBytesRead(stream.Length);
+        operation.AddHashBytes(stream.Length);
+        var hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+        operation.AddArtifactId(hash);
+        return hash;
+    }
+
+    private static T ReadJson<T>(string path, string label)
+    {
+        var text = ReadArtifactText(path);
+        using var operation = ValidationTraceSession.BeginOperation(
+            "json_deserialize",
+            "StardewAI.GoalConditionedBootstrap.CurrentTeacherFrontierSupport",
+            "v1",
+            path);
+        var clock = operation.IsEnabled ? Stopwatch.StartNew() : null;
+        try
+        {
+            return JsonSerializer.Deserialize<T>(text, JsonDefaults.Options)
+                ?? throw new InvalidDataException(label + " is null.");
+        }
+        finally
+        {
+            clock?.Stop();
+            if (clock is not null)
+                operation.AddJsonParseMilliseconds(clock.Elapsed.TotalMilliseconds);
+        }
     }
 
     private static bool IsCurrentCandidate(PolicyEventCandidatePrediction value) =>
