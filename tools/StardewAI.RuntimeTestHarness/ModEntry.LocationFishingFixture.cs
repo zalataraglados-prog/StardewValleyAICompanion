@@ -34,6 +34,12 @@ public sealed partial class ModEntry
         }
 
         var player = Game1.player;
+        var initializedTutorialPrerequisite = false;
+        if (player.fishCaught.Length == 0)
+        {
+            player.fishCaught.Add("(O)145", new[] { 1, 1 });
+            initializedTutorialPrerequisite = true;
+        }
         var rod = player.Items.OfType<FishingRod>()
             .OrderByDescending(value => value.UpgradeLevel)
             .FirstOrDefault();
@@ -71,6 +77,7 @@ public sealed partial class ModEntry
             ReferenceEquals(player.currentLocation, location) &&
             player.TilePoint == stand &&
             player.CurrentTool is FishingRod &&
+            player.fishCaught.Length > 0 &&
             location.isTileFishable(bobber.X, bobber.Y);
         return new TrainingExecutionResult
         {
@@ -91,6 +98,7 @@ public sealed partial class ModEntry
                 ? new[]
                 {
                     "fixture_equipped_rod_without_injecting_catch_output",
+                    "fixture_satisfied_native_tutorial_gate_with_non_target_prior_catch",
                     "fixture_selected_native_fishable_tile",
                     "fixture_transition_is_not_training_eligible"
                 }
@@ -100,7 +108,9 @@ public sealed partial class ModEntry
             ObservedEffect = "location=" + location.NameOrUniqueName +
                 ";stand=" + stand.X + "," + stand.Y +
                 ";bobber=" + bobber.X + "," + bobber.Y +
-                ";rod_slot=" + player.CurrentToolIndex,
+                ";rod_slot=" + player.CurrentToolIndex +
+                ";initialized_tutorial_prerequisite=" +
+                initializedTutorialPrerequisite,
             TargetLocation = location.NameOrUniqueName,
             TargetTileX = stand.X,
             TargetTileY = stand.Y,
