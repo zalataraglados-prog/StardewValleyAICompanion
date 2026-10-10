@@ -106,6 +106,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (requirement.RouteKind is not
             ("native_location_fish_spawn" or
              "native_mine_fishing_override" or
+             "native_monster_drop_table" or
              "native_radioactive_ore_node" or
              "recipe_output"))
         {
