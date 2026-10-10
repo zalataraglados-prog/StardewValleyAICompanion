@@ -403,6 +403,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var source = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var candidates = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var locationResolver = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionLocationRouteTargetResolver.cs");
 
         Assert.Contains(
             "\"fish_pond_output_sample\" { \"full_shipment:item:812\" }",
@@ -427,6 +435,22 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "QualifiedItemId = \"(O)812\"",
             source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"fishing.service_fish_ponds\"",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (routeKind == \"native_fish_pond_output\")",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_fish_pond_terminal_evidence_incomplete",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_fish_pond_output\" or",
+            locationResolver,
             StringComparison.Ordinal);
     }
 

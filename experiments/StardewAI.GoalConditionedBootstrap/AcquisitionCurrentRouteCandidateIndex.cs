@@ -12,7 +12,8 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
     {
         "mining.reach_depth",
         "farm.collect_machine_outputs",
-        "foraging.harvest_tree_product"
+        "foraging.harvest_tree_product",
+        "fishing.service_fish_ponds"
     };
 
     private AcquisitionCurrentRouteCandidateIndex(
@@ -375,6 +376,17 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             if (terrainComplete && machineComplete)
                 return reasons.Count == 0;
             reasons.Add("current_tree_tapper_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind == "native_fish_pond_output")
+        {
+            if (TryField("farm", "buildings", out var buildings) &&
+                FieldStatus(buildings) == "available" &&
+                FieldValue(buildings).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_fish_pond_terminal_evidence_incomplete");
             return false;
         }
         reasons.Add("current_route_candidate_kind_not_supported:" + routeKind);
