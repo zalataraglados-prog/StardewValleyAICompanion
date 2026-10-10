@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
+using StardewValley.Delegates;
 using StardewValley.Extensions;
 using StardewValley.GameData;
 using StardewValley.GameData.Locations;
@@ -108,6 +109,13 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                         ignoreQueryKeys);
                 var conditionProbabilityResolved =
                     IsConditionResolvedForTerminalProbability(spawn.Condition);
+                var conditionFalseStableDuringRepeatedCasts =
+                    IsConditionFalseStableDuringRepeatedCasts(
+                        spawn.Condition,
+                        location,
+                        player,
+                        conditionRandom,
+                        ignoreQueryKeys);
                 var ruleSpec = new FishingRuleEligibilitySpec
                 {
                     Season = spawn.Season?.ToString(),
@@ -197,6 +205,9 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                     condition_met_for_probability = conditionProbabilityResolved
                         ? conditionMet
                         : (bool?)null,
+                    condition_false_stable_during_repeated_casts =
+                        !conditionMet &&
+                        conditionFalseStableDuringRepeatedCasts,
                     condition_preview_seed = seed,
                     season = spawn.Season?.ToString(),
                     fish_area_id = spawn.FishAreaId,
@@ -341,6 +352,86 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
         {
             return false;
         }
+    }
+
+    private static bool IsConditionFalseStableDuringRepeatedCasts(
+        string? condition,
+        GameLocation location,
+        Farmer player,
+        Random random,
+        HashSet<string>? ignoreQueryKeys)
+    {
+        if (string.Equals(condition, "FALSE", StringComparison.Ordinal))
+        {
+            return true;
+        }
+        if (string.IsNullOrWhiteSpace(condition) ||
+            string.Equals(condition, "TRUE", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        try
+        {
+            var context = new GameStateQueryContext(
+                location,
+                player,
+                null,
+                null,
+                random,
+                ignoreQueryKeys);
+            return GameStateQuery.Parse(condition).Any(parsed =>
+                IsStableFalseClause(parsed, context, ignoreQueryKeys));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsStableFalseClause(
+        GameStateQuery.ParsedGameStateQuery parsed,
+        GameStateQueryContext context,
+        HashSet<string>? ignoreQueryKeys)
+    {
+        if (!string.IsNullOrWhiteSpace(parsed.Error) ||
+            parsed.Query.Length == 0 ||
+            parsed.Resolver?.Method.DeclaringType !=
+                typeof(GameStateQuery.DefaultResolvers) ||
+            ignoreQueryKeys?.Contains(parsed.Query[0]) == true)
+        {
+            return false;
+        }
+
+        var key = parsed.Query[0];
+        var stableForEitherValue =
+            string.Equals(key, "TRUE", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(key, "FALSE", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                key,
+                "IS_FESTIVAL_DAY",
+                StringComparison.OrdinalIgnoreCase);
+        var stableOnlyWhileFalse = !parsed.Negated &&
+            string.Equals(
+                key,
+                "PLAYER_SPECIAL_ORDER_RULE_ACTIVE",
+                StringComparison.OrdinalIgnoreCase) &&
+            parsed.Query.Length >= 3 &&
+            (string.Equals(
+                    parsed.Query[1],
+                    "Current",
+                    StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(
+                    parsed.Query[1],
+                    "Target",
+                    StringComparison.OrdinalIgnoreCase));
+        if (!stableForEitherValue && !stableOnlyWhileFalse)
+        {
+            return false;
+        }
+
+        var value = parsed.Resolver(parsed.Query, context);
+        return value == parsed.Negated;
     }
 
 }
