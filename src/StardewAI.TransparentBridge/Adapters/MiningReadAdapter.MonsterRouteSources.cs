@@ -9,12 +9,18 @@ public sealed partial class MiningReadAdapter
         MiningMonsterDropProjection drops)
     {
         const string source = "GameLocation.monsterDrop/Data/Monsters";
+        var nativeTableIds = MiningMonsterDropResolver
+            .ReadNativeMonsterDataQualifiedItemIds(monster)
+            .ToHashSet(StringComparer.Ordinal);
+        var realizedNativeTableIds = drops.SelectedBaseDropQualifiedItemIds
+            .Where(nativeTableIds.Contains);
         return drops.DropProbabilityRules
             .Where(rule => string.Equals(
                 rule.Source,
                 source,
                 StringComparison.Ordinal))
             .SelectMany(rule => rule.QualifiedItemIds)
+            .Concat(realizedNativeTableIds)
             .Where(itemId => !string.IsNullOrWhiteSpace(itemId))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(itemId => itemId, StringComparer.Ordinal)

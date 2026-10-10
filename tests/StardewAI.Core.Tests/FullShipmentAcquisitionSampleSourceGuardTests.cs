@@ -1081,8 +1081,16 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
-            "value = \"monster:Green Slime\"",
+            "value = \"monster:Frost Jelly\"",
             runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadNativeMonsterDataQualifiedItemIds(monster)",
+            ReadRepositoryFile(
+                "src",
+                "StardewAI.TransparentBridge",
+                "Adapters",
+                "MiningReadAdapter.MonsterRouteSources.cs"),
             StringComparison.Ordinal);
         Assert.Contains(
             "name = \"acquisition_target_qualified_item_id\"",
