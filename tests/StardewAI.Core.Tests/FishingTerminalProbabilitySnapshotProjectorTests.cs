@@ -159,6 +159,97 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
         Assert.False(result.Probability!.IndependentRetryLowerBoundProven);
     }
 
+    [Fact]
+    public void StableFalseCompetitorConditionDoesNotBlockIndependentRetries()
+    {
+        using var document = JsonDocument.Parse(SnapshotJson(
+            Rule(
+                "inactive-special-order",
+                "890",
+                0,
+                0.15d,
+                1d,
+                condition: "PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current DROP_QI_BEANS",
+                conditionMet: false,
+                conditionFalseStable: true,
+                blockingReasons: new[] { "game_state_query_false" }),
+            Rule("target", "145", 1, 0.5d, 0.4d)));
+
+        var result = FishingTerminalProbabilitySnapshotProjector.Project(
+            document.RootElement,
+            "Beach",
+            2,
+            "(O)145",
+            0,
+            1,
+            5);
+
+        Assert.True(result.Resolved);
+        Assert.True(result.Probability!.IndependentRetryLowerBoundProven);
+        Assert.Equal(0.2d,
+            result.Probability.SingleAttemptProbabilityLowerBound!.Value,
+            10);
+    }
+
+    [Fact]
+    public void UnprovenFalseCompetitorConditionStillBlocksIndependentRetries()
+    {
+        using var document = JsonDocument.Parse(SnapshotJson(
+            Rule(
+                "mutable-condition",
+                "890",
+                0,
+                0.15d,
+                1d,
+                condition: "TIME 900 2600",
+                conditionMet: false,
+                blockingReasons: new[] { "game_state_query_false" }),
+            Rule("target", "145", 1, 0.5d, 0.4d)));
+
+        var result = FishingTerminalProbabilitySnapshotProjector.Project(
+            document.RootElement,
+            "Beach",
+            2,
+            "(O)145",
+            0,
+            1,
+            5);
+
+        Assert.True(result.Resolved);
+        Assert.False(result.Probability!.IndependentRetryLowerBoundProven);
+        Assert.Contains(
+            "competitor_retry_context_not_stable:mutable-condition",
+            result.Probability.RetryBlockingReasons);
+    }
+
+    [Fact]
+    public void StableSeasonMismatchDominatesMutableCompetitorFields()
+    {
+        using var document = JsonDocument.Parse(SnapshotJson(
+            Rule(
+                "out-of-season",
+                "160",
+                0,
+                0.2d,
+                1d,
+                condition: "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY",
+                catchLimit: 1,
+                blockingReasons: new[] { "season_mismatch" }),
+            Rule("target", "145", 1, 0.5d, 0.4d)));
+
+        var result = FishingTerminalProbabilitySnapshotProjector.Project(
+            document.RootElement,
+            "Beach",
+            2,
+            "(O)145",
+            0,
+            1,
+            5);
+
+        Assert.True(result.Resolved);
+        Assert.True(result.Probability!.IndependentRetryLowerBoundProven);
+    }
+
     private static string SnapshotJson(params object[] rules) =>
         SnapshotJsonWithBait(null, 5, rules);
 
@@ -228,7 +319,12 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
         double spawnChance,
         double acceptanceChance,
         bool conditionResolved = true,
-        string[]? randomSelectors = null)
+        string[]? randomSelectors = null,
+        string? condition = null,
+        bool conditionMet = true,
+        bool conditionFalseStable = false,
+        string[]? blockingReasons = null,
+        int catchLimit = -1)
     {
         var selectors = randomSelectors ?? Array.Empty<string>();
         var random = selectors.Length > 0;
@@ -259,16 +355,20 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
             random_item_ids = selectors,
             item_selection_mode = random ? "random_item_id" : "item_id",
             per_item_condition = (string?)null,
-            condition = (string?)null,
+            condition,
             condition_probability_resolved = conditionResolved,
-            condition_met_for_probability = conditionResolved ? true : (bool?)null,
+            condition_met_for_probability = conditionResolved
+                ? conditionMet
+                : (bool?)null,
+            condition_false_stable_during_repeated_casts =
+                conditionFalseStable,
             player_position = (object?)null,
             min_fishing_level = 0,
-            blocking_reasons = Array.Empty<string>(),
+            blocking_reasons = blockingReasons ?? Array.Empty<string>(),
             eligible_fishable_tile_indices = new[] { 0 },
             spawn_chance_probability_resolved = true,
             use_fish_caught_seeded_random = false,
-            catch_limit = -1,
+            catch_limit = catchLimit,
             set_flag_on_catch = (string?)null,
             effective_spawn_chance_preview = spawnChance,
             outputs

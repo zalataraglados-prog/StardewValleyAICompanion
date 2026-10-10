@@ -222,26 +222,38 @@ public static class FishingTerminalProbabilitySnapshotProjector
             rule,
             "spawn_chance_probability_resolved") == true;
         var seeded = Bool(rule, "use_fish_caught_seeded_random") == true;
-        var retryContextStable = repeatedCastEquipmentStable &&
-                                 string.IsNullOrWhiteSpace(
-                                     String(rule, "condition")) &&
-                                 string.IsNullOrWhiteSpace(
-                                     String(rule, "per_item_condition")) &&
-                                 Int(rule, "min_fishing_level") is int minimumLevel &&
-                                 minimumLevel <= fishingLevel &&
-                                 Int(rule, "catch_limit") == -1 &&
-                                 string.IsNullOrWhiteSpace(
-                                     String(rule, "set_flag_on_catch")) &&
-                                 !seeded;
+        var eligibleBeforeRandomRolls = conditionResolved && conditionMet &&
+                                        fixedBlockingReasons.Length == 0 &&
+                                        eligibleTile && standAllowed;
+        var stableIneligibility = conditionResolved &&
+                                  !eligibleBeforeRandomRolls &&
+                                  ((!conditionMet && Bool(
+                                          rule,
+                                          "condition_false_stable_during_repeated_casts") ==
+                                      true) ||
+                                   fixedBlockingReasons.Any(
+                                       IsStableRepeatedCastBlocker) ||
+                                   !eligibleTile ||
+                                   !standAllowed);
+        var retryContextStable = stableIneligibility ||
+                                 (repeatedCastEquipmentStable &&
+                                  string.IsNullOrWhiteSpace(
+                                      String(rule, "condition")) &&
+                                  string.IsNullOrWhiteSpace(
+                                      String(rule, "per_item_condition")) &&
+                                  Int(rule, "min_fishing_level") is int minimumLevel &&
+                                  minimumLevel <= fishingLevel &&
+                                  Int(rule, "catch_limit") == -1 &&
+                                  string.IsNullOrWhiteSpace(
+                                      String(rule, "set_flag_on_catch")) &&
+                                  !seeded);
 
         return new FishingTerminalProbabilityRule
         {
             RuleKey = ruleKey,
             Precedence = Int(rule, "precedence") ?? 0,
             EligibilityResolved = conditionResolved,
-            EligibleBeforeRandomRolls = conditionResolved && conditionMet &&
-                                        fixedBlockingReasons.Length == 0 &&
-                                        eligibleTile && standAllowed,
+            EligibleBeforeRandomRolls = eligibleBeforeRandomRolls,
             ProducesTarget = producesTarget,
             OutputResolutionComplete = outputProjection.Resolved,
             RetryContextStable = retryContextStable,
@@ -259,6 +271,12 @@ public static class FishingTerminalProbabilitySnapshotProjector
             TargetGenericAcceptanceProbability = outputProjection.AcceptanceProbability
         };
     }
+
+    private static bool IsStableRepeatedCastBlocker(string reason) =>
+        reason is "season_mismatch" or
+            "fishing_level_too_low" or
+            "magic_bait_required" or
+            "no_matching_fishable_tile";
 
     private static TargetOutputProjection ProjectTargetOutput(
         JsonElement rule,
