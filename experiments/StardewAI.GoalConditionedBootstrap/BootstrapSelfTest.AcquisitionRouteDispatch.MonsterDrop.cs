@@ -59,6 +59,30 @@ internal static partial class BootstrapSelfTest
         Require(rebuilt.Length == ranked.Length && reasons.Length == 0,
             "Exact monster-drop ranking did not reproduce from the transparent snapshot: " +
             string.Join(",", reasons));
+
+        var lowering = BushLowering() with
+        {
+            RouteKind = requirement.RouteKind,
+            SourceId = requirement.SourceId,
+            EndpointOptionIds = new[] { "mining.reach_depth" }
+        };
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    requirement,
+                    lowering,
+                    snapshot,
+                    rebuilt).Length == 1,
+            "Exact rebuilt monster-drop intent was rejected by dispatch selection.");
+        var injected = rebuilt.Select(CloneCandidate).ToArray();
+        injected[0].Parameters = injected[0].Parameters.Concat(new[]
+        {
+            Parameter("acquisition_source_id", requirement.SourceId)
+        }).ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    requirement,
+                    lowering,
+                    snapshot,
+                    injected).Length == 0,
+            "A monster-drop candidate with extra acquisition lineage was admitted.");
     }
 
     private static SnapshotEnvelope AcquisitionDispatchMonsterDropSnapshot()
