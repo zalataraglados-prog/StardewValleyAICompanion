@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -68,6 +69,107 @@ public sealed class FishingMainlineTests
         var catchStep = Assert.Single(catchItem.NormalizedCommand.Steps);
         Assert.Equal("catch_fish", catchStep.StepType);
         Assert.Contains("Beach:stand(1,5):bobber(5,5):rod_slot=0", catchStep.Target);
+    }
+
+    [Fact]
+    public void EveryReachableRuleKeepsARepresentativeCastCandidate()
+    {
+        var state = JsonNode.Parse(BaseState())!.AsObject();
+        var fishing = state["fishing"]!.AsObject();
+        fishing["fishable_tiles"]!["value"]!.AsArray().Add(
+            JsonNode.Parse(
+                """
+                {"tile_x":8,"tile_y":8,"water_depth":0,"fish_area_id":"river"}
+                """));
+        fishing["rod_contexts"]!["value"]![0]!["spawn_rules"]!["rules"]!
+            .AsArray()
+            .Add(JsonNode.Parse(
+                """
+                {
+                  "rule_key":"Data/Locations:Beach#1:(O)388",
+                  "source":"Data/Locations:Beach",
+                  "source_index":1,
+                  "id":"wood_only_shallow_pool",
+                  "condition_met":true,
+                  "player_position":null,
+                  "effective_spawn_chance_preview":0.9,
+                  "eligible_before_random_rolls":true,
+                  "blocking_reasons":[],
+                  "eligible_fishable_tile_indices":[1],
+                  "outputs":[{
+                    "output_index":0,
+                    "resolution_complete":true,
+                    "resolution_status":"direct_item",
+                    "item_id":"388",
+                    "qualified_item_id":"(O)388",
+                    "output_eligible_before_random_rolls":true,
+                    "output_blocking_reasons":[],
+                    "data_fish_chance_by_water_depth":[
+                      {"water_depth":0,"chance_preview":1.0}
+                    ]
+                  }]
+                }
+                """));
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                Snapshot(state.ToJsonString()),
+                new[] { "fishing.catch_fish" })
+            .Options);
+
+        Assert.Equal(2, option.EventCandidates.Length);
+        var woodCandidate = Assert.Single(option.EventCandidates.Where(
+            candidate => Outcomes(candidate).Any(outcome =>
+                OutcomeItemId(outcome) == "(O)388")));
+        AssertParameter(woodCandidate.Parameters, "bobber_tile_x", "8");
+        AssertParameter(woodCandidate.Parameters, "bobber_tile_y", "8");
+        Assert.Contains(
+            Outcomes(woodCandidate),
+            outcome => outcome.GetProperty("source_key").GetString() ==
+                "Data/Locations:Beach#1:(O)388");
+        Assert.All(
+            option.EventCandidates,
+            candidate => AssertParameter(
+                candidate.Parameters,
+                "outcome_distribution_complete",
+                "True"));
+    }
+
+    [Fact]
+    public void VerifiedRetryBudgetExpandsToRepeatedNativeCatchSteps()
+    {
+        var snapshot = Snapshot(BaseState());
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[] { "fishing.catch_fish" });
+        var source = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+        source.Parameters = source.Parameters.Concat(new[]
+        {
+            Parameter("acquisition_retry_budget_kind",
+                "independent_binomial_retry_budget"),
+            Parameter("acquisition_retry_required_attempt_count", "3"),
+            Parameter("acquisition_retry_single_attempt_success_probability",
+                "0.4"),
+            Parameter("acquisition_retry_target_success_probability", "0.95")
+        }).ToArray();
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability);
+
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            snapshot.StateHash);
+
+        var catches = plan.Steps;
+        Assert.Equal(3, catches.Length);
+        Assert.All(catches, step => Assert.Equal("catch_fish", step.Kind));
+        Assert.Equal(3, catches.Select(step => step.StepId).Distinct().Count());
+        Assert.Equal(
+            new[] { "1", "2", "3" },
+            catches.Select(step => ParameterValue(
+                step.Parameters,
+                "acquisition_retry_attempt_ordinal")));
     }
 
     [Fact]

@@ -109,93 +109,20 @@ namespace StardewAI.Core.OptionRegistry
                     continue;
                 }
 
-                var normalCast = FindBestCast(
-                    tiles.Where(tile => !reservedTileIndices.Contains(tile.Index)),
-                    default,
+                AddNormalRuleCandidates(
+                    rodContext,
+                    spawnRules,
+                    rules,
+                    tiles,
+                    reservedTileIndices,
                     fishingLevel,
                     grid,
-                    routeDistances);
-                if (normalCast is not null)
-                {
-                    foreach (var rule in rules.EnumerateArray())
-                    {
-                        var fixedRuleBlocks = Strings(rule, "blocking_reasons")
-                            .Where(reason => reason != "player_position_mismatch")
-                            .ToArray();
-                        var eligibleIndices = Ints(rule, "eligible_fishable_tile_indices");
-                        if (fixedRuleBlocks.Length > 0 || Bool(rule, "condition_met") != true ||
-                            !eligibleIndices.Contains(normalCast.Bobber.Index) ||
-                            !RectangleContains(rule.TryGetProperty("player_position", out var playerRectangle) ? playerRectangle : default, normalCast.StandX, normalCast.StandY) ||
-                            !rule.TryGetProperty("outputs", out var outputs) || outputs.ValueKind != JsonValueKind.Array)
-                        {
-                            continue;
-                        }
-
-                        foreach (var output in outputs.EnumerateArray())
-                        {
-                            var resolutionStatus = String(output, "resolution_status");
-                            if (Bool(output, "resolution_complete") != true ||
-                                Bool(output, "output_eligible_before_random_rolls") != true ||
-                                resolutionStatus is not ("direct_item" or "vanilla_secret_note_or_item"))
-                            {
-                                continue;
-                            }
-
-                            var ruleKey = String(rule, "rule_key");
-                            var qualifiedItemId = String(output, "qualified_item_id");
-                            var outputIndex = Int(output, "output_index");
-                            var chanceFactors = new[]
-                                {
-                                    Double(rule, "effective_spawn_chance_preview"),
-                                    ChanceAtDepth(output, normalCast.Bobber.WaterDepth),
-                                    Double(output, "output_local_chance_preview")
-                                }
-                                .Where(chance => chance.HasValue)
-                                .Select(chance => chance!.Value)
-                                .ToArray();
-                            double? expectedChance = chanceFactors.Length > 0
-                                ? chanceFactors.Aggregate(1d, (product, chance) => product * chance)
-                                : null;
-                            var fallbackMultiplier = BaseCatchFallbackMultiplier(rodContext, normalCast.Bobber.WaterDepth);
-                            if (fallbackMultiplier <= 0d)
-                            {
-                                continue;
-                            }
-                            if (expectedChance.HasValue)
-                            {
-                                expectedChance *= fallbackMultiplier;
-                            }
-                            candidates.Add(OutcomeCandidate(
-                                locationId,
-                                rodSlot,
-                                rodQualifiedId,
-                                energyCost,
-                                "rule",
-                                ruleKey,
-                                outputIndex,
-                                String(output, "item_id"),
-                                qualifiedItemId,
-                                normalCast,
-                                expectedChance,
-                                expectedChance.HasValue ? "rule_local_preview" : "unresolved_rule_local_probability",
-                                IntNullable(output, "effective_fish_difficulty"),
-                                Bool(rule, "is_boss_fish") == true,
-                                MaximumRawFishQuality(rodContext),
-                                Strings(output, "context_tags"),
-                                String(output, "context_tags_projection_status")));
-                        }
-                    }
-
-                    AddBaseFallbackCandidate(
-                        rodContext,
-                        spawnRules,
-                        normalCast,
-                        locationId,
-                        rodSlot,
-                        rodQualifiedId,
-                        energyCost,
-                        candidates);
-                }
+                    routeDistances,
+                    locationId,
+                    rodSlot,
+                    rodQualifiedId,
+                    energyCost,
+                    candidates);
             }
 
             if (candidates.Count > 0)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.Training
 {
@@ -10,6 +11,15 @@ namespace StardewAI.Core.Training
     {
         private static IEnumerable<SmallModelPlanStep> CatchFishSteps(PolicyEventCandidatePrediction candidate)
         {
+            var retryAttemptCountText = CandidateParameter(
+                candidate,
+                "acquisition_retry_required_attempt_count");
+            var retryAttemptCount = string.IsNullOrWhiteSpace(
+                    retryAttemptCountText)
+                ? 1
+                : CandidateInt(
+                    candidate,
+                    "acquisition_retry_required_attempt_count");
             if (!candidate.TileX.HasValue || !candidate.TileY.HasValue ||
                 !CandidateInt(candidate, "bobber_tile_x").HasValue ||
                 !CandidateInt(candidate, "bobber_tile_y").HasValue ||
@@ -18,7 +28,11 @@ namespace StardewAI.Core.Training
                 !string.Equals(CandidateParameter(candidate, "outcome_distribution_complete"), "true", StringComparison.OrdinalIgnoreCase) ||
                 string.IsNullOrWhiteSpace(CandidateParameter(candidate, "outcome_distribution_json")) ||
                 string.IsNullOrWhiteSpace(CandidateParameter(candidate, "possible_qualified_item_ids_json")) ||
-                !string.IsNullOrWhiteSpace(CandidateParameter(candidate, "expected_qualified_item_id")))
+                !string.IsNullOrWhiteSpace(CandidateParameter(candidate, "expected_qualified_item_id")) ||
+                !retryAttemptCount.HasValue ||
+                retryAttemptCount.Value <= 0 ||
+                retryAttemptCount.Value >
+                    StochasticRetryPolicy.MaximumIndependentAttemptCount)
             {
                 return Array.Empty<SmallModelPlanStep>();
             }
@@ -45,7 +59,18 @@ namespace StardewAI.Core.Training
                     }
                 });
             }
-            steps.Add(new SmallModelPlanStep
+            for (var attempt = 1; attempt <= retryAttemptCount.Value; attempt++)
+            {
+                var attemptParameters = retryAttemptCount.Value == 1
+                    ? candidate.Parameters
+                    : candidate.Parameters.Concat(new[]
+                    {
+                        Parameter(
+                            "acquisition_retry_attempt_ordinal",
+                            attempt.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture))
+                    }).ToArray();
+                steps.Add(new SmallModelPlanStep
                 {
                     StepId = StepId(candidate, "catch_fish", steps.Count),
                     Kind = "catch_fish",
@@ -67,8 +92,9 @@ namespace StardewAI.Core.Training
                         "success_requires_observed_post_state"
                     },
                     FailurePolicy = new[] { "cancel_safely_refresh_snapshot_and_replan" },
-                    Parameters = candidate.Parameters
+                    Parameters = attemptParameters
                 });
+            }
             return steps;
         }
 
