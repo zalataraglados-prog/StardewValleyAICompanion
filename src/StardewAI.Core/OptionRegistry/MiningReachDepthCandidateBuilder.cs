@@ -46,6 +46,18 @@ namespace StardewAI.Core.OptionRegistry
             var minReserveEnergy = ReadIntParameter(parameters, "minimum_reserve_energy");
             var resourcePreservationPolicy =
                 ReadParameter(parameters, "resource_preservation_policy");
+            var acquisitionRouteKind =
+                ReadParameter(parameters, "acquisition_target_route_kind");
+            var acquisitionSourceId =
+                ReadParameter(parameters, "acquisition_target_source_id");
+            var acquisitionQualifiedItemId =
+                ReadParameter(
+                    parameters,
+                    "acquisition_target_qualified_item_id");
+            var hasAcquisitionIntent =
+                !string.IsNullOrWhiteSpace(acquisitionRouteKind) ||
+                !string.IsNullOrWhiteSpace(acquisitionSourceId) ||
+                !string.IsNullOrWhiteSpace(acquisitionQualifiedItemId);
             if (string.IsNullOrWhiteSpace(resourcePreservationPolicy))
             {
                 resourcePreservationPolicy =
@@ -62,6 +74,12 @@ namespace StardewAI.Core.OptionRegistry
             var currentFamily = ReadString(currentMine.Value, "mine_kind");
             var deepestMineLevel = ReadIntOptional(resources.Value, "deepest_mine_level");
             var blocks = ValidateTarget(currentDepth, currentFamily, targetDepth, targetFamily).ToList();
+            blocks.AddRange(ValidateAcquisitionIntent(
+                hasAcquisitionIntent,
+                acquisitionRouteKind,
+                acquisitionSourceId,
+                acquisitionQualifiedItemId,
+                trainCombat));
             var targetSkillLevel = ReadIntParameter(
                     parameters,
                     "target_skill_level") ??
@@ -83,9 +101,18 @@ namespace StardewAI.Core.OptionRegistry
             var elevatorStart = ElevatorStartFor(currentDepth, targetDepth, currentFamily, deepestMineLevel);
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
-                Kind = trainCombat
-                    ? MiningObjectiveKinds.TrainCombat
-                    : MiningObjectiveKinds.ReachDepth,
+                Kind = hasAcquisitionIntent
+                    ? MiningObjectiveKinds.CollectMonsterDrop
+                    : trainCombat
+                        ? MiningObjectiveKinds.TrainCombat
+                        : MiningObjectiveKinds.ReachDepth,
+                TargetQualifiedItemIds = hasAcquisitionIntent
+                    ? new[] { acquisitionQualifiedItemId! }
+                    : Array.Empty<string>(),
+                TargetAuthoritativeRouteKind =
+                    acquisitionRouteKind ?? string.Empty,
+                TargetAuthoritativeSourceId =
+                    acquisitionSourceId ?? string.Empty,
                 MinimumReserveHealth = minReserveHealth ?? 0,
                 MinimumReserveEnergy = minReserveEnergy,
                 LatestExitTime = latestExitTime,
@@ -118,6 +145,23 @@ namespace StardewAI.Core.OptionRegistry
                     : "mining_floor_step_executor_not_implemented:" + floorStep.StepKind);
             }
 
+            var authoritativeRouteSourcesJson = hasAcquisitionIntent
+                ? MiningAuthoritativeRouteSourceBinding
+                    .ReadRequestedSelectedStepSource(
+                        snapshot,
+                        floorStep,
+                        acquisitionRouteKind ?? string.Empty,
+                        acquisitionSourceId ?? string.Empty,
+                        acquisitionQualifiedItemId ?? string.Empty)
+                : MiningAuthoritativeRouteSourceBinding
+                    .ReadSelectedStepSources(snapshot, floorStep);
+            if (hasAcquisitionIntent &&
+                string.Equals(floorStep.Status, "ready", StringComparison.Ordinal) &&
+                authoritativeRouteSourcesJson == "[]")
+            {
+                blocks.Add("acquisition_target_selected_source_mismatch");
+            }
+
             var available = blocks.Count == 0;
             var executionParameters = MiningFloorStepCompiler.BuildExecutionParameters(floorStep);
 
@@ -125,7 +169,13 @@ namespace StardewAI.Core.OptionRegistry
             {
                 new EventCandidate
                 {
-                    CandidateId = trainCombat
+                    CandidateId = hasAcquisitionIntent
+                        ? "mining:reach_depth:" +
+                            (targetDepth?.ToString() ?? "missing") +
+                            ":acquisition:" + acquisitionRouteKind + ":" +
+                            acquisitionSourceId + ":" +
+                            acquisitionQualifiedItemId
+                        : trainCombat
                         ? "mining:train_combat:" +
                             currentDepth + ":" + targetSkillLevel
                         : "mining:reach_depth:" +
@@ -140,6 +190,12 @@ namespace StardewAI.Core.OptionRegistry
                         (targetDepth?.ToString() ?? "missing") +
                         ";skill_training_target_id=" +
                         (trainCombat ? "combat" : "none") +
+                        ";acquisition_target_route_kind=" +
+                        (acquisitionRouteKind ?? "none") +
+                        ";acquisition_target_source_id=" +
+                        (acquisitionSourceId ?? "none") +
+                        ";acquisition_target_qualified_item_id=" +
+                        (acquisitionQualifiedItemId ?? "none") +
                         ";rolling_floor_step=" + floorStep.StepKind +
                         ";execution_option_id=" + executionOptionId,
                     EstimatedTicks = -1,
@@ -178,17 +234,63 @@ namespace StardewAI.Core.OptionRegistry
                             "resource_preservation_policy",
                             resourcePreservationPolicy),
                         Parameter(
+                            "acquisition_target_route_kind",
+                            acquisitionRouteKind ?? string.Empty),
+                        Parameter(
+                            "acquisition_target_source_id",
+                            acquisitionSourceId ?? string.Empty),
+                        Parameter(
+                            "acquisition_target_qualified_item_id",
+                            acquisitionQualifiedItemId ?? string.Empty),
+                        Parameter(
                             "authoritative_route_sources_json",
-                            MiningAuthoritativeRouteSourceBinding
-                                .ReadSelectedStepSources(
-                                    snapshot,
-                                    floorStep)),
+                            authoritativeRouteSourcesJson),
                         Parameter("estimate_status", "rolling_horizon_current_floor_step"),
                         Parameter("required_executor_profile", "mining_perfect_executor"),
                         Parameter("runtime_boundary", available ? "current_floor_step_executable" : floorStep.Reason)
                     }.Concat(executionParameters).ToArray()
                 }
             };
+        }
+
+        public static string[] ValidateAcquisitionIntent(
+            bool hasAcquisitionIntent,
+            string? routeKind,
+            string? sourceId,
+            string? qualifiedItemId,
+            bool trainCombat)
+        {
+            if (!hasAcquisitionIntent)
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>();
+            if (string.IsNullOrWhiteSpace(routeKind) ||
+                string.IsNullOrWhiteSpace(sourceId) ||
+                string.IsNullOrWhiteSpace(qualifiedItemId))
+            {
+                reasons.Add("acquisition_target_identity_incomplete");
+            }
+            if (!string.Equals(
+                    routeKind,
+                    "native_monster_drop_table",
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("unsupported_mining_acquisition_route_kind");
+            }
+            if (string.IsNullOrWhiteSpace(sourceId) ||
+                !sourceId.StartsWith("monster:", StringComparison.Ordinal) ||
+                sourceId.Length == "monster:".Length)
+            {
+                reasons.Add("acquisition_target_monster_source_invalid");
+            }
+            if (trainCombat)
+            {
+                reasons.Add(
+                    "acquisition_target_incompatible_with_skill_training");
+            }
+            return reasons.ToArray();
         }
 
         public static string[] ValidateSkillTraining(

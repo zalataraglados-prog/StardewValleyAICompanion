@@ -335,7 +335,19 @@ namespace StardewAI.Core.Execution
                     }
                 }
 
-                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs, movementTileDurationMs, bombFinisherAvailable) ??
+                return SelectMonster(
+                        monsters,
+                        search,
+                        grid,
+                        "target_drop_monster_reachable",
+                        objective.TargetQualifiedItemIds,
+                        monsterDropCatalogs,
+                        movementTileDurationMs,
+                        bombFinisherAvailable,
+                        targetAuthoritativeRouteKind:
+                            objective.TargetAuthoritativeRouteKind,
+                        targetAuthoritativeSourceId:
+                            objective.TargetAuthoritativeSourceId) ??
                     Blocked("no_reachable_monster_with_possible_target_drop");
             }
 

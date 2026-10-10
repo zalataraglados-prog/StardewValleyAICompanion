@@ -27,6 +27,52 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
+        public static string ReadRequestedSelectedStepSource(
+            SnapshotEnvelope snapshot,
+            MiningFloorStepPlan floorStep,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId)
+        {
+            var json = ReadSelectedStepSources(snapshot, floorStep);
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                var matches = document.RootElement.ValueKind ==
+                        JsonValueKind.Array
+                    ? document.RootElement.EnumerateArray()
+                        .Where(row => row.ValueKind ==
+                                JsonValueKind.Object &&
+                            string.Equals(
+                                ReadString(row, "route_kind"),
+                                routeKind,
+                                StringComparison.Ordinal) &&
+                            string.Equals(
+                                ReadString(row, "source_id"),
+                                sourceId,
+                                StringComparison.Ordinal) &&
+                            string.Equals(
+                                ReadString(row, "qualified_item_id"),
+                                qualifiedItemId,
+                                StringComparison.Ordinal))
+                        .ToArray()
+                    : Array.Empty<JsonElement>();
+                return matches.Length == 1
+                    ? SerializeSources(new[]
+                    {
+                        new MiningRouteSource(
+                            routeKind,
+                            sourceId,
+                            qualifiedItemId)
+                    })
+                    : "[]";
+            }
+            catch (JsonException)
+            {
+                return "[]";
+            }
+        }
+
         private static string ReadSelectedMonsterSources(
             SnapshotEnvelope snapshot,
             MiningFloorStepPlan floorStep)

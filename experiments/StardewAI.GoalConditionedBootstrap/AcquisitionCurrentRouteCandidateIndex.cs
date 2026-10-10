@@ -67,6 +67,12 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             BuildRollingMiningCandidates(snapshot),
             "mining.reach_depth",
             candidates,
+            reasons,
+            excludedRouteKind: "native_monster_drop_table");
+        AddCandidateSources(
+            BuildCurrentMonsterDropCandidates(snapshot),
+            "mining.reach_depth",
+            candidates,
             reasons);
         return new AcquisitionCurrentRouteCandidateIndex(
             snapshot,
@@ -91,12 +97,64 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         return MiningReachDepthCandidateBuilder.Build(snapshot, parameters);
     }
 
-    internal static SmallModelActionParameter[] BuildRollingMiningParameters(
+    private static EventCandidate[] BuildCurrentMonsterDropCandidates(
         SnapshotEnvelope snapshot)
+    {
+        if (!snapshot.State.TryGetValue("mining", out var mining) ||
+            mining.ValueKind != JsonValueKind.Object ||
+            !mining.TryGetProperty("monsters", out var field) ||
+            field.ValueKind != JsonValueKind.Object ||
+            FieldStatus(field) != "available" ||
+            FieldValue(field).ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<EventCandidate>();
+        }
+
+        var sources = FieldValue(field).EnumerateArray()
+            .Where(monster => monster.ValueKind == JsonValueKind.Object)
+            .SelectMany(monster =>
+                monster.TryGetProperty(
+                    "authoritative_route_sources",
+                    out var rows) &&
+                rows.ValueKind == JsonValueKind.Array
+                    ? rows.EnumerateArray().ToArray()
+                    : Array.Empty<JsonElement>())
+            .Where(row => row.ValueKind == JsonValueKind.Object)
+            .Select(row => new CurrentRouteSource(
+                ReadString(row, "route_kind"),
+                ReadString(row, "source_id"),
+                ReadString(row, "qualified_item_id")))
+            .Where(source =>
+                source.RouteKind == "native_monster_drop_table" &&
+                source.SourceId.StartsWith("monster:",
+                    StringComparison.Ordinal) &&
+                source.SourceId.Length > "monster:".Length &&
+                !string.IsNullOrWhiteSpace(source.QualifiedItemId))
+            .Distinct()
+            .OrderBy(source => source.SourceId, StringComparer.Ordinal)
+            .ThenBy(source => source.QualifiedItemId,
+                StringComparer.Ordinal)
+            .ToArray();
+        return sources.SelectMany(source =>
+                MiningReachDepthCandidateBuilder.Build(
+                    snapshot,
+                    BuildRollingMiningParameters(
+                        snapshot,
+                        source.RouteKind,
+                        source.SourceId,
+                        source.QualifiedItemId)))
+            .ToArray();
+    }
+
+    internal static SmallModelActionParameter[] BuildRollingMiningParameters(
+        SnapshotEnvelope snapshot,
+        string acquisitionRouteKind = "",
+        string acquisitionSourceId = "",
+        string acquisitionQualifiedItemId = "")
     {
         if (!TryReadCurrentMine(snapshot, out var depth, out var family))
             return Array.Empty<SmallModelActionParameter>();
-        return new[]
+        var parameters = new List<SmallModelActionParameter>
         {
             new SmallModelActionParameter
             {
@@ -110,6 +168,27 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 Value = family
             }
         };
+        if (!string.IsNullOrWhiteSpace(acquisitionRouteKind) ||
+            !string.IsNullOrWhiteSpace(acquisitionSourceId) ||
+            !string.IsNullOrWhiteSpace(acquisitionQualifiedItemId))
+        {
+            parameters.Add(new SmallModelActionParameter
+            {
+                Name = "acquisition_target_route_kind",
+                Value = acquisitionRouteKind
+            });
+            parameters.Add(new SmallModelActionParameter
+            {
+                Name = "acquisition_target_source_id",
+                Value = acquisitionSourceId
+            });
+            parameters.Add(new SmallModelActionParameter
+            {
+                Name = "acquisition_target_qualified_item_id",
+                Value = acquisitionQualifiedItemId
+            });
+        }
+        return parameters.ToArray();
     }
 
     private static bool TryReadCurrentMine(
@@ -141,7 +220,8 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         IEnumerable<EventCandidate> eventCandidates,
         string optionId,
         ICollection<AcquisitionCurrentRouteCandidate> candidates,
-        ICollection<string> reasons)
+        ICollection<string> reasons,
+        string excludedRouteKind = "")
     {
         foreach (var candidate in eventCandidates.Where(value =>
                      value.Available && value.BlockReasons.Length == 0))
@@ -163,6 +243,8 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             }
             foreach (var source in sources)
             {
+                if (source.RouteKind == excludedRouteKind)
+                    continue;
                 candidates.Add(new AcquisitionCurrentRouteCandidate(
                     candidate.CandidateId,
                     optionId,

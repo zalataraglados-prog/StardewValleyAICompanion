@@ -64,6 +64,7 @@
     <Compile Include="SkullKeySnapshotContractSourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
+    <Compile Include="MiningReachDepthAcquisitionIntentTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.SleepSettlement.cs" />
     <Compile Include="NativeObjectMechanicsGovernanceTests.cs" />
