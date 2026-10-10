@@ -118,7 +118,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 .ToArray();
         }
 
-        if (requirement.RouteKind == "native_radioactive_ore_node")
+        if (requirement.RouteKind is
+            "native_radioactive_ore_node" or
+            "native_monster_drop_table")
         {
             if (!endpointOptionIds.SequenceEqual(
                     new[] { "mining.reach_depth" },
@@ -126,12 +128,20 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             {
                 blockingReasons = new[]
                 {
-                    "route_dispatch_radioactive_ore_endpoint_invalid"
+                    "route_dispatch_mining_acquisition_endpoint_invalid"
                 };
                 return Array.Empty<OptionAvailabilityCandidate>();
             }
-            var parameters = AcquisitionCurrentRouteCandidateIndex
-                .BuildRollingMiningParameters(snapshot);
+            var parameters = requirement.RouteKind ==
+                    "native_monster_drop_table"
+                ? AcquisitionCurrentRouteCandidateIndex
+                    .BuildRollingMiningParameters(
+                        snapshot,
+                        requirement.RouteKind,
+                        requirement.SourceId,
+                        requirement.QualifiedItemId)
+                : AcquisitionCurrentRouteCandidateIndex
+                    .BuildRollingMiningParameters(snapshot);
             if (parameters.Length == 0)
             {
                 blockingReasons = new[]

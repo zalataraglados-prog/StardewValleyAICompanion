@@ -25,7 +25,9 @@ namespace StardewAI.Core.Execution
             bool matchAnySlimeName = false,
             string combatIntent = TrainingCombatIntents.TargetDefeat,
             string targetRuntimeIdentity = "",
-            bool requireMelee = false)
+            bool requireMelee = false,
+            string targetAuthoritativeRouteKind = "",
+            string targetAuthoritativeSourceId = "")
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -42,6 +44,11 @@ namespace StardewAI.Core.Execution
                         ReadString(monster, "runtime_identity"),
                         targetRuntimeIdentity,
                         StringComparison.Ordinal))
+                .Where(monster => MonsterMatchesAuthoritativeSource(
+                    monster,
+                    targetAuthoritativeRouteKind,
+                    targetAuthoritativeSourceId,
+                    targets))
                 .Select(monster =>
                 {
                     var possible = ExpandMonsterPossibleDrops(monster, dropCatalogs);
@@ -123,6 +130,43 @@ namespace StardewAI.Core.Execution
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static bool MonsterMatchesAuthoritativeSource(
+            JsonElement monster,
+            string routeKind,
+            string sourceId,
+            HashSet<string>? targetQualifiedItemIds)
+        {
+            if (string.IsNullOrWhiteSpace(routeKind) &&
+                string.IsNullOrWhiteSpace(sourceId))
+            {
+                return true;
+            }
+            if (string.IsNullOrWhiteSpace(routeKind) ||
+                string.IsNullOrWhiteSpace(sourceId) ||
+                targetQualifiedItemIds is null ||
+                targetQualifiedItemIds.Count == 0 ||
+                !monster.TryGetProperty(
+                    "authoritative_route_sources",
+                    out var sources) ||
+                sources.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            return sources.EnumerateArray().Any(source =>
+                source.ValueKind == JsonValueKind.Object &&
+                string.Equals(
+                    ReadString(source, "route_kind"),
+                    routeKind,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadString(source, "source_id"),
+                    sourceId,
+                    StringComparison.Ordinal) &&
+                targetQualifiedItemIds.Contains(
+                    ReadString(source, "qualified_item_id")));
         }
 
         private static bool CanDefeatWithAvailableCombat(JsonElement monster, MonsterCombatProjectionInfo? combat)

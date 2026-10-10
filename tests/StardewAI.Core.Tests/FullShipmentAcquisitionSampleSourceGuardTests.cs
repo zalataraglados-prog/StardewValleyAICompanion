@@ -1047,6 +1047,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.QuestMonsterDropFixture.cs");
+        var candidateIndex = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var dispatchVerification = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Verification.cs");
 
         Assert.Contains(
             "\"monster_drop_sample\" { \"full_shipment:item:766\" }",
@@ -1067,6 +1075,30 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "QuestId = \"stardewai.full-shipment.monster-drop\"",
             runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"acquisition_target_route_kind\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "value = \"monster:Green Slime\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"acquisition_target_qualified_item_id\"",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildCurrentMonsterDropCandidates(snapshot)",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "excludedRouteKind: \"native_monster_drop_table\"",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "requirement.RouteKind is\n            \"native_radioactive_ore_node\" or\n            \"native_monster_drop_table\"",
+            dispatchVerification.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
         Assert.Contains(
             "monsterTarget.objectsToDrop.Add(item.QualifiedItemId)",

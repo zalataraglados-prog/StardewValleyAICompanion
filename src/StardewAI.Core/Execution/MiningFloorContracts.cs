@@ -64,6 +64,10 @@ namespace StardewAI.Core.Execution
 
         public string[] TargetQualifiedItemIds { get; set; } = Array.Empty<string>();
 
+        public string TargetAuthoritativeRouteKind { get; set; } = string.Empty;
+
+        public string TargetAuthoritativeSourceId { get; set; } = string.Empty;
+
         public string[] TargetSourceQualifiedItemIds { get; set; } = Array.Empty<string>();
 
         public string[] TargetMonsterNameFragments { get; set; } = Array.Empty<string>();
