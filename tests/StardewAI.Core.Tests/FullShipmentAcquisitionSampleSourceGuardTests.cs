@@ -586,7 +586,16 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             common,
             StringComparison.Ordinal);
         Assert.Contains(
-            "$nativeOutput = @(& dotnet $BootstrapDll @Arguments 2>&1)",
+            "$nativeOutput = @(& dotnet $BootstrapDll @effectiveArguments 2>&1)",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "STARDEWAI_VALIDATION_TRACE_DIR",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$effectiveArguments += @(" +
+            "\"--validation-trace\", $tracePath)",
             common,
             StringComparison.Ordinal);
         Assert.DoesNotContain(

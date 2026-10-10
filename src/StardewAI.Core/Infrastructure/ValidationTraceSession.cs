@@ -1,0 +1,249 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+
+namespace StardewAI.Core.Infrastructure;
+
+public sealed class ValidationTraceSession : IDisposable
+{
+    public const string SchemaVersion = "stardewai.validation_trace.v1";
+    public const int OperationCpuSamplingRate = 256;
+
+    private static readonly AsyncLocal<ValidationTraceSession?> Ambient = new();
+    private static readonly UTF8Encoding Utf8WithoutBom = new(false);
+
+    private readonly string outputPath;
+    private readonly string command;
+    private readonly string producerId;
+    private readonly string producerVersion;
+    private readonly string scenario;
+    private readonly ValidationTraceInput[] inputs;
+    private readonly ValidationTraceSession? previous;
+    private readonly Stopwatch wallClock = Stopwatch.StartNew();
+    private readonly TimeSpan cpuStarted;
+    private readonly DateTimeOffset startedAt = DateTimeOffset.UtcNow;
+    private readonly double processStartMilliseconds;
+    private readonly ValidationTraceOperationAggregator operationAggregator =
+        new();
+    private int nextOperationId;
+    private int completed;
+
+    private ValidationTraceSession(
+        string outputPath,
+        string command,
+        string producerId,
+        string producerVersion,
+        string scenario,
+        IEnumerable<ValidationTraceInput> inputs,
+        double processStartMilliseconds)
+    {
+        this.outputPath = Path.GetFullPath(outputPath);
+        this.command = command;
+        this.producerId = producerId;
+        this.producerVersion = producerVersion;
+        this.scenario = scenario;
+        this.inputs = inputs.ToArray();
+        this.processStartMilliseconds = processStartMilliseconds;
+        cpuStarted = Process.GetCurrentProcess().TotalProcessorTime;
+        previous = Ambient.Value;
+        Ambient.Value = this;
+    }
+
+    public static ValidationTraceSession? TryStart(
+        string? outputPath,
+        string command,
+        string producerId,
+        string producerVersion,
+        string? scenario,
+        IEnumerable<ValidationTraceInput>? inputs,
+        double processStartMilliseconds)
+    {
+        if (string.IsNullOrWhiteSpace(outputPath))
+            return null;
+
+        try
+        {
+            return new ValidationTraceSession(
+                outputPath,
+                command,
+                producerId,
+                producerVersion,
+                scenario?.Trim() ?? string.Empty,
+                inputs ?? Array.Empty<ValidationTraceInput>(),
+                processStartMilliseconds);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static ValidationTraceOperation BeginOperation(
+        string operationKind,
+        string producerId,
+        string producerVersion,
+        params string[] inputPaths)
+    {
+        var session = Ambient.Value;
+        if (session is null)
+            return ValidationTraceOperation.Disabled;
+
+        try
+        {
+            var sequence = Interlocked.Increment(ref session.nextOperationId);
+            var operationId = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}:{1:D6}",
+                session.command,
+                sequence);
+            return new ValidationTraceOperation(
+                session,
+                operationId,
+                operationKind,
+                producerId,
+                producerVersion,
+                inputPaths
+                    .Where(path => !string.IsNullOrWhiteSpace(path))
+                    .Select(SafeFullPath)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray(),
+                sequence % OperationCpuSamplingRate == 1);
+        }
+        catch
+        {
+            return ValidationTraceOperation.Disabled;
+        }
+    }
+
+    public void Complete(int exitCode)
+    {
+        if (Interlocked.Exchange(ref completed, 1) != 0)
+            return;
+
+        wallClock.Stop();
+        var completedAt = DateTimeOffset.UtcNow;
+        var process = Process.GetCurrentProcess();
+        var cpuMilliseconds = Math.Max(
+            0,
+            (process.TotalProcessorTime - cpuStarted).TotalMilliseconds);
+        var operationSnapshot = operationAggregator.Snapshot();
+
+        var deterministicMilliseconds = IsDeterministicCommand(command)
+            ? wallClock.Elapsed.TotalMilliseconds
+            : 0;
+        var evidenceIndexMilliseconds = string.Equals(
+            command,
+            "build-full-shipment-runtime-sample-evidence-index",
+            StringComparison.Ordinal)
+                ? wallClock.Elapsed.TotalMilliseconds
+                : 0;
+        var report = new ValidationTraceReport
+        {
+            SchemaVersion = SchemaVersion,
+            Status = "complete",
+            TraceId = Guid.NewGuid().ToString("N"),
+            Command = command,
+            Scenario = scenario,
+            ProducerId = producerId,
+            ProducerVersion = producerVersion,
+            StartedAt = startedAt,
+            CompletedAt = completedAt,
+            ExitCode = exitCode,
+            CacheHit = false,
+            Inputs = inputs,
+            WallMilliseconds = Round(wallClock.Elapsed.TotalMilliseconds),
+            CpuMilliseconds = Round(cpuMilliseconds),
+            PeakWorkingSetBytes = process.PeakWorkingSet64,
+            BytesRead = operationSnapshot.Sum(value => value.BytesRead),
+            HashBytes = operationSnapshot.Sum(value => value.HashBytes),
+            JsonParseMilliseconds = Round(operationSnapshot.Sum(
+                value => value.JsonParseMilliseconds)),
+            MaterializeMilliseconds = Round(operationSnapshot.Sum(
+                value => value.MaterializeMilliseconds)),
+            ProcessStartMilliseconds = Round(processStartMilliseconds),
+            BuildMilliseconds = 0,
+            DeterministicRebuildMilliseconds = Round(
+                deterministicMilliseconds),
+            EvidenceIndexMilliseconds = Round(evidenceIndexMilliseconds),
+            NativeRuntimeMilliseconds = 0,
+            Operations = operationSnapshot,
+            OperationInvocationCount = operationSnapshot.Sum(
+                value => value.InvocationCount),
+            OperationGroupCount = operationSnapshot.Length,
+            OperationCpuSamplingRate = OperationCpuSamplingRate
+        };
+
+        TryWrite(report);
+    }
+
+    public void Dispose()
+    {
+        Complete(Environment.ExitCode);
+        if (ReferenceEquals(Ambient.Value, this))
+            Ambient.Value = previous;
+    }
+
+    internal void Record(ValidationTraceOperationRecord operation)
+        => operationAggregator.Record(operation);
+
+    private void TryWrite(ValidationTraceReport report)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(outputPath);
+            if (string.IsNullOrWhiteSpace(directory))
+                return;
+            Directory.CreateDirectory(directory);
+            var temporary = outputPath + ".tmp-" + Guid.NewGuid().ToString("N");
+            try
+            {
+                File.WriteAllText(
+                    temporary,
+                    JsonSerializer.Serialize(report) + Environment.NewLine,
+                    Utf8WithoutBom);
+                if (File.Exists(outputPath))
+                    File.Replace(temporary, outputPath, null);
+                else
+                    File.Move(temporary, outputPath);
+            }
+            finally
+            {
+                if (File.Exists(temporary))
+                    File.Delete(temporary);
+            }
+        }
+        catch
+        {
+            // Tracing is diagnostic-only and must never fail the command.
+        }
+    }
+
+    private static bool IsDeterministicCommand(string command) =>
+        command.StartsWith("build-", StringComparison.Ordinal) ||
+        command.StartsWith("compile-", StringComparison.Ordinal) ||
+        command.StartsWith("audit-", StringComparison.Ordinal) ||
+        command.StartsWith("validate-", StringComparison.Ordinal) ||
+        command.StartsWith("score-", StringComparison.Ordinal) ||
+        command.StartsWith("select-", StringComparison.Ordinal) ||
+        command.StartsWith("self-test", StringComparison.Ordinal);
+
+    private static string SafeFullPath(string path)
+    {
+        try
+        {
+            return Path.GetFullPath(path);
+        }
+        catch
+        {
+            return path;
+        }
+    }
+
+    internal static double Round(double value) => Math.Round(value, 3);
+}

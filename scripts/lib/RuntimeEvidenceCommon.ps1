@@ -141,12 +141,34 @@ function Invoke-RuntimeBootstrap {
         [Parameter(Mandatory)] [string] $BootstrapDll,
         [Parameter(Mandatory)] [string[]] $Arguments
     )
+    $effectiveArguments = @($Arguments)
+    $traceDirectory = [Environment]::GetEnvironmentVariable(
+        "STARDEWAI_VALIDATION_TRACE_DIR")
+    if (-not [string]::IsNullOrWhiteSpace($traceDirectory)) {
+        New-Item -ItemType Directory -Force -Path $traceDirectory | Out-Null
+        if ($null -eq $script:validationTraceSequence) {
+            $script:validationTraceSequence = 0
+        }
+        $script:validationTraceSequence++
+        $safeCommand = ([string]$Arguments[0]) -replace '[^a-zA-Z0-9._-]', '_'
+        $tracePath = Join-Path $traceDirectory (
+            "{0:D4}-{1}.validation-trace.json" -f `
+                $script:validationTraceSequence, $safeCommand)
+        $effectiveArguments += @("--validation-trace", $tracePath)
+        $traceScenario = [Environment]::GetEnvironmentVariable(
+            "STARDEWAI_VALIDATION_TRACE_SCENARIO")
+        if (-not [string]::IsNullOrWhiteSpace($traceScenario)) {
+            $effectiveArguments += @(
+                "--validation-trace-scenario", $traceScenario)
+        }
+    }
+
     $previousErrorActionPreference = $ErrorActionPreference
     try {
         # Windows PowerShell turns native stderr into ErrorRecord instances.
         # Capture it before the caller's Stop preference truncates JSON errors.
         $ErrorActionPreference = "Continue"
-        $nativeOutput = @(& dotnet $BootstrapDll @Arguments 2>&1)
+        $nativeOutput = @(& dotnet $BootstrapDll @effectiveArguments 2>&1)
         $exitCode = $LASTEXITCODE
     }
     finally {

@@ -953,21 +953,34 @@ internal static partial class BootstrapSelfTest
                     missingRouteFestivalPath,
                     missingRouteSnapshotPath,
                     targetDateRouteCalibrationPath);
+            var resolvedWithoutSocialRouteEvidence = missingRouteReport.Routes
+                .Where(route => route.LocationRouteAxisStatus ==
+                    "resolved_location_route_match_downstream_pending")
+                .Select(route => route.RouteOccurrenceId)
+                .ToHashSet(StringComparer.Ordinal);
+            var blockedWithoutSocialRouteEvidence = missingRouteReport.Routes
+                .Where(route => route.LocationRouteAxisStatus ==
+                    "blocked_location_route_evidence")
+                .ToArray();
             Require(missingRouteReport.Status ==
                         "partial_target_date_location_route_axis_blocks" &&
                     missingRouteReport.RouteOccurrenceInventoryComplete &&
                     !missingRouteReport.LocationRouteAxisResolutionComplete &&
                     !missingRouteReport.TrainingLabelEligible &&
-                    missingRouteReport.LocationRouteAxisResolvedCount == 72 &&
-                    missingRouteReport.LocationRouteMatchCount == 0 &&
+                    missingRouteReport.LocationRouteAxisResolvedCount == 75 &&
+                    missingRouteReport.LocationRouteMatchCount == 3 &&
                     missingRouteReport.LocationRouteMissCount == 0 &&
                     missingRouteReport.NotApplicableStaticWindowCount == 72 &&
-                    missingRouteReport.BlockedLocationEvidenceCount == 5 &&
-                    missingRouteReport.Routes.Where(route =>
-                        route.LocationRouteAxisStatus ==
-                            "blocked_location_route_evidence").All(route =>
+                    missingRouteReport.BlockedLocationEvidenceCount == 2 &&
+                    resolvedWithoutSocialRouteEvidence.SetEquals(new[]
+                    {
+                        "full_shipment:full_shipment:item:24:0:0",
+                        "community_center_standard:community_center:bundle:Pantry/5:0:0",
+                        "community_center_standard:community_center:bundle:Pantry/5:1:0"
+                    }) &&
+                    blockedWithoutSocialRouteEvidence.All(route =>
                         route.BlockingReasons.Contains(
-                            "location_route_date_evidence_missing")),
+                            "social_route_date_evidence_unavailable")),
                 "Missing transparent route evidence did not fail closed per active route.");
 
             WriteStageOneCollectionSnapshot(

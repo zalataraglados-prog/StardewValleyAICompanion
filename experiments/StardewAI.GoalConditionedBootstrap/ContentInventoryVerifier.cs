@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using StardewAI.Core.Infrastructure;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -98,8 +99,17 @@ public static class ContentInventoryVerifier
 
     internal static string HashFile(string path)
     {
+        using var operation = ValidationTraceSession.BeginOperation(
+            "file_hash",
+            "StardewAI.GoalConditionedBootstrap.ContentInventoryVerifier",
+            "v1",
+            path);
         using var stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+        operation.AddBytesRead(stream.Length);
+        operation.AddHashBytes(stream.Length);
+        var hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+        operation.AddArtifactId(hash);
+        return hash;
     }
 
     private sealed record ContentRecord(string RelativePath, long Bytes, string Sha256);
