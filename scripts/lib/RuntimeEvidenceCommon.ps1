@@ -450,6 +450,79 @@ function Restore-RuntimeProcessEnvironment {
     }
 }
 
+if ($null -eq (
+        "StardewAI.RuntimeEvidence.WindowSuppressor" -as [type])) {
+    Add-Type -TypeDefinition @"
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+namespace StardewAI.RuntimeEvidence
+{
+    public static class WindowSuppressor
+    {
+        private delegate bool EnumWindowsProc(IntPtr window, IntPtr state);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(
+            EnumWindowsProc callback,
+            IntPtr state);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(
+            IntPtr window,
+            out uint processId);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindowAsync(IntPtr window, int command);
+
+        public static void Start(int processId, int durationMilliseconds)
+        {
+            if (processId <= 0 || durationMilliseconds <= 0)
+                return;
+
+            var thread = new Thread(() =>
+            {
+                var deadline = DateTime.UtcNow.AddMilliseconds(
+                    durationMilliseconds);
+                while (DateTime.UtcNow < deadline && ProcessExists(processId))
+                {
+                    EnumWindows((window, _) =>
+                    {
+                        uint owner;
+                        GetWindowThreadProcessId(window, out owner);
+                        if (owner == (uint)processId)
+                            ShowWindowAsync(window, 0);
+                        return true;
+                    }, IntPtr.Zero);
+                    Thread.Sleep(50);
+                }
+            })
+            {
+                IsBackground = true,
+                Name = "StardewAI runtime window suppressor"
+            };
+            thread.Start();
+        }
+
+        private static bool ProcessExists(int processId)
+        {
+            try
+            {
+                using (var process = Process.GetProcessById(processId))
+                    return !process.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+}
+"@
+}
+
 function Start-RuntimeEvidenceProcess {
     param(
         [Parameter(Mandatory)] [string] $FilePath,
@@ -469,7 +542,21 @@ function Start-RuntimeEvidenceProcess {
     if ($ArgumentList.Count -gt 0) {
         $start.ArgumentList = $ArgumentList
     }
-    return Start-Process @start
+    $process = Start-Process @start
+    if ([string]::Equals(
+            [Environment]::GetEnvironmentVariable(
+                "STARDEWAI_SUPPRESS_LOCAL_RENDER"),
+            "1",
+            [StringComparison]::Ordinal) -and
+        [string]::Equals(
+            [IO.Path]::GetFileName($FilePath),
+            "StardewModdingAPI.exe",
+            [StringComparison]::OrdinalIgnoreCase)) {
+        [StardewAI.RuntimeEvidence.WindowSuppressor]::Start(
+            $process.Id,
+            300000)
+    }
+    return $process
 }
 
 function Stop-RuntimeEvidenceProcesses {
