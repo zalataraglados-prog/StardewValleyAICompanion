@@ -118,6 +118,31 @@ internal static partial class BootstrapSelfTest
                 referenceBuilds == 1 &&
                 ReferenceEquals(firstReference, secondReference),
                 "Invocation immutable reference reuse is not scoped and exact.");
+
+            var axisBuilds = 0;
+            var firstAxis = AcquisitionRouteDependencyObservation.ObserveAxis(
+                "self-test-axis",
+                () =>
+                {
+                    axisBuilds++;
+                    return new DeterministicBuildFixture { Value = 12 };
+                },
+                immutablePath);
+            firstAxis.Value = 13;
+            var secondAxis = AcquisitionRouteDependencyObservation.ObserveAxis(
+                "self-test-axis",
+                () =>
+                {
+                    axisBuilds++;
+                    return new DeterministicBuildFixture { Value = 14 };
+                },
+                immutablePath);
+            var axisSnapshot = buildSession.Snapshot();
+            Require(
+                axisBuilds == 1 && secondAxis.Value == 12 &&
+                axisSnapshot.BuildCount == 2 &&
+                axisSnapshot.CacheHitCount == 2,
+                "Acquisition axis reuse is not invocation-scoped and isolated.");
         }
 
         using (InvocationDeterministicBuildSession.Start(enabled: false))

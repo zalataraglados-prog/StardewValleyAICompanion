@@ -312,9 +312,7 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
                 int standX,
                 int standY) =>
                 FishingTerminalProbabilitySnapshotProjector.Project(
-                    forecast.Snapshot,
-                    forecast.TargetLocationId,
-                    forecast.RodSlotIndex,
+                    forecast.ProjectionContext,
                     targetQualifiedItemId,
                     tileIndex,
                     standX,

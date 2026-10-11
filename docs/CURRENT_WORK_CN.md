@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-11 Full Shipment 高风险证据与严格投影优化
+
+- 当前权威 evidence index 已从锚点阶段的 `2/26` 推进到 `5/26`。新增通过 `native_wild_tree_tapper_output`、`native_monster_drop_table` 与 `native_location_fish_spawn` 三个 exact native sample；对应树液收集器产物 `(O)725`、怪物掉落 `(O)766` 和地点钓获 `(O)388` 均完成原生执行、fresh terminal、settlement、checkpoint 与 rollout proof 重建。共享 shipping/settlement 证据继续有效，剩余 `21` 层，`formal_product_training_authorized=false` 不变。
+- 钓鱼场景暴露的主要瓶颈不在游戏动作层。validation trace 显示一次严格 proof 的约 `151.6 s` 中，约 `131.5 s` 用于对 `1599` 条路线、`920` 个可钓水格和鱼类规则重复做 terminal probability projection。现在每个冻结 fishing forecast 只解析一次水格、规则适用格和玩家站位限制，并以“目标物品 + 水深 + 规则适用集合 + 站位许可集合”为完整等价键复用概率；当前格坐标、站位坐标和结果元数据仍逐候选生成。
+- 同一钓获 rollout proof 的严格重建从约 `151 s` 降到 `20.5 s`，新旧 receipt JSON 完全相等且 `proof_chain_verified=true`。包含现有 5 条 proof 的 evidence index 重建从约 `219 s` 降到约 `81 s`。这些缓存只存在于当前 forecast/当前 CLI invocation；不跨进程、run 或 snapshot，不跳过 authority 哈希、fresh-terminal、settlement 或 rollout 校验。
+- 所有 acquisition target-date 轴现通过既有 `InvocationDeterministicBuildSession` 做同一命令内的内容哈希去重，命中后重新反序列化独立 DTO，避免共享可变结果。GoalConditionedBootstrap Release 为 `0 warning / 0 error`，Core game-free 为 `276/276`，Bootstrap hermetic、Full Shipment runtime evidence 与 acquisition dispatch 自测均通过。下一证据顺序仍为地点蚯蚓、晶球掉落、商店购买、社区中心奖励。
+
 ## 2026-10-11 Full Shipment 当前权威锚点恢复
 
 - Sap 原生回放现在通过独立 `stardewai.runtime_full_shipment_sap_evidence_export.v1` 出口进入里程碑。该出口会重新深度构建 recurrence-prefix checkpoint，并精确绑定 Sap `full_shipment:item:92 / (O)92 / native_wild_tree_chop_drop`、rollout manifest/receipt 及四个文件哈希；它不复用旧 smoke 摘要的声明，也不能授权训练。
