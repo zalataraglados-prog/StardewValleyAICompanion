@@ -8,6 +8,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
     private const string ExistingMachine = "existing_machine_source";
     private const string ExistingCurrentMachine =
         "existing_current_machine_source";
+    private const string ExistingGeodeService =
+        "existing_native_geode_service";
     private const string DeferredFacility = "facility_binding_pending_upstream";
 
     private static readonly IReadOnlyDictionary<string, string>
@@ -24,7 +26,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             ["native_fish_pond_output"] = DeferredFacility,
             ["native_fruit_tree_produce"] = DeferredFacility,
             ["native_geode_default_drop"] = NoFacility,
-            ["native_geode_drop"] = NoFacility,
+            ["native_geode_drop"] = ExistingGeodeService,
             ["native_ginger_harvest"] = NoFacility,
             ["native_location_artifact_spot"] = NoFacility,
             ["native_location_fish_spawn"] = NoFacility,
@@ -52,7 +54,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
     private static AcquisitionRouteTargetDateFacility Evaluate(
         AcquisitionRouteTargetDateLocation route,
         AcquisitionRouteCalendarResolution staticRoute,
-        AcquisitionLocationRouteSnapshotState state)
+        AcquisitionLocationRouteSnapshotState state,
+        AcquisitionCurrentRouteCandidateIndex currentCandidates)
     {
         if (!route.LocationRouteAxisResolved)
         {
@@ -115,6 +118,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
                 route,
                 staticRoute,
                 state.MachineFleet),
+            ExistingGeodeService => EvaluateExistingGeodeService(
+                route,
+                staticRoute,
+                currentCandidates),
             PreparedCultivation => EvaluatePreparedCultivation(
                 route,
                 staticRoute,

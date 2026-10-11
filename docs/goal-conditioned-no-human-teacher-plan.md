@@ -1,5 +1,19 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-11: native geode route admitted
+
+- The current-authority Full Shipment evidence index is `7/26`, with 19 strata remaining. The exact
+  `full_shipment:item:386 / (O)386 / native_geode_drop / geode:791:1:random:6` sample consumed one Golden Coconut and
+  25g through the existing Blacksmith chain, produced the projected five Iridium Ore, and passed fresh-terminal,
+  reservation settlement, checkpoint and independently rebuilt rollout-proof verification.
+- The route is enabled only when the current transparent snapshot exposes one exact `processing.crack_geode` candidate.
+  That candidate remains the single source for the input slot, Blacksmith endpoint, fee, native RNG result and daily
+  budget, while execution reuses the sole `executor.crack_geode` implementation.
+- Active material and currency reservations from a pre-execution interruption are idempotent only when their
+  `SourceStateHash` matches the current snapshot. Stale claims now follow the existing atomic replacement path instead
+  of being inherited by an empty portfolio marker. Shop purchase and Community Center reward are the next high-risk
+  samples; `formal_product_training_authorized=false` remains enforced.
+
 ## 2026-10-11: current-authority Full Shipment anchors verified
 
 - The Sap recurrence prefix now enters the milestone through a dedicated evidence-export schema that independently

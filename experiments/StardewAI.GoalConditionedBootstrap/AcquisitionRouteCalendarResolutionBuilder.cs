@@ -35,9 +35,10 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 masterAnglerWindowIndexPath,
                 null,
                 null),
-            inventoryPath,
-            loweringPath,
-            masterAnglerWindowIndexPath);
+            BuildObservationIdentity(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath));
 
     public static AcquisitionRouteCalendarResolutionReport BuildCurrent(
         string inventoryPath,
@@ -54,10 +55,11 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     inventoryPath,
                     snapshotPath),
                 snapshotPath),
-            inventoryPath,
-            loweringPath,
-            masterAnglerWindowIndexPath,
-            snapshotPath);
+            BuildObservationIdentity(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                snapshotPath));
 
     internal static AcquisitionRouteCalendarResolutionReport Build(
         string inventoryPath,
@@ -73,11 +75,45 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 masterAnglerWindowIndexPath,
                 denominator,
                 snapshotPath),
+            BuildObservationIdentity(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                snapshotPath,
+                denominator));
+
+    private static object?[] BuildObservationIdentity(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string? snapshotPath = null,
+        CurrentCommunityCenterDenominatorReport? denominator = null)
+    {
+        var inventory = CurrentTeacherFrontierSupport.Read<
+            AuthoritativeRequirementInventoryReport>(
+            Path.GetFullPath(inventoryPath),
+            "Authoritative requirement inventory");
+        var windows = CurrentTeacherFrontierSupport.Read<
+            MasterAnglerStageOneWindowIndex>(
+            Path.GetFullPath(masterAnglerWindowIndexPath),
+            "Master Angler window index");
+        var identity = new List<object?>
+        {
             inventoryPath,
             loweringPath,
-            masterAnglerWindowIndexPath,
-            snapshotPath,
-            denominator);
+            masterAnglerWindowIndexPath
+        };
+        identity.AddRange(inventory.SourceEvidence
+            .OrderBy(value => value.SourceId, StringComparer.Ordinal)
+            .ThenBy(value => value.Path, StringComparer.Ordinal)
+            .Select(value => (object?)value.Path));
+        identity.Add(windows.CatalogPath);
+        if (!string.IsNullOrWhiteSpace(snapshotPath))
+            identity.Add(snapshotPath);
+        if (denominator is not null)
+            identity.Add(denominator);
+        return identity.ToArray();
+    }
 
     private static AcquisitionRouteCalendarResolutionReport BuildCore(
         string inventoryPath,
@@ -255,6 +291,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var windowSpecies = windows.Species.ToDictionary(
             species => species.QualifiedItemId,
             StringComparer.Ordinal);
+        var currentGeodeDropEnabled = !string.IsNullOrWhiteSpace(snapshotPath) &&
+            AcquisitionCurrentRouteCandidateIndex.Read(snapshotPath)
+                .HasRouteKindCandidate("native_geode_drop");
         var routes = BuildRoutes(
             lowering,
             communityCenterAuthority,
@@ -264,6 +303,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             shops,
             machines,
             accessConstraints,
+            currentGeodeDropEnabled,
             windows.DeadlineTotalDayExclusive);
         var expectedRouteCount = ExpectedRouteCount(
             lowering,
@@ -321,7 +361,12 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             RouteOccurrenceInventoryComplete = true,
             StaticCalendarSourceResolutionComplete = blockedCount == 0,
             TrainingLabelEligible = false,
-            SupportedRouteKinds = SupportedRouteKinds.Order(StringComparer.Ordinal).ToArray(),
+            SupportedRouteKinds = SupportedRouteKinds
+                .Concat(currentGeodeDropEnabled
+                    ? new[] { "native_geode_drop" }
+                    : Array.Empty<string>())
+                .Order(StringComparer.Ordinal)
+                .ToArray(),
             UnresolvedRouteKinds = routes
                 .Where(route => route.Status !=
                     "resolved_static_source_window_target_date_pending")

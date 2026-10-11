@@ -96,11 +96,14 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             source.GameVersion,
             source.TargetTotalDay,
             timingFullPath);
+        var currentCandidates =
+            AcquisitionCurrentRouteCandidateIndex.Read(snapshotFullPath);
         var routes = source.Routes
             .Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
-                state))
+                state,
+                currentCandidates))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>

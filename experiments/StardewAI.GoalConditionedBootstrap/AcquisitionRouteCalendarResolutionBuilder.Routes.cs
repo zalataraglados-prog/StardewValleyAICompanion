@@ -34,6 +34,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
         var result = new List<AcquisitionRouteCalendarResolution>();
@@ -52,6 +53,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     shops,
                     machines,
                     accessConstraints,
+                    currentGeodeDropEnabled,
                     deadlineTotalDayExclusive);
                 continue;
             }
@@ -85,6 +87,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             shops,
                             machines,
                             accessConstraints,
+                            currentGeodeDropEnabled,
                             deadlineTotalDayExclusive);
                     }
                 }
@@ -102,6 +105,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
         foreach (var group in authority.Inventory.Groups)
@@ -167,6 +171,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                         shops,
                         machines,
                         accessConstraints,
+                        currentGeodeDropEnabled,
                         deadlineTotalDayExclusive);
                 }
             }
@@ -191,6 +196,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
         var resolution = ResolveSource(
@@ -202,6 +208,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             shops,
             machines,
             accessConstraints,
+            currentGeodeDropEnabled,
             deadlineTotalDayExclusive);
         var occurrenceId = string.Join(
             ":",
@@ -270,6 +277,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
         if (route.RouteKind == "harvests_as")
@@ -326,6 +334,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         if (route.RouteKind == "native_fish_pond_output")
         {
             return ResolveFishPondOutputWindow(
+                route,
+                deadlineTotalDayExclusive);
+        }
+
+        if (route.RouteKind == "native_geode_drop" &&
+            currentGeodeDropEnabled)
+        {
+            return ResolveGeodeDropWindow(
                 route,
                 deadlineTotalDayExclusive);
         }

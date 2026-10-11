@@ -14,7 +14,8 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "farm.collect_machine_outputs",
         "foraging.harvest_tree_product",
         "foraging.excavate_artifact_spots",
-        "fishing.service_fish_ponds"
+        "fishing.service_fish_ponds",
+        "processing.crack_geode"
     };
 
     private AcquisitionCurrentRouteCandidateIndex(
@@ -33,13 +34,16 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
 
     public string[] BlockingReasons { get; }
 
+    public bool HasRouteKindCandidate(string routeKind) =>
+        Candidates.Any(value => value.RouteKind == routeKind);
+
     public static AcquisitionCurrentRouteCandidateIndex Read(
         string snapshotPath)
     {
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v2",
+            "v3",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -285,6 +289,13 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                         "target_drop_probability_status"),
                     candidate.EstimatedTicks,
                     candidate.EnergyCost,
+                    ReadStringParameter(candidate, "geode_qualified_item_id"),
+                    ReadIntParameter(candidate, "geode_slot_index"),
+                    ReadIntParameter(candidate, "geode_stack_before"),
+                    ReadIntParameter(candidate, "geode_money_before"),
+                    ReadIntParameter(candidate, "geode_price_gold"),
+                    ReadIntParameter(candidate, "geode_expected_output_stack"),
+                    ReadIntParameter(candidate, "geode_expected_output_quality"),
                     source.RouteKind,
                     source.SourceId,
                     source.QualifiedItemId));
@@ -390,6 +401,19 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             }
             reasons.Add(
                 "current_location_artifact_spot_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind == "native_geode_drop")
+        {
+            if (TryField("player", "geode_processing", out var geode) &&
+                FieldStatus(geode) == "available" &&
+                FieldValue(geode).ValueKind == JsonValueKind.Object &&
+                ReadString(FieldValue(geode), "projection_status") ==
+                    "complete_locked_base_1.6.15")
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_geode_processing_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_wild_tree_tapper_output")
@@ -524,6 +548,13 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     string TargetDropProbabilityStatus,
     int EstimatedTicks,
     int EnergyCost,
+    string InputQualifiedItemId,
+    int? InputSlotIndex,
+    int? InputStackBefore,
+    int? MoneyBefore,
+    int? PriceGold,
+    int? ExpectedOutputStack,
+    int? ExpectedOutputQuality,
     string RouteKind,
     string SourceId,
     string QualifiedItemId);

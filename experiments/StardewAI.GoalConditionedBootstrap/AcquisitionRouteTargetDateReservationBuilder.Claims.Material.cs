@@ -9,6 +9,7 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         new[]
         {
             "crop_seed",
+            "geode_input",
             "shop_trade_item",
             "loose_magic_bait",
             "machine_primary_input",

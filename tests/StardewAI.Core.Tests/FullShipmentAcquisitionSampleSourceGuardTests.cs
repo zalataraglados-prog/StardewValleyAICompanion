@@ -1415,6 +1415,38 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.GeodeProcessingFixture.cs");
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.Geodes.cs");
+        var currentCandidates = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var facility = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateFacilityBuilder.Evaluation.Geodes.cs");
+        var resource = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateResourceBuilder.Evaluation.Geodes.cs");
+        var currency = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateCurrencyBuilder.Geodes.cs");
+        var stochastic = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Geodes.cs");
+        var dispatch = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Verification.cs");
 
         Assert.Contains(
             "\"geode_drop_sample\" { \"full_shipment:item:386\" }",
@@ -1451,6 +1483,42 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "Game1.currentLocation = blacksmith",
             fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RequiresExistingLiveCandidateMatch = true",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "complete_locked_base_1.6.15",
+            currentCandidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "resolved_existing_geode_service_match",
+            facility,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"geode_input\"",
+            resource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_geode_money_balance_drifted",
+            currency,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "resolved_source_bound_exact_geode_output",
+            stochastic,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GameClockBudgetPolicy.TicksToGameMinutes(",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"processing.crack_geode\"",
+            dispatch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"open_for_full_shipment\"",
+            dispatch,
             StringComparison.Ordinal);
     }
 

@@ -594,6 +594,26 @@ internal static partial class BootstrapSelfTest
                     committedShop.ClaimSet.ExistingActiveReservationIds.Length == 2,
                 "An exact committed route claim was not recognized idempotently.");
 
+            foreach (var reservation in committedLedger.MaterialReservations)
+                reservation.SourceStateHash = "stale-material-state";
+            foreach (var reservation in committedLedger.CurrencyReservations)
+                reservation.SourceStateHash = "stale-currency-state";
+            Write(committedReservationLedgerPath, committedLedger);
+            var staleReservationReport =
+                BuildReservation(committedReservationLedgerPath);
+            var staleShop = staleReservationReport.Routes.Single(route =>
+                route.RouteOccurrenceId == targetDateCurrencyShop.RouteOccurrenceId);
+            Require(staleShop.ClaimDisposition ==
+                        "claim_replacement_required" &&
+                    staleShop.ClaimSet is not null &&
+                    staleShop.ClaimSet.ReplacementRequired &&
+                    staleShop.ClaimSet.ExistingActiveReservationIds.Length == 2 &&
+                    staleShop.ClaimSet.MaterialClaims.All(claim =>
+                        claim.StateHash != "stale-material-state") &&
+                    staleShop.ClaimSet.CurrencyClaims.All(claim =>
+                        claim.StateHash != "stale-currency-state"),
+                "A stale-snapshot committed route claim was reused as current.");
+
             var mismatchedLedger = FixtureLedger(0);
             mismatchedLedger.PlayerId = "2";
             Write(mismatchedStrategyLedgerPath, mismatchedLedger);
