@@ -157,6 +157,7 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 "machine_input_load" or
                 "machine_input_material_transfer" or
                 "machine_input_purchase" or
+                "shop_purchase_navigation" or
                 "machine_capacity_establishment") ||
             request.FormalTrainingAuthorized ||
             request.BlockingReasons.Length != 0)
@@ -226,7 +227,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                     intent.ExpectedSourceStack &&
                 request.SupportMaterialRelocations.Length == 1;
         }
-        if (request.SupportTransitionKind == "machine_input_purchase")
+        if (request.SupportTransitionKind is
+            "machine_input_purchase" or "shop_purchase_navigation")
         {
             var purchase = request.PurchasePrerequisite;
             return purchase is not null &&

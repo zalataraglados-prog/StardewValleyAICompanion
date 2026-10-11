@@ -63,4 +63,38 @@ public sealed class FutureRouteTimingCalibrationTests
             "future_route_movement_timing_context_outside_calibration_scope",
             result.BlockingReasons);
     }
+
+    [Fact]
+    public void ProvenZeroGameMinuteShopMenuCloseAllowsTemporarilyPausedMovement()
+    {
+        var result = new FutureRouteTimingCalibrationLoader().Load(
+            FutureRouteDateEvidenceProducerTests.CalibrationArtifactJson(),
+            FutureRouteDateEvidenceProducerTests.MovementTimingContext(
+                compatible: true,
+                ready: false),
+            "1.6.15",
+            12,
+            zeroGameMinuteShopMenuCloseRecoveryAvailable: true);
+
+        Assert.Equal(FutureRouteTimingCalibrationLoadStatus.Loaded, result.Status);
+        Assert.NotNull(result.Calibration);
+    }
+
+    [Fact]
+    public void ShopMenuCloseRecoveryDoesNotBypassIncompatibleCalibration()
+    {
+        var result = new FutureRouteTimingCalibrationLoader().Load(
+            FutureRouteDateEvidenceProducerTests.CalibrationArtifactJson(),
+            FutureRouteDateEvidenceProducerTests.MovementTimingContext(
+                compatible: false,
+                ready: false),
+            "1.6.15",
+            12,
+            zeroGameMinuteShopMenuCloseRecoveryAvailable: true);
+
+        Assert.Equal(FutureRouteTimingCalibrationLoadStatus.Blocked, result.Status);
+        Assert.Contains(
+            "future_route_movement_timing_context_outside_calibration_scope",
+            result.BlockingReasons);
+    }
 }

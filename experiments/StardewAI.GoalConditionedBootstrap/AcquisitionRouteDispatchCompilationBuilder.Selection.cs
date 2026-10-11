@@ -90,6 +90,26 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (capacity is not null)
             return capacity;
 
+        if (requirement.RouteKind == "sells" &&
+            requirement.SourceId.StartsWith("shop:", StringComparison.Ordinal) &&
+            candidate.OptionId == "economy.buy_supplies" &&
+            candidate.Kind is "route_connector_tile" or "interact_endpoint" &&
+            string.Equals(
+                candidate.ShopId,
+                requirement.SourceId["shop:".Length..],
+                StringComparison.Ordinal) &&
+            string.Equals(
+                candidate.QualifiedItemId,
+                requirement.QualifiedItemId,
+                StringComparison.Ordinal))
+        {
+            return new AcquisitionRouteDispatchCandidateMatch(
+                candidate,
+                "candidate.shop_id+candidate.qualified_item_id+" +
+                "candidate.purchase_continuation",
+                "supporting_transition");
+        }
+
         if (requirement.RouteKind is (
                 "machine_output" or
                 "native_machine_flavored_output" or
@@ -297,9 +317,30 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             return null;
         }
 
-        return new AcquisitionRouteDispatchCandidateMatch(
-            candidate,
-            targetEvidence + "+" + sourceEvidence);
+        var routeOptionRole = RouteOptionRole(requirement, candidate);
+        return routeOptionRole is null
+            ? null
+            : new AcquisitionRouteDispatchCandidateMatch(
+                candidate,
+                targetEvidence + "+" + sourceEvidence,
+                routeOptionRole);
+    }
+
+    private static string? RouteOptionRole(
+        AcquisitionRouteTargetDateUnlock requirement,
+        PolicyEventCandidatePrediction candidate)
+    {
+        if (requirement.RouteKind != "sells")
+            return "terminal_transition";
+        if (candidate.OptionId != "economy.buy_supplies")
+            return null;
+        return candidate.Kind switch
+        {
+            "route_connector_tile" or "interact_endpoint" =>
+                "supporting_transition",
+            "buy_shop_item" => "terminal_transition",
+            _ => null
+        };
     }
 
     private static bool CandidateCanProduce(

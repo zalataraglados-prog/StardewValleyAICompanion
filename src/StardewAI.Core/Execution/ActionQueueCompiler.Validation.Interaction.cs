@@ -194,7 +194,11 @@ namespace StardewAI.Core.Execution
                     expectedActionType);
             }
 
-            if (!InteractTargetWithinOneTile(snapshot, targetX.Value, targetY.Value))
+            if (!InteractTargetWithinOneTile(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value))
             {
                 return new[] { "interact_target_not_adjacent" };
             }
@@ -286,10 +290,44 @@ namespace StardewAI.Core.Execution
                 string.Equals(ReadString(chest, "expected_action_type"), "SkullKeyChest", StringComparison.Ordinal));
         }
 
-        private static bool InteractTargetWithinOneTile(SnapshotEnvelope snapshot, int targetX, int targetY)
+        private static bool InteractTargetWithinOneTile(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY)
         {
-            var playerX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
+            var currentLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            var projectedLocation = ReadParameter(
+                action,
+                "compiler_context.player_location_before_step");
+            var targetLocation = ReadParameter(action, "target_location");
+            var projectedX = ReadIntParameter(
+                action,
+                "compiler_context.player_tile_x_before_step");
+            var projectedY = ReadIntParameter(
+                action,
+                "compiler_context.player_tile_y_before_step");
+            var useProjection = projectedX.HasValue &&
+                projectedY.HasValue &&
+                !string.IsNullOrWhiteSpace(projectedLocation) &&
+                string.Equals(
+                    projectedLocation,
+                    currentLocation,
+                    StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(targetLocation) ||
+                 string.Equals(
+                     targetLocation,
+                     projectedLocation,
+                     StringComparison.OrdinalIgnoreCase));
+            var playerX = useProjection
+                ? projectedX
+                : ReadStateFieldIntOptional(snapshot, "player", "tile_x");
+            var playerY = useProjection
+                ? projectedY
+                : ReadStateFieldIntOptional(snapshot, "player", "tile_y");
             return playerX.HasValue && playerY.HasValue && Math.Abs(playerX.Value - targetX) + Math.Abs(playerY.Value - targetY) == 1;
         }
 

@@ -123,7 +123,7 @@
 
 ## 2026-10-05 Full Shipment 商店购买入口
 
-- 商店购买代表固定为 `full_shipment:item:388 / (O)388 / sells / shop:Carpenter`。候选显式约束 `Carpenter`、木材 `(O)388`、单价不高于 10 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。
+- 商店购买代表修正为 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。当前 fresh-save 权威分母的 13 条替代路线均可判定，150g 的 Blacksmith 购买是唯一 Pareto 前沿；候选显式约束 `Blacksmith`、铁矿 `(O)380`、单价不高于 150 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。旧木材 `(O)388` 代表同时存在 Town 钓鱼杂物路线，缺少对应概率证据时会被严格 Teacher 正确拒绝，不再用它伪造单一购买分母。
 - 隔离夹具只使用既有 `debug.advance_time_to` 把春 1 推进到 9:00；不会打开菜单、生成物品或修改商店库存。候选来源身份由透明商店预览的 `shop_id` 验证，关闭或不可达时仍在上游排除。
 - 当前 runner 配置入口达到 `24/26`；剩余 2 层为奖励物和地点鱼。本轮不增加生产 evidence index，正式训练仍为 `false`。
 
@@ -1873,3 +1873,12 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 三候选比较样本中，模型第一名与 Teacher 选择一致，Teacher 候选 rank 为 1。输出同时保留全排名、Pareto 前沿标记和一致性结论，但固定 `selection_mode=read_only_teacher_comparison`、`portfolio_commit_authorized=false`、`formal_product_training_authorized=false`。
 - 验证通过：独立评分 CLI、GoalConditionedBootstrap Release `0 warning / 0 error`、完整 Stage 1 collection self-test、Core game-free `81/81`、Backend `203/203`。未启动游戏或正式训练。
 - 这一步证明检查点能被确定性重放和推理，不是实时策略接管。下一固定切片是对当前 fresh snapshot 重新构造完整候选分母，在唯一严格 Pareto 时继续服从 Teacher，在不可比前沿时只生成受门控的模型影子选择；19/19 覆盖门解除前仍不得接入 commit/dispatch。
+
+## 2026-10-12 Full Shipment 原生商店购买路线断点
+
+- 商店购买代表已锁定为 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。它复用唯一的 `economy.buy_supplies` 路线、共享移动、`executor.interact`、可选 `executor.choose_dialogue_response`、`executor.buy_shop_item` 和菜单清理链；没有新增平行商店执行器。
+- 编译器现在在同一计划内顺序投影 `move_to_tile` 后的地点与格点，使紧随其后的相邻交互按计划前态校验；投影仅在当前、目标和投影地点精确一致时生效，跨图或身份不一致仍回退到 fresh snapshot 并失败关闭。商店 supporting transition 只额外允许精确的 `move -> interact` 和 `move -> interact -> dialogue` 队列形状，乱序或扩展形状继续拒绝。
+- 运行时等待会在 connector 后保存 `stable-replan-snapshot.json`，要求地点、兼容性和路线时序同时稳定。ShopMenu 已打开且 `shop_stock` 可读、非只读时，允许零游戏分钟的关菜单恢复证明，不把菜单暂停误判为路线时序失效。RuntimeTestHarness 的空闲冻结仅在 `Game1.player.CanMove` 时介入，避免地图切换淡入阶段被永久冻结。
+- v3 隔离运行原生通过 Farm 到 BusStop、BusStop 到 Town，并到达 Blacksmith 稳定站位；旧 stage 4 因队列内位置未投影而拒绝。修复后对该完全相同失败产物离线重编译得到 `ready_for_supporting_transition_dispatch / dispatch_ready=true`。v4 从 fresh 隔离存档再次通过前两段，随后按用户要求主动中止；它不是失败证据，也尚不能登记为完整购买成功。
+- 收尾验证：GoalConditionedBootstrap Release `0 warning / 0 error`，聚焦测试 `45/45`，完整 Core game-free `284/284`，`self-test-acquisition-route-dispatch` 通过，`git diff --check` 通过。游戏、Backend、ProductHost 和 `8765/8767/8768/8798` 监听均已退出；F 盘 v3/v4 运行证据保留，`local-data/` 未纳入版本控制。
+- `formal_product_training_authorized=false` 保持不变。下一固定步骤只做一件事：从 fresh 隔离存档完整重跑 `shop_purchase_sample`，验证 Blacksmith 柜台交互、ShopMenu fresh 重规划、精确购买 `(O)380 x1`、菜单关闭及原生回执。通过前不得把本切片记为完整运行时 strata，也不得开始正式训练。

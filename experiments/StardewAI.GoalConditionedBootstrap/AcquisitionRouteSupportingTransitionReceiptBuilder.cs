@@ -132,7 +132,8 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 transitionReasons = materialTransfer.BlockingReasons;
                 transitionVerified = materialTransfer.Verified;
             }
-            else if (transitionKind == "machine_input_purchase" &&
+            else if (transitionKind is
+                "machine_input_purchase" or "shop_purchase_navigation" &&
                 PurchaseQueueShapeValid(queue))
             {
                 purchaseTransition = VerifyPurchaseTransition(
@@ -266,7 +267,8 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             ? queue.Items.Length == 2
             : kinds[0] == "machine_capacity_establishment"
                 ? MachineCapacityQueueShapeValid(queue)
-            : kinds[0] == "machine_input_purchase"
+            : kinds[0] is
+                "machine_input_purchase" or "shop_purchase_navigation"
                 ? PurchaseQueueShapeValid(queue)
                 : queue.Items.Length == 1;
     }

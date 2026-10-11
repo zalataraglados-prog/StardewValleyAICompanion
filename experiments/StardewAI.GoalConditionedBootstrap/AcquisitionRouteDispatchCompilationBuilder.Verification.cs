@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
@@ -163,6 +164,105 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                             requirement.RequirementSetId == "full_shipment"
                                 ? "open_for_full_shipment"
                                 : "open_for_projected_value")
+                    }
+                }
+            };
+        }
+
+        if (requirement.RouteKind == "sells")
+        {
+            if (!endpointOptionIds.SequenceEqual(
+                    new[] { "economy.buy_supplies" },
+                    StringComparer.Ordinal))
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_shop_purchase_endpoint_invalid"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+            const string prefix = "shop:";
+            var shopId = requirement.SourceId.StartsWith(
+                    prefix,
+                    StringComparison.Ordinal)
+                ? requirement.SourceId[prefix.Length..]
+                : string.Empty;
+            var stockIds = requirement.MatchingWindows
+                .Where(window => window.SourceKind == "shop_stock_rule" &&
+                    window.SourceKey.StartsWith(
+                        shopId + ":",
+                        StringComparison.Ordinal) &&
+                    !string.IsNullOrWhiteSpace(window.RuleId))
+                .Select(window => window.RuleId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (string.IsNullOrWhiteSpace(shopId) || stockIds.Length != 1)
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_shop_source_invalid_or_ambiguous"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+
+            using var stateDocument = JsonDocument.Parse(
+                JsonSerializer.Serialize(snapshot.State, JsonDefaults.Options));
+            var quoteState = new AcquisitionShopQuoteSnapshotState(
+                stateDocument.RootElement);
+            var quotes = quoteState.ShopQuotes(requirement.QualifiedItemId);
+            if (!quotes.EvidenceAvailable)
+            {
+                blockingReasons = quotes.BlockingReasons;
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+            var matches = quotes.Quotes.Where(quote =>
+                    quote.ShopId == shopId &&
+                    quote.StockId == stockIds[0] &&
+                    quote.CanBuyItem &&
+                    quote.ExecutorPurchaseEnabled &&
+                    quote.ExecutorBlockReasons.Length == 0 &&
+                    quote.OutputStack >= requirement.RequiredAmount &&
+                    quote.OutputQuality >= requirement.MinimumQuality &&
+                    (quote.InfiniteStock || quote.Stock >= 1))
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                blockingReasons = new[]
+                {
+                    matches.Length == 0
+                        ? "route_dispatch_current_shop_quote_missing"
+                        : "route_dispatch_current_shop_quote_ambiguous"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+
+            var quote = matches[0];
+            blockingReasons = Array.Empty<string>();
+            return new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "economy.buy_supplies",
+                    Parameters = new[]
+                    {
+                        Parameter("continuation.shop_id", quote.ShopId),
+                        Parameter(
+                            "continuation.qualified_item_id",
+                            quote.QualifiedItemId),
+                        Parameter("continuation.stock_id", quote.StockId),
+                        Parameter(
+                            "continuation.output_stack_per_purchase",
+                            quote.OutputStack.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture)),
+                        Parameter(
+                            "continuation.output_quality",
+                            quote.OutputQuality.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture)),
+                        Parameter(
+                            "continuation.max_unit_price",
+                            quote.Price.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture)),
+                        Parameter("continuation.quantity", "1")
                     }
                 }
             };

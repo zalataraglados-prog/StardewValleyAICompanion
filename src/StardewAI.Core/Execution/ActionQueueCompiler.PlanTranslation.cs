@@ -24,7 +24,10 @@ namespace StardewAI.Core.Execution
             int stepIndex,
             int stepCount,
             bool activeMenuOpenBeforeStep,
-            string activeMenuTypeBeforeStep)
+            string activeMenuTypeBeforeStep,
+            string playerLocationBeforeStep,
+            int? playerTileXBeforeStep,
+            int? playerTileYBeforeStep)
         {
             var parameters = new List<SmallModelActionParameter>
             {
@@ -34,8 +37,22 @@ namespace StardewAI.Core.Execution
                 Parameter("compiler_context.plan_step_count", stepCount.ToString()),
                 Parameter("compiler_context.is_terminal_step", (stepIndex == stepCount - 1).ToString().ToLowerInvariant()),
                 Parameter("compiler_context.active_menu_open_before_step", activeMenuOpenBeforeStep.ToString().ToLowerInvariant()),
-                Parameter("compiler_context.active_menu_type_before_step", activeMenuTypeBeforeStep)
+                Parameter("compiler_context.active_menu_type_before_step", activeMenuTypeBeforeStep),
+                Parameter("compiler_context.player_location_before_step", playerLocationBeforeStep)
             };
+
+            if (playerTileXBeforeStep.HasValue)
+            {
+                parameters.Add(Parameter(
+                    "compiler_context.player_tile_x_before_step",
+                    playerTileXBeforeStep.Value.ToString()));
+            }
+            if (playerTileYBeforeStep.HasValue)
+            {
+                parameters.Add(Parameter(
+                    "compiler_context.player_tile_y_before_step",
+                    playerTileYBeforeStep.Value.ToString()));
+            }
 
             if (step.TargetTileX.HasValue)
             {

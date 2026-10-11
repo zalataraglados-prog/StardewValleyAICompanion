@@ -102,12 +102,47 @@ namespace StardewAI.Core.Execution
             var actions = new List<SmallModelAction>();
             var activeMenuOpenBeforeStep = ActiveMenuOpen(snapshot);
             var activeMenuTypeBeforeStep = activeMenuOpenBeforeStep ? ActiveMenuType(snapshot) : string.Empty;
+            var playerLocationBeforeStep = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            var playerTileXBeforeStep = ReadStateFieldIntOptional(
+                snapshot,
+                "player",
+                "tile_x");
+            var playerTileYBeforeStep = ReadStateFieldIntOptional(
+                snapshot,
+                "player",
+                "tile_y");
             var routedSteps = ExpandCrossLocationMovePrefix(planOutput.Steps, snapshot);
             var expandedSteps = ExpandMoveRouteRepairs(routedSteps, snapshot);
             for (var index = 0; index < expandedSteps.Length; index++)
             {
                 var step = expandedSteps[index];
-                actions.Add(PlanStepToAction(step, index, expandedSteps.Length, activeMenuOpenBeforeStep, activeMenuTypeBeforeStep));
+                actions.Add(PlanStepToAction(
+                    step,
+                    index,
+                    expandedSteps.Length,
+                    activeMenuOpenBeforeStep,
+                    activeMenuTypeBeforeStep,
+                    playerLocationBeforeStep,
+                    playerTileXBeforeStep,
+                    playerTileYBeforeStep));
+                if (string.Equals(
+                        step.Kind,
+                        "move_to_tile",
+                        StringComparison.Ordinal) &&
+                    step.TargetTileX.HasValue &&
+                    step.TargetTileY.HasValue &&
+                    (string.IsNullOrWhiteSpace(step.TargetLocation) ||
+                     string.Equals(
+                         step.TargetLocation,
+                         playerLocationBeforeStep,
+                         StringComparison.OrdinalIgnoreCase)))
+                {
+                    playerTileXBeforeStep = step.TargetTileX;
+                    playerTileYBeforeStep = step.TargetTileY;
+                }
                 if (string.Equals(step.Kind, "close_menu", StringComparison.Ordinal) ||
                     StepClosesMenu(step))
                 {

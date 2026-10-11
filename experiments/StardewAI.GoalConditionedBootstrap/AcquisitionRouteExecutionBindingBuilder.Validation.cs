@@ -227,7 +227,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         }
     }
 
-    private static bool SupportingTransitionQueueShapeValid(
+    internal static bool SupportingTransitionQueueShapeValid(
         ActionQueueItem[] items,
         string[] boundRouteOptions) =>
         items.Length == 1 ||
@@ -267,6 +267,21 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     "executor.wait_ticks",
                     "executor.buy_shop_item",
                     "executor.close_menu"
+                },
+                StringComparer.Ordinal) ||
+            optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.move_to_tile",
+                    "executor.interact"
+                },
+                StringComparer.Ordinal) ||
+            optionIds.SequenceEqual(
+                new[]
+                {
+                    "executor.move_to_tile",
+                    "executor.interact",
+                    "executor.choose_dialogue_response"
                 },
                 StringComparer.Ordinal);
     }

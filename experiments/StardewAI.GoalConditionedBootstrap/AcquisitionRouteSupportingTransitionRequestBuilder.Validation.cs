@@ -13,6 +13,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         AcquisitionRouteTargetDateReservation reservation,
         AcquisitionRouteTargetDateProcessing processing,
         AcquisitionMachineCapacitySupportBinding? capacityBinding,
+        AcquisitionPurchasePrerequisiteBinding? purchaseBinding,
         ICollection<string> reasons)
     {
         if (requirement.BlockingReasons.Length != 0 ||
@@ -53,6 +54,15 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             ValidateMachinePurchaseRoute(requirement, processing, reasons);
             return;
         }
+        if (supportTransitionKind == "shop_purchase_navigation")
+        {
+            ValidateShopPurchaseNavigationRoute(
+                requirement,
+                processing,
+                purchaseBinding,
+                reasons);
+            return;
+        }
         if (supportTransitionKind == "machine_capacity_establishment")
         {
             ValidateMachineCapacityRoute(
@@ -63,6 +73,37 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             return;
         }
         reasons.Add("support_transition_kind_not_bound");
+    }
+
+    private static void ValidateShopPurchaseNavigationRoute(
+        AcquisitionRouteTargetDateUnlock requirement,
+        AcquisitionRouteTargetDateProcessing processing,
+        AcquisitionPurchasePrerequisiteBinding? purchase,
+        ICollection<string> reasons)
+    {
+        var currency = processing.UpstreamRoute.UpstreamRoute
+            .CurrencyEvaluation;
+        if (requirement.RouteKind != "sells" ||
+            !requirement.SourceId.StartsWith("shop:", StringComparison.Ordinal) ||
+            !processing.ProcessingLeadTimeAxisResolved ||
+            processing.ProcessingLeadTimeMatchesTargetDate != true ||
+            processing.ProcessingLeadTimeRequirementKind !=
+                "no_deterministic_processing_wait" ||
+            processing.BlockingReasons.Length != 0 ||
+            currency is null ||
+            currency.Status != "resolved_currency_budget_match" ||
+            purchase is null ||
+            purchase.InputKind != "terminal_shop_purchase" ||
+            purchase.ShopId != requirement.SourceId["shop:".Length..] ||
+            purchase.QualifiedItemId != requirement.QualifiedItemId ||
+            purchase.RequiredPurchaseCount <= 0 ||
+            purchase.UnitPrice <= 0 ||
+            purchase.OutputStackPerPurchase <= 0 ||
+            string.IsNullOrWhiteSpace(purchase.StockId))
+        {
+            reasons.Add(
+                "support_shop_purchase_navigation_not_authoritatively_admitted");
+        }
     }
 
     private static void ValidateMachineCapacityRoute(
@@ -214,7 +255,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     claim.QualifiedItemId == candidate.QualifiedItemId &&
                     claim.Quantity == quantity.Value) == 1;
         }
-        if (supportTransitionKind == "machine_input_purchase")
+        if (supportTransitionKind is
+            "machine_input_purchase" or "shop_purchase_navigation")
         {
             return candidate.OptionId == "economy.buy_supplies" &&
                 candidate.Available &&

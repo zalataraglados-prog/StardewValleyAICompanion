@@ -130,6 +130,8 @@ internal static partial class BootstrapSelfTest
         VerifyCropPlantingSupportingTransition();
         VerifyMachineInputSupportingTransition();
         VerifyMachineCapacitySupportingTransition();
+        VerifyShopPurchaseStageRoles(requirement, lowered, snapshot, source);
+        VerifyShopPurchaseSupportingQueueShapes();
 
         var invalidSource = requirement with
         {
@@ -807,6 +809,106 @@ internal static partial class BootstrapSelfTest
                 "route_queue_command_binding_invalid",
                 StringComparer.Ordinal),
             "An expanded primitive queue was accepted as a legacy option request.");
+    }
+
+    private static void VerifyShopPurchaseStageRoles(
+        AcquisitionRouteTargetDateUnlock templateRequirement,
+        AcquisitionRequirementRouteLowering templateLowering,
+        SnapshotEnvelope snapshot,
+        PolicyEventCandidatePrediction templateCandidate)
+    {
+        var requirement = templateRequirement with
+        {
+            QualifiedItemId = "(O)380",
+            RouteKind = "sells",
+            SourceId = "shop:Blacksmith"
+        };
+        var lowering = templateLowering with
+        {
+            RouteKind = requirement.RouteKind,
+            SourceId = requirement.SourceId,
+            EndpointOptionIds = new[] { "economy.buy_supplies" }
+        };
+        PolicyEventCandidatePrediction Candidate(string kind)
+        {
+            var candidate = CloneCandidate(templateCandidate);
+            candidate.CandidateId = "shop-stage:" + kind;
+            candidate.OptionId = "economy.buy_supplies";
+            candidate.Kind = kind;
+            candidate.QualifiedItemId = requirement.QualifiedItemId;
+            candidate.ShopId = "Blacksmith";
+            candidate.Quantity = 1;
+            candidate.UnitPrice = 150;
+            candidate.TotalValue = 150;
+            candidate.Parameters = Array.Empty<SmallModelActionParameter>();
+            return candidate;
+        }
+
+        var matches = AcquisitionRouteDispatchCompilationBuilder
+            .SelectCandidates(
+                requirement,
+                lowering,
+                snapshot,
+                new[]
+                {
+                    Candidate("route_connector_tile"),
+                    Candidate("interact_endpoint"),
+                    Candidate("buy_shop_item"),
+                    Candidate("purchase_service_gate")
+                });
+        Require(matches.Length == 3,
+            "Shop acquisition admitted an unsupported stage or lost a valid stage.");
+        Require(matches.Single(match => match.Candidate.Kind ==
+                    "route_connector_tile").RouteOptionRole ==
+                "supporting_transition" &&
+                matches.Single(match => match.Candidate.Kind ==
+                    "interact_endpoint").RouteOptionRole ==
+                "supporting_transition" &&
+                matches.Single(match => match.Candidate.Kind ==
+                    "buy_shop_item").RouteOptionRole ==
+                "terminal_transition",
+            "Shop acquisition stage roles were not classified fail closed.");
+    }
+
+    private static void VerifyShopPurchaseSupportingQueueShapes()
+    {
+        static ActionQueueItem Item(string optionId) => new()
+        {
+            OptionId = optionId
+        };
+
+        var directShop = new[]
+        {
+            Item("executor.move_to_tile"),
+            Item("executor.interact")
+        };
+        var dialogueShop = directShop.Append(
+                Item("executor.choose_dialogue_response"))
+            .ToArray();
+        var routeOptions = Enumerable.Repeat(
+                "economy.buy_supplies",
+                dialogueShop.Length)
+            .ToArray();
+        Require(
+            AcquisitionRouteExecutionBindingBuilder
+                .SupportingTransitionQueueShapeValid(
+                    directShop,
+                    routeOptions.Take(directShop.Length).ToArray()) &&
+            AcquisitionRouteExecutionBindingBuilder
+                .SupportingTransitionQueueShapeValid(
+                    dialogueShop,
+                    routeOptions),
+            "Exact shop interaction support macros were not admitted.");
+
+        var reordered = new[]
+        {
+            Item("executor.interact"),
+            Item("executor.move_to_tile"),
+            Item("executor.choose_dialogue_response")
+        };
+        Require(!AcquisitionRouteExecutionBindingBuilder
+                .SupportingTransitionQueueShapeValid(reordered, routeOptions),
+            "A reordered shop interaction support macro was admitted.");
     }
 
     private static PolicyEventCandidatePrediction CloneCandidate(

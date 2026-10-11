@@ -43,6 +43,7 @@
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="SnapshotStateCacheTests.cs" />
+    <Compile Include="SequentialPlanProjectionTests.cs" />
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />
     <Compile Include="CommunityCenterDonationMainlineTests.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="GameClockBudgetPolicyTests.cs" />
     <Compile Include="HeadlessHostInputPumpSourceGuardTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
+    <Compile Include="FutureRouteTimingCalibrationTests.cs" />
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="ValidationTraceSessionTests.cs" />
     <Compile Include="ValidationImpactAdvisoryTests.cs" />
