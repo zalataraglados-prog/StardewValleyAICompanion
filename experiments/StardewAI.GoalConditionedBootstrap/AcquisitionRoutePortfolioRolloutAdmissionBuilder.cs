@@ -6,6 +6,24 @@ public static class AcquisitionRoutePortfolioRolloutAdmissionBuilder
 {
     public static AcquisitionRoutePortfolioRolloutAdmissionReceipt Build(
         string proofManifestPath,
+        string proofReceiptPath) =>
+        InvocationDeterministicBuildSession.Observe(
+            "training_sample_admission_certificate",
+            "AcquisitionRoutePortfolioRolloutAdmissionBuilder.Build",
+            "v1",
+            new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "RolloutProofManifestPath",
+                    proofManifestPath),
+                InvocationDeterministicBuildSession.File(
+                    "RolloutProofReceiptPath",
+                    proofReceiptPath)
+            },
+            () => BuildCore(proofManifestPath, proofReceiptPath));
+
+    private static AcquisitionRoutePortfolioRolloutAdmissionReceipt BuildCore(
+        string proofManifestPath,
         string proofReceiptPath)
     {
         var manifestFullPath = Path.GetFullPath(proofManifestPath);

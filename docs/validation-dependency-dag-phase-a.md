@@ -62,6 +62,37 @@ dependency collection exists only when a validation trace is explicitly
 enabled. A direct Release no-trace replay completed in 24.927 seconds with the
 same output SHA-256; timing remains observational rather than admission truth.
 
+## Teacher dataset comparison
+
+The independent Teacher supervision export now adds two outer certificates to
+the same graph instead of introducing another verifier:
+
+```text
+rollout proof
+-> training sample admission
+-> Teacher supervision dataset
+```
+
+Both producers still execute their existing controller recomputation. The
+rollout admission certificate binds the proof manifest and proof receipt; the
+Teacher dataset certificate additionally binds the admitted receipt and the
+verified transition artifacts reached through the existing proof chain.
+
+The frozen one-transition Full Shipment Sap terminal rollout produced one
+acyclic graph with 27 producer nodes and 44 external-input invalidation sets.
+Changing the initial snapshot theoretically invalidates all 27 nodes. Changing
+only the proof manifest invalidates the rollout proof, training sample
+admission, and Teacher dataset certificates. The traced and no-trace dataset
+files have the same SHA-256:
+
+`c91a75874801bb2d8e1c7459de35862ed0605aeb876a3ba6a563f5bcd90b4579`
+
+The dataset remains `ready_verified_portfolio_supervision_dataset` with one
+Teacher preference and one native outcome. It is eligible only as Teacher
+training evidence; `formal_product_training_authorized=false` remains
+unchanged. The observed run took about 27.43 seconds with the graph and 22.14
+seconds without it. These timings are diagnostic samples, not admission facts.
+
 ## Non-goals
 
 - no cross-command or cross-run reuse;

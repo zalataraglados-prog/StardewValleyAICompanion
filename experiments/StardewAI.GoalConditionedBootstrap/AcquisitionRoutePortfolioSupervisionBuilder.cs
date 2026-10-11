@@ -11,6 +11,31 @@ public static class AcquisitionRoutePortfolioSupervisionBuilder
     public static AcquisitionRoutePortfolioSupervisionDataset Build(
         string proofManifestPath,
         string proofReceiptPath,
+        string rolloutAdmissionReceiptPath) =>
+        InvocationDeterministicBuildSession.Observe(
+            "teacher_dataset_certificate",
+            "AcquisitionRoutePortfolioSupervisionBuilder.Build",
+            "v1",
+            new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "RolloutProofManifestPath",
+                    proofManifestPath),
+                InvocationDeterministicBuildSession.File(
+                    "RolloutProofReceiptPath",
+                    proofReceiptPath),
+                InvocationDeterministicBuildSession.File(
+                    "RolloutAdmissionReceiptPath",
+                    rolloutAdmissionReceiptPath)
+            },
+            () => BuildCore(
+                proofManifestPath,
+                proofReceiptPath,
+                rolloutAdmissionReceiptPath));
+
+    private static AcquisitionRoutePortfolioSupervisionDataset BuildCore(
+        string proofManifestPath,
+        string proofReceiptPath,
         string rolloutAdmissionReceiptPath)
     {
         var manifestFullPath = Path.GetFullPath(proofManifestPath);
