@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
@@ -25,6 +26,10 @@ namespace StardewAI.Core.Execution
         private const int DefaultMoveRouteRepairMinutesPerClear = 2;
         private readonly OptionRegistry.OptionRegistry optionRegistry;
         private readonly Verifier.Verifier verifier;
+        private readonly ConditionalWeakTable<
+            SnapshotEnvelope,
+            ClearObstacleValidationIndex> clearObstacleValidationBySnapshot =
+                new();
 
         public ActionQueueCompiler()
             : this(new OptionRegistry.OptionRegistry(), new Verifier.Verifier())

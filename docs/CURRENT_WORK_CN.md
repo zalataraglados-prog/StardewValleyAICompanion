@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #195 路线清障与空间索引深度优化
+
+- Windows CPU 采样确认剩余热点不在游戏或模型，而在 `CandidateOptionAvailabilityEvaluator`：旧实现对每个“被阻挡出口 × 可清障物”分别重读碰撞 JSON，并在清障前后各跑一次全图 0-1 BFS。现改为同一快照先计算一次起点距离场，再按唯一出口计算反向距离场；一个障碍当且仅当位于某条最小清障数路径上时生成原有 route-repair 候选。候选顺序、字段、阻塞理由和 `clear_one_obstacle_then_fresh_snapshot` 策略不变。
+- 碰撞格和 `ActionQueueCompiler` 的地形/对象校验新增以 `SnapshotEnvelope` 实例为弱键的只读坐标索引，消除每个障碍再次线性扫描整个数组；索引不跨快照。location、stochastic-retry、daily-time-energy 三个轴重复读取的当前路线候选与野树候选，则只在既有 `InvocationDeterministicBuildSession` 中按精确快照 SHA 复用内部不可变索引，不跨命令、run 或 snapshot。
+- 同一冻结 1599-route Sap 输入上，execution-binding 从上一轮 `104.668 s` 继续降为 `13.475 s`，相对本轮起点缩短约 `87.1%`；旧/新输出 SHA-256 都是 `62b7dd89707ec55b8d8494bd3ea7c16deebfb0e9ca0ae4e642c5e4e90e83e739`。真实消费入口 recurrence-prefix checkpoint 从 `114.952 s` 降为 `24.340 s`，仍输出 `verified_recurrence_prefix`、`verified_iteration_count=1`、`remaining_item_count=153`、`prefix_proof_verified=true`。
+- GoalConditionedBootstrap Release 为 `0 warning / 0 error`，Core game-free `256/256` 与 hermetic Bootstrap self-test 通过；性能验证只读取 F 盘冻结制品，没有启动游戏、修改存档或生成训练数据。`formal_training_authorized=false` 不变。下一性能阶段仍是 #200 Phase A 的完整 DAG/成本观测；本轮不授权跨运行缓存、proof inheritance 或 selective native replay。
+
 ## 2026-10-11 #195 确定性证明链单次 invocation 去重
 
 - Full Shipment Sap 完整原生回放已经生成有效的 acquisition、deposit、sleep settlement、rollout proof 与 recurrence-prefix manifest；但旧 `build-full-shipment-recurrence-prefix-checkpoint` 在持续计算超过 12 分钟后仍未结束，开发反馈成本已不可接受。该中断不否定已落盘的原生动作与结算证据，但当时没有生成 prefix checkpoint/summary，不能宣称完整 runner 通过。

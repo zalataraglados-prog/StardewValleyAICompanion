@@ -726,38 +726,74 @@ namespace StardewAI.Core.OptionRegistry
             return null;
         }
 
-        private static bool CollisionGridBlocksTile(SnapshotEnvelope snapshot, int x, int y)
+        private static bool CollisionGridBlocksTile(
+            SnapshotEnvelope snapshot,
+            int x,
+            int y)
         {
-            var grid = ReadStateFieldValue(snapshot, "locations", "collision_grid");
+            var lookup = collisionGridBySnapshot.GetValue(
+                snapshot,
+                BuildCollisionGridLookup);
+            return lookup.Blocks(x, y);
+        }
+
+        private static CollisionGridLookup BuildCollisionGridLookup(
+            SnapshotEnvelope snapshot)
+        {
+            var grid = ReadStateFieldValue(
+                snapshot,
+                "locations",
+                "collision_grid");
             if (!grid.HasValue || grid.Value.ValueKind != JsonValueKind.Object)
-            {
-                return false;
-            }
+                return new CollisionGridLookup(0, 0, new HashSet<long>());
 
-            var width = ReadInt(grid.Value, "width");
-            var height = ReadInt(grid.Value, "height");
-            if (width > 0 && height > 0 && (x < 0 || y < 0 || x >= width || y >= height))
+            var blocked = new HashSet<long>();
+            if (grid.Value.TryGetProperty(
+                    "notable_tiles",
+                    out var notableTiles) &&
+                notableTiles.ValueKind == JsonValueKind.Array)
             {
-                return true;
-            }
-
-            if (!grid.Value.TryGetProperty("notable_tiles", out var notableTiles) || notableTiles.ValueKind != JsonValueKind.Array)
-            {
-                return false;
-            }
-
-            foreach (var tile in notableTiles.EnumerateArray())
-            {
-                if (tile.ValueKind == JsonValueKind.Object &&
-                    ReadInt(tile, "tile_x") == x &&
-                    ReadInt(tile, "tile_y") == y &&
-                    ReadBool(tile, "collision_blocked") == true)
+                foreach (var tile in notableTiles.EnumerateArray())
                 {
-                    return true;
+                    if (tile.ValueKind == JsonValueKind.Object &&
+                        ReadBool(tile, "collision_blocked") == true)
+                    {
+                        blocked.Add(CoordinateKey(
+                            ReadInt(tile, "tile_x"),
+                            ReadInt(tile, "tile_y")));
+                    }
                 }
             }
 
-            return false;
+            return new CollisionGridLookup(
+                ReadInt(grid.Value, "width"),
+                ReadInt(grid.Value, "height"),
+                blocked);
+        }
+
+        private static long CoordinateKey(int x, int y) =>
+            ((long)x << 32) | (uint)y;
+
+        private sealed class CollisionGridLookup
+        {
+            private readonly int width;
+            private readonly int height;
+            private readonly HashSet<long> blocked;
+
+            public CollisionGridLookup(
+                int width,
+                int height,
+                HashSet<long> blocked)
+            {
+                this.width = width;
+                this.height = height;
+                this.blocked = blocked;
+            }
+
+            public bool Blocks(int x, int y) =>
+                (width > 0 && height > 0 &&
+                    (x < 0 || y < 0 || x >= width || y >= height)) ||
+                blocked.Contains(CoordinateKey(x, y));
         }
 
         private static int DirectionFromTo(int fromX, int fromY, int toX, int toY)

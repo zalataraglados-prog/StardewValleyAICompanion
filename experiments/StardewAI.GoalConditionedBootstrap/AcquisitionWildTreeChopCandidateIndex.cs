@@ -29,8 +29,24 @@ internal sealed class AcquisitionWildTreeChopCandidateIndex
     public static AcquisitionWildTreeChopCandidateIndex Read(
         string snapshotPath)
     {
+        var fullPath = Path.GetFullPath(snapshotPath);
+        return InvocationDeterministicBuildSession.GetOrBuildReference(
+            "AcquisitionWildTreeChopCandidateIndex.Read",
+            "v1",
+            new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "SnapshotPath",
+                    fullPath)
+            },
+            () => ReadCore(fullPath));
+    }
+
+    private static AcquisitionWildTreeChopCandidateIndex ReadCore(
+        string snapshotPath)
+    {
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            Path.GetFullPath(snapshotPath),
+            snapshotPath,
             "Wild-tree chop target-date snapshot");
         if (!HasAvailableTerrainFeatureEvidence(snapshot))
         {
