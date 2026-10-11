@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #195 确定性证明链单次 invocation 去重
+
+- Full Shipment Sap 完整原生回放已经生成有效的 acquisition、deposit、sleep settlement、rollout proof 与 recurrence-prefix manifest；但旧 `build-full-shipment-recurrence-prefix-checkpoint` 在持续计算超过 12 分钟后仍未结束，开发反馈成本已不可接受。该中断不否定已落盘的原生动作与结算证据，但当时没有生成 prefix checkpoint/summary，不能宣称完整 runner 通过。
+- Bootstrap 新增默认启用、可显式关闭的 `InvocationDeterministicBuildSession`。缓存只存在于当前进程/当前命令，键包含 producer/version 及每个输入文件的内容 SHA-256；不跨命令、不跨 run、不跨 snapshot。缓存值只保存序列化字节，命中时重新反序列化为新 DTO，不共享可变对象。`--deterministic-build-session disabled` 或 `STARDEWAI_DETERMINISTIC_BUILD_SESSION=disabled` 可恢复原完整重算路径。
+- 首批只接入实测重复最重的四个节点：target-date processing、opportunity cost、portfolio Teacher preference 与 execution binding。每个唯一子图在本命令中仍完整反算一次；相同输入再次由 fresh/settlement/checkpoint 递归请求时才复用。validation trace 新增 `deterministic_build` operation，能按 producer 区分调用数、命中和累计 wall/CPU，不改变 admission。
+- 同一冻结 1599-route Sap 输入上，execution-binding 从原运行约 `469 s` 降为 `104.668 s`，旧/新输出 SHA-256 均为 `62b7dd89707ec55b8d8494bd3ea7c16deebfb0e9ca0ae4e642c5e4e90e83e739`，缩短约 `77.7%`。此前超过 12 分钟仍未完成的 recurrence-prefix checkpoint 现于 `114.952 s` 完成，输出 `verified_recurrence_prefix`、`verified_iteration_count=1`、`remaining_item_count=153`、`prefix_proof_verified=true`。
+- 性能回归只消费 F 盘冻结制品，没有启动游戏、修改存档或产生正式训练数据。GoalConditionedBootstrap Release 为 `0 warning / 0 error`，hermetic Bootstrap self-test 通过，Core game-free 为 `256/256`。本轮解除的是 proof 重复重算的开发效率硬伤；`formal_training_authorized=false` 不变。
+- 下一步先用现有 trace 完成 #200 Phase A 的全节点依赖/成本观测，再评估 opt-in batch Bootstrap。未建立完整 DAG 和 full-shadow 等价前，不启用跨命令增量跳算、proof inheritance 或 selective native replay。
+
 ## 2026-10-11 Full Shipment Sap 原生证据恢复
 
 - F 盘隔离实验室已经从真实原生新档生成独立 Spring 1 基线：存档槽为 `ProofFarm_451377026`，Full Shipment 初态为 `0/154`，只加载 TransparentBridge 与 RuntimeTestHarness。`Invoke-RuntimeFreshSaveSmoke.ps1` 新增可选 `OutputRoot`，默认行为不变，允许把高负载制品稳定留在 F 盘而不污染 I 盘仓库。

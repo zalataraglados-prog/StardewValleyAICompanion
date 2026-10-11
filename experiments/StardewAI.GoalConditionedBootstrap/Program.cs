@@ -26,6 +26,7 @@ using var validationTrace = ValidationTraceSession.TryStart(
         : options.ExistingInputFiles(),
     processStartMilliseconds);
 InvocationReadSession? invocationReadSession = null;
+InvocationDeterministicBuildSession? deterministicBuildSession = null;
 var commandDefinitions = new CommandDefinition[]
 {
     new("audit-knowledge", AuditKnowledge),
@@ -157,6 +158,8 @@ try
         readSessionPlan.ProhibitedPaths,
         readSessionPlan.ProhibitedRoots,
         ReadSessionEnabled(options));
+    deterministicBuildSession = InvocationDeterministicBuildSession.Start(
+        DeterministicBuildSessionEnabled(options));
     if (!commandRegistry.TryGetValue(command, out var definition))
     {
         throw new ArgumentException(
@@ -177,6 +180,7 @@ catch (Exception ex)
 }
 finally
 {
+    deterministicBuildSession?.Dispose();
     invocationReadSession?.Dispose();
     validationTrace?.Complete(Environment.ExitCode);
 }
@@ -206,6 +210,20 @@ static bool ReadSessionEnabled(Arguments options)
     if (string.Equals(mode, "disabled", StringComparison.OrdinalIgnoreCase))
         return false;
     throw new ArgumentException("--read-session must be enabled or disabled.");
+}
+
+static bool DeterministicBuildSessionEnabled(Arguments options)
+{
+    var mode = options.Optional("deterministic-build-session") ??
+        Environment.GetEnvironmentVariable(
+            "STARDEWAI_DETERMINISTIC_BUILD_SESSION") ??
+        "enabled";
+    if (string.Equals(mode, "enabled", StringComparison.OrdinalIgnoreCase))
+        return true;
+    if (string.Equals(mode, "disabled", StringComparison.OrdinalIgnoreCase))
+        return false;
+    throw new ArgumentException(
+        "--deterministic-build-session must be enabled or disabled.");
 }
 
 static void AuditKnowledge(Arguments options)

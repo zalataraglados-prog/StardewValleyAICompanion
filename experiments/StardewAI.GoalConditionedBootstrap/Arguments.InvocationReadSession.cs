@@ -61,7 +61,11 @@ internal sealed partial class Arguments
     private static bool IsControlArgument(string name) =>
         string.Equals(name, "validation-trace", StringComparison.Ordinal) ||
         string.Equals(name, "validation-trace-scenario", StringComparison.Ordinal) ||
-        string.Equals(name, "read-session", StringComparison.Ordinal);
+        string.Equals(name, "read-session", StringComparison.Ordinal) ||
+        string.Equals(
+            name,
+            "deterministic-build-session",
+            StringComparison.Ordinal);
 
     private static bool IsOutputRootArgument(string name) =>
         name.Contains("output-root", StringComparison.OrdinalIgnoreCase);
