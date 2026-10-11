@@ -11,6 +11,32 @@ public static partial class AcquisitionRouteTargetDateFestivalBuilder
         string staticCalendarResolutionPath,
         string targetDateCalendarPath,
         string targetDateUnlockPath,
+        string snapshotPath) => AcquisitionRouteDependencyObservation
+            .ObserveAxis(
+                "AcquisitionRouteTargetDateFestivalBuilder.Build",
+                () => BuildCore(
+                    inventoryPath,
+                    loweringPath,
+                    masterAnglerWindowIndexPath,
+                    staticCalendarResolutionPath,
+                    targetDateCalendarPath,
+                    targetDateUnlockPath,
+                    snapshotPath),
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                snapshotPath);
+
+    private static AcquisitionRouteTargetDateFestivalReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string staticCalendarResolutionPath,
+        string targetDateCalendarPath,
+        string targetDateUnlockPath,
         string snapshotPath)
     {
         var sourcePath = Path.GetFullPath(targetDateUnlockPath);

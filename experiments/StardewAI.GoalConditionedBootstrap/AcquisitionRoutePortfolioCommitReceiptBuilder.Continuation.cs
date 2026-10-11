@@ -46,7 +46,30 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         string continuationPreferencePath,
         string admissionPath,
         string committedLedgerPath,
-        string? commitResultPath)
+        string? commitResultPath) => ObserveCommit(
+            "AcquisitionRoutePortfolioCommitReceiptBuilder.BuildContinuation",
+            currentInputs,
+            admissionPath,
+            committedLedgerPath,
+            commitResultPath,
+            () => BuildContinuationCore(
+                verifiedPrior,
+                currentInputs,
+                continuationRequestPath,
+                continuationPreferencePath,
+                admissionPath,
+                committedLedgerPath,
+                commitResultPath));
+
+    private static AcquisitionRoutePortfolioCommitReceipt
+        BuildContinuationCore(
+            AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+            AcquisitionRoutePortfolioInputs currentInputs,
+            string continuationRequestPath,
+            string continuationPreferencePath,
+            string admissionPath,
+            string committedLedgerPath,
+            string? commitResultPath)
     {
         var preferenceFullPath = Path.GetFullPath(
             continuationPreferencePath);

@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #200 Phase A observe-only dependency DAG
+
+- validation trace 新增独立子 schema `stardewai.validation_dependency_graph.v1`。节点记录 artifact kind/id、输出 SHA-256、producer/version、输入 artifact/hash/path、reuse scope、调用/缓存观察和 wall/CPU 成本；嵌套重算形成真实依赖边，并从每个外部输入计算理论失效后代。
+- 图已覆盖 calendar resolution、全部 target-date 轴、opportunity cost、Teacher preference、portfolio admission/commit、dispatch validation、execution binding、fresh terminal、settlement、checkpoint 和 rollout proof；没有建立第二套 planner/compiler/executor/verifier。固定安全字段为 `observation_only=true`、`can_affect_admission=false`、`incremental_reuse_authorized=false`。
+- F 盘冻结 Full Shipment Sap recurrence-prefix 对照输出单根、25 个 producer 节点、42 个外部输入失效集合；初始 snapshot 漂移会理论失效全部 25 个后代。输出 SHA-256 仍为 `98222532fcb4df7b16847311159095bf5941e87f12188d2b19290906db8d6f12`，状态仍是 `verified_recurrence_prefix` 且 `prefix_proof_verified=true`。
+- observe-only 图的完整哈希和失效解释令本次显式 trace 从上一轮约 `24.340 s` 增至约 `29.200 s`；直接 Release 无 trace 回放为 `24.927 s` 且 SHA 不变，默认路径不执行图构建。Phase A 不允许跳算、proof inheritance、跨 run 缓存或 selective native replay，`formal_training_authorized=false` 不变。详见 `docs/validation-dependency-dag-phase-a.md`。
+
 ## 2026-10-11 #195 路线清障与空间索引深度优化
 
 - Windows CPU 采样确认剩余热点不在游戏或模型，而在 `CandidateOptionAvailabilityEvaluator`：旧实现对每个“被阻挡出口 × 可清障物”分别重读碰撞 JSON，并在清障前后各跑一次全图 0-1 BFS。现改为同一快照先计算一次起点距离场，再按唯一出口计算反向距离场；一个障碍当且仅当位于某条最小清障数路径上时生成原有 route-repair 候选。候选顺序、字段、阻塞理由和 `clear_one_obstacle_then_fresh_snapshot` 策略不变。

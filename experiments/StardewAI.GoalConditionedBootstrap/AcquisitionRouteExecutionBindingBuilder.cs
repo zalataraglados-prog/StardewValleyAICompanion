@@ -211,15 +211,21 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 opportunity,
                 selected.RouteOccurrenceId,
                 before.StateHash))
-            .Concat(ValidateQueue(
-                queue,
-                opportunity.GoalId,
-                before.StateHash,
-                selectedCandidateId,
-                requirement,
-                lowered,
-                portfolioReceipt.PortfolioId,
-                portfolioReceipt.CommittedLedgerRevision))
+            .Concat(InvocationDeterministicBuildSession.Observe(
+                "compile_binding_certificate",
+                "AcquisitionRouteExecutionBindingBuilder.ValidateDispatch",
+                "v1",
+                InvocationDeterministicBuildSession.Describe(inputs),
+                () => ValidateQueue(
+                        queue,
+                        opportunity.GoalId,
+                        before.StateHash,
+                        selectedCandidateId,
+                        requirement,
+                        lowered,
+                        portfolioReceipt.PortfolioId,
+                        portfolioReceipt.CommittedLedgerRevision)
+                    .ToArray()))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();

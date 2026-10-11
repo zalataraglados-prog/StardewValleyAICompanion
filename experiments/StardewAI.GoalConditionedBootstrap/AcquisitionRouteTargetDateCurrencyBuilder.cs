@@ -16,6 +16,47 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
         string targetDateFacilityPath,
         string targetDateResourcePath,
         string snapshotPath,
+        string routeTimingCalibrationPath) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteTargetDateCurrencyBuilder.Build",
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                snapshotPath,
+                routeTimingCalibrationPath),
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            staticCalendarResolutionPath,
+            targetDateCalendarPath,
+            targetDateUnlockPath,
+            targetDateFestivalPath,
+            targetDateLocationPath,
+            targetDateFacilityPath,
+            targetDateResourcePath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+
+    private static AcquisitionRouteTargetDateCurrencyReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string staticCalendarResolutionPath,
+        string targetDateCalendarPath,
+        string targetDateUnlockPath,
+        string targetDateFestivalPath,
+        string targetDateLocationPath,
+        string targetDateFacilityPath,
+        string targetDateResourcePath,
+        string snapshotPath,
         string routeTimingCalibrationPath)
     {
         var sourcePath = Path.GetFullPath(targetDateResourcePath);

@@ -12,14 +12,22 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         string loweringPath,
         string masterAnglerWindowIndexPath,
         string staticCalendarResolutionPath,
-        int targetTotalDay) => BuildCore(
-            inventoryPath,
-            loweringPath,
-            masterAnglerWindowIndexPath,
-            staticCalendarResolutionPath,
-            null,
-            null,
-            targetTotalDay);
+        int targetTotalDay) => AcquisitionRouteDependencyObservation
+            .ObserveAxis(
+                "AcquisitionRouteTargetDateCalendarBuilder.Build",
+                () => BuildCore(
+                    inventoryPath,
+                    loweringPath,
+                    masterAnglerWindowIndexPath,
+                    staticCalendarResolutionPath,
+                    null,
+                    null,
+                    targetTotalDay),
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetTotalDay);
 
     public static AcquisitionRouteTargetDateCalendarReport BuildCurrent(
         string inventoryPath,
@@ -27,14 +35,23 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         string masterAnglerWindowIndexPath,
         string calendarResolutionPath,
         string snapshotPath,
-        int targetTotalDay) => BuildCore(
-            inventoryPath,
-            loweringPath,
-            masterAnglerWindowIndexPath,
-            calendarResolutionPath,
-            snapshotPath,
-            null,
-            targetTotalDay);
+        int targetTotalDay) => AcquisitionRouteDependencyObservation
+            .ObserveAxis(
+                "AcquisitionRouteTargetDateCalendarBuilder.BuildCurrent",
+                () => BuildCore(
+                    inventoryPath,
+                    loweringPath,
+                    masterAnglerWindowIndexPath,
+                    calendarResolutionPath,
+                    snapshotPath,
+                    null,
+                    targetTotalDay),
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                calendarResolutionPath,
+                snapshotPath,
+                targetTotalDay);
 
     internal static AcquisitionRouteTargetDateCalendarReport Build(
         string inventoryPath,
@@ -43,14 +60,24 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         string calendarResolutionPath,
         string snapshotPath,
         CurrentCommunityCenterDenominatorReport denominator,
-        int targetTotalDay) => BuildCore(
-            inventoryPath,
-            loweringPath,
-            masterAnglerWindowIndexPath,
-            calendarResolutionPath,
-            snapshotPath,
-            denominator,
-            targetTotalDay);
+        int targetTotalDay) => AcquisitionRouteDependencyObservation
+            .ObserveAxis(
+                "AcquisitionRouteTargetDateCalendarBuilder.BuildCurrentDenominator",
+                () => BuildCore(
+                    inventoryPath,
+                    loweringPath,
+                    masterAnglerWindowIndexPath,
+                    calendarResolutionPath,
+                    snapshotPath,
+                    denominator,
+                    targetTotalDay),
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                calendarResolutionPath,
+                snapshotPath,
+                denominator,
+                targetTotalDay);
 
     internal static AcquisitionRouteTargetDateCalendarReport RebuildForSource(
         string inventoryPath,

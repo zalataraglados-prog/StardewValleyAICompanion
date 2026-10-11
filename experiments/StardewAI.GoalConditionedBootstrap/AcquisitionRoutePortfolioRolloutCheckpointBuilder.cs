@@ -18,19 +18,26 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
         string settlementRequestPath,
         string settlementResultPath,
         string settledLedgerPath,
-        string settlementReceiptPath) => BuildInitialCore(
-            inputs,
-            executionBindingPath,
-            executionReceiptPath,
-            afterSnapshotPath,
-            freshTerminalReceiptPath,
-            runId,
-            executorVersion,
-            settlementRequestPath,
-            settlementResultPath,
-            settledLedgerPath,
-            settlementReceiptPath,
-            AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
+        string settlementReceiptPath) =>
+        InvocationDeterministicBuildSession.Observe(
+            "runtime_transition_certificate",
+            "AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildInitial",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs).Concat(
+                InvocationDeterministicBuildSession.Describe(new
+                {
+                    ExecutionBindingPath = executionBindingPath,
+                    ExecutionReceiptPath = executionReceiptPath,
+                    AfterSnapshotPath = afterSnapshotPath,
+                    FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                    RunId = runId,
+                    ExecutorVersion = executorVersion,
+                    SettlementRequestPath = settlementRequestPath,
+                    SettlementResultPath = settlementResultPath,
+                    SettledLedgerPath = settledLedgerPath,
+                    SettlementReceiptPath = settlementReceiptPath
+                })),
+            () => BuildInitialCore(
                 inputs,
                 executionBindingPath,
                 executionReceiptPath,
@@ -40,11 +47,23 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
                 executorVersion,
                 settlementRequestPath,
                 settlementResultPath,
-                settledLedgerPath),
-            AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
-                AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(
-                    inputs),
-                inputs.PortfolioPreferenceRequestPath));
+                settledLedgerPath,
+                settlementReceiptPath,
+                AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt(
+                    inputs,
+                    executionBindingPath,
+                    executionReceiptPath,
+                    afterSnapshotPath,
+                    freshTerminalReceiptPath,
+                    runId,
+                    executorVersion,
+                    settlementRequestPath,
+                    settlementResultPath,
+                    settledLedgerPath),
+                AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
+                    AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(
+                        inputs),
+                    inputs.PortfolioPreferenceRequestPath)));
 
     private static AcquisitionRoutePortfolioRolloutCheckpoint
         BuildInitialCore(

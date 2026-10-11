@@ -9,6 +9,22 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         AcquisitionRoutePortfolioInputs inputs,
         string admissionPath,
         string committedLedgerPath,
+        string? commitResultPath) => ObserveCommit(
+            "AcquisitionRoutePortfolioCommitReceiptBuilder.Build",
+            inputs,
+            admissionPath,
+            committedLedgerPath,
+            commitResultPath,
+            () => BuildCore(
+                inputs,
+                admissionPath,
+                committedLedgerPath,
+                commitResultPath));
+
+    private static AcquisitionRoutePortfolioCommitReceipt BuildCore(
+        AcquisitionRoutePortfolioInputs inputs,
+        string admissionPath,
+        string committedLedgerPath,
         string? commitResultPath)
     {
         var recomputed = AcquisitionRoutePortfolioBuilder.Build(inputs);
@@ -26,6 +42,25 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             string priorSupportingTransitionReplanSha256,
             string admissionPath,
             string committedLedgerPath,
+            string? commitResultPath) => ObserveCommit(
+                "AcquisitionRoutePortfolioCommitReceiptBuilder.BuildAfterSupportingTransition",
+                inputs,
+                admissionPath,
+                committedLedgerPath,
+                commitResultPath,
+                () => BuildAfterSupportingTransitionCore(
+                    inputs,
+                    priorSupportingTransitionReplanSha256,
+                    admissionPath,
+                    committedLedgerPath,
+                    commitResultPath));
+
+    private static AcquisitionRoutePortfolioCommitReceipt
+        BuildAfterSupportingTransitionCore(
+            AcquisitionRoutePortfolioInputs inputs,
+            string priorSupportingTransitionReplanSha256,
+            string admissionPath,
+            string committedLedgerPath,
             string? commitResultPath)
     {
         var recomputed = AcquisitionRoutePortfolioBuilder
@@ -39,6 +74,37 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
             commitResultPath,
             recomputed);
     }
+
+    private static AcquisitionRoutePortfolioCommitReceipt ObserveCommit(
+        string producerId,
+        AcquisitionRoutePortfolioInputs inputs,
+        string admissionPath,
+        string committedLedgerPath,
+        string? commitResultPath,
+        Func<AcquisitionRoutePortfolioCommitReceipt> factory) =>
+        InvocationDeterministicBuildSession.Observe(
+            "portfolio_commit_certificate",
+            producerId,
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs)
+                .Concat(new[]
+                {
+                    InvocationDeterministicBuildSession.File(
+                        "AdmissionPath",
+                        admissionPath),
+                    InvocationDeterministicBuildSession.File(
+                        "CommittedLedgerPath",
+                        committedLedgerPath)
+                })
+                .Concat(string.IsNullOrWhiteSpace(commitResultPath)
+                    ? Array.Empty<DeterministicBuildIdentityPart>()
+                    : new[]
+                    {
+                        InvocationDeterministicBuildSession.File(
+                            "CommitResultPath",
+                            commitResultPath)
+                    }),
+            factory);
 
     private static AcquisitionRoutePortfolioCommitReceipt
         BuildVerifiedAdmission(

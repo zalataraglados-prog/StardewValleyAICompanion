@@ -142,7 +142,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             string executorVersion,
             string settlementRequestPath,
             string settlementResultPath,
-            string settledLedgerPath) => BuildReceiptCore(
+            string settledLedgerPath) => ObserveReceipt(
+                "AcquisitionRoutePortfolioSettlementBuilder.BuildContinuationReceipt",
                 inputs,
                 executionBindingPath,
                 executionReceiptPath,
@@ -153,6 +154,17 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
                 settlementRequestPath,
                 settlementResultPath,
                 settledLedgerPath,
-                verifiedPrior,
-                continuationRequestPath);
+                () => BuildReceiptCore(
+                    inputs,
+                    executionBindingPath,
+                    executionReceiptPath,
+                    afterSnapshotPath,
+                    freshTerminalReceiptPath,
+                    runId,
+                    executorVersion,
+                    settlementRequestPath,
+                    settlementResultPath,
+                    settledLedgerPath,
+                    verifiedPrior,
+                    continuationRequestPath));
 }

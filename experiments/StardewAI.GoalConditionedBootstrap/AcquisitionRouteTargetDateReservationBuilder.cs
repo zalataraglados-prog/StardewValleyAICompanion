@@ -18,6 +18,53 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         string targetDateCurrencyPath,
         string strategyLedgerPath,
         string snapshotPath,
+        string routeTimingCalibrationPath) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteTargetDateReservationBuilder.Build",
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                strategyLedgerPath,
+                snapshotPath,
+                routeTimingCalibrationPath),
+            inventoryPath,
+            loweringPath,
+            masterAnglerWindowIndexPath,
+            staticCalendarResolutionPath,
+            targetDateCalendarPath,
+            targetDateUnlockPath,
+            targetDateFestivalPath,
+            targetDateLocationPath,
+            targetDateFacilityPath,
+            targetDateResourcePath,
+            targetDateCurrencyPath,
+            strategyLedgerPath,
+            snapshotPath,
+            routeTimingCalibrationPath);
+
+    private static AcquisitionRouteTargetDateReservationReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string staticCalendarResolutionPath,
+        string targetDateCalendarPath,
+        string targetDateUnlockPath,
+        string targetDateFestivalPath,
+        string targetDateLocationPath,
+        string targetDateFacilityPath,
+        string targetDateResourcePath,
+        string targetDateCurrencyPath,
+        string strategyLedgerPath,
+        string snapshotPath,
         string routeTimingCalibrationPath)
     {
         var sourcePath = Path.GetFullPath(targetDateCurrencyPath);
