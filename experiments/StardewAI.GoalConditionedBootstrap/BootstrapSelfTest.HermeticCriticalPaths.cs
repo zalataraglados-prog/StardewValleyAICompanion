@@ -6,6 +6,7 @@ internal static partial class BootstrapSelfTest
 {
     internal static void RunHermeticCriticalPaths()
     {
+        VerifyInvocationReadPlan();
         VerifyHermeticStrategicPolicyAndPortfolio();
         VerifyMachineCalendarResolution();
         VerifyRadioactiveOreCalendarResolution();

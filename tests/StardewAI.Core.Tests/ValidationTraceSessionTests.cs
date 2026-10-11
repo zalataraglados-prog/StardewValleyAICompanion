@@ -99,6 +99,46 @@ public sealed class ValidationTraceSessionTests
         Assert.True(Directory.Exists(root));
     }
 
+    [Fact]
+    public void InvocationReadReuseIsVisibleInTrace()
+    {
+        var root = NewRoot();
+        Directory.CreateDirectory(root);
+        var artifactPath = Path.Combine(root, "artifact.json");
+        var tracePath = Path.Combine(root, "trace.json");
+        const string artifact = "{\"schema_version\":\"sample.v1\",\"value\":8}";
+        File.WriteAllText(artifactPath, artifact);
+
+        using (InvocationReadSession.Start(new[] { artifactPath }))
+        using (var traceSession = ValidationTraceSession.TryStart(
+            tracePath,
+            "sample-command",
+            "sample-producer",
+            "v1",
+            "single_low_risk_decision",
+            Array.Empty<ValidationTraceInput>(),
+            0))
+        {
+            Assert.Equal(
+                artifact,
+                ContentAddressedJsonArtifactReader.ReadAllText(artifactPath));
+            Assert.Equal(
+                artifact,
+                ContentAddressedJsonArtifactReader.ReadAllText(artifactPath));
+            traceSession!.Complete(0);
+        }
+
+        using var trace = JsonDocument.Parse(File.ReadAllText(tracePath));
+        var rootElement = trace.RootElement;
+        Assert.True(rootElement.GetProperty("cache_hit").GetBoolean());
+        Assert.Equal(
+            new FileInfo(artifactPath).Length,
+            rootElement.GetProperty("bytes_read").GetInt64());
+        var operation = Assert.Single(
+            rootElement.GetProperty("operations").EnumerateArray());
+        Assert.True(operation.GetProperty("cache_hit").GetBoolean());
+    }
+
     private static string NewRoot() => Path.Combine(
         Path.GetTempPath(),
         "stardewai-validation-trace-tests",

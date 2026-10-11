@@ -17,7 +17,7 @@ public static class ContentAddressedJsonArtifactReader
     private const string BlobDirectoryName = "_snapshot-blobs";
     private const string TraceProducerId =
         "StardewAI.Core.ContentAddressedJsonArtifactReader";
-    private const string TraceProducerVersion = "v1";
+    private const string TraceProducerVersion = "v2";
     private static readonly UTF8Encoding Utf8WithoutBom = new(false);
 
     public static string ReadAllText(string logicalPath)
@@ -27,16 +27,33 @@ public static class ContentAddressedJsonArtifactReader
             TraceProducerId,
             TraceProducerVersion,
             logicalPath);
-        var stored = File.ReadAllText(logicalPath, Utf8WithoutBom);
-        try
+        if (InvocationReadSession.TryGetMaterializedText(
+                logicalPath,
+                out var cached,
+                out var cachedLogicalSha256))
         {
-            operation.AddBytesRead(new FileInfo(logicalPath).Length);
+            operation.MarkCacheHit();
+            operation.AddArtifactId(cachedLogicalSha256);
+            return cached;
         }
-        catch
-        {
-            // Diagnostic byte accounting must not change read semantics.
-        }
-        return MaterializeIfNeeded(logicalPath, stored, operation);
+
+        var stored = InvocationReadSession.ReadAllText(
+            logicalPath,
+            Utf8WithoutBom,
+            out var observation);
+        operation.AddBytesRead(observation.PhysicalBytesRead);
+        if (observation.CacheHit)
+            operation.MarkCacheHit();
+        var materialized = MaterializeIfNeeded(
+            logicalPath,
+            stored,
+            operation,
+            out var logicalSha256);
+        InvocationReadSession.StoreMaterializedText(
+            logicalPath,
+            materialized,
+            logicalSha256);
+        return materialized;
     }
 
     public static string MaterializeIfNeeded(
@@ -48,14 +65,20 @@ public static class ContentAddressedJsonArtifactReader
             TraceProducerId,
             TraceProducerVersion,
             logicalPath);
-        return MaterializeIfNeeded(logicalPath, stored, operation);
+        return MaterializeIfNeeded(
+            logicalPath,
+            stored,
+            operation,
+            out _);
     }
 
     private static string MaterializeIfNeeded(
         string logicalPath,
         string stored,
-        ValidationTraceOperation operation)
+        ValidationTraceOperation operation,
+        out string? logicalSha256)
     {
+        logicalSha256 = null;
         var parseClock = operation.IsEnabled ? Stopwatch.StartNew() : null;
         JsonDocument document;
         try
@@ -141,6 +164,7 @@ public static class ContentAddressedJsonArtifactReader
                 var expectedBytes = root.GetProperty("logical_bytes").GetInt64();
                 var expectedSha256 = RequiredString(root, "logical_sha256");
                 var actualSha256 = Sha256(materialized);
+                logicalSha256 = actualSha256;
                 operation.AddHashBytes(materialized.LongLength);
                 operation.AddArtifactId(expectedSha256);
                 if (materialized.LongLength != expectedBytes ||

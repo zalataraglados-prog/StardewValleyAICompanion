@@ -59,6 +59,7 @@
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="ValidationTraceSessionTests.cs" />
     <Compile Include="ValidationImpactAdvisoryTests.cs" />
+    <Compile Include="InvocationReadSessionTests.cs" />
     <Compile Include="GenericMovementClearanceBoundarySourceGuardTests.cs" />
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
