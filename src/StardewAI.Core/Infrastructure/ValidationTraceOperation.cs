@@ -23,6 +23,7 @@ public sealed class ValidationTraceOperation : IDisposable
     private long hashBytes;
     private double jsonParseMilliseconds;
     private double materializeMilliseconds;
+    private bool cacheHit;
     private int disposed;
 
     private ValidationTraceOperation()
@@ -85,6 +86,12 @@ public sealed class ValidationTraceOperation : IDisposable
             artifactIds.Add(artifactId);
     }
 
+    public void MarkCacheHit()
+    {
+        if (session is not null)
+            cacheHit = true;
+    }
+
     public void Dispose()
     {
         if (session is null ||
@@ -130,7 +137,7 @@ public sealed class ValidationTraceOperation : IDisposable
                     jsonParseMilliseconds),
                 MaterializeMilliseconds = ValidationTraceSession.Round(
                     materializeMilliseconds),
-                CacheHit = false
+                CacheHit = cacheHit
             });
         }
         catch

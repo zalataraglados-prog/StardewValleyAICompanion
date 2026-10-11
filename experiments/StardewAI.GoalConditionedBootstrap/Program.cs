@@ -25,6 +25,7 @@ using var validationTrace = ValidationTraceSession.TryStart(
         ? null
         : options.ExistingInputFiles(),
     processStartMilliseconds);
+InvocationReadSession? invocationReadSession = null;
 var commandDefinitions = new CommandDefinition[]
 {
     new("audit-knowledge", AuditKnowledge),
@@ -150,6 +151,12 @@ var commandRegistry = commandDefinitions.ToDictionary(
     StringComparer.Ordinal);
 try
 {
+    var readSessionPlan = options.InvocationReadPlan();
+    invocationReadSession = InvocationReadSession.Start(
+        readSessionPlan.ImmutableInputPaths,
+        readSessionPlan.ProhibitedPaths,
+        readSessionPlan.ProhibitedRoots,
+        ReadSessionEnabled(options));
     if (!commandRegistry.TryGetValue(command, out var definition))
     {
         throw new ArgumentException(
@@ -170,6 +177,7 @@ catch (Exception ex)
 }
 finally
 {
+    invocationReadSession?.Dispose();
     validationTrace?.Complete(Environment.ExitCode);
 }
 
@@ -186,6 +194,18 @@ static double TraceProcessStartMilliseconds()
     {
         return 0;
     }
+}
+
+static bool ReadSessionEnabled(Arguments options)
+{
+    var mode = options.Optional("read-session") ??
+        Environment.GetEnvironmentVariable("STARDEWAI_READ_SESSION") ??
+        "enabled";
+    if (string.Equals(mode, "enabled", StringComparison.OrdinalIgnoreCase))
+        return true;
+    if (string.Equals(mode, "disabled", StringComparison.OrdinalIgnoreCase))
+        return false;
+    throw new ArgumentException("--read-session must be enabled or disabled.");
 }
 
 static void AuditKnowledge(Arguments options)
@@ -2384,7 +2404,7 @@ internal sealed record CommandDefinition(
     string Name,
     Action<Arguments> Execute);
 
-internal sealed class Arguments
+internal sealed partial class Arguments
 {
     private readonly Dictionary<string, string> values;
 
@@ -2440,6 +2460,10 @@ internal sealed class Arguments
                     pair.Key,
                     "validation-trace",
                     StringComparison.Ordinal) ||
+                string.Equals(
+                    pair.Key,
+                    "read-session",
+                    StringComparison.Ordinal) ||
                 pair.Key.Contains("output", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -2467,6 +2491,7 @@ internal sealed class Arguments
             .ThenBy(value => value.Path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
+
 }
 
 internal static class JsonDefaults

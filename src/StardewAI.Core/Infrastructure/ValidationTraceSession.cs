@@ -155,7 +155,7 @@ public sealed class ValidationTraceSession : IDisposable
             StartedAt = startedAt,
             CompletedAt = completedAt,
             ExitCode = exitCode,
-            CacheHit = false,
+            CacheHit = operationSnapshot.Any(value => value.CacheHit),
             Inputs = inputs,
             WallMilliseconds = Round(wallClock.Elapsed.TotalMilliseconds),
             CpuMilliseconds = Round(cpuMilliseconds),

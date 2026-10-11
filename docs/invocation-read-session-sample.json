@@ -1,0 +1,42 @@
+{
+  "schema_version": "stardewai.invocation_read_session_sample.v1",
+  "status": "complete",
+  "measured_at": "2026-10-11",
+  "command": "build-acquisition-route-calendar-resolution",
+  "reader_producer_version": "v2",
+  "fixture": "artifacts/full-shipment-runtime-sample-production-support/current-stage-one-collection-teacher-frontier-fixture/machine-capacity-support-proof/authority",
+  "run_order": [
+    "enabled",
+    "disabled"
+  ],
+  "output_equivalent": true,
+  "output_sha256": "9611dfb58ca00af4b5b09487b565a64ac1b170e318bfd52d34a82306672ba422",
+  "enabled": {
+    "wall_ms": 258.003,
+    "bytes_read": 913287,
+    "hash_bytes": 787201,
+    "cache_hit": true,
+    "operation_invocation_count": 28
+  },
+  "disabled": {
+    "wall_ms": 260.714,
+    "bytes_read": 1464034,
+    "hash_bytes": 936153,
+    "cache_hit": false,
+    "operation_invocation_count": 28
+  },
+  "reduction": {
+    "bytes_read_percent": 37.618,
+    "hash_bytes_percent": 15.911,
+    "sample_wall_percent": 1.04
+  },
+  "safety": {
+    "scope": "single_process_single_invocation_explicit_immutable_inputs",
+    "typed_mutable_dto_cache": false,
+    "cross_run_cache": false,
+    "cross_snapshot_cache": false,
+    "live_fact_cache": false,
+    "output_path_cache": false,
+    "hosted_quality_reduced": false
+  }
+}

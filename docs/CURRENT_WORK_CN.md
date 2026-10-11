@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #195 invocation-scoped immutable read session
+
+- #199 在 Core 新增单次进程/单次命令生命周期的 `InvocationReadSession`。Bootstrap 默认只登记启动时已存在的文件参数；output/output-root、checkpoint、ledger/lease/ownership、控制参数、输出同路径与输出根后代全部禁止复用。`--read-session disabled` 或 `STARDEWAI_READ_SESSION=disabled` 可恢复原始逐次读取路径。
+- `ContentAddressedJsonArtifactReader` 与 `CurrentTeacherFrontierSupport.HashFile` 共享 raw bytes、stored SHA-256 和验证后的 materialized text/logical SHA-256；内容寻址 blob 或最终 payload 只要有字节数/哈希错误仍立即失败关闭。当前 DTO 多为可变 class，因此本轮明确不共享 typed deserialize 实例，避免对象污染。
+- validation trace 现在会在 operation 与 command 层真实记录 session cache hit；Phase 0 baseline builder 继续拒绝 cache-bearing trace，冻结基线须用 disabled 模式重放。反向顺序代表样本输出 SHA 完全一致，读盘由 `1464034` 降至 `913287` bytes（`37.618%`），全量哈希由 `936153` 降至 `787201` bytes（`15.911%`）；温缓存 wall 样本由 `260.714 ms` 降至 `258.003 ms`，仅作参考。详见 `docs/invocation-read-session.md` 与机器可读样本 `docs/invocation-read-session-sample.json`。
+- 本轮不缓存 live snapshot、正在生成的 receipt、ownership/lease、训练准入或跨 snapshot 事实，不修改 Planner/Compiler/Executor/Verifier，不建立跨 run cache。#195 的 #200–#203 后期 DAG/增量验证顺序保持不变。
+
 ## 2026-10-11 #195 本地 validation impact advisory
 
 - #198 新增只读 `scripts/Get-ValidationImpactAdvisory.ps1`：默认仅读取 staged 与 unstaged 的已跟踪文件，也可读取显式文件清单或 `base...head` git range，输出 `stardewai.validation_impact_advisory.v1` JSON。新建未跟踪文件必须显式传入，避免把无关本地数据扫入分析。
