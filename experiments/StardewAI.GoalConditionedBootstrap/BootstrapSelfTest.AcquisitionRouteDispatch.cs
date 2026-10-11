@@ -493,12 +493,19 @@ internal static partial class BootstrapSelfTest
 
         var radioactiveNodeCandidate = CloneCandidate(monsterCandidate);
         radioactiveNodeCandidate.Kind = "mining_reach_depth_plan_envelope";
+        radioactiveNodeCandidate.QualifiedItemId = string.Empty;
         radioactiveNodeCandidate.Parameters =
             radioactiveNodeCandidate.Parameters
                 .Where(parameter => parameter.Name !=
                     "authoritative_route_sources_json")
                 .Concat(new[]
                 {
+                    Parameter("acquisition_target_route_kind", string.Empty),
+                    Parameter("acquisition_target_source_id", string.Empty),
+                    Parameter(
+                        "acquisition_target_qualified_item_id",
+                        string.Empty),
+                    Parameter("qualified_item_id", "(O)95"),
                     Parameter(
                         "authoritative_route_sources_json",
                         "[{\"route_kind\":\"native_radioactive_ore_node\",\"source_id\":\"GameLocation.breakStone\",\"qualified_item_id\":\"(O)909\"}]")
@@ -520,7 +527,68 @@ internal static partial class BootstrapSelfTest
                     radioactiveNodeLowering,
                     snapshot,
                     new[] { radioactiveNodeCandidate }).Length == 1,
-            "An exact selected radioactive ore node source was rejected.");
+            "An exact selected radioactive ore node source was rejected " +
+            "when empty acquisition placeholders represented no terminal " +
+            "acquisition override.");
+
+        var radioactiveNodePartialIntent = CloneCandidate(
+            radioactiveNodeCandidate);
+        radioactiveNodePartialIntent.Parameters =
+            radioactiveNodePartialIntent.Parameters
+                .Select(parameter => parameter.Name ==
+                    "acquisition_target_route_kind"
+                        ? Parameter(
+                            parameter.Name,
+                            radioactiveNodeRequirement.RouteKind)
+                        : parameter)
+                .ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    radioactiveNodeRequirement,
+                    radioactiveNodeLowering,
+                    snapshot,
+                    new[] { radioactiveNodePartialIntent }).Length == 0,
+            "A radioactive ore node with a partial acquisition override " +
+            "was selected.");
+
+        var radioactiveNodeWrongSource = CloneCandidate(
+            radioactiveNodeCandidate);
+        radioactiveNodeWrongSource.Parameters =
+            radioactiveNodeWrongSource.Parameters
+                .Where(parameter => parameter.Name !=
+                    "authoritative_route_sources_json")
+                .Concat(new[]
+                {
+                    Parameter(
+                        "authoritative_route_sources_json",
+                        "[{\"route_kind\":\"native_radioactive_ore_node\",\"source_id\":\"spoofed.breakStone\",\"qualified_item_id\":\"(O)909\"}]")
+                }).ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    radioactiveNodeRequirement,
+                    radioactiveNodeLowering,
+                    snapshot,
+                    new[] { radioactiveNodeWrongSource }).Length == 0,
+            "A radioactive ore node with a spoofed authoritative source " +
+            "was selected.");
+
+        var radioactiveNodeWrongOutput = CloneCandidate(
+            radioactiveNodeCandidate);
+        radioactiveNodeWrongOutput.Parameters =
+            radioactiveNodeWrongOutput.Parameters
+                .Where(parameter => parameter.Name !=
+                    "authoritative_route_sources_json")
+                .Concat(new[]
+                {
+                    Parameter(
+                        "authoritative_route_sources_json",
+                        "[{\"route_kind\":\"native_radioactive_ore_node\",\"source_id\":\"GameLocation.breakStone\",\"qualified_item_id\":\"(O)390\"}]")
+                }).ToArray();
+        Require(AcquisitionRouteDispatchCompilationBuilder.SelectCandidates(
+                    radioactiveNodeRequirement,
+                    radioactiveNodeLowering,
+                    snapshot,
+                    new[] { radioactiveNodeWrongOutput }).Length == 0,
+            "A radioactive ore node with a spoofed authoritative output " +
+            "was selected.");
 
         var buriedItemCandidate = CloneCandidate(monsterCandidate);
         buriedItemCandidate.Kind = "mining_buried_item_plan_envelope";

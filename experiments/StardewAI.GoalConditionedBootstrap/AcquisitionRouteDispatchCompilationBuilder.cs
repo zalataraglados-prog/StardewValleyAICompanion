@@ -82,7 +82,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             requirement,
             lowered.EndpointOptionIds,
             rankedCandidates,
-            out var candidateVerificationReasons);
+            out var candidateVerificationReasons,
+            out var rebuiltEvidence);
         if (candidateVerificationReasons.Length > 0)
         {
             return Blocked(
@@ -90,7 +91,16 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 requirement,
                 snapshot.StateHash,
                 rankingHash,
-                candidateVerificationReasons);
+                candidateVerificationReasons,
+                new AcquisitionRouteEndpointCandidateEvidenceComparison(
+                    rankedCandidates
+                        .Where(candidate => lowered.EndpointOptionIds.Contains(
+                            candidate.OptionId,
+                            StringComparer.Ordinal))
+                        .OrderBy(candidate => candidate.CandidateId,
+                            StringComparer.Ordinal)
+                        .ToArray(),
+                    rebuiltEvidence));
         }
         var matches = SelectCandidates(
             requirement,
@@ -239,7 +249,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         AcquisitionRouteTargetDateUnlock requirement,
         string stateHash,
         string rankingHash,
-        IEnumerable<string> reasons) => new()
+        IEnumerable<string> reasons,
+        AcquisitionRouteEndpointCandidateEvidenceComparison? comparison = null) => new()
         {
             GoalId = goalId,
             RouteOccurrenceId = requirement.RouteOccurrenceId,
@@ -256,7 +267,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
-                .ToArray()
+                .ToArray(),
+            EndpointCandidateEvidenceComparison = comparison
         };
 
     private static AcquisitionRouteTargetDateUnlock RequirementRoute(

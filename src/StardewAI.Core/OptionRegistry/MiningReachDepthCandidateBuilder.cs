@@ -58,6 +58,20 @@ namespace StardewAI.Core.OptionRegistry
                 !string.IsNullOrWhiteSpace(acquisitionRouteKind) ||
                 !string.IsNullOrWhiteSpace(acquisitionSourceId) ||
                 !string.IsNullOrWhiteSpace(acquisitionQualifiedItemId);
+            var acquisitionIntentParameters = hasAcquisitionIntent
+                ? new[]
+                {
+                    Parameter(
+                        "acquisition_target_route_kind",
+                        acquisitionRouteKind ?? string.Empty),
+                    Parameter(
+                        "acquisition_target_source_id",
+                        acquisitionSourceId ?? string.Empty),
+                    Parameter(
+                        "acquisition_target_qualified_item_id",
+                        acquisitionQualifiedItemId ?? string.Empty)
+                }
+                : Array.Empty<SmallModelActionParameter>();
             if (string.IsNullOrWhiteSpace(resourcePreservationPolicy))
             {
                 resourcePreservationPolicy =
@@ -190,12 +204,14 @@ namespace StardewAI.Core.OptionRegistry
                         (targetDepth?.ToString() ?? "missing") +
                         ";skill_training_target_id=" +
                         (trainCombat ? "combat" : "none") +
-                        ";acquisition_target_route_kind=" +
-                        (acquisitionRouteKind ?? "none") +
-                        ";acquisition_target_source_id=" +
-                        (acquisitionSourceId ?? "none") +
-                        ";acquisition_target_qualified_item_id=" +
-                        (acquisitionQualifiedItemId ?? "none") +
+                        (hasAcquisitionIntent
+                            ? ";acquisition_target_route_kind=" +
+                                acquisitionRouteKind +
+                              ";acquisition_target_source_id=" +
+                                acquisitionSourceId +
+                              ";acquisition_target_qualified_item_id=" +
+                                acquisitionQualifiedItemId
+                            : string.Empty) +
                         ";rolling_floor_step=" + floorStep.StepKind +
                         ";execution_option_id=" + executionOptionId,
                     EstimatedTicks = -1,
@@ -232,23 +248,16 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("minimum_reserve_energy", minReserveEnergy?.ToString() ?? string.Empty),
                         Parameter(
                             "resource_preservation_policy",
-                            resourcePreservationPolicy),
-                        Parameter(
-                            "acquisition_target_route_kind",
-                            acquisitionRouteKind ?? string.Empty),
-                        Parameter(
-                            "acquisition_target_source_id",
-                            acquisitionSourceId ?? string.Empty),
-                        Parameter(
-                            "acquisition_target_qualified_item_id",
-                            acquisitionQualifiedItemId ?? string.Empty),
+                            resourcePreservationPolicy)
+                    }.Concat(acquisitionIntentParameters).Concat(new[]
+                    {
                         Parameter(
                             "authoritative_route_sources_json",
                             authoritativeRouteSourcesJson),
                         Parameter("estimate_status", "rolling_horizon_current_floor_step"),
                         Parameter("required_executor_profile", "mining_perfect_executor"),
                         Parameter("runtime_boundary", available ? "current_floor_step_executable" : floorStep.Reason)
-                    }.Concat(executionParameters).ToArray()
+                    }).Concat(executionParameters).ToArray()
                 }
             };
         }

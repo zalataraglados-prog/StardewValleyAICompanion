@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -91,10 +92,21 @@ public sealed class AcquisitionRouteDispatchCompilation
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 
+    [JsonPropertyName("endpoint_candidate_evidence_comparison")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AcquisitionRouteEndpointCandidateEvidenceComparison?
+        EndpointCandidateEvidenceComparison { get; set; }
+
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
         "The dispatcher selects only a current, available terminal or source-bound supporting candidate proven from the live ranking and same-state transparent snapshot. Learner rank, score and reward are erased before the existing daily-plan and action-queue compilers run. Every expanded primitive repeats the selected route, reservation ledger, source candidate, route-option role and ranking hash. Current tapper output dispatch is additionally constrained to the exact location and tile retained by daily budgeting and requires exactly one matching candidate. A supporting transition is normally one action; the only admitted multi-item shapes are the existing move-plus-transfer macro and the existing one-item purchase macro with optional bounded menu-readiness wait followed by purchase and safe menu close. Every supporting transition requires a fresh snapshot and is never terminal-receipt eligible. Missing or ambiguous source evidence, blocked compilation, any other queue shape or lost lineage fails closed; this artifact cannot authorize formal training.";
 }
+
+public sealed record AcquisitionRouteEndpointCandidateEvidenceComparison(
+    [property: JsonPropertyName("supplied_candidates")]
+    PolicyEventCandidatePrediction[] SuppliedCandidates,
+    [property: JsonPropertyName("rebuilt_candidates")]
+    PolicyEventCandidatePrediction[] RebuiltCandidates);
 
 internal sealed record AcquisitionRouteDispatchCandidateMatch(
     StardewAI.Contracts.Training.PolicyEventCandidatePrediction Candidate,

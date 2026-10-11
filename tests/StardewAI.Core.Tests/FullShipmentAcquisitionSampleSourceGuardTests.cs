@@ -1982,6 +1982,25 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             rebuild,
             StringComparison.Ordinal);
         Assert.Contains(
+            "/api/v1/planner/baseline/rank-options",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Write-Utf8Text -Path $Paths.ranking",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$postCommitRankingResponse",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.True(
+            rebuild.IndexOf(
+                "Write-Utf8Text -Path $Paths.ranking",
+                StringComparison.Ordinal) <
+            rebuild.IndexOf(
+                "build-acquisition-route-portfolio-teacher-preference",
+                StringComparison.Ordinal));
+        Assert.Contains(
             "build-acquisition-route-fresh-terminal-receipt",
             rebuild,
             StringComparison.Ordinal);
@@ -2001,6 +2020,32 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.DoesNotContain(
             "$runId = Split-Path -Leaf $ArtifactDirectory",
             source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SapEvidenceExportHasOneExplicitMilestoneAdmissionPath()
+    {
+        var milestone = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1");
+        var program = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "Program.cs");
+
+        Assert.Equal(
+            2,
+            milestone.Split(
+                "stardewai.runtime_full_shipment_sap_evidence_export.v1",
+                StringSplitOptions.None).Length - 1);
+        Assert.Contains(
+            "build-full-shipment-sap-evidence-export",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FullShipmentRecurrenceProofBuilder.BuildPrefixCheckpoint",
+            program,
             StringComparison.Ordinal);
     }
 

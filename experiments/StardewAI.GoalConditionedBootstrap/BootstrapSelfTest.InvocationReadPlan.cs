@@ -165,6 +165,42 @@ internal static partial class BootstrapSelfTest
         Require(
             builds == 3,
             "Disabled deterministic build reuse changed fallback behavior.");
+
+        var optionalPathBuilds = 0;
+        using (var optionalPathSession =
+            InvocationDeterministicBuildSession.Start())
+        {
+            var identity = InvocationDeterministicBuildSession.Describe(
+                new OptionalPathFixture
+                {
+                    RequiredPath = immutablePath,
+                    OptionalPath = string.Empty
+                });
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-optional-path",
+                "v1",
+                identity,
+                () =>
+                {
+                    optionalPathBuilds++;
+                    return new DeterministicBuildFixture { Value = 10 };
+                });
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-optional-path",
+                "v1",
+                identity,
+                () =>
+                {
+                    optionalPathBuilds++;
+                    return new DeterministicBuildFixture { Value = 11 };
+                });
+            var snapshot = optionalPathSession.Snapshot();
+            Require(
+                optionalPathBuilds == 1 &&
+                snapshot.BuildCount == 1 &&
+                snapshot.CacheHitCount == 1,
+                "Empty optional path did not remain an explicit reusable value identity.");
+        }
     }
 
     private static string WriteFixture(string root, string name)
@@ -178,5 +214,12 @@ internal static partial class BootstrapSelfTest
     private sealed class DeterministicBuildFixture
     {
         public int Value { get; set; }
+    }
+
+    private sealed class OptionalPathFixture
+    {
+        public string RequiredPath { get; init; } = string.Empty;
+
+        public string OptionalPath { get; init; } = string.Empty;
     }
 }

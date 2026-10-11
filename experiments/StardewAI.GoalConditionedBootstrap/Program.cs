@@ -120,6 +120,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-full-shipment-settlement-receipt", BuildFullShipmentSettlementReceipt),
     new("build-full-shipment-recurrence-proof-receipt", BuildFullShipmentRecurrenceProofReceipt),
     new("build-full-shipment-recurrence-prefix-checkpoint", BuildFullShipmentRecurrencePrefixCheckpoint),
+    new("build-full-shipment-sap-evidence-export", BuildFullShipmentSapEvidenceExport),
     new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
     new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
@@ -2156,6 +2157,22 @@ static void BuildFullShipmentRecurrencePrefixCheckpoint(Arguments options)
         options.Required("manifest"));
     Write(options.Required("output"), report);
     if (!report.PrefixProofVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildFullShipmentSapEvidenceExport(Arguments options)
+{
+    var manifestPath = options.Required("manifest");
+    var checkpointPath = options.Required("checkpoint-output");
+    var checkpoint = FullShipmentRecurrenceProofBuilder.BuildPrefixCheckpoint(
+        manifestPath);
+    Write(checkpointPath, checkpoint);
+    var report = FullShipmentSapEvidenceExportBuilder.Build(
+        manifestPath,
+        checkpointPath,
+        checkpoint);
+    Write(options.Required("output"), report);
+    if (!report.EvidenceVerified)
         Environment.ExitCode = 2;
 }
 

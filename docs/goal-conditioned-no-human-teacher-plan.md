@@ -1,5 +1,21 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-11: current-authority Full Shipment anchors verified
+
+- The Sap recurrence prefix now enters the milestone through a dedicated evidence-export schema that independently
+  rebuilds its prefix checkpoint and binds the exact recurrence and acquisition rollout hashes. It cannot authorize
+  formal training.
+- The historical Radioactive Ore native execution was rebased against the current requirement inventory, lowering,
+  Master Angler windows and route-timing authority. Planning, Teacher preference, post-commit ranking, dispatch,
+  execution binding, fresh terminal receipt, settlement, checkpoint and rollout proof all rebuild successfully. The
+  native execution remains the original shared `executor.mine_stone -> executor.pickup_debris` sequence.
+- The current-authority preflight is `2/26`: `native_wild_tree_chop_drop` and `native_radioactive_ore_node` are exact
+  verified anchors, shared shipping evidence is verified, and 24 strata remain. The next bounded batch is the seven
+  high-risk scenarios: tapper output, monster drop, location fishing, location artifact spot, geode drop, shop purchase
+  and Community Center reward.
+- `formal_product_training_authorized=false` remains enforced. This revalidation used frozen artifacts and a hidden
+  Backend process; it did not launch the game, modify a save or produce formal training data.
+
 ## 2026-10-05: bounded runtime verification replaces per-change full replay
 
 - Current-version Sap proof `runtime-full-shipment-sap-refresh-20261005-183733` verified acquisition, shipping, return,

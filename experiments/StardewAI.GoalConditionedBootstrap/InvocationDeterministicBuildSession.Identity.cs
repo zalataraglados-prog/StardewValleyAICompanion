@@ -16,7 +16,9 @@ internal sealed partial class InvocationDeterministicBuildSession
             name.EndsWith("Path", StringComparison.Ordinal) &&
             value is string path)
         {
-            return File(name, path);
+            return string.IsNullOrWhiteSpace(path)
+                ? Value(name, path)
+                : File(name, path);
         }
         return Value(name, value);
     }

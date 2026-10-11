@@ -109,5 +109,137 @@ internal static partial class BootstrapSelfTest
         }
         Require(duplicateRejected,
             "Duplicate Full Shipment runtime sample evidence was accepted.");
+
+        VerifySapEvidenceExport();
+    }
+
+    private static void VerifySapEvidenceExport()
+    {
+        var manifestPath = Path.GetFullPath("sap-recurrence-manifest.json");
+        var checkpointPath = Path.GetFullPath("sap-prefix-checkpoint.json");
+        var rolloutManifestPath = Path.GetFullPath("sap-rollout-manifest.json");
+        var rolloutReceiptPath = Path.GetFullPath("sap-rollout-receipt.json");
+        var manifestSha = new string('a', 64);
+        var rolloutManifestSha = new string('b', 64);
+        var manifest = new FullShipmentRecurrenceProofManifest
+        {
+            Iterations = new[]
+            {
+                new FullShipmentRecurrenceIterationProof
+                {
+                    RequirementId = "full_shipment:item:92",
+                    QualifiedItemId = "(O)92",
+                    AcquisitionRolloutProofManifestPath = rolloutManifestPath,
+                    AcquisitionRolloutProofReceiptPath = rolloutReceiptPath
+                }
+            }
+        };
+        var checkpoint = new FullShipmentRecurrencePrefixCheckpoint
+        {
+            Status = "verified_recurrence_prefix",
+            ManifestSha256 = manifestSha,
+            RequiredItemCount = 154,
+            VerifiedIterationCount = 1,
+            RemainingItemCount = 153,
+            FinalTotalDay = 1,
+            PrefixProofVerified = true,
+            ReadyForNextIteration = true,
+            CompletedRequirementIds = new[] { "full_shipment:item:92" }
+        };
+        var rolloutManifest = new AcquisitionRoutePortfolioRolloutProofManifest
+        {
+            InitialCheckpointProof =
+                new AcquisitionRoutePortfolioInitialCheckpointProof
+                {
+                    RunId = "sap-export-self-test",
+                    ExecutionInputs = new AcquisitionRouteExecutionBindingInputs
+                    {
+                        RouteOccurrenceId =
+                            "full_shipment:full_shipment:item:92:0:7"
+                    }
+                }
+        };
+        var rolloutReceipt = new AcquisitionRoutePortfolioRolloutProofReceipt
+        {
+            Status = "verified_complete_rollout_proof_chain",
+            ManifestSha256 = rolloutManifestSha,
+            ProofChainVerified = true,
+            PortfolioCompletionVerified = true
+        };
+
+        var export = FullShipmentSapEvidenceExportBuilder.BuildReport(
+            manifestPath,
+            checkpointPath,
+            rolloutManifestPath,
+            rolloutReceiptPath,
+            manifest,
+            checkpoint,
+            rolloutManifest,
+            rolloutReceipt,
+            manifestSha,
+            new string('c', 64),
+            rolloutManifestSha,
+            new string('d', 64));
+        Require(
+            export.EvidenceVerified &&
+            export.Status == "passed" &&
+            export.Scenario == "sap_prefix" &&
+            export.RequirementId == "full_shipment:item:92" &&
+            export.QualifiedItemId == "(O)92" &&
+            export.VerifiedIterationCount == 1 &&
+            export.RemainingItemCount == 153 &&
+            !export.FormalTrainingAuthorized,
+            "Verified Sap evidence export was misreported.");
+
+        checkpoint.ManifestSha256 = new string('e', 64);
+        var hashDriftRejected = false;
+        try
+        {
+            FullShipmentSapEvidenceExportBuilder.BuildReport(
+                manifestPath,
+                checkpointPath,
+                rolloutManifestPath,
+                rolloutReceiptPath,
+                manifest,
+                checkpoint,
+                rolloutManifest,
+                rolloutReceipt,
+                manifestSha,
+                new string('c', 64),
+                rolloutManifestSha,
+                new string('d', 64));
+        }
+        catch (InvalidDataException)
+        {
+            hashDriftRejected = true;
+        }
+        Require(hashDriftRejected,
+            "Sap evidence export accepted a drifted recurrence manifest hash.");
+
+        checkpoint.ManifestSha256 = manifestSha;
+        manifest.Iterations[0].QualifiedItemId = "(O)93";
+        var identityDriftRejected = false;
+        try
+        {
+            FullShipmentSapEvidenceExportBuilder.BuildReport(
+                manifestPath,
+                checkpointPath,
+                rolloutManifestPath,
+                rolloutReceiptPath,
+                manifest,
+                checkpoint,
+                rolloutManifest,
+                rolloutReceipt,
+                manifestSha,
+                new string('c', 64),
+                rolloutManifestSha,
+                new string('d', 64));
+        }
+        catch (InvalidDataException)
+        {
+            identityDriftRejected = true;
+        }
+        Require(identityDriftRejected,
+            "Sap evidence export accepted a drifted Sap identity.");
     }
 }

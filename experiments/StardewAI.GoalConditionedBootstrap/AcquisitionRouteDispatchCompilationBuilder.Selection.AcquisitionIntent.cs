@@ -17,6 +17,11 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             .ToArray();
         if (acquisitionParameters.Length == 0)
             return true;
+        if (acquisitionParameters.All(parameter =>
+                string.IsNullOrWhiteSpace(parameter.Value)))
+        {
+            return true;
+        }
         if (requirement.RouteKind != "native_monster_drop_table" ||
             acquisitionParameters.Length != 3)
         {
