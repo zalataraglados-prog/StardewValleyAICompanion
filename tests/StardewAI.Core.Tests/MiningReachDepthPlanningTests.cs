@@ -57,7 +57,16 @@ public sealed class MiningReachDepthPlanningTests
             new OptionAvailabilityCandidate
             {
                 OptionId = "mining.reach_depth",
-                Parameters = new[] { Parameter("target_depth", "45"), Parameter("target_location_family", "ordinary_mines") }
+                Parameters = new[]
+                {
+                    Parameter("target_depth", "45"),
+                    Parameter("target_location_family", "ordinary_mines"),
+                    Parameter("acquisition_target_route_kind", string.Empty),
+                    Parameter("acquisition_target_source_id", string.Empty),
+                    Parameter(
+                        "acquisition_target_qualified_item_id",
+                        string.Empty)
+                }
             }
         });
 
@@ -77,6 +86,14 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.mine_stone");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "minimum_reserve_health" && parameter.Value == string.Empty);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "minimum_reserve_energy" && parameter.Value == string.Empty);
+        Assert.DoesNotContain(candidate.Parameters, parameter =>
+            parameter.Name.StartsWith(
+                "acquisition_target_",
+                StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            "acquisition_target_route_kind",
+            candidate.ExpectedEffect,
+            StringComparison.Ordinal);
     }
 
     [Fact]

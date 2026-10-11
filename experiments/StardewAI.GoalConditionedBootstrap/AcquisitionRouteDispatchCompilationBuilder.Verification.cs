@@ -18,7 +18,27 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             AcquisitionRouteTargetDateUnlock requirement,
             string[] endpointOptionIds,
             IEnumerable<PolicyEventCandidatePrediction> rankedCandidates,
-            out string[] blockingReasons)
+            out string[] blockingReasons) =>
+        RebuildVerifiedCurrentCandidates(
+            snapshot,
+            ledger,
+            goalId,
+            requirement,
+            endpointOptionIds,
+            rankedCandidates,
+            out blockingReasons,
+            out _);
+
+    internal static PolicyEventCandidatePrediction[]
+        RebuildVerifiedCurrentCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger ledger,
+            string goalId,
+            AcquisitionRouteTargetDateUnlock requirement,
+            string[] endpointOptionIds,
+            IEnumerable<PolicyEventCandidatePrediction> rankedCandidates,
+            out string[] blockingReasons,
+            out PolicyEventCandidatePrediction[] rebuiltEvidence)
     {
         var allowed = endpointOptionIds.ToHashSet(StringComparer.Ordinal);
         var supplied = rankedCandidates
@@ -45,6 +65,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 .OrderBy(candidate => candidate.CandidateId,
                     StringComparer.Ordinal)
                 .ToArray();
+        rebuiltEvidence = rebuilt;
         var reasons = new List<string>(intentReasons);
         if (supplied.GroupBy(candidate => candidate.CandidateId,
                 StringComparer.Ordinal).Any(group => group.Count() != 1) ||

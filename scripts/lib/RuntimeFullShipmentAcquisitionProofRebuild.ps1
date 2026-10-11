@@ -21,9 +21,62 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
     )
 
     $initialSnapshotRaw = Get-Content -LiteralPath $InitialSnapshotPath -Raw
+    $initialSnapshot = $initialSnapshotRaw | ConvertFrom-Json
     Invoke-JsonPost -Url (
         "$BackendUrl/api/v1/snapshots?profile=$SnapshotProfile") `
         -Body $initialSnapshotRaw | Out-Null
+    $sourceRanking = Get-Content -LiteralPath $Paths.ranking -Raw |
+        ConvertFrom-Json
+    $rankedOptionIds = @($sourceRanking.prediction.ranked_options |
+        ForEach-Object { [string]$_.option_id } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        Sort-Object -Unique)
+    if ($rankedOptionIds.Count -ne 1) {
+        throw "Source acquisition ranking must bind exactly one option."
+    }
+    $sourceAvailability = @($sourceRanking.availability.options |
+        Where-Object {
+            [string]$_.option_id -eq [string]$rankedOptionIds[0]
+        })
+    if ($sourceAvailability.Count -ne 1) {
+        throw "Source acquisition ranking has no unique availability request."
+    }
+    [object[]]$rankingCandidates = @()
+    [string[]]$candidateOptionIds = @([string]$rankedOptionIds[0])
+    $sourceParameters = @($sourceAvailability[0].parameters)
+    if ($sourceParameters.Count -gt 0) {
+        $candidateOptionIds = @()
+        $rankingCandidates = @([ordered]@{
+            option_id = [string]$rankedOptionIds[0]
+            parameters = $sourceParameters
+            explicit_confirmation_granted = $false
+            invocation_source = 0
+            actor_is_host = $true
+            ownership_authorized = $true
+            adapter_id = "vanilla_native"
+        })
+    }
+    $preferenceRequest = Get-Content `
+        -LiteralPath $Paths.preference_request -Raw | ConvertFrom-Json
+    $rankingRequest = [ordered]@{
+        goal_id = [string]$preferenceRequest.goal_id
+        execution_mode = "training_singleplayer"
+        state_hash = [string]$initialSnapshot.state_hash
+        candidate_option_ids = $candidateOptionIds
+        candidates = $rankingCandidates
+        include_blocked_options = $false
+        training_report = [ordered]@{}
+        policy_checkpoint_path = $null
+        require_structured_policy = $false
+    }
+    $rankingResponse = Invoke-JsonPost -Url (
+        "$BackendUrl/api/v1/planner/baseline/rank-options") `
+        -Body $rankingRequest
+    if ([string]$rankingResponse.Value.schema_version -ne
+            "availability_policy_prediction.v1") {
+        throw "Rebuilt acquisition ranking returned an unexpected schema."
+    }
+    Write-Utf8Text -Path $Paths.ranking -Value $rankingResponse.Raw
     $sourceTargetCalendar = Get-Content `
         -LiteralPath $Paths.target_calendar -Raw | ConvertFrom-Json
     $targetTotalDay = [int]$sourceTargetCalendar.target_total_day
@@ -171,6 +224,15 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
     Write-Utf8Text -Path $Paths.commit_result -Value $commitResponse.Raw
     Write-JsonFile -Path $Paths.committed_ledger `
         -Value $commitResponse.Value.ledger
+    $postCommitRankingResponse = Invoke-JsonPost -Url (
+        "$BackendUrl/api/v1/planner/baseline/rank-options") `
+        -Body $rankingRequest
+    if ([string]$postCommitRankingResponse.Value.schema_version -ne
+            "availability_policy_prediction.v1") {
+        throw "Post-commit acquisition ranking returned an unexpected schema."
+    }
+    Write-Utf8Text -Path $Paths.ranking `
+        -Value $postCommitRankingResponse.Raw
     Invoke-Bootstrap (@(
         "build-acquisition-route-portfolio-commit-receipt"
     ) + $PlanningCommon + @(

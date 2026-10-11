@@ -75,8 +75,9 @@ function Get-SummaryRecord {
         $recurrenceManifestPath = ""
         $prefixCheckpointPath = ""
     }
-    elseif ($schema -eq
-            "stardewai.runtime_full_shipment_sap_prefix_smoke.v1" -and
+    elseif ($schema -in @(
+            "stardewai.runtime_full_shipment_sap_prefix_smoke.v1",
+            "stardewai.runtime_full_shipment_sap_evidence_export.v1") -and
         [string]$PlanEntry.scenario -eq "sap_prefix") {
         $recurrenceManifestPath =
             [string]$summary.recurrence_manifest_path
@@ -397,8 +398,9 @@ if (Test-Path -LiteralPath $checkpointPath -PathType Leaf) {
 foreach ($inputPath in $ExistingSummaryPaths) {
     $summaryPath = Resolve-MilestonePath $inputPath
     $summary = Read-JsonArtifact $summaryPath
-    $scenario = if ([string]$summary.schema_version -eq
-        "stardewai.runtime_full_shipment_sap_prefix_smoke.v1") {
+    $scenario = if ([string]$summary.schema_version -in @(
+        "stardewai.runtime_full_shipment_sap_prefix_smoke.v1",
+        "stardewai.runtime_full_shipment_sap_evidence_export.v1")) {
         "sap_prefix"
     }
     else { [string]$summary.scenario }

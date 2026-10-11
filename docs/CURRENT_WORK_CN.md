@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-11 Full Shipment 当前权威锚点恢复
+
+- Sap 原生回放现在通过独立 `stardewai.runtime_full_shipment_sap_evidence_export.v1` 出口进入里程碑。该出口会重新深度构建 recurrence-prefix checkpoint，并精确绑定 Sap `full_shipment:item:92 / (O)92 / native_wild_tree_chop_drop`、rollout manifest/receipt 及四个文件哈希；它不复用旧 smoke 摘要的声明，也不能授权训练。
+- 放射性矿石历史原生执行证据已按当前 requirement、lowering、Master Angler 窗口和路线计时输入完整重建。修复内容包括：确定性构建键允许空的可选路径值；恢复脚本在 Teacher 前和 ledger commit 后都重新请求当前 ranking；普通下矿候选不再输出三个空的 acquisition 意图字段，显式怪物掉落意图仍要求三个字段完整一致。旧原生运行的两步 `executor.mine_stone -> executor.pickup_debris` 没有改写，当前 fresh-terminal、settlement、checkpoint 与 rollout proof 已全部重新验证。
+- 当前权威 evidence preflight 为 `2/26`：Sap 与 `native_radioactive_ore_node` 两个 anchor 均为 `verified_exact_native_sample`，共享 shipping/settlement 证明有效，剩余 `24` 层。下一批固定为 7 个 high-risk 场景：树液收集器、怪物掉落、地点钓获、地点蚯蚓、晶球掉落、商店购买、社区中心奖励。
+- `formal_product_training_authorized=false` 保持不变。本轮只读取和重建 F 盘冻结证据并启动隐藏 Backend，没有启动游戏、修改存档或产生正式训练样本。当前机器可读检查点位于 `F:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v2-20261011`。
+
 ## 2026-10-11 #214 snapshot 派生空间缓存正确性
 
 - `SnapshotStateCache<T>` 统一替换 collision grid、route connector/route-repair 候选与清障编译验证索引的裸 `ConditionalWeakTable<SnapshotEnvelope,...>`。命中现在必须同时满足同一快照引用和同一非空 `StateHash`；空 hash 永不复用，构建过程中 hash 改变立即失败关闭。
