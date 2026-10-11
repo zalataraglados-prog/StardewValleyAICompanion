@@ -115,6 +115,21 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 currentRouteCandidates);
         }
 
+        if (staticRoute.RouteKind == "native_location_artifact_spot" &&
+            currentRouteCandidates.TryFind(
+                staticRoute.RouteKind,
+                staticRoute.SourceId,
+                staticRoute.QualifiedItemId,
+                out var artifactSpotMatches,
+                out _) &&
+            artifactSpotMatches.Length > 0)
+        {
+            return EvaluateArtifactSpot(
+                route,
+                staticRoute,
+                currentRouteCandidates);
+        }
+
         if (staticRoute.RouteKind == "native_monster_drop_table")
         {
             return EvaluateMonsterDrop(
@@ -258,6 +273,42 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             AcquisitionRouteTargetDateProcessing route,
             AcquisitionRouteCalendarResolution staticRoute,
             AcquisitionCurrentRouteCandidateIndex candidates)
+        => EvaluateCurrentGuaranteedOutput(
+            route,
+            staticRoute,
+            candidates,
+            "matching_guaranteed_radioactive_ore_node_candidate_not_present",
+            new[]
+            {
+                "state.mining.objects.value[].guaranteed_drop_qualified_item_ids",
+                "state.mining.objects.value[].authoritative_route_sources",
+                "candidate:mining.reach_depth"
+            });
+
+    private static AcquisitionRouteTargetDateStochasticRetry
+        EvaluateArtifactSpot(
+            AcquisitionRouteTargetDateProcessing route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+        => EvaluateCurrentGuaranteedOutput(
+            route,
+            staticRoute,
+            candidates,
+            "matching_guaranteed_location_artifact_spot_candidate_not_present",
+            new[]
+            {
+                "state.current_location.objects.value[].clear_output_items",
+                "state.current_location.objects.value[].clear_authoritative_route_sources",
+                "candidate:foraging.excavate_artifact_spots"
+            });
+
+    private static AcquisitionRouteTargetDateStochasticRetry
+        EvaluateCurrentGuaranteedOutput(
+            AcquisitionRouteTargetDateProcessing route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionCurrentRouteCandidateIndex candidates,
+            string missingCandidateReason,
+            string[] evidencePaths)
     {
         if (!candidates.TryFind(
                 staticRoute.RouteKind,
@@ -298,7 +349,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 Array.Empty<string>(),
                 new[]
                 {
-                    "matching_guaranteed_radioactive_ore_node_candidate_not_present"
+                    missingCandidateReason
                 });
         }
 
@@ -313,12 +364,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             1,
             false,
             true,
-            new[]
-            {
-                "state.mining.objects.value[].guaranteed_drop_qualified_item_ids",
-                "state.mining.objects.value[].authoritative_route_sources",
-                "candidate:mining.reach_depth"
-            },
+            evidencePaths,
             Array.Empty<string>(),
             Array.Empty<string>(),
             baselineAttemptCount: 1);

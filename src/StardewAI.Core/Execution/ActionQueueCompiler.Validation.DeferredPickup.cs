@@ -22,7 +22,8 @@ namespace StardewAI.Core.Execution
             if (sourceKind is not (
                     "native_wild_tree_chop_drop" or
                     "native_radioactive_ore_node" or
-                    "native_monster_drop_table"))
+                    "native_monster_drop_table" or
+                    "native_location_artifact_spot"))
             {
                 reasons.Add("deferred_pickup_source_kind_unsupported");
                 return reasons.ToArray();
@@ -90,9 +91,22 @@ namespace StardewAI.Core.Execution
                     guaranteedMinimum.Value,
                     reasons);
             }
-            else
+            else if (sourceKind == "native_monster_drop_table")
             {
                 ValidateDeferredMonsterDropPickup(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId,
+                    quality.Value,
+                    guaranteedMinimum.Value,
+                    reasons);
+            }
+            else
+            {
+                ValidateDeferredArtifactSpotPickup(
                     snapshot,
                     targetX.Value,
                     targetY.Value,
@@ -209,6 +223,46 @@ namespace StardewAI.Core.Execution
             }
         }
 
+        private static void ValidateDeferredArtifactSpotPickup(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId,
+            int quality,
+            int guaranteedMinimum,
+            ICollection<string> reasons)
+        {
+            var spot = CurrentLocationObjectAt(snapshot, targetX, targetY);
+            if (!spot.HasValue ||
+                ReadString(spot.Value, "clear_kind") != "artifact_spot" ||
+                ReadString(spot.Value, "clear_obstacle_executor_status") !=
+                    "ready" ||
+                ReadString(spot.Value, "clear_output_projection_status") !=
+                    "exact")
+            {
+                reasons.Add("deferred_pickup_source_artifact_spot_not_ready");
+                return;
+            }
+
+            if (!ObjectDeclaresRouteSource(
+                    spot.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId))
+            {
+                reasons.Add("deferred_pickup_authoritative_source_drifted");
+            }
+            if (ArtifactSpotGuaranteedQuantity(
+                    spot.Value,
+                    qualifiedItemId,
+                    quality) != guaranteedMinimum)
+            {
+                reasons.Add("deferred_pickup_guaranteed_output_drifted");
+            }
+        }
+
         private static JsonElement? TerrainFeatureAt(
             SnapshotEnvelope snapshot,
             int targetX,
@@ -246,6 +300,63 @@ namespace StardewAI.Core.Execution
                     ReadInt(value, "tile_y") == targetY)
                 .ToArray();
             return matches.Length == 1 ? matches[0] : null;
+        }
+
+        private static JsonElement? CurrentLocationObjectAt(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY)
+        {
+            var objects = ReadStateFieldValue(
+                snapshot,
+                "current_location",
+                "objects");
+            if (!objects.HasValue ||
+                objects.Value.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+            var matches = objects.Value.EnumerateArray()
+                .Where(value => value.ValueKind == JsonValueKind.Object &&
+                    ReadInt(value, "tile_x") == targetX &&
+                    ReadInt(value, "tile_y") == targetY)
+                .ToArray();
+            return matches.Length == 1 ? matches[0] : null;
+        }
+
+        private static bool ObjectDeclaresRouteSource(
+            JsonElement source,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId)
+        {
+            return source.TryGetProperty(
+                    "clear_authoritative_route_sources",
+                    out var sources) &&
+                sources.ValueKind == JsonValueKind.Array &&
+                sources.EnumerateArray().Count(value =>
+                    value.ValueKind == JsonValueKind.Object &&
+                    ReadString(value, "route_kind") == routeKind &&
+                    ReadString(value, "source_id") == sourceId &&
+                    ReadString(value, "qualified_item_id") ==
+                        qualifiedItemId) == 1;
+        }
+
+        private static int ArtifactSpotGuaranteedQuantity(
+            JsonElement spot,
+            string qualifiedItemId,
+            int minimumQuality)
+        {
+            if (!spot.TryGetProperty("clear_output_items", out var outputs) ||
+                outputs.ValueKind != JsonValueKind.Array)
+            {
+                return 0;
+            }
+            return outputs.EnumerateArray()
+                .Where(value => value.ValueKind == JsonValueKind.Object &&
+                    ReadString(value, "qualifiedItemId") == qualifiedItemId &&
+                    ReadInt(value, "quality") >= minimumQuality)
+                .Sum(value => Math.Max(0, ReadInt(value, "quantity")));
         }
 
         private static bool MiningNodeDeclaresRouteSource(
