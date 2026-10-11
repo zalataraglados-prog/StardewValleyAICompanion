@@ -170,4 +170,8 @@ public sealed class ValidationTraceReport
 
     [JsonPropertyName("operation_cpu_sampling_rate")]
     public int OperationCpuSamplingRate { get; set; }
+
+    [JsonPropertyName("dependency_graph")]
+    public ValidationTraceDependencyGraph DependencyGraph { get; set; } =
+        new();
 }

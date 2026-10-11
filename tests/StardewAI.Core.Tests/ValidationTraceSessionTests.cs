@@ -139,6 +139,140 @@ public sealed class ValidationTraceSessionTests
         Assert.True(operation.GetProperty("cache_hit").GetBoolean());
     }
 
+    [Fact]
+    public void DependencyGraphExplainsNestedInputInvalidationWithoutReuse()
+    {
+        var root = NewRoot();
+        Directory.CreateDirectory(root);
+        var tracePath = Path.Combine(root, "trace.json");
+        var external = new ValidationTraceDependencyInput
+        {
+            Name = "BeforeSnapshotPath",
+            ArtifactId = "file:snapshot-sha",
+            ArtifactKind = "snapshot_fact",
+            ContentSha256 = "snapshot-sha",
+            Path = Path.Combine(root, "snapshot.json"),
+            ReuseScope = "snapshot"
+        };
+
+        using (var session = ValidationTraceSession.TryStart(
+            tracePath,
+            "sample-command",
+            "sample-producer",
+            "v1",
+            "single_low_risk_decision",
+            Array.Empty<ValidationTraceInput>(),
+            0))
+        {
+            using (var outer = ValidationTraceSession.BeginDependencyNode(
+                "outer-node",
+                "compile_binding_certificate",
+                "outer-producer",
+                "v1",
+                Array.Empty<ValidationTraceDependencyInput>()))
+            {
+                using (var inner = ValidationTraceSession.BeginDependencyNode(
+                    "inner-node",
+                    "candidate_denominator_certificate",
+                    "inner-producer",
+                    "v1",
+                    new[] { external }))
+                {
+                    inner.SetOutputArtifact("inner-artifact", "inner-sha");
+                }
+                outer.SetOutputArtifact("outer-artifact", "outer-sha");
+            }
+            session!.Complete(0);
+        }
+
+        using var trace = JsonDocument.Parse(File.ReadAllText(tracePath));
+        var graph = trace.RootElement.GetProperty("dependency_graph");
+        Assert.Equal(
+            ValidationTraceDependencyGraph.CurrentSchemaVersion,
+            graph.GetProperty("schema_version").GetString());
+        Assert.True(graph.GetProperty("observation_only").GetBoolean());
+        Assert.False(graph.GetProperty("can_affect_admission").GetBoolean());
+        Assert.False(graph.GetProperty("incremental_reuse_authorized")
+            .GetBoolean());
+        Assert.True(graph.GetProperty("acyclic").GetBoolean());
+        Assert.True(graph.GetProperty("complete").GetBoolean());
+        Assert.True(graph.GetProperty("full_rebuild_executed").GetBoolean());
+        Assert.Equal(2, graph.GetProperty("nodes").GetArrayLength());
+        Assert.Equal(
+            "outer-node",
+            Assert.Single(graph.GetProperty("top_level_node_ids")
+                .EnumerateArray()).GetString());
+
+        var invalidation = Assert.Single(
+            graph.GetProperty("theoretical_invalidation_sets")
+                .EnumerateArray());
+        Assert.Equal(
+            "file:snapshot-sha",
+            invalidation.GetProperty("changed_input_artifact_id").GetString());
+        Assert.Equal(
+            new[] { "inner-node", "outer-node" },
+            invalidation.GetProperty("invalidated_node_ids")
+                .EnumerateArray()
+                .Select(value => value.GetString())
+                .ToArray());
+        Assert.Equal(
+            "input_identity_changed",
+            invalidation.GetProperty("reason").GetString());
+        Assert.Equal(
+            "all_descendants",
+            invalidation.GetProperty("propagation_rule").GetString());
+    }
+
+    [Fact]
+    public void DependencyGraphFailsClosedOnSameIdentityOutputDrift()
+    {
+        var root = NewRoot();
+        Directory.CreateDirectory(root);
+        var tracePath = Path.Combine(root, "trace.json");
+
+        using (var session = ValidationTraceSession.TryStart(
+            tracePath,
+            "sample-command",
+            "sample-producer",
+            "v1",
+            null,
+            Array.Empty<ValidationTraceInput>(),
+            0))
+        {
+            using (var first = ValidationTraceSession.BeginDependencyNode(
+                "same-node",
+                "sample-certificate",
+                "sample-producer",
+                "v1",
+                Array.Empty<ValidationTraceDependencyInput>()))
+            {
+                first.SetOutputArtifact("same-artifact", "first-sha");
+            }
+            using (var second = ValidationTraceSession.BeginDependencyNode(
+                "same-node",
+                "sample-certificate",
+                "sample-producer",
+                "v1",
+                Array.Empty<ValidationTraceDependencyInput>()))
+            {
+                second.SetOutputArtifact("same-artifact", "second-sha");
+            }
+            session!.Complete(0);
+        }
+
+        using var trace = JsonDocument.Parse(File.ReadAllText(tracePath));
+        var graph = trace.RootElement.GetProperty("dependency_graph");
+        Assert.False(graph.GetProperty("complete").GetBoolean());
+        Assert.False(graph.GetProperty("full_rebuild_executed").GetBoolean());
+        var node = Assert.Single(graph.GetProperty("nodes").EnumerateArray());
+        Assert.True(node.GetProperty("identity_conflict").GetBoolean());
+        Assert.Contains(
+            "same_node_identity_output_content_changed",
+            node.GetProperty("invalidation_reasons")
+                .EnumerateArray()
+                .Select(value => value.GetString()));
+    }
+
     private static string NewRoot() => Path.Combine(
         Path.GetTempPath(),
         "stardewai-validation-trace-tests",
