@@ -96,10 +96,13 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
                 StringComparison.Ordinal),
             "Target-date facility capacity and snapshot state hash disagree.");
         var state = AcquisitionResourceInputSnapshotState.Read(snapshot);
+        var currentCandidates =
+            AcquisitionCurrentRouteCandidateIndex.Read(snapshotFullPath);
         var routes = source.Routes.Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
-                state))
+                state,
+                currentCandidates))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>

@@ -138,6 +138,14 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 currentRouteCandidates);
         }
 
+        if (staticRoute.RouteKind == "native_geode_drop")
+        {
+            return EvaluateGeodeDrop(
+                route,
+                staticRoute,
+                currentRouteCandidates);
+        }
+
         if (IsMachineRoute(staticRoute.RouteKind))
             return EvaluateMachine(route, staticRoute, machineExpansion);
 
@@ -301,6 +309,82 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 "state.current_location.objects.value[].clear_authoritative_route_sources",
                 "candidate:foraging.excavate_artifact_spots"
             });
+
+    private static AcquisitionRouteTargetDateStochasticRetry
+        EvaluateGeodeDrop(
+            AcquisitionRouteTargetDateProcessing route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (!candidates.TryFind(
+                staticRoute.RouteKind,
+                staticRoute.SourceId,
+                staticRoute.QualifiedItemId,
+                out var matches,
+                out var blockingReasons))
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_bound_exact_geode_output_evidence_missing",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                blockingReasons);
+        }
+        if (!matches.Any(value =>
+                value.OptionId == "processing.crack_geode" &&
+                value.ExpectedOutputStack >= staticRoute.RequiredAmount &&
+                value.ExpectedOutputQuality >= staticRoute.MinimumQuality))
+        {
+            return Result(
+                route,
+                staticRoute.UncertaintyMode,
+                "blocked_stochastic_probability_evidence",
+                false,
+                null,
+                "source_bound_exact_geode_output_evidence_missing",
+                null,
+                null,
+                false,
+                false,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                new[]
+                {
+                    "matching_exact_geode_output_candidate_not_present"
+                });
+        }
+
+        return Result(
+            route,
+            staticRoute.UncertaintyMode,
+            "resolved_source_bound_exact_geode_output",
+            true,
+            true,
+            "source_bound_exact_geode_output",
+            1d,
+            1,
+            false,
+            true,
+            new[]
+            {
+                "state.player.geode_processing.value.inventory_inputs[]",
+                "state.player.geode_processing.value.predictor_context",
+                "candidate:processing.crack_geode",
+                "candidate.parameters[geode_expected_output_qid]",
+                "candidate.parameters[authoritative_route_sources_json]"
+            },
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            baselineAttemptCount: 1);
+    }
 
     private static AcquisitionRouteTargetDateStochasticRetry
         EvaluateCurrentGuaranteedOutput(

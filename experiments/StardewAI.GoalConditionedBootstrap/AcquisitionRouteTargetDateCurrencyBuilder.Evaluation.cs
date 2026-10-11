@@ -9,6 +9,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
     private const string MachineInputPurchase =
         "current_native_machine_input_purchase_quote";
     private const string DirectMoneyPayment = "native_money_payment";
+    private const string CurrentGeodeFee = "current_native_geode_fee";
 
     private static readonly IReadOnlyDictionary<string, string>
         CurrencyClassByRouteKind = new Dictionary<string, string>(
@@ -24,7 +25,7 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
             ["native_fish_pond_output"] = NoCurrency,
             ["native_fruit_tree_produce"] = NoCurrency,
             ["native_geode_default_drop"] = NoCurrency,
-            ["native_geode_drop"] = NoCurrency,
+            ["native_geode_drop"] = CurrentGeodeFee,
             ["native_ginger_harvest"] = NoCurrency,
             ["native_location_artifact_spot"] = NoCurrency,
             ["native_location_fish_spawn"] = NoCurrency,
@@ -52,7 +53,8 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
     internal static AcquisitionRouteTargetDateCurrency Evaluate(
         AcquisitionRouteTargetDateResource route,
         AcquisitionRouteCalendarResolution staticRoute,
-        AcquisitionShopQuoteSnapshotState state)
+        AcquisitionShopQuoteSnapshotState state,
+        AcquisitionCurrentRouteCandidateIndex? currentCandidates = null)
     {
         if (!route.ResourceInputAxisResolved)
         {
@@ -108,6 +110,11 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
                 route,
                 staticRoute,
                 state),
+            CurrentGeodeFee => EvaluateGeodeFee(
+                route,
+                staticRoute,
+                state,
+                currentCandidates),
             _ => throw new InvalidDataException(
                 "Unknown currency requirement classification.")
         };

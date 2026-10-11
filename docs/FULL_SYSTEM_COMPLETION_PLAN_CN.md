@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-11 Full Shipment 晶球层原生准入
+
+当前 production evidence index 为 `7/26`，剩余 `19` 层。`native_geode_drop` 已按 `full_shipment:item:386 / (O)386 / geode:791:1:random:6` 完成 exact native sample：Golden Coconut `(O)791`、背包槽位、Blacksmith/Clint 柜台、25g、原生 RNG 精确输出 5 个铱矿、日内预算、原生动画、fresh terminal、reservation settlement、checkpoint 与独立 rollout proof 均通过。该路线只在实时透明快照存在精确 `processing.crack_geode` 候选时启用，并复用唯一 `executor.crack_geode`，没有第二套开晶球执行器。
+
+同一路线在执行前中断后留下的 active material/currency reservation，只有 `SourceStateHash` 与新快照一致才允许幂等复用；否则必须通过现有 `claim_replacement_required` 原子 upsert 重绑。下一固定高风险顺序为商店购买、社区中心奖励，已通过的晶球样本不得重复消耗游戏运行资源。`formal_product_training_authorized=false` 保持不变。
+
 ## 2026-10-08 确定性规则升级后的证据重基
 
 已验证的原生动作不会因为上游确定性规则升级而被直接丢弃，也不能继续引用已经漂移的规划产物。标准处理顺序是：复制原 artifact，使用 `Resume-RuntimeFullShipmentAcquisitionProof.ps1 -RebuildPlanning` 从证明自身绑定的权威输入重建规划与承诺，强制保留同一 route occurrence，再用新队列严格复核旧原生 execution receipt。Sap 还必须重新验证获取、投递、睡眠结算的 recurrence prefix。任一身份、动作或状态变化不匹配时均失败关闭，并改为安排新的交互式原生采证。

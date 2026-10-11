@@ -81,6 +81,7 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         return existing.All(row =>
             byId.TryGetValue(row.ReservationId, out var claim) &&
             row.SourceDecisionId == claim.SourceDecisionId &&
+            row.SourceStateHash == claim.StateHash &&
             row.GoalId == claim.GoalId &&
             row.NodeId == claim.NodeId &&
             row.SlotIndex == claim.SlotIndex &&
@@ -101,6 +102,7 @@ public static partial class AcquisitionRouteTargetDateReservationBuilder
         return existing.All(row =>
             byId.TryGetValue(row.ReservationId, out var claim) &&
             row.SourceDecisionId == claim.SourceDecisionId &&
+            row.SourceStateHash == claim.StateHash &&
             row.GoalId == claim.GoalId &&
             row.CurrencyId == claim.CurrencyId &&
             row.Amount == claim.Amount &&

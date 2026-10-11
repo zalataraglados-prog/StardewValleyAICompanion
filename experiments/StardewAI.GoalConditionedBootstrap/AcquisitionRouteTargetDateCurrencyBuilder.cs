@@ -99,10 +99,13 @@ public static partial class AcquisitionRouteTargetDateCurrencyBuilder
             "Target-date resource inputs and snapshot state hash disagree.");
         var state = new AcquisitionShopQuoteSnapshotState(
             RequiredObject(snapshot, "state"));
+        var currentCandidates =
+            AcquisitionCurrentRouteCandidateIndex.Read(snapshotFullPath);
         var routes = source.Routes.Select(route => Evaluate(
                 route,
                 staticRoutes[route.RouteOccurrenceId],
-                state))
+                state,
+                currentCandidates))
             .ToArray();
 
         var blockedUpstream = routes.Count(route =>

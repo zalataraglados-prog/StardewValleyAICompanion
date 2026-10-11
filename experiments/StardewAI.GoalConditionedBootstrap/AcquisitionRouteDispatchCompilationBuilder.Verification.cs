@@ -124,6 +124,50 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         PolicyEventCandidatePrediction[] supplied,
         out string[] blockingReasons)
     {
+        if (requirement.RouteKind == "native_geode_drop")
+        {
+            if (!endpointOptionIds.SequenceEqual(
+                    new[] { "processing.crack_geode" },
+                    StringComparer.Ordinal))
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_geode_acquisition_endpoint_invalid"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+            if (!TryParseGeodeSourceInput(
+                    requirement.SourceId,
+                    out var geodeQualifiedItemId))
+            {
+                blockingReasons = new[]
+                {
+                    "route_dispatch_geode_source_invalid"
+                };
+                return Array.Empty<OptionAvailabilityCandidate>();
+            }
+
+            blockingReasons = Array.Empty<string>();
+            return new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "processing.crack_geode",
+                    Parameters = new[]
+                    {
+                        Parameter(
+                            "geode_qualified_item_id",
+                            geodeQualifiedItemId),
+                        Parameter(
+                            "geode_purpose",
+                            requirement.RequirementSetId == "full_shipment"
+                                ? "open_for_full_shipment"
+                                : "open_for_projected_value")
+                    }
+                }
+            };
+        }
+
         if (requirement.RouteKind is not
             ("native_location_fish_spawn" or
              "native_mine_fishing_override" or
@@ -309,6 +353,42 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 Parameters = source.Parameters
             }
         };
+    }
+
+    private static bool TryParseGeodeSourceInput(
+        string sourceId,
+        out string qualifiedItemId)
+    {
+        qualifiedItemId = string.Empty;
+        var parts = sourceId.Split(':', StringSplitOptions.None);
+        if (parts.Length is not (3 or 5) ||
+            parts[0] != "geode" ||
+            !uint.TryParse(
+                parts[1],
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var itemId) ||
+            !int.TryParse(
+                parts[2],
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var rowIndex) ||
+            rowIndex < 0 ||
+            (parts.Length == 5 &&
+             (parts[3] != "random" ||
+              !int.TryParse(
+                  parts[4],
+                  System.Globalization.NumberStyles.None,
+                  System.Globalization.CultureInfo.InvariantCulture,
+                  out var randomIndex) ||
+              randomIndex < 0)))
+        {
+            return false;
+        }
+
+        qualifiedItemId = "(O)" + itemId.ToString(
+            System.Globalization.CultureInfo.InvariantCulture);
+        return true;
     }
 
     private static bool CandidateEvidenceMatches(

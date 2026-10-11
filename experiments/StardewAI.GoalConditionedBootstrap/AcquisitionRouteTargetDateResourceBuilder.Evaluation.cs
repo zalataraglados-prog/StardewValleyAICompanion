@@ -8,6 +8,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
     private const string FishingBait = "conditional_magic_bait";
     private const string CrabPotService = "existing_crab_pot_service";
     private const string MachineInput = "native_machine_consumed_items";
+    private const string CurrentGeodeInput = "current_native_geode_input";
     private const string DeferredInput = "resource_binding_pending_upstream";
     private const string MagicBaitQualifiedItemId = "(O)908";
 
@@ -25,7 +26,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             ["native_fish_pond_output"] = DeferredInput,
             ["native_fruit_tree_produce"] = NoInput,
             ["native_geode_default_drop"] = DeferredInput,
-            ["native_geode_drop"] = DeferredInput,
+            ["native_geode_drop"] = CurrentGeodeInput,
             ["native_ginger_harvest"] = NoInput,
             ["native_location_artifact_spot"] = NoInput,
             ["native_location_fish_spawn"] = FishingBait,
@@ -53,7 +54,8 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
     internal static AcquisitionRouteTargetDateResource Evaluate(
         AcquisitionRouteTargetDateFacility route,
         AcquisitionRouteCalendarResolution staticRoute,
-        AcquisitionResourceInputSnapshotState state)
+        AcquisitionResourceInputSnapshotState state,
+        AcquisitionCurrentRouteCandidateIndex? currentCandidates = null)
     {
         if (!route.FacilityCapacityAxisResolved)
         {
@@ -123,6 +125,11 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             FishingBait => EvaluateFishing(route, state),
             CrabPotService => EvaluateCrabPot(route, state),
             MachineInput => EvaluateMachine(route, staticRoute, state),
+            CurrentGeodeInput => EvaluateGeodeInput(
+                route,
+                staticRoute,
+                state,
+                currentCandidates),
             _ => Blocked(
                 route,
                 DeferredInput,
