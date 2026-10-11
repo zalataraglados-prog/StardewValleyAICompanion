@@ -62,6 +62,40 @@ public sealed class FishingTerminalProbabilitySnapshotProjectorTests
     }
 
     [Fact]
+    public void PreparedContextReusesProbabilityWithoutReusingTerminalMetadata()
+    {
+        using var document = JsonDocument.Parse(SnapshotJson(
+            Rule("target", "145", 0, 0.5d, 0.4d)));
+        var context = FishingTerminalProbabilitySnapshotProjector.CreateContext(
+            document.RootElement,
+            "Beach",
+            2);
+
+        var southCast = FishingTerminalProbabilitySnapshotProjector.Project(
+            context,
+            "(O)145",
+            0,
+            5,
+            8);
+        var westCast = FishingTerminalProbabilitySnapshotProjector.Project(
+            context,
+            "(O)145",
+            0,
+            1,
+            5);
+
+        Assert.True(southCast.Resolved);
+        Assert.True(westCast.Resolved);
+        Assert.Equal(
+            southCast.Probability!.SingleAttemptProbabilityLowerBound,
+            westCast.Probability!.SingleAttemptProbabilityLowerBound);
+        Assert.Equal((5, 8),
+            (southCast.StandTileX, southCast.StandTileY));
+        Assert.Equal((1, 5),
+            (westCast.StandTileX, westCast.StandTileY));
+    }
+
+    [Fact]
     public void UnseededRandomTargetConditionBlocksProbabilityEvidence()
     {
         using var document = JsonDocument.Parse(SnapshotJson(

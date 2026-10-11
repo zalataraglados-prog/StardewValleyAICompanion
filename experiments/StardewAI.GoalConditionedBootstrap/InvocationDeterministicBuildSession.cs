@@ -37,7 +37,8 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         string producerId,
         string producerVersion,
         IEnumerable<DeterministicBuildIdentityPart> identity,
-        Func<T> factory)
+        Func<T> factory,
+        string artifactKind = "deterministic_derived_artifact")
     {
         var session = Ambient.Value;
         if (session is null || !session.enabled || session.disposed != 0)
@@ -58,7 +59,7 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
                 .ToArray());
         using var dependency = ValidationTraceSession.BeginDependencyNode(
             buildIdentity.Key,
-            "deterministic_derived_artifact",
+            artifactKind,
             producerId,
             producerVersion,
             buildIdentity.Inputs);

@@ -32,15 +32,35 @@ public static class FishingTerminalProbabilitySnapshotProjector
         string targetQualifiedItemId,
         int bobberTileIndex,
         int standTileX,
-        int standTileY)
+        int standTileY) => Project(
+            CreateContext(snapshot, targetLocationId, rodSlotIndex),
+            targetQualifiedItemId,
+            bobberTileIndex,
+            standTileX,
+            standTileY);
+
+    public static FishingTerminalProbabilityProjectionContext CreateContext(
+        JsonElement snapshot,
+        string targetLocationId,
+        int rodSlotIndex)
     {
         var blockers = new List<string>();
         if (!TryObject(snapshot, "state", out var state) ||
             !TryObject(state, "fishing", out var fishing))
         {
             blockers.Add("fishing_forecast_state_missing");
-            return Blocked(targetLocationId, rodSlotIndex, bobberTileIndex,
-                standTileX, standTileY, blockers);
+            return new FishingTerminalProbabilityProjectionContext(
+                targetLocationId,
+                rodSlotIndex,
+                Array.Empty<JsonElement>(),
+                Array.Empty<JsonElement>(),
+                Array.Empty<HashSet<int>>(),
+                Array.Empty<FishingTerminalRulePosition>(),
+                null,
+                null,
+                false,
+                false,
+                blockers.ToArray());
         }
         if (!TryFieldValue(fishing, "forecast_request", out var forecastRequest) ||
             Bool(forecastRequest, "request_complete") != true ||
@@ -74,21 +94,21 @@ public static class FishingTerminalProbabilitySnapshotProjector
         }
         if (blockers.Count > 0)
         {
-            return Blocked(targetLocationId, rodSlotIndex, bobberTileIndex,
-                standTileX, standTileY, blockers);
+            return new FishingTerminalProbabilityProjectionContext(
+                targetLocationId,
+                rodSlotIndex,
+                Array.Empty<JsonElement>(),
+                Array.Empty<JsonElement>(),
+                Array.Empty<HashSet<int>>(),
+                Array.Empty<FishingTerminalRulePosition>(),
+                null,
+                null,
+                false,
+                false,
+                blockers.ToArray());
         }
 
         var tiles = fishableTiles.EnumerateArray().ToArray();
-        if (bobberTileIndex < 0 || bobberTileIndex >= tiles.Length)
-        {
-            blockers.Add("fishing_forecast_bobber_tile_index_out_of_range");
-            return Blocked(targetLocationId, rodSlotIndex, bobberTileIndex,
-                standTileX, standTileY, blockers);
-        }
-        var tile = tiles[bobberTileIndex];
-        var bobberX = Int(tile, "tile_x") ?? int.MinValue;
-        var bobberY = Int(tile, "tile_y") ?? int.MinValue;
-        var waterDepth = Int(tile, "water_depth") ?? int.MinValue;
         var fishingLevel = TryObject(spawnRules, "evaluation_context", out var context)
             ? Int(context, "fishing_level")
             : null;
@@ -105,6 +125,65 @@ public static class FishingTerminalProbabilitySnapshotProjector
             selectedBait.ValueKind == JsonValueKind.Null &&
             Bool(context, "has_magic_bait") == false &&
             Bool(context, "has_curiosity_lure") == false;
+        var ruleElements = default(JsonElement);
+        var ruleInventoryComplete =
+            Bool(spawnRules, "inventory_complete") == true &&
+            TryArray(spawnRules, "rules", out ruleElements);
+        var rules = ruleInventoryComplete
+            ? ruleElements.EnumerateArray().ToArray()
+            : Array.Empty<JsonElement>();
+        var eligibleTileIndices = rules
+            .Select(rule => Ints(rule, "eligible_fishable_tile_indices")
+                .ToHashSet())
+            .ToArray();
+        var playerPositions = rules
+            .Select(ReadPlayerPosition)
+            .ToArray();
+        return new FishingTerminalProbabilityProjectionContext(
+            targetLocationId,
+            rodSlotIndex,
+            tiles,
+            rules,
+            eligibleTileIndices,
+            playerPositions,
+            fishingLevel,
+            baseFishingLevel,
+            repeatedCastEquipmentStable,
+            ruleInventoryComplete,
+            Array.Empty<string>());
+    }
+
+    public static FishingTerminalProbabilityProjectionResult Project(
+        FishingTerminalProbabilityProjectionContext context,
+        string targetQualifiedItemId,
+        int bobberTileIndex,
+        int standTileX,
+        int standTileY)
+    {
+        var targetLocationId = context.TargetLocationId;
+        var rodSlotIndex = context.RodSlotIndex;
+        var blockers = context.BlockingReasons.ToList();
+        if (blockers.Count > 0)
+        {
+            return Blocked(targetLocationId, rodSlotIndex, bobberTileIndex,
+                standTileX, standTileY, blockers);
+        }
+
+        var tiles = context.Tiles;
+        if (bobberTileIndex < 0 || bobberTileIndex >= tiles.Length)
+        {
+            blockers.Add("fishing_forecast_bobber_tile_index_out_of_range");
+            return Blocked(targetLocationId, rodSlotIndex, bobberTileIndex,
+                standTileX, standTileY, blockers);
+        }
+        var tile = tiles[bobberTileIndex];
+        var bobberX = Int(tile, "tile_x") ?? int.MinValue;
+        var bobberY = Int(tile, "tile_y") ?? int.MinValue;
+        var waterDepth = Int(tile, "water_depth") ?? int.MinValue;
+        var fishingLevel = context.FishingLevel;
+        var baseFishingLevel = context.BaseFishingLevel;
+        var repeatedCastEquipmentStable =
+            context.RepeatedCastEquipmentStable;
         if (bobberX == int.MinValue || bobberY == int.MinValue ||
             waterDepth < 0)
         {
@@ -119,9 +198,7 @@ public static class FishingTerminalProbabilitySnapshotProjector
         {
             blockers.Add("fishing_forecast_terminal_cast_geometry_invalid");
         }
-        var ruleElements = default(JsonElement);
-        if (Bool(spawnRules, "inventory_complete") != true ||
-            !TryArray(spawnRules, "rules", out ruleElements))
+        if (!context.RuleInventoryComplete)
         {
             blockers.Add("fishing_forecast_rule_inventory_incomplete");
         }
@@ -139,24 +216,36 @@ public static class FishingTerminalProbabilitySnapshotProjector
                 waterDepth);
         }
 
-        var rules = ruleElements.EnumerateArray()
-            .Select(rule => ProjectRule(
-                rule,
-                targetQualifiedItemId,
-                bobberTileIndex,
-                waterDepth,
-                standTileX,
-                standTileY,
-                fishingLevel.GetValueOrDefault(),
-                repeatedCastEquipmentStable))
-            .ToArray();
-        var probability = FishingTerminalProbabilityEvaluator.Evaluate(
-            new FishingTerminalProbabilityRequest
+        var cacheKey = new FishingTerminalProjectionCacheKey(
+            targetQualifiedItemId,
+            waterDepth,
+            RuleMask(context.EligibleTileIndices, values =>
+                values.Contains(bobberTileIndex)),
+            RuleMask(context.PlayerPositions, position =>
+                position.Allows(standTileX, standTileY)));
+        var probability = context.ProbabilityCache.GetOrAdd(
+            cacheKey,
+            _ =>
             {
-                TargetQualifiedItemId = targetQualifiedItemId,
-                FishingPassIndex = 0,
-                RuleInventoryComplete = true,
-                Rules = rules
+                var rules = context.Rules
+                    .Select(rule => ProjectRule(
+                        rule,
+                        targetQualifiedItemId,
+                        bobberTileIndex,
+                        waterDepth,
+                        standTileX,
+                        standTileY,
+                        fishingLevel.GetValueOrDefault(),
+                        repeatedCastEquipmentStable))
+                    .ToArray();
+                return FishingTerminalProbabilityEvaluator.Evaluate(
+                    new FishingTerminalProbabilityRequest
+                    {
+                        TargetQualifiedItemId = targetQualifiedItemId,
+                        FishingPassIndex = 0,
+                        RuleInventoryComplete = true,
+                        Rules = rules
+                    });
             });
         return new FishingTerminalProbabilityProjectionResult
         {
@@ -398,6 +487,33 @@ public static class FishingTerminalProbabilitySnapshotProjector
                x >= left.Value && y >= top.Value &&
                x < left.Value + width.Value &&
                y < top.Value + height.Value;
+    }
+
+    private static FishingTerminalRulePosition ReadPlayerPosition(
+        JsonElement rule)
+    {
+        if (!rule.TryGetProperty("player_position", out var rectangle) ||
+            rectangle.ValueKind == JsonValueKind.Null)
+        {
+            return new FishingTerminalRulePosition(
+                false, null, null, null, null);
+        }
+        return new FishingTerminalRulePosition(
+            true,
+            Int(rectangle, "x"),
+            Int(rectangle, "y"),
+            Int(rectangle, "width"),
+            Int(rectangle, "height"));
+    }
+
+    private static string RuleMask<T>(
+        IReadOnlyList<T> rules,
+        Func<T, bool> predicate)
+    {
+        var mask = new char[rules.Count];
+        for (var index = 0; index < rules.Count; index++)
+            mask[index] = predicate(rules[index]) ? '1' : '0';
+        return new string(mask);
     }
 
     private static string NormalizeQualifiedObjectId(string value)

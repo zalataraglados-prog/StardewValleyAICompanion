@@ -6,8 +6,7 @@ internal static class AcquisitionRouteDependencyObservation
         string producerId,
         Func<T> factory,
         params object?[] identities) =>
-        InvocationDeterministicBuildSession.Observe(
-            "candidate_denominator_certificate",
+        InvocationDeterministicBuildSession.GetOrBuild(
             producerId,
             "v1",
             identities.Select((value, index) => value is string path
@@ -17,5 +16,6 @@ internal static class AcquisitionRouteDependencyObservation
                 : InvocationDeterministicBuildSession.Value(
                     "InputValue" + index.ToString("D2"),
                     value)),
-            factory);
+            factory,
+            "candidate_denominator_certificate");
 }

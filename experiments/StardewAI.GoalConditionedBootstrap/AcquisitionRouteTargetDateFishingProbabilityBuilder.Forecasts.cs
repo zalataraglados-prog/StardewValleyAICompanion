@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -108,13 +109,18 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
                     Int(request, "rod_slot_index") == reference.RodSlotIndex,
                 "Fishing forecast request identity mismatch: " +
                 reference.RequestId);
+            var clonedRoot = root.Clone();
             loaded.Add(new LoadedFishingForecast(
                 reference.RequestId,
                 reference.TargetLocationId,
                 reference.RodSlotIndex,
                 snapshotPath,
                 digest,
-                root.Clone()));
+                clonedRoot,
+                FishingTerminalProbabilitySnapshotProjector.CreateContext(
+                    clonedRoot,
+                    reference.TargetLocationId,
+                    reference.RodSlotIndex)));
         }
         return loaded.ToArray();
     }
@@ -261,5 +267,6 @@ public static partial class AcquisitionRouteTargetDateFishingProbabilityBuilder
         int RodSlotIndex,
         string SnapshotPath,
         string SnapshotSha256,
-        JsonElement Snapshot);
+        JsonElement Snapshot,
+        FishingTerminalProbabilityProjectionContext ProjectionContext);
 }
