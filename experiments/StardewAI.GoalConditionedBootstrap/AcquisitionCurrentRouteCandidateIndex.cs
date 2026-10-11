@@ -35,8 +35,24 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
     public static AcquisitionCurrentRouteCandidateIndex Read(
         string snapshotPath)
     {
+        var fullPath = Path.GetFullPath(snapshotPath);
+        return InvocationDeterministicBuildSession.GetOrBuildReference(
+            "AcquisitionCurrentRouteCandidateIndex.Read",
+            "v1",
+            new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "SnapshotPath",
+                    fullPath)
+            },
+            () => ReadCore(fullPath));
+    }
+
+    private static AcquisitionCurrentRouteCandidateIndex ReadCore(
+        string snapshotPath)
+    {
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            Path.GetFullPath(snapshotPath),
+            snapshotPath,
             "Current authoritative-route candidate snapshot");
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
             snapshot,

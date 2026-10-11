@@ -35,7 +35,9 @@ namespace StardewAI.Core.Execution
                 : new[] { "movement_target_tile_required" };
         }
 
-        private static string[] ValidateClearObstaclePlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        private string[] ValidateClearObstaclePlan(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "executor.clear_obstacle")
             {
@@ -56,12 +58,14 @@ namespace StardewAI.Core.Execution
 
             if (targetX.HasValue && targetY.HasValue)
             {
-                var terrainFeatures = ReadStateFieldValue(snapshot, "current_location", "terrain_features");
-                var target = terrainFeatures.HasValue && terrainFeatures.Value.ValueKind == JsonValueKind.Array
-                    ? terrainFeatures.Value.EnumerateArray().FirstOrDefault(feature =>
-                        ReadInt(feature, "tile_x") == targetX.Value &&
-                        ReadInt(feature, "tile_y") == targetY.Value)
-                    : default;
+                var clearIndex = clearObstacleValidationBySnapshot.GetValue(
+                    snapshot,
+                    BuildClearObstacleValidationIndex);
+                var target = clearIndex.TerrainFeatures.TryGetValue(
+                    (targetX.Value, targetY.Value),
+                    out var terrainFeature)
+                        ? terrainFeature
+                        : default;
                 if (target.ValueKind == JsonValueKind.Object &&
                     ReadString(target, "type").EndsWith(".Tree", StringComparison.Ordinal))
                 {
@@ -93,13 +97,11 @@ namespace StardewAI.Core.Execution
                     }
                 }
 
-                var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
-                var targetObject = objects.HasValue && objects.Value.ValueKind == JsonValueKind.Array
-                    ? objects.Value.EnumerateArray().FirstOrDefault(item =>
-                        ReadInt(item, "tile_x") == targetX.Value &&
-                        ReadInt(item, "tile_y") == targetY.Value &&
-                        ReadString(item, "clear_kind") is "twig" or "artifact_spot")
-                    : default;
+                var targetObject = clearIndex.Objects.TryGetValue(
+                    (targetX.Value, targetY.Value),
+                    out var obstacle)
+                        ? obstacle
+                        : default;
                 if (targetObject.ValueKind == JsonValueKind.Object)
                 {
                     var status = ReadString(targetObject, "clear_obstacle_executor_status");
@@ -152,6 +154,78 @@ namespace StardewAI.Core.Execution
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static ClearObstacleValidationIndex
+            BuildClearObstacleValidationIndex(SnapshotEnvelope snapshot)
+        {
+            var terrainByTile = new Dictionary<
+                (int X, int Y),
+                JsonElement>();
+            var terrainFeatures = ReadStateFieldValue(
+                snapshot,
+                "current_location",
+                "terrain_features");
+            if (terrainFeatures.HasValue &&
+                terrainFeatures.Value.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var feature in terrainFeatures.Value.EnumerateArray())
+                {
+                    if (feature.ValueKind == JsonValueKind.Object)
+                    {
+                        terrainByTile.TryAdd(
+                            (ReadInt(feature, "tile_x"),
+                                ReadInt(feature, "tile_y")),
+                            feature);
+                    }
+                }
+            }
+
+            var objectsByTile = new Dictionary<
+                (int X, int Y),
+                JsonElement>();
+            var objects = ReadStateFieldValue(
+                snapshot,
+                "current_location",
+                "objects");
+            if (objects.HasValue &&
+                objects.Value.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in objects.Value.EnumerateArray())
+                {
+                    if (item.ValueKind == JsonValueKind.Object &&
+                        ReadString(item, "clear_kind") is
+                            "twig" or "artifact_spot")
+                    {
+                        objectsByTile.TryAdd(
+                            (ReadInt(item, "tile_x"),
+                                ReadInt(item, "tile_y")),
+                            item);
+                    }
+                }
+            }
+
+            return new ClearObstacleValidationIndex(
+                terrainByTile,
+                objectsByTile);
+        }
+
+        private sealed class ClearObstacleValidationIndex
+        {
+            public ClearObstacleValidationIndex(
+                IReadOnlyDictionary<(int X, int Y), JsonElement>
+                    terrainFeatures,
+                IReadOnlyDictionary<(int X, int Y), JsonElement> objects)
+            {
+                TerrainFeatures = terrainFeatures;
+                Objects = objects;
+            }
+
+            public IReadOnlyDictionary<(int X, int Y), JsonElement>
+                TerrainFeatures { get; }
+
+            public IReadOnlyDictionary<(int X, int Y), JsonElement> Objects
+                { get; }
         }
 
         private static string[] ValidateTreeMossClearPlan(

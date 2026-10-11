@@ -92,6 +92,32 @@ internal static partial class BootstrapSelfTest
                 snapshot.BuildCount == 1 && snapshot.CacheHitCount == 1 &&
                 snapshot.CachedBytes > 0,
                 "Invocation deterministic build reuse is not isolated and exact.");
+
+            var referenceBuilds = 0;
+            var firstReference =
+                InvocationDeterministicBuildSession.GetOrBuildReference(
+                    "self-test-reference",
+                    "v1",
+                    identity,
+                    () =>
+                    {
+                        referenceBuilds++;
+                        return new DeterministicBuildFixture { Value = 6 };
+                    });
+            var secondReference =
+                InvocationDeterministicBuildSession.GetOrBuildReference(
+                    "self-test-reference",
+                    "v1",
+                    identity,
+                    () =>
+                    {
+                        referenceBuilds++;
+                        return new DeterministicBuildFixture { Value = 7 };
+                    });
+            Require(
+                referenceBuilds == 1 &&
+                ReferenceEquals(firstReference, secondReference),
+                "Invocation immutable reference reuse is not scoped and exact.");
         }
 
         using (InvocationDeterministicBuildSession.Start(enabled: false))
@@ -120,6 +146,21 @@ internal static partial class BootstrapSelfTest
                     builds++;
                     return new DeterministicBuildFixture { Value = 5 };
                 });
+            var firstReference =
+                InvocationDeterministicBuildSession.GetOrBuildReference(
+                    "self-test-reference-disabled",
+                    "v1",
+                    identity,
+                    () => new DeterministicBuildFixture { Value = 8 });
+            var secondReference =
+                InvocationDeterministicBuildSession.GetOrBuildReference(
+                    "self-test-reference-disabled",
+                    "v1",
+                    identity,
+                    () => new DeterministicBuildFixture { Value = 9 });
+            Require(
+                !ReferenceEquals(firstReference, secondReference),
+                "Disabled immutable reference reuse changed fallback behavior.");
         }
         Require(
             builds == 3,

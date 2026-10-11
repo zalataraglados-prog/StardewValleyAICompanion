@@ -27,6 +27,8 @@ namespace StardewAI.Core.OptionRegistry
         private readonly ActionQueueCompiler compiler;
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
         private readonly ConditionalWeakTable<SnapshotEnvelope, RouteConnectorCandidateCache> routeConnectorCandidatesBySnapshot = new();
+        private static readonly ConditionalWeakTable<SnapshotEnvelope, CollisionGridLookup>
+            collisionGridBySnapshot = new();
         private int routeConnectorCandidateBuildCount;
 
         internal int RouteConnectorCandidateBuildCount => Volatile.Read(ref routeConnectorCandidateBuildCount);

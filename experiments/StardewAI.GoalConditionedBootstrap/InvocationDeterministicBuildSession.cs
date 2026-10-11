@@ -17,6 +17,8 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
 
     private readonly Dictionary<string, byte[]> entries =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, object> referenceEntries =
+        new(StringComparer.Ordinal);
     private readonly InvocationDeterministicBuildSession? previous;
     private readonly bool enabled;
     private int disposed;
@@ -74,6 +76,39 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
         return result;
     }
 
+    public static T GetOrBuildReference<T>(
+        string producerId,
+        string producerVersion,
+        IEnumerable<DeterministicBuildIdentityPart> identity,
+        Func<T> factory)
+        where T : class
+    {
+        var session = Ambient.Value;
+        if (session is null || !session.enabled || session.disposed != 0)
+            return factory();
+
+        var identityParts = identity.ToArray();
+        using var operation = ValidationTraceSession.BeginOperation(
+            "deterministic_reference_build",
+            producerId,
+            producerVersion,
+            identityParts
+                .Where(part => part.IsFile)
+                .Select(part => part.Identity)
+                .ToArray());
+        var key = BuildKey(producerId, producerVersion, identityParts);
+        operation.AddArtifactId(key);
+        if (session.referenceEntries.TryGetValue(key, out var cached))
+        {
+            operation.MarkCacheHit();
+            return (T)cached;
+        }
+
+        var result = factory();
+        session.referenceEntries.Add(key, result);
+        return result;
+    }
+
     public static DeterministicBuildIdentityPart[] Describe(object value) =>
         value.GetType()
             .GetProperties(BindingFlags.Instance | BindingFlags.Public)
@@ -108,6 +143,7 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
         if (Interlocked.Exchange(ref disposed, 1) != 0)
             return;
         entries.Clear();
+        referenceEntries.Clear();
         if (ReferenceEquals(Ambient.Value, this))
             Ambient.Value = previous;
     }
