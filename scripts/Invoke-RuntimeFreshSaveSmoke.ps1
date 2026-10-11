@@ -3,6 +3,7 @@ param(
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [string] $RunId = (
         "runtime-fresh-save-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
+    [string] $OutputRoot = "",
     [int] $StartupTimeoutSeconds = 180,
     [switch] $KeepGameRunning
 )
@@ -119,8 +120,16 @@ if ($null -ne (Get-Process -Name "StardewModdingAPI" `
     throw "StardewModdingAPI is already running. Refusing to attach."
 }
 
-$artifactDirectory = Join-Path $ProjectRoot (
-    "artifacts\runtime-fresh-save\" + $RunId)
+$resolvedOutputRoot = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+    Join-Path $ProjectRoot "artifacts\runtime-fresh-save"
+}
+elseif ([IO.Path]::IsPathRooted($OutputRoot)) {
+    [IO.Path]::GetFullPath($OutputRoot)
+}
+else {
+    [IO.Path]::GetFullPath((Join-Path $ProjectRoot $OutputRoot))
+}
+$artifactDirectory = Join-Path $resolvedOutputRoot $RunId
 $isolatedSavesPath = Join-Path $artifactDirectory (
     "fresh-save-" + $RunId)
 $trainingOutputDirectory = Join-Path $artifactDirectory "training-output"

@@ -312,17 +312,18 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 value.TargetTileX,
                 value.TargetTileY))
             .ToHashSet();
-        var candidate = candidates.Find(
+        var matchingCandidates = candidates.Find(
                 staticRoute.RouteKind,
                 staticRoute.SourceId,
                 staticRoute.QualifiedItemId,
                 staticRoute.RequiredAmount,
                 staticRoute.MinimumQuality)
-            .FirstOrDefault(value => resolvedTargets.Contains((
+            .Where(value => resolvedTargets.Contains((
                 value.LocationId,
                 (int?)value.TargetTileX,
-                (int?)value.TargetTileY)));
-        if (candidate is null)
+                (int?)value.TargetTileY)))
+            .ToArray();
+        if (matchingCandidates.Length == 0)
         {
             return Result(
                 route,
@@ -350,34 +351,54 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 state.EnergyBlockingReasons);
         }
 
-        var actionTicks = Math.Max(
-            1,
-            candidate.EstimatedTicks - candidate.RouteDistanceTiles * 60);
-        return EvaluateTerminal(
-            route,
-            staticRoute,
-            state,
-            "native_wild_tree_chop",
-            candidate.LocationId,
-            candidate.TargetTileX,
-            candidate.TargetTileY,
-            requireExactTargetTile: false,
-            GameClockBudgetPolicy.TicksToGameMinutes(actionTicks),
-            1,
-            null,
-            state.AvailableEnergy.Value,
-            candidate.EnergyCost,
-            candidate.EnergyCost,
-            0d,
-            "existing_native_clear_obstacle_wild_tree_chop_profile",
-            new[]
+        AcquisitionRouteTargetDateDailyTimeEnergy? best = null;
+        foreach (var candidate in matchingCandidates)
+        {
+            var actionTicks = Math.Max(
+                1,
+                candidate.EstimatedTicks -
+                candidate.RouteDistanceTiles * 60);
+            var evaluated = EvaluateTerminal(
+                route,
+                staticRoute,
+                state,
+                "native_wild_tree_chop",
+                candidate.LocationId,
+                candidate.TargetTileX,
+                candidate.TargetTileY,
+                requireExactTargetTile: false,
+                GameClockBudgetPolicy.TicksToGameMinutes(actionTicks),
+                1,
+                null,
+                state.AvailableEnergy.Value,
+                candidate.EnergyCost,
+                candidate.EnergyCost,
+                0d,
+                "existing_native_clear_obstacle_wild_tree_chop_profile",
+                new[]
+                {
+                    "candidate:foraging.chop_wild_tree",
+                    "state.current_location.terrain_features.value[].tree_chop_expected_tool_swings",
+                    "state.current_location.terrain_features.value[].tree_chop_energy_cost",
+                    "compiler:DailyPlanCompiler.ClearPlantSteps",
+                    "compiler:ActionQueueCompiler.ClearObstacle"
+                });
+            if (evaluated.DailyTimeEnergyMatchesTargetDate == true)
+                return evaluated;
+            if (best is null ||
+                evaluated.DailyTimeEnergyAxisResolved &&
+                !best.DailyTimeEnergyAxisResolved ||
+                evaluated.DailyTimeEnergyAxisResolved ==
+                    best.DailyTimeEnergyAxisResolved &&
+                (evaluated.Evaluation?.GuaranteedCompletionByTime ??
+                    int.MaxValue) <
+                (best.Evaluation?.GuaranteedCompletionByTime ?? int.MaxValue))
             {
-                "candidate:foraging.chop_wild_tree",
-                "state.current_location.terrain_features.value[].tree_chop_expected_tool_swings",
-                "state.current_location.terrain_features.value[].tree_chop_energy_cost",
-                "compiler:DailyPlanCompiler.ClearPlantSteps",
-                "compiler:ActionQueueCompiler.ClearObstacle"
-            });
+                best = evaluated;
+            }
+        }
+        return best ?? throw new InvalidDataException(
+            "A non-empty wild-tree candidate set produced no evaluation.");
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy

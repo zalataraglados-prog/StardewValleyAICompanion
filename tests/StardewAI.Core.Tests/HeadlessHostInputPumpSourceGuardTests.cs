@@ -9,9 +9,18 @@ public sealed class HeadlessHostInputPumpSourceGuardTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.HeadlessInput.cs"));
+        var entry = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs"));
 
         Assert.Contains("HeadlessMovementInputSimulator", source, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_SUPPRESS_LOCAL_RENDER", source, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_TRAINING_MODE", source, StringComparison.Ordinal);
+        Assert.Contains("IsHeadlessTrainingRuntime()", source, StringComparison.Ordinal);
+        Assert.Contains("OnHeadlessTrainingSaveLoaded", source, StringComparison.Ordinal);
+        Assert.Contains("IsHeadlessTrainingRuntime()", entry, StringComparison.Ordinal);
+        Assert.Contains("OnHeadlessTrainingSaveLoaded", entry, StringComparison.Ordinal);
         Assert.Contains("GameInputSimulatorField.SetValue(null, headlessInputPump)", source, StringComparison.Ordinal);
         Assert.Contains("moveLeftHeld = direction == 3", source, StringComparison.Ordinal);
         Assert.Contains("moveLeftReleased = previousDirection == 3", source, StringComparison.Ordinal);

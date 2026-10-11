@@ -3,7 +3,7 @@ param(
     [string] $ProjectRoot = "",
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [string] $ArchivedFreshSaveRoot = "",
-    [string] $SaveSlot = "ProofFarm_450250338",
+    [string] $SaveSlot = "",
     [string] $RunId = ("runtime-full-shipment-sap-prefix-" +
         (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputRoot = "artifacts\runtime-full-shipment-sap-prefix",
@@ -711,6 +711,28 @@ foreach ($path in @(
 )) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Required input is missing: $path"
+    }
+}
+
+$archivedSaveItem = Get-Item -LiteralPath $archivedSavePath
+if (-not $archivedSaveItem.PSIsContainer) {
+    throw "Archived fresh save root is not a directory: $archivedSavePath"
+}
+$archivedSaveSlot = [string]$archivedSaveItem.Name
+if ([string]::IsNullOrWhiteSpace($SaveSlot)) {
+    $SaveSlot = $archivedSaveSlot
+}
+if (-not [string]::Equals(
+        $SaveSlot,
+        $archivedSaveSlot,
+        [StringComparison]::Ordinal)) {
+    throw "Archived fresh save slot identity mismatch: requested " +
+        "$SaveSlot but source directory is $archivedSaveSlot."
+}
+foreach ($nativeSaveFile in @($SaveSlot, "SaveGameInfo")) {
+    if (-not (Test-Path -LiteralPath (
+            Join-Path $archivedSavePath $nativeSaveFile) -PathType Leaf)) {
+        throw "Archived fresh save is missing native file: $nativeSaveFile"
     }
 }
 

@@ -59,26 +59,17 @@ public sealed partial class ModEntry
             case ShipSummaryClosePhase.WaitReady:
                 if (shippingMenu.CanReceiveInput() && shippingMenu.currentPage == -1)
                 {
-                    ResetShippingSummaryInput(active);
                     SetShippingSummaryPhase(active, ShipSummaryClosePhase.Press);
                 }
                 break;
 
             case ShipSummaryClosePhase.Press:
-                if (active.ButtonPressed && !active.ButtonReleased)
-                    SetShippingSummaryPhase(active, ShipSummaryClosePhase.Release);
-                break;
-
-            case ShipSummaryClosePhase.Release:
-                if (active.ButtonReleased)
-                {
-                    ResetShippingSummaryInput(active);
-                    SetShippingSummaryPhase(active, ShipSummaryClosePhase.WaitClose);
-                }
                 break;
 
             case ShipSummaryClosePhase.WaitClose:
-                if (active.ElapsedTicks - active.PhaseStartTick > 120)
+                if (shippingMenu.CanReceiveInput() &&
+                    shippingMenu.currentPage == -1 &&
+                    active.ElapsedTicks - active.PhaseStartTick > 120)
                 {
                     active.CloseRetries++;
                     if (active.CloseRetries > 3)
@@ -87,7 +78,6 @@ public sealed partial class ModEntry
                         return;
                     }
 
-                    ReleaseShippingSummaryMenuButtonOverride();
                     SetShippingSummaryPhase(active, ShipSummaryClosePhase.WaitReady);
                 }
                 break;
@@ -97,51 +87,21 @@ public sealed partial class ModEntry
     private void ApplyShippingSummaryCloseInput(ActiveShippingSummaryClose active)
     {
         if (!ReferenceEquals(Game1.activeClickableMenu, active.InitialMenu) ||
-            Game1.activeClickableMenu is not ShippingMenu)
+            Game1.activeClickableMenu is not ShippingMenu shippingMenu)
         {
             return;
         }
 
-        switch (active.Phase)
+        if (active.Phase == ShipSummaryClosePhase.Press)
         {
-            case ShipSummaryClosePhase.Press:
-                if (!active.ButtonPressed)
-                {
-                    if (!TryApplySmapiButtonOverride(
-                            SButton.Escape,
-                            pressed: true,
-                            out var pressReason))
-                    {
-                        CompleteBlockedShippingSummaryClose(active, "shipping_summary_press_failed:" + pressReason);
-                        return;
-                    }
-
-                    active.ButtonPressed = true;
-                }
-                break;
-
-            case ShipSummaryClosePhase.Release:
-                if (!active.ButtonReleased)
-                {
-                    if (!TryApplySmapiButtonOverride(
-                            SButton.Escape,
-                            pressed: false,
-                            out var releaseReason))
-                    {
-                        active.ReleaseRetries++;
-                        if (active.ReleaseRetries > 3)
-                        {
-                            CompleteBlockedShippingSummaryClose(
-                                active,
-                                "shipping_summary_release_failed_after_retries:" + releaseReason);
-                        }
-                        return;
-                    }
-
-                    active.ButtonReleased = true;
-                }
-                break;
+            DispatchNativeShippingSummaryClose(shippingMenu);
+            SetShippingSummaryPhase(active, ShipSummaryClosePhase.WaitClose);
         }
+    }
+
+    private static void DispatchNativeShippingSummaryClose(ShippingMenu shippingMenu)
+    {
+        shippingMenu.receiveKeyPress(Microsoft.Xna.Framework.Input.Keys.Escape);
     }
 
     private static void SetShippingSummaryPhase(
@@ -152,21 +112,8 @@ public sealed partial class ModEntry
         active.PhaseStartTick = active.ElapsedTicks;
     }
 
-    private static void ResetShippingSummaryInput(ActiveShippingSummaryClose active)
-    {
-        active.ButtonPressed = false;
-        active.ButtonReleased = false;
-        active.ReleaseRetries = 0;
-    }
-
-    private void ReleaseShippingSummaryMenuButtonOverride()
-    {
-        TryApplySmapiButtonOverride(SButton.Escape, pressed: false, out _);
-    }
-
     private void CompleteShippingSummaryClose(ActiveShippingSummaryClose active)
     {
-        ReleaseShippingSummaryMenuButtonOverride();
         activeShippingSummaryClose = null;
         active.Pending.Completion.SetResult(ShippingSummaryCloseResult(
             active,
@@ -179,7 +126,6 @@ public sealed partial class ModEntry
         ActiveShippingSummaryClose active,
         string reason)
     {
-        ReleaseShippingSummaryMenuButtonOverride();
         activeShippingSummaryClose = null;
         active.Pending.Completion.SetResult(ShippingSummaryCloseResult(
             active,

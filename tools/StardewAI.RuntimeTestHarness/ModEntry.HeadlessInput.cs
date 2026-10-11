@@ -11,9 +11,29 @@ public sealed partial class ModEntry
 
     private IInputSimulator? headlessInputPump;
 
+    private static bool IsHeadlessTrainingRuntime()
+    {
+        return string.Equals(
+                   Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_MODE"),
+                   "1",
+                   StringComparison.Ordinal) &&
+               string.Equals(
+                   Environment.GetEnvironmentVariable(
+                       "STARDEWAI_SUPPRESS_LOCAL_RENDER"),
+                   "1",
+                   StringComparison.Ordinal);
+    }
+
+    private void OnHeadlessTrainingSaveLoaded(
+        object? sender,
+        StardewModdingAPI.Events.SaveLoadedEventArgs e)
+    {
+        EnsureHeadlessInputPump();
+    }
+
     private void EnsureHeadlessInputPump()
     {
-        if (!IsAiHostRuntimeMode() ||
+        if ((!IsAiHostRuntimeMode() && !IsHeadlessTrainingRuntime()) ||
             !string.Equals(
                 Environment.GetEnvironmentVariable("STARDEWAI_SUPPRESS_LOCAL_RENDER"),
                 "1",

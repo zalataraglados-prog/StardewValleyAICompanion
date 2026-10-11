@@ -212,8 +212,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (sleep.Stage == SleepStage.ConfirmPromptPress ||
-            sleep.Stage == SleepStage.ConfirmPromptRelease)
+        if (sleep.Stage == SleepStage.ConfirmPromptPress)
         {
             return;
         }
@@ -404,41 +403,13 @@ public sealed partial class ModEntry : Mod
                 return true;
             }
 
-            if (!TryApplySmapiButtonOverride(SButton.Y, pressed: true, out var pressReason))
-            {
-                CompleteBlockedSleep(sleep, "sleep_confirm_press_failed:" + pressReason);
-                return false;
-            }
-
-            sleep.SleepConfirmHeld = true;
-            sleep.Stage = SleepStage.ConfirmPromptRelease;
-            return true;
-        }
-
-        if (sleep.Stage == SleepStage.ConfirmPromptRelease)
-        {
-            if (!TryApplySmapiButtonOverride(SButton.Y, pressed: false, out var releaseReason))
-            {
-                CompleteBlockedSleep(sleep, "sleep_confirm_release_failed:" + releaseReason);
-                return false;
-            }
-
-            sleep.SleepConfirmHeld = false;
+            // DialogueBox handles the native Y shortcut in receiveKeyPress; a polled
+            // SMAPI button override installed this late never reaches that dispatch path.
+            prompt.receiveKeyPress(Microsoft.Xna.Framework.Input.Keys.Y);
             sleep.Stage = SleepStage.WaitForPromptClose;
         }
 
         return true;
-    }
-
-    private void ReleaseSleepConfirmInput(ActiveSleep sleep)
-    {
-        if (!sleep.SleepConfirmHeld)
-        {
-            return;
-        }
-
-        TryApplySmapiButtonOverride(SButton.Y, pressed: false, out _);
-        sleep.SleepConfirmHeld = false;
     }
 
     private void TickPostSleepDialogue(ActiveSleep sleep, DialogueBox dialogue)
@@ -592,27 +563,27 @@ public sealed partial class ModEntry : Mod
                     if (shippingMenu.CanReceiveInput() && shippingMenu.currentPage == -1)
                     {
                         sleep.SummaryPhase = ShipSummaryClosePhase.Press;
-                        sleep.SummaryButtonPressed = false;
-                        sleep.SummaryButtonReleased = false;
                     }
                 }
                 break;
 
             case ShipSummaryClosePhase.Press:
-                if (sleep.SummaryButtonPressed && !sleep.SummaryButtonReleased)
-                    sleep.SummaryPhase = ShipSummaryClosePhase.Release;
-                break;
-
-            case ShipSummaryClosePhase.Release:
-                if (sleep.SummaryButtonReleased)
-                {
-                    sleep.SummaryButtonPressed = false;
-                    sleep.SummaryButtonReleased = false;
-                    sleep.SummaryPhase = ShipSummaryClosePhase.WaitClose;
-                }
                 break;
 
             case ShipSummaryClosePhase.WaitClose:
+                if (shippingMenu.CanReceiveInput() &&
+                    shippingMenu.currentPage == -1 &&
+                    sleep.ElapsedTicks - sleep.SummaryPhaseStartTick > 120)
+                {
+                    sleep.SummaryCloseRetries++;
+                    if (sleep.SummaryCloseRetries > 3)
+                    {
+                        CompleteBlockedSleep(sleep, "shipping_summary_close_not_observed_after_retries");
+                        return;
+                    }
+
+                    sleep.SummaryPhase = ShipSummaryClosePhase.WaitReady;
+                }
                 break;
         }
     }
@@ -621,52 +592,17 @@ public sealed partial class ModEntry : Mod
     {
         if (Game1.activeClickableMenu is not ShippingMenu shippingMenu) return;
 
-        switch (sleep.SummaryPhase)
+        if (sleep.SummaryPhase == ShipSummaryClosePhase.Press)
         {
-            case ShipSummaryClosePhase.Press:
-                if (!sleep.SummaryButtonPressed)
-                {
-                    if (!TryApplySmapiButtonOverride(
-                            SButton.Escape,
-                            pressed: true,
-                            out var reason))
-                    {
-                        ReleaseShippingSummaryMenuButtonOverride();
-                        CompleteBlockedSleep(sleep, "shipping_summary_press_failed:" + reason);
-                        return;
-                    }
-                    sleep.SummaryButtonPressed = true;
-                }
-                break;
-
-            case ShipSummaryClosePhase.Release:
-                if (!sleep.SummaryButtonReleased)
-                {
-                    if (!TryApplySmapiButtonOverride(
-                            SButton.Escape,
-                            pressed: false,
-                            out var relReason))
-                    {
-                        sleep.SummaryReleaseRetries++;
-                        if (sleep.SummaryReleaseRetries > 3)
-                        {
-                            ReleaseShippingSummaryMenuButtonOverride();
-                            CompleteBlockedSleep(sleep, "shipping_summary_release_failed_after_retries:" + relReason);
-                            return;
-                        }
-                        return;
-                    }
-                    sleep.SummaryButtonReleased = true;
-                }
-                break;
+            DispatchNativeShippingSummaryClose(shippingMenu);
+            sleep.SummaryPhase = ShipSummaryClosePhase.WaitClose;
+            sleep.SummaryPhaseStartTick = sleep.ElapsedTicks;
         }
     }
 
     private void CompleteSleep(ActiveSleep sleep, string verificationStatus, string[] verificationReasons)
     {
-        ReleaseSleepConfirmInput(sleep);
         ReleaseSmapiLeftButtonOverride();
-        ReleaseShippingSummaryMenuButtonOverride();
         StopAllMovement();
         activeSleep = null;
         sleep.Pending.Completion.SetResult(CompletedSleep(sleep, verificationStatus, verificationReasons));
@@ -674,9 +610,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteBlockedSleep(ActiveSleep sleep, string reason)
     {
-        ReleaseSleepConfirmInput(sleep);
         ReleaseSmapiLeftButtonOverride();
-        ReleaseShippingSummaryMenuButtonOverride();
         StopAllMovement();
         activeSleep = null;
         sleep.Pending.Completion.SetResult(BlockedWithPrimitive(

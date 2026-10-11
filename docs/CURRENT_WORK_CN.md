@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-11 Full Shipment Sap 原生证据恢复
+
+- F 盘隔离实验室已经从真实原生新档生成独立 Spring 1 基线：存档槽为 `ProofFarm_451377026`，Full Shipment 初态为 `0/154`，只加载 TransparentBridge 与 RuntimeTestHarness。`Invoke-RuntimeFreshSaveSmoke.ps1` 新增可选 `OutputRoot`，默认行为不变，允许把高负载制品稳定留在 F 盘而不污染 I 盘仓库。
+- 隐藏训练模式此前没有安装已有的 `HeadlessMovementInputSimulator`，导致路线、碰撞判断和下一步方向均正确时角色仍停在原地。RuntimeTestHarness 现在仅在 `STARDEWAI_TRAINING_MODE=1` 且 `STARDEWAI_SUPPRESS_LOCAL_RENDER=1` 时复用同一个原生输入泵；没有新增第二套移动器、直接坐标写入或 BFS 分支。原生 FarmHouse 出门回归已通过。
+- Full Shipment runner 不再硬编码历史 `ProofFarm_450250338`。未显式指定时从归档存档目录名派生槽名；显式槽名与目录叶名不一致、主存档文件不与槽同名或缺少 `SaveGameInfo` 时均在启动游戏前失败关闭。
+- 新档 Sap 规划真实暴露了一个下游选择错误：`wild_tree:1:0` 有 27 个已解析原生树目标，旧日预算层只取第一个目标；该目标的二次静态寻路失败后，整条 Sap 来源被误判为机会分母不完整。现在按现有候选顺序逐个调用同一个 `EvaluateTerminal`，首个完整匹配立即返回；若没有匹配，仍只保留最佳已解析结果并维持失败关闭，不降低 Teacher 完整分母标准。
+- 同一原生快照上的严格离线重算已通过：Sap `11/11` 路线无阻塞，`1` 条进入 Pareto 前沿；Teacher 为 `UniqueStrictPareto`，分母 `1` 且完整，标签可生成，阻塞为 `0`。目标树为 Farm `(49,20)`，保守完成时间 `06:53`。这只是 Sap 单层偏好证明，`formal_training_authorized=false` 保持不变，不得把离线重算冒充生产证据。
+- 完整原生回放 `runtime-full-shipment-evidence-sap_prefix-20261011-150812` 已通过规划、Teacher、Sap 原生采集、投递、fresh terminal receipt 和 rollout proof，但 recurrence 的 `executor.sleep` 暴露了两个顺序故障：`DialogueBox` 的睡眠 Yes 与 `ShippingMenu` 的原生 OK 都不能由 `UpdateTicking` 阶段安装的 SMAPI 轮询按键覆盖触发。按 F 盘精确 `1.6.15` DLL 反编译结果，两处现在分别复用原生 `receiveKeyPress(Keys.Y)` 与 `receiveKeyPress(Keys.Escape)` 派发；睡眠结算和独立 ShippingMenu 恢复共用唯一的结算派发函数，没有直接改菜单、日期、出货统计或存档。
+- 隔离下游重放 `runtime-full-shipment-sap-shippingfix-20261011-161922` 已真实通过：从新档副本原生获取 Sap `1`、投递并睡眠，存档从 Spring 1 写入 Spring 2，`basicShipped` 原生收据从 `0` 增至 `1`，Full Shipment 为 `1/154`，最终 `total_day=1`。该重放只复用了上一轮已经验证的 acquisition queue，用于证明执行与结算修复，不替代完整生产 recurrence 证明。
+- 验证已通过：GoalConditionedBootstrap Release `0 warning / 0 error`、RuntimeTestHarness Debug `0 warning / 0 error`、Core game-free `256/256`、`git diff --check`。下一固定动作是以修复后的执行器完整重跑 Sap prefix，生成 recurrence manifest/summary 后重建 anchor evidence index，再进入既定 7 个 high-risk 场景；`formal_training_authorized=false` 保持不变。
+
 ## 2026-10-11 #195 invocation-scoped immutable read session
 
 - #199 在 Core 新增单次进程/单次命令生命周期的 `InvocationReadSession`。Bootstrap 默认只登记启动时已存在的文件参数；output/output-root、checkpoint、ledger/lease/ownership、控制参数、输出同路径与输出根后代全部禁止复用。`--read-session disabled` 或 `STARDEWAI_READ_SESSION=disabled` 可恢复原始逐次读取路径。
