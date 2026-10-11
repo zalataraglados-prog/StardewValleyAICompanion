@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #214 snapshot 派生空间缓存正确性
+
+- `SnapshotStateCache<T>` 统一替换 collision grid、route connector/route-repair 候选与清障编译验证索引的裸 `ConditionalWeakTable<SnapshotEnvelope,...>`。命中现在必须同时满足同一快照引用和同一非空 `StateHash`；空 hash 永不复用，构建过程中 hash 改变立即失败关闭。
+- 同一个 `SnapshotEnvelope` 原地替换 `State/StateHash` 后，路线候选会从碰撞阻塞重建为可用，清障编译不会继续读取旧对象索引，机器放置也会按新碰撞格阻断；hash 不变时仍只构建一次。没有新增第二套路由、候选或编译逻辑。
+- game-free Core 回归扩展到 `274/274`，Bootstrap hermetic 通过，Core 与 GoalConditionedBootstrap Release 均为 `0 warning / 0 error`。F 盘冻结 execution-binding 复算约 `14.149 s`，旧/新 SHA-256 同为 `62b7dd89707ec55b8d8494bd3ea7c16deebfb0e9ca0ae4e642c5e4e90e83e739`；fresh snapshot、runtime dispatch 和 verifier 门禁未降低。
+
 ## 2026-10-11 #200 Phase A observe-only dependency DAG
 
 - validation trace 新增独立子 schema `stardewai.validation_dependency_graph.v1`。节点记录 artifact kind/id、输出 SHA-256、producer/version、输入 artifact/hash/path、reuse scope、调用/缓存观察和 wall/CPU 成本；嵌套重算形成真实依赖边，并从每个外部输入计算理论失效后代。

@@ -69,6 +69,47 @@ public sealed class MachinePlacementMainlineTests
     }
 
     [Fact]
+    public void PlacementCandidateReflectsCollisionChangeOnSameSnapshot()
+    {
+        var evaluator = new CandidateOptionAvailabilityEvaluator();
+        var ledger = Ledger(revision: 3);
+        var snapshot = Snapshot(
+            rangeStartX: 7,
+            rangeEndX: 7,
+            blockPlacementStandTiles: false);
+
+        var available = Assert.Single(evaluator.Evaluate(
+                snapshot,
+                new[] { "farm.process_machines" },
+                includeExecutorCalibrationOptions: true,
+                ledger)
+            .Options[0].EventCandidates.Where(candidate =>
+                candidate.Kind == "place_machine_item"));
+        Assert.True(available.Available);
+
+        var replacement = Snapshot(
+            rangeStartX: 7,
+            rangeEndX: 7,
+            blockPlacementStandTiles: true);
+        snapshot.State = replacement.State;
+        snapshot.StateHash = replacement.StateHash;
+        var blocked = Assert.Single(evaluator.Evaluate(
+                snapshot,
+                new[] { "farm.process_machines" },
+                includeExecutorCalibrationOptions: true,
+                ledger)
+            .Options[0].EventCandidates.Where(candidate =>
+                candidate.Kind == "place_machine_item"));
+
+        Assert.False(blocked.Available);
+        Assert.Contains(
+            "machine_placement_reachable_exact_tile_unavailable",
+            blocked.BlockReasons);
+        Assert.Null(blocked.TileX);
+        Assert.Null(blocked.TileY);
+    }
+
+    [Fact]
     public void SupportedMachinePlacementBindsExactIntentTarget()
     {
         var snapshot = Snapshot();
@@ -520,7 +561,8 @@ public sealed class MachinePlacementMainlineTests
     private static SnapshotEnvelope Snapshot(
         int rangeStartX = 7,
         int rangeEndX = 8,
-        bool includeRemoteLocation = false)
+        bool includeRemoteLocation = false,
+        bool blockPlacementStandTiles = false)
     {
         var remotePlacementLocation = includeRemoteLocation
             ? """
@@ -541,6 +583,16 @@ public sealed class MachinePlacementMainlineTests
             "route_connectors":{"value":{"location_id":"FarmHouse","connector_count":1,"connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"Cellar","target_x":5,"target_y":5,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             """
             : string.Empty;
+        var notableTiles = blockPlacementStandTiles
+            ? """
+              [
+                {"tile_x":8,"tile_y":5,"collision_blocked":true},
+                {"tile_x":6,"tile_y":5,"collision_blocked":true},
+                {"tile_x":7,"tile_y":6,"collision_blocked":true},
+                {"tile_x":7,"tile_y":4,"collision_blocked":true}
+              ]
+              """
+            : "[]";
         var stateJson = """
         {
           "player": {
@@ -580,7 +632,7 @@ public sealed class MachinePlacementMainlineTests
             "warps":{"value":[{"x":2,"y":3,"target_location":"Cellar","target_x":5,"target_y":5}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
-            "collision_grid":{"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "collision_grid":{"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":NOTABLE_TILES},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}REMOTE_ROUTING
           },
           "menus": {
@@ -599,6 +651,7 @@ public sealed class MachinePlacementMainlineTests
         .Replace(
             "FINGERPRINT",
             "machine-placement:" + rangeStartX + "-" + rangeEndX)
+        .Replace("NOTABLE_TILES", notableTiles)
         .Replace(
             "REMOTE_PLACEMENT_LOCATION",
             remotePlacementLocation)

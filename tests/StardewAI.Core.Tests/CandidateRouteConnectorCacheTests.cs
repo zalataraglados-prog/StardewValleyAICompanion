@@ -41,10 +41,55 @@ public sealed class CandidateRouteConnectorCacheTests
         Assert.Equal(2, evaluator.RouteConnectorCandidateBuildCount);
     }
 
-    private static SnapshotEnvelope RouteConnectorSnapshot()
+    [Fact]
+    public void RouteRepairDoesNotReuseOldCollisionGridAfterStateHashChanges()
     {
+        var evaluator = new CandidateOptionAvailabilityEvaluator();
+        var snapshot = RouteConnectorSnapshot(blocked: true);
+
+        var blocked = evaluator.Evaluate(
+            snapshot,
+            new[] { "exploration.visit_location" });
+        var blockedRoute = Assert.Single(
+            blocked.Options[0].EventCandidates,
+            candidate => candidate.Kind == "route_connector_tile");
+        Assert.Contains(
+            "route_path_target_blocked_by_collision_grid",
+            blockedRoute.BlockReasons);
+
+        var replacement = RouteConnectorSnapshot(blocked: false);
+        snapshot.State = replacement.State;
+        snapshot.StateHash = replacement.StateHash;
+        var unblocked = evaluator.Evaluate(
+            snapshot,
+            new[] { "exploration.visit_location" });
+        var unblockedRoute = Assert.Single(
+            unblocked.Options[0].EventCandidates,
+            candidate => candidate.Kind == "route_connector_tile");
+
+        Assert.True(
+            unblockedRoute.Available,
+            string.Join(";", unblockedRoute.BlockReasons));
+        Assert.DoesNotContain(
+            unblockedRoute.BlockReasons,
+            reason => reason.Contains(
+                "collision_grid",
+                StringComparison.Ordinal));
+        Assert.Equal(2, evaluator.RouteConnectorCandidateBuildCount);
+    }
+
+    private static SnapshotEnvelope RouteConnectorSnapshot(
+        int connectorX = 2,
+        bool blocked = false)
+    {
+        var terrainFeatures = blocked
+            ? $$"""[{"tile_x":{{connectorX}},"tile_y":1,"type":"Grass"}]"""
+            : "[]";
+        var notableTiles = blocked
+            ? $$"""[{"tile_x":{{connectorX}},"tile_y":1,"collision_blocked":true}]"""
+            : "[]";
         var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-            """
+            $$"""
             {
               "time": {
                 "time": {"value":900,"status":"available"}
@@ -58,22 +103,22 @@ public sealed class CandidateRouteConnectorCacheTests
               },
               "current_location": {
                 "objects": {"value":[],"status":"available"},
-                "terrain_features": {"value":[],"status":"available"},
+                "terrain_features": {"value":{{terrainFeatures}},"status":"available"},
                 "map": {"value":{"id":"Farm"},"status":"available"}
               },
               "menus": {
                 "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available"}
               },
               "locations": {
-                "collision_grid": {"value":{"location_id":"Farm","width":5,"height":5,"notable_tiles":[]},"status":"available"},
-                "route_connectors": {"value":{"location_id":"Farm","connectors":[{"kind":"warp","tile_x":2,"tile_y":1,"target_location":"Town","target_x":1,"target_y":1,"resolved":true}]},"status":"available"},
-                "route_action_branch_coverage": {"value":{"rows":[{"tile_x":2,"tile_y":1,"branch":"Warp","route_training_blocked":false}]},"status":"available"}
+                "collision_grid": {"value":{"location_id":"Farm","width":5,"height":5,"notable_tiles":{{notableTiles}}},"status":"available"},
+                "route_connectors": {"value":{"location_id":"Farm","connectors":[{"kind":"warp","tile_x":{{connectorX}},"tile_y":1,"target_location":"Town","target_x":1,"target_y":1,"resolved":true}]},"status":"available"},
+                "route_action_branch_coverage": {"value":{"rows":[{"tile_x":{{connectorX}},"tile_y":1,"branch":"Warp","route_training_blocked":false}]},"status":"available"}
               }
             }
             """)!;
         return new SnapshotEnvelope
         {
-            StateHash = "route-cache-test",
+            StateHash = "route-cache-test-" + connectorX + "-" + blocked,
             GameTick = 1,
             State = state
         };
