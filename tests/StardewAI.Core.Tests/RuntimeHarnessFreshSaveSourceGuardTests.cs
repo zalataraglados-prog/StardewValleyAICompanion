@@ -46,6 +46,8 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains("full_shipment_shipped_item_count = 0", source, StringComparison.Ordinal);
+        Assert.Contains("[string] $OutputRoot = \"\"", source, StringComparison.Ordinal);
+        Assert.Contains("$resolvedOutputRoot", source, StringComparison.Ordinal);
         Assert.Contains("$env:SMAPI_MODS_PATH = $smokeModsPath", source, StringComparison.Ordinal);
         Assert.Contains("loaded_mod_allowlist = $loadedModAllowlist", source, StringComparison.Ordinal);
         Assert.Contains("$harnessConfig.SlotName = \"\"", source, StringComparison.Ordinal);

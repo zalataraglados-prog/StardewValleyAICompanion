@@ -55,6 +55,7 @@
     <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
     <Compile Include="GameClockBudgetPolicyTests.cs" />
+    <Compile Include="HeadlessHostInputPumpSourceGuardTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="ValidationTraceSessionTests.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
     <Compile Include="DeferredNativeDropPickupTests.cs" />
+    <Compile Include="ExecutorSinglePathGovernanceTests.cs" />
     <Compile Include="SkullKeySnapshotContractSourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
@@ -74,6 +76,7 @@
     <Compile Include="PetCareRuntimeSourceGuardTests.cs" />
     <Compile Include="RuntimeHarnessSources.cs" />
     <Compile Include="RuntimeHarnessFreshSaveSourceGuardTests.cs" />
+    <Compile Include="RuntimeSleepSourceGuardTests.cs" />
     <Compile Include="RuntimeEvidenceFreshnessGovernanceTests.cs" />
     <PackageReference Update="Pathoschild.Stardew.ModBuildConfig"
                       ExcludeAssets="compile;runtime;build;buildTransitive;native;contentfiles;analyzers" />

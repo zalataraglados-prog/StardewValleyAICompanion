@@ -50,6 +50,80 @@ internal static partial class BootstrapSelfTest
         Require(
             session.Snapshot().RegisteredPathCount == 1,
             "Invocation read plan registered an unexpected path count.");
+
+        VerifyInvocationDeterministicBuildSession(immutablePath);
+    }
+
+    private static void VerifyInvocationDeterministicBuildSession(
+        string immutablePath)
+    {
+        var builds = 0;
+        using (var buildSession =
+            InvocationDeterministicBuildSession.Start())
+        {
+            var identity = new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "FixturePath",
+                    immutablePath)
+            };
+            var first = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test",
+                "v1",
+                identity,
+                () =>
+                {
+                    builds++;
+                    return new DeterministicBuildFixture { Value = 1 };
+                });
+            first.Value = 2;
+            var second = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test",
+                "v1",
+                identity,
+                () =>
+                {
+                    builds++;
+                    return new DeterministicBuildFixture { Value = 3 };
+                });
+            var snapshot = buildSession.Snapshot();
+            Require(
+                builds == 1 && second.Value == 1 &&
+                snapshot.BuildCount == 1 && snapshot.CacheHitCount == 1 &&
+                snapshot.CachedBytes > 0,
+                "Invocation deterministic build reuse is not isolated and exact.");
+        }
+
+        using (InvocationDeterministicBuildSession.Start(enabled: false))
+        {
+            var identity = new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "FixturePath",
+                    immutablePath)
+            };
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-disabled",
+                "v1",
+                identity,
+                () =>
+                {
+                    builds++;
+                    return new DeterministicBuildFixture { Value = 4 };
+                });
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-disabled",
+                "v1",
+                identity,
+                () =>
+                {
+                    builds++;
+                    return new DeterministicBuildFixture { Value = 5 };
+                });
+        }
+        Require(
+            builds == 3,
+            "Disabled deterministic build reuse changed fallback behavior.");
     }
 
     private static string WriteFixture(string root, string name)
@@ -58,5 +132,10 @@ internal static partial class BootstrapSelfTest
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, "{}" + Environment.NewLine);
         return path;
+    }
+
+    private sealed class DeterministicBuildFixture
+    {
+        public int Value { get; set; }
     }
 }

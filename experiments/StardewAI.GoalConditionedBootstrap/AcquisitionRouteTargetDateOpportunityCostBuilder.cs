@@ -24,6 +24,78 @@ public static partial class AcquisitionRouteTargetDateOpportunityCostBuilder
         string fishingForecastManifestPath,
         string strategyLedgerPath,
         string snapshotPath,
+        string routeTimingCalibrationPath) =>
+        InvocationDeterministicBuildSession.GetOrBuild(
+            "AcquisitionRouteTargetDateOpportunityCostBuilder.Build",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(new
+            {
+                InventoryPath = inventoryPath,
+                LoweringPath = loweringPath,
+                MasterAnglerWindowIndexPath = masterAnglerWindowIndexPath,
+                StaticCalendarResolutionPath = staticCalendarResolutionPath,
+                TargetDateCalendarPath = targetDateCalendarPath,
+                TargetDateUnlockPath = targetDateUnlockPath,
+                TargetDateFestivalPath = targetDateFestivalPath,
+                TargetDateLocationPath = targetDateLocationPath,
+                TargetDateFacilityPath = targetDateFacilityPath,
+                TargetDateResourcePath = targetDateResourcePath,
+                TargetDateCurrencyPath = targetDateCurrencyPath,
+                TargetDateReservationPath = targetDateReservationPath,
+                TargetDateProcessingPath = targetDateProcessingPath,
+                TargetDateFishingProbabilityPath =
+                    targetDateFishingProbabilityPath,
+                TargetDateStochasticRetryPath =
+                    targetDateStochasticRetryPath,
+                TargetDateDailyTimeEnergyPath =
+                    targetDateDailyTimeEnergyPath,
+                FishingForecastManifestPath = fishingForecastManifestPath,
+                StrategyLedgerPath = strategyLedgerPath,
+                SnapshotPath = snapshotPath,
+                RouteTimingCalibrationPath = routeTimingCalibrationPath
+            }),
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                targetDateReservationPath,
+                targetDateProcessingPath,
+                targetDateFishingProbabilityPath,
+                targetDateStochasticRetryPath,
+                targetDateDailyTimeEnergyPath,
+                fishingForecastManifestPath,
+                strategyLedgerPath,
+                snapshotPath,
+                routeTimingCalibrationPath));
+
+    private static AcquisitionRouteTargetDateOpportunityCostReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string staticCalendarResolutionPath,
+        string targetDateCalendarPath,
+        string targetDateUnlockPath,
+        string targetDateFestivalPath,
+        string targetDateLocationPath,
+        string targetDateFacilityPath,
+        string targetDateResourcePath,
+        string targetDateCurrencyPath,
+        string targetDateReservationPath,
+        string targetDateProcessingPath,
+        string targetDateFishingProbabilityPath,
+        string targetDateStochasticRetryPath,
+        string targetDateDailyTimeEnergyPath,
+        string fishingForecastManifestPath,
+        string strategyLedgerPath,
+        string snapshotPath,
         string routeTimingCalibrationPath)
     {
         var sourcePath = Path.GetFullPath(targetDateDailyTimeEnergyPath);

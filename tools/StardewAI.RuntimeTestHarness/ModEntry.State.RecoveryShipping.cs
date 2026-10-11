@@ -71,7 +71,6 @@ public sealed partial class ModEntry : Mod
         public ExecutorPathCursor PathCursor { get; } = new();
         public int BedStepStuckTicks { get; set; }
         public Vector2 BedStepLastPosition { get; set; }
-        public bool SleepConfirmHeld { get; set; }
         public int PromptWaitTicks { get; set; }
         public int ConfirmReadyWaitTicks { get; set; }
         public int PromptCloseWaitTicks { get; set; }
@@ -87,16 +86,13 @@ public sealed partial class ModEntry : Mod
         public int MaxTicks { get; }
         public ShipSummaryClosePhase SummaryPhase { get; set; }
         public int SummaryPhaseStartTick { get; set; }
-        public bool SummaryButtonPressed { get; set; }
-        public bool SummaryButtonReleased { get; set; }
-        public int SummaryReleaseRetries { get; set; }
+        public int SummaryCloseRetries { get; set; }
     }
 
     private enum ShipSummaryClosePhase
     {
         WaitReady,
         Press,
-        Release,
         WaitClose
     }
 
@@ -116,7 +112,6 @@ public sealed partial class ModEntry : Mod
         StepOntoSleepTouchTile,
         WaitForNativePrompt,
         ConfirmPromptPress,
-        ConfirmPromptRelease,
         WaitForPromptClose,
         WaitForNewDay,
         WaitForPostSleepStable
@@ -281,9 +276,6 @@ public sealed partial class ModEntry : Mod
         public int MaxTicks { get; } = 1200;
         public ShipSummaryClosePhase Phase { get; set; } = ShipSummaryClosePhase.WaitReady;
         public int PhaseStartTick { get; set; }
-        public bool ButtonPressed { get; set; }
-        public bool ButtonReleased { get; set; }
-        public int ReleaseRetries { get; set; }
         public int CloseRetries { get; set; }
     }
 

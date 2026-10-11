@@ -1,5 +1,25 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #195 确定性证明链单次 invocation 去重
+
+- Full Shipment Sap 完整原生回放已经生成有效的 acquisition、deposit、sleep settlement、rollout proof 与 recurrence-prefix manifest；但旧 `build-full-shipment-recurrence-prefix-checkpoint` 在持续计算超过 12 分钟后仍未结束，开发反馈成本已不可接受。该中断不否定已落盘的原生动作与结算证据，但当时没有生成 prefix checkpoint/summary，不能宣称完整 runner 通过。
+- Bootstrap 新增默认启用、可显式关闭的 `InvocationDeterministicBuildSession`。缓存只存在于当前进程/当前命令，键包含 producer/version 及每个输入文件的内容 SHA-256；不跨命令、不跨 run、不跨 snapshot。缓存值只保存序列化字节，命中时重新反序列化为新 DTO，不共享可变对象。`--deterministic-build-session disabled` 或 `STARDEWAI_DETERMINISTIC_BUILD_SESSION=disabled` 可恢复原完整重算路径。
+- 首批只接入实测重复最重的四个节点：target-date processing、opportunity cost、portfolio Teacher preference 与 execution binding。每个唯一子图在本命令中仍完整反算一次；相同输入再次由 fresh/settlement/checkpoint 递归请求时才复用。validation trace 新增 `deterministic_build` operation，能按 producer 区分调用数、命中和累计 wall/CPU，不改变 admission。
+- 同一冻结 1599-route Sap 输入上，execution-binding 从原运行约 `469 s` 降为 `104.668 s`，旧/新输出 SHA-256 均为 `62b7dd89707ec55b8d8494bd3ea7c16deebfb0e9ca0ae4e642c5e4e90e83e739`，缩短约 `77.7%`。此前超过 12 分钟仍未完成的 recurrence-prefix checkpoint 现于 `114.952 s` 完成，输出 `verified_recurrence_prefix`、`verified_iteration_count=1`、`remaining_item_count=153`、`prefix_proof_verified=true`。
+- 性能回归只消费 F 盘冻结制品，没有启动游戏、修改存档或产生正式训练数据。GoalConditionedBootstrap Release 为 `0 warning / 0 error`，hermetic Bootstrap self-test 通过，Core game-free 为 `256/256`。本轮解除的是 proof 重复重算的开发效率硬伤；`formal_training_authorized=false` 不变。
+- 下一步先用现有 trace 完成 #200 Phase A 的全节点依赖/成本观测，再评估 opt-in batch Bootstrap。未建立完整 DAG 和 full-shadow 等价前，不启用跨命令增量跳算、proof inheritance 或 selective native replay。
+
+## 2026-10-11 Full Shipment Sap 原生证据恢复
+
+- F 盘隔离实验室已经从真实原生新档生成独立 Spring 1 基线：存档槽为 `ProofFarm_451377026`，Full Shipment 初态为 `0/154`，只加载 TransparentBridge 与 RuntimeTestHarness。`Invoke-RuntimeFreshSaveSmoke.ps1` 新增可选 `OutputRoot`，默认行为不变，允许把高负载制品稳定留在 F 盘而不污染 I 盘仓库。
+- 隐藏训练模式此前没有安装已有的 `HeadlessMovementInputSimulator`，导致路线、碰撞判断和下一步方向均正确时角色仍停在原地。RuntimeTestHarness 现在仅在 `STARDEWAI_TRAINING_MODE=1` 且 `STARDEWAI_SUPPRESS_LOCAL_RENDER=1` 时复用同一个原生输入泵；没有新增第二套移动器、直接坐标写入或 BFS 分支。原生 FarmHouse 出门回归已通过。
+- Full Shipment runner 不再硬编码历史 `ProofFarm_450250338`。未显式指定时从归档存档目录名派生槽名；显式槽名与目录叶名不一致、主存档文件不与槽同名或缺少 `SaveGameInfo` 时均在启动游戏前失败关闭。
+- 新档 Sap 规划真实暴露了一个下游选择错误：`wild_tree:1:0` 有 27 个已解析原生树目标，旧日预算层只取第一个目标；该目标的二次静态寻路失败后，整条 Sap 来源被误判为机会分母不完整。现在按现有候选顺序逐个调用同一个 `EvaluateTerminal`，首个完整匹配立即返回；若没有匹配，仍只保留最佳已解析结果并维持失败关闭，不降低 Teacher 完整分母标准。
+- 同一原生快照上的严格离线重算已通过：Sap `11/11` 路线无阻塞，`1` 条进入 Pareto 前沿；Teacher 为 `UniqueStrictPareto`，分母 `1` 且完整，标签可生成，阻塞为 `0`。目标树为 Farm `(49,20)`，保守完成时间 `06:53`。这只是 Sap 单层偏好证明，`formal_training_authorized=false` 保持不变，不得把离线重算冒充生产证据。
+- 完整原生回放 `runtime-full-shipment-evidence-sap_prefix-20261011-150812` 已通过规划、Teacher、Sap 原生采集、投递、fresh terminal receipt 和 rollout proof，但 recurrence 的 `executor.sleep` 暴露了两个顺序故障：`DialogueBox` 的睡眠 Yes 与 `ShippingMenu` 的原生 OK 都不能由 `UpdateTicking` 阶段安装的 SMAPI 轮询按键覆盖触发。按 F 盘精确 `1.6.15` DLL 反编译结果，两处现在分别复用原生 `receiveKeyPress(Keys.Y)` 与 `receiveKeyPress(Keys.Escape)` 派发；睡眠结算和独立 ShippingMenu 恢复共用唯一的结算派发函数，没有直接改菜单、日期、出货统计或存档。
+- 隔离下游重放 `runtime-full-shipment-sap-shippingfix-20261011-161922` 已真实通过：从新档副本原生获取 Sap `1`、投递并睡眠，存档从 Spring 1 写入 Spring 2，`basicShipped` 原生收据从 `0` 增至 `1`，Full Shipment 为 `1/154`，最终 `total_day=1`。该重放只复用了上一轮已经验证的 acquisition queue，用于证明执行与结算修复，不替代完整生产 recurrence 证明。
+- 验证已通过：GoalConditionedBootstrap Release `0 warning / 0 error`、RuntimeTestHarness Debug `0 warning / 0 error`、Core game-free `256/256`、`git diff --check`。下一固定动作是以修复后的执行器完整重跑 Sap prefix，生成 recurrence manifest/summary 后重建 anchor evidence index，再进入既定 7 个 high-risk 场景；`formal_training_authorized=false` 保持不变。
+
 ## 2026-10-11 #195 invocation-scoped immutable read session
 
 - #199 在 Core 新增单次进程/单次命令生命周期的 `InvocationReadSession`。Bootstrap 默认只登记启动时已存在的文件参数；output/output-root、checkpoint、ledger/lease/ownership、控制参数、输出同路径与输出根后代全部禁止复用。`--read-session disabled` 或 `STARDEWAI_READ_SESSION=disabled` 可恢复原始逐次读取路径。

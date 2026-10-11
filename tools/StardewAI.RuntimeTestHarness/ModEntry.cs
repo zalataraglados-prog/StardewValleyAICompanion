@@ -274,6 +274,12 @@ public sealed partial class ModEntry : Mod
             StartTrainingExecutorServer();
         }
 
+        if (IsHeadlessTrainingRuntime())
+        {
+            helper.Events.GameLoop.SaveLoaded +=
+                OnHeadlessTrainingSaveLoaded;
+        }
+
         if (IsAiHostRuntimeMode())
         {
             helper.Events.GameLoop.SaveLoaded += OnDedicatedHostSaveLoaded;
@@ -2606,8 +2612,7 @@ public sealed partial class ModEntry : Mod
             }
 
             if (activeSleep is not null &&
-                (activeSleep.Stage == SleepStage.ConfirmPromptPress ||
-                 activeSleep.Stage == SleepStage.ConfirmPromptRelease) &&
+                activeSleep.Stage == SleepStage.ConfirmPromptPress &&
                 !ApplySleepConfirmInput(activeSleep))
             {
                 return;
@@ -2634,11 +2639,9 @@ public sealed partial class ModEntry : Mod
             }
             var sleepObj = activeSleep;
             if (sleepObj is not null &&
-                (sleepObj.Stage == SleepStage.ConfirmPromptPress ||
-                 sleepObj.Stage == SleepStage.ConfirmPromptRelease))
+                sleepObj.Stage == SleepStage.ConfirmPromptPress)
             {
                 Monitor.Log($"Sleep confirmation input failed once and was blocked: {ex}", LogLevel.Error);
-                ReleaseSleepConfirmInput(sleepObj);
                 CompleteBlockedSleep(sleepObj, "sleep_confirm_input_dispatch_exception:" + ex.GetType().Name);
                 return;
             }

@@ -10,7 +10,15 @@ public static partial class AcquisitionRoutePortfolioTeacherPreferenceBuilder
 
     public static AcquisitionRoutePortfolioTeacherPreference Build(
         AcquisitionRoutePortfolioInputs inputs,
-        string requestPath) => BuildScoringSet(inputs, requestPath).Preference;
+        string requestPath) =>
+        InvocationDeterministicBuildSession.GetOrBuild(
+            "AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs)
+                .Append(InvocationDeterministicBuildSession.File(
+                    "RequestPath",
+                    requestPath)),
+            () => BuildScoringSet(inputs, requestPath).Preference);
 
     public static AcquisitionRoutePortfolioTeacherPreference
         BuildAfterSupportingTransition(

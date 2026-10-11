@@ -19,6 +19,60 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         string targetDateReservationPath,
         string strategyLedgerPath,
         string snapshotPath,
+        string routeTimingCalibrationPath) =>
+        InvocationDeterministicBuildSession.GetOrBuild(
+            "AcquisitionRouteTargetDateProcessingBuilder.Build",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(new
+            {
+                InventoryPath = inventoryPath,
+                LoweringPath = loweringPath,
+                MasterAnglerWindowIndexPath = masterAnglerWindowIndexPath,
+                StaticCalendarResolutionPath = staticCalendarResolutionPath,
+                TargetDateCalendarPath = targetDateCalendarPath,
+                TargetDateUnlockPath = targetDateUnlockPath,
+                TargetDateFestivalPath = targetDateFestivalPath,
+                TargetDateLocationPath = targetDateLocationPath,
+                TargetDateFacilityPath = targetDateFacilityPath,
+                TargetDateResourcePath = targetDateResourcePath,
+                TargetDateCurrencyPath = targetDateCurrencyPath,
+                TargetDateReservationPath = targetDateReservationPath,
+                StrategyLedgerPath = strategyLedgerPath,
+                SnapshotPath = snapshotPath,
+                RouteTimingCalibrationPath = routeTimingCalibrationPath
+            }),
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetDateCalendarPath,
+                targetDateUnlockPath,
+                targetDateFestivalPath,
+                targetDateLocationPath,
+                targetDateFacilityPath,
+                targetDateResourcePath,
+                targetDateCurrencyPath,
+                targetDateReservationPath,
+                strategyLedgerPath,
+                snapshotPath,
+                routeTimingCalibrationPath));
+
+    private static AcquisitionRouteTargetDateProcessingReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string staticCalendarResolutionPath,
+        string targetDateCalendarPath,
+        string targetDateUnlockPath,
+        string targetDateFestivalPath,
+        string targetDateLocationPath,
+        string targetDateFacilityPath,
+        string targetDateResourcePath,
+        string targetDateCurrencyPath,
+        string targetDateReservationPath,
+        string strategyLedgerPath,
+        string snapshotPath,
         string routeTimingCalibrationPath)
     {
         var sourcePath = Path.GetFullPath(targetDateReservationPath);

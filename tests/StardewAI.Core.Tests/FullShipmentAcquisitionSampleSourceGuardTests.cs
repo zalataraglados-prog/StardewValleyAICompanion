@@ -822,6 +822,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
+            "$archivedSaveSlot = [string]$archivedSaveItem.Name",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Archived fresh save slot identity mismatch",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Join-Path $archivedSavePath $nativeSaveFile",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Where-Object SessionId -eq $currentSessionId",
             interactive,
             StringComparison.Ordinal);
@@ -1487,6 +1499,32 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.DoesNotContain(
             "player.fishCaught.Add(\"(O)388\"",
             fixture,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WildTreeDailyBudgetEvaluatesEveryResolvedNativeCandidate()
+    {
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Evaluation.cs");
+
+        Assert.Contains(
+            "var matchingCandidates = candidates.Find(",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "foreach (var candidate in matchingCandidates)",
+            dailyBudget.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (evaluated.DailyTimeEnergyMatchesTargetDate == true)\n                return evaluated;",
+            dailyBudget.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            ".FirstOrDefault(value => resolvedTargets.Contains((",
+            dailyBudget,
             StringComparison.Ordinal);
     }
 

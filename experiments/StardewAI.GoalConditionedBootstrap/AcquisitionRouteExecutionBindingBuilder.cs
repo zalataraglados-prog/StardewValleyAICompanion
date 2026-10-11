@@ -9,7 +9,11 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
 {
     public static AcquisitionRouteExecutionBinding Build(
         AcquisitionRouteExecutionBindingInputs inputs) =>
-        BuildCore(inputs, null);
+        InvocationDeterministicBuildSession.GetOrBuild(
+            "AcquisitionRouteExecutionBindingBuilder.Build",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs),
+            () => BuildCore(inputs, null));
 
     public static AcquisitionRouteExecutionBinding
         BuildAfterSupportingTransition(

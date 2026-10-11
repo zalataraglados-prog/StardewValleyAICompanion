@@ -30,8 +30,8 @@ public sealed class ExecutorSinglePathGovernanceTests
             "ModEntry.Sleep.cs"));
 
         Assert.Contains("TryAdvanceExecutorPath(", source, StringComparison.Ordinal);
-        Assert.Contains("TryApplySmapiButtonOverride(SButton.Y, pressed: true", source, StringComparison.Ordinal);
-        Assert.Contains("TryApplySmapiButtonOverride(SButton.Y, pressed: false", source, StringComparison.Ordinal);
+        Assert.Contains("prompt.receiveKeyPress(Microsoft.Xna.Framework.Input.Keys.Y);", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("TryApplySmapiButtonOverride(SButton.Y", source, StringComparison.Ordinal);
         Assert.Contains("SleepStage.WaitForNativePrompt", source, StringComparison.Ordinal);
         Assert.Contains("prompt.transitioning || prompt.safetyTimer > 0", source, StringComparison.Ordinal);
         Assert.Contains("SleepStage.WaitForPromptClose", source, StringComparison.Ordinal);

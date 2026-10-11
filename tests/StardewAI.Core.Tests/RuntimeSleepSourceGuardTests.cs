@@ -3,6 +3,25 @@ namespace StardewAI.Core.Tests;
 public sealed class RuntimeSleepSourceGuardTests
 {
     [Fact]
+    public void SleepConfirmationUsesTheNativeDialogueKeyDispatchPath()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Sleep.cs"));
+
+        Assert.Contains(
+            "prompt.receiveKeyPress(Microsoft.Xna.Framework.Input.Keys.Y);",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "TryApplySmapiButtonOverride(SButton.Y",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void HomeSleepRoutesAroundSoftObstaclesButCanCrossThemWhenRequired()
     {
         var source = File.ReadAllText(Path.Combine(
