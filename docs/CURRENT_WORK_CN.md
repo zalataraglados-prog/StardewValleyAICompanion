@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-11 #195 本地 validation impact advisory
+
+- #198 新增只读 `scripts/Get-ValidationImpactAdvisory.ps1`：默认仅读取 staged 与 unstaged 的已跟踪文件，也可读取显式文件清单或 `base...head` git range，输出 `stardewai.validation_impact_advisory.v1` JSON。新建未跟踪文件必须显式传入，避免把无关本地数据扫入分析。
+- 映射覆盖 docs、Contracts/Core、Backend、GoalConditionedBootstrap、TransparentBridge adapter、RuntimeTestHarness、训练/产品工具、runtime scripts 与版本化 authority。未知路径、共享 runtime script、workflow/project/package 配置一律 broad fallback，并设置 `uncertain_impact=true`。
+- 输出只包含本地第一轮 build/test/source-guard/native replay 建议；固定 `full_quality_still_required=true`、`evidence_reuse_authorized=false`、`native_replay_execution_authorized=false`。脚本不执行测试、不启动游戏、不继承证据，也不修改 GitHub `quality.yml`。
+- game-free 行为回归直接重放 #186、#187、#192、#194、#196 的代表文件集合，并覆盖 docs-only 与 unknown fallback。下一性能切片仍是 #199 单次 invocation 内 immutable bytes/hash/materialization/parse 去重；不得扩展为跨 run 或跨 snapshot cache。
+
 ## 2026-10-11 #195 Phase 0 validation trace 基线
 
 - #197 已完成默认关闭的 validation trace：Bootstrap 可用 `--validation-trace PATH` 与 `--validation-trace-scenario NAME` 输出独立 JSON；运行时脚本仅在显式设置 `STARDEWAI_VALIDATION_TRACE_DIR` 时为子进程采集 trace。追踪失败不会改变命令结果、stdout 协议或既有 fail-closed 门禁，所有记录固定 `cache_hit=false`。
