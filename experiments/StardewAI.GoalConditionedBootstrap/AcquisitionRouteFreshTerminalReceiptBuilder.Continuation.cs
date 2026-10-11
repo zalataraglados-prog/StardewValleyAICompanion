@@ -12,19 +12,27 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
             string executionReceiptPath,
             string afterSnapshotPath,
             string runId,
-            string executorVersion) => BuildVerifiedBinding(
+            string executorVersion) => ObserveBuild(
+                "AcquisitionRouteFreshTerminalReceiptBuilder.BuildAfterSupportingTransition",
                 inputs,
                 executionBindingPath,
                 executionReceiptPath,
                 afterSnapshotPath,
                 runId,
                 executorVersion,
-                AcquisitionRouteExecutionBindingBuilder
-                    .BuildAfterSupportingTransition(
-                        priorInputs,
-                        proof,
-                        replanAdmissionPath,
-                        inputs));
+                () => BuildVerifiedBindingCore(
+                    inputs,
+                    executionBindingPath,
+                    executionReceiptPath,
+                    afterSnapshotPath,
+                    runId,
+                    executorVersion,
+                    AcquisitionRouteExecutionBindingBuilder
+                        .BuildAfterSupportingTransition(
+                            priorInputs,
+                            proof,
+                            replanAdmissionPath,
+                            inputs)));
 
     public static AcquisitionRouteFreshTerminalReceiptAdmission
         BuildInitialContinuation(
@@ -77,16 +85,24 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
             string executionReceiptPath,
             string afterSnapshotPath,
             string runId,
-            string executorVersion) => BuildVerifiedBinding(
+            string executorVersion) => ObserveBuild(
+                "AcquisitionRouteFreshTerminalReceiptBuilder.BuildContinuation",
                 inputs,
                 executionBindingPath,
                 executionReceiptPath,
                 afterSnapshotPath,
                 runId,
                 executorVersion,
-                AcquisitionRouteExecutionBindingBuilder
-                    .BuildContinuation(
-                        verifiedPrior,
-                        continuationRequestPath,
-                        inputs));
+                () => BuildVerifiedBindingCore(
+                    inputs,
+                    executionBindingPath,
+                    executionReceiptPath,
+                    afterSnapshotPath,
+                    runId,
+                    executorVersion,
+                    AcquisitionRouteExecutionBindingBuilder
+                        .BuildContinuation(
+                            verifiedPrior,
+                            continuationRequestPath,
+                            inputs)));
 }

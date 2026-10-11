@@ -11,7 +11,24 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
     internal static (
         AcquisitionRoutePortfolioRolloutProofReceipt Receipt,
         AcquisitionRoutePortfolioVerifiedCheckpoint Latest)
-        BuildVerifiedReceipt(string manifestPath)
+        BuildVerifiedReceipt(string manifestPath) =>
+            InvocationDeterministicBuildSession.Observe(
+                "rollout_proof_certificate",
+                "AcquisitionRoutePortfolioRolloutProofBuilder.BuildVerifiedReceipt",
+                "v1",
+                new[]
+                {
+                    InvocationDeterministicBuildSession.File(
+                        "RolloutProofManifestPath",
+                        manifestPath)
+                },
+                () => BuildVerifiedReceiptCore(manifestPath),
+                result => result.Receipt);
+
+    private static (
+        AcquisitionRoutePortfolioRolloutProofReceipt Receipt,
+        AcquisitionRoutePortfolioVerifiedCheckpoint Latest)
+        BuildVerifiedReceiptCore(string manifestPath)
     {
         var manifestFullPath = Path.GetFullPath(manifestPath);
         var manifest = ReadManifest(manifestFullPath);

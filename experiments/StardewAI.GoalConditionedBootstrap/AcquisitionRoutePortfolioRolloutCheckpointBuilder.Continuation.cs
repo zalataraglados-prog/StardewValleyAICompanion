@@ -81,6 +81,56 @@ public static partial class AcquisitionRoutePortfolioRolloutCheckpointBuilder
             string settlementRequestPath,
             string settlementResultPath,
             string settledLedgerPath,
+            string settlementReceiptPath) =>
+        InvocationDeterministicBuildSession.Observe(
+            "runtime_transition_certificate",
+            "AcquisitionRoutePortfolioRolloutCheckpointBuilder.BuildContinuation",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(currentInputs).Concat(
+                InvocationDeterministicBuildSession.Describe(new
+                {
+                    PriorCheckpointPath = verifiedPrior.CheckpointPath,
+                    ContinuationRequestPath = continuationRequestPath,
+                    ExecutionBindingPath = executionBindingPath,
+                    ExecutionReceiptPath = executionReceiptPath,
+                    AfterSnapshotPath = afterSnapshotPath,
+                    FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                    RunId = runId,
+                    ExecutorVersion = executorVersion,
+                    SettlementRequestPath = settlementRequestPath,
+                    SettlementResultPath = settlementResultPath,
+                    SettledLedgerPath = settledLedgerPath,
+                    SettlementReceiptPath = settlementReceiptPath
+                })),
+            () => BuildContinuationCore(
+                verifiedPrior,
+                continuationRequestPath,
+                currentInputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                executorVersion,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath,
+                settlementReceiptPath));
+
+    private static AcquisitionRoutePortfolioRolloutCheckpoint
+        BuildContinuationCore(
+            AcquisitionRoutePortfolioVerifiedCheckpoint verifiedPrior,
+            string continuationRequestPath,
+            AcquisitionRouteExecutionBindingInputs currentInputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string freshTerminalReceiptPath,
+            string runId,
+            string executorVersion,
+            string settlementRequestPath,
+            string settlementResultPath,
+            string settledLedgerPath,
             string settlementReceiptPath)
     {
         var checkpointFullPath = verifiedPrior.CheckpointPath;

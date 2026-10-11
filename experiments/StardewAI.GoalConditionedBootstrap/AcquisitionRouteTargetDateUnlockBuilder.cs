@@ -10,6 +10,29 @@ public static partial class AcquisitionRouteTargetDateUnlockBuilder
         string masterAnglerWindowIndexPath,
         string staticCalendarResolutionPath,
         string targetDateCalendarPath,
+        string snapshotPath) => AcquisitionRouteDependencyObservation
+            .ObserveAxis(
+                "AcquisitionRouteTargetDateUnlockBuilder.Build",
+                () => BuildCore(
+                    inventoryPath,
+                    loweringPath,
+                    masterAnglerWindowIndexPath,
+                    staticCalendarResolutionPath,
+                    targetDateCalendarPath,
+                    snapshotPath),
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                staticCalendarResolutionPath,
+                targetDateCalendarPath,
+                snapshotPath);
+
+    private static AcquisitionRouteTargetDateUnlockReport BuildCore(
+        string inventoryPath,
+        string loweringPath,
+        string masterAnglerWindowIndexPath,
+        string staticCalendarResolutionPath,
+        string targetDateCalendarPath,
         string snapshotPath)
     {
         var targetPath = Path.GetFullPath(targetDateCalendarPath);

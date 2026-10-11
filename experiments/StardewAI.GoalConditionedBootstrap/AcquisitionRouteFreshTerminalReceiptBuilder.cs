@@ -13,17 +13,50 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
         string executionReceiptPath,
         string afterSnapshotPath,
         string runId,
-        string executorVersion) => BuildVerifiedBinding(
+        string executorVersion) => ObserveBuild(
+            "AcquisitionRouteFreshTerminalReceiptBuilder.Build",
             inputs,
             executionBindingPath,
             executionReceiptPath,
             afterSnapshotPath,
             runId,
             executorVersion,
-            AcquisitionRouteExecutionBindingBuilder.Build(inputs));
+            () => BuildVerifiedBindingCore(
+                inputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                runId,
+                executorVersion,
+                AcquisitionRouteExecutionBindingBuilder.Build(inputs)));
 
     internal static AcquisitionRouteFreshTerminalReceiptAdmission
         BuildVerifiedBinding(
+            AcquisitionRouteExecutionBindingInputs inputs,
+            string executionBindingPath,
+            string executionReceiptPath,
+            string afterSnapshotPath,
+            string runId,
+            string executorVersion,
+            AcquisitionRouteExecutionBinding expectedBinding) => ObserveBuild(
+                "AcquisitionRouteFreshTerminalReceiptBuilder.BuildVerifiedBinding",
+                inputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                runId,
+                executorVersion,
+                () => BuildVerifiedBindingCore(
+                    inputs,
+                    executionBindingPath,
+                    executionReceiptPath,
+                    afterSnapshotPath,
+                    runId,
+                    executorVersion,
+                    expectedBinding));
+
+    private static AcquisitionRouteFreshTerminalReceiptAdmission
+        BuildVerifiedBindingCore(
             AcquisitionRouteExecutionBindingInputs inputs,
             string executionBindingPath,
             string executionReceiptPath,
@@ -135,6 +168,30 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
         result.BlockingReasons = reasons;
         return result;
     }
+
+    private static AcquisitionRouteFreshTerminalReceiptAdmission ObserveBuild(
+        string producerId,
+        AcquisitionRouteExecutionBindingInputs inputs,
+        string executionBindingPath,
+        string executionReceiptPath,
+        string afterSnapshotPath,
+        string runId,
+        string executorVersion,
+        Func<AcquisitionRouteFreshTerminalReceiptAdmission> factory) =>
+        InvocationDeterministicBuildSession.Observe(
+            "runtime_transition_certificate",
+            producerId,
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs).Concat(
+                InvocationDeterministicBuildSession.Describe(new
+                {
+                    ExecutionBindingPath = executionBindingPath,
+                    ExecutionReceiptPath = executionReceiptPath,
+                    AfterSnapshotPath = afterSnapshotPath,
+                    RunId = runId,
+                    ExecutorVersion = executorVersion
+                })),
+            factory);
 
     private static AcquisitionTerminalTransitionEvidence VerifyTerminalTransition(
         AcquisitionRouteExecutionBinding binding,

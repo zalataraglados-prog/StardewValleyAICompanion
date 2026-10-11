@@ -1,13 +1,11 @@
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-internal sealed class InvocationDeterministicBuildSession : IDisposable
+internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 {
     public const string SessionVersion =
         "stardewai.invocation_deterministic_build_session.v1";
@@ -46,6 +44,10 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
             return factory();
 
         var identityParts = identity.ToArray();
+        var buildIdentity = BuildIdentity(
+            producerId,
+            producerVersion,
+            identityParts);
         using var operation = ValidationTraceSession.BeginOperation(
             "deterministic_build",
             producerId,
@@ -54,12 +56,20 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
                 .Where(part => part.IsFile)
                 .Select(part => part.Identity)
                 .ToArray());
-        var key = BuildKey(producerId, producerVersion, identityParts);
+        using var dependency = ValidationTraceSession.BeginDependencyNode(
+            buildIdentity.Key,
+            "deterministic_derived_artifact",
+            producerId,
+            producerVersion,
+            buildIdentity.Inputs);
+        var key = buildIdentity.Key;
         operation.AddArtifactId(key);
         if (session.entries.TryGetValue(key, out var cached))
         {
             session.cacheHitCount++;
             operation.MarkCacheHit();
+            dependency.MarkCacheHit();
+            dependency.SetOutputArtifact(key, Sha256(cached));
             return JsonSerializer.Deserialize<T>(cached, JsonDefaults.Options)
                 ?? throw new InvalidDataException(
                     "Deterministic build cache entry is null: " +
@@ -67,11 +77,11 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
         }
 
         var result = factory();
-        session.entries.Add(
-            key,
-            JsonSerializer.SerializeToUtf8Bytes(
-                result,
-                JsonDefaults.Options));
+        var serialized = JsonSerializer.SerializeToUtf8Bytes(
+            result,
+            JsonDefaults.Options);
+        session.entries.Add(key, serialized);
+        dependency.SetOutputArtifact(key, Sha256(serialized));
         session.buildCount++;
         return result;
     }
@@ -88,6 +98,10 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
             return factory();
 
         var identityParts = identity.ToArray();
+        var buildIdentity = BuildIdentity(
+            producerId,
+            producerVersion,
+            identityParts);
         using var operation = ValidationTraceSession.BeginOperation(
             "deterministic_reference_build",
             producerId,
@@ -96,16 +110,60 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
                 .Where(part => part.IsFile)
                 .Select(part => part.Identity)
                 .ToArray());
-        var key = BuildKey(producerId, producerVersion, identityParts);
+        using var dependency = ValidationTraceSession.BeginDependencyNode(
+            buildIdentity.Key,
+            "deterministic_reference_index",
+            producerId,
+            producerVersion,
+            buildIdentity.Inputs);
+        var key = buildIdentity.Key;
         operation.AddArtifactId(key);
         if (session.referenceEntries.TryGetValue(key, out var cached))
         {
             operation.MarkCacheHit();
-            return (T)cached;
+            dependency.MarkCacheHit();
+            var typed = (T)cached;
+            dependency.SetOutputArtifact(
+                key,
+                dependency.IsEnabled ? ContentSha256(typed) : string.Empty);
+            return typed;
         }
 
         var result = factory();
         session.referenceEntries.Add(key, result);
+        dependency.SetOutputArtifact(
+            key,
+            dependency.IsEnabled ? ContentSha256(result) : string.Empty);
+        return result;
+    }
+
+    public static T Observe<T>(
+        string artifactKind,
+        string producerId,
+        string producerVersion,
+        IEnumerable<DeterministicBuildIdentityPart> identity,
+        Func<T> factory,
+        Func<T, object?>? contentProjection = null)
+    {
+        if (!ValidationTraceSession.IsActive)
+            return factory();
+
+        var buildIdentity = BuildIdentity(
+            producerId,
+            producerVersion,
+            identity.ToArray());
+        using var dependency = ValidationTraceSession.BeginDependencyNode(
+            buildIdentity.Key,
+            artifactKind,
+            producerId,
+            producerVersion,
+            buildIdentity.Inputs);
+        var result = factory();
+        dependency.SetOutputArtifact(
+            buildIdentity.Key,
+            ContentSha256(contentProjection is null
+                ? result
+                : contentProjection(result)));
         return result;
     }
 
@@ -146,59 +204,6 @@ internal sealed class InvocationDeterministicBuildSession : IDisposable
         referenceEntries.Clear();
         if (ReferenceEquals(Ambient.Value, this))
             Ambient.Value = previous;
-    }
-
-    private static DeterministicBuildIdentityPart IdentityPart(
-        string name,
-        object? value,
-        Type type)
-    {
-        if (type == typeof(string) &&
-            name.EndsWith("Path", StringComparison.Ordinal) &&
-            value is string path)
-        {
-            return File(name, path);
-        }
-        return Value(name, value);
-    }
-
-    private static string BuildKey(
-        string producerId,
-        string producerVersion,
-        IEnumerable<DeterministicBuildIdentityPart> identity)
-    {
-        var builder = new StringBuilder()
-            .Append(SessionVersion).Append('\n')
-            .Append(producerId).Append('\n')
-            .Append(producerVersion).Append('\n');
-        foreach (var part in identity)
-        {
-            builder.Append(part.Name).Append('=');
-            if (part.IsFile)
-            {
-                var fullPath = Path.GetFullPath(part.Identity);
-                builder.Append(fullPath).Append('#');
-                if (System.IO.File.Exists(fullPath))
-                {
-                    builder.Append(InvocationReadSession.HashFile(
-                        fullPath,
-                        out _));
-                }
-                else
-                {
-                    builder.Append("missing");
-                }
-            }
-            else
-            {
-                builder.Append(part.Identity);
-            }
-            builder.Append('\n');
-        }
-
-        return Convert.ToHexString(SHA256.HashData(
-                Encoding.UTF8.GetBytes(builder.ToString())))
-            .ToLowerInvariant();
     }
 }
 

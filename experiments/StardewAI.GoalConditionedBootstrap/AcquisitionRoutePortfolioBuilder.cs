@@ -11,24 +11,33 @@ public static partial class AcquisitionRoutePortfolioBuilder
         "target-date-acquisition-route:";
 
     public static AcquisitionRoutePortfolioAdmission Build(
-        AcquisitionRoutePortfolioInputs inputs)
-    {
-        var context = Prepare(inputs);
-        var proposalPath = Path.GetFullPath(inputs.ProposalPath);
-        var proposal = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioProposal>(
-            proposalPath,
-            "Acquisition route portfolio proposal");
-        return Build(
-            context,
-            proposal,
-            CurrentTeacherFrontierSupport.HashFile(proposalPath));
-    }
+        AcquisitionRoutePortfolioInputs inputs) =>
+        InvocationDeterministicBuildSession.Observe(
+            "hard_admission_certificate",
+            "AcquisitionRoutePortfolioBuilder.Build",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs),
+            () => BuildFromInputs(inputs, string.Empty));
 
     public static AcquisitionRoutePortfolioAdmission
         BuildAfterSupportingTransition(
             AcquisitionRoutePortfolioInputs inputs,
-            string priorSupportingTransitionReplanSha256)
+            string priorSupportingTransitionReplanSha256) =>
+        InvocationDeterministicBuildSession.Observe(
+            "hard_admission_certificate",
+            "AcquisitionRoutePortfolioBuilder.BuildAfterSupportingTransition",
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs).Append(
+                InvocationDeterministicBuildSession.Value(
+                    "PriorSupportingTransitionReplanSha256",
+                    priorSupportingTransitionReplanSha256)),
+            () => BuildFromInputs(
+                inputs,
+                priorSupportingTransitionReplanSha256));
+
+    private static AcquisitionRoutePortfolioAdmission BuildFromInputs(
+        AcquisitionRoutePortfolioInputs inputs,
+        string priorSupportingTransitionReplanSha256)
     {
         var context = Prepare(inputs);
         var proposalPath = Path.GetFullPath(inputs.ProposalPath);

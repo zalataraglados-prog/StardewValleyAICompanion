@@ -31,6 +31,8 @@ public sealed class ValidationTraceSession : IDisposable
     private readonly double processStartMilliseconds;
     private readonly ValidationTraceOperationAggregator operationAggregator =
         new();
+    private readonly ValidationTraceDependencyGraphRecorder dependencyRecorder =
+        new();
     private int nextOperationId;
     private int completed;
 
@@ -84,6 +86,8 @@ public sealed class ValidationTraceSession : IDisposable
         }
     }
 
+    public static bool IsActive => Ambient.Value is not null;
+
     public static ValidationTraceOperation BeginOperation(
         string operationKind,
         string producerId,
@@ -121,6 +125,32 @@ public sealed class ValidationTraceSession : IDisposable
         }
     }
 
+    public static ValidationTraceDependencyNodeScope BeginDependencyNode(
+        string nodeId,
+        string artifactKind,
+        string producerId,
+        string producerVersion,
+        IEnumerable<ValidationTraceDependencyInput> inputs)
+    {
+        var session = Ambient.Value;
+        if (session is null)
+            return ValidationTraceDependencyNodeScope.Disabled;
+
+        try
+        {
+            return session.dependencyRecorder.Begin(
+                nodeId,
+                artifactKind,
+                producerId,
+                producerVersion,
+                inputs ?? Array.Empty<ValidationTraceDependencyInput>());
+        }
+        catch
+        {
+            return ValidationTraceDependencyNodeScope.Disabled;
+        }
+    }
+
     public void Complete(int exitCode)
     {
         if (Interlocked.Exchange(ref completed, 1) != 0)
@@ -133,6 +163,9 @@ public sealed class ValidationTraceSession : IDisposable
             0,
             (process.TotalProcessorTime - cpuStarted).TotalMilliseconds);
         var operationSnapshot = operationAggregator.Snapshot();
+        var dependencyGraph = SafeDependencySnapshot();
+        dependencyGraph.FullRebuildExecuted =
+            exitCode == 0 && dependencyGraph.Complete;
 
         var deterministicMilliseconds = IsDeterministicCommand(command)
             ? wallClock.Elapsed.TotalMilliseconds
@@ -176,7 +209,8 @@ public sealed class ValidationTraceSession : IDisposable
             OperationInvocationCount = operationSnapshot.Sum(
                 value => value.InvocationCount),
             OperationGroupCount = operationSnapshot.Length,
-            OperationCpuSamplingRate = OperationCpuSamplingRate
+            OperationCpuSamplingRate = OperationCpuSamplingRate,
+            DependencyGraph = dependencyGraph
         };
 
         TryWrite(report);
@@ -191,6 +225,21 @@ public sealed class ValidationTraceSession : IDisposable
 
     internal void Record(ValidationTraceOperationRecord operation)
         => operationAggregator.Record(operation);
+
+    private ValidationTraceDependencyGraph SafeDependencySnapshot()
+    {
+        try
+        {
+            return dependencyRecorder.Snapshot();
+        }
+        catch
+        {
+            return new ValidationTraceDependencyGraph
+            {
+                Complete = false
+            };
+        }
+    }
 
     private void TryWrite(ValidationTraceReport report)
     {

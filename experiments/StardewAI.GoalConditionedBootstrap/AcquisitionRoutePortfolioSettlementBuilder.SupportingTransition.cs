@@ -62,39 +62,52 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             string executorVersion,
             string settlementRequestPath,
             string settlementResultPath,
-            string settledLedgerPath)
-    {
-        var expectedBinding = AcquisitionRouteExecutionBindingBuilder
-            .BuildAfterSupportingTransition(
-                priorInputs,
-                proof,
-                replanAdmissionPath,
-                inputs);
-        var expectedFresh = AcquisitionRouteFreshTerminalReceiptBuilder
-            .BuildAfterSupportingTransition(
-                priorInputs,
-                proof,
-                replanAdmissionPath,
+            string settledLedgerPath) => ObserveReceipt(
+                "AcquisitionRoutePortfolioSettlementBuilder.BuildAfterSupportingTransitionReceipt",
                 inputs,
                 executionBindingPath,
                 executionReceiptPath,
                 afterSnapshotPath,
+                freshTerminalReceiptPath,
                 runId,
-                executorVersion);
-        return BuildReceiptCore(
-            inputs,
-            executionBindingPath,
-            executionReceiptPath,
-            afterSnapshotPath,
-            freshTerminalReceiptPath,
-            runId,
-            executorVersion,
-            settlementRequestPath,
-            settlementResultPath,
-            settledLedgerPath,
-            null,
-            string.Empty,
-            expectedBinding,
-            expectedFresh);
-    }
+                executorVersion,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath,
+                () =>
+                {
+                    var expectedBinding = AcquisitionRouteExecutionBindingBuilder
+                        .BuildAfterSupportingTransition(
+                            priorInputs,
+                            proof,
+                            replanAdmissionPath,
+                            inputs);
+                    var expectedFresh =
+                        AcquisitionRouteFreshTerminalReceiptBuilder
+                            .BuildAfterSupportingTransition(
+                                priorInputs,
+                                proof,
+                                replanAdmissionPath,
+                                inputs,
+                                executionBindingPath,
+                                executionReceiptPath,
+                                afterSnapshotPath,
+                                runId,
+                                executorVersion);
+                    return BuildReceiptCore(
+                        inputs,
+                        executionBindingPath,
+                        executionReceiptPath,
+                        afterSnapshotPath,
+                        freshTerminalReceiptPath,
+                        runId,
+                        executorVersion,
+                        settlementRequestPath,
+                        settlementResultPath,
+                        settledLedgerPath,
+                        null,
+                        string.Empty,
+                        expectedBinding,
+                        expectedFresh);
+                });
 }

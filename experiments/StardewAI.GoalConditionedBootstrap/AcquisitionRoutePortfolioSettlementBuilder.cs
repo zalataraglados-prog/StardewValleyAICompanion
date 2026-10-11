@@ -101,7 +101,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         string executorVersion,
         string settlementRequestPath,
         string settlementResultPath,
-        string settledLedgerPath) => BuildReceiptCore(
+        string settledLedgerPath) => ObserveReceipt(
+            "AcquisitionRoutePortfolioSettlementBuilder.BuildReceipt",
             inputs,
             executionBindingPath,
             executionReceiptPath,
@@ -112,8 +113,19 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             settlementRequestPath,
             settlementResultPath,
             settledLedgerPath,
-            null,
-            string.Empty);
+            () => BuildReceiptCore(
+                inputs,
+                executionBindingPath,
+                executionReceiptPath,
+                afterSnapshotPath,
+                freshTerminalReceiptPath,
+                runId,
+                executorVersion,
+                settlementRequestPath,
+                settlementResultPath,
+                settledLedgerPath,
+                null,
+                string.Empty));
 
     internal static AcquisitionRoutePortfolioSettlementReceipt
         BuildReceiptFromVerifiedArtifacts(
@@ -236,6 +248,38 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         receipt.BlockingReasons = reasons;
         return receipt;
     }
+
+    private static AcquisitionRoutePortfolioSettlementReceipt ObserveReceipt(
+        string producerId,
+        AcquisitionRouteExecutionBindingInputs inputs,
+        string executionBindingPath,
+        string executionReceiptPath,
+        string afterSnapshotPath,
+        string freshTerminalReceiptPath,
+        string runId,
+        string executorVersion,
+        string settlementRequestPath,
+        string settlementResultPath,
+        string settledLedgerPath,
+        Func<AcquisitionRoutePortfolioSettlementReceipt> factory) =>
+        InvocationDeterministicBuildSession.Observe(
+            "settlement_certificate",
+            producerId,
+            "v1",
+            InvocationDeterministicBuildSession.Describe(inputs).Concat(
+                InvocationDeterministicBuildSession.Describe(new
+                {
+                    ExecutionBindingPath = executionBindingPath,
+                    ExecutionReceiptPath = executionReceiptPath,
+                    AfterSnapshotPath = afterSnapshotPath,
+                    FreshTerminalReceiptPath = freshTerminalReceiptPath,
+                    RunId = runId,
+                    ExecutorVersion = executorVersion,
+                    SettlementRequestPath = settlementRequestPath,
+                    SettlementResultPath = settlementResultPath,
+                    SettledLedgerPath = settledLedgerPath
+                })),
+            factory);
 
     private static AcquisitionRoutePortfolioSettlementReceipt BaseReceipt(
         SettlementContext context,

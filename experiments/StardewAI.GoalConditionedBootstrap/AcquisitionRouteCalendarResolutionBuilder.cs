@@ -26,24 +26,37 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
     public static AcquisitionRouteCalendarResolutionReport Build(
         string inventoryPath,
         string loweringPath,
-        string masterAnglerWindowIndexPath) => BuildCore(
+        string masterAnglerWindowIndexPath) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteCalendarResolutionBuilder.Build",
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                null,
+                null),
             inventoryPath,
             loweringPath,
-            masterAnglerWindowIndexPath,
-            null,
-            null);
+            masterAnglerWindowIndexPath);
 
     public static AcquisitionRouteCalendarResolutionReport BuildCurrent(
         string inventoryPath,
         string loweringPath,
         string masterAnglerWindowIndexPath,
-        string snapshotPath) => BuildCore(
+        string snapshotPath) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteCalendarResolutionBuilder.BuildCurrent",
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                CurrentCommunityCenterDenominatorBuilder.Build(
+                    inventoryPath,
+                    snapshotPath),
+                snapshotPath),
             inventoryPath,
             loweringPath,
             masterAnglerWindowIndexPath,
-            CurrentCommunityCenterDenominatorBuilder.Build(
-                inventoryPath,
-                snapshotPath),
             snapshotPath);
 
     internal static AcquisitionRouteCalendarResolutionReport Build(
@@ -51,12 +64,20 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         string loweringPath,
         string masterAnglerWindowIndexPath,
         string snapshotPath,
-        CurrentCommunityCenterDenominatorReport denominator) => BuildCore(
+        CurrentCommunityCenterDenominatorReport denominator) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteCalendarResolutionBuilder.BuildCurrentDenominator",
+            () => BuildCore(
+                inventoryPath,
+                loweringPath,
+                masterAnglerWindowIndexPath,
+                denominator,
+                snapshotPath),
             inventoryPath,
             loweringPath,
             masterAnglerWindowIndexPath,
-            denominator,
-            snapshotPath);
+            snapshotPath,
+            denominator);
 
     private static AcquisitionRouteCalendarResolutionReport BuildCore(
         string inventoryPath,
