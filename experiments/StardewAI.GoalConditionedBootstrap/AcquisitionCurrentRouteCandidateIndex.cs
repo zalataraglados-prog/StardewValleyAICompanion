@@ -13,6 +13,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "mining.reach_depth",
         "farm.collect_machine_outputs",
         "foraging.harvest_tree_product",
+        "foraging.excavate_artifact_spots",
         "fishing.service_fish_ponds"
     };
 
@@ -38,7 +39,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v1",
+            "v2",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -272,7 +273,8 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                         candidate.TileY,
                     ReadIntParameter(candidate, "stand_tile_x"),
                     ReadIntParameter(candidate, "stand_tile_y"),
-                    ReadIntParameter(candidate, "max_movement_tiles"),
+                    ReadIntParameter(candidate, "max_movement_tiles") ??
+                        ReadIntParameter(candidate, "route_distance_tiles"),
                     ReadIntParameter(candidate, "max_tool_swings"),
                     ReadIntParameter(candidate, "max_attacks"),
                     ReadDoubleParameter(candidate, "estimated_target_cost_ms"),
@@ -377,6 +379,18 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 "objects",
                 "current_mine_object_terminal_evidence_incomplete",
                 reasons);
+        }
+        if (routeKind == "native_location_artifact_spot")
+        {
+            if (TryField("current_location", "objects", out var objects) &&
+                FieldStatus(objects) == "available" &&
+                FieldValue(objects).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add(
+                "current_location_artifact_spot_terminal_evidence_incomplete");
+            return false;
         }
         if (routeKind == "native_wild_tree_tapper_output")
         {

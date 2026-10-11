@@ -14,6 +14,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         "native_radioactive_ore_node";
     private const string DeferredMonsterDropPickupKind =
         "native_monster_drop_table";
+    private const string DeferredArtifactSpotPickupKind =
+        "native_location_artifact_spot";
 
     internal static string[] AppendDeferredNativeDropPickup(
         SmallModelPlanEnvelope plan,
@@ -24,7 +26,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (requirement.RouteKind is not (
                 DeferredWildTreePickupKind or
                 DeferredRadioactiveOrePickupKind or
-                DeferredMonsterDropPickupKind))
+                DeferredMonsterDropPickupKind or
+                DeferredArtifactSpotPickupKind))
             return Array.Empty<string>();
 
         if (requirement.RequiredAmount <= 0 ||
@@ -85,7 +88,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 return new[] { "native_drop_deferred_pickup_source_invalid" };
             }
         }
-        else
+        else if (requirement.RouteKind == DeferredMonsterDropPickupKind)
         {
             targetX = UniqueIntParameter(source, "target_tile_x");
             targetY = UniqueIntParameter(source, "target_tile_y");
@@ -103,6 +106,27 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                     targetX.Value,
                     targetY.Value,
                     source,
+                    requirement,
+                    out guaranteedMinimum))
+            {
+                return new[] { "native_drop_deferred_pickup_source_invalid" };
+            }
+        }
+        else
+        {
+            if (source.OptionId != "foraging.excavate_artifact_spots" ||
+                source.Kind != "clear_obstacle_tile" ||
+                !targetX.HasValue ||
+                !targetY.HasValue ||
+                !CandidateDeclaresAuthoritativeRouteSource(
+                    source,
+                    requirement.RouteKind,
+                    requirement.SourceId,
+                    requirement.QualifiedItemId) ||
+                !TryReadArtifactSpotGuaranteedMinimum(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
                     requirement,
                     out guaranteedMinimum))
             {
@@ -278,6 +302,60 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
 
         guaranteedMinimum = 1;
         return true;
+    }
+
+    private static bool TryReadArtifactSpotGuaranteedMinimum(
+        SnapshotEnvelope snapshot,
+        int targetX,
+        int targetY,
+        AcquisitionRouteTargetDateUnlock requirement,
+        out int guaranteedMinimum)
+    {
+        guaranteedMinimum = 0;
+        if (requirement.MinimumQuality < 0 ||
+            requirement.RouteKind != DeferredArtifactSpotPickupKind)
+        {
+            return false;
+        }
+
+        var objects = StateValue(snapshot, "current_location", "objects");
+        if (!objects.HasValue ||
+            objects.Value.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        var matches = objects.Value.EnumerateArray()
+            .Where(value => value.ValueKind == JsonValueKind.Object &&
+                Int(value, "tile_x") == targetX &&
+                Int(value, "tile_y") == targetY)
+            .ToArray();
+        if (matches.Length != 1)
+            return false;
+
+        var spot = matches[0];
+        if (String(spot, "clear_kind") != "artifact_spot" ||
+            String(spot, "clear_obstacle_executor_status") != "ready" ||
+            String(spot, "clear_output_projection_status") != "exact" ||
+            !RouteSourceExistsExactlyOnce(
+                spot,
+                "clear_authoritative_route_sources",
+                requirement.RouteKind,
+                requirement.SourceId,
+                requirement.QualifiedItemId) ||
+            !spot.TryGetProperty("clear_output_items", out var outputs) ||
+            outputs.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        guaranteedMinimum = outputs.EnumerateArray()
+            .Where(value => value.ValueKind == JsonValueKind.Object &&
+                String(value, "qualifiedItemId") ==
+                    requirement.QualifiedItemId &&
+                Int(value, "quality") >= requirement.MinimumQuality)
+            .Sum(value => Math.Max(0, Int(value, "quantity")));
+        return guaranteedMinimum > 0;
     }
 
     private static bool ArrayContainsExactlyOnce(

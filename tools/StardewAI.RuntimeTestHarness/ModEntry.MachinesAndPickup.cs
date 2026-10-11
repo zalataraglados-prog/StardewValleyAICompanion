@@ -56,7 +56,8 @@ public sealed partial class ModEntry : Mod
         var deferredNativeDrop = request.DeferredPickupSourceKind is
             "native_wild_tree_chop_drop" or
             "native_radioactive_ore_node" or
-            "native_monster_drop_table";
+            "native_monster_drop_table" or
+            "native_location_artifact_spot";
         if (string.IsNullOrWhiteSpace(request.QualifiedItemId))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));

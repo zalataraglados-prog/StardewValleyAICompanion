@@ -71,6 +71,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_location_artifact_spot" => EvaluateArtifactSpot(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_monster_drop_table" => EvaluateMonsterDrop(
                 route,
                 staticRoute,
@@ -686,7 +691,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         double? requiredEnergy,
         double energyReserve,
         string executionAssumption,
-        string[] terminalEvidencePaths)
+        string[] terminalEvidencePaths,
+        bool acceptDefaultLocationWindow = false)
     {
         var routeState = state.RouteState;
         if (!routeState.RouteEvidenceAvailable || routeState.Timing is null)
@@ -742,6 +748,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         var approach = approaches[0];
         var window = RequirementRoute(route).MatchingWindows
             .Where(value => string.IsNullOrWhiteSpace(value.LocationId) ||
+                acceptDefaultLocationWindow &&
+                string.Equals(
+                    value.LocationId,
+                    "Default",
+                    StringComparison.Ordinal) ||
                 string.Equals(
                     value.LocationId,
                     targetLocation,

@@ -40,6 +40,7 @@ internal static partial class BootstrapSelfTest
         Require(rebuilt.Length == ranked.Length && rebuildReasons.Length == 0,
             "Untampered live ranking did not reproduce from the transparent snapshot.");
         VerifyMonsterDropRankingRebuild();
+        VerifyArtifactSpotCurrentRouteCandidateIndex();
         var driftedRanking = ranked.Select(CloneCandidate).ToArray();
         driftedRanking[0].Parameters = driftedRanking[0].Parameters
             .Select(parameter => parameter.Name == "target_tile_x"
@@ -1081,6 +1082,95 @@ internal static partial class BootstrapSelfTest
         SupportingOptionIds: Array.Empty<string>(),
         RuntimeAdmissionReady: true,
         TeacherAdmissionReady: true);
+
+    private static void VerifyArtifactSpotCurrentRouteCandidateIndex()
+    {
+        var snapshot = ArtifactSpotDispatchSnapshot();
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-artifact-spot-index-" + Guid.NewGuid() + ".json");
+        try
+        {
+            File.WriteAllText(
+                path,
+                JsonSerializer.Serialize(snapshot, JsonDefaults.Options));
+            var index = AcquisitionCurrentRouteCandidateIndex.Read(path);
+            Require(index.TryFind(
+                        "native_location_artifact_spot",
+                        "location:Default:10",
+                        "(O)330",
+                        out var candidates,
+                        out var blockingReasons) &&
+                    blockingReasons.Length == 0 &&
+                    candidates.Length == 1 &&
+                    candidates[0].OptionId ==
+                        "foraging.excavate_artifact_spots" &&
+                    candidates[0].LocationId == "Farm" &&
+                    candidates[0].TargetTileX == 12 &&
+                    candidates[0].TargetTileY == 10 &&
+                    candidates[0].MaxMovementTiles == 1 &&
+                    candidates[0].MaxToolSwings == 1 &&
+                    candidates[0].EstimatedTicks == 120 &&
+                    candidates[0].EnergyCost == 2,
+                "The exact current artifact spot did not enter the shared " +
+                "authoritative-route candidate index with its mechanical budget.");
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    private static SnapshotEnvelope ArtifactSpotDispatchSnapshot()
+    {
+        const string outputItems =
+            "[{\"qualifiedItemId\":\"(O)330\",\"quantity\":1}]";
+        var json = $$$"""
+        {
+          "player": {
+            "location_id":{"value":"Farm","status":"available"},
+            "tile_x":{"value":10,"status":"available"},
+            "tile_y":{"value":10,"status":"available"},
+            "energy":{"value":270,"status":"available"},
+            "inventory":{"value":[],"status":"available"}
+          },
+          "time":{"time":{"value":900,"status":"available"}},
+          "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
+          "current_location":{
+            "map":{"value":{"id":"Farm"},"status":"available"},
+            "objects":{"value":[{
+              "tile_x":12,"tile_y":10,"qualified_item_id":"(O)590","name":"Artifact Spot","clear_kind":"artifact_spot",
+              "clear_obstacle_executor_status":"ready","required_tool_kind":"hoe","tool_slot_index":2,"expected_tool_hits_to_clear":1,
+              "harvest_experience_skill_id":"foraging","harvest_experience_on_success_min":15,"harvest_experience_on_success_max":15,
+              "harvest_experience_condition":"native_hoe_digs_artifact_spot","harvest_experience_projection_status":"exact",
+              "clear_output_projection_status":"exact","clear_output_items_json":{{{JsonSerializer.Serialize(outputItems)}}},
+              "clear_authoritative_route_sources":[{"route_kind":"native_location_artifact_spot","source_id":"location:Default:10","qualified_item_id":"(O)330"}],
+              "clear_output_qualified_item_id":"(O)330","clear_output_quantity_min":1,"clear_output_quantity_max":1,
+              "artifact_spots_dug_before":4,"artifact_spots_dug_delta":1,"artifact_spots_dug_expected_after":5,
+              "clear_terrain_feature_expected_after":"HoeDirt","defense_book_mail_before":0,"defense_book_mail_expected_after":0
+            }],"status":"available"},
+            "terrain_features":{"value":[],"status":"available"}
+          },
+          "locations":{
+            "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available"},
+            "route_action_branch_coverage":{"value":{"rows":[]},"status":"available"}
+          }
+        }
+        """;
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            json,
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+            "Artifact-spot dispatch self-test snapshot is null.");
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-10-11T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+    }
 
     private static SnapshotEnvelope AcquisitionDispatchSnapshot()
     {

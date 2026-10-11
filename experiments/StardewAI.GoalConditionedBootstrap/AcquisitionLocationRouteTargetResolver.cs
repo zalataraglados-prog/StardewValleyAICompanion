@@ -21,7 +21,10 @@ internal static class AcquisitionLocationRouteTargetResolver
                 ResolveMachine(staticRoute, state.MachineFleet),
             "sells" => ResolveShop(staticRoute, state),
             "native_crab_pot_output" => ResolveCrabPot(source, state),
-            "native_location_artifact_spot" or
+            "native_location_artifact_spot" => ResolveArtifactSpot(
+                source,
+                state,
+                currentRouteCandidates),
             "native_location_fish_spawn" or
             "native_location_forage_spawn" =>
                 ResolveLocationSource(source, state),
@@ -44,6 +47,24 @@ internal static class AcquisitionLocationRouteTargetResolver
                 Array.Empty<AcquisitionLocationTarget>(),
                 new[] { "location_route_kind_not_supported:" + source.RouteKind })
         };
+    }
+
+    private static AcquisitionLocationTargetResolution ResolveArtifactSpot(
+        AcquisitionRouteTargetDateUnlock route,
+        AcquisitionLocationRouteSnapshotState state,
+        AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (candidates.TryFind(
+                route.RouteKind,
+                route.SourceId,
+                route.QualifiedItemId,
+                out var matches,
+                out _) &&
+            matches.Length > 0)
+        {
+            return ResolveCurrentCandidate(route, candidates);
+        }
+        return ResolveLocationSource(route, state);
     }
 
     private static AcquisitionLocationTargetResolution ResolveCurrentCandidate(

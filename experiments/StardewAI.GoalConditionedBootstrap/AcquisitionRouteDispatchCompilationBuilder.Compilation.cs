@@ -182,7 +182,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             evaluation.SnapshotStartTime,
             evaluation.GuaranteedArrivalByTime.Value);
         var terminalMinutes = evaluation.TerminalActionGameMinutes.Value;
-        if (movementMinutes <= 0 ||
+        if (movementMinutes < 0 ||
             movementMinutes + terminalMinutes !=
                 vector.GuaranteedElapsedGameMinutes)
         {
@@ -326,13 +326,27 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             step.Kind == "move_to_tile");
         var terminal = plan.Steps.SingleOrDefault(step =>
             step.Kind == "clear_obstacle");
+        var movementMinutes = evaluation.GuaranteedArrivalByTime.HasValue
+            ? GameClockBudgetPolicy.ClockMinutesBetween(
+                evaluation.SnapshotStartTime,
+                evaluation.GuaranteedArrivalByTime.Value)
+            : -1;
+        var movementStepMatches = movementMinutes switch
+        {
+            0 => move is null,
+            > 0 => move is not null &&
+                move.TargetTileX == evaluation.StandTileX &&
+                move.TargetTileY == evaluation.StandTileY &&
+                move.EstimatedMinutes == movementMinutes,
+            _ => false
+        };
         if (estimatedMinutes != vector.GuaranteedElapsedGameMinutes ||
-            move is null ||
             terminal is null ||
-            move.TargetTileX != evaluation.StandTileX ||
-            move.TargetTileY != evaluation.StandTileY ||
+            !movementStepMatches ||
             terminal.TargetTileX != evaluation.TargetTileX ||
-            terminal.TargetTileY != evaluation.TargetTileY)
+            terminal.TargetTileY != evaluation.TargetTileY ||
+            terminal.EstimatedMinutes !=
+                evaluation.TerminalActionGameMinutes)
         {
             return new[] { "compiled_queue_teacher_route_budget_mismatch" };
         }

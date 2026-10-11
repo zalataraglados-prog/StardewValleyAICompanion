@@ -1255,6 +1255,39 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.ClearObstacleFixture.cs");
+        var candidateIndex = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var locationResolver = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionLocationRouteTargetResolver.cs");
+        var retry = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.ArtifactSpot.cs");
+        var dispatch = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.Compilation.cs");
+        var deferredPickup = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteDispatchCompilationBuilder.NativeDropPickup.cs");
+        var pickupValidation = ReadRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "Execution",
+            "ActionQueueCompiler.Validation.DeferredPickup.cs");
+        var runtimePickup = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
 
         Assert.Contains(
             "\"location_artifact_spot_sample\" { \"full_shipment:item:330\" }",
@@ -1297,6 +1330,78 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "pair.Value.QualifiedItemId == \"(O)590\"",
             fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"foraging.excavate_artifact_spots\"",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (routeKind == \"native_location_artifact_spot\")",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_location_artifact_spot_terminal_evidence_incomplete",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_location_artifact_spot\" => ResolveArtifactSpot(",
+            locationResolver,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "return ResolveLocationSource(route, state);",
+            locationResolver,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (staticRoute.RouteKind == \"native_location_artifact_spot\" &&",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "matching_guaranteed_location_artifact_spot_candidate_not_present",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "source_bound_guaranteed_output",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate:foraging.excavate_artifact_spots",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "existing_native_clear_obstacle_artifact_spot_profile",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "compiler:ActionQueueCompiler.ClearObstacle",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "acceptDefaultLocationWindow: true",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "0 => move is null",
+            dispatch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movementMinutes < 0",
+            dispatch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "DeferredArtifactSpotPickupKind",
+            deferredPickup,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryReadArtifactSpotGuaranteedMinimum(",
+            deferredPickup,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ValidateDeferredArtifactSpotPickup(",
+            pickupValidation,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "native_location_artifact_spot",
+            runtimePickup,
             StringComparison.Ordinal);
     }
 
