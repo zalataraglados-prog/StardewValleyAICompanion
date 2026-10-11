@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Threading;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -26,12 +25,13 @@ namespace StardewAI.Core.OptionRegistry
         private readonly Verifier.Verifier verifier;
         private readonly ActionQueueCompiler compiler;
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
-        private readonly ConditionalWeakTable<SnapshotEnvelope, RouteConnectorCandidateCache> routeConnectorCandidatesBySnapshot = new();
-        private static readonly ConditionalWeakTable<SnapshotEnvelope, CollisionGridLookup>
+        private readonly SnapshotStateCache<EventCandidate[]>
+            routeConnectorCandidatesBySnapshot = new();
+        private static readonly SnapshotStateCache<CollisionGridLookup>
             collisionGridBySnapshot = new();
-        private int routeConnectorCandidateBuildCount;
 
-        internal int RouteConnectorCandidateBuildCount => Volatile.Read(ref routeConnectorCandidateBuildCount);
+        internal int RouteConnectorCandidateBuildCount =>
+            routeConnectorCandidatesBySnapshot.BuildCount;
 
         public CandidateOptionAvailabilityEvaluator()
             : this(new OptionRegistry(), new Verifier.Verifier())
