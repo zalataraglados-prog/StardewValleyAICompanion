@@ -1280,6 +1280,16 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "$projectedSpot.clear_output_items",
             runner,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$_.qualifiedItemId -eq",
+            runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "$projectedSpot.clear_output_items |\n" +
+            "                    Where-Object {\n" +
+            "                        [string]$_.qualified_item_id -eq",
+            runner.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "ItemRegistry.Create(\"(O)330\")",
             runner,

@@ -1260,7 +1260,7 @@ try {
                     } | Select-Object -First 1)[0]
                 $matchingOutput = @($projectedSpot.clear_output_items |
                     Where-Object {
-                        [string]$_.qualified_item_id -eq
+                        [string]$_.qualifiedItemId -eq
                             [string]$clearObstacleFixture.QualifiedItemId
                     }).Count -gt 0
                 $matchingSource = @(
