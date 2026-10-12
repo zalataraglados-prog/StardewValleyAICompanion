@@ -6,6 +6,8 @@ namespace StardewAI.Core.Training
     {
         public string DirectionId { get; set; } = string.Empty;
 
+        public string ProgressionFamilyId { get; set; } = string.Empty;
+
         public string Domain { get; set; } = string.Empty;
 
         public string Label { get; set; } = string.Empty;
@@ -43,6 +45,7 @@ namespace StardewAI.Core.Training
         {
             CreateDirect(
                 "earn_money",
+                "progression.economy.total_money_earned",
                 "economy",
                 "Increase total money earned",
                 "grandpa.money",
@@ -55,6 +58,7 @@ namespace StardewAI.Core.Training
                 "Cannot bind sell/ship candidates because required transparent sell/ship fields are unavailable."),
             CreateDirect(
                 "complete_museum_collection",
+                "progression.museum.donations",
                 "world_progress",
                 "Complete museum collection achievement",
                 "grandpa.achievement.5",
@@ -68,6 +72,7 @@ namespace StardewAI.Core.Training
                 new[] { "world_progress.museum", "player.inventory", "locations.collision_grid", "menus.active_menu" }),
             CreateDirect(
                 "obtain_skull_key",
+                "progression.mines.ordinary_depth",
                 "exploration",
                 "Obtain Skull Key",
                 "grandpa.skull_key",
@@ -81,6 +86,7 @@ namespace StardewAI.Core.Training
                 new[] { "player.has_skull_key", "mining.current_mine", "mining.floor_objectives" }),
             CreateDirect(
                 "complete_community_center",
+                "progression.community_center.bundles",
                 "world_progress",
                 "Complete Community Center",
                 "grandpa.community_center",
@@ -95,6 +101,7 @@ namespace StardewAI.Core.Training
                 true),
             CreateDirect(
                 "marriage_and_house_upgrade",
+                "progression.social.partnership_and_house",
                 "social",
                 "Marry or get roommate and upgrade farmhouse",
                 "grandpa.marriage_house",
@@ -108,6 +115,7 @@ namespace StardewAI.Core.Training
                 new[] { "player.married_or_roommate", "player.engaged", "player.spouse", "player.farmhouse_upgrade_level", "player.days_until_farmhouse_upgrade", "npcs.friendships", "world_progress.marriage_house" }),
             CreateDirect(
                 "obtain_rusty_key",
+                "progression.museum.donations",
                 "world_progress",
                 "Obtain Rusty Key",
                 "grandpa.rusty_key",
@@ -121,6 +129,7 @@ namespace StardewAI.Core.Training
                 new[] { "player.has_rusty_key", "world_progress.museum", "player.inventory", "locations.collision_grid", "menus.active_menu" }),
             CreateDirect(
                 "complete_master_angler",
+                "progression.collections.master_angler",
                 "world_progress",
                 "Complete Master Angler achievement",
                 "grandpa.achievement.26",
@@ -134,6 +143,7 @@ namespace StardewAI.Core.Training
                 new[] { "world_progress.fish_collection_progress", "fishing.rod_contexts", "fishing.fishable_tiles", "player.crab_pot_placement", "player.crab_pot_network", "current_location.objects" }),
             CreateDirect(
                 "complete_full_shipment",
+                "progression.collections.full_shipment",
                 "economy",
                 "Complete Full Shipment achievement",
                 "grandpa.achievement.34",
@@ -147,6 +157,7 @@ namespace StardewAI.Core.Training
                 new[] { "world_progress.shipping_collection", "world_progress.full_shipment_progress" }),
             CreateDirect(
                 "raise_friendships",
+                "progression.social.friendships",
                 "social",
                 "Raise NPC friendships",
                 "grandpa.friendships",
@@ -159,6 +170,7 @@ namespace StardewAI.Core.Training
                 "Cannot bind social talk/gift candidates because required transparent social fields are unavailable."),
             CreateDirect(
                 "raise_skill_levels",
+                "progression.skills.total_level",
                 "skills",
                 "Raise total skill level",
                 "grandpa.level",
@@ -215,6 +227,7 @@ namespace StardewAI.Core.Training
                 new[] { "player.level", "player.skills_detail", "event_candidates.skill_experience" }),
             CreateDirect(
                 "earn_pet_love",
+                "progression.farm.pet_love",
                 "farm",
                 "Earn pet love",
                 "grandpa.pet_love",
@@ -230,6 +243,7 @@ namespace StardewAI.Core.Training
 
         private static GrandpaDirectionCatalogEntry CreateDirect(
             string directionId,
+            string progressionFamilyId,
             string domain,
             string label,
             string feedbackKey,
@@ -246,6 +260,7 @@ namespace StardewAI.Core.Training
             return new GrandpaDirectionCatalogEntry
             {
                 DirectionId = directionId,
+                ProgressionFamilyId = progressionFamilyId,
                 Domain = domain,
                 Label = label,
                 FeedbackKey = feedbackKey,

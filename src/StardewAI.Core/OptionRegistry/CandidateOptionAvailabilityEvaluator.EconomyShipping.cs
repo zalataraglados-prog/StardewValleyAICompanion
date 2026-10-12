@@ -190,8 +190,6 @@ namespace StardewAI.Core.OptionRegistry
             var continuationMaxUnitPrice = ReadParameterInt(
                 boundParameters,
                 "continuation.max_unit_price");
-            var continuationParameters = PurchaseContinuationParameters(
-                boundParameters);
             var safetyWaitTicks = ShopMenuSafetyWaitTicks(shopStock.Value);
             var targetLocation = ReadStateFieldString(
                 snapshot,
@@ -274,9 +272,11 @@ namespace StardewAI.Core.OptionRegistry
                             .Distinct(StringComparer.Ordinal)
                             .ToArray()
                     };
-                    var objectiveContinuation = continuationParameters.Length > 0
-                        ? continuationParameters
-                        : PurchaseContinuationParameters(candidate, targetLocation);
+                    var objectiveContinuation =
+                        PurchaseContinuationParameters(
+                            candidate,
+                            targetLocation,
+                            boundParameters);
                     candidate.Parameters = safetyWaitTicks > 0
                         ? objectiveContinuation
                             .Append(Parameter(

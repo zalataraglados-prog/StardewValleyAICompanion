@@ -257,12 +257,29 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
     private static void ValidateReconciliation(
         GoalMethodCoverageReconciliationReport report)
     {
-        if (report.SchemaVersion != "goal_method_coverage_reconciliation.v2" ||
+        if (report.SchemaVersion != "goal_method_coverage_reconciliation.v3" ||
             report.GoalId != GoalMethodTeacherCoverageGoalIds.Authoritative ||
             report.TargetScore != 21 ||
             report.CriterionDenominatorCount != 19 ||
             report.Criteria.Length != report.CriterionDenominatorCount ||
             report.Methods.Length != report.RootMethodCount ||
+            report.MethodFamilies.Length == 0 ||
+            report.MethodFamilies.SelectMany(family =>
+                    family.CriterionViews)
+                .Select(view => view.CriterionId)
+                .Distinct(StringComparer.Ordinal).Count() !=
+                    report.CriterionDenominatorCount ||
+            report.MethodFamilies.SelectMany(family =>
+                    family.CriterionViews)
+                .Any(view =>
+                    string.IsNullOrWhiteSpace(view.TeacherGoalContextId) ||
+                    string.IsNullOrWhiteSpace(view.TerminalAssertion)) ||
+            report.Efficiency.FrontierBuildCount != 1 ||
+            report.Efficiency.CriterionViewCount !=
+                report.CriterionDenominatorCount ||
+            report.Efficiency.RootMethodCount != report.RootMethodCount ||
+            report.Efficiency.ProgressionFamilyCount !=
+                report.MethodFamilies.Length ||
             report.FormalProductTrainingAuthorized)
         {
             throw new InvalidDataException(

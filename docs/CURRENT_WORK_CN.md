@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-12 #224 Teacher 构建去重与 Full Shipment 原生商店购买闭环
+
+- Grandpa 目标分母已按权威目录固定为 `19` 个评分准则、`11` 个根方法，不再把方法数误当准则数。Goal-method 对账 schema 升至 `v3`，新增 `10` 个推进方法族和 `19` 个准则视图，其中 Money、Friendship、Skill 共 `3` 个单调阈值族共享各自推进过程，同时保留每个准则的独立终态断言与 Teacher 目标上下文。
+- `GoalMethodCoverageReconciliationBuilder` 现在只构建一次权威 frontier，旧路径的 `2` 次降为 `1` 次；理论独立推进构建由 `19` 次合并为 `10` 次，避免 `9` 次确定性重复构建。以上是结构计数，不冒充 wall-time 实测。当前仍只有 `4/19` executable、`2/19` coverage-ready，`formal_product_training_authorized=false` 不变。
+- 历史回归常量已从过时的 `877` 条对齐到当前权威 `1382 resolved / 217 blocked`；完整 `experiments/Run-Regression.ps1` 已通过。商店购买 supporting transition 现覆盖第六类 `shop_purchase_navigation`，统一复用既有路线、柜台交互、购买和关菜单原语，没有第二套执行器。
+- 原生 v8 回放 `runtime-full-shipment-shop-purchase-20261012-stage-loop-v8` 已从 fresh 隔离存档完整通过三段跨图、Blacksmith 内柜台交互、ShopMenu 安全计时等待、精确购买和菜单关闭。终端队列为 `executor.wait_ticks -> executor.buy_shop_item -> executor.close_menu`，三项均为 `applied/verified`；金额 `500g -> 350g`，`(O)380` 铁矿 `0 -> 1`，菜单终态为关闭。
+- 编译器只允许 `ShopMenu + 正安全计时器 + 非只读/无手持物 + 完整购买延续身份 + 唯一阻塞理由为安全计时器` 的有界等待；后续购买必须紧邻同一身份等待，并在原生执行时再次检查菜单、计时器、商店、库存、价格和容量。身份漂移或缺少安全约束继续失败关闭。Core game-free `288/288`、GoalConditionedBootstrap Release `0 warning / 0 error`、acquisition dispatch 与商店导航终端覆盖自测均通过。
+- 近期开发过慢确有一部分来自重复确定性 frontier/推进构建、逐路线空间扫描、重复钓鱼概率投影以及陈旧 fixture/计数造成的无效回归；这些已分别去重或修正。原生 fresh snapshot、执行前安全门、终态回执和 rollout proof 属于必要验证，不能按性能优化名义删除。
+
 ## 2026-10-11 Full Shipment 高风险证据与严格投影优化
 
 - 当前权威 evidence index 已从锚点阶段的 `2/26` 推进到 `7/26`。新增通过 `native_wild_tree_tapper_output`、`native_monster_drop_table`、`native_location_fish_spawn`、`native_location_artifact_spot` 与 `native_geode_drop` 五个 exact native sample；对应树液收集器产物 `(O)725`、怪物掉落 `(O)766`、地点钓获 `(O)388`、古物点黏土 `(O)330` 和 Golden Coconut `(O)791` 精确开出的 5 个铱矿 `(O)386` 均完成原生执行、fresh terminal、settlement、checkpoint 与 rollout proof 重建。共享 shipping/settlement 证据继续有效，剩余 `19` 层，`formal_product_training_authorized=false` 不变。

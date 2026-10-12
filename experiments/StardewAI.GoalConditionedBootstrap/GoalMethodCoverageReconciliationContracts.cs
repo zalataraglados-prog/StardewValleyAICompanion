@@ -23,7 +23,7 @@ public sealed class GoalMethodCoverageReconciliationReport
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "goal_method_coverage_reconciliation.v2";
+        "goal_method_coverage_reconciliation.v3";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -69,6 +69,13 @@ public sealed class GoalMethodCoverageReconciliationReport
     public GoalMethodCoverageDispositionCount[] MethodDispositionCounts
         { get; set; } = Array.Empty<GoalMethodCoverageDispositionCount>();
 
+    [JsonPropertyName("method_families")]
+    public GoalMethodFamilyProjection[] MethodFamilies { get; set; } =
+        Array.Empty<GoalMethodFamilyProjection>();
+
+    [JsonPropertyName("efficiency")]
+    public GoalMethodCoverageEfficiency Efficiency { get; set; } = new();
+
     [JsonPropertyName("methods")]
     public GoalMethodCoverageMethodReconciliation[] Methods { get; set; } =
         Array.Empty<GoalMethodCoverageMethodReconciliation>();
@@ -85,6 +92,64 @@ public sealed class GoalMethodCoverageReconciliationReport
 public sealed record GoalMethodCoverageDispositionCount(
     [property: JsonPropertyName("disposition")] string Disposition,
     [property: JsonPropertyName("count")] int Count);
+
+public sealed class GoalMethodCoverageEfficiency
+{
+    [JsonPropertyName("frontier_build_count")]
+    public int FrontierBuildCount { get; set; }
+
+    [JsonPropertyName("previous_frontier_build_count")]
+    public int PreviousFrontierBuildCount { get; set; }
+
+    [JsonPropertyName("criterion_view_count")]
+    public int CriterionViewCount { get; set; }
+
+    [JsonPropertyName("root_method_count")]
+    public int RootMethodCount { get; set; }
+
+    [JsonPropertyName("progression_family_count")]
+    public int ProgressionFamilyCount { get; set; }
+
+    [JsonPropertyName("monotone_threshold_family_count")]
+    public int MonotoneThresholdFamilyCount { get; set; }
+
+    [JsonPropertyName("theoretical_independent_progression_build_count")]
+    public int TheoreticalIndependentProgressionBuildCount { get; set; }
+
+    [JsonPropertyName("shared_progression_build_count")]
+    public int SharedProgressionBuildCount { get; set; }
+
+    [JsonPropertyName("theoretical_progression_builds_avoided")]
+    public int TheoreticalProgressionBuildsAvoided { get; set; }
+}
+
+public sealed record GoalMethodFamilyProjection(
+    [property: JsonPropertyName("family_id")] string FamilyId,
+    [property: JsonPropertyName("family_kind")] string FamilyKind,
+    [property: JsonPropertyName("method_ids")] string[] MethodIds,
+    [property: JsonPropertyName("direction_ids")] string[] DirectionIds,
+    [property: JsonPropertyName("permitted_option_ids")] string[] PermittedOptionIds,
+    [property: JsonPropertyName("criterion_views")] GoalMethodCriterionView[] CriterionViews,
+    [property: JsonPropertyName("native_progression_reusable")] bool NativeProgressionReusable,
+    [property: JsonPropertyName("criterion_specific_teacher_relabel_required")] bool CriterionSpecificTeacherRelabelRequired,
+    [property: JsonPropertyName("shared_progression_build_count")]
+        int SharedProgressionBuildCount,
+    [property: JsonPropertyName("theoretical_independent_build_count")]
+        int TheoreticalIndependentBuildCount);
+
+public sealed record GoalMethodCriterionView(
+    [property: JsonPropertyName("criterion_id")] string CriterionId,
+    [property: JsonPropertyName("points")] int Points,
+    [property: JsonPropertyName("state_paths")] string[] StatePaths,
+    [property: JsonPropertyName("operation")] string Operation,
+    [property: JsonPropertyName("target")] string Target,
+    [property: JsonPropertyName("threshold_order")] int ThresholdOrder,
+    [property: JsonPropertyName("teacher_goal_context_id")]
+        string TeacherGoalContextId,
+    [property: JsonPropertyName("terminal_assertion")]
+        string TerminalAssertion,
+    [property: JsonPropertyName("coverage_gate_ready")]
+        bool CoverageGateReady);
 
 public sealed record GoalMethodCoverageCriterionReconciliation(
     [property: JsonPropertyName("criterion_id")] string CriterionId,

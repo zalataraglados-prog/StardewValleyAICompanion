@@ -478,15 +478,20 @@ internal static partial class BootstrapSelfTest
             manifestPath,
             proofReceiptPath,
             rolloutAdmissionPath);
+        var nativeOutcome = verified.Rows.Single().Payload.NativeOutcome;
+        var sameRouteSupportAllowed =
+            supportInputs.RouteOccurrenceId ==
+                selectedTerminalRouteOccurrenceId;
         Require(verified.TeacherTrainingEvidenceEligible &&
                 !verified.FormalProductTrainingAuthorized &&
                 verified.TransitionCount == 1 &&
                 verified.NativeOutcomeCount == 1 &&
-                verified.Rows.Single().Payload.NativeOutcome
-                    .RouteOccurrenceId ==
-                        selectedTerminalRouteOccurrenceId &&
-                verified.Rows.Single().Payload.NativeOutcome
-                    .RouteOccurrenceId != selectedSupportRouteOccurrenceId,
+                nativeOutcome.RouteOccurrenceId ==
+                    selectedTerminalRouteOccurrenceId &&
+                (sameRouteSupportAllowed ||
+                    nativeOutcome.RouteOccurrenceId !=
+                        selectedSupportRouteOccurrenceId) &&
+                nativeOutcome.RunId != proof.RunId,
             "Supporting transition leaked into terminal supervision.");
 
         return new AcquisitionRouteSupportingTransitionTerminalCoverageSource

@@ -61,6 +61,28 @@ internal static partial class BootstrapSelfTest
             new[] { "EVD-HERMETIC" },
             Array.Empty<string>(),
             Array.Empty<string>());
+        var family = new GoalMethodFamilyProjection(
+            "progression.hermetic",
+            "shared_progression",
+            new[] { "method" },
+            new[] { "direction" },
+            new[] { "option" },
+            criteria.Select((criterion, index) =>
+                    new GoalMethodCriterionView(
+                        criterion.CriterionId,
+                        criterion.Points,
+                        new[] { "hermetic.metric" },
+                        "gte",
+                        index.ToString(),
+                        index,
+                        "grandpa.criterion:" + criterion.CriterionId,
+                        "hermetic.metric gte " + index,
+                        true))
+                .ToArray(),
+            true,
+            true,
+            1,
+            criteria.Length);
         var reconciliation = new GoalMethodCoverageReconciliationReport
         {
             Status = "reconciled_coverage_complete",
@@ -85,6 +107,19 @@ internal static partial class BootstrapSelfTest
                 new GoalMethodCoverageDispositionCount(
                     GoalMethodCoverageDispositions.CoverageReady,
                     1)
+            },
+            MethodFamilies = new[] { family },
+            Efficiency = new GoalMethodCoverageEfficiency
+            {
+                FrontierBuildCount = 1,
+                PreviousFrontierBuildCount = 2,
+                CriterionViewCount = 19,
+                RootMethodCount = 1,
+                ProgressionFamilyCount = 1,
+                MonotoneThresholdFamilyCount = 0,
+                TheoreticalIndependentProgressionBuildCount = 19,
+                SharedProgressionBuildCount = 1,
+                TheoreticalProgressionBuildsAvoided = 18
             },
             Methods = new[] { method },
             Criteria = criteria,

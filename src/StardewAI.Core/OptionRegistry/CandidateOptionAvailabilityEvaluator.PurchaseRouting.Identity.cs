@@ -54,51 +54,96 @@ namespace StardewAI.Core.OptionRegistry
 
         private static SmallModelActionParameter[] PurchaseContinuationParameters(
             EconomicCandidate candidate,
-            string targetLocation)
-        {
-            var parameters = new List<SmallModelActionParameter>
-            {
-                Parameter("continuation.option_id", "economy.buy_supplies"),
-                Parameter("continuation.shop_id", candidate.ShopId),
-                Parameter("continuation.target_location", targetLocation),
-                Parameter("continuation.item_id", candidate.ItemId),
-                Parameter(
-                    "continuation.qualified_item_id",
-                    candidate.QualifiedItemId),
-                Parameter(
-                    "continuation.max_unit_price",
-                    candidate.UnitPrice.ToString(CultureInfo.InvariantCulture)),
-                Parameter("continuation.quantity", "1")
-            };
-            if (!string.IsNullOrWhiteSpace(candidate.StockId))
-            {
-                parameters.Add(Parameter(
-                    "continuation.stock_id",
-                    candidate.StockId));
-            }
-            if (candidate.OutputStack > 0)
-            {
-                parameters.Add(Parameter(
-                    "continuation.output_stack_per_purchase",
-                    candidate.OutputStack.ToString(CultureInfo.InvariantCulture)));
-            }
-            if (candidate.OutputQuality >= 0)
-            {
-                parameters.Add(Parameter(
-                    "continuation.output_quality",
-                    candidate.OutputQuality.ToString(CultureInfo.InvariantCulture)));
-            }
-            return parameters.ToArray();
-        }
+            string targetLocation) =>
+            PurchaseContinuationParameters(
+                candidate,
+                targetLocation,
+                Array.Empty<SmallModelActionParameter>());
 
         private static SmallModelActionParameter[] PurchaseContinuationParameters(
+            EconomicCandidate candidate,
+            string targetLocation,
             SmallModelActionParameter[] boundParameters)
         {
-            return boundParameters
+            var bound = boundParameters
                 .Where(parameter => parameter.Name.StartsWith(
                     "continuation.",
                     StringComparison.Ordinal))
-                .ToArray();
+                .GroupBy(parameter => parameter.Name, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(parameter => parameter.Value)
+                        .Distinct(StringComparer.Ordinal)
+                        .Single(),
+                    StringComparer.Ordinal);
+            string Value(string name, string fallback) =>
+                bound.TryGetValue(name, out var value) &&
+                !string.IsNullOrWhiteSpace(value)
+                    ? value
+                    : fallback;
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter(
+                    "continuation.option_id",
+                    Value(
+                        "continuation.option_id",
+                        "economy.buy_supplies")),
+                Parameter(
+                    "continuation.shop_id",
+                    Value("continuation.shop_id", candidate.ShopId)),
+                Parameter(
+                    "continuation.target_location",
+                    Value("continuation.target_location", targetLocation)),
+                Parameter(
+                    "continuation.item_id",
+                    Value("continuation.item_id", candidate.ItemId)),
+                Parameter(
+                    "continuation.qualified_item_id",
+                    Value(
+                        "continuation.qualified_item_id",
+                        candidate.QualifiedItemId))
+            };
+            var stockId = Value(
+                "continuation.stock_id",
+                candidate.StockId);
+            if (!string.IsNullOrWhiteSpace(stockId))
+            {
+                parameters.Add(Parameter(
+                    "continuation.stock_id",
+                    stockId));
+            }
+            var outputStack = Value(
+                "continuation.output_stack_per_purchase",
+                candidate.OutputStack.ToString(CultureInfo.InvariantCulture));
+            if (candidate.OutputStack > 0 ||
+                bound.ContainsKey(
+                    "continuation.output_stack_per_purchase"))
+            {
+                parameters.Add(Parameter(
+                    "continuation.output_stack_per_purchase",
+                    outputStack));
+            }
+            var outputQuality = Value(
+                "continuation.output_quality",
+                candidate.OutputQuality.ToString(
+                    CultureInfo.InvariantCulture));
+            if (candidate.OutputQuality >= 0 ||
+                bound.ContainsKey("continuation.output_quality"))
+            {
+                parameters.Add(Parameter(
+                    "continuation.output_quality",
+                    outputQuality));
+            }
+            parameters.Add(Parameter(
+                "continuation.max_unit_price",
+                Value(
+                    "continuation.max_unit_price",
+                    candidate.UnitPrice.ToString(
+                        CultureInfo.InvariantCulture))));
+            parameters.Add(Parameter(
+                "continuation.quantity",
+                Value("continuation.quantity", "1")));
+            return parameters.ToArray();
         }
 
         private static bool IsPurchaseContinuationCandidate(

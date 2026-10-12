@@ -123,6 +123,9 @@ namespace StardewAI.Core.Execution
                     step,
                     index,
                     expandedSteps.Length,
+                    index > 0 && ShopMenuReadinessWaitMatchesPurchase(
+                        expandedSteps[index - 1],
+                        step),
                     activeMenuOpenBeforeStep,
                     activeMenuTypeBeforeStep,
                     playerLocationBeforeStep,

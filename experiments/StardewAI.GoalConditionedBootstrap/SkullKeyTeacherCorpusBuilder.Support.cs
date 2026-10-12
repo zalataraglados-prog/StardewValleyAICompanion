@@ -85,6 +85,7 @@ public static partial class SkullKeyTeacherCorpusBuilder
                     FieldStatus.Derived)
             {
                 if (!envelope.TryGetProperty("value", out var totalDays) ||
+                    totalDays.ValueKind != JsonValueKind.Number ||
                     !totalDays.TryGetInt32(out var directTotalDay))
                 {
                     throw new InvalidDataException(

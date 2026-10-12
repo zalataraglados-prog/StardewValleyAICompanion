@@ -15,12 +15,6 @@ public static partial class GoalMethodTeacherCoverageBuilder
         GoalMethodFrontierBuildInputs inputs,
         string requestPath)
     {
-        var fullRequestPath = RequiredFullPath(requestPath, "Coverage request");
-        var request = CurrentTeacherFrontierSupport.Read<
-            GoalMethodTeacherCoverageRequest>(
-            fullRequestPath,
-            "Goal-method Teacher coverage request");
-        ValidateRequest(request);
         var frontier = GoalMethodFrontierBuilder.Build(
             inputs.ExpansionPath,
             inputs.DependencyExpansionPath,
@@ -32,6 +26,20 @@ public static partial class GoalMethodTeacherCoverageBuilder
             inputs.OptionMatrixPath,
             inputs.ClaimLedgerPath,
             inputs.DirectionCatalogSourcePath);
+        return Build(inputs, requestPath, frontier);
+    }
+
+    internal static GoalMethodTeacherCoverageReport Build(
+        GoalMethodFrontierBuildInputs inputs,
+        string requestPath,
+        GoalMethodFrontierReport frontier)
+    {
+        var fullRequestPath = RequiredFullPath(requestPath, "Coverage request");
+        var request = CurrentTeacherFrontierSupport.Read<
+            GoalMethodTeacherCoverageRequest>(
+            fullRequestPath,
+            "Goal-method Teacher coverage request");
+        ValidateRequest(request);
         ValidateFrontier(frontier);
 
         var evidence = frontier.Methods.ToDictionary(

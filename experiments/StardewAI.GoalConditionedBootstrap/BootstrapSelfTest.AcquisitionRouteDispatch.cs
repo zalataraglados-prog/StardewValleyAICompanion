@@ -874,7 +874,18 @@ internal static partial class BootstrapSelfTest
     {
         static ActionQueueItem Item(string optionId) => new()
         {
-            OptionId = optionId
+            OptionId = optionId,
+            NormalizedCommand = new NormalizedCommand
+            {
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter
+                    {
+                        Name = "acquisition_support_purchase_stage",
+                        Value = "shop_interaction"
+                    }
+                }
+            }
         };
 
         var directShop = new[]
@@ -897,7 +908,11 @@ internal static partial class BootstrapSelfTest
             AcquisitionRouteExecutionBindingBuilder
                 .SupportingTransitionQueueShapeValid(
                     dialogueShop,
-                    routeOptions),
+                    routeOptions) &&
+            AcquisitionRouteSupportingTransitionQueueShapes.Purchase(
+                directShop) &&
+            AcquisitionRouteSupportingTransitionQueueShapes.Purchase(
+                dialogueShop),
             "Exact shop interaction support macros were not admitted.");
 
         var reordered = new[]
@@ -909,6 +924,10 @@ internal static partial class BootstrapSelfTest
         Require(!AcquisitionRouteExecutionBindingBuilder
                 .SupportingTransitionQueueShapeValid(reordered, routeOptions),
             "A reordered shop interaction support macro was admitted.");
+        Require(!AcquisitionRouteSupportingTransitionQueueShapes.Purchase(
+                reordered),
+            "The shared receipt queue-shape gate admitted a reordered shop " +
+            "interaction macro.");
     }
 
     private static PolicyEventCandidatePrediction CloneCandidate(

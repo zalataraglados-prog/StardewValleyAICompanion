@@ -26,7 +26,8 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             inputs.DirectionCatalogSourcePath);
         var coverage = GoalMethodTeacherCoverageBuilder.Build(
             inputs,
-            coverageRequestPath);
+            coverageRequestPath,
+            frontier);
         ValidateSharedAuthority(frontier, coverage);
         var options = LoadOptions(
             inputs.OptionMatrixPath,
@@ -68,6 +69,10 @@ public static partial class GoalMethodCoverageReconciliationBuilder
                     method.OpenWorkKinds);
             })
             .ToArray();
+        var families = GoalMethodFamilyProjectionBuilder.Build(
+            inputs.KnowledgePath,
+            frontier,
+            criteria);
 
         return new GoalMethodCoverageReconciliationReport
         {
@@ -94,6 +99,22 @@ public static partial class GoalMethodCoverageReconciliationBuilder
                 criteria.Select(criterion => criterion.PrimaryDisposition)),
             MethodDispositionCounts = CountDispositions(
                 methods.Select(method => method.PrimaryDisposition)),
+            MethodFamilies = families,
+            Efficiency = new GoalMethodCoverageEfficiency
+            {
+                FrontierBuildCount = 1,
+                PreviousFrontierBuildCount = 2,
+                CriterionViewCount = criteria.Length,
+                RootMethodCount = methods.Length,
+                ProgressionFamilyCount = families.Length,
+                MonotoneThresholdFamilyCount = families.Count(family =>
+                    family.FamilyKind == "monotone_threshold"),
+                TheoreticalIndependentProgressionBuildCount =
+                    criteria.Length,
+                SharedProgressionBuildCount = families.Length,
+                TheoreticalProgressionBuildsAvoided =
+                    criteria.Length - families.Length
+            },
             Methods = methods,
             Criteria = criteria
         };
