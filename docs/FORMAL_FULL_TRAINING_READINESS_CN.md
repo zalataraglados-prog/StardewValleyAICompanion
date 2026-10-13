@@ -4,7 +4,7 @@
 
 - 当前代码已在全新 `E:` 隔离根重建 acquisition corpus、checkpoint 与支持转移证明，并重新执行正式准入总门。机器报告为 `blocked_open_formal_training_evidence`：promotion-grade coverage `2/19`，coverage-ready root method `1/11`，`formal_product_training_authorized=false`。
 - evidence-integrity 六门全部通过：19 项/21 分权威分母、三来源九行语料重放、非空 train/validation/test、checkpoint/corpus 绑定、holdout 重算和支持终端谱系 `6/6`。这批小语料只验证管线与证据约束，不能解释为正式 Product 数据规模充分。
-- Teacher 阻塞归并为 `dependency_graph_incomplete:15` 和 `evidence_not_connected:2`。运行时 promotion 阻塞归并为三个清障 executor 的透明读取/原生运行/five-gate 全局接线，以及三个社交 option 的内部执行管线。任何内部方法证据完成都必须进入全局 option inventory 后才算解除后者。
+- Teacher 阻塞归并为 `dependency_graph_incomplete:15` 和 `evidence_not_connected:2`。三个清障 executor 已将既有 `EVD-112/189/212` 接入唯一 capability source；重新生成 option matrix 与 acquisition lowering 后，透明读取、原生运行和 five-gate 三类告警均已消失，同时保持 executor calibration 的 `EvaluationOnly` 边界。运行时 promotion 现在只剩三个社交 option 的内部执行管线；任何内部方法证据完成仍必须进入全局 option inventory 后才算解除。
 - 后续按 method family 批量闭合，不再按 19 个 criterion 逐项重复施工。第一优先是通用单调阈值 source/progression contract 和 Money 六阈值试点；每个 criterion 保留独立 target、Teacher goal context、终态断言与 coverage row，runtime progression、Planner/Compiler/Executor、partition plumbing 和 proof substrate 只构建一次。
 - 正式报告：`E:\StardewAI-TestLab\artifacts\formal-training-admission-current-source-v1-20261014\formal-training-admission-reconciliation.json`。旧 2026-09-28 语料在当前回放器下出现确定性日历漂移，已失败关闭，不得拿旧汇总覆盖本基线。
 

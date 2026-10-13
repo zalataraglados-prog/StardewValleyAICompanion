@@ -50,6 +50,7 @@
     <Compile Include="MachinePlacementMainlineTests.cs" />
     <Compile Include="CommunityCenterDonationMainlineTests.cs" />
     <Compile Include="CommunityCenterTransparencyTests.cs" />
+    <Compile Include="CapabilityRegistryGeneratedConsistencyTests.cs" />
     <Compile Include="CurrencyReservationLedgerTests.cs" />
     <Compile Include="FishingTerminalProbabilityEvaluatorTests.cs" />
     <Compile Include="FishingTerminalProbabilitySnapshotProjectorTests.cs" />

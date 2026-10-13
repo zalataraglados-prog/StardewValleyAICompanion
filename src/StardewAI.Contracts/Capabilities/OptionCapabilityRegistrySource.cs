@@ -613,6 +613,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["farm.maintain_crops"] = VerifiedEvidence(
                         "vanilla_current_location_one_exact_candidate_per_fresh_snapshot_native_terrain_HoeDirt_water_plant_fertilize_grab_or_scythe_harvest_IndoorPot_fertilize_and_giant_crop_axe_lifecycle",
                         "EVD-226"),
+                    ["executor.break_farm_resource_clump"] = VerifiedEvidence(
+                        "vanilla_exact_base_farm_stump_and_hollow_log_transparent_identity_geometry_tool_power_hit_budget_native_cross_frame_axe_lifecycle_natural_removal_and_foraging_xp_receipt",
+                        "EVD-112"),
                     ["exploration.visit_location"] = BoundedEvidence(
                         "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",
                         readEvidenceIds: new[] { "EVD-025", "EVD-058" },
@@ -815,11 +818,17 @@ namespace StardewAI.Contracts.Capabilities
                     ["foraging.excavate_artifact_spots"] = VerifiedEvidence(
                         "vanilla_current_location_exact_base_(O)590_artifact_spot_high_level_candidate_daily_plan_clear_obstacle_native_hoe_exact_output_experience_stat_terrain_mail_and_fresh_snapshot_receipt",
                         "EVD-334"),
+                    ["executor.clear_obstacle"] = VerifiedEvidence(
+                        "vanilla_exact_loaded_twig_seed_spot_ordinary_artifact_spot_and_grass_transparent_tool_output_experience_terrain_mail_native_clearance_receipt",
+                        "EVD-189"),
                     ["foraging.harvest_spring_onions"] = VerifiedEvidence(
                         "vanilla_current_location_exact_base_forage_crop_1_(O)399_high_level_candidate_daily_plan_native_Crop_harvest_inventory_foraging_xp_3_crop_removal_and_fresh_snapshot_receipt",
                         "EVD-335"),
                     ["foraging.clear_green_rain_bushes"] = VerifiedEvidence(
                         "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
+                        "EVD-212"),
+                    ["executor.break_current_location_resource_clump"] = VerifiedEvidence(
+                        "vanilla_exact_loaded_base_green_rain_resource_clump_indexes_44_46_geometry_tool_hit_budget_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
                         "EVD-212"),
                     ["inventory.transfer_item"] = VerifiedEvidence(
                         "explicit_bidirectional_player_normal_chest_transfer",
