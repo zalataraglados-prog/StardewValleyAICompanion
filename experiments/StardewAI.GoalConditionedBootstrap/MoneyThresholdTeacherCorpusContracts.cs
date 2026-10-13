@@ -69,7 +69,7 @@ public sealed class MoneyThresholdTeacherCorpus
 
     [JsonPropertyName("corpus_policy")]
     public string CorpusPolicy { get; set; } =
-        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The sale must increase current money and totalMoneyEarned by the same exact positive amount. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. Every crossed threshold receives its own Teacher goal context, terminal assertion and comparison receipt, and retains independent train/validation/test coverage.";
+        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The shared Money progression verifier requires the sale to increase current money and totalMoneyEarned by the same exact positive amount while preserving the de-duplicated pending shipping scope. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. Every crossed threshold receives its own Teacher goal context, terminal assertion and comparison receipt, and retains independent train/validation/test coverage.";
 }
 
 public sealed record MoneyThresholdTeacherEvidenceRow(

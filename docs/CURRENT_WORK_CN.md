@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Money progression 共享验真基础
+
+- `MoneyRevenueProgressionVerifier` 统一投影 `save/player/day/money/totalMoneyEarned` 与 shipping settlement scope，现有 Money 阈值 sale corpus 已改为复用该入口，不再保留第二套金额/天数/actor 读取逻辑。
+- 商店即时结算必须满足当前现金与累计收入同额正增长、同日、同 actor，且 pending shipping value/signature 完全不变；这阻止一次销售证据混入隔夜发货收益。
+- 原生发货结算必须恰好跨一天，现金与累计收入增量都严格等于前夜 pending 值，结算后 pending 为零。多个物理 shipping-bin endpoint 若属于同一 shared/personal scope 只计一次，并且所有副本必须一致，避免重复端点把收益翻倍。
+- hermetic 已覆盖即时销售、发货结算、同 scope 三端点去重、pending 漂移拒绝和重复计价拒绝。该层只是 `earn_money` recurrence 的共享原生状态验真基础，不会单独提高 production coverage；下一步仍是把 acquisition/reserve/processing/sale/shipping/settlement 组合成连续的 fresh-save recurrence。
+
 ## 2026-10-14 Money 阈值族判据级证据边界
 
 - Teacher coverage 不再假设“共享同一 root method 的 criterion 必须拥有完全相同证据”。旧实现会让任意一个 Money 阈值样本污染全部六档；现改为 method 级共享 progression 加 criterion 级独立证据，方法汇总只取所有所属 criterion 的共同三分区覆盖。

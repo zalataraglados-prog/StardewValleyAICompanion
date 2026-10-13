@@ -3035,6 +3035,17 @@ Slice 7 remains assigned to the RTX 5070 node.
   remains 2/19 and unauthorized. The next bounded slice closes the earn-money fresh-save recurrence and opportunity-
   cost dependencies before collecting production partition evidence.
 
+### 2026-10-14: shared Money progression verification
+
+- Immediate shop sales and native shipping-day settlement now share one snapshot projection for actor identity, day,
+  current money, cumulative earnings and pending shipping state. The existing Money threshold corpus consumes this
+  projection instead of owning a second amount/day verifier.
+- Physical shipping-bin endpoints are de-duplicated by native inventory scope. Duplicate endpoints must agree on player,
+  pending value and contents signature; one shared inventory is credited once. A shop sale must preserve that scope,
+  while a day settlement must consume its exact pending value and increase both money measures by that amount.
+- Hermetic negative cases reject pending-state drift and duplicate-endpoint over-credit. This is a recurrence foundation,
+  not a fresh-save schedule or production evidence, so admission remains unchanged.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

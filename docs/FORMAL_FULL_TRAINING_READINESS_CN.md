@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue recurrence 状态边界
+
+- 新增共享 `MoneyRevenueProgressionVerifier`，作为 shop immediate settlement 与 native shipping day settlement 的唯一金额 progression 投影。Money 阈值语料已复用该层，后续 recurrence 不再重新实现 actor/day/money/totalMoneyEarned 读取。
+- shipping-bin 以 `bin_scope` 去重；同一 scoped inventory 的多个物理端点必须报告相同 pending value 与 contents signature，结算收益只计算一次。即时销售要求 shipping scope 保持不变，隔夜结算要求金额增量精确等于前夜 pending 值。
+- 该变更关闭了“物理端点重复计价”和“sale 与 shipping 收益混合归因”两类假证据，但仍不构成 fresh-save 百万元 schedule，也不改变 `formal_product_training_authorized=false`。
+
 ## 2026-10-14 Money method-family 试点
 
 - 覆盖门已从“method 证据广播到全部 criterion”改为“共享 method progression、独立 criterion evidence view”。Money 六档仍共享候选分母、执行器、原生 progression 和分区管线，但任一档缺失都会使 method 汇总保持未完成。
