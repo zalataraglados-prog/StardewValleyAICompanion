@@ -9,6 +9,8 @@ public static class AcquisitionRouteSupportingTransitionKinds
     public const string MachineInputPurchase = "machine_input_purchase";
     public const string MachineCapacityEstablishment =
         "machine_capacity_establishment";
+    public const string ShopPurchaseNavigation =
+        "shop_purchase_navigation";
 
     public static readonly string[] All =
     [
@@ -16,7 +18,8 @@ public static class AcquisitionRouteSupportingTransitionKinds
         MachineInputLoad,
         MachineInputMaterialTransfer,
         MachineInputPurchase,
-        MachineCapacityEstablishment
+        MachineCapacityEstablishment,
+        ShopPurchaseNavigation
     ];
 
     public static bool IsKnown(string value) => All.Contains(

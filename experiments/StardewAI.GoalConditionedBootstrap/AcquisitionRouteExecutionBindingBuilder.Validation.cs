@@ -227,7 +227,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         }
     }
 
-    private static bool SupportingTransitionQueueShapeValid(
+    internal static bool SupportingTransitionQueueShapeValid(
         ActionQueueItem[] items,
         string[] boundRouteOptions) =>
         items.Length == 1 ||
@@ -253,22 +253,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         if (!boundRouteOptions.All(optionId =>
                 optionId == "economy.buy_supplies"))
             return false;
-        var optionIds = items.Select(item => item.OptionId).ToArray();
-        return optionIds.SequenceEqual(
-                new[]
-                {
-                    "executor.buy_shop_item",
-                    "executor.close_menu"
-                },
-                StringComparer.Ordinal) ||
-            optionIds.SequenceEqual(
-                new[]
-                {
-                    "executor.wait_ticks",
-                    "executor.buy_shop_item",
-                    "executor.close_menu"
-                },
-                StringComparer.Ordinal);
+        return AcquisitionRouteSupportingTransitionQueueShapes.Purchase(
+            items);
     }
 
     private static string BoundRouteOption(

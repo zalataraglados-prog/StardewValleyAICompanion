@@ -279,7 +279,7 @@ $scenario = switch ("$requirementId|$qualifiedItemId|$routeKind") {
     "full_shipment:item:388|(O)388|native_location_fish_spawn" {
         "location_fish_spawn_sample"
     }
-    "full_shipment:item:388|(O)388|sells" {
+    "full_shipment:item:380|(O)380|sells" {
         "shop_purchase_sample"
     }
     "full_shipment:item:766|(O)766|native_monster_drop_table" {

@@ -1,5 +1,22 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 商店证据入库与 Sap 结算证明重基
+
+- Full Shipment 运行时样本计划中的商店代表已从过时的 `full_shipment:item:388 / (O)388` 修正为原生 v8 实际验证的 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。`Test-FullShipmentRuntimeSamplePlan.ps1` 重新对账为精确 `26/26`，商店层候选路线包含已验证的 `full_shipment:full_shipment:item:380:0:10`。
+- 当前编译器增加队列内位置投影后，旧 Sap Teacher receipt 按完整编译语义正确失效。Sap 已从 fresh 隔离存档重新执行 acquisition、发货、回家、原生睡眠与次日结算；新 checkpoint 为 `prefix_proof_verified=true`、`verified_iteration_count=1`、`remaining_item_count=153`、`ready_for_next_iteration=true`。
+- Sap 回家后的快照处于淡入阶段，睡眠队列前快照已恢复玩家控制，两者相隔 `41` tick。两份快照的实际差异仅为淡入/控制门、功能投影 tick/指纹和机器探针缓存 tick；游戏内时间、位置、Full Shipment 进度及待结算 Sap 均未变化。recurrence verifier 不再错误要求这两个独立采样快照整份哈希相同，改为同时验证各自 state hash、tick 单调性、角色/存档身份、游戏内时间、位置、完整收集进度和精确待结算数量；位置、进度、发货箱或哈希漂移负例均失败关闭。
+- 严格 production evidence index 已从冻结原生证据重建为 `8/26`：共享 shipping/settlement 证明有效，商店购买已作为 `verified_exact_native_sample` 入库，剩余 `18` 层。高风险批次当前只缺 `community_center_reward_sample`；检查点位于 `F:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v4-20261013`。
+- 本轮原生 Sap 重基完成后，checkpoint 与 evidence export 均通过；随后 evidence preflight 只读冻结证据，没有重复运行商店样本。`formal_product_training_authorized=false` 保持不变。下一固定开发项为社区中心奖励层，之后再进入其余标准分层。
+
+## 2026-10-12 #224 Teacher 构建去重与 Full Shipment 原生商店购买闭环
+
+- Grandpa 目标分母已按权威目录固定为 `19` 个评分准则、`11` 个根方法，不再把方法数误当准则数。Goal-method 对账 schema 升至 `v3`，新增 `10` 个推进方法族和 `19` 个准则视图，其中 Money、Friendship、Skill 共 `3` 个单调阈值族共享各自推进过程，同时保留每个准则的独立终态断言与 Teacher 目标上下文。
+- `GoalMethodCoverageReconciliationBuilder` 现在只构建一次权威 frontier，旧路径的 `2` 次降为 `1` 次；理论独立推进构建由 `19` 次合并为 `10` 次，避免 `9` 次确定性重复构建。以上是结构计数，不冒充 wall-time 实测。当前仍只有 `4/19` executable、`2/19` coverage-ready，`formal_product_training_authorized=false` 不变。
+- 历史回归常量已从过时的 `877` 条对齐到当前权威 `1382 resolved / 217 blocked`；完整 `experiments/Run-Regression.ps1` 已通过。商店购买 supporting transition 现覆盖第六类 `shop_purchase_navigation`，统一复用既有路线、柜台交互、购买和关菜单原语，没有第二套执行器。
+- 原生 v8 回放 `runtime-full-shipment-shop-purchase-20261012-stage-loop-v8` 已从 fresh 隔离存档完整通过三段跨图、Blacksmith 内柜台交互、ShopMenu 安全计时等待、精确购买和菜单关闭。终端队列为 `executor.wait_ticks -> executor.buy_shop_item -> executor.close_menu`，三项均为 `applied/verified`；金额 `500g -> 350g`，`(O)380` 铁矿 `0 -> 1`，菜单终态为关闭。
+- 编译器只允许 `ShopMenu + 正安全计时器 + 非只读/无手持物 + 完整购买延续身份 + 唯一阻塞理由为安全计时器` 的有界等待；后续购买必须紧邻同一身份等待，并在原生执行时再次检查菜单、计时器、商店、库存、价格和容量。身份漂移或缺少安全约束继续失败关闭。Core game-free `288/288`、GoalConditionedBootstrap Release `0 warning / 0 error`、acquisition dispatch 与商店导航终端覆盖自测均通过。
+- 近期开发过慢确有一部分来自重复确定性 frontier/推进构建、逐路线空间扫描、重复钓鱼概率投影以及陈旧 fixture/计数造成的无效回归；这些已分别去重或修正。原生 fresh snapshot、执行前安全门、终态回执和 rollout proof 属于必要验证，不能按性能优化名义删除。
+
 ## 2026-10-11 Full Shipment 高风险证据与严格投影优化
 
 - 当前权威 evidence index 已从锚点阶段的 `2/26` 推进到 `7/26`。新增通过 `native_wild_tree_tapper_output`、`native_monster_drop_table`、`native_location_fish_spawn`、`native_location_artifact_spot` 与 `native_geode_drop` 五个 exact native sample；对应树液收集器产物 `(O)725`、怪物掉落 `(O)766`、地点钓获 `(O)388`、古物点黏土 `(O)330` 和 Golden Coconut `(O)791` 精确开出的 5 个铱矿 `(O)386` 均完成原生执行、fresh terminal、settlement、checkpoint 与 rollout proof 重建。共享 shipping/settlement 证据继续有效，剩余 `19` 层，`formal_product_training_authorized=false` 不变。
@@ -123,7 +140,7 @@
 
 ## 2026-10-05 Full Shipment 商店购买入口
 
-- 商店购买代表固定为 `full_shipment:item:388 / (O)388 / sells / shop:Carpenter`。候选显式约束 `Carpenter`、木材 `(O)388`、单价不高于 10 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。
+- 商店购买代表修正为 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。当前 fresh-save 权威分母的 13 条替代路线均可判定，150g 的 Blacksmith 购买是唯一 Pareto 前沿；候选显式约束 `Blacksmith`、铁矿 `(O)380`、单价不高于 150 和数量 1，继续复用 `economy.buy_supplies` 的跨图路径、柜台交互和 `executor.buy_shop_item`。旧木材 `(O)388` 代表同时存在 Town 钓鱼杂物路线，缺少对应概率证据时会被严格 Teacher 正确拒绝，不再用它伪造单一购买分母。
 - 隔离夹具只使用既有 `debug.advance_time_to` 把春 1 推进到 9:00；不会打开菜单、生成物品或修改商店库存。候选来源身份由透明商店预览的 `shop_id` 验证，关闭或不可达时仍在上游排除。
 - 当前 runner 配置入口达到 `24/26`；剩余 2 层为奖励物和地点鱼。本轮不增加生产 evidence index，正式训练仍为 `false`。
 
@@ -1873,3 +1890,12 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 三候选比较样本中，模型第一名与 Teacher 选择一致，Teacher 候选 rank 为 1。输出同时保留全排名、Pareto 前沿标记和一致性结论，但固定 `selection_mode=read_only_teacher_comparison`、`portfolio_commit_authorized=false`、`formal_product_training_authorized=false`。
 - 验证通过：独立评分 CLI、GoalConditionedBootstrap Release `0 warning / 0 error`、完整 Stage 1 collection self-test、Core game-free `81/81`、Backend `203/203`。未启动游戏或正式训练。
 - 这一步证明检查点能被确定性重放和推理，不是实时策略接管。下一固定切片是对当前 fresh snapshot 重新构造完整候选分母，在唯一严格 Pareto 时继续服从 Teacher，在不可比前沿时只生成受门控的模型影子选择；19/19 覆盖门解除前仍不得接入 commit/dispatch。
+
+## 2026-10-12 Full Shipment 原生商店购买路线断点
+
+- 商店购买代表已锁定为 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。它复用唯一的 `economy.buy_supplies` 路线、共享移动、`executor.interact`、可选 `executor.choose_dialogue_response`、`executor.buy_shop_item` 和菜单清理链；没有新增平行商店执行器。
+- 编译器现在在同一计划内顺序投影 `move_to_tile` 后的地点与格点，使紧随其后的相邻交互按计划前态校验；投影仅在当前、目标和投影地点精确一致时生效，跨图或身份不一致仍回退到 fresh snapshot 并失败关闭。商店 supporting transition 只额外允许精确的 `move -> interact` 和 `move -> interact -> dialogue` 队列形状，乱序或扩展形状继续拒绝。
+- 运行时等待会在 connector 后保存 `stable-replan-snapshot.json`，要求地点、兼容性和路线时序同时稳定。ShopMenu 已打开且 `shop_stock` 可读、非只读时，允许零游戏分钟的关菜单恢复证明，不把菜单暂停误判为路线时序失效。RuntimeTestHarness 的空闲冻结仅在 `Game1.player.CanMove` 时介入，避免地图切换淡入阶段被永久冻结。
+- v3 隔离运行原生通过 Farm 到 BusStop、BusStop 到 Town，并到达 Blacksmith 稳定站位；旧 stage 4 因队列内位置未投影而拒绝。修复后对该完全相同失败产物离线重编译得到 `ready_for_supporting_transition_dispatch / dispatch_ready=true`。v4 从 fresh 隔离存档再次通过前两段，随后按用户要求主动中止；它不是失败证据，也尚不能登记为完整购买成功。
+- 收尾验证：GoalConditionedBootstrap Release `0 warning / 0 error`，聚焦测试 `45/45`，完整 Core game-free `284/284`，`self-test-acquisition-route-dispatch` 通过，`git diff --check` 通过。游戏、Backend、ProductHost 和 `8765/8767/8768/8798` 监听均已退出；F 盘 v3/v4 运行证据保留，`local-data/` 未纳入版本控制。
+- `formal_product_training_authorized=false` 保持不变。下一固定步骤只做一件事：从 fresh 隔离存档完整重跑 `shop_purchase_sample`，验证 Blacksmith 柜台交互、ShopMenu fresh 重规划、精确购买 `(O)380 x1`、菜单关闭及原生回执。通过前不得把本切片记为完整运行时 strata，也不得开始正式训练。

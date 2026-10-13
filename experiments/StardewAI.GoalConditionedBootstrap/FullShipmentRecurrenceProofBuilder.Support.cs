@@ -39,6 +39,32 @@ public static partial class FullShipmentRecurrenceProofBuilder
     private static SnapshotEnvelope ReadSnapshot(string path, string label) =>
         CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(path, label);
 
+    private static bool EquivalentSnapshotStateValue(
+        SnapshotEnvelope left,
+        SnapshotEnvelope right,
+        string section,
+        string field) =>
+        TrySnapshotStateValue(left, section, field, out var leftValue) &&
+        TrySnapshotStateValue(right, section, field, out var rightValue) &&
+        leftValue.GetRawText() == rightValue.GetRawText();
+
+    private static bool TrySnapshotStateValue(
+        SnapshotEnvelope snapshot,
+        string section,
+        string field,
+        out JsonElement value)
+    {
+        value = default;
+        return snapshot.State.TryGetValue(section, out var sectionValue) &&
+            sectionValue.ValueKind == JsonValueKind.Object &&
+            sectionValue.TryGetProperty(field, out var envelope) &&
+            envelope.ValueKind == JsonValueKind.Object &&
+            envelope.TryGetProperty("status", out var status) &&
+            status.ValueKind == JsonValueKind.String &&
+            status.GetString() is "available" or "derived" &&
+            envelope.TryGetProperty("value", out value);
+    }
+
 
 
     private sealed record VerifiedAcquisition(

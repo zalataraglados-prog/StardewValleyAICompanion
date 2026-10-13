@@ -34,6 +34,7 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.advance_story_event" ||
                 action.OptionId == "executor.advance_story_event_minigame" ||
                 IsBoundedLetterViewerSettleWait(action, snapshot) ||
+                IsBoundedShopMenuReadinessWait(action, snapshot) ||
                 (action.OptionId == "executor.sleep" &&
                     string.Equals(
                         ReadParameter(action, "sleep_resume_mode"),
@@ -107,6 +108,173 @@ namespace StardewAI.Core.Execution
                     StringComparison.Ordinal) &&
                 ReadBool(menuState.Value, "can_receive_input") == false;
         }
+
+        private static bool IsBoundedShopMenuReadinessWait(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
+        {
+            return string.Equals(
+                    action.OptionId,
+                    "executor.wait_ticks",
+                    StringComparison.Ordinal) &&
+                int.TryParse(
+                    ReadParameter(action, "wait_ticks"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var waitTicks) &&
+                waitTicks is >= 1 and <= 60 &&
+                HasExactActionParameter(
+                    action,
+                    "precondition",
+                    "shop_menu_open=true") &&
+                HasExactActionParameter(
+                    action,
+                    "precondition",
+                    "shop_menu_safety_timer_active=true") &&
+                HasExactActionParameter(
+                    action,
+                    "safety_constraint",
+                    "bounded_native_shop_menu_readiness_wait") &&
+                HasExactActionParameter(
+                    action,
+                    "safety_constraint",
+                    "purchase_continuation_identity_preserved") &&
+                TryFindSafetyTimerDeferredPurchaseCandidate(
+                    action,
+                    snapshot,
+                    "continuation.",
+                    out _);
+        }
+
+        private static bool TryFindSafetyTimerDeferredPurchaseCandidate(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            string identityPrefix,
+            out JsonElement candidate)
+        {
+            candidate = default;
+            var optionId = ReadParameter(action, identityPrefix + "option_id");
+            var shopId = ReadParameter(action, identityPrefix + "shop_id");
+            var qualifiedItemId = ReadParameter(
+                action,
+                identityPrefix + "qualified_item_id");
+            var stockId = ReadParameter(action, identityPrefix + "stock_id");
+            var outputStack = ReadIntParameter(
+                action,
+                identityPrefix + "output_stack_per_purchase");
+            var outputQuality = ReadIntParameter(
+                action,
+                identityPrefix + "output_quality");
+            var maxUnitPrice = ReadIntParameter(
+                action,
+                identityPrefix + "max_unit_price");
+            var quantity = ReadIntParameter(action, identityPrefix + "quantity");
+            if (!string.Equals(
+                    optionId,
+                    "economy.buy_supplies",
+                    StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(shopId) ||
+                string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                string.IsNullOrWhiteSpace(stockId) ||
+                outputStack is null or <= 0 ||
+                outputQuality is null or < 0 ||
+                maxUnitPrice is null or < 0 ||
+                quantity != 1 ||
+                !string.Equals(
+                    ActiveMenuType(snapshot),
+                    "ShopMenu",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var menu = ReadStateFieldValue(
+                snapshot,
+                "menus",
+                "menu_specific_state");
+            var stock = ReadStateFieldValue(snapshot, "menus", "shop_stock");
+            if (!menu.HasValue ||
+                menu.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(menu.Value, "kind"),
+                    "shop",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadString(menu.Value, "shop_id"),
+                    shopId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                ReadNullableBool(menu.Value, "read_only") != false ||
+                ReadIntOptional(menu.Value, "safety_timer") is not > 0 ||
+                ReadNullableBool(menu.Value, "held_item_present") != false ||
+                !stock.HasValue ||
+                stock.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(stock.Value, "shop_id"),
+                    shopId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                ReadNullableBool(stock.Value, "read_only") != false ||
+                ReadIntOptional(stock.Value, "safety_timer") is not > 0 ||
+                ReadNullableBool(stock.Value, "held_item_present") != false ||
+                ReadIntOptional(stock.Value, "currency") != 0 ||
+                ReadNullableBool(stock.Value, "shop_on_purchase_present") != false ||
+                !stock.Value.TryGetProperty("entries", out var entries) ||
+                entries.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            foreach (var entry in entries.EnumerateArray())
+            {
+                if (entry.ValueKind != JsonValueKind.Object ||
+                    !string.Equals(
+                        ReadString(entry, "qualified_item_id"),
+                        qualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(
+                        ReadString(entry, "synced_key"),
+                        stockId,
+                        StringComparison.Ordinal) ||
+                    ReadIntOptional(entry, "stack") != outputStack.Value ||
+                    ReadIntOptional(entry, "quality") != outputQuality.Value ||
+                    ReadIntOptional(entry, "price") is not int price ||
+                    price > maxUnitPrice.Value ||
+                    ReadNullableBool(entry, "can_buy_item") != true ||
+                    ReadNullableBool(entry, "can_afford_one_with_currency") != true ||
+                    ReadNullableBool(entry, "can_afford_one_with_trade_item") != true ||
+                    ReadNullableBool(entry, "could_inventory_accept") != true ||
+                    ReadNullableBool(entry, "executor_purchase_enabled") != false ||
+                    !HasOnlyShopSafetyTimerBlockReason(entry))
+                {
+                    continue;
+                }
+
+                candidate = entry;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasOnlyShopSafetyTimerBlockReason(JsonElement entry)
+        {
+            return entry.TryGetProperty(
+                    "executor_block_reasons",
+                    out var reasons) &&
+                reasons.ValueKind == JsonValueKind.Array &&
+                reasons.GetArrayLength() == 1 &&
+                reasons[0].ValueKind == JsonValueKind.String &&
+                string.Equals(
+                    reasons[0].GetString(),
+                    "shop_menu_safety_timer_active",
+                    StringComparison.Ordinal);
+        }
+
+        private static bool HasExactActionParameter(
+            SmallModelAction action,
+            string name,
+            string value) => action.Parameters.Any(parameter =>
+                string.Equals(parameter.Name, name, StringComparison.Ordinal) &&
+                string.Equals(parameter.Value, value, StringComparison.Ordinal));
 
         private static string[] ValidateSleepPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
@@ -194,7 +362,11 @@ namespace StardewAI.Core.Execution
                     expectedActionType);
             }
 
-            if (!InteractTargetWithinOneTile(snapshot, targetX.Value, targetY.Value))
+            if (!InteractTargetWithinOneTile(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value))
             {
                 return new[] { "interact_target_not_adjacent" };
             }
@@ -286,10 +458,44 @@ namespace StardewAI.Core.Execution
                 string.Equals(ReadString(chest, "expected_action_type"), "SkullKeyChest", StringComparison.Ordinal));
         }
 
-        private static bool InteractTargetWithinOneTile(SnapshotEnvelope snapshot, int targetX, int targetY)
+        private static bool InteractTargetWithinOneTile(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY)
         {
-            var playerX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
+            var currentLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            var projectedLocation = ReadParameter(
+                action,
+                "compiler_context.player_location_before_step");
+            var targetLocation = ReadParameter(action, "target_location");
+            var projectedX = ReadIntParameter(
+                action,
+                "compiler_context.player_tile_x_before_step");
+            var projectedY = ReadIntParameter(
+                action,
+                "compiler_context.player_tile_y_before_step");
+            var useProjection = projectedX.HasValue &&
+                projectedY.HasValue &&
+                !string.IsNullOrWhiteSpace(projectedLocation) &&
+                string.Equals(
+                    projectedLocation,
+                    currentLocation,
+                    StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(targetLocation) ||
+                 string.Equals(
+                     targetLocation,
+                     projectedLocation,
+                     StringComparison.OrdinalIgnoreCase));
+            var playerX = useProjection
+                ? projectedX
+                : ReadStateFieldIntOptional(snapshot, "player", "tile_x");
+            var playerY = useProjection
+                ? projectedY
+                : ReadStateFieldIntOptional(snapshot, "player", "tile_y");
             return playerX.HasValue && playerY.HasValue && Math.Abs(playerX.Value - targetX) + Math.Abs(playerY.Value - targetY) == 1;
         }
 

@@ -228,6 +228,46 @@ internal static partial class BootstrapSelfTest
                 "EVD-106",
                 StringComparer.Ordinal),
             "Goal-method reconciliation confused action evidence with criterion coverage.");
+        var moneyFamily = reconciliation.MethodFamilies.Single(family =>
+            family.FamilyId ==
+                "progression.economy.total_money_earned");
+        var museumFamily = reconciliation.MethodFamilies.Single(family =>
+            family.FamilyId == "progression.museum.donations");
+        Require(
+            reconciliation.SchemaVersion ==
+                "goal_method_coverage_reconciliation.v3" &&
+            reconciliation.MethodFamilies.Length == 10 &&
+            reconciliation.Efficiency.FrontierBuildCount == 1 &&
+            reconciliation.Efficiency.PreviousFrontierBuildCount == 2 &&
+            reconciliation.Efficiency.CriterionViewCount == 19 &&
+            reconciliation.Efficiency.RootMethodCount == 11 &&
+            reconciliation.Efficiency.ProgressionFamilyCount == 10 &&
+            reconciliation.Efficiency.MonotoneThresholdFamilyCount == 3 &&
+            reconciliation.Efficiency
+                .TheoreticalIndependentProgressionBuildCount == 19 &&
+            reconciliation.Efficiency.SharedProgressionBuildCount == 10 &&
+            reconciliation.Efficiency
+                .TheoreticalProgressionBuildsAvoided == 9 &&
+            moneyFamily.FamilyKind == "monotone_threshold" &&
+            moneyFamily.MethodIds.Length == 1 &&
+            moneyFamily.CriterionViews.Select(view => view.Target)
+                .SequenceEqual(
+                    new[]
+                    {
+                        "50000", "100000", "200000", "300000",
+                        "500000", "1000000"
+                    },
+                    StringComparer.Ordinal) &&
+            moneyFamily.CriterionViews.All(view =>
+                view.Operation == "gte" &&
+                view.TeacherGoalContextId.StartsWith(
+                    "grandpa.criterion:",
+                    StringComparison.Ordinal)) &&
+            museumFamily.FamilyKind == "shared_progression" &&
+            museumFamily.MethodIds.Length == 2 &&
+            museumFamily.CriterionViews.Length == 2,
+            "Goal-method family projection did not preserve the 19/11 " +
+            "authority or shared progression boundaries.");
         Write(
             Path.Combine(
                 fullOutputRoot,

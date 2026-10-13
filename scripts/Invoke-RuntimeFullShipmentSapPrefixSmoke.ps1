@@ -65,6 +65,12 @@ if (-not (Test-Path -LiteralPath $runtimeEvidenceCommon -PathType Leaf)) {
     throw "Runtime evidence helper is missing: $runtimeEvidenceCommon"
 }
 . $runtimeEvidenceCommon
+$shopPurchaseHelper = Join-Path $PSScriptRoot `
+    "lib\RuntimeShopPurchaseAcquisition.ps1"
+if (-not (Test-Path -LiteralPath $shopPurchaseHelper -PathType Leaf)) {
+    throw "Runtime shop acquisition helper is missing: $shopPurchaseHelper"
+}
+. $shopPurchaseHelper
 
 if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
     $ProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
@@ -109,7 +115,7 @@ $sampleRequirementId = switch ($Scenario) {
     "geode_drop_sample" { "full_shipment:item:386" }
     "community_center_reward_sample" { "full_shipment:item:336" }
     "location_fish_spawn_sample" { "full_shipment:item:388" }
-    "shop_purchase_sample" { "full_shipment:item:388" }
+    "shop_purchase_sample" { "full_shipment:item:380" }
     "monster_drop_sample" { "full_shipment:item:766" }
     "radioactive_ore_node_sample" { "full_shipment:item:909" }
     default { "full_shipment:item:92" }
@@ -137,7 +143,7 @@ $sampleQualifiedItemId = switch ($Scenario) {
     "geode_drop_sample" { "(O)386" }
     "community_center_reward_sample" { "(O)336" }
     "location_fish_spawn_sample" { "(O)388" }
-    "shop_purchase_sample" { "(O)388" }
+    "shop_purchase_sample" { "(O)380" }
     "monster_drop_sample" { "(O)766" }
     "radioactive_ore_node_sample" { "(O)909" }
     default { "(O)92" }
@@ -247,15 +253,15 @@ $sampleRankingParameters = switch ($Scenario) {
         @(
             [ordered]@{
                 name = "continuation.shop_id"
-                value = "Carpenter"
+                value = "Blacksmith"
             },
             [ordered]@{
                 name = "continuation.qualified_item_id"
-                value = "(O)388"
+                value = "(O)380"
             },
             [ordered]@{
                 name = "continuation.max_unit_price"
-                value = "10"
+                value = "150"
             },
             [ordered]@{
                 name = "continuation.quantity"
@@ -1632,6 +1638,7 @@ try {
     Assert-FullShipmentState -Snapshot $initial.Value `
         -Shipped 0 -Missing 154 -SapInBin 0 -Phase "initial"
 
+    $proofBeforeSnapshotPath = $initialSnapshotPath
     if ([string]::IsNullOrWhiteSpace($ReplayAcquisitionQueue)) {
     $rankingPath = Join-Path $planningDirectory "ranking-acquisition.json"
     Invoke-Ranking -SnapshotStateHash $initial.Value.state_hash `
@@ -1884,56 +1891,109 @@ try {
     }
     $routeOccurrenceId = [string]$routeIds[0]
 
-    $admission = Get-Content -LiteralPath $admissionPath -Raw |
-        ConvertFrom-Json
-    $commitResultResponse = Invoke-JsonPost -Url (
-        "$backendUrl/api/v1/strategy/commitments/" +
-        "reservation-portfolios/commit") `
-        -Body $admission.atomic_commit_request
-    $commitResultPath = Join-Path $planningDirectory `
-        "portfolio-commit-result.json"
-    $committedLedgerPath = Join-Path $planningDirectory `
-        "committed-strategy-ledger.json"
-    Write-Utf8Text -Path $commitResultPath -Value $commitResultResponse.Raw
-    Write-JsonFile -Path $committedLedgerPath `
-        -Value $commitResultResponse.Value.ledger
-    $commitReceiptPath = Join-Path $planningDirectory `
-        "portfolio-commit-receipt.json"
-    Invoke-Bootstrap (@(
-        "build-acquisition-route-portfolio-commit-receipt"
-    ) + $portfolioCommon + @(
-        "--proposal", $proposalPath,
-        "--portfolio-admission", $admissionPath,
-        "--committed-ledger", $committedLedgerPath,
-        "--commit-result", $commitResultPath,
-        "--output", $commitReceiptPath
-    ))
+    $proofBeforeSnapshotPath = $initialSnapshotPath
+    $shopNavigationManifestPath = ""
+    if ($Scenario -eq "shop_purchase_sample") {
+        $initialShopPlanning = [pscustomobject][ordered]@{
+            Directory = $planningDirectory
+            SnapshotPath = $initialSnapshotPath
+            StrategyLedgerPath = $strategyLedgerPath
+            RankingPath = $rankingPath
+            CalendarPath = $calendarResolutionPath
+            TargetCalendarPath = $targetCalendarPath
+            Axis = $axis
+            ForecastPath = $forecastPath
+            PortfolioCommon = $portfolioCommon
+        }
+        $prepared = Invoke-RuntimeShopPurchaseAcquisitionPreparation `
+            -InitialPlanning $initialShopPlanning `
+            -PlanningDirectory $planningDirectory `
+            -RequirementInventoryPath $requirementInventoryPath `
+            -AcquisitionLoweringPath $acquisitionLoweringPath `
+            -MasterAnglerWindowsPath $masterAnglerWindowsPath `
+            -RouteTimingPath $routeTimingPath `
+            -RequirementId $sampleRequirementId `
+            -QualifiedItemId $sampleQualifiedItemId `
+            -ShopId "Blacksmith" `
+            -RouteOccurrenceId $routeOccurrenceId `
+            -RankingOptionId $sampleRankingOptionId `
+            -RankingParameters $sampleRankingParameters `
+            -GoalId $GoalId -RunId $RunId `
+            -BackendUrl $backendUrl -SnapshotProfile $SnapshotProfile
+        $proofBeforeSnapshotPath = $prepared.BeforeSnapshotPath
+        $queuePath = $prepared.QueuePath
+        $dispatchPath = $prepared.DispatchPath
+        $bindingPath = $prepared.BindingPath
+        $executionCommon = $prepared.ExecutionCommon
+        $portfolioCommon = $prepared.PortfolioCommon
+        $proposalPath = $prepared.ProposalPath
+        $admissionPath = $prepared.AdmissionPath
+        $preferenceRequestPath = $prepared.PreferenceRequestPath
+        $teacherPreferencePath = $prepared.TeacherPreferencePath
+        $commitReceiptPath = $prepared.CommitReceiptPath
+        $committedLedgerPath = $prepared.CommittedLedgerPath
+        $commitResultPath = $prepared.CommitResultPath
+        $shopNavigationManifestPath = $prepared.NavigationManifestPath
+        $strategyLedgerPath = $prepared.Planning.StrategyLedgerPath
+        $rankingPath = $prepared.Planning.RankingPath
+        $calendarResolutionPath = $prepared.Planning.CalendarPath
+        $targetCalendarPath = $prepared.Planning.TargetCalendarPath
+        $axis = $prepared.Planning.Axis
+        $forecastPath = $prepared.Planning.ForecastPath
+    }
+    else {
+        $admission = Get-Content -LiteralPath $admissionPath -Raw |
+            ConvertFrom-Json
+        $commitResultResponse = Invoke-JsonPost -Url (
+            "$backendUrl/api/v1/strategy/commitments/" +
+            "reservation-portfolios/commit") `
+            -Body $admission.atomic_commit_request
+        $commitResultPath = Join-Path $planningDirectory `
+            "portfolio-commit-result.json"
+        $committedLedgerPath = Join-Path $planningDirectory `
+            "committed-strategy-ledger.json"
+        Write-Utf8Text -Path $commitResultPath `
+            -Value $commitResultResponse.Raw
+        Write-JsonFile -Path $committedLedgerPath `
+            -Value $commitResultResponse.Value.ledger
+        $commitReceiptPath = Join-Path $planningDirectory `
+            "portfolio-commit-receipt.json"
+        Invoke-Bootstrap (@(
+            "build-acquisition-route-portfolio-commit-receipt"
+        ) + $portfolioCommon + @(
+            "--proposal", $proposalPath,
+            "--portfolio-admission", $admissionPath,
+            "--committed-ledger", $committedLedgerPath,
+            "--commit-result", $commitResultPath,
+            "--output", $commitReceiptPath
+        ))
 
-    $queuePath = Join-Path $planningDirectory "action-queue.json"
-    $dispatchPath = Join-Path $planningDirectory `
-        "dispatch-compilation.json"
-    $executionCommon = $portfolioCommon + @(
-        "--portfolio-proposal", $proposalPath,
-        "--portfolio-admission", $admissionPath,
-        "--portfolio-preference-request", $preferenceRequestPath,
-        "--portfolio-teacher-preference", $teacherPreferencePath,
-        "--portfolio-commit-receipt", $commitReceiptPath,
-        "--committed-strategy-ledger", $committedLedgerPath,
-        "--portfolio-commit-result", $commitResultPath,
-        "--route-occurrence-id", $routeOccurrenceId
-    )
-    Invoke-Bootstrap (@("compile-acquisition-route-dispatch") +
-        $executionCommon + @(
-            "--ranking", $rankingPath,
-            "--queue-output", $queuePath,
-            "--output", $dispatchPath
-        ))
-    $bindingPath = Join-Path $planningDirectory "execution-binding.json"
-    Invoke-Bootstrap (@("build-acquisition-route-execution-binding") +
-        $executionCommon + @(
-            "--action-queue", $queuePath,
-            "--output", $bindingPath
-        ))
+        $queuePath = Join-Path $planningDirectory "action-queue.json"
+        $dispatchPath = Join-Path $planningDirectory `
+            "dispatch-compilation.json"
+        $executionCommon = $portfolioCommon + @(
+            "--portfolio-proposal", $proposalPath,
+            "--portfolio-admission", $admissionPath,
+            "--portfolio-preference-request", $preferenceRequestPath,
+            "--portfolio-teacher-preference", $teacherPreferencePath,
+            "--portfolio-commit-receipt", $commitReceiptPath,
+            "--committed-strategy-ledger", $committedLedgerPath,
+            "--portfolio-commit-result", $commitResultPath,
+            "--route-occurrence-id", $routeOccurrenceId
+        )
+        Invoke-Bootstrap (@("compile-acquisition-route-dispatch") +
+            $executionCommon + @(
+                "--ranking", $rankingPath,
+                "--queue-output", $queuePath,
+                "--output", $dispatchPath
+            ))
+        $bindingPath = Join-Path $planningDirectory "execution-binding.json"
+        Invoke-Bootstrap (@("build-acquisition-route-execution-binding") +
+            $executionCommon + @(
+                "--action-queue", $queuePath,
+                "--output", $bindingPath
+            ))
+    }
     $executionBinding = Get-Content -LiteralPath $bindingPath -Raw |
         ConvertFrom-Json
     $actualBindingTuple = @(
@@ -1978,7 +2038,7 @@ try {
 
     $acquisition = Invoke-PrecompiledQueue `
         -Name "01-acquire-sample" -QueuePath $queuePath `
-        -BeforePath $initialSnapshotPath
+        -BeforePath $proofBeforeSnapshotPath
     $acquiredInventory = @((Read-StateValue `
         $acquisition.After "player" "inventory") | Where-Object {
             [string]$_.qualified_item_id -eq $sampleQualifiedItemId -and
@@ -2089,7 +2149,7 @@ try {
         target_date_opportunity_cost_path = $axis["opportunity-cost"]
         fishing_forecast_manifest_path = $forecastPath
         strategy_ledger_path = $strategyLedgerPath
-        before_snapshot_path = $initialSnapshotPath
+        before_snapshot_path = $proofBeforeSnapshotPath
         route_timing_calibration_path = $routeTimingPath
         portfolio_proposal_path = $proposalPath
         portfolio_admission_path = $admissionPath

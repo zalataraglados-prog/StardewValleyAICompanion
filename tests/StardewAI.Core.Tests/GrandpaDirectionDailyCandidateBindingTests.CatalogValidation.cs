@@ -79,6 +79,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Equal(19, criteria.Length);
         Assert.All(GrandpaDirectionCatalog.Entries, entry =>
         {
+            Assert.False(string.IsNullOrWhiteSpace(entry.ProgressionFamilyId));
             Assert.False(string.IsNullOrWhiteSpace(entry.Domain));
             Assert.False(string.IsNullOrWhiteSpace(entry.Label));
             Assert.False(string.IsNullOrWhiteSpace(entry.FeedbackKey));

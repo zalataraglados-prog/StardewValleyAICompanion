@@ -175,11 +175,14 @@ internal sealed class AcquisitionLocationRouteSnapshotState
         FutureRouteTimingCalibration? timing = null;
         if (movement.ValueKind != JsonValueKind.Undefined)
         {
+            var shopMenuCloseRecoveryAvailable =
+                ZeroGameMinuteShopMenuCloseRecoveryAvailable(state);
             var load = new FutureRouteTimingCalibrationLoader().Load(
                 File.ReadAllText(Path.GetFullPath(timingCalibrationPath)),
                 movement,
                 expectedGameVersion,
-                targetTotalDay);
+                targetTotalDay,
+                shopMenuCloseRecoveryAvailable);
             if (load.Status == FutureRouteTimingCalibrationLoadStatus.Loaded)
                 timing = load.Calibration;
             else
@@ -218,6 +221,26 @@ internal sealed class AcquisitionLocationRouteSnapshotState
             reasons.Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
                 .ToArray());
+    }
+
+    private static bool ZeroGameMinuteShopMenuCloseRecoveryAvailable(
+        JsonElement state)
+    {
+        if (!TryFieldValue(state, "menus", "active_menu", out var activeMenu) ||
+            activeMenu.ValueKind != JsonValueKind.Object ||
+            ReadBool(activeMenu, "is_open") != true ||
+            !string.Equals(
+                ReadString(activeMenu, "type"),
+                "ShopMenu",
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return TryFieldValue(state, "menus", "shop_stock", out var shopStock) &&
+            shopStock.ValueKind == JsonValueKind.Object &&
+            !string.IsNullOrWhiteSpace(ReadString(shopStock, "shop_id")) &&
+            ReadBool(shopStock, "read_only") != true;
     }
 
     private static Dictionary<string, AcquisitionRouteLocationState>

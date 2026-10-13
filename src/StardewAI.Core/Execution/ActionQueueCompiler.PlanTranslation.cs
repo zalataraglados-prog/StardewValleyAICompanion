@@ -23,8 +23,12 @@ namespace StardewAI.Core.Execution
             SmallModelPlanStep step,
             int stepIndex,
             int stepCount,
+            bool precededByBoundedShopMenuReadinessWait,
             bool activeMenuOpenBeforeStep,
-            string activeMenuTypeBeforeStep)
+            string activeMenuTypeBeforeStep,
+            string playerLocationBeforeStep,
+            int? playerTileXBeforeStep,
+            int? playerTileYBeforeStep)
         {
             var parameters = new List<SmallModelActionParameter>
             {
@@ -34,8 +38,29 @@ namespace StardewAI.Core.Execution
                 Parameter("compiler_context.plan_step_count", stepCount.ToString()),
                 Parameter("compiler_context.is_terminal_step", (stepIndex == stepCount - 1).ToString().ToLowerInvariant()),
                 Parameter("compiler_context.active_menu_open_before_step", activeMenuOpenBeforeStep.ToString().ToLowerInvariant()),
-                Parameter("compiler_context.active_menu_type_before_step", activeMenuTypeBeforeStep)
+                Parameter("compiler_context.active_menu_type_before_step", activeMenuTypeBeforeStep),
+                Parameter("compiler_context.player_location_before_step", playerLocationBeforeStep)
             };
+
+            if (precededByBoundedShopMenuReadinessWait)
+            {
+                parameters.Add(Parameter(
+                    "compiler_context.preceded_by_bounded_shop_menu_readiness_wait",
+                    "true"));
+            }
+
+            if (playerTileXBeforeStep.HasValue)
+            {
+                parameters.Add(Parameter(
+                    "compiler_context.player_tile_x_before_step",
+                    playerTileXBeforeStep.Value.ToString()));
+            }
+            if (playerTileYBeforeStep.HasValue)
+            {
+                parameters.Add(Parameter(
+                    "compiler_context.player_tile_y_before_step",
+                    playerTileYBeforeStep.Value.ToString()));
+            }
 
             if (step.TargetTileX.HasValue)
             {
@@ -70,6 +95,94 @@ namespace StardewAI.Core.Execution
                 Rationale = "compiled from small_model_plan step",
                 Parameters = parameters.ToArray()
             };
+        }
+
+        private static bool ShopMenuReadinessWaitMatchesPurchase(
+            SmallModelPlanStep wait,
+            SmallModelPlanStep purchase)
+        {
+            if (!string.Equals(wait.Kind, "wait_ticks", StringComparison.Ordinal) ||
+                wait.WaitTicks is < 1 or > 60 ||
+                !string.Equals(purchase.Kind, "buy_shop_item", StringComparison.Ordinal) ||
+                !wait.Preconditions.Contains(
+                    "shop_menu_open=true",
+                    StringComparer.Ordinal) ||
+                !wait.Preconditions.Contains(
+                    "shop_menu_safety_timer_active=true",
+                    StringComparer.Ordinal) ||
+                !wait.SafetyConstraints.Contains(
+                    "bounded_native_shop_menu_readiness_wait",
+                    StringComparer.Ordinal) ||
+                !wait.SafetyConstraints.Contains(
+                    "purchase_continuation_identity_preserved",
+                    StringComparer.Ordinal))
+            {
+                return false;
+            }
+
+            var identityNames = new[]
+            {
+                "continuation.option_id",
+                "continuation.shop_id",
+                "continuation.qualified_item_id",
+                "continuation.stock_id",
+                "continuation.output_stack_per_purchase",
+                "continuation.output_quality",
+                "continuation.max_unit_price",
+                "continuation.quantity"
+            };
+            foreach (var name in identityNames)
+            {
+                var waitValue = UniquePlanStepParameter(wait, name);
+                var purchaseValue = UniquePlanStepParameter(purchase, name);
+                if (string.IsNullOrWhiteSpace(waitValue) ||
+                    !string.Equals(waitValue, purchaseValue, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return string.Equals(
+                    UniquePlanStepParameter(wait, "continuation.option_id"),
+                    "economy.buy_supplies",
+                    StringComparison.Ordinal) &&
+                int.TryParse(
+                    UniquePlanStepParameter(wait, "continuation.output_stack_per_purchase"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var outputStack) &&
+                outputStack > 0 &&
+                int.TryParse(
+                    UniquePlanStepParameter(wait, "continuation.output_quality"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var outputQuality) &&
+                outputQuality >= 0 &&
+                int.TryParse(
+                    UniquePlanStepParameter(wait, "continuation.max_unit_price"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var maxUnitPrice) &&
+                maxUnitPrice >= 0 &&
+                string.Equals(
+                    UniquePlanStepParameter(wait, "continuation.quantity"),
+                    "1",
+                    StringComparison.Ordinal);
+        }
+
+        private static string UniquePlanStepParameter(
+            SmallModelPlanStep step,
+            string name)
+        {
+            var values = step.Parameters
+                .Where(parameter => string.Equals(
+                    parameter.Name,
+                    name,
+                    StringComparison.Ordinal))
+                .Select(parameter => parameter.Value)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            return values.Length == 1 ? values[0] : string.Empty;
         }
 
         private static string PlanStepOptionId(string kind)

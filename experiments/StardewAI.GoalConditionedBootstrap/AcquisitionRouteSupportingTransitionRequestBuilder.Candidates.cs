@@ -17,7 +17,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         PolicyEventCandidatePrediction? candidate,
         int? currentDay,
         int supportDeadlineTotalDay,
-        AcquisitionMachineCapacitySupportBinding? capacityBinding = null)
+        AcquisitionMachineCapacitySupportBinding? capacityBinding = null,
+        AcquisitionPurchasePrerequisiteBinding? purchaseBinding = null)
     {
         if (candidate is null)
             return SupportCandidateEvaluation.Empty;
@@ -48,7 +49,14 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                 reservation,
                 candidate,
                 currentDay,
-                supportDeadlineTotalDay),
+                supportDeadlineTotalDay,
+                purchaseBinding),
+            "shop_purchase_navigation" => EvaluatePurchaseCandidate(
+                reservation,
+                candidate,
+                currentDay,
+                supportDeadlineTotalDay,
+                purchaseBinding),
             "machine_capacity_establishment" =>
                 EvaluateMachineCapacityCandidate(
                     candidate,
@@ -113,11 +121,13 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         AcquisitionRouteTargetDateReservation reservation,
         PolicyEventCandidatePrediction candidate,
         int? currentDay,
-        int supportDeadlineTotalDay)
+        int supportDeadlineTotalDay,
+        AcquisitionPurchasePrerequisiteBinding? purchaseBinding)
     {
         var reasons = new List<string>();
-        var purchase = reservation.UpstreamRoute.CurrencyEvaluation?
-            .PurchasePrerequisite;
+        var purchase = purchaseBinding ??
+            reservation.UpstreamRoute.CurrencyEvaluation?
+                .PurchasePrerequisite;
         if (!candidate.Available)
             reasons.Add("machine_input_purchase_candidate_not_ready_now");
         if (purchase is null ||

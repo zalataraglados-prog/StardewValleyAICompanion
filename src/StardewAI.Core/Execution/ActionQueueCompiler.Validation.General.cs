@@ -391,6 +391,23 @@ namespace StardewAI.Core.Execution
                 qualifiedItemId,
                 shopItemId,
                 expectedStockId);
+            var safetyTimerDeferred = false;
+            if (candidate is null &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "compiler_context.preceded_by_bounded_shop_menu_readiness_wait"),
+                    "true",
+                    StringComparison.Ordinal) &&
+                TryFindSafetyTimerDeferredPurchaseCandidate(
+                    action,
+                    snapshot,
+                    "continuation.",
+                    out var deferredCandidate))
+            {
+                candidate = deferredCandidate;
+                safetyTimerDeferred = true;
+            }
             if (candidate is null && !exactIdentityRequested)
                 candidate = FirstSafePurchaseCandidate(snapshot);
             if (candidate is null)
@@ -401,7 +418,8 @@ namespace StardewAI.Core.Execution
                 return reasons.Distinct(StringComparer.Ordinal).ToArray();
             }
 
-            if (ReadBool(candidate.Value, "executor_purchase_enabled") != true)
+            if (!safetyTimerDeferred &&
+                ReadBool(candidate.Value, "executor_purchase_enabled") != true)
             {
                 reasons.Add("purchase_candidate_not_executor_enabled");
             }

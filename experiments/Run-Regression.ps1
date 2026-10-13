@@ -279,9 +279,14 @@ $calendarSupportedRouteKinds = @(
     'native_location_artifact_spot',
     'native_location_fish_spawn',
     'native_location_forage_spawn',
+    'native_fish_pond_output',
+    'native_monster_drop_table',
     'native_mine_fishing_override',
     'native_machine_flavored_output',
-    'native_machine_item_query_output'
+    'native_machine_item_query_output',
+    'native_radioactive_ore_node',
+    'native_wild_tree_chop_drop',
+    'native_wild_tree_tapper_output'
 )
 $calendarSupportedRoutes = @($loweredRoutes | Where-Object {
     $_.route_kind -in $calendarSupportedRouteKinds
@@ -432,10 +437,10 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $routeCalendarResolution.native_game_state_query_source_sha256 -ne `
         $nativeGameStateQueryEvidence[0].sha256 -or
     [int]$routeCalendarResolution.route_occurrence_count -ne $loweredRoutes.Count -or
-    [int]$routeCalendarResolution.resolved_static_source_count -ne 877 -or
-    [int]$routeCalendarResolution.blocked_static_source_count -ne 722 -or
-    $calendarSupportedRoutes.Count -ne 877 -or
-    $resolvedCalendarRoutes.Count -ne 877 -or
+    [int]$routeCalendarResolution.resolved_static_source_count -ne 1382 -or
+    [int]$routeCalendarResolution.blocked_static_source_count -ne 217 -or
+    $calendarSupportedRoutes.Count -ne 1382 -or
+    $resolvedCalendarRoutes.Count -ne 1382 -or
     $resolvedCropRoutes.Count -ne 75 -or
     $wildSeedCropRoutes.Count -ne 8 -or
     $invalidCropRoutes.Count -ne 0 -or
@@ -446,7 +451,7 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     $invalidMachineRoutes.Count -ne 0 -or
     @($resolvedMachineRoutes | Where-Object {
         [bool]$_.machine_source.stochastic_outcome
-    }).Count -ne 98 -or
+    }).Count -ne 102 -or
     @($resolvedMachineRoutes | Where-Object {
         $_.route_kind -eq 'native_machine_flavored_output'
     }).Count -ne 12 -or
@@ -477,6 +482,21 @@ if ($routeCalendarResolution.status -ne 'partial_static_sources_explicitly_block
     @($resolvedCalendarRoutes | Where-Object {
         $_.evidence_class -eq 'runtime_location_nonfish_fishing_window'
     }).Count -ne 8 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.route_kind -eq 'native_fish_pond_output'
+    }).Count -ne 132 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.route_kind -eq 'native_monster_drop_table'
+    }).Count -ne 321 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.route_kind -eq 'native_radioactive_ore_node'
+    }).Count -ne 1 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.route_kind -eq 'native_wild_tree_chop_drop'
+    }).Count -ne 26 -or
+    @($resolvedCalendarRoutes | Where-Object {
+        $_.route_kind -eq 'native_wild_tree_tapper_output'
+    }).Count -ne 25 -or
     @($resolvedCalendarRoutes | Where-Object {
         @($_.calendar_windows).Count -eq 0
     }).Count -ne 0 -or
@@ -523,10 +543,10 @@ if ($targetDateCalendar.status -ne `
     [bool]$targetDateCalendar.training_label_eligible -or
     [int]$targetDateCalendar.target_total_day -ne 0 -or
     [int]$targetDateCalendar.route_occurrence_count -ne 1599 -or
-    [int]$targetDateCalendar.calendar_axis_resolved_count -ne 877 -or
-    [int]$targetDateCalendar.static_window_match_count -ne 639 -or
+    [int]$targetDateCalendar.calendar_axis_resolved_count -ne 1382 -or
+    [int]$targetDateCalendar.static_window_match_count -ne 1144 -or
     [int]$targetDateCalendar.static_window_miss_count -ne 238 -or
-    [int]$targetDateCalendar.blocked_static_source_count -ne 722 -or
+    [int]$targetDateCalendar.blocked_static_source_count -ne 217 -or
     $targetDateRoutes.Count -ne 1599 -or
     @($targetDateRoutes.route_occurrence_id | Select-Object -Unique).Count -ne 1599 -or
     $targetDateCalendar.static_calendar_resolution_sha256 -ne `
@@ -547,6 +567,16 @@ if ($targetDateCalendar.status -ne `
         'native_location_forage_spawn').Count -ne 53 -or
     @($targetDateEligibleRoutes | Where-Object route_kind -eq `
         'native_mine_fishing_override').Count -ne 3 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_fish_pond_output').Count -ne 132 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_monster_drop_table').Count -ne 321 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_radioactive_ore_node').Count -ne 1 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_wild_tree_chop_drop').Count -ne 26 -or
+    @($targetDateEligibleRoutes | Where-Object route_kind -eq `
+        'native_wild_tree_tapper_output').Count -ne 25 -or
     @($targetDateEligibleRoutes | Where-Object route_kind -eq 'sells').Count -ne 93) {
     throw 'Acquisition route target-date calendar-axis regression failed.'
 }
@@ -682,11 +712,11 @@ if ($targetDateUnlock.status -ne 'partial_target_date_unlock_axis_blocks' -or
     [bool]$targetDateUnlock.training_label_eligible -or
     [int]$targetDateUnlock.target_total_day -ne 37 -or
     [int]$targetDateUnlock.route_occurrence_count -ne 1599 -or
-    [int]$targetDateUnlock.unlock_axis_resolved_count -ne 868 -or
-    [int]$targetDateUnlock.unlock_state_match_count -ne 677 -or
+    [int]$targetDateUnlock.unlock_axis_resolved_count -ne 1373 -or
+    [int]$targetDateUnlock.unlock_state_match_count -ne 1182 -or
     [int]$targetDateUnlock.unlock_state_miss_count -ne 0 -or
     [int]$targetDateUnlock.static_window_miss_count -ne 191 -or
-    [int]$targetDateUnlock.blocked_upstream_calendar_count -ne 722 -or
+    [int]$targetDateUnlock.blocked_upstream_calendar_count -ne 217 -or
     [int]$targetDateUnlock.blocked_unlock_evidence_count -ne 9 -or
     [int]$targetDateUnlock.pending_calendar_condition_count -ne 6 -or
     [int]$targetDateUnlock.pending_stochastic_condition_count -ne 1 -or
@@ -742,12 +772,12 @@ if ($targetDateFestival.status -ne `
     [bool]$targetDateFestival.training_label_eligible -or
     [int]$targetDateFestival.target_total_day -ne 37 -or
     [int]$targetDateFestival.route_occurrence_count -ne 1599 -or
-    [int]$targetDateFestival.calendar_condition_axis_resolved_count -ne 862 -or
-    [int]$targetDateFestival.calendar_condition_match_count -ne 671 -or
+    [int]$targetDateFestival.calendar_condition_axis_resolved_count -ne 1367 -or
+    [int]$targetDateFestival.calendar_condition_match_count -ne 1176 -or
     [int]$targetDateFestival.calendar_condition_miss_count -ne 0 -or
     [int]$targetDateFestival.not_applicable_static_window_count -ne 191 -or
     [int]$targetDateFestival.not_applicable_unlock_state_count -ne 0 -or
-    [int]$targetDateFestival.blocked_upstream_count -ne 731 -or
+    [int]$targetDateFestival.blocked_upstream_count -ne 226 -or
     [int]$targetDateFestival.blocked_calendar_evidence_count -ne 6 -or
     [int]$targetDateFestival.pending_stochastic_condition_count -ne 1 -or
     [int]$targetDateFestival.pending_resource_condition_count -ne 1 -or
@@ -793,21 +823,25 @@ if ($targetDateLocation.status -ne `
         'partial_target_date_location_route_axis_blocks' -or
     [int]$targetDateLocation.target_total_day -ne 37 -or
     [int]$targetDateLocation.route_occurrence_count -ne 1599 -or
-    [int]$targetDateLocation.location_route_axis_resolved_count -ne 191 -or
+    [int]$targetDateLocation.location_route_axis_resolved_count -ne 967 -or
     [int]$targetDateLocation.location_route_match_count -ne 0 -or
-    [int]$targetDateLocation.location_route_miss_count -ne 0 -or
+    [int]$targetDateLocation.location_route_miss_count -ne 776 -or
     [int]$targetDateLocation.not_applicable_static_window_count -ne 191 -or
-    [int]$targetDateLocation.blocked_upstream_count -ne 737 -or
-    [int]$targetDateLocation.blocked_location_evidence_count -ne 671 -or
+    [int]$targetDateLocation.blocked_upstream_count -ne 232 -or
+    [int]$targetDateLocation.blocked_location_evidence_count -ne 400 -or
     [bool]$targetDateLocation.location_route_axis_resolution_complete -or
     [bool]$targetDateLocation.training_label_eligible -or
     $machineLocationRoutes.Count -ne 188 -or
     @($machineLocationRoutes | Where-Object {
-        $_.location_route_axis_status -ne 'blocked_location_route_evidence' -or
+        $_.location_route_axis_status -eq 'resolved_location_route_miss'
+    }).Count -ne 162 -or
+    @($machineLocationRoutes | Where-Object {
+        $_.location_route_axis_status -eq 'blocked_location_route_evidence'
+    }).Count -ne 26 -or
+    @($machineLocationRoutes | Where-Object {
+        $_.location_route_axis_status -eq 'blocked_location_route_evidence' -and
         @($_.blocking_reasons) -notcontains `
-            'location_route_date_evidence_missing' -or
-        @($_.blocking_reasons) -notcontains `
-            'location_route_movement_timing_context_missing'
+            'future_location_route_evidence_input_missing'
     }).Count -ne 0) {
     throw 'Acquisition machine location fail-closed regression failed.'
 }

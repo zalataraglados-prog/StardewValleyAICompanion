@@ -10,7 +10,145 @@ internal static partial class BootstrapSelfTest
         VerifyFullShipmentSettlementEvidence();
         VerifyFullShipmentTerminalSettlementEvidence();
         VerifyFullShipmentRecoveryTransitionEvidence();
+        VerifyFullShipmentRecoveryToSleepBoundary();
         VerifyFullShipmentRecurrenceSequence();
+    }
+
+    private static void VerifyFullShipmentRecoveryToSleepBoundary()
+    {
+        var required = new[] { "(O)24", "(O)60", "(O)80" };
+        var recoveryAfter = FullShipmentRecoveryToSleepSnapshot(
+            gameTick: 1_341,
+            volatileProjectionTick: 1_341,
+            locationId: "FarmHouse",
+            tileX: 3,
+            tileY: 11,
+            parsnipBinCount: 1,
+            parsnipShipped: false);
+        var settlementBefore = FullShipmentRecoveryToSleepSnapshot(
+            gameTick: 1_382,
+            volatileProjectionTick: 1_382,
+            locationId: "FarmHouse",
+            tileX: 3,
+            tileY: 11,
+            parsnipBinCount: 1,
+            parsnipShipped: false);
+        Require(
+            recoveryAfter.StateHash != settlementBefore.StateHash,
+            "The recovery-to-sleep fixture did not model transient drift.");
+        var admitted = FullShipmentRecurrenceProofBuilder
+            .ValidateRecoveryToSleepBoundary(
+                recoveryAfter,
+                settlementBefore,
+                required,
+                "(O)24");
+        Require(
+            admitted.Length == 0,
+            "Transient recovery stabilization was rejected: " +
+            string.Join(",", admitted));
+
+        var moved = FullShipmentRecoveryToSleepSnapshot(
+            gameTick: 1_382,
+            volatileProjectionTick: 1_382,
+            locationId: "FarmHouse",
+            tileX: 4,
+            tileY: 11,
+            parsnipBinCount: 1,
+            parsnipShipped: false);
+        Require(
+            FullShipmentRecurrenceProofBuilder
+                .ValidateRecoveryToSleepBoundary(
+                    recoveryAfter,
+                    moved,
+                    required,
+                    "(O)24")
+                .Contains(
+                    "full_shipment_recovery_sleep_actor_position_drifted"),
+            "Recovery-to-sleep actor movement was admitted.");
+
+        var consumed = FullShipmentRecoveryToSleepSnapshot(
+            gameTick: 1_382,
+            volatileProjectionTick: 1_382,
+            locationId: "FarmHouse",
+            tileX: 3,
+            tileY: 11,
+            parsnipBinCount: 0,
+            parsnipShipped: true);
+        var consumedReasons = FullShipmentRecurrenceProofBuilder
+            .ValidateRecoveryToSleepBoundary(
+                recoveryAfter,
+                consumed,
+                required,
+                "(O)24");
+        Require(
+            consumedReasons.Contains(
+                "full_shipment_recovery_sleep_progress_or_day_drifted") &&
+            consumedReasons.Contains(
+                "full_shipment_recovery_sleep_pending_bin_item_drifted"),
+            "Recovery-to-sleep progress or bin drift was admitted.");
+
+        settlementBefore.StateHash = "tampered";
+        Require(
+            FullShipmentRecurrenceProofBuilder
+                .ValidateRecoveryToSleepBoundary(
+                    recoveryAfter,
+                    settlementBefore,
+                    required,
+                    "(O)24")
+                .Contains(
+                    "full_shipment_recovery_sleep_snapshot_hash_invalid"),
+            "A tampered recovery-to-sleep snapshot was admitted.");
+    }
+
+    private static SnapshotEnvelope FullShipmentRecoveryToSleepSnapshot(
+        long gameTick,
+        int volatileProjectionTick,
+        string locationId,
+        int tileX,
+        int tileY,
+        int parsnipBinCount,
+        bool parsnipShipped)
+    {
+        const int inGameTime = 610;
+        var snapshot = FullShipmentSettlementSnapshot(
+            "pending-hash",
+            totalDay: 0,
+            parsnipShipped: parsnipShipped,
+            obsidianShipped: false,
+            parsnipBinCount: parsnipBinCount,
+            achievement34: false);
+        snapshot.GameTick = gameTick;
+        snapshot.InGameTime = new FieldEnvelope<int?>
+        {
+            Value = inGameTime,
+            Status = FieldStatus.Available
+        };
+        snapshot.State["time"] = JsonSerializer.SerializeToElement(new
+        {
+            total_days = Available(0),
+            time = Available(inGameTime)
+        });
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(new
+        {
+            location_id = Available(locationId),
+            tile_x = Available(tileX),
+            tile_y = Available(tileY),
+            movement_timing_context = Available(new
+            {
+                projection_tick = volatileProjectionTick
+            })
+        });
+        snapshot.State["current_location"] =
+            JsonSerializer.SerializeToElement(new
+            {
+                identity = Available(new
+                {
+                    name = locationId,
+                    unique_name = locationId
+                })
+            });
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return snapshot;
     }
 
     private static void VerifyFullShipmentSettlementEvidence()

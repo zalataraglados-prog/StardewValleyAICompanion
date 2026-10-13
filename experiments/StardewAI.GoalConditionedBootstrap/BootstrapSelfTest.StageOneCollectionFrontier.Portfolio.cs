@@ -414,12 +414,16 @@ internal static partial class BootstrapSelfTest
             var cropPlantingCoverage =
                 VerifyCropPlantingSupportingTransitionProof(
                     targetDateExecutionInputs);
+            var shopPurchaseNavigationCoverage =
+                VerifyShopPurchaseNavigationSupportingTransitionProof(
+                    targetDateExecutionInputs);
             VerifySupportingTransitionTerminalCoverageMatrix(
                 cropPlantingCoverage,
                 machineInputLoadCoverage,
                 machineMaterialTransferCoverage,
                 machineInputPurchaseCoverage,
-                machineCapacityCoverage);
+                machineCapacityCoverage,
+                shopPurchaseNavigationCoverage);
             VerifyTargetDatePortfolioContinuationFixture(
                 targetDateExecutionInputs,
                 targetDateOpportunityShop.RouteOccurrenceId,

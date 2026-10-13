@@ -1523,18 +1523,30 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
-    public void ShopPurchaseSampleBindsCarpenterAndUsesSharedPurchaseChain()
+    public void ShopPurchaseSampleBindsBlacksmithAndUsesSharedPurchaseChain()
     {
         var runner = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var shopHelper = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeShopPurchaseAcquisition.ps1");
+        var locationState = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionLocationRouteSnapshotState.cs");
+        var runtimeHarness = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs");
 
         Assert.Contains(
-            "\"shop_purchase_sample\" { \"full_shipment:item:388\" }",
+            "\"shop_purchase_sample\" { \"full_shipment:item:380\" }",
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"shop_purchase_sample\" { \"(O)388\" }",
+            "\"shop_purchase_sample\" { \"(O)380\" }",
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -1550,7 +1562,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
-            "value = \"Carpenter\"",
+            "value = \"Blacksmith\"",
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -1560,6 +1572,38 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "TargetTime = 900",
             runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Wait-RuntimeShopConnectorStableSnapshot",
+            shopHelper,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route_timing_ready_now",
+            shopHelper,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stable-replan-snapshot.json",
+            shopHelper,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ZeroGameMinuteShopMenuCloseRecoveryAvailable(state)",
+            locationState,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"ShopMenu\"",
+            locationState,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadBool(shopStock, \"read_only\") != true",
+            locationState,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Game1.player.CanMove &&",
+            runtimeHarness,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Game1.player.movementDirections.Count == 0",
+            runtimeHarness,
             StringComparison.Ordinal);
     }
 
@@ -2084,7 +2128,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "full_shipment:item:388|(O)388|sells",
+            "full_shipment:item:380|(O)380|sells",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

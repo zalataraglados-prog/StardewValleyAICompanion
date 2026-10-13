@@ -23,7 +23,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         string ledgerSha256 = "",
         string snapshotSha256 = "",
         string rankingSha256 = "",
-        AcquisitionMachineCapacitySupportBinding? capacityBinding = null)
+        AcquisitionMachineCapacitySupportBinding? capacityBinding = null,
+        AcquisitionPurchasePrerequisiteBinding? purchaseBinding = null)
     {
         var reasons = (inheritedReasons ?? Array.Empty<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -56,6 +57,7 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             reservation,
             processing,
             capacityBinding,
+            purchaseBinding,
             reasons);
         if (matches.Length == 0)
         {
@@ -67,6 +69,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     "no_current_exact_machine_input_support_candidate",
                 "machine_input_purchase" =>
                     "no_current_exact_machine_input_purchase_candidate",
+                "shop_purchase_navigation" =>
+                    "no_current_exact_shop_purchase_navigation_candidate",
                 "machine_capacity_establishment" =>
                     "no_current_exact_machine_capacity_support_candidate",
                 _ => "no_current_exact_support_candidate"
@@ -81,7 +85,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             candidate,
             currentDay,
             supportDeadlineTotalDay,
-            capacityBinding);
+            capacityBinding,
+            purchaseBinding);
         reasons.AddRange(candidateEvaluation.BlockingReasons);
 
         var supportRequestId = SupportRequestId(

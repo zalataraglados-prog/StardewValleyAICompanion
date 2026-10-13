@@ -11,6 +11,13 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         PolicyEventCandidatePrediction? candidate = null) =>
         candidate is
         {
+            OptionId: "economy.buy_supplies",
+            Kind: "route_connector_tile" or "interact_endpoint"
+        } && requirement.RouteKind == "sells"
+            ? AcquisitionRouteSupportingTransitionKinds.ShopPurchaseNavigation
+            :
+        candidate is
+        {
             OptionId: "farm.establish_supported_machine_capacity",
             Kind: "craft_machine_item" or "place_machine_item"
         } && requirement.RouteKind is (
@@ -52,6 +59,46 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             AcquisitionRouteTargetDateProcessing route) =>
         route.UpstreamRoute.UpstreamRoute.CurrencyEvaluation?
             .PurchasePrerequisite;
+
+    internal static AcquisitionPurchasePrerequisiteBinding?
+        DirectShopPurchase(
+            AcquisitionRouteTargetDateProcessing route,
+            AcquisitionRouteCalendarResolution staticRoute)
+    {
+        if (staticRoute.RouteKind != "sells" ||
+            staticRoute.ShopSource is not { } source ||
+            route.UpstreamRoute.UpstreamRoute.CurrencyEvaluation is not
+                { } currency ||
+            currency.PurchasePrerequisite is not null ||
+            currency.CurrencyId != source.Currency ||
+            currency.RequiredAmount is not > 0 ||
+            currency.OutputStackPerPurchase is not > 0 ||
+            currency.OutputQuality is not >= 0 ||
+            currency.RequiredPurchaseCount is not > 0 ||
+            currency.RequiredAmount.Value %
+                currency.RequiredPurchaseCount.Value != 0 ||
+            staticRoute.RequiredAmount <= 0 ||
+            string.IsNullOrWhiteSpace(source.ShopId) ||
+            string.IsNullOrWhiteSpace(source.StockId))
+        {
+            return null;
+        }
+
+        return new AcquisitionPurchasePrerequisiteBinding(
+            "terminal_shop_purchase",
+            source.ShopId,
+            source.StockId,
+            staticRoute.QualifiedItemId,
+            0,
+            staticRoute.RequiredAmount,
+            currency.OutputStackPerPurchase.Value,
+            currency.OutputQuality.Value,
+            currency.CurrencyId,
+            currency.CurrencyKey,
+            currency.RequiredAmount.Value /
+                currency.RequiredPurchaseCount.Value,
+            currency.RequiredPurchaseCount.Value);
+    }
 
     internal static bool PurchaseCandidateMatchesBinding(
         PolicyEventCandidatePrediction candidate,

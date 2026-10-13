@@ -132,7 +132,8 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 transitionReasons = materialTransfer.BlockingReasons;
                 transitionVerified = materialTransfer.Verified;
             }
-            else if (transitionKind == "machine_input_purchase" &&
+            else if (transitionKind is
+                "machine_input_purchase" or "shop_purchase_navigation" &&
                 PurchaseQueueShapeValid(queue))
             {
                 purchaseTransition = VerifyPurchaseTransition(
@@ -266,7 +267,8 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             ? queue.Items.Length == 2
             : kinds[0] == "machine_capacity_establishment"
                 ? MachineCapacityQueueShapeValid(queue)
-            : kinds[0] == "machine_input_purchase"
+            : kinds[0] is
+                "machine_input_purchase" or "shop_purchase_navigation"
                 ? PurchaseQueueShapeValid(queue)
                 : queue.Items.Length == 1;
     }
@@ -288,36 +290,8 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
     }
 
     private static bool PurchaseQueueShapeValid(ActionQueueEnvelope queue)
-    {
-        var items = queue.Items ?? Array.Empty<ActionQueueItem>();
-        var stages = items.Select(item => UniqueParameter(
-                item.NormalizedCommand?.Parameters,
-                "acquisition_support_purchase_stage"))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        if (stages.Length != 1)
-            return false;
-        if (stages[0] is "route_connector" or "shop_interaction")
-            return items.Length == 1;
-        if (stages[0] != "purchase")
-            return false;
-        var optionIds = items.Select(item => item.OptionId).ToArray();
-        return optionIds.SequenceEqual(
-                new[]
-                {
-                    "executor.buy_shop_item",
-                    "executor.close_menu"
-                },
-                StringComparer.Ordinal) ||
-            optionIds.SequenceEqual(
-                new[]
-                {
-                    "executor.wait_ticks",
-                    "executor.buy_shop_item",
-                    "executor.close_menu"
-                },
-                StringComparer.Ordinal);
-    }
+        => AcquisitionRouteSupportingTransitionQueueShapes.Purchase(
+            queue.Items ?? Array.Empty<ActionQueueItem>());
 
     private static string[] ValidateSnapshots(
         SnapshotEnvelope before,

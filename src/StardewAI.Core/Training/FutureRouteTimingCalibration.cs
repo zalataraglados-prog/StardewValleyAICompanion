@@ -82,7 +82,8 @@ namespace StardewAI.Core.Training
             string artifactJson,
             JsonElement movementTimingContextField,
             string expectedGameVersion,
-            int targetTotalDays)
+            int targetTotalDays,
+            bool zeroGameMinuteShopMenuCloseRecoveryAvailable = false)
         {
             if (string.IsNullOrWhiteSpace(artifactJson) ||
                 string.IsNullOrWhiteSpace(expectedGameVersion) ||
@@ -117,7 +118,8 @@ namespace StardewAI.Core.Training
                 var reasons = ValidateArtifact(
                     artifact,
                     movementContext,
-                    expectedGameVersion);
+                    expectedGameVersion,
+                    zeroGameMinuteShopMenuCloseRecoveryAvailable);
                 if (reasons.Count > 0)
                     return Blocked(reasons.ToArray());
 
@@ -148,7 +150,8 @@ namespace StardewAI.Core.Training
         private static List<string> ValidateArtifact(
             JsonElement artifact,
             JsonElement movement,
-            string expectedGameVersion)
+            string expectedGameVersion,
+            bool zeroGameMinuteShopMenuCloseRecoveryAvailable)
         {
             var reasons = new List<string>();
             Require(
@@ -266,7 +269,8 @@ namespace StardewAI.Core.Training
                     MovementScope,
                     StringComparison.Ordinal) &&
                 ReadBool(movement, "runtime_calibration_compatible") == true &&
-                ReadBool(movement, "route_timing_ready_now") == true &&
+                (ReadBool(movement, "route_timing_ready_now") == true ||
+                 zeroGameMinuteShopMenuCloseRecoveryAvailable) &&
                 contextUpperBound > 0d &&
                 movementUpperBound.HasValue &&
                 contextUpperBound <= movementUpperBound,

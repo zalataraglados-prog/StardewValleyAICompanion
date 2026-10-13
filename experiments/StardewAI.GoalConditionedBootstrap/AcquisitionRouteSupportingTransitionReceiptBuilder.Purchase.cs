@@ -12,10 +12,9 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             SnapshotEnvelope before,
             SnapshotEnvelope after)
     {
-        var item = queue.Items.Length == 1
-            ? queue.Items[0]
-            : queue.Items.Single(value =>
-                value.OptionId == "executor.buy_shop_item");
+        var item = queue.Items.SingleOrDefault(value =>
+                value.OptionId == "executor.buy_shop_item") ??
+            queue.Items[0];
         var parameters = item.NormalizedCommand?.Parameters;
         var stage = UniqueParameter(
             parameters,

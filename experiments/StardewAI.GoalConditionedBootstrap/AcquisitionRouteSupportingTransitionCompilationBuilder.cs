@@ -139,7 +139,9 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                 candidates,
                 capacityBinding?.MachineQualifiedItemId ?? string.Empty);
         var purchase = AcquisitionRouteSupportingTransitionRequestBuilder
-            .PurchasePrerequisite(route);
+            .PurchasePrerequisite(route) ??
+            AcquisitionRouteSupportingTransitionRequestBuilder
+                .DirectShopPurchase(route, staticRoute);
         if (purchase is not null)
         {
             matches = matches.Where(match =>

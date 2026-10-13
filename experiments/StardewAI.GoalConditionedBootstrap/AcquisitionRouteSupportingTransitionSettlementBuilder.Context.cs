@@ -169,7 +169,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                 "Support settlement machine intent is not active and exact.");
             machineSupportIntent = intents[0];
         }
-        else if (request.SupportTransitionKind == "machine_input_purchase")
+        else if (request.SupportTransitionKind is
+            "machine_input_purchase" or "shop_purchase_navigation")
         {
             var evidence = transition.PurchaseTransition ??
                 throw new InvalidDataException(
@@ -414,11 +415,11 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     MachineSupportIntentStages.CraftSelected
                     ? "verified_machine_capacity_craft"
                     : "verified_machine_capacity_placement"
-                : context.Request.SupportTransitionKind ==
-                    "machine_input_purchase"
+                : context.Request.SupportTransitionKind is
+                    "machine_input_purchase" or "shop_purchase_navigation"
                 ? context.Request.PurchaseStage == "purchase"
-                    ? "verified_machine_input_purchase"
-                    : "verified_machine_input_purchase_progress"
+                    ? "verified_purchase"
+                    : "verified_purchase_progress"
                 : context.Relocations.Length > 0
                     ? "verified_supporting_transition_relocation"
                     : SettlementReason

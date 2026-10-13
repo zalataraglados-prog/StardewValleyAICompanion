@@ -116,7 +116,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
                     out capacityReasons);
             matches = capacityMatches.Concat(matches).ToArray();
         }
-        var purchase = PurchasePrerequisite(route);
+        var purchase = PurchasePrerequisite(route) ??
+            DirectShopPurchase(route, staticRoute);
         if (purchase is not null)
         {
             matches = matches.Where(match =>
@@ -160,7 +161,8 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             CurrentTeacherFrontierSupport.HashFile(ledgerPath),
             CurrentTeacherFrontierSupport.HashFile(snapshotPath),
             CurrentTeacherFrontierSupport.HashFile(rankingPath),
-            capacityBinding);
+            capacityBinding,
+            purchase);
     }
 
     private static string[] ValidateArtifacts(
