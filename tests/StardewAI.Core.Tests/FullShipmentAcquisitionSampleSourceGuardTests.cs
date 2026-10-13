@@ -571,7 +571,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             candidates,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"native_location_fish_spawn\" or",
+            "\"native_location_forage_spawn\" => ResolveCurrentOrLocationSource(",
             location,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -593,6 +593,22 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "candidate:foraging.collect_spawned_objects",
             retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasQualifiedItemCandidateOutsideSource(",
+            retry,
+            StringComparison.Ordinal);
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.SpawnedObjects.cs");
+        Assert.Contains(
+            "current_native_spawned_object_input_profile",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "compiler:ActionQueueCompiler.CompileCollectSpawnedObjectStep",
+            dailyBudget,
             StringComparison.Ordinal);
     }
 

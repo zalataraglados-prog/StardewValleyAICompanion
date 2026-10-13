@@ -76,6 +76,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_location_forage_spawn" => EvaluateSpawnedObject(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_geode_drop" => EvaluateGeodeDrop(
                 route,
                 staticRoute,

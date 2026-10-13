@@ -25,9 +25,12 @@ internal static class AcquisitionLocationRouteTargetResolver
                 source,
                 state,
                 currentRouteCandidates),
-            "native_location_fish_spawn" or
-            "native_location_forage_spawn" =>
+            "native_location_fish_spawn" =>
                 ResolveLocationSource(source, state),
+            "native_location_forage_spawn" => ResolveCurrentOrLocationSource(
+                source,
+                state,
+                currentRouteCandidates),
             "native_wild_tree_chop_drop" => ResolveWildTreeChop(
                 source,
                 wildTreeChopCandidates),
@@ -69,6 +72,22 @@ internal static class AcquisitionLocationRouteTargetResolver
                 out var matches,
                 out _) &&
             matches.Length > 0)
+        {
+            return ResolveCurrentCandidate(route, candidates);
+        }
+        return ResolveLocationSource(route, state);
+    }
+
+    private static AcquisitionLocationTargetResolution
+        ResolveCurrentOrLocationSource(
+            AcquisitionRouteTargetDateUnlock route,
+            AcquisitionLocationRouteSnapshotState state,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (candidates.HasExactRouteCandidate(
+                route.RouteKind,
+                route.SourceId,
+                route.QualifiedItemId))
         {
             return ResolveCurrentCandidate(route, candidates);
         }

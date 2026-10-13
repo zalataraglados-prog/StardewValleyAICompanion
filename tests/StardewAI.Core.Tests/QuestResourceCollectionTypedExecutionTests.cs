@@ -46,6 +46,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             parameter.Value.Contains(
                 "location:Farm:2",
                 StringComparison.Ordinal));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "target_location" &&
+            parameter.Value == "Farm");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "20");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "target_tile_y" && parameter.Value == "20");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "stand_tile_x" && parameter.Value == "19");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "stand_tile_y" && parameter.Value == "20");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_distance_tiles" &&
+            parameter.Value == "1");
 
         var ranked = new EventCandidateRanker().Rank(
             new BaselineTrainingReport(),

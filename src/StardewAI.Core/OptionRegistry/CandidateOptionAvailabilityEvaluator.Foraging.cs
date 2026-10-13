@@ -110,6 +110,13 @@ namespace StardewAI.Core.OptionRegistry
                         {
                             Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
                                 ReadArray(item, "spawned_object_authoritative_route_sources"))),
+                            Parameter("target_location", locationId),
+                            Parameter("target_tile_x", x.ToString()),
+                            Parameter("target_tile_y", y.ToString()),
+                            Parameter("stand_tile_x", stand?.X.ToString() ?? string.Empty),
+                            Parameter("stand_tile_y", stand?.Y.ToString() ?? string.Empty),
+                            Parameter("route_distance_tiles", distance.ToString()),
+                            Parameter("max_movement_tiles", "512"),
                             Parameter("foraging_experience_on_success_min", ReadInt(item, "foraging_experience_on_success_min").ToString()),
                             Parameter("foraging_experience_on_success_max", ReadInt(item, "foraging_experience_on_success_max").ToString()),
                             Parameter("farming_experience_on_success_min", ReadInt(item, "farming_experience_on_success_min").ToString()),

@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Full Shipment 标准批次：原生地点觅食拾取闭环
+
+- `location_forage_spawn_sample` 已从冻结源存档的隔离副本完成原生采证。Teacher 精确选择 `full_shipment:item:16 / (O)16 / native_location_forage_spawn / location:Forest:0 / full_shipment:full_shipment:item:16:0:2`，继续复用唯一的 `foraging.collect_spawned_objects -> collect_spawned_object -> executor.collect_spawned_object` 链；没有新增第二套候选、编译器或执行器。
+- v1 在正式执行前失败关闭并暴露两处真实规划缺口：当前精确地点觅食候选尚未进入日内时间/能量轴，同物品、同路线族的非当前静态来源也没有在存在精确当前替代来源时判为不适用。修复后，候选把地点、目标格、站位格和真实路线距离贯穿到位置与日内预算；随机轴按完整 `route_kind + source_id + qualified_item_id` 绑定当前来源，并排除同路线的非当前替代来源。候选索引缓存 schema 同步升至 `v9`。
+- v2 原生动作经 `GameLocation.checkAction` 在 `261 -> 265` game tick 内从 `Forest (1,6)` 取得 `(O)16 x1`，回执为 `applied/verified`；验证目标对象移除、背包 `0 -> 1`、觅食经验 `0 -> 7`、耕种经验 `0 -> 0`、输出品质 `0`、fresh terminal receipt、settlement 与完整 rollout proof chain。没有直接删除对象、写背包或写经验。
+- rollout proof manifest SHA-256 为 `6aad341921b5b081064ecb0865556e38582b2e1d55e219c7ab0da50858e5068b`，receipt SHA-256 为 `31d5347d06e9d607532af4e1c80150f170eb2b40b089bd33077024bede49383b`；冻结源存档 SHA-256 保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 严格 production evidence index 已推进到 `17/26`，剩余 `9` 层，共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。正式 proof 根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-location-forage-v2-20261014\runtime-full-shipment-evidence-location-forage-v2-20261014`，机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v29-20261014`。
+- 本轮单样本仍触发 1599 条路线的目标日期轴重算，17 层索引也需跨进程重验全部 proof；它们是 #195/#200/#201/#202/#211 已登记的开发效率瓶颈。当前不能以缓存跳过 fresh snapshot、原生执行或终态回执，但后续应使用依赖 DAG 与可失效证书缩小重算范围。下一固定切片是 `fruit_tree_harvest_sample / native_fruit_tree_produce`。
+
 ## 2026-10-14 Full Shipment 标准批次：原生春葱采收闭环
 
 - `spring_onion_harvest_sample` 已从冻结源存档的隔离副本完成原生采证。Teacher 精确选择 `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / Crop.harvest`，继续复用唯一的 `foraging.harvest_spring_onions -> harvest_crop_tile -> executor.harvest_crop` 链；没有新增第二套候选、编译器或执行器。

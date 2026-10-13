@@ -76,7 +76,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v8",
+            "v9",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
