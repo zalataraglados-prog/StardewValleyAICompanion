@@ -278,6 +278,24 @@ internal static partial class BootstrapSelfTest
                 {
                     money = Envelope(money),
                     total_money_earned = Envelope(totalMoneyEarned)
+                },
+                farm = new
+                {
+                    shipping_bins = Envelope(new[]
+                    {
+                        new
+                        {
+                            completed = true,
+                            bin_scope = "personal",
+                            player_id = playerId,
+                            pending_settlement_value = 0,
+                            pending_settlement_value_complete = true,
+                            pending_settlement_timing =
+                                "next_native_day_transition",
+                            contents_signature = "empty-shipping-scope",
+                            contents_truncated = false
+                        }
+                    })
                 }
             }),
             JsonDefaults.Options)!;

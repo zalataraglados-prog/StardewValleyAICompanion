@@ -8,8 +8,6 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyThresholdTeacherCorpusBuilder
 {
-    private const int StageOneDeadlineExclusive = 224;
-
     private static readonly string[] RequiredPartitions =
     {
         PolicyDatasetPartitions.Train,
@@ -137,44 +135,18 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         ValidateSnapshot(after, "after");
         ValidateEpisodeBinding(episode, before, after, result);
 
-        var saveId = RequiredIdentity(before.SaveId, "save_id");
-        var playerId = RequiredIdentity(before.PlayerId, "player_id");
-        if (saveId != RequiredIdentity(after.SaveId, "after save_id") ||
-            playerId != RequiredIdentity(after.PlayerId, "after player_id"))
-        {
-            throw new InvalidDataException(
-                "Money-threshold snapshot identity changed during one sale.");
-        }
-        var totalDay = ReadEnvelopeInt(before, "time", "total_days");
-        if (totalDay < 0 || totalDay >= StageOneDeadlineExclusive ||
-            ReadEnvelopeInt(after, "time", "total_days") != totalDay)
-        {
-            throw new InvalidDataException(
-                "Money-threshold sale is outside one Stage-1 day.");
-        }
-
-        var moneyBefore = ReadEnvelopeInt(before, "player", "money");
-        var moneyAfter = ReadEnvelopeInt(after, "player", "money");
-        var earnedBefore = ReadEnvelopeUInt(
-            before,
-            "player",
-            "total_money_earned");
-        var earnedAfter = ReadEnvelopeUInt(
-            after,
-            "player",
-            "total_money_earned");
-        if (moneyAfter <= moneyBefore || earnedAfter <= earnedBefore)
-        {
-            throw new InvalidDataException(
-                "Money-threshold source is not a positive earning edge.");
-        }
-        var moneyDelta = checked((uint)(moneyAfter - moneyBefore));
-        var earnedDelta = earnedAfter - earnedBefore;
-        if (moneyDelta != earnedDelta)
-        {
-            throw new InvalidDataException(
-                "Money and totalMoneyEarned did not increase by the same exact sale value.");
-        }
+        var progression =
+            MoneyRevenueProgressionVerifier.VerifyImmediateShopSale(
+                before,
+                after);
+        var saveId = progression.Before.SaveId;
+        var playerId = progression.Before.PlayerId;
+        var totalDay = progression.Before.TotalDay;
+        var moneyBefore = progression.Before.Money;
+        var moneyAfter = progression.After.Money;
+        var earnedBefore = progression.Before.TotalMoneyEarned;
+        var earnedAfter = progression.After.TotalMoneyEarned;
+        var earnedDelta = progression.TotalMoneyEarnedDelta;
         ValidateQueueItem(episode, result, earnedDelta);
         ValidateExecutionResult(result, episode, moneyBefore, moneyAfter);
 
