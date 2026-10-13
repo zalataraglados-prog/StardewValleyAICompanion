@@ -18,4 +18,4 @@
 
 ## 下一固定任务
 
-先处理已确认的开发效率瓶颈：单样本不应重算无关的 1599 条路线，严格索引也不应在输入和 proof 哈希未变时重复解析全部旧 proof；优化必须保留 fresh snapshot、原生执行、终态回执和哈希验真。完成回归后进入 `farm_animal_product_sample / full_shipment:item:184 / (O)184 / native_farm_animal_produce`，不得触碰或提交 `local-data/`。
+已先消除功能分支 push 与 PR 的重复 `quality` 运行，并允许同一 PR 的新提交取消陈旧 CI。单 requirement 路线裁剪与跨 proof 复用继续遵守 #200/#201/#202 的 26 层启动门；执行器-only 重试则使用现有、受 StateHash/规划输入约束的 `ReplayAcquisitionQueue`。下一开发切片为 `farm_animal_product_sample / full_shipment:item:184 / (O)184 / native_farm_animal_produce`；不得触碰或提交 `local-data/`。

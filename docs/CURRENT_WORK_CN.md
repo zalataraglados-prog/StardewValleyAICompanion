@@ -8,6 +8,7 @@
 - 正式 v3 在 `93` tick 内完成，回执为 `applied/verified`，验证 `fruit_count 1 -> 0`、`(O)638` 品质 `0` 数量 `1`、背包 `0 -> 1`、觅食经验不变，以及 fresh terminal、settlement 和完整 rollout proof chain。rollout manifest SHA-256 为 `3c599efe1e7510c2ffa37a5e3e8e95bbcb0070a8fe135f0dd643c3ef279481ba`，receipt SHA-256 为 `1ce50884e8f31c9a614867f17be28dbb66e73758db931aafed7dcca0a4a44e55`。
 - 严格 production evidence index 已推进到 `18/26`，剩余 `8` 层，共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。正式 proof 根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-fruit-tree-v3-20261014\runtime-full-shipment-evidence-fruit-tree-v3-20261014`，机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v30-20261014`。
 - Bootstrap 与 RuntimeTestHarness Release 均 `0 warning / 0 error`，Core `2679/2679`、Backend `229/229` 全量通过。下一步先优化单样本 1599 路线全量重算及严格索引重复验真，不得削弱 fresh snapshot、原生执行、终态回执或 proof 哈希门槛；随后进入 `farm_animal_product_sample / native_farm_animal_produce`。
+- 即时开发效率优化先消除 `quality` 在功能分支 push 与 PR 上的重复触发：分支只由 `pull_request` 验证，`main` push 继续完整验证，并以 workflow + PR/ref 为并发键取消同一分支的陈旧运行。精确 requirement 级路线裁剪与跨 proof 证书复用仍受 #200/#201/#202 的 26 层启动门限制，不提前削弱；仅执行器发生变化且初始 StateHash 与规划输入不变的重试，应使用现有 `ReplayAcquisitionQueue` 入口复验原生执行和后续 proof。
 
 ## 2026-10-14 Full Shipment 标准批次：原生地点觅食拾取闭环
 
