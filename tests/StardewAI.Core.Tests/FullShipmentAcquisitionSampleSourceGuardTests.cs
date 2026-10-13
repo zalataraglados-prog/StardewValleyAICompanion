@@ -798,6 +798,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
                 "$stdout = & $runner @parameters",
                 StringComparison.Ordinal));
         Assert.Contains(
+            "if ($missingHighRiskScenarios.Count -eq 0)",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$selected = @($SelectedScenarios | Where-Object",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsNullOrWhiteSpace([string]$_)",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
             "$selectedBatchStartsWithStandard",
             milestone,
             StringComparison.Ordinal);
