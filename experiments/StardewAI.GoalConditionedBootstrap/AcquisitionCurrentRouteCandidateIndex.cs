@@ -10,6 +10,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
 {
     private static readonly string[] OptionIds =
     {
+        "community_center.donate_bundle_items",
         "mining.reach_depth",
         "farm.collect_machine_outputs",
         "foraging.harvest_tree_product",
@@ -43,7 +44,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v3",
+            "v4",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -377,6 +378,44 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         string routeKind,
         ICollection<string> reasons)
     {
+        if (routeKind == "creates_reward_item")
+        {
+            if (TryField(
+                    "world_progress",
+                    "community_center",
+                    out var progress) &&
+                FieldStatus(progress) is "available" or "derived" &&
+                FieldValue(progress).ValueKind == JsonValueKind.Object &&
+                TryReadInt(
+                    FieldValue(progress),
+                    "bundle_data_row_count",
+                    out var dataCount) &&
+                TryReadInt(
+                    FieldValue(progress),
+                    "projected_bundle_row_count",
+                    out var projectedCount) &&
+                TryReadInt(
+                    FieldValue(progress),
+                    "unavailable_bundle_row_count",
+                    out var unavailableCount) &&
+                dataCount > 0 &&
+                projectedCount == dataCount &&
+                unavailableCount == 0 &&
+                FieldValue(progress).TryGetProperty(
+                    "bundle_rows",
+                    out var rows) &&
+                rows.ValueKind == JsonValueKind.Array &&
+                rows.GetArrayLength() == dataCount &&
+                rows.EnumerateArray().All(row =>
+                    row.ValueKind == JsonValueKind.Object &&
+                    ReadString(row, "projection_status") == "exact"))
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add(
+                "current_community_center_reward_terminal_evidence_incomplete");
+            return false;
+        }
         if (routeKind == "native_monster_drop_table")
         {
             return CanConcludeMineArray(
@@ -488,6 +527,17 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         field.ValueKind == JsonValueKind.String
             ? field.GetString() ?? string.Empty
             : string.Empty;
+
+    private static bool TryReadInt(
+        JsonElement value,
+        string property,
+        out int result)
+    {
+        result = 0;
+        return value.ValueKind == JsonValueKind.Object &&
+            value.TryGetProperty(property, out var field) &&
+            field.TryGetInt32(out result);
+    }
 
     private static bool TryReadSources(
         string json,

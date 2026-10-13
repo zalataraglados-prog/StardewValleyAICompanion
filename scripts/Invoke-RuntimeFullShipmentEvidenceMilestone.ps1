@@ -149,6 +149,9 @@ function Write-MilestoneState {
         [string[]] $SelectedScenarios,
         [string] $LastError = ""
     )
+    $selected = @($SelectedScenarios | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_)
+    } | ForEach-Object { [string]$_ })
     $completed = @($Records.scenario | ForEach-Object { [string]$_ })
     $state = [ordered]@{
         schema_version =
@@ -162,11 +165,11 @@ function Write-MilestoneState {
         acquisition_lowering_sha256 = $acquisitionLoweringSha256
         master_angler_windows_sha256 = $masterAnglerWindowsSha256
         route_timing_calibration_sha256 = $routeTimingCalibrationSha256
-        selected_scenario_count = $SelectedScenarios.Count
+        selected_scenario_count = $selected.Count
         completed_scenario_count = @($completed | Where-Object {
-            $_ -in $SelectedScenarios
+            $_ -in $selected
         }).Count
-        remaining_scenarios = @($SelectedScenarios | Where-Object {
+        remaining_scenarios = @($selected | Where-Object {
             $_ -notin $completed
         })
         last_error = $LastError
@@ -462,10 +465,6 @@ if ($MaxScenarios -gt 0) {
 }
 $selectedScenarios = @($selectedEntries.scenario |
     ForEach-Object { [string]$_ })
-$firstSelectedEntry = @($selectedEntries | Select-Object -First 1)
-$selectedBatchStartsWithStandard =
-    $firstSelectedEntry.Count -eq 1 -and
-    [string]$firstSelectedEntry[0].run_batch -eq "standard"
 
 $runner = Join-Path $PSScriptRoot `
     "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1"
@@ -522,8 +521,7 @@ function Confirm-CompletedHighRiskEvidence {
 $anchorEvidenceVerified = $false
 $highRiskEvidenceVerified = $false
 $evidencePreflightIndex = $null
-if ($missingHighRiskScenarios.Count -eq 0 -and
-    ($Batch -eq "standard" -or $selectedBatchStartsWithStandard)) {
+if ($missingHighRiskScenarios.Count -eq 0) {
     $evidencePreflightIndex = Confirm-CompletedHighRiskEvidence
     $anchorEvidenceVerified = $true
     $highRiskEvidenceVerified = $true

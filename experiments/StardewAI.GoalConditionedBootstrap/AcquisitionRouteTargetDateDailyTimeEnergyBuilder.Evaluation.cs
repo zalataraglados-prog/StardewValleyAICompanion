@@ -86,6 +86,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "creates_reward_item" => EvaluateCommunityCenterReward(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_wild_tree_tapper_output" =>
                 EvaluateCurrentRouteCollection(
                     route,

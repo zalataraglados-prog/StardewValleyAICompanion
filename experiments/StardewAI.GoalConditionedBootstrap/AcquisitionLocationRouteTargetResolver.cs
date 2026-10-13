@@ -35,7 +35,8 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_fish_pond_output" or
             "native_geode_drop" or
             "native_radioactive_ore_node" or
-            "native_wild_tree_tapper_output" => ResolveCurrentCandidate(
+            "native_wild_tree_tapper_output" or
+            "creates_reward_item" => ResolveCurrentCandidate(
                 source,
                 currentRouteCandidates),
             "native_mine_fishing_override" => Exact(

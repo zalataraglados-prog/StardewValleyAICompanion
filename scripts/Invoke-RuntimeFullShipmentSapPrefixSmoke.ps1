@@ -2050,6 +2050,36 @@ try {
     Assert-FullShipmentState -Snapshot $acquisition.After `
         -Shipped 0 -Missing 154 -SapInBin 0 -Phase "post-acquisition"
 
+    if ($sampleProofOnly -and
+        -not [string]::IsNullOrWhiteSpace($ReplayAcquisitionQueue)) {
+        $sourceSaveHashAfter = Get-DirectoryContentHash -Path $archivedSavePath
+        if ($sourceSaveHashAfter -ne $sourceSaveHashBefore) {
+            throw "Archived fresh save changed during acquisition replay."
+        }
+        $replaySummary = [ordered]@{
+            schema_version =
+                "stardewai.runtime_full_shipment_acquisition_replay.v1"
+            status = "passed"
+            scenario = $Scenario
+            run_id = $RunId
+            formal_training_authorized = $false
+            replayed_acquisition_queue = $true
+            archived_source_preserved = $true
+            archived_source_sha256 = $sourceSaveHashBefore
+            requirement_id = $sampleRequirementId
+            qualified_item_id = $sampleQualifiedItemId
+            acquired_stack = [int]$acquiredInventory[0].stack
+            action_queue_path = $queuePath
+            execution_receipt_path = $acquisition.ExecutionPath
+            after_snapshot_path = $acquisition.AfterPath
+            isolated_save_root = $isolatedSavesPath
+        }
+        Write-JsonFile -Path (Join-Path $artifactDirectory "summary.json") `
+            -Value $replaySummary
+        $replaySummary | ConvertTo-Json -Depth 24
+        return
+    }
+
     if ([string]::IsNullOrWhiteSpace($ReplayAcquisitionQueue)) {
     $freshReceiptPath = Join-Path $planningDirectory `
         "fresh-terminal-receipt.json"

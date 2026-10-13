@@ -291,9 +291,13 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var windowSpecies = windows.Species.ToDictionary(
             species => species.QualifiedItemId,
             StringComparer.Ordinal);
-        var currentGeodeDropEnabled = !string.IsNullOrWhiteSpace(snapshotPath) &&
-            AcquisitionCurrentRouteCandidateIndex.Read(snapshotPath)
-                .HasRouteKindCandidate("native_geode_drop");
+        var currentRouteCandidates = string.IsNullOrWhiteSpace(snapshotPath)
+            ? null
+            : AcquisitionCurrentRouteCandidateIndex.Read(snapshotPath);
+        var currentGeodeDropEnabled = currentRouteCandidates?
+            .HasRouteKindCandidate("native_geode_drop") == true;
+        var currentCommunityCenterRewardEnabled = currentRouteCandidates?
+            .HasRouteKindCandidate("creates_reward_item") == true;
         var routes = BuildRoutes(
             lowering,
             communityCenterAuthority,
@@ -303,6 +307,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             shops,
             machines,
             accessConstraints,
+            currentRouteCandidates,
             currentGeodeDropEnabled,
             windows.DeadlineTotalDayExclusive);
         var expectedRouteCount = ExpectedRouteCount(
@@ -362,6 +367,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             StaticCalendarSourceResolutionComplete = blockedCount == 0,
             TrainingLabelEligible = false,
             SupportedRouteKinds = SupportedRouteKinds
+                .Concat(currentCommunityCenterRewardEnabled
+                    ? new[] { "creates_reward_item" }
+                    : Array.Empty<string>())
                 .Concat(currentGeodeDropEnabled
                     ? new[] { "native_geode_drop" }
                     : Array.Empty<string>())
