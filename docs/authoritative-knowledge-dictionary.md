@@ -700,6 +700,12 @@ within the same terminal class, only a unique strict Pareto advantage may emit a
 Incomparable trade-offs remain unlabeled. This typed boundary still requires real route rebuild,
 ledger-commit and isolated counterfactual artifacts before it can become production evidence.
 
+Revenue recurrence is now serializable only through a replayable proof manifest. Each edge names
+either one native shop-sale episode or one native shipping queue/receipt/snapshot bundle; the
+builder reruns the corresponding verifier, hashes every leaf artifact and then verifies checkpoint
+continuity. A serialized amount or prefix summary is never authoritative. Comparison-level
+production evidence still requires deterministic route, ledger-commit and counterfactual bindings.
+
 The `raise_friendships` reverse route is also typed but remains `in_progress`. Grandpa's
 friendship population is not the raw save dictionary: native `Utility.ForEachVillager` excludes
 event actors and retains `IsVillager` instances, then

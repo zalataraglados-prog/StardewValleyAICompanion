@@ -36,6 +36,9 @@ internal static partial class BootstrapSelfTest
             sale.TotalMoneyEarnedDelta == 20 &&
             sale.Before.PendingShippingSettlementValue == 300,
             "Immediate Money progression did not preserve an isolated sale.");
+        var saleEpisodePath = VerifyMoneyRevenueShopRecurrenceArtifact(
+            saleBefore,
+            saleAfter);
 
         var settlementBefore = MoneyProgressionSnapshot(
             totalDay: 10,
@@ -66,7 +69,8 @@ internal static partial class BootstrapSelfTest
             "Shipping Money progression double-counted duplicate endpoints.");
         VerifyNativeShippingSettlementReceipt(
             settlementBefore,
-            settlementAfter);
+            settlementAfter,
+            saleEpisodePath);
         VerifyMoneyRevenueRecurrencePrefix(sale, settlement);
 
         RequireMoneyProgressionRejected(
@@ -97,7 +101,8 @@ internal static partial class BootstrapSelfTest
 
     private static void VerifyNativeShippingSettlementReceipt(
         SnapshotEnvelope before,
-        SnapshotEnvelope after)
+        SnapshotEnvelope after,
+        string saleEpisodePath)
     {
         const string candidateId = "candidate.native-shipping-settlement";
         var item = new ActionQueueItem
@@ -201,6 +206,14 @@ internal static partial class BootstrapSelfTest
             evidence.Progression?.ConsumedPendingShippingValue == 300,
             "Native shipping settlement evidence was rejected: " +
             string.Join(",", evidence.BlockingReasons));
+        VerifyMoneyRevenueShippingRecurrenceArtifact(
+            queue,
+            before,
+            receipt,
+            after,
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            candidateId,
+            saleEpisodePath);
 
         item.OptionId = "executor.move";
         item.NormalizedCommand.OptionId = item.OptionId;

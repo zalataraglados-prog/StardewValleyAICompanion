@@ -46,6 +46,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
     new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
+    new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
     new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution),
@@ -456,6 +457,15 @@ static void BuildMoneyThresholdTeacherCorpus(Arguments options)
     var corpus = MoneyThresholdTeacherCorpusBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), corpus);
+}
+
+static void BuildMoneyRevenueRecurrenceProof(Arguments options)
+{
+    var receipt = MoneyRevenueRecurrenceProofBuilder.Build(
+        options.Required("manifest"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.ProofVerified)
+        Environment.ExitCode = 2;
 }
 
 static GoalMethodFrontierBuildInputs GoalMethodFrontierInputs(

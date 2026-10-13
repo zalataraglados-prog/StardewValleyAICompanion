@@ -3087,6 +3087,16 @@ Slice 7 remains assigned to the RTX 5070 node.
   still requires deterministic acquisition-route rebuilding, verified ledger commits, support-transition continuity
   and isolated counterfactual rollouts; this comparison alone does not change formal coverage or authorization.
 
+### 2026-10-14: replayable Revenue recurrence proof
+
+- `build-money-revenue-recurrence-proof` accepts a manifest whose edges are exclusively native shop-sale episodes or
+  native shipping queue/snapshot/receipt bundles. It reuses the existing native verifiers, records every leaf path and
+  SHA-256, then rebuilds the typed recurrence prefix; callers cannot submit precomputed amounts or hashes as evidence.
+- The hermetic two-edge proof binds a 20g immediate sale to a 300g day settlement through one exact checkpoint and
+  emits a 320g receipt. A forged selected-candidate binding is rejected. This closes replay and splice integrity, not
+  production provenance: the next artifact must bind each recurrence receipt to deterministic route/opportunity data,
+  ledger commit evidence and isolated counterfactual rollout results.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
