@@ -711,6 +711,25 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 sourceId,
                 StringComparison.Ordinal);
         }
+        if (routeKind is "machine_output" or
+            "native_machine_flavored_output" or
+            "native_machine_item_query_output" or
+            "native_solar_panel_output")
+        {
+            var canonical = targetSources
+                .OrderBy(value => value.RouteKind, StringComparer.Ordinal)
+                .ThenBy(value => value.SourceId, StringComparer.Ordinal)
+                .FirstOrDefault();
+            return canonical is not null &&
+                string.Equals(
+                    canonical.RouteKind,
+                    routeKind,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    canonical.SourceId,
+                    sourceId,
+                    StringComparison.Ordinal);
+        }
         return targetSources.Length == 1 &&
             string.Equals(
                 targetSources[0].RouteKind,

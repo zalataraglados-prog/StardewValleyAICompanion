@@ -37,7 +37,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
 
         var targets = route.TargetEvaluations.Where(value =>
                 value.Status == "resolved_location_route_match" &&
-                value.BindingKind == "runtime_machine_source_location")
+                value.BindingKind is "runtime_machine_source_location" or
+                    "runtime_canonical_authoritative_route_candidate")
             .ToArray();
         Require(targets.Length > 0,
             "A matched machine route lacks its exact placed-machine target.");
@@ -186,12 +187,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             return null;
         }
         var active = machine.ActiveOutput;
-        return active is not null &&
-            active.QualifiedItemId == staticRoute.QualifiedItemId &&
-            active.RouteSources.Length == 1 &&
-            active.RouteSources[0].RouteKind == staticRoute.RouteKind &&
-            active.RouteSources[0].SourceId == staticRoute.SourceId &&
-            active.RouteSources[0].QualifiedItemId ==
-                staticRoute.QualifiedItemId;
+        return AcquisitionOutputProof.MatchesAuthoritativeRoute(
+            active,
+            staticRoute.RouteKind,
+            staticRoute.SourceId,
+            staticRoute.QualifiedItemId);
     }
 }

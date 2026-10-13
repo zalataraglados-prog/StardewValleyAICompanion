@@ -107,7 +107,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             lowered,
             snapshot,
             candidates);
-        if (requirement.RouteKind == "native_wild_tree_tapper_output")
+        if (requirement.RouteKind is "native_solar_panel_output" or
+            "native_wild_tree_tapper_output")
         {
             var target = route.UpstreamRoute.Evaluation;
             if (target?.TargetTileX is not int targetTileX ||

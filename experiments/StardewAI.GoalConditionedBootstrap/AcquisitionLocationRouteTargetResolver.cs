@@ -18,7 +18,11 @@ internal static class AcquisitionLocationRouteTargetResolver
             "machine_output" or
             "native_machine_flavored_output" or
             "native_machine_item_query_output" =>
-                ResolveMachine(staticRoute, state.MachineFleet),
+                ResolveMachineOrCurrentCandidate(
+                    source,
+                    staticRoute,
+                    state.MachineFleet,
+                    currentRouteCandidates),
             "sells" => ResolveShop(staticRoute, state),
             "native_crab_pot_output" => ResolveCrabPot(source, state),
             "native_location_artifact_spot" => ResolveArtifactSpot(
@@ -39,6 +43,7 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_farm_animal_produce" or
             "native_geode_drop" or
             "native_radioactive_ore_node" or
+            "native_solar_panel_output" or
             "native_wild_tree_tapper_output" or
             "native_bush_shake" or
             "native_tea_bush_harvest" or
@@ -63,6 +68,21 @@ internal static class AcquisitionLocationRouteTargetResolver
                 Array.Empty<AcquisitionLocationTarget>(),
                 new[] { "location_route_kind_not_supported:" + source.RouteKind })
         };
+    }
+
+    private static AcquisitionLocationTargetResolution
+        ResolveMachineOrCurrentCandidate(
+            AcquisitionRouteTargetDateUnlock route,
+            AcquisitionRouteCalendarResolution staticRoute,
+            AcquisitionMachineFleetSnapshotState machineFleet,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        return candidates.HasExactRouteCandidate(
+                route.RouteKind,
+                route.SourceId,
+                route.QualifiedItemId)
+            ? ResolveCanonicalCurrentCandidate(route, candidates)
+            : ResolveMachine(staticRoute, machineFleet);
     }
 
     private static AcquisitionLocationTargetResolution ResolveArtifactSpot(

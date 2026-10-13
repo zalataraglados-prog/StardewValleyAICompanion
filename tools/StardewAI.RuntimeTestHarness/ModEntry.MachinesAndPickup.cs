@@ -934,17 +934,30 @@ public sealed partial class ModEntry : Mod
             .ToArray();
         var actualMasteryDelta = (int)Game1.stats.Get("MasteryExp") - masteryBefore;
         var experienceVerified = actualExperience.SequenceEqual(expectedExperience) && actualMasteryDelta == expectedMasteryDelta;
-        var tapperCycleRescheduled =
-            machine.IsTapper() &&
+        var nativeOutputCycleRescheduled =
             !machine.readyForHarvest.Value &&
             machine.MinutesUntilReady > 0 &&
             machine.heldObject.Value is not null &&
-            !ReferenceEquals(machine.heldObject.Value, output) &&
+            !ReferenceEquals(machine.heldObject.Value, output);
+        var standardMachineCycleRescheduled =
+            !machine.IsTapper() &&
+            nativeOutputCycleRescheduled;
+        var tapperCycleRescheduled =
+            machine.IsTapper() &&
+            nativeOutputCycleRescheduled &&
             location.terrainFeatures.TryGetValue(new Vector2(target.X, target.Y), out var feature) &&
             feature is Tree tree &&
             tree.GetType() == typeof(Tree) &&
             tree.tapped.Value;
-        var outputLifecycleVerified = machine.heldObject.Value is null || tapperCycleRescheduled;
+        var outputLifecycleVerified =
+            machine.heldObject.Value is null ||
+            standardMachineCycleRescheduled ||
+            tapperCycleRescheduled;
+        var outputLifecycleReason = tapperCycleRescheduled
+            ? "tapper_output_cycle_rescheduled"
+            : standardMachineCycleRescheduled
+                ? "machine_output_cycle_rescheduled"
+                : "held_item_cleared";
         var inventoryVerified = afterItemCount > beforeItemCount;
         var verified = acted &&
             outputLifecycleVerified &&
@@ -966,7 +979,7 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "collect_machine_output",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "machine_output_collected", tapperCycleRescheduled ? "tapper_output_cycle_rescheduled" : "held_item_cleared", "inventory_target_item_count_increased", "machine_harvest_skill_and_mastery_experience_verified", "qualified_item_id=" + outputId }
+                ? new[] { "machine_output_collected", outputLifecycleReason, "inventory_target_item_count_increased", "machine_harvest_skill_and_mastery_experience_verified", "qualified_item_id=" + outputId }
                 : new[] { acted ? "checkForAction_returned_true" : "checkForAction_returned_false", outputLifecycleVerified ? "machine_output_lifecycle_verified" : "held_item_still_present", inventoryVerified ? "inventory_target_item_count_increased" : "inventory_target_item_count_not_increased", experienceVerified ? "machine_harvest_experience_verified" : "machine_harvest_experience_mismatch" },
             RequestedEffect = requested,
             ObservedEffect = afterObserved +

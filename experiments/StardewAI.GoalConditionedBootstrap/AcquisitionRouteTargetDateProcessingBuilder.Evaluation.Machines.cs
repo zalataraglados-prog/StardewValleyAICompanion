@@ -286,14 +286,13 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             bool? routeMatches = null;
             if (active is not null)
             {
-                routeMatches = active.RouteSources.Length == 1 &&
-                    active.RouteSources[0].RouteKind ==
-                        staticRoute.RouteKind &&
-                    active.RouteSources[0].SourceId == staticRoute.SourceId &&
-                    active.RouteSources[0].QualifiedItemId ==
-                        staticRoute.QualifiedItemId;
+                routeMatches = AcquisitionOutputProof.MatchesAuthoritativeRoute(
+                    active,
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId);
                 if (active.QualifiedItemId == staticRoute.QualifiedItemId &&
-                    active.RouteSources.Length != 1)
+                    routeMatches != true)
                 {
                     blocking.Add(
                         "machine_active_output_source_unresolved:" +

@@ -48,7 +48,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             ["native_monster_drop_table"] = NoDeterministicWait,
             ["native_object_artifact_spot_chance"] = NoDeterministicWait,
             ["native_radioactive_ore_node"] = NoDeterministicWait,
-            ["native_solar_panel_output"] = DeferredProduction,
+            ["native_solar_panel_output"] = CurrentMachineOutput,
             ["native_spring_onion_harvest"] = NoDeterministicWait,
             ["native_tea_bush_harvest"] = NoDeterministicWait,
             ["native_tree_moss_harvest"] = NoDeterministicWait,

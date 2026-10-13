@@ -113,8 +113,8 @@ internal static partial class BootstrapSelfTest
                     new[] { wrongSource }).Length == 0,
             "A machine load with the wrong native rule source was admitted.");
 
-        var ambiguous = CloneCandidate(support[0].Candidate);
-        ambiguous.Parameters = ambiguous.Parameters.Select(parameter =>
+        var multiSource = CloneCandidate(support[0].Candidate);
+        multiSource.Parameters = multiSource.Parameters.Select(parameter =>
             parameter.Name == "authoritative_route_sources_json"
                 ? Parameter(
                     parameter.Name,
@@ -124,8 +124,9 @@ internal static partial class BootstrapSelfTest
                 .SelectSupportingCandidates(
                     requirement,
                     lowering,
-                    new[] { ambiguous }).Length == 0,
-            "An ambiguous machine output source set was admitted.");
+                    new[] { multiSource }).Length == 1,
+            "A canonical exact machine source was not selected from the " +
+            "complete authoritative source set.");
 
         var compilation = AcquisitionRouteDispatchCompilationBuilder.Compile(
             "grandpa.stage1.21_points",

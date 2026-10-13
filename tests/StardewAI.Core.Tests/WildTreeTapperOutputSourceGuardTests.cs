@@ -68,8 +68,11 @@ public sealed class WildTreeTapperOutputSourceGuardTests
         Assert.Contains("tree.GetType() == typeof(Tree)", source);
         Assert.Contains("tree.tapped.Value", source);
         Assert.Contains(
-            "machine.heldObject.Value is null || tapperCycleRescheduled",
+            "nativeOutputCycleRescheduled",
             source);
+        Assert.Contains("standardMachineCycleRescheduled", source);
+        Assert.Contains("tapperCycleRescheduled", source);
+        Assert.Contains("machine_output_cycle_rescheduled", source);
         Assert.Contains("afterItemCount > beforeItemCount", source);
         Assert.Contains("tapper_output_cycle_rescheduled", source);
         Assert.DoesNotContain(
@@ -141,8 +144,10 @@ public sealed class WildTreeTapperOutputSourceGuardTests
             "AcquisitionRouteDispatchCompilationBuilder.cs");
 
         Assert.Contains(
-            "value.MachineActiveOutputStack >= requiredAmount",
+            "AcquisitionOutputProof.CanSatisfy(",
             selector);
+        Assert.Contains("value.MachineActiveOutputStack", selector);
+        Assert.Contains("value.MachineActiveOutputQuality", selector);
         Assert.Contains("SelectDispatchable(", processing);
         Assert.DoesNotContain(
             "AcquisitionOutputProof.ReadyQuantity(",
