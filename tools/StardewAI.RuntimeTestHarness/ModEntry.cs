@@ -669,6 +669,7 @@ public sealed partial class ModEntry : Mod
         TickFishPondService();
         TickFishPondManagement();
         CaptureExecutorDiagnosticFrame("update_ticked");
+        FinalizeActionOriginOutputCaptures();
 
         if (HasActiveExecutorOperation())
         {
@@ -682,6 +683,7 @@ public sealed partial class ModEntry : Mod
 
         try
         {
+            BeginActionOriginOutputCapture(pending);
             if (pending.Request.OptionId == "debug.visible_walk" ||
                 pending.Request.OptionId == "executor.move_to_tile" ||
                 pending.Request.OptionId == "executor.traverse_connector")

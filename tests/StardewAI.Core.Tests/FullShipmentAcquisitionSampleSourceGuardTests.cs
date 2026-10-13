@@ -197,7 +197,11 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             executor,
             StringComparison.Ordinal);
         Assert.Contains(
-            "DebrisChunkTile(candidate)",
+            "NearestActionOriginChunk(",
+            executor,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "DebrisChunkTile(chunk)",
             executor,
             StringComparison.Ordinal);
         Assert.Contains(

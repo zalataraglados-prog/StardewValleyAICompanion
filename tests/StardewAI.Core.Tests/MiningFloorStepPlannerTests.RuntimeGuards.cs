@@ -426,8 +426,16 @@ public sealed partial class MiningFloorStepPlannerTests
             pickupSource,
             StringComparison.Ordinal);
         Assert.Contains(
-            "(deferredNativeDrop ? 12 : 3)",
+            "const int maximumNativeDropDistanceTiles = 12",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryResolveActionOriginOutput(",
             pickupSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "actionOrigin.ProducedChunks.Contains(value.Chunk)",
+            source,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"native_monster_drop_table\"",

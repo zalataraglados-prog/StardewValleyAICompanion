@@ -368,7 +368,7 @@ public sealed partial class ModEntry : Mod
 
     private sealed class ActivePickupDebris
     {
-        public ActivePickupDebris(PendingExecution pending, GameLocation location, Debris debris, Chunk chunk, Point initialTarget, string qualifiedItemId, int debrisCountBefore, int chunkCountBefore, int itemCountBefore, string inventoryBefore, string requestedEffect)
+        public ActivePickupDebris(PendingExecution pending, GameLocation location, Debris debris, Chunk chunk, Point initialTarget, string qualifiedItemId, int debrisCountBefore, int chunkCountBefore, int itemCountBefore, string inventoryBefore, string requestedEffect, int minimumQuality, int? requiredItemCountAfter, ActionOriginOutputRecord? actionOriginRecord)
         {
             Pending = pending;
             Location = location;
@@ -382,20 +382,26 @@ public sealed partial class ModEntry : Mod
             ItemCountBefore = itemCountBefore;
             InventoryBefore = inventoryBefore;
             RequestedEffect = requestedEffect;
+            MinimumQuality = minimumQuality;
+            RequiredItemCountAfter = requiredItemCountAfter;
+            ActionOriginRecord = actionOriginRecord;
             LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
         public GameLocation Location { get; }
         public string LocationId { get; }
-        public Debris Debris { get; }
-        public Chunk Chunk { get; }
+        public Debris Debris { get; set; }
+        public Chunk Chunk { get; set; }
         public string QualifiedItemId { get; }
         public int DebrisCountBefore { get; }
         public int ChunkCountBefore { get; }
         public int ItemCountBefore { get; }
         public string InventoryBefore { get; }
         public string RequestedEffect { get; }
+        public int MinimumQuality { get; }
+        public int? RequiredItemCountAfter { get; }
+        public ActionOriginOutputRecord? ActionOriginRecord { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 3600;
         public int ElapsedTicks { get; set; }

@@ -40,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GameFreeGovernance)' == 'true'">
+    <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="SnapshotStateCacheTests.cs" />
