@@ -28,4 +28,4 @@
 
 ## 下一步
 
-按权威样本计划进入 standard 批次首项 `parsnip_harvest_sample`：`full_shipment:item:24 / (O)24 / harvests_as / farm.maintain_crops`。先复用现有作物维护与收获链完成当前代码下的确定性规划重建，再只在严格证据需要时执行隔离原生样本。不要重复运行已通过的九个分层，不要提交或删除 `local-data/`。
+standard 批次首项 `parsnip_harvest_sample` 已完成并把严格索引推进到 `10/26`。下一固定项为 `berry_bush_harvest_sample`：`full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`。不要重复运行已通过的十个分层，不要提交或删除 `local-data/`。

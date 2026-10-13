@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 标准批次：普通作物收获
+
+- standard 批次首项 `parsnip_harvest_sample` 已从冻结源存档的隔离副本重新完成原生采证。Teacher 保持选择 `full_shipment:item:24 / (O)24 / harvests_as / full_shipment:full_shipment:item:24:0:0`，动作队列复用唯一的 `farm.maintain_crops -> executor.harvest_crop` 链。
+- 原生执行获取 `(O)24 x1`，冻结源目录哈希保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`；rollout 状态为 `verified_complete_rollout_proof_chain`，portfolio completion 与 proof chain 均为 `true`。
+- 严格 production evidence index 已推进到 `10/26`，共享 shipping/settlement 证明有效，剩余 `16` 层，`formal_product_training_authorized=false`。检查点位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v6-20261013`。
+- 下一固定项为 `berry_bush_harvest_sample / native_bush_shake`。不得重跑已通过的十个分层；优先复用现有 `foraging.harvest_bushes -> executor.harvest_bush` 链并只修真实严格证明缺口。
+
 ## 2026-10-13 Full Shipment 社区中心奖励闭环与高风险批次完成
 
 - `creates_reward_item` 现已贯通当前透明候选、日历、地点、材料、日内时间/能量、Teacher、动作队列与原生执行绑定。代表路线固定为 `full_shipment:item:336 / (O)336 / full_shipment:full_shipment:item:336:0:0 / bundle:Bulletin Board/33:reward`，继续复用唯一的 `community_center.donate_bundle_items -> executor.claim_community_center_bundle_reward` 链，没有第二套奖励执行器。

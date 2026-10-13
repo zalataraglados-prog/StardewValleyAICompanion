@@ -1,5 +1,13 @@
 # StardewAI 短交接：Full Shipment 普通作物样本
 
+## 2026-10-13 当前状态
+
+- 当前分支：`codex/admit-native-parsnip-harvest`。
+- 防风草样本已按当前权威输入从冻结源存档重新原生执行，路线仍为 `full_shipment:full_shipment:item:24:0:0`，获取 `(O)24 x1`。
+- rollout 状态为 `verified_complete_rollout_proof_chain`，portfolio completion 与 proof chain 均已验证；严格索引为 `10/26`，剩余 `16` 层，共享 shipping/settlement 有效，正式训练未授权。
+- 当前证明根：`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v6-20261013\runtime-full-shipment-evidence-parsnip_harvest_sample-20261013-202421`。
+- 下一固定项为 `berry_bush_harvest_sample / full_shipment:item:296 / (O)296 / native_bush_shake`，复用 `foraging.harvest_bushes -> executor.harvest_bush`，不要复制收获执行器。
+
 ## 2026-10-04 接续状态：浆果灌木样本
 
 - 下一层固定为 `full_shipment.runtime_sample.04.native_bush_shake`，代表路线 `full_shipment:full_shipment:item:296:0:0`，复用 `foraging.harvest_bushes -> executor.harvest_bush`。
