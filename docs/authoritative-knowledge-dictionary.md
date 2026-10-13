@@ -692,6 +692,14 @@ proves continuity only for the included revenue edges. It does not prove a fresh
 reserve safety, opportunity cost, intervening acquisition/processing support, or the Year 3
 lower-bound schedule.
 
+Revenue alternatives now have a typed reserve-aware comparison boundary. Money targets are
+derived only from the authoritative Grandpa threshold table; candidate denominators must be
+complete, and every non-scalar material/currency cost must reconcile with an atomic reservation
+claim set bound to the same state and ledger revision. Threshold satisfaction is authoritative;
+within the same terminal class, only a unique strict Pareto advantage may emit a preference.
+Incomparable trade-offs remain unlabeled. This typed boundary still requires real route rebuild,
+ledger-commit and isolated counterfactual artifacts before it can become production evidence.
+
 The `raise_friendships` reverse route is also typed but remains `in_progress`. Grandpa's
 friendship population is not the raw save dictionary: native `Utility.ForEachVillager` excludes
 event actors and retains `IsVillager` instances, then

@@ -1,10 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue 储备感知候选比较
+
+- 新增 `MoneyRevenueAlternativeComparer`，只接受来自权威 `GrandpaEvaluationGoalEvaluator.MoneyThresholds` 的 criterion、完整且不重不漏的候选 ID 分母、同一收益前缀起点及同一 reservation ledger revision。调用方不能自报任意收益目标。
+- 每个候选重新验证 Revenue 前缀，并要求 acquisition 既有的非标量时间/能量/材料/货币成本向量与原子 reservation claim set 数量一致；陈旧状态、替换他人储备、claim/成本漂移均 fail closed。目标阈值满足是第一层权威终态，同一终态层内仅在收益进度、完成日和储备感知成本上存在唯一严格优势时才生成偏好；不可比候选保留在前沿，不读取 learner score。
+- hermetic 覆盖唯一达标候选、收益/木材/时间 trade-off、候选漏项、陈旧 claim 和数量漂移。该层尚未把真实 acquisition route、ledger commit 与隔离 counterfactual rollout 绑定成生产工件，因此 `formal_product_training_authorized=false` 和正式覆盖率不变；下一步补该工件绑定与支持转移连续性。
+
 ## 2026-10-14 Revenue 连续前缀
 
 - 新增 `MoneyRevenueRecurrenceVerifier`，把已验真的即时商店销售与原生隔夜发货结算编排为同一 save/player 的类型化收益前缀。相邻边必须完整复用上一边的 `MoneyRevenueCheckpoint`，因此状态哈希、日数、现金、累计收入和 shipping scope 不能在边界间静默漂移。
 - 验证器不会信任调用方构造的公开 record：每条边都会重新核对 kind、正收益 delta、日推进、pending shipping 消耗、Year 3 截止和聚合总额。hermetic 已覆盖 320g 双类型前缀，并拒绝断链哈希、伪造 delta 与截止日外边。
-- 该类型证明“收益边可以连续组合”，但尚未证明从新存档取得这些边，也未覆盖 acquisition/reserve/processing 间的机会成本。正式状态仍为 promotion-grade `2/19`、root method `1/11`、`formal_product_training_authorized=false`；下一切片接入 reserve-aware alternative comparison。
+- 该类型证明“收益边可以连续组合”，但尚未证明从新存档取得这些边。后续 reserve-aware comparison 已接入现有非标量成本与 reservation claim 语义，但真实 acquisition/processing 支持转移和 counterfactual 工件仍待绑定。正式状态仍为 promotion-grade `2/19`、root method `1/11`、`formal_product_training_authorized=false`。
 
 ## 2026-10-14 通用原生 shipping-settlement evidence
 

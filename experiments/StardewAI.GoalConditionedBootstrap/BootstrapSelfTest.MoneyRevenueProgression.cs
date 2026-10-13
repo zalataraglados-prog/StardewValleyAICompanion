@@ -14,7 +14,7 @@ internal static partial class BootstrapSelfTest
             totalDay: 10,
             gameTick: 100,
             money: 100,
-            totalMoneyEarned: 49_990,
+            totalMoneyEarned: 49_900,
             pendingShippingValue: 300,
             shippingSignature: "pending-300",
             duplicateEndpointCount: 3);
@@ -22,7 +22,7 @@ internal static partial class BootstrapSelfTest
             totalDay: 10,
             gameTick: 110,
             money: 120,
-            totalMoneyEarned: 50_010,
+            totalMoneyEarned: 49_920,
             pendingShippingValue: 300,
             shippingSignature: "pending-300",
             duplicateEndpointCount: 3);
@@ -41,7 +41,7 @@ internal static partial class BootstrapSelfTest
             totalDay: 10,
             gameTick: 120,
             money: 120,
-            totalMoneyEarned: 50_010,
+            totalMoneyEarned: 49_920,
             pendingShippingValue: 300,
             shippingSignature: "pending-300",
             duplicateEndpointCount: 3);
@@ -49,7 +49,7 @@ internal static partial class BootstrapSelfTest
             totalDay: 11,
             gameTick: 200,
             money: 420,
-            totalMoneyEarned: 50_310,
+            totalMoneyEarned: 50_220,
             pendingShippingValue: 0,
             shippingSignature: "empty",
             duplicateEndpointCount: 3);
@@ -75,7 +75,7 @@ internal static partial class BootstrapSelfTest
                 totalDay: 10,
                 gameTick: 110,
                 money: 120,
-                totalMoneyEarned: 50_010,
+                totalMoneyEarned: 49_920,
                 pendingShippingValue: 0,
                 shippingSignature: "empty",
                 duplicateEndpointCount: 3),
@@ -87,7 +87,7 @@ internal static partial class BootstrapSelfTest
                 totalDay: 11,
                 gameTick: 200,
                 money: 720,
-                totalMoneyEarned: 50_610,
+                totalMoneyEarned: 50_520,
                 pendingShippingValue: 0,
                 shippingSignature: "empty",
                 duplicateEndpointCount: 3),
