@@ -146,6 +146,56 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                 currentRouteCandidates);
         }
 
+        if (staticRoute.RouteKind is "native_wild_tree_seed" or
+            "native_wild_tree_seed_drop")
+        {
+            return EvaluateCurrentGuaranteedOutput(
+                route,
+                staticRoute,
+                currentRouteCandidates,
+                "matching_guaranteed_wild_tree_product_candidate_not_present",
+                new[]
+                {
+                    "state.current_location.terrain_features.value[].tree_product_guaranteed_outputs",
+                    "state.current_location.terrain_features.value[].tree_product_authoritative_route_sources",
+                    "candidate:foraging.harvest_tree_product"
+                });
+        }
+
+        if (staticRoute.RouteKind == "native_location_forage_spawn")
+        {
+            if (currentRouteCandidates.TryFind(
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId,
+                    out var forageMatches,
+                    out _) &&
+                forageMatches.Length > 0)
+            {
+                return EvaluateCurrentGuaranteedOutput(
+                    route,
+                    staticRoute,
+                    currentRouteCandidates,
+                    "matching_spawned_object_candidate_not_present",
+                    new[]
+                    {
+                        "state.current_location.objects.value[].spawned_object_pickup_status",
+                        "state.current_location.objects.value[].spawned_object_authoritative_route_sources",
+                        "candidate:foraging.collect_spawned_objects"
+                    });
+            }
+            if (currentRouteCandidates
+                .HasQualifiedItemCandidateOutsideRouteKind(
+                    staticRoute.QualifiedItemId,
+                    staticRoute.RouteKind))
+            {
+                return NotApplicable(
+                    route,
+                    staticRoute.UncertaintyMode,
+                    "not_applicable_current_forage_absent_exact_alternative_present");
+            }
+        }
+
         if (IsMachineRoute(staticRoute.RouteKind))
             return EvaluateMachine(route, staticRoute, machineExpansion);
 

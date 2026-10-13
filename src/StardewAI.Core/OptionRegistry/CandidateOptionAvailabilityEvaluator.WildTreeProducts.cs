@@ -34,6 +34,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 var optional = ReadArray(feature, "tree_product_optional_output_domain");
                 var safeSlot = ReadInt(feature, "tree_product_safe_slot_index");
                 var restoreSlot = ReadInt(feature, "tree_product_restore_slot_index");
+                var distance = interaction is null
+                    ? 0
+                    : Math.Abs(playerX - interaction.Stand.X) +
+                      Math.Abs(playerY - interaction.Stand.Y);
                 var reasons = new List<string>();
                 if (status != "ready") reasons.Add(string.IsNullOrWhiteSpace(status) ? "tree_product_projection_unavailable" : status);
                 if (ReadString(feature, "tree_product_data_contract_status") != "exact_locked_base_1.6.15" ||
@@ -45,12 +49,17 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 if (safeSlot is < 0 or > 11 || restoreSlot is < 0 or > 11) reasons.Add("tree_product_empty_toolbar_slot_unavailable");
                 if (interaction is null) reasons.Add("tree_product_no_reachable_adjacent_interaction");
 
-                var parameters = interaction is null ? Array.Empty<SmallModelActionParameter>() : WildTreeProductParameters(feature, locationId, interaction);
+                var parameters = interaction is null
+                    ? Array.Empty<SmallModelActionParameter>()
+                    : WildTreeProductParameters(
+                        feature,
+                        locationId,
+                        interaction,
+                        distance);
                 if (parameters.Length > 0)
                 {
                     reasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate { OptionId = "executor.harvest_tree_product", Parameters = parameters }));
                 }
-                var distance = interaction is null ? 0 : Math.Abs(playerX - interaction.Stand.X) + Math.Abs(playerY - interaction.Stand.Y);
                 var outputId = guaranteed.Length == 0 ? string.Empty : ReadString(guaranteed[0], "qualified_item_id");
                 return new EventCandidate
                 {
@@ -64,7 +73,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     QualifiedItemId = outputId,
                     Quantity = 1,
                     ExpectedEffect = WildTreeProductExpectedEffect(feature, interaction),
-                    EstimatedTicks = Math.Max(45, distance * 60 + 45),
+                    EstimatedTicks = Math.Max(180, distance * 60 + 180),
                     EnergyCost = 0,
                     AvailabilityClass = "transparent_native_wild_tree_seed_shake",
                     BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
@@ -75,7 +84,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             .ToArray();
     }
 
-    private static SmallModelActionParameter[] WildTreeProductParameters(JsonElement feature, string locationId, TerrainInteraction interaction)
+    private static SmallModelActionParameter[] WildTreeProductParameters(
+        JsonElement feature,
+        string locationId,
+        TerrainInteraction interaction,
+        int routeDistanceTiles)
     {
         return new[]
         {
@@ -95,7 +108,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("tree_product_projection_status", ReadString(feature, "tree_product_projection_status")),
             Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
                 ReadArray(feature, "tree_product_authoritative_route_sources"))),
-            Parameter("tree_product_native_contract", ReadString(feature, "tree_product_native_contract")), Parameter("max_movement_tiles", "512")
+            Parameter("tree_product_native_contract", ReadString(feature, "tree_product_native_contract")),
+            Parameter("route_distance_tiles", routeDistanceTiles.ToString()),
+            Parameter("max_movement_tiles", "512")
         };
     }
 

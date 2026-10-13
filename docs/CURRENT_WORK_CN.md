@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 标准批次：原生野树种子掉落闭环
+
+- `wild_tree_seed_drop_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop / wild_tree:2:0 / full_shipment:full_shipment:item:408:0:4`，唯一动作链仍为 `foraging.harvest_tree_product -> executor.harvest_tree_product`。
+- 严格路线轴现在按 `route_kind + source_id + qualified_item_id` 绑定当前野树产物候选，并从锁定的 `Data/WildTrees payload.2.SeedDropItems[0].ItemId` 解析来源。路线距离进入日内预算，原生摇树后的自然碎片拾取获得独立时间余量；没有增加第二套野树候选、编译器或执行器。
+- `(O)408` 同时有 4 条地点觅食来源。它们未在当前快照物化，而精确的野树确定性来源已经存在，因此随机性轴将这些即时不可执行的替代路线标为不适用；若没有当前确定性替代来源，原有精确概率缺失门仍会失败关闭。该规则避免伪造概率，也没有放宽完整 Teacher 分母。
+- 最终 v4 原生动作在 `56` tick 内经 `GameLocation.checkAction -> Tree.performUseAction -> Tree.shake` 取得 `(O)408 x1`。回执为 `applied/verified`，验证 `has_seed true -> false`、`was_shaken_today false -> true`、完整输出域、背包自然拾取、觅食经验 `0` 和安全槽位恢复；没有直接写树、RNG、碎片、背包或技能状态。
+- v2 暴露了同需求替代觅食路线令 Teacher 分母不完整；v3 证明动作可行，但随后发现共享位置轴改写会使历史 proof 漂移，因此只保留为诊断产物。最终实现收窄到精确身份和随机性轴后，历史 `13` 层全部重建通过，再由 v4 形成正式 proof。
+- 最终 rollout proof manifest SHA-256 为 `5ccc6aed8f59a0f6f061b834f8ae16ac6eb5ebd8df76139a49c3f2b581dacce9`，receipt SHA-256 为 `44516df2daebcbfbfcfa15ea4ab21a6cb17aea837e9856c355fdc08dac97a9d6`。冻结源存档 SHA-256 仍为 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 严格 production evidence index 已推进到 `14/26`，剩余 `12` 层；共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。正式 proof 根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-wild-tree-seed-drop-v4-20261013\runtime-full-shipment-evidence-wild-tree-seed-drop-v4-20261013`，机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v24-20261013`。
+- 下一固定项为 `wild_tree_seed_sample / full_shipment:item:88 / (O)88 / native_wild_tree_seed`。应复用本轮同一候选、严格路线轴、原生摇树和自然拾取链，只验证 `Data/WildTrees payload.6.SeedItemId` 的独立来源层。
+
 ## 2026-10-13 Full Shipment 标准批次：原生茶树采收闭环
 
 - `tea_bush_harvest_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:815 / (O)815 / native_tea_bush_harvest / Bush.GetShakeOffItem / full_shipment:full_shipment:item:815:0:0`。

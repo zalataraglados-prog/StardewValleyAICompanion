@@ -18,6 +18,10 @@ public sealed class WildTreeProductMainlineTests
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("harvest_tree_product", candidate.Kind);
         Assert.Equal("(O)309", candidate.QualifiedItemId);
+        Assert.Equal(240, candidate.EstimatedTicks);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_distance_tiles" &&
+            parameter.Value == "1");
         Assert.Contains(candidate.Parameters, parameter =>
             parameter.Name == "authoritative_route_sources_json" &&
             parameter.Value.Contains(
@@ -61,6 +65,7 @@ public sealed class WildTreeProductMainlineTests
         Assert.True(candidate.Available,
             string.Join(";", candidate.BlockReasons));
         Assert.Equal("(O)408", candidate.QualifiedItemId);
+        Assert.Equal(240, candidate.EstimatedTicks);
         var sources = candidate.Parameters.Single(parameter =>
             parameter.Name == "authoritative_route_sources_json").Value;
         Assert.Contains("native_wild_tree_seed_drop", sources,

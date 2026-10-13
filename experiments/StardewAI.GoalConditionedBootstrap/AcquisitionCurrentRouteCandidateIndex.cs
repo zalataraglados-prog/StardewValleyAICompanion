@@ -13,6 +13,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "community_center.donate_bundle_items",
         "mining.reach_depth",
         "farm.collect_machine_outputs",
+        "foraging.collect_spawned_objects",
         "foraging.harvest_tree_product",
         "foraging.harvest_bushes",
         "foraging.harvest_ginger",
@@ -40,13 +41,32 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
     public bool HasRouteKindCandidate(string routeKind) =>
         Candidates.Any(value => value.RouteKind == routeKind);
 
+    public bool HasExactRouteCandidate(
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId) =>
+        TryFind(
+            routeKind,
+            sourceId,
+            qualifiedItemId,
+            out var matches,
+            out _) &&
+        matches.Length > 0;
+
+    public bool HasQualifiedItemCandidateOutsideRouteKind(
+        string qualifiedItemId,
+        string excludedRouteKind) =>
+        Candidates.Any(value =>
+            value.QualifiedItemId == qualifiedItemId &&
+            value.RouteKind != excludedRouteKind);
+
     public static AcquisitionCurrentRouteCandidateIndex Read(
         string snapshotPath)
     {
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v6",
+            "v7",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -468,6 +488,21 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             reasons.Add("current_ginger_terminal_evidence_incomplete");
             return false;
         }
+        if (routeKind is "native_wild_tree_seed" or
+            "native_wild_tree_seed_drop")
+        {
+            if (TryField(
+                    "current_location",
+                    "terrain_features",
+                    out var features) &&
+                FieldStatus(features) == "available" &&
+                FieldValue(features).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_wild_tree_product_terminal_evidence_incomplete");
+            return false;
+        }
         if (routeKind == "native_monster_drop_table")
         {
             return CanConcludeMineArray(
@@ -492,6 +527,18 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             }
             reasons.Add(
                 "current_location_artifact_spot_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind == "native_location_forage_spawn")
+        {
+            if (TryField("current_location", "objects", out var objects) &&
+                FieldStatus(objects) == "available" &&
+                FieldValue(objects).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add(
+                "current_location_forage_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_geode_drop")

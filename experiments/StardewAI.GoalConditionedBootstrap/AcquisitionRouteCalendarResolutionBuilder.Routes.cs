@@ -322,6 +322,20 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if ((route.RouteKind is "native_wild_tree_seed" or
+                "native_wild_tree_seed_drop") &&
+            currentRouteCandidates?.HasExactRouteCandidate(
+                route.RouteKind,
+                route.SourceId,
+                qualifiedItemId) == true)
+        {
+            return ResolveWildTreeProductWindow(
+                qualifiedItemId,
+                route,
+                currentRouteCandidates,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind == "harvests_as")
         {
             return ResolveCropWindows(
