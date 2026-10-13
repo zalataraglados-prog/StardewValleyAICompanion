@@ -133,6 +133,45 @@ public static partial class FullShipmentRecurrenceProofBuilder
             reasons.Add("full_shipment_recovery_actor_or_game_identity_drifted");
         }
 
+        if (!FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                expectedBefore,
+                out var expectedBoundary) ||
+            !FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                before,
+                out var beforeBoundary) ||
+            !FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                after,
+                out var afterBoundary))
+        {
+            reasons.Add(
+                "full_shipment_recovery_persistent_boundary_unavailable");
+        }
+        else
+        {
+            if (expectedBoundary != beforeBoundary)
+            {
+                reasons.Add(
+                    "full_shipment_recovery_persistent_boundary_chain_broken");
+            }
+            if (beforeBoundary!.InventorySha256 !=
+                afterBoundary!.InventorySha256)
+            {
+                reasons.Add("full_shipment_recovery_inventory_drifted");
+            }
+            if (beforeBoundary.CurrencySha256 !=
+                afterBoundary.CurrencySha256)
+            {
+                reasons.Add(
+                    "full_shipment_recovery_money_or_currency_drifted");
+            }
+            if (beforeBoundary.PersistentStateSha256 !=
+                afterBoundary.PersistentStateSha256)
+            {
+                reasons.Add(
+                    "full_shipment_recovery_persistent_state_drifted");
+            }
+        }
+
         var expectedProgress = FullShipmentSettlementVerifier.Project(
             requiredIds,
             expectedBefore);

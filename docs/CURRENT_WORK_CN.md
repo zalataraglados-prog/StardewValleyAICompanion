@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Recovery -> settlement 持久状态边界
+
+- 经核对，远端最新 issue 仍为长期总纲 `#236`，没有更新编号。其 action-origin debris 与 acquisition output sufficiency 两项已由共享实现覆盖；recovery 只比较 Full Shipment 进度、日期和 shipping bin 的意见仍然成立。
+- 新增版本化 `full_shipment_recovery_settlement_boundary.v1` 投影。连接器移动、菜单、动画和场景候选上下文是显式瞬态白名单；玩家背包、四类原生货币视图、累计收入、日期、shipping bin、world progress、quests 及其余未声明字段进入稳定指纹，未知字段默认按持久字段处理。
+- `FullShipmentRecurrenceProofBuilder` 现在同时验证 prior -> before 边界连续性以及 before -> after 的背包、货币和总持久状态不变性。合法移动继续通过，注入 Money 或 inventory 漂移会失败关闭。GoalConditionedBootstrap Release 构建 `0 warning / 0 error`，聚焦 `self-test-full-shipment-settlement` 通过；未启动游戏或全量回归。
+- 该切片修复快照内持久状态漏洞，但不宣称关闭整个 `#236`：controller 外部 strategy ledger 的 before/after 工件身份、统一 route/timing authority 与实测 profiling 仍是后续项。正式状态保持 promotion-grade `2/19`、root method `1/11`、`formal_product_training_authorized=false`。
+
 ## 2026-10-14 Revenue recurrence 可重放工件
 
 - 新增 `build-money-revenue-recurrence-proof` 与 `MoneyRevenueRecurrenceProofBuilder`。manifest 的每条边只能选择 `native_shop_sale` 或 `native_shipping_settlement` 一种证明形态；前者重新验真 shop execution episode，后者重新验真 sleep queue、before/after snapshot 与 queue receipt，混填或缺字段直接拒绝。

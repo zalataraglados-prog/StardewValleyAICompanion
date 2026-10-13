@@ -24,7 +24,8 @@ internal static partial class BootstrapSelfTest
             "full-shipment-recovery-after",
             totalDay: 40,
             parsnipShipped: false,
-            parsnipBinCount: 1);
+            parsnipBinCount: 1,
+            tileX: 1);
         after.GameTick = before.GameTick + 1;
         var valid = RecoveryFixture(
             before,
@@ -173,6 +174,79 @@ internal static partial class BootstrapSelfTest
             "full_shipment_recovery_pending_bin_item_drifted",
             "A pending shipping-bin item disappeared during recovery.");
 
+        var moneyAfter = RecoverySnapshot(
+            "full-shipment-recovery-money-drift",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1,
+            money: 501);
+        moneyAfter.GameTick = before.GameTick + 1;
+        var money = RecoveryFixture(
+            before,
+            moneyAfter,
+            "executor.traverse_connector",
+            "traverse_connector");
+        RequireRecoveryRejected(
+            ValidateRecovery(
+                money.Queue,
+                before,
+                money.Receipt,
+                moneyAfter,
+                before,
+                required),
+            "full_shipment_recovery_money_or_currency_drifted",
+            "Money drift crossed the recovery-settlement boundary.");
+
+        var inventoryAfter = RecoverySnapshot(
+            "full-shipment-recovery-inventory-drift",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1,
+            inventoryParsnipCount: 2);
+        inventoryAfter.GameTick = before.GameTick + 1;
+        var inventory = RecoveryFixture(
+            before,
+            inventoryAfter,
+            "executor.traverse_connector",
+            "traverse_connector");
+        RequireRecoveryRejected(
+            ValidateRecovery(
+                inventory.Queue,
+                before,
+                inventory.Receipt,
+                inventoryAfter,
+                before,
+                required),
+            "full_shipment_recovery_inventory_drifted",
+            "Inventory drift crossed the recovery-settlement boundary.");
+
+        var unknownPersistentAfter = RecoverySnapshot(
+            "full-shipment-recovery-unknown-persistent-drift",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1);
+        unknownPersistentAfter.GameTick = before.GameTick + 1;
+        unknownPersistentAfter.State["future_persistent_domain"] =
+            JsonSerializer.SerializeToElement(new
+            {
+                future_counter = 1
+            });
+        var unknownPersistent = RecoveryFixture(
+            before,
+            unknownPersistentAfter,
+            "executor.traverse_connector",
+            "traverse_connector");
+        RequireRecoveryRejected(
+            ValidateRecovery(
+                unknownPersistent.Queue,
+                before,
+                unknownPersistent.Receipt,
+                unknownPersistentAfter,
+                before,
+                required),
+            "full_shipment_recovery_persistent_state_drifted",
+            "An unknown persistent field bypassed the boundary contract.");
+
         var wrongExpected = RecoverySnapshot(
             "full-shipment-recovery-wrong-prior",
             totalDay: 40,
@@ -264,13 +338,52 @@ internal static partial class BootstrapSelfTest
         string stateHash,
         int totalDay,
         bool parsnipShipped,
-        int parsnipBinCount) => FullShipmentSettlementSnapshot(
+        int parsnipBinCount,
+        int money = 500,
+        int inventoryParsnipCount = 1,
+        int tileX = 0)
+    {
+        var snapshot = FullShipmentSettlementSnapshot(
             stateHash,
             totalDay,
             parsnipShipped,
             obsidianShipped: false,
             parsnipBinCount,
             achievement34: false);
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(new
+        {
+            location_id = Available("Farm"),
+            tile_x = Available(tileX),
+            tile_y = Available(10),
+            facing_direction = Available(2),
+            current_tool_index = Available(0),
+            money = Available(money),
+            club_coins = Available(10),
+            shop_currency_balances = Available(new
+            {
+                money,
+                star_tokens = 20,
+                club_coins = 10,
+                qi_gems = 5
+            }),
+            total_money_earned = Available(1000U),
+            inventory = Available(new[]
+            {
+                new
+                {
+                    slot_index = 0,
+                    qualified_item_id = "(O)24",
+                    stack = inventoryParsnipCount,
+                    quality = 0
+                }
+            })
+        });
+        snapshot.State["quests"] = JsonSerializer.SerializeToElement(new
+        {
+            active = Available(Array.Empty<object>())
+        });
+        return snapshot;
+    }
 
     private static (
         ActionQueueEnvelope Queue,

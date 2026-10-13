@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Recovery -> settlement 持久状态边界
+
+- Full Shipment 中间 recovery 不再只守 Full Shipment 进度与待结算物品。`full_shipment_recovery_settlement_boundary.v1` 将 actor/save/game/day、inventory、Money/星星币/赌场币/Qi 宝石视图、累计收入、shipping bin、world progress、quests 和未显式声明的状态字段纳入稳定指纹。
+- 只有移动位置、菜单、动画、当前场景候选投影等版本化瞬态字段可以变化；未知字段默认参与比较。合法 `traverse_connector` fixture 通过，Money 与 inventory 注入负例失败关闭。
+- 此项不增加 criterion coverage，也不替代外部 strategy ledger 的工件连续性证明。当前仍为 `2/19`、`1/11`，`formal_product_training_authorized=false`；Revenue comparison 的真实 acquisition/ledger/counterfactual 绑定仍是主线下一块。
+
 ## 2026-10-14 Revenue recurrence 可重放工件
 
 - `money_revenue_recurrence_proof_manifest.v1` 现在显式列出 shop-sale episode 或 shipping queue/snapshots/receipt，不接受调用方直接填写收益金额。`MoneyRevenueRecurrenceProofBuilder` 逐边复用唯一原生验证器，随后重建同 actor/save、checkpoint 连续、Year 3 截止内的 prefix。
