@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-14 通用原生 shipping-settlement evidence
+
+- 单项原生 sleep queue、queue execution receipt 与隔夜 Money progression 现由 `NativeShippingSettlementEvidenceVerifier` 联合验真；`executor.sleep` 和带 `execution_option_id=executor.sleep` 的 `recovery.stabilize_day` 继续复用同一执行器。
+- Full Shipment 普通与终局 settlement receipt 已改为消费该共享入口，不再分别只校验“睡了一天”和 collection 变化而遗漏实际金额归因。合法发货收益必须与前夜去重后的 pending shipping value 精确一致。
+- hermetic 同时覆盖有效 sleep receipt 与非 sleep queue 拒绝。历史工件若缺少 Money 或完整 shipping-scope 字段将 fail closed 并需重采；不会降低或伪造现有 production 分子。
+- 即时 sale 与隔夜 shipping 两种收益边至此都有唯一原生验真入口。下一步把它们编排成同 actor、状态哈希连续、截止 Year 3 的 Revenue recurrence prefix，并接入 reserve-aware alternative 比较。
+
 ## 2026-10-14 通用原生 shop-sale evidence
 
 - 原先位于 Money 阈值 corpus 内部的 execution episode/header/hash/queue/result 验真已下沉为唯一 `NativeShopSaleEpisodeVerifier`。阈值 corpus 现在只负责在通用 sale progression 上派生 crossed criterion，不再复制执行证据验证。
