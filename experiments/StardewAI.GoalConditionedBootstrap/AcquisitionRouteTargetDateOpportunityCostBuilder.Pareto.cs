@@ -58,6 +58,19 @@ public static partial class AcquisitionRouteTargetDateOpportunityCostBuilder
         AcquisitionOpportunityCostVector candidate,
         AcquisitionOpportunityCostVector target)
     {
+        var comparison = CompareOpportunityCost(candidate, target);
+        return comparison.AllNoWorse && comparison.AnyBetter;
+    }
+
+    internal static bool OpportunityCostNoWorse(
+        AcquisitionOpportunityCostVector candidate,
+        AcquisitionOpportunityCostVector target) =>
+        CompareOpportunityCost(candidate, target).AllNoWorse;
+
+    private static OpportunityCostComparison CompareOpportunityCost(
+        AcquisitionOpportunityCostVector candidate,
+        AcquisitionOpportunityCostVector target)
+    {
         var allNoWorse = candidate.GuaranteedElapsedGameMinutes <=
                 target.GuaranteedElapsedGameMinutes &&
             candidate.RequiredEnergy <= target.RequiredEnergy;
@@ -85,7 +98,7 @@ public static partial class AcquisitionRouteTargetDateOpportunityCostBuilder
             allNoWorse &= left <= right;
             anyBetter |= left < right;
         }
-        return allNoWorse && anyBetter;
+        return new OpportunityCostComparison(allNoWorse, anyBetter);
     }
 
     private static IReadOnlyDictionary<MaterialDimension, int>
@@ -107,4 +120,8 @@ public static partial class AcquisitionRouteTargetDateOpportunityCostBuilder
         string QualifiedItemId,
         int Quality,
         int UnitSalePrice);
+
+    private sealed record OpportunityCostComparison(
+        bool AllNoWorse,
+        bool AnyBetter);
 }

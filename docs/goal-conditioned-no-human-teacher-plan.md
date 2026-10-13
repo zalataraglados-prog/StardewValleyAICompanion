@@ -3074,6 +3074,19 @@ Slice 7 remains assigned to the RTX 5070 node.
 - This proves a typed contiguous revenue prefix, not a fresh-save million-gold schedule. The next bounded slice adds
   reserve-aware alternative comparisons before production partition evidence can be collected.
 
+### 2026-10-14: reserve-aware Revenue alternative comparison
+
+- The comparison boundary derives its target only from the authoritative Money criterion table and requires an exact
+  candidate denominator, one source checkpoint and one ledger revision. Every candidate's Revenue prefix is rebuilt;
+  its non-scalar opportunity-cost vector must reconcile with the atomic material/currency reservation claim set.
+- Selection follows `authoritative_threshold_then_reserve_aware_strict_pareto.v1`: authoritative terminal satisfaction
+  is primary, then candidates in the same terminal class are compared by clamped threshold progress, completion day,
+  time, energy, exact material dimensions and native currency dimensions. Only one authoritative frontier member emits
+  pairwise preferences. Trade-offs and ties remain unlabeled, and learner scores are never read.
+- Hermetic coverage rejects incomplete denominators, stale claims and claim/cost quantity drift. Production admission
+  still requires deterministic acquisition-route rebuilding, verified ledger commits, support-transition continuity
+  and isolated counterfactual rollouts; this comparison alone does not change formal coverage or authorization.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

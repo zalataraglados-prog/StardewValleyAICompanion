@@ -15,11 +15,12 @@ internal static partial class BootstrapSelfTest
             prefix.ImmediateShopSaleCount == 1 &&
             prefix.NativeShippingSettlementCount == 1 &&
             prefix.TotalRevenue == 320 &&
-            prefix.InitialTotalMoneyEarned == 49_990 &&
-            prefix.FinalTotalMoneyEarned == 50_310 &&
+            prefix.InitialTotalMoneyEarned == 49_900 &&
+            prefix.FinalTotalMoneyEarned == 50_220 &&
             prefix.InitialTotalDay == 10 &&
             prefix.FinalTotalDay == 11,
             "Money revenue recurrence prefix totals or kind coverage drifted.");
+        VerifyMoneyRevenueAlternativeComparison(prefix, sale);
 
         RequireMoneyRecurrenceRejected(
             new[]

@@ -1,10 +1,16 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue 储备感知候选比较
+
+- `MoneyRevenueAlternativeComparer` 从权威 Money criterion 内部取得阈值，要求完整候选分母、同一收益起点和同一 ledger revision。每个候选重新验真 Revenue 前缀，非标量机会成本必须与原子 reservation claim set 的材料/货币数量一致，且不允许替换既有储备。
+- 选择策略为 `authoritative_threshold_then_reserve_aware_strict_pareto.v1`：先区分是否满足权威终态；终态状态相同时，才按阈值内收益进度、完成日、时间、能量、逐物品材料和逐币种成本做严格 Pareto。只有唯一权威偏好才输出 pairwise label；trade-off 与平局保持不可比，learner score 永不参与。
+- 当前是 hermetic 类型边界，还未绑定真实 acquisition route 的确定性重建、ledger commit 证明和隔离 counterfactual rollout。它不能进入 production 分子，也不授权正式训练；下一开发块补齐这些 artifact binding 与 acquisition/processing 支持转移连续性。
+
 ## 2026-10-14 Revenue 连续前缀
 
 - `MoneyRevenueRecurrenceVerifier` 现将即时商店销售与原生隔夜发货结算组合为同 save/player、状态哈希连续且严格早于 Year 3 截止的类型化前缀。每个公开 transition record 都会重验金额、日期、shipping scope 与 kind 不变量，不能靠调用方声明绕过原生边界。
 - 前缀输出保留首尾状态、首尾日数、现金与累计收入、总收益、两类边计数及完整 transition 序列。断链、伪造增量和截止日外记录 fail closed。
-- 这仍只是连续收益证据结构，不是 fresh-save 百万元 schedule，也没有证明保留任务/收集/生产所需物品后的机会成本。下一步是 reserve-aware alternative comparison；正式训练准入不变。
+- 这仍只是连续收益证据结构，不是 fresh-save 百万元 schedule。后续比较层已经消费 reservation claim 与非标量机会成本，但真实路线重建和隔离 counterfactual 尚未绑定；正式训练准入不变。
 
 ## 2026-10-14 原生发货结算证据复用
 
