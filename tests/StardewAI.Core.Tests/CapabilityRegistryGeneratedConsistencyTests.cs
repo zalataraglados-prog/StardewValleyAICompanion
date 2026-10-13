@@ -1117,6 +1117,49 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void SocialHighLevelOptionsUseOneExplicitDailyPlanToPrimitivePipelineTests()
+    {
+        var expectedKinds = new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["social.talk_npc"] = new[]
+            {
+                "recovery_close_menu", "route_connector_tile",
+                "social_continuation_retry_wait", "social_talk_current"
+            },
+            ["social.gift_npc"] = new[]
+            {
+                "recovery_close_menu", "route_connector_tile",
+                "social_continuation_retry_wait", "social_gift_current"
+            },
+            ["social.advance_partnership"] = new[]
+            {
+                "partnership_bouquet_current", "partnership_propose_marriage_current",
+                "partnership_propose_roommate_current", "recovery_close_menu",
+                "route_connector_tile", "social_continuation_retry_wait"
+            }
+        };
+
+        foreach (var (optionId, candidateKinds) in expectedKinds)
+        {
+            var declaration = OptionCapabilityRegistrySource.GetRequired(optionId);
+            Assert.True(declaration.InternalExecutionPipelineSupported);
+            Assert.False(declaration.ProductExecutorSupported);
+            Assert.False(declaration.HarnessDispatchSupported);
+            Assert.True(DailyPlanCompiler.HasOptionCompiler(optionId));
+            Assert.False(ActionQueueCompiler.HasStepCompiler(optionId));
+            Assert.Equal(
+                candidateKinds,
+                DailyPlanCompiler.OptionCompilerCandidateKinds(optionId)
+                    .OrderBy(value => value, StringComparer.Ordinal));
+        }
+
+        var primitive = OptionCapabilityRegistrySource.GetRequired("executor.social_interact");
+        Assert.True(primitive.ProductExecutorSupported);
+        Assert.True(primitive.HarnessDispatchSupported);
+        Assert.True(ActionQueueCompiler.HasStepCompiler(primitive.OptionId));
+    }
+
+    [Fact]
     public void EveryExcludedOptionHasTypedTrainingAdmissionReasonsTests()
     {
         var excluded = OptionCapabilityRegistrySource.All
