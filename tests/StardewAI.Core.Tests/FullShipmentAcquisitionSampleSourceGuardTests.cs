@@ -398,6 +398,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             candidateIndex,
             StringComparison.Ordinal);
         Assert.Contains(
+            "HasQualifiedItemCandidateOutsideSource(",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ResolveWildTreeProductAbsentSourceWindow(",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RequiresExistingLiveCandidateMatch = true",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "matching_guaranteed_wild_tree_product_candidate_not_present",
             stochastic,
             StringComparison.Ordinal);
