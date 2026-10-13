@@ -15,17 +15,17 @@ internal static partial class BootstrapSelfTest
             gameTick: 100,
             money: 100,
             totalMoneyEarned: 49_990,
-            pendingShippingValue: 120,
-            shippingSignature: "pending-120",
-            duplicateEndpointCount: 2);
+            pendingShippingValue: 300,
+            shippingSignature: "pending-300",
+            duplicateEndpointCount: 3);
         var saleAfter = MoneyProgressionSnapshot(
             totalDay: 10,
             gameTick: 110,
             money: 120,
             totalMoneyEarned: 50_010,
-            pendingShippingValue: 120,
-            shippingSignature: "pending-120",
-            duplicateEndpointCount: 2);
+            pendingShippingValue: 300,
+            shippingSignature: "pending-300",
+            duplicateEndpointCount: 3);
         var sale = MoneyRevenueProgressionVerifier.VerifyImmediateShopSale(
             saleBefore,
             saleAfter);
@@ -34,7 +34,7 @@ internal static partial class BootstrapSelfTest
                 MoneyRevenueTransitionKinds.ImmediateShopSale &&
             sale.MoneyDelta == 20 &&
             sale.TotalMoneyEarnedDelta == 20 &&
-            sale.Before.PendingShippingSettlementValue == 120,
+            sale.Before.PendingShippingSettlementValue == 300,
             "Immediate Money progression did not preserve an isolated sale.");
 
         var settlementBefore = MoneyProgressionSnapshot(
@@ -67,6 +67,7 @@ internal static partial class BootstrapSelfTest
         VerifyNativeShippingSettlementReceipt(
             settlementBefore,
             settlementAfter);
+        VerifyMoneyRevenueRecurrencePrefix(sale, settlement);
 
         RequireMoneyProgressionRejected(
             saleBefore,
@@ -77,7 +78,7 @@ internal static partial class BootstrapSelfTest
                 totalMoneyEarned: 50_010,
                 pendingShippingValue: 0,
                 shippingSignature: "empty",
-                duplicateEndpointCount: 2),
+                duplicateEndpointCount: 3),
             MoneyRevenueProgressionVerifier.VerifyImmediateShopSale,
             "A shop sale that consumed pending shipping was admitted.");
         RequireMoneyProgressionRejected(

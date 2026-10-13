@@ -3063,6 +3063,17 @@ Slice 7 remains assigned to the RTX 5070 node.
   pending value. Historical snapshots missing the required Money or scoped-shipping fields fail closed and must be
   recollected. The next slice can therefore sequence shop and shipping edges without a second settlement implementation.
 
+### 2026-10-14: typed Revenue recurrence prefix
+
+- `MoneyRevenueRecurrenceVerifier` composes verified immediate-sale and native shipping-settlement transitions under one
+  save/player identity. Adjacent transitions must share the complete boundary checkpoint, so their state hash, day,
+  money, cumulative earnings and shipping scope cannot drift between edges.
+- Public transition records are treated as untrusted inputs. The verifier recomputes every kind-specific delta and day
+  invariant, enforces the pre-Year-3 deadline, and reconciles the aggregate revenue with the first and final checkpoints.
+  Hermetic cases reject disconnected hashes, forged deltas and deadline overflow.
+- This proves a typed contiguous revenue prefix, not a fresh-save million-gold schedule. The next bounded slice adds
+  reserve-aware alternative comparisons before production partition evidence can be collected.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
