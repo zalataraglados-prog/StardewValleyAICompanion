@@ -107,6 +107,30 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var source = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.ForageSourceFixture.cs");
+        var executionCommon = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.ExecutionCommon.cs");
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.Bushes.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Bushes.cs");
+        var executor = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Bushes.cs");
+        var executorState = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.Foraging.cs");
 
         Assert.Contains(
             "\"berry_bush_harvest_sample\"",
@@ -138,6 +162,75 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "\"berry_standard\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MoveFixtureFarmerToLocationPerimeter(",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "bush.getBoundingBox().Contains(",
+            fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "!bounds.Contains(standCenterX, standCenterY)",
+            executionCommon,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_native_bush_candidate_calendar",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.parameters[route_distance_tiles]",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "inventoryDelta >= active.ExpectedQuantity",
+            executor,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "native_bush_output_naturally_collected_when_inventory_bearing",
+            executor,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TickBushHarvestOutputCollection(active, playerTile)",
+            executor,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "DebrisChunkTile(candidate)",
+            executor,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildAdjacentToolPath(",
+            executor,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "InventoryCountBefore = CountInventoryItemAtQuality(",
+            executorState,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FullShipmentRuntimeSkipBuildRejectsStaleReleaseComponents()
+    {
+        var source = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+
+        Assert.Contains(
+            "Assert-StardewAIBuildOutputFresh",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Path = $backendDll",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Path = $loopDll",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Path = $script:bootstrapDll",
             source,
             StringComparison.Ordinal);
     }

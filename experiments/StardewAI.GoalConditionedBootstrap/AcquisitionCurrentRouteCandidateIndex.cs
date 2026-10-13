@@ -14,6 +14,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "mining.reach_depth",
         "farm.collect_machine_outputs",
         "foraging.harvest_tree_product",
+        "foraging.harvest_bushes",
         "foraging.excavate_artifact_spots",
         "fishing.service_fish_ponds",
         "processing.crack_geode"
@@ -44,7 +45,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v4",
+            "v5",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -280,6 +281,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     ReadIntParameter(candidate, "stand_tile_y"),
                     ReadIntParameter(candidate, "max_movement_tiles") ??
                         ReadIntParameter(candidate, "route_distance_tiles"),
+                    ReadIntParameter(candidate, "route_distance_tiles"),
                     ReadIntParameter(candidate, "max_tool_swings"),
                     ReadIntParameter(candidate, "max_attacks"),
                     ReadDoubleParameter(candidate, "estimated_target_cost_ms"),
@@ -374,6 +376,26 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         return true;
     }
 
+    public bool TryGetCurrentCalendar(
+        out int totalDay,
+        out string season)
+    {
+        totalDay = 0;
+        season = string.Empty;
+        if (!TryField("time", "total_days", out var totalDays) ||
+            FieldStatus(totalDays) != "available" ||
+            !FieldValue(totalDays).TryGetInt32(out totalDay) ||
+            !TryField("time", "season", out var seasonField) ||
+            FieldStatus(seasonField) != "available" ||
+            FieldValue(seasonField).ValueKind != JsonValueKind.String)
+        {
+            return false;
+        }
+        season = FieldValue(seasonField).GetString() ?? string.Empty;
+        return totalDay >= 0 && season is
+            "spring" or "summer" or "fall" or "winter";
+    }
+
     private bool CanConcludeCurrentCandidateSet(
         string routeKind,
         ICollection<string> reasons)
@@ -414,6 +436,21 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             }
             reasons.Add(
                 "current_community_center_reward_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind is "native_bush_shake" or
+            "native_tea_bush_harvest")
+        {
+            if (TryField(
+                    "current_location",
+                    "large_terrain_features",
+                    out var features) &&
+                FieldStatus(features) == "available" &&
+                FieldValue(features).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_bush_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_monster_drop_table")
@@ -590,6 +627,7 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     int? StandTileX,
     int? StandTileY,
     int? MaxMovementTiles,
+    int? RouteDistanceTiles,
     int? MaxToolSwings,
     int? MaxAttacks,
     double? EstimatedTargetCostMs,

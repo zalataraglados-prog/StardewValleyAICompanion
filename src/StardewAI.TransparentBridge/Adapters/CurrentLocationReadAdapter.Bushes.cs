@@ -95,6 +95,9 @@ public sealed partial class CurrentLocationReadAdapter
             _ => "ordinary_berry"
         };
         var outputId = exactVanillaType ? bush.GetShakeOffItem() ?? string.Empty : string.Empty;
+        var authoritativeRouteSources = ReadBushAuthoritativeRouteSources(
+            bush,
+            outputId);
         var outputContextTags = string.IsNullOrWhiteSpace(outputId)
             ? Array.Empty<string>()
             : ItemRegistry.Create(outputId)
@@ -147,6 +150,7 @@ public sealed partial class CurrentLocationReadAdapter
             bush_harvest_status = status,
             bush_projection_status = exactVanillaType ? "exact_from_native_bush_shake" : "unsupported_custom_runtime_type",
             bush_output_qualified_item_id = outputId,
+            bush_authoritative_route_sources = authoritativeRouteSources,
             bush_output_context_tags = outputContextTags,
             bush_output_quantity_min = quantity,
             bush_output_quantity_max = quantity,
@@ -157,5 +161,31 @@ public sealed partial class CurrentLocationReadAdapter
             bush_nut_collected_before = nutCollected,
             bush_nut_collected_expected_after = size == 4
         };
+    }
+
+    private static object[] ReadBushAuthoritativeRouteSources(
+        Bush bush,
+        string qualifiedItemId)
+    {
+        if (bush.GetType() != typeof(Bush))
+            return Array.Empty<object>();
+
+        var routeKind = qualifiedItemId switch
+        {
+            "(O)296" => "native_bush_shake",
+            "(O)815" => "native_tea_bush_harvest",
+            _ => string.Empty
+        };
+        return string.IsNullOrWhiteSpace(routeKind)
+            ? Array.Empty<object>()
+            : new object[]
+            {
+                new
+                {
+                    route_kind = routeKind,
+                    source_id = "Bush.GetShakeOffItem",
+                    qualified_item_id = qualifiedItemId
+                }
+            };
     }
 }

@@ -52,9 +52,22 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add("bush_no_reachable_perimeter_interaction");
                     }
 
+                    var distance = interaction is null
+                        ? 0
+                        : Math.Abs(playerX - interaction.Stand.X) +
+                          Math.Abs(playerY - interaction.Stand.Y);
+                    var interactionAndCollectionTicks =
+                        ReadString(feature, "bush_kind") is
+                            "ordinary_berry" or "tea_leaf"
+                            ? 180
+                            : 45;
                     var parameters = interaction is null
                         ? Array.Empty<SmallModelActionParameter>()
-                        : BushParameters(feature, locationId, interaction);
+                        : BushParameters(
+                            feature,
+                            locationId,
+                            interaction,
+                            distance);
                     if (parameters.Length > 0)
                     {
                         blockReasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
@@ -64,9 +77,6 @@ namespace StardewAI.Core.OptionRegistry
                         }));
                     }
 
-                    var distance = interaction is null
-                        ? 0
-                        : Math.Abs(playerX - interaction.Stand.X) + Math.Abs(playerY - interaction.Stand.Y);
                     return new EventCandidate
                     {
                         CandidateId = "harvest-bush:" + locationId + ":" + x + "," + y + ":" + ReadString(feature, "bush_kind"),
@@ -79,7 +89,9 @@ namespace StardewAI.Core.OptionRegistry
                         QualifiedItemId = outputId,
                         Quantity = quantity,
                         ExpectedEffect = BushExpectedEffect(feature, interaction),
-                        EstimatedTicks = Math.Max(45, distance * 60 + 45),
+                        EstimatedTicks = Math.Max(
+                            interactionAndCollectionTicks,
+                            distance * 60 + interactionAndCollectionTicks),
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_native_bush_shake_harvest",
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
@@ -123,7 +135,11 @@ namespace StardewAI.Core.OptionRegistry
                 .FirstOrDefault();
         }
 
-        private static SmallModelActionParameter[] BushParameters(JsonElement feature, string locationId, TerrainInteraction interaction)
+        private static SmallModelActionParameter[] BushParameters(
+            JsonElement feature,
+            string locationId,
+            TerrainInteraction interaction,
+            int routeDistanceTiles)
         {
             return new[]
             {
@@ -139,6 +155,11 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("bush_kind", ReadString(feature, "bush_kind")),
                 Parameter("qualified_item_id", ReadString(feature, "bush_output_qualified_item_id")),
                 Parameter(
+                    "authoritative_route_sources_json",
+                    JsonSerializer.Serialize(ReadArray(
+                        feature,
+                        "bush_authoritative_route_sources"))),
+                Parameter(
                     "bush_output_context_tags_json",
                     JsonSerializer.Serialize(ReadStringArray(feature, "bush_output_context_tags"))),
                 Parameter("quantity", ReadInt(feature, "bush_output_quantity_min").ToString()),
@@ -149,6 +170,7 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("bush_nut_collected_before", (ReadBool(feature, "bush_nut_collected_before") == true).ToString().ToLowerInvariant()),
                 Parameter("bush_nut_collected_expected_after", (ReadBool(feature, "bush_nut_collected_expected_after") == true).ToString().ToLowerInvariant()),
                 Parameter("bush_projection_status", ReadString(feature, "bush_projection_status")),
+                Parameter("route_distance_tiles", routeDistanceTiles.ToString()),
                 Parameter("max_movement_tiles", "512")
             };
         }
@@ -164,6 +186,8 @@ namespace StardewAI.Core.OptionRegistry
                 "current_location.large_terrain_features[" + x + "," + y + "].tile_sheet_offset=0" +
                 ";bush_kind=" + ReadString(feature, "bush_kind") +
                 ";qualified_item_id=" + ReadString(feature, "bush_output_qualified_item_id") +
+                ";authoritative_route_sources_json=" + JsonSerializer.Serialize(
+                    ReadArray(feature, "bush_authoritative_route_sources")) +
                 ";quantity=" + ReadInt(feature, "bush_output_quantity_min") +
                 ";expected_output_quality=" + ReadInt(feature, "bush_output_quality") +
                 ";expected_foraging_experience_delta=" + ReadInt(feature, "bush_foraging_experience_on_success_min") +

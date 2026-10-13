@@ -298,6 +298,10 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             .HasRouteKindCandidate("native_geode_drop") == true;
         var currentCommunityCenterRewardEnabled = currentRouteCandidates?
             .HasRouteKindCandidate("creates_reward_item") == true;
+        var currentBushShakeEnabled = currentRouteCandidates?
+            .HasRouteKindCandidate("native_bush_shake") == true;
+        var currentTeaBushHarvestEnabled = currentRouteCandidates?
+            .HasRouteKindCandidate("native_tea_bush_harvest") == true;
         var routes = BuildRoutes(
             lowering,
             communityCenterAuthority,
@@ -372,6 +376,12 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     : Array.Empty<string>())
                 .Concat(currentGeodeDropEnabled
                     ? new[] { "native_geode_drop" }
+                    : Array.Empty<string>())
+                .Concat(currentBushShakeEnabled
+                    ? new[] { "native_bush_shake" }
+                    : Array.Empty<string>())
+                .Concat(currentTeaBushHarvestEnabled
+                    ? new[] { "native_tea_bush_harvest" }
                     : Array.Empty<string>())
                 .Order(StringComparer.Ordinal)
                 .ToArray(),

@@ -84,6 +84,26 @@ public sealed partial class ModEntry
                 questReason));
             return;
         }
+        var projectedOutput = ItemRegistry.Create(
+            projection!.QualifiedItemId,
+            projection.Quantity,
+            projection.Quality);
+        if (projection.Branch is "ordinary_berry" or "tea_leaf" &&
+            !Game1.player.couldInventoryAcceptThisItem(projectedOutput))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "harvest_bush",
+                "bush.tile_sheet_offset=0;inventory_receipt=true",
+                BushHarvestObservedEffect(
+                    location,
+                    bush,
+                    target,
+                    request.QualifiedItemId,
+                    request.ExpectedOutputQuality.Value),
+                "harvest_bush_inventory_cannot_accept_output"));
+            return;
+        }
 
         var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
         var path = TryBuildTilePath(location, Game1.player.TilePoint, stand, maxMovementTiles, out var pathReason, avoidSoftObstacles: true, allowRemovableObstacles: false);
@@ -178,11 +198,30 @@ public sealed partial class ModEntry
             CompleteBushHarvestBlocked(active, "harvest_bush_target_removed_during_execution");
             return;
         }
+        var playerTile = Game1.player.TilePoint;
+        if (playerTile != active.LastObservedTile)
+        {
+            active.MovementTiles += ManhattanDistance(
+                active.LastObservedTile,
+                playerTile);
+            active.LastObservedTile = playerTile;
+            if (active.MovementTiles > active.MaxMovementTiles)
+            {
+                CompleteBushHarvestBlocked(
+                    active,
+                    "harvest_bush_movement_budget_exceeded");
+                return;
+            }
+        }
         if (active.ActionIssued)
         {
             if (BushHarvestPostconditionsMet(active))
             {
                 CompleteBushHarvest(active);
+            }
+            else if (BushHarvestNativePostconditionsMet(active))
+            {
+                TickBushHarvestOutputCollection(active, playerTile);
             }
             return;
         }
@@ -192,17 +231,6 @@ public sealed partial class ModEntry
             return;
         }
 
-        var playerTile = Game1.player.TilePoint;
-        if (playerTile != active.LastObservedTile)
-        {
-            active.MovementTiles += ManhattanDistance(active.LastObservedTile, playerTile);
-            active.LastObservedTile = playerTile;
-            if (active.MovementTiles > active.MaxMovementTiles)
-            {
-                CompleteBushHarvestBlocked(active, "harvest_bush_movement_budget_exceeded");
-                return;
-            }
-        }
         if (playerTile != active.Stand)
         {
             if (active.PathIndex >= active.Path.Count)
@@ -261,11 +289,159 @@ public sealed partial class ModEntry
 
     private static bool BushHarvestPostconditionsMet(ActiveBushHarvest active)
     {
-        var outputDelta = CountBushOutput(active.Location, active.QualifiedItemId, active.ExpectedQuality) - active.OutputCountBefore;
+        var inventoryDelta = CountInventoryItemAtQuality(
+            active.QualifiedItemId,
+            active.ExpectedQuality) - active.InventoryCountBefore;
+        var inventoryReceiptVerified = active.Branch is not (
+            "ordinary_berry" or "tea_leaf") ||
+            inventoryDelta >= active.ExpectedQuantity;
+        return BushHarvestNativePostconditionsMet(active) &&
+            inventoryReceiptVerified;
+    }
+
+    private static bool BushHarvestNativePostconditionsMet(
+        ActiveBushHarvest active)
+    {
+        var outputDelta = CountBushOutput(
+            active.Location,
+            active.QualifiedItemId,
+            active.ExpectedQuality) - active.OutputCountBefore;
         var xpDelta = Game1.player.experiencePoints[Farmer.foragingSkill] - active.ForagingExperienceBefore;
         var nutCollected = string.IsNullOrWhiteSpace(active.NutKey) || Game1.player.team.collectedNutTracker.Contains(active.NutKey);
-        return active.Bush.tileSheetOffset.Value == 0 && outputDelta == active.ExpectedQuantity &&
-            xpDelta == active.ExpectedForagingExperience && nutCollected;
+        return active.Bush.tileSheetOffset.Value == 0 &&
+            outputDelta == active.ExpectedQuantity &&
+            xpDelta == active.ExpectedForagingExperience &&
+            nutCollected;
+    }
+
+    private void TickBushHarvestOutputCollection(
+        ActiveBushHarvest active,
+        Point playerTile)
+    {
+        if (active.Branch is not ("ordinary_berry" or "tea_leaf"))
+        {
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp ||
+            Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var chunk = active.Location.debris
+            .Where(debris => string.Equals(
+                DebrisQualifiedItemId(debris),
+                active.QualifiedItemId,
+                StringComparison.OrdinalIgnoreCase) &&
+                (debris.item?.Quality ?? debris.itemQuality) ==
+                    active.ExpectedQuality)
+            .SelectMany(debris => debris.Chunks)
+            .OrderBy(candidate => ManhattanDistance(
+                playerTile,
+                DebrisChunkTile(candidate)))
+            .FirstOrDefault();
+        if (chunk is null)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var target = DebrisChunkTile(chunk);
+        if (ManhattanDistance(playerTile, target) <= 1)
+        {
+            StopAllMovement();
+            active.Path.Clear();
+            active.PathIndex = 0;
+            active.PickupPathTarget = target;
+            return;
+        }
+
+        if (active.PathIndex >= active.Path.Count ||
+            active.PickupPathTarget != target)
+        {
+            var remainingMovementTiles =
+                active.MaxMovementTiles - active.MovementTiles;
+            if (remainingMovementTiles <= 0)
+            {
+                CompleteBushHarvestBlocked(
+                    active,
+                    "harvest_bush_movement_budget_exceeded");
+                return;
+            }
+            var path = IsTileWalkable(active.Location, target) &&
+                !IsTileOccupiedByCharacter(active.Location, target)
+                    ? TryBuildTilePath(
+                        active.Location,
+                        playerTile,
+                        target,
+                        remainingMovementTiles,
+                        out var pathReason,
+                        avoidSoftObstacles: true)
+                    : BuildAdjacentToolPath(
+                        active.Location,
+                        target,
+                        remainingMovementTiles,
+                        out pathReason,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false);
+            if (path is null)
+            {
+                active.PickupPathFailures++;
+                if (active.PickupPathFailures > 90)
+                {
+                    CompleteBushHarvestBlocked(
+                        active,
+                        "harvest_bush_output_pickup_path_unavailable:" +
+                        pathReason);
+                }
+                return;
+            }
+            active.Path.Clear();
+            active.Path.AddRange(path);
+            active.PathIndex = 0;
+            active.PickupPathTarget = target;
+            active.PickupPathFailures = 0;
+        }
+
+        if (active.PathIndex >= active.Path.Count)
+        {
+            return;
+        }
+        var next = active.Path[active.PathIndex];
+        if (playerTile == next)
+        {
+            active.PathIndex++;
+            return;
+        }
+        if (!IsTileWalkable(active.Location, next) ||
+            IsTileOccupiedByCharacter(active.Location, next))
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            return;
+        }
+
+        var moved = Vector2.DistanceSquared(
+            active.LastPosition,
+            Game1.player.Position) >= 0.01f;
+        active.LastPosition = Game1.player.Position;
+        StartMoving(DirectionTo(playerTile, next));
+        MovePlayerForTick();
+        if (Game1.player.TilePoint == next)
+        {
+            active.PathIndex++;
+        }
+        if (!moved && ++active.StuckTicks > 45)
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            active.StuckTicks = 0;
+        }
+        else if (moved)
+        {
+            active.StuckTicks = 0;
+        }
     }
 
     private void CompleteBushHarvest(ActiveBushHarvest active)
@@ -274,6 +450,9 @@ public sealed partial class ModEntry
         activeBushHarvest = null;
         var request = active.Pending.Request;
         var outputAfter = CountBushOutput(active.Location, active.QualifiedItemId, active.ExpectedQuality);
+        var inventoryAfter = CountInventoryItemAtQuality(
+            active.QualifiedItemId,
+            active.ExpectedQuality);
         var xpAfter = Game1.player.experiencePoints[Farmer.foragingSkill];
         var nutAfter = !string.IsNullOrWhiteSpace(active.NutKey) && Game1.player.team.collectedNutTracker.Contains(active.NutKey);
         var result = new TrainingExecutionResult
@@ -291,13 +470,14 @@ public sealed partial class ModEntry
             TrainingImpactScope = "executor_calibration",
             PrimitiveKind = "harvest_bush",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "native_checkAction_invoked_exact_bush", "native_bush_offset_and_output_delta_verified", "branch_xp_and_nut_tracker_contract_verified" },
+            PrimitiveVerificationReasons = new[] { "native_checkAction_invoked_exact_bush", "native_bush_offset_and_output_delta_verified", "native_bush_output_naturally_collected_when_inventory_bearing", "branch_xp_and_nut_tracker_contract_verified" },
             RequestedEffect = active.RequestedEffect,
             ObservedEffect = BushHarvestObservedEffect(active.Location, active.Bush, active.Target, active.QualifiedItemId, active.ExpectedQuality),
             ChangedFacts = new[]
             {
                 new SimulatedFactChange { Path = "current_location.large_terrain_features[" + active.Target.X + "," + active.Target.Y + "].tile_sheet_offset", Before = active.TileSheetOffsetBefore.ToString(), After = active.Bush.tileSheetOffset.Value.ToString() },
                 new SimulatedFactChange { Path = "current_location.output.count[" + active.QualifiedItemId + ",quality=" + active.ExpectedQuality + "]", Before = active.OutputCountBefore.ToString(), After = outputAfter.ToString() },
+                new SimulatedFactChange { Path = "player.inventory.count[" + active.QualifiedItemId + ",quality=" + active.ExpectedQuality + "]", Before = active.InventoryCountBefore.ToString(), After = inventoryAfter.ToString() },
                 new SimulatedFactChange { Path = "player.skills.foraging.experience", Before = active.ForagingExperienceBefore.ToString(), After = xpAfter.ToString() },
                 new SimulatedFactChange { Path = "world_progress.collected_nut_tracker[" + active.NutKey + "]", Before = active.NutCollectedBefore.ToString().ToLowerInvariant(), After = nutAfter.ToString().ToLowerInvariant() }
             }
@@ -355,6 +535,7 @@ public sealed partial class ModEntry
             ";bush_present=" + (bush is not null && location.largeTerrainFeatures.Contains(bush)).ToString().ToLowerInvariant() +
             ";tile_sheet_offset=" + (bush?.tileSheetOffset.Value.ToString() ?? "missing") +
             ";output_count=" + CountBushOutput(location, qualifiedItemId, quality) +
+            ";inventory_count=" + CountInventoryItemAtQuality(qualifiedItemId, quality) +
             ";foraging_xp=" + Game1.player.experiencePoints[Farmer.foragingSkill];
     }
 

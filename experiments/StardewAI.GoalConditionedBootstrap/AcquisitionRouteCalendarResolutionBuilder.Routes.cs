@@ -299,6 +299,18 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if ((route.RouteKind is "native_bush_shake" or
+                "native_tea_bush_harvest") &&
+            currentRouteCandidates?.HasRouteKindCandidate(
+                route.RouteKind) == true)
+        {
+            return ResolveBushWindow(
+                qualifiedItemId,
+                route,
+                currentRouteCandidates,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind == "harvests_as")
         {
             return ResolveCropWindows(

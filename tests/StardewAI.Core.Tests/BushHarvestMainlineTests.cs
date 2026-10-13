@@ -12,14 +12,21 @@ public sealed class BushHarvestMainlineTests
     [Fact]
     public void ExactBerryBushFlowsThroughNativeShakeQueue()
     {
-        var snapshot = Snapshot(StateJson("ready", "ordinary_berry", "(O)410", 3, 4, 3));
+        var snapshot = Snapshot(StateJson("ready", "ordinary_berry", "(O)296", 3, 4, 3));
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "foraging.harvest_bushes" }, true);
         var candidate = Assert.Single(availability.Options.Single().EventCandidates);
 
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("harvest_bush", candidate.Kind);
         Assert.Equal(3, candidate.Quantity);
+        Assert.Equal(240, candidate.EstimatedTicks);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "interaction_tile_x");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_distance_tiles" &&
+            parameter.Value == "1");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "authoritative_route_sources_json" &&
+            parameter.Value.Contains("native_bush_shake", StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -51,6 +58,14 @@ public sealed class BushHarvestMainlineTests
 
     private static string StateJson(string status, string branch, string outputId, int quantity, int quality, int xp)
     {
+        var routeSources = outputId switch
+        {
+            "(O)296" =>
+                "[{\"route_kind\":\"native_bush_shake\",\"source_id\":\"Bush.GetShakeOffItem\",\"qualified_item_id\":\"(O)296\"}]",
+            "(O)815" =>
+                "[{\"route_kind\":\"native_tea_bush_harvest\",\"source_id\":\"Bush.GetShakeOffItem\",\"qualified_item_id\":\"(O)815\"}]",
+            _ => "[]"
+        };
         return $$$"""
         {
           "player": {
@@ -65,6 +80,7 @@ public sealed class BushHarvestMainlineTests
             "large_terrain_features":{"value":[{"tile_x":12,"tile_y":10,"runtime_type":"StardewValley.TerrainFeatures.Bush","bounding_tile_width":2,"bounding_tile_height":1,
               "is_bush":true,"bush_size":1,"bush_kind":"{{{branch}}}","ready_for_harvest":true,"in_bloom":true,"tile_sheet_offset_before":1,"tile_sheet_offset_expected_after":0,
               "bush_harvest_status":"{{{status}}}","bush_projection_status":"exact_from_native_bush_shake","bush_output_qualified_item_id":"{{{outputId}}}",
+              "bush_authoritative_route_sources":{{{routeSources}}},
               "bush_output_quantity_min":{{{quantity}}},"bush_output_quantity_max":{{{quantity}}},"bush_output_quality":{{{quality}}},
               "bush_foraging_experience_on_success_min":{{{xp}}},"bush_foraging_experience_on_success_max":{{{xp}}},
               "bush_nut_key":"","bush_nut_collected_before":false,"bush_nut_collected_expected_after":false}],

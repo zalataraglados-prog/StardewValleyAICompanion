@@ -109,12 +109,15 @@ public sealed partial class ModEntry
             NutKey = nutKey;
             MaxMovementTiles = maxMovementTiles;
             OutputCountBefore = CountBushOutput(location, qualifiedItemId, expectedQuality);
+            InventoryCountBefore = CountInventoryItemAtQuality(
+                qualifiedItemId,
+                expectedQuality);
             ForagingExperienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
             TileSheetOffsetBefore = bush.tileSheetOffset.Value;
             NutCollectedBefore = !string.IsNullOrWhiteSpace(nutKey) && Game1.player.team.collectedNutTracker.Contains(nutKey);
             LastPosition = Game1.player.Position;
             LastObservedTile = Game1.player.TilePoint;
-            RequestedEffect = "current_location.large_terrain_features[" + target.X + "," + target.Y + "].tile_sheet_offset=0;qualified_item_id=" + qualifiedItemId + ";quantity=" + expectedQuantity + ";branch=" + branch;
+            RequestedEffect = "current_location.large_terrain_features[" + target.X + "," + target.Y + "].tile_sheet_offset=0;qualified_item_id=" + qualifiedItemId + ";quantity=" + expectedQuantity + ";branch=" + branch + ";inventory_receipt=" + (branch is "ordinary_berry" or "tea_leaf").ToString().ToLowerInvariant();
         }
 
         public PendingExecution Pending { get; }
@@ -132,6 +135,7 @@ public sealed partial class ModEntry
         public string NutKey { get; }
         public int MaxMovementTiles { get; }
         public int OutputCountBefore { get; }
+        public int InventoryCountBefore { get; }
         public int ForagingExperienceBefore { get; }
         public int TileSheetOffsetBefore { get; }
         public bool NutCollectedBefore { get; }
@@ -144,6 +148,8 @@ public sealed partial class ModEntry
         public int MovementTiles { get; set; }
         public Vector2 LastPosition { get; set; }
         public Point LastObservedTile { get; set; }
+        public Point? PickupPathTarget { get; set; }
+        public int PickupPathFailures { get; set; }
         public bool ActionIssued { get; set; }
     }
 
