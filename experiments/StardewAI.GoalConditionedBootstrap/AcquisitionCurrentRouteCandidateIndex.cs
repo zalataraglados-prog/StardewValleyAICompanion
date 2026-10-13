@@ -12,6 +12,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
     {
         "community_center.donate_bundle_items",
         "mining.reach_depth",
+        "farm.collect_animal_products",
         "farm.collect_machine_outputs",
         "foraging.collect_spawned_objects",
         "foraging.harvest_tree_product",
@@ -77,7 +78,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v10",
+            "v11",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -331,6 +332,8 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     ReadIntParameter(candidate, "geode_price_gold"),
                     ReadIntParameter(candidate, "geode_expected_output_stack"),
                     ReadIntParameter(candidate, "geode_expected_output_quality"),
+                    ReadStringParameter(candidate, "required_tool_kind"),
+                    ReadIntParameter(candidate, "tool_slot_index"),
                     source.RouteKind,
                     source.SourceId,
                     source.QualifiedItemId));
@@ -511,6 +514,18 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 return reasons.Count == 0;
             }
             reasons.Add("current_fruit_tree_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind is "native_farm_animal_produce" or
+            "native_farm_animal_deluxe_produce")
+        {
+            if (TryField("farm", "animals", out var animals) &&
+                FieldStatus(animals) == "available" &&
+                FieldValue(animals).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_farm_animal_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_ginger_harvest")
@@ -744,6 +759,8 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     int? PriceGold,
     int? ExpectedOutputStack,
     int? ExpectedOutputQuality,
+    string RequiredToolKind,
+    int? ToolSlotIndex,
     string RouteKind,
     string SourceId,
     string QualifiedItemId);

@@ -35,6 +35,8 @@ internal static class AcquisitionLocationRouteTargetResolver
                 source,
                 wildTreeChopCandidates),
             "native_monster_drop_table" or
+            "native_farm_animal_deluxe_produce" or
+            "native_farm_animal_produce" or
             "native_fish_pond_output" or
             "native_geode_drop" or
             "native_radioactive_ore_node" or

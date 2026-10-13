@@ -196,6 +196,41 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
             }
         }
 
+        if (staticRoute.RouteKind is "native_farm_animal_produce" or
+            "native_farm_animal_deluxe_produce")
+        {
+            if (currentRouteCandidates.TryFind(
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId,
+                    out var animalMatches,
+                    out _) &&
+                animalMatches.Length > 0)
+            {
+                return EvaluateCurrentGuaranteedOutput(
+                    route,
+                    staticRoute,
+                    currentRouteCandidates,
+                    "matching_animal_product_candidate_not_present",
+                    new[]
+                    {
+                        "state.farm.animals.value[].harvest_expected_output_items_json",
+                        "state.farm.animals.value[].harvest_authoritative_route_sources",
+                        "candidate:farm.collect_animal_products"
+                    });
+            }
+            if (currentRouteCandidates.HasQualifiedItemCandidateOutsideSource(
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId))
+            {
+                return NotApplicable(
+                    route,
+                    staticRoute.UncertaintyMode,
+                    "not_applicable_current_animal_source_absent_exact_alternative_present");
+            }
+        }
+
         if (staticRoute.RouteKind == "native_location_forage_spawn")
         {
             if (currentRouteCandidates.TryFind(

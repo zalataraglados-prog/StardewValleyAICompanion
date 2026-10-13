@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Full Shipment 标准批次：原生动物产物闭环
+
+- `farm_animal_product_sample` 与 `farm_animal_deluxe_product_sample` 已从冻结源存档的隔离副本完成原生采证。普通牛奶绑定 `full_shipment:item:184 / (O)184 / native_farm_animal_produce / farm_animal:White Cow:0`；大壶牛奶绑定 `full_shipment:item:186 / (O)186 / native_farm_animal_deluxe_produce / farm_animal:White Cow:0`。
+- 两层严格复用唯一动作链 `farm.collect_animal_products -> collect_animal_product -> executor.collect_animal_product`。没有新增第二套候选、编译器或执行器；新增内容仅把现有当前动物候选的精确来源、位置、目标/站位格、路线距离、非消耗工具和能量证据贯穿日历、位置、设施、资源、加工、随机性与日内预算轴。候选索引缓存 schema 升至 `v11`。
+- 普通牛奶原生回执在 `97` tick 内完成，验证 `current_produce -> null`、银星 `(O)184 x1`、能量 `270 -> 266`、耕种经验 `0 -> 5`、友好度 `500 -> 505`、产奶统计 `0 -> 1`，状态哈希与终态快照均新鲜。大壶牛奶使用同一执行链和 `DeluxeProduceItemIds` 权威来源通过完整 fresh terminal、settlement 与 rollout proof。
+- 严格 production evidence index 已推进到 `20/26`，剩余 `6` 层：`machine_output`、`native_fish_pond_output`、`native_machine_flavored_output`、`native_machine_item_query_output`、`native_solar_panel_output`、`native_tree_moss_harvest`。共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v32-20261014`。
+- 现有证明预检仍需逐条重建 receipt，约需数分钟；在 #200/#201/#202 的 26 层门槛满足前，不以跨 proof 缓存削弱验真。`Invoke-RuntimeFullShipmentEvidenceMilestone.ps1 -CompactOutput` 现只返回状态、计数、剩余层与完整文件路径，避免把数百行 checkpoint/index 倒灌控制器上下文；同族路线完成后集中刷新一次严格索引。
+- Bootstrap 与 RuntimeTestHarness Release 均 `0 warning / 0 error`，Core `2680/2680`、Backend `229/229` 全量通过。下一固定切片是 `fish_pond_output_sample / full_shipment:item:812 / (O)812 / native_fish_pond_output`，优先复用现有 `fishing.service_fish_ponds` 透明、候选、编译和原生收取链。
+
 ## 2026-10-14 Full Shipment 标准批次：原生水果树产物闭环
 
 - `fruit_tree_harvest_sample` 已从冻结源存档的隔离副本完成原生采证。Teacher 精确选择 `full_shipment:item:638 / (O)638 / native_fruit_tree_produce / fruit_tree:628:0 / full_shipment:full_shipment:item:638:0:0`，继续复用唯一的 `foraging.harvest_fruit_tree -> harvest_fruit_tree -> executor.harvest_fruit_tree` 链，没有新增第二套候选、编译器或执行器。

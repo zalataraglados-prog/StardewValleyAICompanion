@@ -22,6 +22,9 @@ public sealed class AnimalProductMainlineTests
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("collect_animal_product", candidate.Kind);
         Assert.Equal("(O)184", candidate.QualifiedItemId);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_distance_tiles" &&
+            parameter.Value == "1");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "required_tool_kind" && parameter.Value == "Milk Pail");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_skill_experience_delta" && parameter.Value == "5");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_energy_delta" && parameter.Value == "-4");

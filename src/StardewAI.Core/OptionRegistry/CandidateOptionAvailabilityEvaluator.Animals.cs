@@ -33,6 +33,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 var y = ReadInt(animal, "tile_y");
                 var sameLocation = string.Equals(locationId, currentLocation, StringComparison.OrdinalIgnoreCase);
                 var stand = sameLocation ? FindBestStandTile(snapshot, x, y) : null;
+                var distance = stand is null ? 0 :
+                    Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
                 var status = ReadString(animal, "harvest_status");
                 var outputId = ReadString(animal, "harvest_output_qualified_item_id");
                 var outputJson = ReadString(animal, "harvest_expected_output_items_json");
@@ -86,7 +88,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
                 var parameters = stand is null
                     ? Array.Empty<SmallModelActionParameter>()
-                    : AnimalProductParameters(animal, animalId, x, y, stand.X, stand.Y);
+                    : AnimalProductParameters(
+                        animal,
+                        animalId,
+                        x,
+                        y,
+                        stand.X,
+                        stand.Y,
+                        distance);
                 if (parameters.Length > 0)
                 {
                     blockReasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
@@ -96,7 +105,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     }));
                 }
 
-                var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
                 return new EventCandidate
                 {
                     CandidateId = "collect-animal-product:" + locationId + ":" + animalId + ":" + outputId,
@@ -120,7 +128,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             .ToArray();
     }
 
-    private static SmallModelActionParameter[] AnimalProductParameters(JsonElement animal, string animalId, int x, int y, int standX, int standY)
+    private static SmallModelActionParameter[] AnimalProductParameters(
+        JsonElement animal,
+        string animalId,
+        int x,
+        int y,
+        int standX,
+        int standY,
+        int routeDistanceTiles)
     {
         return new[]
         {
@@ -130,6 +145,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("target_tile_y", y.ToString()),
             Parameter("stand_tile_x", standX.ToString()),
             Parameter("stand_tile_y", standY.ToString()),
+            Parameter("route_distance_tiles", routeDistanceTiles.ToString()),
             Parameter("target_runtime_type", ReadString(animal, "runtime_type")),
             Parameter("target_runtime_identity", animalId),
             Parameter("target_name", ReadString(animal, "name")),
