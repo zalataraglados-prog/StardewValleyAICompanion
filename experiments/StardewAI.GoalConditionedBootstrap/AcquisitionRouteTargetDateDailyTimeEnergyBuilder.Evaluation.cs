@@ -102,6 +102,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_fruit_tree_produce" => EvaluateFruitTreeHarvest(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_spring_onion_harvest" => EvaluateSpringOnionHarvest(
                 route,
                 staticRoute,

@@ -41,6 +41,7 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_wild_tree_tapper_output" or
             "native_bush_shake" or
             "native_tea_bush_harvest" or
+            "native_fruit_tree_produce" or
             "native_spring_onion_harvest" or
             "native_ginger_harvest" or
             "native_wild_tree_seed" or

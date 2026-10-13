@@ -12,6 +12,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         "upstream_machine_input_purchase";
     private const string CurrentMachineOutput =
         "current_machine_output_materialized";
+    private const string CurrentFruitTreeOutput =
+        "current_fruit_tree_output_materialized";
     private const string DeferredProduction =
         "production_lead_time_binding_pending_upstream";
 
@@ -27,7 +29,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             ["native_farm_animal_deluxe_produce"] = DeferredProduction,
             ["native_farm_animal_produce"] = DeferredProduction,
             ["native_fish_pond_output"] = DeferredProduction,
-            ["native_fruit_tree_produce"] = DeferredProduction,
+            ["native_fruit_tree_produce"] = CurrentFruitTreeOutput,
             ["native_geode_default_drop"] = NoDeterministicWait,
             ["native_geode_drop"] = NoDeterministicWait,
             ["native_ginger_harvest"] = NoDeterministicWait,
@@ -123,6 +125,9 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                 route,
                 staticRoute,
                 targetTotalDay),
+            CurrentFruitTreeOutput => EvaluateCurrentFruitTreeOutput(
+                route,
+                staticRoute),
             _ => Blocked(
                 route,
                 DeferredProduction,
@@ -143,4 +148,32 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
     private static string QualifiedItemId(
         AcquisitionRouteTargetDateReservation route) =>
         RequirementRoute(route).QualifiedItemId;
+
+    private static AcquisitionRouteTargetDateProcessing
+        EvaluateCurrentFruitTreeOutput(
+            AcquisitionRouteTargetDateReservation route,
+            AcquisitionRouteCalendarResolution staticRoute)
+    {
+        if (staticRoute.EvidenceClass !=
+                "current_native_fruit_tree_candidate_calendar" ||
+            staticRoute.CalendarWindows.Length == 0 ||
+            staticRoute.CalendarWindows.Any(window =>
+                !window.RequiresExistingLiveCandidateMatch))
+        {
+            return Blocked(
+                route,
+                CurrentFruitTreeOutput,
+                "current_fruit_tree_materialized_output_evidence_missing");
+        }
+
+        return Result(
+            route,
+            "resolved_current_fruit_tree_output_materialized",
+            true,
+            true,
+            CurrentFruitTreeOutput,
+            Array.Empty<AcquisitionProcessingLeadTimeEvaluation>(),
+            Array.Empty<string>(),
+            Array.Empty<string>());
+    }
 }

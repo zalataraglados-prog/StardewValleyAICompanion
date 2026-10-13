@@ -220,20 +220,6 @@ public sealed partial class ModEntry
             CompleteFruitTreeHarvestBlocked(active, "harvest_fruit_tree_target_removed_during_execution");
             return;
         }
-        if (active.ActionIssued)
-        {
-            if (FruitTreeHarvestPostconditionsMet(active))
-            {
-                CompleteFruitTreeHarvest(active);
-            }
-            return;
-        }
-        if (Game1.player.UsingTool || Game1.activeClickableMenu is not null || Game1.dialogueUp)
-        {
-            CompleteFruitTreeHarvestBlocked(active, "harvest_fruit_tree_player_busy_during_execution");
-            return;
-        }
-
         var playerTile = Game1.player.TilePoint;
         if (playerTile != active.LastObservedTile)
         {
@@ -245,6 +231,20 @@ public sealed partial class ModEntry
                 return;
             }
         }
+        if (active.ActionIssued)
+        {
+            if (FruitTreeHarvestPostconditionsMet(active))
+                CompleteFruitTreeHarvest(active);
+            else if (FruitTreeHarvestNativePostconditionsMet(active))
+                TickFruitTreeHarvestOutputCollection(active, playerTile);
+            return;
+        }
+        if (Game1.player.UsingTool || Game1.activeClickableMenu is not null || Game1.dialogueUp)
+        {
+            CompleteFruitTreeHarvestBlocked(active, "harvest_fruit_tree_player_busy_during_execution");
+            return;
+        }
+
         if (playerTile != active.Stand)
         {
             if (active.PathIndex >= active.Path.Count)
@@ -299,14 +299,144 @@ public sealed partial class ModEntry
         {
             CompleteFruitTreeHarvest(active);
         }
+        else if (FruitTreeHarvestNativePostconditionsMet(active))
+        {
+            TickFruitTreeHarvestOutputCollection(active, playerTile);
+        }
     }
 
     private static bool FruitTreeHarvestPostconditionsMet(ActiveFruitTreeHarvest active)
+    {
+        return FruitTreeHarvestNativePostconditionsMet(active) &&
+            active.Outputs.All(output =>
+                CountInventoryItemAtQuality(output.QualifiedItemId, output.Quality) -
+                active.InventoryOutputCountsBefore[output.Key] >= output.Quantity);
+    }
+
+    private static bool FruitTreeHarvestNativePostconditionsMet(ActiveFruitTreeHarvest active)
     {
         var xpDelta = Game1.player.experiencePoints[Farmer.foragingSkill] - active.ForagingExperienceBefore;
         return active.Tree.fruit.Count == 0 && xpDelta == 0 && active.Outputs.All(output =>
             CountFruitTreeOutput(active.Location, output.QualifiedItemId, output.Quality) -
             active.OutputCountsBefore[output.Key] == output.Quantity);
+    }
+
+    private void TickFruitTreeHarvestOutputCollection(
+        ActiveFruitTreeHarvest active,
+        Point playerTile)
+    {
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp ||
+            Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var outputKeys = active.Outputs
+            .Select(output => output.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var chunk = active.Location.debris
+            .Where(debris => outputKeys.Contains(
+                DebrisQualifiedItemId(debris) + "|" +
+                (debris.item?.Quality ?? debris.itemQuality)))
+            .SelectMany(debris => debris.Chunks)
+            .OrderBy(candidate => ManhattanDistance(
+                playerTile,
+                DebrisChunkTile(candidate)))
+            .FirstOrDefault();
+        if (chunk is null)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var target = DebrisChunkTile(chunk);
+        if (ManhattanDistance(playerTile, target) <= 1)
+        {
+            StopAllMovement();
+            active.Path.Clear();
+            active.PathIndex = 0;
+            active.PickupPathTarget = target;
+            return;
+        }
+
+        if (active.PathIndex >= active.Path.Count ||
+            active.PickupPathTarget != target)
+        {
+            var remainingMovementTiles = active.MaxMovementTiles - active.MovementTiles;
+            if (remainingMovementTiles <= 0)
+            {
+                CompleteFruitTreeHarvestBlocked(
+                    active,
+                    "harvest_fruit_tree_movement_budget_exceeded");
+                return;
+            }
+            var path = IsTileWalkable(active.Location, target) &&
+                !IsTileOccupiedByCharacter(active.Location, target)
+                    ? TryBuildTilePath(
+                        active.Location,
+                        playerTile,
+                        target,
+                        remainingMovementTiles,
+                        out var pathReason,
+                        avoidSoftObstacles: true)
+                    : BuildAdjacentToolPath(
+                        active.Location,
+                        target,
+                        remainingMovementTiles,
+                        out pathReason,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false);
+            if (path is null)
+            {
+                active.PickupPathFailures++;
+                if (active.PickupPathFailures > 90)
+                {
+                    CompleteFruitTreeHarvestBlocked(
+                        active,
+                        "harvest_fruit_tree_output_pickup_path_unavailable:" + pathReason);
+                }
+                return;
+            }
+            active.Path.Clear();
+            active.Path.AddRange(path);
+            active.PathIndex = 0;
+            active.PickupPathTarget = target;
+            active.PickupPathFailures = 0;
+        }
+
+        if (active.PathIndex >= active.Path.Count)
+            return;
+        var next = active.Path[active.PathIndex];
+        if (playerTile == next)
+        {
+            active.PathIndex++;
+            return;
+        }
+        if (!IsTileWalkable(active.Location, next) ||
+            IsTileOccupiedByCharacter(active.Location, next))
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            return;
+        }
+
+        var moved = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+        active.LastPosition = Game1.player.Position;
+        StartMoving(DirectionTo(playerTile, next));
+        MovePlayerForTick();
+        if (Game1.player.TilePoint == next)
+            active.PathIndex++;
+        if (!moved && ++active.StuckTicks > 45)
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            active.StuckTicks = 0;
+        }
+        else if (moved)
+        {
+            active.StuckTicks = 0;
+        }
     }
 
     private void CompleteFruitTreeHarvest(ActiveFruitTreeHarvest active)
@@ -355,6 +485,7 @@ public sealed partial class ModEntry
                 "native_checkAction_invoked_exact_fruit_tree",
                 "native_fruit_list_clear_verified",
                 "all_projected_item_quality_quantity_deltas_verified",
+                "native_fruit_tree_output_naturally_collected",
                 "zero_foraging_xp_delta_verified"
             },
             RequestedEffect = active.RequestedEffect,

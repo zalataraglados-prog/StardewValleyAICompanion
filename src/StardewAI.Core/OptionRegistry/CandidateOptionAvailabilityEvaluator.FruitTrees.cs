@@ -61,9 +61,17 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add("fruit_tree_no_reachable_adjacent_interaction");
                     }
 
+                    var distance = interaction is null
+                        ? 0
+                        : Math.Abs(playerX - interaction.Stand.X) +
+                          Math.Abs(playerY - interaction.Stand.Y);
                     var parameters = interaction is null
                         ? Array.Empty<SmallModelActionParameter>()
-                        : FruitTreeParameters(feature, locationId, interaction);
+                        : FruitTreeParameters(
+                            feature,
+                            locationId,
+                            interaction,
+                            distance);
                     if (parameters.Length > 0)
                     {
                         blockReasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
@@ -73,9 +81,6 @@ namespace StardewAI.Core.OptionRegistry
                         }));
                     }
 
-                    var distance = interaction is null
-                        ? 0
-                        : Math.Abs(playerX - interaction.Stand.X) + Math.Abs(playerY - interaction.Stand.Y);
                     var firstOutputId = outputs.Length == 0 ? string.Empty : ReadString(outputs[0], "qualified_item_id");
                     return new EventCandidate
                     {
@@ -105,7 +110,8 @@ namespace StardewAI.Core.OptionRegistry
         private static SmallModelActionParameter[] FruitTreeParameters(
             JsonElement feature,
             string locationId,
-            TerrainInteraction interaction)
+            TerrainInteraction interaction,
+            int routeDistanceTiles)
         {
             return new[]
             {
@@ -131,6 +137,7 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("expected_foraging_experience_delta", ReadInt(feature, "fruit_tree_expected_foraging_experience_delta").ToString()),
                 Parameter("fruit_tree_projection_status", ReadString(feature, "fruit_tree_projection_status")),
                 Parameter("fruit_tree_native_contract", ReadString(feature, "fruit_tree_native_contract")),
+                Parameter("route_distance_tiles", routeDistanceTiles.ToString()),
                 Parameter("max_movement_tiles", "512")
             };
         }

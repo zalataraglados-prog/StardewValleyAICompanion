@@ -181,6 +181,10 @@ public sealed partial class ModEntry
                 output => output.Key,
                 output => CountFruitTreeOutput(location, output.QualifiedItemId, output.Quality),
                 StringComparer.Ordinal);
+            InventoryOutputCountsBefore = outputs.ToDictionary(
+                output => output.Key,
+                output => CountInventoryItemAtQuality(output.QualifiedItemId, output.Quality),
+                StringComparer.Ordinal);
             LastPosition = Game1.player.Position;
             LastObservedTile = Game1.player.TilePoint;
             RequestedEffect = "current_location.terrain_features[" + target.X + "," + target.Y + "].fruit_count=0;outputs=" + FruitTreeOutputsJson(outputs);
@@ -198,6 +202,7 @@ public sealed partial class ModEntry
         public int FruitCountBefore { get; }
         public int ForagingExperienceBefore { get; }
         public IReadOnlyDictionary<string, int> OutputCountsBefore { get; }
+        public IReadOnlyDictionary<string, int> InventoryOutputCountsBefore { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 3600;
@@ -207,6 +212,8 @@ public sealed partial class ModEntry
         public int MovementTiles { get; set; }
         public Vector2 LastPosition { get; set; }
         public Point LastObservedTile { get; set; }
+        public Point? PickupPathTarget { get; set; }
+        public int PickupPathFailures { get; set; }
         public bool ActionIssued { get; set; }
     }
 }
