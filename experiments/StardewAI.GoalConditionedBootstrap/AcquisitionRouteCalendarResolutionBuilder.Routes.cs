@@ -360,6 +360,32 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             }
         }
 
+        if (route.RouteKind is "native_farm_animal_produce" or
+            "native_farm_animal_deluxe_produce")
+        {
+            if (currentRouteCandidates?.HasExactRouteCandidate(
+                    route.RouteKind,
+                    route.SourceId,
+                    qualifiedItemId) == true)
+            {
+                return ResolveAnimalProductWindow(
+                    qualifiedItemId,
+                    route,
+                    currentRouteCandidates,
+                    deadlineTotalDayExclusive);
+            }
+            if (currentRouteCandidates?
+                .HasQualifiedItemCandidateOutsideSource(
+                    route.RouteKind,
+                    route.SourceId,
+                    qualifiedItemId) == true)
+            {
+                return ResolveAnimalProductAbsentSourceWindow(
+                    route,
+                    deadlineTotalDayExclusive);
+            }
+        }
+
         if (route.RouteKind is "native_wild_tree_seed" or
             "native_wild_tree_seed_drop")
         {

@@ -712,6 +712,34 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "ExpectedAnimalCrackerMultiplier = 1",
             source,
             StringComparison.Ordinal);
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.Animals.cs");
+        Assert.Contains(
+            "current_native_animal_product_candidate_calendar",
+            calendar,
+            StringComparison.Ordinal);
+        var facility = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateFacilityBuilder.Evaluation.Animals.cs");
+        Assert.Contains(
+            "resolved_existing_current_farm_animal_capacity_match",
+            facility,
+            StringComparison.Ordinal);
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Animals.cs");
+        Assert.Contains(
+            "current_native_animal_product_tool_input_profile",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "compiler:ActionQueueCompiler.CompileCollectAnimalProductStep",
+            dailyBudget,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1133,7 +1161,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
                 "foreach ($entry in $selectedEntries)",
                 StringComparison.Ordinal));
         Assert.Contains(
-            "evidence_index = $evidencePreflightIndex",
+            "Write-MilestoneOutput -EvidenceIndex $evidencePreflightIndex",
             milestone,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -2597,6 +2625,24 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "FullShipmentRecurrenceProofBuilder.BuildPrefixCheckpoint",
             program,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EvidenceMilestoneSupportsCompactControllerOutput()
+    {
+        var milestone = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentEvidenceMilestone.ps1");
+
+        Assert.Contains("[switch] $CompactOutput", milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "full_shipment_runtime_evidence_milestone_compact.v1",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains("Write-MilestoneOutput -EvidenceIndex",
+            milestone,
             StringComparison.Ordinal);
     }
 

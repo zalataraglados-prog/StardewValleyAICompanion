@@ -12,6 +12,8 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
         "existing_native_geode_service";
     private const string ExistingCurrentFruitTree =
         "existing_current_fruit_tree";
+    private const string ExistingCurrentFarmAnimal =
+        "existing_current_farm_animal";
     private const string DeferredFacility = "facility_binding_pending_upstream";
 
     private static readonly IReadOnlyDictionary<string, string>
@@ -23,8 +25,9 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             ["machine_output"] = ExistingMachine,
             ["native_bush_shake"] = NoFacility,
             ["native_crab_pot_output"] = ExistingCrabPot,
-            ["native_farm_animal_deluxe_produce"] = DeferredFacility,
-            ["native_farm_animal_produce"] = DeferredFacility,
+            ["native_farm_animal_deluxe_produce"] =
+                ExistingCurrentFarmAnimal,
+            ["native_farm_animal_produce"] = ExistingCurrentFarmAnimal,
             ["native_fish_pond_output"] = DeferredFacility,
             ["native_fruit_tree_produce"] = ExistingCurrentFruitTree,
             ["native_geode_default_drop"] = NoFacility,
@@ -125,6 +128,10 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
                 staticRoute,
                 currentCandidates),
             ExistingCurrentFruitTree => EvaluateExistingCurrentFruitTree(
+                route,
+                staticRoute,
+                currentCandidates),
+            ExistingCurrentFarmAnimal => EvaluateExistingCurrentFarmAnimal(
                 route,
                 staticRoute,
                 currentCandidates),

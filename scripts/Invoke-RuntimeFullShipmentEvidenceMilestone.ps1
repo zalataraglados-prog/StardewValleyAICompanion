@@ -24,7 +24,8 @@ param(
     [int] $MaxScenarios = 0,
     [switch] $PlanOnly,
     [switch] $EvidencePreflightOnly,
-    [switch] $SkipBuild
+    [switch] $SkipBuild,
+    [switch] $CompactOutput
 )
 
 $ErrorActionPreference = "Stop"
@@ -344,6 +345,55 @@ $checkpointPath = Join-Path $milestoneRoot "milestone-checkpoint.json"
 $evidenceManifestPath = Join-Path $milestoneRoot `
     "runtime-sample-evidence-manifest.json"
 
+function Write-MilestoneOutput {
+    param($EvidenceIndex = $null)
+
+    $checkpoint = Read-JsonArtifact $checkpointPath
+    if (-not $CompactOutput) {
+        if ($null -eq $EvidenceIndex) {
+            $checkpoint | ConvertTo-Json -Depth 24
+        }
+        else {
+            [ordered]@{
+                checkpoint = $checkpoint
+                evidence_index = $EvidenceIndex
+            } | ConvertTo-Json -Depth 24
+        }
+        return
+    }
+
+    [ordered]@{
+        schema_version = "full_shipment_runtime_evidence_milestone_compact.v1"
+        checkpoint_path = [IO.Path]::GetFullPath($checkpointPath)
+        evidence_index_path = if ($null -eq $EvidenceIndex) {
+            ""
+        } else {
+            [IO.Path]::GetFullPath((Join-Path $milestoneRoot `
+                "runtime-sample-evidence-index.json"))
+        }
+        status = [string]$checkpoint.status
+        record_count = @($checkpoint.records).Count
+        selected_scenario_count = [int]$checkpoint.selected_scenario_count
+        remaining_scenarios = @($checkpoint.remaining_scenarios)
+        verified_runtime_sample_stratum_count = if ($null -eq $EvidenceIndex) {
+            $null
+        } else {
+            [int]$EvidenceIndex.verified_runtime_sample_stratum_count
+        }
+        missing_runtime_sample_stratum_count = if ($null -eq $EvidenceIndex) {
+            $null
+        } else {
+            [int]$EvidenceIndex.missing_runtime_sample_stratum_count
+        }
+        remaining_stratum_ids = if ($null -eq $EvidenceIndex) {
+            @()
+        } else {
+            @($EvidenceIndex.remaining_stratum_ids)
+        }
+        formal_product_training_authorized = $false
+    } | ConvertTo-Json -Depth 6
+}
+
 & (Join-Path $PSScriptRoot "Test-FullShipmentRuntimeSamplePlan.ps1") `
     -ProjectRoot $ProjectRoot -StaticInventory $staticInventoryPath `
     -Plan $planPath -Output $reconciliationPath | Out-Null
@@ -474,7 +524,7 @@ Write-MilestoneState -Status "running" -Records $records `
 if ($PlanOnly) {
     Write-MilestoneState -Status "planned_only" -Records $records `
         -SelectedScenarios $selectedScenarios
-    Read-JsonArtifact $checkpointPath | ConvertTo-Json -Depth 24
+    Write-MilestoneOutput
     return
 }
 
@@ -535,10 +585,7 @@ if ($EvidencePreflightOnly) {
     if ($null -eq $evidencePreflightIndex) {
         throw "Milestone evidence preflight did not produce an evidence index."
     }
-    [ordered]@{
-        checkpoint = Read-JsonArtifact $checkpointPath
-        evidence_index = $evidencePreflightIndex
-    } | ConvertTo-Json -Depth 24
+    Write-MilestoneOutput -EvidenceIndex $evidencePreflightIndex
     return
 }
 
@@ -610,7 +657,4 @@ catch {
         -LastError $_.Exception.Message
     throw
 }
-[ordered]@{
-    checkpoint = Read-JsonArtifact $checkpointPath
-    evidence_index = $evidenceIndex
-} | ConvertTo-Json -Depth 24
+Write-MilestoneOutput -EvidenceIndex $evidenceIndex
