@@ -185,9 +185,13 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                     });
             }
             if (currentRouteCandidates
-                .HasQualifiedItemCandidateOutsideRouteKind(
-                    staticRoute.QualifiedItemId,
-                    staticRoute.RouteKind))
+                    .HasQualifiedItemCandidateOutsideRouteKind(
+                        staticRoute.QualifiedItemId,
+                        staticRoute.RouteKind) ||
+                currentRouteCandidates.HasQualifiedItemCandidateOutsideSource(
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId))
             {
                 return NotApplicable(
                     route,
