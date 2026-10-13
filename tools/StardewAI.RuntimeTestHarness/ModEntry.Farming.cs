@@ -251,11 +251,21 @@ public sealed partial class ModEntry : Mod
 
         if (tool.ElapsedTicks > tool.MaxTicks)
         {
-            var reason = tool.Lifecycle.Phase == NativeToolActionPhase.Ready
+            var reason = tool.ToolCycleCompleted &&
+                tool.PrimitiveKind == "harvest_ginger"
+                    ? "harvest_ginger_output_pickup_timeout"
+                : tool.Lifecycle.Phase == NativeToolActionPhase.Ready
                 ? "movement_timeout"
                 : "tool_timeout";
             WriteExecutorDiagnosticDump(reason);
             CompleteNativeToolBlocked(tool, reason);
+            return;
+        }
+
+        if (tool.ToolCycleCompleted &&
+            tool.PrimitiveKind == "harvest_ginger")
+        {
+            TickGingerOutputCollection(tool);
             return;
         }
 
@@ -346,6 +356,18 @@ public sealed partial class ModEntry : Mod
                 return;
 
             case NativeToolActionCommand.CycleCompleted:
+                if (tool.PrimitiveKind == "harvest_ginger" &&
+                    GingerNativePostconditionsMet(tool))
+                {
+                    tool.ToolCycleCompleted = true;
+                    tool.MovementTiles = tool.Path.Count;
+                    tool.Path.Clear();
+                    tool.PathIndex = 0;
+                    tool.LastObservedTile = Game1.player.TilePoint;
+                    tool.StuckTicks = 0;
+                    TickGingerOutputCollection(tool);
+                    return;
+                }
                 CompleteNativeTool(tool);
                 return;
 
@@ -378,13 +400,14 @@ public sealed partial class ModEntry : Mod
     private void CompleteNativeTool(ActiveNativeTool tool)
     {
         StopAllMovement();
-        activeNativeTool = null;
 
         if (tool.PrimitiveKind == "harvest_ginger")
         {
+            activeNativeTool = null;
             CompleteHarvestGingerNativeTool(tool);
             return;
         }
+        activeNativeTool = null;
         if (tool.PrimitiveKind == "fill_pet_bowl")
         {
             CompleteFillPetBowlNativeTool(tool);

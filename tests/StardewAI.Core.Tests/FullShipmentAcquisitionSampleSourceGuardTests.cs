@@ -241,6 +241,23 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var source = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.Ginger.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Ginger.cs");
+        var candidateIndex = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var bridge = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "CurrentLocationReadAdapter.TerrainExperience.cs");
 
         Assert.Contains(
             "\"ginger_harvest_sample\" { \"full_shipment:item:829\" }",
@@ -261,6 +278,30 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "GingerProfile = \"dry_standard\"",
             source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route.SourcePath != \"whichForageCrop 2 => (O)829\"",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_native_ginger_candidate_calendar",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.OptionId == \"foraging.harvest_ginger\"",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.parameters[route_distance_tiles]",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"foraging.harvest_ginger\"",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ginger_authoritative_route_sources",
+            bridge,
             StringComparison.Ordinal);
     }
 

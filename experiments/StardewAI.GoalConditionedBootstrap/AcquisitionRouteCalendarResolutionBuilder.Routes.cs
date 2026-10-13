@@ -311,6 +311,17 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if (route.RouteKind == "native_ginger_harvest" &&
+            currentRouteCandidates?.HasRouteKindCandidate(
+                route.RouteKind) == true)
+        {
+            return ResolveGingerWindow(
+                qualifiedItemId,
+                route,
+                currentRouteCandidates,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind == "harvests_as")
         {
             return ResolveCropWindows(

@@ -15,6 +15,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "farm.collect_machine_outputs",
         "foraging.harvest_tree_product",
         "foraging.harvest_bushes",
+        "foraging.harvest_ginger",
         "foraging.excavate_artifact_spots",
         "fishing.service_fish_ponds",
         "processing.crack_geode"
@@ -45,7 +46,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v5",
+            "v6",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -451,6 +452,20 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 return reasons.Count == 0;
             }
             reasons.Add("current_bush_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind == "native_ginger_harvest")
+        {
+            if (TryField(
+                    "current_location",
+                    "terrain_features",
+                    out var features) &&
+                FieldStatus(features) == "available" &&
+                FieldValue(features).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_ginger_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_monster_drop_table")

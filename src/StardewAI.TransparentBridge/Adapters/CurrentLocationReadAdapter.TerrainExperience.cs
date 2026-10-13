@@ -208,6 +208,18 @@ public sealed partial class CurrentLocationReadAdapter
                 .OrderBy(tag => tag, StringComparer.Ordinal)
                 .ToArray()
             : Array.Empty<string>();
+        var gingerAuthoritativeRouteSources = isGinger &&
+            exactVanillaRuntimeTypes
+                ? new object[]
+                {
+                    new
+                    {
+                        route_kind = "native_ginger_harvest",
+                        source_id = "Crop.hitWithHoe",
+                        qualified_item_id = "(O)829"
+                    }
+                }
+                : Array.Empty<object>();
         var harvestStatus = !isGinger
             ? "not_ginger"
             : hoe is null
@@ -238,6 +250,8 @@ public sealed partial class CurrentLocationReadAdapter
             ginger_exact_vanilla_runtime_types = exactVanillaRuntimeTypes,
             ginger_energy_cost = energyCost,
             ginger_output_qualified_item_id = isGinger ? "(O)829" : string.Empty,
+            ginger_authoritative_route_sources =
+                gingerAuthoritativeRouteSources,
             ginger_output_context_tags = gingerOutputContextTags,
             ginger_output_quality = isGinger ? 0 : (int?)null,
             ginger_output_quantity_min = isGinger ? 1 : 0,

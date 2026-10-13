@@ -104,6 +104,10 @@ public sealed partial class ModEntry : Mod
             LastPosition = Game1.player.Position;
             MaxMovementTicks = Math.Max(120, path.Count * 90);
             MaxTicks = MaxMovementTicks + 240;
+            MaxMovementTiles = Math.Clamp(
+                pending.Request.MaxMovementTiles ?? 512,
+                1,
+                512);
         }
 
         public static ActiveNativeTool Water(PendingExecution pending, string locationId, Point target, List<Point> path, WateringCan tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeWatered)
@@ -150,6 +154,12 @@ public sealed partial class ModEntry : Mod
         public int StuckTicks { get; set; }
         public int MaxMovementTicks { get; }
         public int MaxTicks { get; }
+        public int MaxMovementTiles { get; }
+        public int MovementTiles { get; set; }
+        public Point LastObservedTile { get; set; } = Game1.player.TilePoint;
+        public Point? PickupPathTarget { get; set; }
+        public int PickupPathFailures { get; set; }
+        public bool ToolCycleCompleted { get; set; }
         public Vector2 LastPosition { get; set; }
         public NativeToolActionLifecycle Lifecycle { get; } = new();
     }
