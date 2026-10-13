@@ -9,6 +9,10 @@ public sealed class RuntimeWildTreeProductExecutorTests
         Assert.Contains("StartWildTreeProductHarvest(pending);", source);
         Assert.Contains("active.Location.checkAction(", source);
         Assert.Contains("CaptureWildTreeProductOutputs", source);
+        Assert.Contains("CaptureWildTreeProductInventoryOutputs", source);
+        Assert.Contains("TickWildTreeProductOutputCollection(active);", source);
+        Assert.Contains("WildTreeProductInventoryReceiptVerified(active)", source);
+        Assert.Contains("native_wild_tree_output_naturally_collected", source);
         Assert.Contains("complete_output_domain_verified_without_rng_prediction", source);
         Assert.Contains("Game1.player.CurrentToolIndex = active.SafeSlotIndex", source);
         Assert.Contains("Game1.player.CurrentToolIndex = active.RestoreSlotIndex", source);

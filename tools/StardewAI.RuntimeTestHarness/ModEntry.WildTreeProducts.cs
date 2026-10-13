@@ -111,7 +111,15 @@ public sealed partial class ModEntry
         if (active.ActionIssued)
         {
             var result = WildTreeProductPostconditionStatus(active);
-            if (result == "verified") CompleteWildTreeProduct(active);
+            if (result == "verified" &&
+                WildTreeProductInventoryReceiptVerified(active))
+            {
+                CompleteWildTreeProduct(active);
+            }
+            else if (result == "verified")
+            {
+                TickWildTreeProductOutputCollection(active);
+            }
             else if (result != "pending") CompleteWildTreeProductBlocked(active, result);
             return;
         }
@@ -147,6 +155,8 @@ public sealed partial class ModEntry
             return;
         }
         active.OutputCountsBefore = CaptureWildTreeProductOutputs(active.Location);
+        active.InventoryOutputCountsBefore =
+            CaptureWildTreeProductInventoryOutputs();
         active.ForagingExperienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
         Game1.player.faceDirection(DirectionTo(playerTile, active.Interaction));
         var handled = false;
@@ -163,7 +173,15 @@ public sealed partial class ModEntry
         active.ActionIssued = true;
         if (!handled) { CompleteWildTreeProductBlocked(active, "harvest_tree_product_native_action_not_handled"); return; }
         var post = WildTreeProductPostconditionStatus(active);
-        if (post == "verified") CompleteWildTreeProduct(active);
+        if (post == "verified" &&
+            WildTreeProductInventoryReceiptVerified(active))
+        {
+            CompleteWildTreeProduct(active);
+        }
+        else if (post == "verified")
+        {
+            TickWildTreeProductOutputCollection(active);
+        }
         else if (post != "pending") CompleteWildTreeProductBlocked(active, post);
     }
 
@@ -193,12 +211,167 @@ public sealed partial class ModEntry
         return "verified";
     }
 
+    private static bool WildTreeProductInventoryReceiptVerified(
+        ActiveWildTreeProductHarvest active)
+    {
+        if (active.InventoryOutputCountsBefore is null)
+            return false;
+        var after = CaptureWildTreeProductInventoryOutputs();
+        return active.Projection.GuaranteedOutputs.All(output =>
+            after.GetValueOrDefault(output.Key) -
+                active.InventoryOutputCountsBefore.GetValueOrDefault(
+                    output.Key) == output.Quantity);
+    }
+
+    private void TickWildTreeProductOutputCollection(
+        ActiveWildTreeProductHarvest active)
+    {
+        if (Game1.activeClickableMenu is not null ||
+            Game1.dialogueUp ||
+            Game1.player.UsingTool ||
+            !Game1.player.CanMove)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var playerTile = Game1.player.TilePoint;
+        if (playerTile != active.LastObservedTile)
+        {
+            active.MovementTiles += ManhattanDistance(
+                active.LastObservedTile,
+                playerTile);
+            active.LastObservedTile = playerTile;
+            if (active.MovementTiles > active.MaxMovementTiles)
+            {
+                CompleteWildTreeProductBlocked(
+                    active,
+                    "harvest_tree_product_movement_budget_exceeded");
+                return;
+            }
+        }
+
+        var outputKeys = active.Projection.GuaranteedOutputs
+            .Select(output => output.Key)
+            .ToHashSet(StringComparer.Ordinal);
+        var chunk = active.Location.debris
+            .Where(debris =>
+            {
+                var id = DebrisQualifiedItemId(debris);
+                var quality = debris.item?.Quality ?? debris.itemQuality;
+                return outputKeys.Contains(id + "|" + quality);
+            })
+            .SelectMany(debris => debris.Chunks)
+            .OrderBy(candidate => ManhattanDistance(
+                playerTile,
+                DebrisChunkTile(candidate)))
+            .FirstOrDefault();
+        if (chunk is null)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var target = DebrisChunkTile(chunk);
+        if (ManhattanDistance(playerTile, target) <= 1)
+        {
+            StopAllMovement();
+            active.Path.Clear();
+            active.PathIndex = 0;
+            active.PickupPathTarget = target;
+            return;
+        }
+
+        if (active.PathIndex >= active.Path.Count ||
+            active.PickupPathTarget != target)
+        {
+            var remainingMovementTiles =
+                active.MaxMovementTiles - active.MovementTiles;
+            if (remainingMovementTiles <= 0)
+            {
+                CompleteWildTreeProductBlocked(
+                    active,
+                    "harvest_tree_product_movement_budget_exceeded");
+                return;
+            }
+            var path = IsTileWalkable(active.Location, target) &&
+                !IsTileOccupiedByCharacter(active.Location, target)
+                    ? TryBuildTilePath(
+                        active.Location,
+                        playerTile,
+                        target,
+                        remainingMovementTiles,
+                        out var pathReason,
+                        avoidSoftObstacles: true)
+                    : BuildAdjacentToolPath(
+                        active.Location,
+                        target,
+                        remainingMovementTiles,
+                        out pathReason,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false);
+            if (path is null)
+            {
+                active.PickupPathFailures++;
+                if (active.PickupPathFailures > 90)
+                {
+                    CompleteWildTreeProductBlocked(
+                        active,
+                        "harvest_tree_product_output_pickup_path_unavailable:" +
+                        pathReason);
+                }
+                return;
+            }
+            active.Path.Clear();
+            active.Path.AddRange(path);
+            active.PathIndex = 0;
+            active.PickupPathTarget = target;
+            active.PickupPathFailures = 0;
+        }
+
+        if (active.PathIndex >= active.Path.Count)
+            return;
+        var next = active.Path[active.PathIndex];
+        if (playerTile == next)
+        {
+            active.PathIndex++;
+            return;
+        }
+        if (!IsTileWalkable(active.Location, next) ||
+            IsTileOccupiedByCharacter(active.Location, next))
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            return;
+        }
+
+        var moved = Vector2.DistanceSquared(
+            active.LastPosition,
+            Game1.player.Position) >= 0.01f;
+        active.LastPosition = Game1.player.Position;
+        StartMoving(DirectionTo(playerTile, next));
+        MovePlayerForTick();
+        if (Game1.player.TilePoint == next)
+            active.PathIndex++;
+        if (!moved && ++active.StuckTicks > 45)
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            active.StuckTicks = 0;
+        }
+        else if (moved)
+        {
+            active.StuckTicks = 0;
+        }
+    }
+
     private void CompleteWildTreeProduct(ActiveWildTreeProductHarvest active)
     {
         StopAllMovement();
         Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         activeWildTreeProductHarvest = null;
         var after = CaptureWildTreeProductOutputs(active.Location);
+        var inventoryAfter = CaptureWildTreeProductInventoryOutputs();
         var changed = new List<SimulatedFactChange>
         {
             new() { Path = "current_location.terrain_features[" + active.Target.X + "," + active.Target.Y + "].has_seed", Before = "true", After = active.Tree.hasSeed.Value.ToString().ToLowerInvariant() },
@@ -210,6 +383,8 @@ public sealed partial class ModEntry
             : active.OutputCountsBefore.Keys.AsEnumerable();
         foreach (var key in after.Keys.Union(beforeKeys, StringComparer.Ordinal).Where(key => after.GetValueOrDefault(key) != (active.OutputCountsBefore?.GetValueOrDefault(key) ?? 0)))
             changed.Add(new SimulatedFactChange { Path = "combined_inventory_debris_output[" + key + "]", Before = (active.OutputCountsBefore?.GetValueOrDefault(key) ?? 0).ToString(), After = after.GetValueOrDefault(key).ToString() });
+        foreach (var output in active.Projection.GuaranteedOutputs)
+            changed.Add(new SimulatedFactChange { Path = "player.inventory.output[" + output.Key + "]", Before = active.InventoryOutputCountsBefore!.GetValueOrDefault(output.Key).ToString(), After = inventoryAfter.GetValueOrDefault(output.Key).ToString() });
         var request = active.Pending.Request;
         var result = new TrainingExecutionResult
         {
@@ -217,8 +392,11 @@ public sealed partial class ModEntry
             OptionId = request.OptionId, Status = "applied", FeedbackAvailable = true, ActualTicks = active.ElapsedTicks,
             StartedAt = active.StartedAt, CompletedAt = DateTimeOffset.UtcNow.ToString("O"), TrainingImpactScope = "executor_calibration",
             PrimitiveKind = "harvest_tree_product", PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "native_checkAction_invoked_exact_tree", "native_seed_consumption_verified", "complete_output_domain_verified_without_rng_prediction", "zero_foraging_xp_delta_verified", "safe_empty_slot_restored" },
-            RequestedEffect = active.RequestedEffect, ObservedEffect = WildTreeProductObservedEffect(active.Location, active.Tree, active.Target, after), ChangedFacts = changed.ToArray()
+            PrimitiveVerificationReasons = new[] { "native_checkAction_invoked_exact_tree", "native_seed_consumption_verified", "complete_output_domain_verified_without_rng_prediction", "native_wild_tree_output_naturally_collected", "zero_foraging_xp_delta_verified", "safe_empty_slot_restored" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = WildTreeProductObservedEffect(active.Location, active.Tree, active.Target, after) +
+                ";inventory_outputs=" + string.Join(",", inventoryAfter.OrderBy(row => row.Key).Select(row => row.Key + "=" + row.Value)),
+            ChangedFacts = changed.ToArray()
         };
         ApplyQuestResourceSourceFeedback(result, request);
         ApplySpecialOrderCollectSourceFeedback(result, request);
@@ -315,6 +493,19 @@ public sealed partial class ModEntry
         return counts;
     }
 
+    private static Dictionary<string, int>
+        CaptureWildTreeProductInventoryOutputs()
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var item in Game1.player.Items.Where(item => item is not null))
+        {
+            var key = item!.QualifiedItemId + "|" + item.Quality;
+            counts[key] = counts.GetValueOrDefault(key) +
+                Math.Max(1, item.Stack);
+        }
+        return counts;
+    }
+
     private static string WildTreeProductObservedEffect(GameLocation location, Tree? tree, Point target, IReadOnlyDictionary<string, int>? outputs) =>
         "location=" + location.NameOrUniqueName + ";target=" + target.X + "," + target.Y + ";tree_present=" + (tree is not null && location.terrainFeatures.ContainsKey(target.ToVector2())).ToString().ToLowerInvariant() +
         ";has_seed=" + (tree?.hasSeed.Value.ToString().ToLowerInvariant() ?? "missing") + ";was_shaken_today=" + (tree?.wasShakenToday.Value.ToString().ToLowerInvariant() ?? "missing") +
@@ -333,7 +524,12 @@ public sealed partial class ModEntry
         public List<Point> Path { get; } public RuntimeWildTreeProductProjection Projection { get; } public int MaxMovementTiles { get; } public int SafeSlotIndex { get; } public int RestoreSlotIndex { get; }
         public bool ExpectedWasShakenBefore { get; } public string RequestedEffect { get; } public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O"); public int MaxTicks { get; } = 3600;
         public int ElapsedTicks { get; set; } public int PathIndex { get; set; } public int StuckTicks { get; set; } public int MovementTiles { get; set; } public Vector2 LastPosition { get; set; } public Point LastObservedTile { get; set; }
-        public bool ActionIssued { get; set; } public Dictionary<string, int>? OutputCountsBefore { get; set; } public int? ForagingExperienceBefore { get; set; }
+        public bool ActionIssued { get; set; }
+        public Dictionary<string, int>? OutputCountsBefore { get; set; }
+        public Dictionary<string, int>? InventoryOutputCountsBefore { get; set; }
+        public int? ForagingExperienceBefore { get; set; }
+        public Point? PickupPathTarget { get; set; }
+        public int PickupPathFailures { get; set; }
     }
 
     private sealed record RuntimeWildTreeProductProjection(string Status, IReadOnlyList<FruitTreeOutputExpectation> GuaranteedOutputs, IReadOnlyList<WildTreeOptionalRule> OptionalRules, string OptionalDomainJson);

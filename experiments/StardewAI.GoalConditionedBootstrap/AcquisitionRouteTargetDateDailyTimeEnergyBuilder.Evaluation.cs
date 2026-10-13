@@ -102,6 +102,12 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_wild_tree_seed" or
+            "native_wild_tree_seed_drop" => EvaluateWildTreeProduct(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_wild_tree_tapper_output" =>
                 EvaluateCurrentRouteCollection(
                     route,

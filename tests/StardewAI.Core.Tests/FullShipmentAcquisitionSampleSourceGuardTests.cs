@@ -340,6 +340,22 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var source = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.WildTreeProducts.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.WildTreeProducts.cs");
+        var candidateIndex = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var stochastic = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.cs");
 
         Assert.Contains(
             "\"wild_tree_seed_drop_sample\" { \"full_shipment:item:408\" }",
@@ -364,6 +380,26 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "WildTreeProfile = \"fall_hazelnut\"",
             source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$\"payload.{parts[1]}.SeedDropItems[{rowIndex}].ItemId\"",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.OptionId == \"foraging.harvest_tree_product\"",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "native_wild_tree_seed_drop",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasExactRouteCandidate(",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "matching_guaranteed_wild_tree_product_candidate_not_present",
+            stochastic,
             StringComparison.Ordinal);
     }
 
@@ -401,6 +437,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "if (-not $sampleProofOnly -and $initialTotalDay -ne 0)",
             source,
+            StringComparison.Ordinal);
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.WildTreeProducts.cs");
+        Assert.Contains(
+            "$\"payload.{parts[1]}.SeedItemId\"",
+            calendar,
             StringComparison.Ordinal);
     }
 
@@ -467,6 +511,56 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "LocationId = \"Forest\"",
             source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LocationForageTargetDateUsesExactCurrentSpawnedObjectEvidence()
+    {
+        var candidates = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionCurrentRouteCandidateIndex.cs");
+        var location = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionLocationRouteTargetResolver.cs");
+        var retry = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.cs");
+
+        Assert.Contains(
+            "\"foraging.collect_spawned_objects\"",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_location_forage_terminal_evidence_incomplete",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_location_fish_spawn\" or",
+            location,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (staticRoute.RouteKind == \"native_location_forage_spawn\")",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "matching_spawned_object_candidate_not_present",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasQualifiedItemCandidateOutsideRouteKind(",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "not_applicable_current_forage_absent_exact_alternative_present",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate:foraging.collect_spawned_objects",
+            retry,
             StringComparison.Ordinal);
     }
 
