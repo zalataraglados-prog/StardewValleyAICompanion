@@ -164,7 +164,7 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
 
         if (staticRoute.RouteKind == "native_fruit_tree_produce")
         {
-            if (currentRouteCandidates.TryFind(
+            if (currentRouteCandidates.TryFindCanonical(
                     staticRoute.RouteKind,
                     staticRoute.SourceId,
                     staticRoute.QualifiedItemId,
@@ -228,6 +228,40 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
                     route,
                     staticRoute.UncertaintyMode,
                     "not_applicable_current_animal_source_absent_exact_alternative_present");
+            }
+        }
+
+        if (staticRoute.RouteKind == "native_fish_pond_output")
+        {
+            if (currentRouteCandidates.TryFind(
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId,
+                    out var fishPondMatches,
+                    out _) &&
+                fishPondMatches.Length > 0)
+            {
+                return EvaluateCurrentGuaranteedOutput(
+                    route,
+                    staticRoute,
+                    currentRouteCandidates,
+                    "matching_fish_pond_output_candidate_not_present",
+                    new[]
+                    {
+                        "state.farm.buildings.value[].fish_pond.output_items_json",
+                        "state.farm.buildings.value[].fish_pond.output_authoritative_route_sources",
+                        "candidate:fishing.service_fish_ponds"
+                    });
+            }
+            if (currentRouteCandidates.HasQualifiedItemCandidateOutsideSource(
+                    staticRoute.RouteKind,
+                    staticRoute.SourceId,
+                    staticRoute.QualifiedItemId))
+            {
+                return NotApplicable(
+                    route,
+                    staticRoute.UncertaintyMode,
+                    "not_applicable_current_fish_pond_source_absent_exact_alternative_present");
             }
         }
 

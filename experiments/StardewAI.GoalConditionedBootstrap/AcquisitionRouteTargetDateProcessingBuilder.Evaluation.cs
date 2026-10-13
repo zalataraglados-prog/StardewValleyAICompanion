@@ -16,6 +16,8 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
         "current_fruit_tree_output_materialized";
     private const string CurrentAnimalProduct =
         "current_animal_product_materialized";
+    private const string CurrentFishPondOutput =
+        "current_fish_pond_output_materialized";
     private const string DeferredProduction =
         "production_lead_time_binding_pending_upstream";
 
@@ -30,7 +32,7 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             ["native_crab_pot_output"] = CrabPotProduction,
             ["native_farm_animal_deluxe_produce"] = CurrentAnimalProduct,
             ["native_farm_animal_produce"] = CurrentAnimalProduct,
-            ["native_fish_pond_output"] = DeferredProduction,
+            ["native_fish_pond_output"] = CurrentFishPondOutput,
             ["native_fruit_tree_produce"] = CurrentFruitTreeOutput,
             ["native_geode_default_drop"] = NoDeterministicWait,
             ["native_geode_drop"] = NoDeterministicWait,
@@ -133,6 +135,9 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             CurrentAnimalProduct => EvaluateCurrentAnimalProduct(
                 route,
                 staticRoute),
+            CurrentFishPondOutput => EvaluateCurrentFishPondOutput(
+                route,
+                staticRoute),
             _ => Blocked(
                 route,
                 DeferredProduction,
@@ -205,6 +210,34 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
             true,
             true,
             CurrentAnimalProduct,
+            Array.Empty<AcquisitionProcessingLeadTimeEvaluation>(),
+            Array.Empty<string>(),
+            Array.Empty<string>());
+    }
+
+    private static AcquisitionRouteTargetDateProcessing
+        EvaluateCurrentFishPondOutput(
+            AcquisitionRouteTargetDateReservation route,
+            AcquisitionRouteCalendarResolution staticRoute)
+    {
+        if (staticRoute.EvidenceClass !=
+                "current_native_fish_pond_output_candidate_calendar" ||
+            staticRoute.CalendarWindows.Length == 0 ||
+            staticRoute.CalendarWindows.Any(window =>
+                !window.RequiresExistingLiveCandidateMatch))
+        {
+            return Blocked(
+                route,
+                CurrentFishPondOutput,
+                "current_fish_pond_materialized_output_evidence_missing");
+        }
+
+        return Result(
+            route,
+            "resolved_current_fish_pond_output_materialized",
+            true,
+            true,
+            CurrentFishPondOutput,
             Array.Empty<AcquisitionProcessingLeadTimeEvaluation>(),
             Array.Empty<string>(),
             Array.Empty<string>());

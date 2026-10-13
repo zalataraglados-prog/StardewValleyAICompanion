@@ -65,8 +65,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             reasons.Add("fish_pond_output_identity_incomplete");
         }
+        var distance = standX.HasValue && standY.HasValue && string.Equals(playerLocation, farmLocation, StringComparison.OrdinalIgnoreCase)
+            ? Math.Abs(playerX - standX.Value) + Math.Abs(playerY - standY.Value)
+            : 0;
         var parameters = targetX.HasValue && targetY.HasValue && standX.HasValue && standY.HasValue
-            ? FishPondOutputParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value)
+            ? FishPondOutputParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value, distance)
             : Array.Empty<SmallModelActionParameter>();
         if (parameters.Length > 0)
         {
@@ -76,9 +79,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Parameters = parameters
             }));
         }
-        var distance = standX.HasValue && standY.HasValue && string.Equals(playerLocation, farmLocation, StringComparison.OrdinalIgnoreCase)
-            ? Math.Abs(playerX - standX.Value) + Math.Abs(playerY - standY.Value)
-            : 0;
         return new EventCandidate
         {
             CandidateId = "collect-fish-pond-output:" + farmLocation + ":" + buildingX + "," + buildingY + ":" + outputId,
@@ -123,8 +123,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             reasons.Add("fish_pond_request_projection_incomplete");
         }
+        var distance = standX.HasValue && standY.HasValue && string.Equals(playerLocation, farmLocation, StringComparison.OrdinalIgnoreCase)
+            ? Math.Abs(playerX - standX.Value) + Math.Abs(playerY - standY.Value)
+            : 0;
         var parameters = targetX.HasValue && targetY.HasValue && standX.HasValue && standY.HasValue
-            ? FishPondRequestParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value)
+            ? FishPondRequestParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value, distance)
             : Array.Empty<SmallModelActionParameter>();
         if (parameters.Length > 0)
         {
@@ -134,9 +137,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Parameters = parameters
             }));
         }
-        var distance = standX.HasValue && standY.HasValue && string.Equals(playerLocation, farmLocation, StringComparison.OrdinalIgnoreCase)
-            ? Math.Abs(playerX - standX.Value) + Math.Abs(playerY - standY.Value)
-            : 0;
         return new EventCandidate
         {
             CandidateId = "complete-fish-pond-request:" + farmLocation + ":" + buildingX + "," + buildingY + ":" + requestId,
@@ -196,9 +196,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         int targetX,
         int targetY,
         int standX,
-        int standY)
+        int standY,
+        int routeDistanceTiles)
     {
-        return FishPondCommonParameters(building, pond, farmLocation, targetX, targetY, standX, standY)
+        return FishPondCommonParameters(building, pond, farmLocation, targetX, targetY, standX, standY, routeDistanceTiles)
             .Concat(new[]
             {
                 Parameter("safe_slot_index", ReadInt(pond, "output_safe_slot_index").ToString()),
@@ -206,6 +207,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(
                     ReadArray(pond, "output_authoritative_route_sources"))),
                 Parameter("quantity", ReadInt(pond, "output_stack").ToString()),
+                Parameter("expected_output_quality", ReadInt(pond, "output_quality").ToString()),
                 Parameter("expected_output_items_json", ReadString(pond, "output_items_json")),
                 Parameter("expected_output_state_context", ReadString(pond, "output_state_context")),
                 Parameter("expected_skill_id", "fishing"),
@@ -222,9 +224,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         int targetX,
         int targetY,
         int standX,
-        int standY)
+        int standY,
+        int routeDistanceTiles)
     {
-        return FishPondCommonParameters(building, pond, farmLocation, targetX, targetY, standX, standY)
+        return FishPondCommonParameters(building, pond, farmLocation, targetX, targetY, standX, standY, routeDistanceTiles)
             .Concat(new[]
             {
                 Parameter("qualified_item_id", ReadString(pond, "request_item_qualified_item_id")),
@@ -249,7 +252,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         int targetX,
         int targetY,
         int standX,
-        int standY)
+        int standY,
+        int routeDistanceTiles)
     {
         return new[]
         {
@@ -258,6 +262,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("target_tile_y", targetY.ToString()),
             Parameter("stand_tile_x", standX.ToString()),
             Parameter("stand_tile_y", standY.ToString()),
+            Parameter("route_distance_tiles", routeDistanceTiles.ToString()),
             Parameter("building_tile_x", ReadInt(building, "tile_x").ToString()),
             Parameter("building_tile_y", ReadInt(building, "tile_y").ToString()),
             Parameter("target_runtime_type", ReadString(pond, "runtime_type")),

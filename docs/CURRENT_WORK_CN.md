@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Full Shipment 标准批次：原生鱼塘产物闭环
+
+- `fish_pond_output_sample` 已从冻结源存档的隔离副本完成原生采证。Teacher 精确选择 `full_shipment:item:812 / (O)812 / native_fish_pond_output / fish_pond:Sturgeon:0 / full_shipment:full_shipment:item:812:0:46`，唯一动作链仍为 `fishing.service_fish_ponds -> collect_fish_pond_output -> executor.collect_fish_pond_output`；没有新增第二套候选、编译器或执行器。
+- 透明桥继续完整保留 `Sturgeon:0..5` 六条权威产出来源。当前候选索引按完整 `route_kind + source_id + qualified_item_id` 建立来源身份，并在同一实时鱼塘可对应多条静态来源时只允许字典序首个来源进入规划与派发；其他来源仍可读，但不会重复占据 Teacher 前沿。候选新增真实 `route_distance_tiles` 与 `expected_output_quality`，索引缓存 schema 升至 `v12`。
+- 当前鱼塘输出已贯穿日历、位置、设施、资源、加工、随机性、日内时间/能量和派发轴。现有鱼塘、已物化 `(O)812 x1`、质量 `0`、零输入、确定性当前输出、零能量和原生收取编译链均须精确一致；来源、物品、位置、数量、质量或快照漂移继续失败关闭。
+- 正式 v5 原生执行复用游戏鱼塘交互取得 `(O)812 x1`，动作回执为 `executor.collect_fish_pond_output`，初始状态哈希 `9640ddc868bab5f4aff44f9b3f065337a90685968ffeec29a2d63ff7d30b3902`，终态状态哈希 `d73e96ac09969e3587d09fb6cb495baadbc40c172a5952a7789655d4de8d5dcb`。离线重放复用同一原生执行回执并完整通过 fresh terminal、settlement 与 rollout proof，不重新启动游戏。
+- 重放期间修复两个开发效率问题：`Resume-RuntimeFullShipmentAcquisitionProof.ps1` 现在可从唯一透明当前候选恢复未绑定的 option-only 排名，不再把它强制改写成显式参数候选并破坏队列哈希；canonical 鱼塘解析继续沿用历史“当前候选不存在”诊断字符串，避免无行为变化的文案调整令旧证据大面积漂移。Sap 历史位置轴重算结果为 `CHANGED=0`。
+- 严格 production evidence index 已推进到 `21/26`。剩余 `5` 层为 `machine_output`、`native_machine_flavored_output`、`native_machine_item_query_output`、`native_solar_panel_output`、`native_tree_moss_harvest`；`formal_product_training_authorized=false`。鱼塘 proof 根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-fish-pond-output-v5-20261014\runtime-full-shipment-evidence-fish-pond-output-v5-20261014`，机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v35-20261014`。
+- 下一固定切片是共享机器产出族：先审计并统一 `machine_output`、`native_machine_flavored_output`、`native_machine_item_query_output` 与 `native_solar_panel_output` 的现有当前机器候选、设施、输入、加工、预算和 `farm.collect_machine_outputs` 执行链，再集中采证；不得为四种来源复制四套规划或执行系统。树苔在机器族之后单独闭环。
+
 ## 2026-10-14 Full Shipment 标准批次：原生动物产物闭环
 
 - `farm_animal_product_sample` 与 `farm_animal_deluxe_product_sample` 已从冻结源存档的隔离副本完成原生采证。普通牛奶绑定 `full_shipment:item:184 / (O)184 / native_farm_animal_produce / farm_animal:White Cow:0`；大壶牛奶绑定 `full_shipment:item:186 / (O)186 / native_farm_animal_deluxe_produce / farm_animal:White Cow:0`。

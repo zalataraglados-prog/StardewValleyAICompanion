@@ -56,6 +56,18 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             out _) &&
         matches.Length > 0;
 
+    public bool HasCanonicalExactRouteCandidate(
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId) =>
+        TryFindCanonical(
+            routeKind,
+            sourceId,
+            qualifiedItemId,
+            out var matches,
+            out _) &&
+        matches.Length > 0;
+
     public bool HasQualifiedItemCandidateOutsideRouteKind(
         string qualifiedItemId,
         string excludedRouteKind) =>
@@ -78,7 +90,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v11",
+            "v12",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -330,8 +342,11 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     ReadIntParameter(candidate, "geode_stack_before"),
                     ReadIntParameter(candidate, "geode_money_before"),
                     ReadIntParameter(candidate, "geode_price_gold"),
-                    ReadIntParameter(candidate, "geode_expected_output_stack"),
-                    ReadIntParameter(candidate, "geode_expected_output_quality"),
+                    ReadIntParameter(candidate, "geode_expected_output_stack") ??
+                        ReadIntParameter(candidate, "expected_output_stack") ??
+                        ReadIntParameter(candidate, "quantity"),
+                    ReadIntParameter(candidate, "geode_expected_output_quality") ??
+                        ReadIntParameter(candidate, "expected_output_quality"),
                     ReadStringParameter(candidate, "required_tool_kind"),
                     ReadIntParameter(candidate, "tool_slot_index"),
                     source.RouteKind,
@@ -408,6 +423,40 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 value.QualifiedItemId == qualifiedItemId)
             .ToArray();
         blockingReasons = Array.Empty<string>();
+        return true;
+    }
+
+    public bool TryFindCanonical(
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId,
+        out AcquisitionCurrentRouteCandidate[] candidates,
+        out string[] blockingReasons)
+    {
+        if (!TryFind(
+                routeKind,
+                sourceId,
+                qualifiedItemId,
+                out var exact,
+                out blockingReasons))
+        {
+            candidates = Array.Empty<AcquisitionCurrentRouteCandidate>();
+            return false;
+        }
+
+        candidates = exact.Where(candidate =>
+                string.Equals(
+                    sourceId,
+                    Candidates.Where(value =>
+                            value.CandidateId == candidate.CandidateId &&
+                            value.RouteKind == routeKind &&
+                            value.QualifiedItemId == qualifiedItemId)
+                        .Select(value => value.SourceId)
+                        .Distinct(StringComparer.Ordinal)
+                        .Order(StringComparer.Ordinal)
+                        .FirstOrDefault(),
+                    StringComparison.Ordinal))
+            .ToArray();
         return true;
     }
 

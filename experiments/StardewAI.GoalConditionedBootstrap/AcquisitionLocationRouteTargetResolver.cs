@@ -37,7 +37,6 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_monster_drop_table" or
             "native_farm_animal_deluxe_produce" or
             "native_farm_animal_produce" or
-            "native_fish_pond_output" or
             "native_geode_drop" or
             "native_radioactive_ore_node" or
             "native_wild_tree_tapper_output" or
@@ -49,6 +48,9 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_wild_tree_seed" or
             "native_wild_tree_seed_drop" or
             "creates_reward_item" => ResolveCurrentCandidate(
+                source,
+                currentRouteCandidates),
+            "native_fish_pond_output" => ResolveCanonicalCurrentCandidate(
                 source,
                 currentRouteCandidates),
             "native_mine_fishing_override" => Exact(
@@ -124,6 +126,47 @@ internal static class AcquisitionLocationRouteTargetResolver
                     {
                         "candidate:" + value.OptionId,
                         "candidate.parameters[authoritative_route_sources_json]"
+                    },
+                    value.TargetTileX,
+                    value.TargetTileY))
+                .ToArray(),
+            matches.Length == 0
+                ? new[]
+                {
+                    "matching_current_authoritative_route_candidate_not_present"
+                }
+                : Array.Empty<string>());
+    }
+
+    private static AcquisitionLocationTargetResolution
+        ResolveCanonicalCurrentCandidate(
+            AcquisitionRouteTargetDateUnlock route,
+            AcquisitionCurrentRouteCandidateIndex candidates)
+    {
+        if (!candidates.TryFindCanonical(
+                route.RouteKind,
+                route.SourceId,
+                route.QualifiedItemId,
+                out var matches,
+                out var blockingReasons))
+        {
+            return new AcquisitionLocationTargetResolution(
+                false,
+                Array.Empty<AcquisitionLocationTarget>(),
+                blockingReasons);
+        }
+
+        return new AcquisitionLocationTargetResolution(
+            true,
+            matches.Select(value => new AcquisitionLocationTarget(
+                    "runtime_canonical_authoritative_route_candidate",
+                    value.SourceId,
+                    value.LocationId,
+                    new[]
+                    {
+                        "candidate:" + value.OptionId,
+                        "candidate.parameters[authoritative_route_sources_json]",
+                        "planner:canonical_current_route_source"
                     },
                     value.TargetTileX,
                     value.TargetTileY))

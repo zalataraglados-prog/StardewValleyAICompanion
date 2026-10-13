@@ -785,6 +785,30 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "experiments",
             "StardewAI.GoalConditionedBootstrap",
             "AcquisitionLocationRouteTargetResolver.cs");
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.FishPond.cs");
+        var facility = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateFacilityBuilder.Evaluation.FishPonds.cs");
+        var resource = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateResourceBuilder.Evaluation.cs");
+        var processing = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateProcessingBuilder.Evaluation.cs");
+        var retry = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateStochasticRetryBuilder.Evaluation.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.FishPonds.cs");
 
         Assert.Contains(
             "\"fish_pond_output_sample\" { \"full_shipment:item:812\" }",
@@ -823,8 +847,58 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             candidates,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"native_fish_pond_output\" or",
+            "\"native_fish_pond_output\" => ResolveCanonicalCurrentCandidate(",
             locationResolver,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryFindCanonical(",
+            candidates,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_native_fish_pond_output_candidate_calendar",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "authoritative_fish_pond_output_row_calendar_invariant",
+            calendar,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (currentRouteCandidates?.HasCanonicalExactRouteCandidate(",
+            ReadRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "AcquisitionRouteCalendarResolutionBuilder.Routes.cs"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "resolved_existing_current_fish_pond_capacity_match",
+            facility,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[\"native_fish_pond_output\"] = NoInput",
+            resource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_fish_pond_output_materialized",
+            processing,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "not_applicable_current_fish_pond_source_absent_exact_alternative_present",
+            retry,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_native_fish_pond_interaction_input_profile",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "compiler:ActionQueueCompiler.CompileCollectFishPondOutputStep",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (routeKind == \"native_fish_pond_output\")",
+            ReadRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "AcquisitionRouteDispatchCompilationBuilder.Selection.cs"),
             StringComparison.Ordinal);
     }
 
@@ -1556,7 +1630,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             candidateIndex,
             StringComparison.Ordinal);
         Assert.Contains(
-            "authoritative_fish_pond_output_row_calendar_invariant",
+            "current_native_fish_pond_output_candidate_calendar",
             fishPondCalendar,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -2570,6 +2644,22 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "$postCommitRankingResponse",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$rankedOptionIds.Count -eq 0",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Unbound source ranking has no unique current candidate.",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sourceParameters = @()",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "must bind exactly one option",
             rebuild,
             StringComparison.Ordinal);
         Assert.True(
