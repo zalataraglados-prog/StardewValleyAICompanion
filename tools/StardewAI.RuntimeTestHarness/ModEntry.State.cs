@@ -35,6 +35,7 @@ public sealed partial class ModEntry : Mod
 
         public TrainingExecutionRequest Request { get; }
         public TaskCompletionSource<TrainingExecutionResult> Completion { get; } = new();
+        public ActionOriginOutputCapture? ActionOriginOutputCapture { get; set; }
         public List<SimulatedFactChange> ChangedFacts { get; } = new();
         public int MovementClearanceActions { get; set; }
         public int MovementExtraTicks { get; set; }
@@ -80,7 +81,7 @@ public sealed partial class ModEntry : Mod
 
     private sealed class ActiveNativeTool
     {
-        private ActiveNativeTool(PendingExecution pending, string primitiveKind, string locationId, Point target, List<Point> path, Tool tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool? beforeWatered, bool? beforeHadHoeDirt, bool beforeGinger = false, int beforeGingerDebrisCount = 0, int beforeGingerInventoryCount = 0, int beforeForagingExperience = 0, int? beforeHoeDirtState = null, double expectedEnergyCost = 0d)
+        private ActiveNativeTool(PendingExecution pending, string primitiveKind, string locationId, Point target, List<Point> path, Tool tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool? beforeWatered, bool? beforeHadHoeDirt, bool beforeGinger = false, int beforeGingerDebrisCount = 0, int beforeGingerInventoryCount = 0, int beforeForagingExperience = 0, int? beforeHoeDirtState = null, double expectedEnergyCost = 0d, HashSet<Debris>? debrisBefore = null, HashSet<Chunk>? chunksBefore = null)
         {
             Pending = pending;
             PrimitiveKind = primitiveKind;
@@ -101,6 +102,8 @@ public sealed partial class ModEntry : Mod
             BeforeForagingExperience = beforeForagingExperience;
             BeforeHoeDirtState = beforeHoeDirtState;
             ExpectedEnergyCost = expectedEnergyCost;
+            DebrisBefore = debrisBefore;
+            ChunksBefore = chunksBefore;
             LastPosition = Game1.player.Position;
             MaxMovementTicks = Math.Max(120, path.Count * 90);
             MaxTicks = MaxMovementTicks + 240;
@@ -125,9 +128,9 @@ public sealed partial class ModEntry : Mod
             return new ActiveNativeTool(pending, "till_soil", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, beforeHadHoeDirt);
         }
 
-        public static ActiveNativeTool Ginger(PendingExecution pending, string locationId, Point target, List<Point> path, Hoe tool, double staminaBefore, string startedAt, int estimatedTicks, string requestedEffect, int beforeGingerDebrisCount, int beforeGingerInventoryCount, int beforeForagingExperience, int beforeHoeDirtState, double expectedEnergyCost)
+        public static ActiveNativeTool Ginger(PendingExecution pending, string locationId, Point target, List<Point> path, Hoe tool, double staminaBefore, string startedAt, int estimatedTicks, string requestedEffect, int beforeGingerDebrisCount, int beforeGingerInventoryCount, int beforeForagingExperience, int beforeHoeDirtState, double expectedEnergyCost, HashSet<Debris> debrisBefore, HashSet<Chunk> chunksBefore)
         {
-            return new ActiveNativeTool(pending, "harvest_ginger", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, true, true, beforeGingerDebrisCount, beforeGingerInventoryCount, beforeForagingExperience, beforeHoeDirtState, expectedEnergyCost);
+            return new ActiveNativeTool(pending, "harvest_ginger", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, true, true, beforeGingerDebrisCount, beforeGingerInventoryCount, beforeForagingExperience, beforeHoeDirtState, expectedEnergyCost, debrisBefore, chunksBefore);
         }
 
         public PendingExecution Pending { get; }
@@ -149,6 +152,8 @@ public sealed partial class ModEntry : Mod
         public int BeforeForagingExperience { get; }
         public int? BeforeHoeDirtState { get; }
         public double ExpectedEnergyCost { get; }
+        public HashSet<Debris>? DebrisBefore { get; }
+        public HashSet<Chunk>? ChunksBefore { get; }
         public int ElapsedTicks { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }

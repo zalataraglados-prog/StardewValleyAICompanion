@@ -447,6 +447,12 @@ static partial class Program
         var harvestMethod = ReadQueueParameterString(item, "harvest_method");
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
         var debrisIndex = ReadQueueParameterInt(item, "debris_index");
+        var acquisitionRouteKind = ReadQueueParameterString(
+            item,
+            "acquisition_route_kind");
+        var acquisitionRouteOccurrenceId = ReadQueueParameterString(
+            item,
+            "acquisition_route_occurrence_id");
         var deferredPickupSourceKind = ReadQueueParameterString(
             item,
             "deferred_pickup_source_kind");
@@ -456,6 +462,9 @@ static partial class Program
         var deferredPickupGuaranteedMinimumQuantity = ReadQueueParameterInt(
             item,
             "deferred_pickup_guaranteed_minimum_quantity");
+        var deferredPickupMinimumQuality = ReadQueueParameterInt(
+            item,
+            "item_quality");
         var inputSlotIndex = ReadQueueParameterInt(item, "input_slot_index");
         var machinePredictionContractFingerprint =
             ReadQueueParameterString(
@@ -1082,12 +1091,17 @@ static partial class Program
         {
             executionRequest.DebrisIndex = debrisIndex.Value;
         }
+        executionRequest.AcquisitionRouteKind = acquisitionRouteKind;
+        executionRequest.AcquisitionRouteOccurrenceId =
+            acquisitionRouteOccurrenceId;
         executionRequest.DeferredPickupSourceKind =
             deferredPickupSourceKind;
         executionRequest.DeferredPickupDebrisItemTotalBefore =
             deferredPickupDebrisItemTotalBefore;
         executionRequest.DeferredPickupGuaranteedMinimumQuantity =
             deferredPickupGuaranteedMinimumQuantity;
+        executionRequest.DeferredPickupMinimumQuality =
+            deferredPickupMinimumQuality;
         if (inputSlotIndex.HasValue)
         {
             executionRequest.InputSlotIndex = inputSlotIndex.Value;

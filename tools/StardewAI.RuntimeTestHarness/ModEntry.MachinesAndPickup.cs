@@ -64,12 +64,30 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));
             return;
         }
+        ActionOriginOutputResolution? actionOrigin = null;
+        var minimumQuality = 0;
+        int? requiredItemCountAfter = null;
         if (deferredNativeDrop)
         {
-            var inventoryNow = CountInventoryItem(request.QualifiedItemId);
+            if (!request.DeferredPickupMinimumQuality.HasValue ||
+                request.DeferredPickupMinimumQuality.Value < 0)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "pickup_debris",
+                    DebrisRequestedEffect(request),
+                    beforeObserved,
+                    "deferred_pickup_minimum_quality_required"));
+                return;
+            }
+            minimumQuality = request.DeferredPickupMinimumQuality.Value;
+            var inventoryNow = CountInventoryItemAtOrAboveQuality(
+                request.QualifiedItemId,
+                minimumQuality);
             var debrisNow = CountLocationDebrisChunks(
                 location,
-                request.QualifiedItemId);
+                request.QualifiedItemId,
+                minimumQuality);
             if (!request.InventoryItemTotalBefore.HasValue ||
                 !request.DeferredPickupDebrisItemTotalBefore.HasValue ||
                 !request.DeferredPickupGuaranteedMinimumQuantity.HasValue ||
@@ -91,6 +109,39 @@ public sealed partial class ModEntry : Mod
                     "deferred_pickup_native_output_conservation_mismatch"));
                 return;
             }
+            if (!TryResolveActionOriginOutput(
+                    request,
+                    location,
+                    request.QualifiedItemId,
+                    minimumQuality,
+                    request.DeferredPickupGuaranteedMinimumQuantity.Value,
+                    out actionOrigin,
+                    out var actionOriginReason))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "pickup_debris",
+                    DebrisRequestedEffect(request),
+                    beforeObserved,
+                    actionOriginReason));
+                return;
+            }
+            requiredItemCountAfter =
+                request.InventoryItemTotalBefore.Value +
+                request.DeferredPickupGuaranteedMinimumQuantity.Value;
+            if (inventoryNow >= requiredItemCountAfter.Value)
+            {
+                pending.Completion.SetResult(
+                    CompletePickupDebrisAlreadyCollected(
+                        request,
+                        location,
+                        target,
+                        beforeObserved,
+                        inventoryNow,
+                        actionOrigin));
+                ConsumeActionOriginOutput(request);
+                return;
+            }
         }
         Debris debris;
         Chunk chunk;
@@ -99,6 +150,8 @@ public sealed partial class ModEntry : Mod
                 location,
                 target,
                 request.QualifiedItemId,
+                minimumQuality,
+                actionOrigin!,
                 out debris,
                 out chunk)
             : TryRebindPickupDebris(
@@ -110,13 +163,16 @@ public sealed partial class ModEntry : Mod
                 out chunk);
         if (!rebound)
         {
-            var itemCountAfterNativeCollection = CountInventoryItem(
-                request.QualifiedItemId);
+            var itemCountAfterNativeCollection = deferredNativeDrop
+                ? CountInventoryItemAtOrAboveQuality(
+                    request.QualifiedItemId,
+                    minimumQuality)
+                : CountInventoryItem(request.QualifiedItemId);
             if (request.InventoryItemTotalBefore.HasValue &&
                 itemCountAfterNativeCollection >
                     request.InventoryItemTotalBefore.Value &&
-                ManhattanDistance(Game1.player.TilePoint, target) <=
-                    (deferredNativeDrop ? 12 : 3))
+                !deferredNativeDrop &&
+                ManhattanDistance(Game1.player.TilePoint, target) <= 3)
             {
                 pending.Completion.SetResult(
                     CompletePickupDebrisAlreadyCollected(
@@ -124,7 +180,8 @@ public sealed partial class ModEntry : Mod
                         location,
                         target,
                         beforeObserved,
-                        itemCountAfterNativeCollection));
+                        itemCountAfterNativeCollection,
+                        null));
                 return;
             }
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_target_not_found"));
@@ -167,9 +224,16 @@ public sealed partial class ModEntry : Mod
             itemId,
             location.debris.Count,
             debris.Chunks.Count,
-            CountInventoryItem(itemId),
+            deferredNativeDrop
+                ? CountInventoryItemAtOrAboveQuality(
+                    itemId,
+                    minimumQuality)
+                : CountInventoryItem(itemId),
             InventoryStackSignature(),
-            DebrisRequestedEffect(request));
+            DebrisRequestedEffect(request),
+            minimumQuality,
+            requiredItemCountAfter,
+            actionOrigin?.Record);
     }
 
     private void TickPickupDebris()
@@ -194,8 +258,16 @@ public sealed partial class ModEntry : Mod
 
         var debrisStillPresent = active.Location.debris.Contains(active.Debris);
         var chunkStillPresent = debrisStillPresent && active.Debris.Chunks.Contains(active.Chunk);
-        var itemCountAfter = CountInventoryItem(active.QualifiedItemId);
-        if ((!debrisStillPresent || !chunkStillPresent) && itemCountAfter > active.ItemCountBefore)
+        var itemCountAfter = active.ActionOriginRecord is null
+            ? CountInventoryItem(active.QualifiedItemId)
+            : CountInventoryItemAtOrAboveQuality(
+                active.QualifiedItemId,
+                active.MinimumQuality);
+        if (active.RequiredItemCountAfter.HasValue &&
+            itemCountAfter >= active.RequiredItemCountAfter.Value ||
+            !active.RequiredItemCountAfter.HasValue &&
+            (!debrisStillPresent || !chunkStillPresent) &&
+            itemCountAfter > active.ItemCountBefore)
         {
             CompletePickupDebris(active, itemCountAfter);
             return;
@@ -212,6 +284,23 @@ public sealed partial class ModEntry : Mod
 
         if (!chunkStillPresent)
         {
+            if (active.ActionOriginRecord is not null &&
+                TryRebindDeferredPickupDebris(
+                    active.Location,
+                    active.PathTarget,
+                    active.QualifiedItemId,
+                    active.MinimumQuality,
+                    active.ActionOriginRecord,
+                    out var nextDebris,
+                    out var nextChunk))
+            {
+                active.Debris = nextDebris;
+                active.Chunk = nextChunk;
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.WaitAtTargetTicks = 0;
+                return;
+            }
             CompletePickupDebrisBlocked(active, "pickup_debris_removed_without_inventory_gain");
             return;
         }
@@ -345,7 +434,9 @@ public sealed partial class ModEntry : Mod
             TrainingImpactScope = "executor_calibration",
             PrimitiveKind = "pickup_debris",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "bfs_reached_live_debris", "game_update_naturally_collected_chunk", "inventory_item_count_increased", "no_direct_debris_collect_call" },
+            PrimitiveVerificationReasons = active.ActionOriginRecord is null
+                ? new[] { "bfs_reached_live_debris", "game_update_naturally_collected_chunk", "inventory_item_count_increased", "no_direct_debris_collect_call" }
+                : new[] { "exact_action_origin_debris_identity_bound", "bfs_reached_live_action_origin_debris", "game_update_naturally_collected_chunk", "required_inventory_quantity_reached", "no_direct_debris_collect_call" },
             RequestedEffect = active.RequestedEffect,
             ObservedEffect = "debris_present=" + active.Location.debris.Contains(active.Debris).ToString().ToLowerInvariant() + ";item_count=" + itemCountAfter + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y,
             ChangedFacts = new[]
@@ -360,6 +451,10 @@ public sealed partial class ModEntry : Mod
         {
             ApplySpecialOrderCollectFeedback(result, request, request.QuestExpectedCurrentCount);
         }
+        if (active.ActionOriginRecord is not null)
+        {
+            ConsumeActionOriginOutput(request);
+        }
         active.Pending.Completion.SetResult(result);
     }
 
@@ -368,7 +463,8 @@ public sealed partial class ModEntry : Mod
         GameLocation location,
         Point target,
         string beforeObserved,
-        int itemCountAfter)
+        int itemCountAfter,
+        ActionOriginOutputResolution? actionOrigin)
     {
         StopAllMovement();
         return new TrainingExecutionResult
@@ -386,13 +482,20 @@ public sealed partial class ModEntry : Mod
             TrainingImpactScope = "executor_calibration",
             PrimitiveKind = "pickup_debris",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[]
-            {
-                "target_chunk_absent_after_native_proximity_collection",
-                "inventory_item_count_increased_since_snapshot",
-                "player_remained_within_three_tiles_of_snapshot_target",
-                "no_direct_debris_collect_call"
-            },
+            PrimitiveVerificationReasons = actionOrigin is null
+                ? new[]
+                {
+                    "target_chunk_absent_after_native_proximity_collection",
+                    "inventory_item_count_increased_since_snapshot",
+                    "player_remained_within_three_tiles_of_snapshot_target",
+                    "no_direct_debris_collect_call"
+                }
+                : new[]
+                {
+                    "exact_action_origin_direct_inventory_delta_bound",
+                    "required_inventory_quantity_reached",
+                    "no_direct_debris_collect_call"
+                },
             RequestedEffect = DebrisRequestedEffect(request),
             ObservedEffect =
                 beforeObserved +
@@ -543,6 +646,27 @@ public sealed partial class ModEntry : Mod
         GameLocation location,
         Point sourceTile,
         string qualifiedItemId,
+        int minimumQuality,
+        ActionOriginOutputResolution actionOrigin,
+        out Debris debris,
+        out Chunk chunk)
+    {
+        return TryRebindDeferredPickupDebris(
+            location,
+            sourceTile,
+            qualifiedItemId,
+            minimumQuality,
+            actionOrigin.Record,
+            out debris,
+            out chunk);
+    }
+
+    private static bool TryRebindDeferredPickupDebris(
+        GameLocation location,
+        Point sourceTile,
+        string qualifiedItemId,
+        int minimumQuality,
+        ActionOriginOutputRecord actionOrigin,
         out Debris debris,
         out Chunk chunk)
     {
@@ -556,7 +680,12 @@ public sealed partial class ModEntry : Mod
             .Where(value => string.Equals(
                 DebrisQualifiedItemId(value.Debris),
                 qualifiedItemId,
-                StringComparison.OrdinalIgnoreCase))
+                StringComparison.OrdinalIgnoreCase) &&
+                (value.Debris.item?.Quality ??
+                    value.Debris.itemQuality) >= minimumQuality &&
+                (actionOrigin.ProducedDebris.Contains(value.Debris) ||
+                 value.Debris.Chunks.Any(
+                     actionOrigin.ProducedChunks.Contains)))
             .SelectMany(value => value.Debris.Chunks.Select(
                 (candidateChunk, chunkIndex) => new
                 {
@@ -569,6 +698,7 @@ public sealed partial class ModEntry : Mod
                         sourceTile,
                         DebrisChunkTile(candidateChunk))
                 }))
+            .Where(value => actionOrigin.ProducedChunks.Contains(value.Chunk))
             .Where(value => value.Distance <=
                 maximumNativeDropDistanceTiles)
             .OrderBy(value => value.Distance)
@@ -590,11 +720,13 @@ public sealed partial class ModEntry : Mod
 
     private static int CountLocationDebrisChunks(
         GameLocation location,
-        string qualifiedItemId) => location.debris
+        string qualifiedItemId,
+        int minimumQuality) => location.debris
         .Where(value => string.Equals(
             DebrisQualifiedItemId(value),
             qualifiedItemId,
-            StringComparison.OrdinalIgnoreCase))
+            StringComparison.OrdinalIgnoreCase) &&
+            (value.item?.Quality ?? value.itemQuality) >= minimumQuality)
         .Sum(value => value.Chunks.Count);
 
     private static Chunk? NearestDebrisChunk(

@@ -109,6 +109,8 @@ public sealed partial class ModEntry
             NutKey = nutKey;
             MaxMovementTiles = maxMovementTiles;
             OutputCountBefore = CountBushOutput(location, qualifiedItemId, expectedQuality);
+            DebrisBefore = CaptureDebrisIdentitySet(location);
+            ChunksBefore = CaptureDebrisChunkIdentitySet(location);
             InventoryCountBefore = CountInventoryItemAtQuality(
                 qualifiedItemId,
                 expectedQuality);
@@ -135,6 +137,8 @@ public sealed partial class ModEntry
         public string NutKey { get; }
         public int MaxMovementTiles { get; }
         public int OutputCountBefore { get; }
+        public HashSet<Debris> DebrisBefore { get; }
+        public HashSet<Chunk> ChunksBefore { get; }
         public int InventoryCountBefore { get; }
         public int ForagingExperienceBefore { get; }
         public int TileSheetOffsetBefore { get; }

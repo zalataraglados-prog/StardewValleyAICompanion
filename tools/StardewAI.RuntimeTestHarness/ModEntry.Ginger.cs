@@ -119,7 +119,9 @@ public sealed partial class ModEntry
             CountInventoryItemAtQuality(GingerQualifiedItemId, 0),
             Game1.player.experiencePoints[Farmer.foragingSkill],
             dirt.state.Value,
-            expectedEnergyCost);
+            expectedEnergyCost,
+            CaptureDebrisIdentitySet(location),
+            CaptureDebrisChunkIdentitySet(location));
     }
 
     private static string[] ValidateGingerHarvestTarget(GameLocation location, Point target, Hoe? hoe, TrainingExecutionRequest request)
@@ -309,17 +311,13 @@ public sealed partial class ModEntry
             }
         }
 
-        var chunk = location.debris
-            .Where(debris => string.Equals(
-                DebrisQualifiedItemId(debris),
-                GingerQualifiedItemId,
-                StringComparison.OrdinalIgnoreCase) &&
-                (debris.item?.Quality ?? debris.itemQuality) == 0)
-            .SelectMany(debris => debris.Chunks)
-            .OrderBy(candidate => ManhattanDistance(
-                playerTile,
-                DebrisChunkTile(candidate)))
-            .FirstOrDefault();
+        var chunk = NearestActionOriginChunk(
+            location,
+            tool.DebrisBefore!,
+            tool.ChunksBefore!,
+            GingerQualifiedItemId,
+            0,
+            playerTile);
         if (chunk is null)
         {
             StopAllMovement();

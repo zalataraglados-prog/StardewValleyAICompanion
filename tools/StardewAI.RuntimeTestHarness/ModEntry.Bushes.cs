@@ -329,18 +329,13 @@ public sealed partial class ModEntry
             return;
         }
 
-        var chunk = active.Location.debris
-            .Where(debris => string.Equals(
-                DebrisQualifiedItemId(debris),
-                active.QualifiedItemId,
-                StringComparison.OrdinalIgnoreCase) &&
-                (debris.item?.Quality ?? debris.itemQuality) ==
-                    active.ExpectedQuality)
-            .SelectMany(debris => debris.Chunks)
-            .OrderBy(candidate => ManhattanDistance(
-                playerTile,
-                DebrisChunkTile(candidate)))
-            .FirstOrDefault();
+        var chunk = NearestActionOriginChunk(
+            active.Location,
+            active.DebrisBefore,
+            active.ChunksBefore,
+            active.QualifiedItemId,
+            active.ExpectedQuality,
+            playerTile);
         if (chunk is null)
         {
             StopAllMovement();
