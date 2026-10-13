@@ -3054,6 +3054,15 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The threshold corpus only derives crossed criterion views from that evidence. The verifier itself has no threshold
   requirement, allowing a later recurrence to retain every verified sale edge without inventing another sale adapter.
 
+### 2026-10-14: reusable native shipping-settlement evidence
+
+- One verifier now composes the exact single-sleep queue, its fresh sequential execution receipt and the shared Money
+  shipping progression. Both ordinary and terminal Full Shipment settlement receipts consume that verifier before their
+  collection-specific checks.
+- Shipping credit is admitted only when current money and cumulative earnings increase by the de-duplicated prior-night
+  pending value. Historical snapshots missing the required Money or scoped-shipping fields fail closed and must be
+  recollected. The next slice can therefore sequence shop and shipping edges without a second settlement implementation.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

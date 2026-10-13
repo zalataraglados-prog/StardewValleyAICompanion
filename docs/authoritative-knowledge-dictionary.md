@@ -681,6 +681,14 @@ counterfactual rollouts produce reserve-aware opportunity-cost labels; and the c
 alternative is training-eligible. Wiki and min-max guides are proposal priors only, never hard
 facts or positive labels.
 
+Native revenue evidence now has two shared verification boundaries. Immediate shop sales bind
+the structured shop, item, slot, quantity, unit price and total value to one fresh execution
+episode and an equal positive Money/totalMoneyEarned delta. Shipping settlement binds one native
+sleep queue and fresh queue receipt to the unique prior-night shipping scope; duplicate physical
+bin endpoints are counted once, and both money measures must increase by that exact pending value.
+These transitions prove settlement only. They do not by themselves prove reserve safety,
+opportunity cost, recurrence continuity, or the Year 3 lower-bound schedule.
+
 The `raise_friendships` reverse route is also typed but remains `in_progress`. Grandpa's
 friendship population is not the raw save dictionary: native `Utility.ForEachVillager` excludes
 event actors and retains `IsVillager` instances, then

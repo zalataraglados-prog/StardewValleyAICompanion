@@ -1,5 +1,8 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -61,6 +64,9 @@ internal static partial class BootstrapSelfTest
             settlement.TotalMoneyEarnedDelta == 300 &&
             settlement.ConsumedPendingShippingValue == 300,
             "Shipping Money progression double-counted duplicate endpoints.");
+        VerifyNativeShippingSettlementReceipt(
+            settlementBefore,
+            settlementAfter);
 
         RequireMoneyProgressionRejected(
             saleBefore,
@@ -87,6 +93,140 @@ internal static partial class BootstrapSelfTest
             MoneyRevenueProgressionVerifier.VerifyShippingDaySettlement,
             "A shipping settlement that double-counted scope endpoints was admitted.");
     }
+
+    private static void VerifyNativeShippingSettlementReceipt(
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        const string candidateId = "candidate.native-shipping-settlement";
+        var item = new ActionQueueItem
+        {
+            QueueItemId = "queue-item.native-shipping-settlement",
+            SourceActionId = "action.native-shipping-settlement",
+            OptionId = "executor.sleep",
+            Status = "pending",
+            BlockingReasons = Array.Empty<string>(),
+            NormalizedCommand = new NormalizedCommand
+            {
+                OptionId = "executor.sleep",
+                StateHash = before.StateHash,
+                Steps = new[]
+                {
+                    MoneyProgressionStep("move_to_bed_adjacent"),
+                    MoneyProgressionStep("step_onto_sleep_touch_tile"),
+                    MoneyProgressionStep("confirm_sleep_yes")
+                }
+            }
+        };
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.native-shipping-settlement",
+            StateHash = before.StateHash,
+            Status = "pending",
+            Items = new[] { item }
+        };
+        var changedFacts = JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                path = "player.money",
+                before = "120",
+                after = "420"
+            }
+        });
+        var receipt = new QueueExecutionReceiptEnvelope
+        {
+            RunId = "run.native-shipping-settlement",
+            QueueId = queue.QueueId,
+            SourceStateHash = before.StateHash,
+            AfterStateHash = after.StateHash,
+            BeforeGameTick = before.GameTick,
+            AfterGameTick = after.GameTick,
+            AfterSnapshotFresh = true,
+            QueueExecutionMode = "sequential_queue_items",
+            Status = "applied",
+            Success = true,
+            PlannedItemCount = 1,
+            ExecutedItemCount = 1,
+            FinalPendingItemCount = 0,
+            MaxQueueItemAttempts = 1,
+            SelectedCandidateId = candidateId,
+            SelectedCandidateCompleted = true,
+            StepResults = new[]
+            {
+                new QueueExecutionStepReceipt
+                {
+                    QueueItemIndex = 0,
+                    QueueItemCount = 1,
+                    OriginalPlannedItemCount = 1,
+                    QueueId = queue.QueueId,
+                    QueueItemId = item.QueueItemId,
+                    OptionId = item.OptionId,
+                    SourceStateHash = before.StateHash,
+                    CompiledCommandStateHash = before.StateHash,
+                    TeacherPreferenceStateRebound = false,
+                    SelectedQueueCandidateCompleted = true,
+                    AfterStateHash = after.StateHash,
+                    StateHashChanged = true,
+                    BeforeGameTick = before.GameTick,
+                    AfterGameTick = after.GameTick,
+                    AfterSnapshotFresh = true,
+                    Status = "applied",
+                    PrimitiveKind = "sleep",
+                    PrimitiveVerificationStatus = "verified",
+                    PrimitiveVerificationReasons = new[]
+                    {
+                        "native_day_transition_applied"
+                    },
+                    EffectiveQueueItem = JsonSerializer.SerializeToElement(
+                        item,
+                        JsonDefaults.Options),
+                    ChangedFacts = changedFacts
+                }
+            }
+        };
+        var evidence = NativeShippingSettlementEvidenceVerifier.Verify(
+            queue,
+            before,
+            receipt,
+            after,
+            receipt.RunId,
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            candidateId);
+        Require(
+            evidence.Verified &&
+            evidence.QueueReceiptVerified &&
+            evidence.NativeSleepQueueVerified &&
+            evidence.Progression?.ConsumedPendingShippingValue == 300,
+            "Native shipping settlement evidence was rejected: " +
+            string.Join(",", evidence.BlockingReasons));
+
+        item.OptionId = "executor.move";
+        item.NormalizedCommand.OptionId = item.OptionId;
+        var nonSleep = NativeShippingSettlementEvidenceVerifier.Verify(
+            queue,
+            before,
+            receipt,
+            after,
+            receipt.RunId,
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            candidateId);
+        Require(
+            !nonSleep.Verified &&
+            !nonSleep.NativeSleepQueueVerified &&
+            nonSleep.BlockingReasons.Contains(
+                "native_shipping_settlement_queue_not_single_sleep"),
+            "A non-sleep queue was admitted as shipping settlement.");
+    }
+
+    private static CompiledActionStep MoneyProgressionStep(string kind) => new()
+    {
+        StepId = "step." + kind,
+        StepType = kind,
+        Target = "fixture",
+        ExpectedEffect = "fixture",
+        EstimatedTicks = 1
+    };
 
     private static void RequireMoneyProgressionRejected(
         SnapshotEnvelope before,

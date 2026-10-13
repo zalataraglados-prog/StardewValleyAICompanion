@@ -65,17 +65,15 @@ public static class FullShipmentTerminalSettlementReceiptBuilder
             AfterSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
                 afterFullPath)
         };
-        var reasons = QueueExecutionReceiptValidator.Validate(
-                queue,
-                before,
-                receipt,
-                after,
-                runId,
-                executorVersion,
-                selectedCandidateId,
-                queue.StateHash,
-                requireTeacherPreferenceStateRebound: false)
-            .ToList();
+        var nativeSettlement = NativeShippingSettlementEvidenceVerifier.Verify(
+            queue,
+            before,
+            receipt,
+            after,
+            runId,
+            executorVersion,
+            selectedCandidateId);
+        var reasons = nativeSettlement.BlockingReasons.ToList();
         if (!string.Equals(
                 inventory.GameVersion,
                 before.GameVersion,
@@ -87,11 +85,6 @@ public static class FullShipmentTerminalSettlementReceiptBuilder
         {
             reasons.Add(
                 "full_shipment_terminal_game_version_authority_mismatch");
-        }
-        if (!FullShipmentSettlementSupport.IsSingleNativeSleepQueue(queue))
-        {
-            reasons.Add(
-                "full_shipment_terminal_queue_not_single_native_sleep");
         }
         var transition = FullShipmentTerminalSettlementVerifier.Verify(
             requiredIds,

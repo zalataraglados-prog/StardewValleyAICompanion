@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 原生发货结算证据复用
+
+- 新增共享 `NativeShippingSettlementEvidenceVerifier`，把单一 sleep queue、fresh queue receipt 和精确 shipping Money progression 合并为一个 fail-closed 证明边界。
+- Full Shipment 普通/终局 settlement 已复用该边界。只有 `player.money` 与 `player.total_money_earned` 都按前夜唯一 shipping scope 的 pending value 精确增长，才可继续进入各自的 collection/achievement 终态验证。
+- 该层与 `NativeShopSaleEpisodeVerifier` 共同覆盖 Revenue recurrence 的两种结算方式；仍缺少连续 fresh-save prefix 与 reserve-aware Teacher counterfactual，因此训练准入状态不变。
+
 ## 2026-10-14 原生销售证据复用
 
 - `NativeShopSaleEpisodeVerifier` 现为所有即时商店收益的共享原生证据入口，统一绑定 effective queue item、结构化商品/商店/槽位/数量/单价/总价、execution result 以及 fresh Money progression。
