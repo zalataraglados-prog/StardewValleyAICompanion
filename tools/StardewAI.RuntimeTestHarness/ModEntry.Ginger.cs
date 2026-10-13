@@ -38,6 +38,23 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(NativeToolBlocked(request, "harvest_ginger", target, hoe, null, staminaBefore, started, estimatedTicks, precheck[0], requested, GingerHarvestObservedEffect(location, target), precheck));
             return;
         }
+        var projectedOutput = ItemRegistry.Create(GingerQualifiedItemId, 1, 0);
+        if (!Game1.player.couldInventoryAcceptThisItem(projectedOutput))
+        {
+            pending.Completion.SetResult(NativeToolBlocked(
+                request,
+                "harvest_ginger",
+                target,
+                hoe,
+                null,
+                staminaBefore,
+                started,
+                estimatedTicks,
+                "harvest_ginger_inventory_cannot_accept_output",
+                requested,
+                GingerHarvestObservedEffect(location, target)));
+            return;
+        }
         var resourceQuestReason = ValidateQuestResourceSourceTarget(
             request,
             new[] { GingerQualifiedItemId });
@@ -169,16 +186,13 @@ public sealed partial class ModEntry
         var foragingAfter = Game1.player.experiencePoints[Farmer.foragingSkill];
         var expectedStateAfter = location.IsRainingHere() ? 1 : 0;
         var energyDelta = tool.StaminaBefore - Game1.player.Stamina;
-        var verified = tool.BeforeGinger &&
-            hasHoeDirt && !hasGinger &&
-            dirt?.state.Value == expectedStateAfter &&
-            debrisAfter + inventoryAfter == tool.BeforeGingerDebrisCount + tool.BeforeGingerInventoryCount + 1 &&
-            foragingAfter == tool.BeforeForagingExperience + 7 &&
-            Math.Abs(energyDelta - tool.ExpectedEnergyCost) <= 0.001d;
+        var verified = GingerNativePostconditionsMet(tool) &&
+            inventoryAfter == tool.BeforeGingerInventoryCount + 1;
         var failureReasons = new List<string>();
         if (!hasHoeDirt || hasGinger) failureReasons.Add("ginger_crop_not_removed_or_hoe_dirt_missing");
         if (dirt?.state.Value != expectedStateAfter) failureReasons.Add("ginger_hoe_dirt_state_after_mismatch");
         if (debrisAfter + inventoryAfter != tool.BeforeGingerDebrisCount + tool.BeforeGingerInventoryCount + 1) failureReasons.Add("ginger_output_total_delta_mismatch");
+        if (inventoryAfter != tool.BeforeGingerInventoryCount + 1) failureReasons.Add("ginger_output_not_naturally_collected");
         if (foragingAfter != tool.BeforeForagingExperience + 7) failureReasons.Add("ginger_foraging_experience_delta_mismatch");
         if (Math.Abs(energyDelta - tool.ExpectedEnergyCost) > 0.001d) failureReasons.Add("ginger_energy_delta_mismatch");
 
@@ -207,7 +221,12 @@ public sealed partial class ModEntry
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "harvest_ginger",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
-            PrimitiveVerificationReasons = verified ? NativeToolVerifiedReasons(tool) : failureReasons.ToArray(),
+            PrimitiveVerificationReasons = verified
+                ? NativeToolVerifiedReasons(tool).Concat(new[]
+                {
+                    "native_ginger_output_naturally_collected"
+                }).ToArray()
+                : failureReasons.ToArray(),
             RequestedEffect = tool.RequestedEffect,
             ObservedEffect = GingerHarvestObservedEffect(location, tool.Target) + ";move_ticks=" + Math.Min(tool.ElapsedTicks, tool.MaxMovementTicks),
             BlockReasons = verified ? Array.Empty<string>() : failureReasons.ToArray(),
@@ -224,6 +243,184 @@ public sealed partial class ModEntry
         ApplyQuestResourceSourceFeedback(result, tool.Pending.Request);
         ApplySpecialOrderCollectSourceFeedback(result, tool.Pending.Request);
         tool.Pending.Completion.SetResult(result);
+    }
+
+    private static bool GingerNativePostconditionsMet(ActiveNativeTool tool)
+    {
+        var location = Game1.currentLocation;
+        var tile = new Vector2(tool.Target.X, tool.Target.Y);
+        var hasHoeDirt = location.terrainFeatures.TryGetValue(
+                tile,
+                out var feature) &&
+            feature is HoeDirt;
+        var hasGinger = IsExactGinger(location, tile, out var dirt);
+        var debrisAfter = CountGingerOutputDebris(location);
+        var inventoryAfter = CountInventoryItemAtQuality(
+            GingerQualifiedItemId,
+            0);
+        var foragingAfter =
+            Game1.player.experiencePoints[Farmer.foragingSkill];
+        var expectedStateAfter = location.IsRainingHere() ? 1 : 0;
+        var energyDelta = tool.StaminaBefore - Game1.player.Stamina;
+        return tool.BeforeGinger &&
+            hasHoeDirt &&
+            !hasGinger &&
+            dirt?.state.Value == expectedStateAfter &&
+            debrisAfter + inventoryAfter ==
+                tool.BeforeGingerDebrisCount +
+                tool.BeforeGingerInventoryCount + 1 &&
+            foragingAfter == tool.BeforeForagingExperience + 7 &&
+            Math.Abs(energyDelta - tool.ExpectedEnergyCost) <= 0.001d;
+    }
+
+    private void TickGingerOutputCollection(ActiveNativeTool tool)
+    {
+        var location = Game1.currentLocation;
+        var inventoryAfter = CountInventoryItemAtQuality(
+            GingerQualifiedItemId,
+            0);
+        if (inventoryAfter == tool.BeforeGingerInventoryCount + 1)
+        {
+            CompleteNativeTool(tool);
+            return;
+        }
+        if (Game1.activeClickableMenu is not null ||
+            Game1.dialogueUp ||
+            Game1.player.UsingTool ||
+            !Game1.player.CanMove)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var playerTile = Game1.player.TilePoint;
+        if (playerTile != tool.LastObservedTile)
+        {
+            tool.MovementTiles += ManhattanDistance(
+                tool.LastObservedTile,
+                playerTile);
+            tool.LastObservedTile = playerTile;
+            if (tool.MovementTiles > tool.MaxMovementTiles)
+            {
+                CompleteNativeToolBlocked(
+                    tool,
+                    "harvest_ginger_movement_budget_exceeded");
+                return;
+            }
+        }
+
+        var chunk = location.debris
+            .Where(debris => string.Equals(
+                DebrisQualifiedItemId(debris),
+                GingerQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase) &&
+                (debris.item?.Quality ?? debris.itemQuality) == 0)
+            .SelectMany(debris => debris.Chunks)
+            .OrderBy(candidate => ManhattanDistance(
+                playerTile,
+                DebrisChunkTile(candidate)))
+            .FirstOrDefault();
+        if (chunk is null)
+        {
+            StopAllMovement();
+            return;
+        }
+
+        var target = DebrisChunkTile(chunk);
+        if (ManhattanDistance(playerTile, target) <= 1)
+        {
+            StopAllMovement();
+            tool.Path.Clear();
+            tool.PathIndex = 0;
+            tool.PickupPathTarget = target;
+            return;
+        }
+
+        if (tool.PathIndex >= tool.Path.Count ||
+            tool.PickupPathTarget != target)
+        {
+            var remainingMovementTiles =
+                tool.MaxMovementTiles - tool.MovementTiles;
+            if (remainingMovementTiles <= 0)
+            {
+                CompleteNativeToolBlocked(
+                    tool,
+                    "harvest_ginger_movement_budget_exceeded");
+                return;
+            }
+            var path = IsTileWalkable(location, target) &&
+                !IsTileOccupiedByCharacter(location, target)
+                    ? TryBuildTilePath(
+                        location,
+                        playerTile,
+                        target,
+                        remainingMovementTiles,
+                        out var pathReason,
+                        avoidSoftObstacles: true)
+                    : BuildAdjacentToolPath(
+                        location,
+                        target,
+                        remainingMovementTiles,
+                        out pathReason,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false);
+            if (path is null)
+            {
+                tool.PickupPathFailures++;
+                if (tool.PickupPathFailures > 90)
+                {
+                    CompleteNativeToolBlocked(
+                        tool,
+                        "harvest_ginger_output_pickup_path_unavailable:" +
+                        pathReason);
+                }
+                return;
+            }
+            tool.Path.Clear();
+            tool.Path.AddRange(path);
+            tool.PathIndex = 0;
+            tool.PickupPathTarget = target;
+            tool.PickupPathFailures = 0;
+        }
+
+        if (tool.PathIndex >= tool.Path.Count)
+        {
+            return;
+        }
+        var next = tool.Path[tool.PathIndex];
+        if (playerTile == next)
+        {
+            tool.PathIndex++;
+            return;
+        }
+        if (!IsTileWalkable(location, next) ||
+            IsTileOccupiedByCharacter(location, next))
+        {
+            tool.Path.Clear();
+            tool.PathIndex = 0;
+            return;
+        }
+
+        var moved = Vector2.DistanceSquared(
+            tool.LastPosition,
+            Game1.player.Position) >= 0.01f;
+        tool.LastPosition = Game1.player.Position;
+        StartMoving(DirectionTo(playerTile, next));
+        MovePlayerForTick();
+        if (Game1.player.TilePoint == next)
+        {
+            tool.PathIndex++;
+        }
+        if (!moved && ++tool.StuckTicks > 45)
+        {
+            tool.Path.Clear();
+            tool.PathIndex = 0;
+            tool.StuckTicks = 0;
+        }
+        else if (moved)
+        {
+            tool.StuckTicks = 0;
+        }
     }
 
     private static bool IsExactGinger(GameLocation location, Vector2 tile, out HoeDirt? dirt)

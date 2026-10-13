@@ -97,6 +97,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_ginger_harvest" => EvaluateGingerHarvest(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_wild_tree_tapper_output" =>
                 EvaluateCurrentRouteCollection(
                     route,

@@ -38,6 +38,7 @@ internal static class AcquisitionLocationRouteTargetResolver
             "native_wild_tree_tapper_output" or
             "native_bush_shake" or
             "native_tea_bush_harvest" or
+            "native_ginger_harvest" or
             "creates_reward_item" => ResolveCurrentCandidate(
                 source,
                 currentRouteCandidates),

@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 标准批次：原生姜采收闭环
+
+- `ginger_harvest_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:829 / (O)829 / native_ginger_harvest / Crop.hitWithHoe / full_shipment:full_shipment:item:829:0:0`，继续复用唯一的 `foraging.harvest_ginger -> executor.harvest_ginger` 链，没有新增第二套规划、编译或执行系统。
+- 透明桥只为精确原版 `HoeDirt/Crop/Hoe` 暴露 `native_ginger_harvest / Crop.hitWithHoe / (O)829` 权威来源。当前候选、日历、地点、日内时间/能量、Teacher 和调度编译均绑定同一个当前快照候选；来源、日期、地点、格子、工具、输出或预算漂移继续失败关闭。
+- 执行器保留原生锄头生命周期。锄出姜后复用现有 BFS/移动原语靠近原生碎片，由游戏自身磁吸进入背包；不直接移除作物、不直接增加经验、不调用碎片直收 API，也不直接写背包。最终动作在 `47` tick 内取得 `(O)829 x1`，回执为 `applied/verified`，并验证作物移除、HoeDirt 状态、原生碎片生成、觅食经验 `+7` 和自然拾取。
+- 完整 rollout 状态为 `verified_complete_rollout_proof_chain`；冻结源存档 SHA-256 保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。姜 proof 根位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-ginger-v1-20261013\runtime-full-shipment-evidence-ginger-v1-20261013`。
+- 严格 production evidence index 已推进到 `12/26`，剩余 `14` 层；共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。机器可读检查点位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v18-20261013`。
+- 本轮只执行一次原生样本和一次最终 evidence-index 构建，没有重跑已通过的 11 层。后续开发性能继续遵守 #195/#200/#201/#202/#211/#223：相同确定性输入单次计算，完整传递身份和哈希，证据按依赖失效；不能用缓存绕过 fresh snapshot、原生执行或严格终态回执。
+- 下一固定项为 `tea_bush_harvest_sample / native_tea_bush_harvest`。应复用现有 `foraging.harvest_bushes -> executor.harvest_bush` 链和共享灌木 fixture，只补茶叶当前候选的严格路线轴与 Full Shipment proof，不得复制浆果执行器，也不得重跑已通过的 12 层。
+
 ## 2026-10-13 Full Shipment 标准批次：原生浆果灌木闭环
 
 - `berry_bush_harvest_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:296 / (O)296 / native_bush_shake / Bush.GetShakeOffItem / full_shipment:full_shipment:item:296:0:0`，继续复用唯一的 `foraging.harvest_bushes -> executor.harvest_bush` 链，没有建立第二套收获执行器。

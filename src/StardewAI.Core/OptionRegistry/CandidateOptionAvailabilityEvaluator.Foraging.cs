@@ -140,6 +140,10 @@ namespace StardewAI.Core.OptionRegistry
                     var x = ReadInt(feature, "tile_x");
                     var y = ReadInt(feature, "tile_y");
                     var stand = FindBestStandTile(snapshot, x, y);
+                    var distance = stand is null
+                        ? 0
+                        : Math.Abs(playerX - stand.X) +
+                          Math.Abs(playerY - stand.Y);
                     var status = ReadString(feature, "ginger_harvest_status");
                     var energyCost = Math.Max(0d, ReadDouble(feature, "ginger_energy_cost"));
                     var blockReasons = new List<string>();
@@ -160,11 +164,15 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
                         {
                             OptionId = "executor.harvest_ginger",
-                            Parameters = GingerParameters(feature, x, y, stand)
+                            Parameters = GingerParameters(
+                                feature,
+                                x,
+                                y,
+                                stand,
+                                distance)
                         }));
                     }
 
-                    var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
                     return new EventCandidate
                     {
                         CandidateId = "harvest-ginger:" + locationId + ":" + x + "," + y,
@@ -178,11 +186,18 @@ namespace StardewAI.Core.OptionRegistry
                         SlotIndex = ReadInt(feature, "ginger_tool_slot_index"),
                         Quantity = 1,
                         ExpectedEffect = GingerExpectedEffect(feature, stand),
-                        EstimatedTicks = Math.Max(85, distance * 60 + 85),
+                        EstimatedTicks = Math.Max(180, distance * 60 + 180),
                         EnergyCost = (int)Math.Ceiling(energyCost),
                         AvailabilityClass = "transparent_native_ginger_hoe_harvest",
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
-                        Parameters = stand is null ? Array.Empty<SmallModelActionParameter>() : GingerParameters(feature, x, y, stand)
+                        Parameters = stand is null
+                            ? Array.Empty<SmallModelActionParameter>()
+                            : GingerParameters(
+                                feature,
+                                x,
+                                y,
+                                stand,
+                                distance)
                     };
                 })
                 .OrderBy(candidate => candidate.EstimatedTicks)
@@ -191,7 +206,12 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private static SmallModelActionParameter[] GingerParameters(JsonElement feature, int x, int y, CandidateTile stand)
+        private static SmallModelActionParameter[] GingerParameters(
+            JsonElement feature,
+            int x,
+            int y,
+            CandidateTile stand,
+            int routeDistanceTiles)
         {
             return new[]
             {
@@ -202,6 +222,11 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("required_tool_kind", "Hoe"),
                 Parameter("tool_slot_index", ReadInt(feature, "ginger_tool_slot_index").ToString()),
                 Parameter("qualified_item_id", "(O)829"),
+                Parameter(
+                    "authoritative_route_sources_json",
+                    JsonSerializer.Serialize(ReadArray(
+                        feature,
+                        "ginger_authoritative_route_sources"))),
                 Parameter(
                     "ginger_output_context_tags_json",
                     JsonSerializer.Serialize(ReadStringArray(feature, "ginger_output_context_tags"))),
@@ -216,6 +241,9 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("skill_experience_condition", "native_hoe_hit_removes_exact_ginger_crop"),
                 Parameter("expected_hoe_dirt_state_after", ReadInt(feature, "ginger_hoe_dirt_state_expected_after").ToString()),
                 Parameter("ginger_projection_status", ReadString(feature, "ginger_projection_status")),
+                Parameter(
+                    "route_distance_tiles",
+                    routeDistanceTiles.ToString()),
                 Parameter("max_movement_tiles", "512")
             };
         }

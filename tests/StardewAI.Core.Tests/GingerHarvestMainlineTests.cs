@@ -19,8 +19,16 @@ public sealed class GingerHarvestMainlineTests
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("harvest_ginger", candidate.Kind);
         Assert.Equal("(O)829", candidate.QualifiedItemId);
+        Assert.Equal(240, candidate.EstimatedTicks);
         Assert.Equal(7, int.Parse(candidate.Parameters.Single(value => value.Name == "expected_foraging_experience_delta").Value));
         Assert.Contains(candidate.Parameters, value => value.Name == "skill_experience_projection_status" && value.Value.StartsWith("exact_"));
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "route_distance_tiles" && value.Value == "1");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "authoritative_route_sources_json" &&
+            value.Value.Contains(
+                "native_ginger_harvest",
+                StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -66,7 +74,9 @@ public sealed class GingerHarvestMainlineTests
             "terrain_features":{"value":[{"tile_x":12,"tile_y":10,"type":"StardewValley.TerrainFeatures.HoeDirt","hoe_dirt_state":1,
               "has_crop":GINGER,"crop_is_forage":GINGER,"forage_crop_id":"2","is_ginger":GINGER,
               "ginger_harvest_status":"ready","ginger_required_tool_kind":"Hoe","ginger_tool_slot_index":3,
-              "ginger_energy_cost":ENERGY_COST,"ginger_output_qualified_item_id":"(O)829","ginger_output_quality":0,"ginger_output_quantity_min":1,"ginger_output_quantity_max":1,
+              "ginger_energy_cost":ENERGY_COST,"ginger_output_qualified_item_id":"(O)829",
+              "ginger_authoritative_route_sources":[{"route_kind":"native_ginger_harvest","source_id":"Crop.hitWithHoe","qualified_item_id":"(O)829"}],
+              "ginger_output_quality":0,"ginger_output_quantity_min":1,"ginger_output_quantity_max":1,
               "ginger_foraging_experience_on_success_min":7,"ginger_foraging_experience_on_success_max":7,
               "ginger_hoe_dirt_state_expected_after":0,"ginger_projection_status":"exact_from_native_crop_hit_with_hoe"}],
               "status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
