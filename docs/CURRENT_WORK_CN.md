@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 标准批次：原生茶树采收闭环
+
+- `tea_bush_harvest_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:815 / (O)815 / native_tea_bush_harvest / Bush.GetShakeOffItem / full_shipment:full_shipment:item:815:0:0`。
+- 本轮没有新增业务代码。茶叶原样复用浆果切片统一后的透明桥、`foraging.harvest_bushes -> executor.harvest_bush` 候选/编译/执行链、共享灌木 fixture、BFS 移动、自然碎片拾取和严格终态回执，证明茶叶与浆果没有形成两套系统。
+- 原生 `checkAction` 在 `39` tick 内取得 `(O)815 x1`，回执为 `applied/verified`；验证灌木偏移复位、原生输出增量、背包自然拾取和茶叶分支原生觅食经验 `0`。没有直接写背包或调用碎片直收 API。
+- 完整 rollout 状态为 `verified_complete_rollout_proof_chain`；冻结源存档 SHA-256 保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。茶叶 proof 根位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-tea-bush-v2-20261013\runtime-full-shipment-evidence-tea-bush-v2-20261013`。
+- 严格 production evidence index 已推进到 `13/26`，剩余 `13` 层；共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。机器可读检查点位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v19-20261013`。
+- 首次运行因合并后源码时间戳晚于 DLL 被 `-SkipBuild` 新鲜度门禁拒绝，未启动游戏或生成证据；完成受约束组件重建后只运行一次茶叶样本和一次最终索引。该门禁按设计阻止旧二进制证据，不能为提速绕过。
+- 下一固定项为 `wild_tree_seed_drop_sample / native_wild_tree_seed_drop`。应先审查并复用现有野树摇落/掉落、移动与自然拾取链，只补当前严格路线轴和 Full Shipment proof；不得重跑已通过的 13 层。
+
 ## 2026-10-13 Full Shipment 标准批次：原生姜采收闭环
 
 - `ginger_harvest_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:829 / (O)829 / native_ginger_harvest / Crop.hitWithHoe / full_shipment:full_shipment:item:829:0:0`，继续复用唯一的 `foraging.harvest_ginger -> executor.harvest_ginger` 链，没有新增第二套规划、编译或执行系统。
