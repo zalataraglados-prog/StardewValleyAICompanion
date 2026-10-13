@@ -46,7 +46,7 @@ public static partial class AcquisitionRouteTargetDateFacilityBuilder
             ["native_monster_drop_table"] = NoFacility,
             ["native_object_artifact_spot_chance"] = NoFacility,
             ["native_radioactive_ore_node"] = NoFacility,
-            ["native_solar_panel_output"] = DeferredFacility,
+            ["native_solar_panel_output"] = ExistingCurrentMachine,
             ["native_spring_onion_harvest"] = NoFacility,
             ["native_tea_bush_harvest"] = NoFacility,
             ["native_tree_moss_harvest"] = NoFacility,

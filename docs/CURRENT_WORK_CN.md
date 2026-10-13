@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Full Shipment 标准批次：共享机器产出族闭环
+
+- `machine_output_sample`、`machine_flavored_output_sample`、`machine_item_query_output_sample` 与 `solar_panel_output_sample` 已从冻结源存档的隔离副本完成原生采证。四层都复用唯一的 `farm.collect_machine_outputs -> executor.collect_machine_output` 链，没有复制候选、编译器或执行器。
+- 当前机器候选以完整 `route_kind + source_id + qualified_item_id` 保留权威来源身份；同一已物化产出存在多个等价权威描述时，只让字典序 canonical 来源进入 Teacher 前沿，透明桥仍保留全部来源。数量与品质统一通过 `AcquisitionOutputProof.CanSatisfy` 验证，缺失证明继续失败关闭。索引缓存 schema 升至 `v13`。
+- 太阳能板不再依赖静态占位：只有透明快照存在精确、可收取的当前太阳能板产出时，才进入日历、位置、设施、资源、加工、随机性、日内预算与 dispatch 轴；旧快照或来源漂移不会生成候选。
+- 原生收取验证器现在区分“产物清空”和“原生立即排入下一生产周期”。后一种成功必须同时满足交互成功、目标物品实际入包、机器退出可收获态、下一周期计时为正且 held object 已更换；树液采集器仍额外要求同格原生已安装树液采集器树。蜂房回放据此不再被误判为失败。
+- 四个严格 proof 根依次为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-machine-output-v5-20261014`、`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-machine-flavored-output-v2-20261014`、`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-machine-item-query-output-v1-20261014`、`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-solar-panel-output-v1-20261014`。冻结源存档 SHA-256 均保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 严格 production evidence index 已集中深验到 `25/26`；唯一剩余层为 `full_shipment.runtime_sample.21.native_tree_moss_harvest`，`formal_product_training_authorized=false`。索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v36-20261014`。Core `2680/2680`、Backend `229/229`，Bootstrap 与 RuntimeTestHarness Release 均为 `0 warning / 0 error`。
+- 下一固定任务是闭合 `tree_moss_harvest_sample / full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest`。必须复用现有 `foraging.harvest_tree_moss` 与共享移动/自然拾取链；通过后重建 `26/26` 索引，再评估正式训练准入，不能仅凭样本通过直接授权训练。
+
 ## 2026-10-14 Full Shipment 标准批次：原生鱼塘产物闭环
 
 - `fish_pond_output_sample` 已从冻结源存档的隔离副本完成原生采证。Teacher 精确选择 `full_shipment:item:812 / (O)812 / native_fish_pond_output / fish_pond:Sturgeon:0 / full_shipment:full_shipment:item:812:0:46`，唯一动作链仍为 `fishing.service_fish_ponds -> collect_fish_pond_output -> executor.collect_fish_pond_output`；没有新增第二套候选、编译器或执行器。

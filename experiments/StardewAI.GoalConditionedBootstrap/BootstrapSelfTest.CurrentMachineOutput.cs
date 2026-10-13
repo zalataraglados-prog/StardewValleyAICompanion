@@ -4,6 +4,33 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyCurrentMachineOutputSingleDispatchSelection()
     {
+        var multiSourceOutput = new AcquisitionMachineActiveOutputState(
+            "(O)725",
+            2,
+            0,
+            new[]
+            {
+                new AcquisitionMachineActiveOutputRouteSource(
+                    "machine_output",
+                    "machine:(BC)105:rule:Default",
+                    "(O)725"),
+                new AcquisitionMachineActiveOutputRouteSource(
+                    "native_machine_item_query_output",
+                    "machine:(BC)105:rule:0:output:1",
+                    "(O)725")
+            });
+        Require(AcquisitionOutputProof.MatchesAuthoritativeRoute(
+                    multiSourceOutput,
+                    "native_machine_item_query_output",
+                    "machine:(BC)105:rule:0:output:1",
+                    "(O)725") &&
+                !AcquisitionOutputProof.MatchesAuthoritativeRoute(
+                    multiSourceOutput,
+                    "native_machine_item_query_output",
+                    "machine:(BC)105:rule:0:output:2",
+                    "(O)725"),
+            "Multi-source machine output attribution did not match exactly.");
+
         var twoInsufficientTargets = new[]
         {
             CurrentMachineOutputTarget(10, 20, stack: 1),

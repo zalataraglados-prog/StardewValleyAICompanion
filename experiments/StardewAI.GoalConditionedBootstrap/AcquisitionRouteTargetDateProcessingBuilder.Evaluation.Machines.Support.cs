@@ -51,11 +51,11 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                     target.MachineActiveOutputEvidenceAvailable == true &&
                     target.MachineActiveOutputQualifiedItemId ==
                         active.QualifiedItemId &&
-                    active.RouteSources.Length == 1 &&
-                    active.RouteSources[0].RouteKind == staticRoute.RouteKind &&
-                    active.RouteSources[0].SourceId == staticRoute.SourceId &&
-                    active.RouteSources[0].QualifiedItemId ==
-                        staticRoute.QualifiedItemId;
+                    AcquisitionOutputProof.MatchesAuthoritativeRoute(
+                        active,
+                        staticRoute.RouteKind,
+                        staticRoute.SourceId,
+                        staticRoute.QualifiedItemId);
                 if (!routeMatches)
                 {
                     blocking.Add(

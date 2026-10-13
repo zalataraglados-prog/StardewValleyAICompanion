@@ -135,6 +135,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_solar_panel_output" or
             "native_wild_tree_tapper_output" =>
                 EvaluateCurrentRouteCollection(
                     route,

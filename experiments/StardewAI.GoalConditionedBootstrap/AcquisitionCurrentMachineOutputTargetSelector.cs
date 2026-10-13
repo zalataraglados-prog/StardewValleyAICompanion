@@ -24,8 +24,10 @@ internal static class AcquisitionCurrentMachineOutputTargetSelector
         string qualifiedItemId,
         int requiredAmount,
         int minimumQuality) => SelectMatching(targets, qualifiedItemId)
-        .Where(value =>
-            value.MachineActiveOutputStack >= requiredAmount &&
-            value.MachineActiveOutputQuality >= minimumQuality)
+        .Where(value => AcquisitionOutputProof.CanSatisfy(
+            value.MachineActiveOutputStack,
+            value.MachineActiveOutputQuality,
+            requiredAmount,
+            minimumQuality))
         .ToArray();
 }

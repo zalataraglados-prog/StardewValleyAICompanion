@@ -137,13 +137,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                  activeOutput.Quality < staticRoute.MinimumQuality ||
                  activeOutput.Stack <
                      binding.CreditedExistingOutputQuantity ||
-                 activeOutput.RouteSources.Length != 1 ||
-                 activeOutput.RouteSources[0].RouteKind !=
-                     staticRoute.RouteKind ||
-                 activeOutput.RouteSources[0].SourceId !=
-                     staticRoute.SourceId ||
-                 activeOutput.RouteSources[0].QualifiedItemId !=
-                     staticRoute.QualifiedItemId))
+                 !AcquisitionOutputProof.MatchesAuthoritativeRoute(
+                     activeOutput,
+                     staticRoute.RouteKind,
+                     staticRoute.SourceId,
+                     staticRoute.QualifiedItemId)))
             {
                 return MachineBlocked(
                     route,

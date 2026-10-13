@@ -5,6 +5,80 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRouteCalendarResolutionBuilder
 {
+    internal static CalendarSourceResolution ResolveCurrentMachineOutputWindow(
+        string qualifiedItemId,
+        AcquisitionRequirementRouteLowering route,
+        AcquisitionCurrentRouteCandidateIndex candidates,
+        int deadlineTotalDayExclusive)
+    {
+        if (!candidates.TryFind(
+                route.RouteKind,
+                route.SourceId,
+                qualifiedItemId,
+                out var matches,
+                out var blockingReasons))
+        {
+            return new CalendarSourceResolution(
+                "blocked_current_machine_output_candidate_evidence",
+                string.Empty,
+                Array.Empty<AuthoritativeCalendarSourceWindow>(),
+                blockingReasons);
+        }
+        var valid = matches.Where(candidate =>
+                candidate.OptionId == "farm.collect_machine_outputs" &&
+                !string.IsNullOrWhiteSpace(candidate.LocationId) &&
+                candidate.TargetTileX.HasValue &&
+                candidate.TargetTileY.HasValue &&
+                candidate.StandTileX.HasValue &&
+                candidate.StandTileY.HasValue &&
+                candidate.MaxMovementTiles is >= 0 &&
+                candidate.EstimatedTicks > 0 &&
+                candidate.EnergyCost == 0)
+            .ToArray();
+        if (valid.Length == 0)
+        {
+            return BlockMachine(
+                "blocked_current_machine_output_candidate_match",
+                "matching_current_machine_output_candidate_not_present");
+        }
+        if (!candidates.TryGetCurrentCalendar(out var totalDay, out var season))
+        {
+            return BlockMachine(
+                "blocked_current_machine_output_calendar_evidence",
+                "current_machine_output_calendar_evidence_incomplete");
+        }
+
+        Require(deadlineTotalDayExclusive > 0 &&
+                totalDay >= 0 &&
+                totalDay < deadlineTotalDayExclusive,
+            "Current machine-output date must precede the deadline.");
+        var windows = valid
+            .Select(candidate => candidate.LocationId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .Select(locationId => new AuthoritativeCalendarSourceWindow
+            {
+                SourceKind = route.RouteKind,
+                SourceKey = route.SourceId,
+                LocationId = locationId,
+                RuleId = route.SourcePath,
+                Season = season,
+                FirstTotalDay = totalDay,
+                LastTotalDay = totalDay,
+                TimeWindows = NativeCalendarConstraintNormalizer.AllDay,
+                WeatherModes = NativeCalendarConstraintNormalizer.AllWeatherModes,
+                RequiresLocationAccessEvidence = true,
+                RequiresExistingLiveCandidateMatch = true,
+                StochasticOutcome = false
+            })
+            .ToArray();
+        return new CalendarSourceResolution(
+            ResolvedStatus,
+            "current_native_machine_output_candidate_calendar",
+            windows,
+            Array.Empty<string>());
+    }
+
     internal static CalendarSourceResolution ResolveMachineWindows(
         string qualifiedItemId,
         AcquisitionRequirementRouteLowering route,

@@ -431,6 +431,19 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 deadlineTotalDayExclusive);
         }
 
+        if (route.RouteKind == "native_solar_panel_output" &&
+            currentRouteCandidates?.HasExactRouteCandidate(
+                route.RouteKind,
+                route.SourceId,
+                qualifiedItemId) == true)
+        {
+            return ResolveCurrentMachineOutputWindow(
+                qualifiedItemId,
+                route,
+                currentRouteCandidates,
+                deadlineTotalDayExclusive);
+        }
+
         if (IsMachineRouteKind(route.RouteKind))
         {
             return ResolveMachineWindows(
