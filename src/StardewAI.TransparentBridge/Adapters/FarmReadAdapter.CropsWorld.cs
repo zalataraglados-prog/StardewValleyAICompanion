@@ -95,6 +95,21 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var harvestIdentity = CropHarvestIdentityResolver.Resolve(crop);
                 var harvestItem = ReadHarvestItemProjection(
                     harvestIdentity.ItemId);
+                var harvestAuthoritativeRouteSources =
+                    crop.GetType() == typeof(Crop) &&
+                    harvestIdentity.QualifiedItemId == "(O)399" &&
+                    harvestIdentity.ProjectionStatus ==
+                        "exact_from_decompiled_native_spring_onion_branch"
+                        ? new object[]
+                        {
+                            new
+                            {
+                                route_kind = "native_spring_onion_harvest",
+                                source_id = "Crop.harvest",
+                                qualified_item_id = "(O)399"
+                            }
+                        }
+                        : Array.Empty<object>();
                 return new
                 {
                     location_id = location.NameOrUniqueName,
@@ -110,6 +125,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_outcome_resolved =
                         harvestIdentity.StochasticOutcomeResolved,
                     harvest_source_seed_id = harvestIdentity.SourceSeedId,
+                    harvest_authoritative_route_sources =
+                        harvestAuthoritativeRouteSources,
                     harvest_item_category = harvestItem.Category,
                     harvest_context_tags = harvestItem.ContextTags,
                     phase_days = crop.phaseDays.ToArray(),

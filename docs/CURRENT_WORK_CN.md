@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Full Shipment 标准批次：原生春葱采收闭环
+
+- `spring_onion_harvest_sample` 已从冻结源存档的隔离副本完成原生采证。Teacher 精确选择 `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / Crop.harvest`，继续复用唯一的 `foraging.harvest_spring_onions -> harvest_crop_tile -> executor.harvest_crop` 链；没有新增第二套候选、编译器或执行器。
+- 透明桥仅为原版 `Crop`、`(O)399` 且投影状态为 `exact_from_decompiled_native_spring_onion_branch` 的当前可收获作物发布权威路线来源。当前候选将地点、目标格、站位格、BFS 前置所需的移动上限、路线距离和完整来源身份贯穿到日历、位置、日内时间/能量、Teacher 与动作队列；来源、物品、地点、格子或预算漂移继续失败关闭。
+- 原生动作在 `261 -> 264` game tick 内取得 `(O)399 x1`，回执为 `applied/verified`；验证当前作物从 ready 变为移除、背包 `0 -> 1`、耕种经验 `0 -> 0`、觅食经验 `0 -> 3`、fresh terminal receipt、settlement 与完整 rollout proof chain。动作仍由游戏原生 `Crop.harvest` 产生物品与经验，没有直接改背包或经验。
+- rollout proof manifest SHA-256 为 `7976da974cbec8c931e1b52d137f09f2891336864e31e82fe4c72d9787335677`，receipt SHA-256 为 `da94fcddbd89a96e11395c0142b2852075cbf1728250ce22b077c8e6ce750057`；冻结源存档 SHA-256 保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 严格 production evidence index 已推进到 `16/26`，剩余 `10` 层，共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。正式 proof 根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-spring-onion-v2-20261014\runtime-full-shipment-evidence-spring-onion-v2-20261014`，机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v28-20261014`。
+- 候选索引缓存 schema 随新增春葱路线升至 `v8`，避免同一进程内误复用旧候选集合。下一固定切片是 `location_forage_spawn_sample / native_location_forage_spawn`；只复用现有地点觅食、移动和自然拾取链补齐严格 proof，不重跑已通过的 16 层。
+
 ## 2026-10-13 Full Shipment 标准批次：原生野树种子闭环
 
 - `wild_tree_seed_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:88 / (O)88 / native_wild_tree_seed / wild_tree:6 / full_shipment:full_shipment:item:88:0:1`，继续复用唯一的 `foraging.harvest_tree_product -> executor.harvest_tree_product` 链。

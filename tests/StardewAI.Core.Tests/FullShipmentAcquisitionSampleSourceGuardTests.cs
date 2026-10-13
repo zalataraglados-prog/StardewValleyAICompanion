@@ -491,6 +491,26 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "option_id = \"debug.setup_harvest_crop_target\"",
             source,
             StringComparison.Ordinal);
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.SpringOnions.cs");
+        Assert.Contains(
+            "current_native_spring_onion_candidate_calendar",
+            calendar,
+            StringComparison.Ordinal);
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.SpringOnions.cs");
+        Assert.Contains(
+            "candidate:foraging.harvest_spring_onions",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "compiler:ActionQueueCompiler.CompileHarvestCropStep",
+            dailyBudget,
+            StringComparison.Ordinal);
     }
 
     [Fact]

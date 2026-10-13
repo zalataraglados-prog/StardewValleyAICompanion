@@ -621,6 +621,8 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
+            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
+            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             return crops.Value.EnumerateArray()
                 .Where(crop =>
                     crop.ValueKind == JsonValueKind.Object &&
@@ -645,6 +647,11 @@ namespace StardewAI.Core.OptionRegistry
                     var skillStatus = ReadString(crop, "harvest_experience_projection_status");
                     var forageCrop = ReadBool(crop, "forage_crop") == true;
                     var forageCropId = ReadString(crop, "forage_crop_id");
+                    var stand = FindBestStandTile(snapshot, x, y);
+                    var routeDistanceTiles = stand is null
+                        ? 0
+                        : Math.Abs(playerX - stand.X) +
+                          Math.Abs(playerY - stand.Y);
                     var effect = "current_location.crops[" + x + "," + y + "].ready_for_harvest=false" +
                         (!string.IsNullOrWhiteSpace(harvestItemId) ? ";harvest_item_id=" + harvestItemId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestQualifiedItemId) ? ";harvest_item_qualified_id=" + harvestQualifiedItemId : string.Empty) +
@@ -672,7 +679,9 @@ namespace StardewAI.Core.OptionRegistry
                         QualifiedItemId = harvestQualifiedItemId,
                         Quantity = Math.Max(1, ReadInt(crop, "harvest_min_stack")),
                         ExpectedEffect = effect,
-                        EstimatedTicks = 60,
+                        EstimatedTicks = Math.Max(
+                            60,
+                            routeDistanceTiles * 60 + 60),
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_ready_for_harvest_runtime_verified",
                         Parameters = new[]
@@ -689,7 +698,21 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter("harvest_item_category", harvestItemCategory.ToString()),
                             Parameter("forage_crop", forageCrop.ToString().ToLowerInvariant()),
                             Parameter("forage_crop_id", forageCropId),
-                            Parameter("harvest_context_tags_json", JsonSerializer.Serialize(ReadStringArray(crop, "harvest_context_tags")))
+                            Parameter("harvest_context_tags_json", JsonSerializer.Serialize(ReadStringArray(crop, "harvest_context_tags"))),
+                            Parameter(
+                                "authoritative_route_sources_json",
+                                JsonSerializer.Serialize(ReadArray(
+                                    crop,
+                                    "harvest_authoritative_route_sources"))),
+                            Parameter("target_location", locationId),
+                            Parameter("target_tile_x", x.ToString()),
+                            Parameter("target_tile_y", y.ToString()),
+                            Parameter("stand_tile_x", stand?.X.ToString() ?? string.Empty),
+                            Parameter("stand_tile_y", stand?.Y.ToString() ?? string.Empty),
+                            Parameter(
+                                "route_distance_tiles",
+                                routeDistanceTiles.ToString()),
+                            Parameter("max_movement_tiles", "512")
                         }
                     };
                 })
