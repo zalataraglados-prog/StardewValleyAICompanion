@@ -23,7 +23,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
             ["native_crab_pot_output"] = CrabPotService,
             ["native_farm_animal_deluxe_produce"] = NoInput,
             ["native_farm_animal_produce"] = NoInput,
-            ["native_fish_pond_output"] = DeferredInput,
+            ["native_fish_pond_output"] = NoInput,
             ["native_fruit_tree_produce"] = NoInput,
             ["native_geode_default_drop"] = DeferredInput,
             ["native_geode_drop"] = CurrentGeodeInput,

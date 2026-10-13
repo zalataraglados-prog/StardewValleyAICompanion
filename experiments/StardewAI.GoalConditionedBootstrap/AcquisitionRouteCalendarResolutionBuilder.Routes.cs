@@ -465,7 +465,28 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
 
         if (route.RouteKind == "native_fish_pond_output")
         {
-            return ResolveFishPondOutputWindow(
+            if (currentRouteCandidates?.HasCanonicalExactRouteCandidate(
+                    route.RouteKind,
+                    route.SourceId,
+                    qualifiedItemId) == true)
+            {
+                return ResolveFishPondOutputWindow(
+                    qualifiedItemId,
+                    route,
+                    currentRouteCandidates,
+                    deadlineTotalDayExclusive);
+            }
+            if (currentRouteCandidates?
+                .HasQualifiedItemCandidateOutsideSource(
+                    route.RouteKind,
+                    route.SourceId,
+                    qualifiedItemId) == true)
+            {
+                return ResolveFishPondOutputAbsentSourceWindow(
+                    route,
+                    deadlineTotalDayExclusive);
+            }
+            return ResolveFishPondOutputAbsentSourceWindow(
                 route,
                 deadlineTotalDayExclusive);
         }

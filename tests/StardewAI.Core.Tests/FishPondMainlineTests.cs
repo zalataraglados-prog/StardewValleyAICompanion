@@ -21,6 +21,8 @@ public sealed class FishPondMainlineTests
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("(O)812", candidate.QualifiedItemId);
         Assert.Contains(candidate.Parameters, value => value.Name == "expected_skill_experience_delta" && value.Value == "11");
+        Assert.Contains(candidate.Parameters, value => value.Name == "route_distance_tiles" && value.Value == "0");
+        Assert.Contains(candidate.Parameters, value => value.Name == "expected_output_quality" && value.Value == "0");
         Assert.Contains(candidate.Parameters, value =>
             value.Name == "authoritative_route_sources_json" &&
             value.Value.Contains(

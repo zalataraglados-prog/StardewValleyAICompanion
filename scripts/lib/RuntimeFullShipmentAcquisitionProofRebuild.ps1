@@ -31,23 +31,41 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         ForEach-Object { [string]$_.option_id } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Sort-Object -Unique)
-    if ($rankedOptionIds.Count -ne 1) {
-        throw "Source acquisition ranking must bind exactly one option."
+    $sourceAvailability = @()
+    if ($rankedOptionIds.Count -eq 1) {
+        $sourceAvailability = @($sourceRanking.availability.options |
+            Where-Object {
+                [string]$_.option_id -eq [string]$rankedOptionIds[0]
+            })
     }
-    $sourceAvailability = @($sourceRanking.availability.options |
-        Where-Object {
-            [string]$_.option_id -eq [string]$rankedOptionIds[0]
-        })
+    elseif ($rankedOptionIds.Count -eq 0) {
+        $sourceAvailability = @($sourceRanking.availability.options)
+    }
+    else {
+        throw "Source acquisition ranking must identify at most one option."
+    }
     if ($sourceAvailability.Count -ne 1) {
         throw "Source acquisition ranking has no unique availability request."
     }
+    $sourceOptionId = [string]$sourceAvailability[0].option_id
     [object[]]$rankingCandidates = @()
-    [string[]]$candidateOptionIds = @([string]$rankedOptionIds[0])
+    [string[]]$candidateOptionIds = @($sourceOptionId)
     $sourceParameters = @($sourceAvailability[0].parameters)
+    $availableCurrentCandidates = @(
+        @($sourceAvailability[0].economic_candidates) +
+        @($sourceAvailability[0].event_candidates) +
+        @($sourceAvailability[0].social_candidates) |
+            Where-Object { [bool]$_.available })
+    if ($rankedOptionIds.Count -eq 0) {
+        if ($availableCurrentCandidates.Count -ne 1) {
+            throw "Unbound source ranking has no unique current candidate."
+        }
+        $sourceParameters = @()
+    }
     if ($sourceParameters.Count -gt 0) {
         $candidateOptionIds = @()
         $rankingCandidates = @([ordered]@{
-            option_id = [string]$rankedOptionIds[0]
+            option_id = $sourceOptionId
             parameters = $sourceParameters
             explicit_confirmation_granted = $false
             invocation_source = 0

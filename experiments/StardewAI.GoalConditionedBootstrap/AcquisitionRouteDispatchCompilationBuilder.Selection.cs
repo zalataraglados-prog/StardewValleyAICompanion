@@ -697,6 +697,20 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 StringComparison.Ordinal))
             .Distinct()
             .ToArray();
+        if (routeKind == "native_fish_pond_output")
+        {
+            var canonical = targetSources
+                .Where(value => string.Equals(
+                    value.RouteKind,
+                    routeKind,
+                    StringComparison.Ordinal))
+                .OrderBy(value => value.SourceId, StringComparer.Ordinal)
+                .FirstOrDefault();
+            return canonical is not null && string.Equals(
+                canonical.SourceId,
+                sourceId,
+                StringComparison.Ordinal);
+        }
         return targetSources.Length == 1 &&
             string.Equals(
                 targetSources[0].RouteKind,
