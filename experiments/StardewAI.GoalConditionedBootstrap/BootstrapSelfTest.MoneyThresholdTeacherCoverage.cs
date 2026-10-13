@@ -176,6 +176,9 @@ internal static partial class BootstrapSelfTest
             genericSale.UnitPrice == 20 &&
             genericSale.Progression.TotalMoneyEarnedDelta == 20,
             "Generic native shop-sale evidence drifted from the compiled sale.");
+        VerifyMoneyRevenueShopRecurrenceArtifact(
+            fixtureRoot,
+            sources[0].ExecutionEpisodePath);
 
         var requestPath = Path.Combine(
             fixtureRoot,

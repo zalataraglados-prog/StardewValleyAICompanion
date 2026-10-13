@@ -1,10 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue recurrence 可重放工件
+
+- 新增 `build-money-revenue-recurrence-proof` 与 `MoneyRevenueRecurrenceProofBuilder`。manifest 的每条边只能选择 `native_shop_sale` 或 `native_shipping_settlement` 一种证明形态；前者重新验真 shop execution episode，后者重新验真 sleep queue、before/after snapshot 与 queue receipt，混填或缺字段直接拒绝。
+- receipt 保存 manifest 哈希、每条边四个源工件的绝对路径与 SHA-256、重新投影的 Money progression 以及最终连续前缀。hermetic 已把 20g 即时销售与 300g 隔夜结算组合为 320g 两边工件，并证明相邻 checkpoint 连续；伪造 selected candidate 无法通过。
+- 这关闭了“内存 prefix 无法重放”和“各边真实但拼接时偷换状态”两个缺口。它仍是合成 fixture，不增加 production coverage；下一块让 Revenue comparison manifest 引用该 receipt、确定性 opportunity report、strategy ledger/commit 与隔离 counterfactual rollout。
+
 ## 2026-10-14 Revenue 储备感知候选比较
 
 - 新增 `MoneyRevenueAlternativeComparer`，只接受来自权威 `GrandpaEvaluationGoalEvaluator.MoneyThresholds` 的 criterion、完整且不重不漏的候选 ID 分母、同一收益前缀起点及同一 reservation ledger revision。调用方不能自报任意收益目标。
 - 每个候选重新验证 Revenue 前缀，并要求 acquisition 既有的非标量时间/能量/材料/货币成本向量与原子 reservation claim set 数量一致；陈旧状态、替换他人储备、claim/成本漂移均 fail closed。目标阈值满足是第一层权威终态，同一终态层内仅在收益进度、完成日和储备感知成本上存在唯一严格优势时才生成偏好；不可比候选保留在前沿，不读取 learner score。
-- hermetic 覆盖唯一达标候选、收益/木材/时间 trade-off、候选漏项、陈旧 claim 和数量漂移。该层尚未把真实 acquisition route、ledger commit 与隔离 counterfactual rollout 绑定成生产工件，因此 `formal_product_training_authorized=false` 和正式覆盖率不变；下一步补该工件绑定与支持转移连续性。
+- hermetic 覆盖唯一达标候选、收益/木材/时间 trade-off、候选漏项、陈旧 claim 和数量漂移。Revenue prefix 现已有独立可重放 receipt，但 comparison 尚未绑定真实 acquisition route、ledger commit 与隔离 counterfactual rollout，因此 `formal_product_training_authorized=false` 和正式覆盖率不变。
 
 ## 2026-10-14 Revenue 连续前缀
 

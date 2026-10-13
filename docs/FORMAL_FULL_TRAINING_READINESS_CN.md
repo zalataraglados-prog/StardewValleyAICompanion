@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue recurrence 可重放工件
+
+- `money_revenue_recurrence_proof_manifest.v1` 现在显式列出 shop-sale episode 或 shipping queue/snapshots/receipt，不接受调用方直接填写收益金额。`MoneyRevenueRecurrenceProofBuilder` 逐边复用唯一原生验证器，随后重建同 actor/save、checkpoint 连续、Year 3 截止内的 prefix。
+- `money_revenue_recurrence_proof_receipt.v1` 固化 manifest 及所有叶子工件哈希。双类型 hermetic 证明累计 320g，并拒绝伪造 queue selected-candidate 绑定；因此历史工件后续可确定性重放，而不是信任序列化 summary。
+- 该 receipt 仍来自合成 fixture，不能计入生产分子。下一固定边界是 comparison manifest：必须把每个候选的 recurrence receipt 绑定到确定性 opportunity-cost report、strategy ledger/commit 与隔离 counterfactual rollout 后才可输出生产 Teacher preference。
+
 ## 2026-10-14 Revenue 储备感知候选比较
 
 - `MoneyRevenueAlternativeComparer` 从权威 Money criterion 内部取得阈值，要求完整候选分母、同一收益起点和同一 ledger revision。每个候选重新验真 Revenue 前缀，非标量机会成本必须与原子 reservation claim set 的材料/货币数量一致，且不允许替换既有储备。
