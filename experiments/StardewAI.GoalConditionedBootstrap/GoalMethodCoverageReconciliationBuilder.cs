@@ -35,11 +35,14 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         var criteriaById = frontier.Criteria.ToDictionary(
             criterion => criterion.CriterionId,
             StringComparer.Ordinal);
+        var frontierMethodsById = frontier.Methods.ToDictionary(
+            method => method.MethodId,
+            StringComparer.Ordinal);
         var coverageByMethod = coverage.Criteria
             .GroupBy(criterion => criterion.MethodId, StringComparer.Ordinal)
             .ToDictionary(
                 group => group.Key,
-                group => ConsistentCoverage(group.ToArray()),
+                group => group.ToArray(),
                 StringComparer.Ordinal);
 
         var methods = frontier.Methods
@@ -58,15 +61,30 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             .Select(criterion =>
             {
                 var method = methodsById[criterion.MethodId];
+                var frontierMethod = frontierMethodsById[criterion.MethodId];
+                var implementedSources = ImplementedSourceKinds(
+                    frontierMethod);
+                var activeSources = criterion.TeacherSourceKinds
+                    .Order(StringComparer.Ordinal)
+                    .ToArray();
                 return new GoalMethodCoverageCriterionReconciliation(
                     criterion.CriterionId,
                     criterion.Points,
                     criterion.DirectionId,
                     criterion.MethodId,
                     criterion.MethodStatus,
-                    method.PrimaryDisposition,
+                    PrimaryDisposition(
+                        frontierMethod,
+                        criterion,
+                        implementedSources,
+                        activeSources,
+                        criterion.CoverageGateReady),
                     criterion.CoverageGateReady,
-                    method.OpenWorkKinds);
+                    OpenWorkKinds(
+                        frontierMethod,
+                        criterion,
+                        implementedSources,
+                        activeSources));
             })
             .ToArray();
         var families = GoalMethodFamilyProjectionBuilder.Build(
@@ -122,10 +140,11 @@ public static partial class GoalMethodCoverageReconciliationBuilder
 
     private static GoalMethodCoverageMethodReconciliation ReconcileMethod(
         GoalMethodFrontierMethod method,
-        GoalMethodTeacherCriterionCoverage coverage,
+        GoalMethodTeacherCriterionCoverage[] criterionCoverage,
         IReadOnlyDictionary<string, GoalCriterionFrontier> criteriaById,
         IReadOnlyDictionary<string, OptionEvidence> options)
     {
+        var coverage = AggregateCoverage(method, criterionCoverage);
         var roles = BuildOptionRoles(method);
         var optionRows = roles
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
@@ -169,8 +188,9 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             .Select(option => option.OptionId)
             .ToArray();
         var coverageReady = method.CriterionIds.All(criterionId =>
-            criteriaById.ContainsKey(criterionId)) &&
-            coverage.CoverageGateReady;
+                criteriaById.ContainsKey(criterionId)) &&
+            criterionCoverage.Length == method.CriterionIds.Length &&
+            criterionCoverage.All(row => row.CoverageGateReady);
         var primary = PrimaryDisposition(
             method,
             coverage,

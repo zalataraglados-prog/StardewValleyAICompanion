@@ -7,8 +7,25 @@ using StardewAI.Contracts.WorldModel;
 
 namespace StardewAI.Core.Goals
 {
+    public sealed record GrandpaMoneyThreshold(
+        string CriterionId,
+        string Label,
+        uint Target,
+        int Points);
+
     public sealed class GrandpaEvaluationGoalEvaluator
     {
+        public static IReadOnlyList<GrandpaMoneyThreshold> MoneyThresholds { get; } =
+            Array.AsReadOnly(new GrandpaMoneyThreshold[]
+            {
+                new("money_50000", "Total money earned >= 50,000", 50000, 1),
+                new("money_100000", "Total money earned >= 100,000", 100000, 1),
+                new("money_200000", "Total money earned >= 200,000", 200000, 1),
+                new("money_300000", "Total money earned >= 300,000", 300000, 1),
+                new("money_500000", "Total money earned >= 500,000", 500000, 1),
+                new("money_1000000", "Total money earned >= 1,000,000", 1000000, 2)
+            });
+
         public static readonly string[] RequiredFactPaths =
         {
             "player.total_money_earned",
@@ -91,12 +108,18 @@ namespace StardewAI.Core.Goals
         private static void AddMoneyFactors(WorldModelEnvelope model, List<GrandpaEvaluationFactor> factors)
         {
             var money = ReadUInt(model.Facts.Player, "total_money_earned");
-            AddThreshold(factors, "money_50000", "Total money earned >= 50,000", "player.total_money_earned", money, 50000, 1, "Game1.player.totalMoneyEarned >= 50000");
-            AddThreshold(factors, "money_100000", "Total money earned >= 100,000", "player.total_money_earned", money, 100000, 1, "Game1.player.totalMoneyEarned >= 100000");
-            AddThreshold(factors, "money_200000", "Total money earned >= 200,000", "player.total_money_earned", money, 200000, 1, "Game1.player.totalMoneyEarned >= 200000");
-            AddThreshold(factors, "money_300000", "Total money earned >= 300,000", "player.total_money_earned", money, 300000, 1, "Game1.player.totalMoneyEarned >= 300000");
-            AddThreshold(factors, "money_500000", "Total money earned >= 500,000", "player.total_money_earned", money, 500000, 1, "Game1.player.totalMoneyEarned >= 500000");
-            AddThreshold(factors, "money_1000000", "Total money earned >= 1,000,000", "player.total_money_earned", money, 1000000, 2, "Game1.player.totalMoneyEarned >= 1000000");
+            foreach (var threshold in MoneyThresholds)
+            {
+                AddThreshold(
+                    factors,
+                    threshold.CriterionId,
+                    threshold.Label,
+                    "player.total_money_earned",
+                    money,
+                    threshold.Target,
+                    threshold.Points,
+                    "Game1.player.totalMoneyEarned >= " + threshold.Target);
+            }
         }
 
         private static void AddCommunityCenterFactors(WorldModelEnvelope model, List<GrandpaEvaluationFactor> factors)

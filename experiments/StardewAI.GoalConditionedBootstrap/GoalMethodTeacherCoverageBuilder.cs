@@ -42,13 +42,21 @@ public static partial class GoalMethodTeacherCoverageBuilder
         ValidateRequest(request);
         ValidateFrontier(frontier);
 
-        var evidence = frontier.Methods.ToDictionary(
+        var methodEvidence = frontier.Methods.ToDictionary(
             method => method.MethodId,
             method => new MethodCoverageEvidence(method),
             StringComparer.Ordinal);
+        var criterionEvidence = frontier.Criteria.ToDictionary(
+            criterion => criterion.CriterionId,
+            criterion => new CriterionCoverageEvidence(criterion.CriterionId),
+            StringComparer.Ordinal);
         var sourceDigests = request.Sources
             .OrderBy(source => source.SourceId, StringComparer.Ordinal)
-            .Select(source => VerifySource(source, frontier, evidence))
+            .Select(source => VerifySource(
+                source,
+                frontier,
+                methodEvidence,
+                criterionEvidence))
             .ToArray();
         var methods = frontier.Methods.ToDictionary(
             method => method.MethodId,
@@ -71,7 +79,9 @@ public static partial class GoalMethodTeacherCoverageBuilder
                         "Goal-method criterion does not have one catalog-backed method: " +
                         criterion.CriterionId);
                 }
-                var row = evidence[method.MethodId];
+                var row = MergeEvidence(
+                    methodEvidence[method.MethodId],
+                    criterionEvidence[criterion.CriterionId]);
                 var comparisonPartitions = OrderedPartitions(
                     row.TeacherComparisonPartitions);
                 var outcomePartitions = OrderedPartitions(
@@ -242,7 +252,9 @@ public static partial class GoalMethodTeacherCoverageBuilder
     private static GoalMethodTeacherCoverageSourceDigest VerifySource(
         GoalMethodTeacherCoverageSource source,
         GoalMethodFrontierReport frontier,
-        IReadOnlyDictionary<string, MethodCoverageEvidence> evidence)
+        IReadOnlyDictionary<string, MethodCoverageEvidence> methodEvidence,
+        IReadOnlyDictionary<string, CriterionCoverageEvidence>
+            criterionEvidence)
     {
         var fullPath = RequiredFullPath(
             source.ArtifactPath,
@@ -255,21 +267,28 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     source,
                     fullPath,
                     frontier,
-                    evidence),
+                    methodEvidence),
             GoalMethodTeacherCoverageSourceKinds
                 .PetLoveTerminalInteractionCorpus =>
                 VerifyPetLoveCorpus(
                     source,
                     fullPath,
                     frontier,
-                    evidence),
+                    methodEvidence),
             GoalMethodTeacherCoverageSourceKinds
                 .SkullKeyTerminalInteractionCorpus =>
                 VerifySkullKeyCorpus(
                     source,
                     fullPath,
                     frontier,
-                    evidence),
+                    methodEvidence),
+            GoalMethodTeacherCoverageSourceKinds
+                .MoneyThresholdProgressionCorpus =>
+                VerifyMoneyThresholdCorpus(
+                    source,
+                    fullPath,
+                    frontier,
+                    criterionEvidence),
             _ => throw new InvalidDataException(
                 "Unsupported goal-method Teacher coverage source kind: " +
                 source.SourceKind)
@@ -278,6 +297,16 @@ public static partial class GoalMethodTeacherCoverageBuilder
 
     private static string[] OrderedPartitions(IReadOnlySet<string> values) =>
         RequiredPartitions.Where(values.Contains).ToArray();
+
+    private static CoverageEvidence MergeEvidence(
+        MethodCoverageEvidence method,
+        CriterionCoverageEvidence criterion) => new(
+            method.TeacherComparisonPartitions
+                .Concat(criterion.TeacherComparisonPartitions),
+            method.NativeOutcomePartitions
+                .Concat(criterion.NativeOutcomePartitions),
+            method.TeacherSourceKinds
+                .Concat(criterion.TeacherSourceKinds));
 
     private static string RequiredFullPath(string value, string label) =>
         string.IsNullOrWhiteSpace(value)
@@ -298,5 +327,41 @@ public static partial class GoalMethodTeacherCoverageBuilder
             new(StringComparer.Ordinal);
         public HashSet<string> TeacherSourceKinds { get; } =
             new(StringComparer.Ordinal);
+    }
+
+    private sealed class CriterionCoverageEvidence
+    {
+        public CriterionCoverageEvidence(string criterionId)
+        {
+            CriterionId = criterionId;
+        }
+
+        public string CriterionId { get; }
+        public HashSet<string> TeacherComparisonPartitions { get; } =
+            new(StringComparer.Ordinal);
+        public HashSet<string> NativeOutcomePartitions { get; } =
+            new(StringComparer.Ordinal);
+        public HashSet<string> TeacherSourceKinds { get; } =
+            new(StringComparer.Ordinal);
+    }
+
+    private sealed class CoverageEvidence
+    {
+        public CoverageEvidence(
+            IEnumerable<string> teacherComparisonPartitions,
+            IEnumerable<string> nativeOutcomePartitions,
+            IEnumerable<string> teacherSourceKinds)
+        {
+            TeacherComparisonPartitions = teacherComparisonPartitions
+                .ToHashSet(StringComparer.Ordinal);
+            NativeOutcomePartitions = nativeOutcomePartitions
+                .ToHashSet(StringComparer.Ordinal);
+            TeacherSourceKinds = teacherSourceKinds
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        public HashSet<string> TeacherComparisonPartitions { get; }
+        public HashSet<string> NativeOutcomePartitions { get; }
+        public HashSet<string> TeacherSourceKinds { get; }
     }
 }

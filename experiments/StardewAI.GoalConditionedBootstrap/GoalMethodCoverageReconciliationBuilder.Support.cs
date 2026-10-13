@@ -49,6 +49,11 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             kinds.Add(GoalMethodTeacherCoverageSourceKinds
                 .SkullKeyTerminalInteractionCorpus);
         }
+        if (method.DirectionId == "earn_money")
+        {
+            kinds.Add(GoalMethodTeacherCoverageSourceKinds
+                .MoneyThresholdProgressionCorpus);
+        }
         return kinds.Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -80,27 +85,80 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         }
     }
 
-    private static GoalMethodTeacherCriterionCoverage ConsistentCoverage(
+    private static GoalMethodTeacherCriterionCoverage AggregateCoverage(
+        GoalMethodFrontierMethod method,
         GoalMethodTeacherCriterionCoverage[] rows)
     {
+        if (rows.Length == 0 ||
+            rows.Length != method.CriterionIds.Length ||
+            rows.Select(row => row.CriterionId)
+                .Distinct(StringComparer.Ordinal).Count() != rows.Length ||
+            !rows.Select(row => row.CriterionId)
+                .Order(StringComparer.Ordinal)
+                .SequenceEqual(
+                    method.CriterionIds.Order(StringComparer.Ordinal),
+                    StringComparer.Ordinal))
+        {
+            throw new InvalidDataException(
+                "Method coverage does not contain its exact criterion denominator: " +
+                method.MethodId);
+        }
+
         var first = rows[0];
         if (rows.Any(row =>
                 row.MethodId != first.MethodId ||
                 row.DirectionId != first.DirectionId ||
-                row.MethodStatus != first.MethodStatus ||
-                !row.TeacherSourceKinds.SequenceEqual(
-                    first.TeacherSourceKinds, StringComparer.Ordinal) ||
-                !row.TeacherComparisonPartitions.SequenceEqual(
-                    first.TeacherComparisonPartitions,
-                    StringComparer.Ordinal) ||
-                !row.NativeOutcomePartitions.SequenceEqual(
-                    first.NativeOutcomePartitions,
-                    StringComparer.Ordinal) ||
-                row.CoverageGateReady != first.CoverageGateReady))
+                row.MethodStatus != first.MethodStatus))
         {
             throw new InvalidDataException(
-                "Criteria sharing one method have inconsistent coverage.");
+                "Criteria sharing one method have inconsistent authority.");
         }
-        return first;
+
+        var comparisonPartitions = IntersectPartitions(rows.Select(row =>
+            row.TeacherComparisonPartitions));
+        var outcomePartitions = IntersectPartitions(rows.Select(row =>
+            row.NativeOutcomePartitions));
+        var splitComplete = HasAllPartitions(comparisonPartitions) &&
+            HasAllPartitions(outcomePartitions);
+        return new GoalMethodTeacherCriterionCoverage(
+            first.CriterionId,
+            rows.Sum(row => row.Points),
+            first.DirectionId,
+            first.MethodId,
+            first.MethodStatus,
+            rows.SelectMany(row => row.RequirementSetIds)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray(),
+            rows.SelectMany(row => row.TeacherSourceKinds)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray(),
+            comparisonPartitions,
+            outcomePartitions,
+            comparisonPartitions.Length > 0,
+            outcomePartitions.Length > 0,
+            splitComplete,
+            rows.All(row => row.CoverageGateReady),
+            rows.SelectMany(row => row.BlockingReasons)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    private static string[] IntersectPartitions(
+        IEnumerable<string[]> partitionSets)
+    {
+        HashSet<string>? intersection = null;
+        foreach (var partitions in partitionSets)
+        {
+            if (intersection is null)
+                intersection = partitions.ToHashSet(StringComparer.Ordinal);
+            else
+                intersection.IntersectWith(partitions);
+        }
+        return RequiredPartitions.Where(partition =>
+                intersection?.Contains(partition) == true)
+            .ToArray();
     }
 }

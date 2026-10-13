@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Money 阈值族判据级证据边界
+
+- Teacher coverage 不再假设“共享同一 root method 的 criterion 必须拥有完全相同证据”。旧实现会让任意一个 Money 阈值样本污染全部六档；现改为 method 级共享 progression 加 criterion 级独立证据，方法汇总只取所有所属 criterion 的共同三分区覆盖。
+- 新增 `money_threshold_progression_corpus` 强类型入口。请求只能提交原生执行 episode，不能提交 criterion ID、阈值或分区标签；构建器只接受 `executor.sell_shop_item` 的 applied/verified 原生回执、fresh 前后快照、完整哈希绑定，以及 `player.money` 与 `player.total_money_earned` 完全相同的正增量。
+- 六个阈值现在由 `GrandpaEvaluationGoalEvaluator.MoneyThresholds` 单点定义。一个真实 progression 可以派生多个 crossed-threshold view，但每个 view 独立保存 Teacher goal context、终态断言、comparison receipt 和 train/validation/test 覆盖，不允许“高阈值通过即自动放行低阈值”。
+- 隔离自测位于 `E:\StardewAI-TestLab\artifacts\goal-method-money-threshold-selftest-20261014`：三份独立 save/player/day 样本只跨越 50,000，报告证明仅 `money_50000` 获得三分区证据，其余五档仍为空；伪造 criterion 归属会在重放时失败关闭。
+- 该自测是结构与验真测试，不是 production native evidence。正式状态仍为 promotion-grade `2/19`、root method `1/11`、`formal_product_training_authorized=false`。下一施工单位是闭合 `earn_money` 的 fresh-save 收益 recurrence 与 opportunity-cost Teacher 依赖，再采集生产三分区证据。
+
 ## 2026-10-14 正式训练准入重算与下一施工单位
 
 - 已使用当前 frontier 输入和当前代码重新生成三分区 acquisition 语料、checkpoint 与支持转移终端谱系，并完成只读 `build-goal-method-formal-training-admission-reconciliation`。报告位于 `E:\StardewAI-TestLab\artifacts\formal-training-admission-current-source-v1-20261014\formal-training-admission-reconciliation.json`；旧 2026-09-28 冻结语料因日历解析漂移已被拒绝，不能继续代表当前状态。
