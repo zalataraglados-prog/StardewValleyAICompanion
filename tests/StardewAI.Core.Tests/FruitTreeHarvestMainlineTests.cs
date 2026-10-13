@@ -28,6 +28,9 @@ public sealed class FruitTreeHarvestMainlineTests
             parameter.Value.Contains(
                 "fruit_tree:628:0",
                 StringComparison.Ordinal));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_distance_tiles" &&
+            parameter.Value == "1");
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);

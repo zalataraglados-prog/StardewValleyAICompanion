@@ -631,6 +631,42 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "\"fruit_tree_harvest_sample\" { \"foraging.harvest_fruit_tree\" }",
             source,
             StringComparison.Ordinal);
+        var calendar = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteCalendarResolutionBuilder.FruitTrees.cs");
+        Assert.Contains(
+            "current_native_fruit_tree_candidate_calendar",
+            calendar,
+            StringComparison.Ordinal);
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.FruitTrees.cs");
+        Assert.Contains(
+            "current_native_fruit_tree_shake_input_profile",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "compiler:ActionQueueCompiler.CompileHarvestFruitTreeStep",
+            dailyBudget,
+            StringComparison.Ordinal);
+        var facility = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateFacilityBuilder.Evaluation.FruitTrees.cs");
+        Assert.Contains(
+            "resolved_existing_current_fruit_tree_capacity_match",
+            facility,
+            StringComparison.Ordinal);
+        var processing = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateProcessingBuilder.Evaluation.cs");
+        Assert.Contains(
+            "current_fruit_tree_output_materialized",
+            processing,
+            StringComparison.Ordinal);
         Assert.Contains(
             "RuleKey = \"fruit_tree\"",
             source,

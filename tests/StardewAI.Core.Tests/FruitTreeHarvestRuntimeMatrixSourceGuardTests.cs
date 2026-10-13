@@ -33,6 +33,12 @@ public sealed class FruitTreeHarvestRuntimeMatrixSourceGuardTests
         Assert.Contains("fruit_tree_has_no_fruit", smoke, StringComparison.Ordinal);
         Assert.Contains("fruit_tree_shake_in_progress", smoke, StringComparison.Ordinal);
         Assert.Contains("-WindowStyle Hidden", smoke, StringComparison.Ordinal);
+
+        var executor = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.FruitTrees.cs"));
+        Assert.Contains("FruitTreeHarvestNativePostconditionsMet", executor, StringComparison.Ordinal);
+        Assert.Contains("TickFruitTreeHarvestOutputCollection", executor, StringComparison.Ordinal);
+        Assert.Contains("native_fruit_tree_output_naturally_collected", executor, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.addItem", executor, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()

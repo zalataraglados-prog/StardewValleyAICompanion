@@ -16,6 +16,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "foraging.collect_spawned_objects",
         "foraging.harvest_tree_product",
         "foraging.harvest_bushes",
+        "foraging.harvest_fruit_tree",
         "foraging.harvest_spring_onions",
         "foraging.harvest_ginger",
         "foraging.excavate_artifact_spots",
@@ -76,7 +77,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v9",
+            "v10",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -496,6 +497,20 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 return reasons.Count == 0;
             }
             reasons.Add("current_spring_onion_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind == "native_fruit_tree_produce")
+        {
+            if (TryField(
+                    "current_location",
+                    "terrain_features",
+                    out var features) &&
+                FieldStatus(features) == "available" &&
+                FieldValue(features).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_fruit_tree_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_ginger_harvest")
