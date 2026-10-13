@@ -3046,6 +3046,14 @@ Slice 7 remains assigned to the RTX 5070 node.
 - Hermetic negative cases reject pending-state drift and duplicate-endpoint over-credit. This is a recurrence foundation,
   not a fresh-save schedule or production evidence, so admission remains unchanged.
 
+### 2026-10-14: reusable native shop-sale evidence
+
+- Native shop-sale episode, queue, result and snapshot verification now live in one reusable verifier. Its evidence keeps
+  shop, qualified item, inventory slot, quantity, unit price, total value, queue identity, artifact hashes and the shared
+  Money progression. Missing, duplicate or conflicting structured command values fail closed.
+- The threshold corpus only derives crossed criterion views from that evidence. The verifier itself has no threshold
+  requirement, allowing a later recurrence to retain every verified sale edge without inventing another sale adapter.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

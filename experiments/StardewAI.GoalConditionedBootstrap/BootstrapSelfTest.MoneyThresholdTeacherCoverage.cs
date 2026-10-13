@@ -131,9 +131,12 @@ internal static partial class BootstrapSelfTest
                         state_hash = before.StateHash,
                         parameters = new[]
                         {
+                            new { name = "slot_index", value = "0" },
                             new { name = "qualified_item_id", value = "(O)24" },
                             new { name = "quantity", value = "1" },
-                            new { name = "expected_unit_price", value = "20" }
+                            new { name = "expected_unit_price", value = "20" },
+                            new { name = "expected_total_value", value = "20" },
+                            new { name = "expected_shop_id", value = "SeedShop" }
                         },
                         steps = new[]
                         {
@@ -160,6 +163,19 @@ internal static partial class BootstrapSelfTest
                 sourceId,
                 episodePath));
         }
+
+        var genericSale = NativeShopSaleEpisodeVerifier.Verify(
+            sources[0].ExecutionEpisodePath);
+        Require(
+            genericSale.EpisodeId.Length > 0 &&
+            genericSale.QueueItemId.Length > 0 &&
+            genericSale.ShopId == "SeedShop" &&
+            genericSale.QualifiedItemId == "(O)24" &&
+            genericSale.SlotIndex == 0 &&
+            genericSale.Quantity == 1 &&
+            genericSale.UnitPrice == 20 &&
+            genericSale.Progression.TotalMoneyEarnedDelta == 20,
+            "Generic native shop-sale evidence drifted from the compiled sale.");
 
         var requestPath = Path.Combine(
             fixtureRoot,
@@ -216,46 +232,69 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejected,
             "Caller-authored money criterion attribution entered coverage.");
-        var tamperedEpisode = JsonNode.Parse(File.ReadAllText(
-                sources[0].ExecutionEpisodePath))!
-            .AsObject();
-        tamperedEpisode["effective_queue_item"]!["normalized_command"]!
-            ["parameters"]![1]!["value"] = "2";
-        var tamperedEpisodePath = Path.Combine(
+        RequireTamperedMoneySaleRejected(
             fixtureRoot,
-            "tampered-sale-quantity-execution-episode.json");
+            sources[0].ExecutionEpisodePath,
+            "quantity",
+            "2");
+        RequireTamperedMoneySaleRejected(
+            fixtureRoot,
+            sources[0].ExecutionEpisodePath,
+            "expected_total_value",
+            "21");
+        return corpusPath;
+    }
+
+    private static void RequireTamperedMoneySaleRejected(
+        string fixtureRoot,
+        string sourceEpisodePath,
+        string parameterName,
+        string tamperedValue)
+    {
+        var tamperedEpisode = JsonNode.Parse(File.ReadAllText(
+                sourceEpisodePath))!
+            .AsObject();
+        var parameters = tamperedEpisode["effective_queue_item"]!
+            ["normalized_command"]!["parameters"]!.AsArray();
+        var parameter = parameters.Single(value =>
+            value?["name"]?.GetValue<string>() == parameterName)!;
+        parameter["value"] = tamperedValue;
+        var safeName = parameterName.Replace('_', '-');
+        var episodePath = Path.Combine(
+            fixtureRoot,
+            "tampered-sale-" + safeName + "-execution-episode.json");
         File.WriteAllText(
-            tamperedEpisodePath,
+            episodePath,
             tamperedEpisode.ToJsonString(new JsonSerializerOptions
             {
                 WriteIndented = true
             }) + Environment.NewLine);
-        var tamperedRequestPath = Path.Combine(
+        var requestPath = Path.Combine(
             fixtureRoot,
-            "tampered-sale-quantity-request.json");
-        Write(tamperedRequestPath, new MoneyThresholdTeacherCorpusRequest
+            "tampered-sale-" + safeName + "-request.json");
+        Write(requestPath, new MoneyThresholdTeacherCorpusRequest
         {
-            CorpusId = "self-test-money-threshold-tampered-sale",
+            CorpusId = "self-test-money-threshold-tampered-" + safeName,
             Sources = new[]
             {
                 new MoneyThresholdTeacherCorpusSource(
-                    "tampered-sale-quantity",
-                    tamperedEpisodePath)
+                    "tampered-sale-" + safeName,
+                    episodePath)
             },
             FormalProductTrainingAuthorized = false
         });
-        rejected = false;
+        var rejected = false;
         try
         {
-            MoneyThresholdTeacherCorpusBuilder.Build(tamperedRequestPath);
+            MoneyThresholdTeacherCorpusBuilder.Build(requestPath);
         }
         catch (InvalidDataException)
         {
             rejected = true;
         }
         Require(rejected,
-            "A forged compiled sale quantity entered money coverage.");
-        return corpusPath;
+            "A forged compiled sale parameter entered money coverage: " +
+            parameterName);
     }
 
     private static SnapshotEnvelope MoneyThresholdSnapshot(

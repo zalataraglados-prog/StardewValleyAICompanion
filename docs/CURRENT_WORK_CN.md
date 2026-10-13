@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-14 通用原生 shop-sale evidence
+
+- 原先位于 Money 阈值 corpus 内部的 execution episode/header/hash/queue/result 验真已下沉为唯一 `NativeShopSaleEpisodeVerifier`。阈值 corpus 现在只负责在通用 sale progression 上派生 crossed criterion，不再复制执行证据验证。
+- 通用证据保留 `shop_id`、`qualified_item_id`、inventory slot、quantity、unit price、total value、queue item、before/after/result 哈希及 Money progression；结构化 command 中任一字段缺失、重复、冲突或总价不等于实际收入增量都会 fail closed。
+- 该入口不要求一次销售必须跨 Grandpa 阈值，因此后续 Revenue recurrence 能记录全部有效销售边，而阈值 Teacher coverage 仍只接收真实跨线视图。现有伪造 quantity 回归仍通过，正式覆盖率不变。
+
 ## 2026-10-14 Money progression 共享验真基础
 
 - `MoneyRevenueProgressionVerifier` 统一投影 `save/player/day/money/totalMoneyEarned` 与 shipping settlement scope，现有 Money 阈值 sale corpus 已改为复用该入口，不再保留第二套金额/天数/actor 读取逻辑。
