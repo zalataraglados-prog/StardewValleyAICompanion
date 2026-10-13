@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 标准批次：原生野树种子闭环
+
+- `wild_tree_seed_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:88 / (O)88 / native_wild_tree_seed / wild_tree:6 / full_shipment:full_shipment:item:88:0:1`，继续复用唯一的 `foraging.harvest_tree_product -> executor.harvest_tree_product` 链。
+- `(O)88` 的权威清单同时包含 `wild_tree:6` 与 `wild_tree:9`。当前 fixture 只物化 `wild_tree:6`；规划器现在用 `route_kind + source_id + qualified_item_id` 绑定可执行候选，同时允许由锁定的 `Data/WildTrees` 证明同物品、同路线族的另一来源无额外日历限制。位置轴仍要求精确 `source_id` 的实时树候选，因此缺席的 `wild_tree:9` 明确为不适用，不会借用 `wild_tree:6` 冒充执行。
+- 最终 v2 原生动作在 `70` tick 内经 `GameLocation.checkAction -> Tree.performUseAction -> Tree.shake` 取得 `(O)88 x1`。回执为 `applied/verified`，验证 `has_seed true -> false`、`was_shaken_today false -> true`、完整输出域、背包自然拾取、觅食经验 `0` 和安全槽位恢复；没有新增第二套候选、编译或执行系统。
+- v1 仅用于暴露 `wild_tree:9` 日历占位导致的 Teacher 分母缺口，不属于正式证据。最终规则落地后先重建既有 `14` 层确认无 proof 漂移，再运行 v2 并构建最终索引。
+- 最终 rollout proof manifest SHA-256 为 `c83584b99a8602b7c449a92135f137325adffff74411aeadc3c05036ab4191d7`，receipt SHA-256 为 `7c22379b83bec6cdaa9f367ec37ec0575bd6a1c353bb861ca3852858c64353c2`。冻结源存档 SHA-256 仍为 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 严格 production evidence index 已推进到 `15/26`，剩余 `11` 层；共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。正式 proof 根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-wild-tree-seed-v2-20261013\runtime-full-shipment-evidence-wild-tree-seed-v2-20261013`，机器可读索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v26-20261013`。
+- 下一固定项为 `spring_onion_harvest_sample / full_shipment:item:399 / (O)399 / native_spring_onion_harvest`，按 sample plan 顺序复用既有春葱透明读、作物采收编译与原生执行链，只补严格 Full Shipment proof。
+
 ## 2026-10-13 Full Shipment 标准批次：原生野树种子掉落闭环
 
 - `wild_tree_seed_drop_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop / wild_tree:2:0 / full_shipment:full_shipment:item:408:0:4`，唯一动作链仍为 `foraging.harvest_tree_product -> executor.harvest_tree_product`。

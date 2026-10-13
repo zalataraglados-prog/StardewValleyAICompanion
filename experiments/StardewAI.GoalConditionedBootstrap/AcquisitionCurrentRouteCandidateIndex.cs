@@ -60,6 +60,15 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             value.QualifiedItemId == qualifiedItemId &&
             value.RouteKind != excludedRouteKind);
 
+    public bool HasQualifiedItemCandidateOutsideSource(
+        string routeKind,
+        string sourceId,
+        string qualifiedItemId) =>
+        Candidates.Any(value =>
+            value.RouteKind == routeKind &&
+            value.SourceId != sourceId &&
+            value.QualifiedItemId == qualifiedItemId);
+
     public static AcquisitionCurrentRouteCandidateIndex Read(
         string snapshotPath)
     {

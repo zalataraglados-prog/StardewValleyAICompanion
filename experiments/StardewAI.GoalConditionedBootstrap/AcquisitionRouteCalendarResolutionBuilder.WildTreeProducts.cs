@@ -83,6 +83,42 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             Array.Empty<string>());
     }
 
+    internal static CalendarSourceResolution
+        ResolveWildTreeProductAbsentSourceWindow(
+            AcquisitionRequirementRouteLowering route,
+            int deadlineTotalDayExclusive)
+    {
+        if (!WildTreeProductSourceIdentityMatches(route))
+        {
+            return BlockLiveSourceCalendar(
+                "blocked_authoritative_wild_tree_product_source_invalid",
+                "wild_tree_product_authoritative_source_identity_invalid");
+        }
+        Require(deadlineTotalDayExclusive > 0,
+            "Wild-tree product calendar deadline must be positive.");
+        return new CalendarSourceResolution(
+            ResolvedStatus,
+            "authoritative_wild_tree_product_calendar_current_candidate_required",
+            new[]
+            {
+                new AuthoritativeCalendarSourceWindow
+                {
+                    SourceKind = route.RouteKind,
+                    SourceKey = route.SourceId,
+                    RuleId = route.SourcePath,
+                    FirstTotalDay = 0,
+                    LastTotalDay = deadlineTotalDayExclusive - 1,
+                    TimeWindows = NativeCalendarConstraintNormalizer.AllDay,
+                    WeatherModes = NativeCalendarConstraintNormalizer
+                        .AllWeatherModes,
+                    RequiresLocationAccessEvidence = true,
+                    RequiresExistingLiveCandidateMatch = true,
+                    StochasticOutcome = false
+                }
+            },
+            Array.Empty<string>());
+    }
+
     private static bool WildTreeProductSourceIdentityMatches(
         AcquisitionRequirementRouteLowering route)
     {
