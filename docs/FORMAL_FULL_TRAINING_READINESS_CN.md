@@ -1,5 +1,12 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Money method-family 试点
+
+- 覆盖门已从“method 证据广播到全部 criterion”改为“共享 method progression、独立 criterion evidence view”。Money 六档仍共享候选分母、执行器、原生 progression 和分区管线，但任一档缺失都会使 method 汇总保持未完成。
+- `money_threshold_progression_corpus` 只接收原生 `executor.sell_shop_item` episode。它重算快照哈希、actor/save/day、执行结果绑定、原生 sale verification reasons、当前金额与累计收入的精确同增量，并从权威阈值表内部推导 crossed criterion；调用方不能自报阈值、criterion 或 partition。
+- 每个 crossed criterion 均生成独立 `grandpa.criterion:<criterion_id>` Teacher 上下文和终态断言。隔离三分区测试只覆盖 50,000 档并确认其余五档不会被连带记账；这消除了共享方法导致的准入假阳性。
+- 当前没有把 fixture 计入 production 分子，准入仍为 `2/19`、`1/11` 且 `formal_product_training_authorized=false`。Money 下一门是完成 fresh-save 收益 recurrence、储备约束与 counterfactual opportunity-cost Teacher，再接入真实三分区 episode。
+
 ## 2026-10-14 当前准入基线
 
 - 当前代码已在全新 `E:` 隔离根重建 acquisition corpus、checkpoint 与支持转移证明，并重新执行正式准入总门。机器报告为 `blocked_open_formal_training_evidence`：promotion-grade coverage `2/19`，coverage-ready root method `1/11`，`formal_product_training_authorized=false`。

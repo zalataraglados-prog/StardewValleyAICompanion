@@ -30,6 +30,13 @@ internal static partial class BootstrapSelfTest
             GoalMethodTeacherCoverageSourceKinds
                 .SkullKeyTerminalInteractionCorpus,
             skullKeyCorpusPath);
+        var moneyThresholdCorpusPath =
+            BuildMoneyThresholdTeacherCorpusFixture(fullOutputRoot);
+        var moneyThresholdSource = new GoalMethodTeacherCoverageSource(
+            "money-threshold-terminal-corpus",
+            GoalMethodTeacherCoverageSourceKinds
+                .MoneyThresholdProgressionCorpus,
+            moneyThresholdCorpusPath);
         var request = new GoalMethodTeacherCoverageRequest
         {
             CoverageId = "self-test-current-goal-method-teacher-coverage",
@@ -349,6 +356,79 @@ internal static partial class BootstrapSelfTest
                 fullOutputRoot,
                 "skull-key-adapter-fixture-coverage-report.json"),
             skullKeyFixtureReport);
+
+        var moneyFixtureRequest = new GoalMethodTeacherCoverageRequest
+        {
+            CoverageId = "self-test-money-threshold-adapter-fixture",
+            Sources = new[] { source, moneyThresholdSource },
+            FormalProductTrainingAuthorized = false
+        };
+        var moneyFixtureRequestPath = Path.Combine(
+            fullOutputRoot,
+            "money-threshold-adapter-fixture-coverage-request.json");
+        Write(moneyFixtureRequestPath, moneyFixtureRequest);
+        var moneyFixtureReport = GoalMethodTeacherCoverageBuilder.Build(
+            inputs,
+            moneyFixtureRequestPath);
+        var coveredMoney = moneyFixtureReport.Criteria.Single(criterion =>
+            criterion.CriterionId == "money_50000");
+        var uncoveredMoney = moneyFixtureReport.Criteria.Where(criterion =>
+                criterion.DirectionId == "earn_money" &&
+                criterion.CriterionId != "money_50000")
+            .ToArray();
+        Require(
+            coveredMoney.TeacherSourceKinds.SequenceEqual(
+                new[]
+                {
+                    GoalMethodTeacherCoverageSourceKinds
+                        .MoneyThresholdProgressionCorpus
+                },
+                StringComparer.Ordinal) &&
+            coveredMoney.SplitCoverageComplete &&
+            !coveredMoney.CoverageGateReady &&
+            coveredMoney.BlockingReasons.SequenceEqual(
+                new[]
+                {
+                    "goal_method_not_executable:pending_dependency_expansion"
+                },
+                StringComparer.Ordinal) &&
+            uncoveredMoney.All(criterion =>
+                criterion.TeacherSourceKinds.Length == 0 &&
+                !criterion.TeacherComparisonCovered &&
+                !criterion.NativeOutcomeCovered),
+            "One crossed money threshold leaked evidence into sibling criteria.");
+        var moneyReconciliation =
+            GoalMethodCoverageReconciliationBuilder.Build(
+                inputs,
+                moneyFixtureRequestPath);
+        var moneyCriteria = moneyReconciliation.Criteria.Where(criterion =>
+                criterion.DirectionId == "earn_money")
+            .ToArray();
+        var moneyMethod = moneyReconciliation.Methods.Single(method =>
+            method.DirectionId == "earn_money");
+        Require(
+            moneyCriteria.Length == 6 &&
+            moneyCriteria.All(criterion =>
+                criterion.PrimaryDisposition ==
+                    GoalMethodCoverageDispositions
+                        .DependencyGraphIncomplete) &&
+            moneyMethod.PrimaryDisposition ==
+                GoalMethodCoverageDispositions.DependencyGraphIncomplete &&
+            moneyMethod.ActiveTeacherSourceKinds.SequenceEqual(
+                new[]
+                {
+                    GoalMethodTeacherCoverageSourceKinds
+                        .MoneyThresholdProgressionCorpus
+                },
+                StringComparer.Ordinal) &&
+            moneyMethod.TeacherComparisonPartitions.Length == 0 &&
+            moneyMethod.NativeOutcomePartitions.Length == 0,
+            "Money method aggregation ignored incomplete criterion views.");
+        Write(
+            Path.Combine(
+                fullOutputRoot,
+                "money-threshold-adapter-fixture-coverage-report.json"),
+            moneyFixtureReport);
 
         var tamperedSkullKeyCorpusPath = Path.Combine(
             fullOutputRoot,

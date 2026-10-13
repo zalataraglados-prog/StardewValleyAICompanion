@@ -3020,6 +3020,21 @@ Slice 7 remains assigned to the RTX 5070 node.
   already the final sleep state. This changes proof composition only; it adds no planner, movement, recovery, sleep, or
   shipping implementation and does not advance production recurrence beyond 0/154.
 
+### 2026-10-14: criterion-local evidence for shared threshold methods
+
+- Goal-method Teacher evidence is no longer broadcast from one root method to every criterion owned by that method.
+  Method progression remains shared, while source kinds, Teacher-comparison partitions and native-outcome partitions are
+  stored per criterion. Method reconciliation intersects criterion partitions and cannot become ready until every
+  authoritative criterion view is ready.
+- The first Money adapter accepts only a hash-bound fresh native `executor.sell_shop_item` episode whose current-money
+  and `totalMoneyEarned` deltas are the same exact positive value. Requests cannot name criteria, thresholds or dataset
+  partitions. Crossed thresholds come from `GrandpaEvaluationGoalEvaluator.MoneyThresholds` and each receives its own
+  Teacher goal context, terminal assertion and comparison receipt.
+- A three-partition fixture crossing only 50,000 proves that the five higher thresholds remain uncredited and that a
+  forged criterion attribution is rejected on replay. Fixture coverage is not production evidence, so the formal gate
+  remains 2/19 and unauthorized. The next bounded slice closes the earn-money fresh-save recurrence and opportunity-
+  cost dependencies before collecting production partition evidence.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

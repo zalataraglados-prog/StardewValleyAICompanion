@@ -12,6 +12,9 @@ public static class GoalMethodTeacherCoverageSourceKinds
 
     public const string SkullKeyTerminalInteractionCorpus =
         "skull_key_terminal_interaction_corpus";
+
+    public const string MoneyThresholdProgressionCorpus =
+        "money_threshold_progression_corpus";
 }
 
 public static class GoalMethodTeacherCoverageGoalIds
