@@ -41,6 +41,10 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
         Assert.Contains("targetTerrainFeatureAfter == expectedTerrainFeatureAfter", source, StringComparison.Ordinal);
         Assert.Contains("ClearanceOutputDeltaMatches(", source, StringComparison.Ordinal);
         Assert.Contains("active.Lifecycle.Advance(ObserveNativeToolAction())", source, StringComparison.Ordinal);
+        Assert.Contains("active.SwingCount == 1", source, StringComparison.Ordinal);
+        Assert.Contains("TreeMossNativeToolTraceMatches(", source, StringComparison.Ordinal);
+        Assert.Contains("before.Length == after.Length", source, StringComparison.Ordinal);
+        Assert.Contains(":foraging_delta=0:moss_stat_delta=0", source, StringComparison.Ordinal);
         Assert.DoesNotContain("ApplyClearanceTool", source, StringComparison.Ordinal);
         Assert.DoesNotContain("performToolAction(", source, StringComparison.Ordinal);
     }

@@ -23,7 +23,8 @@ namespace StardewAI.Core.Execution
                     "native_wild_tree_chop_drop" or
                     "native_radioactive_ore_node" or
                     "native_monster_drop_table" or
-                    "native_location_artifact_spot"))
+                    "native_location_artifact_spot" or
+                    "native_tree_moss_harvest"))
             {
                 reasons.Add("deferred_pickup_source_kind_unsupported");
                 return reasons.ToArray();
@@ -94,6 +95,19 @@ namespace StardewAI.Core.Execution
             else if (sourceKind == "native_monster_drop_table")
             {
                 ValidateDeferredMonsterDropPickup(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId,
+                    quality.Value,
+                    guaranteedMinimum.Value,
+                    reasons);
+            }
+            else if (sourceKind == "native_tree_moss_harvest")
+            {
+                ValidateDeferredTreeMossPickup(
                     snapshot,
                     targetX.Value,
                     targetY.Value,
@@ -263,6 +277,49 @@ namespace StardewAI.Core.Execution
             }
         }
 
+        private static void ValidateDeferredTreeMossPickup(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId,
+            int quality,
+            int guaranteedMinimum,
+            ICollection<string> reasons)
+        {
+            var tree = TerrainFeatureAt(snapshot, targetX, targetY);
+            if (!tree.HasValue ||
+                ReadString(tree.Value, "runtime_type") !=
+                    "StardewValley.TerrainFeatures.Tree" ||
+                ReadString(tree.Value, "moss_harvest_status") != "ready" ||
+                ReadString(
+                    tree.Value,
+                    "moss_harvest_output_projection_status") !=
+                    "exact_seedless_native_scythe_moss_branch")
+            {
+                reasons.Add("deferred_pickup_source_tree_moss_not_ready");
+                return;
+            }
+
+            if (!TreeMossDeclaresRouteSource(
+                    tree.Value,
+                    routeKind,
+                    sourceId,
+                    qualifiedItemId))
+            {
+                reasons.Add("deferred_pickup_authoritative_source_drifted");
+            }
+            if (quality != 0 ||
+                TreeMossGuaranteedQuantity(
+                    tree.Value,
+                    qualifiedItemId,
+                    quality) != guaranteedMinimum)
+            {
+                reasons.Add("deferred_pickup_guaranteed_output_drifted");
+            }
+        }
+
         private static JsonElement? TerrainFeatureAt(
             SnapshotEnvelope snapshot,
             int targetX,
@@ -355,6 +412,44 @@ namespace StardewAI.Core.Execution
             return outputs.EnumerateArray()
                 .Where(value => value.ValueKind == JsonValueKind.Object &&
                     ReadString(value, "qualifiedItemId") == qualifiedItemId &&
+                    ReadInt(value, "quality") >= minimumQuality)
+                .Sum(value => Math.Max(0, ReadInt(value, "quantity")));
+        }
+
+        private static bool TreeMossDeclaresRouteSource(
+            JsonElement tree,
+            string routeKind,
+            string sourceId,
+            string qualifiedItemId)
+        {
+            return tree.TryGetProperty(
+                    "moss_harvest_authoritative_route_sources",
+                    out var sources) &&
+                sources.ValueKind == JsonValueKind.Array &&
+                sources.EnumerateArray().Count(value =>
+                    value.ValueKind == JsonValueKind.Object &&
+                    ReadString(value, "route_kind") == routeKind &&
+                    ReadString(value, "source_id") == sourceId &&
+                    ReadString(value, "qualified_item_id") ==
+                        qualifiedItemId) == 1;
+        }
+
+        private static int TreeMossGuaranteedQuantity(
+            JsonElement tree,
+            string qualifiedItemId,
+            int minimumQuality)
+        {
+            if (!tree.TryGetProperty(
+                    "moss_harvest_output_items",
+                    out var outputs) ||
+                outputs.ValueKind != JsonValueKind.Array)
+            {
+                return 0;
+            }
+            return outputs.EnumerateArray()
+                .Where(value => value.ValueKind == JsonValueKind.Object &&
+                    ReadString(value, "qualifiedItemId") ==
+                        qualifiedItemId &&
                     ReadInt(value, "quality") >= minimumQuality)
                 .Sum(value => Math.Max(0, ReadInt(value, "quantity")));
         }

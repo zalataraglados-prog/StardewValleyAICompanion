@@ -845,7 +845,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 new[] { "harvest_ginger" }),
             ["native_tree_moss_harvest"] = new(
                 "Tree.CreateMossItem",
-                new[] { "harvest_tree_moss" })
+                new[] { "clear_obstacle_tile" })
         };
 
     private sealed record FixedNativeSource(

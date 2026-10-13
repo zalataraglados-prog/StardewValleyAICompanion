@@ -24,6 +24,15 @@ public sealed class TreeMossHarvestMainlineTests
         Assert.Equal("(O)Moss", candidate.QualifiedItemId);
         Assert.Contains(candidate.Parameters, value => value.Name == "clear_completion_mode" && value.Value == "tree_moss_removed");
         Assert.Contains(candidate.Parameters, value => value.Name == "required_tool_kind" && value.Value == "scythe");
+        Assert.Contains(candidate.Parameters, value => value.Name == "stand_tile_x" && value.Value == "11");
+        Assert.Contains(candidate.Parameters, value => value.Name == "stand_tile_y" && value.Value == "10");
+        Assert.Contains(candidate.Parameters, value => value.Name == "max_movement_tiles" && value.Value == "512");
+        Assert.Contains(candidate.Parameters, value => value.Name == "quantity" && value.Value == "2");
+        Assert.Contains(candidate.Parameters, value => value.Name == "expected_output_quality" && value.Value == "0");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "authoritative_route_sources_json" &&
+            value.Value.Contains("native_tree_moss_harvest", StringComparison.Ordinal) &&
+            value.Value.Contains("Tree.CreateMossItem", StringComparison.Ordinal));
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -118,6 +127,7 @@ public sealed class TreeMossHarvestMainlineTests
         "growth_stage":14,"health":10,"stump":false,"tapped":false,"has_moss":true,"has_seed":{{{hasSeed.ToString().ToLowerInvariant()}}},"was_shaken_today":false,"max_shake":0,
         "moss_harvest_status":"{{{status}}}","moss_harvest_completion_mode":"tree_moss_removed","moss_harvest_tool_slot_index":2,"moss_harvest_required_tool_kind":"scythe",
         "moss_harvest_quantity":{{{mossQuantity}}},"moss_harvest_output_items":[{"runtimeType":"StardewValley.Object","qualifiedItemId":"(O)Moss","quality":0,"unitStateSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","quantity":{{{mossQuantity}}}}],
+        "moss_harvest_authoritative_route_sources":[{"route_kind":"native_tree_moss_harvest","source_id":"Tree.CreateMossItem","qualified_item_id":"(O)Moss"}],
         "moss_harvest_output_projection_status":"exact_seedless_native_scythe_moss_branch","moss_harvest_moss_harvested_before":7,"moss_harvest_moss_harvested_after":{{{mossHarvestedAfter}}},
         "moss_harvest_foraging_experience_before":620,"moss_harvest_foraging_experience_after":{{{620 + mossQuantity}}},
         "moss_harvest_growth_stage_before":14,"moss_harvest_growth_stage_after":{{{growthStageAfter}}},"moss_harvest_health_before":10,"moss_harvest_health_after":10,

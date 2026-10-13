@@ -292,7 +292,9 @@ public static partial class AcquisitionRouteTargetDateProcessingBuilder
                     staticRoute.SourceId,
                     staticRoute.QualifiedItemId);
                 if (active.QualifiedItemId == staticRoute.QualifiedItemId &&
-                    routeMatches != true)
+                    routeMatches != true &&
+                    !AcquisitionOutputProof
+                        .HasCompleteAuthoritativeRouteEvidence(active))
                 {
                     blocking.Add(
                         "machine_active_output_source_unresolved:" +

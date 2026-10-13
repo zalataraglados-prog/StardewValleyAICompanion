@@ -664,6 +664,7 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 - 机械动作、路径、战斗微操和工具输入继续作为执行器校准，不进入策略模型自由输出。
 - 正式首选模型是 C# 结构化候选排序器；0.6B 级受约束神经模型仅作为新笔记本上的可选对照。
 - 完整工程包、退出条件、硬件边界和执行顺序以 [`FORMAL_FULL_TRAINING_READINESS_CN.md`](FORMAL_FULL_TRAINING_READINESS_CN.md) 为当前事实源。
+- 2026-10-14 Full Shipment 内部证据分母已经达到 `26/26`，这只解除该 criterion 的运行时样本阻塞，不代表 19 项爷爷评分 Teacher、语料分区、checkpoint、支持转移或所有引用 option 已整体准入。下一施工单位是现有只读 formal-admission reconciliation 的真实制品接线与阻塞清单，不再扩张 Full Shipment 采证分母。
 
 ### F. 演示验收
 - 可展示：

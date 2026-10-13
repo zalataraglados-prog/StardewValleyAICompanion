@@ -58,7 +58,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             reasons.Add("tree_moss_no_adjacent_route_stand_tile");
         }
 
-        var parameters = TreeMossHarvestParameters(feature, locationId, distance);
+        var parameters = TreeMossHarvestParameters(
+            feature,
+            locationId,
+            stand,
+            distance);
         reasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
         {
             OptionId = "executor.clear_obstacle",
@@ -92,14 +96,21 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
     }
 
-    private static SmallModelActionParameter[] TreeMossHarvestParameters(JsonElement feature, string locationId, int distance)
+    private static SmallModelActionParameter[] TreeMossHarvestParameters(
+        JsonElement feature,
+        string locationId,
+        CandidateTile? stand,
+        int distance)
     {
         return new[]
         {
             Parameter("target_location", locationId),
             Parameter("target_tile_x", ReadInt(feature, "tile_x").ToString()),
             Parameter("target_tile_y", ReadInt(feature, "tile_y").ToString()),
+            Parameter("stand_tile_x", stand?.X.ToString() ?? string.Empty),
+            Parameter("stand_tile_y", stand?.Y.ToString() ?? string.Empty),
             Parameter("route_distance_tiles", distance.ToString()),
+            Parameter("max_movement_tiles", "512"),
             Parameter("max_tool_swings", "1"),
             Parameter("clear_completion_mode", ReadString(feature, "moss_harvest_completion_mode")),
             Parameter("target_runtime_type", ReadString(feature, "runtime_type")),
@@ -107,6 +118,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("required_tool_kind", ReadString(feature, "moss_harvest_required_tool_kind")),
             Parameter("clear_output_projection_status", "exact"),
             Parameter("clear_output_items_json", JsonSerializer.Serialize(ReadArray(feature, "moss_harvest_output_items"))),
+            Parameter("authoritative_route_sources_json", JsonSerializer.Serialize(ReadArray(feature, "moss_harvest_authoritative_route_sources"))),
+            Parameter("quantity", ReadInt(feature, "moss_harvest_quantity").ToString()),
+            Parameter("expected_output_quality", "0"),
             Parameter("skill_experience_skill_id", "foraging"),
             Parameter("skill_experience_projection_status", "exact"),
             Parameter("skill_experience_on_success_min", ReadInt(feature, "moss_harvest_quantity").ToString()),
@@ -134,8 +148,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private static string TreeMossHarvestExpectedEffect(JsonElement feature, CandidateTile? stand)
     {
         var prefix = stand is null ? string.Empty : "move_to_adjacent=" + stand.X + "," + stand.Y + ";";
-        return prefix + string.Join(";", TreeMossHarvestParameters(feature, string.Empty, 0)
-            .Where(parameter => parameter.Name is not "target_location" and not "target_tile_x" and not "target_tile_y" and not "route_distance_tiles")
+        return prefix + string.Join(";", TreeMossHarvestParameters(feature, string.Empty, stand, 0)
+            .Where(parameter => parameter.Name is not "target_location" and not "target_tile_x" and not "target_tile_y" and not "stand_tile_x" and not "stand_tile_y" and not "route_distance_tiles")
             .Select(parameter => parameter.Name + "=" + parameter.Value));
     }
 

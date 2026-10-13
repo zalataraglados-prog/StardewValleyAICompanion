@@ -111,6 +111,8 @@ public sealed partial class CurrentLocationReadAdapter
             moss_harvest_required_tool_kind = mossHarvest.RequiredToolKind,
             moss_harvest_quantity = mossHarvest.MossQuantity,
             moss_harvest_output_items = mossHarvest.OutputItems,
+            moss_harvest_authoritative_route_sources =
+                mossHarvest.AuthoritativeRouteSources,
             moss_harvest_output_projection_status = mossHarvest.ProjectionStatus,
             moss_harvest_moss_harvested_before = mossHarvest.MossHarvestedBefore,
             moss_harvest_moss_harvested_after = mossHarvest.MossHarvestedAfter,

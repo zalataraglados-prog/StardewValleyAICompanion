@@ -412,6 +412,19 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             }
         }
 
+        if (route.RouteKind == "native_tree_moss_harvest" &&
+            currentRouteCandidates?.HasExactRouteCandidate(
+                route.RouteKind,
+                route.SourceId,
+                qualifiedItemId) == true)
+        {
+            return ResolveTreeMossWindow(
+                qualifiedItemId,
+                route,
+                currentRouteCandidates,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind == "harvests_as")
         {
             return ResolveCropWindows(

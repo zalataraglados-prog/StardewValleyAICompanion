@@ -20,6 +20,18 @@ public sealed partial class CurrentLocationReadAdapter
         var outputItems = mossStack > 0
             ? new[] { ClearanceOutputItemProjection.FromStandard("(O)Moss", mossStack) }
             : Array.Empty<ClearanceOutputItemProjection>();
+        var authoritativeRouteSources =
+            tree.GetType() == typeof(Tree) && outputItems.Length == 1
+                ? new object[]
+                {
+                    new
+                    {
+                        route_kind = "native_tree_moss_harvest",
+                        source_id = "Tree.CreateMossItem",
+                        qualified_item_id = "(O)Moss"
+                    }
+                }
+                : Array.Empty<object>();
         var status = tree.GetType() != typeof(Tree)
             ? "blocked_custom_tree_runtime_type"
             : tree.growthStage.Value < Tree.treeStage
@@ -56,7 +68,8 @@ public sealed partial class CurrentLocationReadAdapter
             tree.hasSeed.Value,
             tree.wasShakenToday.Value,
             "exact_seedless_native_scythe_moss_branch",
-            TreeMossHarvestNativeContract);
+            TreeMossHarvestNativeContract,
+            authoritativeRouteSources);
     }
 
     private sealed record TreeMossHarvestProjection(
@@ -77,5 +90,6 @@ public sealed partial class CurrentLocationReadAdapter
         bool HasSeedBefore,
         bool WasShakenTodayBefore,
         string ProjectionStatus,
-        string NativeContract);
+        string NativeContract,
+        object[] AuthoritativeRouteSources);
 }

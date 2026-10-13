@@ -472,14 +472,10 @@ public sealed partial class ModEntry : Mod
             : after == "clear";
         var mossStateMatched = !targetIsTreeMoss || TreeMossPostconditionsMatch(request, location, target, mossTree);
         var nativeTreeToolTraceMatched = !targetIsTreeMoss ||
-            !treeToolTrace.Any(entry => entry.StartsWith("removed:", StringComparison.Ordinal)) &&
-            treeToolTrace.Any(entry =>
-                entry.StartsWith("before:", StringComparison.Ordinal) &&
-                entry.Contains(":scythe=true:", StringComparison.Ordinal) &&
-                entry.Contains(":moss=true:", StringComparison.Ordinal)) &&
-            treeToolTrace.Any(entry =>
-                entry.StartsWith("after:remove=false:moss=false:", StringComparison.Ordinal) &&
-                entry.Contains(":moss_stat_delta=1", StringComparison.Ordinal));
+            active.SwingCount == 1 &&
+            TreeMossNativeToolTraceMatches(
+                treeToolTrace,
+                expectedForagingExperience);
         var verified = forcedBlockReason is null &&
             targetClearanceCompleted &&
             (!expectedForagingExperience.HasValue || foragingExperienceDelta == expectedForagingExperience.Value) &&
@@ -903,6 +899,41 @@ public sealed partial class ModEntry : Mod
             active.Location.terrainFeatures.TryGetValue(active.Target.ToVector2(), out var feature) &&
             ReferenceEquals(feature, active.MossTree) &&
             !active.MossTree.hasMoss.Value;
+    }
+
+    private static bool TreeMossNativeToolTraceMatches(
+        IReadOnlyList<string> trace,
+        int? expectedForagingExperience)
+    {
+        var before = trace
+            .Where(entry => entry.StartsWith("before:", StringComparison.Ordinal))
+            .ToArray();
+        var after = trace
+            .Where(entry => entry.StartsWith("after:", StringComparison.Ordinal))
+            .ToArray();
+        var effectiveAfterSuffix =
+            ":foraging_delta=" +
+            (expectedForagingExperience?.ToString(CultureInfo.InvariantCulture) ?? "unprojected") +
+            ":moss_stat_delta=1";
+
+        return trace.Count > 0 &&
+            string.Equals(trace[0], "begin", StringComparison.Ordinal) &&
+            !trace.Any(entry =>
+                entry.StartsWith("removed:", StringComparison.Ordinal) ||
+                entry.Contains("GodTool", StringComparison.OrdinalIgnoreCase)) &&
+            before.Length > 0 &&
+            before.Length == after.Length &&
+            before.All(entry => entry.Contains(":scythe=true:", StringComparison.Ordinal)) &&
+            before.Count(entry =>
+                entry.Contains(":moss=true:", StringComparison.Ordinal) &&
+                entry.Contains(":seed=false:", StringComparison.Ordinal)) == 1 &&
+            after.Count(entry =>
+                entry.StartsWith("after:remove=false:moss=false:", StringComparison.Ordinal) &&
+                entry.EndsWith(effectiveAfterSuffix, StringComparison.Ordinal)) == 1 &&
+            after.Where(entry => !entry.EndsWith(effectiveAfterSuffix, StringComparison.Ordinal))
+                .All(entry =>
+                    entry.StartsWith("after:remove=false:moss=false:", StringComparison.Ordinal) &&
+                    entry.EndsWith(":foraging_delta=0:moss_stat_delta=0", StringComparison.Ordinal));
     }
 
     private static bool TreeMossPostconditionsMatch(
