@@ -68,8 +68,8 @@
     },
     {
       "scenario": "shop_purchase_sample",
-      "requirement_id": "full_shipment:item:388",
-      "qualified_item_id": "(O)388",
+      "requirement_id": "full_shipment:item:380",
+      "qualified_item_id": "(O)380",
       "route_kind": "sells",
       "endpoint_option_id": "economy.buy_supplies",
       "run_batch": "high_risk",

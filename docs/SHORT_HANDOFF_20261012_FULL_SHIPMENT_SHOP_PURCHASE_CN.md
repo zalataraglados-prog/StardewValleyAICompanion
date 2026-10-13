@@ -38,4 +38,6 @@
 
 ## 下一步
 
-以 v8 的 fresh terminal、settlement、checkpoint 与 rollout proof 更新严格生产 evidence index，再按既定顺序进入社区中心奖励层。不要重复运行已通过的商店购买样本；不要提交或删除 `local-data/`。
+v8 商店证明已进入严格 production evidence index；当前索引为 `8/26`，共享 shipping/settlement 证明有效，剩余 `18` 层，正式训练仍未授权。Sap 也已按当前编译器语义完成原生重基，其 checkpoint 精确证明 `1/154`。
+
+下一固定任务是 `community_center_reward_sample`：代表目标为 `full_shipment:item:336 / (O)336 / creates_reward_item / bundle:Bulletin Board/33:reward`。继续复用既有 `community_center.donate_bundle_items`、DailyPlan、动作编译器和 `executor.claim_community_center_bundle_reward`，从透明快照绑定完成但未领奖的权威 bundle 与原生奖励菜单。不要重复运行已通过的商店购买样本；不要提交或删除 `local-data/`。

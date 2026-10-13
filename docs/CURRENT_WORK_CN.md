@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 商店证据入库与 Sap 结算证明重基
+
+- Full Shipment 运行时样本计划中的商店代表已从过时的 `full_shipment:item:388 / (O)388` 修正为原生 v8 实际验证的 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。`Test-FullShipmentRuntimeSamplePlan.ps1` 重新对账为精确 `26/26`，商店层候选路线包含已验证的 `full_shipment:full_shipment:item:380:0:10`。
+- 当前编译器增加队列内位置投影后，旧 Sap Teacher receipt 按完整编译语义正确失效。Sap 已从 fresh 隔离存档重新执行 acquisition、发货、回家、原生睡眠与次日结算；新 checkpoint 为 `prefix_proof_verified=true`、`verified_iteration_count=1`、`remaining_item_count=153`、`ready_for_next_iteration=true`。
+- Sap 回家后的快照处于淡入阶段，睡眠队列前快照已恢复玩家控制，两者相隔 `41` tick。两份快照的实际差异仅为淡入/控制门、功能投影 tick/指纹和机器探针缓存 tick；游戏内时间、位置、Full Shipment 进度及待结算 Sap 均未变化。recurrence verifier 不再错误要求这两个独立采样快照整份哈希相同，改为同时验证各自 state hash、tick 单调性、角色/存档身份、游戏内时间、位置、完整收集进度和精确待结算数量；位置、进度、发货箱或哈希漂移负例均失败关闭。
+- 严格 production evidence index 已从冻结原生证据重建为 `8/26`：共享 shipping/settlement 证明有效，商店购买已作为 `verified_exact_native_sample` 入库，剩余 `18` 层。高风险批次当前只缺 `community_center_reward_sample`；检查点位于 `F:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v4-20261013`。
+- 本轮原生 Sap 重基完成后，checkpoint 与 evidence export 均通过；随后 evidence preflight 只读冻结证据，没有重复运行商店样本。`formal_product_training_authorized=false` 保持不变。下一固定开发项为社区中心奖励层，之后再进入其余标准分层。
+
 ## 2026-10-12 #224 Teacher 构建去重与 Full Shipment 原生商店购买闭环
 
 - Grandpa 目标分母已按权威目录固定为 `19` 个评分准则、`11` 个根方法，不再把方法数误当准则数。Goal-method 对账 schema 升至 `v3`，新增 `10` 个推进方法族和 `19` 个准则视图，其中 Money、Friendship、Skill 共 `3` 个单调阈值族共享各自推进过程，同时保留每个准则的独立终态断言与 Teacher 目标上下文。
