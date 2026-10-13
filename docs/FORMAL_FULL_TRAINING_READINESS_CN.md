@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 当前准入基线
+
+- 当前代码已在全新 `E:` 隔离根重建 acquisition corpus、checkpoint 与支持转移证明，并重新执行正式准入总门。机器报告为 `blocked_open_formal_training_evidence`：promotion-grade coverage `2/19`，coverage-ready root method `1/11`，`formal_product_training_authorized=false`。
+- evidence-integrity 六门全部通过：19 项/21 分权威分母、三来源九行语料重放、非空 train/validation/test、checkpoint/corpus 绑定、holdout 重算和支持终端谱系 `6/6`。这批小语料只验证管线与证据约束，不能解释为正式 Product 数据规模充分。
+- Teacher 阻塞归并为 `dependency_graph_incomplete:15` 和 `evidence_not_connected:2`。运行时 promotion 阻塞归并为三个清障 executor 的透明读取/原生运行/five-gate 全局接线，以及三个社交 option 的内部执行管线。任何内部方法证据完成都必须进入全局 option inventory 后才算解除后者。
+- 后续按 method family 批量闭合，不再按 19 个 criterion 逐项重复施工。第一优先是通用单调阈值 source/progression contract 和 Money 六阈值试点；每个 criterion 保留独立 target、Teacher goal context、终态断言与 coverage row，runtime progression、Planner/Compiler/Executor、partition plumbing 和 proof substrate 只构建一次。
+- 正式报告：`E:\StardewAI-TestLab\artifacts\formal-training-admission-current-source-v1-20261014\formal-training-admission-reconciliation.json`。旧 2026-09-28 语料在当前回放器下出现确定性日历漂移，已失败关闭，不得拿旧汇总覆盖本基线。
+
 ## 2026-10-14 Full Shipment 运行时证据门已闭合
 
 - 权威静态分母保持 `154` 个需求、`641` 条来源、`26` 个执行签名层。当前严格索引为 `26/26`，`runtime_sample_evidence_complete=true`、`shared_shipping_evidence_verified=true`、缺失层 `0`；机器可读索引位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v38-20261014\runtime-sample-evidence-index.json`。

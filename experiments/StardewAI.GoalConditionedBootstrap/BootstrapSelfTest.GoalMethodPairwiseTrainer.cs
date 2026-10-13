@@ -294,17 +294,29 @@ internal static partial class BootstrapSelfTest
             "forged-source-goal-method-corpus-manifest.json");
         Write(forgedManifestPath, forgedManifest);
         var forgedSourceRejected = false;
+        string? forgedSourceFailure = null;
         try
         {
             new GoalMethodPairwiseTrainer().Train(
                 forgedManifestPath,
                 Path.Combine(outputRoot, "forged-goal-method-checkpoint.json"));
         }
-        catch (InvalidDataException)
+        catch (InvalidDataException exception)
         {
             forgedSourceRejected = true;
+            forgedSourceFailure = exception.Message;
         }
-        Require(forgedSourceRejected,
+        Require(forgedSourceRejected &&
+                forgedSourceFailure is not null &&
+                forgedSourceFailure.Contains(
+                    "Goal-method corpus source replay failed at index 0",
+                    StringComparison.Ordinal) &&
+                forgedSourceFailure.Contains(
+                    forgedManifest.Sources[0].RolloutId,
+                    StringComparison.Ordinal) &&
+                forgedSourceFailure.Contains(
+                    forgedManifest.Sources[0].ProofManifestPath,
+                    StringComparison.Ordinal),
             "Forged source digest entered the goal-method trainer.");
 
         var forgedEvaluation = new GoalMethodPairwiseCheckpointStore().Load(

@@ -27,7 +27,9 @@ public sealed partial class GoalMethodPairwiseTrainer
                 "Corpus is not admitted goal-method trainer input.");
         }
 
-        var verifiedSources = manifest.Sources.Select(VerifySource).ToArray();
+        var verifiedSources = manifest.Sources
+            .Select((source, index) => VerifySource(source, index))
+            .ToArray();
         var expectedRows = RebuildCorpusRows(verifiedSources);
         var cleanedRows = ReadRows(manifest.Cleaned, expectedPartition: null);
         RequireRowsEqual(
@@ -99,6 +101,26 @@ public sealed partial class GoalMethodPairwiseTrainer
     }
 
     private static VerifiedSource VerifySource(
+        AcquisitionRoutePortfolioSupervisionCorpusSourceDigest digest,
+        int sourceIndex)
+    {
+        try
+        {
+            return VerifySourceCore(digest);
+        }
+        catch (Exception exception) when (exception is
+            InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            throw new InvalidDataException(
+                "Goal-method corpus source replay failed at index " +
+                sourceIndex + ", rollout_id=" + digest.RolloutId +
+                ", proof_manifest=" + digest.ProofManifestPath + ". " +
+                exception.Message,
+                exception);
+        }
+    }
+
+    private static VerifiedSource VerifySourceCore(
         AcquisitionRoutePortfolioSupervisionCorpusSourceDigest digest)
     {
         foreach (var path in new[]

@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-14 正式训练准入重算与下一施工单位
+
+- 已使用当前 frontier 输入和当前代码重新生成三分区 acquisition 语料、checkpoint 与支持转移终端谱系，并完成只读 `build-goal-method-formal-training-admission-reconciliation`。报告位于 `E:\StardewAI-TestLab\artifacts\formal-training-admission-current-source-v1-20261014\formal-training-admission-reconciliation.json`；旧 2026-09-28 冻结语料因日历解析漂移已被拒绝，不能继续代表当前状态。
+- 当前机器结论为 `2/19` promotion-grade criterion、`1/11` coverage-ready root method；语料为 `3` 个来源、`9` 行，train/validation/test 各 `3` 行、各 `2` 个 pair，重算 validation/test accuracy 均为 `1.0`。支持转移终端谱系已从旧记录的 `5/5` 更新为 `6/6`。
+- 完整性、语料重放、三分区、checkpoint 绑定、holdout 重算、支持谱系与叶制品权限隔离均通过。Teacher 仍阻塞于 `dependency_graph_incomplete:15` 与 `evidence_not_connected:2`；所引用 option 的全局 promotion 库仍报告三个清障 executor 的透明读取/原生运行/five-gate 接线，以及三个社交 option 的内部执行管线缺口。Full Shipment 的 `26/26` 是该方法内部运行时样本分母，不能替代这次全局 option 对账。
+- 训练授权继续保持 `formal_product_training_authorized=false`。下一施工单位按 #224 的 method-family 顺序进入 Money 单调阈值族：复用一个 progression、候选分母、Teacher source adapter 与三分区管线，为六个 money criterion 生成独立目标上下文和终态视图；不得按六个 criterion 复制六套实现。与此同时先核对全局 option promotion 库为何尚未吸收现有清障证据，确认是接线缺口后复用既有执行器修正。
+- Goal-method corpus 重放失败现在会报告精确 source index、`rollout_id` 与 proof manifest 路径，同时继续失败关闭；这用于快速定位漂移，不放宽 digest、回放或授权规则。
+
 ## 2026-10-14 Full Shipment 运行时证据分母闭合
 
 - Full Shipment 权威清单保持 `154/154` 个需求、`641` 条来源、`26` 个执行签名层；严格 production evidence index 已达到 `26/26`，共享 shipping/settlement 证明有效，缺失层为 `0`。索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v38-20261014`。
