@@ -41,6 +41,7 @@ internal static partial class BootstrapSelfTest
             "Untampered live ranking did not reproduce from the transparent snapshot.");
         VerifyMonsterDropRankingRebuild();
         VerifyArtifactSpotCurrentRouteCandidateIndex();
+        VerifyCommunityCenterRewardCurrentRouteCandidateIndex();
         var driftedRanking = ranked.Select(CloneCandidate).ToArray();
         driftedRanking[0].Parameters = driftedRanking[0].Parameters
             .Select(parameter => parameter.Name == "target_tile_x"
@@ -1241,6 +1242,204 @@ internal static partial class BootstrapSelfTest
             if (File.Exists(path))
                 File.Delete(path);
         }
+    }
+
+    private static void VerifyCommunityCenterRewardCurrentRouteCandidateIndex()
+    {
+        var completePath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-community-center-reward-index-" +
+            Guid.NewGuid() + ".json");
+        var incompletePath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-community-center-reward-incomplete-" +
+            Guid.NewGuid() + ".json");
+        try
+        {
+            File.WriteAllText(
+                completePath,
+                JsonSerializer.Serialize(
+                    CommunityCenterRewardDispatchSnapshot(
+                        exactDenominator: true),
+                    JsonDefaults.Options));
+            File.WriteAllText(
+                incompletePath,
+                JsonSerializer.Serialize(
+                    CommunityCenterRewardDispatchSnapshot(
+                        exactDenominator: false),
+                    JsonDefaults.Options));
+
+            var index = AcquisitionCurrentRouteCandidateIndex.Read(
+                completePath);
+            Require(index.TryFind(
+                        "creates_reward_item",
+                        "bundle:Bulletin Board/33:reward",
+                        "(O)336",
+                        out var candidates,
+                        out var blockingReasons) &&
+                    blockingReasons.Length == 0 &&
+                    candidates.Length == 1 &&
+                    candidates[0].OptionId ==
+                        "community_center.donate_bundle_items" &&
+                    candidates[0].LocationId == "CommunityCenter" &&
+                    candidates[0].TargetTileX == 46 &&
+                    candidates[0].TargetTileY == 12 &&
+                    candidates[0].StandTileX == 46 &&
+                    candidates[0].StandTileY == 13 &&
+                    candidates[0].EstimatedTicks == 180 &&
+                    candidates[0].EnergyCost == 0,
+                "The exact current Community Center reward did not enter " +
+                "the shared authoritative-route candidate index.");
+
+            var route = new AcquisitionRequirementRouteLowering(
+                RouteKind: "creates_reward_item",
+                SourceId: "bundle:Bulletin Board/33:reward",
+                SourceAsset: "Data/Bundles",
+                SourcePath: "payload.Bulletin Board/33[reward]",
+                SupervisionMode: "policy_option",
+                UncertaintyMode: "deterministic_fresh_receipt",
+                RequiredDownstreamDependencyAxes: Array.Empty<string>(),
+                EndpointOptionIds: new[]
+                {
+                    "community_center.donate_bundle_items"
+                },
+                SupportingOptionIds: Array.Empty<string>(),
+                RuntimeAdmissionReady: true,
+                TeacherAdmissionReady: true);
+            var resolved = AcquisitionRouteCalendarResolutionBuilder
+                .ResolveCommunityCenterRewardWindow(
+                    "(O)336",
+                    route,
+                    index,
+                    224);
+            Require(resolved.Status ==
+                        "resolved_static_source_window_target_date_pending" &&
+                    resolved.EvidenceClass ==
+                        "current_native_community_center_reward_candidate_calendar" &&
+                    resolved.Windows.Length == 1 &&
+                    resolved.Windows[0].LocationId == "CommunityCenter" &&
+                    resolved.Windows[0].RequiresExistingLiveCandidateMatch &&
+                    !resolved.Windows[0].StochasticOutcome,
+                "The exact current Community Center reward did not receive " +
+                "a deterministic current-candidate calendar window.");
+            var tampered = AcquisitionRouteCalendarResolutionBuilder
+                .ResolveCommunityCenterRewardWindow(
+                    "(O)336",
+                    route with
+                    {
+                        SourcePath =
+                            "payload.Bulletin Board/34[reward]"
+                    },
+                    index,
+                    224);
+            Require(tampered.Status ==
+                        "blocked_authoritative_community_center_reward_source_invalid" &&
+                    tampered.BlockingReasons.SequenceEqual(new[]
+                    {
+                        "community_center_reward_authoritative_source_path_mismatch"
+                    }),
+                "A tampered Community Center reward source path did not " +
+                "fail closed.");
+
+            var incomplete = AcquisitionCurrentRouteCandidateIndex.Read(
+                incompletePath);
+            Require(!incomplete.TryFind(
+                        "creates_reward_item",
+                        "bundle:Bulletin Board/33:reward",
+                        "(O)336",
+                        out _,
+                        out var incompleteReasons) &&
+                    incompleteReasons.Contains(
+                        "current_community_center_reward_terminal_evidence_incomplete",
+                        StringComparer.Ordinal),
+                "An incomplete Community Center denominator was accepted as " +
+                "terminal current-candidate evidence.");
+        }
+        finally
+        {
+            if (File.Exists(completePath))
+                File.Delete(completePath);
+            if (File.Exists(incompletePath))
+                File.Delete(incompletePath);
+        }
+    }
+
+    private static SnapshotEnvelope CommunityCenterRewardDispatchSnapshot(
+        bool exactDenominator)
+    {
+        const string json = """
+        {
+          "player":{
+            "location_id":{"value":"CommunityCenter","status":"available"},
+            "tile_x":{"value":46,"status":"available"},
+            "tile_y":{"value":13,"status":"available"},
+            "inventory":{"value":[],"status":"available"}
+          },
+          "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
+          "locations":{"collision_grid":{"value":{"location_id":"CommunityCenter","width":60,"height":40,"notable_tiles":[]},"status":"available"}},
+          "world_progress":{"community_center":{"value":{
+            "route_state":"undecided",
+            "can_read_junimo_text":true,
+            "community_center_is_current_location":true,
+            "bundle_data_row_count":1,
+            "projected_bundle_row_count":1,
+            "unavailable_bundle_row_count":0,
+            "bundle_rows":[{
+              "projection_status":"exact",
+              "bundle_data_key":"Bulletin Board/33",
+              "bundle_id":33,
+              "area_id":5,
+              "area_name":"Bulletin Board",
+              "reward_available":true,
+              "note_tile_x":46,
+              "note_tile_y":11,
+              "reward":{
+                "projection_status":"exact",
+                "action_status":"ready",
+                "claim_mode":"junimo_note_present_button",
+                "item_id":"336",
+                "qualified_item_id":"(O)336",
+                "runtime_type":"StardewValley.Object",
+                "stack":5,
+                "quality":0,
+                "inventory_accepts_reward":true,
+                "interaction_tile_x":46,
+                "interaction_tile_y":12,
+                "inventory_item_total_before":0,
+                "inventory_item_total_after":5,
+                "authoritative_route_sources":[{
+                  "route_kind":"creates_reward_item",
+                  "source_id":"bundle:Bulletin Board/33:reward",
+                  "qualified_item_id":"(O)336"
+                }]
+              }
+            }]
+          },"status":"available"}}
+        }
+        """;
+        var state = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(
+            json,
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+                "Community Center reward dispatch self-test snapshot is null.");
+        if (!exactDenominator)
+        {
+            var progress = JsonNode.Parse(
+                state["world_progress"].GetRawText())!.AsObject();
+            progress["community_center"]!["value"]![
+                "unavailable_bundle_row_count"] = 1;
+            state["world_progress"] = JsonSerializer.SerializeToElement(
+                progress,
+                JsonDefaults.Options);
+        }
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-10-13T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
     }
 
     private static SnapshotEnvelope ArtifactSpotDispatchSnapshot()

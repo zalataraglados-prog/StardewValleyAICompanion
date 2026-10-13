@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 社区中心奖励闭环与高风险批次完成
+
+- `creates_reward_item` 现已贯通当前透明候选、日历、地点、材料、日内时间/能量、Teacher、动作队列与原生执行绑定。代表路线固定为 `full_shipment:item:336 / (O)336 / full_shipment:full_shipment:item:336:0:0 / bundle:Bulletin Board/33:reward`，继续复用唯一的 `community_center.donate_bundle_items -> executor.claim_community_center_bundle_reward` 链，没有第二套奖励执行器。
+- 解析器只在当前快照精确枚举出奖励候选且 `world_progress.community_center` 的 bundle 分母完整时启用；缺少当前候选的旧快照继续保留原 `blocked_pending_route_kind_calendar_parser` 结果。该兼容门避免全局日历 JSON 无意义漂移，也使现有八份冻结原生证明在当前代码下原样通过严格重建。
+- 原生样本从完成但未领奖的 Bulletin Board bundle 出发，奖励状态由 `true -> false`，Gold Bar `(O)336` 由 `0 -> 5`，动作回执为 `applied`。完整 rollout proof 为 `verified_complete_rollout_proof_chain`，portfolio 完成与 proof chain 均已验证；正式训练标志仍为 `false`。
+- 回放脚本现会在非 Sap acquisition sample 成功后验证冻结源哈希并直接生成样本摘要，不再误入 Sap 专属投递/睡眠路径。里程碑脚本在高风险证据已齐时写入 `high_risk_evidence_verified`，并把空待办规范化为真正的空数组。
+- 严格 production evidence index 已推进到 `9/26`，共享 shipping/settlement 证明继续有效，剩余 `17` 层；七个 high-risk 样本已全部完成。机器可读检查点位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v5-20261013`。下一固定开发项是标准批次首项 `parsnip_harvest_sample`，不得重复运行已通过的高风险样本。
+
 ## 2026-10-13 Full Shipment 商店证据入库与 Sap 结算证明重基
 
 - Full Shipment 运行时样本计划中的商店代表已从过时的 `full_shipment:item:388 / (O)388` 修正为原生 v8 实际验证的 `full_shipment:item:380 / (O)380 / sells / shop:Blacksmith`。`Test-FullShipmentRuntimeSamplePlan.ps1` 重新对账为精确 `26/26`，商店层候选路线包含已验证的 `full_shipment:full_shipment:item:380:0:10`。

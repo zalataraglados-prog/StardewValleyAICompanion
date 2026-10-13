@@ -34,6 +34,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        AcquisitionCurrentRouteCandidateIndex? currentRouteCandidates,
         bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
@@ -53,6 +54,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     shops,
                     machines,
                     accessConstraints,
+                    currentRouteCandidates,
                     currentGeodeDropEnabled,
                     deadlineTotalDayExclusive);
                 continue;
@@ -87,6 +89,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                             shops,
                             machines,
                             accessConstraints,
+                            currentRouteCandidates,
                             currentGeodeDropEnabled,
                             deadlineTotalDayExclusive);
                     }
@@ -105,6 +108,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        AcquisitionCurrentRouteCandidateIndex? currentRouteCandidates,
         bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
@@ -171,6 +175,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                         shops,
                         machines,
                         accessConstraints,
+                        currentRouteCandidates,
                         currentGeodeDropEnabled,
                         deadlineTotalDayExclusive);
                 }
@@ -196,6 +201,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        AcquisitionCurrentRouteCandidateIndex? currentRouteCandidates,
         bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
@@ -208,6 +214,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             shops,
             machines,
             accessConstraints,
+            currentRouteCandidates,
             currentGeodeDropEnabled,
             deadlineTotalDayExclusive);
         var occurrenceId = string.Join(
@@ -277,9 +284,21 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         JsonElement shops,
         JsonElement machines,
         JsonElement accessConstraints,
+        AcquisitionCurrentRouteCandidateIndex? currentRouteCandidates,
         bool currentGeodeDropEnabled,
         int deadlineTotalDayExclusive)
     {
+        if (route.RouteKind == "creates_reward_item" &&
+            currentRouteCandidates?.HasRouteKindCandidate(
+                "creates_reward_item") == true)
+        {
+            return ResolveCommunityCenterRewardWindow(
+                qualifiedItemId,
+                route,
+                currentRouteCandidates,
+                deadlineTotalDayExclusive);
+        }
+
         if (route.RouteKind == "harvests_as")
         {
             return ResolveCropWindows(

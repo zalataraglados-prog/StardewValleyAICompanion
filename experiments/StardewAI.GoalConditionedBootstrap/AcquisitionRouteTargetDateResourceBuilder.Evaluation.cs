@@ -16,7 +16,7 @@ public static partial class AcquisitionRouteTargetDateResourceBuilder
         ResourceClassByRouteKind = new Dictionary<string, string>(
             StringComparer.Ordinal)
         {
-            ["creates_reward_item"] = DeferredInput,
+            ["creates_reward_item"] = NoInput,
             ["harvests_as"] = CropSeed,
             ["machine_output"] = MachineInput,
             ["native_bush_shake"] = NoInput,
