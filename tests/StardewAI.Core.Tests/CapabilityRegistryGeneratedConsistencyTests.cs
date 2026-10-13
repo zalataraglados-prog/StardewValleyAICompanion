@@ -763,6 +763,53 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void ObstacleExecutorsExposeExistingFiveGateEvidenceWithoutBecomingPolicyCandidates()
+    {
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["executor.clear_obstacle"] = "EVD-189",
+            ["executor.break_farm_resource_clump"] = "EVD-112",
+            ["executor.break_current_location_resource_clump"] = "EVD-212"
+        };
+
+        foreach (var pair in expected)
+        {
+            var declaration = OptionCapabilityRegistrySource.GetRequired(pair.Key);
+
+            Assert.False(declaration.PolicyTrainingCandidate);
+            Assert.Equal(
+                OptionTrainingEligibility.EvaluationOnly,
+                declaration.TrainingEligibility);
+            Assert.Equal(
+                TrainingEvidenceGateStatus.RuntimeVerified,
+                declaration.ReadTrainingGate);
+            Assert.Equal(
+                TrainingEvidenceGateStatus.RuntimeVerified,
+                declaration.CandidateTrainingGate);
+            Assert.Equal(
+                TrainingEvidenceGateStatus.RuntimeVerified,
+                declaration.CompilerTrainingGate);
+            Assert.Equal(
+                TrainingEvidenceGateStatus.RuntimeVerified,
+                declaration.RuntimeTrainingGate);
+            Assert.Equal(
+                TrainingEvidenceGateStatus.RuntimeVerified,
+                declaration.OutputTrainingGate);
+            Assert.Equal(new[] { pair.Value }, declaration.ReadEvidenceIds);
+            Assert.Equal(new[] { pair.Value }, declaration.CandidateEvidenceIds);
+            Assert.Equal(new[] { pair.Value }, declaration.CompilerEvidenceIds);
+            Assert.Equal(new[] { pair.Value }, declaration.RuntimeEvidenceIds);
+            Assert.Equal(new[] { pair.Value }, declaration.OutputEvidenceIds);
+            Assert.Contains(
+                TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
+                declaration.TrainingExclusionReasons);
+            Assert.DoesNotContain(
+                pair.Key,
+                OptionCapabilityRegistrySource.TrainingAllowlist);
+        }
+    }
+
+    [Fact]
     public void SpawnedObjectAdmissionRequiresExactNativeMatrixAndEvd211Tests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.collect_spawned_objects");
