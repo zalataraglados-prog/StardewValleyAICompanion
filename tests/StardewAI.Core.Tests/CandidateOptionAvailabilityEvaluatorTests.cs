@@ -28,21 +28,33 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.True(option.ExecutorEnabled);
     }
 
-    [Theory]
-    [InlineData("social.talk_npc")]
-    [InlineData("social.gift_npc")]
-    [InlineData("quest.advance")]
-    public void ExecutorEnabledFalseForIncompleteHighLevelIds(string optionId)
+    [Fact]
+    public void ExecutorEnabledFalseForIncompleteQuestHighLevelId()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
-            .Evaluate(Snapshot("{}"), new[] { optionId }, includeExecutorCalibrationOptions: true)
+            .Evaluate(Snapshot("{}"), new[] { "quest.advance" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
         Assert.False(option.ExecutorEnabled);
     }
 
+    [Theory]
+    [InlineData("social.talk_npc")]
+    [InlineData("social.gift_npc")]
+    [InlineData("social.advance_partnership")]
+    public void ExecutorEnabledUsesDailyPlanPipelineForSocialHighLevelIds(string optionId)
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(Snapshot("{}"), new[] { optionId }, includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        Assert.True(option.ExecutorEnabled);
+        Assert.True(option.PreviewOnly);
+        Assert.False(option.ProductExecutorSupported);
+    }
+
     [Fact]
-    public void ExecutorSocialInteractIsNotAdvertisedAsExecutorEnabled()
+    public void ExecutorSocialInteractIsAdvertisedAsExecutorEnabled()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(Snapshot("{}"), new[] { "executor.social_interact" }, includeExecutorCalibrationOptions: true)
