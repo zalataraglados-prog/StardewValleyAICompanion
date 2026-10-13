@@ -686,8 +686,11 @@ the structured shop, item, slot, quantity, unit price and total value to one fre
 episode and an equal positive Money/totalMoneyEarned delta. Shipping settlement binds one native
 sleep queue and fresh queue receipt to the unique prior-night shipping scope; duplicate physical
 bin endpoints are counted once, and both money measures must increase by that exact pending value.
-These transitions prove settlement only. They do not by themselves prove reserve safety,
-opportunity cost, recurrence continuity, or the Year 3 lower-bound schedule.
+These transitions now feed a typed recurrence verifier which requires one save/player identity,
+complete checkpoint continuity, exact aggregate revenue and a strict pre-Year-3 deadline. This
+proves continuity only for the included revenue edges. It does not prove a fresh-save origin,
+reserve safety, opportunity cost, intervening acquisition/processing support, or the Year 3
+lower-bound schedule.
 
 The `raise_friendships` reverse route is also typed but remains `in_progress`. Grandpa's
 friendship population is not the raw save dictionary: native `Utility.ForEachVillager` excludes

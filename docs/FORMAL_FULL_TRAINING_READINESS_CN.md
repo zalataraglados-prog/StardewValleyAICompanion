@@ -1,10 +1,16 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue 连续前缀
+
+- `MoneyRevenueRecurrenceVerifier` 现将即时商店销售与原生隔夜发货结算组合为同 save/player、状态哈希连续且严格早于 Year 3 截止的类型化前缀。每个公开 transition record 都会重验金额、日期、shipping scope 与 kind 不变量，不能靠调用方声明绕过原生边界。
+- 前缀输出保留首尾状态、首尾日数、现金与累计收入、总收益、两类边计数及完整 transition 序列。断链、伪造增量和截止日外记录 fail closed。
+- 这仍只是连续收益证据结构，不是 fresh-save 百万元 schedule，也没有证明保留任务/收集/生产所需物品后的机会成本。下一步是 reserve-aware alternative comparison；正式训练准入不变。
+
 ## 2026-10-14 原生发货结算证据复用
 
 - 新增共享 `NativeShippingSettlementEvidenceVerifier`，把单一 sleep queue、fresh queue receipt 和精确 shipping Money progression 合并为一个 fail-closed 证明边界。
 - Full Shipment 普通/终局 settlement 已复用该边界。只有 `player.money` 与 `player.total_money_earned` 都按前夜唯一 shipping scope 的 pending value 精确增长，才可继续进入各自的 collection/achievement 终态验证。
-- 该层与 `NativeShopSaleEpisodeVerifier` 共同覆盖 Revenue recurrence 的两种结算方式；仍缺少连续 fresh-save prefix 与 reserve-aware Teacher counterfactual，因此训练准入状态不变。
+- 该层与 `NativeShopSaleEpisodeVerifier` 共同覆盖 Revenue recurrence 的两种结算方式；后续类型化连续前缀已能组合两类边，但仍缺少 fresh-save schedule 与 reserve-aware Teacher counterfactual，因此训练准入状态不变。
 
 ## 2026-10-14 原生销售证据复用
 

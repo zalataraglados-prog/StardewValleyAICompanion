@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue 连续前缀
+
+- 新增 `MoneyRevenueRecurrenceVerifier`，把已验真的即时商店销售与原生隔夜发货结算编排为同一 save/player 的类型化收益前缀。相邻边必须完整复用上一边的 `MoneyRevenueCheckpoint`，因此状态哈希、日数、现金、累计收入和 shipping scope 不能在边界间静默漂移。
+- 验证器不会信任调用方构造的公开 record：每条边都会重新核对 kind、正收益 delta、日推进、pending shipping 消耗、Year 3 截止和聚合总额。hermetic 已覆盖 320g 双类型前缀，并拒绝断链哈希、伪造 delta 与截止日外边。
+- 该类型证明“收益边可以连续组合”，但尚未证明从新存档取得这些边，也未覆盖 acquisition/reserve/processing 间的机会成本。正式状态仍为 promotion-grade `2/19`、root method `1/11`、`formal_product_training_authorized=false`；下一切片接入 reserve-aware alternative comparison。
+
 ## 2026-10-14 通用原生 shipping-settlement evidence
 
 - 单项原生 sleep queue、queue execution receipt 与隔夜 Money progression 现由 `NativeShippingSettlementEvidenceVerifier` 联合验真；`executor.sleep` 和带 `execution_option_id=executor.sleep` 的 `recovery.stabilize_day` 继续复用同一执行器。
