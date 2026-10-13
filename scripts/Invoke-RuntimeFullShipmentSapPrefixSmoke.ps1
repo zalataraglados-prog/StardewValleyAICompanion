@@ -65,6 +65,11 @@ if (-not (Test-Path -LiteralPath $runtimeEvidenceCommon -PathType Leaf)) {
     throw "Runtime evidence helper is missing: $runtimeEvidenceCommon"
 }
 . $runtimeEvidenceCommon
+$deployCommon = Join-Path $PSScriptRoot "Deploy.Common.ps1"
+if (-not (Test-Path -LiteralPath $deployCommon -PathType Leaf)) {
+    throw "Deploy helper is missing: $deployCommon"
+}
+. $deployCommon
 $shopPurchaseHelper = Join-Path $PSScriptRoot `
     "lib\RuntimeShopPurchaseAcquisition.ps1"
 if (-not (Test-Path -LiteralPath $shopPurchaseHelper -PathType Leaf)) {
@@ -838,6 +843,51 @@ $loopDll = Join-Path $ProjectRoot `
     "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
 $script:bootstrapDll = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
+if ($SkipBuild) {
+    $buildConfigurationInputs = @(
+        (Join-Path $ProjectRoot "Directory.Build.props"),
+        (Join-Path $ProjectRoot "Directory.Build.targets"),
+        (Join-Path $ProjectRoot "Directory.Packages.props")
+    )
+    foreach ($buildOutput in @(
+        [pscustomobject]@{
+            Path = $backendDll
+            InputRoots = @(
+                (Join-Path $ProjectRoot "src\StardewAI.Backend"),
+                (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
+                (Join-Path $ProjectRoot "src\StardewAI.Core")
+            )
+        },
+        [pscustomobject]@{
+            Path = $productDll
+            InputRoots = @(
+                (Join-Path $ProjectRoot "tools\StardewAI.ProductExecutor"),
+                (Join-Path $ProjectRoot "src\StardewAI.Contracts")
+            )
+        },
+        [pscustomobject]@{
+            Path = $loopDll
+            InputRoots = @(
+                (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop"),
+                (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
+                (Join-Path $ProjectRoot "src\StardewAI.Core")
+            )
+        },
+        [pscustomobject]@{
+            Path = $script:bootstrapDll
+            InputRoots = @(
+                (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap"),
+                (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
+                (Join-Path $ProjectRoot "src\StardewAI.Core")
+            )
+        }
+    )) {
+        Assert-StardewAIBuildOutputFresh `
+            -OutputPath $buildOutput.Path `
+            -InputRoots $buildOutput.InputRoots `
+            -InputFiles $buildConfigurationInputs
+    }
+}
 $runtimeQueueContext = New-RuntimeQueueContext -LoopDll $loopDll `
     -ArtifactDirectory $artifactDirectory -BackendUrl $backendUrl `
     -SnapshotUrl $snapshotUrl -SnapshotProfile $SnapshotProfile `

@@ -185,6 +185,60 @@ public sealed partial class ModEntry : Mod
         return false;
     }
 
+    private static bool MoveFixtureFarmerToLocationPerimeter(
+        GameLocation location,
+        XnaRectangle bounds,
+        out Point standTile,
+        out Point interactionTile,
+        out string blockReason)
+    {
+        Game1.currentLocation = location;
+        Game1.player.currentLocation = location;
+        var left = bounds.Left / Game1.tileSize;
+        var right = (bounds.Right - 1) / Game1.tileSize;
+        var top = bounds.Top / Game1.tileSize;
+        var bottom = (bounds.Bottom - 1) / Game1.tileSize;
+        var candidates = new List<(Point Stand, Point Interaction)>();
+        for (var x = left; x <= right; x++)
+        {
+            for (var y = top; y <= bottom; y++)
+            {
+                var interaction = new Point(x, y);
+                foreach (var stand in Neighbors(interaction))
+                {
+                    var standCenterX = stand.X * Game1.tileSize + Game1.tileSize / 2;
+                    var standCenterY = stand.Y * Game1.tileSize + Game1.tileSize / 2;
+                    if (!bounds.Contains(standCenterX, standCenterY) &&
+                        IsTileOnMap(location, stand) &&
+                        IsTileWalkable(location, stand))
+                    {
+                        candidates.Add((stand, interaction));
+                    }
+                }
+            }
+        }
+
+        if (candidates.Count > 0)
+        {
+            var selected = candidates
+            .OrderBy(candidate => ManhattanDistance(Game1.player.TilePoint, candidate.Stand))
+            .ThenBy(candidate => candidate.Stand.Y)
+            .ThenBy(candidate => candidate.Stand.X)
+            .First();
+            standTile = selected.Stand;
+            interactionTile = selected.Interaction;
+            blockReason = string.Empty;
+            Game1.player.Position = new Vector2(standTile.X * Game1.tileSize, standTile.Y * Game1.tileSize);
+            Game1.player.faceDirection(DirectionTo(standTile, interactionTile));
+            return true;
+        }
+
+        standTile = Point.Zero;
+        interactionTile = Point.Zero;
+        blockReason = "fixture_no_collision_safe_perimeter_tile";
+        return false;
+    }
+
     private TrainingExecutionResult ExecuteSetupWateringTarget(TrainingExecutionRequest request)
     {
         var reasons = ValidateExecutionRequest(request);

@@ -91,6 +91,12 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 staticRoute,
                 state,
                 currentRouteCandidates),
+            "native_bush_shake" or
+            "native_tea_bush_harvest" => EvaluateBushHarvest(
+                route,
+                staticRoute,
+                state,
+                currentRouteCandidates),
             "native_wild_tree_tapper_output" =>
                 EvaluateCurrentRouteCollection(
                     route,

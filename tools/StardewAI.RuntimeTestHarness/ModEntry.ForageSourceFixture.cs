@@ -237,10 +237,11 @@ public sealed partial class ModEntry
             Game1.player.team.collectedNutTracker.Add(nutKey);
         }
         location.largeTerrainFeatures.Add(bush);
-        var moved = MoveFixtureFarmerToLocationAdjacent(
+        var moved = MoveFixtureFarmerToLocationPerimeter(
             location,
-            target,
+            bush.getBoundingBox(),
             out var stand,
+            out var interaction,
             out var moveReason);
         var projection = ProjectBushHarvest(location, bush);
         var expectedStatus = profile switch
@@ -257,7 +258,10 @@ public sealed partial class ModEntry
                 expectedStatus,
                 StringComparison.Ordinal) &&
             !string.IsNullOrWhiteSpace(projection.QualifiedItemId) &&
-            AreAdjacent(stand, target) &&
+            AreAdjacent(stand, interaction) &&
+            bush.getBoundingBox().Contains(
+                interaction.X * Game1.tileSize + Game1.tileSize / 2,
+                interaction.Y * Game1.tileSize + Game1.tileSize / 2) &&
             !bush.getBoundingBox().Contains(
                 stand.X * Game1.tileSize + Game1.tileSize / 2,
                 stand.Y * Game1.tileSize + Game1.tileSize / 2);

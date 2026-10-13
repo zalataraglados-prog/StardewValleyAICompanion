@@ -40,6 +40,7 @@ internal static partial class BootstrapSelfTest
         Require(rebuilt.Length == ranked.Length && rebuildReasons.Length == 0,
             "Untampered live ranking did not reproduce from the transparent snapshot.");
         VerifyMonsterDropRankingRebuild();
+        VerifyBushCurrentRouteCandidateIndex();
         VerifyArtifactSpotCurrentRouteCandidateIndex();
         VerifyCommunityCenterRewardCurrentRouteCandidateIndex();
         var driftedRanking = ranked.Select(CloneCandidate).ToArray();
@@ -150,14 +151,17 @@ internal static partial class BootstrapSelfTest
         animalCandidate.OptionId = "farm.collect_animal_products";
         animalCandidate.Kind = "collect_animal_product";
         animalCandidate.QualifiedItemId = "(O)184";
-        animalCandidate.Parameters = animalCandidate.Parameters.Concat(new[]
-        {
-            new SmallModelActionParameter
+        animalCandidate.Parameters = animalCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
             {
-                Name = "authoritative_route_sources_json",
-                Value = "[{\"route_kind\":\"native_farm_animal_produce\",\"source_id\":\"farm_animal:White Cow:0\",\"qualified_item_id\":\"(O)184\"}]"
-            }
-        }).ToArray();
+                new SmallModelActionParameter
+                {
+                    Name = "authoritative_route_sources_json",
+                    Value = "[{\"route_kind\":\"native_farm_animal_produce\",\"source_id\":\"farm_animal:White Cow:0\",\"qualified_item_id\":\"(O)184\"}]"
+                }
+            }).ToArray();
         var animalRequirement = requirement with
         {
             QualifiedItemId = "(O)184",
@@ -219,8 +223,10 @@ internal static partial class BootstrapSelfTest
         broadChopCandidate.OptionId = "foraging.chop_wild_tree";
         broadChopCandidate.Kind = "clear_obstacle_tile";
         broadChopCandidate.QualifiedItemId = string.Empty;
-        broadChopCandidate.Parameters = broadChopCandidate.Parameters.Concat(
-            new[]
+        broadChopCandidate.Parameters = broadChopCandidate.Parameters
+            .Where(parameter => parameter.Name !=
+                "authoritative_route_sources_json")
+            .Concat(new[]
             {
                 Parameter(
                     "authoritative_route_sources_json",
@@ -1205,6 +1211,83 @@ internal static partial class BootstrapSelfTest
         RuntimeAdmissionReady: true,
         TeacherAdmissionReady: true);
 
+    private static void VerifyBushCurrentRouteCandidateIndex()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-bush-index-" + Guid.NewGuid() + ".json");
+        try
+        {
+            File.WriteAllText(
+                path,
+                JsonSerializer.Serialize(
+                    AcquisitionDispatchSnapshot(),
+                    JsonDefaults.Options));
+            var index = AcquisitionCurrentRouteCandidateIndex.Read(path);
+            Require(index.TryFind(
+                        "native_bush_shake",
+                        "Bush.GetShakeOffItem",
+                        "(O)296",
+                        out var candidates,
+                        out var blockingReasons) &&
+                    blockingReasons.Length == 0 &&
+                    candidates.Length == 1 &&
+                    candidates[0].OptionId == "foraging.harvest_bushes" &&
+                    candidates[0].LocationId == "Forest" &&
+                    candidates[0].TargetTileX == 12 &&
+                    candidates[0].TargetTileY == 10 &&
+                    candidates[0].StandTileX == 11 &&
+                    candidates[0].StandTileY == 10 &&
+                    candidates[0].RouteDistanceTiles == 1 &&
+                    candidates[0].EstimatedTicks == 240 &&
+                    candidates[0].EnergyCost == 0,
+                "The exact current bush did not enter the shared " +
+                "authoritative-route candidate index.");
+
+            var resolved = AcquisitionRouteCalendarResolutionBuilder
+                .ResolveBushWindow(
+                    "(O)296",
+                    BushLowering(),
+                    index,
+                    224);
+            Require(resolved.Status ==
+                        "resolved_static_source_window_target_date_pending" &&
+                    resolved.EvidenceClass ==
+                        "current_native_bush_candidate_calendar" &&
+                    resolved.Windows.Length == 1 &&
+                    resolved.Windows[0].LocationId == "Forest" &&
+                    resolved.Windows[0].Season == "spring" &&
+                    resolved.Windows[0].FirstTotalDay == 15 &&
+                    resolved.Windows[0].LastTotalDay == 15 &&
+                    resolved.Windows[0].RequiresExistingLiveCandidateMatch &&
+                    !resolved.Windows[0].StochasticOutcome,
+                "The exact current bush did not receive a deterministic " +
+                "current-candidate calendar window.");
+
+            var tampered = AcquisitionRouteCalendarResolutionBuilder
+                .ResolveBushWindow(
+                    "(O)296",
+                    BushLowering() with
+                    {
+                        SourcePath = "Season.Fall => (O)296"
+                    },
+                    index,
+                    224);
+            Require(tampered.Status ==
+                        "blocked_authoritative_bush_source_invalid" &&
+                    tampered.BlockingReasons.SequenceEqual(new[]
+                    {
+                        "bush_authoritative_source_identity_invalid"
+                    }),
+                "A tampered bush source path did not fail closed.");
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
     private static void VerifyArtifactSpotCurrentRouteCandidateIndex()
     {
         var snapshot = ArtifactSpotDispatchSnapshot();
@@ -1496,6 +1579,12 @@ internal static partial class BootstrapSelfTest
     {
         const string json = """
         {
+          "time": {
+            "total_days":{"value":15,"status":"available"},
+            "season":{"value":"spring","status":"available"},
+            "day":{"value":16,"status":"available"},
+            "time":{"value":600,"status":"available"}
+          },
           "player": {
             "location_id":{"value":"Forest","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x":{"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -1508,6 +1597,7 @@ internal static partial class BootstrapSelfTest
             "large_terrain_features":{"value":[{"tile_x":12,"tile_y":10,"runtime_type":"StardewValley.TerrainFeatures.Bush","bounding_tile_width":2,"bounding_tile_height":1,
               "is_bush":true,"bush_size":1,"bush_kind":"ordinary_berry","ready_for_harvest":true,"in_bloom":true,"tile_sheet_offset_before":1,"tile_sheet_offset_expected_after":0,
               "bush_harvest_status":"ready","bush_projection_status":"exact_from_native_bush_shake","bush_output_qualified_item_id":"(O)296",
+              "bush_authoritative_route_sources":[{"route_kind":"native_bush_shake","source_id":"Bush.GetShakeOffItem","qualified_item_id":"(O)296"}],
               "bush_output_quantity_min":1,"bush_output_quantity_max":1,"bush_output_quality":0,
               "bush_foraging_experience_on_success_min":7,"bush_foraging_experience_on_success_max":7,
               "bush_nut_key":"","bush_nut_collected_before":false,"bush_nut_collected_expected_after":false}],

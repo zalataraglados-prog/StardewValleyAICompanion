@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-10-13 Full Shipment 标准批次：原生浆果灌木闭环
+
+- `berry_bush_harvest_sample` 已从冻结源存档的隔离副本完成完整原生采证。Teacher 精确选择 `full_shipment:item:296 / (O)296 / native_bush_shake / Bush.GetShakeOffItem / full_shipment:full_shipment:item:296:0:0`，继续复用唯一的 `foraging.harvest_bushes -> executor.harvest_bush` 链，没有建立第二套收获执行器。
+- 透明桥现在为当前可收获灌木暴露精确权威来源；当前候选索引、日历、地点、日内时间/能量、Teacher、调度编译和执行绑定均按同一候选身份闭合。普通浆果和茶树只在当前快照存在精确候选时进入对应日历；来源、物品、地点、格子或参数漂移继续失败关闭。
+- 夹具站位按灌木真实像素包围盒外围计算，避免两格宽灌木把锚点相邻格误当成可站立格。原生 `checkAction` 后，执行器先验证灌木状态、掉落守恒、经验和核桃分支，再复用现有 BFS 与自然磁吸语义收集落在灌木另一侧的碎片；不会直接写背包或调用直接收集 API。最终动作在 `52` tick 内取得 `(O)296 x3`，回执为 `applied/verified`；候选按包含自然拾取的保守 `180` tick 交互预算参与日内时间校验。
+- 完整 rollout 状态为 `verified_complete_rollout_proof_chain`，原生收获、精确库存增量、装箱、睡眠、次日 Full Shipment 结算和 proof chain 均已验证。冻结源目录哈希保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 严格 production evidence index 已推进到 `11/26`，剩余 `15` 层，共享 shipping/settlement 证明有效，`formal_product_training_authorized=false`。机器可读检查点位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v17-20261013`；本轮原生证明位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-berry-bush-v16-20261013\runtime-full-shipment-evidence-berry-bush-v16-20261013`。
+- `-SkipBuild` 现在会校验 Backend、ProductExecutor、LiveTrainingLoop 与 GoalConditionedBootstrap 的 Release 输出新鲜度，防止在线排名器与离线验证器因旧二进制产生证据形状分裂。当前主要开发性能瓶颈仍是既有证据索引和 1599 条路线的目标日期轴跨进程重复重算；后续优化必须沿 #195/#200/#201/#202/#211 的依赖哈希与可失效 proof 复用方向推进，不能削弱 fresh snapshot、原生执行或严格回执。
+- 下一固定项为 `ginger_harvest_sample / native_ginger_harvest`。应先复用现有 `foraging.harvest_ginger -> executor.harvest_ginger` 链并只补当前严格采证缺口；不得重跑已通过的 11 个分层，也不得把隔离重放摘要当作正式证据。
+
 ## 2026-10-13 Full Shipment 标准批次：普通作物收获
 
 - standard 批次首项 `parsnip_harvest_sample` 已从冻结源存档的隔离副本重新完成原生采证。Teacher 保持选择 `full_shipment:item:24 / (O)24 / harvests_as / full_shipment:full_shipment:item:24:0:0`，动作队列复用唯一的 `farm.maintain_crops -> executor.harvest_crop` 链。
