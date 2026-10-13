@@ -1,5 +1,4 @@
 using System.Globalization;
-using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.Training;
@@ -105,40 +104,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Money-threshold corpus source ID is required.");
         }
-        var episodePath = RequiredFile(
-            source.ExecutionEpisodePath,
-            "Money-threshold execution episode");
-        var episode = CurrentTeacherFrontierSupport.Read<
-            PlanExecutionEpisodeEnvelope>(
-            episodePath,
-            "Money-threshold execution episode");
-        ValidateEpisodeHeader(episode);
-        var beforePath = RequiredFile(
-            episode.BeforeSnapshotPath,
-            "Money-threshold before snapshot");
-        var afterPath = RequiredFile(
-            episode.AfterSnapshotPath,
-            "Money-threshold after snapshot");
-        var resultPath = RequiredFile(
-            episode.ExecutionResultPath,
-            "Money-threshold execution result");
-        var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            beforePath,
-            "Money-threshold before snapshot");
-        var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            afterPath,
-            "Money-threshold after snapshot");
-        var result = CurrentTeacherFrontierSupport.Read<TrainingExecutionResult>(
-            resultPath,
-            "Money-threshold execution result");
-        ValidateSnapshot(before, "before");
-        ValidateSnapshot(after, "after");
-        ValidateEpisodeBinding(episode, before, after, result);
-
-        var progression =
-            MoneyRevenueProgressionVerifier.VerifyImmediateShopSale(
-                before,
-                after);
+        var sale = NativeShopSaleEpisodeVerifier.Verify(
+            source.ExecutionEpisodePath);
+        var progression = sale.Progression;
         var saveId = progression.Before.SaveId;
         var playerId = progression.Before.PlayerId;
         var totalDay = progression.Before.TotalDay;
@@ -147,9 +115,6 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var earnedBefore = progression.Before.TotalMoneyEarned;
         var earnedAfter = progression.After.TotalMoneyEarned;
         var earnedDelta = progression.TotalMoneyEarnedDelta;
-        ValidateQueueItem(episode, result, earnedDelta);
-        ValidateExecutionResult(result, episode, moneyBefore, moneyAfter);
-
         var crossed = GrandpaEvaluationGoalEvaluator.MoneyThresholds
             .Where(threshold => earnedBefore < threshold.Target &&
                 earnedAfter >= threshold.Target)
@@ -176,24 +141,23 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var rowId = StableId(new
         {
             source_id = source.SourceId,
-            before_state_hash = before.StateHash,
-            after_state_hash = after.StateHash,
-            execution_episode_sha256 =
-                CurrentTeacherFrontierSupport.HashFile(episodePath)
+            before_state_hash = progression.Before.StateHash,
+            after_state_hash = progression.After.StateHash,
+            execution_episode_sha256 = sale.ExecutionEpisodeSha256
         });
         return new MoneyThresholdTeacherEvidenceRow(
             rowId,
             source.SourceId,
-            episodePath,
-            CurrentTeacherFrontierSupport.HashFile(episodePath),
-            beforePath,
-            CurrentTeacherFrontierSupport.HashFile(beforePath),
-            before.StateHash,
-            afterPath,
-            CurrentTeacherFrontierSupport.HashFile(afterPath),
-            after.StateHash,
-            resultPath,
-            CurrentTeacherFrontierSupport.HashFile(resultPath),
+            sale.ExecutionEpisodePath,
+            sale.ExecutionEpisodeSha256,
+            sale.BeforeSnapshotPath,
+            sale.BeforeSnapshotSha256,
+            progression.Before.StateHash,
+            sale.AfterSnapshotPath,
+            sale.AfterSnapshotSha256,
+            progression.After.StateHash,
+            sale.ExecutionResultPath,
+            sale.ExecutionResultSha256,
             splitKey,
             PolicyTrajectoryDatasetBuilder.PartitionFor(splitKey),
             saveId,

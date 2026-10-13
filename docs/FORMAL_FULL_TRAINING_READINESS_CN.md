@@ -1,5 +1,10 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 原生销售证据复用
+
+- `NativeShopSaleEpisodeVerifier` 现为所有即时商店收益的共享原生证据入口，统一绑定 effective queue item、结构化商品/商店/槽位/数量/单价/总价、execution result 以及 fresh Money progression。
+- Money threshold corpus 只从该证据派生 criterion-local crossed-threshold views。普通未跨阈值销售不会进入 threshold coverage，但可供下一步连续收益 recurrence 使用，避免为了覆盖每一笔销售复制 corpus schema 或执行器。
+
 ## 2026-10-14 Revenue recurrence 状态边界
 
 - 新增共享 `MoneyRevenueProgressionVerifier`，作为 shop immediate settlement 与 native shipping day settlement 的唯一金额 progression 投影。Money 阈值语料已复用该层，后续 recurrence 不再重新实现 actor/day/money/totalMoneyEarned 读取。
