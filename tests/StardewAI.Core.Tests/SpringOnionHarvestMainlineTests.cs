@@ -44,6 +44,17 @@ public sealed class SpringOnionHarvestMainlineTests
             StringComparison.Ordinal);
         Assert.Contains("skill_experience_skill_id=foraging", candidate.ExpectedEffect, StringComparison.Ordinal);
         Assert.Contains("skill_experience_on_success_min=3", candidate.ExpectedEffect, StringComparison.Ordinal);
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "authoritative_route_sources_json" &&
+            value.Value.Contains(
+                "native_spring_onion_harvest",
+                StringComparison.Ordinal));
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "stand_tile_x" && value.Value == "10");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "stand_tile_y" && value.Value == "10");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "route_distance_tiles" && value.Value == "0");
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -64,6 +75,30 @@ public sealed class SpringOnionHarvestMainlineTests
             value.Name == "forage_crop" && value.Value == "true");
         Assert.Contains(item.NormalizedCommand.Parameters, value =>
             value.Name == "forage_crop_id" && value.Value == "1");
+    }
+
+    [Fact]
+    public void TransparentBridgePublishesOnlyTheExactNativeSpringOnionRoute()
+    {
+        var source = FarmReadAdapterSources.Read(
+            "FarmReadAdapter.CropsWorld.cs");
+
+        Assert.Contains(
+            "crop.GetType() == typeof(Crop)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "harvestIdentity.QualifiedItemId == \"(O)399\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "route_kind = \"native_spring_onion_harvest\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "source_id = \"Crop.harvest\"",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -148,6 +183,7 @@ public sealed class SpringOnionHarvestMainlineTests
           "tile_x":{{{tileX}}},"tile_y":{{{tileY}}},"ready_for_harvest":true,
           "harvest_item_id":"399","harvest_item_qualified_id":"(O)399","harvest_item_category":-81,
           "harvest_item_projection_status":"exact_from_decompiled_native_spring_onion_branch",
+          "harvest_authoritative_route_sources":[{"route_kind":"native_spring_onion_harvest","source_id":"Crop.harvest","qualified_item_id":"(O)399"}],
           "harvest_context_tags":["forage_item"],"harvest_min_stack":1,"harvest_method":"Grab",
           "forage_crop":true,"forage_crop_id":"1",
           "harvest_experience_skill_id":"foraging","harvest_experience_on_success_min":3,
