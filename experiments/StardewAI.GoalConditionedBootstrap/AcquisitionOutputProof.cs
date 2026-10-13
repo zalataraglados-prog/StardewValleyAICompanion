@@ -42,6 +42,17 @@ internal static class AcquisitionOutputProof
                 source.QualifiedItemId == qualifiedItemId);
     }
 
+    public static bool HasCompleteAuthoritativeRouteEvidence(
+        AcquisitionMachineActiveOutputState? output)
+    {
+        return output is not null &&
+            output.RouteSources.Length > 0 &&
+            output.RouteSources.All(source =>
+                !string.IsNullOrWhiteSpace(source.RouteKind) &&
+                !string.IsNullOrWhiteSpace(source.SourceId) &&
+                source.QualifiedItemId == output.QualifiedItemId);
+    }
+
     public static bool CanGuaranteeQuality(
         int provenMinimumQuality,
         int requiredMinimumQuality)

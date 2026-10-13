@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Full Shipment 运行时证据分母闭合
+
+- Full Shipment 权威清单保持 `154/154` 个需求、`641` 条来源、`26` 个执行签名层；严格 production evidence index 已达到 `26/26`，共享 shipping/settlement 证明有效，缺失层为 `0`。索引根为 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v38-20261014`。
+- 最后一层 `tree_moss_harvest_sample / full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest` 已闭合。唯一动作链为 `foraging.harvest_tree_moss -> executor.clear_obstacle -> executor.pickup_debris`：镰刀仍由原生工具周期执行，落地物继续复用共享自然拾取执行器，没有新增第二套采收或拾取系统。
+- 正式树苔 proof 位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-tree-moss-harvest-v7-20261014`。队列精确包含移动、一次清障和一次拾取；取得 `(O)Moss x1`，冻结源存档 SHA-256 保持 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
+- 重建历史层时发现旧 `machine_item_query_output_sample` 已被当前路线身份规则淘汰。处理层现在把“同物品但具有完整、不同权威来源”的当前机器产出判为确定性 route miss；只有来源缺失或不完整时才以 `machine_active_output_source_unresolved` 失败关闭。新的 v3 proof 位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-machine-item-query-output-v3-20261014`。
+- `formal_product_training_authorized=false` 仍是正确结果。`26/26` 只闭合 Full Shipment 内部运行时样本分母；下一固定任务是运行并修正现有 `build-goal-method-formal-training-admission-reconciliation`，从当前 19 项爷爷评分目标、语料、三分区、checkpoint、支持转移和所引用执行器生成真实阻塞清单。任何叶子证据均不得自行授权训练。
+
 ## 2026-10-14 Full Shipment 标准批次：共享机器产出族闭环
 
 - `machine_output_sample`、`machine_flavored_output_sample`、`machine_item_query_output_sample` 与 `solar_panel_output_sample` 已从冻结源存档的隔离副本完成原生采证。四层都复用唯一的 `farm.collect_machine_outputs -> executor.collect_machine_output` 链，没有复制候选、编译器或执行器。

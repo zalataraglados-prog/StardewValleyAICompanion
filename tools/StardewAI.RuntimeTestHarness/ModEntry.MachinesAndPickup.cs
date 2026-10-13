@@ -57,7 +57,8 @@ public sealed partial class ModEntry : Mod
             "native_wild_tree_chop_drop" or
             "native_radioactive_ore_node" or
             "native_monster_drop_table" or
-            "native_location_artifact_spot";
+            "native_location_artifact_spot" or
+            "native_tree_moss_harvest";
         if (string.IsNullOrWhiteSpace(request.QualifiedItemId))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));

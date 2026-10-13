@@ -304,6 +304,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             .HasRouteKindCandidate("native_tea_bush_harvest") == true;
         var currentSolarPanelOutputEnabled = currentRouteCandidates?
             .HasRouteKindCandidate("native_solar_panel_output") == true;
+        var currentTreeMossHarvestEnabled = currentRouteCandidates?
+            .HasRouteKindCandidate("native_tree_moss_harvest") == true;
         var routes = BuildRoutes(
             lowering,
             communityCenterAuthority,
@@ -387,6 +389,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                     : Array.Empty<string>())
                 .Concat(currentSolarPanelOutputEnabled
                     ? new[] { "native_solar_panel_output" }
+                    : Array.Empty<string>())
+                .Concat(currentTreeMossHarvestEnabled
+                    ? new[] { "native_tree_moss_harvest" }
                     : Array.Empty<string>())
                 .Order(StringComparer.Ordinal)
                 .ToArray(),

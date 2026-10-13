@@ -557,6 +557,47 @@ internal static partial class BootstrapSelfTest
                         "machine_active_output_source_unresolved:",
                         StringComparison.Ordinal)),
             "Unattributed automatic machine output did not fail closed.");
+
+        var attributedOtherMachine = new[]
+        {
+            MachineProcessingRow(
+                automaticRoute,
+                2,
+                6,
+                30,
+                automaticRoute.QualifiedItemId,
+                includeActiveSource: true)
+        };
+        attributedOtherMachine[0][
+            "active_output_authoritative_route_sources"] = new object[]
+        {
+            new
+            {
+                route_kind = "native_machine_item_query_output",
+                source_id = "machine:(BC)128:rule:0:output:2",
+                qualified_item_id = automaticRoute.QualifiedItemId
+            }
+        };
+        attributedOtherMachine[0]["fixture_active_output_route_matches"] =
+            false;
+        var attributedOther = AcquisitionRouteTargetDateProcessingBuilder
+            .EvaluateMachine(
+                MachineProcessingReservation(
+                    automaticRoute,
+                    attributedOtherMachine),
+                automaticRoute,
+                MachineProcessingState(900, attributedOtherMachine),
+                0);
+        Require(attributedOther.ProcessingLeadTimeAxisResolved &&
+                attributedOther.ProcessingLeadTimeMatchesTargetDate == false &&
+                attributedOther.BlockingReasons.Length == 0 &&
+                attributedOther.Evaluations.Single().MachineScheduleBinding is
+                    { ActiveOutputRouteMatches: false },
+            "Exact differently attributed machine output did not resolve as a route miss: " +
+            attributedOther.ProcessingLeadTimeAxisStatus + ":" +
+            attributedOther.ProcessingLeadTimeMatchesTargetDate + ":" +
+            string.Join(",", attributedOther.BlockingReasons) + ":" +
+            string.Join(",", attributedOther.NonMatchingReasons));
     }
 
 }

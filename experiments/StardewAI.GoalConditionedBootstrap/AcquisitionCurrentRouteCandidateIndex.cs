@@ -20,6 +20,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         "foraging.harvest_fruit_tree",
         "foraging.harvest_spring_onions",
         "foraging.harvest_ginger",
+        "foraging.harvest_tree_moss",
         "foraging.excavate_artifact_spots",
         "fishing.service_fish_ponds",
         "processing.crack_geode"
@@ -90,7 +91,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v13",
+            "v14",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -604,6 +605,20 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 return reasons.Count == 0;
             }
             reasons.Add("current_wild_tree_product_terminal_evidence_incomplete");
+            return false;
+        }
+        if (routeKind == "native_tree_moss_harvest")
+        {
+            if (TryField(
+                    "current_location",
+                    "terrain_features",
+                    out var features) &&
+                FieldStatus(features) == "available" &&
+                FieldValue(features).ValueKind == JsonValueKind.Array)
+            {
+                return reasons.Count == 0;
+            }
+            reasons.Add("current_tree_moss_terminal_evidence_incomplete");
             return false;
         }
         if (routeKind == "native_monster_drop_table")

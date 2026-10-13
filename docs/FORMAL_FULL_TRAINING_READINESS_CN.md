@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Full Shipment 运行时证据门已闭合
+
+- 权威静态分母保持 `154` 个需求、`641` 条来源、`26` 个执行签名层。当前严格索引为 `26/26`，`runtime_sample_evidence_complete=true`、`shared_shipping_evidence_verified=true`、缺失层 `0`；机器可读索引位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v38-20261014\runtime-sample-evidence-index.json`。
+- 最后一层树苔藓已通过 `foraging.harvest_tree_moss -> executor.clear_obstacle -> executor.pickup_debris` 完成原生证据。第一段只发出一次原生镰刀挥击，第二段复用共享 debris BFS/自然拾取；没有直接写树状态、世界碎片或背包，也没有新增第二套执行器。
+- 历史 `native_machine_item_query_output` 层已在当前代码下重新生成 v3 proof。具有完整但不同权威来源的同物品机器产出是确定性路线不匹配，不再被误报为来源缺失；真正缺失或不完整的来源继续失败关闭。
+- Full Shipment 证据完成不等于正式训练授权。`formal_product_training_authorized=false` 保持不变，完整三年 recurrence 仍只作为最终验收与玩法保留，不是训练准入的重复采证要求。
+- 下一步必须使用现有只读 `build-goal-method-formal-training-admission-reconciliation` 重建独立准入报告。该报告要求 19 项权威爷爷评分分母、可重放 acquisition corpus、非空 train/validation/test、与语料绑定的 checkpoint、重算 holdout、五类支持转移终端谱系，以及全部引用 option 的透明读取、原生运行时、五门和内部执行链均通过。报告最多进入独立 promotion review，不能自行把训练标记改为 true。
+
 ## 2026-10-05 Full Shipment 采证计划准入门
 
 - 当前权威静态清单已重建为 `154` 个需求、`641` 条来源、`26` 个执行签名层，静态可编译完整且 blocker 为 `0`；机器对账后的采证计划为 `26/26`，其中高风险首批为 `7` 层。
