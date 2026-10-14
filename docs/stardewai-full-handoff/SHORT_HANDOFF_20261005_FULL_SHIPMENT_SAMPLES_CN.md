@@ -12,11 +12,11 @@
 - 首个 standard 场景还有第二道阶段门：7 个 high-risk 摘要必须齐全，并由同一 production evidence index 逐层验明 exact native sample。直接运行 `standard` 或通过 `all/all_missing` 跨阶段都不能绕过；断点续跑若已从 standard 开始，只重建一次索引并同时复核 anchor 与 high-risk。
 - SSH 或无 Explorer 同会话时使用 milestone 的 `-EvidencePreflightOnly`；它会构建 index、执行相同阶段断言并在 runner 循环前退出。不要把 `-PlanOnly` 的 `planned_only` checkpoint 当成 anchor 验真结果。
 - 共享 runner 已配置 `26/26` 个权威运行时入口。最后一层为 `location_fish:Town:3 -> (O)388`，使用完整透明钓获分布和既有原生 `catch_fish` 链。
-- `26/26` 是编排入口覆盖，不是生产证据覆盖。runner 的场景无关编排拆分已经完成；当前可独立验收的新版本生产证明仍只有 Sap 和放射性矿石。下一步先导入并独立重验这两个 anchor，再执行高风险与标准里程碑抽样，最后统一重建 production evidence index；训练准入仍为 `false`。
+- `26/26` 是编排入口覆盖，不是生产证据覆盖。runner 的场景无关编排拆分已经完成；当时可独立验收的新版本生产证明仍只有 Sap 和放射性矿石。下一步先导入并独立重验这两个 anchor，再执行高风险与标准里程碑抽样，最后统一重建 production evidence index；训练准入仍为 `false`。
 
 ## 接续状态更新
 
-- 当前权威分母为 26 层，runner 已配置 `25/26` 个入口。新增代表为 `bundle:Bulletin Board/33:reward -> (O)336` 的 `creates_reward_item`，复用现有社区中心原生领奖链；严格生产证据没有因此增长。
+- 当时权威分母为 26 层，runner 已配置 `25/26` 个入口。新增代表为 `bundle:Bulletin Board/33:reward -> (O)336` 的 `creates_reward_item`，复用现有社区中心原生领奖链；严格生产证据没有因此增长。
 - 剩余入口严格为 1 层：`native_location_fish_spawn`。配置入口完成不等于原生生产证明；训练准入仍为 `false`。
 
 ## 最新可接续状态
@@ -27,7 +27,7 @@
 - 防风草重放 `runtime-full-shipment-parsnip-refresh-20261005-192710` 因测试收益低被主动停止；产物保留但不可计入生产索引。本轮不宣称 `3/26`，正式训练仍禁用。
 - 远端包装器已取消错误的 `-SkipBuild` 使用。仓库部署脚本同时新增陈旧 DLL 拒绝和部署 SHA-256 校验；Core game-free `212/212`，部署守卫 `3/3`。
 - 后续默认只跑变更链路的原生回放和共享离线回归；26 层索引留到分层/日历/训练准入里程碑统一重建。不要再次为无关小改跑完整日历和全部样本。
-- 当前权威分母为 26 层，runner 已配置 `24/26` 个入口。晶球掉落之外，已增加 `shop:Carpenter -> (O)388` 的 `sells`；严格生产证据没有因此增长。
+- 当时权威分母为 26 层，runner 已配置 `24/26` 个入口。晶球掉落之外，已增加 `shop:Carpenter -> (O)388` 的 `sells`；严格生产证据没有因此增长。
 - 剩余入口严格为 2 层：奖励物和地点鱼。配置入口完成不等于原生生产证明；训练准入仍为 `false`。
 
 ## 树苔藓入口
@@ -39,7 +39,7 @@
 
 - runner 现为每个样本声明预期 `route_kind`，并在 execution binding 生成后、进入游戏执行前核对 `requirement_id / qualified_item_id / route_kind` 完整三元组；resume 端继续独立复核。
 - 同物品多来源不再可能仅因 requirement 相同而串层。远端守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。
-- 该修正本身没有产生新原生证据；随后新增苔藓入口后，当前十四个待证样本、生产 `2/26`。
+- 该修正本身没有产生新原生证据；随后新增苔藓入口后，当时十四个待证样本、生产 `2/26`。
 
 ## 当时事实（历史快照）
 
