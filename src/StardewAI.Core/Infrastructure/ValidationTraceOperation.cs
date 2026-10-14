@@ -18,6 +18,7 @@ public sealed class ValidationTraceOperation : IDisposable
     private readonly string[] inputPaths = Array.Empty<string>();
     private readonly long wallStarted;
     private readonly TimeSpan? cpuStarted;
+    private readonly long? allocatedBytesStarted;
     private List<string>? artifactIds;
     private long bytesRead;
     private long hashBytes;
@@ -48,6 +49,8 @@ public sealed class ValidationTraceOperation : IDisposable
         wallStarted = Stopwatch.GetTimestamp();
         if (sampleCpu)
             cpuStarted = Process.GetCurrentProcess().TotalProcessorTime;
+        allocatedBytesStarted =
+            ValidationTraceSession.TryGetCurrentThreadAllocatedBytes();
     }
 
     public bool IsEnabled => session is not null;
@@ -113,6 +116,15 @@ public sealed class ValidationTraceOperation : IDisposable
                         cpuStarted.Value).TotalMilliseconds) *
                     ValidationTraceSession.OperationCpuSamplingRate
                 : 0;
+            var allocatedBytesCompleted =
+                ValidationTraceSession.TryGetCurrentThreadAllocatedBytes();
+            var allocatedBytes = allocatedBytesStarted.HasValue &&
+                allocatedBytesCompleted.HasValue
+                    ? Math.Max(
+                        0,
+                        allocatedBytesCompleted.Value -
+                        allocatedBytesStarted.Value)
+                    : 0;
             session.Record(new ValidationTraceOperationRecord
             {
                 InvocationCount = 1,
@@ -133,6 +145,7 @@ public sealed class ValidationTraceOperation : IDisposable
                 CpuSampleCount = cpuStarted.HasValue ? 1 : 0,
                 BytesRead = bytesRead,
                 HashBytes = hashBytes,
+                AllocatedBytes = allocatedBytes,
                 JsonParseMilliseconds = ValidationTraceSession.Round(
                     jsonParseMilliseconds),
                 MaterializeMilliseconds = ValidationTraceSession.Round(

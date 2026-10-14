@@ -203,6 +203,45 @@ catch (Exception ex)
 }
 finally
 {
+    try
+    {
+        if (validationTrace is not null && invocationReadSession is not null)
+        {
+            validationTrace.SetInvocationReadSessionMetrics(
+                invocationReadSession.Snapshot());
+        }
+        if (validationTrace is not null && deterministicBuildSession is not null)
+        {
+            var snapshot = deterministicBuildSession.Snapshot();
+            validationTrace.SetDeterministicBuildSessionMetrics(
+                new ValidationTraceDeterministicBuildSessionMetrics
+                {
+                    SessionVersion = snapshot.SessionVersion,
+                    Enabled = snapshot.Enabled,
+                    BuildCount = snapshot.BuildCount,
+                    CacheHitCount = snapshot.CacheHitCount,
+                    EntryCount = snapshot.EntryCount,
+                    ReferenceEntryCount = snapshot.ReferenceEntryCount,
+                    CachedBytes = snapshot.CachedBytes,
+                    MaxEntryBytes = snapshot.MaxEntryBytes,
+                    Producers = snapshot.Producers.Select(producer =>
+                        new ValidationTraceDeterministicProducerMetrics
+                        {
+                            ProducerId = producer.ProducerId,
+                            BuildCount = producer.BuildCount,
+                            CacheHitCount = producer.CacheHitCount,
+                            CachedBytes = producer.CachedBytes,
+                            MaxEntryBytes = producer.MaxEntryBytes,
+                            ReferenceBuildCount = producer.ReferenceBuildCount,
+                            ReferenceHitCount = producer.ReferenceHitCount
+                        }).ToArray()
+                });
+        }
+    }
+    catch
+    {
+        // Diagnostics must never change command semantics.
+    }
     deterministicBuildSession?.Dispose();
     invocationReadSession?.Dispose();
     validationTrace?.Complete(Environment.ExitCode);

@@ -17,6 +17,8 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, object> referenceEntries =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ProducerStatistics> producerStatistics =
+        new(StringComparer.Ordinal);
     private readonly InvocationDeterministicBuildSession? previous;
     private readonly bool enabled;
     private int disposed;
@@ -68,6 +70,7 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         if (session.entries.TryGetValue(key, out var cached))
         {
             session.cacheHitCount++;
+            session.Statistics(producerId).RecordHit(cached.LongLength);
             operation.MarkCacheHit();
             dependency.MarkCacheHit();
             dependency.SetOutputArtifact(key, Sha256(cached));
@@ -82,6 +85,7 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             result,
             JsonDefaults.Options);
         session.entries.Add(key, serialized);
+        session.Statistics(producerId).RecordBuild(serialized.LongLength);
         dependency.SetOutputArtifact(key, Sha256(serialized));
         session.buildCount++;
         return result;
@@ -121,6 +125,7 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         operation.AddArtifactId(key);
         if (session.referenceEntries.TryGetValue(key, out var cached))
         {
+            session.Statistics(producerId).RecordReferenceHit();
             operation.MarkCacheHit();
             dependency.MarkCacheHit();
             var typed = (T)cached;
@@ -132,6 +137,7 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 
         var result = factory();
         session.referenceEntries.Add(key, result);
+        session.Statistics(producerId).RecordReferenceBuild();
         dependency.SetOutputArtifact(
             key,
             dependency.IsEnabled ? ContentSha256(result) : string.Empty);
@@ -209,12 +215,35 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             JsonSerializer.Serialize(value, JsonDefaults.Compact),
             IsFile: false);
 
-    public InvocationDeterministicBuildSessionSnapshot Snapshot() => new(
-        SessionVersion,
-        enabled,
-        buildCount,
-        cacheHitCount,
-        entries.Sum(pair => (long)pair.Value.LongLength));
+    public InvocationDeterministicBuildSessionSnapshot Snapshot()
+    {
+        var cachedBytes = entries.Sum(pair => (long)pair.Value.LongLength);
+        return new InvocationDeterministicBuildSessionSnapshot(
+            SessionVersion,
+            enabled,
+            buildCount,
+            cacheHitCount,
+            entries.Count,
+            referenceEntries.Count,
+            cachedBytes,
+            entries.Count == 0
+                ? 0
+                : entries.Max(pair => (long)pair.Value.LongLength),
+            producerStatistics
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .Select(pair => pair.Value.Snapshot(pair.Key))
+                .ToArray());
+    }
+
+    private ProducerStatistics Statistics(string producerId)
+    {
+        if (!producerStatistics.TryGetValue(producerId, out var statistics))
+        {
+            statistics = new ProducerStatistics();
+            producerStatistics.Add(producerId, statistics);
+        }
+        return statistics;
+    }
 
     public void Dispose()
     {
@@ -222,8 +251,46 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             return;
         entries.Clear();
         referenceEntries.Clear();
+        producerStatistics.Clear();
         if (ReferenceEquals(Ambient.Value, this))
             Ambient.Value = previous;
+    }
+
+    private sealed class ProducerStatistics
+    {
+        private long buildCount;
+        private long cacheHitCount;
+        private long cachedBytes;
+        private long maxEntryBytes;
+        private long referenceBuildCount;
+        private long referenceHitCount;
+
+        public void RecordBuild(long bytes)
+        {
+            buildCount++;
+            cachedBytes += bytes;
+            maxEntryBytes = Math.Max(maxEntryBytes, bytes);
+        }
+
+        public void RecordHit(long bytes)
+        {
+            cacheHitCount++;
+            maxEntryBytes = Math.Max(maxEntryBytes, bytes);
+        }
+
+        public void RecordReferenceBuild() => referenceBuildCount++;
+
+        public void RecordReferenceHit() => referenceHitCount++;
+
+        public InvocationDeterministicBuildProducerSnapshot Snapshot(
+            string producerId) => new(
+                producerId,
+                buildCount,
+                cacheHitCount,
+                cachedBytes,
+                maxEntryBytes,
+                referenceBuildCount,
+                referenceHitCount);
     }
 }
 
@@ -238,4 +305,17 @@ internal sealed record InvocationDeterministicBuildSessionSnapshot(
     bool Enabled,
     int BuildCount,
     int CacheHitCount,
-    long CachedBytes);
+    int EntryCount,
+    int ReferenceEntryCount,
+    long CachedBytes,
+    long MaxEntryBytes,
+    InvocationDeterministicBuildProducerSnapshot[] Producers);
+
+internal sealed record InvocationDeterministicBuildProducerSnapshot(
+    string ProducerId,
+    long BuildCount,
+    long CacheHitCount,
+    long CachedBytes,
+    long MaxEntryBytes,
+    long ReferenceBuildCount,
+    long ReferenceHitCount);

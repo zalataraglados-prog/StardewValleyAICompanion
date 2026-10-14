@@ -49,6 +49,12 @@ public sealed class ValidationTraceSessionTests
         Assert.Equal("sample-command", rootElement.GetProperty("command").GetString());
         Assert.False(rootElement.GetProperty("cache_hit").GetBoolean());
         Assert.True(rootElement.GetProperty("bytes_read").GetInt64() > 0);
+        Assert.True(rootElement.GetProperty("private_memory_bytes").GetInt64() > 0);
+        Assert.True(rootElement.GetProperty("managed_heap_bytes").GetInt64() > 0);
+        Assert.True(rootElement.GetProperty("allocated_bytes").GetInt64() >= 0);
+        Assert.True(rootElement.GetProperty("gen0_collections").GetInt32() >= 0);
+        Assert.True(rootElement.GetProperty("gen1_collections").GetInt32() >= 0);
+        Assert.True(rootElement.GetProperty("gen2_collections").GetInt32() >= 0);
         Assert.True(rootElement.GetProperty("process_start_ms").GetDouble() >= 3.5);
         Assert.Equal(
             2,
@@ -66,6 +72,7 @@ public sealed class ValidationTraceSessionTests
             "content_addressed_json_read",
             operation.GetProperty("operation_kind").GetString());
         Assert.False(operation.GetProperty("cache_hit").GetBoolean());
+        Assert.True(operation.GetProperty("allocated_bytes").GetInt64() >= 0);
     }
 
     [Fact]

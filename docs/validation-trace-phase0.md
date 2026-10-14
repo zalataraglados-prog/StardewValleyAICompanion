@@ -19,6 +19,12 @@ Tracing is default-off. Setup and write failures are swallowed by the diagnostic
 
 Repeated operations are grouped by operation kind, producer/version, and input paths. A group records its first and last operation IDs, invocation count, cumulative wall/bytes/hash/parse/materialization metrics, sampled CPU cost, and a bounded artifact-ID sample. Root command CPU remains exact; operation CPU uses the declared `operation_cpu_sampling_rate`. This preserves hotspot accounting without letting the observer produce an unbounded trace or query process CPU millions of times.
 
+Command-level allocation uses the runtime's process-wide managed-allocation
+counter. Operation-level allocation uses the current managed thread and is a
+hotspot indicator: nested operations can overlap, and work moved to another
+thread is represented by the command total rather than attributed to the
+originating operation.
+
 ## Rebuilding the baseline
 
 Collect exactly these scenario labels:
@@ -40,6 +46,13 @@ dotnet StardewAI.GoalConditionedBootstrap.dll build-validation-trace-baseline `
 ```
 
 The builder rejects a failed command, an incomplete trace, a cache hit, or missing schema/command identity. Raw traces stay under ignored `artifacts/`; the comparable aggregate is checked in as `docs/validation-trace-phase0-baseline.json`.
+
+Trace v2 extends the baseline with process allocation, GC, private-memory,
+managed-heap, read-session retention, and deterministic-cache producer
+metrics. The checked-in 2026-10-11 v1 aggregate remains a historical CPU/I/O
+baseline and must not be relabeled with invented memory values. A new v2
+aggregate replaces it only after the same five scenarios are actually
+collected. Until then, memory acceptance claims remain unavailable.
 
 ## Frozen baseline
 

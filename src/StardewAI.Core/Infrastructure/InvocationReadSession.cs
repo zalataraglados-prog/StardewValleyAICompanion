@@ -165,16 +165,41 @@ public sealed class InvocationReadSession : IDisposable
     {
         lock (sync)
         {
+            var retainedRawBytes = entries.Values.Sum(entry =>
+                entry.RawBytes?.LongLength ?? 0);
+            var retainedStoredTextBytes = entries.Values.Sum(entry =>
+                Utf16Bytes(entry.StoredText));
+            var retainedMaterializedTextBytes = entries.Values.Sum(entry =>
+                ReferenceEquals(entry.MaterializedText, entry.StoredText)
+                    ? 0
+                    : Utf16Bytes(entry.MaterializedText));
+            var retainedHashTextBytes = entries.Values.Sum(entry =>
+                Utf16Bytes(entry.StoredSha256) +
+                (ReferenceEquals(entry.LogicalSha256, entry.StoredSha256)
+                    ? 0
+                    : Utf16Bytes(entry.LogicalSha256)));
+            var retainedBytes = retainedRawBytes + retainedStoredTextBytes +
+                retainedMaterializedTextBytes + retainedHashTextBytes;
+            var maxEntryRetainedBytes = entries.Count == 0
+                ? 0
+                : entries.Values.Max(EntryRetainedBytes);
             return new InvocationReadSessionSnapshot(
                 ReaderVersion,
                 enabled,
                 immutablePaths.Count,
+                entries.Count,
                 physicalReadCount,
                 physicalBytesRead,
                 fullHashCount,
                 hashBytes,
                 materializationCount,
-                cacheHitCount);
+                cacheHitCount,
+                retainedRawBytes,
+                retainedStoredTextBytes,
+                retainedMaterializedTextBytes,
+                retainedHashTextBytes,
+                retainedBytes,
+                maxEntryRetainedBytes);
         }
     }
 
@@ -308,6 +333,20 @@ public sealed class InvocationReadSession : IDisposable
         }
     }
 
+    private static long EntryRetainedBytes(Entry entry) =>
+        (entry.RawBytes?.LongLength ?? 0) +
+        Utf16Bytes(entry.StoredText) +
+        (ReferenceEquals(entry.MaterializedText, entry.StoredText)
+            ? 0
+            : Utf16Bytes(entry.MaterializedText)) +
+        Utf16Bytes(entry.StoredSha256) +
+        (ReferenceEquals(entry.LogicalSha256, entry.StoredSha256)
+            ? 0
+            : Utf16Bytes(entry.LogicalSha256));
+
+    private static long Utf16Bytes(string? value) =>
+        value is null ? 0 : (long)value.Length * sizeof(char);
+
     private static string TrimDirectorySeparators(string path) =>
         path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
@@ -337,9 +376,16 @@ public sealed record InvocationReadSessionSnapshot(
     string ReaderVersion,
     bool Enabled,
     int RegisteredPathCount,
+    int EntryCount,
     long PhysicalReadCount,
     long PhysicalBytesRead,
     long FullHashCount,
     long HashBytes,
     long MaterializationCount,
-    long CacheHitCount);
+    long CacheHitCount,
+    long RetainedRawBytes,
+    long RetainedStoredTextBytes,
+    long RetainedMaterializedTextBytes,
+    long RetainedHashTextBytes,
+    long RetainedBytes,
+    long MaxEntryRetainedBytes);
