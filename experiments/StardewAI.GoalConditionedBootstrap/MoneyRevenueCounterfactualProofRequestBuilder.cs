@@ -120,6 +120,7 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             BlockingReasons = new[]
             {
                 "terminal_opportunity_cost_proofs_not_supplied",
+                "terminal_reservation_claim_proofs_not_supplied",
                 "verified_counterfactual_revenue_recurrences_not_supplied"
             },
             FormalProductTrainingAuthorized = false

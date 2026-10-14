@@ -39,6 +39,7 @@ internal static partial class BootstrapSelfTest
                     row.NativeShippingSettlementProofRequired) == 3 &&
                 requests.Requests.All(row =>
                     row.TerminalOpportunityCostProofRequired &&
+                    row.TerminalReservationClaimProofRequired &&
                     row.RevenueRecurrenceProofRequired &&
                     row.RequestSha256.Length == 64) &&
                 requests.CatalogSha256.Length == 64,

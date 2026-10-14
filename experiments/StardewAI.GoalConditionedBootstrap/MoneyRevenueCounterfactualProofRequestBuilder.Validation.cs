@@ -97,6 +97,7 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             AcquisitionRolloutReceiptSha256 =
                 alternative.AcquisitionRolloutReceiptSha256,
             TerminalOpportunityCostProofRequired = true,
+            TerminalReservationClaimProofRequired = true,
             NativeShopSaleProofRequired =
                 alternative.RequiresNativeShopSaleProof,
             NativeShippingDepositProofRequired =

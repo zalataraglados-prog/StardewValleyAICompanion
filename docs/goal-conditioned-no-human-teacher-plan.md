@@ -3201,7 +3201,9 @@ Slice 7 remains assigned to the RTX 5070 node.
   plus day-settlement evidence; every request requires a replayable Revenue recurrence.
 - Acquisition opportunity cost is not the complete alternative cost. Travel and interaction for the terminal sale or
   shipping deposit must not be treated as free, so all requests require an independent terminal opportunity-cost proof.
-  The existing acquisition-only comparison remains diagnostic until this shared timing/cost boundary is implemented.
+  External strategy-ledger reservations must also be checked before terminal inventory consumption; in-game auto-sell
+  protection alone is not sufficient. The existing acquisition-only comparison remains diagnostic until both shared
+  timing/cost and terminal reservation boundaries are implemented.
 - The hermetic fixture emits eight requests for eight concrete alternatives, preserving three rebound and five direct
   proof shapes while rejecting a stale source ledger. This authorizes bounded proof collection only, not outcomes,
   production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request

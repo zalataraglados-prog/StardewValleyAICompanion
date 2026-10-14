@@ -87,6 +87,9 @@ public sealed class MoneyRevenueCounterfactualProofRequest
     [JsonPropertyName("terminal_opportunity_cost_proof_required")]
     public bool TerminalOpportunityCostProofRequired { get; set; } = true;
 
+    [JsonPropertyName("terminal_reservation_claim_proof_required")]
+    public bool TerminalReservationClaimProofRequired { get; set; } = true;
+
     [JsonPropertyName("native_shop_sale_proof_required")]
     public bool NativeShopSaleProofRequired { get; set; }
 
@@ -180,6 +183,7 @@ public sealed class MoneyRevenueCounterfactualProofRequestCatalog
         "Every authoritative concrete alternative emits exactly one proof request. Direct " +
         "alternatives require no fabricated acquisition rollout; rebound alternatives retain " +
         "their verified rollout identity. Every request still requires independently verified " +
-        "terminal opportunity cost and native Revenue recurrence evidence. This catalog schedules " +
+        "terminal opportunity cost, reservation safety and native Revenue recurrence evidence. " +
+        "This catalog schedules " +
         "proof collection but cannot claim outcomes, emit a production label or authorize training.";
 }
