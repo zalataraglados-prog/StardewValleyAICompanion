@@ -3157,6 +3157,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   exact shop-sale or shipping candidate back to its path skeleton. Formal coverage remains `2/19`, root-method coverage
   remains `1/11`, and formal product training remains unauthorized.
 
+### 2026-10-14: fresh terminal Revenue candidate rebind
+
+- `build-money-revenue-terminal-candidate-rebind` requires one exact acquisition rollout proof for every path skeleton
+  marked `requires_fresh_terminal_candidate_rebind`. The builder rebuilds the skeleton denominator and each rollout
+  receipt, then locates the executed transition by the skeleton's source candidate identity. The caller supplies no
+  output item, inventory slot, price, shop or terminal candidate.
+- The verified fresh terminal receipt supplies the actual output item and quality floor. Exact before/after inventory
+  deltas identify only slots increased by that transition; pre-existing stacks that did not change are excluded. The
+  existing Revenue candidate-denominator builder is rerun on the terminal snapshot, preserving its pricing,
+  protection, route, compiler and executor semantics.
+- Rebinding is one-to-many when the transparent state exposes several legitimate terminal choices. For example, two
+  shops accepting the same new stack remain two concrete alternatives with distinct candidate hashes. This avoids the
+  false uniqueness assumption that would silently omit a price or route branch.
+- The receipt proves completeness only for the rebind-required skeleton subset. It intentionally keeps alternative
+  authority, production Teacher labels and formal training false until the next slice builds a deterministic union of
+  direct terminal skeletons and rebound concrete alternatives, and makes the comparison proof consume that union
+  instead of a caller-declared list.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
