@@ -103,6 +103,18 @@ boundaries, reservation safety, recurrence, comparison admission, or the
 criterion-local corpus join. The plan is a deterministic work queue, not a
 Teacher label or evidence receipt.
 
+When acquisition work is required, the initializer can consume an optional
+`-AcquisitionRolloutIndex` with schema
+`money_revenue_acquisition_rollout_index.v1`. Its `proofs` array maps each
+required `alternative_id` to an existing rollout proof manifest and receipt.
+The assembly command requires the index to equal the plan's full fresh-rebind
+denominator: missing, duplicate, or extra alternatives fail closed. It then
+hands the generated manifest to the existing rollout/rebind verifier and, only
+after every proof replays, builds the existing direct-plus-rebound concrete
+alternative catalog. If no alternative needs rebind, the same path advances
+with an empty proof index automatically. No rollout receipt is trusted merely
+because it appears in the index.
+
 ## Batch policy
 
 Run one criterion-partition cell at a time. Reuse already built binaries and

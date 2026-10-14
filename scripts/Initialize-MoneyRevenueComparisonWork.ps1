@@ -7,6 +7,7 @@ param(
     [string] $PlanId = "",
     [string] $OutputRoot =
         "artifacts\money-revenue-comparison-work",
+    [string] $AcquisitionRolloutIndex = "",
     [switch] $SkipBuild
 )
 
@@ -46,6 +47,16 @@ $requestPath = Join-Path $outputDirectory `
     "money-revenue-comparison-collection-plan-request.json"
 $planPath = Join-Path $outputDirectory `
     "money-revenue-comparison-collection-plan.json"
+$rebindAssemblyRequestPath = Join-Path $outputDirectory `
+    "money-revenue-terminal-rebind-manifest-assembly-request.json"
+$rebindManifestPath = Join-Path $outputDirectory `
+    "money-revenue-terminal-rebind-manifest.json"
+$rebindReceiptPath = Join-Path $outputDirectory `
+    "money-revenue-terminal-rebind-receipt.json"
+$concreteManifestPath = Join-Path $outputDirectory `
+    "money-revenue-concrete-alternative-denominator-manifest.json"
+$concreteCatalogPath = Join-Path $outputDirectory `
+    "money-revenue-concrete-alternative-denominator.json"
 $bootstrapProject = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
 $bootstrapDll = Join-Path $ProjectRoot `
@@ -80,6 +91,71 @@ Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
     "--output", $planPath)
 
 $plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
+$rolloutProofs = @()
+if (-not [string]::IsNullOrWhiteSpace($AcquisitionRolloutIndex)) {
+    $rolloutIndexPath = Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $AcquisitionRolloutIndex
+    if (-not (Test-Path -LiteralPath $rolloutIndexPath -PathType Leaf)) {
+        throw "Money Revenue acquisition-rollout index is missing: $rolloutIndexPath"
+    }
+    $rolloutIndex = Get-Content -LiteralPath $rolloutIndexPath -Raw |
+        ConvertFrom-Json
+    if ([string]$rolloutIndex.schema_version -ne
+        "money_revenue_acquisition_rollout_index.v1") {
+        throw "Money Revenue acquisition-rollout index schema is invalid."
+    }
+    $rolloutProofs = @($rolloutIndex.proofs | ForEach-Object {
+        $manifestPath = [string]$_.rollout_proof_manifest_path
+        $receiptPath = [string]$_.rollout_proof_receipt_path
+        if ([string]::IsNullOrWhiteSpace($manifestPath) -or
+            [string]::IsNullOrWhiteSpace($receiptPath)) {
+            throw "Money Revenue acquisition-rollout proof paths are required."
+        }
+        [ordered]@{
+            alternative_id = [string]$_.alternative_id
+            rollout_proof_manifest_path = Resolve-RuntimeEvidenceInputPath `
+                -ProjectRoot $ProjectRoot -Path $manifestPath
+            rollout_proof_receipt_path = Resolve-RuntimeEvidenceInputPath `
+                -ProjectRoot $ProjectRoot -Path $receiptPath
+        }
+    })
+}
+
+$concreteStatus = "awaiting_acquisition_rollout_index"
+$canBuildConcrete =
+    [int]$plan.fresh_rebind_alternative_count -eq 0 -or
+    -not [string]::IsNullOrWhiteSpace($AcquisitionRolloutIndex)
+if ($canBuildConcrete) {
+    Write-JsonFile -Path $rebindAssemblyRequestPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_terminal_rebind_manifest_assembly_request.v1"
+        comparison_collection_plan_path = $planPath
+        rollout_proofs = $rolloutProofs
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-revenue-terminal-rebind-manifest",
+        "--request", $rebindAssemblyRequestPath,
+        "--output", $rebindManifestPath)
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-revenue-terminal-candidate-rebind",
+        "--manifest", $rebindManifestPath,
+        "--output", $rebindReceiptPath)
+    Write-JsonFile -Path $concreteManifestPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_concrete_alternative_denominator_manifest.v1"
+        alternative_denominator_catalog_path = $alternativePath
+        terminal_rebind_manifest_path = $rebindManifestPath
+        terminal_rebind_receipt_path = $rebindReceiptPath
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-revenue-concrete-alternative-denominator",
+        "--manifest", $concreteManifestPath,
+        "--output", $concreteCatalogPath)
+    $concreteStatus = "current_concrete_denominator_built"
+}
+
 [ordered]@{
     status = [string]$plan.status
     plan_id = [string]$plan.plan_id
@@ -92,7 +168,17 @@ $plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
         [int]$plan.fresh_rebind_alternative_count
     existing_native_episode_reuse_count =
         [int]$plan.existing_native_episode_reuse_count
+    concrete_denominator_status = $concreteStatus
     alternative_denominator_path = $alternativePath
     comparison_collection_plan_path = $planPath
+    terminal_rebind_manifest_path = if ($canBuildConcrete) {
+        $rebindManifestPath
+    } else { "" }
+    terminal_rebind_receipt_path = if ($canBuildConcrete) {
+        $rebindReceiptPath
+    } else { "" }
+    concrete_alternative_denominator_path = if ($canBuildConcrete) {
+        $concreteCatalogPath
+    } else { "" }
     formal_product_training_authorized = $false
 } | ConvertTo-Json -Depth 16

@@ -53,6 +53,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
     new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
     new("build-money-revenue-alternative-denominator", BuildMoneyRevenueAlternativeDenominator),
+    new("build-money-revenue-terminal-rebind-manifest", BuildMoneyRevenueTerminalRebindManifest),
     new("build-money-revenue-terminal-candidate-rebind", BuildMoneyRevenueTerminalCandidateRebind),
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
@@ -537,6 +538,13 @@ static void BuildMoneyRevenueAlternativeDenominator(Arguments options)
     Write(options.Required("output"), catalog);
     if (!catalog.AlternativeSkeletonDenominatorComplete)
         Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueTerminalRebindManifest(Arguments options)
+{
+    var manifest = MoneyRevenueTerminalRebindManifestAssemblyBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), manifest);
 }
 
 static void BuildMoneyRevenueTerminalCandidateRebind(Arguments options)

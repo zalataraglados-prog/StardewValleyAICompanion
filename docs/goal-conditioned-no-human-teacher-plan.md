@@ -3178,6 +3178,12 @@ Slice 7 remains assigned to the RTX 5070 node.
   required acquisition rollout/rebind work and the one or more direct skeletons
   allowed to reuse the run's native sale episode, without crediting any of the
   remaining terminal or comparison proofs.
+- `build-money-revenue-terminal-rebind-manifest` consumes that rebuilt plan and
+  requires supplied acquisition rollout proofs to cover the exact fresh-rebind
+  alternative ID denominator. The initializer then delegates deep rollout and
+  terminal-candidate validation to the existing rebind builder and can build
+  the existing concrete alternative denominator. Direct-only plans use the
+  same path with an empty proof set; the index itself never certifies a rollout.
 
 ### 2026-10-14: Revenue alternative path skeletons
 
