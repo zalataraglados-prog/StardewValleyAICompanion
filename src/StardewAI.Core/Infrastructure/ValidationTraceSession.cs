@@ -12,7 +12,7 @@ namespace StardewAI.Core.Infrastructure;
 
 public sealed class ValidationTraceSession : IDisposable
 {
-    public const string SchemaVersion = "stardewai.validation_trace.v1";
+    public const string SchemaVersion = "stardewai.validation_trace.v2";
     public const int OperationCpuSamplingRate = 256;
 
     private static readonly AsyncLocal<ValidationTraceSession?> Ambient = new();
@@ -27,6 +27,11 @@ public sealed class ValidationTraceSession : IDisposable
     private readonly ValidationTraceSession? previous;
     private readonly Stopwatch wallClock = Stopwatch.StartNew();
     private readonly TimeSpan cpuStarted;
+    private readonly long allocatedBytesStarted;
+    private readonly long privateMemoryStarted;
+    private readonly int gen0CollectionsStarted;
+    private readonly int gen1CollectionsStarted;
+    private readonly int gen2CollectionsStarted;
     private readonly DateTimeOffset startedAt = DateTimeOffset.UtcNow;
     private readonly double processStartMilliseconds;
     private readonly ValidationTraceOperationAggregator operationAggregator =
@@ -35,6 +40,9 @@ public sealed class ValidationTraceSession : IDisposable
         new();
     private int nextOperationId;
     private int completed;
+    private InvocationReadSessionSnapshot? readSessionSnapshot;
+    private ValidationTraceDeterministicCacheMetrics?
+        deterministicCacheMetrics;
 
     private ValidationTraceSession(
         string outputPath,
@@ -52,7 +60,13 @@ public sealed class ValidationTraceSession : IDisposable
         this.scenario = scenario;
         this.inputs = inputs.ToArray();
         this.processStartMilliseconds = processStartMilliseconds;
-        cpuStarted = Process.GetCurrentProcess().TotalProcessorTime;
+        var process = Process.GetCurrentProcess();
+        cpuStarted = process.TotalProcessorTime;
+        allocatedBytesStarted = GetTotalAllocatedBytes();
+        privateMemoryStarted = SafePrivateMemorySize(process);
+        gen0CollectionsStarted = GC.CollectionCount(0);
+        gen1CollectionsStarted = GC.CollectionCount(1);
+        gen2CollectionsStarted = GC.CollectionCount(2);
         previous = Ambient.Value;
         Ambient.Value = this;
     }
@@ -87,6 +101,19 @@ public sealed class ValidationTraceSession : IDisposable
     }
 
     public static bool IsActive => Ambient.Value is not null;
+
+    public void CaptureReadSession(InvocationReadSessionSnapshot snapshot)
+    {
+        if (Volatile.Read(ref completed) == 0)
+            readSessionSnapshot = snapshot;
+    }
+
+    public void CaptureDeterministicCache(
+        ValidationTraceDeterministicCacheMetrics metrics)
+    {
+        if (Volatile.Read(ref completed) == 0)
+            deterministicCacheMetrics = metrics;
+    }
 
     public static ValidationTraceOperation BeginOperation(
         string operationKind,
@@ -200,9 +227,12 @@ public sealed class ValidationTraceSession : IDisposable
         wallClock.Stop();
         var completedAt = DateTimeOffset.UtcNow;
         var process = Process.GetCurrentProcess();
+        process.Refresh();
         var cpuMilliseconds = Math.Max(
             0,
             (process.TotalProcessorTime - cpuStarted).TotalMilliseconds);
+        var privateMemoryBytes = SafePrivateMemorySize(process);
+        var totalAllocatedBytes = GetTotalAllocatedBytes();
         var operationSnapshot = operationAggregator.Snapshot();
         var dependencyGraph = SafeDependencySnapshot();
         dependencyGraph.FullRebuildExecuted =
@@ -234,6 +264,24 @@ public sealed class ValidationTraceSession : IDisposable
             WallMilliseconds = Round(wallClock.Elapsed.TotalMilliseconds),
             CpuMilliseconds = Round(cpuMilliseconds),
             PeakWorkingSetBytes = process.PeakWorkingSet64,
+            WorkingSetBytes = SafeWorkingSetSize(process),
+            PrivateMemoryBytes = privateMemoryBytes,
+            PrivateMemoryDeltaBytes = Math.Max(
+                0,
+                privateMemoryBytes - privateMemoryStarted),
+            AllocatedBytes = totalAllocatedBytes <= 0 ||
+                allocatedBytesStarted <= 0
+                    ? 0
+                    : Math.Max(0, totalAllocatedBytes - allocatedBytesStarted),
+            Gen0Collections = Math.Max(
+                0,
+                GC.CollectionCount(0) - gen0CollectionsStarted),
+            Gen1Collections = Math.Max(
+                0,
+                GC.CollectionCount(1) - gen1CollectionsStarted),
+            Gen2Collections = Math.Max(
+                0,
+                GC.CollectionCount(2) - gen2CollectionsStarted),
             BytesRead = operationSnapshot.Sum(value => value.BytesRead),
             HashBytes = operationSnapshot.Sum(value => value.HashBytes),
             JsonParseMilliseconds = Round(operationSnapshot.Sum(
@@ -251,6 +299,8 @@ public sealed class ValidationTraceSession : IDisposable
                 value => value.InvocationCount),
             OperationGroupCount = operationSnapshot.Length,
             OperationCpuSamplingRate = OperationCpuSamplingRate,
+            ReadSession = readSessionSnapshot,
+            DeterministicCache = deterministicCacheMetrics,
             DependencyGraph = dependencyGraph
         };
 
@@ -332,6 +382,47 @@ public sealed class ValidationTraceSession : IDisposable
         catch
         {
             return path;
+        }
+    }
+
+    private static long GetTotalAllocatedBytes()
+    {
+        try
+        {
+            var method = typeof(GC).GetMethod(
+                "GetTotalAllocatedBytes",
+                new[] { typeof(bool) });
+            return method?.Invoke(null, new object[] { false }) is long value
+                ? value
+                : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static long SafePrivateMemorySize(Process process)
+    {
+        try
+        {
+            return Math.Max(0, process.PrivateMemorySize64);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static long SafeWorkingSetSize(Process process)
+    {
+        try
+        {
+            return Math.Max(0, process.WorkingSet64);
+        }
+        catch
+        {
+            return 0;
         }
     }
 

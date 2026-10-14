@@ -75,6 +75,11 @@ internal sealed class ValidationTraceOperationAggregator
         target.CpuMilliseconds = ValidationTraceSession.Round(
             target.CpuMilliseconds + source.CpuMilliseconds);
         target.CpuSampleCount += source.CpuSampleCount;
+        target.InclusiveAllocatedBytes += source.InclusiveAllocatedBytes;
+        target.AllocationSampleCount += source.AllocationSampleCount;
+        target.InclusiveGen0Collections += source.InclusiveGen0Collections;
+        target.InclusiveGen1Collections += source.InclusiveGen1Collections;
+        target.InclusiveGen2Collections += source.InclusiveGen2Collections;
         target.BytesRead += source.BytesRead;
         target.HashBytes += source.HashBytes;
         target.JsonParseMilliseconds = ValidationTraceSession.Round(

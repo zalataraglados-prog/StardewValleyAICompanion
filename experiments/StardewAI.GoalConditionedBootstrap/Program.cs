@@ -198,6 +198,41 @@ catch (Exception ex)
 }
 finally
 {
+    try
+    {
+        if (validationTrace is not null)
+        {
+            if (invocationReadSession is not null)
+            {
+                validationTrace.CaptureReadSession(
+                    invocationReadSession.Snapshot());
+            }
+            if (deterministicBuildSession is not null)
+            {
+                var snapshot = deterministicBuildSession.Snapshot();
+                validationTrace.CaptureDeterministicCache(
+                    new ValidationTraceDeterministicCacheMetrics
+                    {
+                        SessionVersion = snapshot.SessionVersion,
+                        Enabled = snapshot.Enabled,
+                        BuildCount = snapshot.BuildCount,
+                        CacheHitCount = snapshot.CacheHitCount,
+                        SerializedEntryCount = snapshot.SerializedEntryCount,
+                        ReferenceEntryCount = snapshot.ReferenceEntryCount,
+                        ReferenceBuildCount = snapshot.ReferenceBuildCount,
+                        ReferenceCacheHitCount =
+                            snapshot.ReferenceCacheHitCount,
+                        CachedBytes = snapshot.CachedBytes,
+                        MaxEntryBytes = snapshot.MaxEntryBytes,
+                        Producers = snapshot.Producers
+                    });
+            }
+        }
+    }
+    catch
+    {
+        // Diagnostics must never change command completion semantics.
+    }
     deterministicBuildSession?.Dispose();
     invocationReadSession?.Dispose();
     validationTrace?.Complete(Environment.ExitCode);

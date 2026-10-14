@@ -28,6 +28,8 @@ public sealed class InvocationReadSessionTests
         Assert.Equal(1, snapshot.FullHashCount);
         Assert.Equal(1, snapshot.MaterializationCount);
         Assert.True(snapshot.CacheHitCount >= 3);
+        Assert.Equal(0, snapshot.RawBytesRetained);
+        Assert.True(snapshot.ReleasedRawBytes > 0);
     }
 
     [Fact]

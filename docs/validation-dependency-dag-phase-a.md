@@ -5,7 +5,7 @@ enabled validation trace. It explains a full rebuild; it does not replace one.
 
 ## Contract
 
-Every `stardewai.validation_trace.v1` report contains a
+Every `stardewai.validation_trace.v2` report contains a
 `dependency_graph` object with schema
 `stardewai.validation_dependency_graph.v1`. Its fixed safety fields are:
 

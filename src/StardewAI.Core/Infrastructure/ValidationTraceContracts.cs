@@ -53,6 +53,21 @@ public sealed class ValidationTraceOperationRecord
     [JsonPropertyName("cpu_sample_count")]
     public long CpuSampleCount { get; set; }
 
+    [JsonPropertyName("inclusive_allocated_bytes")]
+    public long InclusiveAllocatedBytes { get; set; }
+
+    [JsonPropertyName("allocation_sample_count")]
+    public long AllocationSampleCount { get; set; }
+
+    [JsonPropertyName("inclusive_gen0_collections")]
+    public long InclusiveGen0Collections { get; set; }
+
+    [JsonPropertyName("inclusive_gen1_collections")]
+    public long InclusiveGen1Collections { get; set; }
+
+    [JsonPropertyName("inclusive_gen2_collections")]
+    public long InclusiveGen2Collections { get; set; }
+
     [JsonPropertyName("bytes_read")]
     public long BytesRead { get; set; }
 
@@ -131,6 +146,27 @@ public sealed class ValidationTraceReport
     [JsonPropertyName("peak_working_set_bytes")]
     public long PeakWorkingSetBytes { get; set; }
 
+    [JsonPropertyName("working_set_bytes")]
+    public long WorkingSetBytes { get; set; }
+
+    [JsonPropertyName("private_memory_bytes")]
+    public long PrivateMemoryBytes { get; set; }
+
+    [JsonPropertyName("private_memory_delta_bytes")]
+    public long PrivateMemoryDeltaBytes { get; set; }
+
+    [JsonPropertyName("allocated_bytes")]
+    public long AllocatedBytes { get; set; }
+
+    [JsonPropertyName("gen0_collections")]
+    public int Gen0Collections { get; set; }
+
+    [JsonPropertyName("gen1_collections")]
+    public int Gen1Collections { get; set; }
+
+    [JsonPropertyName("gen2_collections")]
+    public int Gen2Collections { get; set; }
+
     [JsonPropertyName("bytes_read")]
     public long BytesRead { get; set; }
 
@@ -171,7 +207,81 @@ public sealed class ValidationTraceReport
     [JsonPropertyName("operation_cpu_sampling_rate")]
     public int OperationCpuSamplingRate { get; set; }
 
+    [JsonPropertyName("read_session")]
+    public InvocationReadSessionSnapshot? ReadSession { get; set; }
+
+    [JsonPropertyName("deterministic_cache")]
+    public ValidationTraceDeterministicCacheMetrics? DeterministicCache
+    {
+        get;
+        set;
+    }
+
     [JsonPropertyName("dependency_graph")]
     public ValidationTraceDependencyGraph DependencyGraph { get; set; } =
         new();
+}
+
+public sealed class ValidationTraceDeterministicCacheMetrics
+{
+    [JsonPropertyName("session_version")]
+    public string SessionVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; }
+
+    [JsonPropertyName("build_count")]
+    public int BuildCount { get; set; }
+
+    [JsonPropertyName("cache_hit_count")]
+    public int CacheHitCount { get; set; }
+
+    [JsonPropertyName("serialized_entry_count")]
+    public int SerializedEntryCount { get; set; }
+
+    [JsonPropertyName("reference_entry_count")]
+    public int ReferenceEntryCount { get; set; }
+
+    [JsonPropertyName("reference_build_count")]
+    public int ReferenceBuildCount { get; set; }
+
+    [JsonPropertyName("reference_cache_hit_count")]
+    public int ReferenceCacheHitCount { get; set; }
+
+    [JsonPropertyName("cached_bytes")]
+    public long CachedBytes { get; set; }
+
+    [JsonPropertyName("max_entry_bytes")]
+    public long MaxEntryBytes { get; set; }
+
+    [JsonPropertyName("producers")]
+    public ValidationTraceDeterministicProducerMetrics[] Producers { get; set; }
+        = Array.Empty<ValidationTraceDeterministicProducerMetrics>();
+}
+
+public sealed class ValidationTraceDeterministicProducerMetrics
+{
+    [JsonPropertyName("producer_id")]
+    public string ProducerId { get; set; } = string.Empty;
+
+    [JsonPropertyName("producer_version")]
+    public string ProducerVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("build_count")]
+    public int BuildCount { get; set; }
+
+    [JsonPropertyName("cache_hit_count")]
+    public int CacheHitCount { get; set; }
+
+    [JsonPropertyName("reference_build_count")]
+    public int ReferenceBuildCount { get; set; }
+
+    [JsonPropertyName("reference_cache_hit_count")]
+    public int ReferenceCacheHitCount { get; set; }
+
+    [JsonPropertyName("cached_bytes")]
+    public long CachedBytes { get; set; }
+
+    [JsonPropertyName("max_entry_bytes")]
+    public long MaxEntryBytes { get; set; }
 }

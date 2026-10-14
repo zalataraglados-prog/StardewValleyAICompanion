@@ -59,6 +59,18 @@ internal static class ValidationTraceBaselineBuilder
             RepresentativeCoverageComplete = missing.Length == 0,
             TotalWallMilliseconds = Round(traces.Sum(trace => trace.WallMilliseconds)),
             TotalCpuMilliseconds = Round(traces.Sum(trace => trace.CpuMilliseconds)),
+            TotalAllocatedBytes = traces.Sum(trace => trace.AllocatedBytes),
+            TotalGen0Collections = traces.Sum(trace => trace.Gen0Collections),
+            TotalGen1Collections = traces.Sum(trace => trace.Gen1Collections),
+            TotalGen2Collections = traces.Sum(trace => trace.Gen2Collections),
+            MaxPeakWorkingSetBytes = traces.Max(
+                trace => trace.PeakWorkingSetBytes),
+            MaxPrivateMemoryBytes = traces.Max(
+                trace => trace.PrivateMemoryBytes),
+            MaxReadSessionRetainedBytes = traces.Max(trace =>
+                trace.ReadSession?.TotalRetainedBytes ?? 0),
+            MaxDeterministicCacheBytes = traces.Max(trace =>
+                trace.DeterministicCache?.CachedBytes ?? 0),
             TotalBytesRead = traces.Sum(trace => trace.BytesRead),
             TotalHashBytes = traces.Sum(trace => trace.HashBytes),
             TopCommands = traces
@@ -75,6 +87,14 @@ internal static class ValidationTraceBaselineBuilder
                         value => value.WallMilliseconds)),
                     CumulativeCpuMilliseconds = Round(group.Sum(
                         value => value.CpuMilliseconds)),
+                    AllocatedBytes = group.Sum(
+                        value => value.AllocatedBytes),
+                    Gen0Collections = group.Sum(
+                        value => value.Gen0Collections),
+                    Gen1Collections = group.Sum(
+                        value => value.Gen1Collections),
+                    Gen2Collections = group.Sum(
+                        value => value.Gen2Collections),
                     BytesRead = group.Sum(value => value.BytesRead),
                     HashBytes = group.Sum(value => value.HashBytes),
                     JsonParseMilliseconds = Round(group.Sum(
@@ -106,6 +126,14 @@ internal static class ValidationTraceBaselineBuilder
                         value => value.WallMilliseconds)),
                     CumulativeCpuMilliseconds = Round(group.Sum(
                         value => value.CpuMilliseconds)),
+                    AllocatedBytes = group.Sum(
+                        value => value.InclusiveAllocatedBytes),
+                    Gen0Collections = group.Sum(
+                        value => value.InclusiveGen0Collections),
+                    Gen1Collections = group.Sum(
+                        value => value.InclusiveGen1Collections),
+                    Gen2Collections = group.Sum(
+                        value => value.InclusiveGen2Collections),
                     BytesRead = group.Sum(value => value.BytesRead),
                     HashBytes = group.Sum(value => value.HashBytes),
                     JsonParseMilliseconds = Round(group.Sum(
@@ -115,6 +143,32 @@ internal static class ValidationTraceBaselineBuilder
                 })
                 .OrderByDescending(value => value.CumulativeWallMilliseconds)
                 .ThenBy(value => value.OperationKind, StringComparer.Ordinal)
+                .ThenBy(value => value.ProducerId, StringComparer.Ordinal)
+                .Take(10)
+                .ToArray(),
+            TopDeterministicCacheProducers = traces
+                .Where(trace => trace.DeterministicCache is not null)
+                .SelectMany(trace => trace.DeterministicCache!.Producers)
+                .GroupBy(value => new
+                {
+                    value.ProducerId,
+                    value.ProducerVersion
+                })
+                .Select(group => new ValidationTraceCacheCostSummary
+                {
+                    ProducerId = group.Key.ProducerId,
+                    ProducerVersion = group.Key.ProducerVersion,
+                    BuildCount = group.Sum(value => value.BuildCount),
+                    CacheHitCount = group.Sum(value => value.CacheHitCount),
+                    ReferenceBuildCount = group.Sum(
+                        value => value.ReferenceBuildCount),
+                    ReferenceCacheHitCount = group.Sum(
+                        value => value.ReferenceCacheHitCount),
+                    CachedBytes = group.Sum(value => value.CachedBytes),
+                    MaxEntryBytes = group.Max(value => value.MaxEntryBytes)
+                })
+                .OrderByDescending(value => value.CachedBytes)
+                .ThenByDescending(value => value.BuildCount)
                 .ThenBy(value => value.ProducerId, StringComparer.Ordinal)
                 .Take(10)
                 .ToArray()
@@ -191,6 +245,30 @@ internal sealed class ValidationTraceBaselineReport
     [JsonPropertyName("total_cpu_ms")]
     public double TotalCpuMilliseconds { get; set; }
 
+    [JsonPropertyName("total_allocated_bytes")]
+    public long TotalAllocatedBytes { get; set; }
+
+    [JsonPropertyName("total_gen0_collections")]
+    public long TotalGen0Collections { get; set; }
+
+    [JsonPropertyName("total_gen1_collections")]
+    public long TotalGen1Collections { get; set; }
+
+    [JsonPropertyName("total_gen2_collections")]
+    public long TotalGen2Collections { get; set; }
+
+    [JsonPropertyName("max_peak_working_set_bytes")]
+    public long MaxPeakWorkingSetBytes { get; set; }
+
+    [JsonPropertyName("max_private_memory_bytes")]
+    public long MaxPrivateMemoryBytes { get; set; }
+
+    [JsonPropertyName("max_read_session_retained_bytes")]
+    public long MaxReadSessionRetainedBytes { get; set; }
+
+    [JsonPropertyName("max_deterministic_cache_bytes")]
+    public long MaxDeterministicCacheBytes { get; set; }
+
     [JsonPropertyName("total_bytes_read")]
     public long TotalBytesRead { get; set; }
 
@@ -204,6 +282,13 @@ internal sealed class ValidationTraceBaselineReport
     [JsonPropertyName("top_operations")]
     public ValidationTraceCostSummary[] TopOperations { get; set; } =
         Array.Empty<ValidationTraceCostSummary>();
+
+    [JsonPropertyName("top_deterministic_cache_producers")]
+    public ValidationTraceCacheCostSummary[] TopDeterministicCacheProducers
+    {
+        get;
+        set;
+    } = Array.Empty<ValidationTraceCacheCostSummary>();
 }
 
 internal sealed class ValidationTraceCostSummary
@@ -229,6 +314,18 @@ internal sealed class ValidationTraceCostSummary
     [JsonPropertyName("cumulative_cpu_ms")]
     public double CumulativeCpuMilliseconds { get; set; }
 
+    [JsonPropertyName("allocated_bytes")]
+    public long AllocatedBytes { get; set; }
+
+    [JsonPropertyName("gen0_collections")]
+    public long Gen0Collections { get; set; }
+
+    [JsonPropertyName("gen1_collections")]
+    public long Gen1Collections { get; set; }
+
+    [JsonPropertyName("gen2_collections")]
+    public long Gen2Collections { get; set; }
+
     [JsonPropertyName("bytes_read")]
     public long BytesRead { get; set; }
 
@@ -240,4 +337,31 @@ internal sealed class ValidationTraceCostSummary
 
     [JsonPropertyName("materialize_ms")]
     public double MaterializeMilliseconds { get; set; }
+}
+
+internal sealed class ValidationTraceCacheCostSummary
+{
+    [JsonPropertyName("producer_id")]
+    public string ProducerId { get; set; } = string.Empty;
+
+    [JsonPropertyName("producer_version")]
+    public string ProducerVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("build_count")]
+    public int BuildCount { get; set; }
+
+    [JsonPropertyName("cache_hit_count")]
+    public int CacheHitCount { get; set; }
+
+    [JsonPropertyName("reference_build_count")]
+    public int ReferenceBuildCount { get; set; }
+
+    [JsonPropertyName("reference_cache_hit_count")]
+    public int ReferenceCacheHitCount { get; set; }
+
+    [JsonPropertyName("cached_bytes")]
+    public long CachedBytes { get; set; }
+
+    [JsonPropertyName("max_entry_bytes")]
+    public long MaxEntryBytes { get; set; }
 }

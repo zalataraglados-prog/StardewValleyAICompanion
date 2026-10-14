@@ -17,11 +17,15 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, object> referenceEntries =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ProducerMetrics> producerMetrics =
+        new(StringComparer.Ordinal);
     private readonly InvocationDeterministicBuildSession? previous;
     private readonly bool enabled;
     private int disposed;
     private int buildCount;
     private int cacheHitCount;
+    private int referenceBuildCount;
+    private int referenceCacheHitCount;
 
     private InvocationDeterministicBuildSession(bool enabled)
     {
@@ -64,10 +68,12 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             producerVersion,
             buildIdentity.Inputs);
         var key = buildIdentity.Key;
+        var metrics = session.GetProducerMetrics(producerId, producerVersion);
         operation.AddArtifactId(key);
         if (session.entries.TryGetValue(key, out var cached))
         {
             session.cacheHitCount++;
+            metrics.CacheHitCount++;
             operation.MarkCacheHit();
             dependency.MarkCacheHit();
             dependency.SetOutputArtifact(key, Sha256(cached));
@@ -82,6 +88,11 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             result,
             JsonDefaults.Options);
         session.entries.Add(key, serialized);
+        metrics.BuildCount++;
+        metrics.CachedBytes += serialized.LongLength;
+        metrics.MaxEntryBytes = Math.Max(
+            metrics.MaxEntryBytes,
+            serialized.LongLength);
         dependency.SetOutputArtifact(key, Sha256(serialized));
         session.buildCount++;
         return result;
@@ -118,9 +129,12 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             producerVersion,
             buildIdentity.Inputs);
         var key = buildIdentity.Key;
+        var metrics = session.GetProducerMetrics(producerId, producerVersion);
         operation.AddArtifactId(key);
         if (session.referenceEntries.TryGetValue(key, out var cached))
         {
+            session.referenceCacheHitCount++;
+            metrics.ReferenceCacheHitCount++;
             operation.MarkCacheHit();
             dependency.MarkCacheHit();
             var typed = (T)cached;
@@ -132,6 +146,8 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 
         var result = factory();
         session.referenceEntries.Add(key, result);
+        session.referenceBuildCount++;
+        metrics.ReferenceBuildCount++;
         dependency.SetOutputArtifact(
             key,
             dependency.IsEnabled ? ContentSha256(result) : string.Empty);
@@ -209,12 +225,42 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             JsonSerializer.Serialize(value, JsonDefaults.Compact),
             IsFile: false);
 
-    public InvocationDeterministicBuildSessionSnapshot Snapshot() => new(
-        SessionVersion,
-        enabled,
-        buildCount,
-        cacheHitCount,
-        entries.Sum(pair => (long)pair.Value.LongLength));
+    public InvocationDeterministicBuildSessionSnapshot Snapshot()
+    {
+        var cachedBytes = entries.Sum(pair => pair.Value.LongLength);
+        return new InvocationDeterministicBuildSessionSnapshot(
+            SessionVersion,
+            enabled,
+            buildCount,
+            cacheHitCount,
+            cachedBytes,
+            entries.Count,
+            referenceEntries.Count,
+            referenceBuildCount,
+            referenceCacheHitCount,
+            entries.Count == 0
+                ? 0
+                : entries.Max(pair => pair.Value.LongLength),
+            producerMetrics.Values
+                .OrderBy(value => value.ProducerId, StringComparer.Ordinal)
+                .ThenBy(
+                    value => value.ProducerVersion,
+                    StringComparer.Ordinal)
+                .Select(value =>
+                    new ValidationTraceDeterministicProducerMetrics
+                    {
+                        ProducerId = value.ProducerId,
+                        ProducerVersion = value.ProducerVersion,
+                        BuildCount = value.BuildCount,
+                        CacheHitCount = value.CacheHitCount,
+                        ReferenceBuildCount = value.ReferenceBuildCount,
+                        ReferenceCacheHitCount =
+                            value.ReferenceCacheHitCount,
+                        CachedBytes = value.CachedBytes,
+                        MaxEntryBytes = value.MaxEntryBytes
+                    })
+                .ToArray());
+    }
 
     public void Dispose()
     {
@@ -222,8 +268,40 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             return;
         entries.Clear();
         referenceEntries.Clear();
+        producerMetrics.Clear();
         if (ReferenceEquals(Ambient.Value, this))
             Ambient.Value = previous;
+    }
+
+    private ProducerMetrics GetProducerMetrics(
+        string producerId,
+        string producerVersion)
+    {
+        var key = producerId + "\u001f" + producerVersion;
+        if (producerMetrics.TryGetValue(key, out var metrics))
+            return metrics;
+
+        metrics = new ProducerMetrics(producerId, producerVersion);
+        producerMetrics.Add(key, metrics);
+        return metrics;
+    }
+
+    private sealed class ProducerMetrics
+    {
+        public ProducerMetrics(string producerId, string producerVersion)
+        {
+            ProducerId = producerId;
+            ProducerVersion = producerVersion;
+        }
+
+        public string ProducerId { get; }
+        public string ProducerVersion { get; }
+        public int BuildCount { get; set; }
+        public int CacheHitCount { get; set; }
+        public int ReferenceBuildCount { get; set; }
+        public int ReferenceCacheHitCount { get; set; }
+        public long CachedBytes { get; set; }
+        public long MaxEntryBytes { get; set; }
     }
 }
 
@@ -238,4 +316,10 @@ internal sealed record InvocationDeterministicBuildSessionSnapshot(
     bool Enabled,
     int BuildCount,
     int CacheHitCount,
-    long CachedBytes);
+    long CachedBytes,
+    int SerializedEntryCount,
+    int ReferenceEntryCount,
+    int ReferenceBuildCount,
+    int ReferenceCacheHitCount,
+    long MaxEntryBytes,
+    ValidationTraceDeterministicProducerMetrics[] Producers);

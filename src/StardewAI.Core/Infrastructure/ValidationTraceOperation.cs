@@ -19,6 +19,10 @@ public sealed class ValidationTraceOperation : IDisposable
     private readonly long wallStarted;
     private readonly TimeSpan? cpuStarted;
     private readonly int cpuSampleWeight;
+    private readonly long allocatedBytesStarted;
+    private readonly int gen0CollectionsStarted;
+    private readonly int gen1CollectionsStarted;
+    private readonly int gen2CollectionsStarted;
     private List<string>? artifactIds;
     private long bytesRead;
     private long hashBytes;
@@ -48,6 +52,10 @@ public sealed class ValidationTraceOperation : IDisposable
         this.inputPaths = inputPaths;
         this.cpuSampleWeight = Math.Max(0, cpuSampleWeight);
         wallStarted = Stopwatch.GetTimestamp();
+        allocatedBytesStarted = GC.GetAllocatedBytesForCurrentThread();
+        gen0CollectionsStarted = GC.CollectionCount(0);
+        gen1CollectionsStarted = GC.CollectionCount(1);
+        gen2CollectionsStarted = GC.CollectionCount(2);
         if (this.cpuSampleWeight > 0)
             cpuStarted = Process.GetCurrentProcess().TotalProcessorTime;
     }
@@ -114,6 +122,9 @@ public sealed class ValidationTraceOperation : IDisposable
                     (Process.GetCurrentProcess().TotalProcessorTime -
                         cpuStarted.Value).TotalMilliseconds) * cpuSampleWeight
                 : 0;
+            var inclusiveAllocatedBytes = Math.Max(
+                0,
+                GC.GetAllocatedBytesForCurrentThread() - allocatedBytesStarted);
             session.Record(new ValidationTraceOperationRecord
             {
                 InvocationCount = 1,
@@ -132,6 +143,17 @@ public sealed class ValidationTraceOperation : IDisposable
                     elapsedMilliseconds),
                 CpuMilliseconds = ValidationTraceSession.Round(cpuMilliseconds),
                 CpuSampleCount = cpuStarted.HasValue ? 1 : 0,
+                InclusiveAllocatedBytes = inclusiveAllocatedBytes,
+                AllocationSampleCount = 1,
+                InclusiveGen0Collections = Math.Max(
+                    0,
+                    GC.CollectionCount(0) - gen0CollectionsStarted),
+                InclusiveGen1Collections = Math.Max(
+                    0,
+                    GC.CollectionCount(1) - gen1CollectionsStarted),
+                InclusiveGen2Collections = Math.Max(
+                    0,
+                    GC.CollectionCount(2) - gen2CollectionsStarted),
                 BytesRead = bytesRead,
                 HashBytes = hashBytes,
                 JsonParseMilliseconds = ValidationTraceSession.Round(

@@ -49,6 +49,9 @@ public sealed class ValidationTraceSessionTests
         Assert.Equal("sample-command", rootElement.GetProperty("command").GetString());
         Assert.False(rootElement.GetProperty("cache_hit").GetBoolean());
         Assert.True(rootElement.GetProperty("bytes_read").GetInt64() > 0);
+        Assert.True(rootElement.GetProperty("allocated_bytes").GetInt64() >= 0);
+        Assert.True(rootElement.GetProperty("private_memory_bytes").GetInt64() >= 0);
+        Assert.True(rootElement.GetProperty("gen0_collections").GetInt32() >= 0);
         Assert.True(rootElement.GetProperty("process_start_ms").GetDouble() >= 3.5);
         Assert.Equal(
             2,
@@ -65,6 +68,11 @@ public sealed class ValidationTraceSessionTests
         Assert.Equal(
             "content_addressed_json_read",
             operation.GetProperty("operation_kind").GetString());
+        Assert.Equal(
+            2,
+            operation.GetProperty("allocation_sample_count").GetInt64());
+        Assert.True(
+            operation.GetProperty("inclusive_allocated_bytes").GetInt64() >= 0);
         Assert.False(operation.GetProperty("cache_hit").GetBoolean());
     }
 
@@ -170,6 +178,63 @@ public sealed class ValidationTraceSessionTests
         var operation = Assert.Single(
             rootElement.GetProperty("operations").EnumerateArray());
         Assert.True(operation.GetProperty("cache_hit").GetBoolean());
+    }
+
+    [Fact]
+    public void TraceCapturesReadAndDeterministicCacheRetention()
+    {
+        var root = NewRoot();
+        Directory.CreateDirectory(root);
+        var artifactPath = Path.Combine(root, "artifact.json");
+        var tracePath = Path.Combine(root, "trace.json");
+        File.WriteAllText(artifactPath, "{\"value\":9}");
+
+        using var readSession = InvocationReadSession.Start(
+            new[] { artifactPath });
+        using (var traceSession = ValidationTraceSession.TryStart(
+            tracePath,
+            "sample-command",
+            "sample-producer",
+            "v1",
+            null,
+            Array.Empty<ValidationTraceInput>(),
+            0))
+        {
+            _ = ContentAddressedJsonArtifactReader.ReadAllText(artifactPath);
+            traceSession!.CaptureReadSession(readSession.Snapshot());
+            traceSession.CaptureDeterministicCache(
+                new ValidationTraceDeterministicCacheMetrics
+                {
+                    SessionVersion = "sample-cache.v1",
+                    Enabled = true,
+                    BuildCount = 1,
+                    SerializedEntryCount = 1,
+                    CachedBytes = 128,
+                    MaxEntryBytes = 128,
+                    Producers = new[]
+                    {
+                        new ValidationTraceDeterministicProducerMetrics
+                        {
+                            ProducerId = "sample-builder",
+                            ProducerVersion = "v1",
+                            BuildCount = 1,
+                            CachedBytes = 128,
+                            MaxEntryBytes = 128
+                        }
+                    }
+                });
+            traceSession.Complete(0);
+        }
+
+        using var trace = JsonDocument.Parse(File.ReadAllText(tracePath));
+        var readMetrics = trace.RootElement.GetProperty("read_session");
+        Assert.Equal(1, readMetrics.GetProperty("entry_count").GetInt32());
+        Assert.True(
+            readMetrics.GetProperty("total_retained_bytes").GetInt64() > 0);
+        Assert.Single(readMetrics.GetProperty("largest_entries").EnumerateArray());
+        var cacheMetrics = trace.RootElement.GetProperty("deterministic_cache");
+        Assert.Equal(128, cacheMetrics.GetProperty("cached_bytes").GetInt64());
+        Assert.Single(cacheMetrics.GetProperty("producers").EnumerateArray());
     }
 
     [Fact]

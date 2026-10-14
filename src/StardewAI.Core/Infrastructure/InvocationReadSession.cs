@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 namespace StardewAI.Core.Infrastructure;
@@ -30,6 +31,8 @@ public sealed class InvocationReadSession : IDisposable
     private long hashBytes;
     private long materializationCount;
     private long cacheHitCount;
+    private long releasedRawBytes;
+    private long releasedStoredTextBytes;
     private int disposed;
 
     private InvocationReadSession(
@@ -158,6 +161,7 @@ public sealed class InvocationReadSession : IDisposable
                 session.materializationCount++;
             entry.MaterializedText = text;
             entry.LogicalSha256 = logicalSha256;
+            session.ReleaseRedundantRepresentations(entry);
         }
     }
 
@@ -165,16 +169,31 @@ public sealed class InvocationReadSession : IDisposable
     {
         lock (sync)
         {
+            var retainedEntries = entries
+                .Select(pair => MeasureRetainedEntry(pair.Key, pair.Value))
+                .OrderByDescending(value => value.TotalRetainedBytes)
+                .ThenBy(value => value.Path, PathComparer)
+                .ToArray();
             return new InvocationReadSessionSnapshot(
                 ReaderVersion,
                 enabled,
                 immutablePaths.Count,
+                entries.Count,
                 physicalReadCount,
                 physicalBytesRead,
                 fullHashCount,
                 hashBytes,
                 materializationCount,
-                cacheHitCount);
+                cacheHitCount,
+                retainedEntries.Sum(value => value.RawBytes),
+                retainedEntries.Sum(value => value.StoredTextBytes),
+                retainedEntries.Sum(value => value.MaterializedTextBytes),
+                retainedEntries.Sum(value => value.HashTextBytes),
+                retainedEntries.Sum(value => value.TotalRetainedBytes),
+                retainedEntries.FirstOrDefault()?.TotalRetainedBytes ?? 0,
+                releasedRawBytes,
+                releasedStoredTextBytes,
+                retainedEntries.Take(20).ToArray());
         }
     }
 
@@ -184,6 +203,11 @@ public sealed class InvocationReadSession : IDisposable
             return;
         if (ReferenceEquals(Ambient.Value, this))
             Ambient.Value = previous;
+        lock (sync)
+        {
+            entries.Clear();
+            immutablePaths.Clear();
+        }
     }
 
     private bool CanReuse(string fullPath) =>
@@ -197,10 +221,12 @@ public sealed class InvocationReadSession : IDisposable
         lock (sync)
         {
             var entry = GetOrCreate(fullPath);
-            var reused = entry.RawBytes is not null;
-            var bytesRead = EnsureRawBytes(fullPath, entry);
+            var reused = entry.StoredText is not null ||
+                entry.RawBytes is not null;
+            var bytesRead = 0L;
             if (entry.StoredText is null)
             {
+                bytesRead = EnsureRawBytes(fullPath, entry);
                 using var stream = new MemoryStream(
                     entry.RawBytes!,
                     writable: false);
@@ -216,7 +242,9 @@ public sealed class InvocationReadSession : IDisposable
                 bytesRead,
                 0,
                 reused);
-            return entry.StoredText;
+            var text = entry.StoredText;
+            ReleaseRedundantRepresentations(entry);
+            return text;
         }
     }
 
@@ -228,16 +256,18 @@ public sealed class InvocationReadSession : IDisposable
         {
             var entry = GetOrCreate(fullPath);
             var reusedBytes = entry.RawBytes is not null;
-            var bytesRead = EnsureRawBytes(fullPath, entry);
+            var bytesRead = 0L;
             var hashWork = 0L;
             var reusedHash = entry.StoredSha256 is not null;
             if (entry.StoredSha256 is null)
             {
+                bytesRead = EnsureRawBytes(fullPath, entry);
                 entry.StoredSha256 = Sha256(entry.RawBytes!);
                 hashWork = entry.RawBytes!.LongLength;
                 fullHashCount++;
                 hashBytes += hashWork;
             }
+            ReleaseRedundantRepresentations(entry);
             if (reusedBytes || reusedHash)
                 cacheHitCount++;
             observation = new InvocationReadObservation(
@@ -266,6 +296,26 @@ public sealed class InvocationReadSession : IDisposable
             entries.Add(fullPath, entry);
         }
         return entry;
+    }
+
+    private void ReleaseRedundantRepresentations(Entry entry)
+    {
+        if (entry.StoredSha256 is not null &&
+            entry.StoredText is not null &&
+            entry.RawBytes is not null)
+        {
+            releasedRawBytes += entry.RawBytes.LongLength;
+            entry.RawBytes = null;
+        }
+
+        if (entry.StoredSha256 is not null &&
+            entry.MaterializedText is not null &&
+            entry.StoredText is not null &&
+            !ReferenceEquals(entry.StoredText, entry.MaterializedText))
+        {
+            releasedStoredTextBytes += StringBytes(entry.StoredText);
+            entry.StoredText = null;
+        }
     }
 
     private static string HashWithoutReuse(
@@ -318,6 +368,32 @@ public sealed class InvocationReadSession : IDisposable
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal);
 
+    private static InvocationReadRetainedEntry MeasureRetainedEntry(
+        string path,
+        Entry entry)
+    {
+        var rawBytes = entry.RawBytes?.LongLength ?? 0;
+        var storedTextBytes = StringBytes(entry.StoredText);
+        var materializedTextBytes = ReferenceEquals(
+            entry.StoredText,
+            entry.MaterializedText)
+                ? 0
+                : StringBytes(entry.MaterializedText);
+        var hashTextBytes = StringBytes(entry.StoredSha256) +
+            StringBytes(entry.LogicalSha256);
+        return new InvocationReadRetainedEntry(
+            path,
+            rawBytes,
+            storedTextBytes,
+            materializedTextBytes,
+            hashTextBytes,
+            rawBytes + storedTextBytes + materializedTextBytes +
+                hashTextBytes);
+    }
+
+    private static long StringBytes(string? value) =>
+        value is null ? 0 : (long)value.Length * sizeof(char);
+
     private sealed class Entry
     {
         public byte[]? RawBytes { get; set; }
@@ -334,12 +410,45 @@ public readonly record struct InvocationReadObservation(
     bool CacheHit);
 
 public sealed record InvocationReadSessionSnapshot(
-    string ReaderVersion,
-    bool Enabled,
-    int RegisteredPathCount,
-    long PhysicalReadCount,
-    long PhysicalBytesRead,
-    long FullHashCount,
-    long HashBytes,
-    long MaterializationCount,
-    long CacheHitCount);
+    [property: JsonPropertyName("reader_version")] string ReaderVersion,
+    [property: JsonPropertyName("enabled")] bool Enabled,
+    [property: JsonPropertyName("registered_path_count")]
+        int RegisteredPathCount,
+    [property: JsonPropertyName("entry_count")] int EntryCount,
+    [property: JsonPropertyName("physical_read_count")]
+        long PhysicalReadCount,
+    [property: JsonPropertyName("physical_bytes_read")]
+        long PhysicalBytesRead,
+    [property: JsonPropertyName("full_hash_count")] long FullHashCount,
+    [property: JsonPropertyName("hash_bytes")] long HashBytes,
+    [property: JsonPropertyName("materialization_count")]
+        long MaterializationCount,
+    [property: JsonPropertyName("cache_hit_count")] long CacheHitCount,
+    [property: JsonPropertyName("raw_bytes_retained")]
+        long RawBytesRetained,
+    [property: JsonPropertyName("stored_text_bytes_retained")]
+        long StoredTextBytesRetained,
+    [property: JsonPropertyName("materialized_text_bytes_retained")]
+        long MaterializedTextBytesRetained,
+    [property: JsonPropertyName("hash_text_bytes_retained")]
+        long HashTextBytesRetained,
+    [property: JsonPropertyName("total_retained_bytes")]
+        long TotalRetainedBytes,
+    [property: JsonPropertyName("max_entry_retained_bytes")]
+        long MaxEntryRetainedBytes,
+    [property: JsonPropertyName("released_raw_bytes")]
+        long ReleasedRawBytes,
+    [property: JsonPropertyName("released_stored_text_bytes")]
+        long ReleasedStoredTextBytes,
+    [property: JsonPropertyName("largest_entries")]
+        InvocationReadRetainedEntry[] LargestEntries);
+
+public sealed record InvocationReadRetainedEntry(
+    [property: JsonPropertyName("path")] string Path,
+    [property: JsonPropertyName("raw_bytes")] long RawBytes,
+    [property: JsonPropertyName("stored_text_bytes")] long StoredTextBytes,
+    [property: JsonPropertyName("materialized_text_bytes")]
+        long MaterializedTextBytes,
+    [property: JsonPropertyName("hash_text_bytes")] long HashTextBytes,
+    [property: JsonPropertyName("total_retained_bytes")]
+        long TotalRetainedBytes);
