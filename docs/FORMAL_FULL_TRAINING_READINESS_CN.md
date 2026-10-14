@@ -1,10 +1,16 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue alternative skeleton denominator
+
+- `build-money-revenue-alternative-denominator` rebuilds the current candidate catalog, then expands every eligible policy candidate through every simple authoritative dependency path to the unique settled-money milestone. Acquisition candidates branch into sale and shipping paths, machine capacity retains load/collect dependencies, and direct terminal candidates keep only their own settlement family.
+- This is a complete path-skeleton denominator, not a concrete counterfactual denominator. Any acquisition, processing or stochastic action requires a fresh post-action terminal-candidate rebind; direct sale and direct shipping retain separate proof shapes, and shipping still requires both deposit and later native settlement evidence.
+- Consequently `alternative_skeleton_denominator_complete` may be true while `current_alternative_denominator_authoritative`, long-horizon authority, production labels and formal training remain false. The next gate closes fresh terminal identity and shipping-deposit proof before comparison-proof binding.
+
 ## 2026-10-14 Revenue current-snapshot candidate denominator
 
 - `build-money-revenue-candidate-denominator` now derives its actionable-node inventory from the authoritative `earn_money` dependency expansion and delegates all live candidate semantics to the existing `CandidateOptionAvailabilityEvaluator`. It records every event/economic row, blocked exclusion, rolling continuation parameter and content digest without introducing a second planner or pricing implementation.
 - Current-snapshot enumeration authority is deliberately separate from long-horizon authority. The current set fails closed on missing option evaluations, missing transparent fields, duplicate identities or candidate-kind drift. Long-horizon authority remains false while the dependency expansion still carries the fresh-save schedule, counterfactual opportunity-cost and crop-route blockers.
-- The catalog alone cannot emit a production preference: it has no verified counterfactual rollout receipts. `production_teacher_preference_label_eligible=false` and `formal_product_training_authorized=false` remain mandatory. The next gate binds every comparison alternative to one exact catalog candidate ID and catalog SHA before any preference is considered.
+- The catalog alone cannot emit a production preference: it has no verified counterfactual rollout receipts. `production_teacher_preference_label_eligible=false` and `formal_product_training_authorized=false` remain mandatory. Its candidate IDs first enter authoritative dependency-path expansion; acquisition outcomes then require a fresh terminal-candidate rebind before any comparison alternative can be concrete.
 
 ## 2026-10-14 Revenue comparison artifact binding
 
