@@ -84,7 +84,7 @@ public static class MoneyThresholdNativeOutcomeWaveSelectionBuilder
             .Where(MoneyThresholdNativeOutcomeSelectionBuilder
                 .IsExecutableShopSaleStage)
             .Select(candidate => (uint)candidate.TotalValue)
-            .DefaultIfEmpty(0)
+            .DefaultIfEmpty(0u)
             .Max();
         var maximumOutcome = checked(
             checkpoint.TotalMoneyEarned + maximumSaleValue);
