@@ -76,6 +76,8 @@ Money 的基础设施、hermetic fixtures、comparison/native channel separation
 
 Money 原生结果表示现已从 sale-only 扩展为统一双入口：隔离的 ShopMenu sale episode，或完整的 Revenue trajectory receipt。后者复用权威 request、可选 acquisition/processing rollout、terminal proof 与 sale/shipping recurrence，并由 corpus v4 统一投影；criterion join 必须匹配 selected concrete alternative、完整 Revenue prefix、terminal evidence 和原生 artifacts。该结构关闭的是 shipping/rebound 的表示缺口，不产生真实生产证据，故 `Money production cells` 仍为 `0/18`。
 
+Money batch 更新链可在调用方显式提供现有 production coverage request 模板时，通过独立 manifest 重放 corpus 并原子替换其中全部旧 Money source；其他 source 原样保留，source ID 冲突失败关闭。默认不提供模板时不会改写 coverage request。该接线仍不改变 `0/18`，但避免 18 格闭合后再手工拼 JSON。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：

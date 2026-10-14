@@ -32,11 +32,6 @@ internal static partial class BootstrapSelfTest
             skullKeyCorpusPath);
         var moneyThresholdCorpusPath =
             BuildMoneyThresholdTeacherCorpusFixture(fullOutputRoot);
-        var moneyThresholdSource = new GoalMethodTeacherCoverageSource(
-            "money-threshold-terminal-corpus",
-            GoalMethodTeacherCoverageSourceKinds
-                .MoneyThresholdProgressionCorpus,
-            moneyThresholdCorpusPath);
         var request = new GoalMethodTeacherCoverageRequest
         {
             CoverageId = "self-test-current-goal-method-teacher-coverage",
@@ -357,12 +352,105 @@ internal static partial class BootstrapSelfTest
                 "skull-key-adapter-fixture-coverage-report.json"),
             skullKeyFixtureReport);
 
-        var moneyFixtureRequest = new GoalMethodTeacherCoverageRequest
+        var moneyAttachmentManifestPath = Path.Combine(
+            fullOutputRoot,
+            "money-threshold-coverage-request-manifest.json");
+        Write(
+            moneyAttachmentManifestPath,
+            new MoneyThresholdCoverageRequestManifest
+            {
+                BaseCoverageRequestPath = requestPath,
+                MoneyThresholdCorpusPath = moneyThresholdCorpusPath,
+                SourceId = "money-threshold-terminal-corpus",
+                FormalProductTrainingAuthorized = false
+            });
+        var moneyFixtureRequest = MoneyThresholdCoverageRequestBuilder.Build(
+            moneyAttachmentManifestPath);
+        Require(
+            moneyFixtureRequest.CoverageId == request.CoverageId &&
+            moneyFixtureRequest.Sources.Length == 2 &&
+            moneyFixtureRequest.Sources.Count(value =>
+                value.SourceKind ==
+                    GoalMethodTeacherCoverageSourceKinds
+                        .MoneyThresholdProgressionCorpus) == 1 &&
+            moneyFixtureRequest.Sources.Single(value =>
+                    value.SourceKind ==
+                        GoalMethodTeacherCoverageSourceKinds
+                            .MoneyThresholdProgressionCorpus)
+                .ArtifactPath == moneyThresholdCorpusPath &&
+            !moneyFixtureRequest.FormalProductTrainingAuthorized,
+            "Money corpus was not attached to the coverage request exactly once.");
+        var staleMoneyRequestPath = Path.Combine(
+            fullOutputRoot,
+            "stale-money-sources-coverage-request.json");
+        Write(
+            staleMoneyRequestPath,
+            new GoalMethodTeacherCoverageRequest
+            {
+                CoverageId = request.CoverageId,
+                Sources = new[]
+                {
+                    source,
+                    new GoalMethodTeacherCoverageSource(
+                        "stale-money-a",
+                        GoalMethodTeacherCoverageSourceKinds
+                            .MoneyThresholdProgressionCorpus,
+                        moneyThresholdCorpusPath),
+                    new GoalMethodTeacherCoverageSource(
+                        "stale-money-b",
+                        GoalMethodTeacherCoverageSourceKinds
+                            .MoneyThresholdProgressionCorpus,
+                        moneyThresholdCorpusPath)
+                },
+                FormalProductTrainingAuthorized = false
+            });
+        var replacementManifestPath = Path.Combine(
+            fullOutputRoot,
+            "replace-stale-money-sources-manifest.json");
+        Write(
+            replacementManifestPath,
+            new MoneyThresholdCoverageRequestManifest
+            {
+                BaseCoverageRequestPath = staleMoneyRequestPath,
+                MoneyThresholdCorpusPath = moneyThresholdCorpusPath,
+                SourceId = "money-threshold-terminal-corpus",
+                FormalProductTrainingAuthorized = false
+            });
+        var replacementRequest = MoneyThresholdCoverageRequestBuilder.Build(
+            replacementManifestPath);
+        Require(
+            replacementRequest.Sources.Length == 2 &&
+            replacementRequest.Sources.Count(value =>
+                value.SourceKind ==
+                    GoalMethodTeacherCoverageSourceKinds
+                        .MoneyThresholdProgressionCorpus) == 1 &&
+            replacementRequest.Sources.All(value =>
+                value.SourceId is not ("stale-money-a" or "stale-money-b")),
+            "Stale Money coverage sources were not replaced atomically.");
+        var sourceCollisionManifestPath = Path.Combine(
+            fullOutputRoot,
+            "money-threshold-coverage-source-collision-manifest.json");
+        Write(
+            sourceCollisionManifestPath,
+            new MoneyThresholdCoverageRequestManifest
+            {
+                BaseCoverageRequestPath = requestPath,
+                MoneyThresholdCorpusPath = moneyThresholdCorpusPath,
+                SourceId = source.SourceId,
+                FormalProductTrainingAuthorized = false
+            });
+        var sourceCollisionRejected = false;
+        try
         {
-            CoverageId = "self-test-money-threshold-adapter-fixture",
-            Sources = new[] { source, moneyThresholdSource },
-            FormalProductTrainingAuthorized = false
-        };
+            _ = MoneyThresholdCoverageRequestBuilder.Build(
+                sourceCollisionManifestPath);
+        }
+        catch (InvalidDataException)
+        {
+            sourceCollisionRejected = true;
+        }
+        Require(sourceCollisionRejected,
+            "A Money source replaced an unrelated coverage source ID.");
         var moneyFixtureRequestPath = Path.Combine(
             fullOutputRoot,
             "money-threshold-adapter-fixture-coverage-request.json");

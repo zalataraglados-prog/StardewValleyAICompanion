@@ -68,6 +68,12 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             BatchSource, StringComparison.Ordinal);
         Assert.Contains("build-money-threshold-evidence-work-plan",
             BatchSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-threshold-coverage-request",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("money_threshold_coverage_request_manifest.v1",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("$CoverageRequestTemplate",
+            BatchSource, StringComparison.Ordinal);
         Assert.Contains("run_summary_paths = $summaryPaths",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains(
@@ -84,6 +90,8 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("StardewModdingAPI", BatchSource,
             StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            BatchSource, StringComparison.Ordinal);
     }
 
     [Fact]

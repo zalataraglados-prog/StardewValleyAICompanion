@@ -11,6 +11,7 @@
 - Money corpus/request 升级为 v4，同一 canonical builder 现在接受隔离 sale episode 或完整 trajectory。comparison join 对 trajectory 强制匹配 selected concrete alternative、acquisition 标志、terminal evidence、完整 prefix 与 terminal artifacts，禁止把 rebound 或 shipping 截断成最后一次出售/结算。
 - batch request v4 与 comparison index v3 可携带一个 comparison-selected trajectory；完成脚本会先构建并独立重放 trajectory，再建立 criterion-local join。若同一 seed 跨越的 criterion 选择不同 alternative，仍要求不同 seed run，不能把多个原生结果塞进一行。
 - 单候选验证现在把已经验证的 source checkpoint 与 final snapshot 通过内部上下文交给 trajectory builder，避免重复读取同一 source/recurrence；同一次完成编排中，多个 criterion 选择同一 alternative 时也只构建一次 trajectory receipt，再分别执行 criterion-local join。
+- 新增 `money_threshold_coverage_request_manifest.v1` 与 `build-money-threshold-coverage-request`。它先重放 Money corpus，再从现有 coverage request 中移除全部旧 Money source、保留其他 source，并加入恰好一个新 Money source；与非 Money source ID 冲突时失败关闭。batch updater 仅在显式传入 `-CoverageRequestTemplate` 时生成该请求，默认不会触碰 production coverage。
 - 这些变更关闭表示与编排代码缺口，但没有采集 production evidence；Money 仍为 `0/18`，正式训练仍为 `false`。
 
 
