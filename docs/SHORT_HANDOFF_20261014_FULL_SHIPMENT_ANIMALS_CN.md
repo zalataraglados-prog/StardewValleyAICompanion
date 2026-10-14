@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生动物产物
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-farm-animal-produce`。
 - 严格运行时证据：`20/26`，剩余 `6` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -17,6 +17,6 @@
 - 普通牛奶原生执行 `97` tick，回执为 `applied/verified`；大壶牛奶复用同一原生 Milk Pail 生命周期并通过完整 rollout proof。没有直接写动物、背包、经验、能量、友好度或统计。
 - `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 新增 `-CompactOutput`，只压缩控制器输出，不跳过证明重建。Core `2680/2680`、Backend `229/229`、Bootstrap 与 RuntimeTestHarness Release 全部通过。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 进入 `fish_pond_output_sample / full_shipment:item:812 / (O)812 / native_fish_pond_output`。先审计并复用现有 `fishing.service_fish_ponds` 当前鱼塘输出链，只补严格 Full Shipment 规划轴与证据；不得新建第二套鱼塘收取执行器，不得触碰或提交 `local-data/`。机器三类路线应在共享机器规划改造后集中采证并刷新一次严格索引。
