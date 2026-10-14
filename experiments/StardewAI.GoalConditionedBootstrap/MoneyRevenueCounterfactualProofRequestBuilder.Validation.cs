@@ -43,11 +43,22 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
         string sourceStateHash,
         string sourceSnapshotPath,
         string sourceSnapshotSha256,
+        string ledgerPath,
         string ledgerSha256,
-        int ledgerRevision)
+        string ledgerId,
+        int ledgerRevision,
+        MoneyRevenueTerminalStrategyLedgerAnchor terminalLedger)
     {
         ValidateAlternative(alternative, sourceStateHash, sourceSnapshotPath,
             sourceSnapshotSha256);
+        ValidateTerminalLedgerAnchor(
+            alternative,
+            terminalLedger,
+            ledgerPath,
+            ledgerSha256,
+            ledgerId,
+            ledgerRevision,
+            sourceStateHash);
         var proofKind = alternative.RequiresNativeShopSaleProof
             ? "native_shop_sale"
             : "native_shipping_deposit_and_day_settlement";
@@ -59,8 +70,17 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
                     alternative.ConcreteAlternativeSha256,
                     SourceStateHash = sourceStateHash,
                     SourceSnapshotSha256 = sourceSnapshotSha256,
+                    SourceStrategyLedgerPath = ledgerPath,
                     SourceStrategyLedgerSha256 = ledgerSha256,
+                    SourceStrategyLedgerId = ledgerId,
                     SourceStrategyLedgerRevision = ledgerRevision,
+                    terminalLedger.SourceKind,
+                    TerminalStrategyLedgerPath = terminalLedger.Path,
+                    TerminalStrategyLedgerSha256 = terminalLedger.Sha256,
+                    TerminalStrategyLedgerId = terminalLedger.LedgerId,
+                    TerminalStrategyLedgerRevision = terminalLedger.Revision,
+                    TerminalStrategyLedgerSourceStateHash =
+                        terminalLedger.SourceStateHash,
                     alternative.TerminalStateHash,
                     alternative.TerminalSnapshotSha256,
                     alternative.TerminalOptionId,
@@ -77,8 +97,17 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             SourceStateHash = sourceStateHash,
             SourceSnapshotPath = sourceSnapshotPath,
             SourceSnapshotSha256 = sourceSnapshotSha256,
+            SourceStrategyLedgerPath = ledgerPath,
             SourceStrategyLedgerSha256 = ledgerSha256,
+            SourceStrategyLedgerId = ledgerId,
             SourceStrategyLedgerRevision = ledgerRevision,
+            TerminalStrategyLedgerSourceKind = terminalLedger.SourceKind,
+            TerminalStrategyLedgerPath = terminalLedger.Path,
+            TerminalStrategyLedgerSha256 = terminalLedger.Sha256,
+            TerminalStrategyLedgerId = terminalLedger.LedgerId,
+            TerminalStrategyLedgerRevision = terminalLedger.Revision,
+            TerminalStrategyLedgerSourceStateHash =
+                terminalLedger.SourceStateHash,
             TerminalStateHash = alternative.TerminalStateHash,
             TerminalSnapshotPath = alternative.TerminalSnapshotPath,
             TerminalSnapshotSha256 = alternative.TerminalSnapshotSha256,
@@ -110,6 +139,37 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(
                 request);
         return request;
+    }
+
+    private static void ValidateTerminalLedgerAnchor(
+        MoneyRevenueConcreteAlternative alternative,
+        MoneyRevenueTerminalStrategyLedgerAnchor terminalLedger,
+        string sourceLedgerPath,
+        string sourceLedgerSha256,
+        string sourceLedgerId,
+        int sourceLedgerRevision,
+        string sourceStateHash)
+    {
+        var rebound = alternative.RequiresAcquisitionOrProcessingRollout;
+        Require(!string.IsNullOrWhiteSpace(terminalLedger.Path) &&
+                IsSha256(terminalLedger.Sha256) &&
+                !string.IsNullOrWhiteSpace(terminalLedger.LedgerId) &&
+                terminalLedger.Revision >= sourceLedgerRevision &&
+                terminalLedger.LedgerId == sourceLedgerId &&
+                terminalLedger.SourceStateHash ==
+                    alternative.TerminalStateHash &&
+                terminalLedger.SourceKind == (rebound
+                    ? "acquisition_rollout_latest_settlement"
+                    : "source_strategy_ledger"),
+            "Money Revenue terminal strategy-ledger anchor is invalid: " +
+            alternative.ConcreteAlternativeId + ".");
+        if (rebound)
+            return;
+        Require(terminalLedger.Path == sourceLedgerPath &&
+                terminalLedger.Sha256 == sourceLedgerSha256 &&
+                terminalLedger.Revision == sourceLedgerRevision &&
+                terminalLedger.SourceStateHash == sourceStateHash,
+            "Money Revenue direct alternative did not retain the exact source strategy ledger.");
     }
 
     private static void ValidateAlternative(

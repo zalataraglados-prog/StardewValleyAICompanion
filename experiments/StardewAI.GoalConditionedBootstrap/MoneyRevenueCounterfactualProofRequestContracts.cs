@@ -41,8 +41,34 @@ public sealed class MoneyRevenueCounterfactualProofRequest
     [JsonPropertyName("source_strategy_ledger_sha256")]
     public string SourceStrategyLedgerSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("source_strategy_ledger_path")]
+    public string SourceStrategyLedgerPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_strategy_ledger_id")]
+    public string SourceStrategyLedgerId { get; set; } = string.Empty;
+
     [JsonPropertyName("source_strategy_ledger_revision")]
     public int SourceStrategyLedgerRevision { get; set; }
+
+    [JsonPropertyName("terminal_strategy_ledger_source_kind")]
+    public string TerminalStrategyLedgerSourceKind { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("terminal_strategy_ledger_path")]
+    public string TerminalStrategyLedgerPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("terminal_strategy_ledger_sha256")]
+    public string TerminalStrategyLedgerSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("terminal_strategy_ledger_id")]
+    public string TerminalStrategyLedgerId { get; set; } = string.Empty;
+
+    [JsonPropertyName("terminal_strategy_ledger_revision")]
+    public int TerminalStrategyLedgerRevision { get; set; }
+
+    [JsonPropertyName("terminal_strategy_ledger_source_state_hash")]
+    public string TerminalStrategyLedgerSourceStateHash { get; set; } =
+        string.Empty;
 
     [JsonPropertyName("terminal_state_hash")]
     public string TerminalStateHash { get; set; } = string.Empty;
@@ -153,6 +179,12 @@ public sealed class MoneyRevenueCounterfactualProofRequestCatalog
     [JsonPropertyName("request_denominator_authoritative")]
     public bool RequestDenominatorAuthoritative { get; set; }
 
+    [JsonPropertyName("terminal_strategy_ledger_anchors_verified")]
+    public bool TerminalStrategyLedgerAnchorsVerified { get; set; }
+
+    [JsonPropertyName("terminal_strategy_ledger_anchor_count")]
+    public int TerminalStrategyLedgerAnchorCount { get; set; }
+
     [JsonPropertyName("counterfactual_proof_collection_ready")]
     public bool CounterfactualProofCollectionReady { get; set; }
 
@@ -182,8 +214,17 @@ public sealed class MoneyRevenueCounterfactualProofRequestCatalog
     public string RequestPolicy { get; set; } =
         "Every authoritative concrete alternative emits exactly one proof request. Direct " +
         "alternatives require no fabricated acquisition rollout; rebound alternatives retain " +
-        "their verified rollout identity. Every request still requires independently verified " +
+        "their verified rollout identity and derive the terminal strategy-ledger anchor from " +
+        "the rollout's final verified settlement. Every request still requires independently verified " +
         "terminal opportunity cost, reservation safety and native Revenue recurrence evidence. " +
         "This catalog schedules " +
         "proof collection but cannot claim outcomes, emit a production label or authorize training.";
 }
+
+internal sealed record MoneyRevenueTerminalStrategyLedgerAnchor(
+    string SourceKind,
+    string Path,
+    string Sha256,
+    string LedgerId,
+    int Revision,
+    string SourceStateHash);

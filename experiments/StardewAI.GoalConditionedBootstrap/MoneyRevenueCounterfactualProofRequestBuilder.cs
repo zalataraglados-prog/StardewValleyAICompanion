@@ -44,6 +44,11 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             ledgerPath,
             "Money Revenue source strategy ledger");
         ValidateSourceLedger(ledger, sourceSnapshot, concrete.SourceStateHash);
+        var terminalLedgerAnchors = BuildTerminalLedgerAnchors(
+            concrete,
+            ledgerPath,
+            Hash(ledgerPath),
+            ledger);
         return BuildCatalog(
             Hash(fullManifestPath),
             concretePath,
@@ -51,7 +56,8 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             concrete,
             ledgerPath,
             Hash(ledgerPath),
-            ledger);
+            ledger,
+            terminalLedgerAnchors);
     }
 
     internal static MoneyRevenueCounterfactualProofRequestCatalog BuildCatalog(
@@ -61,7 +67,9 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
         MoneyRevenueConcreteAlternativeDenominatorCatalog concrete,
         string ledgerPath,
         string ledgerSha256,
-        StrategyCommitmentLedger ledger)
+        StrategyCommitmentLedger ledger,
+        IReadOnlyDictionary<string, MoneyRevenueTerminalStrategyLedgerAnchor>
+            terminalLedgerAnchors)
     {
         Require(concrete.CurrentConcreteDenominatorAuthoritative &&
                 concrete.SkeletonDenominatorComplete &&
@@ -77,6 +85,11 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
                 ledger.Revision >= 0 &&
                 ledger.SourceStateHash == concrete.SourceStateHash,
             "Money Revenue source strategy ledger does not bind the concrete denominator.");
+        Require(terminalLedgerAnchors.Count ==
+                    concrete.ConcreteAlternativeCount &&
+                concrete.ConcreteAlternativeIds.All(
+                    terminalLedgerAnchors.ContainsKey),
+            "Money Revenue terminal strategy-ledger anchor denominator drifted.");
         var requests = concrete.Alternatives
             .OrderBy(row => row.ConcreteAlternativeId, StringComparer.Ordinal)
             .Select(row => BuildRequest(
@@ -84,8 +97,11 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
                 concrete.SourceStateHash,
                 concrete.SourceSnapshotPath,
                 concrete.SourceSnapshotSha256,
+                ledgerPath,
                 ledgerSha256,
-                ledger.Revision))
+                ledger.LedgerId,
+                ledger.Revision,
+                terminalLedgerAnchors[row.ConcreteAlternativeId]))
             .ToArray();
         Require(requests.Length == concrete.ConcreteAlternativeCount &&
                 requests.Select(row => row.ConcreteAlternativeId)
@@ -112,6 +128,9 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
             SourceStrategyLedgerId = ledger.LedgerId,
             SourceStrategyLedgerRevision = ledger.Revision,
             RequestDenominatorAuthoritative = true,
+            TerminalStrategyLedgerAnchorsVerified = true,
+            TerminalStrategyLedgerAnchorCount =
+                terminalLedgerAnchors.Count,
             CounterfactualProofCollectionReady = true,
             ProductionTeacherPreferenceLabelEligible = false,
             RequestCount = requests.Length,
