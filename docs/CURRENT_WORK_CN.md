@@ -1,5 +1,23 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue concrete alternative 联合分母
+
+- 新增 `build-money-revenue-concrete-alternative-denominator`、
+  `money_revenue_concrete_alternative_denominator_manifest.v1` 与 catalog。构建器会重新构建路径骨架、terminal rebind
+  receipt 及其全部叶子证据，再将 direct sale/shipping 骨架和 acquisition/processing 后的 rebound 候选合并为一个
+  不由调用方声明 ID 的具体候选分母。
+- direct 候选严格复用源 candidate 身份和源 state；rebound 候选严格复用已验证的新槽位、terminal state、rollout
+  ID/manifest/receipt 与 terminal candidate。两类候选进入同一 schema，但保留不同的 acquisition、shop-sale、shipping
+  deposit 和 shipping settlement 证明要求，不会用空 rollout 冒充直接销售，也不会把直接出货当成已隔夜结算。
+- hermetic fixture 中 7 个路径骨架稳定展开为 `5 direct + 3 rebound = 8 concrete`；同一新物品的两个商店路径均保留，
+  删除任一 rebound 骨架证据会失败关闭。Release 构建为 `0 warning / 0 error`，快速密封回归通过，未启动游戏。
+- 该 catalog 现在可以声明 `current_concrete_denominator_authoritative=true`，含义仅限当前状态下的候选身份完整。
+  尚未为每个 concrete ID 生成隔离 counterfactual 收益 recurrence，因此 production label eligibility 与
+  `formal_product_training_authorized` 仍为 `false`，正式状态仍是 `2/19`、根方法 `1/11`。
+- 下一固定切片：由 concrete catalog 生成逐项 proof request，并使 Revenue comparison proof 精确消费该目录 ID；
+  direct 候选走原生 sale 或 deposit+settlement，rebound 候选先验 acquisition rollout 再走相同终端证据，不再接受
+  comparison manifest 自报候选全集。
+
 ## 2026-10-14 Revenue fresh terminal 候选重绑定
 
 - 新增 `build-money-revenue-terminal-candidate-rebind`、

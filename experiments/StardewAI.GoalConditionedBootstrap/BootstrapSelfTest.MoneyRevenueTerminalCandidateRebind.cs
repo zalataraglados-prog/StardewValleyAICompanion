@@ -62,6 +62,12 @@ internal static partial class BootstrapSelfTest
                         StringComparison.Ordinal) &&
                     row.ConcreteAlternativeSha256.Length == 64),
             "Revenue terminal rebind omitted a shop path or admitted an unchanged inventory slot.");
+        VerifyMoneyRevenueConcreteAlternativeDenominator(
+            direction,
+            freshCatalog,
+            sale,
+            shipping,
+            after.StateHash);
 
         var rejected = false;
         try

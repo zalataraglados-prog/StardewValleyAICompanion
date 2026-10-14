@@ -1,5 +1,22 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue concrete alternative denominator
+
+`money_revenue_concrete_alternative_denominator_catalog.v1` 现将完整路径骨架分母分成两类后重新合并：direct
+sale/shipping 直接绑定源快照候选；需要 acquisition/processing 的骨架消费已重放验证的 terminal-rebind 证据，并可
+一对多展开全部合法商店或出货终端。每个 concrete alternative 保存完整 source/terminal candidate、路径、proof shape、
+terminal state，以及需要时的 rollout manifest/receipt 路径与哈希。
+
+构建器不接受调用方填写 concrete ID。alternative catalog、rebind manifest 和 rebind receipt 都必须重新构建且互相绑定
+同一 source state/catalog；每个骨架至少贡献一个 concrete alternative，direct 必须恰好一个，ID 和内容哈希不得重复。
+密封 fixture 的 `7 skeleton -> 5 direct + 3 rebound -> 8 concrete` 通过，漏掉任一 rebound 证据会拒绝。
+
+`current_concrete_denominator_authoritative=true` 只证明当前分母不重不漏，不证明这些候选已有隔离执行结果。下一准入门
+是按该目录生成 counterfactual proof requests，并让 comparison receipt 的候选 ID 集合与 catalog 完全相等；direct
+候选不能被迫伪造 acquisition rollout，rebound 候选也不能省略已验证 rollout。完成每项原生 Revenue recurrence 前，
+production label、正式覆盖和训练授权均不变：`2/19`、根方法 `1/11`、
+`formal_product_training_authorized=false`。
+
 ## 2026-10-14 Revenue fresh terminal candidate rebind
 
 `money_revenue_terminal_candidate_rebind_receipt.v1` 现在把所有需要结果态重绑定的 Revenue 路径骨架，与各自完整
