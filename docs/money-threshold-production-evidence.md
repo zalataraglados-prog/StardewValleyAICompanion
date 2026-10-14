@@ -85,6 +85,24 @@ formal training. A native outcome may cross several thresholds; each criterion
 view uses the same independently verified episode, while its comparison
 admission remains criterion-local.
 
+`Initialize-MoneyRevenueComparisonWork.ps1` starts this chain for one accepted
+native run without launching the game. It replays the run through the shared
+run verifier, rebuilds the authoritative alternative skeleton denominator, and
+emits `money_revenue_comparison_collection_plan.v1`. Every alternative is
+listed exactly once. The plan distinguishes:
+
+- acquisition/processing alternatives that first require a verified rollout
+  and fresh terminal-candidate rebind;
+- direct shop-sale or shipping alternatives that can proceed to terminal
+  recurrence, ledger-boundary, opportunity-cost, and reservation evidence;
+- the exact direct sale alternative whose already verified native episode can
+  be reused as its terminal episode input.
+
+Episode reuse is deliberately narrow. It does not satisfy route cost, ledger
+boundaries, reservation safety, recurrence, comparison admission, or the
+criterion-local corpus join. The plan is a deterministic work queue, not a
+Teacher label or evidence receipt.
+
 ## Batch policy
 
 Run one criterion-partition cell at a time. Reuse already built binaries and
@@ -118,7 +136,8 @@ force-full promotion oracle.
 ## Current implementation status
 
 The selection contract, CLI command, isolated native runner, replayed batch,
-and criterion-local comparison attachment path are implemented on the Money
-production branch. They have not been built or executed in the quiet
-development window. Therefore production Money coverage remains `0/18` until
-real runs and their independent comparison admissions are accepted.
+comparison collection planner, and criterion-local comparison attachment path
+are implemented on the Money production branch. They have not been built or
+executed in the quiet development window. Therefore production Money coverage
+remains `0/18` until real runs and their independent comparison admissions are
+accepted.

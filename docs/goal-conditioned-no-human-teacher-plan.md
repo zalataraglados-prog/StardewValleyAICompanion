@@ -3170,6 +3170,14 @@ Slice 7 remains assigned to the RTX 5070 node.
   index and rebuilds that plan after either channel changes. This closes the
   aggregation path only; no production run was executed and formal training
   remains disabled.
+- Native run replay is centralized in
+  `MoneyThresholdNativeOutcomeRunVerifier`; batch aggregation and comparison
+  planning consume the same verified summary, selection, native-only corpus row,
+  and episode identity. `build-money-revenue-comparison-collection-plan` then
+  projects every rebuilt skeleton into an exact collection task. It identifies
+  required acquisition rollout/rebind work and the one or more direct skeletons
+  allowed to reuse the run's native sale episode, without crediting any of the
+  remaining terminal or comparison proofs.
 
 ### 2026-10-14: Revenue alternative path skeletons
 
