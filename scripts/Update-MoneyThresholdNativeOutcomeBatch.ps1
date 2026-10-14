@@ -208,6 +208,12 @@ $workPlan = Get-Content -LiteralPath $workPlanPath -Raw | ConvertFrom-Json
         [int]$batch.teacher_comparison_complete_cell_count
     required_cell_count = [int]$batch.required_cell_count
     fully_complete_cell_count = [int]$workPlan.fully_complete_cell_count
+    native_collection_wave_count =
+        [int]$workPlan.native_collection_wave_count
+    comparison_collection_wave_count =
+        [int]$workPlan.comparison_collection_wave_count
+    comparison_blocked_on_native_cell_count =
+        [int]$workPlan.comparison_blocked_on_native_cell_count
     batch_path = $batchPath
     corpus_path = $corpusPath
     work_plan_path = $workPlanPath

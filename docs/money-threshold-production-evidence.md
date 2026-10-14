@@ -63,6 +63,30 @@ shipping eligibility and collection metadata. This lets the runner schedule a
 normal same-day wait without reimplementing shop calendars or silently dropping
 fields needed by later counterfactual comparison.
 
+### Collection waves
+
+The canonical 18-cell denominator is not a requirement to launch the game 18
+times. The evidence work plan also projects missing cells into conditional
+collection waves:
+
+- native waves group missing thresholds by dataset partition;
+- comparison waves group missing criterion-local admissions by an existing,
+  replay-verified native row.
+
+One native trajectory may close several threshold cells in its partition only
+when its source cumulative earnings are below the lowest missing threshold and
+its verified result reaches the highest missing threshold. The native selection
+builder still derives and verifies the complete crossed-criterion set. If no
+single authoritative candidate satisfies both bounds, the wave must be split
+and the plan rebuilt; the scheduler cannot synthesize or merge evidence.
+
+One comparison wave initializes the Revenue denominator once for its native
+row, but still requires a separate exact comparison admission for every listed
+criterion. All admissions attached to one seed must select the same native
+outcome. Criteria with different selected outcomes require independent seed
+runs. These waves reduce orchestration work only; they do not change cell
+counts, admit fixtures, create Teacher labels, or authorize formal training.
+
 ### Native Revenue trajectory normalization
 
 `build-money-threshold-native-trajectory` closes the representation gap
