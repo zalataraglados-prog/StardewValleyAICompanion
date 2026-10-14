@@ -3214,6 +3214,21 @@ Slice 7 remains assigned to the RTX 5070 node.
   production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request
   to native recurrence receipts before exact-ID comparison admission.
 
+### 2026-10-14: Revenue exact-ID comparison admission
+
+- `build-money-revenue-comparison-admission` rebuilds the terminal execution receipt and its authoritative request
+  catalog. Request IDs, terminal proof IDs and terminal evidence IDs must be exactly equal; concrete alternative IDs
+  are derived only from the requests.
+- Direct alternatives contribute their verified terminal cost. Rebound alternatives reuse the existing acquisition
+  artifact verifier and aggregate its route/reservation cost with terminal cost. Revenue recurrence must join the
+  terminal transition and preserve the source save, player and total-money identity.
+- The complete denominator enters the existing reserve-aware strict-Pareto comparer. A unique frontier is eligible for
+  a production Teacher preference; an incomparable frontier remains valid but unlabeled, with no arbitrary tie-break.
+- Hermetic coverage selects the one-minute sale over an otherwise equal two-minute sale and rejects a missing evidence
+  row. This closes current Revenue comparison admission, not criterion partition admission. The next bounded slice
+  connects the preference and native outcome to independent train/validation/test Money-family criterion views.
+  Formal coverage remains `2/19`, root-method coverage `1/11`, and formal product training remains unauthorized.
+
 ### 2026-10-14: Revenue terminal execution proof denominator
 
 - `build-money-revenue-terminal-execution-proof` rebuilds the authoritative counterfactual request catalog and requires

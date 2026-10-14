@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue exact-ID comparison admission
+
+- 新增 `build-money-revenue-comparison-admission`、`money_revenue_comparison_admission_manifest.v1` 与 receipt。
+  admission 会重建 terminal execution proof 与 counterfactual request catalog，要求 request、terminal proof、terminal evidence 三组 ID 完全相等，并按 request 顺序推导 concrete alternative ID；调用方不能再自报比较分母。
+- direct alternative 只消费已验证 terminal opportunity cost；rebound alternative 复用既有 comparison artifact verifier 重建 acquisition rollout、reservation 与 acquisition opportunity cost，随后和 terminal cost 聚合。没有新增第二套 rollout、Revenue recurrence 或 Pareto 比较实现。
+- 每条 recurrence 必须连接对应 terminal action，并保持 source save/player/total-money identity。完整分母进入现有 reserve-aware strict-Pareto comparer；只有唯一前沿候选时，receipt 才设置 `production_teacher_preference_label_eligible=true`，不可比较前沿保持无标签。
+- hermetic 用同一 source state 构造两条收益相同、真实终端耗时分别为 1/2 游戏分钟的直接出售证明；较快候选被唯一选中，删除任一 evidence 会失败关闭。Release 构建 `0 warning / 0 error`，未启动游戏或外部测试机。
+- 该层关闭 Revenue 当前 concrete denominator 的比较准入，但不冒充 criterion 三分区原生 outcome admission。下一固定切片是让 Money method-family 的独立 train/validation/test criterion view 消费该 preference 与原生结果；正式状态仍为 `2/19`、根方法 `1/11`、`formal_product_training_authorized=false`。
+
 ## 2026-10-14 Revenue terminal execution proof
 
 - 新增 `build-money-revenue-terminal-execution-proof`、

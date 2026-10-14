@@ -53,6 +53,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
+    new("build-money-revenue-comparison-admission", BuildMoneyRevenueComparisonAdmission),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
@@ -529,6 +530,18 @@ static void BuildMoneyRevenueTerminalExecutionProof(Arguments options)
     if (!receipt.TerminalOpportunityCostProofsVerified ||
         !receipt.TerminalReservationClaimProofsVerified ||
         !receipt.NativeRevenueRecurrencesVerified)
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildMoneyRevenueComparisonAdmission(Arguments options)
+{
+    var receipt = MoneyRevenueComparisonAdmissionBuilder.Build(
+        options.Required("manifest"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.CandidateDenominatorAuthoritative ||
+        !receipt.TerminalExecutionProofsVerified)
     {
         Environment.ExitCode = 2;
     }

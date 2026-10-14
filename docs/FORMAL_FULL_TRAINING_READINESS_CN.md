@@ -1,5 +1,16 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue exact-ID comparison admission gate
+
+`money_revenue_comparison_admission_receipt.v1` 只接受完整 terminal execution receipt，并从其源 request catalog 取得唯一候选分母。
+request ID、terminal proof ID 与 terminal evidence ID 必须逐集合完全相等；concrete alternative ID 只能由 request 映射获得。direct 候选使用 terminal cost，
+rebound 候选通过既有 artifact verifier 重建 acquisition cost/reservation 后与 terminal cost 聚合。Revenue prefix 还必须与 terminal transition、source save/player
+和 source `total_money_earned` 连续。
+
+完整分母进入现有 reserve-aware strict-Pareto comparer。只有唯一前沿才产生 production Teacher preference eligibility；不可比较前沿是一个合法但无标签的结果，
+不得任意 tie-break。即使唯一偏好成立，receipt 仍强制 `formal_product_training_authorized=false`，因为 Money criterion 的独立 train/validation/test 原生 outcome view
+尚未消费该偏好。当前正式覆盖与根方法保持 `2/19`、`1/11`。
+
 ## 2026-10-14 Revenue terminal execution proof gate
 
 `money_revenue_terminal_execution_proof_receipt.v1` 现在消费完整 counterfactual request catalog，并要求每个 request ID

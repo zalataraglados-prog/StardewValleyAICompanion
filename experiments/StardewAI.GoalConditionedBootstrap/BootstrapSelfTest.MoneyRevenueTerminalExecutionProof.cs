@@ -43,7 +43,8 @@ internal static partial class BootstrapSelfTest
             before,
             beforeSnapshotPath,
             beforeLedgerPath,
-            ledger);
+            ledger,
+            "shop-parsnip");
         var proof = new MoneyRevenueTerminalAlternativeProof
         {
             RequestId = request.RequestId,
@@ -111,10 +112,20 @@ internal static partial class BootstrapSelfTest
             SnapshotEnvelope before,
             string beforeSnapshotPath,
             string beforeLedgerPath,
-            StrategyCommitmentLedger ledger) => new()
+            StrategyCommitmentLedger ledger,
+            string identitySuffix) => new()
             {
-                RequestId = "request.terminal-shop-parsnip",
-                ConcreteAlternativeId = "alternative.terminal-shop-parsnip",
+                RequestId = "request.terminal-" + identitySuffix,
+                ConcreteAlternativeId = "alternative.terminal-" + identitySuffix,
+                SourceStateHash = before.StateHash,
+                SourceSnapshotPath = beforeSnapshotPath,
+                SourceSnapshotSha256 =
+                CurrentTeacherFrontierSupport.HashFile(beforeSnapshotPath),
+                SourceStrategyLedgerPath = beforeLedgerPath,
+                SourceStrategyLedgerSha256 =
+                CurrentTeacherFrontierSupport.HashFile(beforeLedgerPath),
+                SourceStrategyLedgerId = ledger.LedgerId,
+                SourceStrategyLedgerRevision = ledger.Revision,
                 TerminalStateHash = before.StateHash,
                 TerminalSnapshotPath = beforeSnapshotPath,
                 TerminalSnapshotSha256 =
@@ -122,9 +133,9 @@ internal static partial class BootstrapSelfTest
                 TerminalOptionId = "economy.sell_items",
                 TerminalCandidate = new MoneyRevenueCandidateCatalogEntry
                 {
-                    CatalogCandidateId = "candidate.shop-parsnip",
+                    CatalogCandidateId = "candidate." + identitySuffix,
                     CandidateChannel = "shop_sale",
-                    CandidateId = "shop-parsnip",
+                    CandidateId = identitySuffix,
                     CandidateKind = "native_shop_sale",
                     Available = true,
                     ComparisonEligible = true,
