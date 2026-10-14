@@ -5,9 +5,15 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class MoneyThresholdTeacherCorpusVersions
 {
     public const string Request =
-        "money_threshold_teacher_corpus_request.v3";
+        "money_threshold_teacher_corpus_request.v4";
     public const string Corpus =
-        "money_threshold_teacher_corpus.v3";
+        "money_threshold_teacher_corpus.v4";
+}
+
+public static class MoneyThresholdNativeOutcomeKinds
+{
+    public const string ShopSaleEpisode = "shop_sale_episode";
+    public const string RevenueTrajectory = "revenue_trajectory";
 }
 
 public sealed class MoneyThresholdTeacherCorpusRequest
@@ -32,7 +38,9 @@ public sealed record MoneyThresholdTeacherCorpusSource(
     [property: JsonPropertyName("execution_episode_path")]
         string ExecutionEpisodePath,
     [property: JsonPropertyName("comparison_admissions")]
-        MoneyThresholdTeacherComparisonSource[]? ComparisonAdmissions = null);
+        MoneyThresholdTeacherComparisonSource[]? ComparisonAdmissions = null,
+    [property: JsonPropertyName("native_trajectory_receipt_path")]
+        string NativeTrajectoryReceiptPath = "");
 
 public sealed record MoneyThresholdTeacherComparisonSource(
     [property: JsonPropertyName("criterion_id")] string CriterionId,
@@ -90,7 +98,7 @@ public sealed class MoneyThresholdTeacherCorpus
 
     [JsonPropertyName("corpus_policy")]
     public string CorpusPolicy { get; set; } =
-        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The shared Money progression verifier requires the sale to increase current money and totalMoneyEarned by the same exact positive amount while preserving the de-duplicated pending shipping scope. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. Native outcomes never self-label. A criterion-local Teacher comparison is admitted only by replaying an exact-denominator Revenue comparison receipt whose selected terminal artifact, first Revenue transition, save/player identity and authoritative criterion exactly match this row.";
+        "Each row is rebuilt from exactly one native outcome source: either an isolated ShopMenu sale episode or a complete verified Revenue trajectory. A trajectory preserves the authoritative request, optional acquisition rollout, terminal execution, sale or shipping settlement recurrence, source/final checkpoints and transitive artifact hashes. Crossed Grandpa thresholds and their criterion IDs are derived only from evaluator authority. Native outcomes never self-label. A criterion-local Teacher comparison is admitted only when its exact selected alternative, Revenue prefix, terminal artifacts, source identity and authoritative criterion match the rebuilt native outcome.";
 }
 
 public sealed record MoneyThresholdTeacherEvidenceRow(
@@ -131,7 +139,27 @@ public sealed record MoneyThresholdTeacherEvidenceRow(
     [property: JsonPropertyName("teacher_comparison_count")]
         int TeacherComparisonCount,
     [property: JsonPropertyName("native_terminal_outcome_verified")]
-        bool NativeTerminalOutcomeVerified);
+        bool NativeTerminalOutcomeVerified,
+    [property: JsonPropertyName("native_outcome_kind")]
+        string NativeOutcomeKind,
+    [property: JsonPropertyName("native_outcome_primary_path")]
+        string NativeOutcomePrimaryPath,
+    [property: JsonPropertyName("native_outcome_primary_sha256")]
+        string NativeOutcomePrimarySha256,
+    [property: JsonPropertyName("native_trajectory_receipt_path")]
+        string NativeTrajectoryReceiptPath,
+    [property: JsonPropertyName("native_trajectory_receipt_sha256")]
+        string NativeTrajectoryReceiptSha256,
+    [property: JsonPropertyName("concrete_alternative_id")]
+        string ConcreteAlternativeId,
+    [property: JsonPropertyName("acquisition_rollout_required")]
+        bool AcquisitionRolloutRequired,
+    [property: JsonPropertyName("terminal_execution_evidence_sha256")]
+        string TerminalExecutionEvidenceSha256,
+    [property: JsonPropertyName("revenue_prefix")]
+        MoneyRevenueRecurrencePrefixEvidence RevenuePrefix,
+    [property: JsonPropertyName("native_outcome_artifacts")]
+        MoneyRevenueArtifactBinding[] NativeOutcomeArtifacts);
 
 public sealed record MoneyThresholdTeacherCriterion(
     [property: JsonPropertyName("criterion_id")] string CriterionId,
@@ -167,4 +195,6 @@ public sealed record MoneyThresholdTeacherComparisonEvidence(
     [property: JsonPropertyName("selected_terminal_episode_sha256")]
         string SelectedTerminalEpisodeSha256,
     [property: JsonPropertyName("selection_policy")]
-        string SelectionPolicy);
+        string SelectionPolicy,
+    [property: JsonPropertyName("selected_native_outcome_sha256")]
+        string SelectedNativeOutcomeSha256);

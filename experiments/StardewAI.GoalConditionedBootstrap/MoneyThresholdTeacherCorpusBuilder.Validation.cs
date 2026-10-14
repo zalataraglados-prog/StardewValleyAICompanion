@@ -15,7 +15,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             request.Sources.Length == 0 ||
             request.Sources.Any(source =>
                 string.IsNullOrWhiteSpace(source.SourceId) ||
-                string.IsNullOrWhiteSpace(source.ExecutionEpisodePath) ||
+                string.IsNullOrWhiteSpace(source.ExecutionEpisodePath) ==
+                    string.IsNullOrWhiteSpace(
+                        source.NativeTrajectoryReceiptPath) ||
                 (source.ComparisonAdmissions ??
                     Array.Empty<MoneyThresholdTeacherComparisonSource>())
                     .Any(value =>
@@ -50,6 +52,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             rows.Select(row => row.SplitKey)
                 .Distinct(StringComparer.Ordinal).Count() != rows.Length ||
             rows.Any(row => !row.NativeTerminalOutcomeVerified ||
+                !ValidNativeOutcome(row) ||
                 row.TeacherComparisonCount != row.CrossedThresholds.Count(
                     value => value.TeacherComparison is not null) ||
                 row.DatasetPartition !=
@@ -70,6 +73,56 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Money-threshold Teacher corpus rows are invalid or duplicate.");
         }
+    }
+
+    private static bool ValidNativeOutcome(
+        MoneyThresholdTeacherEvidenceRow row)
+    {
+        if (string.IsNullOrWhiteSpace(row.NativeOutcomePrimaryPath) ||
+            row.NativeOutcomePrimarySha256.Length != 64 ||
+            row.RevenuePrefix is null ||
+            row.NativeOutcomeArtifacts is not { Length: > 0 } artifacts ||
+            artifacts.Select(value => value.Role)
+                .Distinct(StringComparer.Ordinal).Count() != artifacts.Length ||
+            artifacts.Any(value =>
+                string.IsNullOrWhiteSpace(value.Role) ||
+                string.IsNullOrWhiteSpace(value.Path) ||
+                value.Sha256.Length != 64) ||
+            row.RevenuePrefix.SaveId != row.SaveId ||
+            row.RevenuePrefix.PlayerId != row.PlayerId ||
+            row.RevenuePrefix.InitialTotalMoneyEarned !=
+                row.TotalMoneyEarnedBefore ||
+            row.RevenuePrefix.FinalTotalMoneyEarned !=
+                row.TotalMoneyEarnedAfter ||
+            row.RevenuePrefix.TotalRevenue < 0 ||
+            (uint)row.RevenuePrefix.TotalRevenue != row.EarnedDelta)
+        {
+            return false;
+        }
+
+        return row.NativeOutcomeKind switch
+        {
+            MoneyThresholdNativeOutcomeKinds.ShopSaleEpisode =>
+                !string.IsNullOrWhiteSpace(row.ExecutionEpisodePath) &&
+                row.ExecutionEpisodeSha256.Length == 64 &&
+                string.IsNullOrWhiteSpace(
+                    row.NativeTrajectoryReceiptPath) &&
+                string.IsNullOrWhiteSpace(
+                    row.NativeTrajectoryReceiptSha256) &&
+                string.IsNullOrWhiteSpace(row.ConcreteAlternativeId) &&
+                string.IsNullOrWhiteSpace(
+                    row.TerminalExecutionEvidenceSha256) &&
+                !row.AcquisitionRolloutRequired,
+            MoneyThresholdNativeOutcomeKinds.RevenueTrajectory =>
+                string.IsNullOrWhiteSpace(row.ExecutionEpisodePath) &&
+                string.IsNullOrWhiteSpace(row.ExecutionEpisodeSha256) &&
+                !string.IsNullOrWhiteSpace(
+                    row.NativeTrajectoryReceiptPath) &&
+                row.NativeTrajectoryReceiptSha256.Length == 64 &&
+                !string.IsNullOrWhiteSpace(row.ConcreteAlternativeId) &&
+                row.TerminalExecutionEvidenceSha256.Length == 64,
+            _ => false
+        };
     }
 
     private static bool ValidComparison(
@@ -96,7 +149,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             rejected
                 .Distinct(StringComparer.Ordinal).Count() ==
                 rejected.Length &&
-            comparison.SelectedTerminalEpisodeSha256.Length == 64 &&
+            (comparison.SelectedTerminalEpisodeSha256.Length == 0 ||
+             comparison.SelectedTerminalEpisodeSha256.Length == 64) &&
+            comparison.SelectedNativeOutcomeSha256.Length == 64 &&
             comparison.SelectionPolicy ==
                 "authoritative_threshold_then_reserve_aware_strict_pareto.v1";
     }

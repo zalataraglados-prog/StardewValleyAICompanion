@@ -3192,13 +3192,17 @@ Slice 7 remains assigned to the RTX 5070 node.
 - Terminal proof completion now has an exact request-ID manifest assembler and
   a separate quiet orchestration script. After the existing terminal verifier
   and criterion admission builder replay all artifacts, a unique Teacher
-  preference can carry its already verified **direct** native shop-sale episode
-  into batch request v3, replacing the provisional seed episode before the
-  corpus join. Shipping remains blocked by the sale-only corpus. A rebound
-  acquisition/processing alternative is also blocked because its terminal sale
-  cannot represent the initial-state rollout or its split identity. Different
-  criterion-specific selected episodes require distinct seed runs.
-  The initial smallest-sufficient sampling choice is never promoted by
+  preference is normalized into a separate native Revenue trajectory receipt.
+  That receipt is built without consulting the preference and preserves the
+  exact request, optional acquisition rollout, terminal execution, sale or
+  shipping settlement recurrence, and source/final checkpoints.
+- Money corpus v4 consumes either the original isolated sale episode or this
+  complete trajectory. Its join requires the selected concrete alternative,
+  terminal evidence, complete Revenue prefix and terminal artifacts to match.
+  Batch request v4 and comparison index v3 can therefore carry direct,
+  shipping, and rebound outcomes through one corpus path. Different
+  criterion-specific selected alternatives still require distinct seed runs;
+  the initial smallest-sufficient sampling choice is never promoted by
   assumption.
 - The Money review also removed every Money-local private `EqualJson` helper.
   The single bootstrap artifact guard now compares compact UTF-8 serialization

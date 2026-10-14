@@ -60,7 +60,8 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
     $comparisonIndexVersion = [string]$comparisonIndex.schema_version
     if ($comparisonIndexVersion -notin @(
             "money_threshold_comparison_admission_index.v1",
-            "money_threshold_comparison_admission_index.v2") -or
+            "money_threshold_comparison_admission_index.v2",
+            "money_threshold_comparison_admission_index.v3") -or
         [bool]$comparisonIndex.formal_product_training_authorized) {
         throw "Money threshold comparison-admission index schema is invalid."
     }
@@ -72,10 +73,21 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
             throw "Money threshold comparison-admission paths are required."
         }
         $episodePath = [string]$_.execution_episode_path
+        $trajectoryPath = [string]$_.native_trajectory_receipt_path
         if ($comparisonIndexVersion -eq
                 "money_threshold_comparison_admission_index.v1" -and
-            -not [string]::IsNullOrWhiteSpace($episodePath)) {
-            throw "Comparison-admission index v1 cannot override a native episode."
+            (-not [string]::IsNullOrWhiteSpace($episodePath) -or
+             -not [string]::IsNullOrWhiteSpace($trajectoryPath))) {
+            throw "Comparison-admission index v1 cannot override a native outcome."
+        }
+        if ($comparisonIndexVersion -eq
+                "money_threshold_comparison_admission_index.v2" -and
+            -not [string]::IsNullOrWhiteSpace($trajectoryPath)) {
+            throw "Comparison-admission index v2 cannot override a native trajectory."
+        }
+        if (-not [string]::IsNullOrWhiteSpace($episodePath) -and
+            -not [string]::IsNullOrWhiteSpace($trajectoryPath)) {
+            throw "One comparison admission cannot override two native outcomes."
         }
         [ordered]@{
             run_id = [string]$_.run_id
@@ -91,6 +103,14 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
                 Resolve-RuntimeEvidenceInputPath `
                     -ProjectRoot $ProjectRoot `
                     -Path $episodePath
+            }
+            native_trajectory_receipt_path = if (
+                [string]::IsNullOrWhiteSpace($trajectoryPath)) {
+                ""
+            } else {
+                Resolve-RuntimeEvidenceInputPath `
+                    -ProjectRoot $ProjectRoot `
+                    -Path $trajectoryPath
             }
         }
     })
@@ -108,7 +128,7 @@ if (-not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
 }
 
 Write-JsonFile -Path $batchRequestPath -Value ([ordered]@{
-    schema_version = "money_threshold_native_outcome_batch_request.v3"
+    schema_version = "money_threshold_native_outcome_batch_request.v4"
     batch_id = $BatchId
     run_summary_paths = $summaryPaths
     comparison_admissions = $comparisonAdmissions

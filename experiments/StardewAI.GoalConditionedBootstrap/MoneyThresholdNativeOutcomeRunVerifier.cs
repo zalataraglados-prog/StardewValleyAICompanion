@@ -79,6 +79,9 @@ internal static class MoneyThresholdNativeOutcomeRunVerifier
             summary.ExecutionEpisodePath,
             "Money threshold native shop-sale episode");
         Require(SamePath(row.ExecutionEpisodePath, episodePath) &&
+                row.NativeOutcomeKind ==
+                    MoneyThresholdNativeOutcomeKinds.ShopSaleEpisode &&
+                SamePath(row.NativeOutcomePrimaryPath, episodePath) &&
                 row.SourceId == summary.RunId &&
                 row.BeforeStateHash == summary.SourceStateHash &&
                 row.DatasetPartition == summary.DatasetPartition &&

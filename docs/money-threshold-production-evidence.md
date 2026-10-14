@@ -89,12 +89,13 @@ native evidence only: `teacher_preference_label_verified=false` and
 `formal_product_training_authorized=false` are fixed. No Teacher comparison is
 consulted while building it.
 
-This receipt deliberately does not yet count as a production Money corpus row.
-The next schema slice must let the one canonical corpus consume either a
-legacy isolated sale episode or this complete trajectory, then make the
-criterion-local comparison join require the selected alternative, prefix and
-terminal artifacts to match. Until that adapter lands, completion continues to
-report shipping/rebound selections as unsupported rather than truncating them.
+Money corpus v4 consumes either a legacy isolated sale episode or this complete
+trajectory through one discriminated source contract. A trajectory row binds
+its concrete alternative, source/final checkpoints, complete Revenue prefix,
+acquisition requirement and transitive artifacts. The criterion-local join
+requires the comparison-selected concrete alternative, terminal evidence,
+prefix and terminal artifacts to match; it cannot truncate a shipping or
+rebound result to the last sale/settlement transition.
 
 ## Comparison channel
 
@@ -163,22 +164,16 @@ before/after ledger capture, reservation, native sale/shipping, recurrence, and
 opportunity-cost validation to the existing terminal proof builder.
 
 The completion script builds one comparison admission per criterion actually
-crossed by the seed run. A receipt is added to the batch attachment index only
-when it has a unique authoritative preference and the selected alternative's
-native shop-sale episode is present in the verified terminal proof. The
-existing Money corpus builder replays that selected episode and join once more
-before attachment. The provisional seed episode is therefore replaced rather
-than relabeled when a different **direct** sale wins. A shipping preference is
-reported as `teacher_selected_shipping_outcome_not_supported_by_money_corpus`.
-An acquisition/processing alternative is reported as
-`teacher_selected_rollout_outcome_not_supported_by_money_corpus`, because its
-terminal sale alone would omit the rollout and could move the split day. The
-current Money corpus cannot represent either as a complete native outcome. A
-non-unique Pareto frontier is reported separately as
+crossed by the seed run. When a unique authoritative preference exists, it
+builds a native trajectory receipt for that exact selected request and replays
+the corpus v4 criterion-local join before adding the receipt to attachment
+index v3. Direct sale, shipping and acquisition/processing outcomes therefore
+follow the same native trajectory path; none is truncated to a terminal sale.
+A non-unique Pareto frontier is reported separately as
 `comparison_admissions_blocked_by_incomparable_frontier`, because recollecting
 the same action would not resolve that ambiguity. If different crossed criteria
-select different sale episodes, they require distinct seed runs because one
-corpus row cannot own multiple terminal outcomes.
+select different alternatives, they require distinct seed runs because one
+corpus row cannot own multiple native trajectories.
 
 ## Batch policy
 
@@ -189,25 +184,26 @@ reuse a live snapshot, candidate denominator, or isolated save between cells.
 replays every referenced catalog/selection/corpus, rejects duplicate split keys,
 emits one combined corpus, and rebuilds the 18-cell work plan. Its optional
 `-ComparisonAdmissionIndex` input has schema
-`money_threshold_comparison_admission_index.v2` and contains an `admissions`
+`money_threshold_comparison_admission_index.v3` and contains an `admissions`
 array of `run_id`, `criterion_id`, `admission_manifest_path`,
-`admission_receipt_path`, and optional `execution_episode_path`. Each pair must
+`admission_receipt_path`, and optional `native_trajectory_receipt_path`. Each pair must
 reference an accepted seed run and a criterion actually crossed by that seed.
-Request v3 permits one common comparison-selected episode override per seed;
-the existing criterion-local corpus join then rebuilds the admission and checks
-its selected native terminal artifacts. Multiple overrides for one seed fail
-closed. Run the batch updater after each accepted native or comparison artifact
-and schedule only cells still reported missing.
+Batch request v4 permits one common comparison-selected trajectory override per
+seed; the criterion-local corpus join rebuilds the trajectory and admission and
+checks the selected alternative, prefix and terminal artifacts. Multiple
+outcomes for one seed fail closed. Run the batch updater after each accepted
+native or comparison artifact and schedule only cells still reported missing.
 
-Batch request v3 carries direct-sale selected-episode-aware comparison
-attachments. Request
-v2 remains replayable with comparison attachments but no episode override;
-legacy v1 remains native-only. The v2 output separately reports native-complete,
+Batch request v4 carries complete-trajectory comparison attachments. Request
+v3 retains direct-sale selected-episode compatibility, v2 remains replayable
+with comparison attachments but no outcome override, and legacy v1 remains
+native-only. The v3 output separately reports native-complete,
 Teacher-comparison-complete, and fully complete cells. Batch output and the
 canonical work plan share one cell projector, so criterion and partition
 completeness cannot drift between two implementations.
-Legacy comparison index v1 remains readable only without an episode override;
-selected-episode authority is exclusive to v2.
+Legacy comparison index v1 remains readable only without an outcome override;
+v2 is direct-sale episode-only, and complete trajectory authority is exclusive
+to v3.
 
 High-cost full reconciliation is reserved for the Money Exit Gate. During
 development, validate the new or invalidated cell and its exact proof branch.
@@ -217,9 +213,9 @@ force-full promotion oracle.
 ## Current implementation status
 
 The selection contract, CLI command, isolated native runner, replayed batch,
-comparison collection planner, criterion-local comparison attachment path, and
-native Revenue trajectory receipt are implemented. GitHub game-free quality is
+comparison collection planner, criterion-local comparison attachment path,
+native Revenue trajectory receipt, and unified corpus v4 adapter are
+implemented. GitHub game-free quality is
 the validation authority during quiet development; no local game or high-load
-test is run. The trajectory receipt is not yet consumed by corpus v3, so
-production Money coverage remains `0/18` until the corpus adapter and real
-independent runs/comparison admissions are accepted.
+test is run. Production Money coverage remains `0/18` until real independent
+runs and comparison admissions are accepted.

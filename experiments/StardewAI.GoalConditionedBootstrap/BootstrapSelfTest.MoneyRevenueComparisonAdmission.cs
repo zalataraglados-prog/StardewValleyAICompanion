@@ -86,6 +86,9 @@ internal static partial class BootstrapSelfTest
         var trajectoryManifestPath = Path.Combine(
             root,
             "native-trajectory-manifest.json");
+        var trajectoryReceiptPath = Path.Combine(
+            root,
+            "native-trajectory-receipt.json");
         Write(requestManifestPath, new MoneyRevenueCounterfactualProofRequestManifest());
         terminalManifest.CounterfactualRequestManifestPath =
             requestManifestPath;
@@ -119,6 +122,7 @@ internal static partial class BootstrapSelfTest
                 trajectory.SourceStateHash == before.StateHash &&
                 trajectory.SourceCheckpoint.TotalMoneyEarned == 49_990 &&
                 trajectory.FinalCheckpoint.TotalMoneyEarned == 50_010 &&
+                trajectory.FinalSnapshotSha256.Length == 64 &&
                 trajectory.RevenuePrefix.TotalRevenue == 20 &&
                 trajectory.ConcreteAlternativeId ==
                     fast.Request.ConcreteAlternativeId &&
@@ -128,6 +132,29 @@ internal static partial class BootstrapSelfTest
                     value.Role == "terminal_shop_sale_episode") &&
                 trajectory.ReceiptSha256.Length == 64,
             "Money threshold native trajectory projection drifted.");
+        Write(trajectoryReceiptPath, trajectory);
+        var trajectoryRow = MoneyThresholdTeacherCorpusBuilder
+            .BuildNativeTrajectoryRowForTest(
+                "native-trajectory-fast",
+                trajectoryReceiptPath,
+                trajectory);
+        Require(trajectoryRow.NativeOutcomeKind ==
+                    MoneyThresholdNativeOutcomeKinds.RevenueTrajectory &&
+                trajectoryRow.NativeTrajectoryReceiptPath ==
+                    trajectoryReceiptPath &&
+                trajectoryRow.ConcreteAlternativeId ==
+                    fast.Request.ConcreteAlternativeId &&
+                trajectoryRow.TerminalExecutionEvidenceSha256 ==
+                    trajectory.TerminalExecutionEvidenceSha256 &&
+                !trajectoryRow.AcquisitionRolloutRequired &&
+                trajectoryRow.ExecutionEpisodePath.Length == 0 &&
+                trajectoryRow.BeforeStateHash == before.StateHash &&
+                trajectoryRow.AfterStateHash ==
+                    trajectory.FinalCheckpoint.StateHash &&
+                trajectoryRow.CrossedThresholds.Single().CriterionId ==
+                    "money_50000" &&
+                trajectoryRow.TeacherComparisonCount == 0,
+            "Money threshold corpus did not project a native trajectory row.");
         Require(new[]
             {
                 MoneyThresholdNativeTrajectoryBuilder.TrajectoryKind(
@@ -188,6 +215,18 @@ internal static partial class BootstrapSelfTest
                     new[] { slow.Request.ConcreteAlternativeId },
                     StringComparer.Ordinal),
             "Money threshold outcome did not join its exact comparison preference.");
+        var trajectoryJoin = MoneyThresholdTeacherCorpusBuilder
+            .VerifyTrajectoryComparisonJoinForTest(
+                "money_50000",
+                trajectoryReceiptPath,
+                trajectory,
+                receipt);
+        Require(trajectoryJoin.PreferredAlternative ==
+                    fast.Request.ConcreteAlternativeId &&
+                trajectoryJoin.RejectedAlternatives.SequenceEqual(
+                    new[] { slow.Request.ConcreteAlternativeId },
+                    StringComparer.Ordinal),
+            "Money threshold trajectory did not join its exact comparison preference.");
 
         var selectedIndex = Array.FindIndex(
             receipt.Alternatives,

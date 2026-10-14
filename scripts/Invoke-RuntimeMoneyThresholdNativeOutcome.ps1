@@ -327,7 +327,7 @@ try {
     $episodePath = Get-SaleEpisodePath `
         -SnapshotDirectory $snapshotDirectory
     Write-JsonFile -Path $corpusRequestPath -Value ([ordered]@{
-        schema_version = "money_threshold_teacher_corpus_request.v3"
+        schema_version = "money_threshold_teacher_corpus_request.v4"
         corpus_id = "native-outcome-$RunId"
         sources = @([ordered]@{
             source_id = $RunId

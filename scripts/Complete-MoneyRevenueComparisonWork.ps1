@@ -22,6 +22,19 @@ function Resolve-ProofPath {
         -ProjectRoot $ProjectRoot -Path $Path
 }
 
+function Get-StableIdentityHash {
+    param([Parameter(Mandatory)][string] $Value)
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Value)
+        return ([BitConverter]::ToString(
+            $algorithm.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        $algorithm.Dispose()
+    }
+}
+
 function Convert-RouteTransition {
     param($Transition)
     [ordered]@{
@@ -152,6 +165,9 @@ Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
 $admissionRoot = Join-Path $workPath "comparison-admissions"
 $attachments = @()
 $unmatched = @()
+$trajectoryReceiptsByAlternative =
+    [Collections.Generic.Dictionary[string, string]]::new(
+        [StringComparer]::Ordinal)
 foreach ($criterionId in @($plan.crossed_criterion_ids)) {
     $safeCriterion = ([string]$criterionId) -replace '[^a-zA-Z0-9._-]', '_'
     $criterionRoot = Join-Path $admissionRoot $safeCriterion
@@ -176,44 +192,61 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
     $selected = @($receipt.alternatives | Where-Object {
         [string]$_.concrete_alternative_id -eq $selectedId
     })
-    $saleArtifacts = if ($selected.Count -eq 1) {
-        @($selected[0].native_terminal_artifacts | Where-Object {
-            [string]$_.role -eq "shop_sale_episode"
-        })
-    } else { @() }
-    $selectedRequiresRollout = $selected.Count -eq 1 -and
-        [bool]$selected[0].acquisition_rollout_required
-    $hasSupportedEpisode =
+    $hasSelectedOutcome =
         [bool]$receipt.production_teacher_preference_label_eligible -and
-        -not $selectedRequiresRollout -and
-        $saleArtifacts.Count -eq 1
-    if (-not $hasSupportedEpisode) {
+        $selected.Count -eq 1
+    if (-not $hasSelectedOutcome) {
         $unmatched += [ordered]@{
             criterion_id = [string]$criterionId
             selected_alternative_id = $selectedId
             reason = if (-not [bool]$receipt.production_teacher_preference_label_eligible) {
                 "authoritative_frontier_not_unique"
-            } elseif ($selectedRequiresRollout) {
-                "teacher_selected_rollout_outcome_not_supported_by_money_corpus"
             } else {
-                "teacher_selected_shipping_outcome_not_supported_by_money_corpus"
+                "selected_alternative_evidence_missing"
             }
         }
         continue
     }
-    $selectedEpisodePath = [IO.Path]::GetFullPath(
-        [string]$saleArtifacts[0].path)
+
+    if ($trajectoryReceiptsByAlternative.ContainsKey($selectedId)) {
+        $trajectoryReceiptPath =
+            $trajectoryReceiptsByAlternative[$selectedId]
+    }
+    else {
+        $selectedIdentityHash = Get-StableIdentityHash -Value $selectedId
+        $trajectoryRoot = Join-Path (
+            Join-Path $workPath "native-trajectories") $selectedIdentityHash
+        $trajectoryManifestPath = Join-Path $trajectoryRoot `
+            "money-threshold-native-trajectory-manifest.json"
+        $trajectoryReceiptPath = Join-Path $trajectoryRoot `
+            "money-threshold-native-trajectory-receipt.json"
+        Write-JsonFile -Path $trajectoryManifestPath -Value ([ordered]@{
+            schema_version = "money_threshold_native_trajectory_manifest.v1"
+            request_id = [string]$selected[0].request_id
+            terminal_execution_proof_manifest_path = $terminalManifestPath
+            terminal_execution_proof_receipt_path = $terminalReceiptPath
+            formal_product_training_authorized = $false
+        })
+        Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+            "build-money-threshold-native-trajectory",
+            "--manifest", $trajectoryManifestPath,
+            "--output", $trajectoryReceiptPath)
+        $trajectoryReceiptsByAlternative.Add(
+            $selectedId,
+            $trajectoryReceiptPath)
+    }
 
     $verificationRequestPath = Join-Path $criterionRoot `
         "money-threshold-comparison-verification-corpus-request.json"
     $verificationCorpusPath = Join-Path $criterionRoot `
         "money-threshold-comparison-verification-corpus.json"
     Write-JsonFile -Path $verificationRequestPath -Value ([ordered]@{
-        schema_version = "money_threshold_teacher_corpus_request.v3"
+        schema_version = "money_threshold_teacher_corpus_request.v4"
         corpus_id = ([string]$plan.run_id) + "-" + [string]$criterionId
         sources = @([ordered]@{
             source_id = [string]$plan.run_id
-            execution_episode_path = $selectedEpisodePath
+            execution_episode_path = ""
+            native_trajectory_receipt_path = $trajectoryReceiptPath
             comparison_admissions = @([ordered]@{
                 criterion_id = [string]$criterionId
                 admission_manifest_path = $admissionManifestPath
@@ -231,26 +264,27 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
         criterion_id = [string]$criterionId
         admission_manifest_path = $admissionManifestPath
         admission_receipt_path = $admissionReceiptPath
-        execution_episode_path = $selectedEpisodePath
+        selected_alternative_id = $selectedId
+        native_trajectory_receipt_path = $trajectoryReceiptPath
     }
 }
 
 $attachmentIndexPath = Join-Path $workPath `
     "money-threshold-comparison-admission-index.json"
 Write-JsonFile -Path $attachmentIndexPath -Value ([ordered]@{
-    schema_version = "money_threshold_comparison_admission_index.v2"
+    schema_version = "money_threshold_comparison_admission_index.v3"
     admissions = $attachments
     formal_product_training_authorized = $false
 })
 $allMatched = $attachments.Count -eq @($plan.crossed_criterion_ids).Count
-$distinctSelectedEpisodeCount = @($attachments |
-    Select-Object -ExpandProperty execution_episode_path -Unique).Count
+$distinctSelectedOutcomeCount = @($attachments |
+    Select-Object -ExpandProperty selected_alternative_id -Unique).Count
 $hasIncomparableFrontier = @($unmatched | Where-Object {
     [string]$_.reason -eq "authoritative_frontier_not_unique"
 }).Count -gt 0
 [ordered]@{
     status = if ($allMatched) {
-        if ($distinctSelectedEpisodeCount -le 1) {
+        if ($distinctSelectedOutcomeCount -le 1) {
             "comparison_admissions_ready_for_batch_join"
         } else {
             "criterion_specific_teacher_outcomes_require_distinct_seed_runs"
@@ -258,7 +292,7 @@ $hasIncomparableFrontier = @($unmatched | Where-Object {
     } elseif ($hasIncomparableFrontier) {
         "comparison_admissions_blocked_by_incomparable_frontier"
     } else {
-        "teacher_selected_outcome_not_supported_by_money_corpus"
+        "comparison_admissions_missing_selected_evidence"
     }
     run_id = [string]$plan.run_id
     terminal_request_count = $terminalAlternatives.Count

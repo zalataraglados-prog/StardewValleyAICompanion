@@ -71,12 +71,12 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.Contains("run_summary_paths = $summaryPaths",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains(
-            "money_threshold_native_outcome_batch_request.v3",
+            "money_threshold_native_outcome_batch_request.v4",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains("comparison_admissions = $comparisonAdmissions",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains(
-            "money_threshold_comparison_admission_index.v2",
+            "money_threshold_comparison_admission_index.v3",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains("formal_product_training_authorized = $false",
             BatchSource, StringComparison.Ordinal);
@@ -118,7 +118,7 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
     }
 
     [Fact]
-    public void ComparisonCompletionFailsClosedOnTeacherOutcomeMismatch()
+    public void ComparisonCompletionBuildsAndJoinsSelectedNativeTrajectory()
     {
         Assert.Contains("build-money-revenue-terminal-execution-manifest",
             ComparisonCompletionSource, StringComparison.Ordinal);
@@ -126,17 +126,15 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             ComparisonCompletionSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-comparison-admission",
             ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-threshold-native-trajectory",
+            ComparisonCompletionSource, StringComparison.Ordinal);
         Assert.Contains("build-money-threshold-teacher-corpus",
             ComparisonCompletionSource, StringComparison.Ordinal);
-        Assert.Contains(
-            "teacher_selected_shipping_outcome_not_supported_by_money_corpus",
+        Assert.Contains("native_trajectory_receipt_path = $trajectoryReceiptPath",
             ComparisonCompletionSource, StringComparison.Ordinal);
-        Assert.Contains(
-            "teacher_selected_rollout_outcome_not_supported_by_money_corpus",
+        Assert.Contains("money_threshold_comparison_admission_index.v3",
             ComparisonCompletionSource, StringComparison.Ordinal);
-        Assert.Contains("execution_episode_path = $selectedEpisodePath",
-            ComparisonCompletionSource, StringComparison.Ordinal);
-        Assert.Contains("money_threshold_comparison_admission_index.v2",
+        Assert.DoesNotContain("outcome_not_supported_by_money_corpus",
             ComparisonCompletionSource, StringComparison.Ordinal);
         Assert.DoesNotContain("debug.", ComparisonCompletionSource,
             StringComparison.Ordinal);

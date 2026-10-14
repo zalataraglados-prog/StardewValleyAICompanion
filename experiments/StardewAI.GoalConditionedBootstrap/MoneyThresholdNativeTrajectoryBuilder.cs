@@ -1,5 +1,3 @@
-using StardewAI.Contracts.State;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static class MoneyThresholdNativeTrajectoryBuilder
@@ -151,20 +149,15 @@ public static class MoneyThresholdNativeTrajectoryBuilder
         Require(terminalEvidence.TryGetValue(requestId, out var terminal),
             "Money threshold native trajectory terminal evidence is missing.");
 
-        var alternative = MoneyRevenueComparisonAdmissionBuilder
-            .VerifyAlternative(request, proof, terminal);
-        var sourceSnapshotPath = RequiredFile(
-            request!.SourceSnapshotPath,
-            "Money threshold native trajectory source snapshot");
-        var sourceSnapshot = CurrentTeacherFrontierSupport.Read<
-            SnapshotEnvelope>(
-                sourceSnapshotPath,
-                "Money threshold native trajectory source snapshot");
-        var source = MoneyRevenueProgressionVerifier.Project(sourceSnapshot);
+        var verifiedAlternative = MoneyRevenueComparisonAdmissionBuilder
+            .VerifyAlternativeWithContext(request, proof, terminal);
+        var alternative = verifiedAlternative.Alternative;
+        var sourceSnapshotPath = verifiedAlternative.SourceSnapshotPath;
+        var source = verifiedAlternative.SourceCheckpoint;
         var prefix = alternative.RevenuePrefix;
         var final = prefix.Transitions[^1].After;
-        Require(Hash(sourceSnapshotPath) == request.SourceSnapshotSha256 &&
-                source.StateHash == request.SourceStateHash &&
+        var finalSnapshotPath = verifiedAlternative.FinalSnapshotPath;
+        Require(source.StateHash == request!.SourceStateHash &&
                 source.SaveId == prefix.SaveId &&
                 source.PlayerId == prefix.PlayerId &&
                 source.TotalMoneyEarned == prefix.InitialTotalMoneyEarned &&
@@ -199,9 +192,13 @@ public static class MoneyThresholdNativeTrajectoryBuilder
             TrajectoryKind = TrajectoryKind(request),
             SourceStateHash = source.StateHash,
             SourceSnapshotPath = sourceSnapshotPath,
-            SourceSnapshotSha256 = request.SourceSnapshotSha256,
+            SourceSnapshotSha256 =
+                verifiedAlternative.SourceSnapshotSha256,
             SourceCheckpoint = source,
             FinalCheckpoint = final,
+            FinalSnapshotPath = finalSnapshotPath,
+            FinalSnapshotSha256 =
+                verifiedAlternative.FinalSnapshotSha256,
             RevenuePrefix = prefix,
             AcquisitionRolloutRequired =
                 request.AcquisitionRolloutProofRequired,

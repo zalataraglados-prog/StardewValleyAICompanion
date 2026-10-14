@@ -8,6 +8,13 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
         VerifyAlternative(
             MoneyRevenueCounterfactualProofRequest request,
             MoneyRevenueTerminalAlternativeProof proof,
+            MoneyRevenueTerminalExecutionEvidence terminal) =>
+        VerifyAlternativeWithContext(request, proof, terminal).Alternative;
+
+    internal static MoneyRevenueVerifiedComparisonAlternative
+        VerifyAlternativeWithContext(
+            MoneyRevenueCounterfactualProofRequest request,
+            MoneyRevenueTerminalAlternativeProof proof,
             MoneyRevenueTerminalExecutionEvidence terminal)
     {
         Require(proof.RequestId == request.RequestId &&
@@ -43,6 +50,18 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
                     Hash(recurrenceReceiptPath),
             "Money Revenue comparison recurrence is not exact.");
         var prefix = recurrence.Prefix!;
+        var finalTransition = recurrence.Transitions.LastOrDefault() ??
+            throw new InvalidDataException(
+                "Money Revenue comparison recurrence is empty.");
+        var finalSnapshot = finalTransition.Artifacts.SingleOrDefault(
+            value => value.Role == "after_snapshot") ??
+            throw new InvalidDataException(
+                "Money Revenue comparison final snapshot is missing.");
+        var finalSnapshotPath = RequiredFile(
+            finalSnapshot.Path,
+            "Money Revenue comparison final snapshot");
+        Require(Hash(finalSnapshotPath) == finalSnapshot.Sha256,
+            "Money Revenue comparison final snapshot hash is invalid.");
         var expectedRevenueStart = request.NativeShopSaleProofRequired
             ? terminal.TerminalActionBeforeStateHash
             : terminal.TerminalActionAfterStateHash;
@@ -124,18 +143,32 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
                 acquisitionCost.EvidencePaths
                     .Concat(terminal.TerminalOpportunityCost.EvidencePaths));
         MoneyRevenueAlternativeComparer.ValidateOpportunityCost(aggregate);
-        return new MoneyRevenueComparisonAdmissionAlternative(
-            request.RequestId,
-            request.ConcreteAlternativeId,
-            terminal.EvidenceSha256,
-            terminal.NativeTerminalArtifacts,
-            request.AcquisitionRolloutProofRequired,
-            acquisition,
-            prefix,
-            acquisitionCost,
-            terminal.TerminalOpportunityCost,
-            aggregate,
-            reservationNotRequired,
-            reservationIds);
+        return new MoneyRevenueVerifiedComparisonAlternative(
+            new MoneyRevenueComparisonAdmissionAlternative(
+                request.RequestId,
+                request.ConcreteAlternativeId,
+                terminal.EvidenceSha256,
+                terminal.NativeTerminalArtifacts,
+                request.AcquisitionRolloutProofRequired,
+                acquisition,
+                prefix,
+                acquisitionCost,
+                terminal.TerminalOpportunityCost,
+                aggregate,
+                reservationNotRequired,
+                reservationIds),
+            finalSnapshotPath,
+            finalSnapshot.Sha256,
+            sourceSnapshotPath,
+            request.SourceSnapshotSha256,
+            source);
     }
 }
+
+internal sealed record MoneyRevenueVerifiedComparisonAlternative(
+    MoneyRevenueComparisonAdmissionAlternative Alternative,
+    string FinalSnapshotPath,
+    string FinalSnapshotSha256,
+    string SourceSnapshotPath,
+    string SourceSnapshotSha256,
+    MoneyRevenueCheckpoint SourceCheckpoint);

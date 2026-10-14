@@ -4,6 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 Money 完整原生轨迹与 corpus v4
+
+- 新增 `money_threshold_native_trajectory_receipt.v2`。它从权威 Revenue request denominator 中选择一个待验 request，重建完整 terminal proof，并复用既有单候选 verifier 连接可选 acquisition/processing rollout、终端 sale/shipping 动作与 Revenue recurrence；不新增第二套执行器、收益验证或比较器。
+- trajectory receipt 保存 source/final checkpoint、最终快照、concrete alternative、完整 Revenue prefix、terminal evidence SHA 与传递 artifact 哈希，固定 `teacher_preference_label_verified=false`、`formal_product_training_authorized=false`。manifest 中的 request ID 只指定验哪条原生轨迹，不构成偏好标签。
+- Money corpus/request 升级为 v4，同一 canonical builder 现在接受隔离 sale episode 或完整 trajectory。comparison join 对 trajectory 强制匹配 selected concrete alternative、acquisition 标志、terminal evidence、完整 prefix 与 terminal artifacts，禁止把 rebound 或 shipping 截断成最后一次出售/结算。
+- batch request v4 与 comparison index v3 可携带一个 comparison-selected trajectory；完成脚本会先构建并独立重放 trajectory，再建立 criterion-local join。若同一 seed 跨越的 criterion 选择不同 alternative，仍要求不同 seed run，不能把多个原生结果塞进一行。
+- 单候选验证现在把已经验证的 source checkpoint 与 final snapshot 通过内部上下文交给 trajectory builder，避免重复读取同一 source/recurrence；同一次完成编排中，多个 criterion 选择同一 alternative 时也只构建一次 trajectory receipt，再分别执行 criterion-local join。
+- 这些变更关闭表示与编排代码缺口，但没有采集 production evidence；Money 仍为 `0/18`，正式训练仍为 `false`。
+
 
 ## 历史记录 · 2026-10-14 Strategy-ledger 边界制品身份
 

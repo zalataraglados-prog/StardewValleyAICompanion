@@ -40,6 +40,12 @@ internal static partial class BootstrapSelfTest
                 corpus.RowCount == 1 &&
                 row.TeacherComparisonCount == 0 &&
                 row.NativeTerminalOutcomeVerified &&
+                row.NativeOutcomeKind ==
+                    MoneyThresholdNativeOutcomeKinds.ShopSaleEpisode &&
+                row.NativeOutcomePrimaryPath == episodePath &&
+                row.RevenuePrefix.TotalRevenue == 20 &&
+                row.NativeOutcomeArtifacts.Length == 4 &&
+                row.TerminalExecutionEvidenceSha256.Length == 0 &&
                 threshold.CriterionId == "money_50000" &&
                 threshold.TeacherComparison is null &&
                 threshold.NativeTerminalOutcomeVerified &&

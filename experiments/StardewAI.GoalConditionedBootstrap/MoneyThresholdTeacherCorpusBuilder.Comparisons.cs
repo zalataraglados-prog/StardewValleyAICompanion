@@ -7,7 +7,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
     private static MoneyThresholdTeacherComparisonEvidence
         BuildComparisonEvidence(
             GrandpaMoneyThreshold threshold,
-            VerifiedNativeShopSaleEpisode sale,
+            MoneyThresholdVerifiedNativeOutcome outcome,
             MoneyThresholdTeacherComparisonSource source)
     {
         var manifestPath = RequiredFile(
@@ -28,7 +28,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 "Money-threshold comparison receipt drifted from its exact rebuild.");
         }
 
-        var join = ValidateComparisonJoin(threshold, sale, receipt);
+        var join = ValidateComparisonJoin(threshold, outcome, receipt);
         return new MoneyThresholdTeacherComparisonEvidence(
             threshold.CriterionId,
             manifestPath,
@@ -39,8 +39,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             receipt.RequestDenominatorCount,
             join.PreferredAlternative,
             join.RejectedAlternatives,
-            sale.ExecutionEpisodeSha256,
-            receipt.Comparison.SelectionPolicy);
+            outcome.ExecutionEpisodeSha256,
+            receipt.Comparison.SelectionPolicy,
+            outcome.PrimarySha256);
     }
 
     internal static MoneyThresholdComparisonJoin
@@ -55,12 +56,34 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 "Money-threshold test criterion is not authoritative.");
         var sale = NativeShopSaleEpisodeVerifier.Verify(
             executionEpisodePath);
-        return ValidateComparisonJoin(threshold, sale, receipt);
+        return ValidateComparisonJoin(
+            threshold,
+            VerifyNativeSale(sale.ExecutionEpisodePath),
+            receipt);
+    }
+
+    internal static MoneyThresholdComparisonJoin
+        VerifyTrajectoryComparisonJoinForTest(
+            string criterionId,
+            string trajectoryReceiptPath,
+            MoneyThresholdNativeTrajectoryReceipt trajectory,
+            MoneyRevenueComparisonAdmissionReceipt receipt)
+    {
+        var threshold = GrandpaEvaluationGoalEvaluator.MoneyThresholds
+            .SingleOrDefault(value => value.CriterionId == criterionId) ??
+            throw new InvalidDataException(
+                "Money-threshold test criterion is not authoritative.");
+        return ValidateComparisonJoin(
+            threshold,
+            ProjectNativeTrajectory(
+                trajectoryReceiptPath,
+                trajectory),
+            receipt);
     }
 
     private static MoneyThresholdComparisonJoin ValidateComparisonJoin(
         GrandpaMoneyThreshold threshold,
-        VerifiedNativeShopSaleEpisode sale,
+        MoneyThresholdVerifiedNativeOutcome outcome,
         MoneyRevenueComparisonAdmissionReceipt receipt)
     {
         var comparison = receipt.Comparison;
@@ -73,6 +96,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             comparison.CriterionId != threshold.CriterionId ||
             comparison.TargetTotalMoneyEarned != threshold.Target ||
             comparison.SourceStateHash != receipt.SourceStateHash ||
+            receipt.SourceStateHash != outcome.SourceCheckpoint.StateHash ||
             comparison.ExpectedLedgerRevision !=
                 receipt.SourceLedgerRevision ||
             !comparison.CandidateDenominatorComplete ||
@@ -111,7 +135,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 comparison.SelectedAlternativeId) ??
             throw new InvalidDataException(
                 "Money-threshold selected alternative is missing.");
-        ValidateSelectedNativeSale(selected, sale);
+        ValidateSelectedNativeOutcome(selected, outcome);
 
         var rejected = concreteIds
             .Where(value => value != comparison.SelectedAlternativeId)
@@ -147,55 +171,52 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             rejected);
     }
 
-    private static void ValidateSelectedNativeSale(
+    private static void ValidateSelectedNativeOutcome(
         MoneyRevenueComparisonAdmissionAlternative selected,
-        VerifiedNativeShopSaleEpisode sale)
+        MoneyThresholdVerifiedNativeOutcome outcome)
     {
-        if (selected.AcquisitionRolloutRequired)
+        if (selected.AcquisitionRolloutRequired !=
+                outcome.AcquisitionRolloutRequired ||
+            (outcome.Kind ==
+                MoneyThresholdNativeOutcomeKinds.ShopSaleEpisode &&
+             selected.AcquisitionRolloutRequired) ||
+            (outcome.Kind ==
+                MoneyThresholdNativeOutcomeKinds.RevenueTrajectory &&
+             (selected.ConcreteAlternativeId !=
+                outcome.ConcreteAlternativeId ||
+              selected.TerminalExecutionEvidenceSha256 !=
+                outcome.TerminalExecutionEvidenceSha256)))
         {
             throw new InvalidDataException(
-                "Money-threshold sale row cannot represent a Teacher-selected acquisition rollout.");
+                "Money-threshold selected alternative does not match the native outcome trajectory identity.");
         }
         var artifacts = selected.NativeTerminalArtifacts;
+        var rolePrefix = outcome.Kind ==
+            MoneyThresholdNativeOutcomeKinds.RevenueTrajectory
+                ? "terminal_"
+                : string.Empty;
         if (artifacts.Length == 0 ||
             artifacts.Select(value => value.Role)
                 .Distinct(StringComparer.Ordinal).Count() != artifacts.Length ||
-            !MatchesArtifact(
-                artifacts,
-                "shop_sale_episode",
-                sale.ExecutionEpisodePath,
-                sale.ExecutionEpisodeSha256) ||
-            !MatchesArtifact(
-                artifacts,
-                "shop_sale_before_snapshot",
-                sale.BeforeSnapshotPath,
-                sale.BeforeSnapshotSha256) ||
-            !MatchesArtifact(
-                artifacts,
-                "shop_sale_execution_result",
-                sale.ExecutionResultPath,
-                sale.ExecutionResultSha256) ||
-            !MatchesArtifact(
-                artifacts,
-                "shop_sale_after_snapshot",
-                sale.AfterSnapshotPath,
-                sale.AfterSnapshotSha256))
+            artifacts.Any(artifact => !MatchesArtifact(
+                outcome.Artifacts,
+                rolePrefix + artifact.Role,
+                artifact.Path,
+                artifact.Sha256)))
         {
             throw new InvalidDataException(
-                "Money-threshold selected alternative does not bind the native sale artifacts.");
+                "Money-threshold selected alternative does not bind the native terminal artifacts.");
         }
 
         var prefix = selected.RevenuePrefix;
-        if (prefix.Transitions.Length == 0 ||
-            !EqualJson(prefix.Transitions[0], sale.Progression) ||
-            prefix.SaveId != sale.Progression.Before.SaveId ||
-            prefix.PlayerId != sale.Progression.Before.PlayerId ||
-            prefix.InitialStateHash != sale.Progression.Before.StateHash ||
+        if (!EqualJson(prefix, outcome.RevenuePrefix) ||
+            prefix.SaveId != outcome.SourceCheckpoint.SaveId ||
+            prefix.PlayerId != outcome.SourceCheckpoint.PlayerId ||
             prefix.InitialTotalMoneyEarned !=
-                sale.Progression.Before.TotalMoneyEarned)
+                outcome.SourceCheckpoint.TotalMoneyEarned)
         {
             throw new InvalidDataException(
-                "Money-threshold selected alternative does not start with the native sale transition.");
+                "Money-threshold selected alternative does not bind the native Revenue prefix.");
         }
     }
 

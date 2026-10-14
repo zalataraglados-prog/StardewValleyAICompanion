@@ -62,7 +62,10 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var rebuilt = corpus.Rows.Select(row => BuildRow(
                 new MoneyThresholdTeacherCorpusSource(
                     row.SourceId,
-                    row.ExecutionEpisodePath,
+                    row.NativeOutcomeKind ==
+                        MoneyThresholdNativeOutcomeKinds.ShopSaleEpisode
+                            ? row.ExecutionEpisodePath
+                            : string.Empty,
                     row.CrossedThresholds
                         .Where(value => value.TeacherComparison is not null)
                         .Select(value =>
@@ -72,7 +75,11 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                                     .AdmissionManifestPath,
                                 value.TeacherComparison!
                                     .AdmissionReceiptPath))
-                        .ToArray())))
+                        .ToArray(),
+                    row.NativeOutcomeKind ==
+                        MoneyThresholdNativeOutcomeKinds.RevenueTrajectory
+                            ? row.NativeTrajectoryReceiptPath
+                            : string.Empty)))
             .OrderBy(row => row.RowId, StringComparer.Ordinal)
             .ToArray();
         ValidateRows(rebuilt);
@@ -141,18 +148,39 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Money-threshold corpus source ID is required.");
         }
-        var sale = NativeShopSaleEpisodeVerifier.Verify(
-            source.ExecutionEpisodePath);
-        var progression = sale.Progression;
-        var saveId = progression.Before.SaveId;
-        var playerId = progression.Before.PlayerId;
-        var totalDay = progression.Before.TotalDay;
-        var moneyBefore = progression.Before.Money;
-        var moneyAfter = progression.After.Money;
-        var earnedBefore = progression.Before.TotalMoneyEarned;
-        var earnedAfter = progression.After.TotalMoneyEarned;
-        var earnedDelta = progression.TotalMoneyEarnedDelta;
-        var comparisonSources = (source.ComparisonAdmissions ??
+        return BuildRow(
+            source.SourceId,
+            VerifyNativeOutcome(source),
+            source.ComparisonAdmissions);
+    }
+
+    internal static MoneyThresholdTeacherEvidenceRow
+        BuildNativeTrajectoryRowForTest(
+            string sourceId,
+            string trajectoryReceiptPath,
+            MoneyThresholdNativeTrajectoryReceipt trajectory) => BuildRow(
+                sourceId,
+                ProjectNativeTrajectory(
+                    trajectoryReceiptPath,
+                    trajectory),
+                Array.Empty<MoneyThresholdTeacherComparisonSource>());
+
+    private static MoneyThresholdTeacherEvidenceRow BuildRow(
+        string sourceId,
+        MoneyThresholdVerifiedNativeOutcome outcome,
+        MoneyThresholdTeacherComparisonSource[]? admissions)
+    {
+        var before = outcome.SourceCheckpoint;
+        var after = outcome.FinalCheckpoint;
+        var saveId = before.SaveId;
+        var playerId = before.PlayerId;
+        var totalDay = before.TotalDay;
+        var moneyBefore = before.Money;
+        var moneyAfter = after.Money;
+        var earnedBefore = before.TotalMoneyEarned;
+        var earnedAfter = after.TotalMoneyEarned;
+        var earnedDelta = checked(earnedAfter - earnedBefore);
+        var comparisonSources = (admissions ??
                 Array.Empty<MoneyThresholdTeacherComparisonSource>())
             .ToDictionary(value => value.CriterionId, StringComparer.Ordinal);
         var crossed = GrandpaEvaluationGoalEvaluator.MoneyThresholds
@@ -170,7 +198,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                     out var comparisonSource)
                     ? BuildComparisonEvidence(
                         threshold,
-                        sale,
+                        outcome,
                         comparisonSource)
                     : null,
                 true))
@@ -191,10 +219,10 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var splitKey = saveId + ":" + playerId + ":" + totalDay;
         var rowId = StableId(new
         {
-            source_id = source.SourceId,
-            before_state_hash = progression.Before.StateHash,
-            after_state_hash = progression.After.StateHash,
-            execution_episode_sha256 = sale.ExecutionEpisodeSha256,
+            source_id = sourceId,
+            before_state_hash = before.StateHash,
+            after_state_hash = after.StateHash,
+            native_outcome_sha256 = outcome.PrimarySha256,
             comparison_receipt_sha256 = crossed
                 .Where(value => value.TeacherComparison is not null)
                 .Select(value => value.TeacherComparison!
@@ -204,17 +232,17 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         });
         return new MoneyThresholdTeacherEvidenceRow(
             rowId,
-            source.SourceId,
-            sale.ExecutionEpisodePath,
-            sale.ExecutionEpisodeSha256,
-            sale.BeforeSnapshotPath,
-            sale.BeforeSnapshotSha256,
-            progression.Before.StateHash,
-            sale.AfterSnapshotPath,
-            sale.AfterSnapshotSha256,
-            progression.After.StateHash,
-            sale.ExecutionResultPath,
-            sale.ExecutionResultSha256,
+            sourceId,
+            outcome.ExecutionEpisodePath,
+            outcome.ExecutionEpisodeSha256,
+            outcome.BeforeSnapshotPath,
+            outcome.BeforeSnapshotSha256,
+            before.StateHash,
+            outcome.AfterSnapshotPath,
+            outcome.AfterSnapshotSha256,
+            after.StateHash,
+            outcome.TerminalEvidencePath,
+            outcome.TerminalEvidenceSha256,
             splitKey,
             PolicyTrajectoryDatasetBuilder.PartitionFor(splitKey),
             saveId,
@@ -227,7 +255,17 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             earnedDelta,
             crossed,
             crossed.Count(value => value.TeacherComparison is not null),
-            true);
+            true,
+            outcome.Kind,
+            outcome.PrimaryPath,
+            outcome.PrimarySha256,
+            outcome.NativeTrajectoryReceiptPath,
+            outcome.NativeTrajectoryReceiptSha256,
+            outcome.ConcreteAlternativeId,
+            outcome.AcquisitionRolloutRequired,
+            outcome.TerminalExecutionEvidenceSha256,
+            outcome.RevenuePrefix,
+            outcome.Artifacts);
     }
 
 }
