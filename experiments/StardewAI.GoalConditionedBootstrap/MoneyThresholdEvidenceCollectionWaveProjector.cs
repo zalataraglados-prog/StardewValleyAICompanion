@@ -45,44 +45,66 @@ internal static class MoneyThresholdEvidenceCollectionWaveProjector
         var rowById = corpus.Rows.ToDictionary(
             row => row.RowId,
             StringComparer.Ordinal);
-        return cells
+        var missingByPartition = cells
             .Where(cell => cell.NativeOutcomeVerified &&
                 !cell.TeacherComparisonVerified)
-            .Select(cell => new ComparisonCellBinding(
-                cell,
-                cell.NativeOutcomeRowIds
-                    .OrderBy(rowId => rowId, StringComparer.Ordinal)
-                    .First()))
-            .GroupBy(value => value.RowId, StringComparer.Ordinal)
-            .Select(group => BuildComparisonWave(group, rowById))
-            .OrderBy(wave => wave.DatasetPartition, StringComparer.Ordinal)
-            .ThenBy(wave => wave.SourceRowId, StringComparer.Ordinal)
+            .GroupBy(cell => cell.DatasetPartition, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal);
+        return missingByPartition
+            .SelectMany(group => BuildComparisonWaves(
+                group.Key,
+                group.ToArray(),
+                rowById))
             .ToArray();
     }
 
-    private static MoneyThresholdComparisonCollectionWave BuildComparisonWave(
-        IGrouping<string, ComparisonCellBinding> group,
-        IReadOnlyDictionary<string, MoneyThresholdTeacherEvidenceRow> rowById)
+    private static IEnumerable<MoneyThresholdComparisonCollectionWave>
+        BuildComparisonWaves(
+            string partition,
+            MoneyThresholdEvidenceWorkCell[] missingCells,
+            IReadOnlyDictionary<string, MoneyThresholdTeacherEvidenceRow> rowById)
     {
-        if (!rowById.TryGetValue(group.Key, out var row))
+        var remaining = missingCells.ToList();
+        while (remaining.Count > 0)
         {
-            throw new InvalidDataException(
-                "Money work-plan native row is absent from the verified corpus: " +
-                group.Key + ".");
-        }
+            var binding = remaining
+                .SelectMany(cell => cell.NativeOutcomeRowIds.Select(rowId =>
+                    new ComparisonCellBinding(cell, rowId)))
+                .GroupBy(value => value.RowId, StringComparer.Ordinal)
+                .Select(group => new
+                {
+                    RowId = group.Key,
+                    Cells = group
+                        .Select(value => value.Cell)
+                        .Distinct()
+                        .OrderBy(cell => cell.ThresholdOrder)
+                        .ToArray()
+                })
+                .OrderByDescending(value => value.Cells.Length)
+                .ThenBy(value => value.RowId, StringComparer.Ordinal)
+                .FirstOrDefault() ?? throw new InvalidDataException(
+                    "Money comparison work remains without a native row binding.");
+            if (!rowById.TryGetValue(binding.RowId, out var row) ||
+                !string.Equals(
+                    row.DatasetPartition,
+                    partition,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "Money work-plan native row is absent from the verified " +
+                    "partition: " + binding.RowId + ".");
+            }
 
-        var criterionIds = group
-            .Select(value => value.Cell)
-            .OrderBy(cell => cell.ThresholdOrder)
-            .Select(cell => cell.CriterionId)
-            .ToArray();
-        return new MoneyThresholdComparisonCollectionWave(
-            row.DatasetPartition,
-            row.RowId,
-            row.SourceId,
-            criterionIds,
-            "exact_comparison_collection_required",
-            "Initialize the Revenue comparison denominator once from this replay-verified native row, then build one criterion-local exact comparison admission for every listed criterion. All admissions attached to one seed must select the same native outcome; different selected alternatives require independent seed runs.");
+            yield return new MoneyThresholdComparisonCollectionWave(
+                row.DatasetPartition,
+                row.RowId,
+                row.SourceId,
+                binding.Cells.Select(cell => cell.CriterionId).ToArray(),
+                "exact_comparison_collection_required",
+                "Initialize the Revenue comparison denominator once from this replay-verified native row, then build one criterion-local exact comparison admission for every listed criterion. All admissions attached to one seed must select the same native outcome; different selected alternatives require independent seed runs.");
+            var covered = binding.Cells.ToHashSet();
+            remaining.RemoveAll(covered.Contains);
+        }
     }
 
     private sealed record ComparisonCellBinding(

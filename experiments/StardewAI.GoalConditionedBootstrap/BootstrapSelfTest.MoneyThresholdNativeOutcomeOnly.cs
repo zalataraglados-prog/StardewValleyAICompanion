@@ -95,6 +95,35 @@ internal static partial class BootstrapSelfTest
                     "native_outcome_and_teacher_comparison_missing") == 17,
             "Money-threshold work plan did not preserve the exact 6x3 evidence matrix.");
 
+        var groupedWaves = MoneyThresholdEvidenceCollectionWaveProjector.Build(
+            new[]
+            {
+                crossedCell with
+                {
+                    NativeOutcomeRowIds = new[] { "row.narrow", "row.broad" }
+                },
+                crossedCell with
+                {
+                    CriterionId = "money_100000",
+                    ThresholdOrder = 1,
+                    TargetTotalMoneyEarned = 100_000,
+                    NativeOutcomeRowIds = new[] { "row.broad" }
+                }
+            },
+            new MoneyThresholdTeacherCorpus
+            {
+                Rows = new[]
+                {
+                    row with { RowId = "row.narrow", SourceId = "source.narrow" },
+                    row with { RowId = "row.broad", SourceId = "source.broad" }
+                }
+            });
+        Require(groupedWaves.Comparison.Length == 1 &&
+                groupedWaves.Comparison[0].SourceRowId == "row.broad" &&
+                groupedWaves.Comparison[0].MissingCriterionIds.SequenceEqual(
+                    new[] { "money_50000", "money_100000" }),
+            "Money comparison waves did not maximize verified native-row reuse.");
+
         var emptyWorkPlanRequestPath = Path.Combine(
             root,
             "empty-money-threshold-work-plan-request.json");
