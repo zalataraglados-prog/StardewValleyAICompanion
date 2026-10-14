@@ -249,6 +249,13 @@ The first empty work plan can be generated with
 always use the refreshed work-plan path emitted by the batch updater; do not
 continue scheduling from an older copy.
 
+`Initialize-MoneyThresholdProductionWorkPlan.ps1` is the non-game bootstrap
+for that first step. It writes the typed request, invokes the existing builder,
+and requires the fixed 6-criterion, 3-partition, 18-cell denominator. With no
+corpus it additionally requires zero completed cells, exactly three native
+collection waves, and no comparison wave. Supplying an existing corpus uses the
+same replay-verifying builder; the script never manufactures an empty corpus.
+
 `Update-MoneyThresholdNativeOutcomeBatch.ps1` discovers passed run summaries,
 replays every referenced catalog/selection/corpus, rejects duplicate split keys,
 emits one combined corpus, and rebuilds the 18-cell work plan. Its optional

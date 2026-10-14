@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 Money 首轮 work plan 初始化
+
+- 新增 `Initialize-MoneyThresholdProductionWorkPlan.ps1`，不再要求人工书写首个空 work-plan request。它只调用现有权威 builder，并固定校验 `6` 个 criterion、`3` 个 partition、`18` 格分母和 `formal_product_training_authorized=false`。
+- 未提供 corpus 时，输出必须是 native/comparison/complete 均为 `0`、原生波次恰为 `3`、comparison 波次为 `0`；提供 corpus 时仍由原 builder 完整重放验证。脚本不创建伪空 corpus，也不启动游戏。
+- 该计划只用于给 `Invoke-MoneyThresholdNativeCollectionWave.ps1` 提供首轮调度；第一条 accepted native run 后，后续唯一输入改为 batch updater 生成的刷新计划。当前生产状态仍为 `0/18`。
+
 ## 历史记录 · 2026-10-15 Money comparison 波次身份交接
 
 - 新增 `Initialize-MoneyRevenueComparisonWave.ps1`，用 `dataset_partition + source_row_id` 从 canonical work plan 定位唯一 comparison wave，核对 corpus row、source ID、native run summary 和缺失 criterion，再复用既有 `Initialize-MoneyRevenueComparisonWork.ps1`。不再人工搜索 summary 或抄 criterion。
