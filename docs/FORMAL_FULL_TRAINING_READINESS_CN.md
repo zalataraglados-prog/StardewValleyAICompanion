@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue current-snapshot candidate denominator
+
+- `build-money-revenue-candidate-denominator` now derives its actionable-node inventory from the authoritative `earn_money` dependency expansion and delegates all live candidate semantics to the existing `CandidateOptionAvailabilityEvaluator`. It records every event/economic row, blocked exclusion, rolling continuation parameter and content digest without introducing a second planner or pricing implementation.
+- Current-snapshot enumeration authority is deliberately separate from long-horizon authority. The current set fails closed on missing option evaluations, missing transparent fields, duplicate identities or candidate-kind drift. Long-horizon authority remains false while the dependency expansion still carries the fresh-save schedule, counterfactual opportunity-cost and crop-route blockers.
+- The catalog alone cannot emit a production preference: it has no verified counterfactual rollout receipts. `production_teacher_preference_label_eligible=false` and `formal_product_training_authorized=false` remain mandatory. The next gate binds every comparison alternative to one exact catalog candidate ID and catalog SHA before any preference is considered.
+
 ## 2026-10-14 Revenue comparison artifact binding
 
 - `money_revenue_alternative_comparison_proof_receipt.v1` 现能深度重放每个候选的完整 acquisition rollout 与 Revenue recurrence，并逐 transition 核对确定性 opportunity cost、reservation claim、portfolio commit、起始 snapshot/ledger 以及 rollout 终点到收益起点的完整 Money checkpoint 连续性。

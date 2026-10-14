@@ -22,6 +22,7 @@ internal static partial class BootstrapSelfTest
         VerifyCommunityCenterDonationReceiptEvidence();
         RunFullShipmentSettlement();
         VerifyMoneyRevenueProgression();
+        VerifyMoneyRevenueCandidateDenominator();
     }
 
     private static void VerifySupportingTransitionTerminalLineage()

@@ -3116,6 +3116,19 @@ Slice 7 remains assigned to the RTX 5070 node.
   eligibility false and formal product training authorization false. That authoritative enumerator is the next bounded
   Money slice.
 
+### 2026-10-14: current-snapshot Revenue candidate denominator
+
+- `build-money-revenue-candidate-denominator` reads the actionable `earn_money` nodes from the dependency expansion and
+  evaluates their distinct option IDs once against one transparent snapshot. It reuses the existing availability
+  evaluator as the only authority for prices, protections, routes, staged continuations, compiler gates and executors.
+- The catalog preserves every event/economic candidate and blocked exclusion, binds each row by content SHA-256, and
+  fails closed on missing option evaluations, missing transparent factors, duplicate candidate identities or a kind
+  that is neither directly declared nor tied to the option through a rolling continuation.
+- Current-snapshot denominator authority is not long-horizon authority. The latter remains blocked by the declared
+  fresh-save schedule, counterfactual opportunity-cost and crop-production gaps. The catalog also has no rollout
+  proof, so it cannot emit a production Teacher label or authorize formal training. The next slice requires the
+  replayable alternative-comparison proof to consume the exact catalog ID set and catalog digest.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
