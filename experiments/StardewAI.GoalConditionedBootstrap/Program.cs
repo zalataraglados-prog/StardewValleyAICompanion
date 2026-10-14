@@ -49,6 +49,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
     new("build-money-threshold-native-outcome-batch", BuildMoneyThresholdNativeOutcomeBatch),
+    new("build-money-threshold-native-trajectory", BuildMoneyThresholdNativeTrajectory),
     new("build-money-revenue-comparison-collection-plan", BuildMoneyRevenueComparisonCollectionPlan),
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
     new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
@@ -516,6 +517,11 @@ static void BuildMoneyThresholdTeacherCorpus(Arguments options)
         options.Required("request"));
     Write(options.Required("output"), corpus);
 }
+
+static void BuildMoneyThresholdNativeTrajectory(Arguments options) => Write(
+    options.Required("output"),
+    MoneyThresholdNativeTrajectoryBuilder.Build(
+        options.Required("manifest")));
 
 static void BuildMoneyThresholdEvidenceWorkPlan(Arguments options)
 {

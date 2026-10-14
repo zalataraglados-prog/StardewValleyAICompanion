@@ -4,7 +4,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueComparisonAdmissionBuilder
 {
-    private static MoneyRevenueComparisonAdmissionAlternative
+    internal static MoneyRevenueComparisonAdmissionAlternative
         VerifyAlternative(
             MoneyRevenueCounterfactualProofRequest request,
             MoneyRevenueTerminalAlternativeProof proof,

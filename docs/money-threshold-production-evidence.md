@@ -63,6 +63,39 @@ shipping eligibility and collection metadata. This lets the runner schedule a
 normal same-day wait without reimplementing shop calendars or silently dropping
 fields needed by later counterfactual comparison.
 
+### Native Revenue trajectory normalization
+
+`build-money-threshold-native-trajectory` closes the representation gap
+between a single sale episode and a complete Revenue alternative. Its v1
+manifest selects one request ID from an already verified terminal proof
+denominator. The builder rebuilds the authoritative request catalog and the
+entire terminal proof, then reuses the existing per-alternative verifier to
+join:
+
+```text
+exact source snapshot
+-> optional acquisition/processing rollout
+-> resource-neutral terminal route
+-> native shop sale or shipping deposit
+-> verified Revenue recurrence / shipping settlement
+-> final money checkpoint
+```
+
+The receipt has four explicit shapes: direct sale, direct shipping,
+acquisition then sale, and acquisition then shipping. It preserves the exact
+request/concrete-alternative identity, source/final checkpoints, Revenue
+prefix, terminal evidence SHA, and all transitive artifact paths/hashes. It is
+native evidence only: `teacher_preference_label_verified=false` and
+`formal_product_training_authorized=false` are fixed. No Teacher comparison is
+consulted while building it.
+
+This receipt deliberately does not yet count as a production Money corpus row.
+The next schema slice must let the one canonical corpus consume either a
+legacy isolated sale episode or this complete trajectory, then make the
+criterion-local comparison join require the selected alternative, prefix and
+terminal artifacts to match. Until that adapter lands, completion continues to
+report shipping/rebound selections as unsupported rather than truncating them.
+
 ## Comparison channel
 
 A native outcome closes only half of a cell. Its source denominator remains the
@@ -184,8 +217,9 @@ force-full promotion oracle.
 ## Current implementation status
 
 The selection contract, CLI command, isolated native runner, replayed batch,
-comparison collection planner, and criterion-local comparison attachment path
-are implemented on the Money production branch. They have not been built or
-executed in the quiet development window. Therefore production Money coverage
-remains `0/18` until real runs and their independent comparison admissions are
-accepted.
+comparison collection planner, criterion-local comparison attachment path, and
+native Revenue trajectory receipt are implemented. GitHub game-free quality is
+the validation authority during quiet development; no local game or high-load
+test is run. The trajectory receipt is not yet consumed by corpus v3, so
+production Money coverage remains `0/18` until the corpus adapter and real
+independent runs/comparison admissions are accepted.
