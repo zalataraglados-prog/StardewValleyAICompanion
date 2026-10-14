@@ -122,6 +122,25 @@ terminal ledger anchor before emitting the exact request denominator. Without
 that path, initialization stops explicitly at
 `awaiting_source_strategy_ledger`; it does not infer or manufacture a ledger.
 
+`Complete-MoneyRevenueComparisonWork.ps1` consumes a
+`money_revenue_terminal_proof_index.v1` only after that exact request catalog
+exists. The terminal-manifest assembler requires one proof entry per request
+ID, normalizes every referenced artifact path, and then delegates route,
+before/after ledger capture, reservation, native sale/shipping, recurrence, and
+opportunity-cost validation to the existing terminal proof builder.
+
+The completion script builds one comparison admission per criterion actually
+crossed by the seed run. A receipt is added to the batch attachment index only
+when it has a unique authoritative preference and the selected alternative's
+native shop-sale episode is exactly the seed episode. The existing Money corpus
+builder replays that join once more before attachment. If the Teacher selects a
+different outcome, or shipping wins, the script emits
+`teacher_selected_native_outcome_recollection_required`; it never relabels the
+seed episode. A non-unique Pareto frontier is reported separately as
+`comparison_admissions_blocked_by_incomparable_frontier`, because recollecting
+the same action would not resolve that ambiguity. This avoids silently training
+on the sampler's provisional choice.
+
 ## Batch policy
 
 Run one criterion-partition cell at a time. Reuse already built binaries and

@@ -58,7 +58,8 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
     $comparisonIndex = Get-Content -LiteralPath $comparisonIndexPath -Raw |
         ConvertFrom-Json
     if ([string]$comparisonIndex.schema_version -ne
-        "money_threshold_comparison_admission_index.v1") {
+            "money_threshold_comparison_admission_index.v1" -or
+        [bool]$comparisonIndex.formal_product_training_authorized) {
         throw "Money threshold comparison-admission index schema is invalid."
     }
     $comparisonAdmissions = @($comparisonIndex.admissions | ForEach-Object {

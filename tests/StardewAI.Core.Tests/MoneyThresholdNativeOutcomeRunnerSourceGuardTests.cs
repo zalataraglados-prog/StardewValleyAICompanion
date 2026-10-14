@@ -14,6 +14,10 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Initialize-MoneyRevenueComparisonWork.ps1"));
+    private static readonly string ComparisonCompletionSource = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Complete-MoneyRevenueComparisonWork.ps1"));
 
     [Fact]
     public void RunnerUsesImmutableSourceSaveAndAnIsolatedClone()
@@ -110,6 +114,30 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.DoesNotContain("StardewModdingAPI", ComparisonPlanSource,
             StringComparison.Ordinal);
         Assert.DoesNotContain("training/execute", ComparisonPlanSource,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ComparisonCompletionFailsClosedOnTeacherOutcomeMismatch()
+    {
+        Assert.Contains("build-money-revenue-terminal-execution-manifest",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-revenue-terminal-execution-proof",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-revenue-comparison-admission",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-threshold-teacher-corpus",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "teacher_selected_native_outcome_recollection_required",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains("money_threshold_comparison_admission_index.v1",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("debug.", ComparisonCompletionSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("StardewModdingAPI", ComparisonCompletionSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("training/execute", ComparisonCompletionSource,
             StringComparison.Ordinal);
     }
 

@@ -106,7 +106,8 @@ if (-not [string]::IsNullOrWhiteSpace($AcquisitionRolloutIndex)) {
     $rolloutIndex = Get-Content -LiteralPath $rolloutIndexPath -Raw |
         ConvertFrom-Json
     if ([string]$rolloutIndex.schema_version -ne
-        "money_revenue_acquisition_rollout_index.v1") {
+            "money_revenue_acquisition_rollout_index.v1" -or
+        [bool]$rolloutIndex.formal_product_training_authorized) {
         throw "Money Revenue acquisition-rollout index schema is invalid."
     }
     $rolloutProofs = @($rolloutIndex.proofs | ForEach-Object {

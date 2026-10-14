@@ -58,6 +58,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
+    new("build-money-revenue-terminal-execution-manifest", BuildMoneyRevenueTerminalExecutionManifest),
     new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
     new("build-money-revenue-comparison-admission", BuildMoneyRevenueComparisonAdmission),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
@@ -598,6 +599,13 @@ static void BuildStrategyLedgerBoundaryCapture(Arguments options)
         options.Required("snapshot"),
         options.Required("strategy-ledger"));
     Write(options.Required("output"), capture);
+}
+
+static void BuildMoneyRevenueTerminalExecutionManifest(Arguments options)
+{
+    var manifest = MoneyRevenueTerminalExecutionManifestAssemblyBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), manifest);
 }
 
 static void BuildMoneyRevenueComparisonAdmission(Arguments options)

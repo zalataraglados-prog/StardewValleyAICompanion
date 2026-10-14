@@ -3189,6 +3189,13 @@ Slice 7 remains assigned to the RTX 5070 node.
   builder remains the sole authority for source/terminal ledger anchors and the
   exact terminal proof-request denominator; a missing ledger is reported as the
   next gate rather than replaced with a fixture.
+- Terminal proof completion now has an exact request-ID manifest assembler and
+  a separate quiet orchestration script. After the existing terminal verifier
+  and criterion admission builder replay all artifacts, only a unique Teacher
+  preference whose selected native shop-sale episode equals the seed episode
+  can enter the comparison-attachment index. A different selected episode or
+  shipping preference is reported as explicit recollection work; the initial
+  smallest-sufficient sampling choice is never promoted by assumption.
 
 ### 2026-10-14: Revenue alternative path skeletons
 
