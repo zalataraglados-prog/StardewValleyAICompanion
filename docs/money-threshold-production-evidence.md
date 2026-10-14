@@ -115,6 +115,13 @@ alternative catalog. If no alternative needs rebind, the same path advances
 with an empty proof index automatically. No rollout receipt is trusted merely
 because it appears in the index.
 
+After the concrete denominator is authoritative, the initializer accepts an
+optional `-SourceStrategyLedgerPath`. The existing counterfactual-request
+builder verifies that the ledger binds the source snapshot and derives every
+terminal ledger anchor before emitting the exact request denominator. Without
+that path, initialization stops explicitly at
+`awaiting_source_strategy_ledger`; it does not infer or manufacture a ledger.
+
 ## Batch policy
 
 Run one criterion-partition cell at a time. Reuse already built binaries and

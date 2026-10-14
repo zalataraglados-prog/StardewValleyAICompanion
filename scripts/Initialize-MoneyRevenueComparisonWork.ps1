@@ -8,6 +8,7 @@ param(
     [string] $OutputRoot =
         "artifacts\money-revenue-comparison-work",
     [string] $AcquisitionRolloutIndex = "",
+    [string] $SourceStrategyLedgerPath = "",
     [switch] $SkipBuild
 )
 
@@ -57,6 +58,10 @@ $concreteManifestPath = Join-Path $outputDirectory `
     "money-revenue-concrete-alternative-denominator-manifest.json"
 $concreteCatalogPath = Join-Path $outputDirectory `
     "money-revenue-concrete-alternative-denominator.json"
+$counterfactualManifestPath = Join-Path $outputDirectory `
+    "money-revenue-counterfactual-proof-request-manifest.json"
+$counterfactualCatalogPath = Join-Path $outputDirectory `
+    "money-revenue-counterfactual-proof-request-catalog.json"
 $bootstrapProject = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
 $bootstrapDll = Join-Path $ProjectRoot `
@@ -156,6 +161,30 @@ if ($canBuildConcrete) {
     $concreteStatus = "current_concrete_denominator_built"
 }
 
+$counterfactualStatus = "awaiting_source_strategy_ledger"
+if (-not [string]::IsNullOrWhiteSpace($SourceStrategyLedgerPath)) {
+    if (-not $canBuildConcrete) {
+        throw "Source strategy ledger cannot be consumed before the concrete denominator is built."
+    }
+    $sourceLedgerPath = Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $SourceStrategyLedgerPath
+    if (-not (Test-Path -LiteralPath $sourceLedgerPath -PathType Leaf)) {
+        throw "Money Revenue source strategy ledger is missing: $sourceLedgerPath"
+    }
+    Write-JsonFile -Path $counterfactualManifestPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_counterfactual_proof_request_manifest.v1"
+        concrete_alternative_catalog_path = $concreteCatalogPath
+        source_strategy_ledger_path = $sourceLedgerPath
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-revenue-counterfactual-proof-requests",
+        "--manifest", $counterfactualManifestPath,
+        "--output", $counterfactualCatalogPath)
+    $counterfactualStatus = "counterfactual_proof_collection_ready"
+}
+
 [ordered]@{
     status = [string]$plan.status
     plan_id = [string]$plan.plan_id
@@ -169,6 +198,7 @@ if ($canBuildConcrete) {
     existing_native_episode_reuse_count =
         [int]$plan.existing_native_episode_reuse_count
     concrete_denominator_status = $concreteStatus
+    counterfactual_request_status = $counterfactualStatus
     alternative_denominator_path = $alternativePath
     comparison_collection_plan_path = $planPath
     terminal_rebind_manifest_path = if ($canBuildConcrete) {
@@ -179,6 +209,10 @@ if ($canBuildConcrete) {
     } else { "" }
     concrete_alternative_denominator_path = if ($canBuildConcrete) {
         $concreteCatalogPath
+    } else { "" }
+    counterfactual_request_catalog_path = if (
+        $counterfactualStatus -eq "counterfactual_proof_collection_ready") {
+        $counterfactualCatalogPath
     } else { "" }
     formal_product_training_authorized = $false
 } | ConvertTo-Json -Depth 16

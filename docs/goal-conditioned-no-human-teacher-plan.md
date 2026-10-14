@@ -3184,6 +3184,11 @@ Slice 7 remains assigned to the RTX 5070 node.
   terminal-candidate validation to the existing rebind builder and can build
   the existing concrete alternative denominator. Direct-only plans use the
   same path with an empty proof set; the index itself never certifies a rollout.
+- Once the concrete denominator exists, the initializer can pass an explicit
+  source strategy ledger to the existing counterfactual-request builder. That
+  builder remains the sole authority for source/terminal ledger anchors and the
+  exact terminal proof-request denominator; a missing ledger is reported as the
+  next gate rather than replaced with a fixture.
 
 ### 2026-10-14: Revenue alternative path skeletons
 
