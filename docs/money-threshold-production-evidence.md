@@ -194,6 +194,17 @@ checks the selected alternative, prefix and terminal artifacts. Multiple
 outcomes for one seed fail closed. Run the batch updater after each accepted
 native or comparison artifact and schedule only cells still reported missing.
 
+The updater now invokes `build-money-threshold-production-package` once for the
+batch, canonical corpus, work plan, and optional coverage attachment. Native
+runs and comparison sources are deeply replayed once while the batch corpus is
+built. The work-plan and attachment stages consume that same validated in-memory
+corpus, require their declared corpus path to equal the file just written, and
+recheck its in-memory row invariants plus file hash without replaying every
+transitive native artifact again. Standalone commands retain full independent
+replay, and downstream coverage/reconciliation still replays the persisted
+corpus at its own trust boundary. This is single-invocation proof reuse, not a
+cross-run cache or a relaxation of evidence validation.
+
 When an existing production Goal Method coverage request should consume the
 latest corpus, pass `-CoverageRequestTemplate` to the batch updater. It writes a
 `money_threshold_coverage_request_manifest.v1`, replays the corpus, preserves

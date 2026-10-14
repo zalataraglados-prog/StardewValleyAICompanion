@@ -11,14 +11,7 @@ public static class MoneyThresholdCoverageRequestBuilder
             MoneyThresholdCoverageRequestManifest>(
                 fullManifestPath,
                 "Money threshold coverage-request manifest");
-        if (manifest.SchemaVersion !=
-                MoneyThresholdCoverageRequestVersions.Manifest ||
-            string.IsNullOrWhiteSpace(manifest.SourceId) ||
-            manifest.FormalProductTrainingAuthorized)
-        {
-            throw new InvalidDataException(
-                "Money threshold coverage-request manifest is invalid.");
-        }
+        ValidateManifest(manifest);
 
         var baseRequestPath = RequiredFile(
             manifest.BaseCoverageRequestPath,
@@ -26,12 +19,54 @@ public static class MoneyThresholdCoverageRequestBuilder
         var corpusPath = RequiredFile(
             manifest.MoneyThresholdCorpusPath,
             "Money threshold Teacher corpus");
+        _ = MoneyThresholdTeacherCorpusBuilder.Verify(corpusPath);
+        return Build(manifest, baseRequestPath, corpusPath);
+    }
+
+    internal static GoalMethodTeacherCoverageRequest BuildFromVerifiedCorpus(
+        string manifestPath,
+        string verifiedCorpusPath,
+        MoneyThresholdTeacherCorpus verifiedCorpus)
+    {
+        var fullManifestPath = RequiredFile(
+            manifestPath,
+            "Money threshold coverage-request manifest");
+        var manifest = CurrentTeacherFrontierSupport.Read<
+            MoneyThresholdCoverageRequestManifest>(
+                fullManifestPath,
+                "Money threshold coverage-request manifest");
+        ValidateManifest(manifest);
+        var baseRequestPath = RequiredFile(
+            manifest.BaseCoverageRequestPath,
+            "Base goal-method Teacher coverage request");
+        var corpusPath = RequiredFile(
+            verifiedCorpusPath,
+            "Verified Money threshold Teacher corpus");
+        if (!string.Equals(
+                Path.GetFullPath(manifest.MoneyThresholdCorpusPath),
+                corpusPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                "Verified Money corpus does not match the coverage manifest.");
+        }
+        MoneyThresholdTeacherCorpusBuilder.ValidateInMemory(verifiedCorpus);
+        return Build(
+            manifest,
+            baseRequestPath,
+            corpusPath);
+    }
+
+    private static GoalMethodTeacherCoverageRequest Build(
+        MoneyThresholdCoverageRequestManifest manifest,
+        string baseRequestPath,
+        string corpusPath)
+    {
         var baseRequest = CurrentTeacherFrontierSupport.Read<
             GoalMethodTeacherCoverageRequest>(
                 baseRequestPath,
                 "Base goal-method Teacher coverage request");
         GoalMethodTeacherCoverageBuilder.ValidateRequest(baseRequest);
-        _ = MoneyThresholdTeacherCorpusBuilder.Verify(corpusPath);
 
         var retained = baseRequest.Sources
             .Where(source => source.SourceKind !=
@@ -59,6 +94,19 @@ public static class MoneyThresholdCoverageRequestBuilder
         };
         GoalMethodTeacherCoverageBuilder.ValidateRequest(request);
         return request;
+    }
+
+    private static void ValidateManifest(
+        MoneyThresholdCoverageRequestManifest manifest)
+    {
+        if (manifest.SchemaVersion !=
+                MoneyThresholdCoverageRequestVersions.Manifest ||
+            string.IsNullOrWhiteSpace(manifest.SourceId) ||
+            manifest.FormalProductTrainingAuthorized)
+        {
+            throw new InvalidDataException(
+                "Money threshold coverage-request manifest is invalid.");
+        }
     }
 
     private static string RequiredFile(string path, string label)

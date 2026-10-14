@@ -50,6 +50,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
     new("build-money-threshold-native-outcome-batch", BuildMoneyThresholdNativeOutcomeBatch),
+    new("build-money-threshold-production-package", BuildMoneyThresholdProductionPackage),
     new("build-money-threshold-native-trajectory", BuildMoneyThresholdNativeTrajectory),
     new("build-money-revenue-comparison-collection-plan", BuildMoneyRevenueComparisonCollectionPlan),
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
@@ -555,6 +556,44 @@ static void BuildMoneyThresholdNativeOutcomeBatch(Arguments options)
     batch.CorpusOutputSha256 =
         CurrentTeacherFrontierSupport.HashFile(corpusOutput);
     Write(options.Required("output"), batch);
+}
+
+static void BuildMoneyThresholdProductionPackage(Arguments options)
+{
+    var batch = MoneyThresholdNativeOutcomeBatchBuilder.Build(
+        options.Required("batch-request"));
+    var corpusOutput = Path.GetFullPath(
+        options.Required("corpus-output"));
+    Write(corpusOutput, batch.Corpus);
+    batch.CorpusOutputPath = corpusOutput;
+    batch.CorpusOutputSha256 =
+        CurrentTeacherFrontierSupport.HashFile(corpusOutput);
+    Write(options.Required("batch-output"), batch);
+
+    var workPlan = MoneyThresholdEvidenceWorkPlanBuilder
+        .BuildFromVerifiedCorpus(
+            options.Required("work-plan-request"),
+            corpusOutput,
+            batch.Corpus);
+    Write(options.Required("work-plan-output"), workPlan);
+
+    var coverageManifest = options.Optional("coverage-manifest");
+    var coverageOutput = options.Optional("coverage-output");
+    if (string.IsNullOrWhiteSpace(coverageManifest) !=
+        string.IsNullOrWhiteSpace(coverageOutput))
+    {
+        throw new ArgumentException(
+            "--coverage-manifest and --coverage-output must be supplied together.");
+    }
+    if (!string.IsNullOrWhiteSpace(coverageManifest))
+    {
+        var coverageRequest = MoneyThresholdCoverageRequestBuilder
+            .BuildFromVerifiedCorpus(
+                coverageManifest,
+                corpusOutput,
+                batch.Corpus);
+        Write(coverageOutput!, coverageRequest);
+    }
 }
 
 static void BuildMoneyRevenueComparisonCollectionPlan(Arguments options)

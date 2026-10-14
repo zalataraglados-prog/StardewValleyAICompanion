@@ -46,18 +46,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             MoneyThresholdTeacherCorpus>(
             fullPath,
             "Money-threshold Teacher corpus");
-        if (corpus.SchemaVersion != MoneyThresholdTeacherCorpusVersions.Corpus ||
-            string.IsNullOrWhiteSpace(corpus.CorpusId) ||
-            corpus.GoalId != GoalMethodTeacherCoverageGoalIds.Authoritative ||
-            corpus.DirectionId != "earn_money" ||
-            corpus.MethodId != "grandpa.direct.earn_money" ||
-            corpus.FormalProductTrainingAuthorized ||
-            corpus.Rows.Length == 0 ||
-            corpus.RowCount != corpus.Rows.Length)
-        {
-            throw new InvalidDataException(
-                "Money-threshold Teacher corpus header is invalid.");
-        }
+        ValidateHeader(corpus);
 
         var rebuilt = corpus.Rows.Select(row => BuildRow(
                 new MoneyThresholdTeacherCorpusSource(
@@ -90,6 +79,30 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 "Money-threshold Teacher corpus drifted from source evidence.");
         }
         return corpus;
+    }
+
+    internal static void ValidateInMemory(
+        MoneyThresholdTeacherCorpus corpus)
+    {
+        ValidateHeader(corpus);
+        ValidateRows(corpus.Rows);
+    }
+
+    private static void ValidateHeader(
+        MoneyThresholdTeacherCorpus corpus)
+    {
+        if (corpus.SchemaVersion != MoneyThresholdTeacherCorpusVersions.Corpus ||
+            string.IsNullOrWhiteSpace(corpus.CorpusId) ||
+            corpus.GoalId != GoalMethodTeacherCoverageGoalIds.Authoritative ||
+            corpus.DirectionId != "earn_money" ||
+            corpus.MethodId != "grandpa.direct.earn_money" ||
+            corpus.FormalProductTrainingAuthorized ||
+            corpus.Rows.Length == 0 ||
+            corpus.RowCount != corpus.Rows.Length)
+        {
+            throw new InvalidDataException(
+                "Money-threshold Teacher corpus header is invalid.");
+        }
     }
 
     private static MoneyThresholdTeacherCorpus CreateCorpus(

@@ -366,7 +366,19 @@ internal static partial class BootstrapSelfTest
             });
         var moneyFixtureRequest = MoneyThresholdCoverageRequestBuilder.Build(
             moneyAttachmentManifestPath);
+        var verifiedMoneyCorpus = MoneyThresholdTeacherCorpusBuilder.Verify(
+            moneyThresholdCorpusPath);
+        var reusedMoneyFixtureRequest = MoneyThresholdCoverageRequestBuilder
+            .BuildFromVerifiedCorpus(
+                moneyAttachmentManifestPath,
+                moneyThresholdCorpusPath,
+                verifiedMoneyCorpus);
         Require(
+            JsonSerializer.Serialize(
+                moneyFixtureRequest,
+                JsonDefaults.Compact) == JsonSerializer.Serialize(
+                reusedMoneyFixtureRequest,
+                JsonDefaults.Compact) &&
             moneyFixtureRequest.CoverageId == request.CoverageId &&
             moneyFixtureRequest.Sources.Length == 2 &&
             moneyFixtureRequest.Sources.Count(value =>
@@ -379,7 +391,32 @@ internal static partial class BootstrapSelfTest
                             .MoneyThresholdProgressionCorpus)
                 .ArtifactPath == moneyThresholdCorpusPath &&
             !moneyFixtureRequest.FormalProductTrainingAuthorized,
-            "Money corpus was not attached to the coverage request exactly once.");
+            "Verified Money corpus reuse changed coverage attachment semantics.");
+        var workPlanRequestPath = Path.Combine(
+            fullOutputRoot,
+            "money-threshold-evidence-work-plan-request.json");
+        Write(
+            workPlanRequestPath,
+            new MoneyThresholdEvidenceWorkPlanRequest
+            {
+                PlanId = "money-threshold-self-test-work-plan",
+                MoneyThresholdCorpusPath = moneyThresholdCorpusPath,
+                FormalProductTrainingAuthorized = false
+            });
+        var replayedWorkPlan = MoneyThresholdEvidenceWorkPlanBuilder.Build(
+            workPlanRequestPath);
+        var reusedWorkPlan = MoneyThresholdEvidenceWorkPlanBuilder
+            .BuildFromVerifiedCorpus(
+                workPlanRequestPath,
+                moneyThresholdCorpusPath,
+                verifiedMoneyCorpus);
+        Require(
+            JsonSerializer.Serialize(
+                replayedWorkPlan,
+                JsonDefaults.Compact) == JsonSerializer.Serialize(
+                reusedWorkPlan,
+                JsonDefaults.Compact),
+            "Verified Money corpus reuse changed work-plan semantics.");
         var staleMoneyRequestPath = Path.Combine(
             fullOutputRoot,
             "stale-money-sources-coverage-request.json");

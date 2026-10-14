@@ -148,11 +148,6 @@ Write-JsonFile -Path $batchRequestPath -Value ([ordered]@{
     comparison_admissions = $comparisonAdmissions
     formal_product_training_authorized = $false
 })
-Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-    "build-money-threshold-native-outcome-batch",
-    "--request", $batchRequestPath,
-    "--corpus-output", $corpusPath,
-    "--output", $batchPath)
 
 Write-JsonFile -Path $workPlanRequestPath -Value ([ordered]@{
     schema_version = "money_threshold_evidence_work_plan_request.v1"
@@ -160,10 +155,6 @@ Write-JsonFile -Path $workPlanRequestPath -Value ([ordered]@{
     money_threshold_corpus_path = $corpusPath
     formal_product_training_authorized = $false
 })
-Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-    "build-money-threshold-evidence-work-plan",
-    "--request", $workPlanRequestPath,
-    "--output", $workPlanPath)
 
 $coverageRequestPath = ""
 if (-not [string]::IsNullOrWhiteSpace($CoverageRequestTemplate)) {
@@ -187,11 +178,22 @@ if (-not [string]::IsNullOrWhiteSpace($CoverageRequestTemplate)) {
         source_id = $CoverageSourceId
         formal_product_training_authorized = $false
     })
-    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-        "build-money-threshold-coverage-request",
-        "--manifest", $coverageAttachmentManifestPath,
-        "--output", $coverageRequestPath)
 }
+
+$packageArguments = @(
+    "build-money-threshold-production-package",
+    "--batch-request", $batchRequestPath,
+    "--batch-output", $batchPath,
+    "--corpus-output", $corpusPath,
+    "--work-plan-request", $workPlanRequestPath,
+    "--work-plan-output", $workPlanPath)
+if (-not [string]::IsNullOrWhiteSpace($coverageRequestPath)) {
+    $packageArguments += @(
+        "--coverage-manifest", $coverageAttachmentManifestPath,
+        "--coverage-output", $coverageRequestPath)
+}
+Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll `
+    -Arguments $packageArguments
 
 $batch = Get-Content -LiteralPath $batchPath -Raw | ConvertFrom-Json
 $workPlan = Get-Content -LiteralPath $workPlanPath -Raw | ConvertFrom-Json

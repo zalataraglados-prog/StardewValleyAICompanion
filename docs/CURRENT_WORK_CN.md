@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 Money 生产包单次深验编排
+
+- `Update-MoneyThresholdNativeOutcomeBatch.ps1` 现通过一次 `build-money-threshold-production-package` 调用生成 batch、canonical corpus、18-cell work plan 与可选 coverage request，不再启动三个进程并在同一轮内重复深验同一 corpus。
+- 原生 run、comparison admission 与 trajectory 仍在 batch corpus 构建时完整重放一次；后续两步只能复用该进程内已经验证的对象，并必须同时匹配刚落盘 corpus 的绝对路径、文件 SHA-256 和行级不变量。独立命令与下游 coverage/reconciliation 仍在各自信任边界完整重放，未引入跨运行缓存，也未弱化 fail-closed 规则。
+- 这项优化服务 #267 的 proof DAG 单次计算与 #274 的测量优先原则：它消除代码上可确认的重复调用，但没有猜测缓存预算、并发度或内存淘汰参数。没有启动本地游戏或高负载测试，Money production 状态仍为 `0/18`，正式训练仍为 `false`。
+
 ## 历史记录 · 2026-10-15 Money 完整原生轨迹与 corpus v4
 
 - 新增 `money_threshold_native_trajectory_receipt.v2`。它从权威 Revenue request denominator 中选择一个待验 request，重建完整 terminal proof，并复用既有单候选 verifier 连接可选 acquisition/processing rollout、终端 sale/shipping 动作与 Revenue recurrence；不新增第二套执行器、收益验证或比较器。
