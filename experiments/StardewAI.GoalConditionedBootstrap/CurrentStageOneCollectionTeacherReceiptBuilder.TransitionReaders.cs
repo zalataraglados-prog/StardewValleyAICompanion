@@ -21,21 +21,35 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         if (!TryStateValue(snapshot, "farm", "shipping_bins", out var bins) ||
             bins.ValueKind != JsonValueKind.Array)
             return null;
-        var count = 0;
+        int? count = null;
+        string? scopeIdentity = null;
         foreach (var bin in bins.EnumerateArray())
         {
             if (!bin.TryGetProperty("contents", out var contents) ||
                 contents.ValueKind != JsonValueKind.Array)
                 return null;
+            var binCount = 0;
             foreach (var row in contents.EnumerateArray().Where(row =>
                          ReadString(row, "qualified_item_id") == qualifiedItemId))
             {
                 if (!TryReadInt(row, "count", out var stack))
                     return null;
-                count += Math.Max(0, stack);
+                binCount += Math.Max(0, stack);
             }
+            var currentScopeIdentity =
+                ReadString(bin, "bin_scope") + ":" +
+                (bin.TryGetProperty("player_id", out var playerId)
+                    ? playerId.ToString()
+                    : string.Empty);
+            if (count.HasValue &&
+                (count.Value != binCount ||
+                 !string.Equals(scopeIdentity, currentScopeIdentity,
+                     StringComparison.Ordinal)))
+                return null;
+            count = binCount;
+            scopeIdentity = currentScopeIdentity;
         }
-        return count;
+        return count ?? 0;
     }
 
     private static bool? ReadCollectionBoolean(

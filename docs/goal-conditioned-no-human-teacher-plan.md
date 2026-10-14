@@ -3141,6 +3141,22 @@ Slice 7 remains assigned to the RTX 5070 node.
   native deposit proof before day-settlement recurrence. Until those identities are closed, comparison authority,
   production labels and formal training remain false.
 
+### 2026-10-14: exact native shipping-deposit evidence
+
+- One reusable verifier now binds the terminal `executor.ship_inventory_item_to_bin` queue item and receipt to its
+  exact inventory slot, item identity, quality, quantity, live unit price and physical Farm bin endpoint. The before
+  and after snapshots must agree with the receipt changed facts and show the same one-item transfer.
+- Shared-wallet physical bins expose the same native shipping inventory at multiple endpoints. Deposit evidence reads
+  only the queue-selected endpoint; the legacy Stage-One aggregate reader now requires all same-scope endpoint views
+  to agree and credits that shared inventory once instead of summing duplicate views.
+- Native deposit must increase pending settlement value by the exact unit price while current money, cumulative money
+  earned and total day remain unchanged. Immediate payment, endpoint/slot/price drift, stale receipt facts or incomplete
+  transparent state fail closed. Overnight payment remains the separate existing shipping-settlement verifier.
+- This closes the deposit proof shape but does not create concrete alternatives after acquisition or processing. The
+  next bounded slice rebuilds the candidate catalog from each verified fresh terminal snapshot and binds the resulting
+  exact shop-sale or shipping candidate back to its path skeleton. Formal coverage remains `2/19`, root-method coverage
+  remains `1/11`, and formal product training remains unauthorized.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
