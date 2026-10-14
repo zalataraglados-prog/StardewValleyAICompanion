@@ -2258,7 +2258,11 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             dailyBudget,
             StringComparison.Ordinal);
         Assert.Contains(
-            "candidate.parameters[max_movement_tiles]",
+            "candidate.parameters[stand_tile_x]",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.parameters[stand_tile_y]",
             dailyBudget,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -32,7 +32,7 @@ internal sealed class AcquisitionWildTreeChopCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionWildTreeChopCandidateIndex.Read",
-            "v1",
+            "v2",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -154,7 +154,24 @@ internal sealed class AcquisitionWildTreeChopCandidateIndex
                 candidate,
                 "route_distance_tiles",
                 out var routeDistance) ||
-            routeDistance < 0)
+            routeDistance < 0 ||
+            !TryUniqueIntParameter(
+                candidate,
+                "stand_tile_x",
+                out var standTileX) ||
+            !TryUniqueIntParameter(
+                candidate,
+                "stand_tile_y",
+                out var standTileY) ||
+            Math.Abs(candidate.TileX.Value - standTileX) +
+                Math.Abs(candidate.TileY.Value - standTileY) != 1 ||
+            !TryUniqueIntParameter(
+                candidate,
+                "terminal_action_ticks",
+                out var terminalActionTicks) ||
+            terminalActionTicks <= 0 ||
+            candidate.EstimatedTicks !=
+                (long)routeDistance * 60 + terminalActionTicks)
         {
             reason = "wild_tree_chop_candidate_contract_invalid";
             return false;
@@ -196,6 +213,10 @@ internal sealed class AcquisitionWildTreeChopCandidateIndex
                 candidate.EstimatedTicks,
                 candidate.EnergyCost,
                 routeDistance,
+                standTileX,
+                standTileY,
+                terminalActionTicks,
+                "explicit_terminal_action_ticks",
                 source.RouteKind,
                 source.SourceId,
                 source.QualifiedItemId,
@@ -352,6 +373,10 @@ internal sealed record AcquisitionWildTreeChopCandidate(
     int EstimatedTicks,
     int EnergyCost,
     int RouteDistanceTiles,
+    int StandTileX,
+    int StandTileY,
+    int TerminalActionTicks,
+    string TimingProjectionMode,
     string RouteKind,
     string SourceId,
     string QualifiedItemId,

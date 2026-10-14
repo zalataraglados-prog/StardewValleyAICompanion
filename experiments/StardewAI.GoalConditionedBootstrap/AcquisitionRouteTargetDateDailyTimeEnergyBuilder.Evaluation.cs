@@ -205,8 +205,6 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             !candidate.TargetTileY.HasValue ||
             !candidate.StandTileX.HasValue ||
             !candidate.StandTileY.HasValue ||
-            !candidate.MaxMovementTiles.HasValue ||
-            candidate.MaxMovementTiles.Value < 0 ||
             !candidate.MaxToolSwings.HasValue ||
             candidate.MaxToolSwings.Value <= 0 ||
             !string.Equals(
@@ -239,115 +237,37 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 Array.Empty<string>(),
                 state.EnergyBlockingReasons);
         }
-        if (state.RouteState.Timing is null)
-        {
-            return Result(
-                route,
-                "native_radioactive_ore_node",
-                "blocked_daily_route_evidence",
-                false,
-                null,
-                null,
-                Array.Empty<string>(),
-                new[] { "route_timing_calibration_incomplete" });
-        }
-
-        var actionTicks = checked(
-            (candidate.MaxMovementTiles.Value +
-             candidate.MaxToolSwings.Value) * 60);
-        var terminalMinutes =
-            GameClockBudgetPolicy.TicksToGameMinutes(actionTicks);
         var requiredEnergy = candidate.MaxToolSwings.Value * 2d;
-        var start = state.RouteState.CurrentTime;
-        var window = RequirementRoute(route).MatchingWindows
-            .Where(value => string.IsNullOrWhiteSpace(value.LocationId) ||
-                string.Equals(
-                    value.LocationId,
-                    candidate.LocationId,
-                    StringComparison.OrdinalIgnoreCase))
-            .SelectMany(value => value.TimeWindows)
-            .Select(value => new
-            {
-                Window = value,
-                Start = Math.Max(start, value.StartTime),
-                AvailableMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
-                    Math.Max(start, value.StartTime),
-                    value.EndTime)
-            })
-            .Where(value => value.AvailableMinutes >= terminalMinutes)
-            .OrderBy(value => value.Start)
-            .ThenBy(value => value.Window.EndTime)
-            .FirstOrDefault();
-        var timeMatches = window is not null;
-        var energyMatches = state.AvailableEnergy.Value >= requiredEnergy;
-        var evaluation = new AcquisitionDailyTimeEnergyEvaluation(
+        return EvaluateTerminal(
+            route,
+            staticRoute,
+            state,
+            "native_radioactive_ore_node",
             candidate.LocationId,
-            candidate.TargetTileX,
-            candidate.TargetTileY,
-            candidate.StandTileX,
-            candidate.StandTileY,
-            start,
-            start,
-            window?.Window.StartTime,
-            window?.Window.EndTime,
-            terminalMinutes,
-            window is null
-                ? null
-                : GameClockBudgetPolicy.AddClockMinutes(
-                    window.Start,
-                    terminalMinutes),
+            candidate.TargetTileX.Value,
+            candidate.TargetTileY.Value,
+            requireExactTargetTile: false,
+            GameClockBudgetPolicy.TicksToGameMinutes(
+                checked(candidate.MaxToolSwings.Value * 60)),
             1,
             null,
             state.AvailableEnergy.Value,
             requiredEnergy,
             requiredEnergy,
             0d,
-            timeMatches,
-            energyMatches,
             "existing_native_mine_stone_profile",
-            state.RouteState.Timing.EvidenceId,
             new[]
             {
                 "candidate:mining.reach_depth",
-                "candidate.parameters[max_movement_tiles]",
+                "candidate.parameters[stand_tile_x]",
+                "candidate.parameters[stand_tile_y]",
                 "candidate.parameters[max_tool_swings]",
                 "state.mining.objects.value[].best_pickaxe_hits_remaining",
                 "state.player.energy.value",
                 "compiler:MiningFloorStepCompiler"
-            });
-        if (!timeMatches)
-        {
-            return Result(
-                route,
-                "native_radioactive_ore_node",
-                "resolved_daily_time_budget_miss",
-                true,
-                false,
-                evaluation,
-                new[] { "terminal_duration_does_not_fit_source_window" },
-                Array.Empty<string>());
-        }
-        if (!energyMatches)
-        {
-            return Result(
-                route,
-                "native_radioactive_ore_node",
-                "resolved_daily_energy_budget_miss",
-                true,
-                false,
-                evaluation,
-                new[] { "available_energy_below_required_cost_and_reserve" },
-                Array.Empty<string>());
-        }
-        return Result(
-            route,
-            "native_radioactive_ore_node",
-            "resolved_daily_time_energy_budget_match",
-            true,
-            true,
-            evaluation,
-            Array.Empty<string>(),
-            Array.Empty<string>());
+            },
+            exactStandTileX: candidate.StandTileX,
+            exactStandTileY: candidate.StandTileY);
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy
@@ -419,10 +339,6 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         AcquisitionRouteTargetDateDailyTimeEnergy? best = null;
         foreach (var candidate in matchingCandidates)
         {
-            var actionTicks = Math.Max(
-                1,
-                candidate.EstimatedTicks -
-                candidate.RouteDistanceTiles * 60);
             var evaluated = EvaluateTerminal(
                 route,
                 staticRoute,
@@ -432,7 +348,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 candidate.TargetTileX,
                 candidate.TargetTileY,
                 requireExactTargetTile: false,
-                GameClockBudgetPolicy.TicksToGameMinutes(actionTicks),
+                GameClockBudgetPolicy.TicksToGameMinutes(
+                    candidate.TerminalActionTicks),
                 1,
                 null,
                 state.AvailableEnergy.Value,
@@ -443,11 +360,16 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 new[]
                 {
                     "candidate:foraging.chop_wild_tree",
+                    "candidate.parameters[stand_tile_x]",
+                    "candidate.parameters[stand_tile_y]",
+                    "candidate.parameters[terminal_action_ticks]",
                     "state.current_location.terrain_features.value[].tree_chop_expected_tool_swings",
                     "state.current_location.terrain_features.value[].tree_chop_energy_cost",
                     "compiler:DailyPlanCompiler.ClearPlantSteps",
                     "compiler:ActionQueueCompiler.ClearObstacle"
-                });
+                },
+                exactStandTileX: candidate.StandTileX,
+                exactStandTileY: candidate.StandTileY);
             if (evaluated.DailyTimeEnergyMatchesTargetDate == true)
                 return evaluated;
             if (best is null ||
@@ -752,9 +674,23 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         double energyReserve,
         string executionAssumption,
         string[] terminalEvidencePaths,
-        bool acceptDefaultLocationWindow = false)
+        bool acceptDefaultLocationWindow = false,
+        int? exactStandTileX = null,
+        int? exactStandTileY = null)
     {
         var routeState = state.RouteState;
+        if (exactStandTileX.HasValue != exactStandTileY.HasValue)
+        {
+            return Result(
+                route,
+                budgetKind,
+                "blocked_daily_terminal_budget_evidence",
+                false,
+                null,
+                null,
+                Array.Empty<string>(),
+                new[] { "terminal_route_exact_stand_tile_incomplete" });
+        }
         if (!routeState.RouteEvidenceAvailable || routeState.Timing is null)
         {
             return Result(
@@ -778,9 +714,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 StartTileY = routeState.CurrentTileY,
                 EarliestDepartureTime = routeState.CurrentTime,
                 TargetLocation = targetLocation,
-                TargetTileX = targetTileX,
-                TargetTileY = targetTileY,
-                RequireExactTargetTile = requireExactTargetTile
+                TargetTileX = exactStandTileX ?? targetTileX,
+                TargetTileY = exactStandTileY ?? targetTileY,
+                RequireExactTargetTile = exactStandTileX.HasValue ||
+                    requireExactTargetTile
             },
             routeState.Timing);
         var scenario = production.Scenario;
@@ -867,6 +804,13 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     "route_timing_calibration",
                     "static_calendar_resolution.routes[].matching_windows[]"
                 })
+                .Concat(exactStandTileX.HasValue
+                    ? new[]
+                    {
+                        "candidate.parameters[stand_tile_x]",
+                        "candidate.parameters[stand_tile_y]"
+                    }
+                    : Array.Empty<string>())
                 .Distinct(StringComparer.Ordinal)
                 .ToArray());
         if (!timeMatches)

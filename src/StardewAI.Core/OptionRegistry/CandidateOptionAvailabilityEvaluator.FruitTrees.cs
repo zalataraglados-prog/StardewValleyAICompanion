@@ -20,8 +20,6 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             return features.Value.EnumerateArray()
                 .Where(feature => feature.ValueKind == JsonValueKind.Object && ReadBool(feature, "is_fruit_tree") == true)
                 .Select(feature =>
@@ -61,10 +59,7 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add("fruit_tree_no_reachable_adjacent_interaction");
                     }
 
-                    var distance = interaction is null
-                        ? 0
-                        : Math.Abs(playerX - interaction.Stand.X) +
-                          Math.Abs(playerY - interaction.Stand.Y);
+                    var distance = interaction?.Stand.Distance ?? 0;
                     var parameters = interaction is null
                         ? Array.Empty<SmallModelActionParameter>()
                         : FruitTreeParameters(

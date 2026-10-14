@@ -56,6 +56,60 @@ public sealed class BushHarvestMainlineTests
         Assert.Contains("harvest_bush_not_ready_by_transparent_state", queue.Items.Single().BlockingReasons);
     }
 
+    [Fact]
+    public void CandidateAndExecutorShareCachedBfsDistanceAuthority()
+    {
+        var json = StateJson("ready", "ordinary_berry", "(O)296", 1, 0, 7)
+            .Replace(
+                "\"notable_tiles\":[]",
+                "\"notable_tiles\":[" +
+                "{\"tile_x\":11,\"tile_y\":10,\"collision_blocked\":true}," +
+                "{\"tile_x\":11,\"tile_y\":9,\"collision_blocked\":true}," +
+                "{\"tile_x\":11,\"tile_y\":11,\"collision_blocked\":true}]",
+                StringComparison.Ordinal);
+        var snapshot = Snapshot(json);
+        var evaluator = new CandidateOptionAvailabilityEvaluator();
+        var buildsBefore = evaluator.CurrentRouteDistanceBuildCount(snapshot);
+
+        var first = Assert.Single(evaluator.Evaluate(
+                snapshot,
+                new[] { "foraging.harvest_bushes" },
+                true)
+            .Options.Single().EventCandidates);
+        var second = Assert.Single(evaluator.Evaluate(
+                snapshot,
+                new[] { "foraging.harvest_bushes" },
+                true)
+            .Options.Single().EventCandidates);
+
+        Assert.True(first.Available, string.Join(";", first.BlockReasons));
+        Assert.Equal("12", Parameter(first, "stand_tile_x"));
+        Assert.Equal("9", Parameter(first, "stand_tile_y"));
+        Assert.Equal("5", Parameter(first, "route_distance_tiles"));
+        Assert.Equal(480, first.EstimatedTicks);
+        Assert.Equal("5", Parameter(second, "route_distance_tiles"));
+        Assert.Equal(
+            buildsBefore + 1,
+            evaluator.CurrentRouteDistanceBuildCount(snapshot));
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            evaluator.Evaluate(
+                snapshot,
+                new[] { "foraging.harvest_bushes" },
+                true));
+        var queue = new ActionQueueCompiler().Compile(
+            new DailyPlanCompiler().Compile(ranked, snapshot.StateHash),
+            snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    private static string Parameter(
+        StardewAI.Contracts.Options.EventCandidate candidate,
+        string name) =>
+        candidate.Parameters.Single(value => value.Name == name).Value;
+
     private static string StateJson(string status, string branch, string outputId, int quantity, int quality, int xp)
     {
         var routeSources = outputId switch

@@ -52,11 +52,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var target = GeodeCounterTiles(projection.Value)
             .Select(tile => new { tile, stand = FindBestStandTile(snapshot, tile.X, tile.Y) })
             .Where(row => row.stand is not null)
-            .OrderBy(row => Math.Abs(ReadStateFieldInt(snapshot, "player", "tile_x") - row.stand!.X) +
-                Math.Abs(ReadStateFieldInt(snapshot, "player", "tile_y") - row.stand!.Y)).FirstOrDefault();
+            .OrderBy(row => row.stand!.Distance)
+            .ThenBy(row => row.tile.Y)
+            .ThenBy(row => row.tile.X)
+            .FirstOrDefault();
         var candidates = new List<EventCandidate>();
         foreach (var row in rows)
         {
+            var routeDistanceTiles = target?.stand!.Distance ?? 0;
             var reasons = new List<string>();
             if (ReadString(projection.Value, "base_service_status") != "ready")
                 reasons.Add("geode_processing_service_not_ready:" + ReadString(projection.Value, "base_service_status"));
@@ -66,7 +69,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 reasons.Add("geode_processing_output_capacity_unavailable");
             if (target is null) reasons.Add("geode_processing_counter_has_no_reachable_stand");
             var parameters = target is null ? Array.Empty<SmallModelActionParameter>()
-                : GeodeCandidateParameters(projection.Value, row, purpose, target.tile, target.stand!);
+                : GeodeCandidateParameters(
+                    projection.Value,
+                    row,
+                    purpose,
+                    target.tile,
+                    target.stand!,
+                    routeDistanceTiles);
             reasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
             {
                 OptionId = "processing.crack_geode", Parameters = parameters
@@ -92,7 +101,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     }
 
     private static SmallModelActionParameter[] GeodeCandidateParameters(JsonElement projection, JsonElement row,
-        string purpose, GeodeCounterTile target, CandidateTile stand)
+        string purpose, GeodeCounterTile target, CandidateTile stand,
+        int routeDistanceTiles)
     {
         var primary = row.TryGetProperty("expected_output", out var output) && output.ValueKind == JsonValueKind.Object
             ? output : default;
@@ -133,6 +143,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("target_location", ReadString(projection, "location_id")),
             Parameter("target_tile_x", target.X.ToString(CultureInfo.InvariantCulture)), Parameter("target_tile_y", target.Y.ToString(CultureInfo.InvariantCulture)),
             Parameter("stand_tile_x", stand.X.ToString(CultureInfo.InvariantCulture)), Parameter("stand_tile_y", stand.Y.ToString(CultureInfo.InvariantCulture)),
+            Parameter("route_distance_tiles", routeDistanceTiles.ToString(CultureInfo.InvariantCulture)),
+            Parameter("terminal_action_ticks", "420"),
             Parameter("geode_action_raw", target.ActionRaw), Parameter("geode_action_token", target.Token),
             Parameter("native_contract", ReadString(projection, "native_contract")), Parameter("max_movement_tiles", "512")
         };

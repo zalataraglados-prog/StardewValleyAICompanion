@@ -487,7 +487,11 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add("machine_harvest_experience_projection_unavailable");
                     }
 
-                    var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
+                    var distance = standTile.Tile?.Distance ?? 0;
+                    var estimatedTicks = Math.Max(90, distance * 60 + 30);
+                    var terminalActionTicks = Math.Max(
+                        1,
+                        estimatedTicks - distance * 60);
                     var movementEffect = standTile.Tile is null || distance == 0
                         ? string.Empty
                         : "move_to_adjacent=" + standTile.Tile.X + "," +
@@ -515,6 +519,10 @@ namespace StardewAI.Core.OptionRegistry
                         parameters.Add(Parameter("stand_tile_y", standTile.Tile.Y.ToString(
                             System.Globalization.CultureInfo.InvariantCulture)));
                         parameters.Add(Parameter("max_movement_tiles", distance.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                        parameters.Add(Parameter("route_distance_tiles", distance.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)));
+                        parameters.Add(Parameter("terminal_action_ticks", terminalActionTicks.ToString(
                             System.Globalization.CultureInfo.InvariantCulture)));
                     }
                     if (positiveExperienceDeltas.Length == 1)
@@ -549,7 +557,7 @@ namespace StardewAI.Core.OptionRegistry
                         ItemId = outputItemId,
                         QualifiedItemId = outputQualifiedId,
                         Quantity = outputStack,
-                        EstimatedTicks = Math.Max(90, distance * 60 + 30),
+                        EstimatedTicks = estimatedTicks,
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_machine_output_runtime_collect",
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),

@@ -48,9 +48,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         if (candidate is null ||
             !candidate.TargetTileX.HasValue ||
             !candidate.TargetTileY.HasValue ||
-            !candidate.MaxMovementTiles.HasValue ||
-            candidate.MaxMovementTiles.Value < 0 ||
-            candidate.EstimatedTicks <= 0 ||
+            !candidate.StandTileX.HasValue ||
+            !candidate.StandTileY.HasValue ||
+            candidate.TerminalActionTicks <= 0 ||
             candidate.EnergyCost != 0)
         {
             return Result(
@@ -67,10 +67,6 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 });
         }
 
-        var terminalTicks = Math.Max(
-            1,
-            candidate.EstimatedTicks -
-                candidate.MaxMovementTiles.Value * 60);
         return EvaluateTerminal(
             route,
             staticRoute,
@@ -80,7 +76,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             candidate.TargetTileX.Value,
             candidate.TargetTileY.Value,
             requireExactTargetTile: false,
-            GameClockBudgetPolicy.TicksToGameMinutes(terminalTicks),
+            GameClockBudgetPolicy.TicksToGameMinutes(
+                candidate.TerminalActionTicks),
             1,
             null,
             null,
@@ -95,7 +92,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "candidate.parameters[max_movement_tiles]",
                 "compiler:DailyPlanCompiler.MachineSteps",
                 "compiler:ActionQueueCompiler.CollectMachineOutput"
-            });
+            },
+            exactStandTileX: candidate.StandTileX,
+            exactStandTileY: candidate.StandTileY);
     }
 
     private static AcquisitionRouteTargetDateFacility FacilityRoute(

@@ -50,8 +50,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     candidate.ExpectedOutputQuality,
                     staticRoute.RequiredAmount,
                     staticRoute.MinimumQuality) &&
-                candidate.EstimatedTicks >
-                    candidate.RouteDistanceTiles.Value * 60 &&
+                candidate.TerminalActionTicks > 0 &&
                 candidate.EnergyCost == 0 &&
                 string.Equals(
                     state.RouteState.CurrentLocationId,
@@ -86,8 +85,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     candidate.TargetTileY!.Value,
                     requireExactTargetTile: false,
                     GameClockBudgetPolicy.TicksToGameMinutes(
-                        candidate.EstimatedTicks -
-                        candidate.RouteDistanceTiles!.Value * 60),
+                        candidate.TerminalActionTicks),
                     1,
                     null,
                     null,
@@ -105,7 +103,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                         "candidate.estimated_ticks",
                         "compiler:DailyPlanCompiler.ClearObstacleSteps",
                         "compiler:ActionQueueCompiler.CompileClearObstacleStep"
-                    }))
+                    },
+                    exactStandTileX: candidate.StandTileX,
+                    exactStandTileY: candidate.StandTileY))
             .OrderByDescending(value =>
                 value.DailyTimeEnergyMatchesTargetDate == true)
             .ThenByDescending(value => value.DailyTimeEnergyAxisResolved)

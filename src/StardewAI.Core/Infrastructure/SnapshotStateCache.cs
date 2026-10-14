@@ -37,8 +37,17 @@ namespace StardewAI.Core.Infrastructure
                 var value = Build(snapshot, factory, stateHash);
                 entry.StateHash = stateHash;
                 entry.Value = value;
+                entry.BuildCount++;
                 return value;
             }
+        }
+
+        internal int GetBuildCount(SnapshotEnvelope snapshot)
+        {
+            if (!entries.TryGetValue(snapshot, out var entry))
+                return 0;
+            lock (entry)
+                return entry.BuildCount;
         }
 
         private TValue Build(
@@ -68,6 +77,8 @@ namespace StardewAI.Core.Infrastructure
             public string StateHash { get; set; } = string.Empty;
 
             public TValue? Value { get; set; }
+
+            public int BuildCount { get; set; }
         }
     }
 }

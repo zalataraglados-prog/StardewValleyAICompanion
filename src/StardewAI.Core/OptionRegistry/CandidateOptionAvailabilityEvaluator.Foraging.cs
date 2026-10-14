@@ -20,8 +20,6 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             return objects.Value.EnumerateArray()
                 .Where(item => item.ValueKind == JsonValueKind.Object && ReadBool(item, "is_spawned_object") == true)
                 .Select(item =>
@@ -72,9 +70,7 @@ namespace StardewAI.Core.OptionRegistry
                         }));
                     }
 
-                    var distance = stand is null
-                        ? 0
-                        : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+                    var distance = stand?.Distance ?? 0;
                     var effect = (stand is null ? string.Empty : "spawned_object_stand_tile=" + stand.X + "," + stand.Y + ";") +
                         "current_location.objects[" + x + "," + y + "].present=false" +
                         ";qualified_item_id=" + qualifiedItemId +
@@ -138,8 +134,6 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             return terrainFeatures.Value.EnumerateArray()
                 .Where(feature => feature.ValueKind == JsonValueKind.Object && ReadBool(feature, "is_ginger") == true)
                 .Select(feature =>
@@ -147,10 +141,7 @@ namespace StardewAI.Core.OptionRegistry
                     var x = ReadInt(feature, "tile_x");
                     var y = ReadInt(feature, "tile_y");
                     var stand = FindBestStandTile(snapshot, x, y);
-                    var distance = stand is null
-                        ? 0
-                        : Math.Abs(playerX - stand.X) +
-                          Math.Abs(playerY - stand.Y);
+                    var distance = stand?.Distance ?? 0;
                     var status = ReadString(feature, "ginger_harvest_status");
                     var energyCost = Math.Max(0d, ReadDouble(feature, "ginger_energy_cost"));
                     var blockReasons = new List<string>();

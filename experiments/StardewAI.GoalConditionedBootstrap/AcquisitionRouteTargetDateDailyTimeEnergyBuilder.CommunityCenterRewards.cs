@@ -75,7 +75,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             candidate.TargetTileY!.Value,
             requireExactTargetTile: false,
             GameClockBudgetPolicy.TicksToGameMinutes(
-                candidate.EstimatedTicks),
+                candidate.TerminalActionTicks),
             1,
             null,
             null,
@@ -90,6 +90,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "candidate.estimated_ticks",
                 "compiler:DailyPlanCompiler.CommunityCenterSteps",
                 "compiler:ActionQueueCompiler.ClaimCommunityCenterBundleReward"
-            });
+            },
+            exactStandTileX: candidate.StandTileX,
+            exactStandTileY: candidate.StandTileY);
     }
 }

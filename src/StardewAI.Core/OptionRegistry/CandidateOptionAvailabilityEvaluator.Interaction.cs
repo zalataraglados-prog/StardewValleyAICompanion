@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -281,8 +282,9 @@ namespace StardewAI.Core.OptionRegistry
 
         private static CandidateTile? FindBestStandTile(SnapshotEnvelope snapshot, int targetX, int targetY)
         {
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            var routeIndex = currentRouteDistanceBySnapshot.GetValue(
+                snapshot,
+                BuildCurrentRouteDistanceIndex);
             return new[]
                 {
                     new CandidateTile(targetX + 1, targetY),
@@ -290,15 +292,24 @@ namespace StardewAI.Core.OptionRegistry
                     new CandidateTile(targetX, targetY + 1),
                     new CandidateTile(targetX, targetY - 1)
                 }
-                .Where(tile => !CollisionGridBlocksTile(snapshot, tile.X, tile.Y))
-                .OrderBy(tile => Math.Abs(playerX - tile.X) + Math.Abs(playerY - tile.Y))
+                .Select(tile => routeIndex.TryGetDistance(
+                        tile.X,
+                        tile.Y,
+                        out var distance)
+                    ? new CandidateTile(tile.X, tile.Y, distance)
+                    : null)
+                .Where(tile => tile is not null)
+                .OrderBy(tile => tile!.Distance)
+                .ThenBy(tile => tile!.Y)
+                .ThenBy(tile => tile!.X)
                 .FirstOrDefault();
         }
 
         private MachineStandTileSelection FindBestMachineStandTile(SnapshotEnvelope snapshot, string locationId, int targetX, int targetY)
         {
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            var routeIndex = currentRouteDistanceBySnapshot.GetValue(
+                snapshot,
+                BuildCurrentRouteDistanceIndex);
             var occupiedMachineTiles = MachineTileKeys(snapshot, locationId);
             var candidates = new[]
                 {
@@ -307,7 +318,17 @@ namespace StardewAI.Core.OptionRegistry
                     new CandidateTile(targetX, targetY + 1),
                     new CandidateTile(targetX, targetY - 1)
                 }
-                .OrderBy(tile => Math.Abs(playerX - tile.X) + Math.Abs(playerY - tile.Y))
+                .Select(tile => routeIndex.TryGetDistance(
+                        tile.X,
+                        tile.Y,
+                        out var distance)
+                    ? new CandidateTile(tile.X, tile.Y, distance)
+                    : null)
+                .Where(tile => tile is not null)
+                .Select(tile => tile!)
+                .OrderBy(tile => tile.Distance)
+                .ThenBy(tile => tile.Y)
+                .ThenBy(tile => tile.X)
                 .ToArray();
             var sawMachineOccupied = false;
             var sawCollisionBlocked = false;
@@ -731,13 +752,26 @@ namespace StardewAI.Core.OptionRegistry
             int x,
             int y)
         {
-            var lookup = collisionGridBySnapshot.GetValue(
+            var lookup = currentRouteDistanceBySnapshot.GetValue(
                 snapshot,
-                BuildCollisionGridLookup);
+                BuildCurrentRouteDistanceIndex);
             return lookup.Blocks(x, y);
         }
 
-        private static CollisionGridLookup BuildCollisionGridLookup(
+        private static int? CurrentRouteDistance(
+            SnapshotEnvelope snapshot,
+            int x,
+            int y)
+        {
+            var lookup = currentRouteDistanceBySnapshot.GetValue(
+                snapshot,
+                BuildCurrentRouteDistanceIndex);
+            return lookup.TryGetDistance(x, y, out var distance)
+                ? distance
+                : null;
+        }
+
+        private static CurrentRouteDistanceIndex BuildCurrentRouteDistanceIndex(
             SnapshotEnvelope snapshot)
         {
             var grid = ReadStateFieldValue(
@@ -745,55 +779,68 @@ namespace StardewAI.Core.OptionRegistry
                 "locations",
                 "collision_grid");
             if (!grid.HasValue || grid.Value.ValueKind != JsonValueKind.Object)
-                return new CollisionGridLookup(0, 0, new HashSet<long>());
+                return CurrentRouteDistanceIndex.Empty;
 
-            var blocked = new HashSet<long>();
-            if (grid.Value.TryGetProperty(
-                    "notable_tiles",
-                    out var notableTiles) &&
-                notableTiles.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var tile in notableTiles.EnumerateArray())
-                {
-                    if (tile.ValueKind == JsonValueKind.Object &&
-                        ReadBool(tile, "collision_blocked") == true)
-                    {
-                        blocked.Add(CoordinateKey(
-                            ReadInt(tile, "tile_x"),
-                            ReadInt(tile, "tile_y")));
-                    }
-                }
-            }
-
-            return new CollisionGridLookup(
-                ReadInt(grid.Value, "width"),
-                ReadInt(grid.Value, "height"),
-                blocked);
+            var width = ReadInt(grid.Value, "width");
+            var height = ReadInt(grid.Value, "height");
+            var blocked = RouteGridPathfinder.ReadBlockedTiles(grid.Value);
+            var unsupported =
+                RouteGridPathfinder.ReadUnsupportedActionTiles(snapshot);
+            var distances = RouteGridPathfinder.DistancesFrom(
+                ReadStateFieldInt(snapshot, "player", "tile_x"),
+                ReadStateFieldInt(snapshot, "player", "tile_y"),
+                width,
+                height,
+                blocked,
+                unsupported);
+            return new CurrentRouteDistanceIndex(
+                width,
+                height,
+                blocked,
+                distances);
         }
 
-        private static long CoordinateKey(int x, int y) =>
-            ((long)x << 32) | (uint)y;
-
-        private sealed class CollisionGridLookup
+        private sealed class CurrentRouteDistanceIndex
         {
+            public static CurrentRouteDistanceIndex Empty { get; } = new(
+                0,
+                0,
+                new HashSet<string>(StringComparer.Ordinal),
+                Array.Empty<int>());
+
             private readonly int width;
             private readonly int height;
-            private readonly HashSet<long> blocked;
+            private readonly ISet<string> blocked;
+            private readonly int[] distances;
 
-            public CollisionGridLookup(
+            public CurrentRouteDistanceIndex(
                 int width,
                 int height,
-                HashSet<long> blocked)
+                ISet<string> blocked,
+                int[] distances)
             {
                 this.width = width;
                 this.height = height;
                 this.blocked = blocked;
+                this.distances = distances;
             }
 
             public bool Blocks(int x, int y) =>
                 (width > 0 && height > 0 &&
                     (x < 0 || y < 0 || x >= width || y >= height)) ||
-                blocked.Contains(CoordinateKey(x, y));
+                blocked.Contains(RouteGridPathfinder.Key(x, y));
+
+            public bool TryGetDistance(int x, int y, out int distance)
+            {
+                if (!RouteGridPathfinder.InBounds(x, y, width, height) ||
+                    distances.Length != width * height)
+                {
+                    distance = -1;
+                    return false;
+                }
+                distance = distances[y * width + x];
+                return distance >= 0;
+            }
         }
 
         private static int DirectionFromTo(int fromX, int fromY, int toX, int toY)
@@ -813,14 +860,16 @@ namespace StardewAI.Core.OptionRegistry
 
         private sealed class CandidateTile
         {
-            public CandidateTile(int x, int y)
+            public CandidateTile(int x, int y, int distance = -1)
             {
                 X = x;
                 Y = y;
+                Distance = distance;
             }
 
             public int X { get; }
             public int Y { get; }
+            public int Distance { get; }
         }
 
         private readonly struct MachineStandTileSelection

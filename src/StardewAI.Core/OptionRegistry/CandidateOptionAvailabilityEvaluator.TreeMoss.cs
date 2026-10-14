@@ -23,13 +23,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         return features.Value.EnumerateArray()
             .Where(feature => feature.ValueKind == JsonValueKind.Object &&
                 ReadString(feature, "runtime_type") == "StardewValley.TerrainFeatures.Tree" &&
                 ReadBool(feature, "has_moss") == true)
-            .Select(feature => BuildTreeMossHarvestCandidate(snapshot, feature, locationId, playerX, playerY))
+            .Select(feature => BuildTreeMossHarvestCandidate(
+                snapshot,
+                feature,
+                locationId))
             .OrderBy(candidate => candidate.EstimatedTicks)
             .ThenBy(candidate => candidate.TileY)
             .ThenBy(candidate => candidate.TileX)
@@ -39,14 +40,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate BuildTreeMossHarvestCandidate(
         SnapshotEnvelope snapshot,
         JsonElement feature,
-        string locationId,
-        int playerX,
-        int playerY)
+        string locationId)
     {
         var x = ReadInt(feature, "tile_x");
         var y = ReadInt(feature, "tile_y");
         var stand = FindBestStandTile(snapshot, x, y);
-        var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+        var distance = stand?.Distance ?? 0;
         var status = ReadString(feature, "moss_harvest_status");
         var reasons = new List<string>();
         if (!string.Equals(status, "ready", StringComparison.Ordinal))

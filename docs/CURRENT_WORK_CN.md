@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Planner / Executor 路径与终端计时统一
+
+- `RouteGridPathfinder` 现在是当前地图候选、执行器到达校验和未来日期距离场的共享 BFS 原语。当前候选按 `SnapshotEnvelope + StateHash` 缓存一份整数距离场；同一快照重复评估不会按候选重扫全图，执行器单目标校验仍采用命中即停止的 BFS。
+- Full Shipment 当前态采集链已从 Manhattan 估算切换为同一 BFS 语义，覆盖动物产物、机器产出、地面采集、姜、灌木、果树、春葱、树上产物、树苔、野树砍伐、鱼塘、晶球、远古斑点及社区中心奖励。不可达站位在候选上游失败关闭，不再等到执行器阻塞。
+- `AcquisitionCurrentRouteCandidate` 统一保留 `route_distance_tiles`、`terminal_action_ticks` 与计时投影模式。日预算只计算一次“到达精确站位 + 终端动作”；野树砍伐与放射性矿石/怪物目标也已接入该入口，移除了各自手写的路程扣减或当前时间直算分支。
+- 定向回归证明绕墙场景的候选与执行器均采用 5 格 BFS 距离，且同一快照两次候选评估只构建 1 次距离场。Bootstrap Release 构建为 `0 warning / 0 error`，Core game-free 回归 `346/346`，acquisition dispatch 与 bootstrap hermetic 自测通过；未启动游戏或外部测试机。
+- 本切片关闭 #236 的共享 route/arrival/terminal timing 代码缺口，但不据此授权正式训练；`formal_product_training_authorized=false` 保持不变。#236 下一固定切片仍是外部 strategy-ledger before/after artifact identity，并需在代表性真实快照上补一次 wall/CPU 测量后再关闭性能验收项。
+
 ## 2026-10-14 Money evidence work plan
 
 - 新增 `build-money-threshold-evidence-work-plan`，从权威六档 Money criterion 与固定 train/validation/test 分区生成 `6 x 3 = 18` 个不可增删的工作格。输入可以不带 corpus（全部待采）或带一份可重放验证的 Money corpus v3。

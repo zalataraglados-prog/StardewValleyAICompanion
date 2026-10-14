@@ -20,8 +20,6 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             return features.Value.EnumerateArray()
                 .Where(feature => feature.ValueKind == JsonValueKind.Object && ReadBool(feature, "is_bush") == true)
                 .Select(feature =>
@@ -52,10 +50,7 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add("bush_no_reachable_perimeter_interaction");
                     }
 
-                    var distance = interaction is null
-                        ? 0
-                        : Math.Abs(playerX - interaction.Stand.X) +
-                          Math.Abs(playerY - interaction.Stand.Y);
+                    var distance = interaction?.Stand.Distance ?? 0;
                     var interactionAndCollectionTicks =
                         ReadString(feature, "bush_kind") is
                             "ordinary_berry" or "tea_leaf"
@@ -106,8 +101,9 @@ namespace StardewAI.Core.OptionRegistry
 
         private static TerrainInteraction? FindBestTerrainInteraction(SnapshotEnvelope snapshot, int anchorX, int anchorY, int width)
         {
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            var routeIndex = currentRouteDistanceBySnapshot.GetValue(
+                snapshot,
+                BuildCurrentRouteDistanceIndex);
             var candidates = new List<TerrainInteraction>();
             for (var actionX = anchorX; actionX < anchorX + width; actionX++)
             {
@@ -121,9 +117,14 @@ namespace StardewAI.Core.OptionRegistry
                 })
                 {
                     var insideFootprint = stand.Y == anchorY && stand.X >= anchorX && stand.X < anchorX + width;
-                    if (!insideFootprint && !CollisionGridBlocksTile(snapshot, stand.X, stand.Y))
+                    if (!insideFootprint && routeIndex.TryGetDistance(
+                            stand.X,
+                            stand.Y,
+                            out var distance))
                     {
-                        candidates.Add(new TerrainInteraction(action, stand));
+                        candidates.Add(new TerrainInteraction(
+                            action,
+                            new CandidateTile(stand.X, stand.Y, distance)));
                     }
                 }
             }
@@ -131,7 +132,11 @@ namespace StardewAI.Core.OptionRegistry
             return candidates
                 .GroupBy(candidate => candidate.Stand.X + "," + candidate.Stand.Y + ":" + candidate.Action.X + "," + candidate.Action.Y, StringComparer.Ordinal)
                 .Select(group => group.First())
-                .OrderBy(candidate => Math.Abs(playerX - candidate.Stand.X) + Math.Abs(playerY - candidate.Stand.Y))
+                .OrderBy(candidate => candidate.Stand.Distance)
+                .ThenBy(candidate => candidate.Stand.Y)
+                .ThenBy(candidate => candidate.Stand.X)
+                .ThenBy(candidate => candidate.Action.Y)
+                .ThenBy(candidate => candidate.Action.X)
                 .FirstOrDefault();
         }
 

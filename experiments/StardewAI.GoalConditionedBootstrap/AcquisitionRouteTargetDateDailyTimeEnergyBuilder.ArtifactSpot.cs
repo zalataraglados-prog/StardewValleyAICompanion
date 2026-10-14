@@ -40,11 +40,13 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             .Where(candidate =>
                 candidate.TargetTileX.HasValue &&
                 candidate.TargetTileY.HasValue &&
+                candidate.StandTileX.HasValue &&
+                candidate.StandTileY.HasValue &&
                 candidate.MaxMovementTiles.HasValue &&
                 candidate.MaxMovementTiles.Value >= 0 &&
                 candidate.MaxToolSwings.HasValue &&
                 candidate.MaxToolSwings.Value > 0 &&
-                candidate.EstimatedTicks > 0 &&
+                candidate.TerminalActionTicks > 0 &&
                 candidate.EnergyCost >= 0 &&
                 string.Equals(
                     state.RouteState.CurrentLocationId,
@@ -86,11 +88,6 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         AcquisitionRouteTargetDateDailyTimeEnergy? best = null;
         foreach (var candidate in matchingCandidates)
         {
-            var movementTicks = checked(
-                candidate.MaxMovementTiles!.Value * 60);
-            var actionTicks = Math.Max(
-                1,
-                candidate.EstimatedTicks - movementTicks);
             var evaluated = EvaluateTerminal(
                 route,
                 staticRoute,
@@ -100,7 +97,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 candidate.TargetTileX!.Value,
                 candidate.TargetTileY!.Value,
                 requireExactTargetTile: false,
-                GameClockBudgetPolicy.TicksToGameMinutes(actionTicks),
+                GameClockBudgetPolicy.TicksToGameMinutes(
+                    candidate.TerminalActionTicks),
                 1,
                 null,
                 state.AvailableEnergy.Value,
@@ -120,7 +118,9 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                     "compiler:DailyPlanCompiler.ClearPlantSteps",
                     "compiler:ActionQueueCompiler.ClearObstacle"
                 },
-                acceptDefaultLocationWindow: true);
+                acceptDefaultLocationWindow: true,
+                exactStandTileX: candidate.StandTileX,
+                exactStandTileY: candidate.StandTileY);
             if (evaluated.DailyTimeEnergyMatchesTargetDate == true)
                 return evaluated;
             if (best is null ||

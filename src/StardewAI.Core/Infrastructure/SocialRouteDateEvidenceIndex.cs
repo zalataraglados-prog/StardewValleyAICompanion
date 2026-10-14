@@ -71,34 +71,16 @@ namespace StardewAI.Core.Infrastructure
             if (distanceFields.TryGetValue(cacheKey, out var cached))
                 return cached;
 
-            var distances = Enumerable.Repeat(-1, Width * Height).ToArray();
-            if (start.X < 0 || start.Y < 0 ||
-                start.X >= Width || start.Y >= Height)
-            {
-                distanceFields[cacheKey] = distances;
-                return distances;
-            }
-
-            var seen = new HashSet<(int X, int Y)> { start };
-            var queue = new Queue<(int X, int Y, int Distance)>();
-            queue.Enqueue((start.X, start.Y, 0));
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                distances[current.Y * Width + current.X] = current.Distance;
-
-                foreach (var next in CardinalNeighbors(current.X, current.Y))
-                {
-                    if (!walkable.Contains(next) ||
-                        unsupportedActionTiles.Contains(next) ||
-                        additionalBlocked?.Contains(next) == true ||
-                        !seen.Add(next))
-                    {
-                        continue;
-                    }
-                    queue.Enqueue((next.X, next.Y, current.Distance + 1));
-                }
-            }
+            var distances = RouteGridPathfinder.BuildDistanceField(
+                start.X,
+                start.Y,
+                Width,
+                Height,
+                static (_, _) => true,
+                (x, y) =>
+                    walkable.Contains((x, y)) &&
+                    !unsupportedActionTiles.Contains((x, y)) &&
+                    additionalBlocked?.Contains((x, y)) != true);
             distanceFields[cacheKey] = distances;
             return distances;
         }
@@ -117,15 +99,6 @@ namespace StardewAI.Core.Infrastructure
                     .Select(tile => tile.X + "," + tile.Y));
         }
 
-        private static IEnumerable<(int X, int Y)> CardinalNeighbors(
-            int x,
-            int y)
-        {
-            yield return (x + 1, y);
-            yield return (x - 1, y);
-            yield return (x, y + 1);
-            yield return (x, y - 1);
-        }
     }
 
     public sealed class SocialRouteDateEvidenceIndex
