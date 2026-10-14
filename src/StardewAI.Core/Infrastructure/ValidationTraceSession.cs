@@ -94,13 +94,54 @@ public sealed class ValidationTraceSession : IDisposable
         string producerVersion,
         params string[] inputPaths)
     {
+        var sequence = Ambient.Value is null
+            ? 0
+            : Interlocked.Increment(ref Ambient.Value.nextOperationId);
+        var cpuSampleWeight = sequence > 0 &&
+            sequence % OperationCpuSamplingRate == 1
+                ? OperationCpuSamplingRate
+                : 0;
+        return BeginOperation(
+            operationKind,
+            producerId,
+            producerVersion,
+            cpuSampleWeight,
+            sequence,
+            inputPaths);
+    }
+
+    public static ValidationTraceOperation BeginMeasuredOperation(
+        string operationKind,
+        string producerId,
+        string producerVersion,
+        params string[] inputPaths)
+    {
+        var sequence = Ambient.Value is null
+            ? 0
+            : Interlocked.Increment(ref Ambient.Value.nextOperationId);
+        return BeginOperation(
+            operationKind,
+            producerId,
+            producerVersion,
+            cpuSampleWeight: 1,
+            sequence,
+            inputPaths);
+    }
+
+    private static ValidationTraceOperation BeginOperation(
+        string operationKind,
+        string producerId,
+        string producerVersion,
+        int cpuSampleWeight,
+        int sequence,
+        params string[] inputPaths)
+    {
         var session = Ambient.Value;
         if (session is null)
             return ValidationTraceOperation.Disabled;
 
         try
         {
-            var sequence = Interlocked.Increment(ref session.nextOperationId);
             var operationId = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}:{1:D6}",
@@ -117,7 +158,7 @@ public sealed class ValidationTraceSession : IDisposable
                     .Select(SafeFullPath)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray(),
-                sequence % OperationCpuSamplingRate == 1);
+                cpuSampleWeight);
         }
         catch
         {

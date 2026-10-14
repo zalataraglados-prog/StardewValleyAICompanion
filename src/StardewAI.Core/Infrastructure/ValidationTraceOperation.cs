@@ -18,6 +18,7 @@ public sealed class ValidationTraceOperation : IDisposable
     private readonly string[] inputPaths = Array.Empty<string>();
     private readonly long wallStarted;
     private readonly TimeSpan? cpuStarted;
+    private readonly int cpuSampleWeight;
     private List<string>? artifactIds;
     private long bytesRead;
     private long hashBytes;
@@ -37,7 +38,7 @@ public sealed class ValidationTraceOperation : IDisposable
         string producerId,
         string producerVersion,
         string[] inputPaths,
-        bool sampleCpu)
+        int cpuSampleWeight)
     {
         this.session = session;
         this.operationId = operationId;
@@ -45,8 +46,9 @@ public sealed class ValidationTraceOperation : IDisposable
         this.producerId = producerId;
         this.producerVersion = producerVersion;
         this.inputPaths = inputPaths;
+        this.cpuSampleWeight = Math.Max(0, cpuSampleWeight);
         wallStarted = Stopwatch.GetTimestamp();
-        if (sampleCpu)
+        if (this.cpuSampleWeight > 0)
             cpuStarted = Process.GetCurrentProcess().TotalProcessorTime;
     }
 
@@ -110,8 +112,7 @@ public sealed class ValidationTraceOperation : IDisposable
                 ? Math.Max(
                     0,
                     (Process.GetCurrentProcess().TotalProcessorTime -
-                        cpuStarted.Value).TotalMilliseconds) *
-                    ValidationTraceSession.OperationCpuSamplingRate
+                        cpuStarted.Value).TotalMilliseconds) * cpuSampleWeight
                 : 0;
             session.Record(new ValidationTraceOperationRecord
             {

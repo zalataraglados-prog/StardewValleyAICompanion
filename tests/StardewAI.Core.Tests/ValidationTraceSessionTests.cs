@@ -100,6 +100,39 @@ public sealed class ValidationTraceSessionTests
     }
 
     [Fact]
+    public void ExplicitMeasuredOperationUsesExactCpuSampleWeight()
+    {
+        var root = NewRoot();
+        Directory.CreateDirectory(root);
+        var tracePath = Path.Combine(root, "trace.json");
+
+        using (var session = ValidationTraceSession.TryStart(
+            tracePath,
+            "measured-command",
+            "sample-producer",
+            "v1",
+            null,
+            Array.Empty<ValidationTraceInput>(),
+            0))
+        {
+            using (ValidationTraceSession.BeginMeasuredOperation(
+                "proof-verification",
+                "sample-producer",
+                "v1"))
+            {
+                Thread.SpinWait(10_000);
+            }
+            session!.Complete(0);
+        }
+
+        using var trace = JsonDocument.Parse(File.ReadAllText(tracePath));
+        var operation = Assert.Single(
+            trace.RootElement.GetProperty("operations").EnumerateArray());
+        Assert.Equal(1, operation.GetProperty("cpu_sample_count").GetInt64());
+        Assert.True(operation.GetProperty("cpu_ms").GetDouble() >= 0);
+    }
+
+    [Fact]
     public void InvocationReadReuseIsVisibleInTrace()
     {
         var root = NewRoot();

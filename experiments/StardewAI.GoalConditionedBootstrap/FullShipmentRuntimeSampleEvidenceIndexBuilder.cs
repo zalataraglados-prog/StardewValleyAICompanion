@@ -1,3 +1,5 @@
+using StardewAI.Core.Infrastructure;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
@@ -151,6 +153,12 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
             FullShipmentStaticCompilabilityInventoryReport inventory,
             FullShipmentRuntimeSampleEvidenceManifest manifest)
     {
+        using var operation = ValidationTraceSession.BeginMeasuredOperation(
+            "full_shipment_shared_shipping_verification",
+            nameof(FullShipmentRuntimeSampleEvidenceIndexBuilder),
+            "v1",
+            manifest.SharedShippingRecurrenceManifestPath,
+            manifest.SharedShippingPrefixCheckpointPath);
         var hasRecurrence = !string.IsNullOrWhiteSpace(
             manifest.SharedShippingRecurrenceManifestPath);
         var hasCheckpoint = !string.IsNullOrWhiteSpace(
@@ -203,10 +211,13 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
             })
             .ToDictionary(pair => pair.Key, pair => pair.Value,
                 StringComparer.OrdinalIgnoreCase);
+        var evidence = new FullShipmentVerifiedSharedShippingEvidence(
+            CurrentTeacherFrontierSupport.HashFile(recurrencePath),
+            CurrentTeacherFrontierSupport.HashFile(checkpointPath));
+        operation.AddArtifactId(evidence.RecurrenceManifestSha256);
+        operation.AddArtifactId(evidence.PrefixCheckpointSha256);
         return new SharedShippingVerification(
-            new FullShipmentVerifiedSharedShippingEvidence(
-                CurrentTeacherFrontierSupport.HashFile(recurrencePath),
-                CurrentTeacherFrontierSupport.HashFile(checkpointPath)),
+            evidence,
             acquisitionReceiptHashes);
     }
 
@@ -215,6 +226,13 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
         FullShipmentRuntimeSampleEvidenceSource source,
         SharedShippingVerification? shared)
     {
+        using var operation = ValidationTraceSession.BeginMeasuredOperation(
+            "full_shipment_runtime_sample_verification",
+            nameof(FullShipmentRuntimeSampleEvidenceIndexBuilder),
+            "v1",
+            source.AcquisitionRolloutProofManifestPath,
+            source.AcquisitionRolloutProofReceiptPath);
+        operation.AddArtifactId(source.StratumId);
         Require(!string.IsNullOrWhiteSpace(source.StratumId) &&
                 !string.IsNullOrWhiteSpace(source.RouteOccurrenceId) &&
                 !string.IsNullOrWhiteSpace(
@@ -236,11 +254,16 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
                 ProofKey(manifestPath, receiptPath),
                 out var sharedReceiptSha) &&
             sharedReceiptSha == receiptSha;
-        var exactReceiptVerified = sharedProofVerified ||
-            EqualJson(
-                actualReceipt,
-                AcquisitionRoutePortfolioRolloutProofBuilder.BuildReceipt(
-                    manifestPath));
+        var exactReceiptVerified = sharedProofVerified
+            ? VerifySharedReceiptReuse(
+                source,
+                manifestPath,
+                receiptPath,
+                actualReceipt)
+            : VerifyRebuiltReceipt(
+                manifestPath,
+                receiptPath,
+                actualReceipt);
         Require(exactReceiptVerified &&
                 actualReceipt.ProofChainVerified &&
                 actualReceipt.PortfolioCompletionVerified &&
@@ -287,6 +310,41 @@ public static class FullShipmentRuntimeSampleEvidenceIndexBuilder
             CurrentTeacherFrontierSupport.HashFile(manifestPath),
             receiptSha,
             actualReceipt.RolloutId);
+    }
+
+    private static bool VerifySharedReceiptReuse(
+        FullShipmentRuntimeSampleEvidenceSource source,
+        string manifestPath,
+        string receiptPath,
+        AcquisitionRoutePortfolioRolloutProofReceipt actualReceipt)
+    {
+        using var operation = ValidationTraceSession.BeginMeasuredOperation(
+            "full_shipment_rollout_receipt_reuse",
+            nameof(FullShipmentRuntimeSampleEvidenceIndexBuilder),
+            "v1",
+            manifestPath,
+            receiptPath);
+        operation.MarkCacheHit();
+        operation.AddArtifactId(source.StratumId);
+        operation.AddArtifactId(actualReceipt.RolloutId);
+        return true;
+    }
+
+    private static bool VerifyRebuiltReceipt(
+        string manifestPath,
+        string receiptPath,
+        AcquisitionRoutePortfolioRolloutProofReceipt actualReceipt)
+    {
+        using var operation = ValidationTraceSession.BeginMeasuredOperation(
+            "full_shipment_rollout_receipt_rebuild",
+            nameof(FullShipmentRuntimeSampleEvidenceIndexBuilder),
+            "v1",
+            manifestPath,
+            receiptPath);
+        var expected = AcquisitionRoutePortfolioRolloutProofBuilder
+            .BuildReceipt(manifestPath);
+        operation.AddArtifactId(expected.RolloutId);
+        return EqualJson(actualReceipt, expected);
     }
 
     private static string ProofKey(string manifestPath, string receiptPath) =>
