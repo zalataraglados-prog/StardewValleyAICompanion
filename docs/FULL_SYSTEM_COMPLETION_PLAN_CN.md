@@ -1,5 +1,10 @@
 # StardewAI 完全体完成路线图
 
+> **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
+>
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+
+
 ## 2026-10-11 Full Shipment 晶球层原生准入
 
 当前 production evidence index 为 `7/26`，剩余 `19` 层。`native_geode_drop` 已按 `full_shipment:item:386 / (O)386 / geode:791:1:random:6` 完成 exact native sample：Golden Coconut `(O)791`、背包槽位、Blacksmith/Clint 柜台、25g、原生 RNG 精确输出 5 个铱矿、日内预算、原生动画、fresh terminal、reservation settlement、checkpoint 与独立 rollout proof 均通过。该路线只在实时透明快照存在精确 `processing.crack_geode` 候选时启用，并复用唯一 `executor.crack_geode`，没有第二套开晶球执行器。

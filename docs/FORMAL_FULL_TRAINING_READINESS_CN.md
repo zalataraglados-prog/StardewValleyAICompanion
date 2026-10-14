@@ -1,5 +1,10 @@
 # StardewAI 正式全量训练准入与实施路线
 
+> **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
+>
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+
+
 ## 2026-10-14 Money 6x3 evidence work plan
 
 新增只读 `money_threshold_evidence_work_plan.v1`，把六个权威 Grandpa Money 阈值与 train/validation/test 做笛卡尔积，固定形成 18 个 criterion-local 工作格。每格从重新验证的 Money corpus v3 独立计算 native outcome 和 Teacher comparison 是否存在，并列出实际 row ID；method 聚合、调用方计数和 self-test 目录名都不能改变该分母。
