@@ -13,14 +13,7 @@ public static class MoneyThresholdEvidenceWorkPlanBuilder
             MoneyThresholdEvidenceWorkPlanRequest>(
             fullRequestPath,
             "Money-threshold evidence work-plan request");
-        if (request.SchemaVersion !=
-                "money_threshold_evidence_work_plan_request.v1" ||
-            string.IsNullOrWhiteSpace(request.PlanId) ||
-            request.FormalProductTrainingAuthorized)
-        {
-            throw new InvalidDataException(
-                "Money-threshold evidence work-plan request is invalid.");
-        }
+        ValidateRequest(request);
 
         MoneyThresholdTeacherCorpus? corpus = null;
         var corpusPath = string.Empty;
@@ -34,6 +27,54 @@ public static class MoneyThresholdEvidenceWorkPlanBuilder
             corpusSha256 = CurrentTeacherFrontierSupport.HashFile(corpusPath);
         }
 
+        return Build(
+            fullRequestPath,
+            request,
+            corpusPath,
+            corpusSha256,
+            corpus);
+    }
+
+    internal static MoneyThresholdEvidenceWorkPlan BuildFromVerifiedCorpus(
+        string requestPath,
+        string verifiedCorpusPath,
+        MoneyThresholdTeacherCorpus verifiedCorpus)
+    {
+        var fullRequestPath = RequiredFile(
+            requestPath,
+            "Money-threshold evidence work-plan request");
+        var request = CurrentTeacherFrontierSupport.Read<
+            MoneyThresholdEvidenceWorkPlanRequest>(
+            fullRequestPath,
+            "Money-threshold evidence work-plan request");
+        ValidateRequest(request);
+        var corpusPath = RequiredFile(
+            verifiedCorpusPath,
+            "Verified Money-threshold Teacher corpus");
+        if (!string.Equals(
+                Path.GetFullPath(request.MoneyThresholdCorpusPath),
+                corpusPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                "Verified Money corpus does not match the work-plan request.");
+        }
+        MoneyThresholdTeacherCorpusBuilder.ValidateInMemory(verifiedCorpus);
+        return Build(
+            fullRequestPath,
+            request,
+            corpusPath,
+            CurrentTeacherFrontierSupport.HashFile(corpusPath),
+            verifiedCorpus);
+    }
+
+    private static MoneyThresholdEvidenceWorkPlan Build(
+        string fullRequestPath,
+        MoneyThresholdEvidenceWorkPlanRequest request,
+        string corpusPath,
+        string corpusSha256,
+        MoneyThresholdTeacherCorpus? corpus)
+    {
         var cells = MoneyThresholdEvidenceCellProjector.Build(corpus);
         var fullyComplete = cells.Count(value =>
             value.NativeOutcomeVerified &&
@@ -63,6 +104,19 @@ public static class MoneyThresholdEvidenceWorkPlanBuilder
             Cells = cells,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static void ValidateRequest(
+        MoneyThresholdEvidenceWorkPlanRequest request)
+    {
+        if (request.SchemaVersion !=
+                "money_threshold_evidence_work_plan_request.v1" ||
+            string.IsNullOrWhiteSpace(request.PlanId) ||
+            request.FormalProductTrainingAuthorized)
+        {
+            throw new InvalidDataException(
+                "Money-threshold evidence work-plan request is invalid.");
+        }
     }
 
     private static string RequiredFile(string path, string label)

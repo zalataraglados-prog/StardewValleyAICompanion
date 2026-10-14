@@ -78,6 +78,8 @@ Money 原生结果表示现已从 sale-only 扩展为统一双入口：隔离的
 
 Money batch 更新链可在调用方显式提供现有 production coverage request 模板时，通过独立 manifest 重放 corpus 并原子替换其中全部旧 Money source；其他 source 原样保留，source ID 冲突失败关闭。默认不提供模板时不会改写 coverage request。该接线仍不改变 `0/18`，但避免 18 格闭合后再手工拼 JSON。
 
+同一轮 batch 更新现已收敛为单次生产包调用：原生证据只在 canonical corpus 构建阶段深验一次，work plan 与可选 coverage attachment 复用同一进程内已验证对象，并重新绑定落盘路径、SHA-256 与行级不变量。独立调用和下游 coverage/reconciliation 的完整重放边界不变；这减少确定存在的重复回放，但不构成跨运行缓存，也不改变 `0/18` 或正式训练状态。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：
