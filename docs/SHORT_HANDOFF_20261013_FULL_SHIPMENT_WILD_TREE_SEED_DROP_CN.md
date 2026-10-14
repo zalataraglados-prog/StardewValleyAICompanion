@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生野树种子掉落
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-wild-tree-seed-drop`。
 - 严格运行时证据：`14/26`，剩余 `12` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -16,6 +16,6 @@
 - 历史 13 层已在最终代码下全部重建验证，无 proof 漂移。最终索引为 `14/26`，`formal_product_training_authorized=false`。
 - v2 是 Teacher 分母缺口诊断；v3 是收窄作用域前的动作诊断。两者都不属于最终 evidence index，不得作为正式 proof 引用。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 执行 `wild_tree_seed_sample / full_shipment:item:88 / (O)88 / native_wild_tree_seed`。复用同一野树候选、编译、执行和自然拾取链，只闭合 `Data/WildTrees payload.6.SeedItemId` 的独立严格证据层；不得重跑已通过的 14 层，不得触碰或提交 `local-data/`。
