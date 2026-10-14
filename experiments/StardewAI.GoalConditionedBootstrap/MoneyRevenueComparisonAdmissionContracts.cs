@@ -2,11 +2,19 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
+public static class MoneyRevenueComparisonAdmissionVersions
+{
+    public const string Manifest =
+        "money_revenue_comparison_admission_manifest.v1";
+    public const string Receipt =
+        "money_revenue_comparison_admission_receipt.v2";
+}
+
 public sealed class MoneyRevenueComparisonAdmissionManifest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_comparison_admission_manifest.v1";
+        MoneyRevenueComparisonAdmissionVersions.Manifest;
 
     [JsonPropertyName("criterion_id")]
     public string CriterionId { get; set; } = string.Empty;
@@ -29,6 +37,8 @@ public sealed record MoneyRevenueComparisonAdmissionAlternative(
         string ConcreteAlternativeId,
     [property: JsonPropertyName("terminal_execution_evidence_sha256")]
         string TerminalExecutionEvidenceSha256,
+    [property: JsonPropertyName("native_terminal_artifacts")]
+        MoneyRevenueArtifactBinding[] NativeTerminalArtifacts,
     [property: JsonPropertyName("acquisition_rollout_required")]
         bool AcquisitionRolloutRequired,
     [property: JsonPropertyName("acquisition_evidence")]
@@ -50,7 +60,7 @@ public sealed class MoneyRevenueComparisonAdmissionReceipt
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_comparison_admission_receipt.v1";
+        MoneyRevenueComparisonAdmissionVersions.Receipt;
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;

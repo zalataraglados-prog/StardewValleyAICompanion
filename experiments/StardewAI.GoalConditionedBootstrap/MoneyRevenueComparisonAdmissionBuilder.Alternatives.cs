@@ -127,6 +127,7 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
             request.RequestId,
             request.ConcreteAlternativeId,
             terminal.EvidenceSha256,
+            terminal.NativeTerminalArtifacts,
             request.AcquisitionRolloutProofRequired,
             acquisition,
             prefix,

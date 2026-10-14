@@ -38,17 +38,14 @@ internal static partial class BootstrapSelfTest
         Require(corpus.SchemaVersion ==
                     MoneyThresholdTeacherCorpusVersions.Corpus &&
                 corpus.RowCount == 1 &&
-                !row.TeacherComparisonVerified &&
+                row.TeacherComparisonCount == 0 &&
                 row.NativeTerminalOutcomeVerified &&
-                string.IsNullOrWhiteSpace(row.PreferredAlternative) &&
-                string.IsNullOrWhiteSpace(row.RejectedAlternative) &&
                 threshold.CriterionId == "money_50000" &&
-                !threshold.TeacherComparisonVerified &&
+                threshold.TeacherComparison is null &&
                 threshold.NativeTerminalOutcomeVerified &&
-                string.IsNullOrWhiteSpace(
-                    threshold.PreferredAlternative) &&
-                string.IsNullOrWhiteSpace(
-                    threshold.RejectedAlternative),
+                corpus.TeacherComparedCriterionCount == 0 &&
+                corpus.TeacherComparisonPairCount == 0 &&
+                !corpus.TeacherComparisonSplitComplete,
             "Raw Money threshold corpus inferred a Teacher preference from a native outcome.");
         var corpusPath = Path.Combine(root, "money-threshold-corpus.json");
         Write(corpusPath, corpus);

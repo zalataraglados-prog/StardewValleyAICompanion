@@ -1,5 +1,13 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Money criterion comparison join gate
+
+Money threshold corpus v3 在同一个 source kind 内合并两条相互独立的证据通道：原生 sale episode 负责 native outcome，Revenue comparison admission 负责 Teacher preference。每个 criterion 独立携带 admission manifest/receipt 的路径与 SHA、比较 source state、完整候选数、唯一 preferred、全部 rejected、选中 terminal episode SHA 和 selection policy；多阈值跨越不能广播一份 criterion 不匹配的比较。
+
+comparison receipt 已升级为 v2 并公开从 terminal execution proof 重建过的 native terminal artifacts。准入时会再次重建 admission 全链，并要求选中替代项的 sale episode、before/after snapshot、execution result、首条 Revenue transition、save/player、权威 threshold 和完整 pairwise 分母与 raw row 精确相同。缺文件、路径漂移、SHA 漂移、错 criterion、非唯一 Pareto 或 episode 不一致均失败关闭。
+
+Goal Method coverage 仅在上述 join 成功时增加对应 partition 的 Teacher comparison；native partition 始终由原生结果独立记账。当前只有 hermetic 正负例，没有把 fixture 计入 production train/validation/test 分子，因此总体准入仍为 `2/19`、`1/11`，正式训练授权保持 `false`。下一步是采集或重建 Money 六阈值的真实三分区 exact-denominator comparison/outcome 对，而不是放宽门槛。
+
 ## 2026-10-14 Money threshold supervision-channel isolation
 
 Money threshold raw corpus 已升级为 v2，并从此只代表 native outcome channel。成功出售、fresh snapshot 与阈值跨越不能单独证明该动作优于其他候选；
@@ -11,7 +19,7 @@ native outcome partition，但 comparison partition 必须来自独立的 exact-
 
 ## 2026-10-14 Revenue exact-ID comparison admission gate
 
-`money_revenue_comparison_admission_receipt.v1` 只接受完整 terminal execution receipt，并从其源 request catalog 取得唯一候选分母。
+`money_revenue_comparison_admission_receipt.v2` 只接受完整 terminal execution receipt，并从其源 request catalog 取得唯一候选分母。
 request ID、terminal proof ID 与 terminal evidence ID 必须逐集合完全相等；concrete alternative ID 只能由 request 映射获得。direct 候选使用 terminal cost，
 rebound 候选通过既有 artifact verifier 重建 acquisition cost/reservation 后与 terminal cost 聚合。Revenue prefix 还必须与 terminal transition、source save/player
 和 source `total_money_earned` 连续。

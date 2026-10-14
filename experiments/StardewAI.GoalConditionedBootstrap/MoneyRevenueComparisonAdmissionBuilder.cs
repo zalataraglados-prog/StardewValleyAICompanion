@@ -15,7 +15,7 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
             fullManifestPath,
             "Money Revenue comparison admission manifest");
         Require(manifest.SchemaVersion ==
-                    "money_revenue_comparison_admission_manifest.v1" &&
+                    MoneyRevenueComparisonAdmissionVersions.Manifest &&
                 !manifest.FormalProductTrainingAuthorized &&
                 !string.IsNullOrWhiteSpace(manifest.CriterionId),
             "Money Revenue comparison admission manifest is invalid.");
