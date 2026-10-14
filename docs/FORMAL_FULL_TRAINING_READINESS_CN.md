@@ -1,5 +1,14 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Money threshold supervision-channel isolation
+
+Money threshold raw corpus 已升级为 v2，并从此只代表 native outcome channel。成功出售、fresh snapshot 与阈值跨越不能单独证明该动作优于其他候选；
+因此 raw row/criterion 不再携带 preferred/rejected action，也不再设置 Teacher comparison verified。Goal Method coverage 可记录其 train/validation/test
+native outcome partition，但 comparison partition 必须来自独立的 exact-ID Revenue comparison admission。
+
+这是一项防止伪标签的纠错，不增加 coverage。下一门是建立 criterion/partition join artifact：每个 raw outcome 必须绑定同 source state、同 criterion context、
+同选中 terminal episode 的 comparison receipt，之后才可计入 Money-family Teacher comparison。
+
 ## 2026-10-14 Revenue exact-ID comparison admission gate
 
 `money_revenue_comparison_admission_receipt.v1` 只接受完整 terminal execution receipt，并从其源 request catalog 取得唯一候选分母。

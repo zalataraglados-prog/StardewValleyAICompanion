@@ -34,8 +34,10 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 .Distinct(StringComparer.Ordinal).Count() != rows.Length ||
             rows.Select(row => row.SplitKey)
                 .Distinct(StringComparer.Ordinal).Count() != rows.Length ||
-            rows.Any(row => !row.TeacherComparisonVerified ||
+            rows.Any(row => row.TeacherComparisonVerified ||
                 !row.NativeTerminalOutcomeVerified ||
+                !string.IsNullOrWhiteSpace(row.PreferredAlternative) ||
+                !string.IsNullOrWhiteSpace(row.RejectedAlternative) ||
                 row.DatasetPartition !=
                     PolicyTrajectoryDatasetBuilder.PartitionFor(row.SplitKey) ||
                 row.CrossedThresholds.Length == 0 ||
@@ -48,13 +50,11 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                     value.TerminalAssertion !=
                         "player.total_money_earned >= " +
                         expected.Target.ToString(CultureInfo.InvariantCulture) ||
-                    value.PreferredAlternative !=
-                        "execute_verified_native_sale_now:" +
-                        expected.CriterionId ||
-                    value.RejectedAlternative !=
-                        "defer_verified_native_sale:" +
-                        expected.CriterionId ||
-                    !value.TeacherComparisonVerified ||
+                    !string.IsNullOrWhiteSpace(
+                        value.PreferredAlternative) ||
+                    !string.IsNullOrWhiteSpace(
+                        value.RejectedAlternative) ||
+                    value.TeacherComparisonVerified ||
                     !value.NativeTerminalOutcomeVerified)))
         {
             throw new InvalidDataException(

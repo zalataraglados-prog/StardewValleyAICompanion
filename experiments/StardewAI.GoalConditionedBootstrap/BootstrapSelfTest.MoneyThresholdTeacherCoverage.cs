@@ -205,7 +205,7 @@ internal static partial class BootstrapSelfTest
                     "grandpa.criterion:money_50000" &&
                 row.CrossedThresholds[0].TerminalAssertion ==
                     "player.total_money_earned >= 50000" &&
-                row.CrossedThresholds[0].TeacherComparisonVerified &&
+                !row.CrossedThresholds[0].TeacherComparisonVerified &&
                 row.CrossedThresholds[0]
                     .NativeTerminalOutcomeVerified),
             "Money-threshold fixture did not preserve criterion-local coverage.");

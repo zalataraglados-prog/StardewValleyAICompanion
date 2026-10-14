@@ -21,18 +21,17 @@ public static partial class GoalMethodTeacherCoverageBuilder
         }
         var methodCriteria = methods[0].CriterionIds
             .ToHashSet(StringComparer.Ordinal);
-        var creditedComparisons = 0;
         foreach (var row in corpus.Rows)
         {
-            if (!row.TeacherComparisonVerified ||
+            if (row.TeacherComparisonVerified ||
                 !row.NativeTerminalOutcomeVerified)
             {
                 throw new InvalidDataException(
-                    "Money-threshold corpus contains an unverified supervision channel.");
+                    "Raw Money-threshold corpus mixed Teacher preference with native outcome evidence.");
             }
             foreach (var threshold in row.CrossedThresholds)
             {
-                if (!threshold.TeacherComparisonVerified ||
+                if (threshold.TeacherComparisonVerified ||
                     !threshold.NativeTerminalOutcomeVerified ||
                     !methodCriteria.Contains(threshold.CriterionId) ||
                     !evidence.TryGetValue(
@@ -43,11 +42,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
                         "Money-threshold corpus derived a non-authoritative criterion.");
                 }
                 criterionEvidence.TeacherSourceKinds.Add(source.SourceKind);
-                criterionEvidence.TeacherComparisonPartitions.Add(
-                    row.DatasetPartition);
                 criterionEvidence.NativeOutcomePartitions.Add(
                     row.DatasetPartition);
-                creditedComparisons++;
             }
         }
 
@@ -57,6 +53,6 @@ public static partial class GoalMethodTeacherCoverageBuilder
             corpusPath,
             CurrentTeacherFrontierSupport.HashFile(corpusPath),
             corpus.Rows.Length,
-            creditedComparisons);
+            0);
     }
 }

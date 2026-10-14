@@ -3214,6 +3214,16 @@ Slice 7 remains assigned to the RTX 5070 node.
   production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request
   to native recurrence receipts before exact-ID comparison admission.
 
+### 2026-10-14: Money threshold native-outcome isolation
+
+- Money threshold request/corpus contracts are now v2 and represent only native ShopMenu sale outcomes. Observing an
+  executed sale no longer creates a Teacher preference for that sale.
+- Raw rows and criterion views keep `native_terminal_outcome_verified=true`, but force Teacher comparison false and
+  leave preferred/rejected identities empty. The Goal Method adapter credits native partitions only.
+- A hermetic 49,990 to 50,010 progression proves that only the authoritative `money_50000` native outcome is emitted.
+  The next slice must join each criterion/partition outcome to an exact-ID comparison admission with the same source
+  and selected terminal episode before crediting Teacher comparison coverage.
+
 ### 2026-10-14: Revenue exact-ID comparison admission
 
 - `build-money-revenue-comparison-admission` rebuilds the terminal execution receipt and its authoritative request

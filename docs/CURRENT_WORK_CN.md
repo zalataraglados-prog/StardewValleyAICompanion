@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Money threshold native-outcome isolation
+
+- `money_threshold_teacher_corpus_request/corpus` 升级为 v2。raw corpus 现在只证明原生 ShopMenu sale 的 before/after、收益增量与权威阈值跨越，不再把“已经执行的出售”反推成 Teacher preferred action。
+- row 与 criterion 的 `teacher_comparison_verified` 固定为 `false`，preferred/rejected 字段固定为空；`native_terminal_outcome_verified` 保持真实。任何 raw corpus 混入 Teacher 声明都会在构建、重放或 coverage adapter 处失败关闭。
+- Goal Method coverage 的 raw Money adapter 现在只计入 native outcome partition，Teacher comparison partition 保持为空。下一步必须用上一切片的 exact-ID comparison admission 与对应原生 episode 显式 join，才能恢复 criterion-local comparison coverage。
+- 新增轻量 hermetic 阈值跨越回归：49,990 -> 50,010 的原生 sale 只产生 `money_50000` native outcome，不产生偏好。正式状态与 `2/19`、`1/11`、`formal_product_training_authorized=false` 均不变。
+
 ## 2026-10-14 Revenue exact-ID comparison admission
 
 - 新增 `build-money-revenue-comparison-admission`、`money_revenue_comparison_admission_manifest.v1` 与 receipt。
