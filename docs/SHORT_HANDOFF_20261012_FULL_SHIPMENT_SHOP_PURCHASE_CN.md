@@ -38,6 +38,6 @@
 
 ## 当时后续计划（已作废，仅历史）
 
-本交接中的商店与后续社区中心奖励均已完成并进入严格 production evidence index。当前索引为 `9/26`，七个 high-risk 样本全部通过，共享 shipping/settlement 证明有效，剩余 `17` 个标准分层，正式训练仍未授权。
+本交接中的商店与后续社区中心奖励均已完成并进入严格 production evidence index。当时索引为 `9/26`，七个 high-risk 样本全部通过，共享 shipping/settlement 证明有效，剩余 `17` 个标准分层，正式训练仍未授权。
 
 后续以 `SHORT_HANDOFF_20261013_FULL_SHIPMENT_COMMUNITY_CENTER_REWARD_CN.md` 为准。下一固定任务是标准批次首项 `parsnip_harvest_sample`；不要重复运行已通过的商店或社区中心样本，也不要提交或删除 `local-data/`。
