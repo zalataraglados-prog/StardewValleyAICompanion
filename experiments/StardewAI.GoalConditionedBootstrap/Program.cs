@@ -46,6 +46,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
     new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
+    new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
     new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
     new("build-money-revenue-alternative-denominator", BuildMoneyRevenueAlternativeDenominator),
@@ -465,6 +466,13 @@ static void BuildMoneyThresholdTeacherCorpus(Arguments options)
     var corpus = MoneyThresholdTeacherCorpusBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), corpus);
+}
+
+static void BuildMoneyThresholdEvidenceWorkPlan(Arguments options)
+{
+    var plan = MoneyThresholdEvidenceWorkPlanBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), plan);
 }
 
 static void BuildMoneyRevenueRecurrenceProof(Arguments options)

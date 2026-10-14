@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Money 6x3 evidence work plan
+
+新增只读 `money_threshold_evidence_work_plan.v1`，把六个权威 Grandpa Money 阈值与 train/validation/test 做笛卡尔积，固定形成 18 个 criterion-local 工作格。每格从重新验证的 Money corpus v3 独立计算 native outcome 和 Teacher comparison 是否存在，并列出实际 row ID；method 聚合、调用方计数和 self-test 目录名都不能改变该分母。
+
+该计划解决“知道 Money 未完成但不知道该采哪一格”的调度问题，不是新的 coverage gate。缺 outcome 时必须先取得原生结果再做 exact comparison；已有 outcome 时只补 comparison；两者齐全才关闭单格。计划本身始终 `formal_product_training_authorized=false`。当前只有 hermetic `1/18 native、0/18 comparison、0/18 complete`，生产计数仍为 `2/19`、`1/11`。
+
 ## 2026-10-14 Money criterion comparison join gate
 
 Money threshold corpus v3 在同一个 source kind 内合并两条相互独立的证据通道：原生 sale episode 负责 native outcome，Revenue comparison admission 负责 Teacher preference。每个 criterion 独立携带 admission manifest/receipt 的路径与 SHA、比较 source state、完整候选数、唯一 preferred、全部 rejected、选中 terminal episode SHA 和 selection policy；多阈值跨越不能广播一份 criterion 不匹配的比较。
