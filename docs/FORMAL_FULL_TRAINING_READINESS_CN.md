@@ -15,6 +15,8 @@
 
 comparison 波次必须通过版本化 handoff 连接 work plan、corpus row、native run summary 与 comparison collection plan；completion 只允许处理 handoff 中仍缺的 criterion，并把新 admission 与既有 index 累积合并。handoff 的每个源文件在使用前按绝对路径和 SHA-256 重验，但它本身不是 comparison evidence；真实 acquisition rollout、strategy-ledger boundary、terminal proof、Pareto admission 与 criterion-local join 仍逐项必需。
 
+首轮 `0/18` 状态由只读初始化脚本生成无 corpus 的固定 18-cell work plan；它必须显示三个条件原生波次且所有 evidence 计数为零。这个空计划只给采集器提供调度分母，不构成 corpus、native outcome、Teacher comparison 或任何训练准入分子。首条真实 native run 之后，计划必须由 replayed batch/corpus 重建。
+
 
 ## 历史记录 · 2026-10-14 Money 6x3 evidence work plan
 
