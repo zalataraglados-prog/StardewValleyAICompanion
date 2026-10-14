@@ -1,5 +1,22 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue fresh terminal candidate rebind
+
+`money_revenue_terminal_candidate_rebind_receipt.v1` 现在把所有需要结果态重绑定的 Revenue 路径骨架，与各自完整
+acquisition/processing rollout 建立可重放关系。每份 rollout manifest、rollout receipt 和 alternative denominator
+都会从叶子工件重建并逐 JSON 核对；骨架源候选必须在 rollout 中精确命中一个已执行 transition。
+
+实际产物身份来自该 transition 的已验证 fresh terminal receipt。构建器随后对前后快照按物品、最低品质和槽位计算
+净增量，只把真正增加的槽位交给现有 Revenue candidate evaluator。旧库存中的同物品不会进入本路径；同一新槽位若
+存在多个合法商店候选，则全部保留，避免用“唯一商店”假设漏掉价格与路线分支。出货候选同样保留原生 bin、槽位、
+实时单价和 continuation 参数。
+
+此层闭合的是 terminal rebind 子分母，不是最终 alternative 分母。direct sale/shipping 骨架与 rebound concrete
+候选的联合目录仍待建立，comparison manifest 也尚未改成由该联合目录生成。故
+`current_alternative_denominator_authoritative=false`、production label eligibility 为 `false`，正式覆盖仍为
+`2/19`、根方法 `1/11`，正式产品训练未授权。下一门固定为 concrete union denominator，再接现有 native
+sale/deposit/settlement 与 comparison proof。
+
 ## 2026-10-14 原生出货入箱证据边界
 
 原生 `executor.ship_inventory_item_to_bin` 现由单一共享验证器核验：队列末项与执行回执必须绑定精确库存槽、

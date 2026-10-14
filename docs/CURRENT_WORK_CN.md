@@ -1,5 +1,24 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue fresh terminal 候选重绑定
+
+- 新增 `build-money-revenue-terminal-candidate-rebind`、
+  `money_revenue_terminal_candidate_rebind_manifest.v1` 与对应 receipt。manifest 必须对路径骨架中每个
+  `requires_fresh_terminal_candidate_rebind` 项恰好提供一份完整 acquisition rollout proof；漏项、重复项和额外项
+  均失败关闭。
+- 构建器会重建 alternative denominator、完整 rollout 与持久化 receipt，再按骨架的原始 `source_candidate_id`
+  自动定位唯一已执行 transition。调用方不能声明产物、槽位、价格或终端候选；这些字段只从已验证 fresh receipt、
+  前后透明快照和现有 `MoneyRevenueCandidateDenominatorBuilder` 得出。
+- 库存绑定按精确品质和槽位计算。旧库存中的同类物品不会被误算为本次产物；若同一新增槽位可由多个商店收购，
+  所有不同商店/价格/路线候选都会保留为不同 concrete alternative，而不是任意只取一个。sale 与 shipping 继续使用
+  原候选生成器，没有新增第二套售价、保护、BFS、编译器或执行器逻辑。
+- Release 构建为 `0 warning / 0 error`，快速 hermetic 已覆盖旧槽排除、一个新槽展开两个商店候选、同槽出货以及
+  receipt 净增量漂移拒绝；未启动游戏，也未运行高成本完整 Stage-One fixture。
+- 该 receipt 只证明“所有待重绑定骨架均已得到可重放的具体终端候选”，尚未把直接终端骨架与 rebound 结果合并成
+  最终 concrete alternative denominator。因此正式状态保持 `2/19`、根方法 `1/11`、
+  `formal_product_training_authorized=false`。下一固定切片是构建 direct + rebound 的唯一联合目录，并让 comparison
+  proof 从该目录生成候选集合，而不再接受调用方自报 alternatives。
+
 ## 2026-10-14 Revenue 原生出货入箱证据
 
 - 新增唯一 `NativeShippingDepositEvidenceVerifier`，把 `executor.ship_inventory_item_to_bin` 的末队列项、fresh
