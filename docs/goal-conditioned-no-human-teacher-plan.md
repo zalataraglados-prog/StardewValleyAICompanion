@@ -3214,6 +3214,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request
   to native recurrence receipts before exact-ID comparison admission.
 
+### 2026-10-14: Revenue terminal execution proof denominator
+
+- `build-money-revenue-terminal-execution-proof` rebuilds the authoritative counterfactual request catalog and requires
+  exactly one proof for every request ID. A caller cannot omit, duplicate or add an alternative.
+- Each proof starts from the request-derived terminal snapshot and strategy-ledger anchor. Optional route receipts may
+  contain only the existing resource-neutral movement, connector, interaction, menu and wait primitives; the shared
+  versioned persistent boundary rejects inventory, currency, energy or unknown persistent-state drift.
+- The terminal transition reuses the existing native shop-sale episode or shipping-deposit verifier and then joins the
+  existing Revenue recurrence proof. Shop sales additionally prove the exact material-graph slot delta; shipping keeps
+  its exact deposit and later native settlement boundary.
+- The before ledger must be the exact request anchor. The independently persisted after ledger must have identical
+  bytes and digest. The shared material-supply projection subtracts every active reservation before the target stack
+  can be consumed. Actual receipt ticks are converted through the shared game-clock policy.
+- This closes terminal timing, target-reservation and before/after ledger proof collection for the request denominator.
+  It does not select a production preference. The next bounded slice admits a comparison only when its alternative IDs
+  exactly equal these request/evidence IDs. Formal coverage remains `2/19`, root-method coverage `1/11`, and formal
+  product training remains unauthorized.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

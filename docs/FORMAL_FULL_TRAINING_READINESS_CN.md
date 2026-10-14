@@ -1,5 +1,19 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue terminal execution proof gate
+
+`money_revenue_terminal_execution_proof_receipt.v1` 现在消费完整 counterfactual request catalog，并要求每个 request ID
+恰好对应一条可重放终端证明。它从 request 已锁定的 terminal snapshot/ledger 出发，允许零条或多条仅含共享资源中性动作的 route receipt，
+随后验证现有原生 shop sale 或 shipping deposit，并把结果连接到现有 Revenue recurrence receipt。路由前后由版本化 persistent-state boundary
+排除库存、货币、精力和未知持久状态漂移；真实 elapsed ticks 统一换算为 terminal opportunity cost。
+
+外部 strategy ledger 在动作前必须等于 request 推导出的 path/SHA/ID/revision/source-state 锚点，动作后必须以不同路径保存完全相同的字节与 SHA。
+目标库存槽位同时受透明 material graph、actor ownership 和共享 `MaterialSupplyProjection` 约束；active reservation 占用后的可用数量不足即失败关闭。
+终端 after snapshot 还必须证明同一槽位按精确数量减少，避免仅凭收益变化或执行器声明推断物品已被消费。
+
+该 receipt 明确保持 `production_teacher_preference_label_eligible=false`：它尚未在全 request ID 分母上执行严格 Pareto comparison admission。
+因此正式覆盖、根方法和授权仍为 `2/19`、`1/11`、`false`。下一门固定为只消费本 receipt 的 exact-ID comparison；在那之前不得把终端执行证明直接写成正标签。
+
 ## 2026-10-14 Revenue counterfactual proof request denominator
 
 `money_revenue_counterfactual_proof_request_catalog.v1` 从 authoritative concrete catalog 一次性生成完整采证分母，并

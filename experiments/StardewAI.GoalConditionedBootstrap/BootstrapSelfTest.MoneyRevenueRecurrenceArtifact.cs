@@ -91,6 +91,9 @@ internal static partial class BootstrapSelfTest
                 ShopSaleEpisodePath = episodePath
             }));
         var receipt = MoneyRevenueRecurrenceProofBuilder.Build(manifestPath);
+        Write(Path.Combine(
+            root,
+            "shop-revenue-recurrence-receipt.json"), receipt);
         Require(
             receipt.ProofVerified &&
             receipt.Prefix?.TotalRevenue == 20 &&
