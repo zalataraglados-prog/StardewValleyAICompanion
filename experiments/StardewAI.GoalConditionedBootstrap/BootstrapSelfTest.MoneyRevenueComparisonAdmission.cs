@@ -75,6 +75,79 @@ internal static partial class BootstrapSelfTest
             NativeRevenueRecurrencesVerified = true,
             Alternatives = new[] { fast.Evidence, slow.Evidence }
         };
+        var catalogPath = Path.Combine(root, "request-catalog.json");
+        var requestManifestPath = Path.Combine(root, "request-manifest.json");
+        var terminalManifestPath = Path.Combine(
+            root,
+            "terminal-proof-manifest.json");
+        var terminalReceiptPath = Path.Combine(
+            root,
+            "terminal-proof-receipt.json");
+        var trajectoryManifestPath = Path.Combine(
+            root,
+            "native-trajectory-manifest.json");
+        Write(requestManifestPath, new MoneyRevenueCounterfactualProofRequestManifest());
+        terminalManifest.CounterfactualRequestManifestPath =
+            requestManifestPath;
+        terminalManifest.CounterfactualRequestCatalogPath = catalogPath;
+        Write(catalogPath, catalog);
+        Write(terminalManifestPath, terminalManifest);
+        Write(terminalReceiptPath, terminalReceipt);
+        Write(trajectoryManifestPath, new MoneyThresholdNativeTrajectoryManifest
+        {
+            RequestId = fast.Request.RequestId,
+            TerminalExecutionProofManifestPath = terminalManifestPath,
+            TerminalExecutionProofReceiptPath = terminalReceiptPath
+        });
+        var trajectory = MoneyThresholdNativeTrajectoryBuilder.ProjectVerified(
+            trajectoryManifestPath,
+            terminalManifestPath,
+            terminalReceiptPath,
+            catalogPath,
+            fast.Request.RequestId,
+            catalog,
+            terminalManifest,
+            terminalReceipt);
+        Require(trajectory.SchemaVersion ==
+                    MoneyThresholdNativeTrajectoryVersions.Receipt &&
+                trajectory.NativeOutcomeVerified &&
+                !trajectory.TeacherPreferenceLabelVerified &&
+                !trajectory.FormalProductTrainingAuthorized &&
+                !trajectory.AcquisitionRolloutRequired &&
+                trajectory.TrajectoryKind ==
+                    MoneyThresholdNativeTrajectoryKinds.DirectShopSale &&
+                trajectory.SourceStateHash == before.StateHash &&
+                trajectory.SourceCheckpoint.TotalMoneyEarned == 49_990 &&
+                trajectory.FinalCheckpoint.TotalMoneyEarned == 50_010 &&
+                trajectory.RevenuePrefix.TotalRevenue == 20 &&
+                trajectory.ConcreteAlternativeId ==
+                    fast.Request.ConcreteAlternativeId &&
+                trajectory.TerminalExecutionEvidenceSha256 ==
+                    fast.Evidence.EvidenceSha256 &&
+                trajectory.Artifacts.Any(value =>
+                    value.Role == "terminal_shop_sale_episode") &&
+                trajectory.ReceiptSha256.Length == 64,
+            "Money threshold native trajectory projection drifted.");
+        Require(new[]
+            {
+                MoneyThresholdNativeTrajectoryBuilder.TrajectoryKind(
+                    NativeTrajectoryShape(acquisition: false, sale: true)),
+                MoneyThresholdNativeTrajectoryBuilder.TrajectoryKind(
+                    NativeTrajectoryShape(acquisition: false, sale: false)),
+                MoneyThresholdNativeTrajectoryBuilder.TrajectoryKind(
+                    NativeTrajectoryShape(acquisition: true, sale: true)),
+                MoneyThresholdNativeTrajectoryBuilder.TrajectoryKind(
+                    NativeTrajectoryShape(acquisition: true, sale: false))
+            }.SequenceEqual(
+                new[]
+                {
+                    MoneyThresholdNativeTrajectoryKinds.DirectShopSale,
+                    MoneyThresholdNativeTrajectoryKinds.DirectShipping,
+                    MoneyThresholdNativeTrajectoryKinds.AcquisitionThenShopSale,
+                    MoneyThresholdNativeTrajectoryKinds.AcquisitionThenShipping
+                },
+                StringComparer.Ordinal),
+            "Money threshold native trajectory kind mapping drifted.");
         var receipt = MoneyRevenueComparisonAdmissionBuilder
             .CompareVerifiedDenominator(
                 "money_50000",
@@ -240,4 +313,14 @@ internal static partial class BootstrapSelfTest
         MoneyRevenueTerminalAlternativeProof Proof,
         MoneyRevenueTerminalExecutionEvidence Evidence,
         string EpisodePath);
+
+    private static MoneyRevenueCounterfactualProofRequest NativeTrajectoryShape(
+        bool acquisition,
+        bool sale) => new()
+        {
+            AcquisitionRolloutProofRequired = acquisition,
+            NativeShopSaleProofRequired = sale,
+            NativeShippingDepositProofRequired = !sale,
+            NativeShippingSettlementProofRequired = !sale
+        };
 }
