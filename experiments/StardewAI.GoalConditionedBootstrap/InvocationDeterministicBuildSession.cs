@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 {
     public const string SessionVersion =
-        "stardewai.invocation_deterministic_build_session.v1";
+        "stardewai.invocation_deterministic_build_session.v2";
 
     private static readonly AsyncLocal<
         InvocationDeterministicBuildSession?> Ambient = new();
@@ -183,6 +183,25 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         string name,
         string path) => new(name, path, IsFile: true);
 
+    public static DeterministicBuildIdentityPart VerifiedTransitiveFile(
+        string name,
+        string path,
+        string contentSha256)
+    {
+        if (contentSha256.Length != 64 ||
+            contentSha256.Any(character => !Uri.IsHexDigit(character)))
+        {
+            throw new InvalidDataException(
+                "Verified transitive file identity requires SHA-256: " +
+                name);
+        }
+        return new DeterministicBuildIdentityPart(
+            name,
+            path,
+            IsFile: true,
+            contentSha256.ToLowerInvariant());
+    }
+
     public static DeterministicBuildIdentityPart Value(
         string name,
         object? value) => new(
@@ -211,7 +230,8 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 internal readonly record struct DeterministicBuildIdentityPart(
     string Name,
     string Identity,
-    bool IsFile);
+    bool IsFile,
+    string? VerifiedContentSha256 = null);
 
 internal sealed record InvocationDeterministicBuildSessionSnapshot(
     string SessionVersion,

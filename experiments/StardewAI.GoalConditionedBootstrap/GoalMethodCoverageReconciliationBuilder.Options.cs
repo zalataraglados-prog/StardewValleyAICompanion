@@ -16,7 +16,8 @@ public static partial class GoalMethodCoverageReconciliationBuilder
                 "Reconciliation option matrix differs from the rebuilt frontier.");
         }
 
-        using var document = JsonDocument.Parse(File.ReadAllText(fullPath));
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(fullPath));
         var root = document.RootElement;
         if (RequiredString(root, "schema_version") !=
                 "stardewai.option_governance_matrix.v3" ||

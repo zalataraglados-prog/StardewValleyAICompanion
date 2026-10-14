@@ -156,6 +156,10 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
     new("self-test-shop-purchase-navigation-terminal-coverage", SelfTestShopPurchaseNavigationTerminalCoverage),
     new("self-test-crop-planting-terminal-coverage", SelfTestCropPlantingTerminalCoverage),
+    new("self-test-invocation-read-plan", _ => BootstrapSelfTest.RunInvocationReadPlan()),
+    new("self-test-goal-method-frontier-reuse", options =>
+        BootstrapSelfTest.RunGoalMethodFrontierReuse(
+            GoalMethodFrontierInputs(options))),
     new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
     new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
     new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),

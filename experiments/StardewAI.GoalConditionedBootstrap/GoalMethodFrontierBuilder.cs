@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class GoalMethodFrontierBuilder
 {
-    public static GoalMethodFrontierReport Build(
+    private static GoalMethodFrontierReport BuildCore(
         string expansionPath,
         string dependencyExpansionPath,
         string isolatedTrainingAuthorizationPath,
@@ -16,7 +16,8 @@ public static partial class GoalMethodFrontierBuilder
         string knowledgePath,
         string optionMatrixPath,
         string claimLedgerPath,
-        string directionCatalogSourcePath)
+        string directionCatalogSourcePath,
+        AuthoritativeRequirementInventoryReport requirementInventory)
     {
         var expansionFullPath = Path.GetFullPath(expansionPath);
         var dependencyFullPath = Path.GetFullPath(dependencyExpansionPath);
@@ -30,7 +31,8 @@ public static partial class GoalMethodFrontierBuilder
         var ledgerFullPath = Path.GetFullPath(claimLedgerPath);
         var catalogSourceFullPath = Path.GetFullPath(directionCatalogSourcePath);
         var knowledge = KnowledgeIndex.Load(knowledgePath);
-        var requirementInventory = LoadRequirementInventory(
+        ValidateRequirementInventory(
+            requirementInventory,
             requirementInventoryFullPath,
             knowledge.GoalId);
         var options = LoadOptions(optionFullPath);
@@ -367,14 +369,11 @@ public static partial class GoalMethodFrontierBuilder
         };
     }
 
-    private static AuthoritativeRequirementInventoryReport LoadRequirementInventory(
+    private static void ValidateRequirementInventory(
+        AuthoritativeRequirementInventoryReport report,
         string path,
         string expectedGoalId)
     {
-        var report = JsonSerializer.Deserialize<AuthoritativeRequirementInventoryReport>(
-            File.ReadAllText(path),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web))
-            ?? throw new InvalidDataException("Requirement inventory is null.");
         Require(report.SchemaVersion == "authoritative_goal_requirement_inventory.v1",
             "Unsupported authoritative requirement inventory schema.");
         Require(report.GoalId == expectedGoalId,
@@ -400,7 +399,6 @@ public static partial class GoalMethodFrontierBuilder
             Require(ContentInventoryVerifier.HashFile(source.Path) == source.Sha256,
                 "Requirement inventory source hash drifted: " + source.SourceId);
         }
-        return report;
     }
 
     private static AcquisitionRouteOptionLoweringReport LoadAcquisitionLowering(
@@ -411,10 +409,10 @@ public static partial class GoalMethodFrontierBuilder
         string authorizationPath,
         AuthoritativeRequirementInventoryReport inventory)
     {
-        var report = JsonSerializer.Deserialize<AcquisitionRouteOptionLoweringReport>(
-            File.ReadAllText(path),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web))
-            ?? throw new InvalidDataException("Acquisition route lowering report is null.");
+        var report = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRouteOptionLoweringReport>(
+            path,
+            "Acquisition route lowering report");
         Require(report.SchemaVersion == "acquisition_route_option_lowering.v1",
             "Unsupported acquisition route lowering schema.");
         Require(report.GoalId == inventory.GoalId,
@@ -508,7 +506,8 @@ public static partial class GoalMethodFrontierBuilder
         string expectedGoalId,
         IReadOnlyDictionary<string, OptionRow> options)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path));
         var root = document.RootElement;
         Require(
             RequiredString(root, "schema_version") ==
@@ -582,7 +581,8 @@ public static partial class GoalMethodFrontierBuilder
         string path,
         string expectedGoalId)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path));
         var root = document.RootElement;
         Require(RequiredString(root, "schema_version") == "goal_method_expansion_overlay.v1",
             "Unsupported goal-method expansion overlay schema.");
@@ -607,7 +607,8 @@ public static partial class GoalMethodFrontierBuilder
         string path,
         string expectedGoalId)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path));
         var root = document.RootElement;
         Require(RequiredString(root, "schema_version") == "goal_method_dependency_expansions.v1",
             "Unsupported goal-method dependency expansion schema.");
@@ -772,7 +773,8 @@ public static partial class GoalMethodFrontierBuilder
 
     private static Dictionary<string, OptionRow> LoadOptions(string path)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path));
         var root = document.RootElement;
         Require(RequiredString(root, "schema_version") == "stardewai.option_governance_matrix.v3",
             "Current option matrix must be schema v3.");
@@ -789,7 +791,8 @@ public static partial class GoalMethodFrontierBuilder
 
     private static ClaimLedgerIndex LoadClaimLedger(string path)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path));
         var root = document.RootElement;
         var claims = root.GetProperty("claims").EnumerateArray()
             .Where(value => RequiredString(value, "verdict") is "verified" or "verified_scope_difference" or "native_verified_runtime_pending" or "strategy_hypothesis_only")

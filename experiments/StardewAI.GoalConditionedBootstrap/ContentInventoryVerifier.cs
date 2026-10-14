@@ -102,12 +102,13 @@ public static class ContentInventoryVerifier
         using var operation = ValidationTraceSession.BeginOperation(
             "file_hash",
             "StardewAI.GoalConditionedBootstrap.ContentInventoryVerifier",
-            "v1",
+            "v2",
             path);
-        using var stream = File.OpenRead(path);
-        operation.AddBytesRead(stream.Length);
-        operation.AddHashBytes(stream.Length);
-        var hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+        var hash = InvocationReadSession.HashFile(path, out var observation);
+        operation.AddBytesRead(observation.PhysicalBytesRead);
+        operation.AddHashBytes(observation.HashBytes);
+        if (observation.CacheHit)
+            operation.MarkCacheHit();
         operation.AddArtifactId(hash);
         return hash;
     }

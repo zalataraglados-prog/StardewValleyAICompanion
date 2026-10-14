@@ -42,9 +42,8 @@ internal sealed partial class InvocationDeterministicBuildSession
                 builder.Append(fullPath).Append('#');
                 if (System.IO.File.Exists(fullPath))
                 {
-                    var contentSha256 = InvocationReadSession.HashFile(
-                        fullPath,
-                        out _);
+                    var contentSha256 = part.VerifiedContentSha256 ??
+                        InvocationReadSession.HashFile(fullPath, out _);
                     builder.Append(contentSha256);
                     inputs.Add(new ValidationTraceDependencyInput
                     {
