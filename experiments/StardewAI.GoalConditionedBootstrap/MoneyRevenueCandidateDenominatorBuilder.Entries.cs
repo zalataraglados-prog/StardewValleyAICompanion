@@ -7,7 +7,9 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
 {
     private static MoneyRevenueCandidateCatalogEntry BuildEntry(
         RevenueActionNodeDefinition definition,
-        EventCandidate candidate) => BuildEntry(
+        EventCandidate candidate)
+    {
+        var entry = BuildEntry(
             definition,
             "event_candidate",
             candidate.CandidateId,
@@ -18,6 +20,7 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             candidate.TileY,
             candidate.ItemId,
             candidate.QualifiedItemId,
+            candidate.DisplayName,
             candidate.ShopId,
             candidate.SlotIndex,
             candidate.Quantity,
@@ -27,10 +30,31 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             candidate.EnergyCost,
             candidate.Parameters,
             candidate.BlockReasons);
+        entry.ExpectedEffect = candidate.ExpectedEffect;
+        entry.AvailabilityClass = candidate.AvailabilityClass;
+        entry.AllowedNow = candidate.AllowedNow;
+        entry.AllowedToday = candidate.AllowedToday;
+        entry.NextOpenTime = candidate.NextOpenTime;
+        entry.EffectiveOpenTime = candidate.EffectiveOpenTime;
+        entry.ClosesAt = candidate.ClosesAt;
+        entry.WaitCost = candidate.WaitCost;
+        entry.GateReasons = candidate.GateReasons;
+        entry.FullShipmentKnown = candidate.FullShipmentKnown;
+        entry.FullShipmentEligible = candidate.FullShipmentEligible;
+        entry.FullShipmentCurrentShippedCount =
+            candidate.FullShipmentCurrentShippedCount;
+        entry.FullShipmentAlreadyShipped =
+            candidate.FullShipmentAlreadyShipped;
+        entry.FullShipmentContributes = candidate.FullShipmentContributes;
+        entry.AvailableStack = candidate.AvailableStack;
+        return Seal(entry);
+    }
 
     private static MoneyRevenueCandidateCatalogEntry BuildEntry(
         RevenueActionNodeDefinition definition,
-        EconomicCandidate candidate) => BuildEntry(
+        EconomicCandidate candidate)
+    {
+        var entry = BuildEntry(
             definition,
             "economic_candidate",
             candidate.CandidateId,
@@ -41,6 +65,7 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             null,
             candidate.ItemId,
             candidate.QualifiedItemId,
+            candidate.DisplayName,
             candidate.ShopId,
             candidate.SlotIndex,
             candidate.Quantity,
@@ -50,6 +75,23 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             0,
             candidate.Parameters,
             candidate.BlockReasons);
+        entry.StockId = candidate.StockId;
+        entry.OutputStack = candidate.OutputStack;
+        entry.OutputQuality = candidate.OutputQuality;
+        entry.CurrencyBalance = candidate.CurrencyBalance;
+        entry.Stock = candidate.Stock;
+        entry.InfiniteStock = candidate.InfiniteStock;
+        entry.CanShip = candidate.CanShip;
+        entry.CanShopSell = candidate.CanShopSell;
+        entry.FullShipmentKnown = candidate.FullShipmentKnown;
+        entry.FullShipmentEligible = candidate.FullShipmentEligible;
+        entry.FullShipmentCurrentShippedCount =
+            candidate.FullShipmentCurrentShippedCount;
+        entry.FullShipmentAlreadyShipped =
+            candidate.FullShipmentAlreadyShipped;
+        entry.FullShipmentContributes = candidate.FullShipmentContributes;
+        return Seal(entry);
+    }
 
     private static MoneyRevenueCandidateCatalogEntry BuildEntry(
         RevenueActionNodeDefinition definition,
@@ -62,6 +104,7 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
         int? tileY,
         string itemId,
         string qualifiedItemId,
+        string displayName,
         string shopId,
         int? slotIndex,
         int quantity,
@@ -97,6 +140,7 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             TileY = tileY,
             ItemId = itemId,
             QualifiedItemId = qualifiedItemId,
+            DisplayName = displayName,
             ShopId = shopId,
             SlotIndex = slotIndex,
             Quantity = quantity,
@@ -107,32 +151,15 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             Parameters = parameters,
             BlockingReasons = blockingReasons
         };
+        return entry;
+    }
+
+    private static MoneyRevenueCandidateCatalogEntry Seal(
+        MoneyRevenueCandidateCatalogEntry entry)
+    {
         entry.CandidateSha256 =
             AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(
-                new
-                {
-                    entry.CatalogCandidateId,
-                    entry.CandidateChannel,
-                    entry.CandidateId,
-                    entry.CandidateKind,
-                    entry.SemanticKindBinding,
-                    entry.Available,
-                    entry.ComparisonEligible,
-                    entry.LocationId,
-                    entry.TileX,
-                    entry.TileY,
-                    entry.ItemId,
-                    entry.QualifiedItemId,
-                    entry.ShopId,
-                    entry.SlotIndex,
-                    entry.Quantity,
-                    entry.UnitPrice,
-                    entry.TotalValue,
-                    entry.EstimatedTicks,
-                    entry.EnergyCost,
-                    entry.Parameters,
-                    entry.BlockingReasons
-                });
+                entry);
         return entry;
     }
 

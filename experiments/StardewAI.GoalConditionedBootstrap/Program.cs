@@ -47,13 +47,18 @@ var commandDefinitions = new CommandDefinition[]
     new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
+    new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
+    new("build-money-threshold-native-outcome-batch", BuildMoneyThresholdNativeOutcomeBatch),
+    new("build-money-revenue-comparison-collection-plan", BuildMoneyRevenueComparisonCollectionPlan),
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
     new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
     new("build-money-revenue-alternative-denominator", BuildMoneyRevenueAlternativeDenominator),
+    new("build-money-revenue-terminal-rebind-manifest", BuildMoneyRevenueTerminalRebindManifest),
     new("build-money-revenue-terminal-candidate-rebind", BuildMoneyRevenueTerminalCandidateRebind),
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
+    new("build-money-revenue-terminal-execution-manifest", BuildMoneyRevenueTerminalExecutionManifest),
     new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
     new("build-money-revenue-comparison-admission", BuildMoneyRevenueComparisonAdmission),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
@@ -480,6 +485,34 @@ static void BuildMoneyThresholdEvidenceWorkPlan(Arguments options)
     Write(options.Required("output"), plan);
 }
 
+static void BuildMoneyThresholdNativeOutcomeSelection(Arguments options)
+{
+    var selection = MoneyThresholdNativeOutcomeSelectionBuilder.Build(
+        options.Required("candidate-catalog"),
+        options.Required("criterion"),
+        options.Required("partition"));
+    Write(options.Required("output"), selection);
+}
+
+static void BuildMoneyThresholdNativeOutcomeBatch(Arguments options)
+{
+    var batch = MoneyThresholdNativeOutcomeBatchBuilder.Build(
+        options.Required("request"));
+    var corpusOutput = Path.GetFullPath(options.Required("corpus-output"));
+    Write(corpusOutput, batch.Corpus);
+    batch.CorpusOutputPath = corpusOutput;
+    batch.CorpusOutputSha256 =
+        CurrentTeacherFrontierSupport.HashFile(corpusOutput);
+    Write(options.Required("output"), batch);
+}
+
+static void BuildMoneyRevenueComparisonCollectionPlan(Arguments options)
+{
+    var plan = MoneyRevenueComparisonCollectionPlanBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), plan);
+}
+
 static void BuildMoneyRevenueRecurrenceProof(Arguments options)
 {
     var receipt = MoneyRevenueRecurrenceProofBuilder.Build(
@@ -506,6 +539,13 @@ static void BuildMoneyRevenueAlternativeDenominator(Arguments options)
     Write(options.Required("output"), catalog);
     if (!catalog.AlternativeSkeletonDenominatorComplete)
         Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueTerminalRebindManifest(Arguments options)
+{
+    var manifest = MoneyRevenueTerminalRebindManifestAssemblyBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), manifest);
 }
 
 static void BuildMoneyRevenueTerminalCandidateRebind(Arguments options)
@@ -559,6 +599,13 @@ static void BuildStrategyLedgerBoundaryCapture(Arguments options)
         options.Required("snapshot"),
         options.Required("strategy-ledger"));
     Write(options.Required("output"), capture);
+}
+
+static void BuildMoneyRevenueTerminalExecutionManifest(Arguments options)
+{
+    var manifest = MoneyRevenueTerminalExecutionManifestAssemblyBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), manifest);
 }
 
 static void BuildMoneyRevenueComparisonAdmission(Arguments options)

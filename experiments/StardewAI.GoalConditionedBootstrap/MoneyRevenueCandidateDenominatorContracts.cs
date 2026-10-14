@@ -7,7 +7,7 @@ public sealed class MoneyRevenueCandidateDenominatorCatalog
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_candidate_denominator_catalog.v1";
+        "money_revenue_candidate_denominator_catalog.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -188,6 +188,9 @@ public sealed class MoneyRevenueCandidateCatalogEntry
     [JsonPropertyName("qualified_item_id")]
     public string QualifiedItemId { get; set; } = string.Empty;
 
+    [JsonPropertyName("display_name")]
+    public string DisplayName { get; set; } = string.Empty;
+
     [JsonPropertyName("shop_id")]
     public string ShopId { get; set; } = string.Empty;
 
@@ -208,6 +211,75 @@ public sealed class MoneyRevenueCandidateCatalogEntry
 
     [JsonPropertyName("energy_cost")]
     public double EnergyCost { get; set; }
+
+    [JsonPropertyName("expected_effect")]
+    public string ExpectedEffect { get; set; } = string.Empty;
+
+    [JsonPropertyName("availability_class")]
+    public string AvailabilityClass { get; set; } = string.Empty;
+
+    [JsonPropertyName("allowed_now")]
+    public bool? AllowedNow { get; set; }
+
+    [JsonPropertyName("allowed_today")]
+    public bool? AllowedToday { get; set; }
+
+    [JsonPropertyName("next_open_time")]
+    public int? NextOpenTime { get; set; }
+
+    [JsonPropertyName("effective_open_time")]
+    public int? EffectiveOpenTime { get; set; }
+
+    [JsonPropertyName("closes_at")]
+    public int? ClosesAt { get; set; }
+
+    [JsonPropertyName("wait_cost")]
+    public int? WaitCost { get; set; }
+
+    [JsonPropertyName("gate_reasons")]
+    public string[] GateReasons { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("stock_id")]
+    public string StockId { get; set; } = string.Empty;
+
+    [JsonPropertyName("output_stack")]
+    public int? OutputStack { get; set; }
+
+    [JsonPropertyName("output_quality")]
+    public int? OutputQuality { get; set; }
+
+    [JsonPropertyName("currency_balance")]
+    public int? CurrencyBalance { get; set; }
+
+    [JsonPropertyName("stock")]
+    public int? Stock { get; set; }
+
+    [JsonPropertyName("infinite_stock")]
+    public bool? InfiniteStock { get; set; }
+
+    [JsonPropertyName("can_ship")]
+    public bool? CanShip { get; set; }
+
+    [JsonPropertyName("can_shop_sell")]
+    public bool? CanShopSell { get; set; }
+
+    [JsonPropertyName("full_shipment_known")]
+    public bool? FullShipmentKnown { get; set; }
+
+    [JsonPropertyName("full_shipment_eligible")]
+    public bool? FullShipmentEligible { get; set; }
+
+    [JsonPropertyName("full_shipment_current_shipped_count")]
+    public int? FullShipmentCurrentShippedCount { get; set; }
+
+    [JsonPropertyName("full_shipment_already_shipped")]
+    public bool? FullShipmentAlreadyShipped { get; set; }
+
+    [JsonPropertyName("full_shipment_contributes")]
+    public bool? FullShipmentContributes { get; set; }
+
+    [JsonPropertyName("available_stack")]
+    public int? AvailableStack { get; set; }
 
     [JsonPropertyName("parameters")]
     public SmallModelActionParameter[] Parameters { get; set; } =

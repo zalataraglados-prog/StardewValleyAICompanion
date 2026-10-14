@@ -3134,6 +3134,78 @@ Slice 7 remains assigned to the RTX 5070 node.
   proof, so it cannot emit a production Teacher label or authorize formal training. Its IDs must first be expanded
   through the dependency topology, and acquisition outcomes require a fresh terminal-candidate rebind.
 
+### 2026-10-15: isolated Money native-outcome collection boundary
+
+- `build-money-threshold-native-outcome-selection` now turns one rebuilt,
+  comparison-ready current Revenue denominator into a fail-closed collection
+  intent. The target criterion and partition are assertions only; the native
+  episode remains responsible for deriving the actual crossed criteria from
+  evaluator authority.
+- The selector keeps the complete denominator identity and chooses the smallest
+  sufficient real shop-sale continuation. It rejects partition drift, already
+  satisfied thresholds, incomplete transparent state and debug-bound candidates.
+- `Invoke-RuntimeMoneyThresholdNativeOutcome.ps1` hashes and clones an existing
+  source save, runs only against the clone, executes the selected sale through
+  the existing daily-plan/compiler/executor chain, rebuilds a native-only Money
+  corpus row, and verifies that the source save remained byte-for-byte unchanged.
+- This closes the production runner boundary, not a production evidence cell by
+  itself. The implementation has not been executed in the quiet development
+  window. Coverage remains `0/18`; every accepted native outcome still requires
+  its independent exact-denominator Teacher comparison before the cell closes.
+  The operational details and batch policy are in
+  `docs/money-threshold-production-evidence.md`.
+
+### 2026-10-15: Money native/comparison batch convergence
+
+- `money_threshold_native_outcome_batch_request.v2` can attach an existing
+  criterion-local Revenue comparison admission to an accepted native run by
+  exact `run_id + criterion_id`. Legacy v1 requests remain native-only.
+- The batch rejects duplicate attachments, unknown runs, and criteria the run
+  did not actually cross. It then delegates admission replay and native
+  terminal-artifact matching to the existing Money corpus builder rather than
+  adding a second comparison or labeling implementation.
+- Batch output v2 derives native, comparison, and fully complete 6x3 cell counts
+  from the replay-verified corpus through the same cell projector used by the
+  canonical work plan. The update script accepts an optional typed comparison
+  index and rebuilds that plan after either channel changes. This closes the
+  aggregation path only; no production run was executed and formal training
+  remains disabled.
+- Native run replay is centralized in
+  `MoneyThresholdNativeOutcomeRunVerifier`; batch aggregation and comparison
+  planning consume the same verified summary, selection, native-only corpus row,
+  and episode identity. `build-money-revenue-comparison-collection-plan` then
+  projects every rebuilt skeleton into an exact collection task. It identifies
+  required acquisition rollout/rebind work and the one or more direct skeletons
+  allowed to reuse the run's native sale episode, without crediting any of the
+  remaining terminal or comparison proofs.
+- `build-money-revenue-terminal-rebind-manifest` consumes that rebuilt plan and
+  requires supplied acquisition rollout proofs to cover the exact fresh-rebind
+  alternative ID denominator. The initializer then delegates deep rollout and
+  terminal-candidate validation to the existing rebind builder and can build
+  the existing concrete alternative denominator. Direct-only plans use the
+  same path with an empty proof set; the index itself never certifies a rollout.
+- Once the concrete denominator exists, the initializer can pass an explicit
+  source strategy ledger to the existing counterfactual-request builder. That
+  builder remains the sole authority for source/terminal ledger anchors and the
+  exact terminal proof-request denominator; a missing ledger is reported as the
+  next gate rather than replaced with a fixture.
+- Terminal proof completion now has an exact request-ID manifest assembler and
+  a separate quiet orchestration script. After the existing terminal verifier
+  and criterion admission builder replay all artifacts, a unique Teacher
+  preference can carry its already verified **direct** native shop-sale episode
+  into batch request v3, replacing the provisional seed episode before the
+  corpus join. Shipping remains blocked by the sale-only corpus. A rebound
+  acquisition/processing alternative is also blocked because its terminal sale
+  cannot represent the initial-state rollout or its split identity. Different
+  criterion-specific selected episodes require distinct seed runs.
+  The initial smallest-sufficient sampling choice is never promoted by
+  assumption.
+- The Money review also removed every Money-local private `EqualJson` helper.
+  The single bootstrap artifact guard now compares compact UTF-8 serialization
+  instead of retaining two indented UTF-16 strings. Equality remains exact and
+  uncached; this is the bounded #274 allocation reduction, not permission to
+  skip rebuilds or trust stale digests.
+
 ### 2026-10-14: Revenue alternative path skeletons
 
 - `build-money-revenue-alternative-denominator` rebuilds the source candidate catalog and expands each eligible policy

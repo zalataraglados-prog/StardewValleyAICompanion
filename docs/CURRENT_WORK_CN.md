@@ -145,7 +145,7 @@
 
 ## 历史记录 · 2026-10-14 Revenue 当时快照权威候选分母
 
-- 新增 `build-money-revenue-candidate-denominator` 与 `money_revenue_candidate_denominator_catalog.v1`。构建器从 `goal_method_dependency_expansions.v1` 的 `earn_money` 节点自动发现全部带 `option_id` 的 policy transition 与确定性 support transition，再对同一透明快照只调用一次现有 `CandidateOptionAvailabilityEvaluator`；没有复制售价、保护、路径、编译器或执行器规则。
+- 新增 `build-money-revenue-candidate-denominator`；当前 schema 为 `money_revenue_candidate_denominator_catalog.v2`。构建器从 `goal_method_dependency_expansions.v1` 的 `earn_money` 节点自动发现全部带 `option_id` 的 policy transition 与确定性 support transition，再对同一透明快照只调用一次现有 `CandidateOptionAvailabilityEvaluator`；没有复制售价、保护、路径、编译器或执行器规则。v2 同时保留服务时间窗、allowed-now/allowed-today、等待成本、gate 原因、库存/货币及 Full Shipment 相关候选语义，防止采证调度与反事实比较漏字段。
 - 目录同时保留 event/economic 两类候选、滚动 continuation、参数、阻塞原因和逐候选内容哈希。节点漏评、重复候选 ID、缺失透明字段、候选 kind 既不直接匹配依赖图也不绑定 continuation 时均失败关闭；阻塞候选不会被静默删除。
 - 权限被拆成三层：`current_snapshot_denominator_authoritative` 只说明当前快照的依赖节点和候选枚举不重不漏；`current_comparison_denominator_ready` 还要求至少两个当前可比较候选；`long_horizon_denominator_authoritative` 继续受 fresh-save schedule、counterfactual opportunity cost 和 crop route 三个现有 blocker 约束。目录不含 rollout proof，因此 production Teacher label 与正式训练授权始终为 `false`。
 - Release 构建 `0 warning / 0 error`，快速 `self-test-bootstrap-hermetic` 通过；测试覆盖直接候选、跨图 staged continuation、漏 option 与未绑定 kind。未启动游戏或运行高成本 Stage-One fixture。该目录是替代方案路径展开的源分母，不能跳过动作后 fresh terminal rebind 直接绑定整条 rollout。

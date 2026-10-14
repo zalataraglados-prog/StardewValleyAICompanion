@@ -12,10 +12,16 @@ internal static class BootstrapArtifactGuard
             throw new InvalidDataException(message);
     }
 
-    public static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Options),
-        JsonSerializer.Serialize(right, JsonDefaults.Options),
-        StringComparison.Ordinal);
+    public static bool EqualJson(object? left, object? right)
+    {
+        var leftJson = JsonSerializer.SerializeToUtf8Bytes(
+            left,
+            JsonDefaults.Compact);
+        var rightJson = JsonSerializer.SerializeToUtf8Bytes(
+            right,
+            JsonDefaults.Compact);
+        return leftJson.AsSpan().SequenceEqual(rightJson);
+    }
 
     public static bool IsLowerSha256(string value) =>
         value.Length == 64 && value.All(character =>

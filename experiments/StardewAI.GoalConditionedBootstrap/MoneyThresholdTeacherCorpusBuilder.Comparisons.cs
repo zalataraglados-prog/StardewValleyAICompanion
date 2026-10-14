@@ -151,6 +151,11 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         MoneyRevenueComparisonAdmissionAlternative selected,
         VerifiedNativeShopSaleEpisode sale)
     {
+        if (selected.AcquisitionRolloutRequired)
+        {
+            throw new InvalidDataException(
+                "Money-threshold sale row cannot represent a Teacher-selected acquisition rollout.");
+        }
         var artifacts = selected.NativeTerminalArtifacts;
         if (artifacts.Length == 0 ||
             artifacts.Select(value => value.Role)

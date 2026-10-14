@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class NativeShopSaleEpisodeVerifier
@@ -57,9 +55,6 @@ internal static partial class NativeShopSaleEpisodeVerifier
             ? fullPath
             : throw new FileNotFoundException(label + " is missing.", fullPath);
     }
-
-    private static bool EqualJson(object left, object right) =>
-        JsonSerializer.Serialize(left) == JsonSerializer.Serialize(right);
 
     private sealed record ShopSaleCommand(
         string ShopId,
