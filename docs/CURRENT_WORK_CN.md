@@ -1,5 +1,26 @@
 # StardewAI 当前工作
 
+## 2026-10-14 当前权威校正与下一固定工作
+
+- 当前不是两个可相加的 `4/19`。Method executable 为 Community Center 两项、Skull Key、Pet Love；两通道三分区证据完整为 Community Center 两项、Full Shipment、Master Angler；交集只有 Community Center 两项，因此正式状态为 `2/19`、根方法 `1/11`、训练授权 `false`。
+- 历史 Skull Key/Pet Love corpus 仍在本机留档，但 2026-10-14 current-authority coverage request 未重新绑定它们。下一功能步骤固定为先重放和重绑这两组；若 current dictionary/calendar/hash 不一致，只重采失效分区。目标是恢复当前 `4/19`，而不是重新实现动作。
+- 随后补 Full Shipment/Master Angler 的顶层 dependency expansion，复用现有动作、候选、编译器、执行器和三分区证据，目标到 `6/19`。之后按 Museum、Rusty Key、Skills、Money、Friendship、Marriage/House 六族完成余下 13 个 criterion。
+- 全局分母为 `19 criterion / 11 root methods / 114 evidence cells`；当前证据闭合 `24/114`，当前 coverage gate 为 `2/19`。任何局部测试、动作注册或 evidence-index 完成数都不得替代此交集。
+
+最近已经合并的深度优化包括：Goal Method frontier 同次调用复用、共享 `RouteGridPathfinder` 距离场、Planner/Executor
+统一到达与终端计时、recovery/settlement 持久状态边界、通用 acquisition output sufficiency，以及 strategy-ledger 前后边界
+内容寻址。这些工作降低重复计算并封住伪证据，不直接增加准入分子。
+
+当前 `perf/full-shipment-evidence-baseline` 分支的 CPU scope 与 Full Shipment evidence-index proof/reuse/rebuild 计时仍是未合并工作：
+Release 构建和 trace 定向测试已通过，完整样本自测已按用户要求中止，未取得代表性 baseline。继续该性能切片时，应先完成低成本
+baseline，再决定是否优化；不得以 fixture 时间替代真实快照测量。
+
+短期预计：恢复 `4/19` 为 `0.5-1.5` 天（漂移时 `2-4` 天），达到 `6/19` 再需 `4-8` 天。从当前达到 `19/19`
+约需 `20-35` 个主动工作日，之后另需 `3-7` 天训练/holdout；完整产品阶段估计见总路线图。
+
+新增全局防回退门：最新 authority 派生的 criterion 矩阵必须与上一个已接纳矩阵比较。曾经 ready 的项发生回退时默认阻止合并，
+除非提交显式 invalidation artifact，记录原因、失效分区和恢复计划。下方内容继续作为实现历史保留。
+
 ## 2026-10-14 Strategy-ledger 边界制品身份
 
 - 新增 `build-strategy-ledger-boundary-capture` 与 `strategy_ledger_boundary_capture.v1`。每份制品以内容寻址 ID 绑定 `before_terminal_action` 或 `after_terminal_action`、request、concrete alternative、原生执行 `run_id`、快照 SHA/state/tick，以及账本 SHA/ID/revision/source-state/actor；调用方不能再只提交两条裸账本路径。

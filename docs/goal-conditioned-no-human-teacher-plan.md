@@ -1,5 +1,47 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+## 2026-10-14: current authority, convergence order, and scale
+
+This section supersedes historical counters below. At `main@d87836d5`, the current-authority report has four executable
+criteria (the two Community Center criteria, Skull Key, and Pet Love) and four criteria with complete Teacher-comparison
+and native-outcome coverage across train/validation/test (the two Community Center criteria, Full Shipment, and Master
+Angler). Their intersection is only the two Community Center criteria: promotion-grade coverage is `2/19`, root-method
+coverage is `1/11`, and `formal_product_training_authorized=false`.
+
+The historical Skull Key and Pet Love corpora were not rebound by the 2026-10-14 coverage request after the authority
+rebuild. They remain local evidence candidates, not current numerator entries. Full Shipment and Master Angler have the
+opposite gap: their six evidence cells per criterion are complete, but their top-level methods remain
+`pending_dependency_expansion`.
+
+The fixed convergence order is:
+
+1. Replay and rebind Skull Key and Pet Love against the current dictionary, calendar, hashes, and input contracts,
+   recollecting only invalid partitions. This restores `4/19` if the historical evidence remains valid.
+2. Close the Full Shipment and Master Angler dependency expansions without adding parallel executors, reaching `6/19`.
+3. Close Museum, Rusty Key, Skills, Money, Friendship, and Marriage/House on both method execution and all six evidence
+   cells per criterion.
+4. At `19/19`, rebuild global reconciliation, freeze holdout, verify checkpoint/resume, and run promotion review before
+   authorizing formal training.
+
+The authority denominator is 19 criteria, 11 root methods, and `19 x 2 channels x 3 partitions = 114` logical evidence
+cells. Twenty-four cells are currently complete and 90 are absent from current authority: 12 have historical Skull/Pet
+artifacts awaiting replay, while 78 belong to the remaining 13 incomplete criteria. Shared prefixes and checkpoints may
+reduce native runs, but cannot collapse these logical identities.
+
+Recently merged performance/correctness work includes action-origin output attribution, generic acquisition-output
+sufficiency, the recovery-to-settlement persistent boundary, deterministic frontier reuse within one Goal Method
+invocation, shared Planner/Executor BFS and timing semantics, and content-addressed before/after strategy-ledger captures.
+The current performance branch adds exact CPU scopes and evidence-index proof/reuse/rebuild tracing; its build and focused
+trace tests pass, but the representative sample baseline was stopped and the work is not merged.
+
+With no worker delegation, no major game-version drift, and reuse of existing evidence, the expected active effort is
+0.5-1.5 days to restore `4/19` (2-4 days if recollection is required), another 4-8 days to reach `6/19`, and roughly
+20-35 active workdays total to reach `19/19`. Formal training and holdout evaluation then require an estimated 3-7 days.
+Human-adaptive companion behavior remains a post-model phase rather than a formal-admission shortcut.
+
+Every authority rebuild must now emit and compare the criterion-level matrix. Regression of a previously ready criterion
+blocks merge unless an explicit invalidation artifact names the cause, affected partitions, and recollection plan.
+
 ## 2026-10-11: native geode route admitted
 
 - The current-authority Full Shipment evidence index is `7/26`, with 19 strata remaining. The exact

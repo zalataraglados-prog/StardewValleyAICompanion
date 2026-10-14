@@ -1,5 +1,71 @@
 # StardewAI 完全体完成路线图
 
+## 2026-10-14 当前权威状态、收敛顺序与规模估计
+
+> 本节是当前唯一进度入口，覆盖下方按日期保留的历史数字。权威基线为 `main@d87836d5` 与
+> `formal-training-admission-current-source-v1-20261014`。任何旧报告中的 `4/19`、局部分层完成数或动作注册数，
+> 都不能替代本节的 criterion 交集状态。
+
+### 当前交集
+
+| 集合 | 当前内容 | 计数 |
+| --- | --- | ---: |
+| Method 已 executable | Community Center 两项、Skull Key、Pet Love | `4/19` |
+| Teacher comparison 与 native outcome 均覆盖 train/validation/test | Community Center 两项、Full Shipment、Master Angler | `4/19` |
+| 两者同时满足，可进入 coverage gate | Community Center 两项 | `2/19` |
+
+根方法口径为 `1/11` ready：Community Center 已闭合；Skull Key、Pet Love 仅 executable；Full Shipment、Master
+Angler 仅证据三分区闭合；Museum、Friendship、Marriage/House、Money、Skills、Rusty Key 六个根方法两侧均未闭合。
+当前正式训练授权保持 `formal_product_training_authorized=false`。
+
+旧的 Skull Key/Pet Love 三分区 corpus 曾把历史状态提高到 `4/19`，但 2026-10-14 权威重建后，当前 coverage request
+只绑定 `current-acquisition-route-corpus`，没有重新绑定这两份来源。历史工件仍在本机留档，但在按当前字典、日历、哈希和
+输入契约重放通过前，不计入现行分子。这是当前数字从历史 `4/19` 回落到 `2/19` 的原因，不是动作实现被删除。
+
+### 固定收敛顺序
+
+1. **恢复当前 `4/19`**：重放并重新绑定 Skull Key、Pet Love 的历史三分区 corpus。全部哈希与契约一致时复用；任一漂移只补采失效分区，不整组重做。
+2. **达到 `6/19`**：补齐 Full Shipment 与 Master Angler 的顶层 dependency expansion，使已有三分区证据接入可执行 Goal Method；不得另写第二套动作或执行器。
+3. **关闭剩余六个根方法**：依次闭合 Museum、Rusty Key、Skills、Money、Friendship、Marriage/House。每个 criterion 必须同时满足 Method executable、Teacher comparison 三分区和 native outcome 三分区。
+4. **完成 `19/19` 准入**：重新构建全局 reconciliation、冻结 holdout、验证 checkpoint/恢复、做 promotion review；所有门同时通过后才允许正式全量训练。
+5. **训练后阶段**：先以第三年爷爷评估 `21` 分为第一产品目标，再扩展到 `100%` 进度；最强策略稳定后才进行人类适应性、陪玩节奏、联机协作和声音自然度改造。
+
+### 规模
+
+- 权威分母：`19` 个 criterion、`11` 个根方法。
+- 证据逻辑格：`19 x 2` 个独立通道（Teacher comparison/native outcome）`x 3` 个分区，共 `114` 格。
+- 当前已闭合证据：`4 x 6 = 24` 格；当前仍缺 `90` 格。其中 Skull Key/Pet Love 的 `12` 格有历史工件待重放，Full Shipment/Master Angler 的 `12` 格已经闭合但尚缺 Method，剩余 `13` 个 criterion 对应 `78` 个新证据格。
+- 剩余新证据不会等于 78 次完整三年运行：同一根方法的共享前缀、checkpoint、原生结果和批量分区可复用，但每个逻辑格仍必须拥有独立可追溯身份。
+
+### 时间估计
+
+以下估计假定不调用 worker、复用现有执行器与证据、游戏版本和权威字典不再发生大漂移，并按持续开发计算：
+
+| 里程碑 | 预计主动工程时间 | 主要不确定性 |
+| --- | ---: | --- |
+| 重放 Skull Key/Pet Love，恢复 `4/19` | `0.5-1.5` 天；若契约漂移则 `2-4` 天 | 历史 corpus 是否能按当前哈希直接重放 |
+| Full Shipment/Master Angler Method 闭合，达到 `6/19` | `4-8` 天 | 顶层依赖展开与已有原生证据的精确对账 |
+| 剩余六个根方法达到 `19/19` | `15-25` 个工程日，另含 `5-10` 个运行采证日且可部分重叠 | 社交/婚姻长日历、Money 六阈值和原生运行重试 |
+| 全量训练、holdout 评估与首个 21 分模型 | `3-7` 天 | 最终 corpus 规模、超参数和硬件吞吐 |
+
+因此，从当前状态到 `19/19` 准入约需 `20-35` 个主动工作日；连同第一轮正式全量训练与评估，合理墙钟总量约为
+`25-40` 个工作日，即持续投入下约 `5-8` 个日历周，间歇开发按 `8-12` 周估计。RTX 5070 8GB 主要缩短正式模型训练，
+适合 LoRA/小批量路线；它不会明显缩短游戏原生采证、重放和 Method 闭合。达到“除声音略机械外，长期表现接近人类玩家”的完整陪玩，还需在模型可用后
+追加约 `4-8` 周的人类适应、联机、节奏与长线回归；追求稳定 `100%` 完美存档时应按额外 `8-12` 周准备，而不能把它混入
+21 分首训准入。
+
+### 深度优化与防回退
+
+已合并的改进包括：action-origin 输出归因、通用 acquisition output sufficiency、recovery 到 settlement 的持久状态边界、
+同一次 Goal Method 调用的 frontier 确定性复用、Planner/Executor 共用 BFS 与到达/终端计时、strategy-ledger 前后边界的
+内容寻址制品。这些改进减少重复构建、全图重复扫描和伪证据，但不直接增加 `2/19` 分子。
+
+当前分支正在增加精确 CPU scope 与 Full Shipment evidence-index 的 proof/reuse/rebuild 分项测量；Release 构建及 trace
+定向测试已通过，但完整样本自测按用户要求中止，尚无代表性 baseline，因此仍标记为进行中且未合并。
+
+从本节起，全局状态表必须由最新 authority artifact 重新派生。任何曾经 ready 的 criterion 若在新报告中回退，合并门必须失败，
+除非同时提交显式 invalidation artifact，说明失效来源、受影响分区与重采计划。历史文档中的计数只用于追溯，不能成为当前准入输入。
+
 ## 2026-10-11 Full Shipment 晶球层原生准入
 
 当前 production evidence index 为 `7/26`，剩余 `19` 层。`native_geode_drop` 已按 `full_shipment:item:386 / (O)386 / geode:791:1:random:6` 完成 exact native sample：Golden Coconut `(O)791`、背包槽位、Blacksmith/Clint 柜台、25g、原生 RNG 精确输出 5 个铱矿、日内预算、原生动画、fresh terminal、reservation settlement、checkpoint 与独立 rollout proof 均通过。该路线只在实时透明快照存在精确 `processing.crack_geode` 候选时启用，并复用唯一 `executor.crack_geode`，没有第二套开晶球执行器。

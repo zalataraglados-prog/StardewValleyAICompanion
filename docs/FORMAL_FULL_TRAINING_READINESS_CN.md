@@ -1,5 +1,41 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 当前准入真值（覆盖下方历史计数）
+
+当前权威报告是 `formal-training-admission-current-source-v1-20261014`，代码基线为 `main@d87836d5`：
+
+- Method executable：`4/19`，即 Community Center 两项、Skull Key、Pet Love。
+- Teacher comparison 与 native outcome 均完成 train/validation/test：`4/19`，即 Community Center 两项、Full Shipment、Master Angler。
+- 两组交集，也就是实际 coverage gate ready：仅 Community Center 两项，`2/19`；根方法为 `1/11`。
+- 正式训练授权：`formal_product_training_authorized=false`。
+
+因此下方历史段落出现的 `4/19` 只代表当时旧 coverage request 的结果。当前 authority rebuild 没有重新绑定 Skull Key/Pet Love
+的历史 corpus，不能把它们自动带入新分子；Full Shipment/Master Angler 则相反，证据分区已完整，但顶层 Goal Method 仍是
+`pending_dependency_expansion`。准入判断必须取两侧交集，不能把任一侧的 `4/19` 单独称为完成。
+
+### 剩余准入工作量
+
+总分母为 `19 criterion / 11 root methods / 114 channel-partition cells`。当前证据闭合 `24/114`，还缺 `90` 个逻辑格；
+其中 Skull Key/Pet Love 的 12 格优先做当前版本重放，13 个尚未闭合的 criterion 对应 78 个新格。Full Shipment/Master
+Angler 不缺这 12 个证据格，缺的是可执行 Method 依赖展开。
+
+固定阶段门如下：
+
+1. Skull Key/Pet Love 重放成功并重新绑定，恢复 `4/19`；漂移时仅重采失效分区。
+2. Full Shipment/Master Angler Method executable，达到 `6/19`。
+3. Museum、Rusty Key、Skills、Money、Friendship、Marriage/House 六个根方法逐族闭合，达到 `19/19`。
+4. 全局 reconciliation、holdout、checkpoint/恢复与 promotion review 同时通过后，才允许全量训练。
+
+预计恢复 `4/19` 需 `0.5-1.5` 天，发生契约漂移时为 `2-4` 天；达到 `6/19` 再需 `4-8` 天；从当前完成其余六族和生产
+采证、达到 `19/19` 的总主动工程量约为 `20-35` 个工作日。随后首轮正式训练与 holdout 评估预计 `3-7` 天。完整估算和产品后训练阶段见
+`FULL_SYSTEM_COMPLETION_PLAN_CN.md`。
+
+### 准入防回退规则
+
+每次 authority rebuild 都必须输出 criterion 级四态矩阵：Method executable、Teacher comparison 三分区、native outcome
+三分区、两侧交集。此前 ready 的 criterion 若回退，CI/合并门必须失败；只有带显式 invalidation artifact 的有意失效可以放行。
+局部 action、runner、evidence index 或性能测试通过都不得改变正式分子。
+
 ## 2026-10-14 Money 6x3 evidence work plan
 
 新增只读 `money_threshold_evidence_work_plan.v1`，把六个权威 Grandpa Money 阈值与 train/validation/test 做笛卡尔积，固定形成 18 个 criterion-local 工作格。每格从重新验证的 Money corpus v3 独立计算 native outcome 和 Teacher comparison 是否存在，并列出实际 row ID；method 聚合、调用方计数和 self-test 目录名都不能改变该分母。
