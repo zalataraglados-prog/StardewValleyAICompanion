@@ -129,7 +129,7 @@ internal static partial class BootstrapSelfTest
                 trajectory.TerminalExecutionEvidenceSha256 ==
                     fast.Evidence.EvidenceSha256 &&
                 trajectory.Artifacts.Any(value =>
-                    value.Role == "terminal_shop_sale_episode") &&
+                    value.Role == "native_terminal_shop_sale_episode") &&
                 trajectory.ReceiptSha256.Length == 64,
             "Money threshold native trajectory projection drifted.");
         Write(trajectoryReceiptPath, trajectory);

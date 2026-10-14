@@ -193,7 +193,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var artifacts = selected.NativeTerminalArtifacts;
         var rolePrefix = outcome.Kind ==
             MoneyThresholdNativeOutcomeKinds.RevenueTrajectory
-                ? "terminal_"
+                ? "native_terminal_"
                 : string.Empty;
         var expectedArtifactCount = outcome.Kind ==
             MoneyThresholdNativeOutcomeKinds.RevenueTrajectory

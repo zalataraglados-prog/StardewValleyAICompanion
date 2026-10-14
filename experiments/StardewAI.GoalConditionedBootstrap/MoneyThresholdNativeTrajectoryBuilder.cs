@@ -261,7 +261,7 @@ public static class MoneyThresholdNativeTrajectoryBuilder
         foreach (var artifact in alternative.NativeTerminalArtifacts)
         {
             yield return new MoneyRevenueArtifactBinding(
-                "terminal_" + artifact.Role,
+                "native_terminal_" + artifact.Role,
                 artifact.Path,
                 artifact.Sha256);
         }
