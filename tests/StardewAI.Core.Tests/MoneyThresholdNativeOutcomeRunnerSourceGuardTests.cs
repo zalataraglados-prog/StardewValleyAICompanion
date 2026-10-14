@@ -6,6 +6,10 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Invoke-RuntimeMoneyThresholdNativeOutcome.ps1"));
+    private static readonly string BatchSource = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Update-MoneyThresholdNativeOutcomeBatch.ps1"));
 
     [Fact]
     public void RunnerUsesImmutableSourceSaveAndAnIsolatedClone()
@@ -46,6 +50,23 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.DoesNotContain("api/v1/training/execute", Source,
             StringComparison.Ordinal);
         Assert.DoesNotContain("Invoke-RuntimeSaleMainlineSmoke", Source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BatchReplaysRunsAndRebuildsTheCanonicalWorkPlan()
+    {
+        Assert.Contains("build-money-threshold-native-outcome-batch",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-threshold-evidence-work-plan",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("run_summary_paths = $summaryPaths",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("formal_product_training_authorized = $false",
+            BatchSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("debug.", BatchSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("StardewModdingAPI", BatchSource,
             StringComparison.Ordinal);
     }
 

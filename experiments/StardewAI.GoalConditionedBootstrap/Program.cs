@@ -48,6 +48,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
+    new("build-money-threshold-native-outcome-batch", BuildMoneyThresholdNativeOutcomeBatch),
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
     new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
     new("build-money-revenue-alternative-denominator", BuildMoneyRevenueAlternativeDenominator),
@@ -488,6 +489,18 @@ static void BuildMoneyThresholdNativeOutcomeSelection(Arguments options)
         options.Required("criterion"),
         options.Required("partition"));
     Write(options.Required("output"), selection);
+}
+
+static void BuildMoneyThresholdNativeOutcomeBatch(Arguments options)
+{
+    var batch = MoneyThresholdNativeOutcomeBatchBuilder.Build(
+        options.Required("request"));
+    var corpusOutput = Path.GetFullPath(options.Required("corpus-output"));
+    Write(corpusOutput, batch.Corpus);
+    batch.CorpusOutputPath = corpusOutput;
+    batch.CorpusOutputSha256 =
+        CurrentTeacherFrontierSupport.HashFile(corpusOutput);
+    Write(options.Required("output"), batch);
 }
 
 static void BuildMoneyRevenueRecurrenceProof(Arguments options)

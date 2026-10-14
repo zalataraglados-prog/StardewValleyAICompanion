@@ -90,8 +90,10 @@ admission remains criterion-local.
 Run one criterion-partition cell at a time. Reuse already built binaries and
 deployed mods after the first run with `-SkipBuild` and `-SkipDeploy`, but never
 reuse a live snapshot, candidate denominator, or isolated save between cells.
-Rebuild the 18-cell work plan from the accumulated verified corpus after each
-accepted run. Schedule only cells still reported as missing.
+`Update-MoneyThresholdNativeOutcomeBatch.ps1` discovers passed run summaries,
+replays every referenced catalog/selection/corpus, rejects duplicate split keys,
+emits one combined native corpus, and rebuilds the 18-cell work plan. Run it
+after each accepted collection and schedule only cells still reported missing.
 
 High-cost full reconciliation is reserved for the Money Exit Gate. During
 development, validate the new or invalidated cell and its exact proof branch.

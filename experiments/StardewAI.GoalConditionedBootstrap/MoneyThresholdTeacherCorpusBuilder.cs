@@ -23,6 +23,12 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             MoneyThresholdTeacherCorpusRequest>(
             fullRequestPath,
             "Money-threshold corpus request");
+        return Build(request);
+    }
+
+    internal static MoneyThresholdTeacherCorpus Build(
+        MoneyThresholdTeacherCorpusRequest request)
+    {
         ValidateRequest(request);
         var rows = request.Sources.Select(BuildRow)
             .OrderBy(row => row.RowId, StringComparer.Ordinal)

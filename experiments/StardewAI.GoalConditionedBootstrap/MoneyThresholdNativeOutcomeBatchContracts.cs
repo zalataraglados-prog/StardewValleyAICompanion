@@ -1,0 +1,158 @@
+using System.Text.Json.Serialization;
+
+namespace StardewAI.GoalConditionedBootstrap;
+
+public sealed class MoneyThresholdNativeOutcomeBatchRequest
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "money_threshold_native_outcome_batch_request.v1";
+
+    [JsonPropertyName("batch_id")]
+    public string BatchId { get; set; } = string.Empty;
+
+    [JsonPropertyName("run_summary_paths")]
+    public string[] RunSummaryPaths { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("formal_product_training_authorized")]
+    public bool FormalProductTrainingAuthorized { get; set; }
+}
+
+public sealed class MoneyThresholdNativeOutcomeRunSummary
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "money_threshold_native_outcome_run_summary.v1";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("run_id")]
+    public string RunId { get; set; } = string.Empty;
+
+    [JsonPropertyName("criterion_id")]
+    public string CriterionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("dataset_partition")]
+    public string DatasetPartition { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_save_slot_path")]
+    public string SourceSaveSlotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_save_sha256_before")]
+    public string SourceSaveSha256Before { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_save_sha256_after")]
+    public string SourceSaveSha256After { get; set; } = string.Empty;
+
+    [JsonPropertyName("isolated_save_slot_path")]
+    public string IsolatedSaveSlotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("isolated_save_sha256_before")]
+    public string IsolatedSaveSha256Before { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_state_hash")]
+    public string SourceStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("natural_service_wait_applied")]
+    public bool NaturalServiceWaitApplied { get; set; }
+
+    [JsonPropertyName("selection_path")]
+    public string SelectionPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("selection_sha256")]
+    public string SelectionSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("candidate_denominator_path")]
+    public string CandidateDenominatorPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("candidate_denominator_sha256")]
+    public string CandidateDenominatorSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("execution_episode_path")]
+    public string ExecutionEpisodePath { get; set; } = string.Empty;
+
+    [JsonPropertyName("money_threshold_corpus_path")]
+    public string MoneyThresholdCorpusPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("crossed_criterion_ids")]
+    public string[] CrossedCriterionIds { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("formal_product_training_authorized")]
+    public bool FormalProductTrainingAuthorized { get; set; }
+}
+
+public sealed class MoneyThresholdNativeOutcomeBatch
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "money_threshold_native_outcome_batch.v1";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("batch_id")]
+    public string BatchId { get; set; } = string.Empty;
+
+    [JsonPropertyName("request_path")]
+    public string RequestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("request_sha256")]
+    public string RequestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("verified_run_count")]
+    public int VerifiedRunCount { get; set; }
+
+    [JsonPropertyName("native_complete_cell_count")]
+    public int NativeCompleteCellCount { get; set; }
+
+    [JsonPropertyName("required_cell_count")]
+    public int RequiredCellCount { get; set; } = 18;
+
+    [JsonPropertyName("cells")]
+    public MoneyThresholdNativeOutcomeCellStatus[] Cells { get; set; } =
+        Array.Empty<MoneyThresholdNativeOutcomeCellStatus>();
+
+    [JsonPropertyName("verified_runs")]
+    public MoneyThresholdNativeOutcomeVerifiedRun[] VerifiedRuns { get; set; } =
+        Array.Empty<MoneyThresholdNativeOutcomeVerifiedRun>();
+
+    [JsonPropertyName("corpus")]
+    public MoneyThresholdTeacherCorpus Corpus { get; set; } = new();
+
+    [JsonPropertyName("corpus_output_path")]
+    public string CorpusOutputPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("corpus_output_sha256")]
+    public string CorpusOutputSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("formal_product_training_authorized")]
+    public bool FormalProductTrainingAuthorized { get; set; }
+
+    [JsonPropertyName("batch_policy")]
+    public string BatchPolicy { get; set; } =
+        "Every run summary is replayed through its candidate denominator, native selection and Money corpus before admission. Native criterion-partition cells are derived from the verified corpus, not from caller counts. Duplicate split keys are rejected by the corpus builder. This batch closes only the native outcome channel and cannot create Teacher comparisons or authorize formal training.";
+}
+
+public sealed record MoneyThresholdNativeOutcomeCellStatus(
+    [property: JsonPropertyName("criterion_id")] string CriterionId,
+    [property: JsonPropertyName("dataset_partition")]
+        string DatasetPartition,
+    [property: JsonPropertyName("native_outcome_verified")]
+        bool NativeOutcomeVerified,
+    [property: JsonPropertyName("row_ids")] string[] RowIds);
+
+public sealed record MoneyThresholdNativeOutcomeVerifiedRun(
+    [property: JsonPropertyName("run_id")] string RunId,
+    [property: JsonPropertyName("summary_path")] string SummaryPath,
+    [property: JsonPropertyName("summary_sha256")] string SummarySha256,
+    [property: JsonPropertyName("selection_sha256")]
+        string SelectionSha256,
+    [property: JsonPropertyName("candidate_denominator_sha256")]
+        string CandidateDenominatorSha256,
+    [property: JsonPropertyName("execution_episode_path")]
+        string ExecutionEpisodePath,
+    [property: JsonPropertyName("dataset_partition")]
+        string DatasetPartition,
+    [property: JsonPropertyName("crossed_criterion_ids")]
+        string[] CrossedCriterionIds);
