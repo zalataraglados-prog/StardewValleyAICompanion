@@ -26,6 +26,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyRevenueCandidateDenominator();
         VerifyMoneyRevenueTerminalCandidateRebind();
         VerifyMoneyRevenueTerminalExecutionProof();
+        VerifyMoneyRevenueComparisonAdmission();
     }
 
     private static void VerifySupportingTransitionTerminalLineage()

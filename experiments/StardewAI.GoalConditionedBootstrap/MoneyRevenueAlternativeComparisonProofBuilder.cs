@@ -68,7 +68,7 @@ public static partial class MoneyRevenueAlternativeComparisonProofBuilder
         };
     }
 
-    private static MoneyRevenueAlternativeArtifactEvidence VerifyAlternative(
+    internal static MoneyRevenueAlternativeArtifactEvidence VerifyAlternative(
         MoneyRevenueAlternativeArtifactProof proof,
         int index)
     {
