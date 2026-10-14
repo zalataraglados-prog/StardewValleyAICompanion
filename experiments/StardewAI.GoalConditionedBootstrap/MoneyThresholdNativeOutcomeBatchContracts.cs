@@ -2,11 +2,21 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
+public static class MoneyThresholdNativeOutcomeBatchVersions
+{
+    public const string LegacyRequest =
+        "money_threshold_native_outcome_batch_request.v1";
+    public const string Request =
+        "money_threshold_native_outcome_batch_request.v2";
+    public const string Batch =
+        "money_threshold_native_outcome_batch.v2";
+}
+
 public sealed class MoneyThresholdNativeOutcomeBatchRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_threshold_native_outcome_batch_request.v1";
+        MoneyThresholdNativeOutcomeBatchVersions.Request;
 
     [JsonPropertyName("batch_id")]
     public string BatchId { get; set; } = string.Empty;
@@ -14,9 +24,22 @@ public sealed class MoneyThresholdNativeOutcomeBatchRequest
     [JsonPropertyName("run_summary_paths")]
     public string[] RunSummaryPaths { get; set; } = Array.Empty<string>();
 
+    [JsonPropertyName("comparison_admissions")]
+    public MoneyThresholdNativeOutcomeComparisonAdmission[]
+        ComparisonAdmissions { get; set; } =
+            Array.Empty<MoneyThresholdNativeOutcomeComparisonAdmission>();
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
+
+public sealed record MoneyThresholdNativeOutcomeComparisonAdmission(
+    [property: JsonPropertyName("run_id")] string RunId,
+    [property: JsonPropertyName("criterion_id")] string CriterionId,
+    [property: JsonPropertyName("admission_manifest_path")]
+        string AdmissionManifestPath,
+    [property: JsonPropertyName("admission_receipt_path")]
+        string AdmissionReceiptPath);
 
 public sealed class MoneyThresholdNativeOutcomeRunSummary
 {
@@ -86,7 +109,7 @@ public sealed class MoneyThresholdNativeOutcomeBatch
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_threshold_native_outcome_batch.v1";
+        MoneyThresholdNativeOutcomeBatchVersions.Batch;
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -105,6 +128,15 @@ public sealed class MoneyThresholdNativeOutcomeBatch
 
     [JsonPropertyName("native_complete_cell_count")]
     public int NativeCompleteCellCount { get; set; }
+
+    [JsonPropertyName("verified_comparison_admission_count")]
+    public int VerifiedComparisonAdmissionCount { get; set; }
+
+    [JsonPropertyName("teacher_comparison_complete_cell_count")]
+    public int TeacherComparisonCompleteCellCount { get; set; }
+
+    [JsonPropertyName("fully_complete_cell_count")]
+    public int FullyCompleteCellCount { get; set; }
 
     [JsonPropertyName("required_cell_count")]
     public int RequiredCellCount { get; set; } = 18;
@@ -131,7 +163,7 @@ public sealed class MoneyThresholdNativeOutcomeBatch
 
     [JsonPropertyName("batch_policy")]
     public string BatchPolicy { get; set; } =
-        "Every run summary is replayed through its candidate denominator, native selection and Money corpus before admission. Native criterion-partition cells are derived from the verified corpus, not from caller counts. Duplicate split keys are rejected by the corpus builder. This batch closes only the native outcome channel and cannot create Teacher comparisons or authorize formal training.";
+        "Every run summary is replayed through its candidate denominator, native selection and Money corpus before admission. Optional comparison admissions are keyed by an existing run and a criterion actually crossed by that run, then replayed by the existing criterion-local corpus join. Native and Teacher-comparison criterion-partition cells are derived from the verified corpus, not caller counts. Duplicate split keys and duplicate run/criterion attachments are rejected. This batch cannot create evidence or authorize formal training.";
 }
 
 public sealed record MoneyThresholdNativeOutcomeCellStatus(
@@ -140,7 +172,12 @@ public sealed record MoneyThresholdNativeOutcomeCellStatus(
         string DatasetPartition,
     [property: JsonPropertyName("native_outcome_verified")]
         bool NativeOutcomeVerified,
-    [property: JsonPropertyName("row_ids")] string[] RowIds);
+    [property: JsonPropertyName("teacher_comparison_verified")]
+        bool TeacherComparisonVerified,
+    [property: JsonPropertyName("native_outcome_row_ids")]
+        string[] NativeOutcomeRowIds,
+    [property: JsonPropertyName("teacher_comparison_row_ids")]
+        string[] TeacherComparisonRowIds);
 
 public sealed record MoneyThresholdNativeOutcomeVerifiedRun(
     [property: JsonPropertyName("run_id")] string RunId,

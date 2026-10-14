@@ -62,6 +62,14 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             BatchSource, StringComparison.Ordinal);
         Assert.Contains("run_summary_paths = $summaryPaths",
             BatchSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_threshold_native_outcome_batch_request.v2",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("comparison_admissions = $comparisonAdmissions",
+            BatchSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_threshold_comparison_admission_index.v1",
+            BatchSource, StringComparison.Ordinal);
         Assert.Contains("formal_product_training_authorized = $false",
             BatchSource, StringComparison.Ordinal);
         Assert.DoesNotContain("debug.", BatchSource,

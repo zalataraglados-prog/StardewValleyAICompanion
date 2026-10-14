@@ -1,17 +1,7 @@
-using StardewAI.Contracts.Training;
-using StardewAI.Core.Goals;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static class MoneyThresholdNativeOutcomeBatchBuilder
 {
-    private static readonly string[] RequiredPartitions =
-    {
-        PolicyDatasetPartitions.Train,
-        PolicyDatasetPartitions.Validation,
-        PolicyDatasetPartitions.Test
-    };
-
     public static MoneyThresholdNativeOutcomeBatch Build(string requestPath)
     {
         var fullRequestPath = RequiredFile(
@@ -21,71 +11,127 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
             MoneyThresholdNativeOutcomeBatchRequest>(
                 fullRequestPath,
                 "Money threshold native-outcome batch request");
-        Require(request.SchemaVersion ==
-                    "money_threshold_native_outcome_batch_request.v1" &&
+        var comparisonAdmissions = request.ComparisonAdmissions ??
+            Array.Empty<MoneyThresholdNativeOutcomeComparisonAdmission>();
+        var runSummaryPaths = request.RunSummaryPaths ?? Array.Empty<string>();
+        Require((request.SchemaVersion is
+                    MoneyThresholdNativeOutcomeBatchVersions.LegacyRequest or
+                    MoneyThresholdNativeOutcomeBatchVersions.Request) &&
                 !string.IsNullOrWhiteSpace(request.BatchId) &&
-                request.RunSummaryPaths.Length > 0 &&
-                request.RunSummaryPaths.All(path =>
+                runSummaryPaths.Length > 0 &&
+                runSummaryPaths.All(path =>
                     !string.IsNullOrWhiteSpace(path)) &&
-                request.RunSummaryPaths.Select(Path.GetFullPath)
+                runSummaryPaths.Select(Path.GetFullPath)
                     .Distinct(StringComparer.OrdinalIgnoreCase).Count() ==
-                    request.RunSummaryPaths.Length &&
+                    runSummaryPaths.Length &&
+                (request.SchemaVersion !=
+                    MoneyThresholdNativeOutcomeBatchVersions.LegacyRequest ||
+                    comparisonAdmissions.Length == 0) &&
                 !request.FormalProductTrainingAuthorized,
             "Money threshold native-outcome batch request is invalid.");
 
-        var runs = request.RunSummaryPaths
+        var runs = runSummaryPaths
             .Select(VerifyRun)
             .OrderBy(value => value.VerifiedRun.RunId, StringComparer.Ordinal)
             .ToArray();
         Require(runs.Select(value => value.VerifiedRun.RunId)
                 .Distinct(StringComparer.Ordinal).Count() == runs.Length,
             "Money threshold native-outcome run IDs are duplicated.");
+        ValidateComparisonAdmissions(comparisonAdmissions, runs);
         var corpus = MoneyThresholdTeacherCorpusBuilder.Build(
             new MoneyThresholdTeacherCorpusRequest
             {
                 CorpusId = request.BatchId,
                 Sources = runs.Select(value =>
-                        new MoneyThresholdTeacherCorpusSource(
+                    {
+                        var comparisons = comparisonAdmissions
+                            .Where(admission => string.Equals(
+                                admission.RunId,
+                                value.VerifiedRun.RunId,
+                                StringComparison.Ordinal))
+                            .OrderBy(admission => admission.CriterionId,
+                                StringComparer.Ordinal)
+                            .Select(admission =>
+                                new MoneyThresholdTeacherComparisonSource(
+                                    admission.CriterionId,
+                                    admission.AdmissionManifestPath,
+                                    admission.AdmissionReceiptPath))
+                            .ToArray();
+                        return new MoneyThresholdTeacherCorpusSource(
                             value.VerifiedRun.RunId,
-                            value.VerifiedRun.ExecutionEpisodePath))
+                            value.VerifiedRun.ExecutionEpisodePath,
+                            comparisons);
+                    })
                     .ToArray(),
                 FormalProductTrainingAuthorized = false
             });
-        var cells = GrandpaEvaluationGoalEvaluator.MoneyThresholds
-            .SelectMany(threshold => RequiredPartitions.Select(partition =>
-            {
-                var rows = corpus.Rows.Where(row =>
-                        row.DatasetPartition == partition &&
-                        row.CrossedThresholds.Any(value =>
-                            value.CriterionId == threshold.CriterionId))
-                    .Select(row => row.RowId)
-                    .Order(StringComparer.Ordinal)
-                    .ToArray();
-                return new MoneyThresholdNativeOutcomeCellStatus(
-                    threshold.CriterionId,
-                    partition,
-                    rows.Length > 0,
-                    rows);
-            }))
+        var cells = MoneyThresholdEvidenceCellProjector.Build(corpus)
+            .Select(cell => new MoneyThresholdNativeOutcomeCellStatus(
+                cell.CriterionId,
+                cell.DatasetPartition,
+                cell.NativeOutcomeVerified,
+                cell.TeacherComparisonVerified,
+                cell.NativeOutcomeRowIds,
+                cell.TeacherComparisonRowIds))
             .ToArray();
-        var complete = cells.Count(cell => cell.NativeOutcomeVerified);
+        var nativeComplete = cells.Count(cell => cell.NativeOutcomeVerified);
+        var comparisonComplete = cells.Count(cell =>
+            cell.TeacherComparisonVerified);
+        var fullyComplete = cells.Count(cell =>
+            cell.NativeOutcomeVerified && cell.TeacherComparisonVerified);
         return new MoneyThresholdNativeOutcomeBatch
         {
-            Status = complete == cells.Length
-                ? "native_outcome_channel_complete"
-                : "native_outcome_work_remaining",
+            Status = fullyComplete == cells.Length
+                ? "money_threshold_evidence_complete"
+                : nativeComplete == cells.Length
+                    ? "teacher_comparison_work_remaining"
+                    : "native_outcome_work_remaining",
             BatchId = request.BatchId,
             RequestPath = fullRequestPath,
             RequestSha256 = CurrentTeacherFrontierSupport.HashFile(
                 fullRequestPath),
             VerifiedRunCount = runs.Length,
-            NativeCompleteCellCount = complete,
+            NativeCompleteCellCount = nativeComplete,
+            VerifiedComparisonAdmissionCount = comparisonAdmissions.Length,
+            TeacherComparisonCompleteCellCount = comparisonComplete,
+            FullyCompleteCellCount = fullyComplete,
             RequiredCellCount = cells.Length,
             Cells = cells,
             VerifiedRuns = runs.Select(value => value.VerifiedRun).ToArray(),
             Corpus = corpus,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static void ValidateComparisonAdmissions(
+        MoneyThresholdNativeOutcomeComparisonAdmission[] admissions,
+        VerifiedRunSource[] runs)
+    {
+        Require(admissions.All(admission =>
+                admission is not null &&
+                !string.IsNullOrWhiteSpace(admission.RunId) &&
+                !string.IsNullOrWhiteSpace(admission.CriterionId) &&
+                !string.IsNullOrWhiteSpace(admission.AdmissionManifestPath) &&
+                !string.IsNullOrWhiteSpace(admission.AdmissionReceiptPath)) &&
+            admissions.GroupBy(
+                    admission => admission.RunId + "\n" +
+                        admission.CriterionId,
+                    StringComparer.Ordinal)
+                .All(group => group.Count() == 1),
+            "Money threshold comparison admissions are invalid or duplicated.");
+        var runById = runs.ToDictionary(
+            value => value.VerifiedRun.RunId,
+            StringComparer.Ordinal);
+        foreach (var admission in admissions)
+        {
+            Require(runById.TryGetValue(admission.RunId, out var run) &&
+                    run.VerifiedRun.CrossedCriterionIds.Contains(
+                        admission.CriterionId,
+                        StringComparer.Ordinal),
+                "Money threshold comparison admission does not bind a " +
+                "criterion crossed by its native run: " + admission.RunId +
+                "/" + admission.CriterionId + ".");
+        }
     }
 
     private static VerifiedRunSource VerifyRun(string summaryPath)
@@ -102,9 +148,8 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                 summary.Status == "passed" &&
                 !string.IsNullOrWhiteSpace(summary.RunId) &&
                 !string.IsNullOrWhiteSpace(summary.CriterionId) &&
-                RequiredPartitions.Contains(
-                    summary.DatasetPartition,
-                    StringComparer.Ordinal) &&
+                MoneyThresholdEvidenceCellProjector.IsRequiredPartition(
+                    summary.DatasetPartition) &&
                 IsSha256(summary.SourceSaveSha256Before) &&
                 summary.SourceSaveSha256Before ==
                     summary.SourceSaveSha256After &&

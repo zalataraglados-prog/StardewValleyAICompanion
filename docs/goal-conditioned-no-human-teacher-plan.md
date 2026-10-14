@@ -3155,6 +3155,22 @@ Slice 7 remains assigned to the RTX 5070 node.
   The operational details and batch policy are in
   `docs/money-threshold-production-evidence.md`.
 
+### 2026-10-15: Money native/comparison batch convergence
+
+- `money_threshold_native_outcome_batch_request.v2` can attach an existing
+  criterion-local Revenue comparison admission to an accepted native run by
+  exact `run_id + criterion_id`. Legacy v1 requests remain native-only.
+- The batch rejects duplicate attachments, unknown runs, and criteria the run
+  did not actually cross. It then delegates admission replay and native
+  terminal-artifact matching to the existing Money corpus builder rather than
+  adding a second comparison or labeling implementation.
+- Batch output v2 derives native, comparison, and fully complete 6x3 cell counts
+  from the replay-verified corpus through the same cell projector used by the
+  canonical work plan. The update script accepts an optional typed comparison
+  index and rebuilds that plan after either channel changes. This closes the
+  aggregation path only; no production run was executed and formal training
+  remains disabled.
+
 ### 2026-10-14: Revenue alternative path skeletons
 
 - `build-money-revenue-alternative-denominator` rebuilds the source candidate catalog and expands each eligible policy

@@ -92,8 +92,23 @@ deployed mods after the first run with `-SkipBuild` and `-SkipDeploy`, but never
 reuse a live snapshot, candidate denominator, or isolated save between cells.
 `Update-MoneyThresholdNativeOutcomeBatch.ps1` discovers passed run summaries,
 replays every referenced catalog/selection/corpus, rejects duplicate split keys,
-emits one combined native corpus, and rebuilds the 18-cell work plan. Run it
-after each accepted collection and schedule only cells still reported missing.
+emits one combined corpus, and rebuilds the 18-cell work plan. Its optional
+`-ComparisonAdmissionIndex` input has schema
+`money_threshold_comparison_admission_index.v1` and contains an `admissions`
+array of `run_id`, `criterion_id`, `admission_manifest_path`, and
+`admission_receipt_path`. Each pair must reference an accepted run and a
+criterion actually crossed by that run. The existing criterion-local corpus
+join then rebuilds the admission and checks its selected native terminal
+artifacts; the script cannot mark a comparison complete by declaration. Run the
+batch updater after each accepted native or comparison artifact and schedule
+only cells still reported missing.
+
+Batch request v2 carries these optional comparison attachments. Legacy v1
+requests remain replayable only as native-only batches, preventing an old
+schema from silently acquiring new authority. The v2 output separately reports
+native-complete, Teacher-comparison-complete, and fully complete cells. Batch
+output and the canonical work plan share one cell projector, so criterion and
+partition completeness cannot drift between two implementations.
 
 High-cost full reconciliation is reserved for the Money Exit Gate. During
 development, validate the new or invalidated cell and its exact proof branch.
@@ -102,8 +117,8 @@ force-full promotion oracle.
 
 ## Current implementation status
 
-The selection contract, CLI command, hermetic source cases, and isolated native
-runner are implemented on the Money production branch. They have not been
-built or executed in the quiet development window. Therefore production Money
-coverage remains `0/18` until real runs are accepted and the independent
-comparison channel is joined.
+The selection contract, CLI command, isolated native runner, replayed batch,
+and criterion-local comparison attachment path are implemented on the Money
+production branch. They have not been built or executed in the quiet
+development window. Therefore production Money coverage remains `0/18` until
+real runs and their independent comparison admissions are accepted.

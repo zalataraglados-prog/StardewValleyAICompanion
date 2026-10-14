@@ -7,6 +7,7 @@ param(
     [string] $BatchId = "money-threshold-production-native-v1",
     [string] $OutputDirectory =
         "artifacts\money-threshold-production-native-batch",
+    [string] $ComparisonAdmissionIndex = "",
     [switch] $SkipBuild
 )
 
@@ -47,6 +48,37 @@ if ($summaryPaths.Count -eq 0) {
     throw "No passed Money threshold native-outcome summaries were found."
 }
 
+$comparisonAdmissions = @()
+if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
+    $comparisonIndexPath = Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $ComparisonAdmissionIndex
+    if (-not (Test-Path -LiteralPath $comparisonIndexPath -PathType Leaf)) {
+        throw "Money threshold comparison-admission index is missing: $comparisonIndexPath"
+    }
+    $comparisonIndex = Get-Content -LiteralPath $comparisonIndexPath -Raw |
+        ConvertFrom-Json
+    if ([string]$comparisonIndex.schema_version -ne
+        "money_threshold_comparison_admission_index.v1") {
+        throw "Money threshold comparison-admission index schema is invalid."
+    }
+    $comparisonAdmissions = @($comparisonIndex.admissions | ForEach-Object {
+        $manifestPath = [string]$_.admission_manifest_path
+        $receiptPath = [string]$_.admission_receipt_path
+        if ([string]::IsNullOrWhiteSpace($manifestPath) -or
+            [string]::IsNullOrWhiteSpace($receiptPath)) {
+            throw "Money threshold comparison-admission paths are required."
+        }
+        [ordered]@{
+            run_id = [string]$_.run_id
+            criterion_id = [string]$_.criterion_id
+            admission_manifest_path = Resolve-RuntimeEvidenceInputPath `
+                -ProjectRoot $ProjectRoot -Path $manifestPath
+            admission_receipt_path = Resolve-RuntimeEvidenceInputPath `
+                -ProjectRoot $ProjectRoot -Path $receiptPath
+        }
+    })
+}
+
 if (-not $SkipBuild) {
     & dotnet build $bootstrapProject -c Release --no-restore --nologo |
         Out-Null
@@ -59,9 +91,10 @@ if (-not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
 }
 
 Write-JsonFile -Path $batchRequestPath -Value ([ordered]@{
-    schema_version = "money_threshold_native_outcome_batch_request.v1"
+    schema_version = "money_threshold_native_outcome_batch_request.v2"
     batch_id = $BatchId
     run_summary_paths = $summaryPaths
+    comparison_admissions = $comparisonAdmissions
     formal_product_training_authorized = $false
 })
 Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
@@ -88,6 +121,10 @@ $workPlan = Get-Content -LiteralPath $workPlanPath -Raw | ConvertFrom-Json
     batch_id = $BatchId
     verified_run_count = [int]$batch.verified_run_count
     native_complete_cell_count = [int]$batch.native_complete_cell_count
+    verified_comparison_admission_count =
+        [int]$batch.verified_comparison_admission_count
+    teacher_comparison_complete_cell_count =
+        [int]$batch.teacher_comparison_complete_cell_count
     required_cell_count = [int]$batch.required_cell_count
     fully_complete_cell_count = [int]$workPlan.fully_complete_cell_count
     batch_path = $batchPath
