@@ -57,10 +57,38 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         @($sourceAvailability[0].social_candidates) |
             Where-Object { [bool]$_.available })
     if ($rankedOptionIds.Count -eq 0) {
-        if ($availableCurrentCandidates.Count -ne 1) {
-            throw "Unbound source ranking has no unique current candidate."
+        if ($availableCurrentCandidates.Count -eq 1) {
+            $sourceParameters = @()
         }
-        $sourceParameters = @()
+        else {
+            $sourceQueue = Get-Content -LiteralPath $Paths.action_queue -Raw |
+                ConvertFrom-Json
+            $sourceCandidateIds = @($sourceQueue.items |
+                ForEach-Object { @($_.normalized_command.parameters) } |
+                Where-Object {
+                    [string]$_.name -eq "acquisition_source_candidate_id"
+                } |
+                ForEach-Object { [string]$_.value } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                Sort-Object -Unique)
+            if ($sourceCandidateIds.Count -ne 1) {
+                throw "Unbound source ranking has no unique queue-bound " +
+                    "current candidate identity."
+            }
+            $matchedCurrentCandidates = @($availableCurrentCandidates |
+                Where-Object {
+                    [string]$_.candidate_id -eq $sourceCandidateIds[0]
+                })
+            if ($matchedCurrentCandidates.Count -ne 1) {
+                throw "Queue-bound source candidate is not uniquely " +
+                    "available in the current snapshot."
+            }
+            $sourceParameters = @($matchedCurrentCandidates[0].parameters)
+            if ($sourceParameters.Count -eq 0) {
+                throw "Queue-bound source candidate has no explicit " +
+                    "parameters for deterministic replay."
+            }
+        }
     }
     if ($sourceParameters.Count -gt 0) {
         $candidateOptionIds = @()

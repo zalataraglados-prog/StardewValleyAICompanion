@@ -46,6 +46,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             !candidate.TargetTileY.HasValue ||
             !candidate.StandTileX.HasValue ||
             !candidate.StandTileY.HasValue ||
+            !candidate.RouteDistanceTiles.HasValue ||
+            candidate.RouteDistanceTiles.Value < 0 ||
             !candidate.MaxAttacks.HasValue ||
             candidate.MaxAttacks.Value <= 0 ||
             !candidate.EstimatedTargetCostMs.HasValue ||
@@ -93,6 +95,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             new[]
             {
                 "candidate:mining.reach_depth",
+                candidate.RouteDistanceEvidencePath,
                 "candidate.parameters[stand_tile_x]",
                 "candidate.parameters[stand_tile_y]",
                 "candidate.parameters[estimated_target_cost_ms]",
@@ -101,6 +104,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "compiler:MiningFloorStepCompiler"
             },
             exactStandTileX: candidate.StandTileX,
-            exactStandTileY: candidate.StandTileY);
+            exactStandTileY: candidate.StandTileY,
+            exactCurrentLocationRouteDistanceTiles:
+                candidate.RouteDistanceTiles,
+            exactCurrentLocationRouteDistanceEvidencePath:
+                candidate.RouteDistanceEvidencePath);
     }
 }

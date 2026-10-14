@@ -10,7 +10,8 @@ internal static partial class BootstrapSelfTest
     private static ActionQueueItem[] ShippingDepositQueue(
         int slotIndex,
         int unitPrice,
-        int binTileX) =>
+        int binTileX,
+        bool legacyEndpointNames = false) =>
     [
         new ActionQueueItem
         {
@@ -27,9 +28,15 @@ internal static partial class BootstrapSelfTest
                     ShippingParameter(
                         "expected_unit_price",
                         unitPrice.ToString()),
-                    ShippingParameter("bin_location", "Farm"),
-                    ShippingParameter("bin_tile_x", binTileX.ToString()),
-                    ShippingParameter("bin_tile_y", "14")
+                    ShippingParameter(
+                        legacyEndpointNames ? "bin_location" : "target_location",
+                        "Farm"),
+                    ShippingParameter(
+                        legacyEndpointNames ? "bin_tile_x" : "target_tile_x",
+                        binTileX.ToString()),
+                    ShippingParameter(
+                        legacyEndpointNames ? "bin_tile_y" : "target_tile_y",
+                        "14")
                 ]
             }
         }

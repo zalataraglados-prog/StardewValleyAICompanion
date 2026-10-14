@@ -69,16 +69,16 @@ internal static partial class NativeShippingDepositEvidenceVerifier
             reasons);
         var binLocation = ReadUniqueParameter(
             queueItem,
-            "bin_location",
+            "target_location",
             reasons);
         var binTileX = ReadUniqueIntParameter(
             queueItem,
-            "bin_tile_x",
+            "target_tile_x",
             minimum: 0,
             reasons);
         var binTileY = ReadUniqueIntParameter(
             queueItem,
-            "bin_tile_y",
+            "target_tile_y",
             minimum: 0,
             reasons);
 

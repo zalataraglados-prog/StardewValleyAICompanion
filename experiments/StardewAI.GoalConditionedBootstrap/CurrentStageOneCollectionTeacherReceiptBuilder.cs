@@ -172,7 +172,14 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         if (failedTransitions.Length > 0)
         {
             result.Status = "blocked_exact_requirement_transition_missing";
-            result.BlockingReasons = failedTransitions;
+            result.BlockingReasons = failedTransitions
+                .Concat(BuildTransitionFailureDiagnostics(
+                    preference,
+                    queueReceipt,
+                    before,
+                    after))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
             return result;
         }
 
@@ -230,6 +237,31 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         result.VerifiedRequirementTransitions = transitions;
         result.TrainingRow = row;
         return result;
+    }
+
+    private static IEnumerable<string> BuildTransitionFailureDiagnostics(
+        CurrentStageOneCollectionTeacherPreferenceLabel preference,
+        QueueExecutionReceiptEnvelope? receipt,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        foreach (var credit in preference.SelectedCandidate!
+                     .RequirementCredits
+                     .Where(value => string.Equals(
+                         value.BindingKind,
+                         "native_full_shipment_completion",
+                         StringComparison.Ordinal)))
+        {
+            var evidence = NativeShippingDepositEvidenceVerifier.Verify(
+                preference.CompiledQueue!.Items,
+                receipt,
+                before,
+                after,
+                credit.QualifiedItemId,
+                credit.RequiredQuantity);
+            foreach (var reason in evidence.BlockingReasons)
+                yield return "native_full_shipment_evidence:" + reason;
+        }
     }
 
     private static string ReadReceiptSchema(string path)

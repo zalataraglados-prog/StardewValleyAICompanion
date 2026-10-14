@@ -318,6 +318,17 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 var routeDistanceTiles = ReadIntParameter(
                     candidate,
                     "route_distance_tiles");
+                var routeDistanceEvidencePath =
+                    "candidate.parameters[route_distance_tiles]";
+                if (!routeDistanceTiles.HasValue &&
+                    optionId == "mining.reach_depth")
+                {
+                    routeDistanceTiles = ReadIntParameter(
+                        candidate,
+                        "estimated_movement_tiles");
+                    routeDistanceEvidencePath =
+                        "candidate.parameters[estimated_movement_tiles]";
+                }
                 var terminalActionTicks = ReadIntParameter(
                     candidate,
                     "terminal_action_ticks");
@@ -363,6 +374,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     ReadIntParameter(candidate, "max_movement_tiles") ??
                         routeDistanceTiles,
                     routeDistanceTiles,
+                    routeDistanceEvidencePath,
                     terminalActionTicks.Value,
                     timingProjectionMode,
                     ReadIntParameter(candidate, "max_tool_swings"),
@@ -859,6 +871,7 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     int? StandTileY,
     int? MaxMovementTiles,
     int? RouteDistanceTiles,
+    string RouteDistanceEvidencePath,
     int TerminalActionTicks,
     string TimingProjectionMode,
     int? MaxToolSwings,

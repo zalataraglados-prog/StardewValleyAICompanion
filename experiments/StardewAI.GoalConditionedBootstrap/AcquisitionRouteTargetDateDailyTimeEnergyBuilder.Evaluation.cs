@@ -205,6 +205,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             !candidate.TargetTileY.HasValue ||
             !candidate.StandTileX.HasValue ||
             !candidate.StandTileY.HasValue ||
+            !candidate.RouteDistanceTiles.HasValue ||
+            candidate.RouteDistanceTiles.Value < 0 ||
             !candidate.MaxToolSwings.HasValue ||
             candidate.MaxToolSwings.Value <= 0 ||
             !string.Equals(
@@ -259,6 +261,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             new[]
             {
                 "candidate:mining.reach_depth",
+                candidate.RouteDistanceEvidencePath,
                 "candidate.parameters[stand_tile_x]",
                 "candidate.parameters[stand_tile_y]",
                 "candidate.parameters[max_tool_swings]",
@@ -267,7 +270,11 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "compiler:MiningFloorStepCompiler"
             },
             exactStandTileX: candidate.StandTileX,
-            exactStandTileY: candidate.StandTileY);
+            exactStandTileY: candidate.StandTileY,
+            exactCurrentLocationRouteDistanceTiles:
+                candidate.RouteDistanceTiles,
+            exactCurrentLocationRouteDistanceEvidencePath:
+                candidate.RouteDistanceEvidencePath);
     }
 
     private static AcquisitionRouteTargetDateDailyTimeEnergy
@@ -676,7 +683,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
         string[] terminalEvidencePaths,
         bool acceptDefaultLocationWindow = false,
         int? exactStandTileX = null,
-        int? exactStandTileY = null)
+        int? exactStandTileY = null,
+        int? exactCurrentLocationRouteDistanceTiles = null,
+        string exactCurrentLocationRouteDistanceEvidencePath =
+            "candidate.parameters[route_distance_tiles]")
     {
         var routeState = state.RouteState;
         if (exactStandTileX.HasValue != exactStandTileY.HasValue)
@@ -691,7 +701,17 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 Array.Empty<string>(),
                 new[] { "terminal_route_exact_stand_tile_incomplete" });
         }
-        if (!routeState.RouteEvidenceAvailable || routeState.Timing is null)
+        var exactCurrentLocationApproach =
+            exactStandTileX.HasValue &&
+            exactStandTileY.HasValue &&
+            exactCurrentLocationRouteDistanceTiles is >= 0 &&
+            string.Equals(
+                routeState.CurrentLocationId,
+                targetLocation,
+                StringComparison.OrdinalIgnoreCase);
+        if ((!routeState.RouteEvidenceAvailable &&
+                !exactCurrentLocationApproach) ||
+            routeState.Timing is null)
         {
             return Result(
                 route,
@@ -703,46 +723,90 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 Array.Empty<string>(),
                 routeState.RouteEvidenceBlockingReasons);
         }
-        var production = new FutureRouteDateEvidenceProducer().Produce(
-            routeState.RouteGraph,
-            routeState.SocialRouteDateEvidence,
-            new FutureRouteDateEvidenceRequest
-            {
-                TotalDays = state.TargetTotalDay,
-                StartLocation = routeState.CurrentLocationId,
-                StartTileX = routeState.CurrentTileX,
-                StartTileY = routeState.CurrentTileY,
-                EarliestDepartureTime = routeState.CurrentTime,
-                TargetLocation = targetLocation,
-                TargetTileX = exactStandTileX ?? targetTileX,
-                TargetTileY = exactStandTileY ?? targetTileY,
-                RequireExactTargetTile = exactStandTileX.HasValue ||
-                    requireExactTargetTile
-            },
-            routeState.Timing);
-        var scenario = production.Scenario;
-        var approaches = scenario?.ApproachEvidence;
-        if (production.Status != FutureRouteDateEvidenceProductionStatus.Produced ||
-            !production.GuaranteedArrivalByTime.HasValue ||
-            scenario is null ||
-            approaches is null ||
-            approaches.Length != 1)
+
+        int arrival;
+        int? standTileX;
+        int? standTileY;
+        string timingEvidenceId;
+        string[] routeEvidencePaths;
+        if (exactCurrentLocationApproach)
         {
-            return Result(
-                route,
-                budgetKind,
-                "blocked_daily_route_evidence",
-                false,
-                null,
-                null,
-                Array.Empty<string>(),
-                production.BlockingReasons.Length > 0
-                    ? production.BlockingReasons
-                    : new[] { "terminal_route_production_incomplete" });
+            var distance = exactCurrentLocationRouteDistanceTiles!.Value;
+            var movementMinutes = distance == 0
+                ? 0
+                : (int)Math.Ceiling(
+                    distance *
+                    (double)routeState.Timing.GameMinuteNumeratorPerTile /
+                    routeState.Timing.GameMinuteDenominatorPerTile);
+            arrival = GameClockBudgetPolicy.AddClockMinutes(
+                routeState.CurrentTime,
+                movementMinutes);
+            standTileX = exactStandTileX!.Value;
+            standTileY = exactStandTileY!.Value;
+            timingEvidenceId = routeState.Timing.EvidenceId;
+            routeEvidencePaths = new[]
+            {
+                exactCurrentLocationRouteDistanceEvidencePath,
+                "candidate.parameters[stand_tile_x]",
+                "candidate.parameters[stand_tile_y]",
+                "state.player.movement_timing_context.value",
+                "route_timing_calibration"
+            };
+        }
+        else
+        {
+            var production = new FutureRouteDateEvidenceProducer().Produce(
+                routeState.RouteGraph,
+                routeState.SocialRouteDateEvidence,
+                new FutureRouteDateEvidenceRequest
+                {
+                    TotalDays = state.TargetTotalDay,
+                    StartLocation = routeState.CurrentLocationId,
+                    StartTileX = routeState.CurrentTileX,
+                    StartTileY = routeState.CurrentTileY,
+                    EarliestDepartureTime = routeState.CurrentTime,
+                    TargetLocation = targetLocation,
+                    TargetTileX = exactStandTileX ?? targetTileX,
+                    TargetTileY = exactStandTileY ?? targetTileY,
+                    RequireExactTargetTile = exactStandTileX.HasValue ||
+                        requireExactTargetTile
+                },
+                routeState.Timing);
+            var scenario = production.Scenario;
+            var approaches = scenario?.ApproachEvidence;
+            if (production.Status !=
+                    FutureRouteDateEvidenceProductionStatus.Produced ||
+                !production.GuaranteedArrivalByTime.HasValue ||
+                scenario is null ||
+                approaches is null ||
+                approaches.Length != 1)
+            {
+                return Result(
+                    route,
+                    budgetKind,
+                    "blocked_daily_route_evidence",
+                    false,
+                    null,
+                    null,
+                    Array.Empty<string>(),
+                    production.BlockingReasons.Length > 0
+                        ? production.BlockingReasons
+                        : new[] { "terminal_route_production_incomplete" });
+            }
+
+            var approach = approaches[0];
+            arrival = production.GuaranteedArrivalByTime.Value;
+            standTileX = approach.StandTileX;
+            standTileY = approach.StandTileY;
+            timingEvidenceId = approach.TimingEvidenceId;
+            routeEvidencePaths = new[]
+            {
+                "state.locations.route_graph.value",
+                "state.locations.social_route_date_evidence.value",
+                "route_timing_calibration"
+            };
         }
 
-        var arrival = production.GuaranteedArrivalByTime.Value;
-        var approach = approaches[0];
         var window = RequirementRoute(route).MatchingWindows
             .Where(value => string.IsNullOrWhiteSpace(value.LocationId) ||
                 acceptDefaultLocationWindow &&
@@ -775,8 +839,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             targetLocation,
             targetTileX,
             targetTileY,
-            approach.StandTileX,
-            approach.StandTileY,
+            standTileX,
+            standTileY,
             routeState.CurrentTime,
             arrival,
             window?.Window.StartTime,
@@ -796,14 +860,10 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             timeMatches,
             energyMatches,
             executionAssumption,
-            approach.TimingEvidenceId,
-            terminalEvidencePaths.Concat(new[]
-                {
-                    "state.locations.route_graph.value",
-                    "state.locations.social_route_date_evidence.value",
-                    "route_timing_calibration",
-                    "static_calendar_resolution.routes[].matching_windows[]"
-                })
+            timingEvidenceId,
+            terminalEvidencePaths.Concat(routeEvidencePaths)
+                .Append(
+                    "static_calendar_resolution.routes[].matching_windows[]")
                 .Concat(exactStandTileX.HasValue
                     ? new[]
                     {

@@ -123,6 +123,26 @@ internal static partial class BootstrapSelfTest
             "shipping_deposit_before_bin_endpoint_not_unique",
             "A shipping deposit bound to the wrong bin endpoint was admitted.");
 
+        var legacyEndpointQueue = ShippingDepositQueue(
+            3,
+            50,
+            71,
+            legacyEndpointNames: true);
+        RequireShippingDepositRejected(
+            legacyEndpointQueue,
+            ShippingDepositReceipt(
+                legacyEndpointQueue,
+                before,
+                after,
+                2,
+                1,
+                4,
+                5),
+            before,
+            after,
+            "shipping_deposit_parameter_invalid:target_location",
+            "Legacy bin endpoint aliases replaced the canonical target protocol.");
+
         var paidAfter = ShippingDepositSnapshot(
             slotStack: 1,
             binItemCount: 5,

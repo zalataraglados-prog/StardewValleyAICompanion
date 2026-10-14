@@ -215,6 +215,14 @@ internal static class QueueExecutionReceiptValidator
 
 internal static class ExecutionReceiptValidationSupport
 {
+    private static readonly HashSet<string> SequentialProjectionParameters =
+        new(StringComparer.Ordinal)
+        {
+            "compiler_context.player_location_before_step",
+            "compiler_context.player_tile_x_before_step",
+            "compiler_context.player_tile_y_before_step"
+        };
+
     public static bool EffectiveQueueItemMatches(
         JsonElement effective,
         ActionQueueItem expected,
@@ -234,14 +242,69 @@ internal static class ExecutionReceiptValidationSupport
             if (reboundExpected is null)
                 return false;
             reboundExpected.NormalizedCommand.StateHash = reboundStateHash;
-            return actual is not null && string.Equals(
-                JsonSerializer.Serialize(actual, JsonDefaults.Options),
-                JsonSerializer.Serialize(reboundExpected, JsonDefaults.Options),
-                StringComparison.Ordinal);
+            if (actual is null)
+                return false;
+            if (string.Equals(
+                    JsonSerializer.Serialize(actual, JsonDefaults.Options),
+                    JsonSerializer.Serialize(
+                        reboundExpected,
+                        JsonDefaults.Options),
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+            return LegacySequentialProjectionMetadataOnlyDifference(
+                actual,
+                reboundExpected);
         }
         catch (JsonException)
         {
             return false;
         }
+    }
+
+    private static bool LegacySequentialProjectionMetadataOnlyDifference(
+        ActionQueueItem actual,
+        ActionQueueItem expected)
+    {
+        if (actual.NormalizedCommand is null ||
+            expected.NormalizedCommand is null ||
+            !string.Equals(
+                actual.OptionId,
+                expected.OptionId,
+                StringComparison.Ordinal) ||
+            string.Equals(
+                expected.OptionId,
+                "executor.interact",
+                StringComparison.Ordinal) ||
+            actual.NormalizedCommand.Parameters.Any(parameter =>
+                SequentialProjectionParameters.Contains(parameter.Name)) ||
+            SequentialProjectionParameters.Any(name =>
+                expected.NormalizedCommand.Parameters.Count(parameter =>
+                    string.Equals(
+                        parameter.Name,
+                        name,
+                        StringComparison.Ordinal)) != 1))
+        {
+            return false;
+        }
+
+        var withoutDerivedProjection = JsonSerializer
+            .Deserialize<ActionQueueItem>(
+                JsonSerializer.Serialize(expected, JsonDefaults.Options),
+                JsonDefaults.Options);
+        if (withoutDerivedProjection?.NormalizedCommand is null)
+            return false;
+        withoutDerivedProjection.NormalizedCommand.Parameters =
+            withoutDerivedProjection.NormalizedCommand.Parameters
+                .Where(parameter =>
+                    !SequentialProjectionParameters.Contains(parameter.Name))
+                .ToArray();
+        return string.Equals(
+            JsonSerializer.Serialize(actual, JsonDefaults.Options),
+            JsonSerializer.Serialize(
+                withoutDerivedProjection,
+                JsonDefaults.Options),
+            StringComparison.Ordinal);
     }
 }

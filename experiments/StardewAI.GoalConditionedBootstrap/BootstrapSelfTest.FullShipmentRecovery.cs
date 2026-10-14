@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -43,6 +44,37 @@ internal static partial class BootstrapSelfTest
             reasons.Length == 0,
             "A native Full Shipment recovery transition was rejected: " +
             string.Join(",", reasons));
+
+        var movementBefore = RecoverySnapshot(
+            "full-shipment-recovery-movement-before",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1);
+        var movementAfter = RecoverySnapshot(
+            "full-shipment-recovery-movement-after",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1,
+            tileX: 1);
+        AddRecoveryMovementProjectionNoise(movementBefore, afterMove: false);
+        AddRecoveryMovementProjectionNoise(movementAfter, afterMove: true);
+        movementAfter.GameTick = movementBefore.GameTick + 1;
+        var movement = RecoveryFixture(
+            movementBefore,
+            movementAfter,
+            "executor.traverse_connector",
+            "traverse_connector");
+        var movementReasons = ValidateRecovery(
+            movement.Queue,
+            movementBefore,
+            movement.Receipt,
+            movementAfter,
+            movementBefore,
+            required);
+        Require(
+            movementReasons.Length == 0,
+            "Lawful movement-derived recovery noise was treated as persistent " +
+            "state drift: " + string.Join(",", movementReasons));
 
         var legacyExpected = RecoverySnapshot(
             string.Empty,
@@ -383,6 +415,88 @@ internal static partial class BootstrapSelfTest
             active = Available(Array.Empty<object>())
         });
         return snapshot;
+    }
+
+    private static void AddRecoveryMovementProjectionNoise(
+        SnapshotEnvelope snapshot,
+        bool afterMove)
+    {
+        var farm = JsonNode.Parse(snapshot.State["farm"].GetRawText())!
+            .AsObject();
+        farm["machines"] = JsonSerializer.SerializeToNode(Available(new[]
+        {
+            new
+            {
+                qualified_item_id = "(BC)163",
+                machine_probe_cache_tick = afterMove ? 11 : 10,
+                held_item = (string?)null
+            }
+        }));
+        farm["material_inventory_graph"] = JsonSerializer.SerializeToNode(
+            Available(new
+            {
+                inventory_nodes = new[]
+                {
+                    new
+                    {
+                        inventory_kind = "player_inventory",
+                        location_id = afterMove ? "FarmHouse" : "Farm"
+                    }
+                }
+            }));
+        var bins = farm["shipping_bins"]!["value"]!.AsArray();
+        var bin = bins[0]!.AsObject();
+        bin["distance_to_player"] = afterMove ? 68.5 : 1.5;
+        bin["player_within_shipping_range"] = !afterMove;
+        bin["interaction_stand_tile_x"] = afterMove ? 71 : 70;
+        bin["interaction_stand_tile_y"] = afterMove ? 13 : 14;
+        bin["interaction_stand_tile_blocked_reason"] = null;
+        bin["stand_tiles"] = JsonSerializer.SerializeToNode(new[]
+        {
+            new { x = afterMove ? 71 : 70, y = afterMove ? 13 : 14 }
+        });
+        snapshot.State["farm"] = JsonSerializer.SerializeToElement(farm);
+
+        var player = JsonNode.Parse(snapshot.State["player"].GetRawText())!
+            .AsObject();
+        player["active_dialogue_events"] = JsonSerializer.SerializeToNode(
+            Available(afterMove
+                ? new[] { "Introduction", "firstVisit_FarmHouse" }
+                : new[] { "Introduction", "firstVisit_Farm" }));
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(player);
+
+        var quests = JsonNode.Parse(snapshot.State["quests"].GetRawText())!
+            .AsObject();
+        quests["adventure_guild_reward"] = JsonSerializer.SerializeToNode(
+            Available(new
+            {
+                current_location_matches = false,
+                action_tile_x = afterMove ? 11 : 12,
+                action_tile_y = 12
+            }));
+        snapshot.State["quests"] = JsonSerializer.SerializeToElement(quests);
+
+        var progress = JsonNode.Parse(
+            snapshot.State["world_progress"].GetRawText())!.AsObject();
+        progress["game_state_query_unlock_state"] =
+            JsonSerializer.SerializeToNode(Available(new
+            {
+                players = new[]
+                {
+                    new
+                    {
+                        player_id = "123",
+                        stats = new
+                        {
+                            TreesChopped = 1,
+                            stepsTaken = afterMove ? 12 : 9
+                        }
+                    }
+                }
+            }));
+        snapshot.State["world_progress"] =
+            JsonSerializer.SerializeToElement(progress);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
     }
 
     private static (

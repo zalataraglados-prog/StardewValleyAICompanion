@@ -1654,6 +1654,26 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             monsterDailyBudget,
             StringComparison.Ordinal);
         Assert.Contains(
+            "!candidate.RouteDistanceTiles.HasValue",
+            monsterDailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exactCurrentLocationRouteDistanceTiles:",
+            monsterDailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.RouteDistanceEvidencePath",
+            monsterDailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "optionId == \"mining.reach_depth\"",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadIntParameter(\n                        candidate,\n                        \"estimated_movement_tiles\")",
+            candidateIndex.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
             "existing_native_mining_combat_profile",
             monsterDailyBudget,
             StringComparison.Ordinal);
@@ -2659,7 +2679,23 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             rebuild,
             StringComparison.Ordinal);
         Assert.Contains(
-            "Unbound source ranking has no unique current candidate.",
+            "$sourceQueue.items",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "acquisition_source_candidate_id",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$matchedCurrentCandidates.Count -ne 1",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Queue-bound source candidate is not uniquely ",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sourceParameters = @($matchedCurrentCandidates[0].parameters)",
             rebuild,
             StringComparison.Ordinal);
         Assert.Contains(

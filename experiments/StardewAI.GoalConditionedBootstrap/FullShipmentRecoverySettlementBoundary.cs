@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -117,8 +118,15 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
         "crop_catalog",
         "debris",
         "initial_pet_adoption",
+        "material_inventory_graph",
         "pets",
         "warps"
+    };
+
+    private static readonly HashSet<string> VolatileQuestFields = new(
+        StringComparer.Ordinal)
+    {
+        "adventure_guild_reward"
     };
 
     internal static bool TryProject(
@@ -198,7 +206,7 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
                     continue;
                 rows.Add(new KeyValuePair<string, JsonElement>(
                     domain.Key + "." + field.Name,
-                    NormalizeEnvelope(field.Value)));
+                    NormalizeEnvelope(domain.Key, field.Name, field.Value)));
             }
         }
         return HashCanonical(rows);
@@ -207,9 +215,13 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
     private static bool IsVolatile(string domain, string field) =>
         domain == "time" && VolatileTimeFields.Contains(field) ||
         domain == "player" && VolatilePlayerFields.Contains(field) ||
-        domain == "farm" && VolatileFarmFields.Contains(field);
+        domain == "farm" && VolatileFarmFields.Contains(field) ||
+        domain == "quests" && VolatileQuestFields.Contains(field);
 
-    private static JsonElement NormalizeEnvelope(JsonElement value)
+    private static JsonElement NormalizeEnvelope(
+        string domain,
+        string field,
+        JsonElement value)
     {
         if (value.ValueKind != JsonValueKind.Object ||
             !value.TryGetProperty("status", out var status))
@@ -226,11 +238,68 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
                 : status.GetRawText(),
             value = fieldValue.ValueKind == JsonValueKind.Undefined
                 ? (JsonElement?)null
-                : fieldValue.Clone(),
+                : NormalizeFieldValue(domain, field, fieldValue),
             reason = reason.ValueKind == JsonValueKind.String
                 ? reason.GetString()
                 : null
         });
+    }
+
+    private static JsonElement NormalizeFieldValue(
+        string domain,
+        string field,
+        JsonElement value)
+    {
+        var node = JsonNode.Parse(value.GetRawText());
+        if (node is null)
+            return value.Clone();
+
+        if (domain == "farm" && field == "machines" &&
+            node is JsonArray machines)
+        {
+            foreach (var machine in machines.OfType<JsonObject>())
+                machine.Remove("machine_probe_cache_tick");
+        }
+        else if (domain == "farm" && field == "shipping_bins" &&
+                 node is JsonArray bins)
+        {
+            foreach (var bin in bins.OfType<JsonObject>())
+            {
+                bin.Remove("distance_to_player");
+                bin.Remove("player_within_shipping_range");
+                bin.Remove("interaction_stand_tile_x");
+                bin.Remove("interaction_stand_tile_y");
+                bin.Remove("interaction_stand_tile_blocked_reason");
+                bin.Remove("stand_tiles");
+            }
+        }
+        else if (domain == "player" && field == "active_dialogue_events" &&
+                 node is JsonArray dialogueEvents)
+        {
+            for (var index = dialogueEvents.Count - 1; index >= 0; index--)
+            {
+                if (dialogueEvents[index]?.GetValueKind() ==
+                        JsonValueKind.String &&
+                    dialogueEvents[index]!.GetValue<string>()
+                        .StartsWith("firstVisit_", StringComparison.Ordinal))
+                {
+                    dialogueEvents.RemoveAt(index);
+                }
+            }
+        }
+        else if (domain == "world_progress" &&
+                 field == "game_state_query_unlock_state" &&
+                 node is JsonObject unlockState &&
+                 unlockState["players"] is JsonArray players)
+        {
+            foreach (var player in players.OfType<JsonObject>())
+            {
+                if (player["stats"] is JsonObject stats)
+                    stats.Remove("stepsTaken");
+            }
+        }
+
+        return JsonSerializer.SerializeToElement(node);
     }
 
     private static string HashCanonical(

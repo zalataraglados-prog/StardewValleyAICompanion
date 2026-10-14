@@ -88,6 +88,75 @@ internal static partial class BootstrapSelfTest
             "A valid sequential non-rebound queue receipt was rejected: " +
             string.Join(",", reasons));
 
+        var legacyNonInteraction = CloneQueueItem(first);
+        legacyNonInteraction.OptionId = "executor.pickup_debris";
+        legacyNonInteraction.NormalizedCommand.Parameters =
+            legacyNonInteraction.NormalizedCommand.Parameters
+                .Where(parameter => parameter.Name is not
+                    "compiler_context.player_location_before_step" and not
+                    "compiler_context.player_tile_x_before_step" and not
+                    "compiler_context.player_tile_y_before_step")
+                .ToArray();
+        var expectedWithProjection = CloneQueueItem(legacyNonInteraction);
+        expectedWithProjection.NormalizedCommand.Parameters =
+            expectedWithProjection.NormalizedCommand.Parameters.Concat(new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "compiler_context.player_location_before_step",
+                    Value = "Farm"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "compiler_context.player_tile_x_before_step",
+                    Value = "10"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "compiler_context.player_tile_y_before_step",
+                    Value = "20"
+                }
+            }).ToArray();
+        var legacyEffective = JsonSerializer.SerializeToElement(
+            legacyNonInteraction,
+            JsonDefaults.Options);
+        Require(
+            ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(
+                legacyEffective,
+                expectedWithProjection,
+                expectedWithProjection.NormalizedCommand.StateHash),
+            "A legacy non-interaction receipt differing only by derived " +
+            "sequential projection metadata was rejected.");
+
+        var incompleteExpectedProjection = CloneQueueItem(
+            expectedWithProjection);
+        incompleteExpectedProjection.NormalizedCommand.Parameters =
+            incompleteExpectedProjection.NormalizedCommand.Parameters
+                .Where(parameter => parameter.Name !=
+                    "compiler_context.player_tile_y_before_step")
+                .ToArray();
+        Require(
+            !ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(
+                legacyEffective,
+                incompleteExpectedProjection,
+                incompleteExpectedProjection.NormalizedCommand.StateHash),
+            "An incomplete expected sequential projection admitted a legacy " +
+            "receipt.");
+
+        var legacyInteract = CloneQueueItem(legacyNonInteraction);
+        var expectedInteract = CloneQueueItem(expectedWithProjection);
+        legacyInteract.OptionId = "executor.interact";
+        expectedInteract.OptionId = "executor.interact";
+        Require(
+            !ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(
+                JsonSerializer.SerializeToElement(
+                    legacyInteract,
+                    JsonDefaults.Options),
+                expectedInteract,
+                expectedInteract.NormalizedCommand.StateHash),
+            "A legacy interaction receipt missing sequential projection " +
+            "metadata was admitted.");
+
         var incorrectlyRebound = CloneQueueItem(second);
         incorrectlyRebound.NormalizedCommand.StateHash =
             intermediateStateHash;
