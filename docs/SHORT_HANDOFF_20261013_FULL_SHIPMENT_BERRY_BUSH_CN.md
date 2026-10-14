@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生浆果灌木
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-berry-bush-harvest`。
 - 严格运行时证据：`11/26`，剩余 `15` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -26,7 +26,7 @@
 - 完整原生样本：`passed`，rollout proof 为完整验证链。
 - production evidence index：`11/26`，`native_bush_shake` 为 `verified_exact_native_sample`。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 执行 `ginger_harvest_sample / full_shipment:item:829 / (O)829 / native_ginger_harvest`。先审查并复用现有 `foraging.harvest_ginger -> executor.harvest_ginger` 候选、编译、执行与回执链，只补严格路线轴和 Full Shipment proof 缺口。不要复制执行器，不要重跑已通过的 11 层，不要触碰或提交 `local-data/`。
 

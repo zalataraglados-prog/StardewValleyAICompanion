@@ -15,6 +15,6 @@
 - 回归：Core 2162/2162、Backend 155/155、Release 0 warnings / 0 errors。
 - 冻结指纹：`d145570835f06f8ffb14460ce1107950a4aed243939ed60ee08c583bc17a97e9`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 下一切片为 `social.watch_movie`：先反编译并冻结购票、邀请、放映、同伴反应、奖励和一次性状态，再划分模型选择与既有社交/商店/菜单机械层。`minigame.play_junimo_kart` 继续暂缓；正式全量训练尚未开始。

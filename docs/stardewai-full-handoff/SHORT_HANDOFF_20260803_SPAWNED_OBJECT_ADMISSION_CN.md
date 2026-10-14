@@ -25,7 +25,7 @@
 `artifacts/runtime-spawned-object-smoke/runtime-spawned-object-smoke-20260803-145000/summary.json`。
 五类均通过原生 `GameLocation.checkAction` 移除精确对象，并匹配背包数量、品质和两类技能经验。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 继续按权威字典依赖顺序选择下一个“已有完整链但尚未五门准入”的模型级候选。正式生产轨迹、
 跨存档长期 rollout、manifest/checkpoint、第三年爷爷 21 分闭环和 Product Executor 仍未完成，

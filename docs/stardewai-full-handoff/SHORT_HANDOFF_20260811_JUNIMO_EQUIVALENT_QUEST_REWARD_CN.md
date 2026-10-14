@@ -4,7 +4,7 @@
 
 > 2026-08-30 策略更新：EVD-307 已将 Junimo Kart `timed_equivalent` 扩展到训练、联机陪玩和专用房主中的 AI actor。下文“只允许 training_singleplayer”是历史运行证据范围，不再是当前限制；`native_perfect` 仍严格后置为训练完成后的 `PlayerCommandOnly` 代打。
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 动作对账：113 registered / 177 semantic / 112 compiler-bound / 64 catalogued-blocked。
 - 原生分母：320 surfaces / 428 branches / 150 map tokens，三类 blocking 均为 0。
@@ -25,7 +25,7 @@
 - `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260811-194648/summary.json`
 - `artifacts/runtime-quest-reward-claim/runtime-quest-reward-claim-20260811-195512/summary.json`
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 继续从 64 个 `catalogued_blocked` 语义项中选择依赖独立、可复用现有执行引擎且能形成原生回执的下一项；
 不要重新展开 Junimo 原生完美控制器，除非任务明确切换到“玩家完美存档辅助”阶段。正式全量训练仍未准入。

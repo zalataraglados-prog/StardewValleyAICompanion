@@ -16,7 +16,7 @@
 - full snapshot schema `148/132/16/0`；KnowledgeCompiler `585/585`、blocking `0`。
 - 对账 `184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`；原生分母 `322 surfaces / 448 branches / 150 map tokens` 不变。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 - 下一切片是独立 `island.field_office_survey`。当前透明桥已经提供 Survey action tiles、`plantsRestoredLeft/Right`、`hasFailedSurveyToday`、下一题和固定答案 22/18、finale readiness。
 - 需要补候选、DailyPlan、fresh 编译、类型化请求和原生调查对话矩阵，覆盖正确答案、错误答案当日锁、两题顺序、奖励/finale 和次日重置。复用通用对话原语，但不得把调查塞入捐赠执行器或借用 EVD-302 的运行证据。

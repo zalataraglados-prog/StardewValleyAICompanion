@@ -1,6 +1,6 @@
 # StardewAI 短交接 2026-07-14
 
-## 当前结论
+## 当时结论（历史快照）
 
 项目当前唯一正在处理的主阻塞是钓鱼执行器与 SMAPI 4.5.2 的输入兼容性，
 不是透明字段缺失，也不是候选/编译队列没有生成。
@@ -79,7 +79,7 @@ worker 调用。当前 OpenCode 任务先独立收口；之后只审计其补丁
 - 控制端已将原样草稿存档为沙箱提交 `86d1aa1`，提交说明明确标为
   `wip: preserve rejected fishing input draft`；后续只能审计/参考，禁止直接合并。
 
-## 下一步 TODO
+## 当时后续计划（已作废，仅历史） TODO
 
 1. 等当前 OpenCode 任务结束；在约 16:00 前不新增 worker 调用。
 2. 分别审计 OpenCode 产物与 `fishing-smapi-input-fix` 未提交 diff，选择语义正确

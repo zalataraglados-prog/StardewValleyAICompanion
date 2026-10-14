@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生野树种子
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-wild-tree-seed`。
 - 严格运行时证据：`15/26`，剩余 `11` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -16,6 +16,6 @@
 - 最终规则下既有 14 层全部重建通过；加入本层后的索引为 `15/26`，`formal_product_training_authorized=false`。
 - v1 是 `wild_tree:9` 日历占位的失败诊断，不得作为正式 proof 引用。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 执行 `spring_onion_harvest_sample / full_shipment:item:399 / (O)399 / native_spring_onion_harvest`。复用既有春葱透明读、`foraging.harvest_spring_onions` 计划编译和原生 `executor.harvest_crop`，只闭合严格 Full Shipment evidence；不得重跑已通过的 15 层，不得触碰或提交 `local-data/`。

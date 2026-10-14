@@ -5,19 +5,19 @@
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
 
-## 2026-10-11 Full Shipment 晶球层原生准入
+## 历史记录 · 2026-10-11 Full Shipment 晶球层原生准入
 
-当前 production evidence index 为 `7/26`，剩余 `19` 层。`native_geode_drop` 已按 `full_shipment:item:386 / (O)386 / geode:791:1:random:6` 完成 exact native sample：Golden Coconut `(O)791`、背包槽位、Blacksmith/Clint 柜台、25g、原生 RNG 精确输出 5 个铱矿、日内预算、原生动画、fresh terminal、reservation settlement、checkpoint 与独立 rollout proof 均通过。该路线只在实时透明快照存在精确 `processing.crack_geode` 候选时启用，并复用唯一 `executor.crack_geode`，没有第二套开晶球执行器。
+当时 production evidence index 为 `7/26`，剩余 `19` 层。`native_geode_drop` 已按 `full_shipment:item:386 / (O)386 / geode:791:1:random:6` 完成 exact native sample：Golden Coconut `(O)791`、背包槽位、Blacksmith/Clint 柜台、25g、原生 RNG 精确输出 5 个铱矿、日内预算、原生动画、fresh terminal、reservation settlement、checkpoint 与独立 rollout proof 均通过。该路线只在实时透明快照存在精确 `processing.crack_geode` 候选时启用，并复用唯一 `executor.crack_geode`，没有第二套开晶球执行器。
 
 同一路线在执行前中断后留下的 active material/currency reservation，只有 `SourceStateHash` 与新快照一致才允许幂等复用；否则必须通过现有 `claim_replacement_required` 原子 upsert 重绑。下一固定高风险顺序为商店购买、社区中心奖励，已通过的晶球样本不得重复消耗游戏运行资源。`formal_product_training_authorized=false` 保持不变。
 
-## 2026-10-08 确定性规则升级后的证据重基
+## 历史记录 · 2026-10-08 确定性规则升级后的证据重基
 
 已验证的原生动作不会因为上游确定性规则升级而被直接丢弃，也不能继续引用已经漂移的规划产物。标准处理顺序是：复制原 artifact，使用 `Resume-RuntimeFullShipmentAcquisitionProof.ps1 -RebuildPlanning` 从证明自身绑定的权威输入重建规划与承诺，强制保留同一 route occurrence，再用新队列严格复核旧原生 execution receipt。Sap 还必须重新验证获取、投递、睡眠结算的 recurrence prefix。任一身份、动作或状态变化不匹配时均失败关闭，并改为安排新的交互式原生采证。
 
-当前 Sap 与放射性矿 anchor 已按此流程重基，并由独立 production evidence index 复核为 `anchor_evidence_verified`。这只恢复了两个 anchor 的当前有效性，不代表 7 个 high-risk 和其余 standard 分层已完成，也不改变训练授权为 `false` 的状态。
+当时 Sap 与放射性矿 anchor 已按此流程重基，并由独立 production evidence index 复核为 `anchor_evidence_verified`。这只恢复了两个 anchor 的当时有效性，不代表 7 个 high-risk 和其余 standard 分层已完成，也不改变训练授权为 `false` 的状态。
 
-## 2026-10-05 Full Shipment 里程碑采证执行顺序
+## 历史记录 · 2026-10-05 Full Shipment 里程碑采证执行顺序
 
 “重新校验 anchor”严格指 production evidence index 在首个非 anchor 游戏场景前独立重建共享 settlement、rollout receipt、权威输入哈希和精确 stratum/route identity；仅有 summary 或引用文件不构成准入。`all` 批次可从零生成两个 anchor，但同样必须先通过这道前置验真，才会进入高风险层。
 
@@ -25,35 +25,35 @@
 
 无交互桌面或 SSH 会话只允许使用 `-EvidencePreflightOnly` 重建并验收现有 evidence；该模式在任何游戏 runner 前退出，不能生成新的原生样本。`-PlanOnly` 仍只核对计划和摘要入口，不得被解释为 production evidence 验真。
 
-当前静态分母已重新计算为 `154/641/26` 且没有 blocker；26 个 runner 场景经完整执行签名对账后恰好覆盖 26 层。原生采证不再人工逐条展开，而由 `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 执行：先导入并重新校验 Sap/放射性矿石 anchor，再跑树液收集器、怪物掉落、地点钓获、蚯蚓地、晶球、商店和社区中心奖励 7 个高风险层；全部通过后再批量补标准层。每层失败即停、无自动重试、保留 checkpoint 与完整产物。
+当时静态分母已重新计算为 `154/641/26` 且没有 blocker；26 个 runner 场景经完整执行签名对账后恰好覆盖 26 层。原生采证不再人工逐条展开，而由 `Invoke-RuntimeFullShipmentEvidenceMilestone.ps1` 执行：先导入并重新校验 Sap/放射性矿石 anchor，再跑树液收集器、怪物掉落、地点钓获、蚯蚓地、晶球、商店和社区中心奖励 7 个高风险层；全部通过后再批量补标准层。每层失败即停、无自动重试、保留 checkpoint 与完整产物。
 
 退出条件不是“脚本跑完”，而是每个 stratum 都有精确 route occurrence、原生 `applied/verified`、fresh 终态、独立 rollout proof，且最终 `full_shipment_runtime_sample_evidence_index.v1` 重新计算为 `26/26`。在此之前 `formal_product_training_authorized=false`。
 
-## 2026-10-05 runtime evidence 编排边界
+## 历史记录 · 2026-10-05 runtime evidence 编排边界
 
 共享运行时证据基础设施位于 `scripts/lib/RuntimeEvidenceCommon.ps1`：只负责文件与 JSON、快照/HTTP、环境与进程生命周期，以及对唯一 LiveTrainingLoop 队列入口的参数化调用。Full Shipment/Sap 的目标语义、权威来源身份、夹具、出货和 recurrence 断言继续留在 `Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1`。后续样本可以复用通用基础设施，但不得复制 planner/compiler/executor/verifier，也不得把物品或目标规则下沉到通用库。
 
 该拆分不改变训练准入：`26/26` 仍仅表示 runner 入口配置完整。先做代表性原生抽样和共享离线回归，再在里程碑统一重建 production evidence index；索引与其他训练门未完整验收前，`formal_product_training_authorized=false`。
 
-## 2026-10-05 Full Shipment 入口配置完成
+## 历史记录 · 2026-10-05 Full Shipment 入口配置完成
 
-26 个权威运行时分层均已接入共享样本 runner，当前配置覆盖为 `26/26`。最后的 `native_location_fish_spawn` 通过透明完整钓获分布绑定 `location_fish:Town:3 -> (O)388`，没有把非鱼物品伪装成 Master Angler 鱼种，也没有建立第二套钓鱼执行器。
+26 个权威运行时分层均已接入共享样本 runner，当时配置覆盖为 `26/26`。最后的 `native_location_fish_spawn` 通过透明完整钓获分布绑定 `location_fish:Town:3 -> (O)388`，没有把非鱼物品伪装成 Master Angler 鱼种，也没有建立第二套钓鱼执行器。
 
 共享 runner 的场景无关编排拆分已经完成。下一阶段不是继续增加入口，而是先导入并独立重验两个 anchor，再按高风险、标准批次执行代表性原生抽样，最后统一重建 26 层 production evidence index。只有新索引全部独立验收，才能改变 `formal_product_training_authorized=false`。
 
-## 2026-10-05 Full Shipment 入口补齐状态更新
+## 历史记录 · 2026-10-05 Full Shipment 入口补齐状态更新
 
-权威 requirement/lowering 的 26 个运行时分层仍是唯一分母。社区中心奖励已按 `bundle:Bulletin Board/33:reward -> (O)336` 接入共享样本 runner，复用唯一的原生领奖链；当前为 `25/26` 个可运行入口、1 个入口缺失。这只是编排覆盖，不是生产证据覆盖。
+权威 requirement/lowering 的 26 个运行时分层仍是唯一分母。社区中心奖励已按 `bundle:Bulletin Board/33:reward -> (O)336` 接入共享样本 runner，复用唯一的原生领奖链；当时为 `25/26` 个可运行入口、1 个入口缺失。这只是编排覆盖，不是生产证据覆盖。
 
 后续只剩 `native_location_fish_spawn`。先证明现有钓鱼产品动作可表达权威来源；只有现有动作确实缺少必要原生交互时才补动作，不得为 Full Shipment 另建执行器。入口全部装配后再按三层测试制度抽样回放，并仅在训练准入里程碑统一重建 26 层 production evidence index。
 
-## 2026-10-05 Full Shipment 入口补齐状态
+## 历史记录 · 2026-10-05 Full Shipment 入口补齐状态
 
-权威 requirement/lowering 的 26 个运行时分层已重新枚举并作为唯一分母。机器 flavored/query、野树树液收集器、怪物掉落、地点蚯蚓地、晶球掉落和商店购买已加入共享样本 runner，当前为 `24/26` 个可运行入口、2 个入口缺失；这只是编排覆盖，不是生产证据覆盖。商店入口按透明 `shop_id` 与物品身份约束，复用唯一购买执行链。
+权威 requirement/lowering 的 26 个运行时分层已重新枚举并作为唯一分母。机器 flavored/query、野树树液收集器、怪物掉落、地点蚯蚓地、晶球掉落和商店购买已加入共享样本 runner，当时为 `24/26` 个可运行入口、2 个入口缺失；这只是编排覆盖，不是生产证据覆盖。商店入口按透明 `shop_id` 与物品身份约束，复用唯一购买执行链。
 
 后续入口顺序固定为：奖励物、地点鱼。每一层先证明现有产品动作可表达权威来源；只有现有动作确实缺少必要原生交互时才补动作，不得为 Full Shipment 另建执行器。入口全部装配后再按三层测试制度抽样回放，并仅在训练准入里程碑统一重建 26 层 production evidence index。
 
-## 2026-10-05 验证路径与退出条件修正
+## 历史记录 · 2026-10-05 验证路径与退出条件修正
 
 全量运行时证明不再作为每次代码改动的默认测试。后续固定采用以下顺序：
 
@@ -63,121 +63,121 @@
 
 本轮 Sap 当前版本证明 `runtime-full-shipment-sap-refresh-20261005-183733` 已完整通过；放射性矿石证明 `runtime-full-shipment-radioactive-node-20261005-134024` 已通过。防风草重放被主动停止且不计入新索引。部署层新增 `-NoBuild` 陈旧产物拒绝与部署 SHA-256 校验，以保证测试源码、构建输出和实际 Mods DLL 是同一版本。
 
-## 2026-10-05 Full Shipment 树苔藓层接入共享清障内核
+## 历史记录 · 2026-10-05 Full Shipment 树苔藓层接入共享清障内核
 
 `native_tree_moss_harvest` 现以 `(O)Moss`、`Tree.CreateMossItem` 和 `foraging.harvest_tree_moss` 为唯一代表身份。样本夹具只建立合法原生前态；规划、编译、移动、镰刀生命周期、苔藓掉落和回执全部复用现有树苔藓链。该层不会与普通树产物或砍树层合并，也不新增并行动作实现。
 
 异机守卫 `17/17`、game-free `138/138`、Bootstrap Release clean。已装配待原生运行的分层为 14，尚未装配 10；生产 coverage 仍为 `2/26`。
 
-## 2026-10-05 Full Shipment 样本路线类型前置门
+## 历史记录 · 2026-10-05 Full Shipment 样本路线类型前置门
 
 共享样本 runner 已把场景身份扩展为 `requirement_id + qualified_item_id + expected route_kind`，并在 execution binding 建成后、调用游戏执行器前核对完整三元组。该门专门阻止同一物品的多来源路线串层；错误选择不会再消耗原生运行时间，也不能依赖后续 resume 才暴露。
 
 异机守卫 `16/16`、game-free `137/137`、Bootstrap Release `0 warning / 0 error`。此控制门不改变 `2/26` 的生产证据分子，也不放宽任何训练准入条件。
 
-## 2026-10-05 Full Shipment 太阳能板产物层接入共享机器收取链
+## 历史记录 · 2026-10-05 Full Shipment 太阳能板产物层接入共享机器收取链
 
 `native_solar_panel_output` 现按唯一身份 `machine:(BC)231:OutputSolarPanel -> (O)787` 接入，requirement 为 `full_shipment:item:787`，endpoint 为 `farm.collect_machine_outputs`。透明桥保留专用太阳能板状态和权威来源，动作层复用共享机器收取链；夹具不伪造太阳能板建造支持项。
 
 异机守卫 `15/15`、game-free `136/136`、Bootstrap Release `0 warning / 0 error`。该入口尚未产生 fresh Full Shipment receipt 与 rollout proof，生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 机器直接产物层接入现有机器链
+## 历史记录 · 2026-10-05 Full Shipment 机器直接产物层接入现有机器链
 
 `machine_output` 现以蘑菇树桩 `(BC)128` 的 `(O)257` 作为代表，绑定 `full_shipment:item:257 / farm.collect_machine_outputs`。样本只在 proof 根外建立 ready machine；正式路径继续复用唯一的机器投影、候选、DailyPlan、编译器、输出收取执行器和 verifier。采购、转移、容量、投料和加工支持 lineage 不在夹具中伪造完成。
 
-异机守卫 `14/14`、game-free `135/135`、Bootstrap Release `0 warning / 0 error`。`machine_output` 与 `native_machine_item_query_output` 保持独立分层；后者尚未装配。当前层仍需 fresh receipt 与 rollout proof，生产覆盖保持 `2/26`。
+异机守卫 `14/14`、game-free `135/135`、Bootstrap Release `0 warning / 0 error`。`machine_output` 与 `native_machine_item_query_output` 保持独立分层；后者尚未装配。当时层仍需 fresh receipt 与 rollout proof，生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 鱼塘产物层接入既有收取链
+## 历史记录 · 2026-10-05 Full Shipment 鱼塘产物层接入既有收取链
 
 `native_fish_pond_output` 现以鲟鱼鱼塘的鱼籽 `full_shipment:item:812 / (O)812 / fishing.service_fish_ponds` 作为代表。proof 根外夹具建立 ready output，正式链继续使用现有鱼塘投影、候选、DailyPlan、编译器、原生 `checkAction` 执行和 verifier；鱼塘建造支持项仍由既有静态 lineage 负责。
 
 异机守卫 `13/13`、game-free `134/134`、Bootstrap Release `0 warning / 0 error`。历史鱼塘 smoke 已验证 `(O)812` 收取链，但新的 Full Shipment receipt 与 rollout proof 尚未产生，生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 高级动物产物层复用动物链
+## 历史记录 · 2026-10-05 Full Shipment 高级动物产物层复用动物链
 
 `native_farm_animal_deluxe_produce` 现以大瓶牛奶 `full_shipment:item:186 / (O)186 / farm.collect_animal_products` 作为代表。它和普通牛奶共用 proof 根外的 White Cow/Milk Pail 夹具配置以及唯一的动物产物候选、DailyPlan、编译器、原生执行器和 verifier；route kind 与 requirement 仍分别严格绑定。
 
 异机守卫 `12/12`、game-free `133/133`、Bootstrap Release `0 warning / 0 error`。本次只完成可采证入口，尚无 `(O)186` 的 fresh Full Shipment receipt 与 rollout proof，生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 基础动物产物层接入既有挤奶链
+## 历史记录 · 2026-10-05 Full Shipment 基础动物产物层接入既有挤奶链
 
 `native_farm_animal_produce` 现以牛奶 `full_shipment:item:184 / (O)184 / farm.collect_animal_products` 作为运行时分层代表。权威 route occurrence 来自 Brown Cow/White Cow；样本复用现有动物透明投影、DailyPlan、动作编译器、Milk Pail 原生执行和 verifier，不增加鸡蛋专用或并行动物系统。建筑与购买支持项仍由原有静态 lineage 负责，夹具设置不进入 acquisition proof 根。
 
 异机守卫 `11/11`、game-free `132/132`、Bootstrap Release `0 warning / 0 error`。EVD-222 已精确验证 `(O)184` 的原生工具生命周期，但新的 Full Shipment rollout proof 仍待采集，生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 果树产物层接入既有原生链
+## 历史记录 · 2026-10-05 Full Shipment 果树产物层接入既有原生链
 
 `native_fruit_tree_produce` 现以樱桃 `full_shipment:item:638 / (O)638 / foraging.harvest_fruit_tree` 作为运行时分层代表。共享 forage 场景使用现有 `fruit_tree / single_normal / Farm 64,15` 夹具及唯一的果树候选、DailyPlan、编译器、执行器和 verifier；没有为苹果或樱桃创建第二套动作实现。
 
 异机守卫 `10/10`、game-free `131/131`、Bootstrap Release `0 warning / 0 error`。既有果树 action smoke 证明底层链可精确产出 `(O)638`，但不等于新的 Full Shipment rollout proof；生产覆盖仍为 `2/26`。
 
-## 2026-10-05 Full Shipment 地点觅食物层接入 spawned-object 链
+## 历史记录 · 2026-10-05 Full Shipment 地点觅食物层接入 spawned-object 链
 
 `native_location_forage_spawn` 已按 `full_shipment:item:16 / (O)16 / foraging.collect_spawned_objects` 加入共享 forage 场景。普通 profile 在 Forest 建立原生 spawned object，随后仍由现有候选、DailyPlan、编译器、执行器和 fresh verifier 完成，不新增拾取实现。
 
 异机守卫 `9/9`、game-free `130/130`、Bootstrap Release 通过。EVD-211 证明底层链可复用，但本层仍需新的 Full Shipment rollout proof；生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 春葱层并入共享 crop 场景
+## 历史记录 · 2026-10-05 Full Shipment 春葱层并入共享 crop 场景
 
 `native_spring_onion_harvest` 已按 `full_shipment:item:399 / (O)399 / foraging.harvest_spring_onions` 接入。防风草和春葱共用同一 crop fixture 编排及 `executor.harvest_crop`，仅场景参数分别绑定普通种子 `472` 与原生 forage crop `1`；这消除了防风草专用分支，没有形成第二套作物链。
 
 异机守卫 `8/8`、game-free `129/129`、Bootstrap Release 通过。EVD-335 的历史原生执行可用于确认复用方向，但本层仍需 fresh Full Shipment acquisition rollout proof，生产覆盖保持 `2/26`。
 
-## 2026-10-05 Full Shipment 岛屿棕榈层采用精确跨地点根
+## 历史记录 · 2026-10-05 Full Shipment 岛屿棕榈层采用精确跨地点根
 
 `native_wild_tree_seed` 已按 `full_shipment:item:88 / (O)88 / wild_tree:6 / foraging.harvest_tree_product` 加入共享样本 runner。场景配置显式绑定 `IslandSouth 20,20`，证明根校验从写死 Farm 改为比较场景的精确地点；非 forage 场景默认仍为 Farm，完整 Sap recurrence 的 Farm 与第 0 天约束均保留。
 
 异机守卫 `7/7`、game-free `128/128`、Bootstrap Release 通过。该改动不能把历史岛屿棕榈 action smoke 计为 Full Shipment proof；生产覆盖继续为 `2/26`，待原生环境可用后单独采集并重建 rollout。
 
-## 2026-10-05 Full Shipment 野树落种层复用原生树产品链
+## 历史记录 · 2026-10-05 Full Shipment 野树落种层复用原生树产品链
 
 `native_wild_tree_seed_drop` 已按 `full_shipment:item:408 / (O)408 / wild_tree:2:0 / foraging.harvest_tree_product` 加入共享样本 runner，代表 fixture 为 Farm 上的 `wild_tree / fall_hazelnut`。它复用现有树产品候选、DailyPlan、编译器、执行器与 verifier；历史原生 smoke 已证明该动作可精确产出榛子，但不能替代新的 acquisition rollout proof。
 
 异机守卫 `6/6`、game-free `127/127`、Bootstrap Release 通过，生产计数仍为 `2/26`。相邻的 `native_wild_tree_seed` 代表 `(O)88` 需要 `IslandSouth` 根，将在独立切片中显式处理地点合同，不通过把 Farm 断言改成宽松任意地点来顺带放行。
 
-## 2026-10-05 Full Shipment 茶树分层接入共享 forage 配置
+## 历史记录 · 2026-10-05 Full Shipment 茶树分层接入共享 forage 配置
 
 `native_tea_bush_harvest` 使用 `full_shipment:item:815 / (O)815 / Bush.GetShakeOffItem / foraging.harvest_bushes`。现有 `tea_leaf` fixture 与 `executor.harvest_bush` 已有原生 action smoke，因此本轮只给同一 Full Shipment 样本 runner 增加场景配置和严格断点映射。浆果、姜、茶叶不各自维护 fixture 分支，也不新增 planner/compiler/executor。
 
-异机 game-free `126/126` 和 Bootstrap Release 通过。茶树仍需新的 Full Shipment acquisition receipt、fresh 终态与独立 rollout proof 才能计入生产分层；当前严格覆盖保持 `2/26`。原生环境可用时的采证顺序扩展为“浆果 -> 姜 -> 茶叶”，每层单独通过 evidence index 后才增加计数。
+异机 game-free `126/126` 和 Bootstrap Release 通过。茶树仍需新的 Full Shipment acquisition receipt、fresh 终态与独立 rollout proof 才能计入生产分层；当时严格覆盖保持 `2/26`。原生环境可用时的采证顺序扩展为“浆果 -> 姜 -> 茶叶”，每层单独通过 evidence index 后才增加计数。
 
-## 2026-10-05 Full Shipment 姜分层已完成运行入口适配
+## 历史记录 · 2026-10-05 Full Shipment 姜分层已完成运行入口适配
 
 `native_ginger_harvest` 的权威身份固定为 `full_shipment:item:829 / (O)829 / foraging.harvest_ginger`。其代表样本使用已有 `dry_standard` 原生夹具和已有姜采集链，夹具只负责建立可验证源，不进入 acquisition proof 根。浆果与姜共用同一 forage fixture 编排、同一 planner/compiler/executor/verifier，不得分别扩展成平行系统。
 
 异机离线验证已通过 Bootstrap Release、route dispatch、Full Shipment 静态可编译性和 Core game-free `125/125`。这只把姜推进到“可采集原生证据”的状态；浆果和姜都没有新的 fresh 游戏回执，生产覆盖仍为 `2/26`。后续先继续准备可复用分层入口，原生环境可用时按“浆果 -> 姜”采集并逐条通过独立 rollout 重建，不能以夹具回执或历史 smoke 直接计数。
 
-## 2026-10-04 Full Shipment 下一层：native bush shake
+## 历史记录 · 2026-10-04 Full Shipment 下一层：native bush shake
 
 `native_bush_shake` 已完成运行入口与断点证明适配，复用唯一的 `foraging.harvest_bushes -> executor.harvest_bush` 链。权威身份固定为 `full_shipment:item:296 / (O)296`，运行夹具仅建立可采浆果灌木，不能进入证明根。样本日期采用夹具后的真实日期；Sap 完整 recurrence 的第 0 天约束保持不变。
 
-离线回归和旧防风草 proof 重放已通过，但当前没有交互桌面会话，尚未获得新的原生执行回执。生产覆盖因此仍为 `2/26`。下一步只能在交互会话可用时采集该样本，完成后机器登记第 3 层；不得以准备完成、历史 action smoke 或夹具设置回执替代正式 acquisition rollout proof。
+离线回归和旧防风草 proof 重放已通过，但当时没有交互桌面会话，尚未获得新的原生执行回执。生产覆盖因此仍为 `2/26`。当时后续计划只能在交互会话可用时采集该样本，完成后机器登记第 3 层；不得以准备完成、历史 action smoke 或夹具设置回执替代正式 acquisition rollout proof。
 
-## 2026-10-04 Full Shipment 运行抽样进度与下一门
+## 历史记录 · 2026-10-04 Full Shipment 运行抽样进度与下一门
 
 生产抽样索引已经从 `1/26` 提升到 `2/26`。Sap 证明 `native_wild_tree_chop_drop`，防风草证明 `harvests_as`；后者使用 1.6.15 反编译确认的普通作物来源字段 `Crop.netSeedIndex=472`，并通过既有候选、dispatch、动作队列、Product Executor、fresh receipt、组合结算和最终独立 rollout 重放。共享出货/睡眠 recurrence 继续只验证一次。
 
 下一门不是继续跑 152 个 Full Shipment 物品，而是处理剩余 24 个运行时抽样层。优先盘点已有原生 smoke 能否补齐同一 acquisition rollout 合同；只有缺少代表证据的层才启动隔离游戏采集。中间阶段允许复用经过完整哈希校验的落盘绑定以减少重复全轴构建，但每条正式 proof 和最终索引仍必须独立重建一次。26 层未齐前不得把 Full Shipment Goal Method 提升为完成，也不得开启正式全量训练。
 
-## 2026-10-03 Full Shipment 运行验证抽样决策
+## 历史记录 · 2026-10-03 Full Shipment 运行验证抽样决策
 
-Full Shipment 的 154 个物品继续由权威字典、来源身份、lowering、编译器和运行时绑定做 `154/154` 静态全覆盖；运行时不再要求逐物品生成 154 条 fresh-save 递归证据。准入按 `route_kind + source evidence + endpoint/supporting options + inline support transitions` 归并为分层样本，当前生产清单为 26 层，每层一条精确原生回执即可，已有 smoke 可复用。完整 `154/154` recurrence 仅是 AI 实际完成游戏目标的能力及最终可选验收，不是 Full Shipment Teacher 覆盖或正式训练的前置条件。首个 Sap `1/154` 证据用于验证公共递归链，后续不得机械追跑剩余 153 项。
+Full Shipment 的 154 个物品继续由权威字典、来源身份、lowering、编译器和运行时绑定做 `154/154` 静态全覆盖；运行时不再要求逐物品生成 154 条 fresh-save 递归证据。准入按 `route_kind + source evidence + endpoint/supporting options + inline support transitions` 归并为分层样本，当时生产清单为 26 层，每层一条精确原生回执即可，已有 smoke 可复用。完整 `154/154` recurrence 仅是 AI 实际完成游戏目标的能力及最终可选验收，不是 Full Shipment Teacher 覆盖或正式训练的前置条件。首个 Sap `1/154` 证据用于验证公共递归链，后续不得机械追跑剩余 153 项。
 
 证据复用必须经过 `full_shipment_runtime_sample_evidence_index.v1` 机器验证：每条 acquisition proof 重新构建后绑定到唯一 route occurrence 和分层签名，公共出货/睡眠尾链则由一条重新构建的 recurrence prefix 单独证明。只读 smoke 名称或文档声明不能计数；索引完成前总覆盖保持 `4/19`。
 
-## 2026-09-28 Full Shipment 结算恢复链统一
+## 历史记录 · 2026-09-28 Full Shipment 结算恢复链统一
 
 第一阶段 21/21 Teacher 的 Full Shipment 方法继续使用唯一的候选、DailyPlan、动作编译器和产品执行器。出货后到睡眠前不再被错误压缩为同一状态：证明层按既有 recovery 的单连接点滚动重规划逐段验真，并在最终 prefix/recurrence evidence 中哈希绑定每段队列、快照和执行回执。中间段不能睡眠或改变日期、Full Shipment 进度与待结算箱内物品，最终跨日仍由原有 ordinary/terminal 睡眠回执负责。该修复不改变目标顺序，下一项仍是从原生 fresh save 取得 Sap 的真实 `1/154` 前缀。
 
-## 2026-09-08 Teacher / Student 收敛覆盖
+## 历史记录 · 2026-09-08 Teacher / Student 收敛覆盖
 
 当前训练解释统一服从 `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`。有限 TeacherOracle 负责独立偏序、DAgger 重标和评测；产品运行时通过唯一 `StrategicPolicy` 入口，在唯一 strict-Pareto 解上保持确定性权威，只让 Student 在 admitted、non-dominated 的不可比较前沿中学习 soft preference。Planner/Compiler/Executor 的现有唯一链保持不变。`teacher_preference`、`native_outcome`、`student_observation` 必须分离，任何 `selected=true` 都不能自行成为正例。
 
 2026-09-25 已落地首个 `StrategicPolicy.SelectMethod -> strategic_decision.v1` 收口实现：唯一 strict-Pareto 分支先于模型解析并保持确定性；不可比较前沿只允许已验证 checkpoint 在 admitted、non-dominated 成员内排序；旧 live-shadow 命令已降为兼容适配器。模型缺失或损坏不阻断确定性唯一解，但在不可比较前沿上失败关闭。学习分支仍为只读，runtime model authority、portfolio commit 和 formal product training 均未准入；下一门仍是独立 19/19 覆盖与单独运行时提升证据，不能把接口完成描述为正式训练或完整陪玩完成。
 
-因此下方历史“checkpoint 已更新”只证明当时的 Product、事务、数据和训练管线能够运行，不证明监督方向正确。当前正式全量训练继续禁用：反向图仍为 2/19 executable、17/19 pending，且现有 `StructuredPolicyTrainer.BuildPairs` 尚未迁移到独立监督来源。Stage 1 先冻结新存档 Year 3 Spring 1 原版 21/21 最强基线；玩家偏好、协作和拟人节奏只在基线后以可关闭适配层加入。
+因此下方历史“checkpoint 已更新”只证明当时的 Product、事务、数据和训练管线能够运行，不证明监督方向正确。当时正式全量训练继续禁用：反向图仍为 2/19 executable、17/19 pending，且现有 `StructuredPolicyTrainer.BuildPairs` 尚未迁移到独立监督来源。Stage 1 先冻结新存档 Year 3 Spring 1 原版 21/21 最强基线；玩家偏好、协作和拟人节奏只在基线后以可关闭适配层加入。
 
-## 2026-09-06 无真人教师与服务器续跑提案
+## 历史记录 · 2026-09-06 无真人教师与服务器续跑提案
 
 为避免现有策略把自己的遗漏选择反复当作正样本，项目已形成“权威目标依赖图 ->
 确定性教师 -> 既有候选/编译/产品执行链 -> fresh 回执 -> 学生模型”的修正方案。该方案不依赖
@@ -197,7 +197,7 @@ Perfection 新增的依赖、透明字段、候选与原生回执仍须进入同
 服务器只允许并发 1、无渲染、克隆存档、有界准入，并须逐日哈希回传。迁移到服务器是为了
 不干扰交互电脑，不代表可以跳过版本、磁盘、性能、来源存档和剧情决策门。
 
-## 2026-09-06 服务器准入实证与后续分工
+## 历史记录 · 2026-09-06 服务器准入实证与后续分工
 
 `r43` 已在 119 服务器完成单并发、隐藏、静音、克隆存档、`--skip-training` 的有界运行。
 确定性教师先后选择 Robin 和 Abigail；既有候选、唯一 DailyPlan/动作编译器及原生执行器
@@ -233,7 +233,7 @@ Perfection 新增的依赖、透明字段、候选与原生回执仍须进入同
 和重标模型到访状态。模型用于压缩长程搜索成本、提高自然度并适应玩家偏好；在老师尚未
 覆盖完整目标图时，模型不能替老师填补未知规则。
 
-## 2026-09-01 正式训练控制面修正（EVD-326）
+## 历史记录 · 2026-09-01 正式训练控制面修正（EVD-326）
 
 正式训练使用 `policy_decision_trajectory.v2 + action_queue.v1 + product_executor.v1` 的唯一版本组合。Harness 轨迹只保留校准用途，禁止进入结构化 checkpoint。两阶段启动必须先 prepare 并冻结 `training_run_manifest.v2`，再使用同一 manifest 拉起 Product Executor、SMAPI 游戏和 LiveTrainingLoop；不得在 launch 时生成第二个 run-id。
 
@@ -241,7 +241,7 @@ Perfection 新增的依赖、透明字段、候选与原生回执仍须进入同
 
 首个 checkpoint 的来源是独立新存档上的 Product bootstrap 校准轨迹：该阶段允许 `--skip-training`，只采集真实 applied/verified/fresh 轨迹并离线构建初始 checkpoint，不称为正式训练。正式 launch 后必须连续完成至少一个真实游戏日，并证明 checkpoint hash 随新增 Product 轨迹更新，才算全量训练已经启动。
 
-## 2026-08-31 训练优先执行顺序与服务器启动门
+## 历史记录 · 2026-08-31 训练优先执行顺序与服务器启动门
 
 EVD-325 后的当前基线为 `228 registered / 230 semantic / 227 compiler-bound / 145 harness dispatch / 145 Product Executor / 151 five-gate / 62 training allowlist / 2 catalogued blocked`。训练优先动作与独立 Product Executor 已闭合；当前顺序固定为：正式轨迹与结构化 checkpoint 重建 -> 启动前恢复探针 -> 服务器全量训练 -> 后置玩家命令动作。`tailoring.dye_item` 属于外观玩家命令，真 `minigame.play_junimo_kart` 属于核心能力训练后的玩家代打扩展，两者不得重新插回训练启动关键路径；AI 自主游玩赛车继续使用已经锁定的定时等价路径。
 
@@ -249,223 +249,223 @@ EVD-325 后的当前基线为 `228 registered / 230 semantic / 227 compiler-boun
 
 服务器启动门要求独立新存档、SMAPI、静音隐藏、run-id/快照绑定、非空正式 allowlist、结构化策略检查点、Product Executor 健康、轨迹与回执持久化、可恢复停机全部通过。Product Executor 已通过本地真实动作、授权和 at-most-once 恢复验收，但服务器编排与正式轨迹/checkpoint 尚未因此自动完成。启动完成标志为至少一个真实游戏日形成连续、可校验的 `policy_decision_trajectory.v1`：选择均在准入范围内，机械动作均由 Product Executor 原生执行，前后快照 fresh 且回执 verified，正式数据集 manifest 和 checkpoint 哈希已经落盘。仅启动游戏、仅运行测试循环、使用 `--skip-training` 或 baseline 聚合器均不算开始全量训练。
 
-## 2026-08-31 普通任务取消玩家命令闭环（EVD-316）
+## 历史记录 · 2026-08-31 普通任务取消玩家命令闭环（EVD-316）
 
 `quest.cancel` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布普通任务日志的完整取消投影，包括精确任务身份、接受/完成/隐藏/每日/待删除状态、`CanBeCancelled`、接受日、剩余日、奖励、当前任务数和同日每日委托标志副作用。特别订单不进入该投影的可执行域；隐藏、已完成、未接受、待删除或原生不可取消任务保留为带诊断的阻断行。上游只有在玩家给出精确指纹、原因和显式确认时才生成候选，默认策略和训练永远看不到取消欲望。
 
-锁定 1.6.15 的原生 `QuestLog` 不显示二次确认框，取消按钮会立即设置普通任务 `accepted=false`、从日志删除，并仅对同日接受的每日委托清除 `acceptedDailyQuest`。生产运行层只创建原生任务日志、点击精确行和 `cancelQuestButton`，然后验证任务移除、接受标志、每日标志、任务数及金钱/完成统计/特别订单不变；生产代码禁止直接写这些状态。隐藏静音矩阵 `4/4` 覆盖两个成功副作用分支及伪造指纹、不可取消任务拒绝。当前对账为 `212 registered / 222 semantic / 211 compiler-bound / 137 harness dispatch / 135 five-gate / 55 allowlist / 10 catalogued blocked / 0 Product Executor`，full snapshot `163/146/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2133/2133`、Backend `155/155`、Release `0 warnings / 0 errors`。Junimo Kart 继续后置；下一实际纵向切片为 `rewards.claim_adventure_guild_reward`。
+锁定 1.6.15 的原生 `QuestLog` 不显示二次确认框，取消按钮会立即设置普通任务 `accepted=false`、从日志删除，并仅对同日接受的每日委托清除 `acceptedDailyQuest`。生产运行层只创建原生任务日志、点击精确行和 `cancelQuestButton`，然后验证任务移除、接受标志、每日标志、任务数及金钱/完成统计/特别订单不变；生产代码禁止直接写这些状态。隐藏静音矩阵 `4/4` 覆盖两个成功副作用分支及伪造指纹、不可取消任务拒绝。当时对账为 `212 registered / 222 semantic / 211 compiler-bound / 137 harness dispatch / 135 five-gate / 55 allowlist / 10 catalogued blocked / 0 Product Executor`，full snapshot `163/146/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2133/2133`、Backend `155/155`、Release `0 warnings / 0 errors`。Junimo Kart 继续后置；下一实际纵向切片为 `rewards.claim_adventure_guild_reward`。
 
-## 2026-08-31 铁匠晶球处理闭环（EVD-315）
+## 历史记录 · 2026-08-31 铁匠晶球处理闭环（EVD-315）
 
 `processing.crack_geode` 已按完整纵向切片闭合，覆盖全部八种锁定基础版晶球。透明桥发布铁匠铺柜台、Clint/工具领取拦截、角色控制状态、库存槽位与容量、25g、晶球/神秘盒计数、金椰子及金核桃前态、季节/技能/矿层/邮件上下文，以及纯本地 RNG 的精确结果或共享 RNG 的完整当季作物族。候选阶段即排除当前不可服务项；跨地图 continuation 只锁定晶球身份和目的，到达后由 fresh 快照重绑全部机械字段。
 
-生产运行层复用共享逐帧移动，只执行 `Blacksmith checkAction -> Process -> GeodeMenu inventory click -> geodeSpot click -> 2700ms native animation -> inventory receipt`。回执覆盖输入消耗、25g、GeodesCracked/MysteryBoxesOpened、首次矿物/文物邮件、矿物领取副作用、首次金椰子互斥结果、团队金核桃和库存守恒；生产代码禁止直接写这些状态。隐藏静音矩阵 `9/9` 覆盖八种输入和伪造计数拒绝。当前对账为 `210 registered / 221 semantic / 209 compiler-bound / 136 harness dispatch / 133 five-gate / 55 allowlist / 11 catalogued blocked / 0 Product Executor`，full snapshot `162/145/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2128/2128`、Backend `155/155`、Release `0 warnings / 0 errors`。Junimo Kart 继续后置；下一实际纵向切片为 `quest.cancel`。
+生产运行层复用共享逐帧移动，只执行 `Blacksmith checkAction -> Process -> GeodeMenu inventory click -> geodeSpot click -> 2700ms native animation -> inventory receipt`。回执覆盖输入消耗、25g、GeodesCracked/MysteryBoxesOpened、首次矿物/文物邮件、矿物领取副作用、首次金椰子互斥结果、团队金核桃和库存守恒；生产代码禁止直接写这些状态。隐藏静音矩阵 `9/9` 覆盖八种输入和伪造计数拒绝。当时对账为 `210 registered / 221 semantic / 209 compiler-bound / 136 harness dispatch / 133 five-gate / 55 allowlist / 11 catalogued blocked / 0 Product Executor`，full snapshot `162/145/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2128/2128`、Backend `155/155`、Release `0 warnings / 0 errors`。Junimo Kart 继续后置；下一实际纵向切片为 `quest.cancel`。
 
-## 2026-08-30 玩家外观定制命令闭环（EVD-314）
+## 历史记录 · 2026-08-30 玩家外观定制命令闭环（EVD-314）
 
 `player.customize` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥覆盖当前外观、巫师神龛 500g 与完整控件域，以及沙漠节替换地图 `DesertFestival` 上的造型师、每日限制、装备回收空位、完整 `Data/MakeoverOutfits` 过滤和原生日存档 RNG 投影。无法在当前目标位置形成 `ready` 服务的请求在上游排除；跨地图请求只保留玩家给定的模式、目标、原因和确认，到达后由 fresh 快照重绑机械字段。
 
-生产运行层复用共享逐帧移动。巫师分支只经 `WizardShrine checkAction -> Yes -> CharacterCustomization(Source.Wizard) native controls -> OK`；沙漠分支只经 `DesertMakeover TouchAction -> native skippable Event -> onEventFinished ReceiveMakeOver`。禁止直接写金钱、外观、装备、每日标志或直接调用 `ReceiveMakeOver`。隐藏静音矩阵 `4/4` 覆盖完整巫师目标、六个 HSV 上边界、伪造金钱拒绝和沙漠造型。当前对账为 `208 registered / 220 semantic / 207 compiler-bound / 135 harness dispatch / 131 five-gate / 54 allowlist / 12 catalogued blocked / 0 Product Executor`，full snapshot `161/144/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2123/2123`、Backend `155/155`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；Junimo Kart 继续后置，下一实际纵向切片为 `processing.crack_geode`。
+生产运行层复用共享逐帧移动。巫师分支只经 `WizardShrine checkAction -> Yes -> CharacterCustomization(Source.Wizard) native controls -> OK`；沙漠分支只经 `DesertMakeover TouchAction -> native skippable Event -> onEventFinished ReceiveMakeOver`。禁止直接写金钱、外观、装备、每日标志或直接调用 `ReceiveMakeOver`。隐藏静音矩阵 `4/4` 覆盖完整巫师目标、六个 HSV 上边界、伪造金钱拒绝和沙漠造型。当时对账为 `208 registered / 220 semantic / 207 compiler-bound / 135 harness dispatch / 131 five-gate / 54 allowlist / 12 catalogued blocked / 0 Product Executor`，full snapshot `161/144/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2123/2123`、Backend `155/155`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；Junimo Kart 继续后置，下一实际纵向切片为 `processing.crack_geode`。
 
-## 2026-08-30 点唱机曲目玩家命令闭环（EVD-313）
+## 历史记录 · 2026-08-30 点唱机曲目玩家命令闭环（EVD-313）
 
 `player.choose_jukebox_track` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布 Saloon 两个固定 `Jukebox` 地块、可达站位、默认与当前音乐上下文、绿雨限制，以及 `Utility.GetJukeboxTracks` 按原生顺序形成的完整曲目目录。目录同时绑定 `Data/JukeboxTracks` 的可用性、`Farmer.songsHeard`、AlternativeTrackIds 规范化和 soundbank 实际存在性；上游只接受带原因和确认的精确已解锁合法曲目，未知、伪造、禁用或绿雨期不合法曲目不会成为候选。
 
-生产运行层复用共享逐帧移动，只经 Saloon `checkAction` 和 `ChooseFromListMenu` 的前进、OK、Cancel 原生点击执行。它不直接调用 `Game1.changeMusicTrack`，不写歌曲解锁、当前音乐或 Mini-Jukebox 状态；Mini-Jukebox 是另一套有持久位置状态的原生能力，不被本动作冒领。隐藏静音矩阵 `3/3` 覆盖首曲、最后曲和伪造索引拒绝。当前对账为 `206 registered / 219 semantic / 205 compiler-bound / 134 harness dispatch / 129 five-gate / 54 allowlist / 13 catalogued blocked / 0 Product Executor`，full snapshot `160/143/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2118/2118`、Backend `153/153`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.customize`。
+生产运行层复用共享逐帧移动，只经 Saloon `checkAction` 和 `ChooseFromListMenu` 的前进、OK、Cancel 原生点击执行。它不直接调用 `Game1.changeMusicTrack`，不写歌曲解锁、当时音乐或 Mini-Jukebox 状态；Mini-Jukebox 是另一套有持久位置状态的原生能力，不被本动作冒领。隐藏静音矩阵 `3/3` 覆盖首曲、最后曲和伪造索引拒绝。当时对账为 `206 registered / 219 semantic / 205 compiler-bound / 134 harness dispatch / 129 five-gate / 54 allowlist / 13 catalogued blocked / 0 Product Executor`，full snapshot `160/143/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2118/2118`、Backend `153/153`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.customize`。
 
-## 2026-08-30 鱼漂外观玩家命令闭环（EVD-312）
+## 历史记录 · 2026-08-30 鱼漂外观玩家命令闭环（EVD-312）
 
 `player.choose_bobber` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布 FishShop `Bobbers` 端点、当前偏好、随机标志、`fishCaught.Count()/2` 原生解锁商、固定 `0..38` 与随机 `-2` 的完整目录、声呐浮标显示覆盖 `39` 和实时菜单身份。上游只接受带原因和确认的精确已解锁样式；锁定、未知、未确认样式不会成为候选。跨地图 continuation 保留同一玩家指令，到达 FishShop 后才从 fresh 快照重建机械终端。
 
-生产运行层复用共享逐帧移动，只经 FishShop `checkAction`、`ChooseFromIconsMenu.receiveLeftClick` 和原生关闭按钮执行；禁止直接写偏好字段或推进 RNG。隐藏静音矩阵 `3/3` 覆盖固定、随机和锁定拒绝。当前对账为 `204 registered / 218 semantic / 203 compiler-bound / 127 five-gate / 54 allowlist / 14 catalogued blocked / 0 Product Executor`，full snapshot `159/142/17/0`、KnowledgeCompiler `585/585` blocking 0。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.choose_jukebox_track`。
+生产运行层复用共享逐帧移动，只经 FishShop `checkAction`、`ChooseFromIconsMenu.receiveLeftClick` 和原生关闭按钮执行；禁止直接写偏好字段或推进 RNG。隐藏静音矩阵 `3/3` 覆盖固定、随机和锁定拒绝。当时对账为 `204 registered / 218 semantic / 203 compiler-bound / 127 five-gate / 54 allowlist / 14 catalogued blocked / 0 Product Executor`，full snapshot `159/142/17/0`、KnowledgeCompiler `585/585` blocking 0。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.choose_jukebox_track`。
 
-## 2026-08-30 联机聊天玩家命令闭环（EVD-311）
+## 历史记录 · 2026-08-30 联机聊天玩家命令闭环（EVD-311）
 
 `multiplayer.send_chat` 已按完整纵向切片闭合并严格保持 `PlayerCommandOnly`。透明桥发布当前发送者、语言、默认颜色、网络角色、消息队列边界、ChatTextBox 宽度和在线收件人的原生枚举/匹配信息。上游只接受带原因和确认的普通全局消息或精确私聊，拒绝任意斜杠命令、控制字符、模糊目标及原生输入宽度无法容纳的文本；fresh 编译器不信任模型提供的机械字段，全部从当前投影重新绑定。
 
-生产运行层只模拟原生聊天框生命周期：激活 ChatBox、逐字符输入 ChatTextBox，再调用 `textBoxEnter`。脏词过滤、全局 AllPlayers/私聊 exact recipient、type-10 网络分发和发送者本地 kind 0/kind 3 回执都由 1.6.15 原版处理；执行器禁止直接调用 `sendChatMessage`/`receiveChatMessage`，且只声明发送路径与本地回执，不伪造远端送达。隐藏静音矩阵 `2/2` 通过。当前对账为 `202 registered / 217 semantic / 201 compiler-bound / 125 five-gate / 54 allowlist / 15 catalogued blocked / 0 Product Executor`，full snapshot `158/141/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2105/2105`、Backend `151/151`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.choose_bobber`。
+生产运行层只模拟原生聊天框生命周期：激活 ChatBox、逐字符输入 ChatTextBox，再调用 `textBoxEnter`。脏词过滤、全局 AllPlayers/私聊 exact recipient、type-10 网络分发和发送者本地 kind 0/kind 3 回执都由 1.6.15 原版处理；执行器禁止直接调用 `sendChatMessage`/`receiveChatMessage`，且只声明发送路径与本地回执，不伪造远端送达。隐藏静音矩阵 `2/2` 通过。当时对账为 `202 registered / 217 semantic / 201 compiler-bound / 125 five-gate / 54 allowlist / 15 catalogued blocked / 0 Product Executor`，full snapshot `158/141/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2105/2105`、Backend `151/151`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；下一实际纵向切片为 `player.choose_bobber`。
 
-## 2026-08-30 联机钱包玩家命令闭环（EVD-310）
+## 历史记录 · 2026-08-30 联机钱包玩家命令闭环（EVD-310）
 
 `multiplayer.manage_wallet` 已按完整纵向切片闭合，但严格保持 `PlayerCommandOnly`。透明桥发布 ManorHouse LedgerBook 端点、当前共享/独立模式、今晚待切换状态、已认领参与者、原生收款人顺序与响应键、共享及个人余额、赠款统计、五项命令门控和两种次日结算投影。上游仅接收带原因和确认的显式命令；fresh 编译器从实时投影重绑全部机械字段，跨地图 continuation 锁定同一操作、收款人和金额。
 
-运行层复用共享 BFS，只通过原生 LedgerBook `checkAction`、`DialogueBox` 和 `DigitEntryMenu` 输入执行。隐藏静音矩阵 `7/7` 覆盖五项即时命令与两种原生次日结算，生产路径不存在钱包或余额直写。当前对账为 `200 registered / 216 semantic / 199 compiler-bound / 123 five-gate / 54 allowlist / 16 catalogued blocked / 0 Product Executor`，full snapshot `157/140/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2096/2096`、Backend `150/150`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；Junimo Kart 维持既定后置边界，下一实际纵向切片为 `multiplayer.send_chat`。
+运行层复用共享 BFS，只通过原生 LedgerBook `checkAction`、`DialogueBox` 和 `DigitEntryMenu` 输入执行。隐藏静音矩阵 `7/7` 覆盖五项即时命令与两种原生次日结算，生产路径不存在钱包或余额直写。当时对账为 `200 registered / 216 semantic / 199 compiler-bound / 123 five-gate / 54 allowlist / 16 catalogued blocked / 0 Product Executor`，full snapshot `157/140/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2096/2096`、Backend `150/150`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；Junimo Kart 维持既定后置边界，下一实际纵向切片为 `multiplayer.send_chat`。
 
-## 2026-08-30 卡利科雕像原生闭环（EVD-309）
+## 历史记录 · 2026-08-30 卡利科雕像原生闭环（EVD-309）
 
 `mining.activate_calico_statue` 已按完整纵向切片闭合并进入策略训练范围。透明桥以房主权威的日存档随机域发布下一次精确效果、完整 18 效果目录、当前效果栈、雕像地块、可达站位、评分和所有效果回执；上游只在沙漠节骷髅洞内、当前层雕像未激活且存在安全站位时生成候选。fresh 编译器重新计算效果并锁定种子输入、投影指纹、效果身份、地块和前后状态。
 
-运行层复用共享 BFS，只调用一次原生 `MineShaft.checkAction`，并以 `284 -> 285`、激活计数、评分、效果栈、蛋奖励、速度或完全恢复状态验收。隐藏静音矩阵 `18/18` 覆盖效果 ID `0..17`，不存在第二套随机、奖励或状态写入器。当前对账为 `198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 allowlist / 17 catalogued blocked / 0 Product Executor`，full snapshot `156/139/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2087/2087`、Backend `149/149`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `multiplayer.manage_wallet`。
+运行层复用共享 BFS，只调用一次原生 `MineShaft.checkAction`，并以 `284 -> 285`、激活计数、评分、效果栈、蛋奖励、速度或完全恢复状态验收。隐藏静音矩阵 `18/18` 覆盖效果 ID `0..17`，不存在第二套随机、奖励或状态写入器。当时对账为 `198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 allowlist / 17 catalogued blocked / 0 Product Executor`，full snapshot `156/139/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2087/2087`、Backend `149/149`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `multiplayer.manage_wallet`。
 
-## 2026-08-30 赌场老虎机原生闭环（EVD-308）
+## 历史记录 · 2026-08-30 赌场老虎机原生闭环（EVD-308）
 
 `minigame.play_slots` 已按完整纵向切片闭合并进入策略训练范围。透明桥实时发布共享 Rarecrow 齐币需求、ClubSlots 机器、10/100 下注、Luck 倍率、完整概率/图案/倍率分布、期望净收益、活动转轴和原生退出状态；fresh 编译器锁定全部机械字段。运行层复用共享路线，只经原生 `checkAction` 和 `Slots.receiveLeftClick` 输入执行一次旋转，原版共享 RNG 独占结果生成，执行器只验收图案、倍率、齐币差、`timesPlayedSlots` 和 Done 清理。
 
-隐藏静音矩阵 `2/2` 覆盖 10 币无奖和 100 币单七 `x2` 分支，不存在第二套 RNG、转轴或齐币写入器。当前对账为 `196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 allowlist / 18 catalogued blocked / 0 Product Executor`，full snapshot `155/139/16/0`、KnowledgeCompiler `585/585` blocking 0、Core `2080/2080`、Backend `148/148`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `mining.activate_calico_statue`。
+隐藏静音矩阵 `2/2` 覆盖 10 币无奖和 100 币单七 `x2` 分支，不存在第二套 RNG、转轴或齐币写入器。当时对账为 `196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 allowlist / 18 catalogued blocked / 0 Product Executor`，full snapshot `155/139/16/0`、KnowledgeCompiler `585/585` blocking 0、Core `2080/2080`、Backend `148/148`、Release `0 warnings / 0 errors`。下一实际纵向切片为 `mining.activate_calico_statue`。
 
-## 2026-08-30 草原大王正式 AI 等价闭环（EVD-307）
+## 历史记录 · 2026-08-30 草原大王正式 AI 等价闭环（EVD-307）
 
 `minigame.play_prairie_king` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布原生完成统计、无伤统计、JOTPK 存档、Saloon 端点、活动小游戏状态、108000-tick 等价预算和策略边界；fresh 编译器绑定全部机械字段。运行层复用共享路线，经原生入口创建 `AbigailGame`，计时期间暂停开始界面，结束后调用 `usePowerup(-3)` 并只接受原生统计、邮件和成就检查回执。
 
-此处的“闭合”明确等于 AI actor 的最终正式行为，不是原生完美代打。高层选择可训练，底层结果永久标记 `simulated_equivalent`；逐帧代理控制仅作为核心能力训练完成后的玩家指令扩展。隐藏静音冒烟通过统计 `0->1`、无伤 `0->1`、`Beat_PK=True`。当前对账为 `194 registered / 213 semantic / 193 compiler-bound / 117 five-gate / 52 allowlist / 19 catalogued blocked / 0 Product Executor`，full snapshot `154/138/16/0`、KnowledgeCompiler `585/585` blocking 0。Junimo Kart AI 继续复用既有等价执行器；下一实际纵向切片为 `minigame.play_slots`。
+此处的“闭合”明确等于 AI actor 的最终正式行为，不是原生完美代打。高层选择可训练，底层结果永久标记 `simulated_equivalent`；逐帧代理控制仅作为核心能力训练完成后的玩家指令扩展。隐藏静音冒烟通过统计 `0->1`、无伤 `0->1`、`Beat_PK=True`。当时对账为 `194 registered / 213 semantic / 193 compiler-bound / 117 five-gate / 52 allowlist / 19 catalogued blocked / 0 Product Executor`，full snapshot `154/138/16/0`、KnowledgeCompiler `585/585` blocking 0。Junimo Kart AI 继续复用既有等价执行器；下一实际纵向切片为 `minigame.play_slots`。
 
-## 2026-08-30 飞镖原生自主闭环（EVD-306）
+## 历史记录 · 2026-08-30 飞镖原生自主闭环（EVD-306）
 
 `minigame.play_darts` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布目标洞穴天气上下文、海盗夜、活动状态、地图端点、三阶段飞镖限额、分数/投掷/瞄准/充能状态和限量核桃计数。高层只决定是否取得下一枚核桃；fresh 编译器绑定全部机械字段，运行层复用共享路线并只经原生 `checkAction`、Yes 对话和鼠标输入完成。
 
-隐藏静音矩阵 `3/3` 覆盖 `20/15/10` 支飞镖和全部三枚核桃，六投方案全部原生结算；不存在第二套分数或奖励写入器。当前对账为 `192 registered / 212 semantic / 191 compiler-bound / 115 five-gate / 51 allowlist / 20 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母已冻结且 full snapshot `153/137/16/0` blocking 0，回归为 Core `2071/2071`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_junimo_kart`，应先核对并复用已有 `executor.play_junimo_kart`，禁止再建第二套小游戏执行器。
+隐藏静音矩阵 `3/3` 覆盖 `20/15/10` 支飞镖和全部三枚核桃，六投方案全部原生结算；不存在第二套分数或奖励写入器。当时对账为 `192 registered / 212 semantic / 191 compiler-bound / 115 five-gate / 51 allowlist / 20 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母已冻结且 full snapshot `153/137/16/0` blocking 0，回归为 Core `2071/2071`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_junimo_kart`，应先核对并复用已有 `executor.play_junimo_kart`，禁止再建第二套小游戏执行器。
 
-## 2026-08-30 抓娃娃机原生玩家命令闭环（EVD-305）
+## 历史记录 · 2026-08-30 抓娃娃机原生玩家命令闭环（EVD-305）
 
 `minigame.play_crane_game` 已按完整纵向切片闭合，但保持为玩家命令能力。透明桥发布机器占用、电影奖池规则、基础奖池、500g/3 次/900 tick 规则、交互端点，以及活动会话的原生状态、爪钩、奖品、传送带、速度、抓取与掉落字段。高层只授权一次会话；fresh 编译器绑定全部机械字段，运行层复用共享路线并只经原生交互、确认、D/S 输入和奖励菜单完成。
 
-隐藏静音冒烟 `1/1` 完成三次原生机会、500g 精确扣费和两件奖励转移；不存在第二套 RNG、奖品物理或背包写入器。当前对账为 `190 registered / 211 semantic / 189 compiler-bound / 113 five-gate / 50 allowlist / 21 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母已冻结且 full snapshot `152/136/16/0` blocking 0，回归为 Core `2066/2066`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_darts`。
+隐藏静音冒烟 `1/1` 完成三次原生机会、500g 精确扣费和两件奖励转移；不存在第二套 RNG、奖品物理或背包写入器。当时对账为 `190 registered / 211 semantic / 189 compiler-bound / 113 five-gate / 50 allowlist / 21 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母已冻结且 full snapshot `152/136/16/0` blocking 0，回归为 Core `2066/2066`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_darts`。
 
-## 2026-08-30 Calico Jack 原生牌局闭环（EVD-304）
+## 历史记录 · 2026-08-30 Calico Jack 原生牌局闭环（EVD-304）
 
 `minigame.play_calico_jack` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布赌场权限、齐币、Rarecrow 需求、两张桌子、精确动作格、下一局种子、初始牌、隐藏牌、完整未来随机流、推荐要牌/停牌序列、预期结算和活动小游戏私有状态。高层只决定是否接受一个由 `(BC)126`/Deluxe Scarecrow 依赖产生的单局候选；fresh 编译器覆盖下注、牌、随机数、点击和结算等全部机械字段。
 
-运行层复用共享路线，只经原生桌面 `checkAction`、`Play` 对话和 `CalicoJack` 左键输入完成。隐藏静音矩阵 `3/3` 覆盖 1000 齐币获胜、100 齐币失败和首次要牌获胜；不存在第二套牌局状态写入器。当前对账为 `188 registered / 210 semantic / 187 compiler-bound / 111 five-gate / 50 allowlist / 22 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母和 full snapshot `151/135/16/0` 均 blocking 0，回归为 Core `2060/2060`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_crane_game`。
+运行层复用共享路线，只经原生桌面 `checkAction`、`Play` 对话和 `CalicoJack` 左键输入完成。隐藏静音矩阵 `3/3` 覆盖 1000 齐币获胜、100 齐币失败和首次要牌获胜；不存在第二套牌局状态写入器。当时对账为 `188 registered / 210 semantic / 187 compiler-bound / 111 five-gate / 50 allowlist / 22 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母和 full snapshot `151/135/16/0` 均 blocking 0，回归为 Core `2060/2060`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_crane_game`。
 
-## 2026-08-30 Field Office 原生调查闭环（EVD-303）
+## 历史记录 · 2026-08-30 Field Office 原生调查闭环（EVD-303）
 
 `island.field_office_survey` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布唯一下一题、答案范围与锁定答案、问题/响应键、左右植物、当日失败锁、collected-nut、当前 debris、核桃前后计数、finale readiness 和原生交付方式。高层只选择是否答当前题；fresh 编译器重绑全部机械字段，跨地图 continuation 锁定题型与答案。
 
-运行层复用共享路线，只经 `FieldOfficeSurvey -> Survey_Yes -> exact Correct` 原生输入完成。隐藏静音矩阵 `9/9` 覆盖两题、同日顺序、错误锁日、DayUpdate、130 上限和 finale，并区分瞬时 debris 生成与磁力拾取后的最终状态；没有第二套 Field Office 状态写入器。当前对账为 `186 registered / 209 semantic / 185 compiler-bound / 109 five-gate / 49 allowlist / 23 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2054/2054`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_calico_jack`。
+运行层复用共享路线，只经 `FieldOfficeSurvey -> Survey_Yes -> exact Correct` 原生输入完成。隐藏静音矩阵 `9/9` 覆盖两题、同日顺序、错误锁日、DayUpdate、130 上限和 finale，并区分瞬时 debris 生成与磁力拾取后的最终状态；没有第二套 Field Office 状态写入器。当时对账为 `186 registered / 209 semantic / 185 compiler-bound / 109 five-gate / 49 allowlist / 23 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2054/2054`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_calico_jack`。
 
-## 2026-08-30 Field Office 原生捐赠闭环（EVD-302）
+## 历史记录 · 2026-08-30 Field Office 原生捐赠闭环（EVD-302）
 
 `island.field_office_donate` 已按完整纵向切片闭合。透明桥发布完整 11 槽化石状态、原生重复物品分配顺序、当前背包可捐候选、Desk/Survey 端点、解锁/教授/互斥锁/菜单、四组恢复标记、两项调查、finale readiness、GoldenWalnutsFound 和奖励队列。高层只选择一个精确捐赠候选并要求确认；fresh 编译器重绑所有机械字段，跨地图 continuation 只保留物品与目标槽身份。
 
-运行层复用共享路线和连续移动，只经 `FieldOfficeDesk -> Safari_Donate -> FieldOfficeMenu` 输入完成。隐藏静音最终矩阵 `15/15` 覆盖所有槽位、两组多件集合奖励、两组单件普通奖励和 130 核桃替代奖励；没有第二套岛屿状态写入器。全量复核把此前被捐赠语义遮蔽的 `FieldOfficeSurvey` 拆为独立待办，因此当前对账为 `184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2049/2049`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片为 `island.field_office_survey`：复用当前透明状态、岛屿路线、通用对话输入和持久化回执，独立覆盖 22 朵紫花、18 只紫海星、当日失败锁和 finale 触发，不得扩写捐赠执行器。
+运行层复用共享路线和连续移动，只经 `FieldOfficeDesk -> Safari_Donate -> FieldOfficeMenu` 输入完成。隐藏静音最终矩阵 `15/15` 覆盖所有槽位、两组多件集合奖励、两组单件普通奖励和 130 核桃替代奖励；没有第二套岛屿状态写入器。全量复核把此前被捐赠语义遮蔽的 `FieldOfficeSurvey` 拆为独立待办，因此当时对账为 `184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2049/2049`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片为 `island.field_office_survey`：复用当时透明状态、岛屿路线、通用对话输入和持久化回执，独立覆盖 22 朵紫花、18 只紫海星、当日失败锁和 finale 触发，不得扩写捐赠执行器。
 
-## 2026-08-30 住宅装修原生玩家命令闭环（EVD-301）
+## 历史记录 · 2026-08-30 住宅装修原生玩家命令闭环（EVD-301）
 
 `housing.renovate` 已按完整纵向切片闭合，但分类为玩家指令能力而非自主策略动作。透明桥实时发布基础 1.6.15 `Data/HomeRenovations` 的完整 18 项目录、原生可用顺序、要求/动作、区域、婴儿床特殊门、阻挡、费用、首次购买与退款投影。玩家命令只选择装修 ID、区域并给出原因/确认；fresh 编译器重绑机械字段并从碰撞网格选择可达 Robin 柜台站位。
 
-运行层复用共享移动和菜单输入，只经 `Carpenter -> Renovate -> HouseRenovations -> RenovateMenu` 原生链执行。隐藏静音矩阵 `19/19` 覆盖 18 个原版分支及负价无首次购买标记不退款分支；跨地图 continuation 保留玩家命令授权并精确锁定装修 ID/区域，原生终端成功前禁止切换目标；没有第二套住宅状态写入器。当前对账为 `182 registered / 206 semantic / 181 compiler-bound / 105 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2045/2045`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片为 `island.field_office_donate`；必须先锁定捐赠集合、奖励、菜单与持久化分支，再复用既有岛屿路线、库存选择和原生菜单执行体系。
+运行层复用共享移动和菜单输入，只经 `Carpenter -> Renovate -> HouseRenovations -> RenovateMenu` 原生链执行。隐藏静音矩阵 `19/19` 覆盖 18 个原版分支及负价无首次购买标记不退款分支；跨地图 continuation 保留玩家命令授权并精确锁定装修 ID/区域，原生终端成功前禁止切换目标；没有第二套住宅状态写入器。当时对账为 `182 registered / 206 semantic / 181 compiler-bound / 105 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2045/2045`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片为 `island.field_office_donate`；必须先锁定捐赠集合、奖励、菜单与持久化分支，再复用既有岛屿路线、库存选择和原生菜单执行体系。
 
-## 2026-08-30 垃圾桶翻找原生闭环（EVD-300）
+## 历史记录 · 2026-08-30 垃圾桶翻找原生闭环（EVD-300）
 
 `foraging.rummage_garbage` 已按完整纵向切片进入正式策略训练范围。透明桥基于一次地图交互扫描和锁定 `Data/GarbageCans` 发布全部原版 Garbage 端点、日级检查状态、统计、运气/书籍、非变异确定预测、完整物品状态、交付方式、NPC 反应与安全槽。候选先排除已检查、数据漂移、负好感目击、容量/空槽和路线问题，fresh 编译器再重绑全部机械字段。
 
-运行层复用共享 BFS、连续移动、原生 `checkAction`、输出守恒和任务反馈，不复制路线、拾取或任务执行器。隐藏静音矩阵 `9/9` 覆盖全部有界交付/排除/NPC 分支以及两类收集任务；当前对账为 `180 registered / 205 semantic / 179 compiler-bound / 103 five-gate / 48 allowlist / 25 catalogued blocked / 0 Product Executor`，回归为 Core `2039/2039`、Backend `145/145`、Release `0 warnings / 0 errors`。下一纵向切片为 `housing.renovate`：先锁定 RenovateMenu 全部原版选项、前置条件、费用、房屋几何与可逆性，再决定哪些必须保持 PlayerCommandOnly，禁止把装饰偏好混入自主训练。
+运行层复用共享 BFS、连续移动、原生 `checkAction`、输出守恒和任务反馈，不复制路线、拾取或任务执行器。隐藏静音矩阵 `9/9` 覆盖全部有界交付/排除/NPC 分支以及两类收集任务；当时对账为 `180 registered / 205 semantic / 179 compiler-bound / 103 five-gate / 48 allowlist / 25 catalogued blocked / 0 Product Executor`，回归为 Core `2039/2039`、Backend `145/145`、Release `0 warnings / 0 errors`。下一纵向切片为 `housing.renovate`：先锁定 RenovateMenu 全部原版选项、前置条件、费用、房屋几何与可逆性，再决定哪些必须保持 PlayerCommandOnly，禁止把装饰偏好混入自主训练。
 
-## 2026-08-30 普通树产品原生收获闭环（EVD-299）
+## 历史记录 · 2026-08-30 普通树产品原生收获闭环（EVD-299）
 
 `foraging.harvest_tree_product` 已按完整纵向切片进入正式策略训练范围。透明桥在既有 terrain feature 行发布精确基础 `Tree` 身份、种类、成熟/树桩/tapped/种子/摇动状态、`Data/WildTrees` 合同状态、确定输出、完整随机可选输出域、零经验合同、安全空槽和相邻交互状态。候选层先排除自定义类型、数据漂移、未成熟、树桩、tapped、无种子、采集等级不足、摇动中、输出不完整、无空槽及无可达站位，编译器再从 fresh snapshot 重绑全部机械字段。
 
-运行层复用共享 terrain BFS 和连续移动，到站后才冻结背包与 debris 联合基线，并只经 `GameLocation.checkAction -> Tree.performUseAction -> Tree.shake` 执行。隐藏静音矩阵覆盖普通种子、秋季枫树榛子、岛屿棕榈及无种子/摇动中/tapped 上游排除；随机附加掉落只按完整有界域验收，不作为监督标签。当前对账为 `178 registered / 204 semantic / 177 compiler-bound / 102 five-gate / 47 allowlist / 26 catalogued blocked / 0 Product Executor`，回归为 Core `2035/2035`、Backend `144/144`。下一纵向切片为 `foraging.rummage_garbage`；它必须复用现有移动、对象交互、输出守恒和任务资源反馈，不得复制路由或拾取执行器。
+运行层复用共享 terrain BFS 和连续移动，到站后才冻结背包与 debris 联合基线，并只经 `GameLocation.checkAction -> Tree.performUseAction -> Tree.shake` 执行。隐藏静音矩阵覆盖普通种子、秋季枫树榛子、岛屿棕榈及无种子/摇动中/tapped 上游排除；随机附加掉落只按完整有界域验收，不作为监督标签。当时对账为 `178 registered / 204 semantic / 177 compiler-bound / 102 five-gate / 47 allowlist / 26 catalogued blocked / 0 Product Executor`，回归为 Core `2035/2035`、Backend `144/144`。下一纵向切片为 `foraging.rummage_garbage`；它必须复用现有移动、对象交互、输出守恒和任务资源反馈，不得复制路由或拾取执行器。
 
-## 2026-08-30 果树原生收获闭环（EVD-298）
+## 历史记录 · 2026-08-30 果树原生收获闭环（EVD-298）
 
 `foraging.harvest_fruit_tree` 已按一个完整纵向切片进入正式策略训练范围。透明桥在既有 terrain feature 行中发布精确 base FruitTree 身份、成熟/树桩/摇动状态、实时 fruit 列表、按标识与品质分组的最终输出、雷击替换、零经验合同和相邻交互状态。候选层先排除自定义类型、未成熟、树桩、空树、瞬态空果、摇动中、输出不完整及无可达站位，编译器再从 fresh snapshot 重绑全部机械字段。
 
-运行层复用共享 BFS 和连续移动，只经 `GameLocation.checkAction -> FruitTree.performUseAction -> FruitTree.shake` 执行。隐藏静音矩阵覆盖单果、三果金星、雷击三煤炭以及空树/摇动中排除，成功分支逐项核对输出守恒、fruit 清空和 Foraging XP 零变化。当前对账为 `176 registered / 203 semantic / 175 compiler-bound / 101 five-gate / 46 allowlist / 27 catalogued blocked / 0 Product Executor`，回归为 Core `2031/2031`、Backend `143/143`。下一纵向切片为 `foraging.harvest_tree_product`。
+运行层复用共享 BFS 和连续移动，只经 `GameLocation.checkAction -> FruitTree.performUseAction -> FruitTree.shake` 执行。隐藏静音矩阵覆盖单果、三果金星、雷击三煤炭以及空树/摇动中排除，成功分支逐项核对输出守恒、fruit 清空和 Foraging XP 零变化。当时对账为 `176 registered / 203 semantic / 175 compiler-bound / 101 five-gate / 46 allowlist / 27 catalogued blocked / 0 Product Executor`，回归为 Core `2031/2031`、Backend `143/143`。下一纵向切片为 `foraging.harvest_tree_product`。
 
-## 2026-08-30 鱼塘管理玩家命令闭环（EVD-297）
+## 历史记录 · 2026-08-30 鱼塘管理玩家命令闭环（EVD-297）
 
 `fishing.manage_fish_pond` 已覆盖两种原版管理操作，并与自动鱼塘服务链保持单一职责：模型可训练的日循环负责收产出和交请求，换网与清塘只响应玩家明确指令。上游要求精确坐标、操作、原因及清塘二次确认；fresh 编译器重新绑定鱼种、数量、请求、饼干、标牌、产出、水色、网样式、站位和安全槽，任何漂移都闭锁。
 
-运行层只通过共享 BFS、作用域右键输入边沿和原生 `PondQueryMenu` 公共按钮执行。隐藏静音样本 `runtime-fish-pond-management-20260830-013602` 已验证换网保全经济状态与清塘的完整 reset/preserve/debris 矩阵。当前对账为 `174 registered / 202 semantic / 173 compiler-bound / 100 five-gate / 45 allowlist / 28 catalogued blocked / 0 Product Executor`，回归为 Core `2027/2027`、Backend `142/142`。下一纵向切片为 `foraging.harvest_fruit_tree`。
+运行层只通过共享 BFS、作用域右键输入边沿和原生 `PondQueryMenu` 公共按钮执行。隐藏静音样本 `runtime-fish-pond-management-20260830-013602` 已验证换网保全经济状态与清塘的完整 reset/preserve/debris 矩阵。当时对账为 `174 registered / 202 semantic / 173 compiler-bound / 100 five-gate / 45 allowlist / 28 catalogued blocked / 0 Product Executor`，回归为 Core `2027/2027`、Backend `142/142`。下一纵向切片为 `foraging.harvest_fruit_tree`。
 
-## 2026-08-30 展览会转盘闭环（EVD-296）
+## 历史记录 · 2026-08-30 展览会转盘闭环（EVD-296）
 
 `festival.spin_wheel` 已覆盖 Fall 16 原版转盘的完整策略与执行周期。透明桥发布实时入口/站位、数字下注菜单、活动转盘私有状态、完整 Fair 商店与 Stardrop 缺口、零幸运 `22/30` 绿方胜率、有效 `LuckLevel` 及原版随机/计时/结算合同。策略使用 `7/15` 零幸运 Kelly 下注并按需求封顶；精确缺一枚继续复用力量小游戏。
 
-运行层只通过原生对话、数字输入和 `WheelSpinGame` 执行，胜负均按随机反馈验收。隐藏静音运行 `runtime-fair-wheel-spin-20260830-005054` 两次即覆盖 `466` 星币下注的胜负两支和清理。当前对账为 `173 registered / 202 semantic / 172 compiler-bound / 99 five-gate / 45 allowlist / 29 catalogued blocked / 0 Product Executor`，回归为 Core `2023/2023`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `fishing.manage_fish_pond`。
+运行层只通过原生对话、数字输入和 `WheelSpinGame` 执行，胜负均按随机反馈验收。隐藏静音运行 `runtime-fair-wheel-spin-20260830-005054` 两次即覆盖 `466` 星币下注的胜负两支和清理。当时对账为 `173 registered / 202 semantic / 172 compiler-bound / 99 five-gate / 45 allowlist / 29 catalogued blocked / 0 Product Executor`，回归为 Core `2023/2023`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `fishing.manage_fish_pond`。
 
-## 2026-08-29 展览会力量小游戏闭环（EVD-295）
+## 历史记录 · 2026-08-29 展览会力量小游戏闭环（EVD-295）
 
 `festival.play_strength_game` 已覆盖 Fall 16 原版力量小游戏的完整策略与执行周期。透明桥发布唯一入口和站位、免费/固定一星币合同、实时力量/速度/方向/动画/计时状态、全部 Fair 商店行和 Stardrop 缺口；候选仅服务于扣除陈列奖励后恰好剩余一枚星币的需求。
 
-运行层复用共享 BFS，经真实 `Event.checkAction` 打开 `StrengthGame`，等待原生移动结算并根据点击后 `9` 次力量更新预测最大值，只发送一次原生点击。两个隐藏静音样本覆盖 changeSpeed `4` 和 `3`，分别达到力量 `100` 和 `99`，均原生获得一星币并清理菜单状态。当前对账为 `171 registered / 201 semantic / 170 compiler-bound / 97 five-gate / 44 allowlist / 30 catalogued blocked / 0 Product Executor`，回归为 Core `2018/2018`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `festival.spin_wheel`。
+运行层复用共享 BFS，经真实 `Event.checkAction` 打开 `StrengthGame`，等待原生移动结算并根据点击后 `9` 次力量更新预测最大值，只发送一次原生点击。两个隐藏静音样本覆盖 changeSpeed `4` 和 `3`，分别达到力量 `100` 和 `99`，均原生获得一星币并清理菜单状态。当时对账为 `171 registered / 201 semantic / 170 compiler-bound / 97 five-gate / 44 allowlist / 30 catalogued blocked / 0 Product Executor`，回归为 Core `2018/2018`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `festival.spin_wheel`。
 
-## 2026-08-29 展览会靶场闭环（EVD-294）
+## 历史记录 · 2026-08-29 展览会靶场闭环（EVD-294）
 
 `festival.play_slingshot_game` 已覆盖 Fall 16 原版靶场的稳定策略周期。透明桥发布入口、费用、四段原生时序、完整 79 目标日程、实时目标/弹丸/临时装备状态、精确准确率/倍率/奖励公式、全部 Fair 商店行和 Stardrop 缺口；候选只为未获得 Stardrop 的剩余星币需求服务。
 
-运行层复用共享 BFS 和普通矿井弹弓的唯一 `SlingshotAimPatch`，经真实节日 DialogueBox 点击进入原版 TargetGame，在物理更新前计算移动目标拦截点并只发原生输入。隐藏静音 E 盘样本 PASS：48 发 48 次有效命中，raw `95`、accuracy `102`、final `380`、封顶 `500` 星币；费用、返回和临时装备清理均验证。当前对账为 `169 registered / 200 semantic / 168 compiler-bound / 95 five-gate / 43 allowlist / 31 catalogued blocked / 0 Product Executor`，回归为 Core `2013/2013`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `festival.play_strength_game`。
+运行层复用共享 BFS 和普通矿井弹弓的唯一 `SlingshotAimPatch`，经真实节日 DialogueBox 点击进入原版 TargetGame，在物理更新前计算移动目标拦截点并只发原生输入。隐藏静音 E 盘样本 PASS：48 发 48 次有效命中，raw `95`、accuracy `102`、final `380`、封顶 `500` 星币；费用、返回和临时装备清理均验证。当时对账为 `169 registered / 200 semantic / 168 compiler-bound / 95 five-gate / 43 allowlist / 31 catalogued blocked / 0 Product Executor`，回归为 Core `2013/2013`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `festival.play_strength_game`。
 
-## 2026-08-29 展览会钓鱼小游戏闭环（EVD-293）
+## 历史记录 · 2026-08-29 展览会钓鱼小游戏闭环（EVD-293）
 
 `festival.play_fishing_game` 已覆盖 Fall 16 原版钓鱼游戏的稳定策略周期。透明桥发布入口、费用、时长、临时钓具、实时小游戏状态、精确评分/奖励公式、全部星币商店行和 Fair Stardrop 缺口；候选只为未获得 Stardrop 的剩余星币需求服务，并把尚未领取的展览陈列奖励计入供给，其他购买价值留给后续策略而不自动刷分。
 
-运行层复用共享 BFS 和普通钓鱼控制器，经真实节日 DialogueBox 点击进入原版 100 秒 FishingGame，在 `UpdateTicking` 发合法输入并验证随机结果的完整公式，不写结果字段。隐藏静音 E 盘最终样本 PASS：`5/5` 完美、`364` 分、`432` 星币。Core `2008/2008`、Backend `138/138`、Release `0 warnings / 0 errors`；当前对账为 `167 registered / 199 semantic / 166 compiler-bound / 93 five-gate / 42 allowlist / 32 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.play_slingshot_game`。
+运行层复用共享 BFS 和普通钓鱼控制器，经真实节日 DialogueBox 点击进入原版 100 秒 FishingGame，在 `UpdateTicking` 发合法输入并验证随机结果的完整公式，不写结果字段。隐藏静音 E 盘最终样本 PASS：`5/5` 完美、`364` 分、`432` 星币。Core `2008/2008`、Backend `138/138`、Release `0 warnings / 0 errors`；当时对账为 `167 registered / 199 semantic / 166 compiler-bound / 93 five-gate / 42 allowlist / 32 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.play_slingshot_game`。
 
-## 2026-08-29 展览会陈列闭环（EVD-292）
+## 历史记录 · 2026-08-29 展览会陈列闭环（EVD-292）
 
 `festival.manage_grange_display` 已覆盖秋季 16 日展览会的完整稳定陈列周期：实时枚举共享展台和可用库存单位，按原版实际售价、品质、八类多样性、九件数量分及 Mayor 短裤惩罚求最优组合；评审前逐次替换至最佳可用陈列，评审后逐次取回。策略训练只学习安排该目标，坐标、槽位、物品身份、分数、互斥锁和一次操作都由 fresh snapshot 与编译器机械绑定。
 
-运行层复用共享 BFS/移动，只经 `Event.checkAction` 打开原生 `StorageContainer` 并完成一次菜单点击对，不复制展台或评分实现，也不启动评审。隐藏静音 E 盘 `10/10` PASS，九次放入达到 `124` 分、超过一等奖阈值 `90`，并完成一次评审后取回；Core `2003/2003`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `165 registered / 198 semantic / 164 compiler-bound / 91 five-gate / 41 allowlist / 33 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.play_fishing_game`。
+运行层复用共享 BFS/移动，只经 `Event.checkAction` 打开原生 `StorageContainer` 并完成一次菜单点击对，不复制展台或评分实现，也不启动评审。隐藏静音 E 盘 `10/10` PASS，九次放入达到 `124` 分、超过一等奖阈值 `90`，并完成一次评审后取回；Core `2003/2003`、Backend `138/138`、Release `0 warnings / 0 errors`。当时对账为 `165 registered / 198 semantic / 164 compiler-bound / 91 five-gate / 41 allowlist / 33 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.play_fishing_game`。
 
-## 2026-08-29 五类传送图腾原生路由闭环（EVD-291）
+## 历史记录 · 2026-08-29 五类传送图腾原生路由闭环（EVD-291）
 
 `executor.use_warp_totem` 已覆盖锁定 1.6.15 的五种可达原版变体和完整稳定使用分支。透明桥按库存行绑定精确 Object 身份、公共使用门、Farm `WarpTotemEntry`/农场类型回退、固定目的地、被动节日替换链、主动节日入口、地图宽度修正和动画时序；编译器拒绝库存、目的地、节日、坐标、时序、颜色、指纹或原生合同漂移，并在会浪费图腾或需要联机 ReadyCheck 时上游关闭。
 
-运行层复用唯一 `UseInventoryObjectNative`，等待 `Object.totemWarpForReal -> Game1.warpFarmer` 原生回调后验证单物品消费、精确目的地和角色状态，不复制传送实现。隐藏静音 E 盘五变体 `5/5` PASS，最终回归为 Core `1998/1998`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `163 registered / 197 semantic / 162 compiler-bound / 89 five-gate / 40 allowlist / 34 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.manage_grange_display`。
+运行层复用唯一 `UseInventoryObjectNative`，等待 `Object.totemWarpForReal -> Game1.warpFarmer` 原生回调后验证单物品消费、精确目的地和角色状态，不复制传送实现。隐藏静音 E 盘五变体 `5/5` PASS，最终回归为 Core `1998/1998`、Backend `138/138`、Release `0 warnings / 0 errors`。当时对账为 `163 registered / 197 semantic / 162 compiler-bound / 89 five-gate / 40 allowlist / 34 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.manage_grange_display`。
 
-## 2026-08-29 宝藏图腾原生宝藏点闭环（EVD-290）
+## 历史记录 · 2026-08-29 宝藏图腾原生宝藏点闭环（EVD-290）
 
 `executor.use_treasure_totem` 已覆盖锁定 1.6.15 的完整稳定世界使用分支。透明桥绑定精确 `(O)TreasureTotem`、公共物品使用门、室内状态、中心周围 16 格原生圆环、每格放置/占用/前景/灌木/地层判定、可生成集合、世界使用计数、确定性生成合同与指纹；编译器拒绝任何身份、地图、候选集合、计数、时序或合同漂移，并在零有效格时避免浪费图腾。
 
-运行层复用唯一 `UseInventoryObjectNative`，只验证原生消费、计数递增和精确 `(O)590` 生成集合，不直接增删地图对象。后续掉落解析与挖掘复用现有 `ArtifactSpots -> executor.clear_obstacle` 链。隐藏静音 E 盘运行生成 `16/16`，最终回归为 Core `1976/1976`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `162 registered / 197 semantic / 161 compiler-bound / 88 five-gate / 40 allowlist / 35 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_warp_totem`。
+运行层复用唯一 `UseInventoryObjectNative`，只验证原生消费、计数递增和精确 `(O)590` 生成集合，不直接增删地图对象。后续掉落解析与挖掘复用现有 `ArtifactSpots -> executor.clear_obstacle` 链。隐藏静音 E 盘运行生成 `16/16`，最终回归为 Core `1976/1976`、Backend `138/138`、Release `0 warnings / 0 errors`。当时对账为 `162 registered / 197 semantic / 161 compiler-bound / 88 five-gate / 40 allowlist / 35 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_warp_totem`。
 
-## 2026-08-29 回城魔杖原生住宅传送闭环（EVD-289）
+## 历史记录 · 2026-08-29 回城魔杖原生住宅传送闭环（EVD-289）
 
 `executor.use_return_scepter` 已覆盖锁定 1.6.15 的完整稳定世界使用分支。透明桥绑定精确 `(T)ReturnScepter`/`Wand` 身份、不可消耗栈、当前角色 `homeLocation`、原生 `FarmHouse.getFrontDoorSpot()` 结果、房主/小屋差异、浴衣/桥上原生门和执行器稳定门；编译器拒绝库存、住宅类型、门前格、时序、指纹或原生合同漂移，并排除已在落点的无价值重复使用。
 
-运行层复用游戏唯一即时工具入口 `Farmer.BeginUsingTool`，等待 `Wand.wandWarpForReal` 原生回调后验证落点、物品身份以及显示/无敌/移动状态，不复制传送算法。隐藏静音 E 盘运行 PASS，最终回归为 Core `1964/1964`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `161 registered / 197 semantic / 160 compiler-bound / 87 five-gate / 40 allowlist / 36 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_treasure_totem`。
+运行层复用游戏唯一即时工具入口 `Farmer.BeginUsingTool`，等待 `Wand.wandWarpForReal` 原生回调后验证落点、物品身份以及显示/无敌/移动状态，不复制传送算法。隐藏静音 E 盘运行 PASS，最终回归为 Core `1964/1964`、Backend `138/138`、Release `0 warnings / 0 errors`。当时对账为 `161 registered / 197 semantic / 160 compiler-bound / 87 five-gate / 40 allowlist / 36 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_treasure_totem`。
 
-## 2026-08-29 雨水图腾原生天气闭环（EVD-288）
+## 历史记录 · 2026-08-29 雨水图腾原生天气闭环（EVD-288）
 
 `executor.use_rain_totem` 已覆盖锁定 1.6.15 的完整原生物品分支。透明桥绑定精确 `(O)681` 库存身份、公共使用门、`AllowRainTotem`、`RainTotemAffectsContext`、决策目标与实际天气状态归属、默认节日门、即时天气写入、2000ms 动画/提示，以及默认上下文的换日最终天气修正规则。编译器拒绝任何库存、路由、日期、最终天气、时序或指纹漂移，并在节日、最终天气覆盖、重复 Rain 等无效消耗发生前关闭动作。
 
-运行层复用唯一 `UseInventoryObjectNative`，等待原生提示和控制恢复后验证库存、上下文天气与朝向；没有第二套天气执行器。隐藏静音 E 盘四分支均符合预期，最终回归为 Core `1949/1949`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 allowlist / 37 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_return_scepter`。
+运行层复用唯一 `UseInventoryObjectNative`，等待原生提示和控制恢复后验证库存、上下文天气与朝向；没有第二套天气执行器。隐藏静音 E 盘四分支均符合预期，最终回归为 Core `1949/1949`、Backend `138/138`、Release `0 warnings / 0 errors`。当时对账为 `160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 allowlist / 37 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_return_scepter`。
 
-## 2026-08-29 怪兽香水原生 Buff 闭环（EVD-287）
+## 历史记录 · 2026-08-29 怪兽香水原生 Buff 闭环（EVD-287）
 
 `executor.use_monster_musk` 已覆盖锁定 1.6.15 的完整原生物品分支。透明桥绑定精确 `(O)879` 库存身份、公共使用门、`Data/Buffs` 的 Buff 24 定义、当前 Buff 实例与剩余时间、全部确定性动画/精灵域，以及普通矿井和火山地牢的原生生成率消费者；生成编译器拒绝任何身份、数据、活动 Buff、时序、生成语义或指纹漂移。
 
-运行层复用唯一 `UseInventoryObjectNative`，等待 750ms 回调和 1750ms 原生动作完全结算，再以新 Buff 实例、总时长、库存与朝向形成回执。隐藏静音 E 盘首次施加与替换刷新均为 `applied/verified`；最终回归为 Core `1932/1932`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 allowlist / 38 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_rain_totem`。
+运行层复用唯一 `UseInventoryObjectNative`，等待 750ms 回调和 1750ms 原生动作完全结算，再以新 Buff 实例、总时长、库存与朝向形成回执。隐藏静音 E 盘首次施加与替换刷新均为 `applied/verified`；最终回归为 Core `1932/1932`、Backend `138/138`、Release `0 warnings / 0 errors`。当时对账为 `159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 allowlist / 38 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_rain_totem`。
 
-## 2026-08-29 马笛原生召回闭环（EVD-286）
+## 历史记录 · 2026-08-29 马笛原生召回闭环（EVD-286）
 
 `executor.use_horse_flute` 已覆盖锁定 1.6.15 的完整原生分支：无马、室内、无落脚空间和马匹占用限制均在上游失败关闭；已有拥有马匹位于当前地点一格邻域内时成功但不传送，否则执行朝下、音频/动画/冻结、1500ms 延迟重检和 team event/mutex 原生召回。透明桥实时发布全部决策输入，编译器只接受 fresh 指纹一致的精确马匹与库存身份。
 
-运行层不复制传送逻辑，只调用原生 `Object.performUseAction` 并验证精确拥有马匹的后状态以及马笛堆叠不变。隐藏静音 E 盘运行两分支均为 `applied/verified`；最终回归为 Core `1921/1921`、Backend `138/138`、Release `0 warnings / 0 errors`。该动作是 `ExecutorCalibration`，不是策略欲望；上层路线可以机械选择它作为移动加速。当前对账为 `158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 allowlist / 39 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_monster_musk`。
+运行层不复制传送逻辑，只调用原生 `Object.performUseAction` 并验证精确拥有马匹的后状态以及马笛堆叠不变。隐藏静音 E 盘运行两分支均为 `applied/verified`；最终回归为 Core `1921/1921`、Backend `138/138`、Release `0 warnings / 0 errors`。该动作是 `ExecutorCalibration`，不是策略欲望；上层路线可以机械选择它作为移动加速。当时对账为 `158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 allowlist / 39 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_monster_musk`。
 
-## 2026-08-29 三色烟花原生放置闭环（EVD-285）
+## 历史记录 · 2026-08-29 三色烟花原生放置闭环（EVD-285）
 
 `executor.use_firework` 已覆盖锁定 1.6.15 的全部三色烟花分支。透明桥发布库存身份、三色类型与源图映射、当前地图原生合法区间、目标格临时精灵冲突、2400ms 引信以及完整随机结果域；读取阶段绝不推进共享 `Game1.random`。编译器只接受 fresh snapshot 中精确匹配的库存行、相邻站位与目标格。
 
 运行层复用唯一共享原生物品放置入口，不复制精灵、音频或库存副作用。隐藏静音隔离运行三例均创建 5 个原生临时精灵、精确消耗一件物品并验证对应火箭类型。该动作严格为 `PlayerCommandOnly`，不产生自主候选也不进入训练 allowlist。当前对账为 `157 registered / 197 semantic / 156 compiler-bound / 83 five-gate / 40 allowlist / 40 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_horse_flute`。
 
-## 2026-08-29 秘密纸条原生读取闭环（EVD-284）
+## 历史记录 · 2026-08-29 秘密纸条原生读取闭环（EVD-284）
 
 `executor.read_secret_note` 已覆盖锁定 1.6.15 的两类原生可读物：普通秘密纸条 `(O)79` 按存档与玩家身份种子从未读集合确定性选择，日记残页 `(O)842` 选择最小未读编号。完整数据目录、已读/未读状态、选择输入和结果、原文哈希、显示分支及 10/23 号任务副作用均由透明桥实时发布，编译器只接受 fresh snapshot 中精确匹配的一行。
 
 运行层与 `executor.read_book` 共用唯一原生库存物品使用入口，不复制库存消耗逻辑，也不直接修改已读集合、任务或菜单。隐藏静音隔离运行覆盖多未读种子抽取、两个任务分支和日记残页，四例均为 `applied/verified`。该动作是 `ExecutorCalibration`，不直接进入策略训练 allowlist；后续高层规划可以把“读取已有纸条”组合为机械安排。当前对账为 `156 registered / 197 semantic / 155 compiler-bound / 82 five-gate / 40 allowlist / 41 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_firework`。
 
-## 2026-08-29 草种原生放置闭环（EVD-283）
+## 历史记录 · 2026-08-29 草种原生放置闭环（EVD-283）
 
 `executor.plant_grass` 已覆盖锁定 1.6.15 的全部原生草种放置分支：普通草种 `(O)297 -> Grass(1,4)` 与蓝草种 `(O)BlueGrassStarter -> Grass(7,4)`。透明桥只在 full profile 发布当前加载地图的原生合法区间、精确库存变体与结果合同；当前地形输出补充 `grass_type` 和 `number_of_weeds`。用途、布局和精确位置属于上游规划，小模型或布局器必须明确给出，执行器不得自行扩张布局意图。
 
 编译器在 fresh snapshot 上重绑槽位、堆叠、变体、目标、相邻站位、合法区间、通行投影与指纹。运行层复用共享相邻移动和唯一原生物品放置入口，只验证原生结果，不直接写地形或库存。隐藏静音 E 盘运行 `runtime-grass-placement-20260829-093605` 已验证两个变体及透明后状态。该动作是 `ExecutorCalibration`，不进入策略训练 allowlist。当前对账为 `155 registered / 197 semantic / 154 compiler-bound / 81 five-gate / 40 allowlist / 42 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.read_secret_note`。
 
-## 2026-08-29 Drum Block 原生调音闭环（EVD-282）
+## 历史记录 · 2026-08-29 Drum Block 原生调音闭环（EVD-282）
 
 `world.tune_drum_block` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`。透明桥发布持久化原始/解析音色、下一档、完整七档循环、对应 `drumkitN` 音色和独立路过播放入口；编译器只允许安全空槽/工具槽并发起一次原生地点交互，不直接写音色、摇动或缩放。
 
 Flute 与 Drum 已收敛到唯一 `NoteBlockTuning` 运行状态机，但身份、状态算法、请求字段和证据合同仍独立，避免一条运行结果外推到另一动作。隐藏静音 E 盘运行 `runtime-drum-block-20260829-040623` 已验证 `6->0`、`drumkit0`、摇动/缩放、身份与槽位恢复。该动作是 `PlayerCommandOnly`，不进入自主候选和训练。当前对账为 `154 registered / 197 semantic / 153 compiler-bound / 80 five-gate / 40 allowlist / 43 catalogued blocked / 0 Product Executor`。下一纵向切片固定为 `executor.plant_grass`。
 
-## 2026-08-29 Flute Block 原生调音闭环（EVD-281）
+## 历史记录 · 2026-08-29 Flute Block 原生调音闭环（EVD-281）
 
 `world.tune_flute_block` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`。透明桥发布 `preservedParentSheetIndex` 原始/解析值、下一档、完整 25 档循环、基础音色与独立路过播放入口；编译器只允许空槽/工具槽并发起一次原生地点交互，不直接写音高、摇动或缩放。
 
 隐藏静音 E 盘运行 `runtime-flute-block-20260829-034718` 已验证 `2300->2400` 特殊边、`shakeTimer=200`、`scale.Y=1.3`、身份与槽位恢复。该动作是 `PlayerCommandOnly`，不进入自主候选和训练。当前对账为 `153 registered / 197 semantic / 152 compiler-bound / 79 five-gate / 40 allowlist / 44 catalogued blocked / 0 Product Executor`。下一纵向切片固定为 `world.tune_drum_block`。
 
-## 2026-08-29 Farm Computer 原生报告闭环（EVD-280）
+## 历史记录 · 2026-08-29 Farm Computer 原生报告闭环（EVD-280）
 
 `farming.read_farm_computer_report` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> delayed receipt -> E3`。透明桥按锁定 1.6.15 的 `GetRootLocation()` 语义直接发布作物、耕地、成熟/未浇水作物、温室、采集物、机器、干草和农场洞穴字段，同时发布精确本地化报告摘要；模型不需要通过菜单读取策略信息。
 
@@ -473,7 +473,7 @@ Flute 与 Drum 已收敛到唯一 `NoteBlockTuning` 运行状态机，但身份�
 
 下一纵向切片固定为 `world.tune_flute_block`。必须先从锁定反编译源确认调音方向、音高边界、持久化字段和原生可观测结果；若属于装饰/玩家表达，只建立显式命令执行闭环，不得进入自主策略候选或训练。
 
-## 2026-08-29 Mini-Obelisk 原生路由闭环（EVD-279）
+## 历史记录 · 2026-08-29 Mini-Obelisk 原生路由闭环（EVD-279）
 
 `movement.use_mini_obelisk` 已完成 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> delayed receipt -> E3`。它只与其他静态对象动作共享 `NativeObjectInteractionMovement` 和 BFS；配对扫描、距离判定、落点顺序、50ms 原生延迟和传送回执均为独立合同。原生容器顺序必须实时读取，不能把测试夹具的赋值顺序当成 `location.objects.Pairs` 顺序。生产执行只发起一次 `GameLocation.checkAction`，不直接改角色坐标。
 
@@ -481,7 +481,7 @@ Flute 与 Drum 已收敛到唯一 `NoteBlockTuning` 运行状态机，但身份�
 
 下一纵向切片固定为 `farming.read_farm_computer_report`：先从锁定反编译源确认报告字段、访问条件、菜单/对话生命周期及可观测结果，再确定它是纯透明信息、玩家指令动作还是校准动作。若透明桥已直接发布报告的全部原生来源，则候选不得重复制造“读菜单才能知道”的假依赖。
 
-## 2026-08-28 原版删减动作占位与自动采集器闭环（EVD-277 / EVD-278）
+## 历史记录 · 2026-08-28 原版删减动作占位与自动采集器闭环（EVD-277 / EVD-278）
 
 Issue #31 的提速原则落为工程约束：按 `Object.checkForAction`、`performUseAction` 等共享原生底层分组推进，一组只维护一个移动/菜单事务实现；组内每个动作仍必须逐项完成 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`，不得共享语义结论或跳过运行证据。当前组完成 Feed Hopper 与 Auto-Grabber，下一项是 `movement.use_mini_obelisk`。
 
@@ -489,13 +489,13 @@ Issue #31 的提速原则落为工程约束：按 `Object.checkForAction`、`per
 
 `animals.collect_auto_grabber_contents` 已完整复用共享对象移动，并通过原生 `ItemGrabMenu` 逐栈转移。透明桥预演背包累计容量，候选在空容器、全部不可接纳、无安全站位时上游排除；编译器重绑容器全部堆栈身份，运行回执验证转移与留存集合严格分割并守恒。隐藏运行 `runtime-auto-grabber-20260828-165346` 已通过。当前对账为 `150 registered / 197 semantic / 149 compiler-bound / 76 five-gate / 40 allowlist / 47 catalogued blocked / 0 Product Executor`，另有 2 个分母外兼容占位。
 
-## 2026-08-28 木筏分母修正与喂食斗闭环（EVD-275 / EVD-276）
+## 历史记录 · 2026-08-28 木筏分母修正与喂食斗闭环（EVD-275 / EVD-276）
 
 锁定 1.6.15 中 `Raft` 只有残留类型与兼容状态分支，没有 `Data/Tools`、获取、工厂、事件或外部构造入口，因此从玩家语义动作分母移除；当前由 EVD-277 以分母外兼容占位保留原生证据。该历史修正当时把冻结语义分母从 `199` 校正为 `198`，没有改变 `322 surfaces / 448 branches / 150 map tokens` 的原生扫描范围。
 
 `animals.withdraw_feed_hopper_hay` 已实现精确透明投影和原生执行。模型只看到“当前动物屋确有未喂动物时取草”这一有意义候选；料仓、动物、已摆干草、原生取草公式、背包接纳、站位和安全槽全部由最新快照与编译器重绑定。运行时复用共享对象移动，且只调用一次原生 `GameLocation.checkAction`，以料仓和背包守恒回执验收。隐藏静音 E 盘运行 `runtime-feed-hopper-20260828-130723` 通过。当前对账为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 allowlist / 49 catalogued blocked / 0 Product Executor`；下一闭环固定为 `animals.collect_auto_grabber_contents`。
 
-## 2026-08-28 声音石玩家指令闭环（EVD-274）
+## 历史记录 · 2026-08-28 声音石玩家指令闭环（EVD-274）
 
 `world.play_singing_stone` 已从冻结待办分母替换为唯一实现，但它不是自主策略能力。目标必须是当前已加载地点中的精确基础 `(BC)94`；同名家具 `(F)1300`、子类或身份漂移均失败关闭。透明桥发布原生 `crystal` 音高的完整均匀分布 `0..2300 step 100`、共享 RNG 不可预读状态、`shakeTimer=100`、相邻安全站位和对象身份。小模型只在玩家明确要求时选择目标石头，编译器重绑全部机械字段。
 
@@ -816,7 +816,7 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 冻结完美策略，第 11 步拟人化仍必须保持独立 profile/checkpoint。
 
 直接执行任务见 [`SHORT_HANDOFF_20260802_STRUCTURED_POLICY_CN.md`](stardewai-full-handoff/SHORT_HANDOFF_20260802_STRUCTURED_POLICY_CN.md)。
-## 2026-08-04 EVD-214 机器承诺投料切片
+## 历史记录 · 2026-08-04 EVD-214 机器承诺投料切片
 
 新增 `farm.load_supported_machine_input`，但只覆盖当前地图、精确绑定到已摆放机器的有效支持意图、
 当前确定性正净值、零附加耗材、输入槽未被其他目标预留的单次投料。它过滤并复用既有
@@ -829,7 +829,7 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 附加耗材、任务/收集需求及完整制作-摆放-投料生命周期仍未因此准入。下一切片必须继续从这些边界中
 选择一个可完整闭合的高层语义，不能把 EVD-214 外推为机器模块全部完成。
 
-## 2026-08-04 受支持机器容量生命周期编排（EVD-215 已闭合）
+## 历史记录 · 2026-08-04 受支持机器容量生命周期编排（EVD-215 已闭合）
 
 新增 `farm.establish_supported_machine_capacity`，把已有机器支持意图推进成严格的滚动状态机：无活动
 意图时只选择一个 `goal.economy.earn_money` 下证据完整、当前有界正净收益的制作候选；
@@ -845,12 +845,12 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 完成 Keg 原生制作、规划器选择并绑定 `Farm:61,15`、Wheat 原生投料、处理开始、精确意图完成和三条
 训练行落盘。运行还发现并修复了透明桥与执行器原料重算之间缺少售价字段的契约漂移。当前权威对账为
 100 registered / 168 semantic / 88 compiler-bound / 19 five-gate / 18 allowlist / 0 Product Executor，
-585/585 exports，blocking 0，冻结分母指纹不变。EVD-215 只放行上述当前地图、有界正收益、确定性零附加
+585/585 exports，blocking 0，冻结分母指纹不变。EVD-215 只放行上述当时地图、有界正收益、确定性零附加
 耗材生命周期；任务/收集需求机器处理仍是下一独立切片，不能借本状态机放行。
 
-## 2026-08-05 任务/收集需求机器处理（EVD-216 已闭合）
+## 历史记录 · 2026-08-05 任务/收集需求机器处理（EVD-216 已闭合）
 
-新增 `farm.fulfill_machine_task_demand`，但只准入已有、当前地图、可达机器的一条确定性任务链。普通
+新增 `farm.fulfill_machine_task_demand`，但只准入已有、当时地图、可达机器的一条确定性任务链。普通
 `ResourceCollectionQuest` 按精确物品身份匹配，特别订单 `CollectObjective` 按原生上下文标签语法匹配；
 投料必须来自实时原生探针、产物确定、附加耗材计数为零，且不存在尚未精确投影的活动材料保留。
 投料只是生产源步骤，任务进度不得增加；机器自然完成后，既有原生收取链才是入账步骤。
@@ -861,7 +861,7 @@ Wood `(O)388` 并自然产出 Coal `(O)382`。普通任务和特别订单均在�
 `quest.advance` / `farm.process_machines`。为任务新制作或摆放机器、远程机器、随机产物、附加耗材、
 浣熊包需求和精确的任务优先材料保留仍是后续独立切片。
 
-## 2026-08-05 任务驱动机器容量组合（EVD-217 已闭合）
+## 历史记录 · 2026-08-05 任务驱动机器容量组合（EVD-217 已闭合）
 
 既有 `farm.establish_supported_machine_capacity` 现在增加一个严格有界的需求类别：实时普通
 `ResourceCollectionQuest` 的精确物品，或特别订单 `CollectObjective` 的上下文标签集合，必须能由当前快照中
@@ -877,14 +877,14 @@ E 盘隐藏静默矩阵已通过三条正例：普通任务的制作路径
 `runtime-supported-machine-capacity-evd217-final2-ordinary-20260805`、特别订单的制作路径
 `runtime-supported-machine-capacity-evd217-final-special-20260805`，以及背包已有机器直接摆放路径
 `runtime-supported-machine-capacity-evd217-final2-inventory-20260805`。三条路径均完成原生摆放、精确投料、自然处理和原生收取；投料后
-任务进度保持 `0/1`，收取后变为 `1/1`。背包直摆首次运行暴露远程放置候选抢占当前地图原生放置的问题，候选入口已
+任务进度保持 `0/1`，收取后变为 `1/1`。背包直摆首次运行暴露远程放置候选抢占当时地图原生放置的问题，候选入口已
 收紧为当前地图 `place_machine_item`，修复后通过。任务漂移、混合来源、附加耗材和精确槽位冲突由静态编译/账本测试
 失败关闭，未冒充运行时负例。EVD-217 扩大同一选项的训练证据范围，不增加五门闭环或 allowlist 的选项数量。
 最终回归 Core 1528/1528、Backend 112/112 通过，整套 Release 构建 0 错误、5 个既有警告。
 
-## 2026-08-05 单步透明跨图访问（EVD-218 已闭合）
+## 历史记录 · 2026-08-05 单步透明跨图访问（EVD-218 已闭合）
 
-`exploration.visit_location` 已按滚动时域准入：每次只选择当前地图上一个实时可达、已解析、目标地图不同的
+`exploration.visit_location` 已按滚动时域准入：每次只选择当时地图上一个实时可达、已解析、目标地图不同的
 精确连接器，编译为既有 `executor.traverse_connector`，原生穿越后必须读取新快照再规划。若当前路径被一个
 可移除对象阻挡，同一高层选项可以先复用既有 `executor.clear_obstacle` 清除一个精确障碍，然后刷新快照；
 不得把一次证据外推为任意多段路线、关闭门禁、未知 Action、未加载地图碰撞或自定义连接器支持。
@@ -900,7 +900,7 @@ E 盘隐藏静默矩阵已通过三条正例：普通任务的制作路径
 本轮没有伪造组合运行负例。
 最终回归 Core 1530/1530、Backend 114/114 通过；整套 Release 构建 0 错误、5 个既有警告。
 
-## 2026-08-10 `quest.advance` 权威目录与 DailyPlan 编译链对齐
+## 历史记录 · 2026-08-10 `quest.advance` 权威目录与 DailyPlan 编译链对齐
 
 `quest.advance` 的已绑定任务阶段现在由 `QuestActionCoverageCatalog` 直接提供 DailyPlan 候选 kind
 白名单，不再维护另一份容易漂移的手写注册表。锁定的 1.6.15 反编译扫描仍得到 12 种普通任务类型、
@@ -912,11 +912,11 @@ E 盘隐藏静默矩阵已通过三条正例：普通任务的制作路径
 当前权威对账为 104 registered / 171 semantic / 103 compiler-bound / 39 five-gate / 26 allowlist /
 0 Product Executor，585/585 exports，blocking 0。`quest.advance` 只从 `Unbound` 提升为
 `StepCompilerDeclared`；候选状态仍为 `PartiallyBlocked`，运行状态仍为 `RegisteredOnly`，没有进入训练
-白名单。Core 1601/1601、Backend 119/119 通过。本切片未启动游戏，下一步是分别用隔离存档闭合
+白名单。Core 1601/1601、Backend 119/119 通过。本切片未启动游戏，当时后续计划是分别用隔离存档闭合
 `executor.quest_npc_interact` 与 `executor.quest_drop_box_donate` 的原生运行、结果校验和训练行证据；
 之后才处理 5 个明确阻塞阶段，不能把部分任务链外推为完整任务系统。
 
-## 2026-08-10 任务原生终端运行闭环（EVD-233 已闭合）
+## 历史记录 · 2026-08-10 任务原生终端运行闭环（EVD-233 已闭合）
 
 `quest.advance` 的普通物品交付与特别订单投递箱两类终端现已通过隐藏、静音、E 盘隔离存档矩阵。普通任务由
 精确任务候选编译为既有 `executor.quest_npc_interact`，通过原生 `checkAction` 给 Robin 交付物品并观察任务消失；
@@ -929,11 +929,11 @@ Gunther 特别订单由精确 `DonateObjective` 候选编译为既有 `executor.
 LiveTrainingLoop 丢弃实际成功样本。现统一使用标准 `verified`，原生生命周期细节保留在验证原因中。
 
 当前任务目录仍为 28 阶段、21 已绑定、5 明确阻塞、2 仅观察，`quest.advance` 仍保持 PartiallyBlocked、
-RegisteredOnly 且不进入训练白名单。下一步依次关闭 5 个明确阻塞阶段：普通制作、建造、秘密物品取得、type-11
+RegisteredOnly 且不进入训练白名单。当时后续计划依次关闭 5 个明确阻塞阶段：普通制作、建造、秘密物品取得、type-11
 除草和 Junimo Kart 分数；同时补齐 preserved `ColoredObject` 父物品颜色标签透明投影。只有目录声明范围、编译、
 运行和输出反馈全部闭合后，才能重新评估 `quest.advance` 的训练准入。
 
-## 2026-08-10 Donate 父物品颜色透明闭环（EVD-234 已闭合）
+## 历史记录 · 2026-08-10 Donate 父物品颜色透明闭环（EVD-234 已闭合）
 
 锁定版 1.6.15 反编译确认：只有 `DonateObjective.IsValidItem` 在标签组以 `color` 开头且物品为带
 `preservedParentSheetIndex` 的 `ColoredObject` 时，改用父物品 `GetBaseContextTags`；`CollectObjective`、
@@ -944,10 +944,10 @@ RegisteredOnly 且不进入训练白名单。下一步依次关闭 5 个明确�
 E 盘隐藏静音矩阵现为 `3/3`。新增案例使用原生 `QiChallenge12`、`QiChallengeBox`、运行时确认带
 `color_red` 的父物品和原生 `DonateObjective.IsValidItem`，再经候选、DailyPlan、动作队列和既有
 `executor.quest_drop_box_donate` 完成原生菜单点击与确认，目标进度增加并写入 verified 训练行。运行中暴露的
-未见 Mr. Qi 地点事件只在隔离测试夹具中按当前原生前置条件标记已见，生产执行器未放宽。下一步处理普通制作，
+未见 Mr. Qi 地点事件只在隔离测试夹具中按当前原生前置条件标记已见，生产执行器未放宽。当时后续计划处理普通制作，
 其余明确阻塞阶段顺序不变。
 
-## 2026-08-10 普通制作与建造任务闭环（EVD-235、EVD-236 已闭合）
+## 历史记录 · 2026-08-10 普通制作与建造任务闭环（EVD-235、EVD-236 已闭合）
 
 EVD-235 将 `CraftingQuest` 接到目的限定的 `player.quest_crafting`、`quest.advance`、DailyPlan 和既有
 原生 `CraftingPage` 执行器。任务只由原生 `CraftingQuest.OnRecipeCrafted` 完成，材料预留、输出容量、配方身份
@@ -967,7 +967,7 @@ Robin 服务、蓝图价格/材料/工期、在建状态和农场放置候选；
 完成。在 EVD-236 检查点，任务目录为 23 bound、3 blocked、2 observation-only；当时的下一项是秘密物品取得，
 之后是 type-11 除草和 Junimo Kart 分数。该检查点不构成后续状态的当前声明。
 
-## 2026-08-12 通用目的限定建筑建造（EVD-248 已闭合）
+## 历史记录 · 2026-08-12 通用目的限定建筑建造（EVD-248 已闭合）
 
 `buildings.construct` 不是第二套建造器。它是模型的策略出口，只接受明确的 `building_type`、
 `placement_location_id` 和 `construction_reason`；完全机械的寻路、服务交互、蓝图选择和原生落点点击仍由
@@ -987,7 +987,7 @@ Robin/Wizard 基础蓝图和所有 `IsBuildableLocation()` 地点，逐项核验
 原版 `Coop`、`Farm`、一次目的限定建造；Wizard、建筑升级、换皮、跨地点分页矩阵、多人所有权及长期建设策略
 仍需独立证据，不得由 EVD-248 外推。
 
-## 2026-08-10 秘密物品取得状态机纠正（EVD-237 已闭合）
+## 历史记录 · 2026-08-10 秘密物品取得状态机纠正（EVD-237 已闭合）
 
 锁定版 `Data/Quests` 只有 128/129 两条 `SecretLostItemQuest`，均要求 `(O)191`。反编译确认
 `Railroad.getFish` 先检查秘密纸条 25 与 `carolinesNecklace` 邮件状态，在返回项链的同一调用中加入
@@ -1003,11 +1003,11 @@ Robin/Wizard 基础蓝图和所有 `IsBuildableLocation()` 地点，逐项核验
 起始校验统一要求 `player.inventory_capacity.has_empty_slot=true`；否则先由既有存储转移链腾位。本阶段
 不把未单独运行校准的项链案例外推为新五门准入。
 
-在 EVD-237 检查点，任务目录为 23 bound、2 blocked、3 observation-only；当时下一步是 type-11，
+在 EVD-237 检查点，任务目录为 23 bound、2 blocked、3 observation-only；当时当时后续计划是 type-11，
 之后处理 Junimo Kart 分数。在二者关闭并重新做完整任务矩阵前，`quest.advance` 仍保持 PartiallyBlocked、
 RegisteredOnly 且不进入训练白名单。
 
-## 2026-08-10 type-11 不可达兼容状态纠正（EVD-238 已闭合）
+## 历史记录 · 2026-08-10 type-11 不可达兼容状态纠正（EVD-238 已闭合）
 
 实时复核锁定 1.6.15 后确认，`Quest.type_weeding = 11` 只是遗留兼容常量，不是缺失的原版动作族：
 哈希为 `591d29ecf742b2b9e258c271d1e5e55bcfcd9d7dc38c9d64972cd3faaf1b0c6a` 的 66 行
@@ -1024,7 +1024,7 @@ KnowledgeCompiler 现在每轮扫描 `type_weeding=11` 常量、工厂分支和�
 `JKScoreObjective` 的 Junimo Kart 分数；在该阶段完成并重跑任务矩阵前，`quest.advance` 继续保持
 PartiallyBlocked、RegisteredOnly 且不进入训练白名单。
 
-## 2026-08-10 Junimo Kart 分数静态主链（EVD-239 静态与透明 schema 已闭合）
+## 历史记录 · 2026-08-10 Junimo Kart 分数静态主链（EVD-239 静态与透明 schema 已闭合）
 
 锁定 1.6.15 反编译确认：`MinecartGame_Endless` 创建 `MineCart(0, 2)`；Endless 原生死亡分支调用
 `submitHighScore()`，再通过 `SpecialOrder.onJKScoreAchieved` 更新 `JKScoreObjective`。`QuitGame()` 不提交分数，
@@ -1068,7 +1068,7 @@ blocked；干净最高检查点保持 `10,940`。
 完整可行落地区间，替代固定 `hazard + 18px` 下界，并把“无物理解、动态障碍冲突、窗口过窄”分别落盘。
 之后在相同两模组环境按主题做可重复比较。50,000 之前不形成证据；不得引入分数、轨道、碰撞或目标状态写入。
 
-## 2026-08-11 并行动作闭环：每日委托接受
+## 历史记录 · 2026-08-11 并行动作闭环：每日委托接受
 
 Junimo Kart 的控制器优化允许稍后复用唯一现有执行器继续，不得因此停止其他独立动作闭环。
 `quest.accept_daily` 已按唯一链完成：实时读取原生 offer 和许可，从 Town 地图实时发现 `Billboard 3`，在上游排除
@@ -1077,7 +1077,7 @@ Junimo Kart 的控制器优化允许稍后复用唯一现有执行器继续，�
 本动作暂不进入训练白名单。下一动作应继续从 66 个已编目未注册语义项中按依赖独立、可复用现有执行引擎、
 可形成原生回执的顺序选择，不得重建移动、交互、任务或小游戏第二套系统。
 
-## 2026-08-11 并行动作闭环：特别订单接受
+## 历史记录 · 2026-08-11 并行动作闭环：特别订单接受
 
 `quest.accept_special_order` 已作为唯一高层链覆盖 Town、Qi 和沙漠节庆三种入口：透明桥读取原生 offer 与入口，
 候选层在上游排除锁定、同类型已接受和陈旧身份，随后按 fresh snapshot 逐阶段复用既有寻路、移动、交互、
@@ -1088,7 +1088,7 @@ Town 隐藏静默隔离运行已通过；Qi 和沙漠节庆保留为同一实现
 后续仍按“权威字典身份 -> 透明字段 -> 上游许可 -> 复用编译链 -> 原生回执 -> 独立运行证据”的顺序逐项闭合，
 不得以动作总数推进为理由复制移动、菜单、任务或执行器体系。
 
-## 2026-08-11 Junimo Kart 训练等价模式与完美模式分流（EVD-243）
+## 历史记录 · 2026-08-11 Junimo Kart 训练等价模式与完美模式分流（EVD-243）
 
 EVD-307 已覆盖本节早期的单机限制，但不删除其原生控制器和诊断证据。训练、联机陪玩和专用房主中的 AI actor 默认使用
 `timed_equivalent`：以既有 15 分钟平均预算作为等价时长（54,000 游戏 tick），墙钟可配置加速；计时结束后只在
@@ -1100,7 +1100,7 @@ EVD-307 已覆盖本节早期的单机限制，但不删除其原生控制器和
 它是后续“帮玩家打完美存档”的唯一继续校准路径，严格 `PlayerCommandOnly`；真实自然达到 50,000 分前，不登记原生 five-gate 证据。
 隐藏静默 E 盘矩阵 `runtime-junimo-kart-20260811-194648` 已验证等价计时、原生提交回调和目标 `0 -> 50000`。
 
-## 2026-08-11 普通任务奖励领取（EVD-242 已闭合）
+## 历史记录 · 2026-08-11 普通任务奖励领取（EVD-242 已闭合）
 
 `quest.claim_reward` 使用独立于 `quest.advance` 的奖励结算链，但复用既有菜单安全门。透明桥从实时
 `Farmer.questLog` 枚举非隐藏、已完成且有金钱奖励的任务，使用 ID、运行时类型、标题、奖励、接受日和 daily 标记
@@ -1113,7 +1113,7 @@ EVD-307 已覆盖本节早期的单机限制，但不删除其原生控制器和
 105 required、88 实时带来源可读、17 场景性、blocking 0；动作对账当时为 113 registered / 177 semantic /
 112 compiler-bound / 64 catalogued-blocked，原生 320/428/150 不变；后续 EVD-244 计数见下节。
 
-## 2026-08-11 原生职业选择（EVD-244 已闭合）
+## 历史记录 · 2026-08-11 原生职业选择（EVD-244 已闭合）
 
 `skills.choose_profession` 是小模型可选择的高层决策，不是新的机械菜单执行器。透明桥从实时
 `LevelUpMenu` 读取两个原生职业的 ID、标题和描述，并公开玩家已选职业与 `newLevels`；任何字段缺失、选项数量
@@ -1129,39 +1129,39 @@ DailyPlan 把决定编译为现有 `close_menu` 阶段，动作队列继续只�
 Defender 的最大生命增量。该动作进入训练准入后，总计为 114 registered / 177 semantic / 113 compiler-bound /
 63 catalogued-blocked / 40 five-gate / 27 allowlist；Product Executor 仍为 0。下一主切片为 `mail.process_letter`，矿井电梯仅做
 既有普通矿井链的复用核对，不另造矿井系统。
-## 2026-08-12 建筑换肤闭环（EVD-249 已闭合）
+## 历史记录 · 2026-08-12 建筑换肤闭环（EVD-249 已闭合）
 
 `buildings.change_skin` 是小模型的外观策略出口，不是第二套 Robin 菜单系统。模型必须明确给出建筑地点、类型、坐标、目标皮肤和外观理由；透明桥负责读取当前皮肤、原生可用皮肤顺序、条件、权限、入口类型、最短点击方向与次数，以及换肤会重置三组油漆颜色这一副作用。缺少明确意图、权限、服务状态或实时菜单顺序发生漂移时，上游直接排除或执行前失败关闭。
 
 DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作队列只生成唯一 `executor.change_building_skin`。运行时通过原生 `Carpenter -> Construct -> Paint -> 建筑点击 -> BuildingSkinMenu` 完成；生产执行器不得直接写 `skinId`、油漆状态或建筑集合。EVD-249 在 E 盘隔离存档中完成 Pet Bowl 默认皮肤到 `Stone Pet Bowl` 的原生验证，精确使用一次 `next`，并验证返回 ScienceHouse、目标皮肤和三组默认油漆标志。
 
-当前看板为 `122 registered / 180 semantic / 121 compiler-bound / 49 five-gate / 32 training allowlist / 0 Product Executor`；原生分母仍为 `320 surfaces / 428 branches / 150 map tokens` 且三类 blocking 均为 0。真实 full 快照覆盖 112 个必需字段、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。证据只覆盖已声明的 Pet Bowl 分支；`buildings.paint` 仍是下一独立动作切片，必须复用本链的 Robin、建筑目标选择和菜单生命周期，不得复制第二套系统。
+当时看板为 `122 registered / 180 semantic / 121 compiler-bound / 49 five-gate / 32 training allowlist / 0 Product Executor`；原生分母仍为 `320 surfaces / 428 branches / 150 map tokens` 且三类 blocking 均为 0。真实 full 快照覆盖 112 个必需字段、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。证据只覆盖已声明的 Pet Bowl 分支；`buildings.paint` 仍是下一独立动作切片，必须复用本链的 Robin、建筑目标选择和菜单生命周期，不得复制第二套系统。
 
-## 2026-08-27 彩虹尽头奖励闭环（EVD-268）
+## 历史记录 · 2026-08-27 彩虹尽头奖励闭环（EVD-268）
 
 `rewards.claim_pot_of_gold` 已从待办分母替换为唯一高层实现：透明桥实时发布春 17 日 Forest 精确对象、四个站位、年份奖励数量、春 18 日失效与原生输出契约；候选、DailyPlan 和动作编译器在上游排除错误日期、缺失对象、菜单占用与不可达站位。小模型只发出领取意图，所有机械字段由新快照重绑定。
 
 生产运行只复用共享 BFS 并调用原生 `GameLocation.checkAction`。满背包不会阻止领取，金币和帽子先进入 debris，后续只交给现有 `executor.pickup_debris`；禁止新增直接背包转移或第二套奖励拾取实现。E 盘隐藏静音运行在第二年验证 9 个金币与 1 顶帽子精确守恒。当前权威状态为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 allowlist / 56 catalogued blocked / 0 Product Executor`，full 快照 `128 required / 112 readable / 16 contextual / 0 blocking`。下一切片为 `mining.choose_dwarf_statue_power`。
 
-## 2026-08-27 矮人王雕像能力选择闭环（EVD-269）
+## 历史记录 · 2026-08-27 矮人王雕像能力选择闭环（EVD-269）
 
 `mining.choose_dwarf_statue_power` 已从待办分母替换为唯一高层实现。透明桥按原生日种子发布两个不同选项、五类真实效果、采矿精通门、已有全天 buff 锁、当前地图精确基础雕像和相邻站位。模型只负责在两个真实候选中选 `power_id`；编译器保留该策略选择，并覆盖模型提供的所有机械字段。
 
 运行时复用共享 BFS 和原生对象/菜单 API，不直接写生产 buff。普通矿井、骷髅洞、火山和地图外石头继续消费同一个 `dwarfStatue_*` 状态，不复制执行器。隐藏静音 E 盘运行对当天两个菜单项均验证唯一 buff 和菜单关闭。当前权威状态为 `144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 allowlist / 55 catalogued blocked / 0 Product Executor`，full 快照 `129 required / 113 readable / 16 contextual / 0 blocking`。下一切片为 `rewards.claim_statue_blessing`，可复用对象交互与菜单生命周期，但必须独立反编译其随机规则和七种祝福。
 
-## 2026-08-27 祝福雕像领取闭环（EVD-270）
+## 历史记录 · 2026-08-27 祝福雕像领取闭环（EVD-270）
 
 `rewards.claim_statue_blessing` 已从待办分母替换为唯一高层实现。它不要求小模型选择祝福：原生日期种子已唯一决定结果，模型只输出无参数领取目标。透明桥与编译器冻结农业精通、日锁、天气/节日导致的 `6/7` 分母、当天祝福、七种原生效果、精确雕像和相邻站位；任何日期、分母、对象、站位或 buff 漂移都失败关闭。
 
-## 2026-08-27 House Plant 轮转闭环（EVD-271）
+## 历史记录 · 2026-08-27 House Plant 轮转闭环（EVD-271）
 
 `world.rotate_house_plant` 已从待办分母替换为一个显式授权的高层装饰动作。候选按当前地图每一盆精确基础 House Plant 展开，模型只负责选择目标盆；编译器重绑所有机械字段。永久 `ItemId/QualifiedItemId` 与可视 `ParentSheetIndex` 分开建模，防止把轮转误记为物品身份变化。
 
-执行器固定空手语义，并保留原生地点层的边界行为：0..6 各调用对象一次并前进一帧；7 的首次对象调用回到 0 且返回 false，地点层再次调用后最终到 1。运行器只发一次 `GameLocation.checkAction`，不自己模拟 `%8`。四向不可通行对象包围会触发原生破坏性 `performToolAction(null)` 前导分支，因此透明站位、上游候选和运行时双检均在该条件下失败关闭。隐藏静音 E 盘 8/8 通过后，当前权威状态为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 allowlist / 53 catalogued blocked / 0 Product Executor`。本动作不进入自主日计划；下一闭环为 `farming.collect_slime_ball`。
+执行器固定空手语义，并保留原生地点层的边界行为：0..6 各调用对象一次并前进一帧；7 的首次对象调用回到 0 且返回 false，地点层再次调用后最终到 1。运行器只发一次 `GameLocation.checkAction`，不自己模拟 `%8`。四向不可通行对象包围会触发原生破坏性 `performToolAction(null)` 前导分支，因此透明站位、上游候选和运行时双检均在该条件下失败关闭。隐藏静音 E 盘 8/8 通过后，当时权威状态为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 allowlist / 53 catalogued blocked / 0 Product Executor`。本动作不进入自主日计划；下一闭环为 `farming.collect_slime_ball`。
 
 运行时只复用共享 BFS 并调用原生对象交互；七种效果继续由现有钓鱼、社交、战斗、体力和世界 critter 代码消费，不复制下游系统。隐藏静音 E 盘运行验证唯一幸运祝福与日锁。当前权威状态为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 allowlist / 54 catalogued blocked / 0 Product Executor`，full 快照 `130 required / 114 readable / 16 contextual / 0 blocking`。下一切片为 `world.rotate_house_plant`。
 
-## 2026-08-12 建筑涂装闭环（EVD-250 已闭合）
+## 历史记录 · 2026-08-12 建筑涂装闭环（EVD-250 已闭合）
 
 `buildings.paint` 是高层外观选择，不是新的机械执行系统。小模型必须明确建筑身份、涂装区域、恢复默认或自定义 H/S/L，以及外观理由。透明桥实时读取 `Data/PaintData`、权限、区域顺序、亮度边界、当前三组颜色和 Robin 服务入口；同时根据锁定版原生 284 像素滑杆公式公开每个通道的精确鼠标可达值。上游候选与队列编译均拒绝不可达整数、无效果目标、默认显示值无法解除默认标志的三元组、菜单占用和投影漂移。
 
@@ -1169,37 +1169,37 @@ DailyPlan 的语义步骤为 `paint_building_region`，但动作队列仍进入�
 
 EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H180/S37/L-30` 原生全链，训练行已落盘。冻结语义分母保持 180：`123 registered + 57 catalogued_blocked`，说明本切片替换待办项而没有制造第 181 个重复动作；compiler-bound 为 122，Product Executor 仍为 0。最新 full snapshot 为 113 required、96 带来源可读、17 场景性、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1666/1666、Backend 121/121。
 
-## 2026-08-31 Adventure Guild 整批奖励闭环（EVD-317）
+## 历史记录 · 2026-08-31 Adventure Guild 整批奖励闭环（EVD-317）
 
 `rewards.claim_adventure_guild_reward` 已替换对应待办语义项，并只复用现有路线与菜单执行基础设施。模型出口是无参数的高层领取意图；透明桥实时枚举全部完成且未领取的怪物讨伐目标，发布精确物品、对话、邮件、标志、Gil 收据、六帧动画入口集合、站位和整批指纹。fresh 编译器覆盖模型提供的所有机械字段；非空旧指纹发生漂移时失败关闭。
 
 锁定版 `AdventureGuild.gil()` 把当前所有可领取目标合并为一次事务：先安排各目标邮件和标志副作用，再展示可选对话和单个 `ItemGrabMenu`，每次取物按 `SpecialVariable` 写入对应 `Gil_<goalId>`。因此本动作不能拆成逐目标语义。候选与执行前必须通过克隆实时背包并调用原生背包插入算法，证明整个奖励批次均可接收；容量不确定时在上游排除。
 
-隐藏静音 E 盘矩阵 `runtime-adventure-guild-reward-20260831-023014` 已 3/3 通过，包括伪造批次、容量漂移和真实原生领取。当前冻结口径为 214 registered / 223 semantic / 9 catalogued blocked / 213 compiler-bound / 138 harness dispatch / 137 five-gate / 56 training allowlist / 0 Product Executor；full snapshot 为 165/148/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2138/2138、Backend 155/155、Release 0 警告和 0 错误。
+隐藏静音 E 盘矩阵 `runtime-adventure-guild-reward-20260831-023014` 已 3/3 通过，包括伪造批次、容量漂移和真实原生领取。当时冻结口径为 214 registered / 223 semantic / 9 catalogued blocked / 213 compiler-bound / 138 harness dispatch / 137 five-gate / 56 training allowlist / 0 Product Executor；full snapshot 为 165/148/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2138/2138、Backend 155/155、Release 0 警告和 0 错误。
 
 下一切片固定为 `rewards.claim_prize_ticket`，按“本地反编译锁语义 -> 透明字段与整批/随机输出边界 -> 上游许可 -> 复用 DailyPlan/菜单机械链 -> 原生执行与回执 -> 隐藏隔离矩阵 -> 目录冻结”的顺序完成。Junimo Kart 继续保留为已知暂缓项，不阻塞其他动作闭环，也不允许用等价模拟结果冒充原生完美游玩。
 
-## 2026-08-31 Prize Ticket 两阶段奖励闭环（EVD-318）
+## 历史记录 · 2026-08-31 Prize Ticket 两阶段奖励闭环（EVD-318）
 
 `rewards.claim_prize_ticket` 已替换对应待办语义项并进入高层训练白名单。它不是让模型规划菜单细节：模型只决定是否领取当前正收益奖励；透明桥实时发布持有票券、待发特别订单票券、当前 `ticketPrizesClaimed` 等级、当前及后三个预览奖励、精确首奖指纹、Town/ManorHouse 原生端点和安全站位。fresh 编译器覆盖模型提供的机械字段并拒绝投影漂移。
 
 唯一编译链按实时前态选择阶段：有实体票券时滚动到 ManorHouse `PrizeMachine` 并点击当前首奖；没有实体票券但存在 `specialOrderPrizeTickets` 时，先去 Town 原生端点领取一张票券，停止旧队列并以新快照重规划。禁止把两张地图上的步骤用旧投影硬拼成一条队列。原生结算保留满背包 debris 分支、票券减一和领取等级加一；生产代码不直接写结果。
 
-隐藏静音隔离矩阵 `runtime-prize-ticket-reward-20260831-121025` 已 6/6 通过，覆盖投影伪造、待发票券、普通/升级房屋、满背包和 9 级循环。完整快照同时验证了只读观察器不会为 Cooking、Forge、SpecialOrderBoard、建筑或 FarmHouse 主动加载缺失地图资产。当前冻结口径为 216 registered / 224 semantic / 8 catalogued blocked / 215 compiler-bound / 139 harness dispatch / 139 five-gate / 57 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2145/2145、Backend 155/155、Release 0 警告和 0 错误。
+隐藏静音隔离矩阵 `runtime-prize-ticket-reward-20260831-121025` 已 6/6 通过，覆盖投影伪造、待发票券、普通/升级房屋、满背包和 9 级循环。完整快照同时验证了只读观察器不会为 Cooking、Forge、SpecialOrderBoard、建筑或 FarmHouse 主动加载缺失地图资产。当时冻结口径为 216 registered / 224 semantic / 8 catalogued blocked / 215 compiler-bound / 139 harness dispatch / 139 five-gate / 57 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2145/2145、Backend 155/155、Release 0 警告和 0 错误。
 
 下一主切片为 `skills.claim_mastery`，继续按同一动作打包流程闭合五种原版精通领取。Junimo Kart 保持暂缓。正式全量训练仍须等待剩余语义动作处理、Product Executor 集成和全量长线准入验收，不因本动作通过而提前开始。
 
-## 2026-08-31 五分支精通领取闭环（EVD-319）
+## 历史记录 · 2026-08-31 五分支精通领取闭环（EVD-319）
 
 `skills.claim_mastery` 已替换待办语义项并进入高层训练白名单。这里的模型输出是战略选择，不是动作脚本：当五项基础技能均达到 10 且存在未花费精通等级时，小模型从尚未领取的耕作、钓鱼、采集、采矿、战斗分支中选择一个。透明投影发布 MasteryExp、当前等级、已花费点、五个 `mastery_N`、饰品槽、精确碑牌 Action、配方已知状态、直接奖励库存/debris 基线和独立指纹。
 
 唯一执行链复用跨图路由与共享 BFS，到达所选碑牌后只调用原生 `GameLocation.checkAction`，确认 `MasteryTrackerMenu` 后点击其公开 `mainButton`。回执要求目标碑牌增加一次、其他四块不变、`masteryLevelsSpent` 增加一次、MasteryExp/等级不变、全部配方存在、直接奖励在库存或 debris 中守恒，并核对战斗饰品槽及第五碑牌完成态。生产代码禁止直接修改这些结果。
 
-连续隐藏静音矩阵 `runtime-mastery-claim-20260831-130708` 与 `runtime-mastery-claim-20260831-130839` 均为 6/6。当前冻结口径为 218 registered / 225 semantic / 7 catalogued blocked / 217 compiler-bound / 140 harness dispatch / 141 five-gate / 58 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2154/2154、Backend 155/155、Release 0 警告和 0 错误。
+连续隐藏静音矩阵 `runtime-mastery-claim-20260831-130708` 与 `runtime-mastery-claim-20260831-130839` 均为 6/6。当时冻结口径为 218 registered / 225 semantic / 7 catalogued blocked / 217 compiler-bound / 140 harness dispatch / 141 five-gate / 58 training allowlist / 0 Product Executor；full snapshot 为 166/149/17/0，KnowledgeCompiler 585/585 且阻塞 0，Core 2154/2154、Backend 155/155、Release 0 警告和 0 错误。
 
 下一主切片固定为 `social.emote`。必须先区分可自治的陪玩表达、只能由玩家指令触发的表达以及多人可见回执，再复用现有社交和输入基础设施。Junimo Kart 继续暂缓；正式全量训练仍等待剩余动作、Product Executor 和长线验收。
 
-## 2026-08-31 原生玩家表情闭环（EVD-320）
+## 历史记录 · 2026-08-31 原生玩家表情闭环（EVD-320）
 
 `social.emote` 已替换待办语义项，但不进入自主策略训练。它和 `executor.perform_emote` 都固定为玩家指令专用：玩家必须给出一个实时目录中的准确 key、用途和显式确认；候选、DailyPlan 与 fresh 编译器只负责把该授权传给机械执行层。不得把陪玩系统自行决定的社交表达扩张到这条人工命令接口。
 
@@ -1209,7 +1209,7 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 
 下一主切片为 `social.watch_movie`，按“锁定反编译语义 -> 透明字段 -> 模型选择边界 -> 复用商店/社交/菜单机械层 -> 原生回执 -> 隐藏矩阵 -> 目录冻结”推进。Junimo Kart 保持已知暂缓项，不得用模拟结果冒充原生完美游玩。
 
-## 2026-08-31 原生影院完整访问闭环（EVD-321）
+## 历史记录 · 2026-08-31 原生影院完整访问闭环（EVD-321）
 
 `social.watch_movie` 已替换待办语义项并进入高层训练白名单。模型出口只选择当前电影、独自或一个实时合法宾客、以及可选零食；买票数量、商店端点、跨图路线、精确站位、邀请物品槽、入场确认、柜台菜单、影院门互斥锁和放映事件均由编译器机械展开。唯一动作链为 `social.watch_movie -> watch_movie -> executor.watch_movie`，执行器校准动作不进入策略训练。
 
@@ -1217,11 +1217,11 @@ EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H
 
 滚动状态机依次复用既有商店和路线基础设施，并只走原生入口：向 NPC 使用 `(O)809`、Town `Theater_Entrance` 的 Yes、MovieTheater `Concessions` 的真实 `ShopMenu` 购买、`Theater_Doors` 的 mutex/ready 流程及完整 `MovieTheaterScreening` 到 `requestMovieEnd`。生产代码不直接修改票券、金钱、邀请、零食、好感、观影周、事件或互斥锁，也不调用 `skipEvent`。每一阶段后停止旧队列并用新快照重新规划；进入影院后剩余票数需求为零，禁止错误购买第三张票。
 
-隐藏静音 E 盘矩阵 `runtime-movie-theater-smoke-20260831-185111` 已 4/4 通过，邀请、入场、零食和放映均为 `applied/verified`，玩家与 Abigail 周标记更新到同一周，好感从 1000 精确增加到 1050，原生事件清理并返回影院大厅。当前冻结口径为 `222 registered / 227 semantic / 5 catalogued blocked / 221 compiler-bound / 142 harness dispatch / 145 five-gate / 59 training allowlist / 0 Product Executor`；full snapshot 为 `169/152/17/0`，KnowledgeCompiler `585/585` 且阻塞 0，原生分母保持 `322/448/150`。最终静态回归为 Core `2170/2170`、Backend `155/155`、冻结/目录一致性 `50/50`，全解决方案 Release `0 warnings / 0 errors`。
+隐藏静音 E 盘矩阵 `runtime-movie-theater-smoke-20260831-185111` 已 4/4 通过，邀请、入场、零食和放映均为 `applied/verified`，玩家与 Abigail 周标记更新到同一周，好感从 1000 精确增加到 1050，原生事件清理并返回影院大厅。当时冻结口径为 `222 registered / 227 semantic / 5 catalogued blocked / 221 compiler-bound / 142 harness dispatch / 145 five-gate / 59 training allowlist / 0 Product Executor`；full snapshot 为 `169/152/17/0`，KnowledgeCompiler `585/585` 且阻塞 0，原生分母保持 `322/448/150`。最终静态回归为 Core `2170/2170`、Backend `155/155`、冻结/目录一致性 `50/50`，全解决方案 Release `0 warnings / 0 errors`。
 
 EVD-322 已闭合普通 `story.advance_event`，EVD-323 已闭合独立的 `story.advance_event_minigame`。下一主切片固定为 `tailoring.sew_item`；完成后进入 Product Executor 与正式轨迹链，不得用 RuntimeTestHarness 或测试夹具冒充产品执行器。
 
-## 2026-09-01 正式训练冷启动闭环（EVD-327）
+## 历史记录 · 2026-09-01 正式训练冷启动闭环（EVD-327）
 
 正式训练冷启动只接受 `product_executor.v1` 的真实 applied/verified/fresh 回执。E 盘隔离校准已经形成
 3 条 v2 轨迹、248 个训练对和首个结构化 checkpoint；该批数据没有 validation/test 分区，故只负责解除

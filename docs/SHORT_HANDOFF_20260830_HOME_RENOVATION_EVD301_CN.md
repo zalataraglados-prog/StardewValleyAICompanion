@@ -16,7 +16,7 @@
 - full snapshot schema `146/130/16/0`；KnowledgeCompiler `585/585`、blocking `0`。
 - 对账 `182 registered / 206 semantic / 181 compiler-bound / 105 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`；原生分母 `322 surfaces / 448 branches / 150 map tokens` 不变。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 - 下一冻结切片是 `island.field_office_donate`。先按实时反编译和数据锁定捐赠集合、菜单分支、奖励、完成状态和持久化回执，再复用既有岛屿路线、库存选择、显式确认和原生菜单执行基础设施。
 - 不要把住宅装修加入正式策略训练。它的五门证据仅证明玩家指令执行能力。

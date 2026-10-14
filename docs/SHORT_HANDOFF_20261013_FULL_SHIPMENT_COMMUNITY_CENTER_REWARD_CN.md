@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 社区中心奖励路线
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-community-center-reward`。
 - 代表目标：`full_shipment:item:336 / (O)336 / creates_reward_item / bundle:Bulletin Board/33:reward`。
@@ -26,6 +26,6 @@
 - rollout receipt：`verified_complete_rollout_proof_chain`，portfolio completion 与 proof chain 均为 `true`。
 - 严格索引：`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-evidence-current-preflight-v5-20261013`，状态 `9/26`，共享 shipping/settlement 有效。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 standard 批次首项 `parsnip_harvest_sample` 已完成并把严格索引推进到 `10/26`。下一固定项为 `berry_bush_harvest_sample`：`full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`。不要重复运行已通过的十个分层，不要提交或删除 `local-data/`。

@@ -5,7 +5,7 @@
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
 
-## 2026-10-11: native geode route admitted
+## 历史记录 · 2026-10-11: native geode route admitted
 
 - The current-authority Full Shipment evidence index is `7/26`, with 19 strata remaining. The exact
   `full_shipment:item:386 / (O)386 / native_geode_drop / geode:791:1:random:6` sample consumed one Golden Coconut and
@@ -19,7 +19,7 @@
   of being inherited by an empty portfolio marker. Shop purchase and Community Center reward are the next high-risk
   samples; `formal_product_training_authorized=false` remains enforced.
 
-## 2026-10-11: current-authority Full Shipment anchors verified
+## 历史记录 · 2026-10-11: current-authority Full Shipment anchors verified
 
 - The Sap recurrence prefix now enters the milestone through a dedicated evidence-export schema that independently
   rebuilds its prefix checkpoint and binds the exact recurrence and acquisition rollout hashes. It cannot authorize
@@ -35,7 +35,7 @@
 - `formal_product_training_authorized=false` remains enforced. This revalidation used frozen artifacts and a hidden
   Backend process; it did not launch the game, modify a save or produce formal training data.
 
-## 2026-10-05: bounded runtime verification replaces per-change full replay
+## 历史记录 · 2026-10-05: bounded runtime verification replaces per-change full replay
 
 - Current-version Sap proof `runtime-full-shipment-sap-refresh-20261005-183733` verified acquisition, shipping, return,
   native sleep, day rollover, save commit, menu closure, recurrence checkpoint, and independent rollout proof.
@@ -49,7 +49,7 @@
 - Deployment now fails closed when `-NoBuild` points at an output older than source inputs and verifies SHA-256 after
   copying every mod file. This prevents a fresh source tree from being tested through a stale runtime DLL.
 
-## 2026-10-05: native tree-moss sample reuses the scythe chain
+## 历史记录 · 2026-10-05: native tree-moss sample reuses the scythe chain
 
 - The representative identity is
   `full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest / Tree.CreateMossItem / foraging.harvest_tree_moss`.
@@ -59,7 +59,7 @@
 - Off-machine guards passed `17/17`, game-free tests passed `138/138`, and Bootstrap Release built cleanly. Fourteen
   strata are staged and ten remain unstaged; without a fresh Full Shipment receipt, production remains `2/26`.
 
-## 2026-10-05: runtime samples reject the wrong acquisition layer before execution
+## 历史记录 · 2026-10-05: runtime samples reject the wrong acquisition layer before execution
 
 - Every configured sample now declares one expected `route_kind`. After the execution binding is built and before any
   game action runs, the runner compares the exact `requirement_id / qualified_item_id / route_kind` tuple.
@@ -68,7 +68,7 @@
 - Off-machine guards passed `16/16`, game-free tests passed `137/137`, and Bootstrap Release built cleanly. This is a
   control-plane correction, not new native evidence, so production remains `2/26`.
 
-## 2026-10-05: native solar-panel sample preserves its dedicated source
+## 历史记录 · 2026-10-05: native solar-panel sample preserves its dedicated source
 
 - The representative route is
   `full_shipment:item:787 / (O)787 / native_solar_panel_output / farm.collect_machine_outputs`, with the sole source
@@ -79,7 +79,7 @@
 - Off-machine guards passed `15/15`, game-free tests passed `136/136`, and Bootstrap Release built cleanly. No fresh
   Full Shipment receipt exists, so production remains `2/26`.
 
-## 2026-10-05: direct machine-output sample binds the Mushroom Log
+## 历史记录 · 2026-10-05: direct machine-output sample binds the Mushroom Log
 
 - The representative route is
   `full_shipment:item:257 / (O)257 / machine_output / farm.collect_machine_outputs`, with authoritative source
@@ -90,7 +90,7 @@
 - Off-machine guards passed `14/14`, game-free tests passed `135/135`, and Bootstrap Release built cleanly. No fresh
   Full Shipment receipt exists for this stratum, so production remains `2/26`.
 
-## 2026-10-05: native fish-pond-output sample reuses pond collection
+## 历史记录 · 2026-10-05: native fish-pond-output sample reuses pond collection
 
 - The representative route is
   `full_shipment:item:812 / (O)812 / native_fish_pond_output / fishing.service_fish_ponds`.
@@ -100,7 +100,7 @@
 - Off-machine guards passed `13/13`, game-free tests passed `134/134`, and Bootstrap Release built cleanly. Historical
   pond output smoke proves chain reuse only; no fresh Full Shipment receipt exists, so production remains `2/26`.
 
-## 2026-10-05: native deluxe-animal-product sample shares the animal chain
+## 历史记录 · 2026-10-05: native deluxe-animal-product sample shares the animal chain
 
 - The representative route is
   `full_shipment:item:186 / (O)186 / native_farm_animal_deluxe_produce / farm.collect_animal_products`.
@@ -110,7 +110,7 @@
 - Off-machine guards passed `12/12`, game-free tests passed `133/133`, and Bootstrap Release built cleanly. No fresh
   `(O)186` Full Shipment receipt exists, so this stratum is still pending and production remains `2/26`.
 
-## 2026-10-05: native base-animal-product sample reuses the Milk Pail chain
+## 历史记录 · 2026-10-05: native base-animal-product sample reuses the Milk Pail chain
 
 - The representative route is
   `full_shipment:item:184 / (O)184 / native_farm_animal_produce / farm.collect_animal_products`.
@@ -120,7 +120,7 @@
 - Off-machine guards passed `11/11`, game-free tests passed `132/132`, and Bootstrap Release built cleanly. EVD-222
   proves exact `(O)184` chain reuse only; without a fresh Full Shipment receipt, production remains `2/26`.
 
-## 2026-10-05: native fruit-tree sample reuses the existing action chain
+## 历史记录 · 2026-10-05: native fruit-tree sample reuses the existing action chain
 
 - The representative route is
   `full_shipment:item:638 / (O)638 / native_fruit_tree_produce / foraging.harvest_fruit_tree`.
@@ -130,7 +130,7 @@
 - Off-machine guards passed `10/10`, game-free tests passed `131/131`, and Bootstrap Release built cleanly. The historical
   fruit-tree action smoke proves chain reuse only; no fresh Full Shipment receipt exists, so production remains `2/26`.
 
-## 2026-10-05: native location-forage sample reuses spawned-object execution
+## 历史记录 · 2026-10-05: native location-forage sample reuses spawned-object execution
 
 - The representative route is
   `full_shipment:item:16 / (O)16 / native_location_forage_spawn / foraging.collect_spawned_objects`.
@@ -139,7 +139,7 @@
 - Off-machine guards passed `9/9`, game-free tests passed `130/130`, and Bootstrap Release built cleanly.
 - EVD-211 proves the reusable native chain, not this Full Shipment rollout. Production remains `2/26`.
 
-## 2026-10-05: native spring-onion sample shares the crop scenario table
+## 历史记录 · 2026-10-05: native spring-onion sample shares the crop scenario table
 
 - The locked route is
   `full_shipment:item:399 / (O)399 / native_spring_onion_harvest / foraging.harvest_spring_onions`.
@@ -148,7 +148,7 @@
 - Off-machine guards passed `8/8`, game-free tests passed `129/129`, and Bootstrap Release built cleanly.
 - Historical EVD-335 confirms native-chain reuse, not Full Shipment rollout admission. Production remains `2/26`.
 
-## 2026-10-05: Island palm sample binds an exact cross-location root
+## 历史记录 · 2026-10-05: Island palm sample binds an exact cross-location root
 
 - The representative route is
   `full_shipment:item:88 / (O)88 / native_wild_tree_seed / wild_tree:6 / foraging.harvest_tree_product`.
@@ -158,7 +158,7 @@
 - Off-machine guards passed `7/7`, game-free tests passed `128/128`, and Bootstrap Release built cleanly.
 - No fresh Full Shipment receipt exists for this sample, so the production index remains `2/26`.
 
-## 2026-10-05: wild-tree seed-drop sample reuses the native tree-product chain
+## 历史记录 · 2026-10-05: wild-tree seed-drop sample reuses the native tree-product chain
 
 - The representative route is
   `full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop / wild_tree:2:0 / foraging.harvest_tree_product`.
@@ -168,7 +168,7 @@
 - The historical native tree-product smoke is not an acquisition rollout proof. This stratum remains pending and the
   production index remains `2/26`. The Island palm route is deferred to an explicit cross-location-root slice.
 
-## 2026-10-05: native tea-bush sample shares the forage scenario table
+## 历史记录 · 2026-10-05: native tea-bush sample shares the forage scenario table
 
 - Tea Leaf `(O)815` is bound to
   `full_shipment:item:815 / native_tea_bush_harvest / Bush.GetShakeOffItem / foraging.harvest_bushes`.
@@ -179,7 +179,7 @@
 - The historical native tea action smoke establishes reuse viability only. A fresh Full Shipment acquisition receipt
   and independent rollout proof are still required, so production remains `2/26` and training remains disabled.
 
-## 2026-10-05: native ginger sample staged and validated off-machine
+## 历史记录 · 2026-10-05: native ginger sample staged and validated off-machine
 
 - The locked requirement builder and lowering identify Ginger as
   `full_shipment:item:829 / (O)829 / native_ginger_harvest / foraging.harvest_ginger`, sourced by the native
@@ -192,7 +192,7 @@
 - No fresh MonoGame receipt was produced. Berry and ginger remain pending runtime strata, the production index remains
   `2/26`, and formal product training remains disabled.
 
-## 2026-10-04: native bush sample staged without a second action chain
+## 历史记录 · 2026-10-04: native bush sample staged without a second action chain
 
 - The next production stratum is fixed by the authoritative inventory and lowering as
   `full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`. The runtime sample reuses the
@@ -205,7 +205,7 @@
 - Static and game-free validation is complete, but no interactive desktop session was available for MonoGame. The berry
   runtime receipt is therefore pending and the production index remains `2/26`, not `3/26`.
 
-## 2026-10-04: ordinary-crop sample admitted without weakening proof replay
+## 历史记录 · 2026-10-04: ordinary-crop sample admitted without weakening proof replay
 
 - Vanilla 1.6.15 decompilation establishes `Crop.netSeedIndex` as the ordinary crop's planted-seed identity;
   `whichForageCrop` is limited to wild-seed crops. The transparent bridge now publishes the exact ordinary source
@@ -220,7 +220,7 @@
   verified and 24 strata remain. Formal training stays disabled. The next bounded slice inventories existing native
   smokes for those 24 strata and upgrades reusable evidence into this same rollout contract before launching new game runs.
 
-## 2026-10-03: machine-verified runtime sample evidence index
+## 历史记录 · 2026-10-03: machine-verified runtime sample evidence index
 
 - `build-full-shipment-runtime-sample-evidence-index` consumes the v2 static inventory and a small evidence manifest.
   It independently rebuilds every supplied acquisition rollout proof, binds its exact route occurrence back to one
@@ -233,7 +233,7 @@
   the missing stratum IDs and never authorizes formal training by itself. The infrastructure and aggregation regressions
   are complete; production evidence registration starts with the existing Sap proof and does not change 4/19 yet.
 
-## 2026-10-03: Full Shipment runtime evidence uses stratified sampling
+## 历史记录 · 2026-10-03: Full Shipment runtime evidence uses stratified sampling
 
 - The authoritative denominator remains statically complete for all 154 item groups and all 641 acquisition-route occurrences.
 - Native runtime validation is grouped by route kind and execution signature. The current production lowering yields 26 strata; one exact source-bound queue/receipt/fresh-snapshot sample per stratum is sufficient, and already admitted native smokes may be reused.

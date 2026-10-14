@@ -23,6 +23,6 @@ Debris 可能在执行器完成验证后被原生近身自动拾取。因此结�
 - `artifacts/runtime-green-rain-resource-clump-smoke/runtime-green-rain-index46-admission-v2-20260803/summary.json`
 - EVD-187 普通任务/特别订单既有制品。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 继续按权威字典依赖顺序准入下一项已有完整链的模型级候选。正式长期 `policy_decision_trajectory.v2`、manifest/checkpoint、Product Executor 和第三年爷爷 21 分长跑仍未完成，不能把本切片表述为正式全量训练就绪。

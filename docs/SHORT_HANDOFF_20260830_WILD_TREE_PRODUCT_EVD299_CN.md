@@ -13,6 +13,6 @@
 - 生产执行不得直接调用 `Tree.shake` 或写树、debris、库存、经验；只允许一次原生 `GameLocation.checkAction`。
 - 普通树产品、FruitTree 果实、砍树/清障、苔藓、树木种植与成长是独立语义，不得合并或复制基础设施。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 下一冻结语义切片是 `foraging.rummage_garbage`。先用锁定 1.6.15 反编译与实时 `Data/GarbageCans` 确认全部地点/垃圾桶身份、可用时间、NPC 目击惩罚、帽子/特殊掉落、季节/天气/任务/书籍/运气与随机域；再按 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> output receipt -> E3` 闭合。必须复用现有共享移动、对象交互、输出守恒、任务资源反馈和随机域表示，不得新建第二套路由、输入或拾取系统。

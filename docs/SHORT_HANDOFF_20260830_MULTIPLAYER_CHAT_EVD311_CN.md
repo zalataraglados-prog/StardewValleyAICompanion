@@ -15,6 +15,6 @@ fresh 编译器只保留玩家意图，全部机械字段从当前 `player.multi
 - 对账：`202 registered / 217 semantic / 201 compiler-bound / 125 five-gate / 54 allowlist / 15 catalogued blocked / 0 Product Executor`。
 - 回归：Core `2105/2105`，Backend `151/151`，Release `0 warnings / 0 errors`，KnowledgeCompiler `585/585` blocking 0。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 `minigame.play_junimo_kart` 继续复用既有 AI 等价执行，原生完美代打后置到核心能力训练完成后且仅由玩家命令触发。下一实际纵向切片是 `player.choose_bobber`：先核对已有钓鱼菜单、浮标/鱼漂身份、装备限制和确认治理，优先复用现有原生菜单输入与钓鱼透明状态，禁止建立第二套钓鱼装备执行器。

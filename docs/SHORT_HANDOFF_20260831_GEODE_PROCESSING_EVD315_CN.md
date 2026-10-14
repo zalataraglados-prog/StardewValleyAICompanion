@@ -1,6 +1,6 @@
 # StardewAI 短交接：铁匠晶球处理 EVD-315
 
-## 当前状态
+## 当时状态（历史快照）
 
 `processing.crack_geode -> crack_geode -> executor.crack_geode` 已完整闭合。高层动作进入自主候选和策略训练；模型只决定是否处理哪一种晶球及目的，路线、柜台、槽位、费用、计数、随机上下文、输出和原生输入均由 fresh 编译器与机械执行层负责。
 
@@ -20,6 +20,6 @@
 - KnowledgeCompiler `585/585`，blocking 0。
 - Core `2128/2128`；Backend `155/155`；Release `0 warnings / 0 errors`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 `minigame.play_junimo_kart` 按既定要求继续后置。下一实际纵向切片是 `quest.cancel`：先按锁定 1.6.15 反编译确认 QuestLog 可取消类型、菜单入口、确认流程、不可取消/剧情/特别订单边界和副作用，再沿同一条透明投影、上游候选、DailyPlan、fresh 编译、类型化原生执行与隐藏静音回执流程闭合，禁止另建第二套任务状态写入系统。

@@ -16,7 +16,7 @@
 - 制作案例经原生菜单完成材料 `(O)114` `1 -> 0`、产物 `(O)499` `0 -> 1`、配方次数 `0 -> 1`、任务 `present true -> false`、`completed false -> true`。
 - Core 1610/1610、Backend 120/120、完整解决方案构建 0 错误；KnowledgeCompiler 585/585、blocking 0。
 
-## 当前状态与下一步
+## 当时状态（历史快照）与下一步
 
 - 动作看板：105 registered、172 semantic、104 compiler-bound、39 five-gate、26 training allowlist、0 Product Executor。
 - 任务目录：22 bound、4 blocked、2 observation-only。

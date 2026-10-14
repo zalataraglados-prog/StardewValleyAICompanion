@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 树苔藓与 26/26 证据闭环
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-tree-moss-harvest`。
 - Full Shipment：`154/154` 个需求、`641` 条来源、`26/26` 个运行时执行签名层。
@@ -20,6 +20,6 @@
 - Machine ItemQuery 替换证明：`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-machine-item-query-output-v3-20261014\summary.json`。
 - 树苔藓取得 `(O)Moss x1`；冻结源存档 SHA-256 为 `5af603dbb99bafadbb14580952b6e4b8c0d9e257963174759f53fbc8b2d671cc`。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 运行现有 `build-goal-method-formal-training-admission-reconciliation`，使用当前真实的 19 项 Teacher coverage、acquisition corpus、checkpoint 和支持转移制品生成准入报告。先修制品接线和真实阻塞，不新增第二套 Teacher/Planner/Compiler/Executor；报告仍只能进入独立 promotion review，不能自行授权训练。不得触碰或提交 `local-data/`。
