@@ -153,17 +153,41 @@ if ([string]$comparisonPlan.run_id -ne [string]$wave.source_id -or
     throw "Comparison collection plan does not cover its scheduled wave."
 }
 
+$workPlanSnapshotPath = Join-Path $workDirectory `
+    "source-money-threshold-evidence-work-plan.json"
+$corpusSnapshotPath = Join-Path $workDirectory `
+    "source-money-threshold-corpus.json"
+Copy-Item -LiteralPath $sourceWorkPlanPath `
+    -Destination $workPlanSnapshotPath -Force
+Copy-Item -LiteralPath $corpusPath `
+    -Destination $corpusSnapshotPath -Force
+$workPlanSnapshotSha256 =
+    (Get-FileHash -LiteralPath $workPlanSnapshotPath `
+        -Algorithm SHA256).Hash.ToLowerInvariant()
+$corpusSnapshotSha256 =
+    (Get-FileHash -LiteralPath $corpusSnapshotPath `
+        -Algorithm SHA256).Hash.ToLowerInvariant()
+$sourceWorkPlanSha256 =
+    (Get-FileHash -LiteralPath $sourceWorkPlanPath `
+        -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($workPlanSnapshotSha256 -ne $sourceWorkPlanSha256 -or
+    $corpusSnapshotSha256 -ne $corpusSha256) {
+    throw "Comparison-wave scheduling snapshot copy drifted from its source."
+}
+
 $handoffPath = Join-Path $workDirectory `
     "money-revenue-comparison-wave-handoff.json"
 Write-JsonFile -Path $handoffPath -Value ([ordered]@{
     schema_version = "money_revenue_comparison_wave_handoff.v1"
     status = "comparison_wave_initialized"
-    source_work_plan_path = $sourceWorkPlanPath
-    source_work_plan_sha256 =
-        (Get-FileHash -LiteralPath $sourceWorkPlanPath `
-            -Algorithm SHA256).Hash.ToLowerInvariant()
-    source_corpus_path = $corpusPath
-    source_corpus_sha256 = $corpusSha256
+    source_work_plan_path = $workPlanSnapshotPath
+    source_work_plan_sha256 = $workPlanSnapshotSha256
+    source_corpus_path = $corpusSnapshotPath
+    source_corpus_sha256 = $corpusSnapshotSha256
+    origin_work_plan_path = $sourceWorkPlanPath
+    origin_work_plan_sha256 = $sourceWorkPlanSha256
+    origin_corpus_path = $corpusPath
+    origin_corpus_sha256 = $corpusSha256
     source_row_id = $SourceRowId
     source_id = $sourceId
     dataset_partition = $DatasetPartition

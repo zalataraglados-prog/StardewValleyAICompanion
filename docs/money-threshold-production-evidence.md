@@ -178,7 +178,10 @@ criterion to exist in the work-plan corpus, resolves the matching native run
 summary under the configured run root, then invokes the existing initializer.
 Its versioned handoff binds the source work plan, corpus, native run summary,
 comparison plan, hashes, row/source identity, partition, and exact missing
-criterion set. It does not collect terminal proofs or create an admission.
+criterion set. The mutable canonical work plan and corpus are copied and
+hash-checked into the comparison work directory first, so a later batch refresh
+cannot invalidate an in-flight handoff. It does not collect terminal proofs or
+create an admission.
 
 When acquisition work is required, the initializer can consume an optional
 `-AcquisitionRolloutIndex` with schema

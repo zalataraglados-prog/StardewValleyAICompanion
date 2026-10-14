@@ -7,7 +7,7 @@
 ## 历史记录 · 2026-10-15 Money comparison 波次身份交接
 
 - 新增 `Initialize-MoneyRevenueComparisonWave.ps1`，用 `dataset_partition + source_row_id` 从 canonical work plan 定位唯一 comparison wave，核对 corpus row、source ID、native run summary 和缺失 criterion，再复用既有 `Initialize-MoneyRevenueComparisonWork.ps1`。不再人工搜索 summary 或抄 criterion。
-- 新的 `money_revenue_comparison_wave_handoff.v1` 绑定 source work plan、corpus、run summary、comparison plan 的绝对路径与 SHA-256，以及 row/source/partition/criterion identity。completion 使用前重新哈希，漂移即失败关闭。
+- 新的 `money_revenue_comparison_wave_handoff.v1` 绑定 source work plan、corpus、run summary、comparison plan 的绝对路径与 SHA-256，以及 row/source/partition/criterion identity。可变 canonical work plan/corpus 会先复制并核对到 comparison work directory，后续其他波次刷新 batch 不会使在途 handoff 失效；completion 使用前仍重新哈希，漂移即失败关闭。
 - `Complete-MoneyRevenueComparisonWork.ps1` 在提供 handoff 时只生成该波仍缺的 admission；可选 existing index 会按 `run_id + criterion_id` 精确归并为累计 v3 index，重复 key、非法 outcome override 或版本漂移均拒绝。它仍要求真实 rollout、ledger 和 terminal proof，不改变 `Money production evidence cells: 0/18` 或训练授权。
 
 ## 历史记录 · 2026-10-15 Money 原生波次自适应执行
