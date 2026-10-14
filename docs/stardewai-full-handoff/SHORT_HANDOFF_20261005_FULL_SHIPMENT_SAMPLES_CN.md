@@ -41,7 +41,7 @@
 - 同物品多来源不再可能仅因 requirement 相同而串层。远端守卫 `16/16`、Core game-free `137/137`、Bootstrap Release `0 warning / 0 error`。
 - 该修正本身没有产生新原生证据；随后新增苔藓入口后，当前十四个待证样本、生产 `2/26`。
 
-## 当前事实
+## 当时事实（历史快照）
 
 - 生产运行时分层索引严格为 `2/26`：防风草覆盖 `harvests_as`，Sap 覆盖 `native_wild_tree_chop_drop`。
 - 浆果入口已绑定 `full_shipment:item:296 / (O)296 / native_bush_shake / foraging.harvest_bushes`。
@@ -79,6 +79,6 @@
 - 后续仅按变更链路选择代表样本运行。每层必须同时满足：原生执行 `applied/verified`、fresh 终态一致、精确 execution binding、独立 rollout proof 重建通过、生产 evidence index 接纳。
 - 满足一层才把 `2/26` 增加一；在全部 26 层与其余训练门完成前，`formal_product_training_authorized=false`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 入口已经是 `26/26`，旧的“补齐剩余 7 个入口”表述作废。先在异机用 milestone runner 导入并复核 Sap/放射性矿石 anchor，再按树液收集器、怪物掉落、地点鱼、蚯蚓地、晶球、商店、奖励物顺序执行 `high_risk` 批次；全绿后执行 `standard`。每次失败立即停并保留 checkpoint，不自动重试。全部 26 层形成 fresh proof 后统一重建 production evidence index；在此之前正式训练保持关闭。
