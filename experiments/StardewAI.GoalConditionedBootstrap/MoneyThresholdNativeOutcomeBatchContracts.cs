@@ -6,8 +6,10 @@ public static class MoneyThresholdNativeOutcomeBatchVersions
 {
     public const string LegacyRequest =
         "money_threshold_native_outcome_batch_request.v1";
-    public const string Request =
+    public const string ComparisonRequest =
         "money_threshold_native_outcome_batch_request.v2";
+    public const string Request =
+        "money_threshold_native_outcome_batch_request.v3";
     public const string Batch =
         "money_threshold_native_outcome_batch.v2";
 }
@@ -39,7 +41,9 @@ public sealed record MoneyThresholdNativeOutcomeComparisonAdmission(
     [property: JsonPropertyName("admission_manifest_path")]
         string AdmissionManifestPath,
     [property: JsonPropertyName("admission_receipt_path")]
-        string AdmissionReceiptPath);
+        string AdmissionReceiptPath,
+    [property: JsonPropertyName("execution_episode_path")]
+        string ExecutionEpisodePath = "");
 
 public sealed class MoneyThresholdNativeOutcomeRunSummary
 {
@@ -163,7 +167,7 @@ public sealed class MoneyThresholdNativeOutcomeBatch
 
     [JsonPropertyName("batch_policy")]
     public string BatchPolicy { get; set; } =
-        "Every run summary is replayed through its candidate denominator, native selection and Money corpus before admission. Optional comparison admissions are keyed by an existing run and a criterion actually crossed by that run, then replayed by the existing criterion-local corpus join. Native and Teacher-comparison criterion-partition cells are derived from the verified corpus, not caller counts. Duplicate split keys and duplicate run/criterion attachments are rejected. This batch cannot create evidence or authorize formal training.";
+        "Every seed run summary is replayed through its candidate denominator, native selection and Money corpus before admission. Optional comparison admissions are keyed by an existing run and a criterion actually crossed by that seed. Request v3 may replace the provisional seed episode with one common Teacher-selected native shop-sale episode already verified by the terminal proof; the existing criterion-local corpus join replays it. Native and Teacher-comparison criterion-partition cells are derived from that verified corpus, not caller counts. Duplicate split keys, duplicate run/criterion attachments and multiple selected episodes for one seed are rejected. This batch cannot create evidence or authorize formal training.";
 }
 
 public sealed record MoneyThresholdNativeOutcomeCellStatus(

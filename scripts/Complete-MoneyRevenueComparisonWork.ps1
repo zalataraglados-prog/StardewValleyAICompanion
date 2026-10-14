@@ -94,8 +94,6 @@ foreach ($required in @(
     }
 }
 $plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
-$summaryPath = [string]$plan.native_run_summary_path
-$summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
 
 $terminalIndexPath = Resolve-RuntimeEvidenceInputPath `
     -ProjectRoot $ProjectRoot -Path $TerminalProofIndex
@@ -154,7 +152,6 @@ Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
 $admissionRoot = Join-Path $workPath "comparison-admissions"
 $attachments = @()
 $unmatched = @()
-$episodePath = [IO.Path]::GetFullPath([string]$summary.execution_episode_path)
 foreach ($criterionId in @($plan.crossed_criterion_ids)) {
     $safeCriterion = ([string]$criterionId) -replace '[^a-zA-Z0-9._-]', '_'
     $criterionRoot = Join-Path $admissionRoot $safeCriterion
@@ -184,25 +181,28 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
             [string]$_.role -eq "shop_sale_episode"
         })
     } else { @() }
-    $matchesEpisode =
+    $selectedRequiresRollout = $selected.Count -eq 1 -and
+        [bool]$selected[0].acquisition_rollout_required
+    $hasSupportedEpisode =
         [bool]$receipt.production_teacher_preference_label_eligible -and
-        $saleArtifacts.Count -eq 1 -and
-        [string]::Equals(
-            [IO.Path]::GetFullPath([string]$saleArtifacts[0].path),
-            $episodePath,
-            [StringComparison]::OrdinalIgnoreCase)
-    if (-not $matchesEpisode) {
+        -not $selectedRequiresRollout -and
+        $saleArtifacts.Count -eq 1
+    if (-not $hasSupportedEpisode) {
         $unmatched += [ordered]@{
             criterion_id = [string]$criterionId
             selected_alternative_id = $selectedId
             reason = if (-not [bool]$receipt.production_teacher_preference_label_eligible) {
                 "authoritative_frontier_not_unique"
+            } elseif ($selectedRequiresRollout) {
+                "teacher_selected_rollout_outcome_not_supported_by_money_corpus"
             } else {
-                "teacher_selected_native_outcome_recollection_required"
+                "teacher_selected_shipping_outcome_not_supported_by_money_corpus"
             }
         }
         continue
     }
+    $selectedEpisodePath = [IO.Path]::GetFullPath(
+        [string]$saleArtifacts[0].path)
 
     $verificationRequestPath = Join-Path $criterionRoot `
         "money-threshold-comparison-verification-corpus-request.json"
@@ -213,7 +213,7 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
         corpus_id = ([string]$plan.run_id) + "-" + [string]$criterionId
         sources = @([ordered]@{
             source_id = [string]$plan.run_id
-            execution_episode_path = $episodePath
+            execution_episode_path = $selectedEpisodePath
             comparison_admissions = @([ordered]@{
                 criterion_id = [string]$criterionId
                 admission_manifest_path = $admissionManifestPath
@@ -231,6 +231,7 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
         criterion_id = [string]$criterionId
         admission_manifest_path = $admissionManifestPath
         admission_receipt_path = $admissionReceiptPath
+        execution_episode_path = $selectedEpisodePath
     }
 }
 
@@ -242,16 +243,22 @@ Write-JsonFile -Path $attachmentIndexPath -Value ([ordered]@{
     formal_product_training_authorized = $false
 })
 $allMatched = $attachments.Count -eq @($plan.crossed_criterion_ids).Count
+$distinctSelectedEpisodeCount = @($attachments |
+    Select-Object -ExpandProperty execution_episode_path -Unique).Count
 $hasIncomparableFrontier = @($unmatched | Where-Object {
     [string]$_.reason -eq "authoritative_frontier_not_unique"
 }).Count -gt 0
 [ordered]@{
     status = if ($allMatched) {
-        "comparison_admissions_ready_for_batch_join"
+        if ($distinctSelectedEpisodeCount -le 1) {
+            "comparison_admissions_ready_for_batch_join"
+        } else {
+            "criterion_specific_teacher_outcomes_require_distinct_seed_runs"
+        }
     } elseif ($hasIncomparableFrontier) {
         "comparison_admissions_blocked_by_incomparable_frontier"
     } else {
-        "teacher_selected_native_outcome_recollection_required"
+        "teacher_selected_outcome_not_supported_by_money_corpus"
     }
     run_id = [string]$plan.run_id
     terminal_request_count = $terminalAlternatives.Count

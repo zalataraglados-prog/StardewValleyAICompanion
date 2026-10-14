@@ -16,6 +16,7 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
         var runSummaryPaths = request.RunSummaryPaths ?? Array.Empty<string>();
         Require((request.SchemaVersion is
                     MoneyThresholdNativeOutcomeBatchVersions.LegacyRequest or
+                    MoneyThresholdNativeOutcomeBatchVersions.ComparisonRequest or
                     MoneyThresholdNativeOutcomeBatchVersions.Request) &&
                 !string.IsNullOrWhiteSpace(request.BatchId) &&
                 runSummaryPaths.Length > 0 &&
@@ -27,6 +28,12 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                 (request.SchemaVersion !=
                     MoneyThresholdNativeOutcomeBatchVersions.LegacyRequest ||
                     comparisonAdmissions.Length == 0) &&
+                (request.SchemaVersion ==
+                    MoneyThresholdNativeOutcomeBatchVersions.Request ||
+                    comparisonAdmissions.All(admission =>
+                        admission is not null &&
+                        string.IsNullOrWhiteSpace(
+                            admission.ExecutionEpisodePath))) &&
                 !request.FormalProductTrainingAuthorized,
             "Money threshold native-outcome batch request is invalid.");
 
@@ -44,13 +51,29 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                 CorpusId = request.BatchId,
                 Sources = runs.Select(value =>
                     {
-                        var comparisons = comparisonAdmissions
+                        var runAdmissions = comparisonAdmissions
                             .Where(admission => string.Equals(
                                 admission.RunId,
                                 value.VerifiedRun.RunId,
                                 StringComparison.Ordinal))
                             .OrderBy(admission => admission.CriterionId,
                                 StringComparer.Ordinal)
+                            .ToArray();
+                        var episodeOverrides = runAdmissions
+                            .Where(admission => !string.IsNullOrWhiteSpace(
+                                admission.ExecutionEpisodePath))
+                            .Select(admission => RequiredFile(
+                                admission.ExecutionEpisodePath,
+                                "Money threshold comparison-selected native episode"))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToArray();
+                        Require(episodeOverrides.Length <= 1,
+                            "One Money threshold seed run cannot join multiple " +
+                            "Teacher-selected native episodes.");
+                        var executionEpisodePath = episodeOverrides
+                            .SingleOrDefault() ??
+                            value.VerifiedRun.ExecutionEpisodePath;
+                        var comparisons = runAdmissions
                             .Select(admission =>
                                 new MoneyThresholdTeacherComparisonSource(
                                     admission.CriterionId,
@@ -59,7 +82,7 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                             .ToArray();
                         return new MoneyThresholdTeacherCorpusSource(
                             value.VerifiedRun.RunId,
-                            value.VerifiedRun.ExecutionEpisodePath,
+                            executionEpisodePath,
                             comparisons);
                     })
                     .ToArray(),
@@ -112,7 +135,10 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                 !string.IsNullOrWhiteSpace(admission.RunId) &&
                 !string.IsNullOrWhiteSpace(admission.CriterionId) &&
                 !string.IsNullOrWhiteSpace(admission.AdmissionManifestPath) &&
-                !string.IsNullOrWhiteSpace(admission.AdmissionReceiptPath)) &&
+                !string.IsNullOrWhiteSpace(admission.AdmissionReceiptPath) &&
+                (string.IsNullOrWhiteSpace(admission.ExecutionEpisodePath) ||
+                    File.Exists(Path.GetFullPath(
+                        admission.ExecutionEpisodePath)))) &&
             admissions.GroupBy(
                     admission => admission.RunId + "\n" +
                         admission.CriterionId,

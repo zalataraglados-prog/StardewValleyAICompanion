@@ -76,6 +76,15 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
                 -ProjectRoot $ProjectRoot -Path $manifestPath
             admission_receipt_path = Resolve-RuntimeEvidenceInputPath `
                 -ProjectRoot $ProjectRoot -Path $receiptPath
+            execution_episode_path = if (
+                [string]::IsNullOrWhiteSpace(
+                    [string]$_.execution_episode_path)) {
+                ""
+            } else {
+                Resolve-RuntimeEvidenceInputPath `
+                    -ProjectRoot $ProjectRoot `
+                    -Path ([string]$_.execution_episode_path)
+            }
         }
     })
 }
@@ -92,7 +101,7 @@ if (-not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
 }
 
 Write-JsonFile -Path $batchRequestPath -Value ([ordered]@{
-    schema_version = "money_threshold_native_outcome_batch_request.v2"
+    schema_version = "money_threshold_native_outcome_batch_request.v3"
     batch_id = $BatchId
     run_summary_paths = $summaryPaths
     comparison_admissions = $comparisonAdmissions

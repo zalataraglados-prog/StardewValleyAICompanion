@@ -71,7 +71,7 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.Contains("run_summary_paths = $summaryPaths",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains(
-            "money_threshold_native_outcome_batch_request.v2",
+            "money_threshold_native_outcome_batch_request.v3",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains("comparison_admissions = $comparisonAdmissions",
             BatchSource, StringComparison.Ordinal);
@@ -129,7 +129,12 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.Contains("build-money-threshold-teacher-corpus",
             ComparisonCompletionSource, StringComparison.Ordinal);
         Assert.Contains(
-            "teacher_selected_native_outcome_recollection_required",
+            "teacher_selected_shipping_outcome_not_supported_by_money_corpus",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "teacher_selected_rollout_outcome_not_supported_by_money_corpus",
+            ComparisonCompletionSource, StringComparison.Ordinal);
+        Assert.Contains("execution_episode_path = $selectedEpisodePath",
             ComparisonCompletionSource, StringComparison.Ordinal);
         Assert.Contains("money_threshold_comparison_admission_index.v1",
             ComparisonCompletionSource, StringComparison.Ordinal);

@@ -132,14 +132,20 @@ opportunity-cost validation to the existing terminal proof builder.
 The completion script builds one comparison admission per criterion actually
 crossed by the seed run. A receipt is added to the batch attachment index only
 when it has a unique authoritative preference and the selected alternative's
-native shop-sale episode is exactly the seed episode. The existing Money corpus
-builder replays that join once more before attachment. If the Teacher selects a
-different outcome, or shipping wins, the script emits
-`teacher_selected_native_outcome_recollection_required`; it never relabels the
-seed episode. A non-unique Pareto frontier is reported separately as
+native shop-sale episode is present in the verified terminal proof. The
+existing Money corpus builder replays that selected episode and join once more
+before attachment. The provisional seed episode is therefore replaced rather
+than relabeled when a different **direct** sale wins. A shipping preference is
+reported as `teacher_selected_shipping_outcome_not_supported_by_money_corpus`.
+An acquisition/processing alternative is reported as
+`teacher_selected_rollout_outcome_not_supported_by_money_corpus`, because its
+terminal sale alone would omit the rollout and could move the split day. The
+current Money corpus cannot represent either as a complete native outcome. A
+non-unique Pareto frontier is reported separately as
 `comparison_admissions_blocked_by_incomparable_frontier`, because recollecting
-the same action would not resolve that ambiguity. This avoids silently training
-on the sampler's provisional choice.
+the same action would not resolve that ambiguity. If different crossed criteria
+select different sale episodes, they require distinct seed runs because one
+corpus row cannot own multiple terminal outcomes.
 
 ## Batch policy
 
@@ -151,20 +157,22 @@ replays every referenced catalog/selection/corpus, rejects duplicate split keys,
 emits one combined corpus, and rebuilds the 18-cell work plan. Its optional
 `-ComparisonAdmissionIndex` input has schema
 `money_threshold_comparison_admission_index.v1` and contains an `admissions`
-array of `run_id`, `criterion_id`, `admission_manifest_path`, and
-`admission_receipt_path`. Each pair must reference an accepted run and a
-criterion actually crossed by that run. The existing criterion-local corpus
-join then rebuilds the admission and checks its selected native terminal
-artifacts; the script cannot mark a comparison complete by declaration. Run the
-batch updater after each accepted native or comparison artifact and schedule
-only cells still reported missing.
+array of `run_id`, `criterion_id`, `admission_manifest_path`,
+`admission_receipt_path`, and optional `execution_episode_path`. Each pair must
+reference an accepted seed run and a criterion actually crossed by that seed.
+Request v3 permits one common comparison-selected episode override per seed;
+the existing criterion-local corpus join then rebuilds the admission and checks
+its selected native terminal artifacts. Multiple overrides for one seed fail
+closed. Run the batch updater after each accepted native or comparison artifact
+and schedule only cells still reported missing.
 
-Batch request v2 carries these optional comparison attachments. Legacy v1
-requests remain replayable only as native-only batches, preventing an old
-schema from silently acquiring new authority. The v2 output separately reports
-native-complete, Teacher-comparison-complete, and fully complete cells. Batch
-output and the canonical work plan share one cell projector, so criterion and
-partition completeness cannot drift between two implementations.
+Batch request v3 carries direct-sale selected-episode-aware comparison
+attachments. Request
+v2 remains replayable with comparison attachments but no episode override;
+legacy v1 remains native-only. The v2 output separately reports native-complete,
+Teacher-comparison-complete, and fully complete cells. Batch output and the
+canonical work plan share one cell projector, so criterion and partition
+completeness cannot drift between two implementations.
 
 High-cost full reconciliation is reserved for the Money Exit Gate. During
 development, validate the new or invalidated cell and its exact proof branch.
