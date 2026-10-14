@@ -20,6 +20,7 @@ internal static partial class BootstrapSelfTest
         VerifyFormalTrainingAdmissionPolicy();
         VerifySupportingTransitionTerminalLineage();
         VerifyCommunityCenterDonationReceiptEvidence();
+        VerifyNativeShippingDepositEvidence();
         RunFullShipmentSettlement();
         VerifyMoneyRevenueProgression();
         VerifyMoneyRevenueCandidateDenominator();

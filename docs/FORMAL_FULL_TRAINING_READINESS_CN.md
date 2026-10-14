@@ -1,5 +1,20 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 原生出货入箱证据边界
+
+原生 `executor.ship_inventory_item_to_bin` 现由单一共享验证器核验：队列末项与执行回执必须绑定精确库存槽、
+物品 ID、品质、数量、实时单价、Farm 物理出货箱端点和 fresh after snapshot；库存总量、选中槽、所选端点内容、
+待结算金额和 changed-facts 必须同时形成同一个一件物品转移。共享钱包下多个物理出货箱展示同一原生库存，
+验证器只读取队列选中的端点，旧 Stage-One 汇总读取也改为要求各同 scope 视图一致并只计一次，不再重复求和。
+
+入箱阶段必须保持玩家现金、累计收入和 total day 不变，待结算金额只能增加 `quantity * expected_unit_price`；
+错槽位、错单价、错端点、入箱即到账、回执与透明快照不一致均失败关闭。隔夜到账继续由既有原生 shipping
+settlement 验证器负责，两段证据不得混合。
+
+该切片只闭合 Revenue 路径的 deposit proof shape，不代表获取或加工后的具体终端候选已经枚举完成。下一步固定为：
+从每个已验证 fresh terminal snapshot 重新构建候选目录，按路径骨架要求的 shop sale / shipping 终端和实际产物身份
+做唯一重绑定，再进入比较证明。正式覆盖保持 `2/19`，根方法保持 `1/11`，正式产品训练仍未授权。
+
 ## 2026-10-14 Revenue alternative skeleton denominator
 
 - `build-money-revenue-alternative-denominator` rebuilds the current candidate catalog, then expands every eligible policy candidate through every simple authoritative dependency path to the unique settled-money milestone. Acquisition candidates branch into sale and shipping paths, machine capacity retains load/collect dependencies, and direct terminal candidates keep only their own settlement family.

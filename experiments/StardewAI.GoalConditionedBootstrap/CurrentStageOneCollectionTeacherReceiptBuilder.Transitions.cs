@@ -135,28 +135,31 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         var beforeInventory = InventoryCount(before, credit.QualifiedItemId, 0);
         var afterInventory = InventoryCount(after, credit.QualifiedItemId, 0);
         var settled = beforeShipped == false && afterShipped == true;
-        var pending = beforeShipped == false && afterShipped == false &&
-            beforePending.HasValue &&
-            afterPending.HasValue &&
-            beforeInventory.HasValue &&
-            afterInventory.HasValue &&
-            afterPending.Value > beforePending.Value &&
-            beforeInventory.Value - afterInventory.Value >=
-                afterPending.Value - beforePending.Value;
         var terminalBefore = "not_required";
         var terminalAfter = "not_required";
-        var terminalStepPending = !settled && !pending &&
-            VerifyPendingShipmentTerminalStep(
-                credit,
+        var deposit = !settled && receipt is not null
+            ? NativeShippingDepositEvidenceVerifier.Verify(
                 queueItems,
                 receipt,
-                beforePending,
-                afterPending,
-                beforeInventory,
-                afterInventory,
+                before,
                 after,
-                out terminalBefore,
-                out terminalAfter);
+                credit.QualifiedItemId,
+                credit.RequiredQuantity)
+            : null;
+        if (deposit is not null)
+        {
+            terminalBefore =
+                $"pending={CountText(deposit.BeforeBinItemQuantity)};" +
+                $"inventory={CountText(deposit.BeforeInventoryItemQuantity)};" +
+                $"slot={CountText(deposit.BeforeInventorySlotQuantity)};" +
+                $"value={deposit.BeforePendingSettlementValue?.ToString() ?? "unavailable"}";
+            terminalAfter =
+                $"pending={CountText(deposit.AfterBinItemQuantity)};" +
+                $"inventory={CountText(deposit.AfterInventoryItemQuantity)};" +
+                $"slot={CountText(deposit.AfterInventorySlotQuantity)};" +
+                $"value={deposit.AfterPendingSettlementValue?.ToString() ?? "unavailable"}";
+        }
+        var terminalStepPending = deposit?.Verified == true;
         return Transition(
             credit,
             settled
@@ -166,133 +169,7 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                     : "exact_pending_native_shipment_increased",
             $"shipped={BooleanText(beforeShipped)};pending={CountText(beforePending)};inventory={CountText(beforeInventory)};terminal={terminalBefore}",
             $"shipped={BooleanText(afterShipped)};pending={CountText(afterPending)};inventory={CountText(afterInventory)};terminal={terminalAfter}",
-            settled || pending || terminalStepPending);
-    }
-
-    private static bool VerifyPendingShipmentTerminalStep(
-        CurrentCollectionRequirementCredit credit,
-        ActionQueueItem[] queueItems,
-        QueueExecutionReceiptEnvelope? receipt,
-        int? queueBeforePending,
-        int? queueAfterPending,
-        int? queueBeforeInventory,
-        int? queueAfterInventory,
-        SnapshotEnvelope after,
-        out string terminalBefore,
-        out string terminalAfter)
-    {
-        terminalBefore = "unavailable";
-        terminalAfter = "unavailable";
-        if (receipt is null || credit.RequiredQuantity <= 0 ||
-            queueItems.Length == 0 ||
-            receipt.StepResults.Length != queueItems.Length)
-            return false;
-
-        var matches = queueItems
-            .Select((item, index) => (Item: item, Index: index))
-            .Where(value => string.Equals(
-                    value.Item.OptionId,
-                    "executor.ship_inventory_item_to_bin",
-                    StringComparison.Ordinal) &&
-                string.Equals(
-                    ReadParameter(value.Item, "qualified_item_id"),
-                    credit.QualifiedItemId,
-                    StringComparison.Ordinal))
-            .ToArray();
-        if (matches.Length != 1 ||
-            matches[0].Index != queueItems.Length - 1)
-            return false;
-
-        var terminal = receipt.StepResults.SingleOrDefault(step =>
-            step.QueueItemIndex == matches[0].Index &&
-            string.Equals(
-                step.QueueItemId,
-                matches[0].Item.QueueItemId,
-                StringComparison.Ordinal));
-        if (terminal is null ||
-            !terminal.SelectedQueueCandidateCompleted ||
-            !string.Equals(terminal.Status, "applied", StringComparison.Ordinal) ||
-            !string.Equals(
-                terminal.PrimitiveKind,
-                "ship_inventory_item_to_bin",
-                StringComparison.Ordinal) ||
-            !string.Equals(
-                terminal.PrimitiveVerificationStatus,
-                "verified",
-                StringComparison.Ordinal) ||
-            !string.Equals(terminal.AfterStateHash, after.StateHash,
-                StringComparison.Ordinal))
-            return false;
-
-        var inventoryPath = "player.inventory." +
-            credit.QualifiedItemId + ".count";
-        var shippingPath = "farm.shipping_bin." +
-            credit.QualifiedItemId + ".count";
-        if (!TryReadChangedFactCounts(
-                terminal.ChangedFacts,
-                inventoryPath,
-                out var terminalInventoryBefore,
-                out var terminalInventoryAfter) ||
-            !TryReadChangedFactCounts(
-                terminal.ChangedFacts,
-                shippingPath,
-                out var terminalPendingBefore,
-                out var terminalPendingAfter))
-            return false;
-
-        terminalBefore =
-            $"pending={terminalPendingBefore};inventory={terminalInventoryBefore}";
-        terminalAfter =
-            $"pending={terminalPendingAfter};inventory={terminalInventoryAfter}";
-        return terminalInventoryBefore - terminalInventoryAfter ==
-                credit.RequiredQuantity &&
-            terminalPendingAfter - terminalPendingBefore ==
-                credit.RequiredQuantity &&
-            queueBeforePending == terminalPendingBefore &&
-            queueAfterPending == terminalPendingAfter &&
-            queueBeforeInventory.HasValue &&
-            terminalInventoryBefore >= queueBeforeInventory.Value &&
-            queueAfterInventory == terminalInventoryAfter;
-    }
-
-    private static bool TryReadChangedFactCounts(
-        System.Text.Json.JsonElement changedFacts,
-        string path,
-        out int before,
-        out int after)
-    {
-        before = 0;
-        after = 0;
-        if (changedFacts.ValueKind !=
-            System.Text.Json.JsonValueKind.Array)
-            return false;
-        var matches = changedFacts.EnumerateArray()
-            .Where(value => string.Equals(
-                ReadString(value, "path"),
-                path,
-                StringComparison.Ordinal))
-            .ToArray();
-        return matches.Length == 1 &&
-            TryReadChangedFactInt(matches[0], "before", out before) &&
-            TryReadChangedFactInt(matches[0], "after", out after);
-    }
-
-    private static bool TryReadChangedFactInt(
-        System.Text.Json.JsonElement fact,
-        string property,
-        out int result)
-    {
-        result = 0;
-        if (!fact.TryGetProperty(property, out var value))
-            return false;
-        return value.ValueKind switch
-        {
-            System.Text.Json.JsonValueKind.Number =>
-                value.TryGetInt32(out result),
-            System.Text.Json.JsonValueKind.String =>
-                int.TryParse(value.GetString(), out result),
-            _ => false
-        };
+            settled || terminalStepPending);
     }
 
     private static PolicyTeacherRequirementTransition VerifyCollectionBoolean(

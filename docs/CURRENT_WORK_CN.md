@@ -1,5 +1,18 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue 原生出货入箱证据
+
+- 新增唯一 `NativeShippingDepositEvidenceVerifier`，把 `executor.ship_inventory_item_to_bin` 的末队列项、fresh
+  回执、精确库存槽、物品/品质/数量/实时单价、Farm 箱端点、待结算金额、现金、累计收入和日期绑定为同一证据。
+- 修复共享钱包多物理出货箱重复展示同一内容时的重复计数风险：正式证据只读队列绑定端点；旧 Stage-One
+  兼容读取要求同 scope 端点完全一致并只计一次。
+- 密封测试覆盖双共享端点正例，以及错槽位、错单价、错端点、入箱即到账、changed-facts 与快照不一致五类负例；
+  Bootstrap Release 为 0 warning / 0 error，关键密封路径通过，未启动游戏。
+- 状态不升级：该切片只闭合入箱，隔夜结算复用既有共享验证器；正式覆盖仍为 `2/19`、根方法 `1/11`，
+  `formal_product_training_authorized=false`。
+- 下一固定切片：对每个 acquisition/processing rollout 的 fresh terminal snapshot 重建 Revenue 候选目录，将实际
+  产物唯一重绑定到路径骨架要求的 `economy.sell_items` 或 `economy.ship_items` 终端，再生成具体 alternative 分母。
+
 ## 2026-10-14 Revenue 候选到结算路径骨架
 
 - 新增 `build-money-revenue-alternative-denominator` 与 `money_revenue_alternative_denominator_catalog.v1`。它先重建并逐 JSON 核对当前候选目录，再沿权威 `earn_money` 依赖图把每个 policy candidate 展开到唯一累计收益里程碑；只枚举简单路径，因此不会进入 recurrence 回边形成无限展开。
