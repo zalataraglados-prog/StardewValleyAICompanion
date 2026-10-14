@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生春葱采收
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-spring-onion-harvest`。
 - 严格运行时证据：`16/26`，剩余 `10` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -16,6 +16,6 @@
 - rollout manifest SHA-256：`7976da974cbec8c931e1b52d137f09f2891336864e31e82fe4c72d9787335677`；receipt SHA-256：`da94fcddbd89a96e11395c0142b2852075cbf1728250ce22b077c8e6ce750057`。
 - 既有 15 层先完成兼容重建，再加入本层形成 `16/26`；缓存 schema 已升至 `v8`，避免同进程误复用旧候选索引。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 执行 `location_forage_spawn_sample / native_location_forage_spawn`。优先复用现有 `foraging.collect_spawned_objects`、BFS 移动和自然拾取链，只补精确来源轴、当前候选贯穿与 Full Shipment proof；不得重跑已通过的 16 层，不得触碰或提交 `local-data/`。
