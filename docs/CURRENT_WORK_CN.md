@@ -1,5 +1,23 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue counterfactual proof requests
+
+- 新增 `build-money-revenue-counterfactual-proof-requests`、
+  `money_revenue_counterfactual_proof_request_manifest.v1` 与 catalog。它重建 concrete alternative catalog，绑定同一
+  source snapshot 的 strategy ledger，并为每个 concrete ID 恰好生成一份不可由调用方增删的采证请求。
+- direct 候选明确不要求也不允许伪造 acquisition rollout；rebound 候选保留已验证 rollout manifest/receipt。
+  sale 请求要求原生 shop-sale proof，shipping 请求同时要求原生 deposit 与次日 settlement；两类都要求完整 Revenue
+  recurrence。
+- 审查中确认现有 comparison 只聚合 acquisition opportunity cost，不能把最终路由、出售或入箱动作默认为零成本。
+  外部 strategy ledger 的保留项也不能只靠游戏内保护标记推断。因此 8/8 请求统一强制
+  `terminal_opportunity_cost_proof_required=true` 与 `terminal_reservation_claim_proof_required=true`。在共享时序/成本和
+  储备安全证明接入前，已有 comparison 只能保持非生产证据，不能提升 Teacher 标签。
+- hermetic 覆盖 `8 concrete -> 8 proof requests`、`3` 份 rebound 保留 rollout、`5` 份 direct 不伪造 rollout、
+  `5` 条 sale 与 `3` 条 shipping 证明形态，以及陈旧 ledger 拒绝。Release 为 `0 warning / 0 error`，未启动游戏。
+- request denominator 与采证调度已权威，但执行结果仍为空；正式状态继续为 `2/19`、根方法 `1/11`、
+  `formal_product_training_authorized=false`。下一固定切片是实现共享 terminal opportunity-cost 与 reservation proof，
+  再让每个请求绑定 native recurrence receipt，最后使 comparison receipt 的 ID 集与 request catalog 完全相等。
+
 ## 2026-10-14 Revenue concrete alternative 联合分母
 
 - 新增 `build-money-revenue-concrete-alternative-denominator`、

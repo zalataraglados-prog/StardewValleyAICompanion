@@ -74,6 +74,12 @@ public sealed class MoneyRevenueConcreteAlternative
     [JsonPropertyName("terminal_state_hash")]
     public string TerminalStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("terminal_snapshot_path")]
+    public string TerminalSnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("terminal_snapshot_sha256")]
+    public string TerminalSnapshotSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("rebind_evidence_sha256")]
     public string RebindEvidenceSha256 { get; set; } = string.Empty;
 
@@ -120,8 +126,17 @@ public sealed class MoneyRevenueConcreteAlternativeDenominatorCatalog
     [JsonPropertyName("source_state_hash")]
     public string SourceStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("source_snapshot_path")]
+    public string SourceSnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_snapshot_sha256")]
+    public string SourceSnapshotSha256 { get; set; } = string.Empty;
+
     [JsonPropertyName("manifest_sha256")]
     public string ManifestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("manifest_path")]
+    public string ManifestPath { get; set; } = string.Empty;
 
     [JsonPropertyName("alternative_denominator_catalog_path")]
     public string AlternativeDenominatorCatalogPath { get; set; } =

@@ -120,7 +120,9 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                 concrete.Add(BuildDirect(
                     skeleton,
                     source,
-                    sourceCatalog.SourceStateHash));
+                    sourceCatalog.SourceStateHash,
+                    sourceCatalog.SnapshotPath,
+                    sourceCatalog.SnapshotSha256));
                 directCount++;
                 continue;
             }
@@ -152,6 +154,9 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
         {
             Status = "current_concrete_alternative_denominator_authoritative",
             SourceStateHash = skeletonCatalog.SourceStateHash,
+            SourceSnapshotPath = sourceCatalog.SnapshotPath,
+            SourceSnapshotSha256 = sourceCatalog.SnapshotSha256,
+            ManifestPath = manifestPath,
             ManifestSha256 = manifestSha256,
             AlternativeDenominatorCatalogPath = alternativePath,
             AlternativeDenominatorFileSha256 = alternativeFileSha256,

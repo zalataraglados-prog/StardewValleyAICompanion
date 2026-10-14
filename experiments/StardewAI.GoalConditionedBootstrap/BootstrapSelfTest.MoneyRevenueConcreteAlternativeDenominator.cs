@@ -88,6 +88,7 @@ internal static partial class BootstrapSelfTest
                     !row.UsesFreshTerminalRebind) == 5 &&
                 concrete.CatalogSha256.Length == 64,
             "Revenue direct and rebound alternatives did not form one complete concrete denominator.");
+        VerifyMoneyRevenueCounterfactualProofRequests(concrete);
 
         rebindReceipt.Rebinds = evidence.Take(1).ToArray();
         var rejected = false;
@@ -142,6 +143,8 @@ internal static partial class BootstrapSelfTest
                 RolloutManifestSha256 = new string(hashCharacter, 64),
                 RolloutReceiptSha256 = new string(hashCharacter, 64),
                 TerminalStateHash = terminalStateHash,
+                TerminalSnapshotPath = "terminal-" + hashCharacter + ".json",
+                TerminalSnapshotSha256 = new string(hashCharacter, 64),
                 TerminalCandidates = candidates,
                 EvidenceSha256 = new string(hashCharacter, 64)
             };

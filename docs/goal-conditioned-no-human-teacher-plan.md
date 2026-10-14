@@ -3191,6 +3191,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   formal training remain false until every row has an isolated, native, replayable Revenue recurrence and the existing
   reserve-aware comparison yields an admissible preference.
 
+### 2026-10-14: Revenue counterfactual proof requests
+
+- `build-money-revenue-counterfactual-proof-requests` rebuilds the concrete denominator, binds one source-state
+  strategy ledger and emits exactly one immutable proof request per concrete alternative. A stale ledger or any request
+  cardinality drift fails closed.
+- Direct alternatives explicitly carry no acquisition rollout. Rebound alternatives retain their exact verified
+  rollout manifest and receipt. Shop requests require native sale evidence; shipping requests require native deposit
+  plus day-settlement evidence; every request requires a replayable Revenue recurrence.
+- Acquisition opportunity cost is not the complete alternative cost. Travel and interaction for the terminal sale or
+  shipping deposit must not be treated as free, so all requests require an independent terminal opportunity-cost proof.
+  External strategy-ledger reservations must also be checked before terminal inventory consumption; in-game auto-sell
+  protection alone is not sufficient. The existing acquisition-only comparison remains diagnostic until both shared
+  timing/cost and terminal reservation boundaries are implemented.
+- The hermetic fixture emits eight requests for eight concrete alternatives, preserving three rebound and five direct
+  proof shapes while rejecting a stale source ledger. This authorizes bounded proof collection only, not outcomes,
+  production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request
+  to native recurrence receipts before exact-ID comparison admission.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:
