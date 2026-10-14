@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生姜采收
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-ginger-harvest`。
 - 严格运行时证据：`12/26`，剩余 `14` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -18,7 +18,7 @@
 - 原生回执在 `47` tick 内取得 `(O)829 x1`，验证作物移除、HoeDirt 状态、碎片生成、觅食经验 `+7` 和自然拾取，最终为 `applied/verified`。
 - evidence index 只在样本完成后构建一次；既有 11 层没有重跑。姜层 proof manifest SHA-256 为 `7996ac887535d20c229894f40a8fa7c34ff856fa6c52d2c53f54db75f47c4ade`，receipt SHA-256 为 `830eb70fabe0cfcac66a2698a5b6f61fd133b78a03fbad7f1024202030d179b2`。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 执行 `tea_bush_harvest_sample / full_shipment:item:815 / (O)815 / native_tea_bush_harvest`。复用现有 `foraging.harvest_bushes -> executor.harvest_bush`、共享灌木 fixture、自然碎片拾取和严格回执链，只补茶叶尚缺的当前候选路线轴与正式 Full Shipment proof。
 

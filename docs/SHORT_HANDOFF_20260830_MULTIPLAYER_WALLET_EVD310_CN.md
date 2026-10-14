@@ -15,6 +15,6 @@ fresh 编译器只继承操作意图，并重新绑定实时模式、权限、�
 - 对账：`200 registered / 216 semantic / 199 compiler-bound / 123 five-gate / 54 allowlist / 16 catalogued blocked / 0 Product Executor`。
 - 回归：Core `2096/2096`，Backend `150/150`，Release `0 warnings / 0 errors`，KnowledgeCompiler `585/585` blocking 0。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 `minigame.play_junimo_kart` 继续按既定边界复用现有定时等价执行，原生完美代打后置为核心能力训练完成后的玩家命令扩展。下一实际切片是 `multiplayer.send_chat`：先锁定 ChatBox 原生发送、命令解析、聊天类型、收件范围、长度/内容限制、多人传输和日志回执，再复用玩家命令治理与类型化输入链；不得把自由文本自动生成纳入当前策略训练，也不得建立第二套聊天网络协议。

@@ -13,6 +13,6 @@
 - 对账：`196 registered / 214 semantic / 195 compiler-bound / 119 five-gate / 53 allowlist / 18 catalogued blocked / 0 Product Executor`。
 - 回归：Core `2080/2080`，Backend `148/148`，Release `0 warnings / 0 errors`，KnowledgeCompiler `585/585` blocking 0。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 按冻结目录顺序进入 `mining.activate_calico_statue`。先反编译核对沙漠节 Calico Statue 的日期/位置/费用或每日限制、随机祝福、菜单/对话输入、持久状态和退出回执；再复用现有 MineShaft/节日上下文、路线、对话执行和祝福类只读投影，禁止扩大 Slots 或 Dwarf King Statue 证据。

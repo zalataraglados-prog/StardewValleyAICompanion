@@ -44,7 +44,7 @@
 - 89/89 必需透明字段已连接，字段 blocker 0。
 - Core：1105/1105；Backend：67/67；RuntimeTestHarness：0 error。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 1. 实现特别订单原生投递箱菜单闭环。
 2. 将 Collect/Fish/Gift/Slay 的 context-tag 目标绑定到现有动作候选。

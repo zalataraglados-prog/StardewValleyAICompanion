@@ -13,6 +13,6 @@
 - 对账：`198 registered / 215 semantic / 197 compiler-bound / 121 five-gate / 54 allowlist / 17 catalogued blocked / 0 Product Executor`。
 - 回归：Core `2087/2087`，Backend `149/149`，Release `0 warnings / 0 errors`，KnowledgeCompiler `585/585` blocking 0。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 按冻结目录顺序进入 `multiplayer.manage_wallet`。先实时反编译核对独立/共享钱包切换的房主权限、多人菜单端点、资金迁移与守恒、玩家确认边界、在线成员状态和持久化回执；优先复用既有多人透明状态、菜单输入、显式确认和资金守恒设施，禁止建立第二套钱包或金额写入路径。

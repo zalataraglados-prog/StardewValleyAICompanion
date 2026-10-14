@@ -1,6 +1,6 @@
 # StardewAI 短交接：EVD-318
 
-## 当前结论
+## 当时结论（历史快照）
 
 `rewards.claim_prize_ticket` 已完成五门闭环并进入高层训练白名单。模型只输出无参数领取意图；透明桥和 fresh 编译器绑定实时票券来源、奖励等级、精确首奖、地点与站位。唯一运行路径复用共享 BFS，并只通过原生 Town/ManorHouse 交互和 `PrizeTicketMenu` 输入结算。
 
@@ -21,6 +21,6 @@
 
 完整快照现在只读取已经加载的地图层、可建造地点、FarmHouse 入口和床位，不会为了观察 Cooking、Forge、Special Order Board、建筑或房屋上下文触发缺失资产加载。该修正是透明只读边界的一部分，不是奖券执行器的旁路。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 下一主切片为 `skills.claim_mastery`：先按锁定版反编译冻结五类精通领取资格、菜单顺序、星级/经验结算、奖励和一次性标志，再复用现有路线、DailyPlan、fresh 编译和菜单输入链完成原生回执。`minigame.play_junimo_kart` 继续暂缓。正式全量训练尚未开始，Product Executor 仍为 0。

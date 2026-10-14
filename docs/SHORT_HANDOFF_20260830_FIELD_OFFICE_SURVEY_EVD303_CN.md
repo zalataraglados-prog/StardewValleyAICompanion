@@ -22,6 +22,6 @@
 - 原生分母：`322 surfaces / 448 branches / 150 map tokens`，冻结指纹 `a7128f6e7617bc8e76d332d8982d4ac6e86a08c0b70e102e27dffc15f42db809`。
 - 回归：Core `2054/2054`，Backend `148/148`，Release `0 warnings / 0 errors`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 按当前冻结 `semantic-action-catalog.json` 的稳定顺序，下一未闭合纵向切片是 `minigame.play_calico_jack`。先锁定 1.6.15 原生规则、输入、费用/奖励和退出回执，再复用既有 minigame/菜单/路线基础设施；不得把现有 `executor.play_junimo_kart` 或 Fair 小游戏证据直接扩张为 CalicoJack 证据。

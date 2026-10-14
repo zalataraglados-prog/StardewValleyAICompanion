@@ -20,7 +20,7 @@
 `EVD-106` 不得放行 `mining.acquire_golden_scythe`、`volcano.reach_caldera` 或任何
 Skull Cavern 目标，也不得被解释为全矿洞完成。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 继续按权威字典依赖顺序选择已有完整运行证据的窄候选，先审计五门和输出字段，再登记准入；
 缺任一门时补原生运行证据，不复制已有候选、编译器或执行器。`farm.maintain_crops` 当前仍是

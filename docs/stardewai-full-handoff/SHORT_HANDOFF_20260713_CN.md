@@ -20,7 +20,7 @@
   - 12 个队列项全部尝试，最终到达并验证 `executor.load_machine_input`
   - 验证原因：`machine_input_loaded`, `machine_processing_started_or_output_ready`, `inventory_updated`, `qualified_item_id=(O)262`
 
-## 当前事实边界
+## 当时事实（历史快照）边界
 
 - 这不是字段缺失问题：`farm.machines[].loadable_inputs[].predicted_output` 已能进入候选、日计划、action queue 和真实执行器。
 - 当前不是完整 replanning：blocked 项只是被记录并继续，尚未智能修复、重排或重新规划。
@@ -30,7 +30,7 @@
   - 随机多输出和 custom output method 仍 blocked，不猜测
 - broad multi-machine/day strategy 仍未完成，不能宣称机器系统完全自动优化。
 
-## 下一步接续任务
+## 当时后续计划（已作废，仅历史）接续任务
 
 1. 处理候选排序/过滤，减少明显会 blocked 的 ready-output 机器候选排到机器输入前面。
 2. 加队列级 replan/reorder：blocked 后不只是继续，还要根据 after snapshot 更新后续队列或重排。

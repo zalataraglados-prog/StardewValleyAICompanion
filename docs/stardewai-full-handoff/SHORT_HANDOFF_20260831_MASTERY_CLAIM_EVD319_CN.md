@@ -14,6 +14,6 @@
 - KnowledgeCompiler `585/585`、blocking 0；full snapshot `166/149/17/0`。
 - 动作看板：218 registered / 225 semantic / 217 compiler-bound / 140 harness / 141 five-gate / 58 allowlist / 7 blocked / 0 Product Executor。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 下一主切片为 `social.emote`。先锁定原生表情目录、触发条件、多人可见回执和自治/玩家指令边界，再复用现有社交定位与输入链。`minigame.play_junimo_kart` 继续暂缓；正式全量训练仍未开始。
