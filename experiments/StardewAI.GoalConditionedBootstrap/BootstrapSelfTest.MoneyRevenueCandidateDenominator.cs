@@ -92,6 +92,8 @@ internal static partial class BootstrapSelfTest
             direction,
             availability);
         Require(
+            catalog.SchemaVersion ==
+                "money_revenue_candidate_denominator_catalog.v2" &&
             catalog.NodeCoverageComplete &&
             catalog.CurrentSnapshotDenominatorAuthoritative &&
             catalog.CurrentComparisonDenominatorReady &&
@@ -106,6 +108,34 @@ internal static partial class BootstrapSelfTest
                 .All(candidate => candidate.CandidateSha256.Length == 64) &&
             catalog.CatalogSha256.Length == 64,
             "Current Revenue candidate denominator did not preserve its bounded authority.");
+        var saleEntry = catalog.Nodes.Single(node =>
+                node.OptionId == "economy.sell_items")
+            .Candidates.Single();
+        var shippingEntry = catalog.Nodes.Single(node =>
+                node.OptionId == "economy.ship_items")
+            .Candidates.Single();
+        Require(saleEntry.DisplayName == "Parsnip" &&
+                saleEntry.StockId == "parsnip-stock" &&
+                saleEntry.OutputStack == 1 &&
+                saleEntry.OutputQuality == 0 &&
+                saleEntry.CurrencyBalance == 1_000 &&
+                saleEntry.Stock == 12 &&
+                saleEntry.InfiniteStock == false &&
+                saleEntry.CanShopSell == true &&
+                saleEntry.FullShipmentKnown == true &&
+                saleEntry.FullShipmentEligible == true &&
+                shippingEntry.ExpectedEffect == "route_to_shipping_bin" &&
+                shippingEntry.DisplayName == "Parsnip" &&
+                shippingEntry.AvailabilityClass == "available_now" &&
+                shippingEntry.AllowedNow == true &&
+                shippingEntry.AllowedToday == true &&
+                shippingEntry.NextOpenTime == 600 &&
+                shippingEntry.EffectiveOpenTime == 600 &&
+                shippingEntry.ClosesAt == 2600 &&
+                shippingEntry.WaitCost == 0 &&
+                shippingEntry.GateReasons.Length == 0 &&
+                shippingEntry.AvailableStack == 4,
+            "Revenue candidate denominator omitted source candidate semantics.");
         Require(
             catalog.Nodes.Single(node =>
                     node.OptionId == "economy.ship_items")
@@ -230,12 +260,23 @@ internal static partial class BootstrapSelfTest
                         CandidateId = "sell:0",
                         Kind = "sell_shop_item",
                         Available = true,
+                        ItemId = "24",
                         QualifiedItemId = "(O)24",
+                        DisplayName = "Parsnip",
                         ShopId = "SeedShop",
+                        StockId = "parsnip-stock",
+                        OutputStack = 1,
+                        OutputQuality = 0,
                         SlotIndex = 0,
                         Quantity = 1,
                         UnitPrice = 35,
-                        TotalValue = 35
+                        TotalValue = 35,
+                        CurrencyBalance = 1_000,
+                        Stock = 12,
+                        InfiniteStock = false,
+                        CanShopSell = true,
+                        FullShipmentKnown = true,
+                        FullShipmentEligible = true
                     }
                 }),
             ReadyRevenueOption("recovery.stabilize_day")
@@ -251,11 +292,22 @@ internal static partial class BootstrapSelfTest
                         CandidateId = "ship:Farm:71,14:1:24:route:FarmHouse",
                         Kind = shipKind,
                         Available = true,
+                        ExpectedEffect = "route_to_shipping_bin",
+                        ItemId = "24",
                         QualifiedItemId = "(O)24",
+                        DisplayName = "Parsnip",
                         SlotIndex = 1,
                         Quantity = 1,
                         UnitPrice = 35,
                         TotalValue = 35,
+                        AvailabilityClass = "available_now",
+                        AllowedNow = true,
+                        AllowedToday = true,
+                        NextOpenTime = 600,
+                        EffectiveOpenTime = 600,
+                        ClosesAt = 2600,
+                        WaitCost = 0,
+                        AvailableStack = 4,
                         Parameters = shipKind == "route_connector_tile"
                             ? new[]
                             {

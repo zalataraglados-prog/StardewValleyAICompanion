@@ -28,6 +28,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyRevenueTerminalExecutionProof();
         VerifyMoneyRevenueComparisonAdmission();
         VerifyMoneyThresholdNativeOutcomeOnly();
+        VerifyMoneyThresholdNativeOutcomeSelection();
     }
 
     internal static void RunInvocationReadPlan() =>

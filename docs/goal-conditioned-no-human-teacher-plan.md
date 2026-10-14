@@ -3134,6 +3134,27 @@ Slice 7 remains assigned to the RTX 5070 node.
   proof, so it cannot emit a production Teacher label or authorize formal training. Its IDs must first be expanded
   through the dependency topology, and acquisition outcomes require a fresh terminal-candidate rebind.
 
+### 2026-10-15: isolated Money native-outcome collection boundary
+
+- `build-money-threshold-native-outcome-selection` now turns one rebuilt,
+  comparison-ready current Revenue denominator into a fail-closed collection
+  intent. The target criterion and partition are assertions only; the native
+  episode remains responsible for deriving the actual crossed criteria from
+  evaluator authority.
+- The selector keeps the complete denominator identity and chooses the smallest
+  sufficient real shop-sale continuation. It rejects partition drift, already
+  satisfied thresholds, incomplete transparent state and debug-bound candidates.
+- `Invoke-RuntimeMoneyThresholdNativeOutcome.ps1` hashes and clones an existing
+  source save, runs only against the clone, executes the selected sale through
+  the existing daily-plan/compiler/executor chain, rebuilds a native-only Money
+  corpus row, and verifies that the source save remained byte-for-byte unchanged.
+- This closes the production runner boundary, not a production evidence cell by
+  itself. The implementation has not been executed in the quiet development
+  window. Coverage remains `0/18`; every accepted native outcome still requires
+  its independent exact-denominator Teacher comparison before the cell closes.
+  The operational details and batch policy are in
+  `docs/money-threshold-production-evidence.md`.
+
 ### 2026-10-14: Revenue alternative path skeletons
 
 - `build-money-revenue-alternative-denominator` rebuilds the source candidate catalog and expands each eligible policy
