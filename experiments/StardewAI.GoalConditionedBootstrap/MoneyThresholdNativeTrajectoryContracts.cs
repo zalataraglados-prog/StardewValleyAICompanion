@@ -7,7 +7,7 @@ public static class MoneyThresholdNativeTrajectoryVersions
     public const string Manifest =
         "money_threshold_native_trajectory_manifest.v1";
     public const string Receipt =
-        "money_threshold_native_trajectory_receipt.v1";
+        "money_threshold_native_trajectory_receipt.v2";
 }
 
 public static class MoneyThresholdNativeTrajectoryKinds
@@ -97,6 +97,12 @@ public sealed class MoneyThresholdNativeTrajectoryReceipt
         string.Empty,
         0,
         string.Empty);
+
+    [JsonPropertyName("final_snapshot_path")]
+    public string FinalSnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("final_snapshot_sha256")]
+    public string FinalSnapshotSha256 { get; set; } = string.Empty;
 
     [JsonPropertyName("revenue_prefix")]
     public MoneyRevenueRecurrencePrefixEvidence RevenuePrefix { get; set; } =

@@ -1,5 +1,3 @@
-using StardewAI.Contracts.State;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static class MoneyThresholdNativeTrajectoryBuilder
@@ -151,20 +149,21 @@ public static class MoneyThresholdNativeTrajectoryBuilder
         Require(terminalEvidence.TryGetValue(requestId, out var terminal),
             "Money threshold native trajectory terminal evidence is missing.");
 
-        var alternative = MoneyRevenueComparisonAdmissionBuilder
-            .VerifyAlternative(request, proof, terminal);
-        var sourceSnapshotPath = RequiredFile(
-            request!.SourceSnapshotPath,
-            "Money threshold native trajectory source snapshot");
-        var sourceSnapshot = CurrentTeacherFrontierSupport.Read<
-            SnapshotEnvelope>(
-                sourceSnapshotPath,
-                "Money threshold native trajectory source snapshot");
-        var source = MoneyRevenueProgressionVerifier.Project(sourceSnapshot);
+        var selectedRequest = request!;
+        var selectedProof = proof!;
+        var selectedTerminal = terminal!;
+        var verifiedAlternative = MoneyRevenueComparisonAdmissionBuilder
+            .VerifyAlternativeWithContext(
+                selectedRequest,
+                selectedProof,
+                selectedTerminal);
+        var alternative = verifiedAlternative.Alternative;
+        var sourceSnapshotPath = verifiedAlternative.SourceSnapshotPath;
+        var source = verifiedAlternative.SourceCheckpoint;
         var prefix = alternative.RevenuePrefix;
         var final = prefix.Transitions[^1].After;
-        Require(Hash(sourceSnapshotPath) == request.SourceSnapshotSha256 &&
-                source.StateHash == request.SourceStateHash &&
+        var finalSnapshotPath = verifiedAlternative.FinalSnapshotPath;
+        Require(source.StateHash == selectedRequest.SourceStateHash &&
                 source.SaveId == prefix.SaveId &&
                 source.PlayerId == prefix.PlayerId &&
                 source.TotalMoneyEarned == prefix.InitialTotalMoneyEarned &&
@@ -180,8 +179,8 @@ public static class MoneyThresholdNativeTrajectoryBuilder
             requestCatalogPath,
             terminalManifestPath,
             terminalReceiptPath,
-            request,
-            proof,
+            selectedRequest,
+            selectedProof,
             alternative)
             .OrderBy(value => value.Role, StringComparer.Ordinal)
             .ToArray();
@@ -194,18 +193,22 @@ public static class MoneyThresholdNativeTrajectoryBuilder
             Status = "verified_native_money_threshold_trajectory",
             ManifestPath = Path.GetFullPath(manifestPath),
             ManifestSha256 = Hash(manifestPath),
-            RequestId = request.RequestId,
-            ConcreteAlternativeId = request.ConcreteAlternativeId,
-            TrajectoryKind = TrajectoryKind(request),
+            RequestId = selectedRequest.RequestId,
+            ConcreteAlternativeId = selectedRequest.ConcreteAlternativeId,
+            TrajectoryKind = TrajectoryKind(selectedRequest),
             SourceStateHash = source.StateHash,
             SourceSnapshotPath = sourceSnapshotPath,
-            SourceSnapshotSha256 = request.SourceSnapshotSha256,
+            SourceSnapshotSha256 =
+                verifiedAlternative.SourceSnapshotSha256,
             SourceCheckpoint = source,
             FinalCheckpoint = final,
+            FinalSnapshotPath = finalSnapshotPath,
+            FinalSnapshotSha256 =
+                verifiedAlternative.FinalSnapshotSha256,
             RevenuePrefix = prefix,
             AcquisitionRolloutRequired =
-                request.AcquisitionRolloutProofRequired,
-            TerminalExecutionEvidenceSha256 = terminal.EvidenceSha256,
+                selectedRequest.AcquisitionRolloutProofRequired,
+            TerminalExecutionEvidenceSha256 = selectedTerminal.EvidenceSha256,
             Artifacts = artifacts,
             NativeOutcomeVerified = true,
             TeacherPreferenceLabelVerified = false,
@@ -258,7 +261,7 @@ public static class MoneyThresholdNativeTrajectoryBuilder
         foreach (var artifact in alternative.NativeTerminalArtifacts)
         {
             yield return new MoneyRevenueArtifactBinding(
-                "terminal_" + artifact.Role,
+                "native_terminal_" + artifact.Role,
                 artifact.Path,
                 artifact.Sha256);
         }

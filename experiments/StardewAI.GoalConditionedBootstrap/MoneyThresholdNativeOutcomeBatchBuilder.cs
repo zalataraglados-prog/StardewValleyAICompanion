@@ -14,9 +14,17 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
         var comparisonAdmissions = request.ComparisonAdmissions ??
             Array.Empty<MoneyThresholdNativeOutcomeComparisonAdmission>();
         var runSummaryPaths = request.RunSummaryPaths ?? Array.Empty<string>();
+        var supportsEpisodeOverride = request.SchemaVersion ==
+                MoneyThresholdNativeOutcomeBatchVersions
+                    .SelectedEpisodeRequest ||
+            request.SchemaVersion ==
+                MoneyThresholdNativeOutcomeBatchVersions.Request;
+        var supportsTrajectoryOverride = request.SchemaVersion ==
+            MoneyThresholdNativeOutcomeBatchVersions.Request;
         Require((request.SchemaVersion is
                     MoneyThresholdNativeOutcomeBatchVersions.LegacyRequest or
                     MoneyThresholdNativeOutcomeBatchVersions.ComparisonRequest or
+                    MoneyThresholdNativeOutcomeBatchVersions.SelectedEpisodeRequest or
                     MoneyThresholdNativeOutcomeBatchVersions.Request) &&
                 !string.IsNullOrWhiteSpace(request.BatchId) &&
                 runSummaryPaths.Length > 0 &&
@@ -28,12 +36,18 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                 (request.SchemaVersion !=
                     MoneyThresholdNativeOutcomeBatchVersions.LegacyRequest ||
                     comparisonAdmissions.Length == 0) &&
-                (request.SchemaVersion ==
-                    MoneyThresholdNativeOutcomeBatchVersions.Request ||
+                (supportsEpisodeOverride ||
                     comparisonAdmissions.All(admission =>
                         admission is not null &&
                         string.IsNullOrWhiteSpace(
-                            admission.ExecutionEpisodePath))) &&
+                            admission.ExecutionEpisodePath) &&
+                        string.IsNullOrWhiteSpace(
+                            admission.NativeTrajectoryReceiptPath))) &&
+                (supportsTrajectoryOverride ||
+                    comparisonAdmissions.All(admission =>
+                        admission is not null &&
+                        string.IsNullOrWhiteSpace(
+                            admission.NativeTrajectoryReceiptPath))) &&
                 !request.FormalProductTrainingAuthorized,
             "Money threshold native-outcome batch request is invalid.");
 
@@ -67,12 +81,24 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                                 "Money threshold comparison-selected native episode"))
                             .Distinct(StringComparer.OrdinalIgnoreCase)
                             .ToArray();
-                        Require(episodeOverrides.Length <= 1,
+                        var trajectoryOverrides = runAdmissions
+                            .Where(admission => !string.IsNullOrWhiteSpace(
+                                admission.NativeTrajectoryReceiptPath))
+                            .Select(admission => RequiredFile(
+                                admission.NativeTrajectoryReceiptPath,
+                                "Money threshold comparison-selected native trajectory"))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToArray();
+                        Require(episodeOverrides.Length +
+                                trajectoryOverrides.Length <= 1,
                             "One Money threshold seed run cannot join multiple " +
-                            "Teacher-selected native episodes.");
+                            "Teacher-selected native outcomes.");
                         var executionEpisodePath = episodeOverrides
-                            .SingleOrDefault() ??
-                            value.VerifiedRun.ExecutionEpisodePath;
+                            .SingleOrDefault() ?? (trajectoryOverrides.Length == 0
+                                ? value.VerifiedRun.ExecutionEpisodePath
+                                : string.Empty);
+                        var trajectoryReceiptPath = trajectoryOverrides
+                            .SingleOrDefault() ?? string.Empty;
                         var comparisons = runAdmissions
                             .Select(admission =>
                                 new MoneyThresholdTeacherComparisonSource(
@@ -83,7 +109,8 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                         return new MoneyThresholdTeacherCorpusSource(
                             value.VerifiedRun.RunId,
                             executionEpisodePath,
-                            comparisons);
+                            comparisons,
+                            trajectoryReceiptPath);
                     })
                     .ToArray(),
                 FormalProductTrainingAuthorized = false
@@ -137,8 +164,15 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
                 !string.IsNullOrWhiteSpace(admission.AdmissionManifestPath) &&
                 !string.IsNullOrWhiteSpace(admission.AdmissionReceiptPath) &&
                 (string.IsNullOrWhiteSpace(admission.ExecutionEpisodePath) ||
+                 string.IsNullOrWhiteSpace(
+                    admission.NativeTrajectoryReceiptPath)) &&
+                (string.IsNullOrWhiteSpace(admission.ExecutionEpisodePath) ||
                     File.Exists(Path.GetFullPath(
-                        admission.ExecutionEpisodePath)))) &&
+                        admission.ExecutionEpisodePath))) &&
+                (string.IsNullOrWhiteSpace(
+                    admission.NativeTrajectoryReceiptPath) ||
+                    File.Exists(Path.GetFullPath(
+                        admission.NativeTrajectoryReceiptPath)))) &&
             admissions.GroupBy(
                     admission => admission.RunId + "\n" +
                         admission.CriterionId,
