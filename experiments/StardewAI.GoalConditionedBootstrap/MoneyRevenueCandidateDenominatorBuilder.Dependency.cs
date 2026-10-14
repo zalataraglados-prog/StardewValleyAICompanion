@@ -6,8 +6,21 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
 {
     internal sealed record RevenueDirectionDefinition(
         string Status,
+        string CompletionNodeId,
         string[] Blockers,
-        RevenueActionNodeDefinition[] Nodes);
+        RevenueActionNodeDefinition[] Nodes,
+        RevenueDependencyNodeDefinition[] AllNodes,
+        RevenueDependencyEdgeDefinition[] Edges);
+
+    internal sealed record RevenueDependencyNodeDefinition(
+        string NodeId,
+        string NodeKind,
+        string OptionId);
+
+    internal sealed record RevenueDependencyEdgeDefinition(
+        string FromNodeId,
+        string ToNodeId,
+        string EdgeKind);
 
     internal sealed record RevenueActionNodeDefinition(
         string NodeId,
@@ -42,19 +55,60 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
                 nodes.ValueKind == JsonValueKind.Array,
             "earn_money dependency nodes are missing.");
 
-        var actionNodes = nodes.EnumerateArray()
-            .Where(node => node.ValueKind == JsonValueKind.Object &&
-                node.TryGetProperty("option_id", out var optionId) &&
-                optionId.ValueKind == JsonValueKind.String)
+        var nodeRows = nodes.EnumerateArray()
+            .Where(node => node.ValueKind == JsonValueKind.Object)
+            .ToArray();
+        var allNodes = nodeRows
+            .Select(node => new RevenueDependencyNodeDefinition(
+                ReadRequiredString(node, "id"),
+                ReadRequiredString(node, "kind"),
+                ReadOptionalString(node, "option_id")))
+            .ToArray();
+        Require(allNodes.Select(node => node.NodeId)
+                .Distinct(StringComparer.Ordinal).Count() == allNodes.Length,
+            "earn_money dependency node IDs are not unique.");
+        var completionNodeId = ReadRequiredString(
+            match,
+            "completion_node_id");
+        Require(allNodes.Any(node => node.NodeId == completionNodeId),
+            "earn_money completion node is not present in the node set.");
+        var actionNodes = nodeRows
+            .Where(node => !string.IsNullOrWhiteSpace(
+                ReadOptionalString(node, "option_id")))
             .Select(ReadActionNode)
             .ToArray();
-        Require(actionNodes.Select(node => node.NodeId)
-                .Distinct(StringComparer.Ordinal).Count() == actionNodes.Length,
-            "earn_money dependency node IDs are not unique.");
+        var edges = ReadEdges(match, allNodes);
         return new RevenueDirectionDefinition(
             ReadRequiredString(match, "status"),
+            completionNodeId,
             ReadStringArray(match, "blockers"),
-            actionNodes);
+            actionNodes,
+            allNodes,
+            edges);
+    }
+
+    private static RevenueDependencyEdgeDefinition[] ReadEdges(
+        JsonElement direction,
+        RevenueDependencyNodeDefinition[] nodes)
+    {
+        Require(direction.TryGetProperty("edges", out var edges) &&
+                edges.ValueKind == JsonValueKind.Array,
+            "earn_money dependency edges are missing.");
+        var knownNodeIds = nodes.Select(node => node.NodeId)
+            .ToHashSet(StringComparer.Ordinal);
+        var result = edges.EnumerateArray()
+            .Select(edge => new RevenueDependencyEdgeDefinition(
+                ReadRequiredString(edge, "from"),
+                ReadRequiredString(edge, "to"),
+                ReadRequiredString(edge, "kind")))
+            .ToArray();
+        Require(result.All(edge =>
+                knownNodeIds.Contains(edge.FromNodeId) &&
+                knownNodeIds.Contains(edge.ToNodeId)),
+            "earn_money dependency edge references an unknown node.");
+        Require(result.Distinct().Count() == result.Length,
+            "earn_money dependency edges are not unique.");
+        return result;
     }
 
     private static RevenueActionNodeDefinition ReadActionNode(JsonElement node)

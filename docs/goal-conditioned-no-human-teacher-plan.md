@@ -3126,8 +3126,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   that is neither directly declared nor tied to the option through a rolling continuation.
 - Current-snapshot denominator authority is not long-horizon authority. The latter remains blocked by the declared
   fresh-save schedule, counterfactual opportunity-cost and crop-production gaps. The catalog also has no rollout
-  proof, so it cannot emit a production Teacher label or authorize formal training. The next slice requires the
-  replayable alternative-comparison proof to consume the exact catalog ID set and catalog digest.
+  proof, so it cannot emit a production Teacher label or authorize formal training. Its IDs must first be expanded
+  through the dependency topology, and acquisition outcomes require a fresh terminal-candidate rebind.
+
+### 2026-10-14: Revenue alternative path skeletons
+
+- `build-money-revenue-alternative-denominator` rebuilds the source candidate catalog and expands each eligible policy
+  candidate through every simple dependency path to the unique settled-money milestone. The graph itself supplies
+  machine load/collect dependencies and the shop-sale versus shipping split; no second route table is introduced.
+- Every skeleton binds the source candidate digest, ordered node/edge path, terminal option and distinct proof shape.
+  Direct sale, direct shipping, acquisition-then-sale and acquisition-then-shipping are not conflated.
+- Skeleton completeness is intentionally weaker than a concrete alternative denominator. Acquisition, processing and
+  stochastic outputs must refresh the snapshot and rebind an actual terminal candidate; shipping additionally needs
+  native deposit proof before day-settlement recurrence. Until those identities are closed, comparison authority,
+  production labels and formal training remain false.
 
 ## Review questions
 
