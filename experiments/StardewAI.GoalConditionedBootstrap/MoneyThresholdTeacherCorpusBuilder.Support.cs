@@ -24,6 +24,4 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             .ToLowerInvariant();
     }
 
-    private static bool EqualJson(object left, object right) =>
-        JsonSerializer.Serialize(left) == JsonSerializer.Serialize(right);
 }

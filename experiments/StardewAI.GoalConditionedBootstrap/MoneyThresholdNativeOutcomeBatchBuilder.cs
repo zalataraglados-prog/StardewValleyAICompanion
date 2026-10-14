@@ -1,4 +1,3 @@
-using System.Text.Json;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 
@@ -207,9 +206,6 @@ public static class MoneyThresholdNativeOutcomeBatchBuilder
             Path.GetFullPath(left),
             Path.GetFullPath(right),
             StringComparison.OrdinalIgnoreCase);
-
-    private static bool EqualJson(object left, object right) =>
-        JsonSerializer.Serialize(left) == JsonSerializer.Serialize(right);
 
     private static bool IsSha256(string value) =>
         value.Length == 64 && value.All(character =>

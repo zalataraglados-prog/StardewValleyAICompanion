@@ -166,10 +166,6 @@ public static partial class MoneyRevenueAlternativeDenominatorBuilder
         return rows;
     }
 
-    private static bool EqualJson(object left, object right) =>
-        JsonSerializer.Serialize(left, JsonDefaults.Options) ==
-        JsonSerializer.Serialize(right, JsonDefaults.Options);
-
     private static void Require(bool condition, string message)
     {
         if (!condition)

@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueAlternativeComparisonProofBuilder
@@ -38,10 +36,6 @@ public static partial class MoneyRevenueAlternativeComparisonProofBuilder
 
     private static string Hash(string path) =>
         CurrentTeacherFrontierSupport.HashFile(Path.GetFullPath(path));
-
-    private static bool EqualJson(object left, object right) =>
-        JsonSerializer.Serialize(left, JsonDefaults.Options) ==
-        JsonSerializer.Serialize(right, JsonDefaults.Options);
 
     private static void Require(bool condition, string message)
     {

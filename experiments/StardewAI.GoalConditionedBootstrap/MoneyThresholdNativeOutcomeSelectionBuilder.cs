@@ -247,10 +247,6 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
             : throw new FileNotFoundException(label + " is missing.", fullPath);
     }
 
-    private static bool EqualJson(object left, object right) =>
-        System.Text.Json.JsonSerializer.Serialize(left) ==
-        System.Text.Json.JsonSerializer.Serialize(right);
-
     private static void Require(bool condition, string message)
     {
         if (!condition)
