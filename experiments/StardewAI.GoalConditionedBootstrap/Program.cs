@@ -47,6 +47,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
     new("build-money-revenue-recurrence-proof", BuildMoneyRevenueRecurrenceProof),
+    new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
@@ -466,6 +467,16 @@ static void BuildMoneyRevenueRecurrenceProof(Arguments options)
         options.Required("manifest"));
     Write(options.Required("output"), receipt);
     if (!receipt.ProofVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueCandidateDenominator(Arguments options)
+{
+    var catalog = MoneyRevenueCandidateDenominatorBuilder.Build(
+        options.Required("snapshot"),
+        options.Required("dependencies"));
+    Write(options.Required("output"), catalog);
+    if (!catalog.CurrentSnapshotDenominatorAuthoritative)
         Environment.ExitCode = 2;
 }
 
