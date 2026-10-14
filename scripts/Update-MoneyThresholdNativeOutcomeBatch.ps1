@@ -8,6 +8,9 @@ param(
     [string] $OutputDirectory =
         "artifacts\money-threshold-production-native-batch",
     [string] $ComparisonAdmissionIndex = "",
+    [string] $CoverageRequestTemplate = "",
+    [string] $CoverageRequestOutput = "",
+    [string] $CoverageSourceId = "money-threshold-production-corpus",
     [switch] $SkipBuild
 )
 
@@ -32,6 +35,17 @@ $workPlanRequestPath = Join-Path $outputRoot `
     "money-threshold-evidence-work-plan-request.json"
 $workPlanPath = Join-Path $outputRoot `
     "money-threshold-evidence-work-plan.json"
+$coverageAttachmentManifestPath = Join-Path $outputRoot `
+    "money-threshold-coverage-request-manifest.json"
+
+if (-not [string]::IsNullOrWhiteSpace($CoverageRequestOutput) -and
+    [string]::IsNullOrWhiteSpace($CoverageRequestTemplate)) {
+    throw "CoverageRequestOutput requires CoverageRequestTemplate."
+}
+if (-not [string]::IsNullOrWhiteSpace($CoverageRequestTemplate) -and
+    [string]::IsNullOrWhiteSpace($CoverageSourceId)) {
+    throw "CoverageSourceId is required when attaching the Money corpus."
+}
 
 if (-not (Test-Path -LiteralPath $runRootPath -PathType Container)) {
     throw "Money threshold native-outcome run root is missing: $runRootPath"
@@ -151,6 +165,34 @@ Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
     "--request", $workPlanRequestPath,
     "--output", $workPlanPath)
 
+$coverageRequestPath = ""
+if (-not [string]::IsNullOrWhiteSpace($CoverageRequestTemplate)) {
+    $coverageTemplatePath = Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $CoverageRequestTemplate
+    if (-not (Test-Path -LiteralPath $coverageTemplatePath -PathType Leaf)) {
+        throw "Goal-method coverage request template is missing: $coverageTemplatePath"
+    }
+    $coverageRequestPath = if ([string]::IsNullOrWhiteSpace(
+            $CoverageRequestOutput)) {
+        Join-Path $outputRoot "goal-method-teacher-coverage-request.json"
+    }
+    else {
+        Resolve-RuntimeEvidenceInputPath `
+            -ProjectRoot $ProjectRoot -Path $CoverageRequestOutput
+    }
+    Write-JsonFile -Path $coverageAttachmentManifestPath -Value ([ordered]@{
+        schema_version = "money_threshold_coverage_request_manifest.v1"
+        base_coverage_request_path = $coverageTemplatePath
+        money_threshold_corpus_path = $corpusPath
+        source_id = $CoverageSourceId
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-threshold-coverage-request",
+        "--manifest", $coverageAttachmentManifestPath,
+        "--output", $coverageRequestPath)
+}
+
 $batch = Get-Content -LiteralPath $batchPath -Raw | ConvertFrom-Json
 $workPlan = Get-Content -LiteralPath $workPlanPath -Raw | ConvertFrom-Json
 [ordered]@{
@@ -167,5 +209,6 @@ $workPlan = Get-Content -LiteralPath $workPlanPath -Raw | ConvertFrom-Json
     batch_path = $batchPath
     corpus_path = $corpusPath
     work_plan_path = $workPlanPath
+    coverage_request_path = $coverageRequestPath
     formal_product_training_authorized = $false
 } | ConvertTo-Json -Depth 16

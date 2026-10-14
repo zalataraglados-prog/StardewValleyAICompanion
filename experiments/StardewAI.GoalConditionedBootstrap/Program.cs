@@ -46,6 +46,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
     new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
+    new("build-money-threshold-coverage-request", BuildMoneyThresholdCoverageRequest),
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
     new("build-money-threshold-native-outcome-batch", BuildMoneyThresholdNativeOutcomeBatch),
@@ -517,6 +518,11 @@ static void BuildMoneyThresholdTeacherCorpus(Arguments options)
         options.Required("request"));
     Write(options.Required("output"), corpus);
 }
+
+static void BuildMoneyThresholdCoverageRequest(Arguments options) => Write(
+    options.Required("output"),
+    MoneyThresholdCoverageRequestBuilder.Build(
+        options.Required("manifest")));
 
 static void BuildMoneyThresholdNativeTrajectory(Arguments options) => Write(
     options.Required("output"),

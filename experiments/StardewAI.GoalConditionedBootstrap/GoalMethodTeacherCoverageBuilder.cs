@@ -203,7 +203,7 @@ public static partial class GoalMethodTeacherCoverageBuilder
         };
     }
 
-    private static void ValidateRequest(
+    internal static void ValidateRequest(
         GoalMethodTeacherCoverageRequest request)
     {
         if (request.SchemaVersion !=

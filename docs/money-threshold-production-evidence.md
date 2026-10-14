@@ -194,6 +194,14 @@ checks the selected alternative, prefix and terminal artifacts. Multiple
 outcomes for one seed fail closed. Run the batch updater after each accepted
 native or comparison artifact and schedule only cells still reported missing.
 
+When an existing production Goal Method coverage request should consume the
+latest corpus, pass `-CoverageRequestTemplate` to the batch updater. It writes a
+`money_threshold_coverage_request_manifest.v1`, replays the corpus, preserves
+all non-Money sources, and replaces every older Money source with exactly one
+`money_threshold_progression_corpus` source. `-CoverageRequestOutput` may select
+the destination; without a template no coverage request is written. A source-ID
+collision with a non-Money source fails closed.
+
 Batch request v4 carries complete-trajectory comparison attachments. Request
 v3 retains direct-sale selected-episode compatibility, v2 remains replayable
 with comparison attachments but no outcome override, and legacy v1 remains
