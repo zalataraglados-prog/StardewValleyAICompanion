@@ -384,11 +384,14 @@ internal static partial class BootstrapSelfTest
                         .MoneyThresholdProgressionCorpus
                 },
                 StringComparer.Ordinal) &&
-            coveredMoney.SplitCoverageComplete &&
+            !coveredMoney.TeacherComparisonCovered &&
+            coveredMoney.NativeOutcomeCovered &&
+            !coveredMoney.SplitCoverageComplete &&
             !coveredMoney.CoverageGateReady &&
             coveredMoney.BlockingReasons.SequenceEqual(
                 new[]
                 {
+                    "explicit_teacher_comparison_missing",
                     "goal_method_not_executable:pending_dependency_expansion"
                 },
                 StringComparer.Ordinal) &&

@@ -125,10 +125,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 "grandpa.criterion:" + threshold.CriterionId,
                 "player.total_money_earned >= " +
                     threshold.Target.ToString(CultureInfo.InvariantCulture),
-                "execute_verified_native_sale_now:" +
-                    threshold.CriterionId,
-                "defer_verified_native_sale:" + threshold.CriterionId,
-                true,
+                string.Empty,
+                string.Empty,
+                false,
                 true))
             .ToArray();
         if (crossed.Length == 0)
@@ -169,9 +168,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             earnedAfter,
             earnedDelta,
             crossed,
-            "execute_verified_native_sale_now",
-            "defer_verified_native_sale",
-            true,
+            string.Empty,
+            string.Empty,
+            false,
             true);
     }
 

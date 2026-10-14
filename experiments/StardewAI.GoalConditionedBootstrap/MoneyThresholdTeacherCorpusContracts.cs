@@ -5,9 +5,9 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class MoneyThresholdTeacherCorpusVersions
 {
     public const string Request =
-        "money_threshold_teacher_corpus_request.v1";
+        "money_threshold_teacher_corpus_request.v2";
     public const string Corpus =
-        "money_threshold_teacher_corpus.v1";
+        "money_threshold_teacher_corpus.v2";
 }
 
 public sealed class MoneyThresholdTeacherCorpusRequest
@@ -69,7 +69,7 @@ public sealed class MoneyThresholdTeacherCorpus
 
     [JsonPropertyName("corpus_policy")]
     public string CorpusPolicy { get; set; } =
-        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The shared Money progression verifier requires the sale to increase current money and totalMoneyEarned by the same exact positive amount while preserving the de-duplicated pending shipping scope. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. Every crossed threshold receives its own Teacher goal context, terminal assertion and comparison receipt, and retains independent train/validation/test coverage.";
+        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The shared Money progression verifier requires the sale to increase current money and totalMoneyEarned by the same exact positive amount while preserving the de-duplicated pending shipping scope. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. This raw corpus proves native terminal outcomes only; it cannot infer a Teacher preference from the action that happened. A separate exact-denominator comparison admission must supply criterion-local Teacher comparisons before coverage can become ready.";
 }
 
 public sealed record MoneyThresholdTeacherEvidenceRow(
