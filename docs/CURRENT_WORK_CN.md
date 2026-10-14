@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 Money comparison 波次身份交接
+
+- 新增 `Initialize-MoneyRevenueComparisonWave.ps1`，用 `dataset_partition + source_row_id` 从 canonical work plan 定位唯一 comparison wave，核对 corpus row、source ID、native run summary 和缺失 criterion，再复用既有 `Initialize-MoneyRevenueComparisonWork.ps1`。不再人工搜索 summary 或抄 criterion。
+- 新的 `money_revenue_comparison_wave_handoff.v1` 绑定 source work plan、corpus、run summary、comparison plan 的绝对路径与 SHA-256，以及 row/source/partition/criterion identity。可变 canonical work plan/corpus 会先复制并核对到 comparison work directory，后续其他波次刷新 batch 不会使在途 handoff 失效；completion 使用前仍重新哈希，漂移即失败关闭。
+- `Complete-MoneyRevenueComparisonWork.ps1` 在提供 handoff 时只生成该波仍缺的 admission；可选 existing index 会按 `run_id + criterion_id` 精确归并为累计 v3 index，重复 key、非法 outcome override 或版本漂移均拒绝。它仍要求真实 rollout、ledger 和 terminal proof，不改变 `Money production evidence cells: 0/18` 或训练授权。
+
 ## 历史记录 · 2026-10-15 Money 原生波次自适应执行
 
 - 新增 `build-money-threshold-native-outcome-wave-selection`：它先校验固定 `18` 格 work plan 和目标分区波次，再从实时权威 Revenue denominator 中选择当前可达的最高缺失阈值；最终动作仍由原有单阈值 selector、daily-plan compiler 与 executor 完成，没有第二套执行链。

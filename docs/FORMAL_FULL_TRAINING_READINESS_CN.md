@@ -13,6 +13,8 @@
 
 实际执行时，计划中的最高缺失阈值只是条件性上界。实时 wave selector 必须从完整 Revenue denominator 选择当前可达的最高缺失阈值，并继续使用原单阈值 selector 取得最小充分动作；只接纳原生结果真实跨越的 criterion，剩余格在 batch 重建后继续调度。没有可推进候选时在动作入队前失败关闭。该自适应拆波减少无效启动和人工转录，但不放宽 `18` 格分母、partition 隔离、comparison admission 或 formal gate。
 
+comparison 波次必须通过版本化 handoff 连接 work plan、corpus row、native run summary 与 comparison collection plan；completion 只允许处理 handoff 中仍缺的 criterion，并把新 admission 与既有 index 累积合并。handoff 的每个源文件在使用前按绝对路径和 SHA-256 重验，但它本身不是 comparison evidence；真实 acquisition rollout、strategy-ledger boundary、terminal proof、Pareto admission 与 criterion-local join 仍逐项必需。
+
 
 ## 历史记录 · 2026-10-14 Money 6x3 evidence work plan
 

@@ -171,6 +171,18 @@ boundaries, reservation safety, recurrence, comparison admission, or the
 criterion-local corpus join. The plan is a deterministic work queue, not a
 Teacher label or evidence receipt.
 
+`Initialize-MoneyRevenueComparisonWave.ps1` removes the manual identity join
+between the 18-cell work plan and this initializer. It selects one comparison
+wave by partition and native row ID, requires that row and every scheduled
+criterion to exist in the work-plan corpus, resolves the matching native run
+summary under the configured run root, then invokes the existing initializer.
+Its versioned handoff binds the source work plan, corpus, native run summary,
+comparison plan, hashes, row/source identity, partition, and exact missing
+criterion set. The mutable canonical work plan and corpus are copied and
+hash-checked into the comparison work directory first, so a later batch refresh
+cannot invalidate an in-flight handoff. It does not collect terminal proofs or
+create an admission.
+
 When acquisition work is required, the initializer can consume an optional
 `-AcquisitionRolloutIndex` with schema
 `money_revenue_acquisition_rollout_index.v1`. Its `proofs` array maps each
@@ -208,6 +220,14 @@ A non-unique Pareto frontier is reported separately as
 the same action would not resolve that ambiguity. If different crossed criteria
 select different alternatives, they require distinct seed runs because one
 corpus row cannot own multiple native trajectories.
+
+When a comparison-wave handoff is supplied, completion builds admissions only
+for its still-missing criterion set and re-hashes every bound source artifact
+before use. An optional existing comparison-admission index is normalized and
+merged by exact `run_id + criterion_id`; duplicate keys, mixed outcome override
+shapes, or unsupported index versions fail closed. The emitted v3 index is
+cumulative, so updating one wave cannot silently remove comparison evidence
+accepted in an earlier batch.
 
 ## Batch policy
 

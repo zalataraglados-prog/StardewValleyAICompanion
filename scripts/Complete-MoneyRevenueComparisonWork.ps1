@@ -4,6 +4,8 @@ param(
     [string] $WorkDirectory,
     [Parameter(Mandatory)]
     [string] $TerminalProofIndex,
+    [string] $ComparisonWaveHandoffPath = "",
+    [string] $ExistingComparisonAdmissionIndex = "",
     [string] $ProjectRoot =
         (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [switch] $SkipBuild
@@ -33,6 +35,25 @@ function Get-StableIdentityHash {
     finally {
         $algorithm.Dispose()
     }
+}
+
+function Test-SamePath {
+    param([string] $Left, [string] $Right)
+    return [string]::Equals(
+        [IO.Path]::GetFullPath($Left),
+        [IO.Path]::GetFullPath($Right),
+        [StringComparison]::OrdinalIgnoreCase)
+}
+
+function Assert-FileIdentity {
+    param([string] $Path, [string] $ExpectedSha256, [string] $Label)
+    $fullPath = Resolve-ProofPath -Path $Path -Label $Label
+    $actual = (Get-FileHash -LiteralPath $fullPath `
+        -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $ExpectedSha256) {
+        throw "$Label hash drifted from the comparison-wave handoff."
+    }
+    return $fullPath
 }
 
 function Convert-RouteTransition {
@@ -107,6 +128,60 @@ foreach ($required in @(
     }
 }
 $plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
+$criterionIdsToComplete = @($plan.crossed_criterion_ids |
+    ForEach-Object { [string]$_ })
+if (-not [string]::IsNullOrWhiteSpace($ComparisonWaveHandoffPath)) {
+    $handoffPath = Resolve-ProofPath `
+        -Path $ComparisonWaveHandoffPath `
+        -Label "Money Revenue comparison-wave handoff"
+    $handoff = Get-Content -LiteralPath $handoffPath -Raw |
+        ConvertFrom-Json
+    $handoffCriterionIds = @($handoff.scheduled_criterion_ids |
+        ForEach-Object { [string]$_ })
+    if ([string]$handoff.schema_version -ne
+            "money_revenue_comparison_wave_handoff.v1" -or
+        [string]$handoff.status -ne "comparison_wave_initialized" -or
+        [bool]$handoff.formal_product_training_authorized -or
+        [string]$handoff.source_id -ne [string]$plan.run_id -or
+        [string]$handoff.dataset_partition -ne
+            [string]$plan.dataset_partition -or
+        -not (Test-SamePath `
+            -Left ([string]$handoff.work_directory) -Right $workPath) -or
+        -not (Test-SamePath `
+            -Left ([string]$handoff.comparison_collection_plan_path) `
+            -Right $planPath) -or
+        $handoffCriterionIds.Count -eq 0 -or
+        @($handoffCriterionIds | Sort-Object -Unique).Count -ne
+            $handoffCriterionIds.Count -or
+        @($handoffCriterionIds | Where-Object {
+            $criterionIdsToComplete -notcontains $_
+        }).Count -gt 0) {
+        throw "Money Revenue comparison-wave handoff is invalid."
+    }
+    Assert-FileIdentity `
+        -Path ([string]$handoff.source_work_plan_path) `
+        -ExpectedSha256 ([string]$handoff.source_work_plan_sha256) `
+        -Label "Source Money work plan" | Out-Null
+    Assert-FileIdentity `
+        -Path ([string]$handoff.source_corpus_path) `
+        -ExpectedSha256 ([string]$handoff.source_corpus_sha256) `
+        -Label "Source Money corpus" | Out-Null
+    $handoffRunSummaryPath = Assert-FileIdentity `
+        -Path ([string]$handoff.native_run_summary_path) `
+        -ExpectedSha256 ([string]$handoff.native_run_summary_sha256) `
+        -Label "Source Money native run summary"
+    Assert-FileIdentity `
+        -Path ([string]$handoff.comparison_collection_plan_path) `
+        -ExpectedSha256 `
+            ([string]$handoff.comparison_collection_plan_sha256) `
+        -Label "Money Revenue comparison collection plan" | Out-Null
+    if (-not (Test-SamePath `
+        -Left $handoffRunSummaryPath `
+        -Right ([string]$plan.native_run_summary_path))) {
+        throw "Comparison-wave handoff native run does not match the plan."
+    }
+    $criterionIdsToComplete = $handoffCriterionIds
+}
 
 $terminalIndexPath = Resolve-RuntimeEvidenceInputPath `
     -ProjectRoot $ProjectRoot -Path $TerminalProofIndex
@@ -163,12 +238,70 @@ Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
     "--output", $terminalReceiptPath)
 
 $admissionRoot = Join-Path $workPath "comparison-admissions"
+$existingAttachments = @()
+if (-not [string]::IsNullOrWhiteSpace(
+        $ExistingComparisonAdmissionIndex)) {
+    $existingIndexPath = Resolve-ProofPath `
+        -Path $ExistingComparisonAdmissionIndex `
+        -Label "Existing Money comparison-admission index"
+    $existingIndex = Get-Content -LiteralPath $existingIndexPath -Raw |
+        ConvertFrom-Json
+    if ([string]$existingIndex.schema_version -notin @(
+            "money_threshold_comparison_admission_index.v1",
+            "money_threshold_comparison_admission_index.v2",
+            "money_threshold_comparison_admission_index.v3") -or
+        [bool]$existingIndex.formal_product_training_authorized) {
+        throw "Existing Money comparison-admission index is invalid."
+    }
+    $existingAttachments = @($existingIndex.admissions | ForEach-Object {
+        $runId = [string]$_.run_id
+        $criterionId = [string]$_.criterion_id
+        $episodePath = [string]$_.execution_episode_path
+        $trajectoryPath = [string]$_.native_trajectory_receipt_path
+        if ([string]::IsNullOrWhiteSpace($runId) -or
+            [string]::IsNullOrWhiteSpace($criterionId) -or
+            ($existingIndex.schema_version -eq
+                "money_threshold_comparison_admission_index.v1" -and
+                (-not [string]::IsNullOrWhiteSpace($episodePath) -or
+                 -not [string]::IsNullOrWhiteSpace($trajectoryPath))) -or
+            ($existingIndex.schema_version -eq
+                "money_threshold_comparison_admission_index.v2" -and
+                -not [string]::IsNullOrWhiteSpace($trajectoryPath)) -or
+            (-not [string]::IsNullOrWhiteSpace($episodePath) -and
+             -not [string]::IsNullOrWhiteSpace($trajectoryPath))) {
+            throw "Existing comparison-admission attachment is invalid."
+        }
+        [ordered]@{
+            run_id = $runId
+            criterion_id = $criterionId
+            admission_manifest_path = Resolve-ProofPath `
+                -Path ([string]$_.admission_manifest_path) `
+                -Label "Existing comparison-admission manifest"
+            admission_receipt_path = Resolve-ProofPath `
+                -Path ([string]$_.admission_receipt_path) `
+                -Label "Existing comparison-admission receipt"
+            execution_episode_path = Resolve-ProofPath `
+                -Path $episodePath `
+                -Label "Existing selected execution episode" -Optional
+            native_trajectory_receipt_path = Resolve-ProofPath `
+                -Path $trajectoryPath `
+                -Label "Existing native trajectory receipt" -Optional
+        }
+    })
+    $existingKeys = @($existingAttachments | ForEach-Object {
+        ([string]$_.run_id) + "|" + ([string]$_.criterion_id)
+    })
+    if ($existingKeys.Count -ne
+        @($existingKeys | Sort-Object -Unique).Count) {
+        throw "Existing Money comparison-admission index has duplicate keys."
+    }
+}
 $attachments = @()
 $unmatched = @()
 $trajectoryReceiptsByAlternative =
     [Collections.Generic.Dictionary[string, string]]::new(
         [StringComparer]::Ordinal)
-foreach ($criterionId in @($plan.crossed_criterion_ids)) {
+foreach ($criterionId in $criterionIdsToComplete) {
     $safeCriterion = ([string]$criterionId) -replace '[^a-zA-Z0-9._-]', '_'
     $criterionRoot = Join-Path $admissionRoot $safeCriterion
     $admissionManifestPath = Join-Path $criterionRoot `
@@ -269,14 +402,49 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
     }
 }
 
+$existingKeySet = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::Ordinal)
+foreach ($existing in $existingAttachments) {
+    [void]$existingKeySet.Add(
+        ([string]$existing.run_id) + "|" +
+        ([string]$existing.criterion_id))
+}
+foreach ($attachment in $attachments) {
+    $key = ([string]$attachment.run_id) + "|" +
+        ([string]$attachment.criterion_id)
+    if (-not $existingKeySet.Add($key)) {
+        throw "New comparison admission duplicates the existing index: $key"
+    }
+}
+$cumulativeAttachments = @($existingAttachments) + @($attachments)
+$outcomesByRun = $cumulativeAttachments | Group-Object run_id
+foreach ($runOutcomes in $outcomesByRun) {
+    $outcomeKeys = @($runOutcomes.Group | ForEach-Object {
+        if (-not [string]::IsNullOrWhiteSpace(
+                [string]$_.native_trajectory_receipt_path)) {
+            "trajectory:" + [IO.Path]::GetFullPath(
+                [string]$_.native_trajectory_receipt_path)
+        }
+        elseif (-not [string]::IsNullOrWhiteSpace(
+                [string]$_.execution_episode_path)) {
+            "episode:" + [IO.Path]::GetFullPath(
+                [string]$_.execution_episode_path)
+        }
+    } | Sort-Object -Unique)
+    if ($outcomeKeys.Count -gt 1) {
+        throw "Cumulative comparison admissions select multiple outcomes for " +
+            "run $($runOutcomes.Name)."
+    }
+}
+
 $attachmentIndexPath = Join-Path $workPath `
     "money-threshold-comparison-admission-index.json"
 Write-JsonFile -Path $attachmentIndexPath -Value ([ordered]@{
     schema_version = "money_threshold_comparison_admission_index.v3"
-    admissions = $attachments
+    admissions = $cumulativeAttachments
     formal_product_training_authorized = $false
 })
-$allMatched = $attachments.Count -eq @($plan.crossed_criterion_ids).Count
+$allMatched = $attachments.Count -eq $criterionIdsToComplete.Count
 $distinctSelectedOutcomeCount = @($attachments |
     Select-Object -ExpandProperty selected_alternative_id -Unique).Count
 $hasIncomparableFrontier = @($unmatched | Where-Object {
@@ -297,6 +465,7 @@ $hasIncomparableFrontier = @($unmatched | Where-Object {
     run_id = [string]$plan.run_id
     terminal_request_count = $terminalAlternatives.Count
     comparison_admission_count = $attachments.Count
+    cumulative_comparison_admission_count = $cumulativeAttachments.Count
     unmatched_criteria = $unmatched
     terminal_execution_proof_receipt_path = $terminalReceiptPath
     comparison_admission_index_path = $attachmentIndexPath
