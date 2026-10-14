@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 共享机器产出族
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/unify-current-machine-output-evidence`。
 - 严格运行时证据：`25/26`；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -23,6 +23,6 @@
 - 太阳能板：`E:\StardewAI-TestLab\artifacts\runtime-full-shipment-solar-panel-output-v1-20261014\summary.json`。
 - 四份证明均通过原生获取、入包、发货、睡眠结算与独立 rollout proof；冻结源存档未变。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 闭合唯一剩余层 `tree_moss_harvest_sample / full_shipment:item:Moss / (O)Moss / native_tree_moss_harvest`，复用现有 `foraging.harvest_tree_moss` 与共享移动/自然拾取执行链。通过后重建严格 `26/26` 索引，再单独判断正式训练准入；不得触碰或提交 `local-data/`。
