@@ -165,9 +165,14 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 这些优化减少重复 BFS、重复 frontier 构建、伪输出和伪账本连续性，但它们是 correctness/feedback-time 基础设施，**不直接增加**
 `CoverageGateReady 2/19`。
 
-当前本地性能分支正在增加精确 CPU scope，以及 Full Shipment evidence-index 的 proof/reuse/rebuild 分项计时。Release 构建和
-trace 定向测试已通过，但代表性完整样本基线被主动中止，尚未形成可接纳的真实 wall/CPU 结论，也尚未合并。继续时必须先完成
-低成本真实快照 baseline，再根据测量决定是否优化；不得用 hermetic fixture 时间替代生产结论。
+PR #275 正在重验受共享 acquisition 修复影响的现版本证据。8 个已迁移的 current-authority strata 已通过；随后第一个仍使用
+旧版工件的防风草样本因确定性目标日期路线漂移而失败关闭。因此历史 `26/26` 仍是已冻结生产事实，但**不能表述为当前代码已经
+fresh 重跑 26/26**；现版本迁移与正式 promotion revalidation 必须单独记账。
+
+#274 / draft PR #276 已把 validation trace 升级为 v2，增加命令级 allocation/GC/private-memory、operation 级 inclusive allocation、
+read-session 表示保留量和 deterministic-cache producer 占用，并在命令收尾释放冗余表示。该切片目前只有静态差异检查，按安静模式
+要求尚未构建或运行。恢复测试后先做 focused trace，再决定 rollout single-computation、unique-proof-first index 或进一步生命周期优化；
+不得直接重跑全 26 层，也不得用 cache 命中降低证据门禁。
 
 ## 9. 剩余规模
 
