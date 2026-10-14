@@ -195,7 +195,14 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             MoneyThresholdNativeOutcomeKinds.RevenueTrajectory
                 ? "terminal_"
                 : string.Empty;
+        var expectedArtifactCount = outcome.Kind ==
+            MoneyThresholdNativeOutcomeKinds.RevenueTrajectory
+                ? outcome.Artifacts.Count(value => value.Role.StartsWith(
+                    rolePrefix,
+                    StringComparison.Ordinal))
+                : outcome.Artifacts.Length;
         if (artifacts.Length == 0 ||
+            artifacts.Length != expectedArtifactCount ||
             artifacts.Select(value => value.Role)
                 .Distinct(StringComparer.Ordinal).Count() != artifacts.Length ||
             artifacts.Any(artifact => !MatchesArtifact(
