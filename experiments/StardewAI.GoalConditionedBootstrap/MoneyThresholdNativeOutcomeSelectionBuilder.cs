@@ -25,34 +25,12 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
         string criterionId,
         string datasetPartition)
     {
-        var fullPath = RequiredFile(
-            candidateDenominatorPath,
-            "Money Revenue candidate denominator");
-        var persisted = CurrentTeacherFrontierSupport.Read<
-            MoneyRevenueCandidateDenominatorCatalog>(
-                fullPath,
-                "Money Revenue candidate denominator");
-        var catalog = MoneyRevenueCandidateDenominatorBuilder.Build(
-            persisted.SnapshotPath,
-            persisted.DependencyExpansionPath);
-        Require(EqualJson(persisted, catalog),
-            "Money Revenue candidate denominator drifted from its source rebuild.");
-        Require(catalog.CurrentSnapshotDenominatorAuthoritative &&
-                catalog.CurrentComparisonDenominatorReady &&
-                catalog.NodeCoverageComplete &&
-                !catalog.FormalProductTrainingAuthorized,
-            "Money Revenue candidate denominator is not current and authoritative.");
-
-        var snapshot = CurrentTeacherFrontierSupport.Read<
-            StardewAI.Contracts.State.SnapshotEnvelope>(
-                catalog.SnapshotPath,
-                "Money threshold source snapshot");
-        var checkpoint = MoneyRevenueProgressionVerifier.Project(snapshot);
+        var inputs = LoadInputs(candidateDenominatorPath);
         return BuildSelection(
-            fullPath,
-            CurrentTeacherFrontierSupport.HashFile(fullPath),
-            catalog,
-            checkpoint,
+            inputs.CandidateDenominatorPath,
+            inputs.CandidateDenominatorSha256,
+            inputs.Catalog,
+            inputs.Checkpoint,
             criterionId,
             datasetPartition);
     }
@@ -170,7 +148,7 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
         return selection;
     }
 
-    private static bool IsExecutableShopSaleStage(
+    internal static bool IsExecutableShopSaleStage(
         MoneyRevenueCandidateCatalogEntry candidate)
     {
         if (!candidate.Available ||
@@ -236,6 +214,42 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
         parameters.TryGetValue(name, out var values) &&
         values.Length == 1 &&
         !string.IsNullOrWhiteSpace(values[0]);
+
+    internal static SelectionInputs LoadInputs(string candidateDenominatorPath)
+    {
+        var fullPath = RequiredFile(
+            candidateDenominatorPath,
+            "Money Revenue candidate denominator");
+        var persisted = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCandidateDenominatorCatalog>(
+                fullPath,
+                "Money Revenue candidate denominator");
+        var catalog = MoneyRevenueCandidateDenominatorBuilder.Build(
+            persisted.SnapshotPath,
+            persisted.DependencyExpansionPath);
+        Require(EqualJson(persisted, catalog),
+            "Money Revenue candidate denominator drifted from its source rebuild.");
+        Require(catalog.CurrentSnapshotDenominatorAuthoritative &&
+                catalog.CurrentComparisonDenominatorReady &&
+                catalog.NodeCoverageComplete &&
+                !catalog.FormalProductTrainingAuthorized,
+            "Money Revenue candidate denominator is not current and authoritative.");
+        var snapshot = CurrentTeacherFrontierSupport.Read<
+            StardewAI.Contracts.State.SnapshotEnvelope>(
+                catalog.SnapshotPath,
+                "Money threshold source snapshot");
+        return new SelectionInputs(
+            fullPath,
+            CurrentTeacherFrontierSupport.HashFile(fullPath),
+            catalog,
+            MoneyRevenueProgressionVerifier.Project(snapshot));
+    }
+
+    internal sealed record SelectionInputs(
+        string CandidateDenominatorPath,
+        string CandidateDenominatorSha256,
+        MoneyRevenueCandidateDenominatorCatalog Catalog,
+        MoneyRevenueCheckpoint Checkpoint);
 
     private static string RequiredFile(string path, string label)
     {

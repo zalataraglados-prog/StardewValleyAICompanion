@@ -117,7 +117,93 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejectedPartition,
             "Money threshold native-outcome selection admitted partition drift.");
+
+        var waveCatalog = new MoneyRevenueCandidateDenominatorCatalog
+        {
+            CurrentSnapshotDenominatorAuthoritative = true,
+            CurrentComparisonDenominatorReady = true,
+            NodeCoverageComplete = true,
+            SnapshotPath = "source-snapshot.json",
+            SnapshotSha256 = new string('b', 64),
+            ComparisonCandidateCount = 2,
+            CatalogSha256 = new string('c', 64),
+            Nodes = new[]
+            {
+                new MoneyRevenueCandidateNodeCoverage
+                {
+                    NodeId = "dependency.earn_money.sell",
+                    OptionId = "economy.sell_items",
+                    PolicyChoice = true,
+                    EnumerationComplete = true,
+                    Candidates = new[]
+                    {
+                        SaleSelectionCandidate("sale:100k", 50_020, 20),
+                        SaleSelectionCandidate("sale:overshoot-100k", 60_000, 10)
+                    }
+                }
+            }
+        };
+        var wavePlan = new MoneyThresholdEvidenceWorkPlan
+        {
+            CriterionCount = 6,
+            RequiredPartitionCount = 3,
+            RequiredCellCount = 18,
+            Cells = new[]
+            {
+                MissingMoneyCell("money_50000", 0, 50_000, partition),
+                MissingMoneyCell("money_100000", 1, 100_000, partition),
+                MissingMoneyCell("money_200000", 2, 200_000, partition)
+            },
+            NativeCollectionWaves = new[]
+            {
+                new MoneyThresholdNativeCollectionWave(
+                    partition,
+                    new[]
+                    {
+                        "money_50000",
+                        "money_100000",
+                        "money_200000"
+                    },
+                    50_000,
+                    200_000,
+                    "money_200000",
+                    "conditional_native_outcome_collection_required",
+                    "test")
+            }
+        };
+        var waveSelection =
+            MoneyThresholdNativeOutcomeWaveSelectionBuilder.BuildSelection(
+                "candidate-denominator.json",
+                new string('d', 64),
+                waveCatalog,
+                checkpoint,
+                wavePlan,
+                partition);
+        Require(waveSelection.CriterionId == "money_100000" &&
+                waveSelection.ExpectedCrossedCriterionIds.SequenceEqual(
+                    new[] { "money_50000", "money_100000" },
+                    StringComparer.Ordinal) &&
+                waveSelection.SelectedCandidate.CatalogCandidateId ==
+                    "sale:100k",
+            "Money wave selection did not choose the highest reachable missing threshold.");
     }
+
+    private static MoneyThresholdEvidenceWorkCell MissingMoneyCell(
+        string criterionId,
+        int thresholdOrder,
+        uint target,
+        string partition) => new(
+            criterionId,
+            thresholdOrder,
+            target,
+            1,
+            partition,
+            false,
+            false,
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            "native_outcome_and_teacher_comparison_missing",
+            "collect_native_outcome_then_build_exact_comparison_admission");
 
     private static MoneyRevenueCandidateCatalogEntry SaleSelectionCandidate(
         string id,

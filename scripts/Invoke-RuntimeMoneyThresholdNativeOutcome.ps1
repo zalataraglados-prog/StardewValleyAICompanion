@@ -5,15 +5,8 @@ param(
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [Parameter(Mandatory)]
     [string] $SourceSaveSlotPath,
-    [Parameter(Mandatory)]
-    [ValidateSet(
-        "money_50000",
-        "money_100000",
-        "money_200000",
-        "money_300000",
-        "money_500000",
-        "money_1000000")]
-    [string] $CriterionId,
+    [string] $CriterionId = "",
+    [string] $CollectionWaveWorkPlanPath = "",
     [Parameter(Mandatory)]
     [ValidateSet("train", "validation", "test")]
     [string] $DatasetPartition,
@@ -101,6 +94,25 @@ function Wait-NativeGameTime {
     }
     throw "Timed out waiting naturally for service time $TargetTime."
 }
+
+$validCriterionIds = @(
+    "money_50000",
+    "money_100000",
+    "money_200000",
+    "money_300000",
+    "money_500000",
+    "money_1000000")
+$usingWave = -not [string]::IsNullOrWhiteSpace(
+    $CollectionWaveWorkPlanPath)
+if ($usingWave -eq (-not [string]::IsNullOrWhiteSpace($CriterionId)) -or
+    (-not $usingWave -and $validCriterionIds -notcontains $CriterionId)) {
+    throw "Supply either one authoritative CriterionId or one " +
+        "CollectionWaveWorkPlanPath."
+}
+$waveWorkPlanPath = if ($usingWave) {
+    Resolve-RuntimeEvidenceInputPath `
+        -ProjectRoot $ProjectRoot -Path $CollectionWaveWorkPlanPath
+} else { "" }
 
 $sourceSave = Assert-SourceSaveSlot -Path $SourceSaveSlotPath
 $sourceSlotName = Split-Path -Leaf $sourceSave
@@ -273,15 +285,28 @@ try {
             -TimeoutSeconds $NaturalWaitTimeoutSeconds
         $naturalWaitApplied = $true
     }
-    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-        "build-money-threshold-native-outcome-selection",
-        "--candidate-catalog", $candidateCatalogPath,
-        "--criterion", $CriterionId,
-        "--partition", $DatasetPartition,
-        "--output", $selectionPath)
+    $selectionArguments = if ($usingWave) {
+        @(
+            "build-money-threshold-native-outcome-wave-selection",
+            "--candidate-catalog", $candidateCatalogPath,
+            "--work-plan", $waveWorkPlanPath,
+            "--partition", $DatasetPartition,
+            "--output", $selectionPath)
+    }
+    else {
+        @(
+            "build-money-threshold-native-outcome-selection",
+            "--candidate-catalog", $candidateCatalogPath,
+            "--criterion", $CriterionId,
+            "--partition", $DatasetPartition,
+            "--output", $selectionPath)
+    }
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll `
+        -Arguments $selectionArguments
 
     $selection = Get-Content -LiteralPath $selectionPath -Raw |
         ConvertFrom-Json
+    $effectiveCriterionId = [string]$selection.criterion_id
     Assert-ProductionParameters `
         -Parameters @($selection.objective_parameters)
     $loopRoot = Join-Path $runDirectory "loop"
@@ -352,7 +377,7 @@ try {
     if (@($corpus.rows).Count -ne 1 -or
         -not [bool]$row.native_terminal_outcome_verified -or
         [string]$row.dataset_partition -ne $DatasetPartition -or
-        $crossedIds -notcontains $CriterionId -or
+        $crossedIds -notcontains $effectiveCriterionId -or
         ($crossedIds -join "|") -ne ($expectedCrossedIds -join "|") -or
         [uint64]$row.total_money_earned_before -ne
             [uint64]$selection.total_money_earned_before -or
@@ -369,7 +394,7 @@ try {
         schema_version = "money_threshold_native_outcome_run_summary.v1"
         status = "passed"
         run_id = $RunId
-        criterion_id = $CriterionId
+        criterion_id = $effectiveCriterionId
         dataset_partition = $DatasetPartition
         source_save_slot_path = $sourceSave
         source_save_sha256_before = $sourceSaveSha256Before
@@ -403,7 +428,10 @@ catch {
         schema_version = "money_threshold_native_outcome_run_failure.v1"
         status = "failed"
         run_id = $RunId
-        criterion_id = $CriterionId
+        criterion_id = if ([string]::IsNullOrWhiteSpace(
+            $effectiveCriterionId)) { $CriterionId } else {
+            $effectiveCriterionId
+        }
         dataset_partition = $DatasetPartition
         error = $failureMessage
         source_save_slot_path = $sourceSave

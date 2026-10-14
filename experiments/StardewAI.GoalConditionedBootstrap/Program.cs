@@ -49,6 +49,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-threshold-coverage-request", BuildMoneyThresholdCoverageRequest),
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
+    new("build-money-threshold-native-outcome-wave-selection", BuildMoneyThresholdNativeOutcomeWaveSelection),
     new("build-money-threshold-native-outcome-batch", BuildMoneyThresholdNativeOutcomeBatch),
     new("build-money-threshold-production-package", BuildMoneyThresholdProductionPackage),
     new("build-money-threshold-native-trajectory", BuildMoneyThresholdNativeTrajectory),
@@ -542,6 +543,15 @@ static void BuildMoneyThresholdNativeOutcomeSelection(Arguments options)
     var selection = MoneyThresholdNativeOutcomeSelectionBuilder.Build(
         options.Required("candidate-catalog"),
         options.Required("criterion"),
+        options.Required("partition"));
+    Write(options.Required("output"), selection);
+}
+
+static void BuildMoneyThresholdNativeOutcomeWaveSelection(Arguments options)
+{
+    var selection = MoneyThresholdNativeOutcomeWaveSelectionBuilder.Build(
+        options.Required("candidate-catalog"),
+        options.Required("work-plan"),
         options.Required("partition"));
     Write(options.Required("output"), selection);
 }
