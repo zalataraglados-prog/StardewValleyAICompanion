@@ -52,6 +52,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-terminal-candidate-rebind", BuildMoneyRevenueTerminalCandidateRebind),
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
+    new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
@@ -518,6 +519,19 @@ static void BuildMoneyRevenueCounterfactualProofRequests(Arguments options)
     Write(options.Required("output"), catalog);
     if (!catalog.CounterfactualProofCollectionReady)
         Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueTerminalExecutionProof(Arguments options)
+{
+    var receipt = MoneyRevenueTerminalExecutionProofBuilder.Build(
+        options.Required("manifest"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.TerminalOpportunityCostProofsVerified ||
+        !receipt.TerminalReservationClaimProofsVerified ||
+        !receipt.NativeRevenueRecurrencesVerified)
+    {
+        Environment.ExitCode = 2;
+    }
 }
 
 static void BuildMoneyRevenueAlternativeComparisonProof(Arguments options)

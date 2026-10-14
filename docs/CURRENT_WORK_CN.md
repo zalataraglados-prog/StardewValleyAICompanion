@@ -1,5 +1,21 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue terminal execution proof
+
+- 新增 `build-money-revenue-terminal-execution-proof`、
+  `money_revenue_terminal_execution_proof_manifest.v1` 与 receipt。manifest 必须对 authoritative request catalog
+  中每个 request ID 恰好提供一份证明，漏项、重复项和额外项均失败关闭；request catalog 会从源 manifest 重建并逐 JSON 核对。
+- 每份证明从 request 固定的 terminal snapshot 与 terminal strategy-ledger anchor 开始。可选 route transition 只能复用现有
+  queue/receipt validator 和资源中性移动、连接器、交互、菜单及等待动作；版本化 persistent boundary 必须证明路由期间库存、货币、精力和持久状态未变。
+- 终端动作复用现有原生 shop-sale episode 或 shipping-deposit verifier，并强制接入现有 Revenue recurrence receipt。
+  商店出售额外核对透明 material graph 的精确槽位、物品、品质、单价与数量减少；出货仍要求精确入箱队列并以次日原生结算作为 recurrence 首跳。
+- before ledger 必须就是 request 推导出的权威终端账本；after ledger 必须是独立路径但字节和 SHA 完全相同。
+  当前玩家库存槽位通过共享 `MaterialSupplyProjection` 与全部 active reservation 联合投影，只有未预留数量足以覆盖出售/入箱数量时才准入。
+- 终端总耗时取真实 receipt 的起止 tick，并统一通过 `GameClockBudgetPolicy.TicksToGameMinutes` 转换；没有复制 BFS、商店、出货、账本或执行器实现。
+  Release 构建为 `0 warning / 0 error`，轻量 hermetic 覆盖未预留商店出售正例和全量预留拒绝，未启动游戏或外部测试机。
+- 本层得到的是完整 terminal proof denominator，不是生产偏好。下一固定切片是以这些 evidence 的 request ID 为唯一分母，构建严格 comparison admission，随后才可判断
+  `earn_money` 是否获得 production Teacher preference。正式状态保持 `2/19`、根方法 `1/11`、`formal_product_training_authorized=false`。
+
 ## 2026-10-14 Revenue counterfactual proof requests
 
 - 新增 `build-money-revenue-counterfactual-proof-requests`、
