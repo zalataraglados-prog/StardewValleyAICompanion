@@ -1,6 +1,6 @@
 # StardewAI 短交接：Full Shipment 原生茶树采收
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 分支：`codex/admit-native-tea-bush-harvest`。
 - 严格运行时证据：`13/26`，剩余 `13` 层；共享 shipping/settlement 有效，正式训练仍未授权。
@@ -17,7 +17,7 @@
 - 完整 rollout proof 为 `verified_complete_rollout_proof_chain`。proof manifest SHA-256 为 `032e337bb3ab487249465d289c8a8f2145cc1934a46f2ff4add75349176dea13`，receipt SHA-256 为 `3fb71cbd20411e567577a9d0d0217e608c0070d043df8e13448e747406bb896f`。
 - 首次 `-SkipBuild` 尝试被源码/DLL 新鲜度门禁拒绝，未启动游戏或形成证据。重建后只运行一次正式样本和一次最终 evidence index；既有 12 层没有重跑。
 
-## 下一固定任务
+## 当时后续计划（已作废，仅历史）
 
 执行 `wild_tree_seed_drop_sample / full_shipment:item:408 / (O)408 / native_wild_tree_seed_drop`。先审查并复用现有野树原生交互、移动和自然拾取链，只补当前严格路线轴与正式 Full Shipment proof。
 
