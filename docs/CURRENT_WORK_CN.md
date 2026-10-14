@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 Money 原生波次自适应执行
+
+- 新增 `build-money-threshold-native-outcome-wave-selection`：它先校验固定 `18` 格 work plan 和目标分区波次，再从实时权威 Revenue denominator 中选择当前可达的最高缺失阈值；最终动作仍由原有单阈值 selector、daily-plan compiler 与 executor 完成，没有第二套执行链。
+- 计划中的最高阈值只表示本波理论上界，不再被误当成当前存档一定可达。源累计收入必须低于最低缺失阈值；候选只能关闭真实 crossed 的连续前缀，更高阈值留给 batch 刷新后的后续波次。若没有任何候选能推进，动作入队前失败关闭。
+- 新增 `Invoke-MoneyThresholdNativeCollectionWave.ps1`，负责读取一个当前 work plan、调用既有隔离采集器、重建 canonical batch/work plan，并验证至少一个计划格由真实 native row 关闭。它不生成标签、不把计划当证据，也不改变 `Money production evidence cells: 0/18` 或正式训练状态。本轮未启动游戏或本地高负载测试。
+
 ## 历史记录 · 2026-10-15 Money 生产采证波次收敛
 
 - `money_threshold_evidence_work_plan.v1` 继续保留六个权威阈值乘三个固定分区的 `18` 格分母，但新增从同一 verified corpus 派生的采集波次。原生波次按分区聚合尚缺 outcome 的阈值；比较波次按一条既有 native row 聚合尚缺 exact comparison 的 criterion。

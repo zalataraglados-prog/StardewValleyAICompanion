@@ -11,6 +11,8 @@
 
 比较波次按 verified native row 聚合一次 denominator 初始化，再为该 row 跨越且仍缺 comparison 的 criterion 分别建立 exact admission。不同 criterion 选择不同 native outcome 时不得共用 seed。波次是施工调度，不是 evidence、Teacher 标签或训练授权；当前生产仍为 `0/18`，`formal_product_training_authorized=false`。
 
+实际执行时，计划中的最高缺失阈值只是条件性上界。实时 wave selector 必须从完整 Revenue denominator 选择当前可达的最高缺失阈值，并继续使用原单阈值 selector 取得最小充分动作；只接纳原生结果真实跨越的 criterion，剩余格在 batch 重建后继续调度。没有可推进候选时在动作入队前失败关闭。该自适应拆波减少无效启动和人工转录，但不放宽 `18` 格分母、partition 隔离、comparison admission 或 formal gate。
+
 
 ## 历史记录 · 2026-10-14 Money 6x3 evidence work plan
 

@@ -80,6 +80,16 @@ builder still derives and verifies the complete crossed-criterion set. If no
 single authoritative candidate satisfies both bounds, the wave must be split
 and the plan rebuilt; the scheduler cannot synthesize or merge evidence.
 
+`build-money-threshold-native-outcome-wave-selection` performs that split from
+the live, authoritative Revenue candidate denominator. It requires the source
+checkpoint to remain below the lowest missing threshold, then selects the
+highest missing threshold reachable by a currently executable sale and reuses
+the ordinary single-threshold selector to choose the smallest sufficient sale.
+The resulting native row closes only the criterion prefix it actually crossed;
+the refreshed work plan retains every higher threshold for a later wave. A
+plan-level recommendation is therefore an upper bound, never an assertion that
+the current save can reach it.
+
 One comparison wave initializes the Revenue denominator once for its native
 row, but still requires a separate exact comparison admission for every listed
 criterion. All admissions attached to one seed must select the same native
@@ -204,6 +214,21 @@ corpus row cannot own multiple native trajectories.
 Run one criterion-partition cell at a time. Reuse already built binaries and
 deployed mods after the first run with `-SkipBuild` and `-SkipDeploy`, but never
 reuse a live snapshot, candidate denominator, or isolated save between cells.
+`Invoke-MoneyThresholdNativeCollectionWave.ps1` is the production scheduling
+entry point when a current work plan is available. It validates the selected
+partition wave, delegates the only game action to the existing isolated native
+runner, rebuilds the canonical batch/work plan, and requires at least one
+scheduled cell to become native-complete. It does not add another executor or
+trust the scheduling plan as evidence. If the live denominator cannot advance
+the wave, selection fails before queue execution and the isolated diagnostics
+are retained.
+
+The first empty work plan can be generated with
+`build-money-threshold-evidence-work-plan` from a v1 request whose
+`money_threshold_corpus_path` is empty. After the first accepted native run,
+always use the refreshed work-plan path emitted by the batch updater; do not
+continue scheduling from an older copy.
+
 `Update-MoneyThresholdNativeOutcomeBatch.ps1` discovers passed run summaries,
 replays every referenced catalog/selection/corpus, rejects duplicate split keys,
 emits one combined corpus, and rebuilds the 18-cell work plan. Its optional
