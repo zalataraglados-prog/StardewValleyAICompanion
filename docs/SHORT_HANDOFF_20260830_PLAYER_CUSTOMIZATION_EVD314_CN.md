@@ -1,6 +1,6 @@
 # StardewAI 短交接：玩家外观定制 EVD-314
 
-## 当前状态
+## 当时状态（历史快照）
 
 `player.customize -> customize_player -> executor.customize_player` 已完整闭合。该动作严格为 `PlayerCommandOnly`，不进入默认候选、自主日计划或策略训练；唯一保留的上游信息是玩家明确给出的模式、目标、原因和确认，所有机械字段在执行前从当前透明快照重新绑定。
 
@@ -18,6 +18,6 @@
 - KnowledgeCompiler `585/585`，blocking 0。
 - Core `2123/2123`；Backend `155/155`；Release `0 warnings / 0 errors`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 `minigame.play_junimo_kart` 按用户既定要求继续后置。下一实际纵向切片是 `processing.crack_geode`：先锁定 1.6.15 原生入口、服务/库存/费用门控、完整 geode 输出与 RNG/回执语义，再按同一套“透明投影 -> 上游候选 -> DailyPlan -> fresh 编译 -> 类型化运行 -> 原生输入 -> 结果回执 -> 隐藏静音验证”流程闭合，禁止另建第二套移动、库存或奖励系统。
