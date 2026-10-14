@@ -42,15 +42,23 @@ namespace StardewAI.Core.Execution
             var guaranteedMinimum = ReadIntParameter(
                 action,
                 "deferred_pickup_guaranteed_minimum_quantity");
+            var requiredAmount = ReadIntParameter(
+                action,
+                "acquisition_required_amount");
             if (!targetX.HasValue || !targetY.HasValue ||
                 string.IsNullOrWhiteSpace(qualifiedItemId) ||
                 !quality.HasValue || quality.Value < 0 ||
                 !inventoryBefore.HasValue || inventoryBefore.Value < 0 ||
                 !debrisBefore.HasValue || debrisBefore.Value < 0 ||
-                !guaranteedMinimum.HasValue || guaranteedMinimum.Value <= 0)
+                !guaranteedMinimum.HasValue || guaranteedMinimum.Value <= 0 ||
+                !requiredAmount.HasValue || requiredAmount.Value <= 0)
             {
                 reasons.Add("deferred_pickup_typed_baseline_required");
                 return reasons.ToArray();
+            }
+            if (requiredAmount.Value > guaranteedMinimum.Value)
+            {
+                reasons.Add("native_drop_deferred_pickup_guarantee_insufficient");
             }
 
             var sourceId = ReadParameter(
