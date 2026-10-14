@@ -50,5 +50,48 @@ internal static partial class BootstrapSelfTest
         var corpusPath = Path.Combine(root, "money-threshold-corpus.json");
         Write(corpusPath, corpus);
         MoneyThresholdTeacherCorpusBuilder.Verify(corpusPath);
+
+        var workPlanRequestPath = Path.Combine(
+            root,
+            "money-threshold-work-plan-request.json");
+        Write(workPlanRequestPath, new MoneyThresholdEvidenceWorkPlanRequest
+        {
+            PlanId = "money-threshold-native-outcome-work",
+            MoneyThresholdCorpusPath = corpusPath
+        });
+        var workPlan = MoneyThresholdEvidenceWorkPlanBuilder.Build(
+            workPlanRequestPath);
+        var crossedCell = workPlan.Cells.Single(value =>
+            value.CriterionId == "money_50000" &&
+            value.DatasetPartition == row.DatasetPartition);
+        Require(workPlan.RequiredCellCount == 18 &&
+                workPlan.NativeOutcomeCompleteCellCount == 1 &&
+                workPlan.TeacherComparisonCompleteCellCount == 0 &&
+                workPlan.FullyCompleteCellCount == 0 &&
+                !workPlan.CoverageComplete &&
+                !workPlan.FormalProductTrainingAuthorized &&
+                crossedCell.NativeOutcomeVerified &&
+                !crossedCell.TeacherComparisonVerified &&
+                crossedCell.Status == "teacher_comparison_missing" &&
+                workPlan.Cells.Count(value => value.Status ==
+                    "native_outcome_and_teacher_comparison_missing") == 17,
+            "Money-threshold work plan did not preserve the exact 6x3 evidence matrix.");
+
+        var emptyWorkPlanRequestPath = Path.Combine(
+            root,
+            "empty-money-threshold-work-plan-request.json");
+        Write(emptyWorkPlanRequestPath, new MoneyThresholdEvidenceWorkPlanRequest
+        {
+            PlanId = "money-threshold-empty-work"
+        });
+        var emptyWorkPlan = MoneyThresholdEvidenceWorkPlanBuilder.Build(
+            emptyWorkPlanRequestPath);
+        Require(emptyWorkPlan.RequiredCellCount == 18 &&
+                emptyWorkPlan.NativeOutcomeCompleteCellCount == 0 &&
+                emptyWorkPlan.TeacherComparisonCompleteCellCount == 0 &&
+                emptyWorkPlan.FullyCompleteCellCount == 0 &&
+                emptyWorkPlan.Cells.All(value => value.Status ==
+                    "native_outcome_and_teacher_comparison_missing"),
+            "An empty Money-threshold work plan did not expose all 18 missing cells.");
     }
 }

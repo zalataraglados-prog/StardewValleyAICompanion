@@ -3214,6 +3214,16 @@ Slice 7 remains assigned to the RTX 5070 node.
   production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request
   to native recurrence receipts before exact-ID comparison admission.
 
+### 2026-10-14: Money 6x3 evidence work plan
+
+- `build-money-threshold-evidence-work-plan` derives an immutable 18-cell matrix from the six authoritative Grandpa
+  Money thresholds and train/validation/test. It accepts no corpus or one replay-verified Money corpus v3 and records
+  native-outcome and exact-comparison channels independently for every cell.
+- Each cell retains the evidence row IDs and reports complete, comparison-missing, or both-channels-missing. Method
+  aggregation cannot hide a criterion/partition gap, and the plan cannot create episodes, promote fixtures or authorize
+  training. The hermetic one-row corpus reports native `1/18`, comparison `0/18`, complete `0/18`; production readiness
+  remains unchanged.
+
 ### 2026-10-14: Money criterion comparison join
 
 - Money threshold request/corpus contracts are now v3 without introducing a second source kind. A native ShopMenu sale

@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Money evidence work plan
+
+- 新增 `build-money-threshold-evidence-work-plan`，从权威六档 Money criterion 与固定 train/validation/test 分区生成 `6 x 3 = 18` 个不可增删的工作格。输入可以不带 corpus（全部待采）或带一份可重放验证的 Money corpus v3。
+- 每格分别统计 native outcome 与 exact-denominator Teacher comparison，不用 method 汇总掩盖 criterion/partition 缺口。输出保留命中的 row ID，并只给出三种状态：完整、已有 outcome 但缺 comparison、两通道都缺。
+- work plan 只负责调度缺失证据，不能生成 episode、提升 fixture 或授权训练。当前本机 E 盘 Money 目录只有 self-test；hermetic 示例因此是 `native 1/18`、`comparison 0/18`、`complete 0/18`，正式覆盖仍不变。
+
 ## 2026-10-14 Money criterion comparison join
 
 - `money_threshold_teacher_corpus_request/corpus` 已升级为 v3。它仍以原生 ShopMenu sale episode 为 native outcome 唯一来源，但现在允许每个 crossed criterion 显式附带一份 Revenue comparison admission；没有 admission 的行继续只计 native outcome。
