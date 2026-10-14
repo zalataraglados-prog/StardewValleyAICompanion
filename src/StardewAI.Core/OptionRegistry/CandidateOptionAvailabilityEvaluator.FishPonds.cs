@@ -24,8 +24,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             ? ReadString(farmIdentity.Value, "location_id")
             : "Farm";
         var playerLocation = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         var rows = new List<EventCandidate>();
         foreach (var building in buildings.Value.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object))
         {
@@ -35,8 +33,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 continue;
             }
 
-            rows.Add(BuildFishPondOutputCandidate(snapshot, building, pond, farmLocation, playerLocation, playerX, playerY));
-            rows.Add(BuildFishPondRequestCandidate(snapshot, building, pond, farmLocation, playerLocation, playerX, playerY));
+            rows.Add(BuildFishPondOutputCandidate(
+                snapshot,
+                building,
+                pond,
+                farmLocation,
+                playerLocation));
+            rows.Add(BuildFishPondRequestCandidate(
+                snapshot,
+                building,
+                pond,
+                farmLocation,
+                playerLocation));
         }
         return rows.ToArray();
     }
@@ -46,9 +54,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         JsonElement building,
         JsonElement pond,
         string farmLocation,
-        string playerLocation,
-        int playerX,
-        int playerY)
+        string playerLocation)
     {
         var buildingX = ReadInt(building, "tile_x");
         var buildingY = ReadInt(building, "tile_y");
@@ -65,11 +71,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             reasons.Add("fish_pond_output_identity_incomplete");
         }
-        var distance = standX.HasValue && standY.HasValue && string.Equals(playerLocation, farmLocation, StringComparison.OrdinalIgnoreCase)
-            ? Math.Abs(playerX - standX.Value) + Math.Abs(playerY - standY.Value)
-            : 0;
-        var parameters = targetX.HasValue && targetY.HasValue && standX.HasValue && standY.HasValue
-            ? FishPondOutputParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value, distance)
+        var distance = standX.HasValue && standY.HasValue &&
+            string.Equals(
+                playerLocation,
+                farmLocation,
+                StringComparison.OrdinalIgnoreCase)
+                ? CurrentRouteDistance(snapshot, standX.Value, standY.Value)
+                : null;
+        if (!distance.HasValue)
+            reasons.Add("fish_pond_stand_tile_unreachable");
+        var parameters = targetX.HasValue && targetY.HasValue &&
+            standX.HasValue && standY.HasValue && distance.HasValue
+            ? FishPondOutputParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value, distance.Value)
             : Array.Empty<SmallModelActionParameter>();
         if (parameters.Length > 0)
         {
@@ -91,7 +104,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             QualifiedItemId = outputId,
             Quantity = ReadInt(pond, "output_stack"),
             ExpectedEffect = FishPondOutputExpectedEffect(building, pond, standX, standY),
-            EstimatedTicks = Math.Max(30, distance * 60 + 30),
+            EstimatedTicks = distance.HasValue
+                ? Math.Max(30, distance.Value * 60 + 30)
+                : -1,
             EnergyCost = 0,
             AvailabilityClass = "transparent_fish_pond_native_output_collect",
             BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
@@ -104,9 +119,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         JsonElement building,
         JsonElement pond,
         string farmLocation,
-        string playerLocation,
-        int playerX,
-        int playerY)
+        string playerLocation)
     {
         var buildingX = ReadInt(building, "tile_x");
         var buildingY = ReadInt(building, "tile_y");
@@ -123,11 +136,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             reasons.Add("fish_pond_request_projection_incomplete");
         }
-        var distance = standX.HasValue && standY.HasValue && string.Equals(playerLocation, farmLocation, StringComparison.OrdinalIgnoreCase)
-            ? Math.Abs(playerX - standX.Value) + Math.Abs(playerY - standY.Value)
-            : 0;
-        var parameters = targetX.HasValue && targetY.HasValue && standX.HasValue && standY.HasValue
-            ? FishPondRequestParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value, distance)
+        var distance = standX.HasValue && standY.HasValue &&
+            string.Equals(
+                playerLocation,
+                farmLocation,
+                StringComparison.OrdinalIgnoreCase)
+                ? CurrentRouteDistance(snapshot, standX.Value, standY.Value)
+                : null;
+        if (!distance.HasValue)
+            reasons.Add("fish_pond_stand_tile_unreachable");
+        var parameters = targetX.HasValue && targetY.HasValue &&
+            standX.HasValue && standY.HasValue && distance.HasValue
+            ? FishPondRequestParameters(building, pond, farmLocation, targetX.Value, targetY.Value, standX.Value, standY.Value, distance.Value)
             : Array.Empty<SmallModelActionParameter>();
         if (parameters.Length > 0)
         {
@@ -149,7 +169,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             QualifiedItemId = requestId,
             Quantity = ReadInt(pond, "request_item_count_remaining"),
             ExpectedEffect = FishPondRequestExpectedEffect(building, pond, standX, standY),
-            EstimatedTicks = Math.Max(60, distance * 60 + ReadInt(pond, "request_item_count_remaining") * 30),
+            EstimatedTicks = distance.HasValue
+                ? Math.Max(
+                    60,
+                    distance.Value * 60 +
+                        ReadInt(pond, "request_item_count_remaining") * 30)
+                : -1,
             EnergyCost = 0,
             AvailabilityClass = "transparent_fish_pond_native_request_completion",
             BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),

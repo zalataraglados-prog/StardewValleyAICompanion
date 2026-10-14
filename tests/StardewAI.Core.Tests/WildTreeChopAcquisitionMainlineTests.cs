@@ -26,6 +26,15 @@ public sealed class WildTreeChopAcquisitionMainlineTests
 
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("clear_obstacle_tile", candidate.Kind);
+        Assert.Equal(660, candidate.EstimatedTicks);
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "route_distance_tiles" && value.Value == "1");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "stand_tile_x" && value.Value == "11");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "stand_tile_y" && value.Value == "10");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "terminal_action_ticks" && value.Value == "600");
         Assert.Contains(candidate.Parameters, value => value.Name == "clear_completion_mode" && value.Value == "wild_tree_removed");
         Assert.Contains(candidate.Parameters, value => value.Name == "required_tool_kind" && value.Value == "axe");
         Assert.Contains(candidate.Parameters, value =>

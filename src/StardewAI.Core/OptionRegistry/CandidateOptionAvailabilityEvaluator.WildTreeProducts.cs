@@ -20,8 +20,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         return features.Value.EnumerateArray()
             .Where(feature => feature.ValueKind == JsonValueKind.Object && ReadString(feature, "runtime_type") == "StardewValley.TerrainFeatures.Tree")
             .Select(feature =>
@@ -34,10 +32,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 var optional = ReadArray(feature, "tree_product_optional_output_domain");
                 var safeSlot = ReadInt(feature, "tree_product_safe_slot_index");
                 var restoreSlot = ReadInt(feature, "tree_product_restore_slot_index");
-                var distance = interaction is null
-                    ? 0
-                    : Math.Abs(playerX - interaction.Stand.X) +
-                      Math.Abs(playerY - interaction.Stand.Y);
+                var distance = interaction?.Stand.Distance ?? 0;
                 var reasons = new List<string>();
                 if (status != "ready") reasons.Add(string.IsNullOrWhiteSpace(status) ? "tree_product_projection_unavailable" : status);
                 if (ReadString(feature, "tree_product_data_contract_status") != "exact_locked_base_1.6.15" ||

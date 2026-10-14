@@ -40,6 +40,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             .Where(value => value.OptionId == "processing.crack_geode" &&
                 value.TargetTileX.HasValue &&
                 value.TargetTileY.HasValue &&
+                value.StandTileX.HasValue &&
+                value.StandTileY.HasValue &&
                 value.ExpectedOutputStack >= staticRoute.RequiredAmount &&
                 value.ExpectedOutputQuality >= staticRoute.MinimumQuality &&
                 resolvedTargets.Contains((
@@ -49,7 +51,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             .OrderBy(value => value.EstimatedTicks)
             .ThenBy(value => value.CandidateId, StringComparer.Ordinal)
             .FirstOrDefault();
-        if (candidate is null || candidate.EstimatedTicks <= 0)
+        if (candidate is null || candidate.TerminalActionTicks <= 0)
         {
             return Result(
                 route,
@@ -72,7 +74,7 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
             candidate.TargetTileY.GetValueOrDefault(),
             requireExactTargetTile: false,
             GameClockBudgetPolicy.TicksToGameMinutes(
-                candidate.EstimatedTicks),
+                candidate.TerminalActionTicks),
             1,
             null,
             state.AvailableEnergy,
@@ -87,6 +89,8 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 "state.player.geode_processing.value",
                 "compiler:DailyPlanCompiler.GeodeProcessingSteps",
                 "compiler:ActionQueueCompiler.CompileGeodeProcessingStep"
-            });
+            },
+            exactStandTileX: candidate.StandTileX,
+            exactStandTileY: candidate.StandTileY);
     }
 }

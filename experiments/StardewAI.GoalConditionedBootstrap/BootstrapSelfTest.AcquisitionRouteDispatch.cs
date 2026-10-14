@@ -1239,6 +1239,9 @@ internal static partial class BootstrapSelfTest
                     candidates[0].StandTileX == 11 &&
                     candidates[0].StandTileY == 10 &&
                     candidates[0].RouteDistanceTiles == 1 &&
+                    candidates[0].TerminalActionTicks == 180 &&
+                    candidates[0].TimingProjectionMode ==
+                        "candidate_total_minus_route_distance" &&
                     candidates[0].EstimatedTicks == 240 &&
                     candidates[0].EnergyCost == 0,
                 "The exact current bush did not enter the shared " +
@@ -1315,6 +1318,9 @@ internal static partial class BootstrapSelfTest
                     candidates[0].TargetTileY == 10 &&
                     candidates[0].MaxMovementTiles == 1 &&
                     candidates[0].MaxToolSwings == 1 &&
+                    candidates[0].TerminalActionTicks == 60 &&
+                    candidates[0].TimingProjectionMode ==
+                        "explicit_terminal_action_ticks" &&
                     candidates[0].EstimatedTicks == 120 &&
                     candidates[0].EnergyCost == 2,
                 "The exact current artifact spot did not enter the shared " +
@@ -1369,6 +1375,10 @@ internal static partial class BootstrapSelfTest
                     candidates[0].TargetTileY == 12 &&
                     candidates[0].StandTileX == 46 &&
                     candidates[0].StandTileY == 13 &&
+                    candidates[0].RouteDistanceTiles == 0 &&
+                    candidates[0].TerminalActionTicks == 180 &&
+                    candidates[0].TimingProjectionMode ==
+                        "explicit_terminal_action_ticks" &&
                     candidates[0].EstimatedTicks == 180 &&
                     candidates[0].EnergyCost == 0,
                 "The exact current Community Center reward did not enter " +

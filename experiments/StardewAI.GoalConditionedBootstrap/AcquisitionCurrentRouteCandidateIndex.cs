@@ -91,7 +91,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v14",
+            "v15",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -315,6 +315,41 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             {
                 if (source.RouteKind == excludedRouteKind)
                     continue;
+                var routeDistanceTiles = ReadIntParameter(
+                    candidate,
+                    "route_distance_tiles");
+                var terminalActionTicks = ReadIntParameter(
+                    candidate,
+                    "terminal_action_ticks");
+                var timingProjectionMode =
+                    "explicit_terminal_action_ticks";
+                if (!terminalActionTicks.HasValue &&
+                    routeDistanceTiles is >= 0 &&
+                    candidate.EstimatedTicks >
+                        routeDistanceTiles.Value * 60)
+                {
+                    terminalActionTicks = checked(
+                        candidate.EstimatedTicks -
+                        routeDistanceTiles.Value * 60);
+                    timingProjectionMode =
+                        "candidate_total_minus_route_distance";
+                }
+                if (terminalActionTicks is null or <= 0)
+                {
+                    if (optionId == "mining.reach_depth")
+                    {
+                        terminalActionTicks = 0;
+                        timingProjectionMode =
+                            "mining_native_budget_projection";
+                    }
+                    else
+                    {
+                        reasons.Add(
+                            "current_route_candidate_terminal_timing_missing:" +
+                            candidate.CandidateId);
+                        continue;
+                    }
+                }
                 candidates.Add(new AcquisitionCurrentRouteCandidate(
                     candidate.CandidateId,
                     optionId,
@@ -326,8 +361,10 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                     ReadIntParameter(candidate, "stand_tile_x"),
                     ReadIntParameter(candidate, "stand_tile_y"),
                     ReadIntParameter(candidate, "max_movement_tiles") ??
-                        ReadIntParameter(candidate, "route_distance_tiles"),
-                    ReadIntParameter(candidate, "route_distance_tiles"),
+                        routeDistanceTiles,
+                    routeDistanceTiles,
+                    terminalActionTicks.Value,
+                    timingProjectionMode,
                     ReadIntParameter(candidate, "max_tool_swings"),
                     ReadIntParameter(candidate, "max_attacks"),
                     ReadDoubleParameter(candidate, "estimated_target_cost_ms"),
@@ -822,6 +859,8 @@ internal sealed record AcquisitionCurrentRouteCandidate(
     int? StandTileY,
     int? MaxMovementTiles,
     int? RouteDistanceTiles,
+    int TerminalActionTicks,
+    string TimingProjectionMode,
     int? MaxToolSwings,
     int? MaxAttacks,
     double? EstimatedTargetCostMs,

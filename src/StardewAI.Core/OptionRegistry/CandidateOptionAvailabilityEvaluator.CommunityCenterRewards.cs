@@ -45,8 +45,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 rowCountExact);
         }
 
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         var result = new List<EventCandidate>();
         foreach (var bundle in pending)
         {
@@ -64,9 +62,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 rowCountExact,
                 requireStand: true,
                 standAvailable: stand is not null);
-            var distance = stand is null
-                ? 0
-                : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+            var distance = stand?.Distance ?? 0;
             var parameters = stand is null || !interactionX.HasValue || !interactionY.HasValue
                 ? Array.Empty<SmallModelActionParameter>()
                 : CommunityCenterRewardParameters(
@@ -76,7 +72,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     stand.X,
                     stand.Y,
                     interactionX.Value,
-                    interactionY.Value);
+                    interactionY.Value,
+                    distance);
             var blocks = reasons.Distinct(StringComparer.Ordinal).ToArray();
             result.Add(new EventCandidate
             {
@@ -223,7 +220,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         int standX,
         int standY,
         int interactionX,
-        int interactionY) =>
+        int interactionY,
+        int routeDistanceTiles) =>
         new[]
         {
             Parameter("target_location", "CommunityCenter"),
@@ -231,6 +229,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("stand_tile_y", standY.ToString(CultureInfo.InvariantCulture)),
             Parameter("target_tile_x", interactionX.ToString(CultureInfo.InvariantCulture)),
             Parameter("target_tile_y", interactionY.ToString(CultureInfo.InvariantCulture)),
+            Parameter("route_distance_tiles", routeDistanceTiles.ToString(CultureInfo.InvariantCulture)),
+            Parameter("terminal_action_ticks", "180"),
             Parameter("community_center_note_tile_x", NullableReadInt(bundle, "note_tile_x")?.ToString(CultureInfo.InvariantCulture) ?? "-1"),
             Parameter("community_center_note_tile_y", NullableReadInt(bundle, "note_tile_y")?.ToString(CultureInfo.InvariantCulture) ?? "-1"),
             Parameter("route_state", ReadString(progress, "route_state")),

@@ -69,85 +69,38 @@ public static partial class AcquisitionRouteTargetDateDailyTimeEnergyBuilder
                 });
         }
 
-        var terminalMinutes = Math.Max(
-            1,
-            (int)Math.Ceiling(
-                candidate.EstimatedTargetCostMs.Value /
-                GameClockBudgetPolicy.RealMillisecondsPerGameMinute));
-        var start = state.RouteState.CurrentTime;
-        var window = RequirementRoute(route).MatchingWindows
-            .Where(value => string.IsNullOrWhiteSpace(value.LocationId) ||
-                string.Equals(
-                    value.LocationId,
-                    candidate.LocationId,
-                    StringComparison.OrdinalIgnoreCase))
-            .SelectMany(value => value.TimeWindows)
-            .Select(value => new
-            {
-                Window = value,
-                Start = Math.Max(start, value.StartTime),
-                AvailableMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
-                    Math.Max(start, value.StartTime),
-                    value.EndTime)
-            })
-            .Where(value => value.AvailableMinutes >= terminalMinutes)
-            .OrderBy(value => value.Start)
-            .ThenBy(value => value.Window.EndTime)
-            .FirstOrDefault();
-        var evaluation = new AcquisitionDailyTimeEnergyEvaluation(
+        return EvaluateTerminal(
+            route,
+            staticRoute,
+            state,
+            "native_monster_drop_table",
             candidate.LocationId,
-            candidate.TargetTileX,
-            candidate.TargetTileY,
-            candidate.StandTileX,
-            candidate.StandTileY,
-            start,
-            start,
-            window?.Window.StartTime,
-            window?.Window.EndTime,
-            terminalMinutes,
-            window is null
-                ? null
-                : GameClockBudgetPolicy.AddClockMinutes(
-                    window.Start,
-                    terminalMinutes),
+            candidate.TargetTileX.Value,
+            candidate.TargetTileY.Value,
+            requireExactTargetTile: false,
+            Math.Max(
+                1,
+                (int)Math.Ceiling(
+                    candidate.EstimatedTargetCostMs.Value /
+                    GameClockBudgetPolicy.RealMillisecondsPerGameMinute)),
             1,
             null,
             state.AvailableEnergy,
             null,
             null,
             0d,
-            window is not null,
-            true,
             "existing_native_mining_combat_profile",
-            state.RouteState.Timing?.EvidenceId ?? string.Empty,
             new[]
             {
                 "candidate:mining.reach_depth",
+                "candidate.parameters[stand_tile_x]",
+                "candidate.parameters[stand_tile_y]",
                 "candidate.parameters[estimated_target_cost_ms]",
                 "candidate.parameters[max_attacks]",
                 "state.mining.monsters.value[].melee_attack_projections",
                 "compiler:MiningFloorStepCompiler"
-            });
-        if (window is null)
-        {
-            return Result(
-                route,
-                "native_monster_drop_table",
-                "resolved_daily_time_budget_miss",
-                true,
-                false,
-                evaluation,
-                new[] { "terminal_duration_does_not_fit_source_window" },
-                Array.Empty<string>());
-        }
-        return Result(
-            route,
-            "native_monster_drop_table",
-            "resolved_daily_time_energy_budget_match",
-            true,
-            true,
-            evaluation,
-            Array.Empty<string>(),
-            Array.Empty<string>());
+            },
+            exactStandTileX: candidate.StandTileX,
+            exactStandTileY: candidate.StandTileY);
     }
 }

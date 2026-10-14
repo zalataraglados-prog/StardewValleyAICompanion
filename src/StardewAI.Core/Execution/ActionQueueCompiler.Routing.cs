@@ -885,153 +885,41 @@ namespace StardewAI.Core.Execution
         }
 
         private static HashSet<string> ReadBlockedCollisionTiles(JsonElement collisionGrid)
-        {
-            var blockedTiles = new HashSet<string>(StringComparer.Ordinal);
-            if (!collisionGrid.TryGetProperty("notable_tiles", out var tiles) || tiles.ValueKind != JsonValueKind.Array)
-            {
-                return blockedTiles;
-            }
-
-            foreach (var tile in tiles.EnumerateArray())
-            {
-                if (tile.ValueKind == JsonValueKind.Object &&
-                    tile.TryGetProperty("collision_blocked", out var blocked) &&
-                    blocked.ValueKind == JsonValueKind.True)
-                {
-                    blockedTiles.Add(TileKey(ReadInt(tile, "tile_x"), ReadInt(tile, "tile_y")));
-                }
-            }
-
-            return blockedTiles;
-        }
+            => RouteGridPathfinder.ReadBlockedTiles(collisionGrid);
 
         private static HashSet<string> ReadUnsupportedRouteActionTiles(SnapshotEnvelope snapshot)
-        {
-            var unsupportedTiles = new HashSet<string>(StringComparer.Ordinal);
-            var coverage = ReadStateFieldValue(snapshot, "locations", "route_action_branch_coverage");
-            if (!coverage.HasValue ||
-                coverage.Value.ValueKind != JsonValueKind.Object ||
-                !coverage.Value.TryGetProperty("rows", out var rows) ||
-                rows.ValueKind != JsonValueKind.Array)
-            {
-                return unsupportedTiles;
-            }
-
-            foreach (var row in rows.EnumerateArray())
-            {
-                if (row.ValueKind == JsonValueKind.Object &&
-                    row.TryGetProperty("route_training_blocked", out var blocked) &&
-                    blocked.ValueKind == JsonValueKind.True)
-                {
-                    unsupportedTiles.Add(TileKey(ReadInt(row, "tile_x"), ReadInt(row, "tile_y")));
-                }
-            }
-
-            return unsupportedTiles;
-        }
+            => RouteGridPathfinder.ReadUnsupportedActionTiles(snapshot);
 
         private static bool PathExists(int startX, int startY, int targetX, int targetY, int width, int height, HashSet<string> blockedTiles, HashSet<string> extraBlockedTiles)
-        {
-            var startKey = TileKey(startX, startY);
-            var targetKey = TileKey(targetX, targetY);
-            // The actor can already be standing on a touch/action tile. Leaving that
-            // established start is safe; only entering unsupported route tiles is blocked.
-            if (blockedTiles.Contains(startKey) || blockedTiles.Contains(targetKey) || extraBlockedTiles.Contains(targetKey))
-            {
-                return false;
-            }
-
-            var visited = new HashSet<string>(StringComparer.Ordinal) { startKey };
-            var queue = new Queue<(int X, int Y)>();
-            queue.Enqueue((startX, startY));
-
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (current.X == targetX && current.Y == targetY)
-                {
-                    return true;
-                }
-
-                foreach (var next in Neighbors(current.X, current.Y))
-                {
-                    if (!TileInBounds(next.X, next.Y, width, height))
-                    {
-                        continue;
-                    }
-
-                    var key = TileKey(next.X, next.Y);
-                    if (visited.Contains(key) || blockedTiles.Contains(key) || extraBlockedTiles.Contains(key))
-                    {
-                        continue;
-                    }
-
-                    visited.Add(key);
-                    queue.Enqueue(next);
-                }
-            }
-
-            return false;
-        }
+            => ShortestPathLength(
+                startX,
+                startY,
+                targetX,
+                targetY,
+                width,
+                height,
+                blockedTiles,
+                extraBlockedTiles).HasValue;
 
         private static int? ShortestPathLength(int startX, int startY, int targetX, int targetY, int width, int height, HashSet<string> blockedTiles, HashSet<string> extraBlockedTiles)
-        {
-            var startKey = TileKey(startX, startY);
-            var targetKey = TileKey(targetX, targetY);
-            if (blockedTiles.Contains(startKey) || blockedTiles.Contains(targetKey) ||
-                extraBlockedTiles.Contains(targetKey))
-            {
-                return null;
-            }
-
-            var visited = new HashSet<string>(StringComparer.Ordinal) { startKey };
-            var queue = new Queue<(int X, int Y, int Distance)>();
-            queue.Enqueue((startX, startY, 0));
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (current.X == targetX && current.Y == targetY)
-                {
-                    return current.Distance;
-                }
-
-                foreach (var next in Neighbors(current.X, current.Y))
-                {
-                    if (!TileInBounds(next.X, next.Y, width, height))
-                    {
-                        continue;
-                    }
-
-                    var key = TileKey(next.X, next.Y);
-                    if (!visited.Add(key) || blockedTiles.Contains(key) || extraBlockedTiles.Contains(key))
-                    {
-                        continue;
-                    }
-
-                    queue.Enqueue((next.X, next.Y, current.Distance + 1));
-                }
-            }
-
-            return null;
-        }
+            => RouteGridPathfinder.ShortestPathLength(
+                startX,
+                startY,
+                targetX,
+                targetY,
+                width,
+                height,
+                blockedTiles,
+                extraBlockedTiles);
 
         private static IEnumerable<(int X, int Y)> Neighbors(int x, int y)
-        {
-            yield return (x + 1, y);
-            yield return (x - 1, y);
-            yield return (x, y + 1);
-            yield return (x, y - 1);
-        }
+            => RouteGridPathfinder.Neighbors(x, y);
 
         private static bool TileInBounds(int x, int y, int width, int height)
-        {
-            return x >= 0 && y >= 0 && x < width && y < height;
-        }
+            => RouteGridPathfinder.InBounds(x, y, width, height);
 
         private static string TileKey(int x, int y)
-        {
-            return x + "," + y;
-        }
+            => RouteGridPathfinder.Key(x, y);
 
     }
 }

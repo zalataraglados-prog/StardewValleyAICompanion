@@ -27,11 +27,15 @@ namespace StardewAI.Core.OptionRegistry
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
         private readonly SnapshotStateCache<EventCandidate[]>
             routeConnectorCandidatesBySnapshot = new();
-        private static readonly SnapshotStateCache<CollisionGridLookup>
-            collisionGridBySnapshot = new();
+        private static readonly SnapshotStateCache<CurrentRouteDistanceIndex>
+            currentRouteDistanceBySnapshot = new();
 
         internal int RouteConnectorCandidateBuildCount =>
             routeConnectorCandidatesBySnapshot.BuildCount;
+
+        internal int CurrentRouteDistanceBuildCount(
+            SnapshotEnvelope snapshot) =>
+            currentRouteDistanceBySnapshot.GetBuildCount(snapshot);
 
         public CandidateOptionAvailabilityEvaluator()
             : this(new OptionRegistry(), new Verifier.Verifier())

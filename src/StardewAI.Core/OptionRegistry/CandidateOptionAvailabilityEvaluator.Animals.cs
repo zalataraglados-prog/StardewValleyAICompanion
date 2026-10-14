@@ -20,8 +20,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         return animals.Value.EnumerateArray()
             .Where(animal => animal.ValueKind == JsonValueKind.Object &&
                 ReadString(animal, "harvest_type") == "HarvestWithTool")
@@ -33,8 +31,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 var y = ReadInt(animal, "tile_y");
                 var sameLocation = string.Equals(locationId, currentLocation, StringComparison.OrdinalIgnoreCase);
                 var stand = sameLocation ? FindBestStandTile(snapshot, x, y) : null;
-                var distance = stand is null ? 0 :
-                    Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+                var distance = stand?.Distance ?? 0;
                 var status = ReadString(animal, "harvest_status");
                 var outputId = ReadString(animal, "harvest_output_qualified_item_id");
                 var outputJson = ReadString(animal, "harvest_expected_output_items_json");

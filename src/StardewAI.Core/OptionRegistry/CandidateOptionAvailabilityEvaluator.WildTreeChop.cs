@@ -23,14 +23,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         return features.Value.EnumerateArray()
             .Where(feature => feature.ValueKind == JsonValueKind.Object &&
                 ReadString(feature, "runtime_type") == "StardewValley.TerrainFeatures.Tree" &&
                 ReadInt(feature, "growth_stage") >= 5 &&
                 ReadBool(feature, "stump") != true)
-            .Select(feature => BuildWildTreeChopAcquisitionCandidate(snapshot, feature, locationId, playerX, playerY))
+            .Select(feature => BuildWildTreeChopAcquisitionCandidate(
+                snapshot,
+                feature,
+                locationId))
             .OrderBy(candidate => candidate.EstimatedTicks)
             .ThenBy(candidate => candidate.TileY)
             .ThenBy(candidate => candidate.TileX)
@@ -40,14 +41,16 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate BuildWildTreeChopAcquisitionCandidate(
         SnapshotEnvelope snapshot,
         JsonElement feature,
-        string locationId,
-        int playerX,
-        int playerY)
+        string locationId)
     {
         var x = ReadInt(feature, "tile_x");
         var y = ReadInt(feature, "tile_y");
         var stand = FindBestStandTile(snapshot, x, y);
-        var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+        var distance = stand?.Distance ?? 0;
+        var expectedSwings = Math.Max(
+            1,
+            ReadInt(feature, "tree_chop_expected_tool_swings"));
+        var terminalActionTicks = expectedSwings * 60 + 240;
         var status = ReadString(feature, "tree_chop_acquisition_status");
         var reasons = new List<string>();
         if (status != "ready")
@@ -59,15 +62,21 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             reasons.Add("wild_tree_chop_no_adjacent_route_stand_tile");
         }
 
-        var parameters = WildTreeChopParameters(feature, locationId, distance);
+        var parameters = WildTreeChopParameters(
+            feature,
+            locationId,
+            distance,
+            stand,
+            terminalActionTicks);
         reasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
         {
             OptionId = "executor.clear_obstacle",
             Parameters = parameters
         }));
 
-        var expectedSwings = Math.Max(1, ReadInt(feature, "tree_chop_expected_tool_swings"));
-        var estimatedTicks = Math.Max(60, distance * 60 + expectedSwings * 60 + 240);
+        var estimatedTicks = Math.Max(
+            60,
+            distance * 60 + terminalActionTicks);
         var energyCost = (int)Math.Ceiling(Math.Max(0d, ReadDouble(feature, "tree_chop_energy_cost")));
         var playerEnergy = ReadStateFieldValue(snapshot, "player", "energy");
         if (playerEnergy.HasValue && playerEnergy.Value.ValueKind == JsonValueKind.Number &&
@@ -89,7 +98,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             LocationId = locationId,
             TileX = x,
             TileY = y,
-            ExpectedEffect = WildTreeChopExpectedEffect(feature, stand),
+            ExpectedEffect = WildTreeChopExpectedEffect(parameters, stand),
             EstimatedTicks = estimatedTicks,
             EnergyCost = energyCost,
             AvailabilityClass = "transparent_native_wild_tree_chop_acquisition",
@@ -101,14 +110,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private static SmallModelActionParameter[] WildTreeChopParameters(
         JsonElement feature,
         string locationId,
-        int distance)
+        int distance,
+        CandidateTile? stand,
+        int terminalActionTicks)
     {
         return new[]
         {
             Parameter("target_location", locationId),
             Parameter("target_tile_x", ReadInt(feature, "tile_x").ToString()),
             Parameter("target_tile_y", ReadInt(feature, "tile_y").ToString()),
+            Parameter("stand_tile_x", stand?.X.ToString() ?? string.Empty),
+            Parameter("stand_tile_y", stand?.Y.ToString() ?? string.Empty),
             Parameter("route_distance_tiles", distance.ToString()),
+            Parameter("terminal_action_ticks", terminalActionTicks.ToString()),
             Parameter("max_tool_swings", ReadInt(feature, "tree_chop_expected_tool_swings").ToString()),
             Parameter("clear_completion_mode", ReadString(feature, "tree_chop_completion_mode")),
             Parameter("target_runtime_type", ReadString(feature, "runtime_type")),
@@ -141,11 +155,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
     }
 
-    private static string WildTreeChopExpectedEffect(JsonElement feature, CandidateTile? stand)
+    private static string WildTreeChopExpectedEffect(
+        IEnumerable<SmallModelActionParameter> parameters,
+        CandidateTile? stand)
     {
         var prefix = stand is null ? string.Empty : "move_to_adjacent=" + stand.X + "," + stand.Y + ";";
-        return prefix + string.Join(";", WildTreeChopParameters(feature, string.Empty, 0)
-            .Where(parameter => parameter.Name is not "target_location" and not "target_tile_x" and not "target_tile_y" and not "route_distance_tiles")
+        return prefix + string.Join(";", parameters
+            .Where(parameter => parameter.Name is not "target_location" and
+                not "target_tile_x" and
+                not "target_tile_y" and
+                not "stand_tile_x" and
+                not "stand_tile_y" and
+                not "route_distance_tiles")
             .Select(parameter => parameter.Name + "=" + parameter.Value));
     }
 }

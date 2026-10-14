@@ -34,8 +34,6 @@ namespace StardewAI.Core.OptionRegistry
         {
             var candidates = new List<EventCandidate>();
             var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
             if (objects.HasValue && objects.Value.ValueKind == JsonValueKind.Array)
             {
@@ -58,7 +56,14 @@ namespace StardewAI.Core.OptionRegistry
                         continue;
                     }
 
-                    candidates.Add(ClearObstacleCandidate(snapshot, locationId, playerX, playerY, x, y, clearKind, qualifiedId, item));
+                    candidates.Add(ClearObstacleCandidate(
+                        snapshot,
+                        locationId,
+                        x,
+                        y,
+                        clearKind,
+                        qualifiedId,
+                        item));
                 }
             }
 
@@ -80,7 +85,14 @@ namespace StardewAI.Core.OptionRegistry
 
                     var x = ReadInt(feature, "tile_x");
                     var y = ReadInt(feature, "tile_y");
-                    candidates.Add(ClearObstacleCandidate(snapshot, locationId, playerX, playerY, x, y, clearKind, type, feature));
+                    candidates.Add(ClearObstacleCandidate(
+                        snapshot,
+                        locationId,
+                        x,
+                        y,
+                        clearKind,
+                        type,
+                        feature));
                 }
             }
 
@@ -95,8 +107,6 @@ namespace StardewAI.Core.OptionRegistry
         private EventCandidate ClearObstacleCandidate(
             SnapshotEnvelope snapshot,
             string locationId,
-            int playerX,
-            int playerY,
             int x,
             int y,
             string clearKind,
@@ -207,13 +217,23 @@ namespace StardewAI.Core.OptionRegistry
             {
                 blockReasons.Add("clear_obstacle_no_adjacent_route_stand_tile");
             }
-            var distance = standTile is not null
-                ? Math.Abs(playerX - standTile.X) + Math.Abs(playerY - standTile.Y)
-                : 0;
+            else
+            {
+                probeParameters.Add(Parameter(
+                    "stand_tile_x",
+                    standTile.X.ToString()));
+                probeParameters.Add(Parameter(
+                    "stand_tile_y",
+                    standTile.Y.ToString()));
+            }
+            var distance = standTile?.Distance ?? 0;
             probeParameters.Add(Parameter(
                 "route_distance_tiles",
                 distance.ToString()));
             var estimatedTicks = Math.Max(60, distance * 60 + ClearObstacleToolTicks(clearKind, maxToolSwings));
+            probeParameters.Add(Parameter(
+                "terminal_action_ticks",
+                Math.Max(1, estimatedTicks - distance * 60).ToString()));
             var playerEnergy = ReadStateFieldValue(snapshot, "player", "energy");
             if (playerEnergy.HasValue &&
                 playerEnergy.Value.ValueKind == JsonValueKind.Number &&
