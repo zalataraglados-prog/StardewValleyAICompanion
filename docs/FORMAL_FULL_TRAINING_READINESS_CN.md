@@ -5,6 +5,13 @@
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
 
+## 历史记录 · 2026-10-15 Money 采证波次与 18 格分母分离
+
+`money_threshold_evidence_work_plan.v1` 新增原生采集波次和比较采集波次，但 `6 x 3 = 18` 的正式分母不变。原生波次按分区聚合：一条独立轨迹可以同时跨越多个阈值，所以空 corpus 的理论首轮为 train/validation/test 各一个条件性波次；只有真实源状态低于最低缺失阈值、且真实结果达到最高缺失阈值时才成立。无法一次跨越时按真实候选拆波，不能降低分母。
+
+比较波次按 verified native row 聚合一次 denominator 初始化，再为该 row 跨越且仍缺 comparison 的 criterion 分别建立 exact admission。不同 criterion 选择不同 native outcome 时不得共用 seed。波次是施工调度，不是 evidence、Teacher 标签或训练授权；当前生产仍为 `0/18`，`formal_product_training_authorized=false`。
+
+
 ## 历史记录 · 2026-10-14 Money 6x3 evidence work plan
 
 新增只读 `money_threshold_evidence_work_plan.v1`，把六个权威 Grandpa Money 阈值与 train/validation/test 做笛卡尔积，固定形成 18 个 criterion-local 工作格。每格从重新验证的 Money corpus v3 独立计算 native outcome 和 Teacher comparison 是否存在，并列出实际 row ID；method 聚合、调用方计数和 self-test 目录名都不能改变该分母。

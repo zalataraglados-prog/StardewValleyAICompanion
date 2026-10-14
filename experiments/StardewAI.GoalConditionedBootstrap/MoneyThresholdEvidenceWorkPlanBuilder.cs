@@ -79,6 +79,9 @@ public static class MoneyThresholdEvidenceWorkPlanBuilder
         var fullyComplete = cells.Count(value =>
             value.NativeOutcomeVerified &&
             value.TeacherComparisonVerified);
+        var waves = MoneyThresholdEvidenceCollectionWaveProjector.Build(
+            cells,
+            corpus);
         return new MoneyThresholdEvidenceWorkPlan
         {
             Status = fullyComplete == cells.Length
@@ -100,8 +103,14 @@ public static class MoneyThresholdEvidenceWorkPlanBuilder
             TeacherComparisonCompleteCellCount = cells.Count(value =>
                 value.TeacherComparisonVerified),
             FullyCompleteCellCount = fullyComplete,
+            NativeCollectionWaveCount = waves.Native.Length,
+            ComparisonCollectionWaveCount = waves.Comparison.Length,
+            ComparisonBlockedOnNativeCellCount = cells.Count(value =>
+                !value.NativeOutcomeVerified),
             CoverageComplete = fullyComplete == cells.Length,
             Cells = cells,
+            NativeCollectionWaves = waves.Native,
+            ComparisonCollectionWaves = waves.Comparison,
             FormalProductTrainingAuthorized = false
         };
     }

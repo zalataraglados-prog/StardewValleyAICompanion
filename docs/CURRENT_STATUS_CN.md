@@ -80,6 +80,8 @@ Money batch 更新链可在调用方显式提供现有 production coverage reque
 
 同一轮 batch 更新现已收敛为单次生产包调用：原生证据只在 canonical corpus 构建阶段深验一次，work plan 与可选 coverage attachment 复用同一进程内已验证对象，并重新绑定落盘路径、SHA-256 与行级不变量。独立调用和下游 coverage/reconciliation 的完整重放边界不变；这减少确定存在的重复回放，但不构成跨运行缓存，也不改变 `0/18` 或正式训练状态。
 
+当前 work plan 还会把同一 `18` 格分母投影为最少误导的采集波次。生产 corpus 为空时是 `3` 个条件性原生波次，而不是 18 次必需启动：train、validation、test 各一波；单波能否同时跨越六个阈值必须由真实 source checkpoint 和 Revenue candidate 证明，不能由计划器假定。已有 native row 的比较工作按 row 聚合，但每个 criterion 的 exact comparison admission 仍独立，且不同优选不得合并到同一个 seed。该变化只减少调度重复，不增加任何生产分子。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：

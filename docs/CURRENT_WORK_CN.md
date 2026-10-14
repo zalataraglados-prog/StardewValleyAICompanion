@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 Money 生产采证波次收敛
+
+- `money_threshold_evidence_work_plan.v1` 继续保留六个权威阈值乘三个固定分区的 `18` 格分母，但新增从同一 verified corpus 派生的采集波次。原生波次按分区聚合尚缺 outcome 的阈值；比较波次按一条既有 native row 聚合尚缺 exact comparison 的 criterion。
+- 空生产 corpus 不再被误读为 18 次游戏启动，而是显示 `3` 个条件性原生波次：每个分区各一波。单波只有在源累计收入低于该分区最低缺失阈值、且一个权威 Revenue outcome 到达最高缺失阈值时才可同时关闭多格；选择器仍逐项证明真实 crossed criterion。若当前候选不能满足上下界，必须拆波并重建计划，不能合并或伪造证据。
+- 已有 native row 时，比较波次只复用一次 Revenue denominator 初始化，随后仍为列出的每个 criterion 建立独立 comparison admission。同一个 seed 的全部 admission 必须选择同一个 native outcome；若不同 criterion 的唯一优选不同，必须使用独立 seed run。
+- 此调度压缩不改变 `Money production evidence cells: 0/18`，也不授权正式训练。未启动游戏、本地构建或高负载测试；验证交给远端质量门禁。
+
 ## 历史记录 · 2026-10-15 Money 生产包单次深验编排
 
 - `Update-MoneyThresholdNativeOutcomeBatch.ps1` 现通过一次 `build-money-threshold-production-package` 调用生成 batch、canonical corpus、18-cell work plan 与可选 coverage request，不再启动三个进程并在同一轮内重复深验同一 corpus。

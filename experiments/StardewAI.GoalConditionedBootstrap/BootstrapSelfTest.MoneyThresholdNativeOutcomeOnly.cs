@@ -74,14 +74,55 @@ internal static partial class BootstrapSelfTest
                 workPlan.NativeOutcomeCompleteCellCount == 1 &&
                 workPlan.TeacherComparisonCompleteCellCount == 0 &&
                 workPlan.FullyCompleteCellCount == 0 &&
+                workPlan.NativeCollectionWaveCount == 3 &&
+                workPlan.ComparisonCollectionWaveCount == 1 &&
+                workPlan.ComparisonBlockedOnNativeCellCount == 17 &&
                 !workPlan.CoverageComplete &&
                 !workPlan.FormalProductTrainingAuthorized &&
                 crossedCell.NativeOutcomeVerified &&
                 !crossedCell.TeacherComparisonVerified &&
                 crossedCell.Status == "teacher_comparison_missing" &&
+                workPlan.ComparisonCollectionWaves.Single()
+                    .MissingCriterionIds.SequenceEqual(
+                        new[] { "money_50000" }) &&
+                workPlan.NativeCollectionWaves.Single(value =>
+                        value.DatasetPartition == row.DatasetPartition)
+                    .MissingCriterionIds.First() == "money_100000" &&
+                workPlan.NativeCollectionWaves.Single(value =>
+                        value.DatasetPartition == row.DatasetPartition)
+                    .RecommendedCriterionId == "money_1000000" &&
                 workPlan.Cells.Count(value => value.Status ==
                     "native_outcome_and_teacher_comparison_missing") == 17,
             "Money-threshold work plan did not preserve the exact 6x3 evidence matrix.");
+
+        var groupedWaves = MoneyThresholdEvidenceCollectionWaveProjector.Build(
+            new[]
+            {
+                crossedCell with
+                {
+                    NativeOutcomeRowIds = new[] { "row.narrow", "row.broad" }
+                },
+                crossedCell with
+                {
+                    CriterionId = "money_100000",
+                    ThresholdOrder = 1,
+                    TargetTotalMoneyEarned = 100_000,
+                    NativeOutcomeRowIds = new[] { "row.broad" }
+                }
+            },
+            new MoneyThresholdTeacherCorpus
+            {
+                Rows = new[]
+                {
+                    row with { RowId = "row.narrow", SourceId = "source.narrow" },
+                    row with { RowId = "row.broad", SourceId = "source.broad" }
+                }
+            });
+        Require(groupedWaves.Comparison.Length == 1 &&
+                groupedWaves.Comparison[0].SourceRowId == "row.broad" &&
+                groupedWaves.Comparison[0].MissingCriterionIds.SequenceEqual(
+                    new[] { "money_50000", "money_100000" }),
+            "Money comparison waves did not maximize verified native-row reuse.");
 
         var emptyWorkPlanRequestPath = Path.Combine(
             root,
@@ -96,6 +137,14 @@ internal static partial class BootstrapSelfTest
                 emptyWorkPlan.NativeOutcomeCompleteCellCount == 0 &&
                 emptyWorkPlan.TeacherComparisonCompleteCellCount == 0 &&
                 emptyWorkPlan.FullyCompleteCellCount == 0 &&
+                emptyWorkPlan.NativeCollectionWaveCount == 3 &&
+                emptyWorkPlan.ComparisonCollectionWaveCount == 0 &&
+                emptyWorkPlan.ComparisonBlockedOnNativeCellCount == 18 &&
+                emptyWorkPlan.NativeCollectionWaves.All(value =>
+                    value.MissingCriterionIds.Length == 6 &&
+                    value.SourceTotalMoneyEarnedMaxExclusive == 50_000 &&
+                    value.OutcomeTotalMoneyEarnedMinInclusive == 1_000_000 &&
+                    value.RecommendedCriterionId == "money_1000000") &&
                 emptyWorkPlan.Cells.All(value => value.Status ==
                     "native_outcome_and_teacher_comparison_missing"),
             "An empty Money-threshold work plan did not expose all 18 missing cells.");
