@@ -1,5 +1,21 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-10-14 Revenue counterfactual proof request denominator
+
+`money_revenue_counterfactual_proof_request_catalog.v1` 从 authoritative concrete catalog 一次性生成完整采证分母，并
+绑定同一 source state 的 strategy ledger。每个 concrete alternative 恰好对应一个 request；direct alternative 的
+acquisition proof 必须为空，rebound alternative 必须保留原 rollout manifest/receipt。shop 与 shipping 分别声明
+原生 sale 或 deposit+settlement proof，且全部要求可重放 Revenue recurrence。
+
+该切片同时关闭一个规划层遗漏：acquisition opportunity cost 不等于整条 Revenue alternative 的总成本。最终去商店、
+去出货箱和终端交互同样消耗时间，不能被 comparison 当作零。因此所有请求现在都要求独立 terminal opportunity-cost
+proof；现有仅含 acquisition 成本的 comparison receipt 继续是非权威诊断，不能用于生产偏好。
+
+密封测试证明 `8 concrete -> 8 requests`，其中 `3` 条带 acquisition rollout、`5` 条 direct 不伪造 rollout、
+`5` 条 shop sale、`3` 条 shipping deposit+settlement；陈旧 strategy ledger 会失败关闭。当前只达到
+`counterfactual_proof_collection_ready=true`，尚未获得执行结果。下一准入门是共享 terminal timing/cost 证明、逐请求
+native recurrence receipt 和严格 ID 对账；正式覆盖、根方法与授权保持 `2/19`、`1/11`、`false`。
+
 ## 2026-10-14 Revenue concrete alternative denominator
 
 `money_revenue_concrete_alternative_denominator_catalog.v1` 现将完整路径骨架分母分成两类后重新合并：direct

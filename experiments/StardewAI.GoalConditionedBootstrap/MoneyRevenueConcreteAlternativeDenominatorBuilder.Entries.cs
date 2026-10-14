@@ -5,7 +5,9 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
     private static MoneyRevenueConcreteAlternative BuildDirect(
         MoneyRevenueAlternativeSkeleton skeleton,
         SourceCandidateRef source,
-        string sourceStateHash)
+        string sourceStateHash,
+        string sourceSnapshotPath,
+        string sourceSnapshotSha256)
     {
         Require(!skeleton.RequiresAcquisitionOrProcessingRollout &&
                 !skeleton.RequiresFreshTerminalCandidateRebind &&
@@ -46,6 +48,8 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                 skeleton.RequiresNativeShippingSettlementProof,
             UsesFreshTerminalRebind = false,
             TerminalStateHash = sourceStateHash,
+            TerminalSnapshotPath = sourceSnapshotPath,
+            TerminalSnapshotSha256 = sourceSnapshotSha256,
             PathNodeIds = skeleton.PathNodeIds,
             PathEdges = skeleton.PathEdges
         });
@@ -70,6 +74,8 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                 evidence.ProofShape == skeleton.ProofShape &&
                 request.AlternativeId == skeleton.AlternativeId &&
                 IsSha256(evidence.EvidenceSha256) &&
+                !string.IsNullOrWhiteSpace(evidence.TerminalSnapshotPath) &&
+                IsSha256(evidence.TerminalSnapshotSha256) &&
                 IsSha256(rebound.ConcreteAlternativeSha256) &&
                 rebound.TerminalCandidate.ComparisonEligible,
             "Money Revenue rebound evidence drifted from its skeleton: " +
@@ -98,6 +104,8 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                 skeleton.RequiresNativeShippingSettlementProof,
             UsesFreshTerminalRebind = true,
             TerminalStateHash = evidence.TerminalStateHash,
+            TerminalSnapshotPath = evidence.TerminalSnapshotPath,
+            TerminalSnapshotSha256 = evidence.TerminalSnapshotSha256,
             RebindEvidenceSha256 = evidence.EvidenceSha256,
             AcquisitionRolloutId = evidence.RolloutId,
             AcquisitionRolloutManifestPath = Path.GetFullPath(
