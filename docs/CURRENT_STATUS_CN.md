@@ -134,10 +134,82 @@ Money 完成后，不预先固定 Friendship / Skill / Museum 的顺序。先重
 
 然后只选**一个**下一施工单位。
 
-## 7. 文档治理规则
+## 7. 两组 `4/19` 的差集与恢复队列
+
+当前两组 `4/19` 不是同一组，也不能相加：
+
+| 状态 | criterion | 后续缺口 |
+| --- | --- | --- |
+| executable 且 split-complete | Community Center 两项 | 已进入 `CoverageGateReady` |
+| 仅 executable | Skull Key、Pet Love | 当前 authority request 未重新绑定历史三分区 corpus |
+| 仅 split-complete | Full Shipment、Master Angler | 顶层 Goal Method 仍为 `pending_dependency_expansion` |
+| 两侧均未闭合 | 其余 13 项 | Method 与生产证据都要闭合 |
+
+Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子。它们需要按当前字典、日历、输入契约和哈希重新验证；
+完全一致时直接重绑，只有失效分区才重采。Full Shipment/Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，
+不得另写第二套动作、候选或执行器。
+
+这些修复不打断当前 Money `WIP=1`。Money Exit Gate 完成后，重新生成 reconciliation，并把上述四项作为高复用候选优先
+评估；仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
+
+## 8. 最近的深度优化状态
+
+已进入主线并作为后续施工基础的改进：
+
+1. action-origin 输出归因与通用 acquisition output sufficiency，避免执行成功但产物归属错误或重复写专用校验；
+2. recovery 到 settlement 的版本化持久状态边界，未知持久字段默认失败关闭；
+3. 同一次 Goal Method 调用内确定性复用 frontier，避免相同 authority 输入重复构建；
+4. Planner、候选与 Executor 共用 `RouteGridPathfinder`、到达站位和终端计时语义，同一快照只构建一份当前地图距离场；
+5. strategy-ledger 前后边界改为内容寻址 capture，绑定阶段、请求、候选、原生运行、快照与账本身份，不能再靠裸路径声明连续性。
+
+这些优化减少重复 BFS、重复 frontier 构建、伪输出和伪账本连续性，但它们是 correctness/feedback-time 基础设施，**不直接增加**
+`CoverageGateReady 2/19`。
+
+当前本地性能分支正在增加精确 CPU scope，以及 Full Shipment evidence-index 的 proof/reuse/rebuild 分项计时。Release 构建和
+trace 定向测试已通过，但代表性完整样本基线被主动中止，尚未形成可接纳的真实 wall/CPU 结论，也尚未合并。继续时必须先完成
+低成本真实快照 baseline，再根据测量决定是否优化；不得用 hermetic fixture 时间替代生产结论。
+
+## 9. 剩余规模
+
+- 战略分母：`19` 个 criterion、`11` 个 root method。
+- 细粒度证据分母：`19 x 2` 个独立通道（Teacher comparison/native outcome）`x 3` 个分区，共 `114` 个 channel-partition cell；也可视为 `57` 个必须同时具备双通道的 criterion-partition join cell。
+- 当前机器报告实际闭合 `24/114` 个 channel cell，即 `12/57` 个 join cell；仍缺 `90` 个 channel cell。
+- Skull Key/Pet Love 对应的 `12` 个 channel cell 有历史工件待 current-authority 重放；Full Shipment/Master Angler 的 `12` 个 channel cell 已闭合，但缺 Method executable。
+- 其余 `13` 个 criterion 分属 Money、Museum、Friendship、Marriage/House、Skills、Rusty Key 六个根方法，对应 `78` 个尚未闭合的 channel cell。Money 当前以双通道 join 计为 `0/18` production cell。
+
+这些逻辑格不等于同等数量的完整三年运行。相同根方法允许复用权威前缀、checkpoint、原生结果和批量分区编排，但每个逻辑格
+仍必须保留独立的 save/player/partition/criterion 身份与可重放证据，不能为了提速合并监督标签。
+
+## 10. 时间估计
+
+假定不调用 worker、复用现有执行器和生产工件、游戏版本/权威字典不发生大漂移，并保持 `WIP=1`：
+
+| 阶段 | 预计主动工程时间 | 说明 |
+| --- | ---: | --- |
+| Money / Revenue Exit Gate | `5-9` 天 | 关闭 review debt、18 个生产 join cell、接入 coverage request 并统一做一次高成本验收 |
+| Skull/Pet 重放与 Full/Angler Method 修复队列 | `5-10` 天 | 每次一个根方法；若旧 corpus 哈希完全一致，耗时接近下界 |
+| Museum、Rusty Key、Skills、Friendship、Marriage/House | `12-20` 天 | 长日历与社交/婚姻状态是主要不确定性 |
+| 全局 reconciliation、回退检查与 promotion review | `3-5` 天 | 达到 `19/19` 前的统一收口，不在每个小 PR 重跑 |
+
+从当前状态到 `19/19` 正式训练准入，合理估计为 `25-40` 个主动工作日；生产采证中的等待和原生重试可与部分开发重叠。
+首轮全量训练、holdout 评估和首个第三年爷爷 `21` 分模型另需约 `3-7` 天，因此持续投入的墙钟总量约 `6-10` 个日历周；
+间歇开发按 `10-14` 周准备。RTX 5070 8GB 主要用于 LoRA/小批量正式训练，不会明显缩短游戏原生采证与 Method 闭合。
+
+首个 21 分模型之后，达到“除声音略机械外，长期表现接近人类玩家”的陪玩还需约 `4-8` 周的人类适应、联机协作、节奏与
+长线回归。稳定 `100%` 完美存档是第二产品阶段，保守按额外 `8-12` 周估计，不应反向阻塞 21 分首训。
+
+### 估计适用边界
+
+上述时间不是承诺日期。以下事件会触发重新估算：游戏或 SMAPI 版本变化、权威字典/日历指纹变化、历史 corpus 无法重放、
+新增 P0/P1 跨域 correctness 缺陷，或真实性能 baseline 证明当前反馈回路仍不可接受。
+
+## 11. 防回退与文档治理规则
 
 1. 本文件只保留当前状态，不堆叠历史 changelog。
 2. `FORMAL_FULL_TRAINING_READINESS_CN.md`、`goal-conditioned-no-human-teacher-plan.md`、`FULL_SYSTEM_COMPLETION_PLAN_CN.md`、`CURRENT_WORK_CN.md` 中的日期章节均视为历史/证据记录。
 3. 任何历史章节中的数字若与本文件冲突，以当前机器报告 + 本文件最新同步值为准。
 4. 新 PR 若改变上述七个状态量之一，必须在同一 PR 或紧随其后的状态同步 PR 更新本文件。
 5. 不再通过新增 handoff 文档来表达一个简单数字变化；优先更新本面板和机器 report。
+6. 每次 authority rebuild 都必须输出 criterion 级四态矩阵：Method executable、Teacher comparison 三分区、native outcome 三分区及其交集。
+7. 曾经 `CoverageGateReady` 的 criterion 在新报告中回退时，合并门默认失败；只有显式 invalidation artifact 记录失效原因、受影响分区和恢复计划后才允许接受。
+8. 局部动作注册、runner、Full Shipment strata、hermetic fixture 或性能测试通过，均不得直接改变正式 coverage 分子。
