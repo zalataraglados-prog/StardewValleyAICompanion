@@ -5,9 +5,9 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class MoneyThresholdTeacherCorpusVersions
 {
     public const string Request =
-        "money_threshold_teacher_corpus_request.v2";
+        "money_threshold_teacher_corpus_request.v3";
     public const string Corpus =
-        "money_threshold_teacher_corpus.v2";
+        "money_threshold_teacher_corpus.v3";
 }
 
 public sealed class MoneyThresholdTeacherCorpusRequest
@@ -30,7 +30,16 @@ public sealed class MoneyThresholdTeacherCorpusRequest
 public sealed record MoneyThresholdTeacherCorpusSource(
     [property: JsonPropertyName("source_id")] string SourceId,
     [property: JsonPropertyName("execution_episode_path")]
-        string ExecutionEpisodePath);
+        string ExecutionEpisodePath,
+    [property: JsonPropertyName("comparison_admissions")]
+        MoneyThresholdTeacherComparisonSource[]? ComparisonAdmissions = null);
+
+public sealed record MoneyThresholdTeacherComparisonSource(
+    [property: JsonPropertyName("criterion_id")] string CriterionId,
+    [property: JsonPropertyName("admission_manifest_path")]
+        string AdmissionManifestPath,
+    [property: JsonPropertyName("admission_receipt_path")]
+        string AdmissionReceiptPath);
 
 public sealed class MoneyThresholdTeacherCorpus
 {
@@ -60,6 +69,18 @@ public sealed class MoneyThresholdTeacherCorpus
     [JsonPropertyName("covered_criterion_count")]
     public int CoveredCriterionCount { get; set; }
 
+    [JsonPropertyName("teacher_compared_criterion_count")]
+    public int TeacherComparedCriterionCount { get; set; }
+
+    [JsonPropertyName("teacher_comparison_pair_count")]
+    public int TeacherComparisonPairCount { get; set; }
+
+    [JsonPropertyName("native_split_complete")]
+    public bool NativeSplitComplete { get; set; }
+
+    [JsonPropertyName("teacher_comparison_split_complete")]
+    public bool TeacherComparisonSplitComplete { get; set; }
+
     [JsonPropertyName("rows")]
     public MoneyThresholdTeacherEvidenceRow[] Rows { get; set; } =
         Array.Empty<MoneyThresholdTeacherEvidenceRow>();
@@ -69,7 +90,7 @@ public sealed class MoneyThresholdTeacherCorpus
 
     [JsonPropertyName("corpus_policy")]
     public string CorpusPolicy { get; set; } =
-        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The shared Money progression verifier requires the sale to increase current money and totalMoneyEarned by the same exact positive amount while preserving the de-duplicated pending shipping scope. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. This raw corpus proves native terminal outcomes only; it cannot infer a Teacher preference from the action that happened. A separate exact-denominator comparison admission must supply criterion-local Teacher comparisons before coverage can become ready.";
+        "Each row is rebuilt from one successful native ShopMenu sale episode bound to fresh before/after snapshots. The shared Money progression verifier requires the sale to increase current money and totalMoneyEarned by the same exact positive amount while preserving the de-duplicated pending shipping scope. Crossed Grandpa thresholds and their criterion IDs are derived only from the evaluator authority, never supplied by the request. Native outcomes never self-label. A criterion-local Teacher comparison is admitted only by replaying an exact-denominator Revenue comparison receipt whose selected terminal artifact, first Revenue transition, save/player identity and authoritative criterion exactly match this row.";
 }
 
 public sealed record MoneyThresholdTeacherEvidenceRow(
@@ -107,12 +128,8 @@ public sealed record MoneyThresholdTeacherEvidenceRow(
     [property: JsonPropertyName("earned_delta")] uint EarnedDelta,
     [property: JsonPropertyName("crossed_thresholds")]
         MoneyThresholdTeacherCriterion[] CrossedThresholds,
-    [property: JsonPropertyName("preferred_alternative")]
-        string PreferredAlternative,
-    [property: JsonPropertyName("rejected_alternative")]
-        string RejectedAlternative,
-    [property: JsonPropertyName("teacher_comparison_verified")]
-        bool TeacherComparisonVerified,
+    [property: JsonPropertyName("teacher_comparison_count")]
+        int TeacherComparisonCount,
     [property: JsonPropertyName("native_terminal_outcome_verified")]
         bool NativeTerminalOutcomeVerified);
 
@@ -124,11 +141,30 @@ public sealed record MoneyThresholdTeacherCriterion(
         string TeacherGoalContextId,
     [property: JsonPropertyName("terminal_assertion")]
         string TerminalAssertion,
-    [property: JsonPropertyName("preferred_alternative")]
-        string PreferredAlternative,
-    [property: JsonPropertyName("rejected_alternative")]
-        string RejectedAlternative,
-    [property: JsonPropertyName("teacher_comparison_verified")]
-        bool TeacherComparisonVerified,
+    [property: JsonPropertyName("teacher_comparison")]
+        MoneyThresholdTeacherComparisonEvidence? TeacherComparison,
     [property: JsonPropertyName("native_terminal_outcome_verified")]
         bool NativeTerminalOutcomeVerified);
+
+public sealed record MoneyThresholdTeacherComparisonEvidence(
+    [property: JsonPropertyName("criterion_id")] string CriterionId,
+    [property: JsonPropertyName("admission_manifest_path")]
+        string AdmissionManifestPath,
+    [property: JsonPropertyName("admission_manifest_sha256")]
+        string AdmissionManifestSha256,
+    [property: JsonPropertyName("admission_receipt_path")]
+        string AdmissionReceiptPath,
+    [property: JsonPropertyName("admission_receipt_sha256")]
+        string AdmissionReceiptSha256,
+    [property: JsonPropertyName("comparison_source_state_hash")]
+        string ComparisonSourceStateHash,
+    [property: JsonPropertyName("candidate_denominator_count")]
+        int CandidateDenominatorCount,
+    [property: JsonPropertyName("preferred_alternative")]
+        string PreferredAlternative,
+    [property: JsonPropertyName("rejected_alternatives")]
+        string[] RejectedAlternatives,
+    [property: JsonPropertyName("selected_terminal_episode_sha256")]
+        string SelectedTerminalEpisodeSha256,
+    [property: JsonPropertyName("selection_policy")]
+        string SelectionPolicy);

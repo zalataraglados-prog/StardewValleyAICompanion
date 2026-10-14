@@ -21,18 +21,17 @@ public static partial class GoalMethodTeacherCoverageBuilder
         }
         var methodCriteria = methods[0].CriterionIds
             .ToHashSet(StringComparer.Ordinal);
+        var creditedComparisons = 0;
         foreach (var row in corpus.Rows)
         {
-            if (row.TeacherComparisonVerified ||
-                !row.NativeTerminalOutcomeVerified)
+            if (!row.NativeTerminalOutcomeVerified)
             {
                 throw new InvalidDataException(
-                    "Raw Money-threshold corpus mixed Teacher preference with native outcome evidence.");
+                    "Money-threshold corpus contains an unverified native outcome.");
             }
             foreach (var threshold in row.CrossedThresholds)
             {
-                if (threshold.TeacherComparisonVerified ||
-                    !threshold.NativeTerminalOutcomeVerified ||
+                if (!threshold.NativeTerminalOutcomeVerified ||
                     !methodCriteria.Contains(threshold.CriterionId) ||
                     !evidence.TryGetValue(
                         threshold.CriterionId,
@@ -44,6 +43,13 @@ public static partial class GoalMethodTeacherCoverageBuilder
                 criterionEvidence.TeacherSourceKinds.Add(source.SourceKind);
                 criterionEvidence.NativeOutcomePartitions.Add(
                     row.DatasetPartition);
+                if (threshold.TeacherComparison is not null)
+                {
+                    criterionEvidence.TeacherComparisonPartitions.Add(
+                        row.DatasetPartition);
+                    creditedComparisons += threshold.TeacherComparison
+                        .RejectedAlternatives.Length;
+                }
             }
         }
 
@@ -53,6 +59,6 @@ public static partial class GoalMethodTeacherCoverageBuilder
             corpusPath,
             CurrentTeacherFrontierSupport.HashFile(corpusPath),
             corpus.Rows.Length,
-            0);
+            creditedComparisons);
     }
 }

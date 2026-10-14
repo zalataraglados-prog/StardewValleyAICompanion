@@ -56,7 +56,17 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var rebuilt = corpus.Rows.Select(row => BuildRow(
                 new MoneyThresholdTeacherCorpusSource(
                     row.SourceId,
-                    row.ExecutionEpisodePath)))
+                    row.ExecutionEpisodePath,
+                    row.CrossedThresholds
+                        .Where(value => value.TeacherComparison is not null)
+                        .Select(value =>
+                            new MoneyThresholdTeacherComparisonSource(
+                                value.CriterionId,
+                                value.TeacherComparison!
+                                    .AdmissionManifestPath,
+                                value.TeacherComparison!
+                                    .AdmissionReceiptPath))
+                        .ToArray())))
             .OrderBy(row => row.RowId, StringComparer.Ordinal)
             .ToArray();
         ValidateRows(rebuilt);
@@ -78,19 +88,40 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             .Select(value => value.CriterionId)
             .Distinct(StringComparer.Ordinal)
             .Count();
-        var splitComplete = GrandpaEvaluationGoalEvaluator.MoneyThresholds.All(
+        var comparedCriteria = rows
+            .SelectMany(row => row.CrossedThresholds)
+            .Where(value => value.TeacherComparison is not null)
+            .Select(value => value.CriterionId)
+            .Distinct(StringComparer.Ordinal)
+            .Count();
+        var comparisonPairs = rows
+            .SelectMany(row => row.CrossedThresholds)
+            .Where(value => value.TeacherComparison is not null)
+            .Sum(value => value.TeacherComparison!.RejectedAlternatives.Length);
+        var nativeSplitComplete = GrandpaEvaluationGoalEvaluator.MoneyThresholds.All(
             threshold => RequiredPartitions.All(partition => rows.Any(row =>
                 row.DatasetPartition == partition &&
                 row.CrossedThresholds.Any(value =>
                     value.CriterionId == threshold.CriterionId))));
+        var teacherSplitComplete = GrandpaEvaluationGoalEvaluator
+            .MoneyThresholds.All(threshold => RequiredPartitions.All(
+                partition => rows.Any(row =>
+                    row.DatasetPartition == partition &&
+                    row.CrossedThresholds.Any(value =>
+                        value.CriterionId == threshold.CriterionId &&
+                        value.TeacherComparison is not null))));
         return new MoneyThresholdTeacherCorpus
         {
-            Status = splitComplete
+            Status = nativeSplitComplete && teacherSplitComplete
                 ? "ready_split_complete_money_threshold_teacher_corpus"
                 : "verified_partial_money_threshold_teacher_corpus",
             CorpusId = corpusId,
             RowCount = rows.Length,
             CoveredCriterionCount = coveredCriteria,
+            TeacherComparedCriterionCount = comparedCriteria,
+            TeacherComparisonPairCount = comparisonPairs,
+            NativeSplitComplete = nativeSplitComplete,
+            TeacherComparisonSplitComplete = teacherSplitComplete,
             Rows = rows,
             FormalProductTrainingAuthorized = false
         };
@@ -115,6 +146,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         var earnedBefore = progression.Before.TotalMoneyEarned;
         var earnedAfter = progression.After.TotalMoneyEarned;
         var earnedDelta = progression.TotalMoneyEarnedDelta;
+        var comparisonSources = (source.ComparisonAdmissions ??
+                Array.Empty<MoneyThresholdTeacherComparisonSource>())
+            .ToDictionary(value => value.CriterionId, StringComparer.Ordinal);
         var crossed = GrandpaEvaluationGoalEvaluator.MoneyThresholds
             .Where(threshold => earnedBefore < threshold.Target &&
                 earnedAfter >= threshold.Target)
@@ -125,15 +159,27 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 "grandpa.criterion:" + threshold.CriterionId,
                 "player.total_money_earned >= " +
                     threshold.Target.ToString(CultureInfo.InvariantCulture),
-                string.Empty,
-                string.Empty,
-                false,
+                comparisonSources.TryGetValue(
+                    threshold.CriterionId,
+                    out var comparisonSource)
+                    ? BuildComparisonEvidence(
+                        threshold,
+                        sale,
+                        comparisonSource)
+                    : null,
                 true))
             .ToArray();
         if (crossed.Length == 0)
         {
             throw new InvalidDataException(
                 "Money-threshold source did not cross an authoritative threshold.");
+        }
+        var crossedIds = crossed.Select(value => value.CriterionId)
+            .ToHashSet(StringComparer.Ordinal);
+        if (comparisonSources.Keys.Any(value => !crossedIds.Contains(value)))
+        {
+            throw new InvalidDataException(
+                "Money-threshold comparison does not belong to a crossed criterion.");
         }
 
         var splitKey = saveId + ":" + playerId + ":" + totalDay;
@@ -142,7 +188,13 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             source_id = source.SourceId,
             before_state_hash = progression.Before.StateHash,
             after_state_hash = progression.After.StateHash,
-            execution_episode_sha256 = sale.ExecutionEpisodeSha256
+            execution_episode_sha256 = sale.ExecutionEpisodeSha256,
+            comparison_receipt_sha256 = crossed
+                .Where(value => value.TeacherComparison is not null)
+                .Select(value => value.TeacherComparison!
+                    .AdmissionReceiptSha256)
+                .Order(StringComparer.Ordinal)
+                .ToArray()
         });
         return new MoneyThresholdTeacherEvidenceRow(
             rowId,
@@ -168,9 +220,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             earnedAfter,
             earnedDelta,
             crossed,
-            string.Empty,
-            string.Empty,
-            false,
+            crossed.Count(value => value.TeacherComparison is not null),
             true);
     }
 

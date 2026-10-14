@@ -14,7 +14,7 @@ internal static partial class BootstrapSelfTest
         var before = MoneyRevenueTerminalSnapshot(
             gameTick: 100,
             money: 100,
-            totalMoneyEarned: 49_900,
+            totalMoneyEarned: 49_990,
             inventoryStack: 1);
         var sourceSnapshotPath = Path.Combine(root, "source-snapshot.json");
         Write(sourceSnapshotPath, before);
@@ -80,7 +80,9 @@ internal static partial class BootstrapSelfTest
                 catalog,
                 terminalManifest,
                 terminalReceipt);
-        Require(receipt.CandidateDenominatorAuthoritative &&
+        Require(receipt.SchemaVersion ==
+                    MoneyRevenueComparisonAdmissionVersions.Receipt &&
+                receipt.CandidateDenominatorAuthoritative &&
                 receipt.TerminalExecutionProofsVerified &&
                 receipt.ProductionTeacherPreferenceLabelEligible &&
                 !receipt.FormalProductTrainingAuthorized &&
@@ -100,6 +102,45 @@ internal static partial class BootstrapSelfTest
                     row.AlternativeId == slow.Request.ConcreteAlternativeId)
                     .OpportunityCost.GuaranteedElapsedGameMinutes == 2,
             "Money Revenue exact-ID comparison admission drifted.");
+
+        var join = MoneyThresholdTeacherCorpusBuilder
+            .VerifyComparisonJoinForTest(
+                "money_50000",
+                fast.EpisodePath,
+                receipt);
+        Require(join.PreferredAlternative ==
+                    fast.Request.ConcreteAlternativeId &&
+                join.RejectedAlternatives.SequenceEqual(
+                    new[] { slow.Request.ConcreteAlternativeId },
+                    StringComparer.Ordinal),
+            "Money threshold outcome did not join its exact comparison preference.");
+
+        var selectedIndex = Array.FindIndex(
+            receipt.Alternatives,
+            value => value.ConcreteAlternativeId ==
+                receipt.Comparison.SelectedAlternativeId);
+        var selected = receipt.Alternatives[selectedIndex];
+        receipt.Alternatives[selectedIndex] = selected with
+        {
+            NativeTerminalArtifacts = selected.NativeTerminalArtifacts
+                .Where(value => value.Role != "shop_sale_episode")
+                .ToArray()
+        };
+        var mismatchedEpisodeRejected = false;
+        try
+        {
+            MoneyThresholdTeacherCorpusBuilder.VerifyComparisonJoinForTest(
+                "money_50000",
+                fast.EpisodePath,
+                receipt);
+        }
+        catch (InvalidDataException)
+        {
+            mismatchedEpisodeRejected = true;
+        }
+        Require(mismatchedEpisodeRejected,
+            "A comparison without the selected native sale episode was admitted.");
+        receipt.Alternatives[selectedIndex] = selected;
 
         terminalReceipt.Alternatives = new[] { fast.Evidence };
         var rejected = false;
@@ -132,7 +173,7 @@ internal static partial class BootstrapSelfTest
         var after = MoneyRevenueTerminalSnapshot(
             gameTick: afterTick,
             money: 120,
-            totalMoneyEarned: 49_920,
+            totalMoneyEarned: 50_010,
             inventoryStack: 0);
         var episodePath = VerifyMoneyRevenueShopRecurrenceArtifact(
             before,
@@ -175,11 +216,13 @@ internal static partial class BootstrapSelfTest
         return new MoneyRevenueComparisonAdmissionFixture(
             request,
             proof,
-            evidence);
+            evidence,
+            episodePath);
     }
 
     private sealed record MoneyRevenueComparisonAdmissionFixture(
         MoneyRevenueCounterfactualProofRequest Request,
         MoneyRevenueTerminalAlternativeProof Proof,
-        MoneyRevenueTerminalExecutionEvidence Evidence);
+        MoneyRevenueTerminalExecutionEvidence Evidence,
+        string EpisodePath);
 }

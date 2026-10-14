@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Money criterion comparison join
+
+- `money_threshold_teacher_corpus_request/corpus` 已升级为 v3。它仍以原生 ShopMenu sale episode 为 native outcome 唯一来源，但现在允许每个 crossed criterion 显式附带一份 Revenue comparison admission；没有 admission 的行继续只计 native outcome。
+- `money_revenue_comparison_admission_receipt.v2` 在既有 exact-ID 分母和严格 Pareto 结果之外，保留已验真的 native terminal artifact 列表。Money join 会重新构建 manifest/receipt，并要求 criterion、阈值、唯一优选、完整 rejected 集合、save/player、首条 Revenue transition，以及 sale episode、before/after snapshot、execution result 的路径和 SHA-256 全部一致。
+- Goal Method adapter 只为完成上述 join 的 criterion/partition 增加 Teacher comparison coverage；原生成功本身仍不能自我标注。hermetic 正例绑定 49,990 -> 50,010 的优选 sale，删除选中 episode artifact 的负例会失败关闭。
+- 该切片打通了真实比较凭据进入 Money criterion view 的代码路径，但没有制造 production 三分区数据；正式状态仍为 `2/19`、根方法 `1/11`、`formal_product_training_authorized=false`。
+
 ## 2026-10-14 Money threshold native-outcome isolation
 
 - `money_threshold_teacher_corpus_request/corpus` 升级为 v2。raw corpus 现在只证明原生 ShopMenu sale 的 before/after、收益增量与权威阈值跨越，不再把“已经执行的出售”反推成 Teacher preferred action。

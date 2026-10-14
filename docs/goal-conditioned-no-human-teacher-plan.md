@@ -3214,6 +3214,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   production Teacher labels or formal training. The next slice closes terminal cost evidence, then binds each request
   to native recurrence receipts before exact-ID comparison admission.
 
+### 2026-10-14: Money criterion comparison join
+
+- Money threshold request/corpus contracts are now v3 without introducing a second source kind. A native ShopMenu sale
+  remains the sole outcome source; each crossed criterion may independently attach one exact Revenue comparison
+  admission, while criteria without an admission remain native-outcome-only.
+- Revenue comparison admission receipts are now v2 and retain the verified native terminal artifacts. Admission replays
+  the complete manifest/receipt chain and requires the selected sale episode, before/after snapshots, execution result,
+  first Revenue transition, save/player identity, authoritative threshold, unique preference and full rejected set to
+  match the criterion row exactly.
+- Goal Method coverage credits a Teacher comparison partition only after that join. Hermetic coverage accepts the
+  49,990 -> 50,010 selected sale and rejects the same comparison when its selected episode artifact is removed. No
+  production partitions were created, so readiness remains `2/19`, root methods remain `1/11`, and formal training is
+  still unauthorized.
+
 ### 2026-10-14: Money threshold native-outcome isolation
 
 - Money threshold request/corpus contracts are now v2 and represent only native ShopMenu sale outcomes. Observing an
