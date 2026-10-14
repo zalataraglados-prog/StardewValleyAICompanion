@@ -122,50 +122,16 @@ public static partial class AcquisitionRoutePortfolioBuilder
     {
         try
         {
-            var vectors = selected.Select(route => route.CostVector!).ToArray();
-            var materials = vectors.SelectMany(vector => vector.MaterialCosts)
-                .GroupBy(row => new
-                {
-                    row.QualifiedItemId,
-                    row.Quality,
-                    row.UnitSalePrice
-                })
-                .Select(group =>
-                {
-                    var quantity = checked(group.Sum(row => row.Quantity));
-                    return new AcquisitionOpportunityMaterialCost(
-                        group.Key.QualifiedItemId,
-                        group.Key.Quality,
-                        group.Key.UnitSalePrice,
-                        quantity,
-                        checked(quantity * group.Key.UnitSalePrice));
-                })
-                .OrderBy(row => row.QualifiedItemId, StringComparer.Ordinal)
-                .ThenBy(row => row.Quality)
-                .ThenBy(row => row.UnitSalePrice)
-                .ToArray();
-            var currencies = vectors.SelectMany(vector => vector.CurrencyCosts)
-                .GroupBy(row => new { row.CurrencyId, row.CurrencyKey })
-                .Select(group => new AcquisitionOpportunityCurrencyCost(
-                    group.Key.CurrencyId,
-                    group.Key.CurrencyKey,
-                    checked(group.Sum(row => row.Amount))))
-                .OrderBy(row => row.CurrencyId)
-                .ToArray();
-            return new AcquisitionOpportunityCostVector(
-                checked(vectors.Sum(vector =>
-                    vector.GuaranteedElapsedGameMinutes)),
-                vectors.Sum(vector => vector.RequiredEnergy),
-                checked(materials.Sum(row => row.TotalSaleValue)),
-                materials,
-                currencies,
+            return AcquisitionOpportunityCostVectorAggregator.Aggregate(
+                selected.Select(route => route.CostVector!),
                 new[]
                 {
                     "selected_routes[].cost_vector",
                     "authoritative_requirement_inventory.requirement_sets[].groups[]"
                 });
         }
-        catch (OverflowException)
+        catch (Exception exception) when (
+            exception is OverflowException or InvalidDataException)
         {
             reasons.Add("route_portfolio_aggregate_cost_overflow");
             return null;

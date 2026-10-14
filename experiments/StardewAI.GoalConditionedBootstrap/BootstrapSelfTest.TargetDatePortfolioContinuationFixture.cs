@@ -60,6 +60,9 @@ internal static partial class BootstrapSelfTest
                 return source;
             })
             .ToArray();
+        VerifyMoneyRevenueAlternativeComparisonArtifact(
+            sources[0],
+            fixtureRoot);
         VerifyTargetDatePortfolioSupervisionCorpus(
             sources,
             fixtureRoot);

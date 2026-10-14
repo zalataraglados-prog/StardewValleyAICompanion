@@ -48,6 +48,34 @@ internal static partial class BootstrapSelfTest
             !comparison.UsesLearnerScore,
             "Revenue target comparison did not select the sole satisfying alternative.");
 
+        var artifactComparison = MoneyRevenueAlternativeComparer
+            .CompareVerifiedArtifacts(
+                "money_50000",
+                sourceStateHash,
+                ledgerRevision,
+                new[] { higher.AlternativeId, lower.AlternativeId },
+                new[]
+                {
+                    new MoneyRevenueVerifiedArtifactAlternative(
+                        higher.AlternativeId,
+                        higher.RevenuePrefix,
+                        higher.OpportunityCost,
+                        true,
+                        Array.Empty<string>()),
+                    new MoneyRevenueVerifiedArtifactAlternative(
+                        lower.AlternativeId,
+                        lower.RevenuePrefix,
+                        lower.OpportunityCost,
+                        true,
+                        Array.Empty<string>())
+                });
+        Require(
+            artifactComparison.SelectedAlternativeId ==
+                higher.AlternativeId &&
+            artifactComparison.TeacherPreferenceLabelEligible &&
+            !artifactComparison.FormalTrainingAuthorized,
+            "Artifact-verified Revenue alternatives drifted during comparison.");
+
         var reservedHigher = higher with
         {
             OpportunityCost = RevenueOpportunityCost(

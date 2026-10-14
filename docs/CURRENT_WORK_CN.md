@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Revenue 候选比较可重放工件
+
+- 新增 `build-money-revenue-alternative-comparison-proof`、`money_revenue_alternative_comparison_proof_manifest.v1` 与对应 receipt。每个候选不再由调用方直接拼接 prefix/cost/claim，而是必须引用完整 acquisition rollout manifest+receipt 和 Revenue recurrence manifest+receipt；两张 receipt 都必须逐项等于控制器重算结果。
+- acquisition rollout 的每个已执行 transition 都重新绑定唯一 route occurrence、确定性 opportunity-cost report、该 route 的 reservation claim set 与已验原子 portfolio commit。所有 transition 的非标量成本由共享 `AcquisitionOpportunityCostVectorAggregator` 聚合，原 portfolio admission 同步复用该实现，没有出现第二套成本算法。
+- 比较候选必须共享完全相同的起始 state hash、snapshot SHA-256、strategy-ledger SHA-256 与 ledger revision；rollout 最终 snapshot 的完整 Money checkpoint 必须等于 Revenue prefix 的第一 checkpoint，且 acquisition 过程不得暗中增加累计收入。篡改持久化 Revenue receipt 会失败关闭。
+- 当前 manifest 仍是调用方声明的候选集合，尚无权威 Revenue alternative enumerator 证明“所有可行赚钱方案均已列入”。因此 receipt 明确输出 `candidate_denominator_authoritative=false`、`production_teacher_preference_label_eligible=false`、`formal_product_training_authorized=false`；正式状态仍为 promotion-grade `2/19`、root method `1/11`。下一块固定为从透明快照与权威 acquisition/processing route 生成 Revenue 候选全集，再让本工件消费该权威 denominator。
+- 本机只执行低成本验证：GoalConditionedBootstrap Release `0 warning / 0 error`，`self-test-bootstrap-hermetic` 退出码 `0`。完整 Stage-One fixture 历史开销约 30 分钟、183 GiB 读取，本轮没有在本机重跑；新增成功链回归已挂接在该完整 fixture，但轻量 PR CI 不执行这一高成本项，因此本轮不能宣称完整工件成功链已动态通过。未启动游戏。
+
 ## 2026-10-14 Recovery -> settlement 持久状态边界
 
 - 经核对，远端最新 issue 仍为长期总纲 `#236`，没有更新编号。其 action-origin debris 与 acquisition output sufficiency 两项已由共享实现覆盖；recovery 只比较 Full Shipment 进度、日期和 shipping bin 的意见仍然成立。

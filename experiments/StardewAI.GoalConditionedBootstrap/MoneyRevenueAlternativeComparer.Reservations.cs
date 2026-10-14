@@ -8,23 +8,36 @@ internal static partial class MoneyRevenueAlternativeComparer
     private static string[] ValidateReservation(
         MoneyRevenueAlternativeCandidate candidate,
         string sourceStateHash,
-        int expectedLedgerRevision)
+        int expectedLedgerRevision) => ValidateReservation(
+        candidate.OpportunityCost,
+        candidate.ReservationNotRequired,
+        candidate.ReservationClaimSet,
+        sourceStateHash,
+        expectedLedgerRevision,
+        "goal.economy.earn_money");
+
+    internal static string[] ValidateReservation(
+        AcquisitionOpportunityCostVector vector,
+        bool reservationNotRequired,
+        AcquisitionRouteReservationClaimSet? reservationClaimSet,
+        string sourceStateHash,
+        int expectedLedgerRevision,
+        string expectedGoalId)
     {
-        var vector = candidate.OpportunityCost;
         var vectorMaterials = vector.MaterialCosts ??
             Array.Empty<AcquisitionOpportunityMaterialCost>();
         var vectorCurrencies = vector.CurrencyCosts ??
             Array.Empty<AcquisitionOpportunityCurrencyCost>();
-        if (candidate.ReservationNotRequired)
+        if (reservationNotRequired)
         {
-            Require(candidate.ReservationClaimSet is null &&
+            Require(reservationClaimSet is null &&
                     vectorMaterials.Length == 0 &&
                     vectorCurrencies.Length == 0,
                 "Reservation-free revenue alternative has reserved costs.");
             return Array.Empty<string>();
         }
 
-        var claims = candidate.ReservationClaimSet ??
+        var claims = reservationClaimSet ??
             throw new InvalidDataException(
                 "Reserve-aware revenue alternative lacks a claim set.");
         var materials = claims.MaterialClaims ??
@@ -52,7 +65,8 @@ internal static partial class MoneyRevenueAlternativeComparer
                         claim.Purpose,
                         claims,
                         sourceStateHash,
-                        expectedLedgerRevision) &&
+                        expectedLedgerRevision,
+                        expectedGoalId) &&
                     !string.IsNullOrWhiteSpace(claim.NodeId) &&
                     claim.SlotIndex >= 0 &&
                     !string.IsNullOrWhiteSpace(claim.QualifiedItemId) &&
@@ -67,7 +81,8 @@ internal static partial class MoneyRevenueAlternativeComparer
                         claim.Purpose,
                         claims,
                         sourceStateHash,
-                        expectedLedgerRevision) &&
+                        expectedLedgerRevision,
+                        expectedGoalId) &&
                     NativeShopCurrencies.TryGetKey(
                         claim.CurrencyId,
                         out _) &&
@@ -93,11 +108,12 @@ internal static partial class MoneyRevenueAlternativeComparer
         string purpose,
         AcquisitionRouteReservationClaimSet set,
         string expectedStateHash,
-        int expectedLedgerRevision) =>
+        int expectedLedgerRevision,
+        string expectedGoalId) =>
         stateHash == expectedStateHash &&
         ledgerRevision == expectedLedgerRevision &&
         sourceDecisionId == set.SourceDecisionId &&
-        goalId == "goal.economy.earn_money" &&
+        goalId == expectedGoalId &&
         !string.IsNullOrWhiteSpace(reservationId) &&
         !string.IsNullOrWhiteSpace(purpose);
 
