@@ -238,7 +238,7 @@ foreach ($criterionId in @($plan.crossed_criterion_ids)) {
 $attachmentIndexPath = Join-Path $workPath `
     "money-threshold-comparison-admission-index.json"
 Write-JsonFile -Path $attachmentIndexPath -Value ([ordered]@{
-    schema_version = "money_threshold_comparison_admission_index.v1"
+    schema_version = "money_threshold_comparison_admission_index.v2"
     admissions = $attachments
     formal_product_training_authorized = $false
 })

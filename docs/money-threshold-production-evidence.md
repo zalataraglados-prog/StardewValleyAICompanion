@@ -156,7 +156,7 @@ reuse a live snapshot, candidate denominator, or isolated save between cells.
 replays every referenced catalog/selection/corpus, rejects duplicate split keys,
 emits one combined corpus, and rebuilds the 18-cell work plan. Its optional
 `-ComparisonAdmissionIndex` input has schema
-`money_threshold_comparison_admission_index.v1` and contains an `admissions`
+`money_threshold_comparison_admission_index.v2` and contains an `admissions`
 array of `run_id`, `criterion_id`, `admission_manifest_path`,
 `admission_receipt_path`, and optional `execution_episode_path`. Each pair must
 reference an accepted seed run and a criterion actually crossed by that seed.
@@ -173,6 +173,8 @@ legacy v1 remains native-only. The v2 output separately reports native-complete,
 Teacher-comparison-complete, and fully complete cells. Batch output and the
 canonical work plan share one cell projector, so criterion and partition
 completeness cannot drift between two implementations.
+Legacy comparison index v1 remains readable only without an episode override;
+selected-episode authority is exclusive to v2.
 
 High-cost full reconciliation is reserved for the Money Exit Gate. During
 development, validate the new or invalidated cell and its exact proof branch.

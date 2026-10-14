@@ -57,8 +57,10 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
     }
     $comparisonIndex = Get-Content -LiteralPath $comparisonIndexPath -Raw |
         ConvertFrom-Json
-    if ([string]$comparisonIndex.schema_version -ne
-            "money_threshold_comparison_admission_index.v1" -or
+    $comparisonIndexVersion = [string]$comparisonIndex.schema_version
+    if ($comparisonIndexVersion -notin @(
+            "money_threshold_comparison_admission_index.v1",
+            "money_threshold_comparison_admission_index.v2") -or
         [bool]$comparisonIndex.formal_product_training_authorized) {
         throw "Money threshold comparison-admission index schema is invalid."
     }
@@ -69,6 +71,12 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
             [string]::IsNullOrWhiteSpace($receiptPath)) {
             throw "Money threshold comparison-admission paths are required."
         }
+        $episodePath = [string]$_.execution_episode_path
+        if ($comparisonIndexVersion -eq
+                "money_threshold_comparison_admission_index.v1" -and
+            -not [string]::IsNullOrWhiteSpace($episodePath)) {
+            throw "Comparison-admission index v1 cannot override a native episode."
+        }
         [ordered]@{
             run_id = [string]$_.run_id
             criterion_id = [string]$_.criterion_id
@@ -76,14 +84,13 @@ if (-not [string]::IsNullOrWhiteSpace($ComparisonAdmissionIndex)) {
                 -ProjectRoot $ProjectRoot -Path $manifestPath
             admission_receipt_path = Resolve-RuntimeEvidenceInputPath `
                 -ProjectRoot $ProjectRoot -Path $receiptPath
-            execution_episode_path = if (
-                [string]::IsNullOrWhiteSpace(
-                    [string]$_.execution_episode_path)) {
+            execution_episode_path = if ([string]::IsNullOrWhiteSpace(
+                $episodePath)) {
                 ""
             } else {
                 Resolve-RuntimeEvidenceInputPath `
                     -ProjectRoot $ProjectRoot `
-                    -Path ([string]$_.execution_episode_path)
+                    -Path $episodePath
             }
         }
     })
