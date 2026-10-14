@@ -58,6 +58,40 @@ public sealed partial class DeferredNativeDropPickupTests
             Assert.Single(queue.Items).BlockingReasons);
     }
 
+    [Fact]
+    public void DeferredPickupRequiresTypedAcquisitionAmount()
+    {
+        var snapshot = Snapshot(RadioactiveNodeState());
+        var request = Request(snapshot.StateHash);
+        request.Actions[0].Parameters = request.Actions[0].Parameters
+            .Where(parameter => parameter.Name !=
+                "acquisition_required_amount")
+            .ToArray();
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "deferred_pickup_typed_baseline_required",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void DeferredPickupRejectsAmountAboveGuaranteedOutput()
+    {
+        var snapshot = Snapshot(RadioactiveNodeState());
+        var request = Request(snapshot.StateHash);
+        Assert.Single(request.Actions[0].Parameters.Where(parameter =>
+            parameter.Name == "acquisition_required_amount")).Value = "2";
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "native_drop_deferred_pickup_guarantee_insufficient",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
     private static string RadioactiveNodeState(
         string guaranteedDropQualifiedItemId = "(O)909",
         string sourceId = "GameLocation.breakStone") => $$"""
@@ -143,6 +177,7 @@ public sealed partial class DeferredNativeDropPickupTests
                     Parameter(
                         "deferred_pickup_guaranteed_minimum_quantity",
                         "1"),
+                    Parameter("acquisition_required_amount", "1"),
                     Parameter(
                         "acquisition_route_kind",
                         "native_radioactive_ore_node"),

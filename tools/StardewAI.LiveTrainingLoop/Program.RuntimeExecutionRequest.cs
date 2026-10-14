@@ -453,6 +453,9 @@ static partial class Program
         var acquisitionRouteOccurrenceId = ReadQueueParameterString(
             item,
             "acquisition_route_occurrence_id");
+        var acquisitionRequiredAmount = ReadQueueParameterInt(
+            item,
+            "acquisition_required_amount");
         var deferredPickupSourceKind = ReadQueueParameterString(
             item,
             "deferred_pickup_source_kind");
@@ -1094,6 +1097,8 @@ static partial class Program
         executionRequest.AcquisitionRouteKind = acquisitionRouteKind;
         executionRequest.AcquisitionRouteOccurrenceId =
             acquisitionRouteOccurrenceId;
+        executionRequest.AcquisitionRequiredAmount =
+            acquisitionRequiredAmount;
         executionRequest.DeferredPickupSourceKind =
             deferredPickupSourceKind;
         executionRequest.DeferredPickupDebrisItemTotalBefore =

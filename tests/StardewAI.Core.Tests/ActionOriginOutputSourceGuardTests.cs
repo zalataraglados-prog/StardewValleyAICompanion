@@ -14,6 +14,7 @@ public sealed class ActionOriginOutputSourceGuardTests
             QueueItemId = "queue-item.pickup",
             AcquisitionRouteKind = "native_location_artifact_spot",
             AcquisitionRouteOccurrenceId = "route-occurrence.330.1",
+            AcquisitionRequiredAmount = 1,
             DeferredPickupSourceKind = "native_location_artifact_spot",
             DeferredPickupMinimumQuality = 2
         };
@@ -28,6 +29,7 @@ public sealed class ActionOriginOutputSourceGuardTests
             roundTrip.AcquisitionRouteKind);
         Assert.Equal(request.AcquisitionRouteOccurrenceId,
             roundTrip.AcquisitionRouteOccurrenceId);
+        Assert.Equal(1, roundTrip.AcquisitionRequiredAmount);
         Assert.Equal(2, roundTrip.DeferredPickupMinimumQuality);
     }
 
@@ -43,6 +45,7 @@ public sealed class ActionOriginOutputSourceGuardTests
         Assert.Contains("\"acquisition_route_occurrence_id\"", source);
         Assert.Contains("executionRequest.AcquisitionRouteKind", source);
         Assert.Contains("executionRequest.AcquisitionRouteOccurrenceId", source);
+        Assert.Contains("executionRequest.AcquisitionRequiredAmount", source);
         Assert.Contains("executionRequest.DeferredPickupMinimumQuality", source);
     }
 
@@ -78,6 +81,12 @@ public sealed class ActionOriginOutputSourceGuardTests
         Assert.Contains("actionOrigin.ProducedChunks.Contains(value.Chunk)",
             pickup);
         Assert.Contains("ConsumeActionOriginOutput(request)", pickup);
+        Assert.Contains(
+            "request.AcquisitionRequiredAmount.Value;",
+            pickup);
+        Assert.DoesNotContain(
+            "request.InventoryItemTotalBefore.Value +\n                request.DeferredPickupGuaranteedMinimumQuantity.Value",
+            pickup);
     }
 
     [Fact]
