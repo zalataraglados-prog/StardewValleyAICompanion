@@ -3196,6 +3196,11 @@ Slice 7 remains assigned to the RTX 5070 node.
   can enter the comparison-attachment index. A different selected episode or
   shipping preference is reported as explicit recollection work; the initial
   smallest-sufficient sampling choice is never promoted by assumption.
+- The Money review also removed every Money-local private `EqualJson` helper.
+  The single bootstrap artifact guard now compares compact UTF-8 serialization
+  instead of retaining two indented UTF-16 strings. Equality remains exact and
+  uncached; this is the bounded #274 allocation reduction, not permission to
+  skip rebuilds or trust stale digests.
 
 ### 2026-10-14: Revenue alternative path skeletons
 
