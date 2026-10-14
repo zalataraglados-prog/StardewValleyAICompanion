@@ -1,5 +1,10 @@
 # StardewAI 当前工作
 
+> **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
+>
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+
+
 ## 2026-10-14 Strategy-ledger 边界制品身份
 
 - 新增 `build-strategy-ledger-boundary-capture` 与 `strategy_ledger_boundary_capture.v1`。每份制品以内容寻址 ID 绑定 `before_terminal_action` 或 `after_terminal_action`、request、concrete alternative、原生执行 `run_id`、快照 SHA/state/tick，以及账本 SHA/ID/revision/source-state/actor；调用方不能再只提交两条裸账本路径。
