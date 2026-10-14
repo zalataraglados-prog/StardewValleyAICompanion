@@ -323,6 +323,15 @@ incomplete, and both pet love and Skull Key as production evidence not connected
 methods have typed source adapters; neither has three-partition production evidence. It never
 authorizes formal product training.
 
+The Goal Method frontier is an invocation-scoped deterministic producer. Its identity binds all
+ten direct authority inputs plus every transitive requirement-inventory source path and declared
+SHA-256. The first build still hashes and verifies every physical source. A later identical build
+in the same Bootstrap process reuses only that verified result and deserializes a fresh report;
+`--deterministic-build-session disabled` retains the full rebuild path. This never crosses a
+process, run, or snapshot boundary and does not change coverage admission. Run
+`self-test-goal-method-frontier-reuse` with the normal frontier arguments to verify one build/one
+hit behavior against current authority inputs.
+
 `build-goal-method-formal-training-admission-reconciliation` is the aggregate read-only admission
 audit. In addition to the frontier inputs, it requires `--coverage-request`, `--corpus-manifest`,
 `--checkpoint`, `--support-terminal-coverage-request`, and `--output`. It rebuilds the 19-criterion

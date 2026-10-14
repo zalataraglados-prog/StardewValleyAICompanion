@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -23,8 +22,8 @@ public static class KnowledgeIndex
     public static GoalKnowledge Load(string path)
     {
         var fullPath = Path.GetFullPath(path);
-        using var stream = File.OpenRead(fullPath);
-        using var document = JsonDocument.Parse(stream);
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(fullPath));
         var root = document.RootElement;
         var schema = RequiredString(root, "schema_version");
         var issues = root.GetProperty("issues");
@@ -58,7 +57,7 @@ public static class KnowledgeIndex
             RequiredString(goal, "goalId"),
             targetScore,
             criteria.Length,
-            Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fullPath))).ToLowerInvariant(),
+            CurrentTeacherFrontierSupport.HashFile(fullPath),
             criteria);
     }
 

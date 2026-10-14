@@ -6,7 +6,7 @@ internal static partial class BootstrapSelfTest
 {
     internal static void RunHermeticCriticalPaths()
     {
-        VerifyInvocationReadPlan();
+        RunInvocationReadPlan();
         VerifyHermeticStrategicPolicyAndPortfolio();
         VerifyMachineCalendarResolution();
         VerifyRadioactiveOreCalendarResolution();
@@ -29,6 +29,9 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyRevenueComparisonAdmission();
         VerifyMoneyThresholdNativeOutcomeOnly();
     }
+
+    internal static void RunInvocationReadPlan() =>
+        VerifyInvocationReadPlan();
 
     private static void VerifySupportingTransitionTerminalLineage()
     {

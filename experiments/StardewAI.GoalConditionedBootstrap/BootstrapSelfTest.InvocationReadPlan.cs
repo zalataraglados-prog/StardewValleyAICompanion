@@ -51,11 +51,24 @@ internal static partial class BootstrapSelfTest
             session.Snapshot().RegisteredPathCount == 1,
             "Invocation read plan registered an unexpected path count.");
 
-        VerifyInvocationDeterministicBuildSession(immutablePath);
+        var firstHash = ContentInventoryVerifier.HashFile(immutablePath);
+        var secondHash = ContentInventoryVerifier.HashFile(immutablePath);
+        var readSnapshot = session.Snapshot();
+        Require(
+            firstHash == secondHash &&
+            readSnapshot.PhysicalReadCount == 1 &&
+            readSnapshot.FullHashCount == 1 &&
+            readSnapshot.CacheHitCount >= 1,
+            "Content authority hashing bypassed invocation read reuse.");
+
+        VerifyInvocationDeterministicBuildSession(
+            immutablePath,
+            firstHash);
     }
 
     private static void VerifyInvocationDeterministicBuildSession(
-        string immutablePath)
+        string immutablePath,
+        string immutableSha256)
     {
         var builds = 0;
         using (var buildSession =
@@ -143,6 +156,57 @@ internal static partial class BootstrapSelfTest
                 axisSnapshot.BuildCount == 2 &&
                 axisSnapshot.CacheHitCount == 2,
                 "Acquisition axis reuse is not invocation-scoped and isolated.");
+
+            var transitiveBuilds = 0;
+            var verifiedIdentity = new[]
+            {
+                InvocationDeterministicBuildSession.VerifiedTransitiveFile(
+                    "AuthoritySource",
+                    immutablePath,
+                    immutableSha256)
+            };
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-verified-transitive",
+                "v1",
+                verifiedIdentity,
+                () =>
+                {
+                    transitiveBuilds++;
+                    return new DeterministicBuildFixture { Value = 15 };
+                });
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-verified-transitive",
+                "v1",
+                verifiedIdentity,
+                () =>
+                {
+                    transitiveBuilds++;
+                    return new DeterministicBuildFixture { Value = 16 };
+                });
+            var changedIdentity = new[]
+            {
+                InvocationDeterministicBuildSession.VerifiedTransitiveFile(
+                    "AuthoritySource",
+                    immutablePath,
+                    new string(
+                        immutableSha256[0] == 'a' ? 'b' : 'a',
+                        64))
+            };
+            _ = InvocationDeterministicBuildSession.GetOrBuild(
+                "self-test-verified-transitive",
+                "v1",
+                changedIdentity,
+                () =>
+                {
+                    transitiveBuilds++;
+                    return new DeterministicBuildFixture { Value = 17 };
+                });
+            var transitiveSnapshot = buildSession.Snapshot();
+            Require(
+                transitiveBuilds == 2 &&
+                transitiveSnapshot.BuildCount == 4 &&
+                transitiveSnapshot.CacheHitCount == 3,
+                "Verified transitive identity was reused across content drift.");
         }
 
         using (InvocationDeterministicBuildSession.Start(enabled: false))
