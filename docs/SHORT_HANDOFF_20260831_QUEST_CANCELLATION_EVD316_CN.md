@@ -1,6 +1,6 @@
 # StardewAI 短交接：普通任务取消 EVD-316
 
-## 当前状态
+## 当时状态（历史快照）
 
 `quest.cancel -> cancel_quest -> executor.cancel_quest` 已完整闭合。该能力严格为 `PlayerCommandOnly`：只有玩家给出一个当前透明投影中的精确指纹、非空原因和显式确认，才会产生候选；它不进入默认候选、自主日计划或策略训练。
 
@@ -22,6 +22,6 @@
 - KnowledgeCompiler `585/585`，blocking 0。
 - Core `2133/2133`；Backend `155/155`；Release `0 warnings / 0 errors`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 `minigame.play_junimo_kart` 按既定要求继续后置。下一实际纵向切片为 `rewards.claim_adventure_guild_reward`：先用锁定 1.6.15 反编译确认奖励类型、Adventure Guild 原生入口、菜单/对话流程、库存容量、一次性标志和所有副作用，再沿透明投影、上游候选、DailyPlan、fresh 编译、类型化原生执行与隐藏静音回执闭合；不得复用普通任务奖励或直接发放物品。
