@@ -3175,6 +3175,22 @@ Slice 7 remains assigned to the RTX 5070 node.
   direct terminal skeletons and rebound concrete alternatives, and makes the comparison proof consume that union
   instead of a caller-declared list.
 
+### 2026-10-14: concrete Revenue alternative denominator
+
+- `build-money-revenue-concrete-alternative-denominator` rebuilds the path-skeleton catalog and terminal-rebind receipt,
+  then forms one deterministic union. Direct sale/shipping skeletons bind their source candidate at the source state;
+  acquisition or processing skeletons expand through every verified rebound terminal candidate.
+- Both families share one concrete schema while retaining distinct proof requirements. Direct alternatives carry no
+  fabricated acquisition rollout. Rebound alternatives retain the exact rollout manifest/receipt identity, terminal
+  state and rebind evidence. Shop sale, shipping deposit and shipping day settlement requirements remain independent.
+- A hermetic denominator expands seven skeletons into five direct and three rebound concrete alternatives. Two shops
+  accepting the same newly produced stack remain separate rows, and removing either required rebind evidence fails
+  closed. The catalog derives every concrete ID and rejects duplicates or skeletons with the wrong cardinality.
+- Current concrete-denominator authority is narrower than outcome or long-horizon authority. The next slice generates
+  proof requests from this catalog and requires the comparison proof to consume exactly its IDs. Production labels and
+  formal training remain false until every row has an isolated, native, replayable Revenue recurrence and the existing
+  reserve-aware comparison yields an admissible preference.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

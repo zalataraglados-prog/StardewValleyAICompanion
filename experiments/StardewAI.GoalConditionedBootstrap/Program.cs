@@ -50,6 +50,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-candidate-denominator", BuildMoneyRevenueCandidateDenominator),
     new("build-money-revenue-alternative-denominator", BuildMoneyRevenueAlternativeDenominator),
     new("build-money-revenue-terminal-candidate-rebind", BuildMoneyRevenueTerminalCandidateRebind),
+    new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
@@ -497,6 +498,15 @@ static void BuildMoneyRevenueTerminalCandidateRebind(Arguments options)
         options.Required("manifest"));
     Write(options.Required("output"), receipt);
     if (!receipt.TerminalRebindDenominatorComplete)
+        Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueConcreteAlternativeDenominator(Arguments options)
+{
+    var catalog = MoneyRevenueConcreteAlternativeDenominatorBuilder.Build(
+        options.Required("manifest"));
+    Write(options.Required("output"), catalog);
+    if (!catalog.CurrentConcreteDenominatorAuthoritative)
         Environment.ExitCode = 2;
 }
 
