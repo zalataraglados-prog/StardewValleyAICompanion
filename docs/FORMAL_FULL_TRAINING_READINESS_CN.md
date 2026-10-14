@@ -5,7 +5,7 @@
 - `money_revenue_alternative_comparison_proof_receipt.v1` 现能深度重放每个候选的完整 acquisition rollout 与 Revenue recurrence，并逐 transition 核对确定性 opportunity cost、reservation claim、portfolio commit、起始 snapshot/ledger 以及 rollout 终点到收益起点的完整 Money checkpoint 连续性。
 - 成本聚合已成为 acquisition portfolio 与 Revenue comparison 共用的唯一实现。比较仍只使用权威 Grandpa Money 阈值和严格 Pareto，不读 learner score；持久化 receipt 或任一叶子工件漂移会在重新构建时失败关闭。
 - 该工件关闭了“真实路线/commit/rollout 没有绑定”的结构缺口，但没有凭空解决候选全集枚举：manifest 自报的 alternatives 不是权威 denominator。故其 production label、正式训练授权均强制为 `false`，当前准入继续是 `2/19`、`1/11`。下一准入门是建立由透明状态、权威 acquisition/processing route 与 Revenue terminal options 确定性生成的完整候选目录；之后才能把唯一 Pareto preference 计入生产分子。
-- 本地仅完成 Release `0 warning / 0 error` 与快速 hermetic 回归。完整 Stage-One 成功链已挂接新增测试，但因已知 183 GiB 读取成本不在本机执行，等待远端 CI。
+- 本地仅完成 Release `0 warning / 0 error` 与快速 hermetic 回归。完整 Stage-One 成功链已挂接新增测试，但因已知 183 GiB 读取成本不在本机执行，且轻量 PR CI 不包含该项；故该成功链保持“待下一次计划内完整验证”，不能按已通过记录。
 
 ## 2026-10-14 Recovery -> settlement 持久状态边界
 
