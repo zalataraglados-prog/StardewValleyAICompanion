@@ -1,6 +1,6 @@
 # StardewAI 短交接：EVD-317
 
-## 当前结论
+## 当时结论（历史快照）
 
 `rewards.claim_adventure_guild_reward` 已完成五门闭环并进入高层训练白名单。模型只需输出无参数领取意图；透明桥和 fresh 编译器绑定当前全部完成且未领取的怪物讨伐奖励。唯一运行路径复用共享 BFS，调用原生 Gil 交互，推进可选对话并逐项点击原生奖励菜单，不直接写游戏结果。
 
@@ -17,6 +17,6 @@
 - Tests：Core 2138/2138；Backend 155/155；Release build 0 warnings / 0 errors。
 - Freeze fingerprint：`10b8329f92466d34ce5570679fea0096b298a36693668e8ff107be1794804902`。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 下一主切片为 `rewards.claim_prize_ticket`。先从本地反编译确定 `PrizeTicketMenu` 的候选批次、随机边界、背包容量、菜单步骤和所有副作用，再接入现有透明桥、DailyPlan、fresh 编译、共享菜单输入、类型化收据和隐藏隔离测试。`minigame.play_junimo_kart` 是明确暂缓项，不要先做。
