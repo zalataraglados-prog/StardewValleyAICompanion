@@ -59,6 +59,9 @@ public sealed class ValidationTraceOperationRecord
     [JsonPropertyName("hash_bytes")]
     public long HashBytes { get; set; }
 
+    [JsonPropertyName("allocated_bytes")]
+    public long AllocatedBytes { get; set; }
+
     [JsonPropertyName("json_parse_ms")]
     public double JsonParseMilliseconds { get; set; }
 
@@ -131,6 +134,27 @@ public sealed class ValidationTraceReport
     [JsonPropertyName("peak_working_set_bytes")]
     public long PeakWorkingSetBytes { get; set; }
 
+    [JsonPropertyName("private_memory_bytes")]
+    public long PrivateMemoryBytes { get; set; }
+
+    [JsonPropertyName("managed_heap_bytes")]
+    public long ManagedHeapBytes { get; set; }
+
+    [JsonPropertyName("managed_allocation_counter_available")]
+    public bool ManagedAllocationCounterAvailable { get; set; }
+
+    [JsonPropertyName("allocated_bytes")]
+    public long AllocatedBytes { get; set; }
+
+    [JsonPropertyName("gen0_collections")]
+    public int Gen0Collections { get; set; }
+
+    [JsonPropertyName("gen1_collections")]
+    public int Gen1Collections { get; set; }
+
+    [JsonPropertyName("gen2_collections")]
+    public int Gen2Collections { get; set; }
+
     [JsonPropertyName("bytes_read")]
     public long BytesRead { get; set; }
 
@@ -174,4 +198,118 @@ public sealed class ValidationTraceReport
     [JsonPropertyName("dependency_graph")]
     public ValidationTraceDependencyGraph DependencyGraph { get; set; } =
         new();
+
+    [JsonPropertyName("invocation_read_session")]
+    public ValidationTraceReadSessionMetrics InvocationReadSession { get; set; } =
+        new();
+
+    [JsonPropertyName("deterministic_build_session")]
+    public ValidationTraceDeterministicBuildSessionMetrics
+        DeterministicBuildSession { get; set; } = new();
+}
+
+public sealed class ValidationTraceReadSessionMetrics
+{
+    [JsonPropertyName("reader_version")]
+    public string ReaderVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; }
+
+    [JsonPropertyName("registered_path_count")]
+    public int RegisteredPathCount { get; set; }
+
+    [JsonPropertyName("entry_count")]
+    public int EntryCount { get; set; }
+
+    [JsonPropertyName("physical_read_count")]
+    public long PhysicalReadCount { get; set; }
+
+    [JsonPropertyName("physical_bytes_read")]
+    public long PhysicalBytesRead { get; set; }
+
+    [JsonPropertyName("full_hash_count")]
+    public long FullHashCount { get; set; }
+
+    [JsonPropertyName("hash_bytes")]
+    public long HashBytes { get; set; }
+
+    [JsonPropertyName("materialization_count")]
+    public long MaterializationCount { get; set; }
+
+    [JsonPropertyName("cache_hit_count")]
+    public long CacheHitCount { get; set; }
+
+    [JsonPropertyName("retained_raw_bytes")]
+    public long RetainedRawBytes { get; set; }
+
+    [JsonPropertyName("retained_stored_text_bytes")]
+    public long RetainedStoredTextBytes { get; set; }
+
+    [JsonPropertyName("retained_materialized_text_bytes")]
+    public long RetainedMaterializedTextBytes { get; set; }
+
+    [JsonPropertyName("retained_hash_text_bytes")]
+    public long RetainedHashTextBytes { get; set; }
+
+    [JsonPropertyName("retained_bytes")]
+    public long RetainedBytes { get; set; }
+
+    [JsonPropertyName("max_entry_retained_bytes")]
+    public long MaxEntryRetainedBytes { get; set; }
+}
+
+public sealed class ValidationTraceDeterministicBuildSessionMetrics
+{
+    [JsonPropertyName("session_version")]
+    public string SessionVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; }
+
+    [JsonPropertyName("build_count")]
+    public int BuildCount { get; set; }
+
+    [JsonPropertyName("cache_hit_count")]
+    public int CacheHitCount { get; set; }
+
+    [JsonPropertyName("entry_count")]
+    public int EntryCount { get; set; }
+
+    [JsonPropertyName("reference_entry_count")]
+    public int ReferenceEntryCount { get; set; }
+
+    [JsonPropertyName("cached_bytes")]
+    public long CachedBytes { get; set; }
+
+    [JsonPropertyName("max_entry_bytes")]
+    public long MaxEntryBytes { get; set; }
+
+    [JsonPropertyName("producers")]
+    public ValidationTraceDeterministicProducerMetrics[] Producers { get; set; } =
+        Array.Empty<ValidationTraceDeterministicProducerMetrics>();
+}
+
+public sealed class ValidationTraceDeterministicProducerMetrics
+{
+    [JsonPropertyName("producer_id")]
+    public string ProducerId { get; set; } = string.Empty;
+
+    [JsonPropertyName("build_count")]
+    public long BuildCount { get; set; }
+
+    [JsonPropertyName("cache_hit_count")]
+    public long CacheHitCount { get; set; }
+
+    [JsonPropertyName("cached_bytes")]
+    public long CachedBytes { get; set; }
+
+    [JsonPropertyName("max_entry_bytes")]
+    public long MaxEntryBytes { get; set; }
+
+    [JsonPropertyName("reference_build_count")]
+    public long ReferenceBuildCount { get; set; }
+
+    [JsonPropertyName("reference_hit_count")]
+    public long ReferenceHitCount { get; set; }
 }

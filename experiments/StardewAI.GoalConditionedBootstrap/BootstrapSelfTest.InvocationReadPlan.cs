@@ -103,7 +103,12 @@ internal static partial class BootstrapSelfTest
             Require(
                 builds == 1 && second.Value == 1 &&
                 snapshot.BuildCount == 1 && snapshot.CacheHitCount == 1 &&
-                snapshot.CachedBytes > 0,
+                snapshot.EntryCount == 1 &&
+                snapshot.CachedBytes > 0 && snapshot.MaxEntryBytes > 0 &&
+                snapshot.Producers.Length == 1 &&
+                snapshot.Producers[0].ProducerId == "self-test" &&
+                snapshot.Producers[0].BuildCount == 1 &&
+                snapshot.Producers[0].CacheHitCount == 1,
                 "Invocation deterministic build reuse is not isolated and exact.");
 
             var referenceBuilds = 0;
@@ -129,7 +134,10 @@ internal static partial class BootstrapSelfTest
                     });
             Require(
                 referenceBuilds == 1 &&
-                ReferenceEquals(firstReference, secondReference),
+                ReferenceEquals(firstReference, secondReference) &&
+                buildSession.Snapshot().Producers.Single(producer =>
+                    producer.ProducerId == "self-test-reference")
+                    .ReferenceHitCount == 1,
                 "Invocation immutable reference reuse is not scoped and exact.");
 
             var axisBuilds = 0;

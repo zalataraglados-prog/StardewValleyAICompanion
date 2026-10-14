@@ -5,7 +5,7 @@ enabled validation trace. It explains a full rebuild; it does not replace one.
 
 ## Contract
 
-Every `stardewai.validation_trace.v1` report contains a
+Every `stardewai.validation_trace.v2` report contains a
 `dependency_graph` object with schema
 `stardewai.validation_dependency_graph.v1`. Its fixed safety fields are:
 
@@ -45,6 +45,13 @@ calendar resolution
 Snapshot-backed route and wild-tree indexes are represented as invocation-only
 derived index nodes. Snapshot facts keep `reuse_scope=snapshot`; all other
 observed derived nodes remain invocation scoped.
+
+Trace v2 adds diagnostics required by #274 without changing dependency or
+admission semantics: total managed allocation, Gen0/Gen1/Gen2 deltas, final
+managed heap and private memory, per-operation current-thread allocation,
+read-session retained representations, and deterministic-cache bytes grouped
+by producer. Allocation counters are explicitly marked unavailable on runtimes
+that do not expose them. All metrics remain observe-only.
 
 ## Frozen comparison
 

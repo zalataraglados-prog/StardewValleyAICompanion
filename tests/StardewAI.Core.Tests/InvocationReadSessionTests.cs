@@ -28,6 +28,12 @@ public sealed class InvocationReadSessionTests
         Assert.Equal(1, snapshot.FullHashCount);
         Assert.Equal(1, snapshot.MaterializationCount);
         Assert.True(snapshot.CacheHitCount >= 3);
+        Assert.Equal(1, snapshot.EntryCount);
+        Assert.True(snapshot.RetainedRawBytes > 0);
+        Assert.True(snapshot.RetainedStoredTextBytes > 0);
+        Assert.True(snapshot.RetainedBytes >=
+            snapshot.RetainedRawBytes + snapshot.RetainedStoredTextBytes);
+        Assert.Equal(snapshot.RetainedBytes, snapshot.MaxEntryRetainedBytes);
     }
 
     [Fact]
@@ -62,8 +68,10 @@ public sealed class InvocationReadSessionTests
         Assert.Equal(first, second);
         Assert.False(InvocationReadSession.IsPathReusable(path));
         Assert.False(snapshot.Enabled);
+        Assert.Equal(0, snapshot.EntryCount);
         Assert.Equal(0, snapshot.PhysicalReadCount);
         Assert.Equal(0, snapshot.CacheHitCount);
+        Assert.Equal(0, snapshot.RetainedBytes);
     }
 
     [Fact]

@@ -59,6 +59,20 @@ internal static class ValidationTraceBaselineBuilder
             RepresentativeCoverageComplete = missing.Length == 0,
             TotalWallMilliseconds = Round(traces.Sum(trace => trace.WallMilliseconds)),
             TotalCpuMilliseconds = Round(traces.Sum(trace => trace.CpuMilliseconds)),
+            TotalAllocatedBytes = traces.Sum(trace => trace.AllocatedBytes),
+            TotalGen0Collections = traces.Sum(trace => trace.Gen0Collections),
+            TotalGen1Collections = traces.Sum(trace => trace.Gen1Collections),
+            TotalGen2Collections = traces.Sum(trace => trace.Gen2Collections),
+            MaxPeakWorkingSetBytes = traces.Max(trace =>
+                trace.PeakWorkingSetBytes),
+            MaxPrivateMemoryBytes = traces.Max(trace =>
+                trace.PrivateMemoryBytes),
+            MaxManagedHeapBytes = traces.Max(trace =>
+                trace.ManagedHeapBytes),
+            MaxReadSessionRetainedBytes = traces.Max(trace =>
+                trace.InvocationReadSession.RetainedBytes),
+            MaxDeterministicCachedBytes = traces.Max(trace =>
+                trace.DeterministicBuildSession.CachedBytes),
             TotalBytesRead = traces.Sum(trace => trace.BytesRead),
             TotalHashBytes = traces.Sum(trace => trace.HashBytes),
             TopCommands = traces
@@ -75,6 +89,13 @@ internal static class ValidationTraceBaselineBuilder
                         value => value.WallMilliseconds)),
                     CumulativeCpuMilliseconds = Round(group.Sum(
                         value => value.CpuMilliseconds)),
+                    AllocatedBytes = group.Sum(value => value.AllocatedBytes),
+                    PeakWorkingSetBytes = group.Max(value =>
+                        value.PeakWorkingSetBytes),
+                    PrivateMemoryBytes = group.Max(value =>
+                        value.PrivateMemoryBytes),
+                    ManagedHeapBytes = group.Max(value =>
+                        value.ManagedHeapBytes),
                     BytesRead = group.Sum(value => value.BytesRead),
                     HashBytes = group.Sum(value => value.HashBytes),
                     JsonParseMilliseconds = Round(group.Sum(
@@ -106,6 +127,7 @@ internal static class ValidationTraceBaselineBuilder
                         value => value.WallMilliseconds)),
                     CumulativeCpuMilliseconds = Round(group.Sum(
                         value => value.CpuMilliseconds)),
+                    AllocatedBytes = group.Sum(value => value.AllocatedBytes),
                     BytesRead = group.Sum(value => value.BytesRead),
                     HashBytes = group.Sum(value => value.HashBytes),
                     JsonParseMilliseconds = Round(group.Sum(
@@ -158,7 +180,7 @@ internal sealed class ValidationTraceBaselineReport
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "stardewai.validation_trace_baseline.v1";
+        "stardewai.validation_trace_baseline.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -190,6 +212,33 @@ internal sealed class ValidationTraceBaselineReport
 
     [JsonPropertyName("total_cpu_ms")]
     public double TotalCpuMilliseconds { get; set; }
+
+    [JsonPropertyName("total_allocated_bytes")]
+    public long TotalAllocatedBytes { get; set; }
+
+    [JsonPropertyName("total_gen0_collections")]
+    public int TotalGen0Collections { get; set; }
+
+    [JsonPropertyName("total_gen1_collections")]
+    public int TotalGen1Collections { get; set; }
+
+    [JsonPropertyName("total_gen2_collections")]
+    public int TotalGen2Collections { get; set; }
+
+    [JsonPropertyName("max_peak_working_set_bytes")]
+    public long MaxPeakWorkingSetBytes { get; set; }
+
+    [JsonPropertyName("max_private_memory_bytes")]
+    public long MaxPrivateMemoryBytes { get; set; }
+
+    [JsonPropertyName("max_managed_heap_bytes")]
+    public long MaxManagedHeapBytes { get; set; }
+
+    [JsonPropertyName("max_read_session_retained_bytes")]
+    public long MaxReadSessionRetainedBytes { get; set; }
+
+    [JsonPropertyName("max_deterministic_cached_bytes")]
+    public long MaxDeterministicCachedBytes { get; set; }
 
     [JsonPropertyName("total_bytes_read")]
     public long TotalBytesRead { get; set; }
@@ -228,6 +277,18 @@ internal sealed class ValidationTraceCostSummary
 
     [JsonPropertyName("cumulative_cpu_ms")]
     public double CumulativeCpuMilliseconds { get; set; }
+
+    [JsonPropertyName("allocated_bytes")]
+    public long AllocatedBytes { get; set; }
+
+    [JsonPropertyName("peak_working_set_bytes")]
+    public long PeakWorkingSetBytes { get; set; }
+
+    [JsonPropertyName("private_memory_bytes")]
+    public long PrivateMemoryBytes { get; set; }
+
+    [JsonPropertyName("managed_heap_bytes")]
+    public long ManagedHeapBytes { get; set; }
 
     [JsonPropertyName("bytes_read")]
     public long BytesRead { get; set; }
