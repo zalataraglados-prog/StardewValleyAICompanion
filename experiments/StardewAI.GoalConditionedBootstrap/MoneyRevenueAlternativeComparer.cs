@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Core.Goals;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -21,6 +22,84 @@ internal static partial class MoneyRevenueAlternativeComparer
             expectedLedgerRevision,
             expectedAlternativeIds,
             alternatives);
+        return CompareCore(
+            criterionId,
+            threshold.Target,
+            sourceStateHash,
+            expectedLedgerRevision,
+            verified);
+    }
+
+    internal static MoneyRevenueAlternativeComparison CompareVerifiedArtifacts(
+        string criterionId,
+        string sourceStateHash,
+        int expectedLedgerRevision,
+        IReadOnlyList<string> expectedAlternativeIds,
+        IReadOnlyList<MoneyRevenueVerifiedArtifactAlternative> alternatives)
+    {
+        var threshold = GrandpaEvaluationGoalEvaluator.MoneyThresholds
+            .SingleOrDefault(value => value.CriterionId == criterionId) ??
+            throw new InvalidDataException(
+                "Money revenue comparison criterion is not authoritative.");
+        ValidateArtifactDenominator(
+            sourceStateHash,
+            expectedLedgerRevision,
+            expectedAlternativeIds,
+            alternatives);
+        var verified = alternatives.Select(candidate =>
+            {
+                var prefix = MoneyRevenueRecurrenceVerifier.VerifyPrefix(
+                    candidate.RevenuePrefix.Transitions);
+                Require(JsonSerializer.Serialize(prefix, JsonDefaults.Options) ==
+                        JsonSerializer.Serialize(
+                            candidate.RevenuePrefix,
+                            JsonDefaults.Options),
+                    "Money revenue artifact prefix drifted after replay.");
+                ValidateOpportunityCost(candidate.OpportunityCost);
+                var reservationIds = candidate.ReservationIds
+                    .Order(StringComparer.Ordinal)
+                    .ToArray();
+                Require(reservationIds.All(id =>
+                            !string.IsNullOrWhiteSpace(id)) &&
+                        reservationIds.Distinct(StringComparer.Ordinal)
+                            .Count() == reservationIds.Length &&
+                        (candidate.ReservationNotRequired
+                            ? reservationIds.Length == 0
+                            : reservationIds.Length > 0),
+                    "Money revenue artifact reservation identity is invalid.");
+                var before = Math.Min(
+                    prefix.InitialTotalMoneyEarned,
+                    threshold.Target);
+                var after = Math.Min(
+                    prefix.FinalTotalMoneyEarned,
+                    threshold.Target);
+                return new VerifiedAlternative(
+                    candidate.AlternativeId,
+                    prefix,
+                    candidate.OpportunityCost,
+                    candidate.ReservationNotRequired,
+                    reservationIds,
+                    prefix.FinalTotalMoneyEarned >= threshold.Target,
+                    checked(after - before));
+            })
+            .OrderBy(candidate => candidate.AlternativeId,
+                StringComparer.Ordinal)
+            .ToArray();
+        return CompareCore(
+            criterionId,
+            threshold.Target,
+            sourceStateHash,
+            expectedLedgerRevision,
+            verified);
+    }
+
+    private static MoneyRevenueAlternativeComparison CompareCore(
+        string criterionId,
+        uint target,
+        string sourceStateHash,
+        int expectedLedgerRevision,
+        VerifiedAlternative[] verified)
+    {
         var dominatedBy = verified.ToDictionary(
             candidate => candidate.AlternativeId,
             candidate => verified.Where(other =>
@@ -64,7 +143,7 @@ internal static partial class MoneyRevenueAlternativeComparer
             : Array.Empty<MoneyRevenueAlternativePairwisePreference>();
         return new MoneyRevenueAlternativeComparison(
             criterionId,
-            threshold.Target,
+            target,
             sourceStateHash,
             expectedLedgerRevision,
             verified.Length,
@@ -77,6 +156,36 @@ internal static partial class MoneyRevenueAlternativeComparer
             unique,
             evaluations,
             preferences);
+    }
+
+    private static void ValidateArtifactDenominator(
+        string sourceStateHash,
+        int expectedLedgerRevision,
+        IReadOnlyList<string> expectedAlternativeIds,
+        IReadOnlyList<MoneyRevenueVerifiedArtifactAlternative> alternatives)
+    {
+        if (string.IsNullOrWhiteSpace(sourceStateHash) ||
+            expectedLedgerRevision < 0 ||
+            expectedAlternativeIds is null ||
+            alternatives is null)
+        {
+            throw new InvalidDataException(
+                "Money revenue artifact comparison identity is invalid.");
+        }
+        var expected = expectedAlternativeIds.ToArray();
+        var actual = alternatives.ToArray();
+        Require(expected.Length >= 2 &&
+                expected.All(id => !string.IsNullOrWhiteSpace(id)) &&
+                expected.Distinct(StringComparer.Ordinal).Count() ==
+                    expected.Length &&
+                actual.Length == expected.Length &&
+                actual.All(candidate => candidate is not null) &&
+                actual.Select(candidate => candidate.AlternativeId)
+                    .Order(StringComparer.Ordinal)
+                    .SequenceEqual(
+                        expected.Order(StringComparer.Ordinal),
+                        StringComparer.Ordinal),
+            "Money revenue artifact candidate denominator is incomplete.");
     }
 
     private static bool Dominates(
@@ -102,3 +211,10 @@ internal static partial class MoneyRevenueAlternativeComparer
         return noWorse && strictlyBetter;
     }
 }
+
+internal sealed record MoneyRevenueVerifiedArtifactAlternative(
+    string AlternativeId,
+    MoneyRevenueRecurrencePrefixEvidence RevenuePrefix,
+    AcquisitionOpportunityCostVector OpportunityCost,
+    bool ReservationNotRequired,
+    string[] ReservationIds);

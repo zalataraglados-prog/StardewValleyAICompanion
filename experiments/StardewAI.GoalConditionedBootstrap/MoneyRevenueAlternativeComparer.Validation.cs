@@ -91,7 +91,7 @@ internal static partial class MoneyRevenueAlternativeComparer
             checked(after - before));
     }
 
-    private static void ValidateOpportunityCost(
+    internal static void ValidateOpportunityCost(
         AcquisitionOpportunityCostVector vector)
     {
         var materials = vector.MaterialCosts ??

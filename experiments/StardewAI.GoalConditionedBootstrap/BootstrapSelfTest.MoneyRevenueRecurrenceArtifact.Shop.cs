@@ -11,11 +11,13 @@ internal static partial class BootstrapSelfTest
 {
     private static string VerifyMoneyRevenueShopRecurrenceArtifact(
         SnapshotEnvelope before,
-        SnapshotEnvelope after)
+        SnapshotEnvelope after,
+        string fixtureId = "default")
     {
         var root = Path.Combine(
             Path.GetTempPath(),
-            "stardewai-money-revenue-shop-artifact");
+            "stardewai-money-revenue-shop-artifact",
+            fixtureId);
         Directory.CreateDirectory(root);
         var beforePath = Path.Combine(root, "before.json");
         var afterPath = Path.Combine(root, "after.json");

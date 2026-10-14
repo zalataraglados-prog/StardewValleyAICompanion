@@ -3097,6 +3097,25 @@ Slice 7 remains assigned to the RTX 5070 node.
   production provenance: the next artifact must bind each recurrence receipt to deterministic route/opportunity data,
   ledger commit evidence and isolated counterfactual rollout results.
 
+### 2026-10-14: replayable Revenue alternative comparison proof
+
+- `build-money-revenue-alternative-comparison-proof` now requires every declared alternative to carry an exact persisted
+  acquisition rollout receipt and Revenue recurrence receipt. Both are rebuilt from their manifests and leaf artifacts;
+  serialized summaries are never trusted. Every executed acquisition transition is rebound to its unique deterministic
+  opportunity-cost row, route reservation claims and verified atomic portfolio commit.
+- All alternatives must share the same source state, snapshot digest, strategy-ledger digest and ledger revision. The
+  terminal rollout snapshot is independently projected and must exactly equal the first Revenue checkpoint, including
+  actor, day, money, cumulative earnings and shipping scope. Acquisition may spend current money but may not silently
+  create cumulative Revenue before the verified recurrence starts.
+- Non-scalar cost aggregation is now shared with route portfolio admission instead of duplicated. The comparison still
+  derives its threshold from the authoritative Grandpa Money table and uses the existing reserve-aware strict-Pareto
+  policy; learner scores remain absent.
+- This closes artifact provenance for a declared candidate set, not candidate enumeration completeness. Until a
+  deterministic Revenue alternative catalog is generated from the transparent state and authoritative acquisition,
+  processing and terminal-sale routes, the receipt sets `candidate_denominator_authoritative=false`, production label
+  eligibility false and formal product training authorization false. That authoritative enumerator is the next bounded
+  Money slice.
+
 ## Review questions
 
 Public review should focus on the following points before Slice 5/6 promotion:

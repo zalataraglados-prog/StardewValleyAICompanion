@@ -86,7 +86,7 @@ internal static class MoneyRevenueProgressionVerifier
         return (beforeProjection, afterProjection);
     }
 
-    private static MoneyRevenueCheckpoint Project(SnapshotEnvelope snapshot)
+    internal static MoneyRevenueCheckpoint Project(SnapshotEnvelope snapshot)
     {
         Require(
             snapshot.SchemaVersion == "snapshot.v1" &&
