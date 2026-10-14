@@ -8,7 +8,7 @@
 - 任何旧存档或模组注入的 live type-11 行明确失败关闭。
 - KnowledgeCompiler 每次对账复核常量、工厂分支和写入点，证据变化即 blocking。
 
-## 当前状态
+## 当时状态（历史快照）
 
 - 任务目录：`23 bound / 1 blocked / 3 observation-only / 1 native-unreachable`，共 28 阶段。
 - KnowledgeCompiler：`585/585`，blocking `0`。
