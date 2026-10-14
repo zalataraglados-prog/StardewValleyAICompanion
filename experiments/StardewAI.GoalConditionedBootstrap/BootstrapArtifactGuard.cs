@@ -12,7 +12,7 @@ internal static class BootstrapArtifactGuard
             throw new InvalidDataException(message);
     }
 
-    public static bool EqualJson<T>(T left, T right)
+    public static bool EqualJson(object? left, object? right)
     {
         var leftJson = JsonSerializer.SerializeToUtf8Bytes(
             left,

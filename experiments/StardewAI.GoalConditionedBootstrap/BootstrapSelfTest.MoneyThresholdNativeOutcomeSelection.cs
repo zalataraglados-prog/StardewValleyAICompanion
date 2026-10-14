@@ -1,4 +1,5 @@
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
