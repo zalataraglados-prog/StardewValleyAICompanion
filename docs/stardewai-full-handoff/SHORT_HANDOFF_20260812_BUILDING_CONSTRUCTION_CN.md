@@ -15,6 +15,6 @@
 
 EVD-248 只证明当前 Robin 服务点下，原版 `Coop` 在 `Farm` 的一次明确用途建造。不能外推为 Wizard、升级、换皮、所有蓝图/地点组合、多人所有权、Product Executor 或长期建设策略完成。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 从生成的 59 个 `catalogued-blocked` 语义动作中选择下一个依赖清晰且可复用现有机械原语的高层动作。不得回头复制建造、任务、移动、菜单或材料执行器；建筑升级继续由 `housing.advance_farmhouse` 或后续独立升级语义管理，`buildings.change_skin` 仍是独立未完成项。
