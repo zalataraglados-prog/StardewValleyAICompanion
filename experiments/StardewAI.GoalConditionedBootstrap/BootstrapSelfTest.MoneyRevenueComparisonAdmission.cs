@@ -71,6 +71,7 @@ internal static partial class BootstrapSelfTest
             VerifiedAlternativeCount = requests.Length,
             TerminalOpportunityCostProofsVerified = true,
             TerminalReservationClaimProofsVerified = true,
+            StrategyLedgerBoundaryArtifactsVerified = true,
             NativeRevenueRecurrencesVerified = true,
             Alternatives = new[] { fast.Evidence, slow.Evidence }
         };
@@ -196,11 +197,25 @@ internal static partial class BootstrapSelfTest
         request.SourceSnapshotPath = sourceSnapshotPath;
         request.SourceSnapshotSha256 =
             CurrentTeacherFrontierSupport.HashFile(sourceSnapshotPath);
+        var beforeCapturePath = Path.Combine(
+            root,
+            "before-ledger-capture-" + identity + ".json");
+        var afterCapturePath = Path.Combine(
+            root,
+            "after-ledger-capture-" + identity + ".json");
+        WriteMoneyRevenueBoundaryCaptures(
+            request,
+            terminalSnapshotPath,
+            Path.Combine(episodeRoot, "after.json"),
+            sourceLedgerPath,
+            afterLedgerPath,
+            beforeCapturePath,
+            afterCapturePath);
         var proof = new MoneyRevenueTerminalAlternativeProof
         {
             RequestId = request.RequestId,
-            BeforeStrategyLedgerPath = sourceLedgerPath,
-            AfterStrategyLedgerPath = afterLedgerPath,
+            BeforeStrategyLedgerCapturePath = beforeCapturePath,
+            AfterStrategyLedgerCapturePath = afterCapturePath,
             RouteTransitions =
                 Array.Empty<MoneyRevenueTerminalQueueTransitionProof>(),
             ShopSaleEpisodePath = episodePath,

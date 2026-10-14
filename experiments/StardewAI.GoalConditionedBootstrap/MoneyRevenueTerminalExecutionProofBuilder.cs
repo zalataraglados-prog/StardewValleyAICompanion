@@ -49,6 +49,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
         Require(alternatives.Length == requestCatalog.RequestCount &&
                 alternatives.All(row =>
                     row.ReservationSafetyVerified &&
+                    row.StrategyLedgerBoundaryArtifactsVerified &&
                     row.ResourceNeutralRouteVerified &&
                     row.NativeTerminalTransitionVerified &&
                     row.RevenueRecurrenceVerified),
@@ -63,6 +64,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             VerifiedAlternativeCount = alternatives.Length,
             TerminalOpportunityCostProofsVerified = true,
             TerminalReservationClaimProofsVerified = true,
+            StrategyLedgerBoundaryArtifactsVerified = true,
             NativeRevenueRecurrencesVerified = true,
             ProductionTeacherPreferenceLabelEligible = false,
             Alternatives = alternatives,
@@ -84,7 +86,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
         var proofs = manifest.Alternatives ??
             Array.Empty<MoneyRevenueTerminalAlternativeProof>();
         Require(manifest.SchemaVersion ==
-                    "money_revenue_terminal_execution_proof_manifest.v1" &&
+                    "money_revenue_terminal_execution_proof_manifest.v2" &&
                 !manifest.FormalProductTrainingAuthorized &&
                 !string.IsNullOrWhiteSpace(
                     manifest.CounterfactualRequestManifestPath) &&
@@ -92,7 +94,11 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
                     manifest.CounterfactualRequestCatalogPath) &&
                 proofs.Length > 0 &&
                 proofs.All(row => row is not null &&
-                    !string.IsNullOrWhiteSpace(row.RequestId)) &&
+                    !string.IsNullOrWhiteSpace(row.RequestId) &&
+                    !string.IsNullOrWhiteSpace(
+                        row.BeforeStrategyLedgerCapturePath) &&
+                    !string.IsNullOrWhiteSpace(
+                        row.AfterStrategyLedgerCapturePath)) &&
                 proofs.Select(row => row.RequestId)
                     .Distinct(StringComparer.Ordinal).Count() == proofs.Length,
             "Money Revenue terminal execution proof manifest is invalid.");

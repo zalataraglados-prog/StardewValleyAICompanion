@@ -3273,9 +3273,13 @@ Slice 7 remains assigned to the RTX 5070 node.
 - The terminal transition reuses the existing native shop-sale episode or shipping-deposit verifier and then joins the
   existing Revenue recurrence proof. Shop sales additionally prove the exact material-graph slot delta; shipping keeps
   its exact deposit and later native settlement boundary.
-- The before ledger must be the exact request anchor. The independently persisted after ledger must have identical
-  bytes and digest. The shared material-supply projection subtracts every active reservation before the target stack
-  can be consumed. Actual receipt ticks are converted through the shared game-clock policy.
+- The before and after ledgers must each be wrapped in a content-addressed `strategy_ledger_boundary_capture.v1`.
+  Each capture binds its boundary phase, request, concrete alternative, native execution run, snapshot digest/state/tick
+  and ledger digest/ID/revision/source-state/actor. The verifier rebuilds both captures from the referenced files; phase
+  swaps, stale captures and reused identities fail closed. The before ledger remains the exact request anchor, while
+  the independently persisted after ledger must have identical bytes and digest. The shared material-supply projection
+  subtracts every active reservation before the target stack can be consumed. Actual receipt ticks are converted
+  through the shared game-clock policy.
 - This closes terminal timing, target-reservation and before/after ledger proof collection for the request denominator.
   It does not select a production preference. The next bounded slice admits a comparison only when its alternative IDs
   exactly equal these request/evidence IDs. Formal coverage remains `2/19`, root-method coverage `1/11`, and formal

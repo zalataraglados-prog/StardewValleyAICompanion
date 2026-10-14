@@ -39,6 +39,7 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
         Require(EqualJson(terminalReceipt, expectedTerminalReceipt) &&
                 terminalReceipt.TerminalOpportunityCostProofsVerified &&
                 terminalReceipt.TerminalReservationClaimProofsVerified &&
+                terminalReceipt.StrategyLedgerBoundaryArtifactsVerified &&
                 terminalReceipt.NativeRevenueRecurrencesVerified &&
                 !terminalReceipt.ProductionTeacherPreferenceLabelEligible &&
                 !terminalReceipt.FormalProductTrainingAuthorized,
@@ -94,6 +95,7 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
                 !terminalManifest.FormalProductTrainingAuthorized &&
                 terminalReceipt.TerminalOpportunityCostProofsVerified &&
                 terminalReceipt.TerminalReservationClaimProofsVerified &&
+                terminalReceipt.StrategyLedgerBoundaryArtifactsVerified &&
                 terminalReceipt.NativeRevenueRecurrencesVerified &&
                 !terminalReceipt.ProductionTeacherPreferenceLabelEligible &&
                 !terminalReceipt.FormalProductTrainingAuthorized,

@@ -36,7 +36,10 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             proof,
             terminalStart,
             route.TerminalActionBefore,
-            native.TerminalActionAfter);
+            route.TerminalActionBeforePath,
+            native.TerminalActionAfter,
+            native.TerminalActionAfterPath,
+            native.RunId);
 
         var elapsedTicks = checked(
             native.TerminalActionAfter.GameTick - terminalStart.GameTick);
@@ -51,8 +54,10 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
                 routeProofs[row.TransitionIndex].AfterSnapshotPath
             })
             .Concat(native.Artifacts.Select(row => row.Path))
-            .Append(proof.BeforeStrategyLedgerPath)
-            .Append(proof.AfterStrategyLedgerPath)
+            .Append(proof.BeforeStrategyLedgerCapturePath)
+            .Append(proof.AfterStrategyLedgerCapturePath)
+            .Append(reservation.BeforeLedgerPath)
+            .Append(reservation.AfterLedgerPath)
             .Append(native.RecurrenceManifestPath)
             .Append(native.RecurrenceReceiptPath)
             .Select(Path.GetFullPath)
@@ -83,6 +88,11 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             reservation.TargetStack,
             reservation.TargetReservedQuantity,
             reservation.TargetAvailableQuantity,
+            reservation.RunId,
+            reservation.BeforeCaptureId,
+            reservation.BeforeCaptureSha256,
+            reservation.AfterCaptureId,
+            reservation.AfterCaptureSha256,
             reservation.BeforeLedgerSha256,
             reservation.AfterLedgerSha256,
             reservation.LedgerId,
@@ -91,6 +101,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             native.Artifacts,
             native.RecurrenceManifestSha256,
             native.RecurrenceReceiptSha256,
+            true,
             true,
             true,
             true,

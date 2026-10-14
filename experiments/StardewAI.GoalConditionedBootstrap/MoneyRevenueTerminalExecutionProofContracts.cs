@@ -6,7 +6,7 @@ public sealed class MoneyRevenueTerminalExecutionProofManifest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_terminal_execution_proof_manifest.v1";
+        "money_revenue_terminal_execution_proof_manifest.v2";
 
     [JsonPropertyName("counterfactual_request_manifest_path")]
     public string CounterfactualRequestManifestPath { get; set; } =
@@ -29,11 +29,11 @@ public sealed class MoneyRevenueTerminalAlternativeProof
     [JsonPropertyName("request_id")]
     public string RequestId { get; set; } = string.Empty;
 
-    [JsonPropertyName("before_strategy_ledger_path")]
-    public string BeforeStrategyLedgerPath { get; set; } = string.Empty;
+    [JsonPropertyName("before_strategy_ledger_capture_path")]
+    public string BeforeStrategyLedgerCapturePath { get; set; } = string.Empty;
 
-    [JsonPropertyName("after_strategy_ledger_path")]
-    public string AfterStrategyLedgerPath { get; set; } = string.Empty;
+    [JsonPropertyName("after_strategy_ledger_capture_path")]
+    public string AfterStrategyLedgerCapturePath { get; set; } = string.Empty;
 
     [JsonPropertyName("route_transitions")]
     public MoneyRevenueTerminalQueueTransitionProof[] RouteTransitions
@@ -128,6 +128,16 @@ public sealed record MoneyRevenueTerminalExecutionEvidence(
         int TargetReservedQuantity,
     [property: JsonPropertyName("target_available_quantity")]
         int TargetAvailableQuantity,
+    [property: JsonPropertyName("strategy_ledger_execution_run_id")]
+        string StrategyLedgerExecutionRunId,
+    [property: JsonPropertyName("before_strategy_ledger_capture_id")]
+        string BeforeStrategyLedgerCaptureId,
+    [property: JsonPropertyName("before_strategy_ledger_capture_sha256")]
+        string BeforeStrategyLedgerCaptureSha256,
+    [property: JsonPropertyName("after_strategy_ledger_capture_id")]
+        string AfterStrategyLedgerCaptureId,
+    [property: JsonPropertyName("after_strategy_ledger_capture_sha256")]
+        string AfterStrategyLedgerCaptureSha256,
     [property: JsonPropertyName("before_strategy_ledger_sha256")]
         string BeforeStrategyLedgerSha256,
     [property: JsonPropertyName("after_strategy_ledger_sha256")]
@@ -146,6 +156,8 @@ public sealed record MoneyRevenueTerminalExecutionEvidence(
         string RevenueRecurrenceReceiptSha256,
     [property: JsonPropertyName("reservation_safety_verified")]
         bool ReservationSafetyVerified,
+    [property: JsonPropertyName("strategy_ledger_boundary_artifacts_verified")]
+        bool StrategyLedgerBoundaryArtifactsVerified,
     [property: JsonPropertyName("resource_neutral_route_verified")]
         bool ResourceNeutralRouteVerified,
     [property: JsonPropertyName("native_terminal_transition_verified")]
@@ -158,7 +170,7 @@ public sealed class MoneyRevenueTerminalExecutionProofReceipt
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_terminal_execution_proof_receipt.v1";
+        "money_revenue_terminal_execution_proof_receipt.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -182,6 +194,9 @@ public sealed class MoneyRevenueTerminalExecutionProofReceipt
     [JsonPropertyName("terminal_reservation_claim_proofs_verified")]
     public bool TerminalReservationClaimProofsVerified { get; set; }
 
+    [JsonPropertyName("strategy_ledger_boundary_artifacts_verified")]
+    public bool StrategyLedgerBoundaryArtifactsVerified { get; set; }
+
     [JsonPropertyName("native_revenue_recurrences_verified")]
     public bool NativeRevenueRecurrencesVerified { get; set; }
 
@@ -204,7 +219,8 @@ public sealed class MoneyRevenueTerminalExecutionProofReceipt
     [JsonPropertyName("proof_policy")]
     public string ProofPolicy { get; set; } =
         "Every authoritative Revenue request must bind one resource-neutral terminal route, " +
-        "one native sale or shipping-deposit transition, an unchanged external strategy ledger, " +
+        "one native sale or shipping-deposit transition, two independently identified strategy-ledger " +
+        "boundary captures, an unchanged external strategy ledger, " +
         "an exact unreserved target stack and a replayable Revenue recurrence. Actual receipt " +
         "ticks are converted by the shared game-clock policy. This receipt still cannot select " +
         "a production Teacher preference or authorize formal product training.";

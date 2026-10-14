@@ -12,14 +12,41 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             MoneyRevenueTerminalAlternativeProof proof,
             SnapshotEnvelope terminalStart,
             SnapshotEnvelope terminalActionBefore,
-            SnapshotEnvelope terminalActionAfter)
+            string terminalActionBeforePath,
+            SnapshotEnvelope terminalActionAfter,
+            string terminalActionAfterPath,
+            string runId)
     {
-        var beforePath = RequiredFile(
-            proof.BeforeStrategyLedgerPath,
-            "Money Revenue terminal before strategy ledger");
-        var afterPath = RequiredFile(
-            proof.AfterStrategyLedgerPath,
-            "Money Revenue terminal after strategy ledger");
+        var beforeCapturePath = RequiredFile(
+            proof.BeforeStrategyLedgerCapturePath,
+            "Money Revenue terminal before strategy-ledger capture");
+        var afterCapturePath = RequiredFile(
+            proof.AfterStrategyLedgerCapturePath,
+            "Money Revenue terminal after strategy-ledger capture");
+        Require(!string.Equals(
+                    beforeCapturePath,
+                    afterCapturePath,
+                    StringComparison.OrdinalIgnoreCase),
+            "Money Revenue terminal strategy-ledger captures are not independent artifacts.");
+        var beforeCapture = VerifyBoundaryCapture(
+            beforeCapturePath,
+            StrategyLedgerBoundaryKinds.BeforeTerminalAction,
+            request,
+            runId,
+            terminalActionBefore,
+            terminalActionBeforePath);
+        var afterCapture = VerifyBoundaryCapture(
+            afterCapturePath,
+            StrategyLedgerBoundaryKinds.AfterTerminalAction,
+            request,
+            runId,
+            terminalActionAfter,
+            terminalActionAfterPath);
+        Require(beforeCapture.CaptureId != afterCapture.CaptureId,
+            "Money Revenue terminal strategy-ledger capture identities were reused across boundaries.");
+
+        var beforePath = Path.GetFullPath(beforeCapture.StrategyLedgerPath);
+        var afterPath = Path.GetFullPath(afterCapture.StrategyLedgerPath);
         Require(string.Equals(
                     beforePath,
                     Path.GetFullPath(request.TerminalStrategyLedgerPath),
@@ -123,6 +150,11 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             terminalActionAfter);
 
         return new TerminalReservationVerification(
+            runId,
+            beforeCapture.CaptureId,
+            Hash(beforeCapturePath),
+            afterCapture.CaptureId,
+            Hash(afterCapturePath),
             beforeSha256,
             afterSha256,
             ledger.LedgerId,
@@ -131,7 +163,37 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             target.Slot.SlotIndex,
             target.Slot.Stack,
             projected[0].ReservedQuantity,
-            projected[0].AvailableQuantity);
+            projected[0].AvailableQuantity,
+            beforePath,
+            afterPath);
+    }
+
+    private static StrategyLedgerBoundaryCapture VerifyBoundaryCapture(
+        string capturePath,
+        string expectedBoundaryKind,
+        MoneyRevenueCounterfactualProofRequest request,
+        string runId,
+        SnapshotEnvelope expectedSnapshot,
+        string expectedSnapshotPath)
+    {
+        var capture = CurrentTeacherFrontierSupport.Read<
+            StrategyLedgerBoundaryCapture>(
+            capturePath,
+            "Money Revenue strategy-ledger boundary capture");
+        var expected = StrategyLedgerBoundaryCaptureBuilder.Build(
+            expectedBoundaryKind,
+            request.RequestId,
+            request.ConcreteAlternativeId,
+            runId,
+            expectedSnapshotPath,
+            capture.StrategyLedgerPath);
+        Require(EqualJson(capture, expected) &&
+                !capture.FormalProductTrainingAuthorized &&
+                capture.SnapshotSha256 == Hash(expectedSnapshotPath) &&
+                capture.StateHash == expectedSnapshot.StateHash &&
+                capture.GameTick == expectedSnapshot.GameTick,
+            "Money Revenue strategy-ledger boundary capture identity is invalid.");
+        return capture;
     }
 
     private static void VerifyTargetInventoryConsumption(
@@ -173,6 +235,11 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
     }
 
     private sealed record TerminalReservationVerification(
+        string RunId,
+        string BeforeCaptureId,
+        string BeforeCaptureSha256,
+        string AfterCaptureId,
+        string AfterCaptureSha256,
         string BeforeLedgerSha256,
         string AfterLedgerSha256,
         string LedgerId,
@@ -181,5 +248,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
         int TargetSlotIndex,
         int TargetStack,
         int TargetReservedQuantity,
-        int TargetAvailableQuantity);
+        int TargetAvailableQuantity,
+        string BeforeLedgerPath,
+        string AfterLedgerPath);
 }

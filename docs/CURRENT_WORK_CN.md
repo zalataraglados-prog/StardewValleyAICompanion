@@ -1,12 +1,19 @@
 # StardewAI 当前工作
 
+## 2026-10-14 Strategy-ledger 边界制品身份
+
+- 新增 `build-strategy-ledger-boundary-capture` 与 `strategy_ledger_boundary_capture.v1`。每份制品以内容寻址 ID 绑定 `before_terminal_action` 或 `after_terminal_action`、request、concrete alternative、原生执行 `run_id`、快照 SHA/state/tick，以及账本 SHA/ID/revision/source-state/actor；调用方不能再只提交两条裸账本路径。
+- Money Revenue terminal manifest/receipt 升级为 v2。证明器会从制品引用的真实快照和账本重新构造完整 capture 并逐 JSON 核对，同时要求 before/after 是不同文件、不同 capture ID、相同执行 run；before 仍必须等于 request 锚点，after 仍必须是独立账本文件且字节和 SHA 不变。
+- hermetic 回归覆盖正常出售、前后 capture 互换拒绝、账本改写后旧 capture 失效及全量 reservation 拒绝；Bootstrap Release 构建 `0 warning / 0 error`。未启动游戏或外部测试机，`formal_product_training_authorized=false` 保持不变。
+- 这关闭 #236 的外部 strategy-ledger before/after artifact identity 代码缺口。该 issue 只剩代表性真实快照的 wall/CPU 测量与证据索引验收，不能用 hermetic 计时替代。
+
 ## 2026-10-14 Planner / Executor 路径与终端计时统一
 
 - `RouteGridPathfinder` 现在是当前地图候选、执行器到达校验和未来日期距离场的共享 BFS 原语。当前候选按 `SnapshotEnvelope + StateHash` 缓存一份整数距离场；同一快照重复评估不会按候选重扫全图，执行器单目标校验仍采用命中即停止的 BFS。
 - Full Shipment 当前态采集链已从 Manhattan 估算切换为同一 BFS 语义，覆盖动物产物、机器产出、地面采集、姜、灌木、果树、春葱、树上产物、树苔、野树砍伐、鱼塘、晶球、远古斑点及社区中心奖励。不可达站位在候选上游失败关闭，不再等到执行器阻塞。
 - `AcquisitionCurrentRouteCandidate` 统一保留 `route_distance_tiles`、`terminal_action_ticks` 与计时投影模式。日预算只计算一次“到达精确站位 + 终端动作”；野树砍伐与放射性矿石/怪物目标也已接入该入口，移除了各自手写的路程扣减或当前时间直算分支。
 - 定向回归证明绕墙场景的候选与执行器均采用 5 格 BFS 距离，且同一快照两次候选评估只构建 1 次距离场。Bootstrap Release 构建为 `0 warning / 0 error`，Core game-free 回归 `346/346`，acquisition dispatch 与 bootstrap hermetic 自测通过；未启动游戏或外部测试机。
-- 本切片关闭 #236 的共享 route/arrival/terminal timing 代码缺口，但不据此授权正式训练；`formal_product_training_authorized=false` 保持不变。#236 下一固定切片仍是外部 strategy-ledger before/after artifact identity，并需在代表性真实快照上补一次 wall/CPU 测量后再关闭性能验收项。
+- 本切片关闭 #236 的共享 route/arrival/terminal timing 代码缺口，但不据此授权正式训练；`formal_product_training_authorized=false` 保持不变。后续外部 strategy-ledger 边界身份已由上一节补齐；#236 仍需在代表性真实快照上补一次 wall/CPU 测量后再关闭性能验收项。
 
 ## 2026-10-14 Money evidence work plan
 
@@ -40,13 +47,13 @@
 ## 2026-10-14 Revenue terminal execution proof
 
 - 新增 `build-money-revenue-terminal-execution-proof`、
-  `money_revenue_terminal_execution_proof_manifest.v1` 与 receipt。manifest 必须对 authoritative request catalog
+  `money_revenue_terminal_execution_proof_manifest.v2` 与 receipt。manifest 必须对 authoritative request catalog
   中每个 request ID 恰好提供一份证明，漏项、重复项和额外项均失败关闭；request catalog 会从源 manifest 重建并逐 JSON 核对。
 - 每份证明从 request 固定的 terminal snapshot 与 terminal strategy-ledger anchor 开始。可选 route transition 只能复用现有
   queue/receipt validator 和资源中性移动、连接器、交互、菜单及等待动作；版本化 persistent boundary 必须证明路由期间库存、货币、精力和持久状态未变。
 - 终端动作复用现有原生 shop-sale episode 或 shipping-deposit verifier，并强制接入现有 Revenue recurrence receipt。
   商店出售额外核对透明 material graph 的精确槽位、物品、品质、单价与数量减少；出货仍要求精确入箱队列并以次日原生结算作为 recurrence 首跳。
-- before ledger 必须就是 request 推导出的权威终端账本；after ledger 必须是独立路径但字节和 SHA 完全相同。
+- before/after 必须各自提供 `strategy_ledger_boundary_capture.v1`，绑定边界阶段、request、候选、原生执行 run、快照与账本内容身份。before ledger 必须就是 request 推导出的权威终端账本；after ledger 必须是独立路径但字节和 SHA 完全相同。
   当前玩家库存槽位通过共享 `MaterialSupplyProjection` 与全部 active reservation 联合投影，只有未预留数量足以覆盖出售/入箱数量时才准入。
 - 终端总耗时取真实 receipt 的起止 tick，并统一通过 `GameClockBudgetPolicy.TicksToGameMinutes` 转换；没有复制 BFS、商店、出货、账本或执行器实现。
   Release 构建为 `0 warning / 0 error`，轻量 hermetic 覆盖未预留商店出售正例和全量预留拒绝，未启动游戏或外部测试机。

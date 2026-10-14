@@ -16,6 +16,7 @@ public static partial class MoneyRevenueComparisonAdmissionBuilder
                     request.ConcreteAlternativeId &&
                 terminal.TerminalStartStateHash == request.TerminalStateHash &&
                 terminal.ReservationSafetyVerified &&
+                terminal.StrategyLedgerBoundaryArtifactsVerified &&
                 terminal.ResourceNeutralRouteVerified &&
                 terminal.NativeTerminalTransitionVerified &&
                 terminal.RevenueRecurrenceVerified,
