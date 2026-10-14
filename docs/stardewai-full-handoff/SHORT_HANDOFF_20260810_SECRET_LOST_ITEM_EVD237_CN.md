@@ -15,7 +15,7 @@
 - Core 1617/1617、Backend 121/121、Release 构建 0 错误；KnowledgeCompiler 585/585、blocking 0。
 - 未启动游戏；EVD-228 只作为无 BobberBar 特殊收获原生生命周期的继承证据，不声称已单独校准项链案例。
 
-## 下一步
+## 当时后续计划（已作废，仅历史）
 
 处理 `Quest` type 11 的 `weeding_no_subclass`。必须先从锁定 `Data/Quests`、任务解析器、原生除草/物品收货回调和实际任务 ID 枚举其精确终点，再决定它是独立动作、既有动作组合还是另一个仅观察状态。禁止从显示文本或单个示例推断。完成透明读取、候选、DailyPlan、动作队列、原生运行反馈与输出证据后，再处理 `JKScoreObjective`。
 
