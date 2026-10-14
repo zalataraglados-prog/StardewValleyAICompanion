@@ -53,6 +53,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-terminal-candidate-rebind", BuildMoneyRevenueTerminalCandidateRebind),
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
+    new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
     new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
     new("build-money-revenue-comparison-admission", BuildMoneyRevenueComparisonAdmission),
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
@@ -541,10 +542,23 @@ static void BuildMoneyRevenueTerminalExecutionProof(Arguments options)
     Write(options.Required("output"), receipt);
     if (!receipt.TerminalOpportunityCostProofsVerified ||
         !receipt.TerminalReservationClaimProofsVerified ||
+        !receipt.StrategyLedgerBoundaryArtifactsVerified ||
         !receipt.NativeRevenueRecurrencesVerified)
     {
         Environment.ExitCode = 2;
     }
+}
+
+static void BuildStrategyLedgerBoundaryCapture(Arguments options)
+{
+    var capture = StrategyLedgerBoundaryCaptureBuilder.Build(
+        options.Required("boundary-kind"),
+        options.Required("request-id"),
+        options.Required("concrete-alternative-id"),
+        options.Required("run-id"),
+        options.Required("snapshot"),
+        options.Required("strategy-ledger"));
+    Write(options.Required("output"), capture);
 }
 
 static void BuildMoneyRevenueComparisonAdmission(Arguments options)

@@ -36,12 +36,12 @@ rebound 候选通过既有 artifact verifier 重建 acquisition cost/reservation
 
 ## 2026-10-14 Revenue terminal execution proof gate
 
-`money_revenue_terminal_execution_proof_receipt.v1` 现在消费完整 counterfactual request catalog，并要求每个 request ID
+`money_revenue_terminal_execution_proof_receipt.v2` 现在消费完整 counterfactual request catalog，并要求每个 request ID
 恰好对应一条可重放终端证明。它从 request 已锁定的 terminal snapshot/ledger 出发，允许零条或多条仅含共享资源中性动作的 route receipt，
 随后验证现有原生 shop sale 或 shipping deposit，并把结果连接到现有 Revenue recurrence receipt。路由前后由版本化 persistent-state boundary
 排除库存、货币、精力和未知持久状态漂移；真实 elapsed ticks 统一换算为 terminal opportunity cost。
 
-外部 strategy ledger 在动作前必须等于 request 推导出的 path/SHA/ID/revision/source-state 锚点，动作后必须以不同路径保存完全相同的字节与 SHA。
+外部 strategy ledger 不再以两个裸路径作为边界证据。动作前后必须分别提供 `strategy_ledger_boundary_capture.v1`，其内容寻址 ID 绑定 before/after 阶段、request、concrete alternative、原生执行 run、快照 SHA/state/tick 与账本 SHA/ID/revision/source-state/actor；证明器从实际文件重新构造制品并精确比较。动作前账本仍必须等于 request 推导出的 path/SHA/ID/revision/source-state 锚点，动作后必须以不同路径保存完全相同的字节与 SHA，两个 capture 文件和 ID 也必须独立。
 目标库存槽位同时受透明 material graph、actor ownership 和共享 `MaterialSupplyProjection` 约束；active reservation 占用后的可用数量不足即失败关闭。
 终端 after snapshot 还必须证明同一槽位按精确数量减少，避免仅凭收益变化或执行器声明推断物品已被消费。
 

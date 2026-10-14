@@ -101,6 +101,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             sale.AfterSnapshotPath,
             "Money Revenue native shop sale after snapshot");
         return new TerminalNativeVerification(
+            sale.RunId,
             sale.Progression.Before.StateHash,
             after,
             sale.AfterSnapshotPath,
@@ -216,6 +217,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
                 recurrence.Prefix.PlayerId == checkpoint.PlayerId,
             "Money Revenue shipping deposit does not join its native day-settlement recurrence.");
         return new TerminalNativeVerification(
+            depositProof.RunId,
             before.StateHash,
             after,
             afterPath,
@@ -241,6 +243,7 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
             sha256 ?? Hash(path));
 
     private sealed record TerminalNativeVerification(
+        string RunId,
         string TerminalActionBeforeStateHash,
         SnapshotEnvelope TerminalActionAfter,
         string TerminalActionAfterPath,

@@ -45,11 +45,25 @@ internal static partial class BootstrapSelfTest
             beforeLedgerPath,
             ledger,
             "shop-parsnip");
+        var beforeCapturePath = Path.Combine(
+            root,
+            "strategy-ledger-before-capture.json");
+        var afterCapturePath = Path.Combine(
+            root,
+            "strategy-ledger-after-capture.json");
+        WriteMoneyRevenueBoundaryCaptures(
+            request,
+            beforeSnapshotPath,
+            afterSnapshotPath: Path.Combine(root, "after.json"),
+            beforeLedgerPath,
+            afterLedgerPath,
+            beforeCapturePath,
+            afterCapturePath);
         var proof = new MoneyRevenueTerminalAlternativeProof
         {
             RequestId = request.RequestId,
-            BeforeStrategyLedgerPath = beforeLedgerPath,
-            AfterStrategyLedgerPath = afterLedgerPath,
+            BeforeStrategyLedgerCapturePath = beforeCapturePath,
+            AfterStrategyLedgerCapturePath = afterCapturePath,
             RouteTransitions =
                 Array.Empty<MoneyRevenueTerminalQueueTransitionProof>(),
             ShopSaleEpisodePath = episodePath,
@@ -62,6 +76,9 @@ internal static partial class BootstrapSelfTest
                 evidence.ResourceNeutralRouteVerified &&
                 evidence.NativeTerminalTransitionVerified &&
                 evidence.RevenueRecurrenceVerified &&
+                evidence.StrategyLedgerBoundaryArtifactsVerified &&
+                evidence.BeforeStrategyLedgerCaptureId !=
+                    evidence.AfterStrategyLedgerCaptureId &&
                 evidence.TargetInventoryStack == 1 &&
                 evidence.TargetReservedQuantity == 0 &&
                 evidence.TargetAvailableQuantity == 1 &&
@@ -69,6 +86,22 @@ internal static partial class BootstrapSelfTest
                 evidence.ElapsedGameMinutes == 1 &&
                 evidence.EvidenceSha256.Length == 64,
             "Money Revenue terminal execution proof was rejected.");
+
+        proof.BeforeStrategyLedgerCapturePath = afterCapturePath;
+        var swappedBoundaryRejected = false;
+        try
+        {
+            MoneyRevenueTerminalExecutionProofBuilder.VerifyAlternative(
+                request,
+                proof);
+        }
+        catch (InvalidDataException)
+        {
+            swappedBoundaryRejected = true;
+        }
+        Require(swappedBoundaryRejected,
+            "Swapped Money Revenue strategy-ledger boundaries were admitted.");
+        proof.BeforeStrategyLedgerCapturePath = beforeCapturePath;
 
         ledger.MaterialReservations = new[]
         {
@@ -92,6 +125,14 @@ internal static partial class BootstrapSelfTest
         Write(afterLedgerPath, ledger);
         request.TerminalStrategyLedgerSha256 =
             CurrentTeacherFrontierSupport.HashFile(beforeLedgerPath);
+        WriteMoneyRevenueBoundaryCaptures(
+            request,
+            beforeSnapshotPath,
+            afterSnapshotPath: Path.Combine(root, "after.json"),
+            beforeLedgerPath,
+            afterLedgerPath,
+            beforeCapturePath,
+            afterCapturePath);
         var rejected = false;
         try
         {
@@ -105,6 +146,36 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejected,
             "A fully reserved Money Revenue terminal stack was admitted.");
+    }
+
+    private static void WriteMoneyRevenueBoundaryCaptures(
+        MoneyRevenueCounterfactualProofRequest request,
+        string beforeSnapshotPath,
+        string afterSnapshotPath,
+        string beforeLedgerPath,
+        string afterLedgerPath,
+        string beforeCapturePath,
+        string afterCapturePath)
+    {
+        const string runId = "run.revenue-shop-artifact";
+        Write(
+            beforeCapturePath,
+            StrategyLedgerBoundaryCaptureBuilder.Build(
+                StrategyLedgerBoundaryKinds.BeforeTerminalAction,
+                request.RequestId,
+                request.ConcreteAlternativeId,
+                runId,
+                beforeSnapshotPath,
+                beforeLedgerPath));
+        Write(
+            afterCapturePath,
+            StrategyLedgerBoundaryCaptureBuilder.Build(
+                StrategyLedgerBoundaryKinds.AfterTerminalAction,
+                request.RequestId,
+                request.ConcreteAlternativeId,
+                runId,
+                afterSnapshotPath,
+                afterLedgerPath));
     }
 
     private static MoneyRevenueCounterfactualProofRequest
