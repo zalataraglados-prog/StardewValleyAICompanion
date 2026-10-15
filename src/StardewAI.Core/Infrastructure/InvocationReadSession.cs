@@ -11,7 +11,11 @@ namespace StardewAI.Core.Infrastructure;
 
 public sealed class InvocationReadSession : IDisposable
 {
-    public const string ReaderVersion = "stardewai.invocation_read_session.v1";
+    public const string ReaderVersion = "stardewai.invocation_read_session.v2";
+
+    public const long DefaultMaxRetainedBytes = 32L * 1024 * 1024;
+    public const long DefaultMaxEntryRetainedBytes = 24L * 1024 * 1024;
+    private const long DynamicLargeEntryAdmissionBytes = 1024L * 1024;
 
     private static readonly AsyncLocal<InvocationReadSession?> Ambient = new();
     private static readonly StringComparer PathComparer =
@@ -21,28 +25,49 @@ public sealed class InvocationReadSession : IDisposable
 
     private readonly object sync = new();
     private readonly HashSet<string> immutablePaths;
+    private readonly HashSet<string> dynamicPaths;
+    private readonly HashSet<string> prohibitedPaths;
+    private readonly string[] prohibitedRoots;
     private readonly Dictionary<string, Entry> entries;
+    private readonly Dictionary<string, long> accessCounts;
     private readonly InvocationReadSession? previous;
     private readonly bool enabled;
+    private readonly long maxRetainedBytes;
+    private readonly long maxEntryRetainedBytes;
     private long physicalReadCount;
     private long physicalBytesRead;
     private long fullHashCount;
     private long hashBytes;
     private long materializationCount;
     private long cacheHitCount;
+    private long dynamicRegistrationCount;
+    private long evictionCount;
+    private long largeEntryBypassCount;
+    private long probationBypassCount;
+    private long releasedRawBytes;
+    private long releasedStoredTextBytes;
+    private long accessSequence;
     private int disposed;
 
     private InvocationReadSession(
         IEnumerable<string> immutableInputPaths,
         IEnumerable<string> prohibitedPaths,
         IEnumerable<string> prohibitedRoots,
-        bool enabled)
+        bool enabled,
+        long maxRetainedBytes,
+        long maxEntryRetainedBytes)
     {
+        if (maxRetainedBytes < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxRetainedBytes));
+        if (maxEntryRetainedBytes < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxEntryRetainedBytes));
         this.enabled = enabled;
-        var prohibited = new HashSet<string>(
+        this.maxRetainedBytes = maxRetainedBytes;
+        this.maxEntryRetainedBytes = maxEntryRetainedBytes;
+        this.prohibitedPaths = new HashSet<string>(
             prohibitedPaths.Select(CanonicalPath),
             PathComparer);
-        var roots = prohibitedRoots
+        this.prohibitedRoots = prohibitedRoots
             .Select(CanonicalPath)
             .Select(TrimDirectorySeparators)
             .Distinct(PathComparer)
@@ -51,10 +76,13 @@ public sealed class InvocationReadSession : IDisposable
             .Where(path => !string.IsNullOrWhiteSpace(path))
             .Select(CanonicalPath)
             .Where(File.Exists)
-            .Where(path => !prohibited.Contains(path))
-            .Where(path => !roots.Any(root => IsDescendant(path, root)))
+            .Where(path => !this.prohibitedPaths.Contains(path))
+            .Where(path => !this.prohibitedRoots.Any(root =>
+                IsDescendant(path, root)))
             .ToHashSet(PathComparer);
         entries = new Dictionary<string, Entry>(PathComparer);
+        dynamicPaths = new HashSet<string>(PathComparer);
+        accessCounts = new Dictionary<string, long>(PathComparer);
         previous = Ambient.Value;
         Ambient.Value = this;
     }
@@ -63,16 +91,20 @@ public sealed class InvocationReadSession : IDisposable
         IEnumerable<string> immutableInputPaths,
         IEnumerable<string>? prohibitedPaths = null,
         IEnumerable<string>? prohibitedRoots = null,
-        bool enabled = true) => new(
+        bool enabled = true,
+        long maxRetainedBytes = DefaultMaxRetainedBytes,
+        long maxEntryRetainedBytes = DefaultMaxEntryRetainedBytes) => new(
             immutableInputPaths ?? Array.Empty<string>(),
             prohibitedPaths ?? Array.Empty<string>(),
             prohibitedRoots ?? Array.Empty<string>(),
-            enabled);
+            enabled,
+            maxRetainedBytes,
+            maxEntryRetainedBytes);
 
     public static bool IsPathReusable(string path)
     {
         var session = Ambient.Value;
-        return session is not null && session.CanReuse(CanonicalPath(path));
+        return session is not null && session.IsRegistered(CanonicalPath(path));
     }
 
     public static string HashFile(
@@ -81,7 +113,22 @@ public sealed class InvocationReadSession : IDisposable
     {
         var fullPath = CanonicalPath(path);
         var session = Ambient.Value;
-        if (session is null || !session.CanReuse(fullPath))
+        if (session is null || !session.CanReuse(
+                fullPath,
+                allowDynamicRegistration: false))
+            return HashWithoutReuse(fullPath, out observation);
+        return session.HashReusableFile(fullPath, out observation);
+    }
+
+    public static string HashImmutableInputFile(
+        string path,
+        out InvocationReadObservation observation)
+    {
+        var fullPath = CanonicalPath(path);
+        var session = Ambient.Value;
+        if (session is null || !session.CanReuse(
+                fullPath,
+                allowDynamicRegistration: true))
             return HashWithoutReuse(fullPath, out observation);
         return session.HashReusableFile(fullPath, out observation);
     }
@@ -93,7 +140,9 @@ public sealed class InvocationReadSession : IDisposable
     {
         var fullPath = CanonicalPath(path);
         var session = Ambient.Value;
-        if (session is null || !session.CanReuse(fullPath))
+        if (session is null || !session.CanReuse(
+                fullPath,
+                allowDynamicRegistration: true))
         {
             var text = File.ReadAllText(fullPath, encoding);
             observation = new InvocationReadObservation(
@@ -114,11 +163,15 @@ public sealed class InvocationReadSession : IDisposable
         logicalSha256 = null;
         var fullPath = CanonicalPath(path);
         var session = Ambient.Value;
-        if (session is null || !session.CanReuse(fullPath))
+        if (session is null || !session.CanReuse(
+                fullPath,
+                allowDynamicRegistration: true))
             return false;
 
         lock (session.sync)
         {
+            session.accessCounts.TryGetValue(fullPath, out var accessCount);
+            session.accessCounts[fullPath] = accessCount + 1;
             if (!session.entries.TryGetValue(fullPath, out var entry) ||
                 entry.MaterializedText is null)
             {
@@ -126,6 +179,7 @@ public sealed class InvocationReadSession : IDisposable
             }
             text = entry.MaterializedText;
             logicalSha256 = entry.LogicalSha256;
+            entry.LastUse = ++session.accessSequence;
             session.cacheHitCount++;
             return true;
         }
@@ -138,7 +192,9 @@ public sealed class InvocationReadSession : IDisposable
     {
         var fullPath = CanonicalPath(path);
         var session = Ambient.Value;
-        if (session is null || !session.CanReuse(fullPath))
+        if (session is null || !session.CanReuse(
+                fullPath,
+                allowDynamicRegistration: true))
             return;
 
         lock (session.sync)
@@ -158,6 +214,22 @@ public sealed class InvocationReadSession : IDisposable
                 session.materializationCount++;
             entry.MaterializedText = text;
             entry.LogicalSha256 = logicalSha256;
+            entry.LastUse = ++session.accessSequence;
+            if (!ReferenceEquals(entry.StoredText, text))
+            {
+                session.releasedStoredTextBytes += Utf16Bytes(entry.StoredText);
+                entry.StoredText = null;
+            }
+            session.ReleaseRawBytes(entry);
+            if (session.dynamicPaths.Contains(fullPath) &&
+                session.accessCounts.GetValueOrDefault(fullPath) <= 1 &&
+                EntryRetainedBytes(entry) > DynamicLargeEntryAdmissionBytes)
+            {
+                session.entries.Remove(fullPath);
+                session.probationBypassCount++;
+                return;
+            }
+            session.EnforceBudget(fullPath);
         }
     }
 
@@ -183,6 +255,15 @@ public sealed class InvocationReadSession : IDisposable
             var maxEntryRetainedBytes = entries.Count == 0
                 ? 0
                 : entries.Values.Max(EntryRetainedBytes);
+            var largestEntries = entries
+                .Select(pair => new InvocationReadEntrySnapshot(
+                    pair.Key,
+                    EntryRetainedBytes(pair.Value),
+                    accessCounts.GetValueOrDefault(pair.Key)))
+                .OrderByDescending(entry => entry.RetainedBytes)
+                .ThenBy(entry => entry.Path, PathComparer)
+                .Take(10)
+                .ToArray();
             return new InvocationReadSessionSnapshot(
                 ReaderVersion,
                 enabled,
@@ -199,7 +280,16 @@ public sealed class InvocationReadSession : IDisposable
                 retainedMaterializedTextBytes,
                 retainedHashTextBytes,
                 retainedBytes,
-                maxEntryRetainedBytes);
+                maxEntryRetainedBytes,
+                this.maxRetainedBytes,
+                this.maxEntryRetainedBytes,
+                dynamicRegistrationCount,
+                evictionCount,
+                largeEntryBypassCount,
+                probationBypassCount,
+                releasedRawBytes,
+                releasedStoredTextBytes,
+                largestEntries);
         }
     }
 
@@ -211,8 +301,28 @@ public sealed class InvocationReadSession : IDisposable
             Ambient.Value = previous;
     }
 
-    private bool CanReuse(string fullPath) =>
-        enabled && disposed == 0 && immutablePaths.Contains(fullPath);
+    private bool CanReuse(
+        string fullPath,
+        bool allowDynamicRegistration)
+    {
+        if (!enabled || disposed != 0)
+            return false;
+        lock (sync)
+        {
+            if (immutablePaths.Contains(fullPath))
+                return true;
+            if (!allowDynamicRegistration || !File.Exists(fullPath) ||
+                prohibitedPaths.Contains(fullPath) ||
+                prohibitedRoots.Any(root => IsDescendant(fullPath, root)))
+            {
+                return false;
+            }
+            immutablePaths.Add(fullPath);
+            dynamicPaths.Add(fullPath);
+            dynamicRegistrationCount++;
+            return true;
+        }
+    }
 
     private string ReadReusableText(
         string fullPath,
@@ -222,10 +332,13 @@ public sealed class InvocationReadSession : IDisposable
         lock (sync)
         {
             var entry = GetOrCreate(fullPath);
-            var reused = entry.RawBytes is not null;
-            var bytesRead = EnsureRawBytes(fullPath, entry);
+            var reused = entry.RawBytes is not null || entry.StoredText is not null;
+            var bytesRead = 0L;
+            var hashWork = 0L;
             if (entry.StoredText is null)
             {
+                bytesRead = EnsureRawBytes(fullPath, entry);
+                hashWork = EnsureStoredHash(entry);
                 using var stream = new MemoryStream(
                     entry.RawBytes!,
                     writable: false);
@@ -235,11 +348,14 @@ public sealed class InvocationReadSession : IDisposable
                     detectEncodingFromByteOrderMarks: true);
                 entry.StoredText = reader.ReadToEnd();
             }
+            entry.LastUse = ++accessSequence;
+            ReleaseRawBytes(entry);
+            EnforceBudget(fullPath);
             if (reused)
                 cacheHitCount++;
             observation = new InvocationReadObservation(
                 bytesRead,
-                0,
+                hashWork,
                 reused);
             return entry.StoredText;
         }
@@ -253,23 +369,24 @@ public sealed class InvocationReadSession : IDisposable
         {
             var entry = GetOrCreate(fullPath);
             var reusedBytes = entry.RawBytes is not null;
-            var bytesRead = EnsureRawBytes(fullPath, entry);
-            var hashWork = 0L;
             var reusedHash = entry.StoredSha256 is not null;
-            if (entry.StoredSha256 is null)
+            var bytesRead = 0L;
+            var hashWork = 0L;
+            if (!reusedHash)
             {
-                entry.StoredSha256 = Sha256(entry.RawBytes!);
-                hashWork = entry.RawBytes!.LongLength;
-                fullHashCount++;
-                hashBytes += hashWork;
+                bytesRead = EnsureRawBytes(fullPath, entry);
+                hashWork = EnsureStoredHash(entry);
             }
+            entry.LastUse = ++accessSequence;
+            ReleaseRawBytes(entry);
+            EnforceBudget(fullPath);
             if (reusedBytes || reusedHash)
                 cacheHitCount++;
             observation = new InvocationReadObservation(
                 bytesRead,
                 hashWork,
                 reusedBytes || reusedHash);
-            return entry.StoredSha256;
+            return entry.StoredSha256!;
         }
     }
 
@@ -281,6 +398,57 @@ public sealed class InvocationReadSession : IDisposable
         physicalReadCount++;
         physicalBytesRead += entry.RawBytes.LongLength;
         return entry.RawBytes.LongLength;
+    }
+
+    private long EnsureStoredHash(Entry entry)
+    {
+        if (entry.StoredSha256 is not null)
+            return 0;
+        entry.StoredSha256 = Sha256(entry.RawBytes!);
+        var hashWork = entry.RawBytes!.LongLength;
+        fullHashCount++;
+        hashBytes += hashWork;
+        return hashWork;
+    }
+
+    private bool IsRegistered(string fullPath)
+    {
+        if (!enabled || disposed != 0)
+            return false;
+        lock (sync)
+            return immutablePaths.Contains(fullPath);
+    }
+
+    private void ReleaseRawBytes(Entry entry)
+    {
+        if (entry.RawBytes is null || entry.StoredSha256 is null)
+            return;
+        releasedRawBytes += entry.RawBytes.LongLength;
+        entry.RawBytes = null;
+    }
+
+    private void EnforceBudget(string currentPath)
+    {
+        if (!entries.TryGetValue(currentPath, out var current))
+            return;
+        if (EntryRetainedBytes(current) > maxEntryRetainedBytes)
+        {
+            entries.Remove(currentPath);
+            largeEntryBypassCount++;
+            return;
+        }
+
+        while (entries.Values.Sum(EntryRetainedBytes) > maxRetainedBytes &&
+               entries.Count > 0)
+        {
+            var victim = entries
+                .OrderBy(pair => accessCounts.GetValueOrDefault(pair.Key))
+                .ThenBy(pair => pair.Value.LastUse)
+                .ThenBy(pair => pair.Key, PathComparer)
+                .First();
+            entries.Remove(victim.Key);
+            evictionCount++;
+        }
     }
 
     private Entry GetOrCreate(string fullPath)
@@ -364,6 +532,7 @@ public sealed class InvocationReadSession : IDisposable
         public string? StoredSha256 { get; set; }
         public string? MaterializedText { get; set; }
         public string? LogicalSha256 { get; set; }
+        public long LastUse { get; set; }
     }
 }
 
@@ -371,6 +540,11 @@ public readonly record struct InvocationReadObservation(
     long PhysicalBytesRead,
     long HashBytes,
     bool CacheHit);
+
+public sealed record InvocationReadEntrySnapshot(
+    string Path,
+    long RetainedBytes,
+    long AccessCount);
 
 public sealed record InvocationReadSessionSnapshot(
     string ReaderVersion,
@@ -388,4 +562,13 @@ public sealed record InvocationReadSessionSnapshot(
     long RetainedMaterializedTextBytes,
     long RetainedHashTextBytes,
     long RetainedBytes,
-    long MaxEntryRetainedBytes);
+    long MaxEntryRetainedBytes,
+    long RetentionBudgetBytes,
+    long EntryRetentionLimitBytes,
+    long DynamicRegistrationCount,
+    long EvictionCount,
+    long LargeEntryBypassCount,
+    long ProbationBypassCount,
+    long ReleasedRawBytes,
+    long ReleasedStoredTextBytes,
+    InvocationReadEntrySnapshot[] LargestEntries);

@@ -104,9 +104,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
     private static AcquisitionCurrentRouteCandidateIndex ReadCore(
         string snapshotPath)
     {
-        var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            snapshotPath,
-            "Current authoritative-route candidate snapshot");
+        var snapshot = AcquisitionReadOnlySnapshotProjection.Read(snapshotPath);
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
             snapshot,
             OptionIds,

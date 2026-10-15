@@ -69,14 +69,10 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
 
         var beforeState = AcquisitionStrategyLedgerReader.Read(
             beforePath,
-            JsonSerializer.SerializeToElement(
-                terminalStart,
-                JsonDefaults.Options));
+            terminalStart);
         var afterState = AcquisitionStrategyLedgerReader.Read(
             afterPath,
-            JsonSerializer.SerializeToElement(
-                terminalActionAfter,
-                JsonDefaults.Options));
+            terminalActionAfter);
         var ledger = beforeState.Ledger;
         Require(EqualJson(ledger, afterState.Ledger) &&
                 beforeState.ActorPlayerId == afterState.ActorPlayerId &&

@@ -48,11 +48,9 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             AvailabilityAwarePolicyPredictionEnvelope>(
             rankingPath,
             "Acquisition support compilation ranking");
-        using var snapshotDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             committedPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var processing = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateProcessingReport>(
             Path.GetFullPath(inputs.TargetDateProcessingPath),

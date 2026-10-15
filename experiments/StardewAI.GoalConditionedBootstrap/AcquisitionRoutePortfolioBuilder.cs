@@ -72,9 +72,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         var recomputed = RecomputeOpportunityCost(inputs);
         Require(EqualJson(opportunity, recomputed),
             "Target-date opportunity-cost report drifted from deterministic source compilation.");
-        var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            snapshotPath,
-            "Acquisition route portfolio snapshot");
+        var snapshot = AcquisitionReadOnlySnapshotProjection.Read(snapshotPath);
         var targetDateCalendar = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateCalendarReport>(
             Path.GetFullPath(inputs.TargetDateCalendarPath),
@@ -86,11 +84,9 @@ public static partial class AcquisitionRoutePortfolioBuilder
                 targetDateCalendar,
                 snapshot,
                 snapshotSha256);
-        using var snapshotDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var ledgerState = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
-            snapshotDocument.RootElement);
+            snapshot);
         return new AcquisitionRoutePortfolioBuildContext(
             inventory,
             opportunity,

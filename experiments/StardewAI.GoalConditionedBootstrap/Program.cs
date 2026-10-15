@@ -184,9 +184,13 @@ try
         readSessionPlan.ImmutableInputPaths,
         readSessionPlan.ProhibitedPaths,
         readSessionPlan.ProhibitedRoots,
-        ReadSessionEnabled(options));
+        ReadSessionEnabled(options),
+        ReadSessionBudgetBytes(options),
+        ReadSessionEntryLimitBytes(options));
     deterministicBuildSession = InvocationDeterministicBuildSession.Start(
-        DeterministicBuildSessionEnabled(options));
+        DeterministicBuildSessionEnabled(options),
+        DeterministicCacheBudgetBytes(options),
+        DeterministicCacheEntryLimitBytes(options));
     if (!commandRegistry.TryGetValue(command, out var definition))
     {
         throw new ArgumentException(
@@ -228,6 +232,10 @@ finally
                     ReferenceEntryCount = snapshot.ReferenceEntryCount,
                     CachedBytes = snapshot.CachedBytes,
                     MaxEntryBytes = snapshot.MaxEntryBytes,
+                    CacheBudgetBytes = snapshot.CacheBudgetBytes,
+                    EntryLimitBytes = snapshot.EntryLimitBytes,
+                    EvictionCount = snapshot.EvictionCount,
+                    RejectedEntryCount = snapshot.RejectedEntryCount,
                     Producers = snapshot.Producers.Select(producer =>
                         new ValidationTraceDeterministicProducerMetrics
                         {
@@ -237,7 +245,11 @@ finally
                             CachedBytes = producer.CachedBytes,
                             MaxEntryBytes = producer.MaxEntryBytes,
                             ReferenceBuildCount = producer.ReferenceBuildCount,
-                            ReferenceHitCount = producer.ReferenceHitCount
+                            ReferenceHitCount = producer.ReferenceHitCount,
+                            EvictionCount = producer.EvictionCount,
+                            RejectedEntryCount = producer.RejectedEntryCount,
+                            WallSavedEstimateMilliseconds =
+                                producer.WallSavedEstimateMilliseconds
                         }).ToArray()
                 });
         }
@@ -290,6 +302,49 @@ static bool DeterministicBuildSessionEnabled(Arguments options)
         return false;
     throw new ArgumentException(
         "--deterministic-build-session must be enabled or disabled.");
+}
+
+static long ReadSessionBudgetBytes(Arguments options) => BudgetBytes(
+    options,
+    "read-session-max-mib",
+    "STARDEWAI_READ_SESSION_MAX_MIB",
+    InvocationReadSession.DefaultMaxRetainedBytes);
+
+static long ReadSessionEntryLimitBytes(Arguments options) => BudgetBytes(
+    options,
+    "read-session-entry-max-mib",
+    "STARDEWAI_READ_SESSION_ENTRY_MAX_MIB",
+    InvocationReadSession.DefaultMaxEntryRetainedBytes);
+
+static long DeterministicCacheBudgetBytes(Arguments options) => BudgetBytes(
+    options,
+    "deterministic-cache-max-mib",
+    "STARDEWAI_DETERMINISTIC_CACHE_MAX_MIB",
+    InvocationDeterministicBuildSession.DefaultCacheBudgetBytes);
+
+static long DeterministicCacheEntryLimitBytes(Arguments options) => BudgetBytes(
+    options,
+    "deterministic-cache-entry-max-mib",
+    "STARDEWAI_DETERMINISTIC_CACHE_ENTRY_MAX_MIB",
+    InvocationDeterministicBuildSession.DefaultEntryLimitBytes);
+
+static long BudgetBytes(
+    Arguments options,
+    string argument,
+    string environmentVariable,
+    long fallback)
+{
+    var text = options.Optional(argument) ??
+        Environment.GetEnvironmentVariable(environmentVariable);
+    if (string.IsNullOrWhiteSpace(text))
+        return fallback;
+    if (!long.TryParse(text, out var mebibytes) || mebibytes < 0 ||
+        mebibytes > long.MaxValue / (1024L * 1024L))
+    {
+        throw new ArgumentException(
+            "--" + argument + " must be a non-negative integer MiB value.");
+    }
+    return mebibytes * 1024L * 1024L;
 }
 
 static void AuditKnowledge(Arguments options)

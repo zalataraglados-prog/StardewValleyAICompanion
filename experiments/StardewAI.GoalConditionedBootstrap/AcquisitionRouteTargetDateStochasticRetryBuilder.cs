@@ -254,11 +254,4 @@ public static partial class AcquisitionRouteTargetDateStochasticRetryBuilder
         };
     }
 
-    private static bool EqualJson<T>(T left, T right)
-    {
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        return JsonSerializer.Serialize(left, options) ==
-            JsonSerializer.Serialize(right, options);
-    }
-
 }

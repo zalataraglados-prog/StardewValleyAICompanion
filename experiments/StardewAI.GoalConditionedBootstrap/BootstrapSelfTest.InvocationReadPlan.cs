@@ -298,6 +298,38 @@ internal static partial class BootstrapSelfTest
                 snapshot.CacheHitCount == 1,
                 "Empty optional path did not remain an explicit reusable value identity.");
         }
+
+        var budgetBuilds = 0;
+        using (var budgetSession = InvocationDeterministicBuildSession.Start(
+                   cacheBudgetBytes: 0,
+                   entryLimitBytes: 1024))
+        {
+            var identity = new[]
+            {
+                InvocationDeterministicBuildSession.File(
+                    "FixturePath",
+                    immutablePath)
+            };
+            for (var index = 0; index < 2; index++)
+            {
+                _ = InvocationDeterministicBuildSession.GetOrBuild(
+                    "self-test-budget",
+                    "v1",
+                    identity,
+                    () =>
+                    {
+                        budgetBuilds++;
+                        return new DeterministicBuildFixture { Value = index };
+                    });
+            }
+            var snapshot = budgetSession.Snapshot();
+            Require(
+                budgetBuilds == 2 &&
+                snapshot.EntryCount == 0 &&
+                snapshot.RejectedEntryCount == 2 &&
+                snapshot.CachedBytes == 0,
+                "Deterministic cache budget did not fail open to recomputation.");
+        }
     }
 
     private static string WriteFixture(string root, string name)

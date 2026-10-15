@@ -369,11 +369,6 @@ public static class PetLoveTeacherCorpusBuilder
             .ToLowerInvariant()[..24];
     }
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Compact),
-        JsonSerializer.Serialize(right, JsonDefaults.Compact),
-        StringComparison.Ordinal);
-
     private static readonly string[] RequiredPartitions =
     {
         PolicyDatasetPartitions.Train,

@@ -257,6 +257,46 @@ public sealed class ValidationTraceReadSessionMetrics
 
     [JsonPropertyName("max_entry_retained_bytes")]
     public long MaxEntryRetainedBytes { get; set; }
+
+    [JsonPropertyName("retention_budget_bytes")]
+    public long RetentionBudgetBytes { get; set; }
+
+    [JsonPropertyName("entry_retention_limit_bytes")]
+    public long EntryRetentionLimitBytes { get; set; }
+
+    [JsonPropertyName("dynamic_registration_count")]
+    public long DynamicRegistrationCount { get; set; }
+
+    [JsonPropertyName("eviction_count")]
+    public long EvictionCount { get; set; }
+
+    [JsonPropertyName("large_entry_bypass_count")]
+    public long LargeEntryBypassCount { get; set; }
+
+    [JsonPropertyName("probation_bypass_count")]
+    public long ProbationBypassCount { get; set; }
+
+    [JsonPropertyName("released_raw_bytes")]
+    public long ReleasedRawBytes { get; set; }
+
+    [JsonPropertyName("released_stored_text_bytes")]
+    public long ReleasedStoredTextBytes { get; set; }
+
+    [JsonPropertyName("largest_entries")]
+    public ValidationTraceReadSessionEntryMetrics[] LargestEntries { get; set; } =
+        Array.Empty<ValidationTraceReadSessionEntryMetrics>();
+}
+
+public sealed class ValidationTraceReadSessionEntryMetrics
+{
+    [JsonPropertyName("path")]
+    public string Path { get; set; } = string.Empty;
+
+    [JsonPropertyName("retained_bytes")]
+    public long RetainedBytes { get; set; }
+
+    [JsonPropertyName("access_count")]
+    public long AccessCount { get; set; }
 }
 
 public sealed class ValidationTraceDeterministicBuildSessionMetrics
@@ -285,6 +325,18 @@ public sealed class ValidationTraceDeterministicBuildSessionMetrics
     [JsonPropertyName("max_entry_bytes")]
     public long MaxEntryBytes { get; set; }
 
+    [JsonPropertyName("cache_budget_bytes")]
+    public long CacheBudgetBytes { get; set; }
+
+    [JsonPropertyName("entry_limit_bytes")]
+    public long EntryLimitBytes { get; set; }
+
+    [JsonPropertyName("eviction_count")]
+    public long EvictionCount { get; set; }
+
+    [JsonPropertyName("rejected_entry_count")]
+    public long RejectedEntryCount { get; set; }
+
     [JsonPropertyName("producers")]
     public ValidationTraceDeterministicProducerMetrics[] Producers { get; set; } =
         Array.Empty<ValidationTraceDeterministicProducerMetrics>();
@@ -312,4 +364,13 @@ public sealed class ValidationTraceDeterministicProducerMetrics
 
     [JsonPropertyName("reference_hit_count")]
     public long ReferenceHitCount { get; set; }
+
+    [JsonPropertyName("eviction_count")]
+    public long EvictionCount { get; set; }
+
+    [JsonPropertyName("rejected_entry_count")]
+    public long RejectedEntryCount { get; set; }
+
+    [JsonPropertyName("wall_saved_estimate_ms")]
+    public double WallSavedEstimateMilliseconds { get; set; }
 }

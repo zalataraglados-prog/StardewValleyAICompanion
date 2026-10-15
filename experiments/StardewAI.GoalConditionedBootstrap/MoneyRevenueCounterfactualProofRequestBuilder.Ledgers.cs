@@ -105,12 +105,9 @@ public static partial class MoneyRevenueCounterfactualProofRequestBuilder
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             terminalSnapshotPath,
             "Money Revenue terminal snapshot");
-        using var snapshotDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(
-                terminalSnapshotPath));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             settledLedgerPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var ledgerSha256 = Hash(settledLedgerPath);
         Require(snapshot.StateHash == alternative.TerminalStateHash &&
                 ledger.LedgerId == sourceLedger.LedgerId &&

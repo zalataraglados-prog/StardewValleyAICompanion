@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -11,7 +12,23 @@ internal static class AcquisitionStrategyLedgerReader
 {
     public static AcquisitionStrategyLedgerState Read(
         string path,
+        SnapshotEnvelope snapshot) => Read(
+            path,
+            ReadIdentity(snapshot, "save_id"),
+            ReadIdentity(snapshot, "player_id"));
+
+    public static AcquisitionStrategyLedgerState Read(
+        string path,
         JsonElement snapshot)
+        => Read(
+            path,
+            ReadIdentity(snapshot, "save_id"),
+            ReadIdentity(snapshot, "player_id"));
+
+    private static AcquisitionStrategyLedgerState Read(
+        string path,
+        string saveId,
+        string playerId)
     {
         StrategyCommitmentLedger ledger;
         try
@@ -29,8 +46,6 @@ internal static class AcquisitionStrategyLedgerReader
                 ex);
         }
 
-        var saveId = ReadIdentity(snapshot, "save_id");
-        var playerId = ReadIdentity(snapshot, "player_id");
         Require(long.TryParse(playerId, out var actorPlayerId),
             "Snapshot player identity is not a native numeric player ID.");
         var materialReservations = ledger.MaterialReservations ??
@@ -64,6 +79,31 @@ internal static class AcquisitionStrategyLedgerReader
         Require(allIds.Distinct(StringComparer.Ordinal).Count() == allIds.Length,
             "Strategy commitment reservation IDs are not globally unique.");
         return new AcquisitionStrategyLedgerState(ledger, actorPlayerId);
+    }
+
+    private static string ReadIdentity(
+        SnapshotEnvelope snapshot,
+        string field)
+    {
+        var topEnvelope = field switch
+        {
+            "save_id" => snapshot.SaveId,
+            "player_id" => snapshot.PlayerId,
+            _ => throw new InvalidDataException(
+                "Unknown snapshot identity field: " + field)
+        };
+        var topValue = topEnvelope.Status == FieldStatus.Available
+            ? topEnvelope.Value ?? string.Empty
+            : string.Empty;
+        var stateValue = string.Empty;
+        Require(!string.IsNullOrWhiteSpace(topValue) &&
+                snapshot.State.TryGetValue("identity", out var identity) &&
+                identity.ValueKind == JsonValueKind.Object &&
+                identity.TryGetProperty(field, out var stateEnvelope) &&
+                TryReadEnvelopeString(stateEnvelope, out stateValue) &&
+                topValue == stateValue,
+            "Snapshot " + field + " identity is missing or drifted.");
+        return topValue;
     }
 
     private static void ValidateMaterialReservations(

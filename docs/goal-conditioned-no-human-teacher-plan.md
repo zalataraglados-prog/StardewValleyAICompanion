@@ -3204,11 +3204,30 @@ Slice 7 remains assigned to the RTX 5070 node.
   criterion-specific selected alternatives still require distinct seed runs;
   the initial smallest-sufficient sampling choice is never promoted by
   assumption.
-- The Money review also removed every Money-local private `EqualJson` helper.
-  The single bootstrap artifact guard now compares compact UTF-8 serialization
-  instead of retaining two indented UTF-16 strings. Equality remains exact and
-  uncached; this is the bounded #274 allocation reduction, not permission to
-  skip rebuilds or trust stale digests.
+- The #274 performance pass removed all remaining private bootstrap
+  `EqualJson` implementations. The single artifact guard now streams canonical
+  compact JSON through SHA-256, so equality no longer retains two whole JSON
+  buffers. The digest is computed from the current object on every comparison;
+  mutable DTOs never keep a stale cached fingerprint.
+- Invocation reads now admit transitive content reads under a 32 MiB budget,
+  release raw/stored representations after verified materialization, protect
+  frequently reused artifacts from one-use large entries, and report the ten
+  largest retained paths. Generic hash-only access cannot dynamically declare
+  a file immutable; only an explicit deterministic-build input identity may
+  register a transitive immutable dependency. The deterministic build cache
+  uses compact snapshots, a 64 MiB
+  total budget, a 16 MiB entry limit, LRU eviction and per-producer rejected,
+  evicted and estimated-wall-saved metrics.
+- The top typed/DOM hotspot no longer reparses a full snapshot just to validate
+  strategy-ledger identity. Read-only acquisition consumers share one
+  exact-content-bound `SnapshotEnvelope` projection per invocation; callers
+  that may mutate a DTO still receive independent deserialization.
+- The measured equal-prefix A/B/C record is checked in at
+  `docs/validation-trace-issue-274-20261015.json`. It reduced current-default
+  wall time from 17.16 s to 7.59 s and reduced the measured peak from 541.0 MiB
+  to 525.4 MiB. The frozen 26-proof artifact now fails closed against
+  current source compilation, so this measurement is not a force-full
+  correctness acceptance and does not authorize formal training.
 
 ### 2026-10-14: Revenue alternative path skeletons
 

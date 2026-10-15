@@ -73,12 +73,9 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             ReservationPortfolioSupportingTransitionSettlementResult>(
             resultPath,
             "Acquisition support settlement result");
-        using var afterDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(
-                Path.GetFullPath(afterSnapshotPath)));
         var settled = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
-            afterDocument.RootElement).Ledger;
+            context.AfterSnapshot).Ledger;
         return BuildReceiptCore(
             context,
             request,
