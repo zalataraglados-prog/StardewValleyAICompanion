@@ -442,12 +442,21 @@ internal static partial class BootstrapSelfTest
                     },
                 InitialCheckpointPath = terminal.RolloutCheckpointPath
             });
+        const string rolloutProofProducer =
+            "AcquisitionRoutePortfolioRolloutProofBuilder.BuildVerifiedReceipt";
+        var producerBefore = InvocationDeterministicBuildSession
+            .CurrentProducerSnapshot(rolloutProofProducer);
         var proofReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
             .BuildReceipt(manifestPath);
+        var producerAfterProof = InvocationDeterministicBuildSession
+            .CurrentProducerSnapshot(rolloutProofProducer);
         Require(proofReceipt.ProofChainVerified &&
                 proofReceipt.PortfolioCompletionVerified &&
                 proofReceipt.TransitionCount == 1 &&
-                proofReceipt.ContinuationTransitionCount == 0,
+                proofReceipt.ContinuationTransitionCount == 0 &&
+                producerAfterProof is not null &&
+                producerAfterProof.BuildCount ==
+                    (producerBefore?.BuildCount ?? 0) + 1,
             "Supporting-transition lineage did not reach a terminal proof receipt.");
         var proofReceiptPath = Path.Combine(
             terminalRoot,
@@ -469,6 +478,14 @@ internal static partial class BootstrapSelfTest
             manifestPath,
             proofReceiptPath,
             rolloutAdmissionPath);
+        var producerAfterConsumers = InvocationDeterministicBuildSession
+            .CurrentProducerSnapshot(rolloutProofProducer);
+        Require(producerAfterConsumers is not null &&
+                producerAfterConsumers.BuildCount ==
+                    producerAfterProof.BuildCount &&
+                producerAfterConsumers.CacheHitCount >=
+                    producerAfterProof.CacheHitCount + 3,
+            "Rollout proof consumers rebuilt an identical proof chain.");
         var datasetPath = Path.Combine(
             terminalRoot,
             "supervision-dataset.json");
