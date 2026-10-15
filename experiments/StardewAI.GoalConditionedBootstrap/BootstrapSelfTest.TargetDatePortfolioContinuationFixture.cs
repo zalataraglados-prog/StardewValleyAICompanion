@@ -2,6 +2,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Strategy;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -84,8 +85,6 @@ internal static partial class BootstrapSelfTest
         var snapshotPath = Path.Combine(outputRoot, "before-snapshot.json");
         var snapshot = JsonNode.Parse(
             File.ReadAllText(template.BeforeSnapshotPath))!.AsObject();
-        var stateHash = "three-transition-portfolio-state-" + fixtureId;
-        snapshot["state_hash"] = stateHash;
         snapshot["save_id"]!["value"] = saveId;
         snapshot["state"]!["identity"]!["save_id"]!["value"] = saveId;
         var capacity = snapshot["state"]!["locations"]!
@@ -115,6 +114,28 @@ internal static partial class BootstrapSelfTest
             ReadyCrop(2),
             ReadyCrop(3),
             ReadyCrop(4));
+        snapshot["state"]!["farm"]!["shipping_bins"]!["value"] =
+            new JsonArray(
+                new JsonObject
+                {
+                    ["completed"] = true,
+                    ["tile_x"] = 10,
+                    ["tile_y"] = 12,
+                    ["bin_scope"] = "shared",
+                    ["player_id"] = "1",
+                    ["pending_settlement_value"] = 0,
+                    ["pending_settlement_value_complete"] = true,
+                    ["pending_settlement_timing"] =
+                        "next_native_day_transition",
+                    ["contents_signature"] = "empty",
+                    ["contents_truncated"] = false
+                });
+        var fixtureSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
+            snapshot.ToJsonString(JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+            "Portfolio continuation snapshot clone failed.");
+        var stateHash = SnapshotHash.ComputeStateHash(fixtureSnapshot.State);
+        snapshot["state_hash"] = stateHash;
         File.WriteAllText(
             snapshotPath,
             snapshot.ToJsonString(JsonDefaults.Options));

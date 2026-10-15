@@ -262,9 +262,7 @@ internal static partial class BootstrapSelfTest
             int timeOfDay = 900,
             int emptyInventorySlots = 12)
     {
-        var root = Path.Combine(
-            Path.GetTempPath(),
-            "stardewai-machine-daily-fixture");
+        var root = TempArtifactRoot("machine-daily-fixture");
         Directory.CreateDirectory(root);
         var snapshotPath = Path.Combine(root, "snapshot.json");
         var timingPath = Path.Combine(root, "route-timing.json");

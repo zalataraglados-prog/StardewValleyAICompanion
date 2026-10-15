@@ -74,3 +74,15 @@ The numbers freeze the immediate optimization order:
 3. Cross-run certificates, incremental validation, proof rebasing, and snapshot deltas remain #200-#203 work and cannot begin by weakening fresh-state gates.
 
 No wall-clock measurement is training truth. Native evidence, fresh snapshots, actor/ownership/lease checks, execution receipts, settlement, and formal product promotion remain unchanged.
+
+## 2026-10-15 current-authority exit-gate audit
+
+The optimized equal-prefix benchmark remains valid performance evidence, but
+the frozen 26-stratum manifest is not current-authority evidence. A current
+source scan rebuilt Sap successfully and classified the other 25 strata as
+stale at location-route, daily time/energy, calendar, or Teacher-preference
+boundaries. Offline planning rebuild now reaches Teacher, commit, and dispatch;
+it then correctly rejects historical execution receipts that lack the current
+compiled player-location and tile context. Closing #274 therefore requires
+fresh native executions followed by force-full equivalence. Historical receipts
+must not be rewritten or accepted through weaker equality.

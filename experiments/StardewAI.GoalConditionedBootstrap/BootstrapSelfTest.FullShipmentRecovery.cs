@@ -44,6 +44,37 @@ internal static partial class BootstrapSelfTest
             "A native Full Shipment recovery transition was rejected: " +
             string.Join(",", reasons));
 
+        var volatileBefore = RecoverySnapshot(
+            "full-shipment-recovery-volatile-before",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1);
+        var volatileAfter = RecoverySnapshot(
+            "full-shipment-recovery-volatile-after",
+            totalDay: 40,
+            parsnipShipped: false,
+            parsnipBinCount: 1,
+            tileX: 1);
+        AddRecoveryVolatileProjection(volatileBefore, variant: 1);
+        AddRecoveryVolatileProjection(volatileAfter, variant: 2);
+        volatileAfter.GameTick = volatileBefore.GameTick + 1;
+        var volatileTransition = RecoveryFixture(
+            volatileBefore,
+            volatileAfter,
+            "executor.traverse_connector",
+            "traverse_connector");
+        var volatileReasons = ValidateRecovery(
+            volatileTransition.Queue,
+            volatileBefore,
+            volatileTransition.Receipt,
+            volatileAfter,
+            volatileBefore,
+            required);
+        Require(
+            volatileReasons.Length == 0,
+            "Recovery-only transparent projections changed the persistent boundary: " +
+            string.Join(",", volatileReasons));
+
         var legacyExpected = RecoverySnapshot(
             string.Empty,
             totalDay: 40,

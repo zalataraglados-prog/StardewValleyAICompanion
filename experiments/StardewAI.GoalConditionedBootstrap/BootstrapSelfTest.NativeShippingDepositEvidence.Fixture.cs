@@ -27,9 +27,9 @@ internal static partial class BootstrapSelfTest
                     ShippingParameter(
                         "expected_unit_price",
                         unitPrice.ToString()),
-                    ShippingParameter("bin_location", "Farm"),
-                    ShippingParameter("bin_tile_x", binTileX.ToString()),
-                    ShippingParameter("bin_tile_y", "14")
+                    ShippingParameter("target_location", "Farm"),
+                    ShippingParameter("target_tile_x", binTileX.ToString()),
+                    ShippingParameter("target_tile_y", "14")
                 ]
             }
         }
