@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 current-authority 放射性矿石原生重验
+
+- `radioactive_ore_node_sample` 的实时夹具已在普通矿井 99 层生成精确 `(O)95` 节点与保证掉落 `(O)909`。首次 current-authority 运行暴露两处同一链路缺口：`mining.reach_depth` 未携带精确采集意图时被现成梯子抢占；dispatcher 从同状态重建候选时又只为怪物掉落保留采集意图。
+- 修复继续复用唯一的 `MiningFloorStepPlanner -> executor.mine_stone -> executor.pickup_debris` 链。放射性矿石意图映射到既有 `CollectResourceOrArtifact` 目标，按 `native_radioactive_ore_node / GameLocation.breakStone / (O)909` 绑定；防篡改重建和 selection 都要求同一组三字段，未跳过候选证据比较。
+- 隐藏、静音、E 盘隔离运行 `runtime-full-shipment-evidence-radioactive_ore_node_sample-20261015-204018` 已完成原生破坏、延迟掉落拾取、运输箱、睡眠结算和 rollout proof。当前 evidence index 为 `2/26`，剩余 `24` 层；shared shipping evidence 保持有效，`formal_product_training_authorized=false`。
+
 ## 历史记录 · 2026-10-15 current-authority Sap 原生重验
 
 - 当前预算与位置协议合入后，E 盘 9 类旧 `passed` 摘要均由当前严格验证器重新判定为 stale，不能作为 current-authority 证据；旧 Sap 证明也命中 daily time/energy drift。

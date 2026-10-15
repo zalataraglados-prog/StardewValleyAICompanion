@@ -40,6 +40,7 @@ internal static partial class BootstrapSelfTest
         Require(rebuilt.Length == ranked.Length && rebuildReasons.Length == 0,
             "Untampered live ranking did not reproduce from the transparent snapshot.");
         VerifyMonsterDropRankingRebuild();
+        VerifyRadioactiveOreRankingRebuild();
         VerifyBushCurrentRouteCandidateIndex();
         VerifyArtifactSpotCurrentRouteCandidateIndex();
         VerifyCommunityCenterRewardCurrentRouteCandidateIndex();

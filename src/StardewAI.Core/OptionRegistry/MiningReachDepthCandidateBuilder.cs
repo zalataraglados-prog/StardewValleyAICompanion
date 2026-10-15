@@ -116,7 +116,7 @@ namespace StardewAI.Core.OptionRegistry
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
                 Kind = hasAcquisitionIntent
-                    ? MiningObjectiveKinds.CollectMonsterDrop
+                    ? AcquisitionObjectiveKind(acquisitionRouteKind)
                     : trainCombat
                         ? MiningObjectiveKinds.TrainCombat
                         : MiningObjectiveKinds.ReachDepth,
@@ -281,18 +281,38 @@ namespace StardewAI.Core.OptionRegistry
             {
                 reasons.Add("acquisition_target_identity_incomplete");
             }
-            if (!string.Equals(
-                    routeKind,
-                    "native_monster_drop_table",
-                    StringComparison.Ordinal))
+            if (routeKind is not (
+                    "native_monster_drop_table" or
+                    "native_radioactive_ore_node"))
             {
                 reasons.Add("unsupported_mining_acquisition_route_kind");
             }
-            if (string.IsNullOrWhiteSpace(sourceId) ||
-                !sourceId.StartsWith("monster:", StringComparison.Ordinal) ||
-                sourceId.Length == "monster:".Length)
+            else if (string.Equals(
+                         routeKind,
+                         "native_monster_drop_table",
+                         StringComparison.Ordinal) &&
+                     (string.IsNullOrWhiteSpace(sourceId) ||
+                      !sourceId.StartsWith(
+                          "monster:",
+                          StringComparison.Ordinal) ||
+                      sourceId.Length == "monster:".Length))
             {
                 reasons.Add("acquisition_target_monster_source_invalid");
+            }
+            else if (string.Equals(
+                         routeKind,
+                         "native_radioactive_ore_node",
+                         StringComparison.Ordinal) &&
+                     (!string.Equals(
+                          sourceId,
+                          "GameLocation.breakStone",
+                          StringComparison.Ordinal) ||
+                      !string.Equals(
+                          qualifiedItemId,
+                          "(O)909",
+                          StringComparison.Ordinal)))
+            {
+                reasons.Add("acquisition_target_radioactive_ore_source_invalid");
             }
             if (trainCombat)
             {
@@ -300,6 +320,16 @@ namespace StardewAI.Core.OptionRegistry
                     "acquisition_target_incompatible_with_skill_training");
             }
             return reasons.ToArray();
+        }
+
+        private static string AcquisitionObjectiveKind(string? routeKind)
+        {
+            return string.Equals(
+                routeKind,
+                "native_radioactive_ore_node",
+                StringComparison.Ordinal)
+                ? MiningObjectiveKinds.CollectResourceOrArtifact
+                : MiningObjectiveKinds.CollectMonsterDrop;
         }
 
         public static string[] ValidateSkillTraining(

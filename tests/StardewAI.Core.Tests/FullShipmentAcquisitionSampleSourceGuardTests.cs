@@ -1525,6 +1525,21 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             runner,
             StringComparison.Ordinal);
         Assert.Contains(
+            "name = \"acquisition_target_route_kind\"\n" +
+            "                value = \"native_radioactive_ore_node\"",
+            runner.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"acquisition_target_source_id\"\n" +
+            "                value = \"GameLocation.breakStone\"",
+            runner.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "name = \"acquisition_target_qualified_item_id\"\n" +
+            "                value = \"(O)909\"",
+            runner.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
             "-Parameters $sampleRankingParameters",
             runner,
             StringComparison.Ordinal);
@@ -2294,8 +2309,12 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             dailyBudget,
             StringComparison.Ordinal);
         Assert.Contains(
-            "BuildRollingMiningParameters(snapshot)",
-            dispatchVerification,
+            "BuildRollingMiningParameters(\n" +
+            "                    snapshot,\n" +
+            "                    requirement.RouteKind,\n" +
+            "                    requirement.SourceId,\n" +
+            "                    requirement.QualifiedItemId)",
+            dispatchVerification.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
         Assert.Contains(
             "route_dispatch_current_mine_intent_unavailable",
