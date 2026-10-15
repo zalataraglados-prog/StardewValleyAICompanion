@@ -21,6 +21,8 @@ $requestPath = Join-Path $outputRoot `
     "money-threshold-evidence-work-plan-request.json"
 $workPlanPath = Join-Path $outputRoot `
     "money-threshold-evidence-work-plan.json"
+$canonicalCorpusPath = Join-Path $outputRoot `
+    "money-threshold-native-outcome-corpus.json"
 $bootstrapProject = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
 $bootstrapDll = Join-Path $ProjectRoot `
@@ -32,6 +34,34 @@ if (-not [string]::IsNullOrWhiteSpace($MoneyThresholdCorpusPath)) {
         -ProjectRoot $ProjectRoot -Path $MoneyThresholdCorpusPath
     if (-not (Test-Path -LiteralPath $corpusPath -PathType Leaf)) {
         throw "Money threshold corpus is missing: $corpusPath"
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($corpusPath)) {
+    if (Test-Path -LiteralPath $canonicalCorpusPath -PathType Leaf) {
+        throw "Refusing to replace a canonical Money work plan with an empty " +
+            "bootstrap while its refreshed corpus exists: " +
+            $canonicalCorpusPath
+    }
+
+    if (Test-Path -LiteralPath $workPlanPath -PathType Leaf) {
+        try {
+            $existingWorkPlan = Get-Content -LiteralPath $workPlanPath -Raw |
+                ConvertFrom-Json
+        }
+        catch {
+            throw "Refusing to replace an unreadable existing Money work " +
+                "plan with an empty bootstrap: $workPlanPath"
+        }
+
+        if ([string]$existingWorkPlan.schema_version -ne
+                "money_threshold_evidence_work_plan.v1" -or
+            [int]$existingWorkPlan.native_outcome_complete_cell_count -ne 0 -or
+            [int]$existingWorkPlan.teacher_comparison_complete_cell_count -ne 0 -or
+            [int]$existingWorkPlan.fully_complete_cell_count -ne 0) {
+            throw "Refusing to downgrade an existing Money work plan with " +
+                "an empty bootstrap: $workPlanPath"
+        }
     }
 }
 

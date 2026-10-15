@@ -18,6 +18,19 @@ $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
 $ArtifactDirectory = [IO.Path]::GetFullPath($ArtifactDirectory)
 $planningDirectory = Join-Path $ArtifactDirectory "planning"
 $backendUrl = "http://127.0.0.1:$BackendPort"
+$runtimeEvidenceCommon = Join-Path $PSScriptRoot `
+    "lib\RuntimeEvidenceCommon.ps1"
+$planningPipelineSupport = Join-Path $PSScriptRoot `
+    "lib\RuntimeAcquisitionPlanningPipeline.ps1"
+foreach ($supportPath in @(
+    $runtimeEvidenceCommon,
+    $planningPipelineSupport
+)) {
+    if (-not (Test-Path -LiteralPath $supportPath -PathType Leaf)) {
+        throw "Runtime acquisition planning support is missing: $supportPath"
+    }
+    . $supportPath
+}
 $planningRebuildSupport = Join-Path $PSScriptRoot `
     "lib\RuntimeFullShipmentAcquisitionProofRebuild.ps1"
 if (-not (Test-Path -LiteralPath $planningRebuildSupport -PathType Leaf)) {
@@ -407,7 +420,6 @@ try {
             -AcquisitionLoweringPath $acquisitionLoweringPath `
             -MasterAnglerWindowsPath $masterAnglerWindowsPath `
             -RouteTimingPath $routeTimingPath -Paths $paths `
-            -PlanningCommon $planningCommon `
             -ExecutionCommon $executionCommon `
             -RouteOccurrenceId $routeOccurrenceId `
             -RequirementId $requirementId `

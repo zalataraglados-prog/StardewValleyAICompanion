@@ -1661,7 +1661,15 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             candidateIndex,
             StringComparison.Ordinal);
         Assert.Contains(
-            "excludedRouteKind: \"native_monster_drop_table\"",
+            "excludedRouteKinds: new[]",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_monster_drop_table\"",
+            candidateIndex,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"native_radioactive_ore_node\"",
             candidateIndex,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -2494,6 +2502,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         var source = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var planningPipeline = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeAcquisitionPlanningPipeline.ps1");
 
         Assert.Contains(
             "$sampleProofOnly = $Scenario -ne \"sap_prefix\"",
@@ -2504,8 +2516,12 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "\"--target-total-day\", ([string]$initialTotalDay)",
+            "-TargetTotalDay $initialTotalDay",
             source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--target-total-day\", ([string]$TargetTotalDay)",
+            planningPipeline,
             StringComparison.Ordinal);
     }
 
@@ -2715,6 +2731,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "$sourceCandidateId = [string]$sourceDispatch.source_candidate_id",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sourceCandidateId = [string]$sourceCandidates[0].candidate_id",
             rebuild,
             StringComparison.Ordinal);
         Assert.Contains(

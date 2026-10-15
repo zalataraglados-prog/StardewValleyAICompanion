@@ -4,6 +4,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 current-authority 批处理与规划流水线优化
+
+- 固定顺序小批次连续完成 `location_fish_spawn_sample`、`location_artifact_spot_sample`、`geode_drop_sample` 与 `shop_purchase_sample`；优化完成后又以 `community_center_reward_sample` 做真实原生代表回归。五层均通过当前 Teacher、原生执行、运输箱、睡眠结算与 rollout proof；current-authority evidence index 从 `4/26` 推进到 `9/26`，剩余 `17` 层，`formal_product_training_authorized=false`。
+- 性能审查确认同一套 calendar + 12 个 target-date 轴此前在首次规划、商店支持过渡重规划和断点恢复重建中各维护一份，并且每个轴启动一个独立 Bootstrap 进程。现统一为 `RuntimeAcquisitionPlanningPipeline.ps1`，14 个确定性命令在一个有界顺序批处理中执行；只有显式标记为 `BatchSafe` 的纯规划构建命令可进入共享会话，失败即停、禁止递归、拒绝重复或覆盖控制文件的输出，且保留逐进程 oracle。
+- 使用刚通过的地点鱼真实输入做等价对照：批处理 `14.51s`，逐进程 oracle `93.69s`，14/14 输出 SHA-256 完全一致；紧凑 JSON 将该段落盘量从约 `145 MiB` 降到 `72.5 MiB`。随后社区中心奖励真实原生场景通过同一优化链并进入当前 evidence index。这只消除重复进程、重复读取和空白格式，不改变候选、计划、编译、执行、证明或训练准入语义。
+- evidence index 的实测 trace 还暴露默认 32 MiB read session 在 9 份 proof 上产生约 `13.4 GiB` 物理读取和 `3204` 次逐出。索引调用点现单独使用 `256 MiB` 总预算与 `64 MiB` 单项预算；同一输入 A/B 输出逐字节一致，墙钟由 `106.7s` 降至 `92.9s`、物理读取降至约 `10.57 GiB`，峰值工作集由约 `1127 MiB` 增至 `1327 MiB`。确定性构建缓存不扩容，因为 512 MiB A/B 没有增加命中数。
+- 全量 correctness 审查同时关闭三个独立缺口：放射性矿石当前候选只接受 `native_radioactive_ore_node / GameLocation.breakStone / (O)909`，普通滚动矿点显式排除怪物掉落与放射性矿点；legacy unbound 证明回退到唯一候选时会保留真实 `candidate_id`；Money 空初始化在 canonical corpus 或非零计划已存在时于任何写入前失败关闭，不能把真实进度覆盖成 `0/18`。
+- 回归结果为完整 solution Release `0 warning / 0 error`、Core game-free `351/351`、Backend `229/229`，五项聚焦 Bootstrap 自测与 PowerShell AST 均通过。Money 防覆盖的功能测试证明 fresh 空计划仍为 `0/18 + 3` 个 native waves，已有 corpus 时请求/计划均不落盘且 corpus SHA-256 不变。
+- 全仓检查确认旧性能分支的核心观测/缓存能力已经被后续主线实现覆盖，不能直接合入其旧业务修复。当前剩余结构性热点是 2,000 行以上的运行烟测编排脚本；它们应按 fixture/setup、planning、native execution、proof 四个责任边界渐进拆分，不与本轮 correctness/performance 修改捆绑。
+
 ## 历史记录 · 2026-10-15 current-authority 高风险小批次推进
 
 - 放射性矿石修复合入后，milestone 按冻结顺序继续运行 `wild_tree_tapper_output_sample` 与 `monster_drop_sample`。两层均直接通过当前 Teacher、dispatcher、防篡改候选重建、原生动作、发货、睡眠结算与 rollout proof，未新增候选、编译器或执行器。

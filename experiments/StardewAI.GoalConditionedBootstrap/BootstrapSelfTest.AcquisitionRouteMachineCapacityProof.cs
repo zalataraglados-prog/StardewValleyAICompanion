@@ -482,7 +482,7 @@ internal static partial class BootstrapSelfTest
             .CurrentProducerSnapshot(rolloutProofProducer);
         Require(producerAfterConsumers is not null &&
                 producerAfterConsumers.BuildCount ==
-                    producerAfterProof.BuildCount &&
+                    producerAfterProof!.BuildCount &&
                 producerAfterConsumers.CacheHitCount >=
                     producerAfterProof.CacheHitCount + 3,
             "Rollout proof consumers rebuilt an identical proof chain.");

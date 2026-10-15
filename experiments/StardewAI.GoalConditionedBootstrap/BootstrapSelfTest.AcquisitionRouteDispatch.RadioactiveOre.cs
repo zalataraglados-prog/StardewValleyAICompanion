@@ -14,6 +14,7 @@ internal static partial class BootstrapSelfTest
     private static void VerifyRadioactiveOreRankingRebuild()
     {
         var snapshot = AcquisitionDispatchRadioactiveOreSnapshot();
+        VerifyRadioactiveOreCurrentRouteCandidateIndex(snapshot);
         var ledger = new StrategyCommitmentLedger
         {
             LedgerId = "ledger.dispatch.radioactive-ore.self-test",
@@ -79,6 +80,52 @@ internal static partial class BootstrapSelfTest
                     rebuilt).Length == 1,
             "Exact rebuilt radioactive-ore intent was rejected by dispatch " +
             "selection.");
+    }
+
+    private static void VerifyRadioactiveOreCurrentRouteCandidateIndex(
+        SnapshotEnvelope snapshot)
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-radioactive-ore-index-" + Guid.NewGuid() + ".json");
+        try
+        {
+            File.WriteAllText(
+                path,
+                JsonSerializer.Serialize(snapshot, JsonDefaults.Options));
+            var index = AcquisitionCurrentRouteCandidateIndex.Read(path);
+            Require(index.TryFind(
+                        "native_radioactive_ore_node",
+                        "GameLocation.breakStone",
+                        "(O)909",
+                        out var candidates,
+                        out var blockingReasons) &&
+                    blockingReasons.Length == 0 &&
+                    candidates.Length == 1 &&
+                    candidates[0].OptionId == "mining.reach_depth" &&
+                    candidates[0].TargetTileX == 3 &&
+                    candidates[0].TargetTileY == 2 &&
+                    candidates[0].CandidateId.Contains(
+                        ":acquisition:native_radioactive_ore_node:",
+                        StringComparison.Ordinal),
+                "The exact radioactive-ore source did not enter the current " +
+                "candidate index ahead of the reachable ladder.");
+            Require(index.TryFind(
+                        "native_radioactive_ore_node",
+                        "spoofed.breakStone",
+                        "(O)909",
+                        out var spoofed,
+                        out var spoofedReasons) &&
+                    spoofedReasons.Length == 0 &&
+                    spoofed.Length == 0,
+                "A mismatched radioactive-ore source entered the current " +
+                "candidate index.");
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
     }
 
     private static SnapshotEnvelope AcquisitionDispatchRadioactiveOreSnapshot()

@@ -10,6 +10,10 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Update-MoneyThresholdNativeOutcomeBatch.ps1"));
+    private static readonly string InitializationSource = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Initialize-MoneyThresholdProductionWorkPlan.ps1"));
     private static readonly string ComparisonPlanSource = File.ReadAllText(
         FindRepositoryFile(
             "scripts",
@@ -92,6 +96,29 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("formal_product_training_authorized = $true",
             BatchSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EmptyInitializationCannotDowngradeCanonicalMoneyEvidence()
+    {
+        const string corpusGuard =
+            "Test-Path -LiteralPath $canonicalCorpusPath -PathType Leaf";
+        const string workPlanGuard =
+            "[int]$existingWorkPlan.native_outcome_complete_cell_count -ne 0";
+        const string firstWrite = "Write-JsonFile -Path $requestPath";
+
+        Assert.Contains("money-threshold-native-outcome-corpus.json",
+            InitializationSource, StringComparison.Ordinal);
+        Assert.Contains(corpusGuard, InitializationSource,
+            StringComparison.Ordinal);
+        Assert.Contains(workPlanGuard, InitializationSource,
+            StringComparison.Ordinal);
+        Assert.True(
+            InitializationSource.IndexOf(corpusGuard, StringComparison.Ordinal) <
+            InitializationSource.IndexOf(firstWrite, StringComparison.Ordinal));
+        Assert.True(
+            InitializationSource.IndexOf(workPlanGuard, StringComparison.Ordinal) <
+            InitializationSource.IndexOf(firstWrite, StringComparison.Ordinal));
     }
 
     [Fact]

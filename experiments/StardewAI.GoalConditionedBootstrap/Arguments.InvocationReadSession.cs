@@ -78,7 +78,8 @@ internal sealed partial class Arguments
         string.Equals(
             name,
             "deterministic-cache-entry-max-mib",
-            StringComparison.Ordinal);
+            StringComparison.Ordinal) ||
+        string.Equals(name, "json-output", StringComparison.Ordinal);
 
     private static bool IsOutputRootArgument(string name) =>
         name.Contains("output-root", StringComparison.OrdinalIgnoreCase);
