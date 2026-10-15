@@ -9,7 +9,6 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         [Parameter(Mandatory)] [string] $MasterAnglerWindowsPath,
         [Parameter(Mandatory)] [string] $RouteTimingPath,
         [Parameter(Mandatory)] [hashtable] $Paths,
-        [Parameter(Mandatory)] [object[]] $PlanningCommon,
         [Parameter(Mandatory)] [object[]] $ExecutionCommon,
         [Parameter(Mandatory)] [string] $RouteOccurrenceId,
         [Parameter(Mandatory)] [string] $RequirementId,
@@ -73,6 +72,7 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
             throw "Unbound source ranking has no unique source dispatch " +
                 "candidate '$sourceCandidateId'."
         }
+        $sourceCandidateId = [string]$sourceCandidates[0].candidate_id
         # Preserve the source request shape. The exact dispatch identity above
         # proves that the old native target remains in the unbound option set;
         # downstream route binding must still select that same identity.
@@ -131,127 +131,22 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         -LiteralPath $Paths.target_calendar -Raw | ConvertFrom-Json
     $targetTotalDay = [int]$sourceTargetCalendar.target_total_day
 
-    Invoke-Bootstrap @(
-        "build-current-acquisition-route-calendar-resolution",
-        "--requirement-inventory", $RequirementInventoryPath,
-        "--acquisition-lowering", $AcquisitionLoweringPath,
-        "--master-angler-windows", $MasterAnglerWindowsPath,
-        "--snapshot", $InitialSnapshotPath,
-        "--output", $Paths.calendar
-    )
-    Invoke-Bootstrap @(
-        "build-current-acquisition-route-target-date-calendar",
-        "--requirement-inventory", $RequirementInventoryPath,
-        "--acquisition-lowering", $AcquisitionLoweringPath,
-        "--master-angler-windows", $MasterAnglerWindowsPath,
-        "--calendar-resolution", $Paths.calendar,
-        "--snapshot", $InitialSnapshotPath,
-        "--target-total-day", ([string]$targetTotalDay),
-        "--output", $Paths.target_calendar
-    )
-
-    $rebuiltAxes = [ordered]@{}
-    foreach ($row in @(
-        @("unlock", "build-acquisition-route-target-date-unlock-state"),
-        @("festival", "build-acquisition-route-target-date-festival-state"),
-        @("location", "build-acquisition-route-target-date-location-route"),
-        @("facility", "build-acquisition-route-target-date-facility-capacity"),
-        @("resource", "build-acquisition-route-target-date-resource-inputs"),
-        @("currency", "build-acquisition-route-target-date-currency-budget"),
-        @("reservation", "build-acquisition-route-target-date-inventory-reservation"),
-        @("processing", "build-acquisition-route-target-date-processing-lead-time")
-    )) {
-        $axisName = [string]$row[0]
-        $rebuiltAxes[$axisName] = $Paths[$axisName]
-        $arguments = @(
-            [string]$row[1],
-            "--requirement-inventory", $RequirementInventoryPath,
-            "--acquisition-lowering", $AcquisitionLoweringPath,
-            "--master-angler-windows", $MasterAnglerWindowsPath,
-            "--calendar-resolution", $Paths.calendar,
-            "--target-date-calendar", $Paths.target_calendar,
-            "--snapshot", $InitialSnapshotPath,
-            "--output", $Paths[$axisName]
-        )
-        foreach ($prior in @(
-            "unlock", "festival", "location", "facility", "resource",
-            "currency", "reservation", "processing"
-        )) {
-            if ($rebuiltAxes.Contains($prior) -and $prior -ne $axisName) {
-                $arguments += @(
-                    "--target-date-$prior", $rebuiltAxes[$prior])
-            }
-        }
-        if ($axisName -in @(
-                "location", "facility", "resource", "currency",
-                "reservation", "processing")) {
-            $arguments += @(
-                "--route-timing-calibration", $RouteTimingPath)
-        }
-        if ($axisName -in @("reservation", "processing")) {
-            $arguments += @("--strategy-ledger", $Paths.strategy_ledger)
-        }
-        Invoke-Bootstrap $arguments
-    }
-
-    $downstreamAxes = @(
-        [ordered]@{
-            Name = "fishing_probability"
-            Command = "build-acquisition-route-target-date-fishing-probability"
-            Dependencies = @()
-        },
-        [ordered]@{
-            Name = "stochastic_retry"
-            Command = "build-acquisition-route-target-date-stochastic-retry-budget"
-            Dependencies = @("fishing_probability")
-        },
-        [ordered]@{
-            Name = "daily_time_energy"
-            Command = "build-acquisition-route-target-date-daily-time-energy-budget"
-            Dependencies = @("fishing_probability", "stochastic_retry")
-        },
-        [ordered]@{
-            Name = "opportunity_cost"
-            Command = "build-acquisition-route-target-date-opportunity-cost"
-            Dependencies = @(
-                "fishing_probability", "stochastic_retry", "daily_time_energy")
-        }
-    )
-    foreach ($axis in $downstreamAxes) {
-        $arguments = @(
-            [string]$axis.Command,
-            "--requirement-inventory", $RequirementInventoryPath,
-            "--acquisition-lowering", $AcquisitionLoweringPath,
-            "--master-angler-windows", $MasterAnglerWindowsPath,
-            "--calendar-resolution", $Paths.calendar,
-            "--target-date-calendar", $Paths.target_calendar,
-            "--target-date-unlock", $Paths.unlock,
-            "--target-date-festival", $Paths.festival,
-            "--target-date-location", $Paths.location,
-            "--target-date-facility", $Paths.facility,
-            "--target-date-resource", $Paths.resource,
-            "--target-date-currency", $Paths.currency,
-            "--target-date-reservation", $Paths.reservation,
-            "--target-date-processing", $Paths.processing
-        )
-        foreach ($dependency in @($axis.Dependencies)) {
-            $parameter = "--target-date-" +
-                ([string]$dependency).Replace("_", "-")
-            $arguments += @($parameter, $Paths[[string]$dependency])
-        }
-        $arguments += @(
-            "--fishing-forecast-manifest", $Paths.forecast,
-            "--strategy-ledger", $Paths.strategy_ledger,
-            "--snapshot", $InitialSnapshotPath,
-            "--route-timing-calibration", $RouteTimingPath,
-            "--output", $Paths[[string]$axis.Name]
-        )
-        Invoke-Bootstrap $arguments
-    }
+    $rebuiltPlanning = Invoke-RuntimeAcquisitionPlanningPipeline `
+        -BootstrapDll $script:bootstrapDll `
+        -OutputDirectory ([IO.Path]::GetDirectoryName($Paths.calendar)) `
+        -BatchName "target-date-planning-rebuild" `
+        -SnapshotPath $InitialSnapshotPath `
+        -StrategyLedgerPath $Paths.strategy_ledger `
+        -TargetTotalDay $targetTotalDay `
+        -RequirementInventoryPath $RequirementInventoryPath `
+        -AcquisitionLoweringPath $AcquisitionLoweringPath `
+        -MasterAnglerWindowsPath $MasterAnglerWindowsPath `
+        -RouteTimingPath $RouteTimingPath `
+        -Paths $Paths
 
     Invoke-Bootstrap (@(
         "build-acquisition-route-portfolio-teacher-preference"
-    ) + $PlanningCommon + @(
+    ) + @($rebuiltPlanning.PortfolioCommon) + @(
         "--preference-request", $Paths.preference_request,
         "--selected-proposal-output", $Paths.proposal,
         "--selected-admission-output", $Paths.admission,
@@ -285,7 +180,7 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         -Value $postCommitRankingResponse.Raw
     Invoke-Bootstrap (@(
         "build-acquisition-route-portfolio-commit-receipt"
-    ) + $PlanningCommon + @(
+    ) + @($rebuiltPlanning.PortfolioCommon) + @(
         "--proposal", $Paths.proposal,
         "--portfolio-admission", $Paths.admission,
         "--committed-ledger", $Paths.committed_ledger,

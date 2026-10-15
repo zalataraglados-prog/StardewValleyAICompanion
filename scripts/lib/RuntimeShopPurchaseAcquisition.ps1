@@ -66,67 +66,15 @@ function New-RuntimeShopPurchasePlanningState {
         -Parameters $RankingParameters | Out-Null
 
     $calendarPath = Join-Path $Directory "calendar-resolution.json"
-    Invoke-Bootstrap @(
-        "build-current-acquisition-route-calendar-resolution",
-        "--requirement-inventory", $RequirementInventoryPath,
-        "--acquisition-lowering", $AcquisitionLoweringPath,
-        "--master-angler-windows", $MasterAnglerWindowsPath,
-        "--snapshot", $SnapshotPath,
-        "--output", $calendarPath
-    )
     $targetCalendarPath = Join-Path $Directory "target-date-calendar.json"
-    Invoke-Bootstrap @(
-        "build-current-acquisition-route-target-date-calendar",
-        "--requirement-inventory", $RequirementInventoryPath,
-        "--acquisition-lowering", $AcquisitionLoweringPath,
-        "--master-angler-windows", $MasterAnglerWindowsPath,
-        "--calendar-resolution", $calendarPath,
-        "--snapshot", $SnapshotPath,
-        "--target-total-day", ([string]$TargetTotalDay),
-        "--output", $targetCalendarPath
-    )
 
     $axis = [ordered]@{}
-    foreach ($row in @(
-        @("unlock", "build-acquisition-route-target-date-unlock-state"),
-        @("festival", "build-acquisition-route-target-date-festival-state"),
-        @("location", "build-acquisition-route-target-date-location-route"),
-        @("facility", "build-acquisition-route-target-date-facility-capacity"),
-        @("resource", "build-acquisition-route-target-date-resource-inputs"),
-        @("currency", "build-acquisition-route-target-date-currency-budget"),
-        @("reservation", "build-acquisition-route-target-date-inventory-reservation"),
-        @("processing", "build-acquisition-route-target-date-processing-lead-time")
+    foreach ($axisName in @(
+        "unlock", "festival", "location", "facility", "resource",
+        "currency", "reservation", "processing"
     )) {
-        $axisName = [string]$row[0]
         $axis[$axisName] = Join-Path $Directory `
             ("target-date-" + $axisName + ".json")
-        $arguments = @(
-            [string]$row[1],
-            "--requirement-inventory", $RequirementInventoryPath,
-            "--acquisition-lowering", $AcquisitionLoweringPath,
-            "--master-angler-windows", $MasterAnglerWindowsPath,
-            "--calendar-resolution", $calendarPath,
-            "--target-date-calendar", $targetCalendarPath,
-            "--snapshot", $SnapshotPath,
-            "--output", $axis[$axisName]
-        )
-        foreach ($prior in @(
-            "unlock", "festival", "location", "facility", "resource",
-            "currency", "reservation", "processing"
-        )) {
-            if ($axis.Contains($prior) -and $prior -ne $axisName) {
-                $arguments += @("--target-date-$prior", $axis[$prior])
-            }
-        }
-        if ($axisName -in @(
-                "location", "facility", "resource", "currency",
-                "reservation", "processing")) {
-            $arguments += @("--route-timing-calibration", $RouteTimingPath)
-        }
-        if ($axisName -in @("reservation", "processing")) {
-            $arguments += @("--strategy-ledger", $StrategyLedgerPath)
-        }
-        Invoke-Bootstrap $arguments
     }
 
     $forecastPath = Join-Path $Directory "fishing-forecast-manifest.json"
@@ -134,87 +82,43 @@ function New-RuntimeShopPurchasePlanningState {
         schema_version = "fishing_forecast_snapshot_manifest.v1"
         snapshots = @()
     })
-    $downstream = @(
-        [ordered]@{
-            Name = "fishing-probability"
-            Command = "build-acquisition-route-target-date-fishing-probability"
-            Dependencies = @()
-        },
-        [ordered]@{
-            Name = "stochastic-retry"
-            Command = "build-acquisition-route-target-date-stochastic-retry-budget"
-            Dependencies = @("fishing-probability")
-        },
-        [ordered]@{
-            Name = "daily-time-energy"
-            Command = "build-acquisition-route-target-date-daily-time-energy-budget"
-            Dependencies = @("fishing-probability", "stochastic-retry")
-        },
-        [ordered]@{
-            Name = "opportunity-cost"
-            Command = "build-acquisition-route-target-date-opportunity-cost"
-            Dependencies = @(
-                "fishing-probability", "stochastic-retry",
-                "daily-time-energy")
-        }
-    )
-    foreach ($row in $downstream) {
-        $axis[[string]$row.Name] = Join-Path $Directory `
-            ("target-date-" + [string]$row.Name + ".json")
-        $arguments = @(
-            [string]$row.Command,
-            "--requirement-inventory", $RequirementInventoryPath,
-            "--acquisition-lowering", $AcquisitionLoweringPath,
-            "--master-angler-windows", $MasterAnglerWindowsPath,
-            "--calendar-resolution", $calendarPath,
-            "--target-date-calendar", $targetCalendarPath,
-            "--target-date-unlock", $axis["unlock"],
-            "--target-date-festival", $axis["festival"],
-            "--target-date-location", $axis["location"],
-            "--target-date-facility", $axis["facility"],
-            "--target-date-resource", $axis["resource"],
-            "--target-date-currency", $axis["currency"],
-            "--target-date-reservation", $axis["reservation"],
-            "--target-date-processing", $axis["processing"]
-        )
-        foreach ($dependency in @($row.Dependencies)) {
-            $arguments += @(
-                "--target-date-$dependency",
-                $axis[[string]$dependency])
-        }
-        $arguments += @(
-            "--fishing-forecast-manifest", $forecastPath,
-            "--strategy-ledger", $StrategyLedgerPath,
-            "--snapshot", $SnapshotPath,
-            "--route-timing-calibration", $RouteTimingPath,
-            "--output", $axis[[string]$row.Name]
-        )
-        Invoke-Bootstrap $arguments
+    foreach ($axisName in @(
+        "fishing-probability", "stochastic-retry", "daily-time-energy",
+        "opportunity-cost"
+    )) {
+        $axis[$axisName] = Join-Path $Directory `
+            ("target-date-" + $axisName + ".json")
     }
-
-    $portfolioCommon = @(
-        "--requirement-inventory", $RequirementInventoryPath,
-        "--acquisition-lowering", $AcquisitionLoweringPath,
-        "--master-angler-windows", $MasterAnglerWindowsPath,
-        "--calendar-resolution", $calendarPath,
-        "--target-date-calendar", $targetCalendarPath,
-        "--target-date-unlock", $axis["unlock"],
-        "--target-date-festival", $axis["festival"],
-        "--target-date-location", $axis["location"],
-        "--target-date-facility", $axis["facility"],
-        "--target-date-resource", $axis["resource"],
-        "--target-date-currency", $axis["currency"],
-        "--target-date-reservation", $axis["reservation"],
-        "--target-date-processing", $axis["processing"],
-        "--target-date-fishing-probability", $axis["fishing-probability"],
-        "--target-date-stochastic-retry", $axis["stochastic-retry"],
-        "--target-date-daily-time-energy", $axis["daily-time-energy"],
-        "--target-date-opportunity-cost", $axis["opportunity-cost"],
-        "--fishing-forecast-manifest", $forecastPath,
-        "--strategy-ledger", $StrategyLedgerPath,
-        "--snapshot", $SnapshotPath,
-        "--route-timing-calibration", $RouteTimingPath
-    )
+    $planningPaths = @{
+        calendar = $calendarPath
+        target_calendar = $targetCalendarPath
+        unlock = $axis["unlock"]
+        festival = $axis["festival"]
+        location = $axis["location"]
+        facility = $axis["facility"]
+        resource = $axis["resource"]
+        currency = $axis["currency"]
+        reservation = $axis["reservation"]
+        processing = $axis["processing"]
+        fishing_probability = $axis["fishing-probability"]
+        stochastic_retry = $axis["stochastic-retry"]
+        daily_time_energy = $axis["daily-time-energy"]
+        opportunity_cost = $axis["opportunity-cost"]
+        forecast = $forecastPath
+    }
+    $pipeline = Invoke-RuntimeAcquisitionPlanningPipeline `
+        -BootstrapDll $script:bootstrapDll `
+        -OutputDirectory $Directory `
+        -BatchName "target-date-planning" `
+        -SnapshotPath $SnapshotPath `
+        -StrategyLedgerPath $StrategyLedgerPath `
+        -TargetTotalDay $TargetTotalDay `
+        -RequirementInventoryPath $RequirementInventoryPath `
+        -AcquisitionLoweringPath $AcquisitionLoweringPath `
+        -MasterAnglerWindowsPath $MasterAnglerWindowsPath `
+        -RouteTimingPath $RouteTimingPath `
+        -Paths $planningPaths
+    $portfolioCommon = @($pipeline.PortfolioCommon)
     return [pscustomobject][ordered]@{
         Directory = $Directory
         SnapshotPath = $SnapshotPath

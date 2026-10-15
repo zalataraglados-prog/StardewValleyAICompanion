@@ -14,7 +14,7 @@
 | Split-complete Teacher/native evidence | **4/19** | train/validation/test 两条证据通道完整的 criterion |
 | Promotion-grade / CoverageGateReady intersection | **2/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
 | Coverage-ready root methods | **1/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
-| Full Shipment runtime strata | **历史 26/26；当前权威重验 4/26** | 历史分母已闭合；当前 Sap、放射性矿石、树液采集器与怪物掉落完成重采，**不是全局 /19** |
+| Full Shipment runtime strata | **历史 26/26；当前权威重验 9/26** | 历史分母已闭合；当前九个独立 strata 已完成重采，**不是全局 /19** |
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
@@ -39,7 +39,7 @@ Executable criteria:       4/19
 Split-complete evidence:   4/19
 CoverageGateReady:         2/19
 Root methods ready:        1/11
-Full Shipment runtime:    26/26
+Full Shipment runtime:    current authority 9/26 (historical 26/26)
 Money production cells:    0/18
 Formal training:           false
 ```
@@ -50,7 +50,7 @@ Formal training:           false
 
 历史 `26/26` runtime strata 已闭合，分母不得扩张。#274 的 current-authority 审计显示：旧证据分别命中 location route、daily time/energy、calendar 或 Teacher preference 漂移；离线重建又确认旧执行收据缺少当前队列要求的 `player_location_before_step` 与玩家 tile 上下文。它们必须重新执行原生动作，不能通过放宽相等性或改写旧收据伪装为当前证据。
 
-当前 `4/26` 由 2026-10-15 的 Sap、放射性矿石、树液采集器与怪物掉落四次新原生运行支撑，不再引用对应旧摘要。Sap 通过共享 BFS、原生移动/碰撞/磁吸完成多掉落拾取；放射性矿石通过精确采集意图、共享 `executor.mine_stone` 与延迟拾取完成节点破坏；树液采集器与怪物掉落按冻结顺序直接通过既有原生链。四层均通过运输箱、睡眠结算、rollout proof 和当前 evidence index；其余 `22` 层仍为缺失，正式训练继续失败关闭。
+当前 `9/26` 由 2026-10-15 至 2026-10-16 的 Sap、放射性矿石、树液采集器、怪物掉落、地点鱼类、地点蚯蚓地、晶球掉落、商店购买与社区中心奖励九次新原生运行支撑，不再引用对应旧摘要。Sap 通过共享 BFS、原生移动/碰撞/磁吸完成多掉落拾取；放射性矿石通过精确采集意图、共享 `executor.mine_stone` 与延迟拾取完成节点破坏；其余七层按冻结顺序通过既有原生链。九层均通过运输箱、睡眠结算、rollout proof 和当前 evidence index；其余 `17` 层仍为缺失，正式训练继续失败关闭。
 
 除非出现以下情况，否则**不得主动重跑全部 26 层**：
 
@@ -88,7 +88,7 @@ Money batch 更新链可在调用方显式提供现有 production coverage reque
 
 波次执行不会死守计划中的最高阈值。`build-money-threshold-native-outcome-wave-selection` 会在实时、完整的 Revenue denominator 上选择当前能够跨越的最高缺失阈值，再复用原单阈值选择器取得最小充分售卖；真实结果跨过多少格就只关闭多少格，其余格由刷新后的 work plan 保留。`Invoke-MoneyThresholdNativeCollectionWave.ps1` 只负责校验波次、调用既有隔离 runner、重建 batch 并确认至少一格真实关闭，不新增第二套执行器或证据捷径。当前仍未运行该入口，故 `Money production cells` 保持 `0/18`。
 
-首轮空生产状态可由 `Initialize-MoneyThresholdProductionWorkPlan.ps1` 直接生成固定 `6 × 3 = 18` 格计划；无 corpus 时必须得到 `0` 个完整格、`3` 个原生波次和 `0` 个 comparison 波次。该入口只调用既有 work-plan builder，不创建空 corpus、证据或训练授权。首个 native run 接纳后必须改用 batch updater 输出的刷新计划。
+首轮空生产状态可由 `Initialize-MoneyThresholdProductionWorkPlan.ps1` 直接生成固定 `6 × 3 = 18` 格计划；无 corpus 时必须得到 `0` 个完整格、`3` 个原生波次和 `0` 个 comparison 波次。该入口只调用既有 work-plan builder，不创建空 corpus、证据或训练授权。为防止空初始化把真实进度降回 `0/18`，目标目录一旦存在 canonical corpus、不可读/非规范计划或任一非零完成格，初始化器会在首次写入前失败关闭；后续只有 batch updater 能刷新 canonical production work plan。
 
 comparison 侧现由 `Initialize-MoneyRevenueComparisonWave.ps1` 以 `partition + source_row_id` 从 work plan 精确定位 corpus row 和 native run summary，并生成带全路径哈希、source identity 与缺失 criterion 集的 handoff。completion 可只处理 handoff 列出的缺口，并把新 admission 与已有 index 按 `run_id + criterion_id` 累积合并，防止局部补证据时丢掉旧分子。该接线仍要求后续 acquisition rollout、strategy ledger 与 terminal proof 全部真实存在，不会凭 handoff 生成 Teacher 标签。
 
@@ -187,7 +187,7 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 
 #274 的代码优化阶段已完成：canonical artifact equality 改为流式哈希，read-session 与 deterministic-cache 均有显式总预算、单项预算、逐出与遥测，优先级最高的 DTO/DOM 双表示已收敛为 typed/read-only projection，并完成真实 26-proof 前缀的 A/B/C 测量。最终 C 组墙钟 `7588.7 ms`、CPU `6859.4 ms`、峰值工作集 `525.4 MiB`；相对旧默认实现分别降低约 `55.8%`、`40.2%` 和 `2.9%`。
 
-#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation。当前已完成 `4/26` 原生重采，剩余 `22/26` 仍需按当前源码重放；旧 execution receipt 缺失当前编译器上下文参数，不能替代新收据。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
+#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation。当前已完成 `9/26` 原生重采，剩余 `17/26` 仍需按当前源码重放；旧 execution receipt 缺失当前编译器上下文参数，不能替代新收据。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
 
 ## 9. 剩余规模
 

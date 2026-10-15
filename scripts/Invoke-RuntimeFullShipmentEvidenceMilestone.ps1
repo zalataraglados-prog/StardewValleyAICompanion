@@ -219,6 +219,8 @@ function Build-CurrentEvidenceIndex {
         "build-full-shipment-runtime-sample-evidence-index" `
         "--static-inventory" $staticInventoryPath `
         "--evidence-manifest" $evidenceManifestPath `
+        "--read-session-max-mib" "256" `
+        "--read-session-entry-max-mib" "64" `
         "--output" $indexPath | Out-Null
     if ($LASTEXITCODE -notin @(0, 2)) {
         throw "Full Shipment runtime evidence index rebuild failed with exit $LASTEXITCODE."

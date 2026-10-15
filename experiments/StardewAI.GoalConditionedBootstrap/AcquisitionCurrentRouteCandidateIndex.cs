@@ -91,7 +91,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         var fullPath = Path.GetFullPath(snapshotPath);
         return InvocationDeterministicBuildSession.GetOrBuildReference(
             "AcquisitionCurrentRouteCandidateIndex.Read",
-            "v15",
+            "v16",
             new[]
             {
                 InvocationDeterministicBuildSession.File(
@@ -136,9 +136,18 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             "mining.reach_depth",
             candidates,
             reasons,
-            excludedRouteKind: "native_monster_drop_table");
+            excludedRouteKinds: new[]
+            {
+                "native_monster_drop_table",
+                "native_radioactive_ore_node"
+            });
         AddCandidateSources(
             BuildCurrentMonsterDropCandidates(snapshot),
+            "mining.reach_depth",
+            candidates,
+            reasons);
+        AddCandidateSources(
+            BuildCurrentRadioactiveOreCandidates(snapshot),
             "mining.reach_depth",
             candidates,
             reasons);
@@ -167,10 +176,34 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
 
     private static EventCandidate[] BuildCurrentMonsterDropCandidates(
         SnapshotEnvelope snapshot)
+        => BuildCurrentMineSourceCandidates(
+            snapshot,
+            "monsters",
+            source =>
+                source.RouteKind == "native_monster_drop_table" &&
+                source.SourceId.StartsWith("monster:",
+                    StringComparison.Ordinal) &&
+                source.SourceId.Length > "monster:".Length &&
+                !string.IsNullOrWhiteSpace(source.QualifiedItemId));
+
+    private static EventCandidate[] BuildCurrentRadioactiveOreCandidates(
+        SnapshotEnvelope snapshot)
+        => BuildCurrentMineSourceCandidates(
+            snapshot,
+            "objects",
+            source =>
+                source.RouteKind == "native_radioactive_ore_node" &&
+                source.SourceId == "GameLocation.breakStone" &&
+                source.QualifiedItemId == "(O)909");
+
+    private static EventCandidate[] BuildCurrentMineSourceCandidates(
+        SnapshotEnvelope snapshot,
+        string fieldName,
+        Func<CurrentRouteSource, bool> acceptsSource)
     {
         if (!snapshot.State.TryGetValue("mining", out var mining) ||
             mining.ValueKind != JsonValueKind.Object ||
-            !mining.TryGetProperty("monsters", out var field) ||
+            !mining.TryGetProperty(fieldName, out var field) ||
             field.ValueKind != JsonValueKind.Object ||
             FieldStatus(field) != "available" ||
             FieldValue(field).ValueKind != JsonValueKind.Array)
@@ -192,12 +225,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
                 ReadString(row, "route_kind"),
                 ReadString(row, "source_id"),
                 ReadString(row, "qualified_item_id")))
-            .Where(source =>
-                source.RouteKind == "native_monster_drop_table" &&
-                source.SourceId.StartsWith("monster:",
-                    StringComparison.Ordinal) &&
-                source.SourceId.Length > "monster:".Length &&
-                !string.IsNullOrWhiteSpace(source.QualifiedItemId))
+            .Where(acceptsSource)
             .Distinct()
             .OrderBy(source => source.SourceId, StringComparer.Ordinal)
             .ThenBy(source => source.QualifiedItemId,
@@ -289,7 +317,7 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
         string optionId,
         ICollection<AcquisitionCurrentRouteCandidate> candidates,
         ICollection<string> reasons,
-        string excludedRouteKind = "")
+        IReadOnlyCollection<string>? excludedRouteKinds = null)
     {
         foreach (var candidate in eventCandidates.Where(value =>
                      value.Available && value.BlockReasons.Length == 0))
@@ -311,7 +339,9 @@ internal sealed class AcquisitionCurrentRouteCandidateIndex
             }
             foreach (var source in sources)
             {
-                if (source.RouteKind == excludedRouteKind)
+                if (excludedRouteKinds?.Contains(
+                        source.RouteKind,
+                        StringComparer.Ordinal) == true)
                     continue;
                 var routeDistanceTiles = ReadIntParameter(
                     candidate,

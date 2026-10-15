@@ -69,21 +69,21 @@ var commandDefinitions = new CommandDefinition[]
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
     new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution),
-    new("build-current-acquisition-route-calendar-resolution", BuildCurrentAcquisitionRouteCalendarResolution),
+    new("build-current-acquisition-route-calendar-resolution", BuildCurrentAcquisitionRouteCalendarResolution, BatchSafe: true),
     new("build-acquisition-route-target-date-calendar", BuildAcquisitionRouteTargetDateCalendar),
-    new("build-current-acquisition-route-target-date-calendar", BuildCurrentAcquisitionRouteTargetDateCalendar),
-    new("build-acquisition-route-target-date-unlock-state", BuildAcquisitionRouteTargetDateUnlockState),
-    new("build-acquisition-route-target-date-festival-state", BuildAcquisitionRouteTargetDateFestivalState),
-    new("build-acquisition-route-target-date-location-route", BuildAcquisitionRouteTargetDateLocationRoute),
-    new("build-acquisition-route-target-date-facility-capacity", BuildAcquisitionRouteTargetDateFacilityCapacity),
-    new("build-acquisition-route-target-date-resource-inputs", BuildAcquisitionRouteTargetDateResourceInputs),
-    new("build-acquisition-route-target-date-currency-budget", BuildAcquisitionRouteTargetDateCurrencyBudget),
-    new("build-acquisition-route-target-date-inventory-reservation", BuildAcquisitionRouteTargetDateInventoryReservation),
-    new("build-acquisition-route-target-date-processing-lead-time", BuildAcquisitionRouteTargetDateProcessingLeadTime),
-    new("build-acquisition-route-target-date-fishing-probability", BuildAcquisitionRouteTargetDateFishingProbability),
-    new("build-acquisition-route-target-date-stochastic-retry-budget", BuildAcquisitionRouteTargetDateStochasticRetryBudget),
-    new("build-acquisition-route-target-date-daily-time-energy-budget", BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget),
-    new("build-acquisition-route-target-date-opportunity-cost", BuildAcquisitionRouteTargetDateOpportunityCost),
+    new("build-current-acquisition-route-target-date-calendar", BuildCurrentAcquisitionRouteTargetDateCalendar, BatchSafe: true),
+    new("build-acquisition-route-target-date-unlock-state", BuildAcquisitionRouteTargetDateUnlockState, BatchSafe: true),
+    new("build-acquisition-route-target-date-festival-state", BuildAcquisitionRouteTargetDateFestivalState, BatchSafe: true),
+    new("build-acquisition-route-target-date-location-route", BuildAcquisitionRouteTargetDateLocationRoute, BatchSafe: true),
+    new("build-acquisition-route-target-date-facility-capacity", BuildAcquisitionRouteTargetDateFacilityCapacity, BatchSafe: true),
+    new("build-acquisition-route-target-date-resource-inputs", BuildAcquisitionRouteTargetDateResourceInputs, BatchSafe: true),
+    new("build-acquisition-route-target-date-currency-budget", BuildAcquisitionRouteTargetDateCurrencyBudget, BatchSafe: true),
+    new("build-acquisition-route-target-date-inventory-reservation", BuildAcquisitionRouteTargetDateInventoryReservation, BatchSafe: true),
+    new("build-acquisition-route-target-date-processing-lead-time", BuildAcquisitionRouteTargetDateProcessingLeadTime, BatchSafe: true),
+    new("build-acquisition-route-target-date-fishing-probability", BuildAcquisitionRouteTargetDateFishingProbability, BatchSafe: true),
+    new("build-acquisition-route-target-date-stochastic-retry-budget", BuildAcquisitionRouteTargetDateStochasticRetryBudget, BatchSafe: true),
+    new("build-acquisition-route-target-date-daily-time-energy-budget", BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget, BatchSafe: true),
+    new("build-acquisition-route-target-date-opportunity-cost", BuildAcquisitionRouteTargetDateOpportunityCost, BatchSafe: true),
     new("build-acquisition-route-portfolio-admission", BuildAcquisitionRoutePortfolioAdmission),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
@@ -167,6 +167,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-shop-purchase-navigation-terminal-coverage", SelfTestShopPurchaseNavigationTerminalCoverage),
     new("self-test-crop-planting-terminal-coverage", SelfTestCropPlantingTerminalCoverage),
     new("self-test-invocation-read-plan", _ => BootstrapSelfTest.RunInvocationReadPlan()),
+    new("self-test-bootstrap-command-batch", _ => BootstrapSelfTest.RunCommandBatch()),
     new("self-test-goal-method-frontier-reuse", options =>
         BootstrapSelfTest.RunGoalMethodFrontierReuse(
             GoalMethodFrontierInputs(options))),
@@ -179,6 +180,7 @@ var commandRegistry = commandDefinitions.ToDictionary(
     StringComparer.Ordinal);
 try
 {
+    JsonDefaults.ConfigureOutput(options.Optional("json-output"));
     var readSessionPlan = options.InvocationReadPlan();
     invocationReadSession = InvocationReadSession.Start(
         readSessionPlan.ImmutableInputPaths,
@@ -191,13 +193,21 @@ try
         DeterministicBuildSessionEnabled(options),
         DeterministicCacheBudgetBytes(options),
         DeterministicCacheEntryLimitBytes(options));
-    if (!commandRegistry.TryGetValue(command, out var definition))
+    if (string.Equals(command, "run-command-batch", StringComparison.Ordinal))
+    {
+        RunCommandBatch(options, commandRegistry);
+    }
+    else if (!commandRegistry.TryGetValue(command, out var definition))
     {
         throw new ArgumentException(
             "Command must be " + string.Join(", ",
-                commandDefinitions.Select(value => value.Name)) + ".");
+                commandDefinitions.Select(value => value.Name)
+                    .Append("run-command-batch")) + ".");
     }
-    definition.Execute(options);
+    else
+    {
+        definition.Execute(options);
+    }
 }
 catch (Exception ex)
 {
@@ -2711,6 +2721,15 @@ static void BuildValidationTraceBaseline(Arguments options) => Write(
     options.Required("output"),
     ValidationTraceBaselineBuilder.Build(options.Required("trace-root")));
 
+static void RunCommandBatch(
+    Arguments options,
+    IReadOnlyDictionary<string, CommandDefinition> commandRegistry) => Write(
+        options.Required("output"),
+        BootstrapCommandBatchRunner.Run(
+            options.Required("batch-manifest"),
+            options.Required("output"),
+            commandRegistry));
+
 static void Write(string path, object value)
 {
     var fullPath = Path.GetFullPath(path);
@@ -2727,7 +2746,7 @@ static void Write(string path, object value)
             FileOptions.WriteThrough))
         using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
         {
-            writer.Write(JsonSerializer.Serialize(value, JsonDefaults.Options));
+            writer.Write(JsonSerializer.Serialize(value, JsonDefaults.Output));
             writer.WriteLine();
             writer.Flush();
             stream.Flush(flushToDisk: true);
@@ -2777,7 +2796,8 @@ static void WriteJsonl<T>(string path, IEnumerable<T> values)
 
 internal sealed record CommandDefinition(
     string Name,
-    Action<Arguments> Execute);
+    Action<Arguments> Execute,
+    bool BatchSafe = false);
 
 internal sealed partial class Arguments
 {
@@ -2877,4 +2897,20 @@ internal static class JsonDefaults
     {
         WriteIndented = true
     };
+
+    public static JsonSerializerOptions Output { get; private set; } = Options;
+
+    public static void ConfigureOutput(string? format)
+    {
+        var normalized = string.IsNullOrWhiteSpace(format)
+            ? "indented"
+            : format;
+        Output = normalized switch
+        {
+            "indented" => Options,
+            "compact" => Compact,
+            _ => throw new ArgumentException(
+                "--json-output must be indented or compact.")
+        };
+    }
 }

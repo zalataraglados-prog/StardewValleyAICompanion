@@ -184,6 +184,39 @@ function Invoke-RuntimeBootstrap {
     }
 }
 
+function Invoke-RuntimeBootstrapBatch {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $BootstrapDll,
+        [Parameter(Mandatory)] [object[]] $Commands,
+        [Parameter(Mandatory)] [string] $OutputDirectory,
+        [Parameter(Mandatory)] [string] $BatchName
+    )
+
+    if ($Commands.Count -eq 0) {
+        throw "Runtime bootstrap batch must contain at least one command."
+    }
+    New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
+    $manifestPath = Join-Path $OutputDirectory "$BatchName.manifest.json"
+    $resultPath = Join-Path $OutputDirectory "$BatchName.result.json"
+    Write-JsonFile -Path $manifestPath -Value ([ordered]@{
+        schema_version = "stardewai.bootstrap_command_batch.v1"
+        commands = $Commands
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $BootstrapDll -Arguments @(
+        "run-command-batch",
+        "--batch-manifest", $manifestPath,
+        "--output", $resultPath,
+        "--json-output", "compact"
+    )
+    $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+    if ([string]$result.status -ne "passed" -or
+        [int]$result.command_count -ne $Commands.Count) {
+        throw "Runtime bootstrap batch did not complete every command: $BatchName"
+    }
+    return $result
+}
+
 function Save-RuntimeSnapshotAndIngest {
     param(
         [Parameter(Mandatory)] [string] $Path,
