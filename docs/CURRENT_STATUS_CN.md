@@ -50,6 +50,8 @@ Formal training:           false
 
 历史 `26/26` runtime strata 已闭合，分母不得扩张。#274 的 current-authority 审计显示：Sap 已按当前源码重建并通过，另外 `25` 层的历史证据分别命中 location route、daily time/energy、calendar 或 Teacher preference 漂移；离线重建又确认旧执行收据缺少当前队列要求的 `player_location_before_step` 与玩家 tile 上下文。它们必须重新执行原生动作，不能通过放宽相等性或改写旧收据伪装为当前证据。
 
+当前 `1/26` 由新原生运行 `runtime-full-shipment-sap-current-authority-v7-20261015` 支撑，不再引用旧 Sap 摘要。该运行通过共享 BFS、原生移动/碰撞/磁吸完成多掉落拾取，随后通过运输箱、睡眠结算、recurrence proof 和当前 evidence index；其余 `25` 层仍为缺失，正式训练继续失败关闭。
+
 除非出现以下情况，否则**不得主动重跑全部 26 层**：
 
 1. 权威 route/source contract 真实变化；

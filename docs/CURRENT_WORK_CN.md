@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 current-authority Sap 原生重验
+
+- 当前预算与位置协议合入后，E 盘 9 类旧 `passed` 摘要均由当前严格验证器重新判定为 stale，不能作为 current-authority 证据；旧 Sap 证明也命中 daily time/energy drift。
+- 新原生运行 `runtime-full-shipment-sap-current-authority-v7-20261015` 暴露并修复唯一共享 `executor.pickup_debris` 的两个执行问题：可进入掉落格必须真正走入；不可进入格旁必须保持朝向输入以进入原生磁吸范围；BFS 不得规划穿过本动作不会清除的可移除障碍。
+- 修复后的同一运行原生获得并运输 `6` 个 `(O)92`，完成睡眠结算和 recurrence proof。当前源码 evidence index 精确验证 `native_wild_tree_chop_drop` 为 `1/26`，shared shipping evidence 为真；其余 `25` 层仍须重新执行原生动作，formal training 仍为 `false`。
+
 ## 历史记录 · 2026-10-15 #274 当前权威 force-full 收口
 
 - 对冻结的 Full Shipment `26` 层证据执行当前源码扫描：Sap 的当前重建证明通过，其余 `25` 层分别因 location route、daily time/energy、calendar 或 Teacher preference 漂移而失效。离线 planning 重建已能重新通过 Teacher、commit 与 dispatch，但旧 execution receipt 缺少当前动作队列新增的玩家位置/tile 上下文，因此必须原生重跑，不能改写历史收据或放宽相等性。
