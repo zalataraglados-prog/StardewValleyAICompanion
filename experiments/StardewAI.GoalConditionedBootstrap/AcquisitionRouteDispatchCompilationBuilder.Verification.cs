@@ -298,16 +298,12 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 };
                 return Array.Empty<OptionAvailabilityCandidate>();
             }
-            var parameters = requirement.RouteKind ==
-                    "native_monster_drop_table"
-                ? AcquisitionCurrentRouteCandidateIndex
-                    .BuildRollingMiningParameters(
-                        snapshot,
-                        requirement.RouteKind,
-                        requirement.SourceId,
-                        requirement.QualifiedItemId)
-                : AcquisitionCurrentRouteCandidateIndex
-                    .BuildRollingMiningParameters(snapshot);
+            var parameters = AcquisitionCurrentRouteCandidateIndex
+                .BuildRollingMiningParameters(
+                    snapshot,
+                    requirement.RouteKind,
+                    requirement.SourceId,
+                    requirement.QualifiedItemId);
             if (parameters.Length == 0)
             {
                 blockingReasons = new[]

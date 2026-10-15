@@ -22,7 +22,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         {
             return true;
         }
-        if (requirement.RouteKind != "native_monster_drop_table" ||
+        if (requirement.RouteKind is not (
+                "native_monster_drop_table" or
+                "native_radioactive_ore_node") ||
             acquisitionParameters.Length != 3)
         {
             return false;

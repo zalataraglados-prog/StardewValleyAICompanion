@@ -218,6 +218,18 @@ $sampleRankingParameters = switch ($Scenario) {
             [ordered]@{
                 name = "target_location_family"
                 value = "ordinary_mines"
+            },
+            [ordered]@{
+                name = "acquisition_target_route_kind"
+                value = "native_radioactive_ore_node"
+            },
+            [ordered]@{
+                name = "acquisition_target_source_id"
+                value = "GameLocation.breakStone"
+            },
+            [ordered]@{
+                name = "acquisition_target_qualified_item_id"
+                value = "(O)909"
             }
         )
     }

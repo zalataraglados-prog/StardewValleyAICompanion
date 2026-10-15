@@ -14,7 +14,7 @@
 | Split-complete Teacher/native evidence | **4/19** | train/validation/test 两条证据通道完整的 criterion |
 | Promotion-grade / CoverageGateReady intersection | **2/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
 | Coverage-ready root methods | **1/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
-| Full Shipment runtime strata | **历史 26/26；当前权威重验 1/26** | 历史分母已闭合，但当前编译器加入了执行上下文参数；除 Sap 外须重新采集原生收据，**不是全局 /19** |
+| Full Shipment runtime strata | **历史 26/26；当前权威重验 2/26** | 历史分母已闭合，但当前编译器加入了执行上下文参数；当前仅 Sap 与放射性矿石完成重采，**不是全局 /19** |
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
@@ -48,9 +48,9 @@ Formal training:           false
 
 ### Full Shipment runtime evidence
 
-历史 `26/26` runtime strata 已闭合，分母不得扩张。#274 的 current-authority 审计显示：Sap 已按当前源码重建并通过，另外 `25` 层的历史证据分别命中 location route、daily time/energy、calendar 或 Teacher preference 漂移；离线重建又确认旧执行收据缺少当前队列要求的 `player_location_before_step` 与玩家 tile 上下文。它们必须重新执行原生动作，不能通过放宽相等性或改写旧收据伪装为当前证据。
+历史 `26/26` runtime strata 已闭合，分母不得扩张。#274 的 current-authority 审计显示：旧证据分别命中 location route、daily time/energy、calendar 或 Teacher preference 漂移；离线重建又确认旧执行收据缺少当前队列要求的 `player_location_before_step` 与玩家 tile 上下文。它们必须重新执行原生动作，不能通过放宽相等性或改写旧收据伪装为当前证据。
 
-当前 `1/26` 由新原生运行 `runtime-full-shipment-sap-current-authority-v7-20261015` 支撑，不再引用旧 Sap 摘要。该运行通过共享 BFS、原生移动/碰撞/磁吸完成多掉落拾取，随后通过运输箱、睡眠结算、recurrence proof 和当前 evidence index；其余 `25` 层仍为缺失，正式训练继续失败关闭。
+当前 `2/26` 由新原生运行 `runtime-full-shipment-sap-current-authority-v7-20261015` 与 `runtime-full-shipment-evidence-radioactive_ore_node_sample-20261015-204018` 支撑，不再引用对应旧摘要。Sap 通过共享 BFS、原生移动/碰撞/磁吸完成多掉落拾取；放射性矿石通过精确采集意图、共享 `executor.mine_stone` 与延迟拾取完成节点破坏。两者均通过运输箱、睡眠结算、rollout proof 和当前 evidence index；其余 `24` 层仍为缺失，正式训练继续失败关闭。
 
 除非出现以下情况，否则**不得主动重跑全部 26 层**：
 
@@ -187,7 +187,7 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 
 #274 的代码优化阶段已完成：canonical artifact equality 改为流式哈希，read-session 与 deterministic-cache 均有显式总预算、单项预算、逐出与遥测，优先级最高的 DTO/DOM 双表示已收敛为 typed/read-only projection，并完成真实 26-proof 前缀的 A/B/C 测量。最终 C 组墙钟 `7588.7 ms`、CPU `6859.4 ms`、峰值工作集 `525.4 MiB`；相对旧默认实现分别降低约 `55.8%`、`40.2%` 和 `2.9%`。
 
-#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation。当前扫描已把结果细分为 `1/26` 可重建与 `25/26` 需原生重采；离线重建能通过 Teacher、commit 和 dispatch，但会在旧 execution receipt 缺失当前编译器上下文参数处失败关闭。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
+#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation。当前已完成 `2/26` 原生重采，剩余 `24/26` 仍需按当前源码重放；旧 execution receipt 缺失当前编译器上下文参数，不能替代新收据。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
 
 ## 9. 剩余规模
 
