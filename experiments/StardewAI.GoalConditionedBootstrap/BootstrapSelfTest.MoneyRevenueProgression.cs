@@ -39,6 +39,17 @@ internal static partial class BootstrapSelfTest
         var saleEpisodePath = VerifyMoneyRevenueShopRecurrenceArtifact(
             saleBefore,
             saleAfter);
+        VerifyMoneyRevenueShopRecurrenceArtifact(
+            saleBefore,
+            MoneyProgressionSnapshot(
+                totalDay: 10,
+                gameTick: 110,
+                money: 110,
+                totalMoneyEarned: 49_910,
+                pendingShippingValue: 300,
+                shippingSignature: "pending-300",
+                duplicateEndpointCount: 3),
+            fixtureId: "variable-sale-value");
 
         var settlementBefore = MoneyProgressionSnapshot(
             totalDay: 10,

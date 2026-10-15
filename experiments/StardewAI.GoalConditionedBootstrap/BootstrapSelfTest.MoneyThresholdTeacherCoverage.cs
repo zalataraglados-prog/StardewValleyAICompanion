@@ -178,7 +178,8 @@ internal static partial class BootstrapSelfTest
             "Generic native shop-sale evidence drifted from the compiled sale.");
         VerifyMoneyRevenueShopRecurrenceArtifact(
             fixtureRoot,
-            sources[0].ExecutionEpisodePath);
+            sources[0].ExecutionEpisodePath,
+            expectedRevenue: 20);
 
         var requestPath = Path.Combine(
             fixtureRoot,

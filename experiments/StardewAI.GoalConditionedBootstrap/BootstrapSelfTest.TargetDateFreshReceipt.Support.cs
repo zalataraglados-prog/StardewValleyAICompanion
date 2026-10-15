@@ -81,19 +81,18 @@ internal static partial class BootstrapSelfTest
         };
     }
 
-    private static void WriteTargetDateInventoryAfterSnapshot(
+    private static string WriteTargetDateInventoryAfterSnapshot(
         string beforeSnapshotPath,
         string afterSnapshotPath,
-        string afterStateHash,
         string qualifiedItemId,
         int stack,
-        int quality)
+        int quality,
+        int playerTileXDelta = 0)
     {
         Require(stack >= 0,
             "Fresh-receipt quantity fixture requires a non-negative stack.");
         var root = JsonNode.Parse(
             File.ReadAllText(beforeSnapshotPath))!.AsObject();
-        root["state_hash"] = afterStateHash;
         root["game_tick"] = root["game_tick"]!.GetValue<long>() + 1;
         var inventory = root["state"]!["player"]!["inventory"]!["value"]!
             .AsArray();
@@ -106,9 +105,22 @@ internal static partial class BootstrapSelfTest
                 quality
             }, JsonDefaults.Options));
         }
+        if (playerTileXDelta != 0)
+        {
+            var tileX = root["state"]!["player"]!["tile_x"]!["value"]!;
+            root["state"]!["player"]!["tile_x"]!["value"] =
+                tileX.GetValue<int>() + playerTileXDelta;
+        }
+        var after = JsonSerializer.Deserialize<SnapshotEnvelope>(
+            root.ToJsonString(JsonDefaults.Options),
+            JsonDefaults.Options) ?? throw new InvalidDataException(
+            "Fresh-receipt after snapshot clone failed.");
+        var afterStateHash = SnapshotHash.ComputeStateHash(after.State);
+        root["state_hash"] = afterStateHash;
         File.WriteAllText(
             afterSnapshotPath,
             root.ToJsonString(JsonDefaults.Options));
+        return afterStateHash;
     }
 
     private static AcquisitionRouteTargetDateUnlock TargetDateRequirementRoute(

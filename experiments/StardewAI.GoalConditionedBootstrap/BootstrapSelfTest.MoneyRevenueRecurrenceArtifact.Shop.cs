@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
@@ -14,9 +15,8 @@ internal static partial class BootstrapSelfTest
         SnapshotEnvelope after,
         string fixtureId = "default")
     {
-        var root = Path.Combine(
-            Path.GetTempPath(),
-            "stardewai-money-revenue-shop-artifact",
+        var root = TempArtifactRoot(
+            "money-revenue-shop-artifact",
             fixtureId);
         Directory.CreateDirectory(root);
         var beforePath = Path.Combine(root, "before.json");
@@ -25,15 +25,22 @@ internal static partial class BootstrapSelfTest
         var episodePath = Path.Combine(root, "execution-episode.json");
         Write(beforePath, before);
         Write(afterPath, after);
+        var beforeMoney = before.State["player"].GetProperty("money")
+            .GetProperty("value").GetInt32();
+        var afterMoney = after.State["player"].GetProperty("money")
+            .GetProperty("value").GetInt32();
+        var saleValue = checked(afterMoney - beforeMoney);
+        Require(saleValue > 0,
+            "Shop-sale recurrence fixture requires positive revenue.");
+        var saleValueText = saleValue.ToString(
+            CultureInfo.InvariantCulture);
         var changes = new[]
         {
             new SimulatedFactChange
             {
                 Path = "player.money",
-                Before = before.State["player"].GetProperty("money")
-                    .GetProperty("value").GetInt32().ToString(),
-                After = after.State["player"].GetProperty("money")
-                    .GetProperty("value").GetInt32().ToString()
+                Before = beforeMoney.ToString(CultureInfo.InvariantCulture),
+                After = afterMoney.ToString(CultureInfo.InvariantCulture)
             }
         };
         var reasons = new[]
@@ -54,7 +61,9 @@ internal static partial class BootstrapSelfTest
             PrimitiveKind = "sell_shop_item",
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = reasons,
-            RequestedEffect = "shop_id=SeedShop;qualified_item_id=(O)24;quantity=1;expected_unit_price=20",
+            RequestedEffect =
+                "shop_id=SeedShop;qualified_item_id=(O)24;quantity=1;" +
+                "expected_unit_price=" + saleValueText,
             ObservedEffect = "money_increased_by_exact_sale_value",
             BlockReasons = Array.Empty<string>(),
             ChangedFacts = changes
@@ -75,8 +84,8 @@ internal static partial class BootstrapSelfTest
                     RevenueParameter("slot_index", "0"),
                     RevenueParameter("qualified_item_id", "(O)24"),
                     RevenueParameter("quantity", "1"),
-                    RevenueParameter("expected_unit_price", "20"),
-                    RevenueParameter("expected_total_value", "20"),
+                    RevenueParameter("expected_unit_price", saleValueText),
+                    RevenueParameter("expected_total_value", saleValueText),
                     RevenueParameter("expected_shop_id", "SeedShop")
                 },
                 Steps = new[]
@@ -124,7 +133,10 @@ internal static partial class BootstrapSelfTest
             ObservedEffect = result.ObservedEffect,
             ChangedFacts = JsonSerializer.SerializeToElement(changes)
         });
-        VerifyMoneyRevenueShopRecurrenceArtifact(root, episodePath);
+        VerifyMoneyRevenueShopRecurrenceArtifact(
+            root,
+            episodePath,
+            saleValue);
         return episodePath;
     }
 

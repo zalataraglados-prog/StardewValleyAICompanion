@@ -52,13 +52,10 @@ internal static partial class BootstrapSelfTest
         var transitionId = request.TransitionCount.ToString(
             "D2",
             System.Globalization.CultureInfo.InvariantCulture);
-        var afterStateHash =
-            "target-date-continuation-after-state-" + transitionId;
         var afterSnapshotPath = Path.Combine(outputRoot, "after-snapshot.json");
-        WriteTargetDateInventoryAfterSnapshot(
+        var afterStateHash = WriteTargetDateInventoryAfterSnapshot(
             bindingInputs.BeforeSnapshotPath,
             afterSnapshotPath,
-            afterStateHash,
             requirement.QualifiedItemId,
             requirement.RequiredAmount,
             requirement.MinimumQuality);

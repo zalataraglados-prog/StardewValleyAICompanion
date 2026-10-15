@@ -27,6 +27,9 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         -Body $initialSnapshotRaw | Out-Null
     $sourceRanking = Get-Content -LiteralPath $Paths.ranking -Raw |
         ConvertFrom-Json
+    $sourceDispatch = Get-Content -LiteralPath $Paths.dispatch -Raw |
+        ConvertFrom-Json
+    $sourceCandidateId = [string]$sourceDispatch.source_candidate_id
     $rankedOptionIds = @($sourceRanking.prediction.ranked_options |
         ForEach-Object { [string]$_.option_id } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
@@ -57,9 +60,22 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         @($sourceAvailability[0].social_candidates) |
             Where-Object { [bool]$_.available })
     if ($rankedOptionIds.Count -eq 0) {
-        if ($availableCurrentCandidates.Count -ne 1) {
-            throw "Unbound source ranking has no unique current candidate."
+        $sourceCandidates = @(if ([string]::IsNullOrWhiteSpace(
+                $sourceCandidateId)) {
+            $availableCurrentCandidates
         }
+        else {
+            $availableCurrentCandidates | Where-Object {
+                [string]$_.candidate_id -eq $sourceCandidateId
+            }
+        })
+        if ($sourceCandidates.Count -ne 1) {
+            throw "Unbound source ranking has no unique source dispatch " +
+                "candidate '$sourceCandidateId'."
+        }
+        # Preserve the source request shape. The exact dispatch identity above
+        # proves that the old native target remains in the unbound option set;
+        # downstream route binding must still select that same identity.
         $sourceParameters = @()
     }
     if ($sourceParameters.Count -gt 0) {
@@ -93,6 +109,22 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
     if ([string]$rankingResponse.Value.schema_version -ne
             "availability_policy_prediction.v1") {
         throw "Rebuilt acquisition ranking returned an unexpected schema."
+    }
+    if ($rankedOptionIds.Count -eq 0) {
+        $rebuiltSourceCandidates = @(
+            @($rankingResponse.Value.availability.options | Where-Object {
+                [string]$_.option_id -eq $sourceOptionId
+            } | ForEach-Object {
+                @($_.economic_candidates) + @($_.event_candidates) +
+                    @($_.social_candidates)
+            }) | Where-Object {
+                [bool]$_.available -and
+                [string]$_.candidate_id -eq $sourceCandidateId
+            })
+        if ($rebuiltSourceCandidates.Count -ne 1) {
+            throw "Rebuilt unbound ranking lost source dispatch candidate " +
+                "'$sourceCandidateId'."
+        }
     }
     Write-Utf8Text -Path $Paths.ranking -Value $rankingResponse.Raw
     $sourceTargetCalendar = Get-Content `

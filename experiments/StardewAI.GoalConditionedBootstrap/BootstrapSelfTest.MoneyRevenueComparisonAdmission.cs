@@ -7,9 +7,8 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyMoneyRevenueComparisonAdmission()
     {
-        var root = Path.Combine(
-            Path.GetTempPath(),
-            "stardewai-money-revenue-comparison-admission");
+        var root = TempArtifactRoot(
+            "money-revenue-comparison-admission");
         Directory.CreateDirectory(root);
         var before = MoneyRevenueTerminalSnapshot(
             gameTick: 100,

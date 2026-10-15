@@ -1491,6 +1491,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.RadioactiveOreNodeFixture.cs");
+        var dailyBudget = ReadRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "AcquisitionRouteTargetDateDailyTimeEnergyBuilder.Evaluation.cs");
 
         Assert.Contains(
             "\"radioactive_ore_node_sample\" { \"full_shipment:item:909\" }",
@@ -1543,6 +1547,18 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.DoesNotContain(
             "ItemRegistry.Create<StardewValley.Object>(\"(O)909\")",
             fixture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.MaxMovementTiles is null or < 0",
+            dailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exactCurrentLocationMaxMovementTiles:\n                candidate.MaxMovementTiles",
+            dailyBudget.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "routeState.RouteEvidenceBlockingReasons.SequenceEqual(\n                new[] { \"location_route_date_evidence_missing\" })",
+            dailyBudget.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
     }
 
@@ -1656,6 +1672,14 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
         Assert.Contains(
             "existing_native_mining_combat_profile",
             monsterDailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidate.MaxMovementTiles is null or < 0",
+            monsterDailyBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exactCurrentLocationMaxMovementTiles:\n                candidate.MaxMovementTiles",
+            monsterDailyBudget.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
         Assert.Contains(
             "requirement.RouteKind is\n            \"native_radioactive_ore_node\" or\n            \"native_monster_drop_table\"",
@@ -2667,7 +2691,15 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             rebuild,
             StringComparison.Ordinal);
         Assert.Contains(
-            "Unbound source ranking has no unique current candidate.",
+            "Unbound source ranking has no unique source dispatch",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$sourceCandidateId = [string]$sourceDispatch.source_candidate_id",
+            rebuild,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Rebuilt unbound ranking lost source dispatch candidate",
             rebuild,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -91,6 +91,13 @@ namespace StardewAI.Contracts.State
             return builder.ToString();
         }
 
+        public static string CanonicalizeSemantic(JsonElement element)
+        {
+            var builder = new StringBuilder();
+            WriteCanonical(element, builder, excludeNonSemanticProperties: true);
+            return builder.ToString();
+        }
+
         private static void WriteCanonical(
             JsonElement element,
             StringBuilder builder,

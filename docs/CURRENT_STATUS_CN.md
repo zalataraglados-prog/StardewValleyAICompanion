@@ -14,7 +14,7 @@
 | Split-complete Teacher/native evidence | **4/19** | train/validation/test 两条证据通道完整的 criterion |
 | Promotion-grade / CoverageGateReady intersection | **2/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
 | Coverage-ready root methods | **1/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
-| Full Shipment runtime strata | **26/26** | Full Shipment 内部运行时执行签名证据，已闭合；**不是全局 /19** |
+| Full Shipment runtime strata | **历史 26/26；当前权威重验 1/26** | 历史分母已闭合，但当前编译器加入了执行上下文参数；除 Sap 外须重新采集原生收据，**不是全局 /19** |
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
@@ -48,7 +48,9 @@ Formal training:           false
 
 ### Full Shipment runtime evidence
 
-`26/26` runtime strata 已闭合。除非出现以下情况，否则**不得继续扩张分母或主动重跑全部 26 层**：
+历史 `26/26` runtime strata 已闭合，分母不得扩张。#274 的 current-authority 审计显示：Sap 已按当前源码重建并通过，另外 `25` 层的历史证据分别命中 location route、daily time/energy、calendar 或 Teacher preference 漂移；离线重建又确认旧执行收据缺少当前队列要求的 `player_location_before_step` 与玩家 tile 上下文。它们必须重新执行原生动作，不能通过放宽相等性或改写旧收据伪装为当前证据。
+
+除非出现以下情况，否则**不得主动重跑全部 26 层**：
 
 1. 权威 route/source contract 真实变化；
 2. game/mod profile 或版本变化；
@@ -183,7 +185,7 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 
 #274 的代码优化阶段已完成：canonical artifact equality 改为流式哈希，read-session 与 deterministic-cache 均有显式总预算、单项预算、逐出与遥测，优先级最高的 DTO/DOM 双表示已收敛为 typed/read-only projection，并完成真实 26-proof 前缀的 A/B/C 测量。最终 C 组墙钟 `7588.7 ms`、CPU `6859.4 ms`、峰值工作集 `525.4 MiB`；相对旧默认实现分别降低约 `55.8%`、`40.2%` 和 `2.9%`。
 
-#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation，所有模式都会在同一 `Target-date location route drifted from deterministic source compilation.` 边界失败关闭。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
+#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation。当前扫描已把结果细分为 `1/26` 可重建与 `25/26` 需原生重采；离线重建能通过 Teacher、commit 和 dispatch，但会在旧 execution receipt 缺失当前编译器上下文参数处失败关闭。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
 
 ## 9. 剩余规模
 

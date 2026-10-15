@@ -187,11 +187,9 @@ internal static partial class BootstrapSelfTest
         queueItem.NormalizedCommand.Parameters = routeParameters;
         Write(inputs.ActionQueuePath, queue);
 
-        var afterStateHash = "target-date-route-after-state";
-        WriteTargetDateInventoryAfterSnapshot(
+        var afterStateHash = WriteTargetDateInventoryAfterSnapshot(
             inputs.BeforeSnapshotPath,
             afterSnapshotPath,
-            afterStateHash,
             requirement.QualifiedItemId,
             requirement.RequiredAmount,
             requirement.MinimumQuality);
@@ -523,15 +521,13 @@ internal static partial class BootstrapSelfTest
                     StringComparer.Ordinal),
             "Route settlement ledger tampering bypassed exact replay.");
 
-        var insufficientStateHash =
-            "target-date-route-insufficient-after-state";
-        WriteTargetDateInventoryAfterSnapshot(
+        var insufficientStateHash = WriteTargetDateInventoryAfterSnapshot(
             inputs.BeforeSnapshotPath,
             insufficientAfterSnapshotPath,
-            insufficientStateHash,
             requirement.QualifiedItemId,
             requirement.RequiredAmount - 1,
-            requirement.MinimumQuality);
+            requirement.MinimumQuality,
+            playerTileXDelta: 1);
         var insufficientReceiptPath =
             insufficientAfterSnapshotPath + ".receipt.json";
         Write(

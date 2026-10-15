@@ -15,7 +15,7 @@ internal sealed record FullShipmentRecoverySettlementBoundary(
     string CurrencySha256,
     string PersistentStateSha256);
 
-internal static class FullShipmentRecoverySettlementBoundaryProjector
+internal static partial class FullShipmentRecoverySettlementBoundaryProjector
 {
     internal const string ContractVersion =
         "full_shipment_recovery_settlement_boundary.v1";
@@ -45,6 +45,7 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
         StringComparer.Ordinal)
     {
         "active_menu",
+        "active_dialogue_events",
         "active_object_qualified_id",
         "bobber_selection",
         "book_candidates",
@@ -198,7 +199,10 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
                     continue;
                 rows.Add(new KeyValuePair<string, JsonElement>(
                     domain.Key + "." + field.Name,
-                    NormalizeEnvelope(field.Value)));
+                    NormalizePersistentEnvelope(
+                        domain.Key,
+                        field.Name,
+                        field.Value)));
             }
         }
         return HashCanonical(rows);
@@ -243,7 +247,7 @@ internal static class FullShipmentRecoverySettlementBoundaryProjector
         {
             builder.Append(value.Key);
             builder.Append('=');
-            builder.Append(SnapshotHash.Canonicalize(value.Value));
+            builder.Append(SnapshotHash.CanonicalizeSemantic(value.Value));
             builder.Append('\n');
         }
         return Convert.ToHexString(

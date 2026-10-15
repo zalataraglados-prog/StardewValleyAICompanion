@@ -15,9 +15,8 @@ internal static partial class BootstrapSelfTest
         string selectedCandidateId,
         string saleEpisodePath)
     {
-        var root = Path.Combine(
-            Path.GetTempPath(),
-            "stardewai-money-revenue-recurrence-artifact");
+        var root = TempArtifactRoot(
+            "money-revenue-recurrence-artifact");
         Directory.CreateDirectory(root);
         var queuePath = Path.Combine(root, "queue.json");
         var beforePath = Path.Combine(root, "before.json");
@@ -78,7 +77,8 @@ internal static partial class BootstrapSelfTest
 
     private static void VerifyMoneyRevenueShopRecurrenceArtifact(
         string root,
-        string episodePath)
+        string episodePath,
+        int expectedRevenue)
     {
         var manifestPath = Path.Combine(
             root,
@@ -96,7 +96,7 @@ internal static partial class BootstrapSelfTest
             "shop-revenue-recurrence-receipt.json"), receipt);
         Require(
             receipt.ProofVerified &&
-            receipt.Prefix?.TotalRevenue == 20 &&
+            receipt.Prefix?.TotalRevenue == expectedRevenue &&
             receipt.Transitions.Length == 1 &&
             receipt.Transitions[0].ProofKind ==
                 MoneyRevenueRecurrenceProofKinds.NativeShopSale &&

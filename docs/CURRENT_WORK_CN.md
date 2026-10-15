@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 #274 当前权威 force-full 收口
+
+- 对冻结的 Full Shipment `26` 层证据执行当前源码扫描：Sap 的当前重建证明通过，其余 `25` 层分别因 location route、daily time/energy、calendar 或 Teacher preference 漂移而失效。离线 planning 重建已能重新通过 Teacher、commit 与 dispatch，但旧 execution receipt 缺少当前动作队列新增的玩家位置/tile 上下文，因此必须原生重跑，不能改写历史收据或放宽相等性。
+- 修正当前权威重建链的真实缺口：shipping deposit verifier 使用现行 `target_location/target_tile_x/target_tile_y` 协议；仅在“当前矿层 + 精确站位 + 候选保守最大移动格数 + 计时校准”全部成立时，允许 purpose-limited mining snapshot 不携带全局 social route graph；跨图或其他缺证据仍失败关闭。
+- recovery settlement 的持久状态投影现忽略明确的瞬时定位/缓存字段，同时保留未知持久字段失败关闭。自测临时工件改为进程级隔离，并修复 continuation 夹具的占位哈希、空出货端点及固定 20 金出售协议；这些修正使完整 Stage-One fixture 首次在当前严格哈希/原生收入链上通过。
+- 验证通过：Bootstrap Release 构建、bootstrap hermetic、acquisition dispatch、Full Shipment 静态可编译性、完整 Stage-One、Core game-free `350/350`、Backend `229/229`、KnowledgeCompiler/LiveTrainingLoop Release 构建。未启动游戏；current-authority 仍为 `1/26`，#274 和正式训练准入保持关闭。
+
 ## 历史记录 · 2026-10-15 rollout proof 单次重验
 
 - `AcquisitionRoutePortfolioRolloutProofBuilder.BuildVerifiedReceipt` 从 observe-only 改为 invocation-scoped deterministic certificate。身份覆盖 proof manifest、初始/续段 execution inputs、支持过渡、checkpoint、执行、终态和结算文件；任一传递内容漂移都会产生新键并重新完整验证。
