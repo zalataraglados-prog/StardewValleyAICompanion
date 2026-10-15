@@ -4,6 +4,11 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 current-authority 高风险小批次推进
+
+- 放射性矿石修复合入后，milestone 按冻结顺序继续运行 `wild_tree_tapper_output_sample` 与 `monster_drop_sample`。两层均直接通过当前 Teacher、dispatcher、防篡改候选重建、原生动作、发货、睡眠结算与 rollout proof，未新增候选、编译器或执行器。
+- 怪物掉落仍走 `mining.reach_depth -> CollectMonsterDrop -> executor.combat_monster -> executor.pickup_debris`，证明放射性矿石新增的 `CollectResourceOrArtifact` 分流没有回退现有战斗链。当前 evidence index 为 `4/26`，剩余 `22` 层，正式训练继续失败关闭。
+
 ## 历史记录 · 2026-10-15 current-authority 放射性矿石原生重验
 
 - `radioactive_ore_node_sample` 的实时夹具已在普通矿井 99 层生成精确 `(O)95` 节点与保证掉落 `(O)909`。首次 current-authority 运行暴露两处同一链路缺口：`mining.reach_depth` 未携带精确采集意图时被现成梯子抢占；dispatcher 从同状态重建候选时又只为怪物掉落保留采集意图。
