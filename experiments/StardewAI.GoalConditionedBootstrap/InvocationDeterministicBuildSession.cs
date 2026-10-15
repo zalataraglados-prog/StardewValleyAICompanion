@@ -35,6 +35,26 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
     public static InvocationDeterministicBuildSession Start(
         bool enabled = true) => new(enabled);
 
+    internal static bool IsReuseEnabled
+    {
+        get
+        {
+            var session = Ambient.Value;
+            return session is not null && session.enabled &&
+                session.disposed == 0;
+        }
+    }
+
+    internal static InvocationDeterministicBuildProducerSnapshot?
+        CurrentProducerSnapshot(string producerId)
+    {
+        var session = Ambient.Value;
+        if (session is null || session.disposed != 0)
+            return null;
+        return session.Snapshot().Producers.SingleOrDefault(producer =>
+            producer.ProducerId == producerId);
+    }
+
     public static T GetOrBuild<T>(
         string producerId,
         string producerVersion,

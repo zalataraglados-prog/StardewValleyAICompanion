@@ -175,13 +175,15 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 3. 同一次 Goal Method 调用内确定性复用 frontier，避免相同 authority 输入重复构建；
 4. Planner、候选与 Executor 共用 `RouteGridPathfinder`、到达站位和终端计时语义，同一快照只构建一份当前地图距离场；
 5. strategy-ledger 前后边界改为内容寻址 capture，绑定阶段、请求、候选、原生运行、快照与账本身份，不能再靠裸路径声明连续性。
+6. validation trace v2 已记录 managed allocation、GC、private memory、read-session retention 与 deterministic-cache producer 成本；这些指标只负责解释开销，不改变 admission。
+7. acquisition rollout proof 已改为 invocation 内的唯一 heavy verifier：缓存键绑定 manifest 及其全部直接/传递文件身份，缓存值仅保留轻量 receipt/checkpoint certificate；Full Shipment evidence index 先按精确 proof 内容身份去重，再映射回各 stratum。
 
 这些优化减少重复 BFS、重复 frontier 构建、伪输出和伪账本连续性，但它们是 correctness/feedback-time 基础设施，**不直接增加**
 `CoverageGateReady 2/19`。
 
-当前本地性能分支正在增加精确 CPU scope，以及 Full Shipment evidence-index 的 proof/reuse/rebuild 分项计时。Release 构建和
-trace 定向测试已通过，但代表性完整样本基线被主动中止，尚未形成可接纳的真实 wall/CPU 结论，也尚未合并。继续时必须先完成
-低成本真实快照 baseline，再根据测量决定是否优化；不得用 hermetic fixture 时间替代生产结论。
+#274 尚未全部完成。当前已落地的是观测能力、rollout proof 单次重验和 Full Shipment unique-proof-first；尚缺 canonical artifact equality、
+read-session / deterministic-cache 的预算与生命周期、top-N typed DTO/DOM 双表示收敛，以及代表性 A/B/C 和 force-full 性能验收。
+在这些结果实测通过前，不得把本轮描述为“全仓性能优化完成”，也不得用 hermetic fixture 时间替代生产结论。
 
 ## 9. 剩余规模
 

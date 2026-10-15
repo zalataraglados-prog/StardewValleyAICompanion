@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-15 rollout proof 单次重验
+
+- `AcquisitionRoutePortfolioRolloutProofBuilder.BuildVerifiedReceipt` 从 observe-only 改为 invocation-scoped deterministic certificate。身份覆盖 proof manifest、初始/续段 execution inputs、支持过渡、checkpoint、执行、终态和结算文件；任一传递内容漂移都会产生新键并重新完整验证。
+- 缓存不保留整棵 mutable checkpoint graph，只保存 proof receipt、末端 checkpoint 路径与哈希。每个 consumer 仍重新读取独立末端 checkpoint 对象并核对状态、ledger、transition count 与完成状态；禁用 deterministic session 时恢复完整重验。
+- Full Shipment runtime evidence index 增加 exact manifest/receipt content identity 的 unique-proof-first 映射。同一 proof 可服务多个合法 stratum，但每个 route occurrence、authority hash 与 stratum 归属仍逐项验证，26 层分母不合并。
+- 该切片只完成 #274 的 rollout single-computation / unique-proof-first 核心，不代表全仓性能验收完成。canonical equality、缓存预算、表示生命周期与真实 A/B/C baseline 仍待后续；Money 仍为 `0/18`，正式训练仍为 `false`。
+
 ## 历史记录 · 2026-10-15 Money 首轮 work plan 初始化
 
 - 新增 `Initialize-MoneyThresholdProductionWorkPlan.ps1`，不再要求人工书写首个空 work-plan request。它只调用现有权威 builder，并固定校验 `6` 个 criterion、`3` 个 partition、`18` 格分母和 `formal_product_training_authorized=false`。

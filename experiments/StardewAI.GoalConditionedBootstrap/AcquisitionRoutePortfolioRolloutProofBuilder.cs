@@ -11,28 +11,66 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
     internal static (
         AcquisitionRoutePortfolioRolloutProofReceipt Receipt,
         AcquisitionRoutePortfolioVerifiedCheckpoint Latest)
-        BuildVerifiedReceipt(string manifestPath) =>
-            InvocationDeterministicBuildSession.Observe(
-                "rollout_proof_certificate",
-                "AcquisitionRoutePortfolioRolloutProofBuilder.BuildVerifiedReceipt",
-                "v1",
-                new[]
-                {
-                    InvocationDeterministicBuildSession.File(
-                        "RolloutProofManifestPath",
-                        manifestPath)
-                },
-                () => BuildVerifiedReceiptCore(manifestPath),
-                result => result.Receipt);
-
-    private static (
-        AcquisitionRoutePortfolioRolloutProofReceipt Receipt,
-        AcquisitionRoutePortfolioVerifiedCheckpoint Latest)
-        BuildVerifiedReceiptCore(string manifestPath)
+        BuildVerifiedReceipt(string manifestPath)
     {
         var manifestFullPath = Path.GetFullPath(manifestPath);
         var manifest = ReadManifest(manifestFullPath);
-        var latest = Verify(manifest, manifestFullPath);
+        var identity = BuildIdentity(manifestFullPath, manifest);
+        const string producer =
+            "AcquisitionRoutePortfolioRolloutProofBuilder.BuildVerifiedReceipt";
+        const string producerVersion = "v2";
+        var certificate = InvocationDeterministicBuildSession.IsReuseEnabled
+            ? InvocationDeterministicBuildSession.GetOrBuild(
+                producer,
+                producerVersion,
+                identity,
+                () => BuildCertificate(manifest, manifestFullPath),
+                "rollout_proof_certificate")
+            : InvocationDeterministicBuildSession.Observe(
+                "rollout_proof_certificate",
+                producer,
+                producerVersion,
+                identity,
+                () => BuildCertificate(manifest, manifestFullPath),
+                result => result.Receipt);
+        var latestPath = Path.GetFullPath(certificate.LatestCheckpointPath);
+        var latestSha256 = CurrentTeacherFrontierSupport.HashFile(latestPath);
+        Require(latestSha256 == certificate.LatestCheckpointSha256 &&
+                latestSha256 == certificate.Receipt.LatestCheckpointSha256,
+            "Verified rollout proof certificate checkpoint identity drifted.");
+        var latest = CurrentTeacherFrontierSupport.Read<
+            AcquisitionRoutePortfolioRolloutCheckpoint>(
+            latestPath,
+            "Verified rollout proof latest checkpoint");
+        Require(latest.CheckpointVerified &&
+                !latest.FormalTrainingAuthorized &&
+                latest.RolloutId == certificate.Receipt.RolloutId &&
+                latest.GoalId == certificate.Receipt.GoalId &&
+                latest.TransitionCount == certificate.Receipt.TransitionCount &&
+                latest.LatestStateHash ==
+                    certificate.Receipt.LatestStateHash &&
+                latest.LatestLedgerRevision ==
+                    certificate.Receipt.LatestLedgerRevision &&
+                latest.LatestLedgerSha256 ==
+                    certificate.Receipt.LatestLedgerSha256 &&
+                latest.PortfolioCompletionVerified ==
+                    certificate.Receipt.PortfolioCompletionVerified,
+            "Verified rollout proof certificate terminal checkpoint drifted.");
+        return (
+            certificate.Receipt,
+            new AcquisitionRoutePortfolioVerifiedCheckpoint(
+                latestPath,
+                latest));
+    }
+
+    private static AcquisitionRoutePortfolioVerifiedRolloutProofCertificate
+        BuildCertificate(
+            AcquisitionRoutePortfolioRolloutProofManifest manifest,
+            string manifestPath)
+    {
+        var latest = Verify(manifest, manifestPath);
+        var latestSha256 = CurrentTeacherFrontierSupport.HashFile(
+            latest.CheckpointPath);
         var receipt = new AcquisitionRoutePortfolioRolloutProofReceipt
         {
             Status = latest.Checkpoint.PortfolioCompletionVerified
@@ -44,9 +82,8 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
                 AcquisitionRouteCommunityCenterProvenanceSupport.Clone(
                     latest.Checkpoint.CommunityCenterProvenance),
             ManifestSha256 = CurrentTeacherFrontierSupport.HashFile(
-                manifestFullPath),
-            LatestCheckpointSha256 = CurrentTeacherFrontierSupport.HashFile(
-                latest.CheckpointPath),
+                manifestPath),
+            LatestCheckpointSha256 = latestSha256,
             TransitionCount = latest.Checkpoint.TransitionCount,
             ContinuationTransitionCount =
                 manifest.ContinuationTransitions.Length,
@@ -58,7 +95,112 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
             ProofChainVerified = true,
             FormalTrainingAuthorized = false
         };
-        return (receipt, latest);
+        return new AcquisitionRoutePortfolioVerifiedRolloutProofCertificate
+        {
+            Receipt = receipt,
+            LatestCheckpointPath = latest.CheckpointPath,
+            LatestCheckpointSha256 = latestSha256
+        };
+    }
+
+    private static DeterministicBuildIdentityPart[] BuildIdentity(
+        string manifestPath,
+        AcquisitionRoutePortfolioRolloutProofManifest manifest)
+    {
+        var identity = new List<DeterministicBuildIdentityPart>
+        {
+            InvocationDeterministicBuildSession.File(
+                "RolloutProofManifestPath",
+                manifestPath)
+        };
+        var initial = manifest.InitialCheckpointProof ??
+            throw new InvalidDataException(
+                "Rollout proof manifest has no initial proof: " +
+                manifestPath);
+        AddIdentity(
+            identity,
+            "Initial.ExecutionInputs",
+            InvocationDeterministicBuildSession.Describe(
+                initial.ExecutionInputs));
+        AddIdentity(
+            identity,
+            "Initial",
+            InvocationDeterministicBuildSession.Describe(new
+            {
+                initial.ExecutionBindingPath,
+                initial.ExecutionReceiptPath,
+                initial.AfterSnapshotPath,
+                initial.FreshTerminalReceiptPath,
+                initial.RunId,
+                initial.ExecutorVersion,
+                initial.SettlementRequestPath,
+                initial.SettlementResultPath,
+                initial.SettledLedgerPath,
+                initial.SettlementReceiptPath,
+                manifest.InitialCheckpointPath
+            }));
+        if (initial.SupportingTransition is { } supporting)
+        {
+            AddIdentity(
+                identity,
+                "Initial.Supporting.RequestInputs",
+                InvocationDeterministicBuildSession.Describe(
+                    supporting.RequestInputs));
+            AddIdentity(
+                identity,
+                "Initial.Supporting.SettlementProof",
+                InvocationDeterministicBuildSession.Describe(
+                    supporting.SettlementProof));
+            identity.Add(InvocationDeterministicBuildSession.File(
+                "Initial.Supporting.ReplanAdmissionPath",
+                supporting.ReplanAdmissionPath));
+        }
+
+        var transitions = manifest.ContinuationTransitions ??
+            throw new InvalidDataException(
+                "Rollout proof manifest has no transition list: " +
+                manifestPath);
+        for (var index = 0; index < transitions.Length; index++)
+        {
+            var transition = transitions[index] ??
+                throw new InvalidDataException(
+                    "Rollout proof manifest has a null transition: " +
+                    manifestPath);
+            var prefix = "Continuation[" + index + "]";
+            AddIdentity(
+                identity,
+                prefix + ".ExecutionInputs",
+                InvocationDeterministicBuildSession.Describe(
+                    transition.ExecutionInputs));
+            AddIdentity(
+                identity,
+                prefix,
+                InvocationDeterministicBuildSession.Describe(new
+                {
+                    transition.ContinuationRequestPath,
+                    transition.ExecutionBindingPath,
+                    transition.ExecutionReceiptPath,
+                    transition.AfterSnapshotPath,
+                    transition.FreshTerminalReceiptPath,
+                    transition.RunId,
+                    transition.ExecutorVersion,
+                    transition.SettlementRequestPath,
+                    transition.SettlementResultPath,
+                    transition.SettledLedgerPath,
+                    transition.SettlementReceiptPath,
+                    transition.CheckpointPath
+                }));
+        }
+        return identity.ToArray();
+    }
+
+    private static void AddIdentity(
+        ICollection<DeterministicBuildIdentityPart> destination,
+        string prefix,
+        IEnumerable<DeterministicBuildIdentityPart> source)
+    {
+        foreach (var part in source)
+            destination.Add(part with { Name = prefix + "." + part.Name });
     }
 
     internal static AcquisitionRoutePortfolioVerifiedCheckpoint
@@ -196,4 +338,15 @@ public static class AcquisitionRoutePortfolioRolloutProofBuilder
             "Acquisition route portfolio rollout proof manifest");
 
 
+}
+
+internal sealed class
+    AcquisitionRoutePortfolioVerifiedRolloutProofCertificate
+{
+    public AcquisitionRoutePortfolioRolloutProofReceipt Receipt
+    { get; set; } = new();
+
+    public string LatestCheckpointPath { get; set; } = string.Empty;
+
+    public string LatestCheckpointSha256 { get; set; } = string.Empty;
 }

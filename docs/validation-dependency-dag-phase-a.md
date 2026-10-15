@@ -53,6 +53,20 @@ read-session retained representations, and deterministic-cache bytes grouped
 by producer. Allocation counters are explicitly marked unavailable on runtimes
 that do not expose them. All metrics remain observe-only.
 
+The rollout-proof producer is now the first measured DAG node promoted from
+observe-only rebuild to invocation-scoped single computation. Its cache key
+contains the manifest plus every initial, supporting-transition, continuation,
+execution, checkpoint, fresh-terminal, ledger, and settlement file identity.
+The cached value is a small receipt/checkpoint certificate, not the mutable
+checkpoint graph. Consumers reload an isolated terminal checkpoint and verify
+its content hash and terminal identity before use. Disabling the deterministic
+session restores the full verifier.
+
+The Full Shipment runtime evidence index also groups by exact manifest/receipt
+content identity before mapping the verified proof back to route-specific
+strata. This removes duplicate proof computation only; it does not merge the
+26-stratum denominator or relax route, authority, or stratum checks.
+
 ## Frozen comparison
 
 The Full Shipment Sap recurrence-prefix fixture produced one acyclic graph with
