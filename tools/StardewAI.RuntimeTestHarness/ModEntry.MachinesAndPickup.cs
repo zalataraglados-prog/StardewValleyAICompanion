@@ -326,9 +326,25 @@ public sealed partial class ModEntry : Mod
         active.TransientBusyTicks = 0;
 
         var target = DebrisChunkTile(active.Chunk);
-        if (ManhattanDistance(Game1.player.TilePoint, target) <= 1)
+        var targetWalkable = IsTileWalkable(active.Location, target) &&
+            !IsTileOccupiedByCharacter(active.Location, target);
+        if (Game1.player.TilePoint == target)
         {
             StopAllMovement();
+            active.WaitAtTargetTicks++;
+            if (active.WaitAtTargetTicks > 120)
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.WaitAtTargetTicks = 0;
+            }
+            return;
+        }
+        if (!targetWalkable &&
+            ManhattanDistance(Game1.player.TilePoint, target) <= 1)
+        {
+            StartMoving(DirectionTo(Game1.player.TilePoint, target));
+            MovePlayerForTick();
             active.WaitAtTargetTicks++;
             if (active.WaitAtTargetTicks > 120)
             {
@@ -341,22 +357,22 @@ public sealed partial class ModEntry : Mod
 
         if (active.PathIndex >= active.Path.Count || active.PathTarget != target)
         {
-            var path = IsTileWalkable(active.Location, target) &&
-                !IsTileOccupiedByCharacter(active.Location, target)
-                    ? TryBuildTilePath(
-                        active.Location,
-                        Game1.player.TilePoint,
-                        target,
-                        512,
-                        out var pathReason,
-                        avoidSoftObstacles: true)
-                    : BuildAdjacentToolPath(
-                        active.Location,
-                        target,
-                        512,
-                        out pathReason,
-                        avoidSoftObstacles: true,
-                        allowRemovableObstacles: false);
+            var path = targetWalkable
+                ? TryBuildTilePath(
+                    active.Location,
+                    Game1.player.TilePoint,
+                    target,
+                    512,
+                    out var pathReason,
+                    avoidSoftObstacles: true,
+                    allowRemovableObstacles: false)
+                : BuildAdjacentToolPath(
+                    active.Location,
+                    target,
+                    512,
+                    out pathReason,
+                    avoidSoftObstacles: true,
+                    allowRemovableObstacles: false);
             if (path is null)
             {
                 active.PathFailures++;

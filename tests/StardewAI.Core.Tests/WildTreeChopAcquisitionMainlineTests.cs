@@ -175,6 +175,7 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         var clearance = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.ObstacleClearance.cs"));
         var chop = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.cs"));
         var verification = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.WildTreeChop.Verification.cs"));
+        var pickup = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MachinesAndPickup.cs"));
         var nativeEvidenceIsolation = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.NativeEvidenceIsolation.cs"));
         var terrain = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "CurrentLocationReadAdapter.TerrainExperience.cs"));
         var bridgeEntry = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "ModEntry.cs"));
@@ -200,6 +201,14 @@ public sealed class WildTreeChopAcquisitionMainlineTests
         Assert.Contains("axe.GetType() == typeof(Axe)", terrain, StringComparison.Ordinal);
         Assert.Contains("OrderBy(row => row.Key, StringComparer.Ordinal)", verification, StringComparison.Ordinal);
         Assert.Contains("row.Value.ToString(CultureInfo.InvariantCulture)", verification, StringComparison.Ordinal);
+        Assert.Contains("var targetWalkable = IsTileWalkable(active.Location, target)", pickup, StringComparison.Ordinal);
+        Assert.Contains("if (Game1.player.TilePoint == target)", pickup, StringComparison.Ordinal);
+        Assert.Contains("var path = targetWalkable", pickup, StringComparison.Ordinal);
+        Assert.Contains("StartMoving(DirectionTo(Game1.player.TilePoint, target))", pickup, StringComparison.Ordinal);
+        Assert.Matches(
+            "var path = targetWalkable[\\s\\S]+?avoidSoftObstacles: true,\\s+allowRemovableObstacles: false\\)",
+            pickup);
+        Assert.DoesNotContain("if (ManhattanDistance(Game1.player.TilePoint, target) <= 1)", pickup, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_TRAINING_MODE", nativeEvidenceIsolation, StringComparison.Ordinal);
         Assert.Contains("if (!trainingMode && !explicitlyRequired)", nativeEvidenceIsolation, StringComparison.Ordinal);
         Assert.Contains("Name = \"STARDEWAI_DISABLE_EXTERNAL_GOD_TOOL\", Value = \"1\"", trainingLauncher, StringComparison.Ordinal);
