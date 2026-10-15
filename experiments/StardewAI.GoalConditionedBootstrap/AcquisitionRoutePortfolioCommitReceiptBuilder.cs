@@ -127,14 +127,12 @@ public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotPath,
             "Acquisition route portfolio snapshot");
-        using var snapshotDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var baseLedger = AcquisitionStrategyLedgerReader.Read(
             baseLedgerPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var committedLedger = AcquisitionStrategyLedgerReader.Read(
             committedLedgerFullPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var opportunity = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteTargetDateOpportunityCostReport>(
             inputs.TargetDateOpportunityCostPath,

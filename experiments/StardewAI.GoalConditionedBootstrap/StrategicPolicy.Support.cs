@@ -217,8 +217,4 @@ public sealed partial class StrategicPolicy
         exception is ArgumentException or InvalidDataException or IOException or
             UnauthorizedAccessException or JsonException;
 
-    private static bool EqualJson<T>(T left, T right) => string.Equals(
-        JsonSerializer.Serialize(left, JsonDefaults.Compact),
-        JsonSerializer.Serialize(right, JsonDefaults.Compact),
-        StringComparison.Ordinal);
 }

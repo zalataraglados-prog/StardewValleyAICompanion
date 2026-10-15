@@ -127,7 +127,22 @@ public sealed class ValidationTraceSession : IDisposable
                 snapshot.RetainedMaterializedTextBytes,
             RetainedHashTextBytes = snapshot.RetainedHashTextBytes,
             RetainedBytes = snapshot.RetainedBytes,
-            MaxEntryRetainedBytes = snapshot.MaxEntryRetainedBytes
+            MaxEntryRetainedBytes = snapshot.MaxEntryRetainedBytes,
+            RetentionBudgetBytes = snapshot.RetentionBudgetBytes,
+            EntryRetentionLimitBytes = snapshot.EntryRetentionLimitBytes,
+            DynamicRegistrationCount = snapshot.DynamicRegistrationCount,
+            EvictionCount = snapshot.EvictionCount,
+            LargeEntryBypassCount = snapshot.LargeEntryBypassCount,
+            ProbationBypassCount = snapshot.ProbationBypassCount,
+            ReleasedRawBytes = snapshot.ReleasedRawBytes,
+            ReleasedStoredTextBytes = snapshot.ReleasedStoredTextBytes,
+            LargestEntries = snapshot.LargestEntries.Select(entry =>
+                new ValidationTraceReadSessionEntryMetrics
+                {
+                    Path = entry.Path,
+                    RetainedBytes = entry.RetainedBytes,
+                    AccessCount = entry.AccessCount
+                }).ToArray()
         };
     }
 

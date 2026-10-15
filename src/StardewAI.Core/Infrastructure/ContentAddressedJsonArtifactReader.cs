@@ -42,6 +42,7 @@ public static class ContentAddressedJsonArtifactReader
             Utf8WithoutBom,
             out var observation);
         operation.AddBytesRead(observation.PhysicalBytesRead);
+        operation.AddHashBytes(observation.HashBytes);
         if (observation.CacheHit)
             operation.MarkCacheHit();
         var materialized = MaterializeIfNeeded(

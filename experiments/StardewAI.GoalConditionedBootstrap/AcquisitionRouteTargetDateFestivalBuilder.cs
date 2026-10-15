@@ -217,13 +217,4 @@ public static partial class AcquisitionRouteTargetDateFestivalBuilder
             evaluations,
             blockingReasons);
 
-    private static bool EqualJson<T>(T left, T right)
-    {
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        return string.Equals(
-            JsonSerializer.Serialize(left, options),
-            JsonSerializer.Serialize(right, options),
-            StringComparison.Ordinal);
-    }
-
 }

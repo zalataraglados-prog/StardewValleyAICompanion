@@ -181,9 +181,9 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 这些优化减少重复 BFS、重复 frontier 构建、伪输出和伪账本连续性，但它们是 correctness/feedback-time 基础设施，**不直接增加**
 `CoverageGateReady 2/19`。
 
-#274 尚未全部完成。当前已落地的是观测能力、rollout proof 单次重验和 Full Shipment unique-proof-first；尚缺 canonical artifact equality、
-read-session / deterministic-cache 的预算与生命周期、top-N typed DTO/DOM 双表示收敛，以及代表性 A/B/C 和 force-full 性能验收。
-在这些结果实测通过前，不得把本轮描述为“全仓性能优化完成”，也不得用 hermetic fixture 时间替代生产结论。
+#274 的代码优化阶段已完成：canonical artifact equality 改为流式哈希，read-session 与 deterministic-cache 均有显式总预算、单项预算、逐出与遥测，优先级最高的 DTO/DOM 双表示已收敛为 typed/read-only projection，并完成真实 26-proof 前缀的 A/B/C 测量。最终 C 组墙钟 `7588.7 ms`、CPU `6859.4 ms`、峰值工作集 `525.4 MiB`；相对旧默认实现分别降低约 `55.8%`、`40.2%` 和 `2.9%`。
+
+#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation，所有模式都会在同一 `Target-date location route drifted from deterministic source compilation.` 边界失败关闭。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
 
 ## 9. 剩余规模
 

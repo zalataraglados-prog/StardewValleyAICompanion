@@ -29,10 +29,10 @@ public sealed class InvocationReadSessionTests
         Assert.Equal(1, snapshot.MaterializationCount);
         Assert.True(snapshot.CacheHitCount >= 3);
         Assert.Equal(1, snapshot.EntryCount);
-        Assert.True(snapshot.RetainedRawBytes > 0);
+        Assert.Equal(0, snapshot.RetainedRawBytes);
         Assert.True(snapshot.RetainedStoredTextBytes > 0);
-        Assert.True(snapshot.RetainedBytes >=
-            snapshot.RetainedRawBytes + snapshot.RetainedStoredTextBytes);
+        Assert.True(snapshot.ReleasedRawBytes > 0);
+        Assert.True(snapshot.RetainedBytes >= snapshot.RetainedStoredTextBytes);
         Assert.Equal(snapshot.RetainedBytes, snapshot.MaxEntryRetainedBytes);
     }
 
@@ -106,6 +106,80 @@ public sealed class InvocationReadSessionTests
 
         Assert.True(InvocationReadSession.IsPathReusable(outerPath));
         Assert.False(InvocationReadSession.IsPathReusable(innerPath));
+    }
+
+    [Fact]
+    public void RegistersAndReusesTransitiveArtifactReads()
+    {
+        var path = NewFile("transitive.json", "{\"value\":7}");
+        using var session = InvocationReadSession.Start(Array.Empty<string>());
+
+        var first = ContentAddressedJsonArtifactReader.ReadAllText(path);
+        var second = ContentAddressedJsonArtifactReader.ReadAllText(path);
+        var snapshot = session.Snapshot();
+
+        Assert.Equal(first, second);
+        Assert.Equal(1, snapshot.RegisteredPathCount);
+        Assert.Equal(1, snapshot.DynamicRegistrationCount);
+        Assert.Equal(1, snapshot.PhysicalReadCount);
+        Assert.True(snapshot.CacheHitCount >= 1);
+    }
+
+    [Fact]
+    public void HashOnlyAccessDoesNotDeclareDynamicInputImmutable()
+    {
+        var path = NewFile("hash-only.json", "{\"value\":9}");
+        using var session = InvocationReadSession.Start(Array.Empty<string>());
+
+        _ = InvocationReadSession.HashFile(path, out var observation);
+        var snapshot = session.Snapshot();
+
+        Assert.False(observation.CacheHit);
+        Assert.Equal(0, snapshot.RegisteredPathCount);
+        Assert.Equal(0, snapshot.DynamicRegistrationCount);
+        Assert.Equal(0, snapshot.EntryCount);
+    }
+
+    [Fact]
+    public void DeclaredImmutableHashInputIsRegisteredAndReused()
+    {
+        var path = NewFile("immutable-hash-input.json", "{\"value\":10}");
+        using var session = InvocationReadSession.Start(Array.Empty<string>());
+
+        var first = InvocationReadSession.HashImmutableInputFile(
+            path,
+            out var firstObservation);
+        var second = InvocationReadSession.HashImmutableInputFile(
+            path,
+            out var secondObservation);
+        var snapshot = session.Snapshot();
+
+        Assert.Equal(first, second);
+        Assert.False(firstObservation.CacheHit);
+        Assert.True(secondObservation.CacheHit);
+        Assert.Equal(1, snapshot.RegisteredPathCount);
+        Assert.Equal(1, snapshot.DynamicRegistrationCount);
+        Assert.Equal(1, snapshot.PhysicalReadCount);
+        Assert.Equal(1, snapshot.FullHashCount);
+    }
+
+    [Fact]
+    public void RetentionBudgetEvictsWithoutChangingReadResult()
+    {
+        var path = NewFile("budget.json", "{\"value\":8}");
+        using var session = InvocationReadSession.Start(
+            Array.Empty<string>(),
+            maxRetainedBytes: 1,
+            maxEntryRetainedBytes: 1024);
+
+        var first = ContentAddressedJsonArtifactReader.ReadAllText(path);
+        var second = ContentAddressedJsonArtifactReader.ReadAllText(path);
+        var snapshot = session.Snapshot();
+
+        Assert.Equal(first, second);
+        Assert.True(snapshot.PhysicalReadCount >= 2);
+        Assert.True(snapshot.EvictionCount >= 2);
+        Assert.Equal(0, snapshot.RetainedBytes);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
@@ -8,12 +9,14 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 {
     public const string SessionVersion =
-        "stardewai.invocation_deterministic_build_session.v2";
+        "stardewai.invocation_deterministic_build_session.v3";
+    public const long DefaultCacheBudgetBytes = 64L * 1024 * 1024;
+    public const long DefaultEntryLimitBytes = 16L * 1024 * 1024;
 
     private static readonly AsyncLocal<
         InvocationDeterministicBuildSession?> Ambient = new();
 
-    private readonly Dictionary<string, byte[]> entries =
+    private readonly Dictionary<string, CacheEntry> entries =
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, object> referenceEntries =
         new(StringComparer.Ordinal);
@@ -21,19 +24,38 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         new(StringComparer.Ordinal);
     private readonly InvocationDeterministicBuildSession? previous;
     private readonly bool enabled;
+    private readonly long cacheBudgetBytes;
+    private readonly long entryLimitBytes;
     private int disposed;
     private int buildCount;
     private int cacheHitCount;
+    private long evictionCount;
+    private long rejectedEntryCount;
+    private long accessSequence;
 
-    private InvocationDeterministicBuildSession(bool enabled)
+    private InvocationDeterministicBuildSession(
+        bool enabled,
+        long cacheBudgetBytes,
+        long entryLimitBytes)
     {
+        if (cacheBudgetBytes < 0)
+            throw new ArgumentOutOfRangeException(nameof(cacheBudgetBytes));
+        if (entryLimitBytes < 0)
+            throw new ArgumentOutOfRangeException(nameof(entryLimitBytes));
         this.enabled = enabled;
+        this.cacheBudgetBytes = cacheBudgetBytes;
+        this.entryLimitBytes = entryLimitBytes;
         previous = Ambient.Value;
         Ambient.Value = this;
     }
 
     public static InvocationDeterministicBuildSession Start(
-        bool enabled = true) => new(enabled);
+        bool enabled = true,
+        long cacheBudgetBytes = DefaultCacheBudgetBytes,
+        long entryLimitBytes = DefaultEntryLimitBytes) => new(
+            enabled,
+            cacheBudgetBytes,
+            entryLimitBytes);
 
     internal static bool IsReuseEnabled
     {
@@ -90,24 +112,53 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         if (session.entries.TryGetValue(key, out var cached))
         {
             session.cacheHitCount++;
-            session.Statistics(producerId).RecordHit(cached.LongLength);
+            cached.LastUse = ++session.accessSequence;
+            session.Statistics(producerId).RecordHit(
+                cached.Data.LongLength,
+                cached.BuildWallMilliseconds);
             operation.MarkCacheHit();
             dependency.MarkCacheHit();
-            dependency.SetOutputArtifact(key, Sha256(cached));
-            return JsonSerializer.Deserialize<T>(cached, JsonDefaults.Options)
+            dependency.SetOutputArtifact(key, cached.ContentSha256);
+            return JsonSerializer.Deserialize<T>(
+                       cached.Data,
+                       JsonDefaults.Options)
                 ?? throw new InvalidDataException(
                     "Deterministic build cache entry is null: " +
                     producerId);
         }
 
+        var buildClock = Stopwatch.StartNew();
         var result = factory();
+        buildClock.Stop();
         var serialized = JsonSerializer.SerializeToUtf8Bytes(
             result,
-            JsonDefaults.Options);
-        session.entries.Add(key, serialized);
-        session.Statistics(producerId).RecordBuild(serialized.LongLength);
-        dependency.SetOutputArtifact(key, Sha256(serialized));
+            JsonDefaults.Compact);
+        var contentSha256 = Sha256(serialized);
+        dependency.SetOutputArtifact(key, contentSha256);
         session.buildCount++;
+        if (serialized.LongLength <= session.entryLimitBytes &&
+            serialized.LongLength <= session.cacheBudgetBytes)
+        {
+            session.entries.Add(
+                key,
+                new CacheEntry(
+                    serialized,
+                    contentSha256,
+                    producerId,
+                    ++session.accessSequence,
+                    buildClock.Elapsed.TotalMilliseconds));
+            session.Statistics(producerId).RecordBuild(
+                serialized.LongLength,
+                retained: true);
+            session.EnforceBudget();
+        }
+        else
+        {
+            session.rejectedEntryCount++;
+            session.Statistics(producerId).RecordBuild(
+                serialized.LongLength,
+                retained: false);
+        }
         return result;
     }
 
@@ -237,7 +288,8 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
 
     public InvocationDeterministicBuildSessionSnapshot Snapshot()
     {
-        var cachedBytes = entries.Sum(pair => (long)pair.Value.LongLength);
+        var cachedBytes = entries.Sum(pair =>
+            (long)pair.Value.Data.LongLength);
         return new InvocationDeterministicBuildSessionSnapshot(
             SessionVersion,
             enabled,
@@ -248,11 +300,31 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
             cachedBytes,
             entries.Count == 0
                 ? 0
-                : entries.Max(pair => (long)pair.Value.LongLength),
+                : entries.Max(pair => (long)pair.Value.Data.LongLength),
+            cacheBudgetBytes,
+            entryLimitBytes,
+            evictionCount,
+            rejectedEntryCount,
             producerStatistics
                 .OrderBy(pair => pair.Key, StringComparer.Ordinal)
                 .Select(pair => pair.Value.Snapshot(pair.Key))
                 .ToArray());
+    }
+
+    private void EnforceBudget()
+    {
+        while (entries.Sum(pair => (long)pair.Value.Data.LongLength) >
+               cacheBudgetBytes)
+        {
+            var victim = entries
+                .OrderBy(pair => pair.Value.LastUse)
+                .ThenBy(pair => pair.Key, StringComparer.Ordinal)
+                .First();
+            entries.Remove(victim.Key);
+            evictionCount++;
+            Statistics(victim.Value.ProducerId).RecordEviction(
+                victim.Value.Data.LongLength);
+        }
     }
 
     private ProducerStatistics Statistics(string producerId)
@@ -285,22 +357,36 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
         private long referenceBuildCount;
         private long referenceHitCount;
 
-        public void RecordBuild(long bytes)
+        private long evictionCount;
+        private long rejectedEntryCount;
+        private double wallSavedEstimateMilliseconds;
+
+        public void RecordBuild(long bytes, bool retained)
         {
             buildCount++;
-            cachedBytes += bytes;
             maxEntryBytes = Math.Max(maxEntryBytes, bytes);
+            if (retained)
+                cachedBytes += bytes;
+            else
+                rejectedEntryCount++;
         }
 
-        public void RecordHit(long bytes)
+        public void RecordHit(long bytes, double buildWallMilliseconds)
         {
             cacheHitCount++;
             maxEntryBytes = Math.Max(maxEntryBytes, bytes);
+            wallSavedEstimateMilliseconds += buildWallMilliseconds;
         }
 
         public void RecordReferenceBuild() => referenceBuildCount++;
 
         public void RecordReferenceHit() => referenceHitCount++;
+
+        public void RecordEviction(long bytes)
+        {
+            evictionCount++;
+            cachedBytes -= bytes;
+        }
 
         public InvocationDeterministicBuildProducerSnapshot Snapshot(
             string producerId) => new(
@@ -310,7 +396,33 @@ internal sealed partial class InvocationDeterministicBuildSession : IDisposable
                 cachedBytes,
                 maxEntryBytes,
                 referenceBuildCount,
-                referenceHitCount);
+                referenceHitCount,
+                evictionCount,
+                rejectedEntryCount,
+                wallSavedEstimateMilliseconds);
+    }
+
+    private sealed class CacheEntry
+    {
+        public CacheEntry(
+            byte[] data,
+            string contentSha256,
+            string producerId,
+            long lastUse,
+            double buildWallMilliseconds)
+        {
+            Data = data;
+            ContentSha256 = contentSha256;
+            ProducerId = producerId;
+            LastUse = lastUse;
+            BuildWallMilliseconds = buildWallMilliseconds;
+        }
+
+        public byte[] Data { get; }
+        public string ContentSha256 { get; }
+        public string ProducerId { get; }
+        public long LastUse { get; set; }
+        public double BuildWallMilliseconds { get; }
     }
 }
 
@@ -329,6 +441,10 @@ internal sealed record InvocationDeterministicBuildSessionSnapshot(
     int ReferenceEntryCount,
     long CachedBytes,
     long MaxEntryBytes,
+    long CacheBudgetBytes,
+    long EntryLimitBytes,
+    long EvictionCount,
+    long RejectedEntryCount,
     InvocationDeterministicBuildProducerSnapshot[] Producers);
 
 internal sealed record InvocationDeterministicBuildProducerSnapshot(
@@ -338,4 +454,7 @@ internal sealed record InvocationDeterministicBuildProducerSnapshot(
     long CachedBytes,
     long MaxEntryBytes,
     long ReferenceBuildCount,
-    long ReferenceHitCount);
+    long ReferenceHitCount,
+    long EvictionCount,
+    long RejectedEntryCount,
+    double WallSavedEstimateMilliseconds);

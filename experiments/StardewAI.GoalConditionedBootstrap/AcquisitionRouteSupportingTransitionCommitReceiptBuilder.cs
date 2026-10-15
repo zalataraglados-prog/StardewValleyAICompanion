@@ -28,14 +28,12 @@ public static class AcquisitionRouteSupportingTransitionCommitReceiptBuilder
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             snapshotPath,
             "Acquisition support commit snapshot");
-        using var snapshotDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var baseLedger = AcquisitionStrategyLedgerReader.Read(
             baseLedgerPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var committed = AcquisitionStrategyLedgerReader.Read(
             committedPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var result = CurrentTeacherFrontierSupport.Read<
             ReservationPortfolioCommitResult>(
             resultPath,

@@ -45,9 +45,7 @@ internal sealed class AcquisitionWildTreeChopCandidateIndex
     private static AcquisitionWildTreeChopCandidateIndex ReadCore(
         string snapshotPath)
     {
-        var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            snapshotPath,
-            "Wild-tree chop target-date snapshot");
+        var snapshot = AcquisitionReadOnlySnapshotProjection.Read(snapshotPath);
         if (!HasAvailableTerrainFeatureEvidence(snapshot))
         {
             return Blocked(

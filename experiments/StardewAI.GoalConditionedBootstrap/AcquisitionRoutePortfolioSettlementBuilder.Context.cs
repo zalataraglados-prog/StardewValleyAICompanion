@@ -78,13 +78,11 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             afterPath,
             "Acquisition route settlement after snapshot");
-        using var afterDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(afterPath));
         var baseLedgerPath = Path.GetFullPath(
             inputs.CommittedStrategyLedgerPath);
         var baseLedger = AcquisitionStrategyLedgerReader.Read(
             baseLedgerPath,
-            afterDocument.RootElement).Ledger;
+            after).Ledger;
         Require(baseLedger.Revision ==
                     binding.CommittedStrategyLedgerRevision &&
                 CurrentTeacherFrontierSupport.HashFile(baseLedgerPath) ==

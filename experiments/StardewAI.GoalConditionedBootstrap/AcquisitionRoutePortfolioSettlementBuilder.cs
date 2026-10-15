@@ -211,12 +211,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             ReservationPortfolioRouteSettlementResult>(
             resultPath,
             "Acquisition route portfolio settlement result");
-        using var afterDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(
-                Path.GetFullPath(afterSnapshotPath)));
         var settled = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
-            afterDocument.RootElement).Ledger;
+            context.AfterSnapshot).Ledger;
         var receipt = BaseReceipt(
             context,
             executionBindingPath,

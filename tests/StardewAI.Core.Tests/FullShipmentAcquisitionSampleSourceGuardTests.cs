@@ -2400,7 +2400,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
-    public void SnapshotConsumersUseContentAddressedAwareReads()
+    public void SnapshotConsumersUseContentAddressedReadsWithoutDuplicateDom()
     {
         var support = ReadRepositoryFile(
             "experiments",
@@ -2424,7 +2424,15 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             fullShipment,
             StringComparison.Ordinal);
         Assert.Contains(
-            "ReadArtifactText(snapshotPath)",
+            "AcquisitionReadOnlySnapshotProjection.Read(snapshotPath)",
+            portfolio,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AcquisitionStrategyLedgerReader.Read(",
+            portfolio,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "JsonDocument.Parse(",
             portfolio,
             StringComparison.Ordinal);
         Assert.DoesNotContain(

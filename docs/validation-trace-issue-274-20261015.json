@@ -1,0 +1,87 @@
+{
+  "schema_version": "stardewai.validation_trace_issue_274_baseline.v1",
+  "status": "partial_current_authority_drift",
+  "measured_at": "2026-10-15T16:48:07+08:00",
+  "command": "build-full-shipment-runtime-sample-evidence-index",
+  "static_inventory_sha256": "e9de870279dc39c6e6fab49ca9dac9ea295576df74112b21ee890aebdc21deeb",
+  "evidence_manifest_sha256": "0fc7832951a03e867eca471eb224474dff694ecfb6496287e2cfbb1b5ad6fbce",
+  "common_terminal_error": "Target-date location route drifted from deterministic source compilation.",
+  "runs": [
+    {
+      "mode": "A_sessions_disabled",
+      "implementation": "main@c5f5f5d2",
+      "wall_ms": 9274.8,
+      "cpu_ms": 9921.9,
+      "peak_working_set_mib": 561.7,
+      "private_memory_mib": 536.2,
+      "managed_heap_mib": 422.0,
+      "allocated_mib": 2097.0,
+      "gen0_collections": 195,
+      "gen1_collections": 74,
+      "gen2_collections": 15,
+      "exit_code": 1
+    },
+    {
+      "mode": "B_read_enabled_build_disabled",
+      "implementation": "main@c5f5f5d2",
+      "wall_ms": 9089.6,
+      "cpu_ms": 10328.1,
+      "peak_working_set_mib": 587.2,
+      "private_memory_mib": 510.1,
+      "managed_heap_mib": 412.1,
+      "allocated_mib": 2086.7,
+      "gen0_collections": 195,
+      "gen1_collections": 73,
+      "gen2_collections": 15,
+      "exit_code": 1
+    },
+    {
+      "mode": "B_current_default",
+      "implementation": "main@c5f5f5d2",
+      "wall_ms": 17160.2,
+      "cpu_ms": 11468.8,
+      "peak_working_set_mib": 541.0,
+      "private_memory_mib": 492.1,
+      "managed_heap_mib": 351.4,
+      "allocated_mib": 1974.1,
+      "gen0_collections": 177,
+      "gen1_collections": 71,
+      "gen2_collections": 15,
+      "deterministic_cache_mib": 22.6,
+      "deterministic_cache_hits": 0,
+      "exit_code": 1
+    },
+    {
+      "mode": "C_optimized_candidate",
+      "implementation": "codex/issue-274-complete-optimization",
+      "wall_ms": 7588.7,
+      "cpu_ms": 6859.4,
+      "peak_working_set_mib": 525.4,
+      "private_memory_mib": 523.6,
+      "managed_heap_mib": 468.3,
+      "allocated_mib": 2035.9,
+      "gen0_collections": 163,
+      "gen1_collections": 62,
+      "gen2_collections": 18,
+      "read_session_retained_mib": 21.9,
+      "read_session_budget_mib": 32,
+      "deterministic_cache_mib": 15.4,
+      "deterministic_cache_budget_mib": 64,
+      "deterministic_cache_hits": 0,
+      "snapshot_deserialize_count": 2,
+      "exit_code": 1
+    }
+  ],
+  "comparison": {
+    "optimized_vs_previous_default_wall_reduction_percent": 55.8,
+    "optimized_vs_previous_default_cpu_reduction_percent": 40.2,
+    "optimized_vs_previous_default_peak_change_percent": -2.9,
+    "focused_feedback_target_met": true,
+    "historical_1_1_gib_peak_target_met": true
+  },
+  "acceptance_limits": {
+    "force_full_26_proof_pass_measured": false,
+    "reason": "The frozen 26/26 manifest predates current deterministic source compilation and fails closed at the same semantic drift boundary in every mode. It is valid for equal-prefix profiling, but not for force-full correctness acceptance.",
+    "formal_training_authorized": false
+  }
+}

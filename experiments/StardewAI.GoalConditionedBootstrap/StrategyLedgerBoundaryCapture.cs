@@ -92,7 +92,7 @@ public static class StrategyLedgerBoundaryCaptureBuilder
             "Boundary snapshot");
         var ledgerState = AcquisitionStrategyLedgerReader.Read(
             fullLedgerPath,
-            JsonSerializer.SerializeToElement(snapshot, JsonDefaults.Options));
+            snapshot);
         var ledger = ledgerState.Ledger;
         var snapshotSha256 = CurrentTeacherFrontierSupport.HashFile(
             fullSnapshotPath);

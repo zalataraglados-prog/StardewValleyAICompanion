@@ -62,9 +62,22 @@ internal sealed partial class Arguments
         string.Equals(name, "validation-trace", StringComparison.Ordinal) ||
         string.Equals(name, "validation-trace-scenario", StringComparison.Ordinal) ||
         string.Equals(name, "read-session", StringComparison.Ordinal) ||
+        string.Equals(name, "read-session-max-mib", StringComparison.Ordinal) ||
+        string.Equals(
+            name,
+            "read-session-entry-max-mib",
+            StringComparison.Ordinal) ||
         string.Equals(
             name,
             "deterministic-build-session",
+            StringComparison.Ordinal) ||
+        string.Equals(
+            name,
+            "deterministic-cache-max-mib",
+            StringComparison.Ordinal) ||
+        string.Equals(
+            name,
+            "deterministic-cache-entry-max-mib",
             StringComparison.Ordinal);
 
     private static bool IsOutputRootArgument(string name) =>

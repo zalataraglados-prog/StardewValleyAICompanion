@@ -55,11 +55,9 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
             AvailabilityAwarePolicyPredictionEnvelope>(
             rankingPath,
             "Acquisition support live ranking");
-        using var snapshotDocument = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(snapshotPath));
         var ledger = AcquisitionStrategyLedgerReader.Read(
             ledgerPath,
-            snapshotDocument.RootElement).Ledger;
+            snapshot).Ledger;
         var route = ExactlyOne(
             processing.Routes,
             value => value.RouteOccurrenceId == inputs.RouteOccurrenceId,
