@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money terminal-proof 采集适配
+
+- `Initialize-MoneyRevenueComparisonWork.ps1` 在 concrete denominator 与 counterfactual request catalog 完成后，现自动调用 `build-money-revenue-terminal-proof-collection-plan`，不再把“下一步如何采证”留给调用者从 catalog 手工猜测。
+- 新计划重建 comparison plan 和 counterfactual catalog，保持一请求一工作项。每项固定列出 terminal snapshot/candidate/strategy-ledger 身份、原生收入证明种类和有序阶段；acquisition rebound 会显式要求恢复已验证终态，shop 与 shipping 进入不同采集模式。
+- 唯一已有原生 sale episode 只有在 source state、catalog candidate、shop、item、slot、quantity 和 unit price 全部匹配时才标记为 `offline_materialization_ready`。其余项保持 `native_collection_required`；计划固定 `terminal_proof_index_ready=false`、`formal_product_training_authorized=false`，没有把计划伪装成证据。
+- Bootstrap hermetic 新增三路分流和重复 request 拒绝回归。下一切片将消费离线复用工作项生成带真实账本边界与 recurrence 的已验证 proof fragment，并以可恢复 checkpoint 累积；只有 request denominator 全部闭合才允许输出 `money_revenue_terminal_proof_index.v1`。
+
 ## 历史记录 · 2026-10-16 Money 作物生产支持边界修正
 
 - 首次真实 Money 原生采证诊断暴露的“`farm.maintain_crops` 需要进入训练 allowlist”是旧依赖图中的层级错误，不是动作缺失。EVD-226 已闭合该高层选项的五道证据门，但其职责是把透明的当前地点作物义务确定性展开为浇水、播种、施肥、普通收获或巨型作物收获；它不得成为 Student 策略标签。
