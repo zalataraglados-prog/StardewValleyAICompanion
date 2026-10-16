@@ -22,6 +22,11 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Complete-MoneyRevenueComparisonWork.ps1"));
+    private static readonly string TerminalProofCollectionSource =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "scripts",
+                "Initialize-MoneyRevenueTerminalProofCollection.ps1"));
 
     [Fact]
     public void RunnerUsesImmutableSourceSaveAndAnIsolatedClone()
@@ -206,6 +211,28 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("training/execute", ComparisonCompletionSource,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TerminalProofCollectionMaterializesOnlyVerifiedOfflineReuse()
+    {
+        Assert.Contains("reuse_verified_shop_sale_episode",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.Contains("build-strategy-ledger-boundary-capture",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-revenue-recurrence-proof",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-terminal-proof-collection-checkpoint",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.Contains("build-money-revenue-terminal-proof-index",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("StardewModdingAPI",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("training/execute",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            TerminalProofCollectionSource, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryFile(params string[] segments)

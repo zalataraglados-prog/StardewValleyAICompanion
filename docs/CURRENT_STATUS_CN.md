@@ -100,6 +100,8 @@ comparison 侧现由 `Initialize-MoneyRevenueComparisonWave.ps1` 以 `partition 
 
 counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_plan.v1`。它重建并逐字节核对 comparison plan 与 request catalog，把每个权威 request 恰好映射为一个 terminal-proof 工作项；只有与 source state、candidate、物品槽、数量、单价和商店都完全一致的既有原生 sale episode 可以进入离线复用通道，其余 shop/shipping alternative 必须原生采集。该计划明确列出账本边界、资源中性终端路线、原生收入动作、recurrence 和终端证明阶段，但自身不是 terminal proof index、Teacher 标签或 production evidence；Money 仍为 `0/18`。
 
+`Initialize-MoneyRevenueTerminalProofCollection.ps1` 现可无游戏物化上述唯一离线复用项：从已验证 sale episode 提取真实 before/after snapshot 与 run identity，保留 request 锚定的 before ledger，另存字节完全一致的 after ledger，构建不可互换的 boundary capture 和 Revenue recurrence。所有 fragment 进入 `money_revenue_terminal_proof_collection_checkpoint.v1` 前都由既有 terminal execution verifier 完整重放；checkpoint 允许保存真实部分进度，但只有 verified request ID 集与完整 denominator 相等时才输出 completion 可消费的 `money_revenue_terminal_proof_index.v1`。其余反事实分支仍为原生采集 blocker，未增加 Money production 分子。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：

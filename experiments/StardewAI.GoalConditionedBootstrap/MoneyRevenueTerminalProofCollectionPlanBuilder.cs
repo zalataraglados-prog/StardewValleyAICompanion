@@ -170,10 +170,10 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
             "Money Revenue terminal-proof request shape is invalid: " +
             request.RequestId + ".");
 
-        var candidate = request.TerminalCandidate;
-        Require(candidate is not null,
-            "Money Revenue terminal candidate is missing: " +
-            request.RequestId + ".");
+        var candidate = request.TerminalCandidate ??
+            throw new InvalidDataException(
+                "Money Revenue terminal candidate is missing: " +
+                request.RequestId + ".");
         var reuse = shop &&
             request.TerminalStateHash == comparisonPlan.SourceStateHash &&
             candidate.CatalogCandidateId ==
