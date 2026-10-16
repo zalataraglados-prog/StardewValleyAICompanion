@@ -61,6 +61,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-terminal-candidate-rebind", BuildMoneyRevenueTerminalCandidateRebind),
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
+    new("build-money-revenue-terminal-proof-collection-plan", BuildMoneyRevenueTerminalProofCollectionPlan),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
     new("build-money-revenue-terminal-execution-manifest", BuildMoneyRevenueTerminalExecutionManifest),
     new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
@@ -737,6 +738,15 @@ static void BuildMoneyRevenueCounterfactualProofRequests(Arguments options)
         options.Required("manifest"));
     Write(options.Required("output"), catalog);
     if (!catalog.CounterfactualProofCollectionReady)
+        Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueTerminalProofCollectionPlan(Arguments options)
+{
+    var plan = MoneyRevenueTerminalProofCollectionPlanBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), plan);
+    if (plan.RequestCount <= 0 || plan.OfflineReuseReadyCount != 1)
         Environment.ExitCode = 2;
 }
 

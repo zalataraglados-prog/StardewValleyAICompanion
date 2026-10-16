@@ -62,6 +62,10 @@ $counterfactualManifestPath = Join-Path $outputDirectory `
     "money-revenue-counterfactual-proof-request-manifest.json"
 $counterfactualCatalogPath = Join-Path $outputDirectory `
     "money-revenue-counterfactual-proof-request-catalog.json"
+$terminalProofCollectionPlanRequestPath = Join-Path $outputDirectory `
+    "money-revenue-terminal-proof-collection-plan-request.json"
+$terminalProofCollectionPlanPath = Join-Path $outputDirectory `
+    "money-revenue-terminal-proof-collection-plan.json"
 $bootstrapProject = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
 $bootstrapDll = Join-Path $ProjectRoot `
@@ -163,6 +167,7 @@ if ($canBuildConcrete) {
 }
 
 $counterfactualStatus = "awaiting_source_strategy_ledger"
+$terminalProofCollectionStatus = "awaiting_counterfactual_request_catalog"
 if (-not [string]::IsNullOrWhiteSpace($SourceStrategyLedgerPath)) {
     if (-not $canBuildConcrete) {
         throw "Source strategy ledger cannot be consumed before the concrete denominator is built."
@@ -184,6 +189,19 @@ if (-not [string]::IsNullOrWhiteSpace($SourceStrategyLedgerPath)) {
         "--manifest", $counterfactualManifestPath,
         "--output", $counterfactualCatalogPath)
     $counterfactualStatus = "counterfactual_proof_collection_ready"
+    Write-JsonFile -Path $terminalProofCollectionPlanRequestPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_terminal_proof_collection_plan_request.v1"
+        comparison_collection_plan_path = $planPath
+        counterfactual_request_manifest_path = $counterfactualManifestPath
+        counterfactual_request_catalog_path = $counterfactualCatalogPath
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-revenue-terminal-proof-collection-plan",
+        "--request", $terminalProofCollectionPlanRequestPath,
+        "--output", $terminalProofCollectionPlanPath)
+    $terminalProofCollectionStatus = "terminal_proof_collection_planned"
 }
 
 [ordered]@{
@@ -200,6 +218,7 @@ if (-not [string]::IsNullOrWhiteSpace($SourceStrategyLedgerPath)) {
         [int]$plan.existing_native_episode_reuse_count
     concrete_denominator_status = $concreteStatus
     counterfactual_request_status = $counterfactualStatus
+    terminal_proof_collection_status = $terminalProofCollectionStatus
     alternative_denominator_path = $alternativePath
     comparison_collection_plan_path = $planPath
     terminal_rebind_manifest_path = if ($canBuildConcrete) {
@@ -214,6 +233,11 @@ if (-not [string]::IsNullOrWhiteSpace($SourceStrategyLedgerPath)) {
     counterfactual_request_catalog_path = if (
         $counterfactualStatus -eq "counterfactual_proof_collection_ready") {
         $counterfactualCatalogPath
+    } else { "" }
+    terminal_proof_collection_plan_path = if (
+        $terminalProofCollectionStatus -eq
+            "terminal_proof_collection_planned") {
+        $terminalProofCollectionPlanPath
     } else { "" }
     formal_product_training_authorized = $false
 } | ConvertTo-Json -Depth 16

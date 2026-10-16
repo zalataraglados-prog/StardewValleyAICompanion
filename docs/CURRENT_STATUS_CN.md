@@ -98,6 +98,8 @@ Money batch 更新链可在调用方显式提供现有 production coverage reque
 
 comparison 侧现由 `Initialize-MoneyRevenueComparisonWave.ps1` 以 `partition + source_row_id` 从 work plan 精确定位 corpus row 和 native run summary，并生成带全路径哈希、source identity 与缺失 criterion 集的 handoff。completion 可只处理 handoff 列出的缺口，并把新 admission 与已有 index 按 `run_id + criterion_id` 累积合并，防止局部补证据时丢掉旧分子。该接线仍要求后续 acquisition rollout、strategy ledger 与 terminal proof 全部真实存在，不会凭 handoff 生成 Teacher 标签。
 
+counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_plan.v1`。它重建并逐字节核对 comparison plan 与 request catalog，把每个权威 request 恰好映射为一个 terminal-proof 工作项；只有与 source state、candidate、物品槽、数量、单价和商店都完全一致的既有原生 sale episode 可以进入离线复用通道，其余 shop/shipping alternative 必须原生采集。该计划明确列出账本边界、资源中性终端路线、原生收入动作、recurrence 和终端证明阶段，但自身不是 terminal proof index、Teacher 标签或 production evidence；Money 仍为 `0/18`。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：

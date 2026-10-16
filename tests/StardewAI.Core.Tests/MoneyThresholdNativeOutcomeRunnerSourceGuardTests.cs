@@ -159,6 +159,12 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-counterfactual-proof-requests",
             ComparisonPlanSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-terminal-proof-collection-plan",
+            ComparisonPlanSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_terminal_proof_collection_plan_request.v1",
+            ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains("source_strategy_ledger_path = $sourceLedgerPath",
             ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains("money_revenue_acquisition_rollout_index.v1",
