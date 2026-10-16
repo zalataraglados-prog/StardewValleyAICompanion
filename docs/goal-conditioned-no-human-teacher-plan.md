@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## Current slice · 2026-10-16: bounded crop site preparation
+
+- A purpose-limited `farm_layout` snapshot projects only an explicit Farm rectangle of at most `32x32` tiles and avoids unrelated machine, animal, and whole-farm material scans.
+- The site-preparation plan binds exact layout tiles to the existing obstacle clearing, resource-clump, BFS positioning, and tilling candidates. Clearing ends the current binding; tilling is rebound only from a fresh post-clear snapshot.
+- This mechanical plan is not planting-layout proof or production evidence. Money remains `0/18`; seed reservation/acquisition proof is the next slice, followed by daily capacity, lifecycle, output retention, and settlement.
+
 ## 历史记录 · 2026-10-16: Money crop planting-layout checkpoint
 
 - The future-crop denominator now includes one `planting-layout:<commitment>` request per active commitment. A layout proof replays the persisted obligation plan, same-save/player planting-day snapshot, exact outdoor Farm context, every selected empty HoeDirt tile, native seed legality and an adjusted growth duration no later than the conservative commitment deadline.

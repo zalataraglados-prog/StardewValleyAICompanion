@@ -71,6 +71,7 @@ internal static partial class BootstrapSelfTest
                     "seed-acquisition:money.year2.spring.strawberry:60",
                     StringComparer.Ordinal),
             "Money crop-production obligation plan lost an exact future obligation.");
+        VerifyMoneyCropSitePreparationPlan(root, planPath);
         VerifyMoneyCropPlantingLayoutCheckpoint(root, planPath, plan);
 
         ledger.CropPlantingCommitments[0].HarvestTotalDays =
@@ -111,6 +112,52 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejected,
             "A null Money crop-production harvest schedule was admitted.");
+    }
+
+    private static void VerifyMoneyCropSitePreparationPlan(
+        string root,
+        string planPath)
+    {
+        var snapshotPath = Path.Combine(
+            root,
+            "site-preparation-snapshot.json");
+        var requestPath = Path.Combine(
+            root,
+            "site-preparation-request.json");
+        var snapshot = MoneyCropSitePreparationSnapshot();
+        var tiles = Enumerable.Range(0, 100)
+            .Select(index => new MoneyRevenueCropPlantingTile(
+                5 + index % 10,
+                6 + index / 10))
+            .ToArray();
+        Write(snapshotPath, snapshot);
+        Write(requestPath, new MoneyRevenueCropSitePreparationPlanRequest
+        {
+            CropProductionPlanPath = planPath,
+            CommitmentId = "money.year2.spring.strawberry",
+            PreparationSnapshotPath = snapshotPath,
+            LocationId = "Farm",
+            Tiles = tiles
+        });
+
+        var plan = MoneyRevenueCropSitePreparationPlanBuilder.Build(
+            requestPath);
+
+        Require(plan.Status == "site_preparation_plan_ready" &&
+                plan.TileCount == 100 &&
+                plan.AlreadyPreparedCount == 0 &&
+                plan.DirectTillCount == 100 &&
+                plan.ClearThenRebindCount == 0 &&
+                plan.BlockedCount == 0 &&
+                plan.SitePreparationPlanReady &&
+                plan.PlantingLayoutProofStillRequired &&
+                !plan.FormalProductTrainingAuthorized &&
+                plan.Steps.All(step =>
+                    step.ActionOptionId == "executor.till_soil" &&
+                    step.Parameters.Any(parameter =>
+                        parameter.Name == "fresh_snapshot_rebind_required" &&
+                        parameter.Value == "true")),
+            "Money crop site-preparation plan lost its bounded till bindings.");
     }
 
     private static void VerifyMoneyCropPlantingLayoutCheckpoint(
@@ -296,10 +343,124 @@ internal static partial class BootstrapSelfTest
         return snapshot;
     }
 
+    private static SnapshotEnvelope MoneyCropSitePreparationSnapshot()
+    {
+        var snapshot = MoneyCropProductionSnapshot();
+        var state = snapshot.State.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value,
+            StringComparer.Ordinal);
+        state["time"] = JsonSerializer.SerializeToElement(new
+        {
+            total_days = MoneyCropRuntimeField(111),
+            year = MoneyCropRuntimeField(1),
+            season = MoneyCropRuntimeField("winter"),
+            day = MoneyCropRuntimeField(28),
+            time = MoneyCropRuntimeField(900)
+        }, JsonDefaults.Options);
+        state["player"] = JsonSerializer.SerializeToElement(new
+        {
+            location_id = MoneyCropRuntimeField("Farm"),
+            tile_x = MoneyCropRuntimeField(4),
+            tile_y = MoneyCropRuntimeField(6),
+            energy = MoneyCropRuntimeField(270),
+            inventory = MoneyCropRuntimeField(Array.Empty<object>())
+        }, JsonDefaults.Options);
+        var siteTiles = Enumerable.Range(0, 100).Select(index => new
+        {
+            tile_x = 5 + index % 10,
+            tile_y = 6 + index / 10,
+            status = "ready_to_till",
+            clearable_blocker_kinds = Array.Empty<string>()
+        }).ToArray();
+        state["current_location"] = JsonSerializer.SerializeToElement(new
+        {
+            map = MoneyCropRuntimeField(new { id = "Farm" }),
+            objects = MoneyCropRuntimeField(Array.Empty<object>()),
+            terrain_features = MoneyCropRuntimeField(Array.Empty<object>()),
+            site_preparation_context = MoneyCropRuntimeField(new
+            {
+                projection_status =
+                    "complete_bounded_current_farm_region",
+                location_id = "Farm",
+                hoe_tool_slot_index = 2,
+                hoe_tool_qualified_item_id = "(T)Hoe",
+                hoe_energy_cost_per_single_tile_action = 1.7,
+                tiles = siteTiles
+            })
+        }, JsonDefaults.Options);
+        state["farm"] = JsonSerializer.SerializeToElement(new
+        {
+            crop_catalog = MoneyCropRuntimeField(new[]
+            {
+                new
+                {
+                    seed_id = "745",
+                    seasons = new[] { "spring" },
+                    grow_days = 8,
+                    regrow_days = 4,
+                    harvest_item_id = "400",
+                    harvest_item_qualified_id = "(O)400",
+                    harvest_context_tags = new[]
+                    {
+                        "category_fruits",
+                        "item_strawberry"
+                    },
+                    harvest_unit_sale_price = 120,
+                    harvest_min_stack = 1,
+                    needs_watering = true
+                }
+            }),
+            material_inventory_graph = snapshot.State["farm"]
+                .GetProperty("material_inventory_graph"),
+            resource_clumps = MoneyCropRuntimeField(Array.Empty<object>())
+        }, JsonDefaults.Options);
+        state["menus"] = JsonSerializer.SerializeToElement(new
+        {
+            active_menu = MoneyCropRuntimeField(new
+            {
+                is_open = false,
+                type = "none"
+            })
+        }, JsonDefaults.Options);
+        state["locations"] = JsonSerializer.SerializeToElement(new
+        {
+            collision_grid = MoneyCropRuntimeField(new
+            {
+                location_id = "Farm",
+                width = 100,
+                height = 100,
+                notable_tiles = Array.Empty<object>()
+            }),
+            route_action_branch_coverage = MoneyCropRuntimeField(new
+            {
+                rows = Array.Empty<object>()
+            })
+        }, JsonDefaults.Options);
+        snapshot.GameTick = 150;
+        snapshot.State = state;
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return snapshot;
+    }
+
     private static object MoneyCropField<T>(T value) => new
     {
         value,
         status = FieldStatus.Available
+    };
+
+    private static object MoneyCropRuntimeField<T>(T value) => new
+    {
+        value,
+        status = FieldStatus.Available,
+        source = new
+        {
+            kind = "test",
+            path = "money_crop_site_preparation_self_test"
+        },
+        adapter = "test",
+        read_at_tick = 150,
+        confidence = 1.0
     };
 
     private static SnapshotEnvelope MoneyCropProductionSnapshot()

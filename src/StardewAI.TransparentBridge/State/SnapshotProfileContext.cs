@@ -7,6 +7,8 @@ public static class SnapshotProfileContext
     private static readonly AsyncLocal<string?> CurrentProfile = new();
     private static readonly AsyncLocal<string?> FishingLocation = new();
     private static readonly AsyncLocal<int?> FishingRodSlot = new();
+    private static readonly AsyncLocal<FarmSitePreparationBounds?>
+        FarmSitePreparationRegion = new();
 
     public static string Current
     {
@@ -26,6 +28,12 @@ public static class SnapshotProfileContext
         set => FishingRodSlot.Value = value;
     }
 
+    public static FarmSitePreparationBounds? SitePreparationBounds
+    {
+        get => FarmSitePreparationRegion.Value;
+        set => FarmSitePreparationRegion.Value = value;
+    }
+
     public static bool IncludesPersistentMaterialInventoryGraph =>
         Current is "daily" or "training_machine" or "fishing" or "full";
 
@@ -37,4 +45,13 @@ public static class SnapshotProfileContext
 
     public static bool IncludesCrabPotNetwork =>
         Current is "daily" or "fishing" or "full";
+
+    public static bool IncludesFarmSitePreparation =>
+        Current == "farm_layout";
 }
+
+public sealed record FarmSitePreparationBounds(
+    int MinX,
+    int MinY,
+    int MaxX,
+    int MaxY);

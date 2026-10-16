@@ -52,6 +52,8 @@ namespace StardewAI.Core.OptionRegistry
                 ["story.advance_event_minigame"] = StoryEventMinigameCandidates,
                 ["mail.process_letter"] = (snapshot, _) => MailProcessingCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),
+                ["executor.break_farm_resource_clump"] = (snapshot, _) => ClearFarmResourceClumpCandidates(snapshot),
+                ["executor.till_soil"] = (snapshot, _) => TillSoilCandidates(snapshot),
                 ["executor.plant_seed"] = (snapshot, _) => PlantSeedCandidates(snapshot),
                 ["exploration.visit_location"] = (snapshot, _) => RouteConnectorCandidates(snapshot),
                 ["executor.interact"] = (snapshot, _) => InteractEndpointCandidates(snapshot),

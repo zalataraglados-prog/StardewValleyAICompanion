@@ -494,6 +494,7 @@ namespace StardewAI.Core.OptionRegistry
                         "vanilla_1_6_pet_bowl",
                         "vanilla_1_6_crop_data",
                         "vanilla_1_6_current_location_crops",
+                        "vanilla_1_6_15_farm_site_preparation",
                         "vanilla_1_6_farm_and_animal_houses",
                         "vanilla_1_6_animal_purchase",
                         "vanilla_1_6_material_inventory_graph",

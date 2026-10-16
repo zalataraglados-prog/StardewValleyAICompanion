@@ -104,6 +104,8 @@ counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_
 
 未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v1` 会重新核验这些值，并把当前未预留种子按承诺顺序唯一分配，再列出布局、缺种、预留、日容量、原生成长和逐波输出保留请求。布局 proof 必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；片段进入 checkpoint 前还会被重新构建。当前 v1 只关闭布局证据种类，其余请求保持 pending，future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。下一施工切片先为不足的 HoeDirt 组合既有清障/锄地/路线动作形成前置场地准备计划和证明，再闭合种子、日容量、生命周期与输出保留；不得另写第二套作物候选、规划器或执行器。
 
+场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。该计划本身不是 planting-layout proof，也没有增加 Money production 分子；下一施工切片为种子预留/购种 proof。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：

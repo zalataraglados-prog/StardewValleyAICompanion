@@ -846,24 +846,26 @@ namespace StardewAI.Core.OptionRegistry
                     var skillMaximum = NullableReadInt(clump, "harvest_experience_on_success_max");
                     var skillCondition = ReadString(clump, "harvest_experience_condition");
                     var skillStatus = ReadString(clump, "harvest_experience_projection_status");
+                    var executionParameters = new[]
+                    {
+                        Parameter("target_location", "Farm"),
+                        Parameter("target_tile_x", (hitTile?.X ?? x).ToString()),
+                        Parameter("target_tile_y", (hitTile?.Y ?? y).ToString()),
+                        Parameter("stand_tile_x", (standTile?.X ?? x).ToString()),
+                        Parameter("stand_tile_y", (standTile?.Y ?? y).ToString()),
+                        Parameter("resource_clump_tile_x", x.ToString()),
+                        Parameter("resource_clump_tile_y", y.ToString()),
+                        Parameter("resource_clump_width", width.ToString()),
+                        Parameter("resource_clump_height", height.ToString()),
+                        Parameter("resource_clump_parent_sheet_index", ReadInt(clump, "parent_sheet_index").ToString()),
+                        Parameter("tool_slot_index", ReadInt(clump, "tool_slot_index").ToString()),
+                        Parameter("required_tool_kind", "axe"),
+                        Parameter("max_tool_swings", hits.ToString())
+                    };
                     var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
                     {
                         OptionId = "executor.break_farm_resource_clump",
-                        Parameters = new[]
-                        {
-                            Parameter("target_tile_x", (hitTile?.X ?? x).ToString()),
-                            Parameter("target_tile_y", (hitTile?.Y ?? y).ToString()),
-                            Parameter("stand_tile_x", (standTile?.X ?? x).ToString()),
-                            Parameter("stand_tile_y", (standTile?.Y ?? y).ToString()),
-                            Parameter("resource_clump_tile_x", x.ToString()),
-                            Parameter("resource_clump_tile_y", y.ToString()),
-                            Parameter("resource_clump_width", width.ToString()),
-                            Parameter("resource_clump_height", height.ToString()),
-                            Parameter("resource_clump_parent_sheet_index", ReadInt(clump, "parent_sheet_index").ToString()),
-                            Parameter("tool_slot_index", ReadInt(clump, "tool_slot_index").ToString()),
-                            Parameter("required_tool_kind", "axe"),
-                            Parameter("max_tool_swings", hits.ToString())
-                        }
+                        Parameters = executionParameters
                     }).ToList();
                     if (!string.Equals(status, "ready", StringComparison.Ordinal))
                     {
@@ -903,14 +905,14 @@ namespace StardewAI.Core.OptionRegistry
                         EnergyCost = hits * 2,
                         AvailabilityClass = "transparent_farm_resource_clump",
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
-                        Parameters = new[]
+                        Parameters = executionParameters.Concat(new[]
                         {
                             Parameter("skill_experience_skill_id", skillId),
                             Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_condition", skillCondition),
                             Parameter("skill_experience_projection_status", skillStatus)
-                        }
+                        }).ToArray()
                     };
                 })
                 .ToArray();
