@@ -109,6 +109,8 @@ internal static class StrategyCommitmentLedgerSupport
         int revision,
         string cancelReason) => new()
         {
+            ProductionObligationSchemaVersion =
+                row.ProductionObligationSchemaVersion,
             CommitmentId = row.CommitmentId,
             Revision = revision,
             Status = status,
@@ -116,6 +118,7 @@ internal static class StrategyCommitmentLedgerSupport
             SourceStateHash = row.SourceStateHash,
             LocationContext = row.LocationContext,
             SeedId = row.SeedId,
+            SeedQualifiedItemId = row.SeedQualifiedItemId,
             HarvestItemId = row.HarvestItemId,
             HarvestItemQualifiedId = row.HarvestItemQualifiedId,
             HarvestContextTags = (row.HarvestContextTags ?? Array.Empty<string>()).ToArray(),
@@ -129,6 +132,16 @@ internal static class StrategyCommitmentLedgerSupport
             RegrowDays = row.RegrowDays,
             LastInSeasonHarvestTotalDay = row.LastInSeasonHarvestTotalDay,
             MinimumUnitsPerWave = row.MinimumUnitsPerWave,
+            NeedsWatering = row.NeedsWatering,
+            RequiredWateringTotalDays =
+                (row.RequiredWateringTotalDays ?? Array.Empty<int>())
+                .ToArray(),
+            HarvestTotalDays =
+                (row.HarvestTotalDays ?? Array.Empty<int>()).ToArray(),
+            MinimumHarvestWaveCount = row.MinimumHarvestWaveCount,
+            MinimumTotalUnits = row.MinimumTotalUnits,
+            HarvestUnitSalePrice = row.HarvestUnitSalePrice,
+            MinimumGrossRevenue = row.MinimumGrossRevenue,
             ProjectionStatus = row.ProjectionStatus,
             ProjectionCondition = row.ProjectionCondition,
             CancelReason = cancelReason

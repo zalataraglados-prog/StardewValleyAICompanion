@@ -1770,7 +1770,7 @@ namespace StardewAI.Backend.Tests
                 "grandpa_score": {{FieldJson(3)}},
                 "crops": {{FieldJson("[{\"tile_x\":1,\"tile_y\":2,\"needs_watering\":true,\"watered\":false}]", raw: true)}},
                 "crop_catalog": {{(includeStrategyCatalog
-                    ? FieldJson("[{\"seed_id\":\"745\",\"seasons\":[\"spring\"],\"grow_days\":8,\"regrow_days\":4,\"harvest_item_id\":\"400\",\"harvest_item_qualified_id\":\"(O)400\",\"harvest_min_stack\":1}]", raw: true)
+                    ? FieldJson("[{\"seed_id\":\"745\",\"seasons\":[\"spring\"],\"grow_days\":8,\"regrow_days\":4,\"harvest_item_id\":\"400\",\"harvest_item_qualified_id\":\"(O)400\",\"harvest_context_tags\":[\"category_fruits\",\"item_strawberry\"],\"harvest_unit_sale_price\":120,\"harvest_min_stack\":1,\"needs_watering\":true}]", raw: true)
                     : UnavailableFieldJson("crop_catalog_not_in_general_backend_fixture"))}},
                 "material_inventory_graph": {{(includeMaterialGraph
                     ? FieldJson("{\"schema_version\":\"material_inventory_graph.v1\",\"status\":\"available\",\"player_id\":123,\"inventory_nodes\":[{\"node_id\":\"player:123\",\"inventory_kind\":\"player_inventory\",\"supply_state\":\"available\",\"owner_player_id\":123,\"ownership_class\":\"actor_owned\",\"actor_use_authorized\":true,\"slots\":[{\"slot_index\":1,\"item_id\":\"388\",\"qualified_item_id\":\"(O)388\",\"stack\":30}]}]}", raw: true)

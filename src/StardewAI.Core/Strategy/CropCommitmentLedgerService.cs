@@ -77,9 +77,18 @@ namespace StardewAI.Core.Strategy
             var lastHarvestTotalDay = 0;
             var baseGrowDays = crop.HasValue ? ReadInt(crop.Value, "grow_days") : 0;
             var regrowDays = crop.HasValue ? NullableReadInt(crop.Value, "regrow_days") : null;
+            var needsWatering = crop.HasValue &&
+                ReadRequiredBool(crop.Value, "needs_watering", errors);
+            var harvestUnitSalePrice = crop.HasValue
+                ? NullableReadInt(crop.Value, "harvest_unit_sale_price")
+                : null;
             if (crop.HasValue && baseGrowDays <= 0)
             {
                 errors.Add("native_crop_base_grow_days_unavailable");
+            }
+            if (harvestUnitSalePrice.HasValue && harvestUnitSalePrice.Value < 0)
+            {
+                errors.Add("native_crop_harvest_sale_price_invalid");
             }
             if (errors.Count == 0)
             {
@@ -108,11 +117,23 @@ namespace StardewAI.Core.Strategy
                 return Rejected(current, errors);
             }
 
+            var production = CropProductionObligationProjector.Project(
+                plantingTotalDay,
+                firstHarvestTotalDay,
+                lastHarvestTotalDay,
+                regrowDays,
+                request.TileCount,
+                Math.Max(1, ReadInt(crop!.Value, "harvest_min_stack", 1)),
+                needsWatering,
+                harvestUnitSalePrice);
+
             var ledger = StrategyCommitmentLedgerSupport.CloneOrCreate(current, snapshot, updatedAt);
             var existing = ledger.CropPlantingCommitments.FirstOrDefault(row =>
                 string.Equals(row.CommitmentId, request.CommitmentId, StringComparison.Ordinal));
             var commitment = new CropPlantingCommitment
             {
+                ProductionObligationSchemaVersion =
+                    "crop_production_obligation.v1",
                 CommitmentId = request.CommitmentId,
                 Revision = (existing?.Revision ?? 0) + 1,
                 Status = StrategyCommitmentStatuses.Active,
@@ -120,6 +141,8 @@ namespace StardewAI.Core.Strategy
                 SourceStateHash = snapshot.StateHash,
                 LocationContext = "outdoor_seasonal",
                 SeedId = ReadString(crop!.Value, "seed_id"),
+                SeedQualifiedItemId = QualifyObjectId(
+                    ReadString(crop.Value, "seed_id")),
                 HarvestItemId = ReadString(crop.Value, "harvest_item_id"),
                 HarvestItemQualifiedId = ReadString(crop.Value, "harvest_item_qualified_id"),
                 HarvestContextTags = ReadStringArray(crop.Value, "harvest_context_tags"),
@@ -132,9 +155,21 @@ namespace StardewAI.Core.Strategy
                 FirstHarvestTotalDay = firstHarvestTotalDay,
                 RegrowDays = regrowDays.HasValue && regrowDays.Value > 0 ? regrowDays : null,
                 LastInSeasonHarvestTotalDay = lastHarvestTotalDay,
-                MinimumUnitsPerWave = checked(request.TileCount * Math.Max(1, ReadInt(crop.Value, "harvest_min_stack", 1))),
+                MinimumUnitsPerWave = production.MinimumUnitsPerWave,
+                NeedsWatering = needsWatering,
+                RequiredWateringTotalDays =
+                    production.RequiredWateringTotalDays,
+                HarvestTotalDays = production.HarvestTotalDays,
+                MinimumHarvestWaveCount =
+                    production.MinimumHarvestWaveCount,
+                MinimumTotalUnits = production.MinimumTotalUnits,
+                HarvestUnitSalePrice = harvestUnitSalePrice,
+                MinimumGrossRevenue = production.MinimumGrossRevenue,
                 ProjectionStatus = "conservative_native_base_growth",
-                ProjectionCondition = "outdoor_crop_planted_on_committed_date_and_receives_each_required_daily_growth_update_without_speed_modifiers"
+                ProjectionCondition =
+                    "outdoor_crop_planted_on_committed_date_and_receives_each_required_daily_growth_update_without_speed_modifiers;" +
+                    "watering_obligation_assumes_every_native_growth_day_requires_explicit_service_and_is_skipped_only_from_fresh_native_state;" +
+                    "harvest_and_revenue_use_native_minimum_stack_and_quality_zero_sale_price_only"
             };
             ledger.CropPlantingCommitments = ledger.CropPlantingCommitments
                 .Where(row => !string.Equals(row.CommitmentId, commitment.CommitmentId, StringComparison.Ordinal))
@@ -276,6 +311,23 @@ namespace StardewAI.Core.Strategy
 
         private static int CalendarOrdinal(int year, int seasonIndex, int day) =>
             (year - 1) * 112 + seasonIndex * 28 + day - 1;
+
+        private static bool ReadRequiredBool(
+            JsonElement row,
+            string property,
+            ICollection<string> errors)
+        {
+            if (row.TryGetProperty(property, out var value) &&
+                value.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            {
+                return value.GetBoolean();
+            }
+            errors.Add("native_crop_" + property + "_unavailable");
+            return false;
+        }
+
+        private static string QualifyObjectId(string itemId) =>
+            itemId.StartsWith('(') ? itemId : "(O)" + itemId;
 
 
         private static string[] ReadStringArray(JsonElement row, string property) =>

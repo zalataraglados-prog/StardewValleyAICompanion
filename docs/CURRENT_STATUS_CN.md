@@ -102,6 +102,8 @@ counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_
 
 `Initialize-MoneyRevenueTerminalProofCollection.ps1` 现可无游戏物化上述唯一离线复用项：从已验证 sale episode 提取真实 before/after snapshot 与 run identity，保留 request 锚定的 before ledger，另存字节完全一致的 after ledger，构建不可互换的 boundary capture 和 Revenue recurrence。所有 fragment 进入 `money_revenue_terminal_proof_collection_checkpoint.v1` 前都由既有 terminal execution verifier 完整重放；checkpoint 允许保存真实部分进度，但只有 verified request ID 集与完整 denominator 相等时才输出 completion 可消费的 `money_revenue_terminal_proof_index.v1`。其余反事实分支仍为原生采集 blocker，未增加 Money production 分子。
 
+未来作物承诺现在具备独立的精确采证计划。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v1` 会重新核验这些值，并把当前未预留种子按承诺顺序唯一分配，再列出缺种、预留、日容量、原生成长和逐波输出保留请求。该计划仍不是执行回执或生产证明，固定保持 future-proof、fresh-save schedule 和 formal training 三个 gate 为 false，因此 Money 仍是 `0/18`。下一施工切片是让上述请求进入可恢复的原生 proof checkpoint，然后把通过证明的义务组合进 fresh-save 百万元下界日程；不得另写第二套作物候选、规划器或执行器。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：
