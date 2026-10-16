@@ -24,6 +24,27 @@ function Write-JsonFile {
         $Value | ConvertTo-Json -Depth 96)
 }
 
+function Write-RawJsonProperty {
+    param(
+        [string] $Path,
+        [string] $RawJson,
+        [string] $PropertyName
+    )
+    $document = [Text.Json.JsonDocument]::Parse($RawJson)
+    try {
+        try {
+            $property = $document.RootElement.GetProperty($PropertyName)
+        }
+        catch {
+            throw "JSON property is missing: $PropertyName"
+        }
+        Write-Utf8Text -Path $Path -Value $property.GetRawText()
+    }
+    finally {
+        $document.Dispose()
+    }
+}
+
 function Get-DirectoryContentHash {
     param([string] $Path)
     $root = [IO.Path]::GetFullPath($Path).TrimEnd('\')
