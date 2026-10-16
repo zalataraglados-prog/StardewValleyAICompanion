@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 当前切片 · 2026-10-16 Money 种子预留 proof
+
+- 新增 `build-money-revenue-crop-seed-reservation-proof`。它重新构建义务计划，并在不晚于供给截止日的 fresh snapshot 上重验同一 save/player、透明物料图和提交后的 strategy ledger。
+- 只有用途、种子身份、状态哈希和库存槽都精确匹配，且活动 reservation 总量等于承诺全部地块数时，`seed-reservation:<commitment>` 才可进入 crop-production checkpoint。部分预留、超额、旧状态或不存在的槽位全部失败关闭。
+- checkpoint schema v2 同时接纳布局和种子预留两类可重建 fragment；购种 shortfall 仍需现有 `economy.buy_supplies -> executor.buy_shop_item` 原生链补足后再取 fresh snapshot 预留。Money 仍为 `0/18`，训练授权仍为 false。
+
 ## 当前切片 · 2026-10-16 Money 作物场地准备计划
 
 - 透明桥新增目的受限的 `profile=farm_layout&min_x=...&min_y=...&max_x=...&max_y=...`；区域每边最多 32 格，只读取 Farm 当前地点、碰撞和区域内对象/地形特征/资源块，不展开机器、动物或全农场物料图。

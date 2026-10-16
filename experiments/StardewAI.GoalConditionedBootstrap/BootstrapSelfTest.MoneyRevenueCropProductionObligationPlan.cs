@@ -73,6 +73,7 @@ internal static partial class BootstrapSelfTest
             "Money crop-production obligation plan lost an exact future obligation.");
         VerifyMoneyCropSitePreparationPlan(root, planPath);
         VerifyMoneyCropPlantingLayoutCheckpoint(root, planPath, plan);
+        VerifyMoneyCropSeedReservationProof(root, snapshot);
 
         ledger.CropPlantingCommitments[0].HarvestTotalDays =
             new[] { 120 };
@@ -112,6 +113,124 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejected,
             "A null Money crop-production harvest schedule was admitted.");
+    }
+
+    private static void VerifyMoneyCropSeedReservationProof(
+        string root,
+        SnapshotEnvelope snapshot)
+    {
+        var mutation = new CropCommitmentLedgerService().Upsert(
+            null,
+            snapshot,
+            new CropPlantingCommitmentUpsertRequest
+            {
+                StateHash = snapshot.StateHash,
+                ExpectedLedgerRevision = 0,
+                CommitmentId = "money.seed-reservation.fixture",
+                SourceDecisionId = "teacher.money.seed-reservation.v1",
+                SeedId = "745",
+                TileCount = 40,
+                PlantingYear = 2,
+                PlantingSeason = "spring",
+                PlantingDayOfMonth = 1,
+                LocationContext = "outdoor_seasonal"
+            },
+            "2026-10-16T00:00:00Z");
+        Require(mutation.Accepted && mutation.Ledger is not null,
+            "Money seed-reservation fixture commitment was rejected.");
+        var sourceLedger = mutation.Ledger!;
+        var snapshotPath = Path.Combine(root, "seed-reservation-snapshot.json");
+        var sourceLedgerPath = Path.Combine(root, "seed-reservation-source-ledger.json");
+        var planRequestPath = Path.Combine(root, "seed-reservation-plan-request.json");
+        Write(snapshotPath, snapshot);
+        Write(sourceLedgerPath, sourceLedger);
+        Write(planRequestPath, new MoneyRevenueCropProductionObligationPlanRequest
+        {
+            SnapshotPath = snapshotPath,
+            StrategyLedgerPath = sourceLedgerPath
+        });
+        var plan = MoneyRevenueCropProductionObligationPlanBuilder.Build(planRequestPath);
+        var planPath = Path.Combine(root, "seed-reservation-plan.json");
+        Write(planPath, plan);
+
+        sourceLedger.Revision++;
+        sourceLedger.MaterialReservations = new[]
+        {
+            new MaterialReservation
+            {
+                ReservationId = "money.seed-reservation.fixture:seed:0",
+                Revision = 1,
+                SourceDecisionId = "teacher.money.seed-reservation.v1",
+                SourceStateHash = snapshot.StateHash,
+                GoalId = "earn_money",
+                OwnerPlayerId = 123,
+                NodeId = "player:123",
+                SlotIndex = 0,
+                QualifiedItemId = "(O)745",
+                Quantity = 40,
+                Purpose = "crop_seed_supply:money.seed-reservation.fixture"
+            }
+        };
+        var committedLedgerPath = Path.Combine(root, "seed-reservation-committed-ledger.json");
+        Write(committedLedgerPath, sourceLedger);
+        var proofRequestPath = Path.Combine(root, "seed-reservation-proof-request.json");
+        Write(proofRequestPath, new MoneyRevenueCropSeedReservationProofRequest
+        {
+            CropProductionPlanPath = planPath,
+            CommitmentId = "money.seed-reservation.fixture",
+            ReservationSnapshotPath = snapshotPath,
+            CommittedStrategyLedgerPath = committedLedgerPath
+        });
+        var proof = MoneyRevenueCropSeedReservationProofBuilder.Build(proofRequestPath);
+        Require(proof.SeedReservationVerified && proof.RequiredQuantity == 40 &&
+                proof.ReservedQuantity == 40 && proof.ReservationIds.Length == 1 &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money crop seed-reservation proof lost its exact committed quantity.");
+
+        var proofPath = Path.Combine(root, "seed-reservation-proof.json");
+        var indexPath = Path.Combine(root, "seed-reservation-fragment-index.json");
+        var checkpointRequestPath = Path.Combine(root, "seed-reservation-checkpoint-request.json");
+        Write(proofPath, proof);
+        Write(indexPath, new MoneyRevenueCropProductionProofFragmentIndex
+        {
+            CropProductionPlanPath = planPath,
+            SeedReservationProofPaths = new[] { proofPath }
+        });
+        Write(checkpointRequestPath, new MoneyRevenueCropProductionProofCheckpointRequest
+        {
+            CropProductionPlanPath = planPath,
+            FragmentIndexPath = indexPath
+        });
+        var checkpoint = MoneyRevenueCropProductionProofCheckpointBuilder.Build(checkpointRequestPath);
+        Require(checkpoint.VerifiedFragmentCount == 1 &&
+                checkpoint.VerifiedSeedReservations.Length == 1 &&
+                checkpoint.VerifiedRequestIds.SequenceEqual(
+                    new[] { "seed-reservation:money.seed-reservation.fixture" },
+                    StringComparer.Ordinal),
+            "Money crop seed-reservation proof did not enter the exact checkpoint denominator.");
+
+        sourceLedger.MaterialReservations[0].Quantity = 39;
+        var tamperedLedgerPath = Path.Combine(root, "seed-reservation-ledger-tampered.json");
+        Write(tamperedLedgerPath, sourceLedger);
+        var tamperedRequestPath = Path.Combine(root, "seed-reservation-request-tampered.json");
+        Write(tamperedRequestPath, new MoneyRevenueCropSeedReservationProofRequest
+        {
+            CropProductionPlanPath = planPath,
+            CommitmentId = "money.seed-reservation.fixture",
+            ReservationSnapshotPath = snapshotPath,
+            CommittedStrategyLedgerPath = tamperedLedgerPath
+        });
+        var rejected = false;
+        try
+        {
+            _ = MoneyRevenueCropSeedReservationProofBuilder.Build(tamperedRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "A partial Money crop seed reservation was admitted as full proof.");
     }
 
     private static void VerifyMoneyCropSitePreparationPlan(

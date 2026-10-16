@@ -106,6 +106,8 @@ counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_
 
 场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。该计划本身不是 planting-layout proof，也没有增加 Money production 分子；下一施工切片为种子预留/购种 proof。
 
+种子预留 proof 现已进入 crop-production checkpoint v2：它只认可 fresh snapshot 上已经原子提交到 strategy ledger 的完整种子 reservation，并逐槽对照透明物料图；原计划中的“当前可用数量”不再能冒充预留。任何 shortfall 必须先经既有购买链原生补足，再重新快照和提交预留。该层没有闭合购种回执、日容量、生命周期或输出保留，因此 Money 仍为 `0/18`。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：
