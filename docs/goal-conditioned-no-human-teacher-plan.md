@@ -558,7 +558,8 @@ and auditing each acquisition rule before it is admitted to the hypergraph.
   settlement total plus a completeness flag and next-day timing.
 - The source-backed mechanics and transparent inputs pass, but the route is not training-ready:
   a seed-robust fresh-save Year-3 lower-bound proof, counterfactual reserve/opportunity-cost
-  labels, and a training-admitted crop-production branch remain explicit blockers.
+  labels, and long-horizon crop-production commitments remain explicit blockers. Crop maintenance
+  is compiler-owned deterministic support and must not become a Student policy label.
 - The 1.6 min-max guide and Wiki fishing strategy can seed alternatives. They cannot become
   deterministic route rules without isolated rollout evidence visible to the student.
 - Regression PASS: 19/19 criteria facts, 15/15 source locks, 228 current options, 151

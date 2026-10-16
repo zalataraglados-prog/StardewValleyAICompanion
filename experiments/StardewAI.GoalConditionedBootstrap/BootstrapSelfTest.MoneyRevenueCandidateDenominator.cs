@@ -39,6 +39,13 @@ internal static partial class BootstrapSelfTest
                       "kind": "state_gate"
                     },
                     {
+                      "id": "dependency.earn_money.crops",
+                      "kind": "deterministic_transition",
+                      "option_id": "farm.maintain_crops",
+                      "candidate_kinds": ["harvest_crop_tile"],
+                      "required_field_paths": ["current_location.crops"]
+                    },
+                    {
                       "id": "dependency.earn_money.sell",
                       "kind": "policy_option_transition",
                       "option_id": "economy.sell_items",
@@ -62,6 +69,7 @@ internal static partial class BootstrapSelfTest
                   ],
                   "edges": [
                     { "from": "dependency.earn_money.forage", "to": "dependency.earn_money.reserve", "kind": "may_produce" },
+                    { "from": "dependency.earn_money.crops", "to": "dependency.earn_money.reserve", "kind": "may_produce" },
                     { "from": "dependency.earn_money.reserve", "to": "dependency.earn_money.sell", "kind": "authorizes_alternative" },
                     { "from": "dependency.earn_money.reserve", "to": "dependency.earn_money.ship", "kind": "authorizes_alternative" },
                     { "from": "dependency.earn_money.sell", "to": "dependency.earn_money.milestone", "kind": "advances_immediately" },
@@ -101,13 +109,25 @@ internal static partial class BootstrapSelfTest
             !catalog.ProductionTeacherPreferenceLabelEligible &&
             !catalog.FormalProductTrainingAuthorized &&
             catalog.PolicyNodeCount == 3 &&
-            catalog.DeterministicSupportNodeCount == 1 &&
+            catalog.DeterministicSupportNodeCount == 2 &&
             catalog.ComparisonCandidateCount == 3 &&
             catalog.ComparisonCandidateIds.Length == 3 &&
             catalog.Nodes.SelectMany(node => node.Candidates)
                 .All(candidate => candidate.CandidateSha256.Length == 64) &&
             catalog.CatalogSha256.Length == 64,
             "Current Revenue candidate denominator did not preserve its bounded authority.");
+        var cropNode = catalog.Nodes.Single(node =>
+            node.OptionId == "farm.maintain_crops");
+        Require(
+            cropNode.DeterministicSupport &&
+            !cropNode.PolicyChoice &&
+            cropNode.EnumerationComplete &&
+            cropNode.EnumeratedCandidateCount == 1 &&
+            cropNode.ComparisonCandidateCount == 0 &&
+            cropNode.Candidates.Single().SemanticKindBinding ==
+                "direct_declared_kind" &&
+            !cropNode.Candidates.Single().ComparisonEligible,
+            "Deterministic crop support leaked into Revenue comparison labels.");
         var saleEntry = catalog.Nodes.Single(node =>
                 node.OptionId == "economy.sell_items")
             .Candidates.Single();
@@ -277,6 +297,24 @@ internal static partial class BootstrapSelfTest
                         CanShopSell = true,
                         FullShipmentKnown = true,
                         FullShipmentEligible = true
+                    }
+                }),
+            ReadyRevenueOption(
+                "farm.maintain_crops",
+                eventCandidates: new[]
+                {
+                    new EventCandidate
+                    {
+                        CandidateId = "crop:Farm:64,15:24",
+                        Kind = "harvest_crop_tile",
+                        Available = true,
+                        LocationId = "Farm",
+                        TileX = 64,
+                        TileY = 15,
+                        QualifiedItemId = "(O)24",
+                        Quantity = 1,
+                        UnitPrice = 35,
+                        TotalValue = 35
                     }
                 }),
             ReadyRevenueOption("recovery.stabilize_day")

@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money 作物生产支持边界修正
+
+- 首次真实 Money 原生采证诊断暴露的“`farm.maintain_crops` 需要进入训练 allowlist”是旧依赖图中的层级错误，不是动作缺失。EVD-226 已闭合该高层选项的五道证据门，但其职责是把透明的当前地点作物义务确定性展开为浇水、播种、施肥、普通收获或巨型作物收获；它不得成为 Student 策略标签。
+- `earn_money` 依赖图现在把 `farm.maintain_crops` 接成 `deterministic_transition`：Teacher 负责选择作物收益方法及经济参数，编译器负责逐 fresh snapshot 展开机械动作，只有验证过的原生收获回执才能流入 reserve-safe 待售库存。当前快照 denominator 会枚举该支持节点，但不会把它计入 comparison candidate。
+- 原错误 blocker 已替换为真实剩余工作：未来日期的购种、播种、成长、浇水、收获和库存保留承诺仍需完整证明。fresh-save 百万累计收入下界日程和反事实机会成本标签也仍未闭合，所以 Money 保持 `0/18`，`formal_product_training_authorized=false`。
+- 新增权威 JSON 架构回归，固定作物节点类型、五种候选 kind、运行时证据状态、非训练准入状态和图连接；bootstrap 自测同时证明确定性作物候选不会泄漏到 Teacher 比较标签。验证为 Core game-free `356/356`、Backend `229/229`、Bootstrap Release `0 warning / 0 error`、hermetic 自测与当前 checkpoint 检查通过，未启动游戏。
+
 ## 历史记录 · 2026-10-16 current-authority Full Shipment 26/26 收口
 
 - 从锁定的 `9/26` 检查点按冻结顺序完成剩余 17 个标准 strata。最终里程碑检查点为 `26 records / 0 remaining / completed_selected_batch`，严格 evidence index 为 `verified=26 / missing=0 / shared_shipping=true`；原生游戏、Backend 与 Product 进程均已退出。

@@ -48,6 +48,7 @@
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />
+    <Compile Include="MoneyDependencyExpansionArchitectureTests.cs" />
     <Compile Include="BushHarvestMainlineTests.cs" />
     <Compile Include="CommunityCenterDonationMainlineTests.cs" />
     <Compile Include="CommunityCenterTransparencyTests.cs" />
