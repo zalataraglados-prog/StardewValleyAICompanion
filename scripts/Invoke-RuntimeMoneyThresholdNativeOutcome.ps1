@@ -74,6 +74,26 @@ function Assert-ProductionParameters {
     }
 }
 
+function Assert-MoneyDependencyExpansionReady {
+    param([Parameter(Mandatory)] [string] $Path)
+    $document = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+    $directions = @($document.directions | Where-Object {
+        [string]$_.direction_id -eq "earn_money"
+    })
+    if ([string]$document.schema_version -ne
+            "goal_method_dependency_expansions.v1" -or
+        $directions.Count -ne 1) {
+        throw "Money dependency expansion authority is invalid: $Path"
+    }
+    $direction = $directions[0]
+    $blockers = @($direction.blockers | ForEach-Object { [string]$_ } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ([string]$direction.status -ne "complete" -or $blockers.Count -ne 0) {
+        throw "Money dependency expansion is not production-ready: status=" +
+            "$($direction.status); blockers=$($blockers -join ' | ')"
+    }
+}
+
 function Wait-NativeGameTime {
     param(
         [Parameter(Mandatory)] [string] $Url,
@@ -123,6 +143,7 @@ $outputRoot = Resolve-RuntimeEvidenceInputPath `
 $runDirectory = Join-Path $outputRoot $RunId
 $isolatedSaves = Join-Path $runDirectory "isolated-saves"
 $isolatedSlot = Join-Path $isolatedSaves $sourceSlotName
+$isolatedMods = Join-Path $runDirectory "smapi-mods"
 $runtimeGameDirectory = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiPath = Join-Path $runtimeGameDirectory "StardewModdingAPI.exe"
 $backendDll = Join-Path $ProjectRoot `
@@ -133,6 +154,7 @@ $bootstrapDll = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
 $backendUrl = "http://127.0.0.1:$BackendPort"
 $snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full"
+$initialSnapshotUrl = "$snapshotUrl&fresh=true"
 $executorUrl = "http://127.0.0.1:8767"
 $backendStdout = Join-Path $runDirectory "backend.stdout.log"
 $backendStderr = Join-Path $runDirectory "backend.stderr.log"
@@ -155,6 +177,7 @@ foreach ($required in @($dependencyPath, $smapiPath)) {
         throw "Required production native-outcome input is missing: $required"
     }
 }
+Assert-MoneyDependencyExpansionReady -Path $dependencyPath
 Assert-RuntimePortsUnused -Ports @($BackendPort, 8765, 8767) `
     -OperationName "Money threshold native-outcome collection"
 if (Test-Path -LiteralPath $runDirectory) {
@@ -162,6 +185,7 @@ if (Test-Path -LiteralPath $runDirectory) {
 }
 
 New-Item -ItemType Directory -Force -Path $isolatedSaves | Out-Null
+New-Item -ItemType Directory -Force -Path $isolatedMods | Out-Null
 $sourceSaveSha256Before = Get-DirectoryContentHash -Path $sourceSave
 Copy-Item -LiteralPath $sourceSave -Destination $isolatedSlot -Recurse
 $isolatedSaveSha256Before = Get-DirectoryContentHash -Path $isolatedSlot
@@ -200,6 +224,17 @@ if (-not $SkipDeploy) {
         "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
         @deployArguments | Out-Null
 }
+foreach ($modName in @(
+    "StardewAI.TransparentBridge",
+    "StardewAI.RuntimeTestHarness"
+)) {
+    $sourceMod = Join-Path $runtimeGameDirectory "Mods\$modName"
+    if (-not (Test-Path -LiteralPath $sourceMod -PathType Container)) {
+        throw "Required Money runtime mod is missing: $sourceMod"
+    }
+    Copy-Item -LiteralPath $sourceMod `
+        -Destination (Join-Path $isolatedMods $modName) -Recurse
+}
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -212,6 +247,7 @@ $environmentNames = @(
     "STARDEWAI_SUPPRESS_LOCAL_RENDER",
     "SDL_AUDIODRIVER",
     "ALSOFT_DRIVERS",
+    "SMAPI_MODS_PATH",
     "ASPNETCORE_URLS")
 $savedEnvironment = Save-RuntimeProcessEnvironment -Names $environmentNames
 $backendProcess = $null
@@ -228,6 +264,7 @@ try {
     $env:STARDEWAI_SUPPRESS_LOCAL_RENDER = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $isolatedMods
     $env:ASPNETCORE_URLS = $backendUrl
 
     $backendProcess = Start-RuntimeEvidenceProcess `
@@ -243,9 +280,10 @@ try {
         -WorkingDirectory $runtimeGameDirectory `
         -StandardOutputPath $gameStdout `
         -StandardErrorPath $gameStderr
-    Wait-Json -Url "$executorUrl/health" -TimeoutSeconds 60 | Out-Null
+    Wait-Json -Url "$executorUrl/health" `
+        -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
     $capture = Get-FreshRuntimeSnapshot `
-        -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
+        -Url $initialSnapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
     $naturalWaitApplied = $false
     while ($true) {
         Write-Utf8Text -Path $snapshotPath -Value $capture.Raw

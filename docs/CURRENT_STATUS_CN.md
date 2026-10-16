@@ -6,7 +6,7 @@
 
 ## 1. 当前状态面板
 
-基于当前主线状态（创建本次清理时为 `main@d87836d5`）：
+基于当前主线状态：
 
 | 指标 | 当前值 | 含义 |
 | --- | ---: | --- |
@@ -50,6 +50,8 @@ Formal training:           false
 
 固定 `26/26` runtime strata 已由 2026-10-15 至 2026-10-16 的当前源码全部原生重采，分母不得扩张。每层均绑定当前 requirement/lowering、Master Angler 窗口、路线计时、精确 route occurrence、原生动作、fresh 终态、reservation settlement 与独立 rollout proof；共享运输箱和睡眠结算前缀也通过重建。最终 `full_shipment_runtime_sample_evidence_index.v1` 为 `verified=26 / missing=0 / shared_shipping=true`，不再引用漂移的历史执行收据。
 
+PR #298 随后补回 deferred pickup 的精确需求数量绑定。该共享 correctness 变更没有触发无差别重跑：wild-tree Sap 路线重新原生执行并证明只拾取需求量 `1`、而非保证产量 `6`；其余四条受影响的 `1:1` 路线从当前源码重建 proof。新的严格 26 层索引仍为 `26/26`、缺失 `0`，SHA-256 为 `e30edb0e6aca07deca484c8b8f1a4437eef68cb01120f13074329d7e2e0830b1`。
+
 收口过程中发现并修复了一个跨路径的可重放性硬伤：PowerShell 将后端原始 ledger 中的历史 `DateTimeOffset` 从 `+00:00` 重写为本机 `+08:00`，虽然时刻相同，却破坏字节级重放。标准采证、断点恢复、规划重建和商店支持链共七个 ledger 提取点已统一从原始响应提取 JSON，不再经过对象往返序列化。严格守卫因此保持不放宽，并在真实防风草提交/结算及后续全部标准层中通过。
 
 `26/26` 只关闭 Full Shipment 运行签名层，不会把全局 Goal Method / formal coverage 提升到 `19/19`。正式训练仍因其他 criterion 和生产分区缺口失败关闭。
@@ -88,9 +90,11 @@ Money batch 更新链可在调用方显式提供现有 production coverage reque
 
 当前 work plan 还会把同一 `18` 格分母投影为最少误导的采集波次。生产 corpus 为空时是 `3` 个条件性原生波次，而不是 18 次必需启动：train、validation、test 各一波；单波能否同时跨越六个阈值必须由真实 source checkpoint 和 Revenue candidate 证明，不能由计划器假定。已有 native row 的比较工作按 row 聚合，但每个 criterion 的 exact comparison admission 仍独立，且不同优选不得合并到同一个 seed。该变化只减少调度重复，不增加任何生产分子。
 
-波次执行不会死守计划中的最高阈值。`build-money-threshold-native-outcome-wave-selection` 会在实时、完整的 Revenue denominator 上选择当前能够跨越的最高缺失阈值，再复用原单阈值选择器取得最小充分售卖；真实结果跨过多少格就只关闭多少格，其余格由刷新后的 work plan 保留。`Invoke-MoneyThresholdNativeCollectionWave.ps1` 只负责校验波次、调用既有隔离 runner、重建 batch 并确认至少一格真实关闭，不新增第二套执行器或证据捷径。当前仍未运行该入口，故 `Money production cells` 保持 `0/18`。
+波次执行不会死守计划中的最高阈值。`build-money-threshold-native-outcome-wave-selection` 会在实时、完整的 Revenue denominator 上选择当前能够跨越的最高缺失阈值，再复用原单阈值选择器取得最小充分售卖；真实结果跨过多少格就只关闭多少格，其余格由刷新后的 work plan 保留。`Invoke-MoneyThresholdNativeCollectionWave.ps1` 只负责校验波次、调用既有隔离 runner、重建 batch 并确认至少一格真实关闭，不新增第二套执行器或证据捷径。
 
 首轮空生产状态可由 `Initialize-MoneyThresholdProductionWorkPlan.ps1` 直接生成固定 `6 × 3 = 18` 格计划；无 corpus 时必须得到 `0` 个完整格、`3` 个原生波次和 `0` 个 comparison 波次。该入口只调用既有 work-plan builder，不创建空 corpus、证据或训练授权。为防止空初始化把真实进度降回 `0/18`，目标目录一旦存在 canonical corpus、不可读/非规范计划或任一非零完成格，初始化器会在首次写入前失败关闭；后续只有 batch updater 能刷新 canonical production work plan。
+
+2026-10-16 已在 E 盘本地证据区初始化上述正式计划，机器结果为 `0/18 + 3 native waves + 0 comparison waves`。首次 train 诊断取得真实 fresh full snapshot，但权威 Revenue denominator 按设计拒绝生产采集：`earn_money` dependency expansion 仍有 fresh-save 百万收入下界日程、机会成本 Teacher 标签和 `farm.maintain_crops` 训练准入三个 blocker。因此没有任何 Money cell 被伪计完成。runner 现会在复制存档或启动进程前检查该静态准入；未完成时约一秒失败关闭。真正运行时只加载 TransparentBridge 与 RuntimeTestHarness，并对首次世界快照强制刷新，避免标题界面空缓存和无关模组污染。
 
 comparison 侧现由 `Initialize-MoneyRevenueComparisonWave.ps1` 以 `partition + source_row_id` 从 work plan 精确定位 corpus row 和 native run summary，并生成带全路径哈希、source identity 与缺失 criterion 集的 handoff。completion 可只处理 handoff 列出的缺口，并把新 admission 与已有 index 按 `run_id + criterion_id` 累积合并，防止局部补证据时丢掉旧分子。该接线仍要求后续 acquisition rollout、strategy ledger 与 terminal proof 全部真实存在，不会凭 handoff 生成 Teacher 标签。
 

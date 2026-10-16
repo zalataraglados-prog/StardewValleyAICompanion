@@ -32,6 +32,18 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("$env:STARDEWAI_TEST_SAVES = $isolatedSaves", Source,
             StringComparison.Ordinal);
+        Assert.Contains("$env:SMAPI_MODS_PATH = $isolatedMods", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("\"StardewAI.TransparentBridge\"", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("\"StardewAI.RuntimeTestHarness\"", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("-TimeoutSeconds $StartupTimeoutSeconds", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("$initialSnapshotUrl = \"$snapshotUrl&fresh=true\"",
+            Source, StringComparison.Ordinal);
+        Assert.Contains("-Url $initialSnapshotUrl", Source,
+            StringComparison.Ordinal);
         Assert.Contains("source_save_unchanged", Source,
             StringComparison.Ordinal);
         Assert.Contains("Stop-RuntimeEvidenceProcesses", Source,
@@ -41,6 +53,11 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
     [Fact]
     public void RunnerUsesProductionSelectionAndNativeVerificationOnly()
     {
+        var dependencyGate =
+            "Assert-MoneyDependencyExpansionReady -Path $dependencyPath";
+        var firstRuntimeSideEffect =
+            "New-Item -ItemType Directory -Force -Path $isolatedSaves";
+
         Assert.Contains("build-money-revenue-candidate-denominator", Source,
             StringComparison.Ordinal);
         Assert.Contains("build-money-threshold-native-outcome-selection", Source,
@@ -54,6 +71,12 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("effective_open_time", Source,
             StringComparison.Ordinal);
+        Assert.Contains("goal_method_dependency_expansions.v1", Source,
+            StringComparison.Ordinal);
+        Assert.Contains(dependencyGate, Source, StringComparison.Ordinal);
+        Assert.True(
+            Source.IndexOf(dependencyGate, StringComparison.Ordinal) <
+            Source.IndexOf(firstRuntimeSideEffect, StringComparison.Ordinal));
 
         Assert.DoesNotContain("debug.advance_time_to", Source,
             StringComparison.Ordinal);
@@ -68,12 +91,12 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
     [Fact]
     public void BatchReplaysRunsAndRebuildsTheCanonicalWorkPlan()
     {
-        Assert.Contains("build-money-threshold-native-outcome-batch",
+        Assert.Contains("build-money-threshold-production-package",
             BatchSource, StringComparison.Ordinal);
-        Assert.Contains("build-money-threshold-evidence-work-plan",
-            BatchSource, StringComparison.Ordinal);
-        Assert.Contains("build-money-threshold-coverage-request",
-            BatchSource, StringComparison.Ordinal);
+        Assert.Contains("--work-plan-request", BatchSource,
+            StringComparison.Ordinal);
+        Assert.Contains("--work-plan-output", BatchSource,
+            StringComparison.Ordinal);
         Assert.Contains("money_threshold_coverage_request_manifest.v1",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains("$CoverageRequestTemplate",

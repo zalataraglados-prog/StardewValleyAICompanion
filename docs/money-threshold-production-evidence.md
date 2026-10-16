@@ -57,6 +57,15 @@ transparent data, a non-matching partition, or an unusable denominator all fail
 closed. Failed isolated saves and logs are retained for diagnosis; the source
 save remains the immutable seed.
 
+Before any runtime side effect, the runner now requires the authoritative
+`earn_money` dependency expansion to be `complete` with zero blockers. A known
+incomplete method graph therefore fails before save cloning, backend startup or
+game startup instead of paying for a runtime denominator that must be rejected.
+When admitted, SMAPI loads only isolated copies of TransparentBridge and
+RuntimeTestHarness. The executor health wait uses the caller's startup budget,
+and the first full snapshot is force-refreshed until a loaded player location is
+visible so a title-screen cache cannot masquerade as a fresh world snapshot.
+
 The Revenue catalog v2 preserves the source candidate's service window,
 allowed-now/allowed-today state, wait cost, gate reasons, stock/currency data,
 shipping eligibility and collection metadata. This lets the runner schedule a
