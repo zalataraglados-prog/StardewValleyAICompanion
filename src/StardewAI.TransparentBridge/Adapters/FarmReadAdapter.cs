@@ -72,6 +72,32 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             });
         }
 
+        if (SnapshotProfileContext.IncludesFarmSitePreparation)
+        {
+            var bounds = SnapshotProfileContext.SitePreparationBounds;
+            var field = bounds is null
+                ? (object)Unavailable(
+                    "farm_layout_bounds_missing_or_invalid",
+                    "SnapshotProfileContext.SitePreparationBounds",
+                    tick,
+                    "snapshot_profile")
+                : Field(
+                    ReadResourceClumps(farm, bounds),
+                    "bounded Game1.getFarm().resourceClumps intersecting farm_layout bounds",
+                    tick,
+                    "vanilla_1_6_farm");
+            return Section(
+                "farm",
+                new Dictionary<string, object>
+                {
+                    ["resource_clumps"] = field
+                },
+                bounds is null
+                    ? new[] { "farm.resource_clumps" }
+                    : Array.Empty<string>(),
+                "partial");
+        }
+
         var materialInventoryGraph =
             ReadCachedMaterialInventoryGraph(
                 farm,

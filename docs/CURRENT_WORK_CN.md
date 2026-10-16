@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 当前切片 · 2026-10-16 Money 作物场地准备计划
+
+- 透明桥新增目的受限的 `profile=farm_layout&min_x=...&min_y=...&max_x=...&max_y=...`；区域每边最多 32 格，只读取 Farm 当前地点、碰撞和区域内对象/地形特征/资源块，不展开机器、动物或全农场物料图。
+- `build-money-revenue-crop-site-preparation-plan` 重建作物义务计划并逐格绑定现有 `executor.clear_obstacle`、`executor.break_farm_resource_clump`、`executor.till_soil` 候选。已耕地不操作；可直接锄地时绑定精确候选；单一可清障碍只生成清障步骤，随后必须取得 fresh snapshot 再绑定锄地，禁止用旧状态盲排两步。
+- 场地准备是机械执行计划，不是 planting-layout proof、生产证据或训练授权。精确地块仍由上游规划给出，播种日仍需 fresh snapshot 逐格验真；Money 保持 `0/18`。下一切片沿既有义务分母闭合种子预留/购种，不另建作物执行器。
+
 ## 历史记录 · 2026-10-16 Money 作物布局证明检查点
 
 - `money_revenue_crop_production_obligation_plan.v1` 的每项承诺现显式保留种植季节、基础生长天数，并把 `planting-layout:<commitment>` 纳入同一个证据分母。旧计划缺字段或请求分母漂移时必须重建，不能沿用。

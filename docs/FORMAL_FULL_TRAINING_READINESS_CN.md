@@ -4,6 +4,10 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 当前记录 · 2026-10-16 Money 作物场地准备
+
+作物场地准备现通过有界 `farm_layout` 透明快照和既有清障/资源块/BFS/锄地候选形成可执行计划。单次清障只授权清障本身，锄地必须在动作后的 fresh snapshot 上重新绑定；计划不会写地图，也不会把机械动作冒充布局策略。它仍要求播种日的独立 planting-layout proof，不产生 production cell，故 Money 保持 `0/18` 且 `formal_product_training_authorized=false`。下一准入缺口是种子预留/购种 proof，之后仍有日容量、生命周期、输出保留和终端结算。
+
 ## 历史记录 · 2026-10-16 Money 作物布局 proof checkpoint
 
 Money 未来作物证据分母新增逐承诺 planting-layout 请求，并用 planting-day fresh snapshot 验证精确 Farm 地块、原生种植许可和基础生长时长。`money_revenue_crop_production_proof_checkpoint.v1` 只统计能够从自身 request 重新构建且仍在原计划分母内的 proof；当前 schema 仅支持布局片段，所以即使布局已验证，种子、容量、生命周期、输出保留与终端结算仍全部独立 pending。该 checkpoint 不产生生产格，不授权 fresh-save 百万日程或正式训练，Money 保持 `0/18`。

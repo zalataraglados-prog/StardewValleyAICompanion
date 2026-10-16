@@ -332,6 +332,22 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_clear_obstacle_candidates");
             }
 
+            if (optionId == "executor.break_farm_resource_clump")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_farm_resource_clump_candidates",
+                    "no_available_farm_resource_clump_candidates");
+            }
+
+            if (optionId == "executor.till_soil")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_till_soil_candidates",
+                    "no_available_till_soil_candidates");
+            }
+
             if (optionId == "executor.plant_seed")
             {
                 return EventCandidateAvailabilityReasons(

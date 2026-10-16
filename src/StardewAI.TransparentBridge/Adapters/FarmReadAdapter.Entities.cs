@@ -262,7 +262,19 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
     private static object[] ReadResourceClumps(Farm farm)
     {
+        return ReadResourceClumps(farm, bounds: null);
+    }
+
+    private static object[] ReadResourceClumps(
+        Farm farm,
+        FarmSitePreparationBounds? bounds)
+    {
         return farm.resourceClumps
+            .Where(clump => bounds is null ||
+                clump.Tile.X < bounds.MaxX + 1 &&
+                clump.Tile.X + clump.width.Value > bounds.MinX &&
+                clump.Tile.Y < bounds.MaxY + 1 &&
+                clump.Tile.Y + clump.height.Value > bounds.MinY)
             .Select(clump =>
             {
                 var experience = clump is GiantCrop

@@ -347,10 +347,14 @@ public sealed partial class ModEntry : Mod
         var profile = SnapshotProfile(request);
         var fishingLocationId = SnapshotFishingLocationId(request, profile);
         var fishingRodSlotIndex = SnapshotFishingRodSlotIndex(request, profile);
+        var sitePreparationBounds = SnapshotFarmSitePreparationBounds(
+            request,
+            profile);
         var cacheKey = SnapshotCacheKey(
             profile,
             fishingLocationId,
-            fishingRodSlotIndex);
+            fishingRodSlotIndex,
+            sitePreparationBounds);
         var forceRefresh = SnapshotForceRefresh(request);
         var expectedStateHash = string.Empty;
         var expectedGameTick = 0L;
@@ -391,6 +395,7 @@ public sealed partial class ModEntry : Mod
             profile,
             fishingLocationId,
             fishingRodSlotIndex,
+            sitePreparationBounds,
             cacheKey,
             forceRefresh,
             completion));
@@ -450,6 +455,7 @@ public sealed partial class ModEntry : Mod
                          Profile: item.Profile.ToLowerInvariant(),
                          item.FishingLocationId,
                          item.FishingRodSlotIndex,
+                         item.SitePreparationBounds,
                          item.CacheKey,
                          item.ForceRefresh)))
         {
@@ -467,6 +473,7 @@ public sealed partial class ModEntry : Mod
                             group.Key.Profile,
                             group.Key.FishingLocationId,
                             group.Key.FishingRodSlotIndex,
+                            group.Key.SitePreparationBounds,
                             group.Key.CacheKey,
                             publishSnapshotEvent: true);
                 }
@@ -639,19 +646,24 @@ public sealed partial class ModEntry : Mod
     private SnapshotEnvelope BuildSnapshotWithoutEvent(
         string profile = "light",
         string? fishingLocationId = null,
-        int? fishingRodSlotIndex = null)
+        int? fishingRodSlotIndex = null,
+        FarmSitePreparationBounds? sitePreparationBounds = null)
     {
         var previousProfile = SnapshotProfileContext.Current;
         var previousFishingLocationId =
             SnapshotProfileContext.TargetFishingLocationId;
         var previousFishingRodSlotIndex =
             SnapshotProfileContext.TargetFishingRodSlotIndex;
+        var previousSitePreparationBounds =
+            SnapshotProfileContext.SitePreparationBounds;
         try
         {
             SnapshotProfileContext.Current = profile;
             SnapshotProfileContext.TargetFishingLocationId = fishingLocationId;
             SnapshotProfileContext.TargetFishingRodSlotIndex =
                 fishingRodSlotIndex;
+            SnapshotProfileContext.SitePreparationBounds =
+                sitePreparationBounds;
             return (stateCollector ?? CreateStateCollector(Helper)).BuildSnapshot(AllowedDomainsForProfile(profile));
         }
         finally
@@ -661,6 +673,8 @@ public sealed partial class ModEntry : Mod
                 previousFishingLocationId;
             SnapshotProfileContext.TargetFishingRodSlotIndex =
                 previousFishingRodSlotIndex;
+            SnapshotProfileContext.SitePreparationBounds =
+                previousSitePreparationBounds;
         }
     }
 
@@ -668,6 +682,7 @@ public sealed partial class ModEntry : Mod
     {
         return RefreshSnapshotCache(
             "light",
+            null,
             null,
             null,
             "light",
@@ -680,6 +695,7 @@ public sealed partial class ModEntry : Mod
             profile,
             null,
             null,
+            null,
             profile,
             publishSnapshotEvent);
     }
@@ -688,6 +704,7 @@ public sealed partial class ModEntry : Mod
         string profile,
         string? fishingLocationId,
         int? fishingRodSlotIndex,
+        FarmSitePreparationBounds? sitePreparationBounds,
         string cacheKey,
         bool publishSnapshotEvent)
     {
@@ -697,7 +714,8 @@ public sealed partial class ModEntry : Mod
             var snapshot = BuildSnapshotWithoutEvent(
                 profile,
                 fishingLocationId,
-                fishingRodSlotIndex);
+                fishingRodSlotIndex,
+                sitePreparationBounds);
             CacheSnapshot(cacheKey, snapshot, publishSnapshotEvent);
             return snapshot;
         }
@@ -727,7 +745,7 @@ public sealed partial class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "daily" or "clock" or "identity" or "clearance" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "training_mining" or "fishing" or "fishing_forecast" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "clock" or "identity" or "clearance" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "training_mining" or "fishing" or "fishing_forecast" or "farm_layout" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static string? SnapshotFishingLocationId(
@@ -775,11 +793,50 @@ public sealed partial class ModEntry : Mod
             : null;
     }
 
+    private static FarmSitePreparationBounds? SnapshotFarmSitePreparationBounds(
+        HttpListenerRequest request,
+        string profile)
+    {
+        if (!string.Equals(
+                profile,
+                "farm_layout",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var query = ParseQuery(request.Url?.Query ?? string.Empty);
+        if (!TryReadNonNegativeInt(query, "min_x", out var minX) ||
+            !TryReadNonNegativeInt(query, "min_y", out var minY) ||
+            !TryReadNonNegativeInt(query, "max_x", out var maxX) ||
+            !TryReadNonNegativeInt(query, "max_y", out var maxY) ||
+            maxX < minX ||
+            maxY < minY ||
+            maxX - minX + 1 > 32 ||
+            maxY - minY + 1 > 32)
+        {
+            return null;
+        }
+
+        return new FarmSitePreparationBounds(minX, minY, maxX, maxY);
+    }
+
     private static string SnapshotCacheKey(
         string profile,
         string? fishingLocationId,
-        int? fishingRodSlotIndex) =>
-        string.Equals(
+        int? fishingRodSlotIndex,
+        FarmSitePreparationBounds? sitePreparationBounds) =>
+        string.Equals(profile, "farm_layout", StringComparison.OrdinalIgnoreCase)
+            ? sitePreparationBounds is null
+                ? profile.ToLowerInvariant() + "|missing-bounds"
+                : string.Join(
+                    "|",
+                    profile.ToLowerInvariant(),
+                    sitePreparationBounds.MinX,
+                    sitePreparationBounds.MinY,
+                    sitePreparationBounds.MaxX,
+                    sitePreparationBounds.MaxY)
+            : string.Equals(
             profile,
             "fishing_forecast",
             StringComparison.OrdinalIgnoreCase)
@@ -791,6 +848,21 @@ public sealed partial class ModEntry : Mod
                     System.Globalization.CultureInfo.InvariantCulture) ??
                 "missing-rod")
             : profile.ToLowerInvariant();
+
+    private static bool TryReadNonNegativeInt(
+        IReadOnlyDictionary<string, string> query,
+        string name,
+        out int value)
+    {
+        value = 0;
+        return query.TryGetValue(name, out var raw) &&
+               int.TryParse(
+                   raw,
+                   System.Globalization.NumberStyles.None,
+                   System.Globalization.CultureInfo.InvariantCulture,
+                   out value) &&
+               value >= 0;
+    }
 
     private static bool SnapshotForceRefresh(HttpListenerRequest request)
     {
@@ -841,7 +913,7 @@ public sealed partial class ModEntry : Mod
             "unavailable_fields"
         };
 
-        if (profile is "daily" or "route" or "shop" or "social" or "social_future" or "machine")
+        if (profile is "daily" or "route" or "shop" or "social" or "social_future" or "machine" or "farm_layout")
         {
             domains.Add("current_location");
             domains.Add("locations");
@@ -873,6 +945,11 @@ public sealed partial class ModEntry : Mod
             domains.Add("world_progress");
             domains.Add("mods");
             domains.Add("modded_state");
+        }
+
+        if (profile == "farm_layout")
+        {
+            domains.Add("farm");
         }
 
         if (profile is "training_mining")
@@ -1127,6 +1204,7 @@ public sealed partial class ModEntry : Mod
         string Profile,
         string? FishingLocationId,
         int? FishingRodSlotIndex,
+        FarmSitePreparationBounds? SitePreparationBounds,
         string CacheKey,
         bool ForceRefresh,
         TaskCompletionSource<SnapshotEnvelope> Completion);

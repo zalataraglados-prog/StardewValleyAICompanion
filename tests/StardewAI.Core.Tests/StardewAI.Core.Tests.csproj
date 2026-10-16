@@ -60,6 +60,8 @@
     <Compile Include="FishingAttemptBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
+    <Compile Include="FarmSitePreparationCandidateTests.cs" />
+    <Compile Include="FarmSitePreparationSourceGuardTests.cs" />
     <Compile Include="GingerHarvestMainlineTests.cs" />
     <Compile Include="WildTreeProductMainlineTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />

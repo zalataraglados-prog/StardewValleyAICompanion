@@ -1013,6 +1013,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("collect_auto_grabber_contents"),
                 SupportedCandidate("use_mini_obelisk"),
                 SupportedCandidate("clear_farm_resource_clump"),
+                SupportedCandidate("till_soil_tile"),
                 SupportedCandidate("clear_green_rain_resource_clump"),
                 SupportedCandidate("clear_obstacle_tile"), SupportedCandidate("collect_animal_product"),
                 SupportedCandidate("animal_purchase_select_service"),

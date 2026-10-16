@@ -18,6 +18,14 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     public override StateAdapterResult Collect(long tick)
     {
         var location = Context.IsWorldReady ? Game1.currentLocation : null;
+        if (location is not null &&
+            SnapshotProfileContext.IncludesFarmSitePreparation)
+        {
+            return CollectFarmSitePreparation(
+                location,
+                SnapshotProfileContext.SitePreparationBounds,
+                tick);
+        }
         var actionIndex = location is null ? null : ReadMapActionIndex(location);
         var storageRequested =
             SnapshotProfileContext
@@ -53,6 +61,39 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                         "farm.material_inventory_graph access_points filtered to Game1.currentLocation.NameOrUniqueName; canonical contents remain farm.material_inventory_graph.inventory_nodes[node_id]",
                         tick,
                         "vanilla_1_6_storage_infrastructure");
+        object sitePreparationField;
+        if (location is null)
+        {
+            sitePreparationField = Field(
+                (object?)null,
+                "Game1.currentLocation unavailable",
+                tick,
+                "vanilla_1_6_15_farm_site_preparation");
+        }
+        else if (!SnapshotProfileContext.IncludesFarmSitePreparation)
+        {
+            sitePreparationField = Unavailable(
+                "not_requested_by_snapshot_profile",
+                "SnapshotProfileContext.IncludesFarmSitePreparation",
+                tick,
+                "snapshot_profile");
+        }
+        else if (SnapshotProfileContext.SitePreparationBounds is not { } bounds)
+        {
+            sitePreparationField = Unavailable(
+                "farm_layout_bounds_missing_or_invalid",
+                "SnapshotProfileContext.SitePreparationBounds",
+                tick,
+                "snapshot_profile");
+        }
+        else
+        {
+            sitePreparationField = Field(
+                ReadFarmSitePreparationContext(location, bounds),
+                "bounded Game1.currentLocation native diggable, passability, occupancy and Farm resource-clump queries",
+                tick,
+                "vanilla_1_6_15_farm_site_preparation");
+        }
         var unavailable = location is null
             ? new[]
             {
@@ -71,6 +112,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.resource_clumps",
                 "current_location.crops",
                 "current_location.planting_context",
+                "current_location.site_preparation_context",
                 "current_location.shop_action_tiles",
                 "current_location.garbage_cans",
                 "current_location.mine_elevator_action_tiles",
@@ -103,6 +145,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["resource_clumps"] = Field(location is null ? null : ReadCurrentLocationResourceClumps(location, Game1.player), "Game1.currentLocation.resourceClumps; ResourceClump.performToolAction/destroy decompiled projections", tick),
             ["crops"] = Field(location is null ? null : FarmReadAdapter.ReadCrops(location), "Game1.currentLocation terrain HoeDirt and IndoorPot.hoeDirt live crop state", tick, "vanilla_1_6_current_location_crops"),
             ["planting_context"] = Field(location is null ? null : ReadPlantingContext(location), "Game1.currentLocation planting APIs and HoeDirt terrain features", tick),
+            ["site_preparation_context"] = sitePreparationField,
             ["shop_action_tiles"] = Field(actionIndex?.ShopActionTiles, "Game1.currentLocation map Action properties parsed by GameLocation.performAction", tick),
             ["garbage_cans"] = Field(actionIndex?.GarbageCanActionTiles, "Game1.currentLocation Buildings Action=Garbage; locked Data/GarbageCans; GameLocation.TryGetGarbageItem deterministic non-mutating prediction; live CheckedGarbage and NPC reaction state", tick, "vanilla_1_6_15_garbage_cans"),
             ["mine_elevator_action_tiles"] = Field(actionIndex?.MineElevatorActionTiles, "GameLocation Buildings Action first token MineElevator or MineShaft Buildings/mine tile index 112; native performAction/checkAction elevator dispatch", tick),
