@@ -4,12 +4,19 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money terminal-proof 可恢复 checkpoint
+
+- 新增 `money_revenue_terminal_proof_fragment_index.v1` 与 checkpoint builder。fragment 可以分批累积，但每一项必须在计数前通过既有 terminal execution verifier；重复 request、denominator 外 request、上游计划漂移、账本/快照/recurrence 篡改都会失败关闭。
+- `Initialize-MoneyRevenueTerminalProofCollection.ps1` 自动物化 collection plan 中唯一的 `reuse_verified_shop_sale_episode`：不启动游戏，只使用已验证 episode 的真实 before/after snapshot 和 run ID，生成独立前后 strategy-ledger capture 与 Revenue recurrence，再进入 checkpoint 深验。脚本可重入，已有 fragment 先验证后保留。
+- partial checkpoint 只报告 verified/pending request IDs，不能进入 completion。`build-money-revenue-terminal-proof-index` 仅在 `pending=0`、verified count 等于完整 request denominator 且 checkpoint 精确重建一致时输出 v1 final index；formal training 始终保持 false。
+- hermetic 回归覆盖完整 fragment、空 checkpoint、重复 fragment 拒绝与 final-index gate。当前只关闭“已有原生 episode 仍需人工手拼 proof”的缺口；其他 shop/shipping/rebound 反事实仍需后续原生采集适配，Money 仍为 `0/18`。
+
 ## 历史记录 · 2026-10-16 Money terminal-proof 采集适配
 
 - `Initialize-MoneyRevenueComparisonWork.ps1` 在 concrete denominator 与 counterfactual request catalog 完成后，现自动调用 `build-money-revenue-terminal-proof-collection-plan`，不再把“下一步如何采证”留给调用者从 catalog 手工猜测。
 - 新计划重建 comparison plan 和 counterfactual catalog，保持一请求一工作项。每项固定列出 terminal snapshot/candidate/strategy-ledger 身份、原生收入证明种类和有序阶段；acquisition rebound 会显式要求恢复已验证终态，shop 与 shipping 进入不同采集模式。
 - 唯一已有原生 sale episode 只有在 source state、catalog candidate、shop、item、slot、quantity 和 unit price 全部匹配时才标记为 `offline_materialization_ready`。其余项保持 `native_collection_required`；计划固定 `terminal_proof_index_ready=false`、`formal_product_training_authorized=false`，没有把计划伪装成证据。
-- Bootstrap hermetic 新增三路分流和重复 request 拒绝回归。下一切片将消费离线复用工作项生成带真实账本边界与 recurrence 的已验证 proof fragment，并以可恢复 checkpoint 累积；只有 request denominator 全部闭合才允许输出 `money_revenue_terminal_proof_index.v1`。
+- Bootstrap hermetic 新增三路分流和重复 request 拒绝回归；后续可恢复 checkpoint 已按上节落地。
 
 ## 历史记录 · 2026-10-16 Money 作物生产支持边界修正
 

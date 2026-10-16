@@ -62,6 +62,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-money-revenue-terminal-proof-collection-plan", BuildMoneyRevenueTerminalProofCollectionPlan),
+    new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
+    new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
     new("build-money-revenue-terminal-execution-manifest", BuildMoneyRevenueTerminalExecutionManifest),
     new("build-money-revenue-terminal-execution-proof", BuildMoneyRevenueTerminalExecutionProof),
@@ -748,6 +750,22 @@ static void BuildMoneyRevenueTerminalProofCollectionPlan(Arguments options)
     Write(options.Required("output"), plan);
     if (plan.RequestCount <= 0 || plan.OfflineReuseReadyCount != 1)
         Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueTerminalProofCollectionCheckpoint(Arguments options)
+{
+    var checkpoint = MoneyRevenueTerminalProofCollectionCheckpointBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), checkpoint);
+}
+
+static void BuildMoneyRevenueTerminalProofIndex(Arguments options)
+{
+    var index = MoneyRevenueTerminalProofCollectionCheckpointBuilder
+        .BuildFinalIndex(
+            options.Required("request"),
+            options.Required("checkpoint"));
+    Write(options.Required("output"), index);
 }
 
 static void BuildMoneyRevenueTerminalExecutionProof(Arguments options)

@@ -3197,6 +3197,13 @@ Slice 7 remains assigned to the RTX 5070 node.
   offline materialization; every other shop or shipping alternative remains
   explicit native collection work. The plan cannot stand in for a terminal
   proof index, a preference label, production evidence or training admission.
+- The offline materializer consumes only that exact reuse mode. It preserves
+  the request-anchored before ledger, writes an independent byte-identical after
+  ledger, builds phase-bound boundary captures and a recurrence proof, and then
+  submits the fragment to the existing terminal verifier. Verified fragments
+  accumulate in a resumable checkpoint; missing request IDs remain explicit.
+  The final `money_revenue_terminal_proof_index.v1` is emitted only when the
+  verified ID set equals the complete request denominator.
 - Terminal proof completion now has an exact request-ID manifest assembler and
   a separate quiet orchestration script. After the existing terminal verifier
   and criterion admission builder replay all artifacts, a unique Teacher

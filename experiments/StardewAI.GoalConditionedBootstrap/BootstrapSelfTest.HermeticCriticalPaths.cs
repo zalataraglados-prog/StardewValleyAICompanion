@@ -27,6 +27,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyRevenueTerminalCandidateRebind();
         VerifyMoneyRevenueTerminalExecutionProof();
         VerifyMoneyRevenueTerminalProofCollectionPlan();
+        VerifyMoneyRevenueTerminalProofCollectionCheckpoint();
         VerifyMoneyRevenueComparisonAdmission();
         VerifyMoneyThresholdNativeOutcomeOnly();
         VerifyMoneyThresholdNativeOutcomeSelection();
