@@ -63,6 +63,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-money-revenue-terminal-proof-collection-plan", BuildMoneyRevenueTerminalProofCollectionPlan),
     new("build-money-revenue-crop-production-obligation-plan", BuildMoneyRevenueCropProductionObligationPlan),
+    new("build-money-revenue-crop-planting-layout-proof", BuildMoneyRevenueCropPlantingLayoutProof),
+    new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
     new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
@@ -758,6 +760,20 @@ static void BuildMoneyRevenueCropProductionObligationPlan(Arguments options)
     var plan = MoneyRevenueCropProductionObligationPlanBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), plan);
+}
+
+static void BuildMoneyRevenueCropPlantingLayoutProof(Arguments options)
+{
+    var proof = MoneyRevenueCropPlantingLayoutProofBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), proof);
+}
+
+static void BuildMoneyRevenueCropProductionProofCheckpoint(Arguments options)
+{
+    var checkpoint = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), checkpoint);
 }
 
 static void BuildMoneyRevenueTerminalProofCollectionCheckpoint(Arguments options)

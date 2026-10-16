@@ -88,7 +88,7 @@ public sealed class MoneyRevenueCropProductionObligationPlan
 
     [JsonPropertyName("planning_policy")]
     public string PlanningPolicy { get; set; } =
-        "This artifact independently replays every active crop commitment against the exact transparent crop catalog and the shared crop-production obligation projector. It enumerates seed reservation/acquisition, planting, every conservative watering day, every minimum harvest wave, output retention and terminal settlement evidence without creating a second crop executor. It is a collection plan, not proof: pending native lifecycle, daily capacity, reservation and terminal evidence cannot authorize Money labels or formal training.";
+        "This artifact independently replays every active crop commitment against the exact transparent crop catalog and the shared crop-production obligation projector. It enumerates planting-layout binding, seed reservation/acquisition, planting, every conservative watering day, every minimum harvest wave, output retention and terminal settlement evidence without creating a second crop executor. It is a collection plan, not proof: pending layout, native lifecycle, daily capacity, reservation and terminal evidence cannot authorize Money labels or formal training.";
 }
 
 public sealed record MoneyRevenueCropProductionCommitmentPlan(
@@ -99,6 +99,8 @@ public sealed record MoneyRevenueCropProductionCommitmentPlan(
     string HarvestItemQualifiedId,
     [property: JsonPropertyName("tile_count")] int TileCount,
     [property: JsonPropertyName("planting_total_day")] int PlantingTotalDay,
+    [property: JsonPropertyName("planting_season")] string PlantingSeason,
+    [property: JsonPropertyName("base_grow_days")] int BaseGrowDays,
     [property: JsonPropertyName("seed_supply_deadline_total_day")]
     int SeedSupplyDeadlineTotalDay,
     [property: JsonPropertyName("current_unreserved_seed_quantity")]

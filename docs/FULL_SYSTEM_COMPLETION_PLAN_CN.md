@@ -4,6 +4,10 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money 作物场地准备边界
+
+未来作物义务已进入可恢复证据检查点，但种植布局不是机械执行器可以自行臆造的字段：上游必须给出精确地块，验证器再以 planting-day 透明快照逐格证明合法。若开放 HoeDirt 数量不足，检查点失败关闭；后续必须复用现有清障、锄地、BFS 与播种动作生成前置场地准备计划，并在 fresh snapshot 上重新绑定。禁止通过直接改地图、预造耕地 fixture 或另建作物执行器绕过此边界。布局、种子、日容量、生命周期、输出保留和终端结算全部完成前，未来作物证明、百万元日程及正式训练均保持 false。
+
 
 ## 历史记录 · 2026-10-11 Full Shipment 晶球层原生准入
 
