@@ -14,7 +14,7 @@
 | Split-complete Teacher/native evidence | **4/19** | train/validation/test 两条证据通道完整的 criterion |
 | Promotion-grade / CoverageGateReady intersection | **2/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
 | Coverage-ready root methods | **1/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
-| Full Shipment runtime strata | **历史 26/26；当前权威重验 9/26** | 历史分母已闭合；当前九个独立 strata 已完成重采，**不是全局 /19** |
+| Full Shipment runtime strata | **当前权威 26/26** | 固定 26 层均由当前源码原生重采并通过严格索引，**不是全局 /19** |
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
@@ -39,7 +39,7 @@ Executable criteria:       4/19
 Split-complete evidence:   4/19
 CoverageGateReady:         2/19
 Root methods ready:        1/11
-Full Shipment runtime:    current authority 9/26 (historical 26/26)
+Full Shipment runtime:    current authority 26/26
 Money production cells:    0/18
 Formal training:           false
 ```
@@ -48,9 +48,11 @@ Formal training:           false
 
 ### Full Shipment runtime evidence
 
-历史 `26/26` runtime strata 已闭合，分母不得扩张。#274 的 current-authority 审计显示：旧证据分别命中 location route、daily time/energy、calendar 或 Teacher preference 漂移；离线重建又确认旧执行收据缺少当前队列要求的 `player_location_before_step` 与玩家 tile 上下文。它们必须重新执行原生动作，不能通过放宽相等性或改写旧收据伪装为当前证据。
+固定 `26/26` runtime strata 已由 2026-10-15 至 2026-10-16 的当前源码全部原生重采，分母不得扩张。每层均绑定当前 requirement/lowering、Master Angler 窗口、路线计时、精确 route occurrence、原生动作、fresh 终态、reservation settlement 与独立 rollout proof；共享运输箱和睡眠结算前缀也通过重建。最终 `full_shipment_runtime_sample_evidence_index.v1` 为 `verified=26 / missing=0 / shared_shipping=true`，不再引用漂移的历史执行收据。
 
-当前 `9/26` 由 2026-10-15 至 2026-10-16 的 Sap、放射性矿石、树液采集器、怪物掉落、地点鱼类、地点蚯蚓地、晶球掉落、商店购买与社区中心奖励九次新原生运行支撑，不再引用对应旧摘要。Sap 通过共享 BFS、原生移动/碰撞/磁吸完成多掉落拾取；放射性矿石通过精确采集意图、共享 `executor.mine_stone` 与延迟拾取完成节点破坏；其余七层按冻结顺序通过既有原生链。九层均通过运输箱、睡眠结算、rollout proof 和当前 evidence index；其余 `17` 层仍为缺失，正式训练继续失败关闭。
+收口过程中发现并修复了一个跨路径的可重放性硬伤：PowerShell 将后端原始 ledger 中的历史 `DateTimeOffset` 从 `+00:00` 重写为本机 `+08:00`，虽然时刻相同，却破坏字节级重放。标准采证、断点恢复、规划重建和商店支持链共七个 ledger 提取点已统一从原始响应提取 JSON，不再经过对象往返序列化。严格守卫因此保持不放宽，并在真实防风草提交/结算及后续全部标准层中通过。
+
+`26/26` 只关闭 Full Shipment 运行签名层，不会把全局 Goal Method / formal coverage 提升到 `19/19`。正式训练仍因其他 criterion 和生产分区缺口失败关闭。
 
 除非出现以下情况，否则**不得主动重跑全部 26 层**：
 
@@ -187,7 +189,7 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 
 #274 的代码优化阶段已完成：canonical artifact equality 改为流式哈希，read-session 与 deterministic-cache 均有显式总预算、单项预算、逐出与遥测，优先级最高的 DTO/DOM 双表示已收敛为 typed/read-only projection，并完成真实 26-proof 前缀的 A/B/C 测量。最终 C 组墙钟 `7588.7 ms`、CPU `6859.4 ms`、峰值工作集 `525.4 MiB`；相对旧默认实现分别降低约 `55.8%`、`40.2%` 和 `2.9%`。
 
-#274 仍不得关闭：冻结的 `26/26` manifest 早于当前 deterministic source compilation。当前已完成 `9/26` 原生重采，剩余 `17/26` 仍需按当前源码重放；旧 execution receipt 缺失当前编译器上下文参数，不能替代新收据。因此上述数据可证明等长前缀性能改进，但不能替代重新生成当前权威证据后的 force-full 正确性准入。
+#274 的 current-authority force-full correctness 门已关闭：固定 26 层全部由当前源码重新执行，最终严格索引为 `26/26`、缺失 `0`，且共享运输/结算证据有效。性能优化没有通过复用旧收据、减少分母或放宽 proof 相等性获得；相反，ledger 时间偏移导致的精确重放差异被守卫发现并修复。合并本次收口后可关闭 #274，并按 WIP=1 返回 Money / Revenue 主线。
 
 ## 9. 剩余规模
 

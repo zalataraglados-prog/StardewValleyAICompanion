@@ -1888,8 +1888,8 @@ try {
             "committed-strategy-ledger.json"
         Write-Utf8Text -Path $commitResultPath `
             -Value $commitResultResponse.Raw
-        Write-JsonFile -Path $committedLedgerPath `
-            -Value $commitResultResponse.Value.ledger
+        Write-RawJsonProperty -Path $committedLedgerPath `
+            -RawJson $commitResultResponse.Raw -PropertyName "ledger"
         $commitReceiptPath = Join-Path $planningDirectory `
             "portfolio-commit-receipt.json"
         Invoke-Bootstrap (@(
@@ -2055,8 +2055,8 @@ try {
     $settledLedgerPath = Join-Path $planningDirectory `
         "settled-strategy-ledger.json"
     Write-Utf8Text -Path $settlementResultPath -Value $settlementResponse.Raw
-    Write-JsonFile -Path $settledLedgerPath `
-        -Value $settlementResponse.Value.ledger
+    Write-RawJsonProperty -Path $settledLedgerPath `
+        -RawJson $settlementResponse.Raw -PropertyName "ledger"
     $settlementReceiptPath = Join-Path $planningDirectory `
         "settlement-receipt.json"
     Invoke-Bootstrap (@(

@@ -454,8 +454,8 @@ try {
         -Body $settlementRequest
     Write-Utf8Text -Path $settlementResultPath `
         -Value $settlementResponse.Raw
-    Write-JsonFile -Path $settledLedgerPath `
-        -Value $settlementResponse.Value.ledger
+    Write-RawJsonProperty -Path $settledLedgerPath `
+        -RawJson $settlementResponse.Raw -PropertyName "ledger"
 
     Invoke-Bootstrap (@(
         "build-acquisition-route-portfolio-settlement-receipt-from-verified-artifacts"

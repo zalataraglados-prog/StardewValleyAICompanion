@@ -218,8 +218,8 @@ function Invoke-RuntimeShopPurchaseAcquisitionPreparation {
             $committedLedgerPath = Join-Path $current.Directory `
                 "committed-strategy-ledger.json"
             Write-Utf8Text -Path $commitResultPath -Value $commitResponse.Raw
-            Write-JsonFile -Path $committedLedgerPath `
-                -Value $commitResponse.Value.ledger
+            Write-RawJsonProperty -Path $committedLedgerPath `
+                -RawJson $commitResponse.Raw -PropertyName "ledger"
             $commitReceiptPath = Join-Path $current.Directory `
                 "portfolio-commit-receipt.json"
             Invoke-Bootstrap (@(
@@ -350,8 +350,8 @@ function Invoke-RuntimeShopPurchaseAcquisitionPreparation {
             "support-committed-ledger.json"
         Write-Utf8Text -Path $supportCommitResultPath `
             -Value $commitResponse.Raw
-        Write-JsonFile -Path $supportCommittedLedgerPath `
-            -Value $commitResponse.Value.ledger
+        Write-RawJsonProperty -Path $supportCommittedLedgerPath `
+            -RawJson $commitResponse.Raw -PropertyName "ledger"
         $supportCommitReceiptPath = Join-Path $stageDirectory `
             "support-commit-receipt.json"
         Invoke-Bootstrap (@(
@@ -436,8 +436,8 @@ function Invoke-RuntimeShopPurchaseAcquisitionPreparation {
             "support-settled-ledger.json"
         Write-Utf8Text -Path $settlementResultPath `
             -Value $settlementResponse.Raw
-        Write-JsonFile -Path $settledLedgerPath `
-            -Value $settlementResponse.Value.ledger
+        Write-RawJsonProperty -Path $settledLedgerPath `
+            -RawJson $settlementResponse.Raw -PropertyName "ledger"
         $settlementReceiptPath = Join-Path $stageDirectory `
             "support-settlement-receipt.json"
         Invoke-Bootstrap (@(

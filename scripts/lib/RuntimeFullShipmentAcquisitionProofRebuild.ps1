@@ -167,8 +167,8 @@ function Invoke-RuntimeFullShipmentAcquisitionPlanningRebuild {
         "reservation-portfolios/commit") `
         -Body $admission.atomic_commit_request
     Write-Utf8Text -Path $Paths.commit_result -Value $commitResponse.Raw
-    Write-JsonFile -Path $Paths.committed_ledger `
-        -Value $commitResponse.Value.ledger
+    Write-RawJsonProperty -Path $Paths.committed_ledger `
+        -RawJson $commitResponse.Raw -PropertyName "ledger"
     $postCommitRankingResponse = Invoke-JsonPost -Url (
         "$BackendUrl/api/v1/planner/baseline/rank-options") `
         -Body $rankingRequest

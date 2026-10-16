@@ -4,6 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 current-authority Full Shipment 26/26 收口
+
+- 从锁定的 `9/26` 检查点按冻结顺序完成剩余 17 个标准 strata。最终里程碑检查点为 `26 records / 0 remaining / completed_selected_batch`，严格 evidence index 为 `verified=26 / missing=0 / shared_shipping=true`；原生游戏、Backend 与 Product 进程均已退出。
+- 首次防风草运行被精确重放守卫拒绝。根因是 PowerShell 把后端回执内的 ledger 历史时间从 `+00:00` 往返序列化为本机 `+08:00`，语义时刻相同但 canonical JSON 不同。没有放宽 verifier，也没有改写旧证明。
+- 新增共享 `Write-RawJsonProperty`，标准提交/结算、断点恢复结算、规划重建提交以及商店提交/支持提交/结算共七个路径统一直接从后端原始响应提取 `ledger`。全仓运行脚本已无 `.Value.ledger` 的有损提取，源守卫固定该约束。
+- 修复后真实防风草路线依次通过 atomic commit、原生采收、fresh terminal、settlement 与 rollout proof；其余 16 个标准层连续通过同一链，证明修复覆盖真实闭环而非只通过离线测试。
+- 收尾验证为完整 solution Release `0 warning / 0 error`、Core `352/352`、Backend `229/229`；Full Shipment settlement、dispatch、static compilability、runtime sample evidence、Bootstrap batch 与 hermetic 自测全部通过，变更脚本 AST 和 `git diff --check` 通过。
+- 该结果只完成 Full Shipment 的当前权威运行签名层。`formal_product_training_authorized=false` 保持不变，Goal Method / formal coverage 分母没有增加；收尾验证和提交完成后返回 Money / Revenue WIP=1，不启动训练。
+
 ## 历史记录 · 2026-10-16 current-authority 批处理与规划流水线优化
 
 - 固定顺序小批次连续完成 `location_fish_spawn_sample`、`location_artifact_spot_sample`、`geode_drop_sample` 与 `shop_purchase_sample`；优化完成后又以 `community_center_reward_sample` 做真实原生代表回归。五层均通过当前 Teacher、原生执行、运输箱、睡眠结算与 rollout proof；current-authority evidence index 从 `4/26` 推进到 `9/26`，剩余 `17` 层，`formal_product_training_authorized=false`。

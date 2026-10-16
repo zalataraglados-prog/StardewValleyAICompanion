@@ -2085,6 +2085,57 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
     }
 
     [Fact]
+    public void RuntimeCommitLedgersPreserveRawBackendJson()
+    {
+        var common = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeEvidenceCommon.ps1");
+        var runner = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
+        var rebuild = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeFullShipmentAcquisitionProofRebuild.ps1");
+        var shop = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeShopPurchaseAcquisition.ps1");
+        var resume = ReadRepositoryFile(
+            "scripts",
+            "Resume-RuntimeFullShipmentAcquisitionProof.ps1");
+
+        Assert.Contains(
+            "function Write-RawJsonProperty",
+            common,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$document.RootElement.GetProperty($PropertyName)",
+            common,
+            StringComparison.Ordinal);
+        foreach (var source in new[] { runner, rebuild, shop, resume })
+        {
+            Assert.Contains(
+                "Write-RawJsonProperty",
+                source,
+                StringComparison.Ordinal);
+            Assert.Contains(
+                "-RawJson",
+                source,
+                StringComparison.Ordinal);
+            Assert.Contains(
+                "-PropertyName \"ledger\"",
+                source,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                ".Value.ledger",
+                source,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void CommunityCenterRewardSampleUsesExactPendingNativeReward()
     {
         var runner = ReadRepositoryFile(
