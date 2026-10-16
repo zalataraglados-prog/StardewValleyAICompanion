@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v1" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v2" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -43,12 +43,13 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v1" &&
+                    "money_revenue_crop_production_proof_fragment_index.v2" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
                     StringComparison.OrdinalIgnoreCase) &&
                 fragmentIndex.PlantingLayoutProofPaths is not null &&
+                fragmentIndex.SeedReservationProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof fragment index is invalid.");
 
@@ -65,13 +66,21 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             "Money Revenue crop planting-layout proof paths are duplicated.");
         var proofs = proofPaths.Select(path => VerifyProof(path, planPath, plan))
             .ToArray();
+        var seedProofPaths = (fragmentIndex.SeedReservationProofPaths ??
+                throw new InvalidDataException(
+                    "Money Revenue crop seed-reservation proof paths are missing."))
+            .Select(path => RequiredFile(path, "Money Revenue crop seed-reservation proof fragment"))
+            .ToArray();
+        Require(seedProofPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() == seedProofPaths.Length,
+            "Money Revenue crop seed-reservation proof paths are duplicated.");
+        var seedProofs = seedProofPaths.Select(path => VerifySeedProof(path, planPath, plan)).ToArray();
         Require(proofs.Select(value => value.EvidenceRequestId)
                     .Distinct(StringComparer.Ordinal).Count() == proofs.Length,
             "Money Revenue crop planting-layout evidence request IDs are duplicated.");
 
-        var proofByRequest = proofs.ToDictionary(
-            value => value.EvidenceRequestId,
-            StringComparer.Ordinal);
+        var proofByRequest = proofs.Select(value => (value.EvidenceRequestId, Value: (object)value))
+            .Concat(seedProofs.Select(value => (value.EvidenceRequestId, Value: (object)value)))
+            .ToDictionary(value => value.EvidenceRequestId, value => value.Value, StringComparer.Ordinal);
         var verifiedIds = plan.PendingEvidenceRequestIds
             .Where(proofByRequest.ContainsKey)
             .ToArray();
@@ -95,13 +104,29 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             PendingRequestCount = pendingIds.Length,
             VerifiedRequestIds = verifiedIds,
             PendingRequestIds = pendingIds,
-            VerifiedPlantingLayouts = verifiedIds
-                .Select(requestId => proofByRequest[requestId])
-                .ToArray(),
+            VerifiedPlantingLayouts = proofs,
+            VerifiedSeedReservations = seedProofs,
             FutureCropProductionProofReady = false,
             FreshSaveRevenueScheduleReady = false,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static MoneyRevenueCropSeedReservationProof VerifySeedProof(
+        string proofPath,
+        string planPath,
+        MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var proof = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropSeedReservationProof>(proofPath, "Money Revenue crop seed-reservation proof");
+        var rebuilt = MoneyRevenueCropSeedReservationProofBuilder.Build(proof.RequestPath);
+        Require(proof.SchemaVersion == "money_revenue_crop_seed_reservation_proof.v1" &&
+                BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
+                string.Equals(Path.GetFullPath(proof.CropProductionPlanPath), planPath, StringComparison.OrdinalIgnoreCase) &&
+                plan.PendingEvidenceRequestIds.Contains(proof.EvidenceRequestId, StringComparer.Ordinal) &&
+                proof.EvidenceRequestId == "seed-reservation:" + proof.CommitmentId &&
+                proof.SeedReservationVerified && !proof.FormalProductTrainingAuthorized,
+            "Money Revenue crop seed-reservation proof is not exact or is outside the denominator.");
+        return proof;
     }
 
     private static MoneyRevenueCropPlantingLayoutProof VerifyProof(
