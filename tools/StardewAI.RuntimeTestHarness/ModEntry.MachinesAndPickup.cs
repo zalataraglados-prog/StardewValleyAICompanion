@@ -91,7 +91,30 @@ public sealed partial class ModEntry : Mod
             if (!request.InventoryItemTotalBefore.HasValue ||
                 !request.DeferredPickupDebrisItemTotalBefore.HasValue ||
                 !request.DeferredPickupGuaranteedMinimumQuantity.HasValue ||
-                request.DeferredPickupGuaranteedMinimumQuantity.Value <= 0 ||
+                request.DeferredPickupGuaranteedMinimumQuantity.Value <= 0)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "pickup_debris",
+                    DebrisRequestedEffect(request),
+                    beforeObserved,
+                    "deferred_pickup_native_output_conservation_mismatch"));
+                return;
+            }
+            if (!request.AcquisitionRequiredAmount.HasValue ||
+                request.AcquisitionRequiredAmount.Value <= 0 ||
+                request.AcquisitionRequiredAmount.Value >
+                    request.DeferredPickupGuaranteedMinimumQuantity.Value)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "pickup_debris",
+                    DebrisRequestedEffect(request),
+                    beforeObserved,
+                    "deferred_pickup_required_quantity_invalid"));
+                return;
+            }
+            if (
                 Math.Max(
                     0,
                     inventoryNow - request.InventoryItemTotalBefore.Value) +
@@ -128,7 +151,7 @@ public sealed partial class ModEntry : Mod
             }
             requiredItemCountAfter =
                 request.InventoryItemTotalBefore.Value +
-                request.DeferredPickupGuaranteedMinimumQuantity.Value;
+                request.AcquisitionRequiredAmount.Value;
             if (inventoryNow >= requiredItemCountAfter.Value)
             {
                 pending.Completion.SetResult(

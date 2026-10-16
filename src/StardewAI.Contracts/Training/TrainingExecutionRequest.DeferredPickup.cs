@@ -10,6 +10,9 @@ public sealed partial class TrainingExecutionRequest
     [JsonPropertyName("acquisition_route_occurrence_id")]
     public string AcquisitionRouteOccurrenceId { get; set; } = string.Empty;
 
+    [JsonPropertyName("acquisition_required_amount")]
+    public int? AcquisitionRequiredAmount { get; set; }
+
     [JsonPropertyName("deferred_pickup_source_kind")]
     public string DeferredPickupSourceKind { get; set; } = string.Empty;
 

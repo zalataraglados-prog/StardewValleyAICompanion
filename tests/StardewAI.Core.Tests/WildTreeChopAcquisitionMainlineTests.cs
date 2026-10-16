@@ -307,6 +307,7 @@ public sealed class WildTreeChopAcquisitionMainlineTests
                         Parameter(
                             "deferred_pickup_guaranteed_minimum_quantity",
                             "6"),
+                        Parameter("acquisition_required_amount", "1"),
                         Parameter(
                             "tree_chop_guaranteed_minimum_outputs_json",
                             "[{\"qualifiedItemId\":\"(O)388\",\"quality\":0,\"quantityMin\":17},{\"qualifiedItemId\":\"(O)92\",\"quality\":0,\"quantityMin\":6}]"),

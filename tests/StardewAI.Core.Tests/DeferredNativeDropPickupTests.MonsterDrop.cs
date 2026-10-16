@@ -108,6 +108,7 @@ public sealed partial class DeferredNativeDropPickupTests
                         Parameter(
                             "deferred_pickup_guaranteed_minimum_quantity",
                             "1"),
+                        Parameter("acquisition_required_amount", "1"),
                         Parameter(
                             "acquisition_route_kind",
                             "native_monster_drop_table"),
