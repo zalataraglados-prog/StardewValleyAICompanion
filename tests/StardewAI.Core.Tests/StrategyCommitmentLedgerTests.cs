@@ -25,6 +25,19 @@ public sealed class StrategyCommitmentLedgerTests
         Assert.Equal(136, commitment.LastInSeasonHarvestTotalDay);
         Assert.Equal(4, commitment.RegrowDays);
         Assert.Equal(100, commitment.MinimumUnitsPerWave);
+        Assert.Equal("crop_production_obligation.v1",
+            commitment.ProductionObligationSchemaVersion);
+        Assert.Equal("(O)745", commitment.SeedQualifiedItemId);
+        Assert.True(commitment.NeedsWatering);
+        Assert.Equal(24, commitment.RequiredWateringTotalDays.Length);
+        Assert.Equal(112, commitment.RequiredWateringTotalDays[0]);
+        Assert.Equal(135, commitment.RequiredWateringTotalDays[^1]);
+        Assert.Equal(new[] { 120, 124, 128, 132, 136 },
+            commitment.HarvestTotalDays);
+        Assert.Equal(5, commitment.MinimumHarvestWaveCount);
+        Assert.Equal(500, commitment.MinimumTotalUnits);
+        Assert.Equal(120, commitment.HarvestUnitSalePrice);
+        Assert.Equal(60000, commitment.MinimumGrossRevenue);
         Assert.Equal("upsert", Assert.Single(first.Ledger.History).Operation);
 
         var revised = service.Upsert(first.Ledger, snapshot, Request(snapshot, 1, 120), "2026-07-19T00:01:00Z");
@@ -529,7 +542,7 @@ public sealed class StrategyCommitmentLedgerTests
           "farm": {
             "crop_catalog": {"value":[{
               "seed_id":"745","seasons":["spring"],"grow_days":8,"regrow_days":4,
-              "harvest_item_id":"400","harvest_item_qualified_id":"(O)400","harvest_context_tags":["category_fruits","item_strawberry"],"harvest_min_stack":1
+              "harvest_item_id":"400","harvest_item_qualified_id":"(O)400","harvest_context_tags":["category_fruits","item_strawberry"],"harvest_unit_sale_price":120,"harvest_min_stack":1,"needs_watering":true
             }],"status":"available"},
             "material_inventory_graph": {"value":{
               "schema_version":"material_inventory_graph.v1",

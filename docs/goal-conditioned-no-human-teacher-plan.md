@@ -3219,6 +3219,24 @@ Slice 7 remains assigned to the RTX 5070 node.
   criterion-specific selected alternatives still require distinct seed runs;
   the initial smallest-sufficient sampling choice is never promoted by
   assumption.
+- Future crop revenue now has a typed obligation boundary without creating a
+  second crop planner. `CropCommitmentLedgerService` and the shared
+  `CropProductionObligationProjector` derive exact seed identity, conservative
+  watering dates, harvest waves, minimum units and quality-zero gross revenue
+  from the transparent native crop catalog. The existing deterministic
+  `farm.maintain_crops` compiler remains the only owner of mechanical crop
+  actions.
+- `money_revenue_crop_production_obligation_plan.v1` replays the snapshot,
+  strategy ledger, catalog projection and reservation-aware material supply.
+  It allocates current unreserved seed stock once and emits exact requests for
+  seed acquisition/reservation, daily capacity, native crop lifecycle and each
+  harvest wave's retained output. Missing v1 fields, catalog drift, duplicate
+  commitments or modified dates/quantities fail closed.
+- This is an evidence collection denominator, not future production proof. It
+  always reports crop proof, fresh-save Revenue schedule and formal training as
+  false. The next bounded slice is a resumable checkpoint for those exact
+  requests; only verified fragments may then enter the fresh-save one-million
+  lower-bound schedule. Money coverage therefore remains `0/18`.
 - The #274 performance pass removed all remaining private bootstrap
   `EqualJson` implementations. The single artifact guard now streams canonical
   compact JSON through SHA-256, so equality no longer retains two whole JSON

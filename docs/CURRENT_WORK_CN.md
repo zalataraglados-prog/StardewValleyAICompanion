@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money 未来作物生产义务计划
+
+- 既有 `CropCommitmentLedgerService` 现在从透明 `farm.crop_catalog` 为每项种植承诺固定种子身份、是否需浇水、逐日浇水义务、每次收获日、最小波次数、最小产量、零品质单价和保守毛收入；所有日期和数量由共享 `CropProductionObligationProjector` 计算，没有另建作物规划器或执行器。
+- 新增 `money_revenue_crop_production_obligation_plan.v1`。它重新核验快照、策略账本、原生作物目录和当前未预留种子库存，为每项活跃承诺生成购种/预留、日容量、原生成长以及每个收获波次的终端保留证据请求；同一批种子不能被多个承诺重复计算。
+- 旧版、字段缺失或被篡改的承诺失败关闭。计划固定保持 `future_crop_production_proof_ready=false`、`fresh_save_revenue_schedule_ready=false` 与 `formal_product_training_authorized=false`；它关闭的是未来作物义务遗漏和采证分母不明确，不是生产证据本身，Money 仍为 `0/18`。
+- 下一切片只沿该计划补可恢复的原生 proof checkpoint：验证购种/预留、每日时间与体力容量、作物生命周期和每波输出保留，再由 fresh-save 下界日程组合到百万元目标。验证已通过 Core game-free `366/366`、Backend `229/229`、Bootstrap Release 零警告及 hermetic 关键链，未启动游戏。
+
 ## 历史记录 · 2026-10-16 Money terminal-proof 可恢复 checkpoint
 
 - 新增 `money_revenue_terminal_proof_fragment_index.v1` 与 checkpoint builder。fragment 可以分批累积，但每一项必须在计数前通过既有 terminal execution verifier；重复 request、denominator 外 request、上游计划漂移、账本/快照/recurrence 篡改都会失败关闭。

@@ -62,6 +62,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-money-revenue-terminal-proof-collection-plan", BuildMoneyRevenueTerminalProofCollectionPlan),
+    new("build-money-revenue-crop-production-obligation-plan", BuildMoneyRevenueCropProductionObligationPlan),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
     new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
@@ -750,6 +751,13 @@ static void BuildMoneyRevenueTerminalProofCollectionPlan(Arguments options)
     Write(options.Required("output"), plan);
     if (plan.RequestCount <= 0 || plan.OfflineReuseReadyCount != 1)
         Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueCropProductionObligationPlan(Arguments options)
+{
+    var plan = MoneyRevenueCropProductionObligationPlanBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), plan);
 }
 
 static void BuildMoneyRevenueTerminalProofCollectionCheckpoint(Arguments options)

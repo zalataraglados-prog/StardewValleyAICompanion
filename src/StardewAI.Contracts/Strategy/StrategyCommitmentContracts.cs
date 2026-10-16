@@ -82,6 +82,10 @@ namespace StardewAI.Contracts.Strategy
 
     public sealed class CropPlantingCommitment
     {
+        [JsonPropertyName("production_obligation_schema_version")]
+        public string ProductionObligationSchemaVersion { get; set; } =
+            string.Empty;
+
         [JsonPropertyName("commitment_id")]
         public string CommitmentId { get; set; } = string.Empty;
 
@@ -102,6 +106,9 @@ namespace StardewAI.Contracts.Strategy
 
         [JsonPropertyName("seed_id")]
         public string SeedId { get; set; } = string.Empty;
+
+        [JsonPropertyName("seed_qualified_item_id")]
+        public string SeedQualifiedItemId { get; set; } = string.Empty;
 
         [JsonPropertyName("harvest_item_id")]
         public string HarvestItemId { get; set; } = string.Empty;
@@ -141,6 +148,28 @@ namespace StardewAI.Contracts.Strategy
 
         [JsonPropertyName("minimum_units_per_wave")]
         public int MinimumUnitsPerWave { get; set; }
+
+        [JsonPropertyName("needs_watering")]
+        public bool NeedsWatering { get; set; }
+
+        [JsonPropertyName("required_watering_total_days")]
+        public int[] RequiredWateringTotalDays { get; set; } =
+            Array.Empty<int>();
+
+        [JsonPropertyName("harvest_total_days")]
+        public int[] HarvestTotalDays { get; set; } = Array.Empty<int>();
+
+        [JsonPropertyName("minimum_harvest_wave_count")]
+        public int MinimumHarvestWaveCount { get; set; }
+
+        [JsonPropertyName("minimum_total_units")]
+        public int MinimumTotalUnits { get; set; }
+
+        [JsonPropertyName("harvest_unit_sale_price")]
+        public int? HarvestUnitSalePrice { get; set; }
+
+        [JsonPropertyName("minimum_gross_revenue")]
+        public long? MinimumGrossRevenue { get; set; }
 
         [JsonPropertyName("projection_status")]
         public string ProjectionStatus { get; set; } = "conservative_native_base_growth";

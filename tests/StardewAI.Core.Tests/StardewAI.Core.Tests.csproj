@@ -44,6 +44,7 @@
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="SnapshotStateCacheTests.cs" />
+    <Compile Include="StrategyCommitmentLedgerTests.cs" />
     <Compile Include="SequentialPlanProjectionTests.cs" />
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
