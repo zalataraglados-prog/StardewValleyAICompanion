@@ -4,6 +4,10 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money 作物布局 proof checkpoint
+
+Money 未来作物证据分母新增逐承诺 planting-layout 请求，并用 planting-day fresh snapshot 验证精确 Farm 地块、原生种植许可和基础生长时长。`money_revenue_crop_production_proof_checkpoint.v1` 只统计能够从自身 request 重新构建且仍在原计划分母内的 proof；当前 schema 仅支持布局片段，所以即使布局已验证，种子、容量、生命周期、输出保留与终端结算仍全部独立 pending。该 checkpoint 不产生生产格，不授权 fresh-save 百万日程或正式训练，Money 保持 `0/18`。
+
 
 ## 历史记录 · 2026-10-15 Money 采证波次与 18 格分母分离
 

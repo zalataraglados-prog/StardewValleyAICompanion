@@ -46,6 +46,8 @@ internal static partial class BootstrapSelfTest
 
         var plan = MoneyRevenueCropProductionObligationPlanBuilder.Build(
             requestPath);
+        var planPath = Path.Combine(root, "plan.json");
+        Write(planPath, plan);
         var commitment = plan.Commitments.Single();
         Require(plan.Status == "crop_production_evidence_collection_ready" &&
                 plan.ActiveCommitmentCount == 1 &&
@@ -61,11 +63,15 @@ internal static partial class BootstrapSelfTest
                     value.HarvestTotalDay).SequenceEqual(
                         new[] { 120, 124, 128, 132, 136 }) &&
                 commitment.MinimumTotalUnits == 500 &&
-                commitment.PendingEvidenceRequestIds.Length == 9 &&
+                commitment.PendingEvidenceRequestIds.Length == 10 &&
+                commitment.PendingEvidenceRequestIds.Contains(
+                    "planting-layout:money.year2.spring.strawberry",
+                    StringComparer.Ordinal) &&
                 commitment.PendingEvidenceRequestIds.Contains(
                     "seed-acquisition:money.year2.spring.strawberry:60",
                     StringComparer.Ordinal),
             "Money crop-production obligation plan lost an exact future obligation.");
+        VerifyMoneyCropPlantingLayoutCheckpoint(root, planPath, plan);
 
         ledger.CropPlantingCommitments[0].HarvestTotalDays =
             new[] { 120 };
@@ -106,6 +112,195 @@ internal static partial class BootstrapSelfTest
         Require(rejected,
             "A null Money crop-production harvest schedule was admitted.");
     }
+
+    private static void VerifyMoneyCropPlantingLayoutCheckpoint(
+        string root,
+        string planPath,
+        MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var plantingSnapshotPath = Path.Combine(
+            root,
+            "planting-day-snapshot.json");
+        var plantingSnapshot = MoneyCropPlantingDaySnapshot();
+        Write(plantingSnapshotPath, plantingSnapshot);
+        var tiles = Enumerable.Range(0, 100)
+            .Select(index => new MoneyRevenueCropPlantingTile(
+                5 + index % 10,
+                6 + index / 10))
+            .ToArray();
+        var layoutRequestPath = Path.Combine(root, "layout-request.json");
+        var layoutRequest = new MoneyRevenueCropPlantingLayoutProofRequest
+        {
+            CropProductionPlanPath = planPath,
+            CommitmentId = "money.year2.spring.strawberry",
+            PlantingSnapshotPath = plantingSnapshotPath,
+            LocationId = "Farm",
+            Tiles = tiles
+        };
+        Write(layoutRequestPath, layoutRequest);
+        var proof = MoneyRevenueCropPlantingLayoutProofBuilder.Build(
+            layoutRequestPath);
+        Require(proof.Status == "verified_planting_layout" &&
+                proof.EvidenceRequestId ==
+                    "planting-layout:money.year2.spring.strawberry" &&
+                proof.PlantingTotalDay == 112 &&
+                proof.TileCount == 100 &&
+                proof.PlantingLayoutVerified &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money crop planting-layout proof lost exact planting-day evidence.");
+
+        var proofPath = Path.Combine(root, "layout-proof.json");
+        var fragmentIndexPath = Path.Combine(root, "fragment-index.json");
+        var checkpointRequestPath = Path.Combine(
+            root,
+            "checkpoint-request.json");
+        Write(proofPath, proof);
+        Write(fragmentIndexPath,
+            new MoneyRevenueCropProductionProofFragmentIndex
+            {
+                CropProductionPlanPath = planPath,
+                PlantingLayoutProofPaths = new[] { proofPath }
+            });
+        Write(checkpointRequestPath,
+            new MoneyRevenueCropProductionProofCheckpointRequest
+            {
+                CropProductionPlanPath = planPath,
+                FragmentIndexPath = fragmentIndexPath
+            });
+        var checkpoint = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+            checkpointRequestPath);
+        Require(checkpoint.Status ==
+                    "crop_production_proof_collection_in_progress" &&
+                checkpoint.RequestCount ==
+                    plan.PendingEvidenceRequestIds.Length &&
+                checkpoint.VerifiedFragmentCount == 1 &&
+                checkpoint.PendingRequestCount == 9 &&
+                checkpoint.VerifiedRequestIds.SequenceEqual(
+                    new[]
+                    {
+                        "planting-layout:money.year2.spring.strawberry"
+                    },
+                    StringComparer.Ordinal) &&
+                checkpoint.VerifiedPlantingLayouts.Length == 1 &&
+                !checkpoint.FutureCropProductionProofReady &&
+                !checkpoint.FreshSaveRevenueScheduleReady &&
+                !checkpoint.FormalProductTrainingAuthorized,
+            "Money crop-production proof checkpoint admitted incomplete future production.");
+
+        layoutRequest.Tiles[0] = new MoneyRevenueCropPlantingTile(999, 999);
+        var invalidLayoutRequestPath = Path.Combine(
+            root,
+            "layout-request-invalid.json");
+        Write(invalidLayoutRequestPath, layoutRequest);
+        var rejected = false;
+        try
+        {
+            _ = MoneyRevenueCropPlantingLayoutProofBuilder.Build(
+                invalidLayoutRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "An unavailable Money crop planting-layout tile was admitted.");
+
+        proof.PlantingLayoutVerified = false;
+        var tamperedProofPath = Path.Combine(root, "layout-proof-tampered.json");
+        var tamperedFragmentIndexPath = Path.Combine(
+            root,
+            "fragment-index-tampered.json");
+        var tamperedCheckpointRequestPath = Path.Combine(
+            root,
+            "checkpoint-request-tampered.json");
+        Write(tamperedProofPath, proof);
+        Write(tamperedFragmentIndexPath,
+            new MoneyRevenueCropProductionProofFragmentIndex
+            {
+                CropProductionPlanPath = planPath,
+                PlantingLayoutProofPaths = new[] { tamperedProofPath }
+            });
+        Write(tamperedCheckpointRequestPath,
+            new MoneyRevenueCropProductionProofCheckpointRequest
+            {
+                CropProductionPlanPath = planPath,
+                FragmentIndexPath = tamperedFragmentIndexPath
+            });
+        rejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+                tamperedCheckpointRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "A tampered Money crop planting-layout proof was admitted.");
+    }
+
+    private static SnapshotEnvelope MoneyCropPlantingDaySnapshot()
+    {
+        var snapshot = MoneyCropProductionSnapshot();
+        var state = snapshot.State.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value,
+            StringComparer.Ordinal);
+        state["time"] = JsonSerializer.SerializeToElement(new
+        {
+            total_days = MoneyCropField(112),
+            year = MoneyCropField(2),
+            season = MoneyCropField("spring"),
+            day = MoneyCropField(1)
+        }, JsonDefaults.Options);
+        state["player"] = JsonSerializer.SerializeToElement(new
+        {
+            location_id = MoneyCropField("Farm")
+        }, JsonDefaults.Options);
+        var hoeDirtTiles = Enumerable.Range(0, 100).Select(index => new
+        {
+            tile_x = 5 + index % 10,
+            tile_y = 6 + index / 10,
+            has_crop = false,
+            is_garden_pot = false,
+            occupied_object_qualified_id = (string?)null,
+            seed_results = new[]
+            {
+                new
+                {
+                    slot_index = 0,
+                    seed_id = "745",
+                    hard_rule_allows_planting = true,
+                    can_mature_before_season_end_with_paddy_if_eligible = true,
+                    adjusted_grow_days_with_paddy_if_eligible = 7,
+                    days_remaining_in_season = 27
+                }
+            }
+        }).ToArray();
+        state["current_location"] = JsonSerializer.SerializeToElement(new
+        {
+            planting_context = MoneyCropField(new
+            {
+                location_id = "Farm",
+                season = "spring",
+                is_outdoors = true,
+                is_farm = true,
+                is_greenhouse = false,
+                hoe_dirt_tiles = hoeDirtTiles
+            })
+        }, JsonDefaults.Options);
+        snapshot.GameTick = 200;
+        snapshot.State = state;
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return snapshot;
+    }
+
+    private static object MoneyCropField<T>(T value) => new
+    {
+        value,
+        status = FieldStatus.Available
+    };
 
     private static SnapshotEnvelope MoneyCropProductionSnapshot()
     {

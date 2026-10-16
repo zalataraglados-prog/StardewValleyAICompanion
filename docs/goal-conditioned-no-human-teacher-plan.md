@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16: Money crop planting-layout checkpoint
+
+- The future-crop denominator now includes one `planting-layout:<commitment>` request per active commitment. A layout proof replays the persisted obligation plan, same-save/player planting-day snapshot, exact outdoor Farm context, every selected empty HoeDirt tile, native seed legality and an adjusted growth duration no later than the conservative commitment deadline.
+- Layout is a policy/planning output; planting remains the existing deterministic `farm.maintain_crops -> executor.plant_seed` chain. If enough legal HoeDirt does not exist, proof fails closed and the next slice must compose existing clearing, tilling and routing primitives into a pre-plant site-preparation plan rather than adding another crop executor.
+- The resumable crop-production checkpoint currently verifies layout fragments only. Seed reservation/acquisition, daily time-energy capacity, native lifecycle, output retention and terminal settlement remain pending; future-crop proof, fresh-save schedule and formal training remain false.
+
 
 ## 历史记录 · 2026-10-11: native geode route admitted
 

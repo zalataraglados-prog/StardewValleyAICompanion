@@ -106,6 +106,7 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
             var shortfall = checked(commitment.TileCount - allocated);
             var requestIds = new List<string>
             {
+                "planting-layout:" + commitment.CommitmentId,
                 "seed-reservation:" + commitment.CommitmentId,
                 "daily-capacity:" + commitment.CommitmentId,
                 "native-crop-lifecycle:" + commitment.CommitmentId
@@ -135,6 +136,8 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
                 commitment.HarvestItemQualifiedId,
                 commitment.TileCount,
                 commitment.PlantingTotalDay,
+                commitment.PlantingSeason,
+                commitment.BaseGrowDays,
                 commitment.PlantingTotalDay,
                 allocated,
                 shortfall,

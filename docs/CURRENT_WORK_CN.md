@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 历史记录 · 2026-10-16 Money 作物布局证明检查点
+
+- `money_revenue_crop_production_obligation_plan.v1` 的每项承诺现显式保留种植季节、基础生长天数，并把 `planting-layout:<commitment>` 纳入同一个证据分母。旧计划缺字段或请求分母漂移时必须重建，不能沿用。
+- 新增 `build-money-revenue-crop-planting-layout-proof`。调用方提供的是非机械的精确地块选择；构建器逐项重放原计划和 planting-day 透明快照，核对同一 save/player、精确日期、Farm 室外季节、空且无对象的非花盆 HoeDirt、原生种植许可、季末成熟许可及不晚于承诺上界的原生调整后生长日数。实际播种继续复用 `farm.maintain_crops -> executor.plant_seed`，没有第二套作物执行器。
+- 新增 `money_revenue_crop_production_proof_fragment_index.v1` 与可恢复 checkpoint。v1 只认可重新构建一致的布局 proof；fixture 中 `1/10 verified` 时其余种子预留/购种、日容量、原生命周期和逐波终端保留请求全部保持 pending，三个训练/日程 gate 均保持 false。分母外、重复、篡改或不可用地块均失败关闭。
+- 这一步同时暴露真实后续缺口：如果种植日没有足量合法 HoeDirt，proof 不会假装可执行。下一切片先把已有清障、锄地和路线动作组合为前置场地准备计划/证明，再闭合种子供给、逐日时间体力容量、生命周期和输出保留；Money 生产仍为 `0/18`。
+
 ## 历史记录 · 2026-10-16 Money 未来作物生产义务计划
 
 - 既有 `CropCommitmentLedgerService` 现在从透明 `farm.crop_catalog` 为每项种植承诺固定种子身份、是否需浇水、逐日浇水义务、每次收获日、最小波次数、最小产量、零品质单价和保守毛收入；所有日期和数量由共享 `CropProductionObligationProjector` 计算，没有另建作物规划器或执行器。
