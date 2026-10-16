@@ -18,7 +18,7 @@
       "blockers": [
         "fresh-save seed-robust lower-bound schedule proving settled totalMoneyEarned reaches one million before the Year 3 evaluation",
         "counterfactual opportunity-cost labels over acquisition processing sale shipping and reserve commitments",
-        "crop-production alternative remains excluded until farm.maintain_crops is training-eligible"
+        "long-horizon crop-production commitments still need future-date seed purchase planting growth harvest and reserve proofs"
       ],
       "nodes": [
         {
@@ -105,6 +105,31 @@
           "binding": {
             "output": "one exact ready native animal product added to player.inventory",
             "infrastructure_assumption": "none; candidate exists only for already owned ready animals"
+          }
+        },
+        {
+          "id": "dependency.earn_money.maintain_crop_production",
+          "kind": "deterministic_transition",
+          "option_id": "farm.maintain_crops",
+          "candidate_kinds": ["water_crop_tile", "plant_seed_tile", "apply_fertilizer_tile", "harvest_crop_tile", "harvest_giant_crop_tile"],
+          "required_field_paths": [
+            "current_location.crops",
+            "current_location.planting_context",
+            "current_location.resource_clumps",
+            "player.inventory",
+            "player.inventory_capacity",
+            "player.energy",
+            "time.season",
+            "time.weather",
+            "time.time"
+          ],
+          "rule": {
+            "execution_owner": "mandatory_crop_maintenance_compiler_not_policy_label",
+            "selection_owner": "the Teacher may select a crop-production method and its economic parameters; the compiler expands current exact mechanical obligations",
+            "current_snapshot_scope": "one exact loaded-location crop obligation per fresh snapshot",
+            "output": "only a verified native harvest receipt may enter reserve-safe positive inventory",
+            "future_scope": "seed purchase planting growth watering harvest and reservation commitments require separate future-date proofs",
+            "missing_or_drifted_state": "fail_closed"
           }
         },
         {
@@ -212,6 +237,7 @@
         { "from": "dependency.earn_money.acquire_fishable_inventory", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
         { "from": "dependency.earn_money.acquire_spawned_foraging_inventory", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
         { "from": "dependency.earn_money.acquire_animal_product_inventory", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
+        { "from": "dependency.earn_money.maintain_crop_production", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce_after_verified_native_harvest" },
         { "from": "dependency.earn_money.establish_positive_machine_capacity", "to": "dependency.earn_money.load_positive_machine_input", "kind": "enables" },
         { "from": "dependency.earn_money.load_positive_machine_input", "to": "dependency.earn_money.collect_ready_machine_output", "kind": "delays_until_processing_complete" },
         { "from": "dependency.earn_money.collect_ready_machine_output", "to": "dependency.earn_money.reserve_safe_positive_inventory", "kind": "may_produce" },
@@ -225,6 +251,7 @@
         { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.acquire_fishable_inventory", "kind": "reconsiders" },
         { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.acquire_spawned_foraging_inventory", "kind": "reconsiders" },
         { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.acquire_animal_product_inventory", "kind": "reconsiders" },
+        { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.maintain_crop_production", "kind": "reconsiders_deterministic_support" },
         { "from": "dependency.earn_money.revenue_portfolio_recurrence", "to": "dependency.earn_money.establish_positive_machine_capacity", "kind": "reconsiders" }
       ]
     },
