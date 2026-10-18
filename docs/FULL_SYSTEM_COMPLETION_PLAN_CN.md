@@ -4,10 +4,30 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前记录 · 2026-10-16 Money 作物场地准备已组合
+## 当前记录 · 2026-10-18 Money Exit Gate 施工顺序校正
 
-`farm_layout` 有界透明投影和 `build-money-revenue-crop-site-preparation-plan` 已把精确地块连接到唯一的清障、资源块、BFS 与锄地实现。区域最大 `32×32`，不会触发无关机器/动物/全农场物料扫描；清障后强制 fresh snapshot 再绑定锄地。该层只提供机械准备计划，不能替代上游布局选择、播种日 proof 或 production evidence。下一固定切片是种子预留/购种 proof，然后依次处理日容量、生命周期、输出保留与终端结算。
+完全体路线图的全局方向不变，但当前实施顺序必须以 `CURRENT_STATUS_CN.md` 为唯一口径：
 
+```text
+#307 shared P1
+-> #308 / #309 / #310 Money P1
+-> #311 crop P2
+-> real Money native production collection
+-> terminal proof completion
+-> exact Teacher comparison
+-> criterion-local train/validation/test join
+-> Money 18/18
+-> Money reconciliation / Exit Gate
+-> 重新选择一个下一 root method
+```
+
+已经完成的 terminal-proof、crop obligation、planting layout、site preparation 与 seed-reservation 代码都属于 **production 前置基础设施**，不能自行增加 `/19` 或 Money `0/18`。Full Shipment current-authority `26/26` 已冻结，不再占当前施工资源。
+
+后期的 dependency DAG、incremental recomputation、selective replay 与 Online Companion 优化继续保留在 #200/#201/#202/#203，但在当前 Money correctness debt 清零且真实采集 trace 证明有性能 blocker 前，不抢占 WIP=1。
+
+## 历史记录 · 2026-10-16 Money 作物场地准备已组合
+
+`farm_layout` 有界透明投影和 `build-money-revenue-crop-site-preparation-plan` 已把精确地块连接到唯一的清障、资源块、BFS 与锄地实现。区域最大 `32×32`；清障后强制 fresh snapshot 再绑定锄地。该层只提供机械准备计划，不能替代上游布局选择、播种日 proof 或 production evidence。后续 #306 已继续实现 seed-reservation proof，但其 ledger lineage/freshness 仍由 #310 P1 收口；因此本段不再作为当前“下一切片”指令。
 ## 历史记录 · 2026-10-16 Money 作物场地准备边界
 
 未来作物义务已进入可恢复证据检查点，但种植布局不是机械执行器可以自行臆造的字段：上游必须给出精确地块，验证器再以 planting-day 透明快照逐格证明合法。若开放 HoeDirt 数量不足，检查点失败关闭；后续必须复用现有清障、锄地、BFS 与播种动作生成前置场地准备计划，并在 fresh snapshot 上重新绑定。禁止通过直接改地图、预造耕地 fixture 或另建作物执行器绕过此边界。布局、种子、日容量、生命周期、输出保留和终端结算全部完成前，未来作物证明、百万元日程及正式训练均保持 false。
