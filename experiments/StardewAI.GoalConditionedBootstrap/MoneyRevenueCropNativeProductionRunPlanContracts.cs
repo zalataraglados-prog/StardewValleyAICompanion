@@ -76,6 +76,9 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
     [JsonPropertyName("source_state_hash")]
     public string SourceStateHash { get; set; } = string.Empty;
 
+    [JsonPropertyName("source_total_day")]
+    public int SourceTotalDay { get; set; }
+
     [JsonPropertyName("location_id")]
     public string LocationId { get; set; } = string.Empty;
 
@@ -113,7 +116,8 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
     [JsonPropertyName("planning_policy")]
     public string PlanningPolicy { get; set; } =
         "The exact crop commitments and non-overlapping layout intents are " +
-        "expanded once into a continuous native-day schedule. Plant, conditional " +
+        "expanded once from the exact source snapshot into a continuous native-day " +
+        "schedule. Pre-plant days contain only one native sleep boundary. Plant, conditional " +
         "water and harvest batches preserve compiler order and the configured " +
         "queue limit; one native sleep closes every non-terminal day. Runtime " +
         "must capture planting-layout and daily-capacity snapshots at the marked " +

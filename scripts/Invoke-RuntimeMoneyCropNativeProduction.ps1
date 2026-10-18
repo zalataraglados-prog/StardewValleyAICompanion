@@ -43,6 +43,8 @@ function Assert-RunPlan {
         [string]$Plan.status -ne "native_crop_production_run_ready" -or
         -not [bool]$Plan.native_production_run_ready -or
         [bool]$Plan.formal_product_training_authorized -or
+        [string]::IsNullOrWhiteSpace([string]$Plan.source_state_hash) -or
+        [int]$Plan.source_total_day -ne [int]$Plan.first_total_day -or
         @($Plan.days).Count -ne [int]$Plan.day_count -or
         @($Plan.covered_commitment_ids).Count -eq 0) {
         throw "Money crop native-production run plan is not executable."
@@ -73,6 +75,7 @@ $fragmentIndexPath = Join-Path $evidenceDirectory "fragment-index.json"
 $checkpointRequestPath = Join-Path $evidenceDirectory `
     "checkpoint-request.json"
 $checkpointPath = Join-Path $evidenceDirectory "checkpoint.json"
+$sourcePreflightPath = Join-Path $evidenceDirectory "source-preflight.json"
 $summaryPath = Join-Path $runDirectory "summary.json"
 $failurePath = Join-Path $runDirectory "failure.json"
 
@@ -234,8 +237,25 @@ try {
         -BackendUrl $backendUrl -SnapshotProfile "full"
     $initialDay = [int](Read-StateValue `
         $initial.Value "time" "total_days")
-    if ($initialDay -ne [int]$runPlan.first_total_day) {
-        throw "Isolated crop save starts on day $initialDay, expected $($runPlan.first_total_day)."
+    $initialStateHash = [string]$initial.Value.state_hash
+    $sourceBoundaryMatches =
+        $initialDay -eq [int]$runPlan.source_total_day -and
+        $initialStateHash -eq [string]$runPlan.source_state_hash
+    Write-JsonFile -Path $sourcePreflightPath -Value ([ordered]@{
+        schema_version = "money_crop_native_source_preflight.v1"
+        status = if ($sourceBoundaryMatches) { "matched" } else { "rejected" }
+        run_plan_path = $runPlanPath
+        expected_source_state_hash = [string]$runPlan.source_state_hash
+        observed_source_state_hash = $initialStateHash
+        expected_source_total_day = [int]$runPlan.source_total_day
+        observed_source_total_day = $initialDay
+        source_save_slot_path = $sourceSave
+        source_save_sha256 = $sourceSaveSha256Before
+        source_boundary_matches = $sourceBoundaryMatches
+        formal_product_training_authorized = $false
+    })
+    if (-not $sourceBoundaryMatches) {
+        throw "Isolated crop save does not match the exact run-plan source boundary."
     }
 
     $runtimeQueueContext = New-RuntimeQueueContext `
@@ -248,6 +268,9 @@ try {
     $transitions = [Collections.Generic.List[object]]::new()
     $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
     $layoutSnapshotByCommitment = @{}
+    $proofFirstDay = [int](@($productionPlan.commitments |
+        ForEach-Object { [int]$_.planting_total_day } |
+        Measure-Object -Minimum).Minimum)
     $executedCropBatchCount = 0
     $skippedWaterBatchCount = 0
 
@@ -268,6 +291,7 @@ try {
                 -TargetLocation ([string]$runPlan.location_id) `
                 -TotalDay $totalDay -Name "day-$totalDay-crop-ingress"
             foreach ($routeArtifact in @($route.Artifacts)) {
+                if ($totalDay -lt $proofFirstDay) { continue }
                 $transitions.Add((New-RuntimeCropTransition `
                     -TransitionKind "supporting_route_to_crop" `
                     -TotalDay $totalDay -Artifacts $routeArtifact `
@@ -319,6 +343,7 @@ try {
                 -TargetLocation $homeLocation -TotalDay $totalDay `
                 -Name "day-$totalDay-sleep-ingress"
             foreach ($routeArtifact in @($homeRoute.Artifacts)) {
+                if ($totalDay -lt $proofFirstDay) { continue }
                 $transitions.Add((New-RuntimeCropTransition `
                     -TransitionKind "supporting_route_to_sleep" `
                     -TotalDay $totalDay -Artifacts $routeArtifact `
@@ -339,9 +364,11 @@ try {
                 [string]$sleepItems[0].option_id -ne "executor.sleep") {
                 throw "Day $totalDay did not compile one native sleep queue."
             }
-            $transitions.Add((New-RuntimeCropTransition `
-                -TransitionKind "native_day_rollover" `
-                -TotalDay $totalDay -Artifacts $sleep -RunId $RunId))
+            if ($totalDay -ge $proofFirstDay) {
+                $transitions.Add((New-RuntimeCropTransition `
+                    -TransitionKind "native_day_rollover" `
+                    -TotalDay $totalDay -Artifacts $sleep -RunId $RunId))
+            }
             $currentPath = $sleep.AfterPath
         }
     }
@@ -494,6 +521,7 @@ try {
         source_save_slot_path = $sourceSave
         source_save_sha256_before = $sourceSaveSha256Before
         source_save_sha256_after = $sourceSaveSha256After
+        source_preflight_path = $sourcePreflightPath
         isolated_save_slot_path = $isolatedSlot
         isolated_save_sha256_before = $isolatedSaveSha256Before
         isolated_mods_root_path = $isolatedMods

@@ -1,3 +1,5 @@
+using StardewAI.Contracts.State;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static class MoneyRevenueCropNativeProductionRunPlanBuilder
@@ -35,6 +37,18 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 !plan.FutureCropProductionProofReady &&
                 !plan.FormalProductTrainingAuthorized,
             "Money Revenue crop-production obligation plan is not exact.");
+        var sourceSnapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+            RequiredFile(
+                plan.SnapshotPath,
+                "Money Revenue crop-production source snapshot"),
+            "Money Revenue crop-production source snapshot");
+        var sourceTotalDay = ReadAvailableStateInt(
+            sourceSnapshot,
+            "time",
+            "total_days");
+        Require(sourceSnapshot.StateHash == plan.SourceStateHash &&
+                sourceTotalDay >= 0,
+            "Money Revenue crop-production source boundary is invalid.");
 
         var requestedIntents = request.LayoutIntents ??
             throw new InvalidDataException(
@@ -73,8 +87,11 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 intents.Sum(value => value.Tiles.Length),
             "Money Revenue crop native-production layout intents overlap.");
 
-        var firstDay = plan.Commitments.Min(value =>
+        var firstPlantingDay = plan.Commitments.Min(value =>
             value.PlantingTotalDay);
+        Require(sourceTotalDay <= firstPlantingDay,
+            "Money Revenue crop native-production source day follows its first planting day.");
+        var firstDay = sourceTotalDay;
         var lastDay = plan.Commitments.Max(value =>
             value.HarvestWaves.Max(wave => wave.HarvestTotalDay));
         Require(firstDay >= 0 && lastDay >= firstDay &&
@@ -98,6 +115,7 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
             CropProductionPlanSha256 =
                 CurrentTeacherFrontierSupport.HashFile(planPath),
             SourceStateHash = plan.SourceStateHash,
+            SourceTotalDay = sourceTotalDay,
             LocationId = intents[0].LocationId,
             CoveredCommitmentIds = plan.Commitments.Select(value =>
                 value.CommitmentId).ToArray(),
@@ -179,6 +197,24 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
         var fullPath = Path.GetFullPath(path);
         Require(File.Exists(fullPath), label + " is missing: " + fullPath);
         return fullPath;
+    }
+
+    private static int ReadAvailableStateInt(
+        SnapshotEnvelope snapshot,
+        string domain,
+        string field)
+    {
+        var result = 0;
+        Require(snapshot.State.TryGetValue(domain, out var domainValue) &&
+                domainValue.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                domainValue.TryGetProperty(field, out var fieldValue) &&
+                fieldValue.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                fieldValue.TryGetProperty("status", out var status) &&
+                status.GetString() == "available" &&
+                fieldValue.TryGetProperty("value", out var value) &&
+                value.TryGetInt32(out result),
+            "Money Revenue crop native-production source day is unavailable.");
+        return result;
     }
 
     private static void Require(bool condition, string message)
