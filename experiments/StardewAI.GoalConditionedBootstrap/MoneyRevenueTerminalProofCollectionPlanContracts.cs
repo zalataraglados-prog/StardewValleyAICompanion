@@ -15,7 +15,13 @@ public sealed class MoneyRevenueTerminalProofCollectionPlanRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_terminal_proof_collection_plan_request.v1";
+        "money_revenue_terminal_proof_collection_plan_request.v2";
+
+    [JsonPropertyName("run_id")]
+    public string RunId { get; set; } = string.Empty;
+
+    [JsonPropertyName("dataset_partition")]
+    public string DatasetPartition { get; set; } = string.Empty;
 
     [JsonPropertyName("comparison_collection_plan_path")]
     public string ComparisonCollectionPlanPath { get; set; } = string.Empty;
@@ -36,7 +42,7 @@ public sealed class MoneyRevenueTerminalProofCollectionPlan
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_terminal_proof_collection_plan.v1";
+        "money_revenue_terminal_proof_collection_plan.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -52,6 +58,29 @@ public sealed class MoneyRevenueTerminalProofCollectionPlan
 
     [JsonPropertyName("comparison_collection_plan_sha256")]
     public string ComparisonCollectionPlanSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("alternative_denominator_catalog_path")]
+    public string AlternativeDenominatorCatalogPath { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("alternative_denominator_file_sha256")]
+    public string AlternativeDenominatorFileSha256 { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("alternative_denominator_catalog_sha256")]
+    public string AlternativeDenominatorCatalogSha256 { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("concrete_alternative_catalog_path")]
+    public string ConcreteAlternativeCatalogPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("concrete_alternative_catalog_file_sha256")]
+    public string ConcreteAlternativeCatalogFileSha256 { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("concrete_alternative_catalog_sha256")]
+    public string ConcreteAlternativeCatalogSha256 { get; set; } =
+        string.Empty;
 
     [JsonPropertyName("counterfactual_request_manifest_path")]
     public string CounterfactualRequestManifestPath { get; set; } =
@@ -103,11 +132,13 @@ public sealed class MoneyRevenueTerminalProofCollectionPlan
 
     [JsonPropertyName("plan_policy")]
     public string PlanPolicy { get; set; } =
-        "Every authoritative counterfactual request appears exactly once. Only the exact " +
-        "already verified native shop-sale episode may enter the offline reuse path. All " +
-        "other shop-sale and shipping alternatives remain native collection work. A plan " +
-        "schedules evidence collection but is not a terminal proof index, Teacher label, " +
-        "production evidence or formal training authorization.";
+        "The requested run and partition, alternative skeleton denominator, concrete " +
+        "denominator and counterfactual request denominator are exact and hash-bound. Every " +
+        "authoritative concrete request appears exactly once. Only the exact already verified " +
+        "native shop-sale episode may enter the offline reuse path. All other shop-sale and " +
+        "shipping alternatives remain native collection work. A plan schedules evidence " +
+        "collection but is not a terminal proof index, Teacher label, production evidence or " +
+        "formal training authorization.";
 }
 
 public sealed record MoneyRevenueTerminalProofCollectionWorkItem(

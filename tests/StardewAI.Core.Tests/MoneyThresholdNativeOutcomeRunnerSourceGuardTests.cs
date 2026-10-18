@@ -184,7 +184,11 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             "build-money-revenue-terminal-proof-collection-plan",
             ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains(
-            "money_revenue_terminal_proof_collection_plan_request.v1",
+            "money_revenue_terminal_proof_collection_plan_request.v2",
+            ComparisonPlanSource, StringComparison.Ordinal);
+        Assert.Contains("run_id = [string]$plan.run_id",
+            ComparisonPlanSource, StringComparison.Ordinal);
+        Assert.Contains("dataset_partition = [string]$plan.dataset_partition",
             ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains("source_strategy_ledger_path = $sourceLedgerPath",
             ComparisonPlanSource, StringComparison.Ordinal);
@@ -243,6 +247,22 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             TerminalProofCollectionSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-terminal-proof-index",
             TerminalProofCollectionSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_terminal_proof_collection_plan.v2",
+            TerminalProofCollectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-Path ([string]$request.terminal_snapshot_path)",
+            TerminalProofCollectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "([string]$item.terminal_snapshot_sha256).ToLowerInvariant()",
+            TerminalProofCollectionSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "-Path ([string]$episode.before_snapshot_path)",
+            TerminalProofCollectionSource,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("StardewModdingAPI",
             TerminalProofCollectionSource, StringComparison.Ordinal);
         Assert.DoesNotContain("training/execute",

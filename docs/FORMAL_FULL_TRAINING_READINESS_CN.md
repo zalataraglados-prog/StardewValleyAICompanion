@@ -14,11 +14,9 @@ Money production cells:  0/18
 Formal product training: false
 ```
 
-Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation 与 seed-reservation proof 的基础设施，但在 production admission 前必须先关闭：
+Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation 与 seed-reservation proof 的基础设施。#307、#308、#309、#310 与 #311 已收口，当前没有已知 P0/P1 review issue 阻止继续施工，但这些修复没有自行增加分子。
 
-- #309 P1：terminal-proof concrete denominator/provenance/boundary；
-
-**准入规则：**#309 未关闭时，不得把任何新 Money native run / terminal fragment / crop fragment 提升为正式 production cell。#307、#308、#310 与 #311 已收口但没有自行增加分子。Full Shipment current-authority `26/26` 已完成，但只证明其 runtime stratum，不改变全局 `2/19`。
+**准入规则：**只有 crop-production 的购种 shortfall、日容量、生命周期、逐波输出保留与结算，以及真实 native outcome、完整 terminal proof、exact Teacher comparison 和 criterion-local join 全部成立时，相应 Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 
