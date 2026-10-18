@@ -4,12 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 作物原生商店结算证明
+## 当前切片 · 2026-10-18 Money 作物原生运输箱结算证明
 
-- `output-retention-terminal:<commitment>:<wave>` 是“留存+终端结算”的组合义务。checkpoint 不再让单独的 output-retention fragment 关闭该请求；新增 `money_revenue_crop_terminal_settlement_proof.v1` 后，只有独立重建作物计划、留存 proof、资源中性路线、精确 ShopMenu sale 与单转换 Revenue recurrence 的组合 proof 才能计入分子。
+- `output-retention-terminal:<commitment>:<wave>` 是“留存+终端结算”的组合义务。`money_revenue_crop_terminal_settlement_proof.v2` 只允许原生 ShopMenu sale 或原生 shipping settlement 二选一；两者都必须独立重建作物计划、留存 proof 和单转换 Revenue recurrence，单独留存仍不能计入分子。
 - 终端路线验证已从原 `MoneyRevenueTerminalExecutionProofBuilder` 抽成单一共享验证器，原 terminal proof 与作物结算 proof 共用同一组允许动作、continuation identity、执行回执、状态连续性与持久资源不变门槛，没有新增路线候选、编译器或执行器。
-- hermetic 正例为 5 个草莓收获波次分别出售保守 `2` 件并取得精确收入。仅有 5 个留存 fragment 时 checkpoint 仍只验证布局、容量和生命周期 `3` 项，5 个 terminal 请求保持 pending；加入 5 个组合结算 proof 后才成为 `8` 项。少卖 1 件会失败关闭。
-- fragment index 已升级为 v8，checkpoint 已升级为 v7。当前 v1 只关闭已留存产物的原生商店售卖分支；运输箱逐件投递、原生隔夜结算及其日内容量仍 pending。尚未采集正式 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。
+- shipping 分支严格复用 `executor.ship_inventory_item_to_bin` 与既有原生睡眠结算验证器：保守 `N` 件产物必须形成 `N` 条连续、各自只含一次原生投递的队列，第一条从空待结算值开始，每条只按该件物品的透明原生价格增加待结算值；最后仅允许一次原生睡眠把完整待结算值同时记入 Money 与 `totalMoneyEarned`。投递前移动只能放在共享资源中性路线中；少投一件、状态不连续、预载运输箱价值、混合商店路径或结算值不一致均失败关闭。
+- hermetic 正例在同一 5 波 checkpoint 中混合 1 个运输箱结算 proof 与 4 个商店结算 proof，仍精确关闭 5 个 terminal 请求并得到 `8` 个已验证 fragment；单独 5 个留存 fragment 仍只有 `3` 项。fragment index 已升级为 v9，checkpoint 已升级为 v8。尚未采集正式 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是跨承诺/波次聚合同一结算日的运输箱投递、路线、时间与队列容量，不重复实现投递或睡眠执行器。
 
 ## 已收口 · 2026-10-18 Money 作物逐波输出留存证明
 

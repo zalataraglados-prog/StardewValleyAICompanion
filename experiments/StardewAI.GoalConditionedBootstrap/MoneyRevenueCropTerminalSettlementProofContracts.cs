@@ -6,7 +6,7 @@ public sealed class MoneyRevenueCropTerminalSettlementProofRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_terminal_settlement_proof_request.v1";
+        "money_revenue_crop_terminal_settlement_proof_request.v2";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -22,6 +22,11 @@ public sealed class MoneyRevenueCropTerminalSettlementProofRequest
     [JsonPropertyName("shop_sale_episode_path")]
     public string ShopSaleEpisodePath { get; set; } = string.Empty;
 
+    [JsonPropertyName("shipping_deposit_transitions")]
+    public MoneyRevenueTerminalQueueTransitionProof[]
+        ShippingDepositTransitions { get; set; } =
+            Array.Empty<MoneyRevenueTerminalQueueTransitionProof>();
+
     [JsonPropertyName("revenue_recurrence_manifest_path")]
     public string RevenueRecurrenceManifestPath { get; set; } = string.Empty;
 
@@ -36,7 +41,7 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_terminal_settlement_proof.v1";
+        "money_revenue_crop_terminal_settlement_proof.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -103,6 +108,11 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
     [JsonPropertyName("shop_id")]
     public string ShopId { get; set; } = string.Empty;
 
+    [JsonPropertyName("shipping_deposits")]
+    public MoneyRevenueCropShippingDepositEvidence[] ShippingDeposits
+        { get; set; } =
+            Array.Empty<MoneyRevenueCropShippingDepositEvidence>();
+
     [JsonPropertyName("slot_index")]
     public int SlotIndex { get; set; }
 
@@ -137,10 +147,31 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
     public string ProofPolicy { get; set; } =
         "This proof closes one output-retention-terminal request only after " +
         "independently rebuilding its crop plan and retained-output support, " +
-        "replaying an optional resource-neutral route, verifying one exact " +
-        "native ShopMenu sale of the conservative wave quantity, and rebuilding " +
-        "the single-transition Revenue recurrence. Retained output alone is a " +
-        "supporting fragment and cannot close the request. Native shipping " +
-        "settlement, aggregate settlement capacity, production collection and " +
-        "formal product training remain separate gates.";
+        "then verifying exactly one native settlement mode: either a resource-" +
+        "neutral route plus an exact ShopMenu sale, or one exact native shipping " +
+        "deposit per conservative unit followed by one native overnight " +
+        "settlement. The single-transition Revenue recurrence must rebuild the " +
+        "same terminal outcome. Retained output alone is supporting evidence and " +
+        "cannot close the request. Aggregate settlement capacity, production " +
+        "collection and formal product training remain separate gates.";
 }
+
+public sealed record MoneyRevenueCropShippingDepositEvidence(
+    [property: JsonPropertyName("transition_index")] int TransitionIndex,
+    [property: JsonPropertyName("transition_id")] string TransitionId,
+    [property: JsonPropertyName("queue_sha256")] string QueueSha256,
+    [property: JsonPropertyName("before_snapshot_sha256")]
+        string BeforeSnapshotSha256,
+    [property: JsonPropertyName("execution_receipt_sha256")]
+        string ExecutionReceiptSha256,
+    [property: JsonPropertyName("after_snapshot_sha256")]
+        string AfterSnapshotSha256,
+    [property: JsonPropertyName("source_state_hash")] string SourceStateHash,
+    [property: JsonPropertyName("after_state_hash")] string AfterStateHash,
+    [property: JsonPropertyName("queue_item_id")] string QueueItemId,
+    [property: JsonPropertyName("slot_index")] int SlotIndex,
+    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("unit_price")] int UnitPrice,
+    [property: JsonPropertyName("pending_value_before")] long PendingValueBefore,
+    [property: JsonPropertyName("pending_value_after")] long PendingValueAfter,
+    [property: JsonPropertyName("option_ids")] string[] OptionIds);

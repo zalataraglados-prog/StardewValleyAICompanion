@@ -15,13 +15,17 @@ public static class MoneyRevenueCropTerminalSettlementProofBuilder
                 fullRequestPath,
                 "Money Revenue crop terminal-settlement proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_terminal_settlement_proof_request.v1" &&
+                    "money_revenue_crop_terminal_settlement_proof_request.v2" &&
                 request.RouteTransitions is not null &&
+                request.ShippingDepositTransitions is not null &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop terminal-settlement proof request is invalid.");
         var routeTransitions = request.RouteTransitions ??
             throw new InvalidDataException(
                 "Money Revenue crop terminal route transitions are missing.");
+        var shippingDepositTransitions = request.ShippingDepositTransitions ??
+            throw new InvalidDataException(
+                "Money Revenue crop shipping transitions are missing.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -70,89 +74,20 @@ public static class MoneyRevenueCropTerminalSettlementProofBuilder
         Require(terminalStart.StateHash == retention.AfterStateHash,
             "Money Revenue crop terminal start state drifted.");
 
-        var salePath = RequiredFile(
-            request.ShopSaleEpisodePath,
-            "Money Revenue crop ShopMenu sale episode");
-        var sale = NativeShopSaleEpisodeVerifier.Verify(salePath);
-        var route = MoneyRevenueResourceNeutralTerminalRouteVerifier.Verify(
-            terminalStart,
-            routeTransitions,
-            new MoneyRevenueTerminalContinuationIdentity(
-                "economy.sell_items",
-                sale.QualifiedItemId,
-                sale.SlotIndex,
-                sale.Quantity,
-                sale.UnitPrice,
-                sale.ShopId));
-        var saleBefore = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            sale.BeforeSnapshotPath,
-            "Money Revenue crop ShopMenu sale before snapshot");
-        var saleAfter = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            sale.AfterSnapshotPath,
-            "Money Revenue crop ShopMenu sale after snapshot");
-        var saleInventoryBefore = ExactInventoryReceiptVerifier.InventoryCount(
-            saleBefore,
-            sale.QualifiedItemId,
-            minimumQuality: 0);
-        var saleInventoryAfter = ExactInventoryReceiptVerifier.InventoryCount(
-            saleAfter,
-            sale.QualifiedItemId,
-            minimumQuality: 0);
-        Require(route.TerminalActionBefore.StateHash ==
-                    sale.Progression.Before.StateHash &&
-                sale.QualifiedItemId == retention.HarvestItemQualifiedId &&
-                sale.Quantity == retention.MinimumUnits &&
-                retention.InventoryQuantityIncrease >= sale.Quantity &&
-                saleInventoryBefore.HasValue &&
-                saleInventoryAfter.HasValue &&
-                checked(saleInventoryBefore.Value -
-                    saleInventoryAfter.Value) == sale.Quantity &&
-                checked(sale.Quantity * sale.UnitPrice) ==
-                    sale.Progression.MoneyDelta &&
-                sale.Progression.MoneyDelta >=
-                    retention.MinimumGrossRevenue,
-            "Money Revenue crop ShopMenu sale does not settle the retained wave exactly.");
-
-        var recurrenceManifestPath = RequiredFile(
-            request.RevenueRecurrenceManifestPath,
-            "Money Revenue crop recurrence manifest");
-        var recurrenceReceiptPath = RequiredFile(
-            request.RevenueRecurrenceReceiptPath,
-            "Money Revenue crop recurrence receipt");
-        var manifest = CurrentTeacherFrontierSupport.Read<
-            MoneyRevenueRecurrenceProofManifest>(
-                recurrenceManifestPath,
-                "Money Revenue crop recurrence manifest");
-        var rebuiltRecurrence = MoneyRevenueRecurrenceProofBuilder.Build(
-            recurrenceManifestPath);
-        var recurrence = CurrentTeacherFrontierSupport.Read<
-            MoneyRevenueRecurrenceProofReceipt>(
-                recurrenceReceiptPath,
-                "Money Revenue crop recurrence receipt");
-        Require(manifest.Transitions is not null &&
-                manifest.Transitions.Length == 1 &&
-                manifest.Transitions[0].ProofKind ==
-                    MoneyRevenueRecurrenceProofKinds.NativeShopSale &&
-                SamePath(
-                    manifest.Transitions[0].ShopSaleEpisodePath,
-                    sale.ExecutionEpisodePath) &&
-                BootstrapArtifactGuard.EqualJson(
-                    recurrence,
-                    rebuiltRecurrence) &&
-                recurrence.ProofVerified &&
-                recurrence.Prefix is not null &&
-                recurrence.Transitions.Length == 1 &&
-                BootstrapArtifactGuard.EqualJson(
-                    recurrence.Transitions[0].Progression,
-                    sale.Progression) &&
-                recurrence.Prefix.InitialStateHash ==
-                    sale.Progression.Before.StateHash &&
-                recurrence.Prefix.FinalStateHash ==
-                    sale.Progression.After.StateHash &&
-                recurrence.Prefix.TotalRevenue ==
-                    sale.Progression.MoneyDelta &&
-                !recurrence.FormalProductTrainingAuthorized,
-            "Money Revenue crop ShopMenu sale recurrence is not exact.");
+        var hasShopSale = !string.IsNullOrWhiteSpace(
+            request.ShopSaleEpisodePath);
+        var hasShippingDeposits = shippingDepositTransitions.Length > 0;
+        Require(hasShopSale != hasShippingDeposits,
+            "Money Revenue crop settlement must select exactly one native terminal mode.");
+        var settlement = hasShopSale
+            ? MoneyRevenueCropTerminalSettlementModeVerifier.VerifyShop(
+                request,
+                terminalStart,
+                retention)
+            : MoneyRevenueCropTerminalSettlementModeVerifier.VerifyShipping(
+                request,
+                terminalStart,
+                retention);
 
         return new MoneyRevenueCropTerminalSettlementProof
         {
@@ -169,23 +104,29 @@ public static class MoneyRevenueCropTerminalSettlementProofBuilder
             HarvestItemQualifiedId = retention.HarvestItemQualifiedId,
             MinimumUnits = retention.MinimumUnits,
             MinimumGrossRevenue = retention.MinimumGrossRevenue,
-            TerminalKind = MoneyRevenueRecurrenceProofKinds.NativeShopSale,
+            TerminalKind = settlement.TerminalKind,
             TerminalStartStateHash = terminalStart.StateHash,
             TerminalActionBeforeStateHash =
-                route.TerminalActionBefore.StateHash,
-            TerminalActionAfterStateHash = sale.Progression.After.StateHash,
-            RouteTransitions = route.Evidence,
-            ShopSaleEpisodePath = sale.ExecutionEpisodePath,
-            ShopSaleEpisodeSha256 = sale.ExecutionEpisodeSha256,
-            ShopId = sale.ShopId,
-            SlotIndex = sale.SlotIndex,
-            SettledQuantity = sale.Quantity,
-            UnitPrice = sale.UnitPrice,
-            SettledRevenue = sale.Progression.MoneyDelta,
-            RevenueRecurrenceManifestPath = recurrenceManifestPath,
-            RevenueRecurrenceManifestSha256 = Hash(recurrenceManifestPath),
-            RevenueRecurrenceReceiptPath = recurrenceReceiptPath,
-            RevenueRecurrenceReceiptSha256 = Hash(recurrenceReceiptPath),
+                settlement.TerminalActionBeforeStateHash,
+            TerminalActionAfterStateHash =
+                settlement.TerminalActionAfterStateHash,
+            RouteTransitions = settlement.RouteTransitions,
+            ShopSaleEpisodePath = settlement.ShopSaleEpisodePath,
+            ShopSaleEpisodeSha256 = settlement.ShopSaleEpisodeSha256,
+            ShopId = settlement.ShopId,
+            ShippingDeposits = settlement.ShippingDeposits,
+            SlotIndex = settlement.SlotIndex,
+            SettledQuantity = settlement.SettledQuantity,
+            UnitPrice = settlement.UnitPrice,
+            SettledRevenue = settlement.SettledRevenue,
+            RevenueRecurrenceManifestPath =
+                settlement.RevenueRecurrenceManifestPath,
+            RevenueRecurrenceManifestSha256 =
+                settlement.RevenueRecurrenceManifestSha256,
+            RevenueRecurrenceReceiptPath =
+                settlement.RevenueRecurrenceReceiptPath,
+            RevenueRecurrenceReceiptSha256 =
+                settlement.RevenueRecurrenceReceiptSha256,
             NativeTerminalSettlementVerified = true,
             FormalProductTrainingAuthorized = false
         };
