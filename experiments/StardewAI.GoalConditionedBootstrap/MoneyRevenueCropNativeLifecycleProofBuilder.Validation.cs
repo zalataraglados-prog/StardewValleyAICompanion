@@ -73,7 +73,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             while (cursor < transitions.Length &&
                 transitions[cursor].Request.TotalDay == day &&
                 transitions[cursor].Request.TransitionKind ==
-                    SupportingRouteKind)
+                    CropIngressRouteKind)
             {
                 supportingRoutes.Add(transitions[cursor++]);
             }
@@ -88,10 +88,6 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 day,
                 supportingRoutes,
                 contexts[0].Layout.LocationId);
-            Require(ReadPlayerLocation(dayStart) ==
-                    contexts[0].Layout.LocationId,
-                "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
-                day + ".");
             Require(contexts.Where(value =>
                         value.Commitment.PlantingTotalDay == day)
                     .All(value => value.Layout.PlantingStateHash ==
@@ -105,6 +101,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             {
                 dayActions.Add(transitions[cursor++]);
             }
+            Require(dayActions.Count == 0 ||
+                    ReadPlayerLocation(dayStart) ==
+                        contexts[0].Layout.LocationId,
+                "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
+                day + ".");
+            Require(dayActions.Count > 0 || supportingRoutes.Count == 0,
+                "Money Revenue crop lifecycle routed to crops without a crop action on day " +
+                day + ".");
             ValidateDayActions(
                 day,
                 dayActions,
@@ -113,11 +117,31 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
             if (day < lastDay)
             {
+                var sleepRoutes = new List<LoadedTransition>();
+                while (cursor < transitions.Length &&
+                    transitions[cursor].Request.TotalDay == day &&
+                    transitions[cursor].Request.TransitionKind ==
+                        SleepIngressRouteKind)
+                {
+                    sleepRoutes.Add(transitions[cursor++]);
+                }
+                Require(cursor < transitions.Length &&
+                        transitions[cursor].Request.TotalDay == day,
+                    "Money Revenue crop lifecycle sleep route has no same-day rollover on day " +
+                    day + ".");
+                var homeLocation = sleepRoutes.Count > 0
+                    ? ReadHomeLocation(sleepRoutes[0].Before)
+                    : ReadHomeLocation(transitions[cursor].Before);
+                ValidateSupportingRoutes(day, sleepRoutes, homeLocation);
                 Require(cursor < transitions.Length &&
                         transitions[cursor].Request.TotalDay == day &&
                         transitions[cursor].Request.TransitionKind ==
                             DayRolloverKind,
                     "Money Revenue crop lifecycle is missing the native day rollover on day " +
+                    day + ".");
+                Require(ReadPlayerLocation(transitions[cursor].Before) ==
+                        homeLocation,
+                    "Money Revenue crop lifecycle native sleep did not start at home on day " +
                     day + ".");
                 ValidateDayRollover(
                     transitions[cursor++],

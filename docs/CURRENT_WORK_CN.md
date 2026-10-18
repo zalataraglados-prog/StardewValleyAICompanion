@@ -12,9 +12,9 @@
 
 ## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
-- `money_revenue_crop_native_lifecycle_proof.v3` 不再为每个承诺接受一条互相独立的世界时间线。每份逐承诺 proof 都必须从 aggregate daily-capacity proof 加载整份计划的全部布局，并重放同一条连续 world-state/tick 链；每个原生睡眠只出现一次，同时验证全部仍活跃作物的反编译 `Crop.newDay` 转换。v3 进一步承认睡醒位于 `FarmHouse` 的真实原生状态：当天作物动作前可以出现显式 `supporting_route` 队列，但只能复用既有移动/连接器/有界等待 primitive，必须由统一执行回执验真、保持同一日期、保持库存/货币/持久世界状态不变并最终到达共享 `Farm` 地块；缺路线、隐藏传送或夹带资源动作均失败关闭。
+- `money_revenue_crop_native_lifecycle_proof.v3` 不再为每个承诺接受一条互相独立的世界时间线。每份逐承诺 proof 都必须从 aggregate daily-capacity proof 加载整份计划的全部布局，并重放同一条连续 world-state/tick 链；每个原生睡眠只出现一次，同时验证全部仍活跃作物的反编译 `Crop.newDay` 转换。v3 进一步承认睡醒位于 `FarmHouse`、睡前又必须回家的真实原生状态：`supporting_route_to_crop` 和 `supporting_route_to_sleep` 分别位于当天作物动作前后，只能复用既有移动/连接器/有界等待 primitive，必须由统一执行回执验真、保持同一日期、保持库存/货币/持久世界状态不变并最终到达声明的 `Farm` 或 home 地点；缺路线、隐藏传送或夹带资源动作均失败关闭。雨天等没有实际作物动作的日期不得生成无效 crop-ingress 路线。
 - 作物动作队列仍复用现有播种、浇水和收获执行器，但每个同类队列必须完整归属于一个不重叠承诺布局。transition proof 记录 `action_commitment_id`；output-retention 只选择本承诺的连续收获批次，因此同日多承诺不会互相吞并库存增量或动作分母。
-- fragment index 已升级为 v13、checkpoint 已升级为 v12。hermetic 双承诺正例不再建立两份独立生命周期后合成终点库存，而是在一条共享轨迹中顺序完成 `2+3` 格的全部动作、逐承诺留存、5 次原生投箱与一次共享睡眠结算，并在每次睡醒后用显式资源中性路线回到农场。正式 fragment 仍未采集，Money 保持 `0/18`。
+- fragment index 已升级为 v13、checkpoint 已升级为 v12。hermetic 双承诺正例不再建立两份独立生命周期后合成终点库存，而是在一条共享轨迹中顺序完成 `2+3` 格的全部动作、逐承诺留存、5 次原生投箱与一次共享睡眠结算，并在每天动作前后用两类显式资源中性路线连接 `FarmHouse` 与 `Farm`。正式 fragment 仍未采集，Money 保持 `0/18`。
 - 下一固定切片仍是 real Money native production collection runner：用一个可恢复逐日循环采集 fresh snapshot，选择当前日队列并复用既有编译/执行/回执链，按达成的计划义务输出 v2 lifecycle 与后续 retention/settlement fragment；不得另建作物规划器或动作执行器。
 
 ## 已收口 · 2026-10-18 Money 同日多波共享原生结算证明

@@ -151,7 +151,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             CropActionQueueCount = transitions.Count(value =>
                 value.Request.TransitionKind == CropActionsKind),
             SupportingRouteQueueCount = transitions.Count(value =>
-                value.Request.TransitionKind == SupportingRouteKind),
+                value.Request.TransitionKind is CropIngressRouteKind or
+                    SleepIngressRouteKind),
+            CropIngressRouteQueueCount = transitions.Count(value =>
+                value.Request.TransitionKind == CropIngressRouteKind),
+            SleepIngressRouteQueueCount = transitions.Count(value =>
+                value.Request.TransitionKind == SleepIngressRouteKind),
             NativeDayRolloverCount = transitions.Count(value =>
                 value.Request.TransitionKind == DayRolloverKind),
             VerifiedPlantActionCount = CountOption(
@@ -173,7 +178,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         MoneyRevenueCropNativeLifecycleTransitionRequest request)
     {
         Require(request.TransitionKind is CropActionsKind or
-                    SupportingRouteKind or DayRolloverKind &&
+                    CropIngressRouteKind or SleepIngressRouteKind or
+                    DayRolloverKind &&
                 request.TotalDay >= 0 &&
                 !string.IsNullOrWhiteSpace(request.RunId) &&
                 !string.IsNullOrWhiteSpace(request.ExecutorVersion) &&
@@ -217,7 +223,10 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             value.Queue.Items.Count(item => item.OptionId == optionId));
 
     private const string CropActionsKind = "crop_actions";
-    private const string SupportingRouteKind = "supporting_route";
+    private const string CropIngressRouteKind =
+        "supporting_route_to_crop";
+    private const string SleepIngressRouteKind =
+        "supporting_route_to_sleep";
     private const string DayRolloverKind = "native_day_rollover";
     private const string PlantOption = "executor.plant_seed";
     private const string WaterOption = "executor.water_crop";

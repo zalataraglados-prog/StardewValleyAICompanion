@@ -222,6 +222,12 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
     [JsonPropertyName("supporting_route_queue_count")]
     public int SupportingRouteQueueCount { get; set; }
 
+    [JsonPropertyName("crop_ingress_route_queue_count")]
+    public int CropIngressRouteQueueCount { get; set; }
+
+    [JsonPropertyName("sleep_ingress_route_queue_count")]
+    public int SleepIngressRouteQueueCount { get; set; }
+
     [JsonPropertyName("native_day_rollover_count")]
     public int NativeDayRolloverCount { get; set; }
 
@@ -255,10 +261,11 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
         "and harvest operation. Scheduled watering must " +
         "leave every tile watered; already-watered rain tiles need no redundant " +
         "water action, while explicit water actions may target each tile at most " +
-        "once. Resource-neutral movement and connector queues may precede the " +
-        "day's crop actions, but must retain the same calendar day, preserve " +
-        "inventory, currency and persistent world state, and end at the shared " +
-        "crop location. Consecutive fresh " +
+        "once. Explicit crop-ingress and sleep-ingress route queues may surround " +
+        "the day's crop actions, but must use resource-neutral movement and " +
+        "connector primitives, retain the same calendar day, preserve inventory, " +
+        "currency and persistent world state, and end at the declared crop or " +
+        "home location. Consecutive fresh " +
         "snapshots must form one state-hash chain, while each overnight boundary " +
         "must be a single native sleep queue whose crop phase transition exactly " +
         "matches the decompiled Crop.newDay state machine. This proves lifecycle " +

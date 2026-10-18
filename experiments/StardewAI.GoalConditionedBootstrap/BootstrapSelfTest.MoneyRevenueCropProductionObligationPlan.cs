@@ -847,6 +847,10 @@ internal static partial class BootstrapSelfTest
         }).ToArray();
         state["current_location"] = JsonSerializer.SerializeToElement(new
         {
+            home_context = MoneyCropField(new
+            {
+                home_location_id = "FarmHouse"
+            }),
             planting_context = MoneyCropField(new
             {
                 location_id = "Farm",
