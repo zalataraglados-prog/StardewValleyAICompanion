@@ -4,7 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 整计划共享原生生命周期
+## 当前切片 · 2026-10-18 Money 原生生产 runner 固定编排
+
+- 新增 `money_revenue_crop_native_production_run_plan.v1`。它把精确 Teacher 作物承诺和调用方给出的不重叠 Farm 布局意图一次展开为连续日期、布局采证边界、逐日容量快照边界、固定 `plant -> conditional water -> harvest` 顺序、最多 8 项的同承诺动作批次，以及每个非终端日唯一原生睡眠。
+- 该 plan 不调用模型反复选择机械动作，也不新增播种/浇水/收获/睡眠实现。运行时只能逐批送入现有 action compiler 和执行/回执链；浇水批次必须按当天透明 `needs_watering` 过滤，不能在雨天制造冗余动作。plan 自身不是 proof、Teacher label 或训练授权。
+- hermetic 双承诺正例覆盖完整日期和动作分母、2 项批次上限、动作顺序、条件浇水与睡眠数；布局重叠失败关闭。下一固定切片是运行壳层：隔离源存档，按 plan 逐日采集 fresh snapshot，编译并执行当天批次，落盘全部 queue/receipt/after snapshot，随后物化 layout、daily-capacity、shared lifecycle、retention 与 settlement fragment。
+
+## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
 - `money_revenue_crop_native_lifecycle_proof.v2` 不再为每个承诺接受一条互相独立的世界时间线。每份逐承诺 proof 都必须从 aggregate daily-capacity proof 加载整份计划的全部布局，并重放同一条连续 world-state/tick 链；每个原生睡眠只出现一次，同时验证全部仍活跃作物的反编译 `Crop.newDay` 转换。
 - 作物动作队列仍复用现有播种、浇水和收获执行器，但每个同类队列必须完整归属于一个不重叠承诺布局。transition proof 记录 `action_commitment_id`；output-retention 只选择本承诺的连续收获批次，因此同日多承诺不会互相吞并库存增量或动作分母。

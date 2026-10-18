@@ -1,0 +1,112 @@
+namespace StardewAI.GoalConditionedBootstrap;
+
+internal static partial class BootstrapSelfTest
+{
+    private static void VerifyMoneyCropNativeProductionRunPlan(
+        string root,
+        string planPath,
+        MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var requestPath = Path.Combine(root, "native-run-plan-request.json");
+        var intents = new[]
+        {
+            new MoneyRevenueCropNativeProductionLayoutIntent(
+                plan.Commitments[0].CommitmentId,
+                "Farm",
+                new[]
+                {
+                    new MoneyRevenueCropPlantingTile(5, 6),
+                    new MoneyRevenueCropPlantingTile(6, 6)
+                }),
+            new MoneyRevenueCropNativeProductionLayoutIntent(
+                plan.Commitments[1].CommitmentId,
+                "Farm",
+                new[]
+                {
+                    new MoneyRevenueCropPlantingTile(7, 6),
+                    new MoneyRevenueCropPlantingTile(8, 6),
+                    new MoneyRevenueCropPlantingTile(9, 6)
+                })
+        };
+        Write(requestPath,
+            new MoneyRevenueCropNativeProductionRunPlanRequest
+            {
+                CropProductionPlanPath = planPath,
+                LayoutIntents = intents,
+                MaxQueueItemCount = 2
+            });
+        var runPlan = MoneyRevenueCropNativeProductionRunPlanBuilder.Build(
+            requestPath);
+        var expectedFirstDay = plan.Commitments.Min(value =>
+            value.PlantingTotalDay);
+        var expectedLastDay = plan.Commitments.Max(value =>
+            value.HarvestWaves.Max(wave => wave.HarvestTotalDay));
+        var expectedActionCount = plan.Commitments.Sum(commitment =>
+            commitment.TileCount *
+            (1 + commitment.RequiredWateringTotalDays.Length +
+                commitment.HarvestWaves.Length));
+        Require(runPlan.Status == "native_crop_production_run_ready" &&
+                runPlan.FirstTotalDay == expectedFirstDay &&
+                runPlan.LastTotalDay == expectedLastDay &&
+                runPlan.DayCount == expectedLastDay - expectedFirstDay + 1 &&
+                runPlan.ActionCount == expectedActionCount &&
+                runPlan.Days.Count(day => day.NativeSleepRequired) ==
+                    runPlan.DayCount - 1 &&
+                runPlan.Days.SelectMany(day => day.ActionBatches)
+                    .All(batch => batch.Tiles.Length is >= 1 and <= 2) &&
+                runPlan.Days.SelectMany(day => day.ActionBatches)
+                    .Where(batch => batch.OptionId == "executor.water_crop")
+                    .All(batch => batch.ExecutionCondition ==
+                        "crop_needs_watering") &&
+                runPlan.Days.SelectMany(day => day.ActionBatches)
+                    .Where(batch => batch.OptionId != "executor.water_crop")
+                    .All(batch => batch.ExecutionCondition == "always") &&
+                runPlan.CoveredCommitmentIds.SequenceEqual(
+                    plan.Commitments.Select(value => value.CommitmentId),
+                    StringComparer.Ordinal) &&
+                runPlan.NativeProductionRunReady &&
+                !runPlan.FormalProductTrainingAuthorized,
+            "Money crop native-production run plan lost its exact day/action denominator.");
+        foreach (var day in runPlan.Days)
+        {
+            var ranks = day.ActionBatches.Select(batch =>
+                batch.OptionId switch
+                {
+                    "executor.plant_seed" => 0,
+                    "executor.water_crop" => 1,
+                    "executor.harvest_crop" => 2,
+                    _ => -1
+                }).ToArray();
+            Require(ranks.All(rank => rank >= 0) &&
+                    ranks.SequenceEqual(ranks.OrderBy(rank => rank)) &&
+                    day.CaptureDailyCapacitySnapshot ==
+                        day.ActionBatches.Any(),
+                "Money crop native-production run day lost compiler order or capture boundary.");
+        }
+
+        var overlappingRequestPath = Path.Combine(
+            root,
+            "native-run-plan-overlap-request.json");
+        var overlappingIntents = intents.Select((intent, index) =>
+            index == 1
+                ? intent with
+                {
+                    Tiles = intent.Tiles.Select((tile, tileIndex) =>
+                        tileIndex == 0
+                            ? new MoneyRevenueCropPlantingTile(5, 6)
+                            : tile).ToArray()
+                }
+                : intent).ToArray();
+        Write(overlappingRequestPath,
+            new MoneyRevenueCropNativeProductionRunPlanRequest
+            {
+                CropProductionPlanPath = planPath,
+                LayoutIntents = overlappingIntents,
+                MaxQueueItemCount = 2
+            });
+        RequireRejects(
+            () => MoneyRevenueCropNativeProductionRunPlanBuilder.Build(
+                overlappingRequestPath),
+            "Overlapping Money crop native-production layout intents were admitted.");
+    }
+}
