@@ -4,14 +4,32 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前记录 · 2026-10-16 Money 种子预留 proof
+## 当前准入状态 · 2026-10-18
 
-crop-production checkpoint v2 可重建 planting-layout 与 seed-reservation 两类 fragment。种子预留只在 fresh snapshot 的透明物料槽与提交后 ledger 精确一致、活动 claim 总量覆盖全部地块时成立；计划中的可用数量和部分 claim 均不算证据。购种 shortfall、日容量、生命周期、输出保留与结算仍 pending，Money 保持 `0/18`，正式训练保持 false。
+正式训练准入没有变化：
 
-## 当前记录 · 2026-10-16 Money 作物场地准备
+```text
+CoverageGateReady:       2/19
+Money production cells:  0/18
+Formal product training: false
+```
 
-作物场地准备现通过有界 `farm_layout` 透明快照和既有清障/资源块/BFS/锄地候选形成可执行计划。单次清障只授权清障本身，锄地必须在动作后的 fresh snapshot 上重新绑定；计划不会写地图，也不会把机械动作冒充布局策略。它仍要求播种日的独立 planting-layout proof，不产生 production cell，故 Money 保持 `0/18` 且 `formal_product_training_authorized=false`。下一准入缺口是种子预留/购种 proof，之后仍有日容量、生命周期、输出保留和终端结算。
+Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation 与 seed-reservation proof 的基础设施，但在 production admission 前必须先关闭：
 
+- #307 P1：Windows PowerShell 5.1 raw JSON extraction compatibility；
+- #308 P1：native run exact Mod allowlist provenance；
+- #309 P1：terminal-proof concrete denominator/provenance/boundary；
+- #310 P1：seed-reservation ledger lineage / post-plan freshness；
+- #311 P2：crop planning fail-closed debt。
+
+**准入规则：**上述 P1 未清零时，不得把任何新 Money native run / terminal fragment / crop fragment提升为正式 production cell；#311 中会影响候选完整性、可执行性或 proof identity 的条目也必须在相应 cell admission 前关闭。Full Shipment current-authority `26/26` 已完成，但只证明其 runtime stratum，不改变全局 `2/19`。
+
+## 已实现待准入 · 2026-10-16 Money 种子预留 proof
+
+crop-production checkpoint v2 已能重建 planting-layout 与 seed-reservation fragment，并逐槽核对 transparent inventory 与活动 claim。**但 #310 P1 尚未证明 reservation ledger 的 plan-ledger lineage，也未建立完整 post-plan freshness 下界**，因此该 fragment 不能视为已通过正式 evidence admission。购种 shortfall、日容量、生命周期、输出保留与结算仍 pending；Money 保持 `0/18`，正式训练保持 false。
+## 已实现待准入 · 2026-10-16 Money 作物场地准备
+
+作物场地准备已通过有界 `farm_layout` 透明快照和既有清障/资源块/BFS/锄地候选形成执行计划；清障后必须 fresh snapshot 重绑。**#311 P2 尚未关闭 bounds overflow、BFS reachability、stamina gate 等 fail-closed 缺口**。因此它仍是待准入基础设施，不产生 production cell；Money 保持 `0/18` 且 `formal_product_training_authorized=false`。
 ## 历史记录 · 2026-10-16 Money 作物布局 proof checkpoint
 
 Money 未来作物证据分母新增逐承诺 planting-layout 请求，并用 planting-day fresh snapshot 验证精确 Farm 地块、原生种植许可和基础生长时长。`money_revenue_crop_production_proof_checkpoint.v1` 只统计能够从自身 request 重新构建且仍在原计划分母内的 proof；当前 schema 仅支持布局片段，所以即使布局已验证，种子、容量、生命周期、输出保留与终端结算仍全部独立 pending。该 checkpoint 不产生生产格，不授权 fresh-save 百万日程或正式训练，Money 保持 `0/18`。
