@@ -1,7 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
 
@@ -193,7 +195,8 @@ internal static partial class BootstrapSelfTest
             root,
             planPath,
             plan,
-            snapshot);
+            snapshot,
+            continuationReceipt.FinalLedger!);
         VerifyMoneyCropSeedReservationProof(root, snapshot);
         VerifyMoneyCropNativeLifecycleProof();
 
@@ -325,154 +328,6 @@ internal static partial class BootstrapSelfTest
                     StringComparer.Ordinal) &&
                 !rejectedReceipt.FormalProductTrainingAuthorized,
             "A rejected Money crop-production mutation was not preserved for audit.");
-    }
-
-    private static void VerifyMoneyCropSeedAcquisitionProof(
-        string root,
-        string planPath,
-        MoneyRevenueCropProductionObligationPlan plan,
-        SnapshotEnvelope before)
-    {
-        var commitment = plan.Commitments.Single();
-        var after = CloneSnapshot(before);
-        var farm = JsonNode.Parse(
-            after.State["farm"].GetRawText())!.AsObject();
-        farm["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]![
-            "slots"]![0]!["stack"] = 100;
-        after.State["farm"] = JsonSerializer.SerializeToElement(
-            farm,
-            JsonDefaults.Options);
-        after.GameTick = before.GameTick + 1;
-        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
-
-        var transition = new AcquisitionTerminalTransitionEvidence
-        {
-            TransitionKind = "exact_player_inventory_quantity_increase",
-            QualifiedItemId = commitment.SeedQualifiedItemId,
-            RequiredAmount = commitment.SeedQuantityShortfall,
-            MinimumQuality = 0,
-            BeforeQuantity = 40,
-            AfterQuantity = 100,
-            QuantityIncrease = commitment.SeedQuantityShortfall,
-            Resolved = true,
-            Verified = true
-        };
-        var freshReceipt = new AcquisitionRouteFreshTerminalReceiptAdmission
-        {
-            Status = "verified_fresh_terminal_receipt",
-            GoalId = "earn_money",
-            RouteOccurrenceId = "route.money.seed-acquisition.fixture",
-            AfterSnapshotSha256 = new string('a', 64),
-            TerminalTransition = transition,
-            QueueExecutionVerified = true,
-            FreshTerminalReceiptVerified = true,
-            RouteTrainingEvidenceEligible = true
-        };
-        var rolloutReceipt = new AcquisitionRoutePortfolioRolloutProofReceipt
-        {
-            Status = "verified_complete_rollout_proof_chain",
-            GoalId = "earn_money",
-            LatestStateHash = after.StateHash,
-            TransitionCount = 1,
-            PortfolioCompletionVerified = true,
-            ProofChainVerified = true
-        };
-        var proof = MoneyRevenueCropSeedAcquisitionProofBuilder.BuildProof(
-            "seed-acquisition-request.json",
-            new string('1', 64),
-            planPath,
-            CurrentTeacherFrontierSupport.HashFile(planPath),
-            plan,
-            commitment,
-            plan.SnapshotPath,
-            new string('2', 64),
-            "seed-acquisition-rollout-receipt.json",
-            new string('3', 64),
-            plan.SnapshotPath,
-            plan.SnapshotSha256,
-            before,
-            Path.Combine(root, "seed-acquisition-after.json"),
-            freshReceipt.AfterSnapshotSha256,
-            after,
-            "seed-acquisition-fresh-terminal-receipt.json",
-            new string('4', 64),
-            freshReceipt,
-            rolloutReceipt);
-        Require(proof.Status ==
-                    "verified_exact_seed_shortfall_acquisition" &&
-                proof.EvidenceRequestId ==
-                    "seed-acquisition:money.year2.spring.strawberry:60" &&
-                proof.RequiredShortfallQuantity == 60 &&
-                proof.VerifiedQuantityIncrease == 60 &&
-                proof.SeedAcquisitionVerified &&
-                !proof.FormalProductTrainingAuthorized,
-            "Money crop seed-acquisition proof lost the exact shortfall.");
-
-        transition.QuantityIncrease = 59;
-        var partialRejected = false;
-        try
-        {
-            _ = MoneyRevenueCropSeedAcquisitionProofBuilder.BuildProof(
-                "seed-acquisition-request.json",
-                new string('1', 64),
-                planPath,
-                CurrentTeacherFrontierSupport.HashFile(planPath),
-                plan,
-                commitment,
-                plan.SnapshotPath,
-                new string('2', 64),
-                "seed-acquisition-rollout-receipt.json",
-                new string('3', 64),
-                plan.SnapshotPath,
-                plan.SnapshotSha256,
-                before,
-                Path.Combine(root, "seed-acquisition-after.json"),
-                freshReceipt.AfterSnapshotSha256,
-                after,
-                "seed-acquisition-fresh-terminal-receipt.json",
-                new string('4', 64),
-                freshReceipt,
-                rolloutReceipt);
-        }
-        catch (InvalidDataException)
-        {
-            partialRejected = true;
-        }
-        Require(partialRejected,
-            "A partial Money crop seed acquisition was admitted.");
-
-        transition.QuantityIncrease = commitment.SeedQuantityShortfall;
-        var wrongBoundaryRejected = false;
-        try
-        {
-            _ = MoneyRevenueCropSeedAcquisitionProofBuilder.BuildProof(
-                "seed-acquisition-request.json",
-                new string('1', 64),
-                planPath,
-                CurrentTeacherFrontierSupport.HashFile(planPath),
-                plan,
-                commitment,
-                "wrong-source-snapshot.json",
-                new string('2', 64),
-                "seed-acquisition-rollout-receipt.json",
-                new string('3', 64),
-                "wrong-source-snapshot.json",
-                plan.SnapshotSha256,
-                before,
-                Path.Combine(root, "seed-acquisition-after.json"),
-                freshReceipt.AfterSnapshotSha256,
-                after,
-                "seed-acquisition-fresh-terminal-receipt.json",
-                new string('4', 64),
-                freshReceipt,
-                rolloutReceipt);
-        }
-        catch (InvalidDataException)
-        {
-            wrongBoundaryRejected = true;
-        }
-        Require(wrongBoundaryRejected,
-            "A Money crop seed acquisition from the wrong plan boundary was admitted.");
     }
 
     private static void VerifyMoneyCropSeedReservationProof(
@@ -1165,6 +1020,25 @@ internal static partial class BootstrapSelfTest
                 "season": {"value":"winter","status":"available"},
                 "day": {"value":20,"status":"available"}
               },
+              "player": {
+                "inventory": {"value":[{
+                  "slot_index":0,
+                  "item_id":"745",
+                  "qualified_item_id":"(O)745",
+                  "stack":40,
+                  "quality":0,
+                  "is_empty":false
+                }],"status":"available"},
+                "money": {"value":10000,"status":"available"},
+                "club_coins": {"value":0,"status":"available"},
+                "shop_currency_balances": {"value":[{
+                  "currency_id":0,
+                  "currency_key":"money",
+                  "balance":10000
+                }],"status":"available"},
+                "total_money_earned": {"value":10000,"status":"available"},
+                "location_id": {"value":"Farm","status":"available"}
+              },
               "farm": {
                 "crop_catalog": {"value":[{
                   "seed_id":"745",
@@ -1179,6 +1053,7 @@ internal static partial class BootstrapSelfTest
                   "is_raised":false,
                   "needs_watering":true
                 }],"status":"available"},
+                "shipping_bins": {"value":[],"status":"available"},
                 "material_inventory_graph": {"value":{
                   "schema_version":"material_inventory_graph.v1",
                   "status":"available",
@@ -1206,7 +1081,8 @@ internal static partial class BootstrapSelfTest
                   "deduplicated_access_point_count":0,
                   "default_shared_resource_policy":"deny_without_explicit_authorization"
                 },"status":"available"}
-              }
+              },
+              "world_progress": {}
             }
             """,
             JsonDefaults.Options)!;

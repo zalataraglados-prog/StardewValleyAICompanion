@@ -1,11 +1,33 @@
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
-using StardewAI.Core.Infrastructure;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyRevenueCropSeedAcquisitionProofBuilder
+public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
 {
+    private static readonly AsyncLocal<HashSet<string>?> BuildStack = new();
+
     public static MoneyRevenueCropSeedAcquisitionProof Build(
+        string requestPath)
+    {
+        var identity = Path.GetFullPath(requestPath);
+        var stack = BuildStack.Value ??= new HashSet<string>(PathComparer);
+        Require(stack.Add(identity),
+            "Money Revenue crop seed-acquisition proof lineage is cyclic.");
+        try
+        {
+            return BuildCore(identity);
+        }
+        finally
+        {
+            stack.Remove(identity);
+            if (stack.Count == 0)
+                BuildStack.Value = null;
+        }
+    }
+
+    private static MoneyRevenueCropSeedAcquisitionProof BuildCore(
         string requestPath)
     {
         var requestFile = RequiredFile(
@@ -16,7 +38,7 @@ public static class MoneyRevenueCropSeedAcquisitionProofBuilder
                 requestFile,
                 "Money Revenue crop seed-acquisition proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_seed_acquisition_proof_request.v1" &&
+                    "money_revenue_crop_seed_acquisition_proof_request.v2" &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop seed-acquisition proof request is invalid.");
@@ -50,192 +72,168 @@ public static class MoneyRevenueCropSeedAcquisitionProofBuilder
                     StringComparer.Ordinal),
             "Money Revenue crop seed acquisition is outside the plan denominator.");
 
+        var planSha256 = CurrentTeacherFrontierSupport.HashFile(planFile);
+        var acquisitionCommitments = plan.Commitments.Where(value =>
+                value.SeedQuantityShortfall > 0)
+            .ToArray();
+        var acquisitionIndex = Array.FindIndex(
+            acquisitionCommitments,
+            value => value.CommitmentId == exactCommitment.CommitmentId);
+        Require(acquisitionIndex >= 0,
+            "Money Revenue crop seed acquisition is outside the shortfall order.");
+
+        MoneyRevenueCropSeedAcquisitionProof? priorProof = null;
+        SnapshotEnvelope? priorBoundary = null;
+        if (acquisitionIndex == 0)
+        {
+            Require(string.IsNullOrWhiteSpace(
+                    request.PriorSeedAcquisitionProofPath),
+                "The first Money Revenue crop seed acquisition has an unexpected prior proof.");
+        }
+        else
+        {
+            var priorPath = RequiredFile(
+                request.PriorSeedAcquisitionProofPath,
+                "Prior Money Revenue crop seed-acquisition proof");
+            priorProof = CurrentTeacherFrontierSupport.Read<
+                MoneyRevenueCropSeedAcquisitionProof>(
+                    priorPath,
+                    "Prior Money Revenue crop seed-acquisition proof");
+            var rebuiltPrior = Build(priorProof.RequestPath);
+            Require(priorProof.SchemaVersion ==
+                        "money_revenue_crop_seed_acquisition_proof.v2" &&
+                    BootstrapArtifactGuard.EqualJson(
+                        priorProof,
+                        rebuiltPrior) &&
+                    SamePath(priorProof.CropProductionPlanPath, planFile) &&
+                    priorProof.CropProductionPlanSha256 == planSha256 &&
+                    priorProof.CommitmentId ==
+                        acquisitionCommitments[acquisitionIndex - 1]
+                            .CommitmentId &&
+                    priorProof.SeedAcquisitionVerified &&
+                    !priorProof.FormalProductTrainingAuthorized,
+                "Prior Money Revenue crop seed-acquisition proof is not the exact preceding shortfall.");
+            priorBoundary = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+                RequiredFile(
+                    priorProof.AfterSnapshotPath,
+                    "Prior Money Revenue crop seed-acquisition terminal snapshot"),
+                "Prior Money Revenue crop seed-acquisition terminal snapshot");
+            ValidateSnapshot(priorBoundary, "prior terminal");
+            Require(priorBoundary.StateHash == priorProof.AfterStateHash,
+                "Prior Money Revenue crop seed-acquisition terminal boundary drifted.");
+        }
+
         var manifestFile = RequiredFile(
-            request.AcquisitionRolloutProofManifestPath,
-            "Money Revenue seed acquisition rollout proof manifest");
-        var receiptFile = RequiredFile(
-            request.AcquisitionRolloutProofReceiptPath,
-            "Money Revenue seed acquisition rollout proof receipt");
+            request.ExecutionManifestPath,
+            "Money Revenue crop seed-acquisition execution manifest");
         var manifest = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioRolloutProofManifest>(
+            MoneyRevenueCropSeedAcquisitionExecutionManifest>(
                 manifestFile,
-                "Money Revenue seed acquisition rollout proof manifest");
-        var persistedReceipt = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRoutePortfolioRolloutProofReceipt>(
-                receiptFile,
-                "Money Revenue seed acquisition rollout proof receipt");
-        var rebuiltReceipt = AcquisitionRoutePortfolioRolloutProofBuilder
-            .BuildReceipt(manifestFile);
-        Require(BootstrapArtifactGuard.EqualJson(
-                    persistedReceipt,
-                    rebuiltReceipt) &&
-                persistedReceipt.GoalId == "earn_money" &&
-                persistedReceipt.ProofChainVerified &&
-                persistedReceipt.PortfolioCompletionVerified &&
-                persistedReceipt.TransitionCount == 1 &&
-                persistedReceipt.ContinuationTransitionCount == 0 &&
-                persistedReceipt.ManifestSha256 ==
-                    CurrentTeacherFrontierSupport.HashFile(manifestFile) &&
-                !persistedReceipt.FormalTrainingAuthorized &&
-                manifest.ContinuationTransitions?.Length == 0 &&
-                !manifest.FormalTrainingAuthorized,
-            "Money Revenue seed acquisition rollout proof is not one exact complete transition.");
+                "Money Revenue crop seed-acquisition execution manifest");
+        Require(manifest.SchemaVersion ==
+                    "money_revenue_crop_seed_acquisition_execution_manifest.v1" &&
+                SamePath(manifest.CropProductionPlanPath, planFile) &&
+                manifest.CropProductionPlanSha256 == planSha256 &&
+                manifest.CommitmentId == exactCommitment.CommitmentId &&
+                !string.IsNullOrWhiteSpace(manifest.SourceStateHash) &&
+                !string.IsNullOrWhiteSpace(manifest.RunId) &&
+                manifest.Transitions is { Length: > 0 } &&
+                !manifest.FormalProductTrainingAuthorized,
+            "Money Revenue crop seed-acquisition execution manifest is invalid.");
 
-        var initial = manifest.InitialCheckpointProof ??
-            throw new InvalidDataException(
-                "Money Revenue seed acquisition rollout has no initial transition.");
-        var freshReceiptFile = RequiredFile(
-            initial.FreshTerminalReceiptPath,
-            "Money Revenue seed acquisition fresh terminal receipt");
-        var freshReceipt = CurrentTeacherFrontierSupport.Read<
-            AcquisitionRouteFreshTerminalReceiptAdmission>(
-                freshReceiptFile,
-                "Money Revenue seed acquisition fresh terminal receipt");
-        var beforeFile = RequiredFile(
-            initial.ExecutionInputs.BeforeSnapshotPath,
-            "Money Revenue seed acquisition before snapshot");
-        var afterFile = RequiredFile(
-            initial.AfterSnapshotPath,
-            "Money Revenue seed acquisition after snapshot");
-        var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            beforeFile,
-            "Money Revenue seed acquisition before snapshot");
-        var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            afterFile,
-            "Money Revenue seed acquisition after snapshot");
-
-        return BuildProof(
-            requestFile,
-            CurrentTeacherFrontierSupport.HashFile(requestFile),
-            planFile,
-            CurrentTeacherFrontierSupport.HashFile(planFile),
+        var transitions = manifest.Transitions.Select(LoadTransition).ToArray();
+        var verification = VerifyExecutionChain(
             plan,
             exactCommitment,
-            manifestFile,
-            CurrentTeacherFrontierSupport.HashFile(manifestFile),
-            receiptFile,
-            CurrentTeacherFrontierSupport.HashFile(receiptFile),
-            beforeFile,
-            CurrentTeacherFrontierSupport.HashFile(beforeFile),
-            before,
-            afterFile,
-            CurrentTeacherFrontierSupport.HashFile(afterFile),
-            after,
-            freshReceiptFile,
-            CurrentTeacherFrontierSupport.HashFile(freshReceiptFile),
-            freshReceipt,
-            persistedReceipt);
-    }
-
-    internal static MoneyRevenueCropSeedAcquisitionProof BuildProof(
-        string requestPath,
-        string requestSha256,
-        string planPath,
-        string planSha256,
-        MoneyRevenueCropProductionObligationPlan plan,
-        MoneyRevenueCropProductionCommitmentPlan commitment,
-        string rolloutManifestPath,
-        string rolloutManifestSha256,
-        string rolloutReceiptPath,
-        string rolloutReceiptSha256,
-        string beforeSnapshotPath,
-        string beforeSnapshotSha256,
-        SnapshotEnvelope before,
-        string afterSnapshotPath,
-        string afterSnapshotSha256,
-        SnapshotEnvelope after,
-        string freshTerminalReceiptPath,
-        string freshTerminalReceiptSha256,
-        AcquisitionRouteFreshTerminalReceiptAdmission freshReceipt,
-        AcquisitionRoutePortfolioRolloutProofReceipt rolloutReceipt)
-    {
-        ValidateSnapshot(before, "before");
-        ValidateSnapshot(after, "after");
-        var transition = freshReceipt.TerminalTransition ??
-            throw new InvalidDataException(
-                "Money Revenue crop seed acquisition has no terminal transition.");
-        var beforeQuantity = transition.BeforeQuantity ??
-            throw new InvalidDataException(
-                "Money Revenue crop seed acquisition has no before quantity.");
-        var afterQuantity = transition.AfterQuantity ??
-            throw new InvalidDataException(
-                "Money Revenue crop seed acquisition has no after quantity.");
-        var quantityIncrease = transition.QuantityIncrease ??
-            throw new InvalidDataException(
-                "Money Revenue crop seed acquisition has no quantity increase.");
-        var beforeTotalDay = ReadInt(before, "time", "total_days");
-        var afterTotalDay = ReadInt(after, "time", "total_days");
-        Require(SamePath(beforeSnapshotPath, plan.SnapshotPath) &&
-                beforeSnapshotSha256 == plan.SnapshotSha256 &&
-                before.StateHash == plan.SourceStateHash &&
-                before.SaveId.Status == FieldStatus.Available &&
-                before.PlayerId.Status == FieldStatus.Available &&
-                after.SaveId.Status == FieldStatus.Available &&
-                after.PlayerId.Status == FieldStatus.Available &&
-                before.SaveId.Value == after.SaveId.Value &&
-                before.PlayerId.Value == after.PlayerId.Value &&
-                afterTotalDay >= beforeTotalDay &&
-                afterTotalDay <= commitment.SeedSupplyDeadlineTotalDay &&
-                (afterTotalDay != beforeTotalDay ||
-                    after.GameTick >= before.GameTick) &&
-                freshReceipt.Status == "verified_fresh_terminal_receipt" &&
-                freshReceipt.GoalId == "earn_money" &&
-                freshReceipt.QueueExecutionVerified &&
-                freshReceipt.FreshTerminalReceiptVerified &&
-                freshReceipt.RouteTrainingEvidenceEligible &&
-                freshReceipt.BlockingReasons.Length == 0 &&
-                !freshReceipt.FormalTrainingAuthorized &&
-                freshReceipt.AfterSnapshotSha256 == afterSnapshotSha256 &&
-                transition.Resolved &&
-                transition.Verified &&
-                transition.QualifiedItemId ==
-                    commitment.SeedQualifiedItemId &&
-                transition.RequiredAmount ==
-                    commitment.SeedQuantityShortfall &&
-                quantityIncrease ==
-                    commitment.SeedQuantityShortfall &&
-                (long)afterQuantity - beforeQuantity ==
-                    commitment.SeedQuantityShortfall &&
-                rolloutReceipt.GoalId == "earn_money" &&
-                rolloutReceipt.TransitionCount == 1 &&
-                rolloutReceipt.ContinuationTransitionCount == 0 &&
-                rolloutReceipt.LatestStateHash == after.StateHash &&
-                rolloutReceipt.ProofChainVerified &&
-                rolloutReceipt.PortfolioCompletionVerified &&
-                !rolloutReceipt.FormalTrainingAuthorized,
-            "Money Revenue crop seed acquisition does not prove the exact shortfall before its deadline.");
-
+            manifest,
+            transitions,
+            priorBoundary);
+        var first = transitions[0];
+        var last = transitions[^1];
         return new MoneyRevenueCropSeedAcquisitionProof
         {
-            Status = "verified_exact_seed_shortfall_acquisition",
-            RequestPath = requestPath,
-            RequestSha256 = requestSha256,
-            CropProductionPlanPath = planPath,
+            Status = "verified_exact_seed_shortfall_native_acquisition",
+            RequestPath = requestFile,
+            RequestSha256 = Hash(requestFile),
+            CropProductionPlanPath = planFile,
             CropProductionPlanSha256 = planSha256,
-            EvidenceRequestId = EvidenceRequestId(commitment),
-            CommitmentId = commitment.CommitmentId,
-            AcquisitionRolloutProofManifestPath = rolloutManifestPath,
-            AcquisitionRolloutProofManifestSha256 = rolloutManifestSha256,
-            AcquisitionRolloutProofReceiptPath = rolloutReceiptPath,
-            AcquisitionRolloutProofReceiptSha256 = rolloutReceiptSha256,
-            BeforeSnapshotPath = beforeSnapshotPath,
-            BeforeSnapshotSha256 = beforeSnapshotSha256,
-            BeforeStateHash = before.StateHash,
-            AfterSnapshotPath = afterSnapshotPath,
-            AfterSnapshotSha256 = afterSnapshotSha256,
-            AfterStateHash = after.StateHash,
-            FreshTerminalReceiptPath = freshTerminalReceiptPath,
-            FreshTerminalReceiptSha256 = freshTerminalReceiptSha256,
-            RouteOccurrenceId = freshReceipt.RouteOccurrenceId,
-            SeedQualifiedItemId = commitment.SeedQualifiedItemId,
-            RequiredShortfallQuantity = commitment.SeedQuantityShortfall,
-            VerifiedQuantityIncrease = quantityIncrease,
+            EvidenceRequestId = evidenceRequestId,
+            CommitmentId = exactCommitment.CommitmentId,
+            ExecutionManifestPath = manifestFile,
+            ExecutionManifestSha256 = Hash(manifestFile),
+            PriorSeedAcquisitionProofPath = priorProof is null
+                ? string.Empty
+                : Path.GetFullPath(request.PriorSeedAcquisitionProofPath),
+            PriorSeedAcquisitionProofSha256 = priorProof is null
+                ? string.Empty
+                : Hash(request.PriorSeedAcquisitionProofPath),
+            PriorSeedAcquisitionEvidenceRequestId =
+                priorProof?.EvidenceRequestId ?? string.Empty,
+            BeforeSnapshotPath = first.BeforePath,
+            BeforeSnapshotSha256 = Hash(first.BeforePath),
+            BeforeStateHash = first.Before.StateHash,
+            AfterSnapshotPath = last.AfterPath,
+            AfterSnapshotSha256 = Hash(last.AfterPath),
+            AfterStateHash = last.After.StateHash,
+            SeedQualifiedItemId = exactCommitment.SeedQualifiedItemId,
+            InitialSeedQuantity = verification.InitialQuantity,
+            FinalSeedQuantity = verification.FinalQuantity,
+            RequiredShortfallQuantity =
+                exactCommitment.SeedQuantityShortfall,
+            VerifiedQuantityIncrease = verification.VerifiedIncrease,
             SeedSupplyDeadlineTotalDay =
-                commitment.SeedSupplyDeadlineTotalDay,
-            AcquisitionTotalDay = afterTotalDay,
+                exactCommitment.SeedSupplyDeadlineTotalDay,
+            AcquisitionTotalDay = verification.TotalDay,
+            TransitionCount = transitions.Length,
+            SupportingTransitionCount = verification.TransitionProofs.Count(
+                value => value.Stage == "supporting_route_or_shop"),
+            PurchaseSliceCount = verification.TransitionProofs.Count(
+                value => value.Stage == "purchase_slice"),
+            Transitions = verification.TransitionProofs,
             SeedAcquisitionVerified = true,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static LoadedTransition LoadTransition(
+        MoneyRevenueCropNativeLifecycleTransitionRequest request)
+    {
+        Require(request.TransitionKind == "seed_acquisition_stage" &&
+                request.TotalDay >= 0 &&
+                !string.IsNullOrWhiteSpace(request.RunId) &&
+                !string.IsNullOrWhiteSpace(request.ExecutorVersion) &&
+                !string.IsNullOrWhiteSpace(request.SelectedCandidateId),
+            "Money Revenue crop seed-acquisition transition request is invalid.");
+        var queuePath = RequiredFile(
+            request.QueuePath,
+            "Money Revenue crop seed-acquisition queue");
+        var beforePath = RequiredFile(
+            request.BeforeSnapshotPath,
+            "Money Revenue crop seed-acquisition before snapshot");
+        var receiptPath = RequiredFile(
+            request.ExecutionReceiptPath,
+            "Money Revenue crop seed-acquisition execution receipt");
+        var afterPath = RequiredFile(
+            request.AfterSnapshotPath,
+            "Money Revenue crop seed-acquisition after snapshot");
+        return new LoadedTransition(
+            request,
+            queuePath,
+            beforePath,
+            receiptPath,
+            afterPath,
+            CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(
+                queuePath,
+                "Money Revenue crop seed-acquisition queue"),
+            CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+                beforePath,
+                "Money Revenue crop seed-acquisition before snapshot"),
+            CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(
+                receiptPath,
+                "Money Revenue crop seed-acquisition execution receipt"),
+            CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+                afterPath,
+                "Money Revenue crop seed-acquisition after snapshot"));
     }
 
     private static string EvidenceRequestId(
@@ -243,47 +241,8 @@ public static class MoneyRevenueCropSeedAcquisitionProofBuilder
         "seed-acquisition:" + commitment.CommitmentId + ":" +
         commitment.SeedQuantityShortfall;
 
-    private static void ValidateSnapshot(
-        SnapshotEnvelope snapshot,
-        string boundary)
-    {
-        Require(snapshot.SchemaVersion == "snapshot.v1" &&
-                snapshot.GameVersion == "1.6.15" &&
-                !string.IsNullOrWhiteSpace(snapshot.StateHash) &&
-                snapshot.StateHash == SnapshotHash.ComputeStateHash(
-                    snapshot.State),
-            "Money Revenue crop seed acquisition " + boundary +
-            " snapshot is invalid.");
-    }
-
-    private static int ReadInt(
-        SnapshotEnvelope snapshot,
-        string section,
-        string field)
-    {
-        if (!snapshot.State.TryGetValue(section, out var sectionValue) ||
-            sectionValue.ValueKind != System.Text.Json.JsonValueKind.Object ||
-            !sectionValue.TryGetProperty(field, out var envelope) ||
-            envelope.ValueKind != System.Text.Json.JsonValueKind.Object ||
-            !envelope.TryGetProperty("value", out var value) ||
-            !value.TryGetInt32(out var result))
-        {
-            throw new InvalidDataException(
-                "Money Revenue crop seed acquisition field is unavailable: " +
-                section + "." + field);
-        }
-        return result;
-    }
-
-    private static bool SamePath(string left, string right) =>
-        !string.IsNullOrWhiteSpace(left) &&
-        !string.IsNullOrWhiteSpace(right) &&
-        string.Equals(
-            Path.GetFullPath(left),
-            Path.GetFullPath(right),
-            OperatingSystem.IsWindows()
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal);
+    private static string Hash(string path) =>
+        CurrentTeacherFrontierSupport.HashFile(path);
 
     private static string RequiredFile(string path, string label)
     {
@@ -293,9 +252,49 @@ public static class MoneyRevenueCropSeedAcquisitionProofBuilder
         return fullPath;
     }
 
+    private static bool SamePath(string left, string right) =>
+        !string.IsNullOrWhiteSpace(left) &&
+        !string.IsNullOrWhiteSpace(right) &&
+        string.Equals(
+            Path.GetFullPath(left),
+            Path.GetFullPath(right),
+            PathComparison);
+
     private static void Require(bool condition, string message)
     {
         if (!condition)
             throw new InvalidDataException(message);
     }
+
+    private static StringComparison PathComparison =>
+        OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+    private sealed record LoadedTransition(
+        MoneyRevenueCropNativeLifecycleTransitionRequest Request,
+        string QueuePath,
+        string BeforePath,
+        string ReceiptPath,
+        string AfterPath,
+        ActionQueueEnvelope Queue,
+        SnapshotEnvelope Before,
+        QueueExecutionReceiptEnvelope Receipt,
+        SnapshotEnvelope After);
+
+    private sealed record PurchaseBinding(
+        string ShopId,
+        string StockId,
+        string QualifiedItemId,
+        int OutputStack,
+        int OutputQuality,
+        int MaxUnitPrice,
+        int Quantity);
+
+    private sealed record ChainVerification(
+        int InitialQuantity,
+        int FinalQuantity,
+        int VerifiedIncrease,
+        int TotalDay,
+        MoneyRevenueCropSeedAcquisitionTransitionProof[] TransitionProofs);
 }

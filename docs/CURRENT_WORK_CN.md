@@ -9,12 +9,19 @@
 - `build-money-revenue-crop-production-decision-receipt` 已补上生产链原先缺失的起点。权威 Teacher 必须提交精确源快照、UTC 决策时间、非空作物承诺以及与每项承诺等量且全局不重叠的 `Farm` 布局；构建器按请求顺序逐项调用唯一的 `CropCommitmentLedgerService.Upsert`，保留每次 typed request、接受/拒绝结果、账本 revision 和最终 ledger，并把同一布局意图直接交给既有 native run-plan builder。空/重复/越界布局、失效作物或日期、身份及 revision 漂移均失败关闭；该收据不选择作物、不生成布局、不执行动作，也不授权训练。
 - `Initialize-MoneyRevenueCropNativeProduction.ps1` 已把上述收据接到唯一生产输入物化链。它拒绝覆盖已有输入目录，先保护源存档目录哈希，再原样提取 `final_ledger`，依次调用既有 obligation-plan 与 native run-plan builder，最后生成 `money_crop_native_production_input_manifest.v1`，绑定源存档目录、Teacher 决策、快照、账本、两级请求和两级计划的绝对路径与 SHA-256。离线功能实跑已验证全部 8 个引用制品哈希一致，且源存档目录前后未变；该 manifest 仍不是原生证据或训练授权。
 - `Invoke-RuntimeMoneyCropNativeProduction.ps1` 现在只接受上述 production input manifest，不再允许调用方分别传入源存档与 run-plan request。独立验证库会在构建、部署或启动游戏之前复核源存档树哈希、全部 8 个制品哈希、决策最终账本的原样提取、各级 path/hash 血缘、固定 Money 目标边界，以及 decision/receipt/obligation/run-plan 四层完全相同且不重复的 commitment 集合；运行器直接复制并消费清单中的既有 run plan，不再重复生成第二份计划。
-- `Invoke-RuntimeMoneyCropNativeProduction.ps1` 已把 `money_revenue_crop_native_production_run_plan.v2` 接入隔离源存档、精确双 Mod allowlist、现有 action/plan compiler、RuntimeTestHarness 原生执行和统一回执链。v2 先枚举全部非零种子 shortfall，并复用既有 `economy.buy_supplies` 候选与编译执行链，以一次一份、fresh snapshot rebind 的有界原生切片精确补齐，禁止脚本直接改库存或货币；随后按连续日期逐批执行 `plant -> conditional water -> harvest`，每次跨地图只编译一个透明 connector 并 fresh replan，每个非终端日复用既有 `recovery.stabilize_day` 生成唯一原生睡眠。购种执行回执到正式 acquisition rollout proof 的适配仍是当前下一步。
+- `Invoke-RuntimeMoneyCropNativeProduction.ps1` 已把 `money_revenue_crop_native_production_run_plan.v2` 接入隔离源存档、精确双 Mod allowlist、现有 action/plan compiler、RuntimeTestHarness 原生执行和统一回执链。v2 先枚举全部非零种子 shortfall，并复用既有 `economy.buy_supplies` 候选与编译执行链，以一次一份、fresh snapshot rebind 的有界原生切片精确补齐，禁止脚本直接改库存或货币；随后按连续日期逐批执行 `plant -> conditional water -> harvest`，每次跨地图只编译一个透明 connector 并 fresh replan，每个非终端日复用既有 `recovery.stabilize_day` 生成唯一原生睡眠。每项补购现在同时物化 v2 执行清单和可重建证明，直接进入同一 crop checkpoint。
 - run plan 现在从权威 crop-production 源快照当天开始，而不是错误地跳到最早种植日；源日到种植日前的每一天只能有一个原生 sleep boundary。运行器在任何动作前输出 `money_crop_native_source_preflight.v1`，要求隔离存档首次 fresh full snapshot 的 `state_hash` 和 `total_days` 同时精确匹配计划源边界；不匹配时立即停止，不能用同日期的相似存档代替。
 - 播种日不再假设选中地块已经长期保持 HoeDirt。每个承诺的布局必须能被一个 `32×32` `farm_layout` 投影完整覆盖；运行器在布局与容量取证前调用既有 `money_revenue_crop_site_preparation_plan.v1`，一次只执行一个现有 `clear_obstacle`、`break_farm_resource_clump` 或 `till_soil` 候选，每次状态变化后重新抓取 fresh bounded snapshot 并重建计划，直到全部目标格被透明状态确认为 `already_prepared`。阻塞、候选缺失、日期/地点漂移或有界动作数耗尽都会停止运行，不会直接尝试播种。
 - 浇水批次在执行前只按透明 `farm.crops[].needs_watering` 过滤；雨天不生成冗余浇水，但若当天逐日容量证明要求边界快照，仍可通过资源中性的 crop-ingress 到达 Farm。跨地图 move 被现有 compiler 重写为 connector 时现在保留唯一 `candidate_id`，因此路线、作物动作和睡眠的 queue/receipt/after snapshot 都能维持可审计候选身份。
-- 当前收集器会物化 planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。它尚未执行真实游戏采集，也尚未接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
-- 下一固定切片：先把购种执行产生的统一队列回执适配进既有 acquisition rollout proof；随后由正式 Teacher 生成首份权威决策制品，经唯一 initializer 形成不可变输入并完成首次隐藏静音原生运行。成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套购买器、作物候选、规划器或执行器。
+- 当前收集器会物化 seed-acquisition v2、planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。它尚未执行真实游戏采集，也尚未接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
+- 下一固定切片：由正式 Teacher 生成首份权威决策制品，经唯一 initializer 形成不可变输入并完成首次隐藏静音原生运行。成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套购买器、作物候选、规划器或执行器。
+
+## 已收口 · 2026-10-18 Money 购种原生切片证明 v2
+
+- 旧 v1 只接受单一 acquisition terminal transition，无法表示安全购买链必须执行的“路线/开店 + 多次 quantity-one 购买 + 每步 fresh rebind”。v2 改为读取不可变执行清单，但每条 transition 仍来自现有 `economy.buy_supplies -> DailyPlanCompiler -> ActionQueueCompiler -> RuntimeTestHarness`，没有第二套购买器或执行器。
+- 每条回执都经统一 `QueueExecutionReceiptValidator` 重放；支持阶段只允许资源中性的移动、连接器、交互、对话、等待和关菜单，购买阶段只允许等待、单次 `executor.buy_shop_item` 和关菜单。continuation 必须锁定种子、商店、stock row、输出 stack/quality、价格上限和 `quantity=1`；实际库存增量和 money 减量必须与编译参数一致。
+- 状态链要求同一 save/player/game、同日、逐 tick 连续且不晚于 seed deadline。首个缺种承诺必须从计划源状态开始；后续缺种承诺必须按计划顺序引用并重建上一份购种 proof，以其终态作为唯一新起点。支持阶段的完整持久资源边界必须不变；购买阶段除玩家库存、money/余额镜像和物料图外的持久状态必须不变。全部切片的累计净增必须精确等于计划 shortfall，少买、超买、断链、跳过前序承诺、错误物品或身份漂移均失败关闭。
+- hermetic 自测覆盖一段资源中性路线和两次购买的成功聚合，并拒绝缺最后一片、替换 before boundary 及非单份购买。该 proof 已接入 fragment index/checkpoint；尚未产生正式原生 fragment，所以 Money 仍为 `0/18`，训练授权仍为 false。
 
 ## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
@@ -74,7 +81,7 @@
 
 ## 已收口 · 2026-10-18 Money 作物种子短缺获取证明
 
-- 新增 `money_revenue_crop_seed_acquisition_proof.v1`，只适配既有 `AcquisitionRoutePortfolioRolloutProofBuilder` 的完整 rollout manifest/receipt；没有新增商店候选、寻路、购买编译器、执行器或回执验证器。
+- 历史 `money_revenue_crop_seed_acquisition_proof.v1` 只适配既有 `AcquisitionRoutePortfolioRolloutProofBuilder` 的单 terminal rollout，现已由上方 v2 连续原生切片证明取代；该历史实现同样没有新增商店候选、寻路、购买编译器或执行器。
 - proof 强制 rollout 从精确 crop-plan snapshot 起步，`goal_id=earn_money`，只有一个完成的 terminal transition，物品等于承诺种子、`required_amount` 和实际增量都等于计划 shortfall，并在 seed-supply deadline 当日或之前完成。同存档/玩家、状态哈希、文件哈希和 fresh terminal receipt 均独立核验。
 - crop fragment index 当时升级为 v4，checkpoint 升级为 v3，可累积该 proof；少买一份、错误计划边界、额外 continuation 或未完成 rollout 均失败关闭。后续逐日容量切片已把它们分别升级为 v5/v4。尚未采集正式购种 fragment，Money 仍为 `0/18`，正式训练仍为 false。
 

@@ -29,7 +29,9 @@ function ConvertTo-RuntimeCropPurchaseParameters {
         "continuation.option_id",
         "continuation.shop_id",
         "continuation.qualified_item_id",
+        "continuation.stock_id",
         "continuation.output_stack_per_purchase",
+        "continuation.output_quality",
         "continuation.max_unit_price",
         "continuation.quantity"
     )) {
