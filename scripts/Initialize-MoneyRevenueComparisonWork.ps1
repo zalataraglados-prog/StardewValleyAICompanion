@@ -22,7 +22,7 @@ if (-not (Test-Path -LiteralPath $summaryPath -PathType Leaf)) {
 }
 $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
 if ([string]$summary.schema_version -ne
-        "money_threshold_native_outcome_run_summary.v1" -or
+        "money_threshold_native_outcome_run_summary.v2" -or
     [string]$summary.status -ne "passed" -or
     [string]::IsNullOrWhiteSpace([string]$summary.run_id)) {
     throw "Money threshold native-outcome run summary is not passed and versioned."

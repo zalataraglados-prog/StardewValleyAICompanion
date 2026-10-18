@@ -30,6 +30,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyRevenueTerminalProofCollectionCheckpoint();
         VerifyMoneyRevenueCropProductionObligationPlan();
         VerifyMoneyRevenueComparisonAdmission();
+        VerifyMoneyRuntimeModIsolation();
         VerifyMoneyThresholdNativeOutcomeOnly();
         VerifyMoneyThresholdNativeOutcomeSelection();
     }

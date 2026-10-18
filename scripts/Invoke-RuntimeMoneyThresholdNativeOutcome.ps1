@@ -74,6 +74,48 @@ function Assert-ProductionParameters {
     }
 }
 
+function Get-MoneyRuntimeModAllowlist {
+    param([Parameter(Mandatory)] [string] $ModsRoot)
+    $expected = [ordered]@{
+        "StardewAI.RuntimeTestHarness" = "StardewAI.RuntimeTestHarness"
+        "StardewAI.TransparentBridge" = "StardewAI.TransparentBridge"
+    }
+    $rootItems = @(Get-ChildItem -LiteralPath $ModsRoot -Force)
+    $directories = @($rootItems | Where-Object { $_.PSIsContainer } |
+        Sort-Object Name)
+    $files = @($rootItems | Where-Object { -not $_.PSIsContainer })
+    if ($files.Count -ne 0 -or
+        $directories.Count -ne $expected.Count -or
+        ($directories.Name -join "|") -ne ($expected.Keys -join "|")) {
+        throw "Money runtime isolated Mods root is not the exact allowlist."
+    }
+
+    return @($directories | ForEach-Object {
+        if (($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Money runtime Mod must not be a reparse point: $($_.FullName)"
+        }
+        $manifestPath = Join-Path $_.FullName "manifest.json"
+        if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+            throw "Money runtime Mod manifest is missing: $manifestPath"
+        }
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw |
+            ConvertFrom-Json
+        $uniqueId = [string]$manifest.UniqueID
+        $version = [string]$manifest.Version
+        if ($uniqueId -ne [string]$expected[$_.Name] -or
+            [string]::IsNullOrWhiteSpace($version)) {
+            throw "Money runtime Mod manifest identity is invalid: $($_.Name)"
+        }
+        [ordered]@{
+            directory_name = $_.Name
+            unique_id = $uniqueId
+            version = $version
+            manifest_sha256 = Get-RuntimeFileSha256 -Path $manifestPath
+            content_sha256 = Get-DirectoryContentHash -Path $_.FullName
+        }
+    })
+}
+
 function Assert-MoneyDependencyExpansionReady {
     param([Parameter(Mandatory)] [string] $Path)
     $document = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
@@ -235,6 +277,8 @@ foreach ($modName in @(
     Copy-Item -LiteralPath $sourceMod `
         -Destination (Join-Path $isolatedMods $modName) -Recurse
 }
+$runtimeModAllowlist = @(Get-MoneyRuntimeModAllowlist -ModsRoot $isolatedMods)
+$isolatedModsSha256Before = Get-DirectoryContentHash -Path $isolatedMods
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -428,8 +472,12 @@ try {
     if ($sourceSaveSha256After -ne $sourceSaveSha256Before) {
         throw "Source save changed during isolated native-outcome collection."
     }
+    $isolatedModsSha256After = Get-DirectoryContentHash -Path $isolatedMods
+    if ($isolatedModsSha256After -ne $isolatedModsSha256Before) {
+        throw "Isolated runtime Mods changed during native-outcome collection."
+    }
     $summary = [ordered]@{
-        schema_version = "money_threshold_native_outcome_run_summary.v1"
+        schema_version = "money_threshold_native_outcome_run_summary.v2"
         status = "passed"
         run_id = $RunId
         criterion_id = $effectiveCriterionId
@@ -439,6 +487,10 @@ try {
         source_save_sha256_after = $sourceSaveSha256After
         isolated_save_slot_path = $isolatedSlot
         isolated_save_sha256_before = $isolatedSaveSha256Before
+        isolated_mods_root_path = $isolatedMods
+        isolated_mods_sha256_before = $isolatedModsSha256Before
+        isolated_mods_sha256_after = $isolatedModsSha256After
+        runtime_mod_allowlist = $runtimeModAllowlist
         source_state_hash = [string]$selection.source_state_hash
         natural_service_wait_applied = $naturalWaitApplied
         selection_path = $selectionPath
@@ -477,6 +529,8 @@ catch {
         source_save_sha256_after = $sourceSaveSha256After
         source_save_unchanged =
             $sourceSaveSha256After -eq $sourceSaveSha256Before
+        isolated_mods_root_path = $isolatedMods
+        isolated_mods_sha256_before = $isolatedModsSha256Before
         formal_product_training_authorized = $false
     })
     throw

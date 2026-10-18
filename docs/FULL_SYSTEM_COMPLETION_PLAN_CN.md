@@ -9,9 +9,7 @@
 完全体路线图的全局方向不变，但当前实施顺序必须以 `CURRENT_STATUS_CN.md` 为唯一口径：
 
 ```text
-#307 shared P1
--> #308 / #309 / #310 Money P1
--> #311 crop P2
+#309 Money P1
 -> real Money native production collection
 -> terminal proof completion
 -> exact Teacher comparison
@@ -27,7 +25,7 @@
 
 ## 历史记录 · 2026-10-16 Money 作物场地准备已组合
 
-`farm_layout` 有界透明投影和 `build-money-revenue-crop-site-preparation-plan` 已把精确地块连接到唯一的清障、资源块、BFS 与锄地实现。区域最大 `32×32`；清障后强制 fresh snapshot 再绑定锄地。该层只提供机械准备计划，不能替代上游布局选择、播种日 proof 或 production evidence。后续 #306 已继续实现 seed-reservation proof，但其 ledger lineage/freshness 仍由 #310 P1 收口；因此本段不再作为当前“下一切片”指令。
+`farm_layout` 有界透明投影和 `build-money-revenue-crop-site-preparation-plan` 已把精确地块连接到唯一的清障、资源块、BFS 与锄地实现。区域最大 `32×32`；清障后强制 fresh snapshot 再绑定锄地。该层只提供机械准备计划，不能替代上游布局选择、播种日 proof 或 production evidence。后续 #310 / #311 已关闭 seed-reservation lineage/freshness 与场地准备 fail-closed 缺口；因此本段不再作为当前“下一切片”指令。
 ## 历史记录 · 2026-10-16 Money 作物场地准备边界
 
 未来作物义务已进入可恢复证据检查点，但种植布局不是机械执行器可以自行臆造的字段：上游必须给出精确地块，验证器再以 planting-day 透明快照逐格证明合法。若开放 HoeDirt 数量不足，检查点失败关闭；后续必须复用现有清障、锄地、BFS 与播种动作生成前置场地准备计划，并在 fresh snapshot 上重新绑定。禁止通过直接改地图、预造耕地 fixture 或另建作物执行器绕过此边界。布局、种子、日容量、生命周期、输出保留和终端结算全部完成前，未来作物证明、百万元日程及正式训练均保持 false。

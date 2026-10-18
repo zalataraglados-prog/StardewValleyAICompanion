@@ -53,7 +53,7 @@ public sealed class MoneyThresholdNativeOutcomeRunSummary
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_threshold_native_outcome_run_summary.v1";
+        "money_threshold_native_outcome_run_summary.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -81,6 +81,19 @@ public sealed class MoneyThresholdNativeOutcomeRunSummary
 
     [JsonPropertyName("isolated_save_sha256_before")]
     public string IsolatedSaveSha256Before { get; set; } = string.Empty;
+
+    [JsonPropertyName("isolated_mods_root_path")]
+    public string IsolatedModsRootPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("isolated_mods_sha256_before")]
+    public string IsolatedModsSha256Before { get; set; } = string.Empty;
+
+    [JsonPropertyName("isolated_mods_sha256_after")]
+    public string IsolatedModsSha256After { get; set; } = string.Empty;
+
+    [JsonPropertyName("runtime_mod_allowlist")]
+    public MoneyThresholdRuntimeModIdentity[] RuntimeModAllowlist { get; set; } =
+        Array.Empty<MoneyThresholdRuntimeModIdentity>();
 
     [JsonPropertyName("source_state_hash")]
     public string SourceStateHash { get; set; } = string.Empty;
@@ -112,6 +125,13 @@ public sealed class MoneyThresholdNativeOutcomeRunSummary
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
+
+public sealed record MoneyThresholdRuntimeModIdentity(
+    [property: JsonPropertyName("directory_name")] string DirectoryName,
+    [property: JsonPropertyName("unique_id")] string UniqueId,
+    [property: JsonPropertyName("version")] string Version,
+    [property: JsonPropertyName("manifest_sha256")] string ManifestSha256,
+    [property: JsonPropertyName("content_sha256")] string ContentSha256);
 
 public sealed class MoneyThresholdNativeOutcomeBatch
 {

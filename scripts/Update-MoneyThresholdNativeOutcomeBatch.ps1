@@ -55,7 +55,7 @@ $summaryPaths = @(Get-ChildItem -LiteralPath $runRootPath `
         $summary = Get-Content -LiteralPath $_.FullName -Raw |
             ConvertFrom-Json
         [string]$summary.schema_version -eq
-            "money_threshold_native_outcome_run_summary.v1" -and
+            "money_threshold_native_outcome_run_summary.v2" -and
         [string]$summary.status -eq "passed"
     } | Sort-Object FullName | Select-Object -ExpandProperty FullName)
 if ($summaryPaths.Count -eq 0) {

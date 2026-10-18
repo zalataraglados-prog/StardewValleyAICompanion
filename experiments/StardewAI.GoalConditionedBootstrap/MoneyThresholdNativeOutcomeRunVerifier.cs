@@ -13,7 +13,7 @@ internal static class MoneyThresholdNativeOutcomeRunVerifier
                 fullSummaryPath,
                 "Money threshold native-outcome run summary");
         Require(summary.SchemaVersion ==
-                    "money_threshold_native_outcome_run_summary.v1" &&
+                    "money_threshold_native_outcome_run_summary.v2" &&
                 summary.Status == "passed" &&
                 !string.IsNullOrWhiteSpace(summary.RunId) &&
                 !string.IsNullOrWhiteSpace(summary.CriterionId) &&
@@ -36,6 +36,13 @@ internal static class MoneyThresholdNativeOutcomeRunVerifier
                     StringComparer.Ordinal) &&
                 !summary.FormalProductTrainingAuthorized,
             "Money threshold native-outcome run summary is invalid.");
+        Require(SamePath(
+                summary.IsolatedModsRootPath,
+                Path.Combine(
+                    Path.GetDirectoryName(fullSummaryPath)!,
+                    "smapi-mods")),
+            "Money runtime isolated Mods root is outside its run directory.");
+        MoneyThresholdRuntimeModIsolationVerifier.Verify(summary);
 
         var candidatePath = RequiredFile(
             summary.CandidateDenominatorPath,
