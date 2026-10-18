@@ -71,6 +71,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["max_health"] = Field(player?.maxHealth, "Game1.player.maxHealth", tick),
             ["energy"] = Field(player?.Stamina, "Game1.player.Stamina", tick),
             ["max_energy"] = Field(player?.MaxStamina, "Game1.player.MaxStamina", tick),
+            ["watering_can_state"] = Field(ReadWateringCanState(player), "Game1.player.Items exact WateringCan; WaterLeft/waterCanMax/IsBottomless/IsEfficient/UpgradeLevel; Farmer.FarmingLevel/hasWateringCanEnchantment; decompiled WateringCan.DoFunction power-zero energy and water consumption", tick, "vanilla_1_6_15_crop_watering_capacity"),
             ["level"] = Field(Context.IsWorldReady ? (int?)player?.Level : null, "Game1.player.Level", tick),
             ["skills_detail"] = Field(ReadSkillsDetail(player), "Game1.player.GetUnmodifiedSkillLevel/GetSkillLevel/experiencePoints/professions/newLevels; Farmer.getBaseExperienceForLevel; LevelUpMenu profession text", tick),
             ["book_candidates"] = Field(ReadBookCandidates(player), "Game1.player.Items and Object.performUseAction/readBook native branches", tick),

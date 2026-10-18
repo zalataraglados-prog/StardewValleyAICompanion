@@ -162,7 +162,7 @@ namespace StardewAI.Core.Execution
                     "plant_seed",
                     "current_location(" + x.Value + "," + y.Value + "):" + seedId,
                     "current_location.planting_context[" + x.Value + "," + y.Value + "].has_crop=true;player.seed_inventory[" + seedId + "].stack_decreases",
-                    60)
+                    CropMaintenanceBudgetPolicy.PlantTicksPerTile)
             };
         }
 

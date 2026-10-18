@@ -1,5 +1,9 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-18 aggregate crop daily-capacity authority
+
+For locked vanilla 1.6.15, crop movement blocking comes from `CropData.IsRaised`. A vanilla watering can has exact capacities `40/55/70/85/100` for upgrade levels `0..4`; one power-zero watering action consumes one unit unless the Bottomless enchantment is present. Its exact energy cost is zero with the Efficient enchantment, otherwise `max(0, 2 - FarmingLevel * 0.1)`. Daily-capacity proof must bind readable runtime values from a fresh same-save snapshot, preserve a consistent `total_days` versus year/season/day world-date offset, rebuild shared BFS and compiler-owned timing, and aggregate every active crop commitment on each planting, conservative watering or harvest day. Version 1 deliberately rejects a day that needs a watering-can refill because the refill route is not yet part of this proof; it may not assume free water or omit travel. This authority proves capacity only, not crop lifecycle, retained output, settlement or formal training admission.
+
 ## 2026-10-05 native Radioactive Ore source identity
 
 The locked Full Shipment identity is `full_shipment:item:909 / (O)909 / native_radioactive_ore_node`, with route

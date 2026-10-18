@@ -4,7 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money production 前 correctness 收口
+## 当前切片 · 2026-10-18 Money 作物逐日容量证明
+
+- 新增 `money_revenue_crop_daily_capacity_proof.v1`。每个证明都会重建精确作物义务计划和**全部活动承诺**的布局证明，再按所有承诺的播种、保守浇水和收获日期并集逐日聚合；不同承诺不能分别通过后再在同一天超额占用时间、体力或水量。
+- 每一天必须提供同一存档、玩家和游戏版本的 fresh snapshot，透明字段状态必须可读，`total_days` 必须与 year/season/day 保持同一世界日期偏移。容量计算复用共享单源 BFS 距离场、游戏时钟换算和编译器所有的移动、播种、浇水、收获时序；透明桥新增原版作物 `is_raised` 与精确 power-zero 水壶状态。v1 在需要补水路线时失败关闭，不猜测或省略补水。
+- hermetic 正例覆盖 25 天、100 格作物：播种日 `100 播种 + 100 浇水`、同日 `100 浇水 + 100 收获` 及最终纯收获日；负例拒绝缺一天、日期字段漂移和 `99/100` 水量。fragment index 已升级为 v5，checkpoint 已升级为 v4。
+- 该层只证明计划内逐日维护容量，不证明原生生长生命周期、逐波输出保留、结算或正式训练。尚未采集生产 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是 `native-crop-lifecycle:<commitment>`。
+
+## 已收口 · 2026-10-18 Money production 前 correctness 收口
 
 本轮已关闭 **#307**、**#308**、**#309**、**#310** 与 **#311**：
 
@@ -16,19 +23,19 @@
 - terminal-proof collection request/plan 升级为 v2，显式绑定期望 run/partition、骨架分母、concrete denominator 与请求分母。合法 skeleton 可以展开为多个 concrete request；错误 catalog/run/partition/boundary 失败关闭。唯一离线复用 sale episode 的 before capture 现严格使用 request/verifier 的 terminal snapshot。
 - 验证通过：Core game-free `372/372`、Bootstrap Release `0 warning / 0 error`、完整 hermetic 自测、E 盘隔离游戏依赖下 TransparentBridge Release `0 warning / 0 error`。未启动游戏，Money production cells 仍为 `0/18`，formal training 仍为 false。
 
-当前已知 P0/P1 review debt 清零，唯一 primary item 继续是 **Money / Revenue**。购种 shortfall 证明适配器已复用现有 acquisition rollout 落地；下一切片是日容量，然后依次闭合生命周期、逐波输出保留与结算，再进入真实 Money native production collection、terminal proof completion、Teacher comparison 与 criterion-local join。**不得因为已有 terminal/crop infrastructure 就提前把 Money 从 `0/18` 上调。** Full Shipment 已冻结为 current-authority `26/26`，不再作为当前施工项。
+当前已知 P0/P1 review debt 清零，唯一 primary item 继续是 **Money / Revenue**。购种 shortfall 与逐日容量 proof 适配器已经落地；下一切片是原生作物生命周期，然后依次闭合逐波输出保留与结算，再进入真实 Money native production collection、terminal proof completion、Teacher comparison 与 criterion-local join。**不得因为已有 terminal/crop infrastructure 就提前把 Money 从 `0/18` 上调。** Full Shipment 已冻结为 current-authority `26/26`，不再作为当前施工项。
 
-## 当前切片 · 2026-10-18 Money 作物种子短缺获取证明
+## 已收口 · 2026-10-18 Money 作物种子短缺获取证明
 
 - 新增 `money_revenue_crop_seed_acquisition_proof.v1`，只适配既有 `AcquisitionRoutePortfolioRolloutProofBuilder` 的完整 rollout manifest/receipt；没有新增商店候选、寻路、购买编译器、执行器或回执验证器。
 - proof 强制 rollout 从精确 crop-plan snapshot 起步，`goal_id=earn_money`，只有一个完成的 terminal transition，物品等于承诺种子、`required_amount` 和实际增量都等于计划 shortfall，并在 seed-supply deadline 当日或之前完成。同存档/玩家、状态哈希、文件哈希和 fresh terminal receipt 均独立核验。
-- crop fragment index 升级为 v4，checkpoint 升级为 v3，可累积该 proof；少买一份、错误计划边界、额外 continuation 或未完成 rollout 均失败关闭。正负例、Bootstrap Release 零警告和完整 hermetic 自测通过。尚未采集正式购种 fragment，Money 仍为 `0/18`，正式训练仍为 false；下一固定切片是 `daily-capacity:<commitment>`。
+- crop fragment index 当时升级为 v4，checkpoint 升级为 v3，可累积该 proof；少买一份、错误计划边界、额外 continuation 或未完成 rollout 均失败关闭。后续逐日容量切片已把它们分别升级为 v5/v4。尚未采集正式购种 fragment，Money 仍为 `0/18`，正式训练仍为 false。
 
 ## 已收口 · 2026-10-18 Money 种子预留 proof
 
 - `build-money-revenue-crop-seed-reservation-proof` 已能重建义务计划，并核对同一 save/player、透明物料图、活动 reservation、种子身份、状态哈希、库存槽与完整数量。
 - #310 已关闭：committed reservation ledger 必须由原 crop plan 的 strategy-ledger lineage 经原子提交服务合法演化，reservation snapshot 具备 post-plan freshness 下界。
-- seed-reservation fragment 已通过 correctness gate；购种 shortfall 已有精确 acquisition-rollout proof 类型但正式 fragment 仍待采集，日容量、生命周期、输出保留与结算继续 pending。Money 保持 `0/18`，训练授权仍为 false。
+- seed-reservation fragment 已通过 correctness gate；购种 shortfall 与逐日容量已有精确 proof 类型但正式 fragment 仍待采集，生命周期、输出保留与结算继续 pending。Money 保持 `0/18`，训练授权仍为 false。
 ## 已收口 · 2026-10-18 Money 作物场地准备计划
 
 - 透明桥已有目的受限的 `farm_layout` 投影，计划器也已复用现有 `executor.clear_obstacle`、`executor.break_farm_resource_clump`、`executor.till_soil` 候选；清障后必须取得 fresh snapshot 再绑定锄地。

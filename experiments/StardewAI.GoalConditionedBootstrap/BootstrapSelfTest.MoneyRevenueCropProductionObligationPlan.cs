@@ -75,6 +75,7 @@ internal static partial class BootstrapSelfTest
             "Money crop-production obligation plan lost an exact future obligation.");
         VerifyMoneyCropSitePreparationPlan(root, planPath);
         VerifyMoneyCropPlantingLayoutCheckpoint(root, planPath, plan);
+        VerifyMoneyCropDailyCapacityProof(root, planPath, plan);
         VerifyMoneyCropSeedAcquisitionProof(
             root,
             planPath,
@@ -955,6 +956,7 @@ internal static partial class BootstrapSelfTest
                   "harvest_context_tags":["category_fruits","item_strawberry"],
                   "harvest_unit_sale_price":120,
                   "harvest_min_stack":1,
+                  "is_raised":false,
                   "needs_watering":true
                 }],"status":"available"},
                 "material_inventory_graph": {"value":{
