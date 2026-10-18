@@ -16,6 +16,7 @@ internal static partial class BootstrapSelfTest
         string firstDailyProofPath,
         MoneyRevenueCropSettlementCapacityProof settlementCapacity)
     {
+        VerifyMoneyCropNativeProductionRunPlan(root, planPath, plan);
         var capacityProofPath = Path.Combine(
             root,
             "settlement-capacity-proof.json");
