@@ -15,8 +15,9 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 fullRequestPath,
                 "Money Revenue crop native-production run-plan request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_native_production_run_plan_request.v1" &&
+                    "money_revenue_crop_native_production_run_plan_request.v2" &&
                 request.LayoutIntents is not null &&
+                request.SeedAcquisitionIntents is not null &&
                 request.MaxQueueItemCount is >= 1 and <= 8 &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop native-production run-plan request is invalid.");
@@ -106,17 +107,38 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 intents,
                 request.MaxQueueItemCount))
             .ToArray();
-        var seedAcquisitions = plan.Commitments
+        var shortfalls = plan.Commitments
             .Where(value => value.SeedQuantityShortfall > 0)
-            .Select((value, index) =>
-                new MoneyRevenueCropNativeSeedAcquisition(
-                    index + 1,
-                    value.CommitmentId,
-                    value.SeedQualifiedItemId,
-                    value.SeedQuantityShortfall,
-                    value.SeedSupplyDeadlineTotalDay,
-                    "economy.buy_supplies_one_unit_fresh_snapshot_slices"))
             .ToArray();
+        var acquisitionIntents = request.SeedAcquisitionIntents ??
+            Array.Empty<MoneyRevenueCropNativeSeedAcquisitionIntent>();
+        Require(acquisitionIntents.Length == shortfalls.Length &&
+                acquisitionIntents.Select(value => value.CommitmentId)
+                    .Distinct(StringComparer.Ordinal).Count() ==
+                    acquisitionIntents.Length,
+            "Money Revenue crop seed-acquisition intents are incomplete or duplicated.");
+        var seedAcquisitions = shortfalls.Select((value, index) =>
+        {
+            var matches = acquisitionIntents.Where(intent =>
+                    intent.CommitmentId == value.CommitmentId)
+                .ToArray();
+            Require(matches.Length == 1 &&
+                    matches[0].SeedQualifiedItemId ==
+                        value.SeedQualifiedItemId &&
+                    !string.IsNullOrWhiteSpace(matches[0].ShopId) &&
+                    matches[0].MaxUnitPrice > 0,
+                "Money Revenue crop seed-acquisition intent is invalid for " +
+                value.CommitmentId + ".");
+            return new MoneyRevenueCropNativeSeedAcquisition(
+                index + 1,
+                value.CommitmentId,
+                value.SeedQualifiedItemId,
+                matches[0].ShopId,
+                matches[0].MaxUnitPrice,
+                value.SeedQuantityShortfall,
+                value.SeedSupplyDeadlineTotalDay,
+                "economy.buy_supplies_one_unit_fresh_snapshot_slices");
+        }).ToArray();
         Require(seedAcquisitions.All(value =>
                     value.RequiredQuantity > 0 &&
                     value.DeadlineTotalDay >= sourceTotalDay &&

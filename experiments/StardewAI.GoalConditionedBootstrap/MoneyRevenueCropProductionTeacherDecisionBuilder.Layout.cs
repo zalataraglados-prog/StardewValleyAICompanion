@@ -57,9 +57,13 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             var minY = ReadInt(bounds, "min_y");
             var maxX = ReadInt(bounds, "max_x");
             var maxY = ReadInt(bounds, "max_y");
+            var mapWidth = ReadInt(context, "map_width");
+            var mapHeight = ReadInt(context, "map_height");
             Require(minX >= 0 && minY >= 0 && maxX >= minX &&
-                    maxY >= minY && maxX - minX + 1 <= 32 &&
-                    maxY - minY + 1 <= 32,
+                    maxY >= minY && mapWidth is >= 1 and <= 512 &&
+                    mapHeight is >= 1 and <= 512 &&
+                    maxX < mapWidth && maxY < mapHeight &&
+                    maxX - minX + 1 <= 32 && maxY - minY + 1 <= 32,
                 "Money Revenue crop-production Teacher layout bounds are invalid.");
             var rows = RequiredProperty(context, "tiles");
             Require(rows.ValueKind == JsonValueKind.Array,
@@ -87,6 +91,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     minY,
                     maxX,
                     maxY,
+                    mapWidth,
+                    mapHeight,
                     tiles.Length),
                 tiles));
         }

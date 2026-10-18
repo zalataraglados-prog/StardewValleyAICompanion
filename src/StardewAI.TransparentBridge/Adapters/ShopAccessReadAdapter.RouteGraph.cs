@@ -59,6 +59,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         {
             foreach (var warp in location.warps)
             {
+                var targetLoaded = !string.IsNullOrWhiteSpace(warp.TargetName) &&
+                    locationNames.Contains(warp.TargetName);
+                var nativeBusTransport = IsNativeBusTransportWarp(
+                    location,
+                    warp.TargetName);
                 edges.Add(new
                 {
                     kind = "warp",
@@ -70,8 +75,14 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     target_y = (int?)warp.TargetY,
                     source_property = "GameLocation.warps",
                     raw_action = (string?)null,
-                    resolved = !string.IsNullOrWhiteSpace(warp.TargetName) && locationNames.Contains(warp.TargetName),
-                    unresolved_reason = !string.IsNullOrWhiteSpace(warp.TargetName) && locationNames.Contains(warp.TargetName) ? (string?)null : "target_location_not_loaded"
+                    native_transport_transition = nativeBusTransport,
+                    transport_executor_supported = !nativeBusTransport,
+                    resolved = targetLoaded && !nativeBusTransport,
+                    unresolved_reason = !targetLoaded
+                        ? "target_location_not_loaded"
+                        : nativeBusTransport
+                            ? "native_bus_transport_executor_required"
+                            : (string?)null
                 });
             }
 
@@ -122,7 +133,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             unresolved_edge_count = edges.Count(edge => ReadBoolProperty(edge, "resolved") != true),
             unsupported_action_branch_count = unsupportedActionBranches,
             route_executor_enabled = true,
-            route_executor_scope = "resolved_warp_touch_action_warp_action_warp_locked_door_warp_building_door_only",
+            route_executor_scope = "resolved_walkable_warp_touch_action_warp_action_warp_locked_door_warp_building_door_only;native_transport_transitions_excluded",
             route_replan_policy = "fresh_snapshot_after_each_location_transition",
             graph_scope = "loaded_locations_only",
             edges = edges
@@ -131,6 +142,29 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 .ThenBy(edge => ReadIntProperty(edge, "from_x") ?? 0)
                 .ToArray()
         };
+    }
+
+    private static bool IsNativeBusTransportWarp(
+        GameLocation location,
+        string? targetLocation)
+    {
+        var sourceLocation = location.NameOrUniqueName;
+        return string.Equals(
+                sourceLocation,
+                "BusStop",
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                targetLocation,
+                "Desert",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                sourceLocation,
+                "Desert",
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                targetLocation,
+                "BusStop",
+                StringComparison.OrdinalIgnoreCase);
     }
 
     private static object ReadRouteMapSummaries()

@@ -22,6 +22,11 @@ public sealed class MoneyRevenueCropDailyCapacityProofRequest
     public string[] DailySnapshotPaths { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("watering_can_refill_receipts")]
+    public MoneyRevenueCropDailyCapacityRefillReceiptRequest[]
+        WateringCanRefillReceipts { get; set; } =
+            Array.Empty<MoneyRevenueCropDailyCapacityRefillReceiptRequest>();
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
@@ -74,6 +79,11 @@ public sealed class MoneyRevenueCropDailyCapacityProof
     public MoneyRevenueCropDailyCapacityDay[] Days { get; set; } =
         Array.Empty<MoneyRevenueCropDailyCapacityDay>();
 
+    [JsonPropertyName("verified_watering_can_refill_receipts")]
+    public MoneyRevenueCropDailyCapacityRefillReceiptProof[]
+        VerifiedWateringCanRefillReceipts { get; set; } =
+            Array.Empty<MoneyRevenueCropDailyCapacityRefillReceiptProof>();
+
     [JsonPropertyName("daily_capacity_verified")]
     public bool DailyCapacityVerified { get; set; }
 
@@ -88,9 +98,11 @@ public sealed class MoneyRevenueCropDailyCapacityProof
         "plan, one fresh same-save snapshot supplies current time, energy, exact " +
         "vanilla power-zero WateringCan state and the current Farm collision grid. " +
         "The shared BFS route and compiler-owned plant, water, harvest, movement and " +
-        "game-clock policies rebuild one aggregate day budget. Version 1 fails closed " +
-        "when a watering can would need a refill; it does not invent or omit that " +
-        "route. This proves aggregate crop-maintenance capacity only. It does not " +
+        "game-clock policies rebuild one aggregate day budget. Rain-satisfied crop " +
+        "tiles require no native watering action. A depleted watering can is admitted " +
+        "only when an exact same-state native queue receipt proves a successful refill " +
+        "and its conservative actual ticks fit the day budget; otherwise version 1 " +
+        "fails closed. This proves aggregate crop-maintenance capacity only. It does not " +
         "prove native lifecycle transitions, retained output, settlement, a fresh-save " +
         "revenue schedule or formal training authorization.";
 }
@@ -102,6 +114,20 @@ public sealed record MoneyRevenueCropDailyCapacityLayoutBinding(
     [property: JsonPropertyName("planting_layout_proof_sha256")]
     string PlantingLayoutProofSha256,
     [property: JsonPropertyName("raised_crop")] bool RaisedCrop);
+
+public sealed record MoneyRevenueCropDailyCapacityRefillReceiptRequest(
+    [property: JsonPropertyName("total_day")] int TotalDay,
+    [property: JsonPropertyName("execution_receipt_path")]
+    string ExecutionReceiptPath);
+
+public sealed record MoneyRevenueCropDailyCapacityRefillReceiptProof(
+    [property: JsonPropertyName("total_day")] int TotalDay,
+    [property: JsonPropertyName("execution_receipt_path")]
+    string ExecutionReceiptPath,
+    [property: JsonPropertyName("execution_receipt_sha256")]
+    string ExecutionReceiptSha256,
+    [property: JsonPropertyName("refill_actual_ticks")]
+    int RefillActualTicks);
 
 public sealed record MoneyRevenueCropDailyCapacityDay(
     [property: JsonPropertyName("total_day")] int TotalDay,
@@ -140,6 +166,10 @@ public sealed record MoneyRevenueCropDailyCapacityDay(
     int? WateringCanCapacity,
     [property: JsonPropertyName("watering_can_bottomless")]
     bool? WateringCanBottomless,
+    [property: JsonPropertyName("watering_can_refill_route_verified")]
+    bool WateringCanRefillRouteVerified,
+    [property: JsonPropertyName("watering_can_refill_actual_ticks")]
+    int WateringCanRefillActualTicks,
     [property: JsonPropertyName("time_budget_fits")]
     bool TimeBudgetFits,
     [property: JsonPropertyName("energy_budget_fits")]

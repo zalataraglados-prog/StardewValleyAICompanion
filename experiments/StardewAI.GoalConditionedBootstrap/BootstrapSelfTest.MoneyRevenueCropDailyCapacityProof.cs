@@ -97,6 +97,55 @@ internal static partial class BootstrapSelfTest
                 finalDay.HarvestActionCount == 100,
             "Money crop daily-capacity proof lost its aggregate daily operations.");
 
+        var rainSatisfiedDay = commitment.RequiredWateringTotalDays
+            .First(value => value != commitment.PlantingTotalDay);
+        var rainSatisfiedPath = Path.Combine(
+            root,
+            "daily-capacity-rain-satisfied-day.json");
+        var rainSatisfied = MoneyCropDailyCapacitySnapshot(
+            rainSatisfiedDay,
+            0);
+        var rainFarm = JsonNode.Parse(
+            rainSatisfied.State["farm"].GetRawText())!.AsObject();
+        rainFarm["crops"] = JsonSerializer.SerializeToNode(
+            MoneyCropRuntimeField(tiles.Select(tile => new
+            {
+                tile_x = tile.TileX,
+                tile_y = tile.TileY,
+                needs_watering = false
+            }).ToArray()),
+            JsonDefaults.Options);
+        rainSatisfied.State["farm"] = JsonSerializer.SerializeToElement(
+            rainFarm,
+            JsonDefaults.Options);
+        rainSatisfied.StateHash = SnapshotHash.ComputeStateHash(
+            rainSatisfied.State);
+        Write(rainSatisfiedPath, rainSatisfied);
+        var rainRequestPath = Path.Combine(
+            root,
+            "daily-capacity-rain-satisfied-request.json");
+        Write(rainRequestPath,
+            new MoneyRevenueCropDailyCapacityProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                PlantingLayoutProofPaths = new[] { layoutProofPath },
+                DailySnapshotPaths = snapshotPaths.Select(path =>
+                    path.EndsWith(
+                        "daily-capacity-day-" + rainSatisfiedDay + ".json",
+                        StringComparison.Ordinal)
+                        ? rainSatisfiedPath
+                        : path).ToArray()
+            });
+        var rainProof = MoneyRevenueCropDailyCapacityProofBuilder.Build(
+            rainRequestPath);
+        var rainDay = rainProof.Days.Single(value =>
+            value.TotalDay == rainSatisfiedDay);
+        Require(rainDay.WaterActionCount == 0 &&
+                rainDay.WaterBudgetFits &&
+                !rainDay.WateringCanRefillRouteVerified,
+            "A rain-satisfied crop day still invented a native watering action.");
+
         var proofPath = Path.Combine(root, "daily-capacity-proof.json");
         var fragmentIndexPath = Path.Combine(
             root,
@@ -185,10 +234,10 @@ internal static partial class BootstrapSelfTest
         var insufficientWaterPath = Path.Combine(
             root,
             "daily-capacity-insufficient-water-day.json");
-        Write(insufficientWaterPath,
-            MoneyCropDailyCapacitySnapshot(
-                commitment.PlantingTotalDay,
-                99));
+        var insufficientWater = MoneyCropDailyCapacitySnapshot(
+            commitment.PlantingTotalDay,
+            99);
+        Write(insufficientWaterPath, insufficientWater);
         var insufficientWaterRequestPath = Path.Combine(
             root,
             "daily-capacity-insufficient-water-request.json");
@@ -208,6 +257,64 @@ internal static partial class BootstrapSelfTest
             () => MoneyRevenueCropDailyCapacityProofBuilder.Build(
                 insufficientWaterRequestPath),
             "A Money crop day requiring an unmodeled watering-can refill was admitted.");
+
+        var refillReceiptPath = Path.Combine(
+            root,
+            "daily-capacity-refill-receipt.json");
+        Write(refillReceiptPath, new
+        {
+            schema_version = "queue_execution_receipt.v1",
+            status = "applied",
+            success = true,
+            after_snapshot_fresh = true,
+            source_state_hash = insufficientWater.StateHash,
+            step_results = new[]
+            {
+                new
+                {
+                    option_id = "executor.water_crop",
+                    status = "applied",
+                    primitive_kind = "water_crop",
+                    primitive_verification_status = "verified",
+                    target_location = "Farm",
+                    water_before = 0,
+                    water_after = 99,
+                    actual_ticks = 733
+                }
+            }
+        });
+        var refillRequestPath = Path.Combine(
+            root,
+            "daily-capacity-refill-request.json");
+        Write(refillRequestPath,
+            new MoneyRevenueCropDailyCapacityProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                PlantingLayoutProofPaths = new[] { layoutProofPath },
+                DailySnapshotPaths = snapshotPaths
+                    .Select((path, index) => index == 0
+                        ? insufficientWaterPath
+                        : path)
+                    .ToArray(),
+                WateringCanRefillReceipts = new[]
+                {
+                    new MoneyRevenueCropDailyCapacityRefillReceiptRequest(
+                        commitment.PlantingTotalDay,
+                        refillReceiptPath)
+                }
+            });
+        var refillProof = MoneyRevenueCropDailyCapacityProofBuilder.Build(
+            refillRequestPath);
+        var refillDay = refillProof.Days.Single(value =>
+            value.TotalDay == commitment.PlantingTotalDay);
+        Require(refillDay.WateringCanRefillRouteVerified &&
+                refillDay.WateringCanRefillActualTicks == 733 &&
+                refillDay.WaterBudgetFits &&
+                refillProof.VerifiedWateringCanRefillReceipts.Length == 1 &&
+                refillProof.VerifiedWateringCanRefillReceipts[0]
+                    .RefillActualTicks == 733,
+            "An exact native watering-can refill receipt did not enter the day budget.");
     }
 
     private static SnapshotEnvelope MoneyCropDailyCapacitySnapshot(

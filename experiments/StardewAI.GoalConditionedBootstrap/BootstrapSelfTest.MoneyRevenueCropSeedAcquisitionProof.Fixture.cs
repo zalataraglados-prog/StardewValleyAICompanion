@@ -15,7 +15,8 @@ internal static partial class BootstrapSelfTest
         SnapshotEnvelope before,
         int sequence,
         int purchaseQuantity,
-        int unitPrice)
+        int unitPrice,
+        string supportingOptionId = "executor.traverse_connector")
     {
         var prefix = "seed-acquisition-transition-" +
             sequence.ToString("D3");
@@ -31,13 +32,16 @@ internal static partial class BootstrapSelfTest
             before,
             continuation,
             purchaseQuantity > 0,
-            unitPrice);
+            unitPrice,
+            supportingOptionId);
         var after = purchaseQuantity > 0
             ? SeedAcquisitionPurchase(
                 before,
                 purchaseQuantity,
                 unitPrice)
-            : SeedAcquisitionRoute(before);
+            : supportingOptionId == "executor.wait_ticks"
+                ? SeedAcquisitionWait(before)
+                : SeedAcquisitionRoute(before);
         var selectedCandidateId = "candidate." + prefix;
         var receipt = SeedAcquisitionReceipt(
             queue,
@@ -99,7 +103,8 @@ internal static partial class BootstrapSelfTest
         SnapshotEnvelope before,
         SmallModelActionParameter[] continuation,
         bool purchase,
-        int unitPrice)
+        int unitPrice,
+        string supportingOptionId)
     {
         var specifications = purchase
             ? new[]
@@ -139,7 +144,7 @@ internal static partial class BootstrapSelfTest
             : new[]
             {
                 (
-                    OptionId: "executor.traverse_connector",
+                    OptionId: supportingOptionId,
                     Parameters: continuation.Concat(new[]
                     {
                         SeedAcquisitionParameter(
@@ -266,6 +271,28 @@ internal static partial class BootstrapSelfTest
         after.State["player"] = JsonSerializer.SerializeToElement(
             player,
             JsonDefaults.Options);
+        after.GameTick = before.GameTick + 1;
+        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+        return after;
+    }
+
+    private static SnapshotEnvelope SeedAcquisitionWait(
+        SnapshotEnvelope before)
+    {
+        var after = CloneSnapshot(before);
+        var time = JsonNode.Parse(after.State["time"].GetRawText())!
+            .AsObject();
+        var nextTime = (after.InGameTime.Value ?? 600) + 10;
+        if (time["time"] is JsonObject timeEnvelope)
+            timeEnvelope["value"] = nextTime;
+        else
+            time["time"] = JsonSerializer.SerializeToNode(
+                Available(nextTime));
+        after.State["time"] = JsonSerializer.SerializeToElement(
+            time,
+            JsonDefaults.Options);
+        after.InGameTime.Value = nextTime;
+        after.InGameTime.Status = FieldStatus.Available;
         after.GameTick = before.GameTick + 1;
         after.StateHash = SnapshotHash.ComputeStateHash(after.State);
         return after;

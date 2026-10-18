@@ -6,7 +6,7 @@ public sealed class MoneyRevenueCropNativeProductionRunPlanRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_production_run_plan_request.v1";
+        "money_revenue_crop_native_production_run_plan_request.v2";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -15,6 +15,11 @@ public sealed class MoneyRevenueCropNativeProductionRunPlanRequest
     public MoneyRevenueCropNativeProductionLayoutIntent[] LayoutIntents
         { get; set; } =
             Array.Empty<MoneyRevenueCropNativeProductionLayoutIntent>();
+
+    [JsonPropertyName("seed_acquisition_intents")]
+    public MoneyRevenueCropNativeSeedAcquisitionIntent[] SeedAcquisitionIntents
+        { get; set; } =
+            Array.Empty<MoneyRevenueCropNativeSeedAcquisitionIntent>();
 
     [JsonPropertyName("max_queue_item_count")]
     public int MaxQueueItemCount { get; set; } = 8;
@@ -28,6 +33,13 @@ public sealed record MoneyRevenueCropNativeProductionLayoutIntent(
     [property: JsonPropertyName("location_id")] string LocationId,
     [property: JsonPropertyName("tiles")]
     MoneyRevenueCropPlantingTile[] Tiles);
+
+public sealed record MoneyRevenueCropNativeSeedAcquisitionIntent(
+    [property: JsonPropertyName("commitment_id")] string CommitmentId,
+    [property: JsonPropertyName("seed_qualified_item_id")]
+    string SeedQualifiedItemId,
+    [property: JsonPropertyName("shop_id")] string ShopId,
+    [property: JsonPropertyName("max_unit_price")] int MaxUnitPrice);
 
 public sealed record MoneyRevenueCropNativeProductionActionBatch(
     [property: JsonPropertyName("batch_index")] int BatchIndex,
@@ -46,6 +58,8 @@ public sealed record MoneyRevenueCropNativeSeedAcquisition(
     [property: JsonPropertyName("commitment_id")] string CommitmentId,
     [property: JsonPropertyName("seed_qualified_item_id")]
     string SeedQualifiedItemId,
+    [property: JsonPropertyName("shop_id")] string ShopId,
+    [property: JsonPropertyName("max_unit_price")] int MaxUnitPrice,
     [property: JsonPropertyName("required_quantity")] int RequiredQuantity,
     [property: JsonPropertyName("deadline_total_day")] int DeadlineTotalDay,
     [property: JsonPropertyName("execution_policy")] string ExecutionPolicy);
@@ -65,7 +79,7 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_production_run_plan.v2";
+        "money_revenue_crop_native_production_run_plan.v3";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;

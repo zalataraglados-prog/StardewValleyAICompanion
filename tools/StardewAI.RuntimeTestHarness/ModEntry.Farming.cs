@@ -45,9 +45,41 @@ public sealed partial class ModEntry : Mod
         }
 
         var precheck = ValidateWaterCropTarget(location, target, can);
-        if (precheck.Length > 0)
+        var nonWaterPrecheck = precheck
+            .Where(reason => !string.Equals(reason, "no_water", StringComparison.Ordinal))
+            .ToArray();
+        if (nonWaterPrecheck.Length > 0)
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, precheck[0], requested, WaterCropObservedEffect(location, target), precheck));
+            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, nonWaterPrecheck[0], requested, WaterCropObservedEffect(location, target), nonWaterPrecheck));
+            return;
+        }
+
+        if (precheck.Contains("no_water", StringComparer.Ordinal))
+        {
+            if (!TryBuildWateringCanRefillPath(
+                    location,
+                    request.MaxMovementTiles ?? 512,
+                    out var refillTarget,
+                    out var refillPath,
+                    out var refillReason))
+            {
+                pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, refillReason, requested, WaterCropObservedEffect(location, target), new[] { refillReason }));
+                return;
+            }
+
+            activeNativeTool = ActiveNativeTool.WaterAfterRefill(
+                pending,
+                location.NameOrUniqueName,
+                target,
+                refillTarget,
+                refillPath,
+                can!,
+                staminaBefore,
+                waterBefore,
+                started,
+                estimatedTicks,
+                requested,
+                IsCropWatered(location, target));
             return;
         }
 
@@ -59,6 +91,57 @@ public sealed partial class ModEntry : Mod
         }
 
         activeNativeTool = ActiveNativeTool.Water(pending, location.NameOrUniqueName, target, path, can!, staminaBefore, waterBefore, started, estimatedTicks, requested, IsCropWatered(location, target));
+    }
+
+    private static bool TryBuildWateringCanRefillPath(
+        GameLocation location,
+        int maxTiles,
+        out Point refillTarget,
+        out List<Point> refillPath,
+        out string blockReason)
+    {
+        refillTarget = default;
+        refillPath = new List<Point>();
+        blockReason = "no_reachable_water_source";
+        var layer = location.Map?.Layers.FirstOrDefault();
+        if (layer is null)
+        {
+            return false;
+        }
+
+        var start = Game1.player.TilePoint;
+        var candidates = new List<Point>();
+        for (var y = 0; y < layer.LayerHeight; y++)
+        {
+            for (var x = 0; x < layer.LayerWidth; x++)
+            {
+                if (location.CanRefillWateringCanOnTile(x, y))
+                {
+                    candidates.Add(new Point(x, y));
+                }
+            }
+        }
+
+        foreach (var candidate in candidates.OrderBy(tile => ManhattanDistance(start, tile)))
+        {
+            var path = BuildAdjacentToolPath(
+                location,
+                candidate,
+                maxTiles,
+                out _,
+                allowRemovableObstacles: false);
+            if (path is null)
+            {
+                continue;
+            }
+
+            refillTarget = candidate;
+            refillPath = path;
+            blockReason = string.Empty;
+            return true;
+        }
+
+        return false;
     }
 
     private void StartTillSoil(PendingExecution pending)
@@ -323,7 +406,12 @@ public sealed partial class ModEntry : Mod
         StopAllMovement();
         if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready)
         {
-            var recheck = tool.PrimitiveKind switch
+            var recheck = tool.RefillingWateringCan
+                ? ValidateWateringCanRefillTarget(
+                    Game1.currentLocation,
+                    tool.Target,
+                    tool.Tool as WateringCan)
+                : tool.PrimitiveKind switch
             {
                 "water_crop" => ValidateWaterCropTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
                 "fill_pet_bowl" => ValidatePetBowlTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
@@ -356,6 +444,11 @@ public sealed partial class ModEntry : Mod
                 return;
 
             case NativeToolActionCommand.CycleCompleted:
+                if (tool.RefillingWateringCan)
+                {
+                    ContinueWaterCropAfterRefill(tool);
+                    return;
+                }
                 if (tool.PrimitiveKind == "harvest_ginger" &&
                     GingerNativePostconditionsMet(tool))
                 {
@@ -376,6 +469,58 @@ public sealed partial class ModEntry : Mod
                 CompleteNativeToolBlocked(tool, decision.Reason);
                 return;
         }
+    }
+
+    private static string[] ValidateWateringCanRefillTarget(
+        GameLocation location,
+        Point target,
+        WateringCan? can)
+    {
+        var reasons = new List<string>();
+        if (!IsTileOnMap(location, target) ||
+            !location.CanRefillWateringCanOnTile(target.X, target.Y))
+        {
+            reasons.Add("water_source_runtime_drift");
+        }
+        if (can is null)
+        {
+            reasons.Add("missing_tool");
+        }
+        else if (can.WaterLeft > 0 || Game1.player.hasWateringCanEnchantment)
+        {
+            reasons.Add("refill_already_satisfied_runtime_drift");
+        }
+
+        return reasons.ToArray();
+    }
+
+    private void ContinueWaterCropAfterRefill(ActiveNativeTool tool)
+    {
+        if (tool.Tool is not WateringCan can || can.WaterLeft <= 0)
+        {
+            CompleteNativeToolBlocked(tool, "refill_unchanged_postcondition");
+            return;
+        }
+        if (!tool.CropTargetAfterRefill.HasValue)
+        {
+            CompleteNativeToolBlocked(tool, "refill_crop_target_missing");
+            return;
+        }
+
+        var cropTarget = tool.CropTargetAfterRefill.Value;
+        var path = BuildAdjacentToolPath(
+            Game1.currentLocation,
+            cropTarget,
+            tool.MaxMovementTiles,
+            out var moveReason,
+            allowRemovableObstacles: false);
+        if (path is null)
+        {
+            CompleteNativeToolBlocked(tool, moveReason);
+            return;
+        }
+
+        tool.ContinueAfterWateringCanRefill(cropTarget, path);
     }
 
     private void CompleteNativeToolBlocked(ActiveNativeTool tool, string reason, string[]? reasons = null)

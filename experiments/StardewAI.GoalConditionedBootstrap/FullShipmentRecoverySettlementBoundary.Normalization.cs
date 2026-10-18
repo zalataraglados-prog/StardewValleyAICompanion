@@ -33,6 +33,12 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             case ("world_progress", "game_state_query_unlock_state"):
                 NormalizeGameStateQueryUnlockState(value);
                 break;
+            case ("world_progress", "game_state_query_calendar_state"):
+                NormalizeGameStateQueryCalendarState(value);
+                break;
+            case ("world_progress", "marriage_house"):
+                NormalizeMarriageHouse(value);
+                break;
         }
         return JsonSerializer.SerializeToElement(normalized);
     }
@@ -98,5 +104,20 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             if (player["stats"] is JsonObject stats)
                 stats.Remove("stepsTaken");
         }
+    }
+
+    private static void NormalizeGameStateQueryCalendarState(JsonNode value)
+    {
+        if (value is JsonObject calendar)
+            calendar.Remove("time_of_day");
+    }
+
+    private static void NormalizeMarriageHouse(JsonNode value)
+    {
+        if (value is not JsonObject marriageHouse)
+            return;
+        marriageHouse.Remove("robin_present_at_counter");
+        if (marriageHouse["home_renovations"] is JsonObject renovations)
+            renovations.Remove("robin_present_at_service");
     }
 }

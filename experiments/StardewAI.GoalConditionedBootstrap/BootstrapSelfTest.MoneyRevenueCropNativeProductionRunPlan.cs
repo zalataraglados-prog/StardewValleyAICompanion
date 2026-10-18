@@ -33,6 +33,16 @@ internal static partial class BootstrapSelfTest
             {
                 CropProductionPlanPath = planPath,
                 LayoutIntents = intents,
+                SeedAcquisitionIntents = plan.Commitments
+                    .Where(commitment =>
+                        commitment.SeedQuantityShortfall > 0)
+                    .Select(commitment =>
+                        new MoneyRevenueCropNativeSeedAcquisitionIntent(
+                            commitment.CommitmentId,
+                            commitment.SeedQualifiedItemId,
+                            "FixtureSeedShop",
+                            100))
+                    .ToArray(),
                 MaxQueueItemCount = 2
             });
         var runPlan = MoneyRevenueCropNativeProductionRunPlanBuilder.Build(
@@ -56,7 +66,7 @@ internal static partial class BootstrapSelfTest
             .ToArray();
         Require(runPlan.Status == "native_crop_production_run_ready" &&
                 runPlan.SchemaVersion ==
-                    "money_revenue_crop_native_production_run_plan.v2" &&
+                    "money_revenue_crop_native_production_run_plan.v3" &&
                 runPlan.FirstTotalDay == expectedFirstDay &&
                 runPlan.SourceTotalDay == expectedFirstDay &&
                 runPlan.SourceStateHash == sourceSnapshot.StateHash &&
@@ -67,9 +77,11 @@ internal static partial class BootstrapSelfTest
                     expectedSeedAcquisitions.Length &&
                 runPlan.SeedAcquisitions.Select(value =>
                     (value.CommitmentId, value.SeedQualifiedItemId,
+                        value.ShopId, value.MaxUnitPrice,
                         value.RequiredQuantity, value.DeadlineTotalDay))
                     .SequenceEqual(expectedSeedAcquisitions.Select(value =>
                         (value.CommitmentId, value.SeedQualifiedItemId,
+                            "FixtureSeedShop", 100,
                             value.SeedQuantityShortfall,
                             value.SeedSupplyDeadlineTotalDay))) &&
                 runPlan.SeedAcquisitions.All(value =>

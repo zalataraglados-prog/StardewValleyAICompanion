@@ -132,7 +132,12 @@ namespace StardewAI.Core.OptionRegistry
                 graphEdges,
                 targetLocation);
 
-            if (!gate.AllowedNow)
+            if (!gate.AllowedToday ||
+                string.Equals(
+                    currentLocation,
+                    targetLocation,
+                    StringComparison.OrdinalIgnoreCase) &&
+                !gate.AllowedNow)
             {
                 return new EventCandidate
                 {
@@ -158,11 +163,15 @@ namespace StardewAI.Core.OptionRegistry
                     UnitPrice = preview.UnitPrice,
                     TotalValue = preview.TotalValue,
                     AvailabilityClass = objectivePrefix + "_service_unavailable",
-                    AllowedNow = false,
-                    AllowedToday = false,
+                    AllowedNow = gate.AllowedNow,
+                    AllowedToday = gate.AllowedToday,
+                    NextOpenTime = gate.NextOpenTime,
                     EffectiveOpenTime = gate.OpenTime,
                     ClosesAt = gate.CloseTime,
-                    GateReasons = gate.BlockReasons,
+                    GateReasons = gate.GateReasons
+                        .Concat(gate.BlockReasons)
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray(),
                     BlockReasons = preview.BlockReasons
                         .Concat(gate.BlockReasons)
                         .Distinct(StringComparer.Ordinal)
@@ -296,11 +305,14 @@ namespace StardewAI.Core.OptionRegistry
                 AvailabilityClass = objectivePrefix + "_cross_map_route_step",
                 AllowedNow = route.AllowedNow,
                 AllowedToday = route.AllowedToday,
-                NextOpenTime = route.NextOpenTime,
+                NextOpenTime = route.NextOpenTime ?? gate.NextOpenTime,
                 EffectiveOpenTime = gate.OpenTime,
                 ClosesAt = gate.CloseTime,
                 WaitCost = route.WaitCost,
-                GateReasons = route.GateReasons,
+                GateReasons = route.GateReasons
+                    .Concat(gate.GateReasons)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
                 BlockReasons = routeReasons,
                 Parameters = route.Parameters
                     .Concat(continuation)

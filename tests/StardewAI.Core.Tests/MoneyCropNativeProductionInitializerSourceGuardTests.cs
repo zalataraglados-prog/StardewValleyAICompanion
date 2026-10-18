@@ -10,6 +10,43 @@ public sealed class MoneyCropNativeProductionInitializerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Initialize-MoneyRevenueCropProductionTeacherDecision.ps1"));
+    private static readonly string TeacherBoundaryCapture = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Capture-MoneyRevenueCropProductionTeacherBoundary.ps1"));
+
+    [Fact]
+    public void TeacherBoundaryCaptureUsesTheImmutableCompleteFarmBoundary()
+    {
+        Assert.Contains("Assert-RuntimeSourceSaveSlot", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("Get-RuntimeExactModAllowlist", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE",
+            TeacherBoundaryCapture, StringComparison.Ordinal);
+        Assert.Contains("profile=full&fresh=true", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("profile=farm_layout", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("$minY += 32", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("$minX += 32", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("map_width", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("map_height", TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Initialize-MoneyRevenueCropProductionTeacherDecision.ps1",
+            TeacherBoundaryCapture,
+            StringComparison.Ordinal);
+        Assert.Contains("Initialize-MoneyRevenueCropNativeProduction.ps1",
+            TeacherBoundaryCapture, StringComparison.Ordinal);
+        Assert.Contains("source save changed during capture",
+            TeacherBoundaryCapture, StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            TeacherBoundaryCapture, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void TeacherInitializerBuildsTheTypedDecisionWithoutHandwrittenCommitments()
@@ -98,6 +135,12 @@ public sealed class MoneyCropNativeProductionInitializerSourceGuardTests
         Assert.Contains("crop_native_run_plan_request_sha256", Initializer,
             StringComparison.Ordinal);
         Assert.Contains("crop_native_run_plan_sha256", Initializer,
+            StringComparison.Ordinal);
+        Assert.Contains("seed_acquisition_intents", Initializer,
+            StringComparison.Ordinal);
+        Assert.Contains("teacher_candidate_evaluations", Initializer,
+            StringComparison.Ordinal);
+        Assert.Contains("max_unit_price", Initializer,
             StringComparison.Ordinal);
         Assert.Contains("already exists", Initializer,
             StringComparison.Ordinal);

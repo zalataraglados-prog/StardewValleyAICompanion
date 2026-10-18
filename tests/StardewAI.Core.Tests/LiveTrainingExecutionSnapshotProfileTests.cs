@@ -25,6 +25,32 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
+    public void SnapshotFileProfileIsOptionalAndParsedSeparately()
+    {
+        Assert.Empty(LiveTrainingOptions.Parse(Array.Empty<string>())
+            .SnapshotFileProfile);
+
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--snapshot-file-profile",
+            "farm_layout"
+        });
+
+        Assert.Equal("farm_layout", options.SnapshotFileProfile);
+        Assert.Equal("full", options.ExecutionSnapshotProfile);
+    }
+
+    [Fact]
+    public void EmptySnapshotFileProfileIsRejected()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--snapshot-file-profile",
+            " "
+        }));
+    }
+
+    [Fact]
     public void EmptyExecutionProfileIsRejected()
     {
         Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
@@ -78,6 +104,47 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
 
         Assert.Contains("options.ExecutionSnapshotProfile", source, StringComparison.Ordinal);
         Assert.DoesNotContain("ReadFullSnapshotAsync", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AfterExecutionForcesOneSameTickCaptureForPausedMenus()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.QueueInspection.cs"));
+        var refresh = source.IndexOf(
+            "var sameTickRefresh = await ReadExecutionSnapshotAsync(",
+            StringComparison.Ordinal);
+        var poll = source.IndexOf(
+            "await Task.Delay(options.AfterSnapshotPollMs);",
+            refresh,
+            StringComparison.Ordinal);
+
+        Assert.True(refresh >= 0);
+        Assert.True(poll > refresh);
+        Assert.Contains("same_tick_state_hash_changed", source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void InitialSnapshotFileCanUseItsOwnIngestProfile()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var http = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.JsonHttp.cs"));
+
+        Assert.Contains("options.SnapshotFileProfile", program,
+            StringComparison.Ordinal);
+        Assert.Contains("string? explicitProfile = null", http,
+            StringComparison.Ordinal);
+        Assert.Contains("Uri.EscapeDataString(explicitProfile)", http,
+            StringComparison.Ordinal);
     }
 
     private static string FindRepositoryFile(params string[] segments)

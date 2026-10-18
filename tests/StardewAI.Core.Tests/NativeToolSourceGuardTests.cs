@@ -25,6 +25,13 @@ public sealed class NativeToolSourceGuardTests
         Assert.DoesNotContain("currentLocation = farm", executionSource, StringComparison.Ordinal);
         Assert.Contains("request.LocationId, location.NameOrUniqueName", executionSource, StringComparison.Ordinal);
         Assert.Contains("BuildAdjacentToolPath(location, target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("TryBuildWateringCanRefillPath", executionSource, StringComparison.Ordinal);
+        Assert.Contains("location.CanRefillWateringCanOnTile", executionSource, StringComparison.Ordinal);
+        Assert.Equal(2, executionSource.Split("allowRemovableObstacles: false", StringSplitOptions.None).Length - 1);
+        Assert.Contains("ActiveNativeTool.WaterAfterRefill", executionSource, StringComparison.Ordinal);
+        Assert.Contains("ContinueWaterCropAfterRefill(tool);", executionSource, StringComparison.Ordinal);
+        Assert.Contains("refill_unchanged_postcondition", executionSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("can.WaterLeft =", executionSource, StringComparison.Ordinal);
         Assert.Contains("ValidateWaterCropTarget(Game1.currentLocation, tool.Target", executionSource, StringComparison.Ordinal);
         Assert.Contains("ValidateTillSoilTarget(Game1.currentLocation, tool.Target", executionSource, StringComparison.Ordinal);
         Assert.Contains("location is not Farm && location is not MineShaft", executionSource, StringComparison.Ordinal);

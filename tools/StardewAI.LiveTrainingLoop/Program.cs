@@ -228,7 +228,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
 
     var ingest = await PostJsonStringAsync(
         http,
-        SnapshotIngestUrl(options),
+        SnapshotIngestUrl(
+            options,
+            iteration == 1 &&
+                !string.IsNullOrWhiteSpace(options.SnapshotFile)
+                ? options.SnapshotFileProfile
+                : null),
         snapshotJson);
     lastStateHash = ReadString(ingest, "state_hash");
 
@@ -756,6 +761,7 @@ var report = new LiveTrainingLoopReport
     BridgeSnapshotUrl = options.BridgeSnapshotUrl,
     ExecutionSnapshotProfile = options.ExecutionSnapshotProfile,
     SnapshotFile = options.SnapshotFile,
+    SnapshotFileProfile = options.SnapshotFileProfile,
     SnapshotArtifactMode = options.SnapshotArtifactMode,
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,

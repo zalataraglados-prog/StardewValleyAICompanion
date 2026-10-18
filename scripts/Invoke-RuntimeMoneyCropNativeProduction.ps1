@@ -39,7 +39,7 @@ function Copy-RuntimeSnapshotArtifact {
 function Assert-RunPlan {
     param([Parameter(Mandatory)] $Plan)
     if ([string]$Plan.schema_version -ne
-            "money_revenue_crop_native_production_run_plan.v2" -or
+            "money_revenue_crop_native_production_run_plan.v3" -or
         [string]$Plan.status -ne "native_crop_production_run_ready" -or
         -not [bool]$Plan.native_production_run_ready -or
         [bool]$Plan.formal_product_training_authorized -or
@@ -57,6 +57,9 @@ function Assert-RunPlan {
                 [string]$acquisition.commitment_id) -or
             [string]::IsNullOrWhiteSpace(
                 [string]$acquisition.seed_qualified_item_id) -or
+            [string]::IsNullOrWhiteSpace(
+                [string]$acquisition.shop_id) -or
+            [int]$acquisition.max_unit_price -le 0 -or
             [int]$acquisition.required_quantity -le 0 -or
             [int]$acquisition.deadline_total_day -lt
                 [int]$Plan.source_total_day -or
@@ -279,17 +282,35 @@ try {
     $initialDay = [int](Read-StateValue `
         $initial.Value "time" "total_days")
     $initialStateHash = [string]$initial.Value.state_hash
+    $expectedSourceSnapshot = Get-Content `
+        -LiteralPath $productionInput.SnapshotPath -Raw | ConvertFrom-Json
+    $expectedSourceBoundaryHash = Get-MoneyCropSourceBoundaryHash `
+        -Snapshot $expectedSourceSnapshot
+    $observedSourceBoundaryHash = Get-MoneyCropSourceBoundaryHash `
+        -Snapshot $initial.Value
     $sourceBoundaryMatches =
         $initialDay -eq [int]$runPlan.source_total_day -and
-        $initialStateHash -eq [string]$runPlan.source_state_hash
+        $observedSourceBoundaryHash -eq $expectedSourceBoundaryHash
     Write-JsonFile -Path $sourcePreflightPath -Value ([ordered]@{
-        schema_version = "money_crop_native_source_preflight.v1"
+        schema_version = "money_crop_native_source_preflight.v2"
         status = if ($sourceBoundaryMatches) { "matched" } else { "rejected" }
         production_input_manifest_path = $productionInputManifestPath
         production_input_manifest_sha256 = $productionInputManifestSha256
         run_plan_path = $runPlanPath
         expected_source_state_hash = [string]$runPlan.source_state_hash
         observed_source_state_hash = $initialStateHash
+        expected_source_boundary_hash = $expectedSourceBoundaryHash
+        observed_source_boundary_hash = $observedSourceBoundaryHash
+        boundary_hash_excluded_runtime_identity_fields = @(
+            "environment.training_run_id",
+            "environment.save_isolation_path"
+        )
+        boundary_hash_excluded_nonsemantic_fields = @(
+            "*.read_at_tick",
+            "*.machine_probe_cache_tick",
+            "*.projection_tick",
+            "player.movie_theater.projection_fingerprint"
+        )
         expected_source_total_day = [int]$runPlan.source_total_day
         observed_source_total_day = $initialDay
         source_save_slot_path = $sourceSave
@@ -313,6 +334,7 @@ try {
     $seedAcquisitionProofPaths = [Collections.Generic.List[string]]::new()
     $previousSeedAcquisitionProofPath = ""
     $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
+    $wateringCanRefillReceipts = [Collections.Generic.List[object]]::new()
     $layoutSnapshotByCommitment = @{}
     $sitePreparationPlanPaths = [Collections.Generic.List[string]]::new()
     $sitePreparationActionCount = 0
@@ -405,7 +427,10 @@ try {
                 -TargetLocation ([string]$runPlan.location_id) `
                 -TotalDay $totalDay -Name "day-$totalDay-crop-ingress"
             foreach ($routeArtifact in @($route.Artifacts)) {
-                if ($totalDay -lt $proofFirstDay) { continue }
+                if ($totalDay -lt $proofFirstDay -or
+                    @($day.capture_layout_commitment_ids).Count -gt 0) {
+                    continue
+                }
                 $transitions.Add((New-RuntimeCropTransition `
                     -TransitionKind "supporting_route_to_crop" `
                     -TotalDay $totalDay -Artifacts $routeArtifact `
@@ -464,6 +489,23 @@ try {
             $transitions.Add((New-RuntimeCropTransition `
                 -TransitionKind "crop_actions" -TotalDay $totalDay `
                 -Artifacts $result.Artifacts -RunId $RunId))
+            $refillSteps = @($result.Artifacts.Execution.step_results |
+                Where-Object {
+                    [string]$_.option_id -eq "executor.water_crop" -and
+                    [string]$_.status -eq "applied" -and
+                    [string]$_.primitive_verification_status -eq "verified" -and
+                    $null -ne $_.water_before -and
+                    [int]$_.water_before -eq 0 -and
+                    $null -ne $_.water_after -and
+                    [int]$_.water_after -gt 0
+                })
+            if ($refillSteps.Count -gt 0) {
+                $wateringCanRefillReceipts.Add([ordered]@{
+                    total_day = $totalDay
+                    execution_receipt_path =
+                        [string]$result.Artifacts.ExecutionPath
+                })
+            }
             $currentPath = $result.SourcePath
             $executedCropBatchCount++
         }
@@ -557,6 +599,7 @@ try {
             commitment_id = $commitmentId
             planting_layout_proof_paths = @($layoutProofPaths)
             daily_snapshot_paths = @($dailySnapshotPaths)
+            watering_can_refill_receipts = @($wateringCanRefillReceipts)
             formal_product_training_authorized = $false
         })
         Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
@@ -684,6 +727,8 @@ try {
         site_preparation_plan_paths = @($sitePreparationPlanPaths)
         planting_layout_proof_count = $layoutProofPaths.Count
         daily_capacity_proof_count = $capacityProofPaths.Count
+        watering_can_refill_receipt_count =
+            $wateringCanRefillReceipts.Count
         native_lifecycle_proof_count = $lifecycleProofPaths.Count
         output_retention_proof_count = $retentionProofPaths.Count
         checkpoint_path = $checkpointPath

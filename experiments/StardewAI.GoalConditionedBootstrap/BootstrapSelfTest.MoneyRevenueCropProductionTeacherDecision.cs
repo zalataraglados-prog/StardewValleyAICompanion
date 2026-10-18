@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.OptionRegistry;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -27,6 +28,16 @@ internal static partial class BootstrapSelfTest
                 MaxQueueItemCount = 8
             });
 
+        var purchaseAvailability =
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    MoneyCropTeacherSourceSnapshot(),
+                    new[] { "economy.buy_supplies" })
+                .Options[0];
+        Write(
+            Path.Combine(root, "purchase-availability.json"),
+            purchaseAvailability);
+
         var decision =
             MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
                 teacherRequestPath);
@@ -47,6 +58,23 @@ internal static partial class BootstrapSelfTest
                     value.Admitted &&
                     value.ExistingSeedQuantity == 1 &&
                     value.ShopId.Length == 0) &&
+                decision.TeacherCandidateEvaluations.Any(value =>
+                    value.SeedId == "478" &&
+                    !value.Admitted &&
+                    value.BlockReasons.Contains(
+                        "no_current_seed_supply",
+                        StringComparer.Ordinal)) &&
+                decision.TeacherCandidateEvaluations.Any(value =>
+                    value.SeedId == "745" &&
+                    !value.Admitted &&
+                    value.BlockReasons.Contains(
+                        "no_current_seed_supply",
+                        StringComparer.Ordinal)) &&
+                decision.TeacherCandidateEvaluations.Any(value =>
+                    value.SeedId == "474" &&
+                    value.Selected &&
+                    value.ShopId == "SeedShop" &&
+                    value.SeedUnitPrice == 80) &&
                 decision.Commitments.Length == 1 &&
                 decision.Commitments[0].SeedId == "474" &&
                 decision.Commitments[0].TileCount == 5 &&
@@ -120,6 +148,63 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejected,
             "A crop-production layout captured from a different resource boundary was admitted.");
+
+        var partialLayout = MoneyCropTeacherLayoutSnapshot();
+        var partialState = partialLayout.State.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value,
+            StringComparer.Ordinal);
+        partialState["farm"] = JsonSerializer.SerializeToElement(new
+        {
+            site_preparation_context = MoneyCropRuntimeField(new
+            {
+                schema_version = "farm_site_preparation_context.v1",
+                projection_status =
+                    "complete_bounded_current_farm_region",
+                location_id = "Farm",
+                map_width = 4,
+                map_height = 3,
+                bounds = new
+                {
+                    min_x = 0,
+                    min_y = 0,
+                    max_x = 2,
+                    max_y = 2
+                },
+                tile_count = 9,
+                tiles = Enumerable.Range(0, 9).Select(index => new
+                {
+                    tile_x = index % 3,
+                    tile_y = index / 3,
+                    status = "ready_to_till"
+                }).ToArray()
+            })
+        }, JsonDefaults.Options);
+        partialLayout.State = partialState;
+        partialLayout.StateHash = SnapshotHash.ComputeStateHash(partialState);
+        var partialLayoutPath = Path.Combine(root, "partial-layout.json");
+        Write(partialLayoutPath, partialLayout);
+        var partialRequestPath = Path.Combine(root, "partial-request.json");
+        Write(partialRequestPath,
+            new MoneyRevenueCropProductionTeacherRequest
+            {
+                SnapshotPath = sourcePath,
+                FarmLayoutSnapshotPaths = new[] { partialLayoutPath },
+                DecisionId = "teacher.money.crop.spring7.partial",
+                DecisionRecordedAt = "2026-10-18T00:00:00Z"
+            });
+        rejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                partialRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "A crop-production Teacher layout with incomplete Farm coverage was admitted.");
     }
 
     private static SnapshotEnvelope MoneyCropTeacherSourceSnapshot()
@@ -140,8 +225,20 @@ internal static partial class BootstrapSelfTest
         state["player"] = JsonSerializer.SerializeToElement(new
         {
             location_id = MoneyCropRuntimeField("FarmHouse"),
+            tile_x = MoneyCropRuntimeField(0),
+            tile_y = MoneyCropRuntimeField(0),
+            energy = MoneyCropRuntimeField(270),
             money = MoneyCropRuntimeField(450),
             inventory = MoneyCropRuntimeField(new[]
+            {
+                new
+                {
+                    slot_index = 0,
+                    qualified_item_id = "(O)476",
+                    stack = 1
+                }
+            }),
+            seed_inventory = MoneyCropRuntimeField(new[]
             {
                 new
                 {
@@ -162,7 +259,11 @@ internal static partial class BootstrapSelfTest
                 MoneyCropTeacherCatalogRow(
                     "474", 12, null, "190", 350, false),
                 MoneyCropTeacherCatalogRow(
-                    "476", 6, null, "192", 30, false)
+                    "476", 6, null, "192", 30, false),
+                MoneyCropTeacherCatalogRow(
+                    "478", 13, null, "276", 220, false),
+                MoneyCropTeacherCatalogRow(
+                    "745", 8, 4, "400", 120, false)
             }),
             shipping_bins = MoneyCropRuntimeField(new[]
             {
@@ -210,7 +311,8 @@ internal static partial class BootstrapSelfTest
         {
             shops = MoneyCropRuntimeField(new
             {
-                shops = new[]
+                stores_closed_for_festival = false,
+                shops = new object[]
                 {
                     new
                     {
@@ -224,11 +326,131 @@ internal static partial class BootstrapSelfTest
                                 MoneyCropTeacherStock("474", 80)
                             }
                         }
+                    },
+                    new
+                    {
+                        shop_id = "Festival_EggFestival_Pierre",
+                        stock_preview = new
+                        {
+                            entries = new[]
+                            {
+                                MoneyCropTeacherStock("745", 100)
+                            }
+                        }
+                    },
+                    new
+                    {
+                        shop_id = "Festival_NightMarket_MagicBoat_Day1",
+                        stock_preview = new
+                        {
+                            entries = new[]
+                            {
+                                MoneyCropTeacherStock("474", 10)
+                            }
+                        }
+                    },
+                    new
+                    {
+                        shop_id = "Sandy",
+                        stock_preview = new
+                        {
+                            entries = new[]
+                            {
+                                MoneyCropTeacherStock("478", 100)
+                            }
+                        }
+                    }
+                }
+            }),
+            collision_grid = MoneyCropRuntimeField(new
+            {
+                location_id = "FarmHouse",
+                width = 4,
+                height = 4,
+                notable_tiles = Array.Empty<object>()
+            }),
+            route_connectors = MoneyCropRuntimeField(new
+            {
+                location_id = "FarmHouse",
+                connectors = new[]
+                {
+                    new
+                    {
+                        kind = "warp",
+                        tile_x = 1,
+                        tile_y = 0,
+                        target_location = "Farm",
+                        target_x = 1,
+                        target_y = 1,
+                        resolved = true
+                    }
+                }
+            }),
+            route_action_branch_coverage = MoneyCropRuntimeField(new
+            {
+                rows = Array.Empty<object>()
+            }),
+            route_graph = MoneyCropRuntimeField(new
+            {
+                edges = new object[]
+                {
+                    MoneyCropTeacherRouteEdge(
+                        "FarmHouse", 1, 0, "Farm", 1, 1, true),
+                    MoneyCropTeacherRouteEdge(
+                        "Farm", 2, 0, "BusStop", 1, 1, true),
+                    MoneyCropTeacherRouteEdge(
+                        "BusStop", 2, 0, "Town", 1, 1, true),
+                    MoneyCropTeacherRouteEdge(
+                        "Town", 2, 0, "SeedShop", 1, 1, true),
+                    MoneyCropTeacherRouteEdge(
+                        "BusStop", 22, 8, "Desert", 18, 27, false),
+                    MoneyCropTeacherRouteEdge(
+                        "Desert", 6, 51, "SandyHouse", 4, 9, true),
+                    new
+                    {
+                        kind = "shop_endpoint",
+                        from_location = "SeedShop",
+                        from_x = 4,
+                        from_y = 18,
+                        shop_id = "SeedShop",
+                        action_type = "Buy",
+                        direct_time_allowed = true,
+                        festival_closed = false,
+                        allowed_now = true,
+                        resolved = false
+                    },
+                    new
+                    {
+                        kind = "shop_endpoint",
+                        from_location = "SandyHouse",
+                        from_x = 2,
+                        from_y = 6,
+                        shop_id = "Sandy",
+                        action_type = "Buy",
+                        direct_time_allowed = true,
+                        festival_closed = false,
+                        allowed_now = true,
+                        resolved = false
                     }
                 }
             })
         }, JsonDefaults.Options);
-        snapshot.GameTick = 100;
+        state["current_location"] = JsonSerializer.SerializeToElement(new
+        {
+            map = MoneyCropRuntimeField(new { id = "FarmHouse" }),
+            objects = MoneyCropRuntimeField(Array.Empty<object>()),
+            terrain_features = MoneyCropRuntimeField(Array.Empty<object>()),
+            shop_action_tiles = MoneyCropRuntimeField(Array.Empty<object>())
+        }, JsonDefaults.Options);
+        state["menus"] = JsonSerializer.SerializeToElement(new
+        {
+            active_menu = MoneyCropRuntimeField(new
+            {
+                is_open = false,
+                type = "none"
+            })
+        }, JsonDefaults.Options);
+        snapshot.GameTick = 150;
         snapshot.State = state;
         snapshot.StateHash = SnapshotHash.ComputeStateHash(state);
         return snapshot;
@@ -251,18 +473,20 @@ internal static partial class BootstrapSelfTest
                     projection_status =
                         "complete_bounded_current_farm_region",
                     location_id = "Farm",
+                    map_width = 4,
+                    map_height = 3,
                     bounds = new
                     {
-                        min_x = 68,
-                        min_y = 16,
-                        max_x = 71,
-                        max_y = 18
+                        min_x = 0,
+                        min_y = 0,
+                        max_x = 3,
+                        max_y = 2
                     },
                     tile_count = 12,
                     tiles = Enumerable.Range(0, 12).Select(index => new
                     {
-                        tile_x = 68 + index % 4,
-                        tile_y = 16 + index / 4,
+                        tile_x = index % 4,
+                        tile_y = index / 4,
                         status = index == 0
                             ? "already_prepared"
                             : "ready_to_till"
@@ -270,7 +494,7 @@ internal static partial class BootstrapSelfTest
                 })
             }, JsonDefaults.Options)
         };
-        source.GameTick = 101;
+        source.GameTick = 151;
         source.State = state;
         source.StateHash = SnapshotHash.ComputeStateHash(state);
         return source;
@@ -304,9 +528,36 @@ internal static partial class BootstrapSelfTest
         string seedId,
         int price) => new
     {
+        item_id = seedId,
         qualified_item_id = "(O)" + seedId,
+        display_name = "Seed " + seedId,
         price,
         currency = 0,
-        executor_purchase_preview_enabled = true
+        stock = int.MaxValue,
+        infinite_stock = true,
+        stack = 1,
+        quality = 0,
+        currency_balance = 450,
+        executor_purchase_preview_enabled = true,
+        executor_block_reasons = Array.Empty<string>()
+    };
+
+    private static object MoneyCropTeacherRouteEdge(
+        string fromLocation,
+        int fromX,
+        int fromY,
+        string targetLocation,
+        int targetX,
+        int targetY,
+        bool resolved) => new
+    {
+        kind = "warp",
+        from_location = fromLocation,
+        from_x = fromX,
+        from_y = fromY,
+        target_location = targetLocation,
+        target_x = targetX,
+        target_y = targetY,
+        resolved
     };
 }

@@ -183,6 +183,39 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void BuySuppliesRetainsRouteWhenShopEntranceOpensLaterToday()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"378",
+                "qualified_item_id":"(O)378",
+                "display_name":"Copper Ore",
+                "price":150,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, routeGraphExtra: """
+              ,{"kind":"locked_door_warp","from_location":"Town","from_x":1,"from_y":1,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":true,"time_allowed":false,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"effective_open_time":1000,"close_time":1700,"unresolved_reason":null}}
+            """), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(1000, candidate.NextOpenTime);
+        Assert.Equal(1000, candidate.EffectiveOpenTime);
+        Assert.Equal(1700, candidate.ClosesAt);
+        Assert.Contains("shop_entrance_not_open_yet", candidate.GateReasons);
+        Assert.DoesNotContain(
+            "no_value_available_purchase_candidates",
+            option.BlockingReasons);
+    }
+
+    [Fact]
     public void BuySuppliesExcludesRemoteDialogueShopWhenRuntimeOwnerIsNotAtCounter()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

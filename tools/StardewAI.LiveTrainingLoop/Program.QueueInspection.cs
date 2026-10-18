@@ -139,6 +139,25 @@ static partial class Program
             return (latestJson, latest, true, "game_tick_advanced_without_hash_change");
         }
 
+        // Menus can pause the game tick while changing observable UI state. Force one
+        // main-thread capture before waiting on a tick that may not advance.
+        var sameTickRefresh = await ReadExecutionSnapshotAsync(
+            http,
+            options,
+            forceRefresh: true);
+        latest = sameTickRefresh.Snapshot;
+        latestJson = sameTickRefresh.Json;
+        latestHash = ReadString(latest, "state_hash");
+        latestTick = ReadLong(latest, "game_tick");
+        if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
+        {
+            return (latestJson, latest, true, "same_tick_state_hash_changed");
+        }
+        if (latestTick > beforeTick)
+        {
+            return (latestJson, latest, true, "game_tick_advanced_without_hash_change");
+        }
+
         do
         {
             var clock = await ReadCurrentSnapshotAsync(http, options);

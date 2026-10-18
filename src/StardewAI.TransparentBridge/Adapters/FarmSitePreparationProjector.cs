@@ -67,6 +67,8 @@ internal static class FarmSitePreparationProjector
                 : "blocked_current_location_not_farm",
             location_id = location.NameOrUniqueName,
             is_farm = location is Farm,
+            map_width = mapWidth,
+            map_height = mapHeight,
             bounds = new
             {
                 min_x = bounds.MinX,

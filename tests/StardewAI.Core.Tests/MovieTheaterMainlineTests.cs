@@ -104,6 +104,7 @@ public sealed class MovieTheaterMainlineTests
         Assert.Contains("debug.setup_movie_theater", supported, StringComparison.Ordinal);
         Assert.Contains("invitedNpcsByName", bridge, StringComparison.Ordinal);
         Assert.Contains("Game1.getCharacterFromName", bridge, StringComparison.Ordinal);
+        Assert.Contains("movie.Tags?.OrderBy", bridge, StringComparison.Ordinal);
         Assert.Contains("active.Location.checkAction", runtime, StringComparison.Ordinal);
         Assert.Contains("shop.receiveLeftClick", runtime, StringComparison.Ordinal);
         Assert.Contains("dialogue.receiveLeftClick", runtime, StringComparison.Ordinal);

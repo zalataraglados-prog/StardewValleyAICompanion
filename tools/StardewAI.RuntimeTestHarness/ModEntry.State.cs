@@ -118,6 +118,17 @@ public sealed partial class ModEntry : Mod
             return new ActiveNativeTool(pending, "water_crop", locationId, target, path, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null);
         }
 
+        public static ActiveNativeTool WaterAfterRefill(PendingExecution pending, string locationId, Point cropTarget, Point refillTarget, List<Point> refillPath, WateringCan tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeWatered)
+        {
+            var active = new ActiveNativeTool(pending, "water_crop", locationId, refillTarget, refillPath, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null)
+            {
+                CropTargetAfterRefill = cropTarget,
+                RefillingWateringCan = true
+            };
+            active.MaxTicks += 240;
+            return active;
+        }
+
         public static ActiveNativeTool WaterPetBowl(PendingExecution pending, string locationId, Point target, List<Point> path, WateringCan tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeWatered, double expectedEnergyCost)
         {
             return new ActiveNativeTool(pending, "fill_pet_bowl", locationId, target, path, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null, expectedEnergyCost: expectedEnergyCost);
@@ -136,8 +147,8 @@ public sealed partial class ModEntry : Mod
         public PendingExecution Pending { get; }
         public string PrimitiveKind { get; }
         public string LocationId { get; }
-        public Point Target { get; }
-        public List<Point> Path { get; }
+        public Point Target { get; set; }
+        public List<Point> Path { get; set; }
         public Tool Tool { get; }
         public double StaminaBefore { get; }
         public int? WaterBefore { get; }
@@ -157,8 +168,8 @@ public sealed partial class ModEntry : Mod
         public int ElapsedTicks { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
-        public int MaxMovementTicks { get; }
-        public int MaxTicks { get; }
+        public int MaxMovementTicks { get; private set; }
+        public int MaxTicks { get; private set; }
         public int MaxMovementTiles { get; }
         public int MovementTiles { get; set; }
         public Point LastObservedTile { get; set; } = Game1.player.TilePoint;
@@ -166,7 +177,24 @@ public sealed partial class ModEntry : Mod
         public int PickupPathFailures { get; set; }
         public bool ToolCycleCompleted { get; set; }
         public Vector2 LastPosition { get; set; }
-        public NativeToolActionLifecycle Lifecycle { get; } = new();
+        public bool RefillingWateringCan { get; set; }
+        public Point? CropTargetAfterRefill { get; set; }
+        public NativeToolActionLifecycle Lifecycle { get; private set; } = new();
+
+        public void ContinueAfterWateringCanRefill(Point cropTarget, List<Point> cropPath)
+        {
+            Target = cropTarget;
+            Path = cropPath;
+            PathIndex = 0;
+            StuckTicks = 0;
+            LastPosition = Game1.player.Position;
+            RefillingWateringCan = false;
+            CropTargetAfterRefill = null;
+            Lifecycle = new NativeToolActionLifecycle();
+            var addedMovementTicks = Math.Max(120, cropPath.Count * 90);
+            MaxMovementTicks += addedMovementTicks;
+            MaxTicks += addedMovementTicks + 240;
+        }
     }
 
     private sealed class ActiveAdjacentTileAction

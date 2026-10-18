@@ -17,6 +17,128 @@ function Assert-MoneyCropInputCondition {
     if (-not $Condition) { throw $Message }
 }
 
+function Remove-MoneyCropNonSemanticBoundaryMetadata {
+    param([AllowNull()] $Value)
+
+    if ($null -eq $Value -or $Value -is [string]) { return }
+    if ($Value -is [Collections.IEnumerable] -and
+        $Value -isnot [pscustomobject]) {
+        foreach ($item in $Value) {
+            Remove-MoneyCropNonSemanticBoundaryMetadata -Value $item
+        }
+        return
+    }
+    if ($Value -isnot [pscustomobject]) { return }
+
+    foreach ($property in @($Value.PSObject.Properties)) {
+        if ($property.Name -in @(
+                "read_at_tick",
+                "machine_probe_cache_tick",
+                "projection_tick")) {
+            $Value.PSObject.Properties.Remove($property.Name)
+            continue
+        }
+        Remove-MoneyCropNonSemanticBoundaryMetadata -Value $property.Value
+    }
+}
+
+if (-not ("StardewAI.RuntimeSupport.CanonicalJson" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+
+namespace StardewAI.RuntimeSupport
+{
+    public static class CanonicalJson
+    {
+        public static string Serialize(string json)
+        {
+            using (var document = JsonDocument.Parse(json))
+            {
+                var builder = new StringBuilder(json.Length);
+                Write(document.RootElement, builder);
+                return builder.ToString();
+            }
+        }
+
+        private static void Write(JsonElement element, StringBuilder builder)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    builder.Append('{');
+                    var first = true;
+                    foreach (var property in element.EnumerateObject()
+                                 .OrderBy(value => value.Name,
+                                     StringComparer.Ordinal))
+                    {
+                        if (!first)
+                            builder.Append(',');
+                        first = false;
+                        builder.Append(JsonSerializer.Serialize(property.Name));
+                        builder.Append(':');
+                        Write(property.Value, builder);
+                    }
+                    builder.Append('}');
+                    break;
+                case JsonValueKind.Array:
+                    builder.Append('[');
+                    for (var index = 0; index < element.GetArrayLength(); index++)
+                    {
+                        if (index > 0)
+                            builder.Append(',');
+                        Write(element[index], builder);
+                    }
+                    builder.Append(']');
+                    break;
+                default:
+                    builder.Append(element.GetRawText());
+                    break;
+            }
+        }
+    }
+}
+'@
+}
+
+function Get-MoneyCropSourceBoundaryHash {
+    param([Parameter(Mandatory)] $Snapshot)
+
+    $state = $Snapshot.state | ConvertTo-Json -Depth 96 -Compress |
+        ConvertFrom-Json
+    foreach ($fieldName in @("training_run_id", "save_isolation_path")) {
+        $field = $state.environment.$fieldName
+        Assert-MoneyCropInputCondition `
+            -Condition ($null -ne $field -and
+                $field.PSObject.Properties.Name -contains "value") `
+            -Message (
+                "Money crop source boundary is missing environment." +
+                $fieldName + ".")
+        $field.value = "__runtime_identity_excluded__"
+    }
+    Remove-MoneyCropNonSemanticBoundaryMetadata -Value $state
+    $movieTheater = $state.player.movie_theater.value
+    if ($null -ne $movieTheater -and
+        $movieTheater.PSObject.Properties.Name -contains
+            "projection_fingerprint") {
+        $movieTheater.PSObject.Properties.Remove("projection_fingerprint")
+    }
+
+    $json = [StardewAI.RuntimeSupport.CanonicalJson]::Serialize(
+        ($state | ConvertTo-Json -Depth 96 -Compress))
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($json)
+        return ([BitConverter]::ToString($sha.ComputeHash($bytes)).
+            Replace("-", "").ToLowerInvariant())
+    }
+    finally {
+        $sha.Dispose()
+    }
+}
+
 function Get-MoneyCropManifestArtifact {
     param(
         [Parameter(Mandatory)] $Manifest,
@@ -295,12 +417,16 @@ function Read-MoneyCropNativeProductionInputManifest {
     Assert-MoneyCropInputCondition `
         -Condition (
             [string]$runPlanRequest.schema_version -eq
-                "money_revenue_crop_native_production_run_plan_request.v1" -and
+                "money_revenue_crop_native_production_run_plan_request.v2" -and
             (Test-MoneyCropInputPathEqual `
                 -Left ([string]$runPlanRequest.crop_production_plan_path) `
                 -Right $artifacts.ObligationPlanPath) -and
             @($runPlanRequest.layout_intents).Count -eq
                 [int]$manifest.commitment_count -and
+            @($runPlanRequest.seed_acquisition_intents).Count -eq
+                @($obligationPlan.commitments | Where-Object {
+                    [int]$_.seed_quantity_shortfall -gt 0
+                }).Count -and
             [int]$runPlanRequest.max_queue_item_count -eq
                 [int]$manifest.max_queue_item_count -and
             -not [bool]$runPlanRequest.formal_product_training_authorized) `
@@ -319,7 +445,7 @@ function Read-MoneyCropNativeProductionInputManifest {
     Assert-MoneyCropInputCondition `
         -Condition (
             [string]$runPlan.schema_version -eq
-                "money_revenue_crop_native_production_run_plan.v2" -and
+                "money_revenue_crop_native_production_run_plan.v3" -and
             [string]$runPlan.status -eq
                 "native_crop_production_run_ready" -and
             [bool]$runPlan.native_production_run_ready -and
@@ -364,6 +490,7 @@ function Read-MoneyCropNativeProductionInputManifest {
         [int]$_.seed_quantity_shortfall -gt 0
     })
     $actualAcquisitions = @($runPlan.seed_acquisitions)
+    $acquisitionIntents = @($runPlanRequest.seed_acquisition_intents)
     Assert-MoneyCropInputCondition `
         -Condition ($actualAcquisitions.Count -eq
             $expectedAcquisitions.Count) `
@@ -371,13 +498,20 @@ function Read-MoneyCropNativeProductionInputManifest {
     for ($index = 0; $index -lt $expectedAcquisitions.Count; $index++) {
         $expected = $expectedAcquisitions[$index]
         $actual = $actualAcquisitions[$index]
+        $intent = @($acquisitionIntents | Where-Object {
+            [string]$_.commitment_id -eq [string]$expected.commitment_id
+        })
         Assert-MoneyCropInputCondition `
             -Condition (
+                $intent.Count -eq 1 -and
                 [int]$actual.acquisition_index -eq ($index + 1) -and
                 [string]$actual.commitment_id -eq
                     [string]$expected.commitment_id -and
                 [string]$actual.seed_qualified_item_id -eq
                     [string]$expected.seed_qualified_item_id -and
+                [string]$actual.shop_id -eq [string]$intent[0].shop_id -and
+                [int]$actual.max_unit_price -eq
+                    [int]$intent[0].max_unit_price -and
                 [int]$actual.required_quantity -eq
                     [int]$expected.seed_quantity_shortfall -and
                 [int]$actual.deadline_total_day -eq

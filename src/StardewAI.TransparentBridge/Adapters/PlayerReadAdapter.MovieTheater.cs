@@ -96,7 +96,15 @@ public sealed partial class PlayerReadAdapter
             player_location = player.currentLocation?.NameOrUniqueName,
             player_last_seen = player.lastSeenMovieWeek.Value,
             ticketSlots,
-            movie = movie is null ? null : new { movie.Id, movie.Tags, movie.YearModulus, movie.YearRemainder },
+            movie = movie is null ? null : new
+            {
+                movie.Id,
+                Tags = movie.Tags?.OrderBy(
+                    value => value,
+                    StringComparer.Ordinal).ToArray() ?? Array.Empty<string>(),
+                movie.YearModulus,
+                movie.YearRemainder
+            },
             invitations,
             own_invitation = ownInvitation is null ? null : new { guest = ownInvitation.invitedNPC?.Name, ownInvitation.fulfilled, purchasedConcessionId },
             theater_state = ReadMovieTheaterNetInt(theater, MovieTheaterCurrentStateField),

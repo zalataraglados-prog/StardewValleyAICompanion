@@ -109,6 +109,30 @@ internal static partial class BootstrapSelfTest
                 "execution_receipt_effective_queue_item_mismatch:1",
                 StringComparer.Ordinal),
             "An undeclared queue-item state rebind was admitted.");
+
+        var continuationRebind = CloneQueueItem(second);
+        continuationRebind.QueueItemId += ".continuation";
+        continuationRebind.NormalizedCommand.StateHash =
+            intermediateStateHash;
+        continuationRebind.NormalizedCommand.Steps[0].StepId +=
+            ".continuation";
+        var continuationElement = JsonSerializer.SerializeToElement(
+            continuationRebind,
+            JsonDefaults.Options);
+        Require(ExecutionReceiptValidationSupport
+                .EffectiveQueueItemSemanticallyMatches(
+                    continuationElement,
+                    second),
+            "A semantic continuation queue-item rebind was rejected.");
+        continuationRebind.NormalizedCommand.Steps[0].Target += ".drifted";
+        continuationElement = JsonSerializer.SerializeToElement(
+            continuationRebind,
+            JsonDefaults.Options);
+        Require(!ExecutionReceiptValidationSupport
+                .EffectiveQueueItemSemanticallyMatches(
+                    continuationElement,
+                    second),
+            "A continuation queue item with semantic target drift was admitted.");
     }
 
     private static QueueExecutionStepReceipt SequentialReceiptStep(

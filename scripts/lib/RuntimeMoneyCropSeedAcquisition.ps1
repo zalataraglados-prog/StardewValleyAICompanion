@@ -54,9 +54,12 @@ function Invoke-RuntimeCropSeedAcquisition {
     )
 
     $qualifiedItemId = [string]$Acquisition.seed_qualified_item_id
+    $shopId = [string]$Acquisition.shop_id
+    $maxUnitPrice = [int]$Acquisition.max_unit_price
     $requiredQuantity = [int]$Acquisition.required_quantity
     $deadlineTotalDay = [int]$Acquisition.deadline_total_day
     if ([string]::IsNullOrWhiteSpace($qualifiedItemId) -or
+        [string]::IsNullOrWhiteSpace($shopId) -or $maxUnitPrice -le 0 -or
         $requiredQuantity -le 0 -or $deadlineTotalDay -lt 0 -or
         [string]$Acquisition.execution_policy -ne
             "economy.buy_supplies_one_unit_fresh_snapshot_slices") {
@@ -119,6 +122,14 @@ function Invoke-RuntimeCropSeedAcquisition {
                     value = $qualifiedItemId
                 },
                 [ordered]@{
+                    name = "continuation.shop_id"
+                    value = $shopId
+                },
+                [ordered]@{
+                    name = "continuation.max_unit_price"
+                    value = [string]$maxUnitPrice
+                },
+                [ordered]@{
                     name = "continuation.quantity"
                     value = "1"
                 }
@@ -133,9 +144,15 @@ function Invoke-RuntimeCropSeedAcquisition {
             -OutputPath $rankingPath -OptionId "economy.buy_supplies" `
             -Parameters $rankingParameters
         $candidates = @($ranking.ranked_event_candidates | Where-Object {
-            [bool]$_.available -and
+            (([bool]$_.available -and
+                    [string]$_.timeline_status -eq "ready_now") -or
+                ([string]$_.timeline_status -eq "deferred" -and
+                    [bool]$_.allowed_today -and
+                    [int]$_.scheduled_wait_cost -gt 0)) -and
             [string]$_.option_id -eq "economy.buy_supplies" -and
+            [string]$_.shop_id -eq $shopId -and
             [string]$_.qualified_item_id -eq $qualifiedItemId -and
+            [int]$_.unit_price -le $maxUnitPrice -and
             [string]$_.kind -in @(
                 "route_connector_tile",
                 "interact_endpoint",
@@ -150,6 +167,12 @@ function Invoke-RuntimeCropSeedAcquisition {
         if ([string](@($bound | Where-Object {
                 [string]$_.name -eq "continuation.qualified_item_id"
             })[0].value) -ne $qualifiedItemId -or
+            [string](@($bound | Where-Object {
+                [string]$_.name -eq "continuation.shop_id"
+            })[0].value) -ne $shopId -or
+            [int](@($bound | Where-Object {
+                [string]$_.name -eq "continuation.max_unit_price"
+            })[0].value) -gt $maxUnitPrice -or
             [string](@($bound | Where-Object {
                 [string]$_.name -eq "continuation.quantity"
             })[0].value) -ne "1") {
@@ -172,7 +195,7 @@ function Invoke-RuntimeCropSeedAcquisition {
             -CandidateKind ([string]$candidate.kind) `
             -CandidateId ([string]$candidate.candidate_id) `
             -CandidateParameters $parameterStrings `
-            -SourceSnapshotPath $current.Path
+            -SourceSnapshotPath $current.Path -AllowVerifiedContinuation
         $afterQuantity = Get-RuntimeCropInventoryQuantity `
             -Snapshot $execution.After -QualifiedItemId $qualifiedItemId
         if ($afterQuantity -lt $beforeQuantity -or

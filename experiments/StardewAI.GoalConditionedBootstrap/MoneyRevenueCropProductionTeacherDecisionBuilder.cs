@@ -33,7 +33,12 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         var layouts = ReadLayoutSnapshots(
             request.FarmLayoutSnapshotPaths,
             snapshot);
-        var viableTiles = layouts
+        Require(layouts.Select(value => (
+                    value.Binding.MapWidth,
+                    value.Binding.MapHeight))
+                .Distinct().Count() == 1,
+            "Money Revenue crop-production Teacher layout map dimensions drifted.");
+        var layoutTiles = layouts
             .SelectMany(value => value.Tiles)
             .GroupBy(value => new { value.TileX, value.TileY })
             .Select(group =>
@@ -43,6 +48,12 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     $"Farm({group.Key.TileX},{group.Key.TileY}).");
                 return group.Single();
             })
+            .ToArray();
+        var mapWidth = layouts[0].Binding.MapWidth;
+        var mapHeight = layouts[0].Binding.MapHeight;
+        Require(layoutTiles.Length == checked(mapWidth * mapHeight),
+            "Money Revenue crop-production Teacher layout snapshots do not cover the complete Farm map.");
+        var viableTiles = layoutTiles
             .Where(value => value.Status is
                 "already_prepared" or "ready_to_till" or
                 "requires_single_clearance_then_till")

@@ -101,6 +101,8 @@ public sealed record MoneyRevenueCropTeacherLayoutSnapshotBinding(
     [property: JsonPropertyName("min_y")] int MinY,
     [property: JsonPropertyName("max_x")] int MaxX,
     [property: JsonPropertyName("max_y")] int MaxY,
+    [property: JsonPropertyName("map_width")] int MapWidth,
+    [property: JsonPropertyName("map_height")] int MapHeight,
     [property: JsonPropertyName("tile_count")] int TileCount);
 
 public sealed record MoneyRevenueCropTeacherCandidateEvaluation(
