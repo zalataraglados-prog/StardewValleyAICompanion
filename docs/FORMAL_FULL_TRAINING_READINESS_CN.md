@@ -16,11 +16,11 @@ Formal product training: false
 
 Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation 与 seed-reservation proof 的基础设施。#307、#308、#309、#310 与 #311 已收口，当前没有已知 P0/P1 review issue 阻止继续施工，但这些修复没有自行增加分子。
 
-**准入规则：**只有 crop-production 的购种 shortfall、日容量、生命周期、逐波输出保留与结算，以及真实 native outcome、完整 terminal proof、exact Teacher comparison 和 criterion-local join 全部成立时，相应 Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
+**准入规则：**购种 shortfall 已具备复用现有 acquisition rollout 的精确 proof 类型，但仍需真实 fragment；只有该 fragment、日容量、生命周期、逐波输出保留与结算，以及真实 native outcome、完整 terminal proof、exact Teacher comparison 和 criterion-local join 全部成立时，相应 Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 
-crop-production checkpoint v2 已能重建 planting-layout 与 seed-reservation fragment，并逐槽核对 transparent inventory 与活动 claim。#310 已证明 reservation ledger 的 plan-ledger lineage、原子 commit replay 与 post-plan freshness 下界；但购种 shortfall、日容量、生命周期、输出保留与结算仍 pending，所以 Money 保持 `0/18`，正式训练保持 false。
+crop-production checkpoint v3 已能重建 planting-layout、seed-reservation 与 seed-acquisition fragment。#310 已证明 reservation ledger 的 plan-ledger lineage、原子 commit replay 与 post-plan freshness 下界；seed acquisition 则完整重放共享 rollout 并绑定精确 shortfall 和截止日。正式购种 fragment、日容量、生命周期、输出保留与结算仍 pending，所以 Money 保持 `0/18`，正式训练保持 false。
 ## 已收口待后续证据 · 2026-10-18 Money 作物场地准备
 
 作物场地准备已通过有界 `farm_layout` 透明快照和既有清障/资源块/BFS/锄地候选形成执行计划；清障后必须 fresh snapshot 重绑。#311 已关闭 bounds overflow、BFS reachability、stamina gate 及相关作物分母 fail-closed 缺口。该层仍只是基础设施，不产生 production cell；Money 保持 `0/18` 且 `formal_product_training_authorized=false`。

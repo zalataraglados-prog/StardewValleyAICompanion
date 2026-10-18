@@ -102,15 +102,15 @@ counterfactual catalog 之后现使用 `money_revenue_terminal_proof_collection_
 
 `Initialize-MoneyRevenueTerminalProofCollection.ps1` 现可无游戏物化上述唯一离线复用项：after boundary 继续来自已验证 sale episode，before boundary 则严格使用 request/verifier 规定的 terminal snapshot，并同时核对 request、work item 与实物 SHA-256。所有 fragment 进入 `money_revenue_terminal_proof_collection_checkpoint.v1` 前都由既有 terminal execution verifier 完整重放；checkpoint 允许保存真实部分进度，但只有 verified request ID 集与完整 denominator 相等时才输出 completion 可消费的 `money_revenue_terminal_proof_index.v1`。其余反事实分支仍为原生采集 blocker，未增加 Money production 分子。
 
-未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v2` 会重新核验这些值，拒绝已经过去的种植日，把同承诺已有预留与当前未预留供给分开审计，并只将未预留余量按承诺顺序唯一分配。种子预留 proof v2 必须从计划基准 ledger 原子重放 commit request/result，手写最终账本、倒退日期或同日倒退 tick 均失败关闭。布局 proof 仍必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；fragment index v3 及每个 proof 还必须绑定同一计划 SHA-256。其余购种 shortfall、日容量、生命周期、逐波输出保留与结算请求保持 pending，future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。下一切片沿既有唯一作物链补这些证明，不得另写第二套作物候选、规划器或执行器。
+未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v2` 会重新核验这些值，拒绝已经过去的种植日，把同承诺已有预留与当前未预留供给分开审计，并只将未预留余量按承诺顺序唯一分配。种子预留 proof v2 必须从计划基准 ledger 原子重放 commit request/result，手写最终账本、倒退日期或同日倒退 tick 均失败关闭。布局 proof 仍必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；fragment index v4 及每个 proof 还必须绑定同一计划 SHA-256。购种 shortfall 现可用 `money_revenue_crop_seed_acquisition_proof.v1` 复用并完整重放既有 acquisition rollout；但正式 fragment 尚未采集，日容量、生命周期、逐波输出保留与结算也保持 pending。future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。下一切片进入日容量证明，不得另写第二套作物候选、规划器或执行器。
 
 场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。局部读取现使用 overflow-safe 边界与不会回绕的遍历，资源团块站位复用共享 BFS，锄地在体力缺失或 `<=0` 时失败关闭。该计划本身不是 planting-layout proof，也没有增加 Money production 分子。
 
-种子预留 proof 现已进入 crop-production checkpoint v2：它只认可 fresh snapshot 上经共享原子提交服务精确重放、且直接继承计划基准 ledger 的完整 reservation，并逐槽对照透明物料图；原计划中的“当前可用数量”和调用方手写的最终 ledger 都不能冒充预留。预留快照不得早于计划源快照，同日还必须保持 tick 单调。任何 shortfall 仍必须经既有购买链原生补足，再重新快照和提交预留。该层没有闭合购种回执、日容量、生命周期或输出保留，因此 Money 仍为 `0/18`。
+crop-production checkpoint v3 只认可可从精确请求重建的 fragment。种子预留继续要求 fresh snapshot 上由共享原子提交服务重放的完整 reservation，并逐槽对照透明物料图；购种 shortfall proof 则要求既有 acquisition rollout 从计划源快照出发，在截止日前以唯一完整 terminal transition 精确增加短缺数量。少买、错误物品、错误计划边界、未完成 rollout 或额外 continuation 均失败关闭。正式购种 fragment、日容量、生命周期和输出保留尚未采集，因此 Money 仍为 `0/18`。
 
 ### production 前 correctness debt 已清零（2026-10-18 审计）
 
-#307、#308、#309、#310 与 #311 均已按各自验收边界收口；当前没有已知 P0/P1 review issue 阻止 Money 主线继续。该结论不增加证据分子：`CoverageGateReady=2/19`、`Money=0/18`、`formal_product_training_authorized=false` 仍保持不变。下一施工单位回到 Money，先完成既有 crop-production checkpoint 中的购种 shortfall、日容量、生命周期、逐波输出保留与结算，再进行真实 native collection、terminal proof completion、Teacher comparison 和 criterion-local join。
+#307、#308、#309、#310 与 #311 均已按各自验收边界收口；当前没有已知 P0/P1 review issue 阻止 Money 主线继续。该结论不增加证据分子：`CoverageGateReady=2/19`、`Money=0/18`、`formal_product_training_authorized=false` 仍保持不变。购种 shortfall 证明适配器已实现，下一施工单位是 crop-production 日容量证明，随后依次闭合生命周期、逐波输出保留与结算，再进行真实 native collection、terminal proof completion、Teacher comparison 和 criterion-local join。
 
 #307 已关闭：共享 raw JSON helper 现在在 Windows PowerShell 5.1 与 PowerShell 7 上通过同一严格词法扫描原样截取根属性，不再依赖 `System.Text.Json`，也不对 ledger 值做对象往返序列化。真实双壳层测试覆盖嵌套对象、转义字符串、时区小数以及缺失/重复属性失败关闭；七条 ledger 调用路径仍统一复用该 helper。
 
