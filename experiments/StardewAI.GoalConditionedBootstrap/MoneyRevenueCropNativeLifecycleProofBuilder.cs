@@ -16,7 +16,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof_request.v2" &&
+                    "money_revenue_crop_native_lifecycle_proof_request.v3" &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.Transitions is { Length: > 0 } &&
                 !request.FormalProductTrainingAuthorized,
@@ -120,9 +120,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 value.Before.StateHash,
                 value.After.StateHash,
                 value.Queue.Items.Length,
-                value.Request.TransitionKind == CropActionsKind
-                    ? value.Queue.Items[0].OptionId
-                    : "executor.sleep",
+                value.Request.TransitionKind == DayRolloverKind
+                    ? "executor.sleep"
+                    : value.Queue.Items[0].OptionId,
                 ResolveActionCommitmentId(value, contexts),
                 true)).ToArray();
         return new MoneyRevenueCropNativeLifecycleProof
@@ -150,6 +150,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             TransitionCount = transitions.Length,
             CropActionQueueCount = transitions.Count(value =>
                 value.Request.TransitionKind == CropActionsKind),
+            SupportingRouteQueueCount = transitions.Count(value =>
+                value.Request.TransitionKind is CropIngressRouteKind or
+                    SleepIngressRouteKind),
+            CropIngressRouteQueueCount = transitions.Count(value =>
+                value.Request.TransitionKind == CropIngressRouteKind),
+            SleepIngressRouteQueueCount = transitions.Count(value =>
+                value.Request.TransitionKind == SleepIngressRouteKind),
             NativeDayRolloverCount = transitions.Count(value =>
                 value.Request.TransitionKind == DayRolloverKind),
             VerifiedPlantActionCount = CountOption(
@@ -170,7 +177,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static LoadedTransition LoadTransition(
         MoneyRevenueCropNativeLifecycleTransitionRequest request)
     {
-        Require(request.TransitionKind is CropActionsKind or DayRolloverKind &&
+        Require(request.TransitionKind is CropActionsKind or
+                    CropIngressRouteKind or SleepIngressRouteKind or
+                    DayRolloverKind &&
                 request.TotalDay >= 0 &&
                 !string.IsNullOrWhiteSpace(request.RunId) &&
                 !string.IsNullOrWhiteSpace(request.ExecutorVersion) &&
@@ -214,6 +223,10 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             value.Queue.Items.Count(item => item.OptionId == optionId));
 
     private const string CropActionsKind = "crop_actions";
+    private const string CropIngressRouteKind =
+        "supporting_route_to_crop";
+    private const string SleepIngressRouteKind =
+        "supporting_route_to_sleep";
     private const string DayRolloverKind = "native_day_rollover";
     private const string PlantOption = "executor.plant_seed";
     private const string WaterOption = "executor.water_crop";

@@ -68,7 +68,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var rebuiltLifecycle = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             lifecycle.RequestPath);
         Require(lifecycle.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof.v2" &&
+                    "money_revenue_crop_native_lifecycle_proof.v3" &&
                 BootstrapArtifactGuard.EqualJson(
                     lifecycle,
                     rebuiltLifecycle) &&

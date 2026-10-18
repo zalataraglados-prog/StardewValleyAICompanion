@@ -83,7 +83,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         LoadedTransition transition,
         LifecycleCommitmentContext[] contexts)
     {
-        if (transition.Request.TransitionKind == DayRolloverKind)
+        if (transition.Request.TransitionKind != CropActionsKind)
             return string.Empty;
         var owners = transition.Queue.Items.Select(item =>
         {

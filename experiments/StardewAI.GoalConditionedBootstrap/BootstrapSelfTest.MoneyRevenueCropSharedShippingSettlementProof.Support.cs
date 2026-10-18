@@ -36,6 +36,17 @@ internal static partial class BootstrapSelfTest
              totalDay <= finalDay;
              totalDay++)
         {
+            if (totalDay > firstDay)
+            {
+                current = AddLifecycleTransition(
+                    fixtureRoot,
+                    transitions,
+                    current,
+                    totalDay,
+                    ref sequence,
+                    "executor.traverse_connector",
+                    routeTargetLocation: "Farm");
+            }
             for (var index = 0; index < plan.Commitments.Length; index++)
             {
                 if (totalDay == plan.Commitments[index].PlantingTotalDay)
@@ -82,6 +93,14 @@ internal static partial class BootstrapSelfTest
             }
             if (totalDay < finalDay)
             {
+                current = AddLifecycleTransition(
+                    fixtureRoot,
+                    transitions,
+                    current,
+                    totalDay,
+                    ref sequence,
+                    "executor.traverse_connector",
+                    routeTargetLocation: "FarmHouse");
                 current = AddLifecycleTransition(
                     fixtureRoot,
                     transitions,
