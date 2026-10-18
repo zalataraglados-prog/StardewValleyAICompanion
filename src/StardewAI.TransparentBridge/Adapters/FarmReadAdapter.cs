@@ -75,7 +75,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         if (SnapshotProfileContext.IncludesFarmSitePreparation)
         {
             var bounds = SnapshotProfileContext.SitePreparationBounds;
-            var field = bounds is null
+            var resourceClumps = bounds is null
                 ? (object)Unavailable(
                     "farm_layout_bounds_missing_or_invalid",
                     "SnapshotProfileContext.SitePreparationBounds",
@@ -86,14 +86,37 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     "bounded Game1.getFarm().resourceClumps intersecting farm_layout bounds",
                     tick,
                     "vanilla_1_6_farm");
+            var sitePreparationContext = bounds is null
+                ? (object)Unavailable(
+                    "farm_layout_bounds_missing_or_invalid",
+                    "SnapshotProfileContext.SitePreparationBounds",
+                    tick,
+                    "snapshot_profile")
+                : Field(
+                    FarmSitePreparationProjector.ReadContext(farm, bounds),
+                    "bounded Game1.getFarm() native diggable, passability and occupancy queries",
+                    tick,
+                    "vanilla_1_6_15_farm_site_preparation");
             return Section(
                 "farm",
                 new Dictionary<string, object>
                 {
-                    ["resource_clumps"] = field
+                    ["farm_identity"] = Field(new
+                    {
+                        location_name = farm.Name,
+                        location_id = farm.NameOrUniqueName,
+                        is_farm = farm.IsFarm,
+                        greenhouse_unlocked = farm.greenhouseUnlocked.Value
+                    }, "Game1.getFarm().Name/NameOrUniqueName/IsFarm/greenhouseUnlocked", tick, "vanilla_1_6_farm"),
+                    ["resource_clumps"] = resourceClumps,
+                    ["site_preparation_context"] = sitePreparationContext
                 },
                 bounds is null
-                    ? new[] { "farm.resource_clumps" }
+                    ? new[]
+                    {
+                        "farm.resource_clumps",
+                        "farm.site_preparation_context"
+                    }
                     : Array.Empty<string>(),
                 "partial");
         }

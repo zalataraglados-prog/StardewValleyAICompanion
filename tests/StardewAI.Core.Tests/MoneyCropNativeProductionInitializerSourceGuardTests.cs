@@ -6,6 +6,38 @@ public sealed class MoneyCropNativeProductionInitializerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Initialize-MoneyRevenueCropNativeProduction.ps1"));
+    private static readonly string TeacherInitializer = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Initialize-MoneyRevenueCropProductionTeacherDecision.ps1"));
+
+    [Fact]
+    public void TeacherInitializerBuildsTheTypedDecisionWithoutHandwrittenCommitments()
+    {
+        Assert.Contains(
+            "money_revenue_crop_production_teacher_request.v1",
+            TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-crop-production-teacher-decision",
+            TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_crop_production_decision_request.v2",
+            TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.Contains("farm_layout_snapshot_paths", TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.Contains("teacher_request_sha256", TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.Contains("teacher_candidate_evaluations", TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("commitments =", TeacherInitializer,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            TeacherInitializer,
+            StringComparison.Ordinal);
+    }
 
     [Fact]
     public void InitializerUsesTheTypedDecisionAndExistingPlanBuilders()
@@ -58,6 +90,10 @@ public sealed class MoneyCropNativeProductionInitializerSourceGuardTests
         Assert.Contains("source_save_tree_sha256", Initializer,
             StringComparison.Ordinal);
         Assert.Contains("decision_receipt_sha256", Initializer,
+            StringComparison.Ordinal);
+        Assert.Contains("teacher_request_sha256", Initializer,
+            StringComparison.Ordinal);
+        Assert.Contains("teacher_selection_policy", Initializer,
             StringComparison.Ordinal);
         Assert.Contains("crop_native_run_plan_request_sha256", Initializer,
             StringComparison.Ordinal);
