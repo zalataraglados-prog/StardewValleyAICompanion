@@ -4,12 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 作物原生运输箱结算证明
+## 当前切片 · 2026-10-18 Money 作物结算日聚合容量证明
 
-- `output-retention-terminal:<commitment>:<wave>` 是“留存+终端结算”的组合义务。`money_revenue_crop_terminal_settlement_proof.v2` 只允许原生 ShopMenu sale 或原生 shipping settlement 二选一；两者都必须独立重建作物计划、留存 proof 和单转换 Revenue recurrence，单独留存仍不能计入分子。
-- 终端路线验证已从原 `MoneyRevenueTerminalExecutionProofBuilder` 抽成单一共享验证器，原 terminal proof 与作物结算 proof 共用同一组允许动作、continuation identity、执行回执、状态连续性与持久资源不变门槛，没有新增路线候选、编译器或执行器。
-- shipping 分支严格复用 `executor.ship_inventory_item_to_bin` 与既有原生睡眠结算验证器：保守 `N` 件产物必须形成 `N` 条连续、各自只含一次原生投递的队列，第一条从空待结算值开始，每条只按该件物品的透明原生价格增加待结算值；最后仅允许一次原生睡眠把完整待结算值同时记入 Money 与 `totalMoneyEarned`。投递前移动只能放在共享资源中性路线中；少投一件、状态不连续、预载运输箱价值、混合商店路径或结算值不一致均失败关闭。
-- hermetic 正例在同一 5 波 checkpoint 中混合 1 个运输箱结算 proof 与 4 个商店结算 proof，仍精确关闭 5 个 terminal 请求并得到 `8` 个已验证 fragment；单独 5 个留存 fragment 仍只有 `3` 项。fragment index 已升级为 v9，checkpoint 已升级为 v8。尚未采集正式 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是跨承诺/波次聚合同一结算日的运输箱投递、路线、时间与队列容量，不重复实现投递或睡眠执行器。
+- 新增 `money_revenue_crop_settlement_capacity_proof.v1`。它重建完整作物义务计划、整计划逐日容量证明和全部布局证明，再把不同承诺的保守收获波次按同一 `harvest_total_day` 合并；每个保守单位都必须占用一条只含一次原生单件投递的 fresh-replan 队列。
+- 路线和时序没有产生第二套实现：作物维护层公开既有确定性 BFS 的终点；运输候选与容量证明共用 `ShippingBinRouteProjector`；投递编译器与容量证明共用 `ShippingSettlementBudgetPolicy.NativeSingleItemDepositTicks`。聚合日预算由既有维护 ticks、维护终点至运输箱站位的 BFS 尾程和 `N` 次投递 ticks 组成，必须在 autonomous recovery cutoff 前整体可达且不超时。
+- checkpoint fragment index 已升级为 v10、checkpoint 已升级为 v9。只要索引包含任一原生 shipping terminal proof，就必须有且只能有一份精确重建的整计划容量证明覆盖全部对应 terminal request；该支持证明不进入 request denominator，也不增加 numerator。hermetic 正例把同日两个承诺的 `2+3` 件产出合并为 5 条单件队列，并拒绝 18:50 起步的超时日及缺失聚合支持的 shipping checkpoint。
+- 该切片只证明计划可容纳，不把多个真实波次伪装成已经完成的一次原生隔夜结算。正式 fragment 尚未采集，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是 real Money native production collection；采集组合必须明确证明同一结算夜下多个波次的连续投递和共享睡眠归因，再进入 terminal proof completion、Teacher comparison 与 criterion-local join。
 
 ## 已收口 · 2026-10-18 Money 作物逐波输出留存证明
 

@@ -70,7 +70,9 @@ namespace StardewAI.Core.Execution
                     ":item=" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? "missing" : qualifiedItemId) +
                     ":quantity=" + quantity,
                     "native_shipping_bin_receives_exact_verified_inventory_quantity",
-                    Math.Max(60, (ReadIntParameter(action, "estimated_minutes") ?? 1) * 60))
+                    Math.Max(
+                        ShippingSettlementBudgetPolicy.NativeSingleItemDepositTicks,
+                        (ReadIntParameter(action, "estimated_minutes") ?? 1) * 60))
             };
         }
     }

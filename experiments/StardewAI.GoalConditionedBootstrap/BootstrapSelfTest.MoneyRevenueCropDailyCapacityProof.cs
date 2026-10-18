@@ -263,6 +263,35 @@ internal static partial class BootstrapSelfTest
                 rows = Array.Empty<object>()
             })
         }, JsonDefaults.Options);
+        var farm = JsonNode.Parse(state["farm"].GetRawText())!.AsObject();
+        farm["shipping_bins"] = JsonSerializer.SerializeToNode(
+            MoneyCropRuntimeField(new[]
+            {
+                new
+                {
+                    tile_x = 71,
+                    tile_y = 14,
+                    tile_width = 2,
+                    tile_height = 1,
+                    interaction_stand_tile_x = 70,
+                    interaction_stand_tile_y = 14,
+                    days_of_construction_left = 0,
+                    completed = true,
+                    bin_scope = "personal",
+                    player_id = "123",
+                    contents = Array.Empty<object>(),
+                    pending_settlement_value = 0,
+                    pending_settlement_value_complete = true,
+                    pending_settlement_timing =
+                        "next_native_day_transition",
+                    contents_signature = "empty-shipping-scope",
+                    contents_truncated = false
+                }
+            }),
+            JsonDefaults.Options);
+        state["farm"] = JsonSerializer.SerializeToElement(
+            farm,
+            JsonDefaults.Options);
         snapshot.GameTick = 300 + totalDay;
         snapshot.State = state;
         snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);

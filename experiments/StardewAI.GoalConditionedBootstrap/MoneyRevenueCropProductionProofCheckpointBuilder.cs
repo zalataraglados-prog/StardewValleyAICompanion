@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v8" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v9" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v9" &&
+                    "money_revenue_crop_production_proof_fragment_index.v10" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -59,6 +59,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndex.NativeLifecycleProofPaths is not null &&
                 fragmentIndex.OutputRetentionProofPaths is not null &&
                 fragmentIndex.TerminalSettlementProofPaths is not null &&
+                fragmentIndex.SettlementCapacityProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof fragment index is invalid.");
 
@@ -159,6 +160,36 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     Path.GetFullPath(proof.OutputRetentionProofPath),
                     PathComparer)),
             "Money Revenue crop terminal settlement lacks its indexed retention support.");
+        var settlementCapacityProofPaths =
+            (fragmentIndex.SettlementCapacityProofPaths ??
+                throw new InvalidDataException(
+                    "Money Revenue crop settlement-capacity proof paths are missing."))
+            .Select(path => RequiredFile(
+                path,
+                "Money Revenue crop settlement-capacity proof fragment"))
+            .ToArray();
+        Require(settlementCapacityProofPaths.Length <= 1 &&
+                settlementCapacityProofPaths.Distinct(PathComparer).Count() ==
+                    settlementCapacityProofPaths.Length,
+            "Money Revenue crop settlement-capacity proof paths are duplicated or ambiguous.");
+        var settlementCapacityProofs = settlementCapacityProofPaths.Select(
+                path => VerifySettlementCapacityProof(
+                    path,
+                    planPath,
+                    planSha256))
+            .ToArray();
+        var shippingSettlements = terminalSettlementProofs.Where(proof =>
+                proof.TerminalKind ==
+                    MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement)
+            .ToArray();
+        Require(shippingSettlements.Length == 0 ||
+                (settlementCapacityProofs.Length == 1 &&
+                 shippingSettlements.All(proof =>
+                     settlementCapacityProofs[0].CoveredTerminalRequestIds
+                         .Contains(
+                             proof.EvidenceRequestId,
+                             StringComparer.Ordinal))),
+            "Money Revenue crop shipping settlement lacks aggregate day capacity support.");
 
         var allEvidenceIds = proofs.Select(value => value.EvidenceRequestId)
             .Concat(seedProofs.Select(value => value.EvidenceRequestId))
@@ -212,10 +243,37 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             VerifiedNativeLifecycles = nativeLifecycleProofs,
             VerifiedOutputRetentions = outputRetentionProofs,
             VerifiedTerminalSettlements = terminalSettlementProofs,
+            VerifiedSettlementCapacities = settlementCapacityProofs,
             FutureCropProductionProofReady = false,
             FreshSaveRevenueScheduleReady = false,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static MoneyRevenueCropSettlementCapacityProof
+        VerifySettlementCapacityProof(
+            string proofPath,
+            string planPath,
+            string planSha256)
+    {
+        var proof = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropSettlementCapacityProof>(
+                proofPath,
+                "Money Revenue crop settlement-capacity proof");
+        var rebuilt = MoneyRevenueCropSettlementCapacityProofBuilder.Build(
+            proof.RequestPath);
+        Require(proof.SchemaVersion ==
+                    "money_revenue_crop_settlement_capacity_proof.v1" &&
+                BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
+                string.Equals(
+                    Path.GetFullPath(proof.CropProductionPlanPath),
+                    planPath,
+                    PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
+                proof.AggregateSettlementCapacityVerified &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money Revenue crop settlement-capacity proof is not exact.");
+        return proof;
     }
 
     private static MoneyRevenueCropTerminalSettlementProof

@@ -9,8 +9,7 @@
 完全体路线图的全局方向不变，但当前实施顺序必须以 `CURRENT_STATUS_CN.md` 为唯一口径：
 
 ```text
-crop-production aggregate settlement capacity
--> real Money native production collection
+real Money native production collection
 -> terminal proof completion
 -> exact Teacher comparison
 -> criterion-local train/validation/test join
@@ -21,7 +20,7 @@ crop-production aggregate settlement capacity
 
 已经完成的 terminal-proof、crop obligation、planting layout、site preparation 与 seed-reservation 代码都属于 **production 前置基础设施**，不能自行增加 `/19` 或 Money `0/18`。Full Shipment current-authority `26/26` 已冻结，不再占当前施工资源。
 
-#307、#308、#309、#310 与 #311 已全部关闭；购种 shortfall、aggregate daily-capacity、native lifecycle、per-wave output retention、原生 ShopMenu sale 与原生 shipping settlement 已接入唯一既有链。shipping proof 强制每个保守单位对应一次既有原生单件投递，并把连续累计的待结算值绑定到唯一原生隔夜结算和 Revenue recurrence。下一项不是扩展 correctness 清单，而是聚合同一结算日跨承诺/波次的路线、时间和队列容量；完成后才进入真实 native production collection。
+#307、#308、#309、#310 与 #311 已全部关闭；购种 shortfall、aggregate daily-capacity、native lifecycle、per-wave output retention、原生 ShopMenu sale 与原生 shipping settlement 已接入唯一既有链。shipping proof 强制每个保守单位对应一次既有原生单件投递，并把连续累计的待结算值绑定到唯一原生隔夜结算和 Revenue recurrence。`money_revenue_crop_settlement_capacity_proof.v1` 已进一步聚合同一结算日跨承诺/波次的维护尾程、运输箱路线、时间和单件队列容量，且只作 checkpoint 支持、不增加分子。下一项固定为真实 native production collection；其中必须用一条连续原生证据链解决同一夜多个波次共享睡眠结算的归因，不能由容量证明替代。
 
 后期的 dependency DAG、incremental recomputation、selective replay 与 Online Companion 优化继续保留在 #200/#201/#202/#203，但在当前 Money correctness debt 清零且真实采集 trace 证明有性能 blocker 前，不抢占 WIP=1。
 

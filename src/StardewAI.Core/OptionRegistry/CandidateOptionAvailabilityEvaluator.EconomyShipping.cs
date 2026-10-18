@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -465,7 +466,8 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var fullShipmentIndex = ReadFullShipmentIndex(snapshot);
-            var binBounds = SelectShippingBinTile(shippingBins);
+            var binBounds = ShippingBinRouteProjector.SelectFirstCompleted(
+                snapshot);
             if (binBounds is null)
             {
                 return Array.Empty<EventCandidate>();
@@ -485,7 +487,7 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             JsonElement item,
             IReadOnlyDictionary<string, FullShipmentItemIndexEntry>? fullShipmentIndex,
-            ShippingBinTile binBounds,
+            ShippingBinRouteProjection binBounds,
             IReadOnlyDictionary<string, int> binContents)
         {
             var blockReasons = new List<string>();
@@ -618,15 +620,10 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static CandidateTile? ReadBinStandTile(SnapshotEnvelope snapshot, ShippingBinTile bin)
-        {
-            if (bin.StandX.HasValue && bin.StandY.HasValue)
-            {
-                return new CandidateTile(bin.StandX.Value, bin.StandY.Value);
-            }
-
-            return null;
-        }
+        private static CandidateTile? ReadBinStandTile(
+            SnapshotEnvelope snapshot,
+            ShippingBinRouteProjection bin) =>
+            new(bin.StandTileX, bin.StandTileY);
 
         private static IReadOnlyDictionary<string, int> ReadShippingBinContents(SnapshotEnvelope snapshot)
         {
@@ -710,54 +707,6 @@ namespace StardewAI.Core.OptionRegistry
 
             return shippingBins.Value.EnumerateArray().Any(bin =>
                 ReadInt(bin, "days_of_construction_left") <= 0);
-        }
-
-        private static ShippingBinTile? SelectShippingBinTile(JsonElement? shippingBins)
-        {
-            if (!shippingBins.HasValue || shippingBins.Value.ValueKind != JsonValueKind.Array)
-            {
-                return null;
-            }
-
-            foreach (var bin in shippingBins.Value.EnumerateArray())
-            {
-                if (ReadInt(bin, "days_of_construction_left") <= 0)
-                {
-                    var tileX = ReadInt(bin, "tile_x");
-                    var tileY = ReadInt(bin, "tile_y");
-                    var width = Math.Max(1, ReadInt(bin, "tile_width"));
-                    if (width <= 0) width = ReadInt(bin, "tiles_wide");
-                    if (width <= 0) width = 2;
-                    var height = Math.Max(1, ReadInt(bin, "tile_height"));
-                    if (height <= 0) height = ReadInt(bin, "tiles_high");
-                    if (height <= 0) height = 1;
-                    var standX = NullableReadInt(bin, "interaction_stand_tile_x");
-                    var standY = NullableReadInt(bin, "interaction_stand_tile_y");
-                    return new ShippingBinTile(tileX, tileY, width, height, standX, standY);
-                }
-            }
-
-            return null;
-        }
-
-        private sealed class ShippingBinTile
-        {
-            public ShippingBinTile(int tileX, int tileY, int width, int height, int? standX, int? standY)
-            {
-                TileX = tileX;
-                TileY = tileY;
-                Width = width;
-                Height = height;
-                StandX = standX;
-                StandY = standY;
-            }
-
-            public int TileX { get; }
-            public int TileY { get; }
-            public int Width { get; }
-            public int Height { get; }
-            public int? StandX { get; }
-            public int? StandY { get; }
         }
 
         private static int[] ReadIntArray(JsonElement? parent, string propertyName)
