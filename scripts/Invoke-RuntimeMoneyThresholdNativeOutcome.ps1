@@ -26,24 +26,6 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
 
-function Assert-SourceSaveSlot {
-    param([Parameter(Mandatory)] [string] $Path)
-    $fullPath = [IO.Path]::GetFullPath($Path).TrimEnd('\')
-    if (-not (Test-Path -LiteralPath $fullPath -PathType Container)) {
-        throw "Source save slot is missing: $fullPath"
-    }
-    $slotName = Split-Path -Leaf $fullPath
-    $saveFile = Join-Path $fullPath $slotName
-    if (-not (Test-Path -LiteralPath $saveFile -PathType Leaf)) {
-        throw "Source save slot does not contain its primary save file: $saveFile"
-    }
-    $item = Get-Item -LiteralPath $fullPath -Force
-    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
-        throw "Source save slot must not be a reparse point: $fullPath"
-    }
-    return $fullPath
-}
-
 function Get-SaleEpisodePath {
     param([Parameter(Mandatory)] [string] $SnapshotDirectory)
     $matches = @(Get-ChildItem -LiteralPath $SnapshotDirectory `
@@ -72,48 +54,6 @@ function Assert-ProductionParameters {
             throw "Production native-outcome selection contains a debug parameter."
         }
     }
-}
-
-function Get-MoneyRuntimeModAllowlist {
-    param([Parameter(Mandatory)] [string] $ModsRoot)
-    $expected = [ordered]@{
-        "StardewAI.RuntimeTestHarness" = "StardewAI.RuntimeTestHarness"
-        "StardewAI.TransparentBridge" = "StardewAI.TransparentBridge"
-    }
-    $rootItems = @(Get-ChildItem -LiteralPath $ModsRoot -Force)
-    $directories = @($rootItems | Where-Object { $_.PSIsContainer } |
-        Sort-Object Name)
-    $files = @($rootItems | Where-Object { -not $_.PSIsContainer })
-    if ($files.Count -ne 0 -or
-        $directories.Count -ne $expected.Count -or
-        ($directories.Name -join "|") -ne ($expected.Keys -join "|")) {
-        throw "Money runtime isolated Mods root is not the exact allowlist."
-    }
-
-    return @($directories | ForEach-Object {
-        if (($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
-            throw "Money runtime Mod must not be a reparse point: $($_.FullName)"
-        }
-        $manifestPath = Join-Path $_.FullName "manifest.json"
-        if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
-            throw "Money runtime Mod manifest is missing: $manifestPath"
-        }
-        $manifest = Get-Content -LiteralPath $manifestPath -Raw |
-            ConvertFrom-Json
-        $uniqueId = [string]$manifest.UniqueID
-        $version = [string]$manifest.Version
-        if ($uniqueId -ne [string]$expected[$_.Name] -or
-            [string]::IsNullOrWhiteSpace($version)) {
-            throw "Money runtime Mod manifest identity is invalid: $($_.Name)"
-        }
-        [ordered]@{
-            directory_name = $_.Name
-            unique_id = $uniqueId
-            version = $version
-            manifest_sha256 = Get-RuntimeFileSha256 -Path $manifestPath
-            content_sha256 = Get-DirectoryContentHash -Path $_.FullName
-        }
-    })
 }
 
 function Assert-MoneyDependencyExpansionReady {
@@ -176,7 +116,7 @@ $waveWorkPlanPath = if ($usingWave) {
         -ProjectRoot $ProjectRoot -Path $CollectionWaveWorkPlanPath
 } else { "" }
 
-$sourceSave = Assert-SourceSaveSlot -Path $SourceSaveSlotPath
+$sourceSave = Assert-RuntimeSourceSaveSlot -Path $SourceSaveSlotPath
 $sourceSlotName = Split-Path -Leaf $sourceSave
 $dependencyPath = Resolve-RuntimeEvidenceInputPath `
     -ProjectRoot $ProjectRoot -Path $DependencyExpansion
@@ -277,7 +217,13 @@ foreach ($modName in @(
     Copy-Item -LiteralPath $sourceMod `
         -Destination (Join-Path $isolatedMods $modName) -Recurse
 }
-$runtimeModAllowlist = @(Get-MoneyRuntimeModAllowlist -ModsRoot $isolatedMods)
+$runtimeModAllowlist = @(Get-RuntimeExactModAllowlist `
+    -ModsRoot $isolatedMods `
+    -OperationName "Money runtime" `
+    -ExpectedUniqueIds ([ordered]@{
+        "StardewAI.RuntimeTestHarness" = "StardewAI.RuntimeTestHarness"
+        "StardewAI.TransparentBridge" = "StardewAI.TransparentBridge"
+    }))
 $isolatedModsSha256Before = Get-DirectoryContentHash -Path $isolatedMods
 
 $environmentNames = @(

@@ -43,7 +43,7 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("\"StardewAI.RuntimeTestHarness\"", Source,
             StringComparison.Ordinal);
-        Assert.Contains("Get-MoneyRuntimeModAllowlist", Source,
+        Assert.Contains("Get-RuntimeExactModAllowlist", Source,
             StringComparison.Ordinal);
         Assert.Contains("isolated_mods_root_path = $isolatedMods", Source,
             StringComparison.Ordinal);

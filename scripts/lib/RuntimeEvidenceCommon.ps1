@@ -77,6 +77,67 @@ function Get-DirectoryContentHash {
     }
 }
 
+function Assert-RuntimeSourceSaveSlot {
+    param([Parameter(Mandatory)] [string] $Path)
+    $fullPath = [IO.Path]::GetFullPath($Path).TrimEnd('\')
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Container)) {
+        throw "Source save slot is missing: $fullPath"
+    }
+    $slotName = Split-Path -Leaf $fullPath
+    $saveFile = Join-Path $fullPath $slotName
+    if (-not (Test-Path -LiteralPath $saveFile -PathType Leaf)) {
+        throw "Source save slot does not contain its primary save file: $saveFile"
+    }
+    $item = Get-Item -LiteralPath $fullPath -Force
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Source save slot must not be a reparse point: $fullPath"
+    }
+    return $fullPath
+}
+
+function Get-RuntimeExactModAllowlist {
+    param(
+        [Parameter(Mandatory)] [string] $ModsRoot,
+        [Parameter(Mandatory)] $ExpectedUniqueIds,
+        [string] $OperationName = "Runtime evidence"
+    )
+    $expectedNames = @($ExpectedUniqueIds.Keys | Sort-Object)
+    $rootItems = @(Get-ChildItem -LiteralPath $ModsRoot -Force)
+    $directories = @($rootItems | Where-Object { $_.PSIsContainer } |
+        Sort-Object Name)
+    $files = @($rootItems | Where-Object { -not $_.PSIsContainer })
+    if ($files.Count -ne 0 -or
+        $directories.Count -ne $expectedNames.Count -or
+        ($directories.Name -join "|") -ne ($expectedNames -join "|")) {
+        throw "$OperationName isolated Mods root is not the exact allowlist."
+    }
+
+    return @($directories | ForEach-Object {
+        if (($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "$OperationName Mod must not be a reparse point: $($_.FullName)"
+        }
+        $manifestPath = Join-Path $_.FullName "manifest.json"
+        if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+            throw "$OperationName Mod manifest is missing: $manifestPath"
+        }
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw |
+            ConvertFrom-Json
+        $uniqueId = [string]$manifest.UniqueID
+        $version = [string]$manifest.Version
+        if ($uniqueId -ne [string]$ExpectedUniqueIds[$_.Name] -or
+            [string]::IsNullOrWhiteSpace($version)) {
+            throw "$OperationName Mod manifest identity is invalid: $($_.Name)"
+        }
+        [ordered]@{
+            directory_name = $_.Name
+            unique_id = $uniqueId
+            version = $version
+            manifest_sha256 = Get-RuntimeFileSha256 -Path $manifestPath
+            content_sha256 = Get-DirectoryContentHash -Path $_.FullName
+        }
+    })
+}
+
 function Read-StateValue {
     param($Snapshot, [string] $Domain, [string] $Field)
     $domainNode = $Snapshot.state.$Domain
@@ -262,6 +323,28 @@ function Save-RuntimeSnapshotAndIngest {
     }
 }
 
+function Import-RuntimeSnapshotFile {
+    param(
+        [Parameter(Mandatory)] [string] $Path,
+        [Parameter(Mandatory)] [string] $BackendUrl,
+        [Parameter(Mandatory)] [string] $SnapshotProfile
+    )
+    $raw = Get-Content -LiteralPath $Path -Raw
+    $snapshot = $raw | ConvertFrom-Json
+    $ingest = Invoke-JsonPost `
+        -Url "$BackendUrl/api/v1/snapshots?profile=$SnapshotProfile" `
+        -Body $raw
+    if (-not [bool]$ingest.Value.accepted -or
+        [string]$ingest.Value.state_hash -ne [string]$snapshot.state_hash) {
+        throw "Backend rejected or changed snapshot identity for $Path."
+    }
+    return [pscustomobject]@{
+        Raw = $raw
+        Value = $snapshot
+        Path = [IO.Path]::GetFullPath($Path)
+    }
+}
+
 function Invoke-RuntimeRanking {
     param(
         [Parameter(Mandatory)] [string] $BackendUrl,
@@ -341,13 +424,20 @@ function Invoke-RuntimeDailyPlanStep {
         [Parameter(Mandatory)] [string] $OptionId,
         [Parameter(Mandatory)] [string] $CandidateKind,
         [Parameter(Mandatory)] [string] $CandidateId,
-        [string[]] $CandidateParameters = @()
+        [string[]] $CandidateParameters = @(),
+        [string] $SourceSnapshotPath = ""
     )
     $stepRoot = Join-Path $Context.ArtifactDirectory $Name
-    $capture = Get-FreshRuntimeSnapshot `
-        -Url $Context.SnapshotUrl -TimeoutSeconds 60
     $sourcePath = Join-Path $stepRoot "source-snapshot.json"
-    Write-Utf8Text -Path $sourcePath -Value $capture.Raw
+    if ([string]::IsNullOrWhiteSpace($SourceSnapshotPath)) {
+        $capture = Get-FreshRuntimeSnapshot `
+            -Url $Context.SnapshotUrl -TimeoutSeconds 60
+        Write-Utf8Text -Path $sourcePath -Value $capture.Raw
+    }
+    else {
+        $raw = Get-Content -LiteralPath $SourceSnapshotPath -Raw
+        Write-Utf8Text -Path $sourcePath -Value $raw
+    }
     $arguments = [Collections.Generic.List[string]]::new()
     foreach ($value in @(
         $Context.LoopDll,
@@ -394,18 +484,26 @@ function Invoke-RuntimePrecompiledQueue {
         [Parameter(Mandatory)] $Context,
         [Parameter(Mandatory)] [string] $Name,
         [Parameter(Mandatory)] [string] $QueuePath,
-        [Parameter(Mandatory)] [string] $BeforePath
+        [Parameter(Mandatory)] [string] $BeforePath,
+        [ValidateSet("product", "runtime_harness")]
+        [string] $ExecutionTarget = "product"
     )
     $loopRoot = Join-Path $Context.ArtifactDirectory $Name
-    $arguments = @(
+    $executorUrl = if ($ExecutionTarget -eq "runtime_harness") {
+        $Context.ExecutorRoot
+    }
+    else {
+        $Context.ProductUrl
+    }
+    $arguments = [Collections.Generic.List[string]]::new()
+    foreach ($value in @(
         $Context.LoopDll,
         "--root", $loopRoot,
         "--backend-url", $Context.BackendUrl,
         "--bridge-snapshot-url", $Context.SnapshotUrl,
         "--execution-snapshot-profile", $Context.SnapshotProfile,
         "--snapshot-file", $BeforePath,
-        "--executor-url", $Context.ProductUrl,
-        "--use-product-executor",
+        "--executor-url", $executorUrl,
         "--no-manifest",
         "--skip-training",
         "--run-id", $Context.RunId,
@@ -417,7 +515,10 @@ function Invoke-RuntimePrecompiledQueue {
         "--sleep-ms", "0",
         "--after-snapshot-wait-ms", "1000",
         "--after-snapshot-poll-ms", "250"
-    )
+    )) { $arguments.Add([string]$value) }
+    if ($ExecutionTarget -eq "product") {
+        $arguments.Add("--use-product-executor")
+    }
     $stdout = & dotnet $arguments
     $stdout | Set-Content `
         -LiteralPath (Join-Path $loopRoot "loop.stdout.log") -Encoding utf8

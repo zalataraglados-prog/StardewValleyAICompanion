@@ -644,7 +644,8 @@ public sealed partial class ActionQueueCompilerTests
             Kind = "move_to_tile",
             TargetLocation = "Farm",
             TargetTileX = 70,
-            TargetTileY = 13
+            TargetTileY = 13,
+            Preconditions = new[] { "candidate_id:route:test:farm", "world_ready" }
         });
 
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
@@ -653,6 +654,12 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("executor.traverse_connector", item.OptionId);
         Assert.True(item.Status == "pending", string.Join("|", item.BlockingReasons.Concat(item.MissingStateFactors)));
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "cross_location_move_target" && parameter.Value == "Farm");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "precondition" &&
+            parameter.Value == "candidate_id:route:test:farm");
+        Assert.DoesNotContain(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "precondition" &&
+            parameter.Value == "world_ready");
     }
 
     [Fact]

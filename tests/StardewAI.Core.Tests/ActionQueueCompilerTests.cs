@@ -218,7 +218,9 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
-            new SmallModelActionParameter { Name = "seed_id", Value = "472" }
+            new SmallModelActionParameter { Name = "seed_id", Value = "472" },
+            new SmallModelActionParameter { Name = "action_commitment_id", Value = "crop.test" },
+            new SmallModelActionParameter { Name = "precondition", Value = "candidate_id:crop:112:crop.test:1" }
         };
 
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
@@ -232,6 +234,12 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("plant_seed", step.StepType);
         Assert.Equal("current_location(64,15):472", step.Target);
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "seed_id" && parameter.Value == "472");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "action_commitment_id" &&
+            parameter.Value == "crop.test");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "precondition" &&
+            parameter.Value == "candidate_id:crop:112:crop.test:1");
     }
 
     [Fact]

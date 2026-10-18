@@ -618,11 +618,11 @@ public sealed class LiveTrainingOptions
                 "--precompiled-queue cannot be combined with a planner, " +
                 "parameterized action, plan output, or executor option override.");
         }
-        if (!SkipTraining || !UseProductExecutor || !RequireExecutorFeedback)
+        if (!SkipTraining || !RequireExecutorFeedback)
         {
             throw new ArgumentException(
                 "--precompiled-queue requires --skip-training, " +
-                "--use-product-executor, and executor feedback.");
+                "and executor feedback.");
         }
         if (MaxAttempts != 1 || RequiredVerifiedActions != 1)
         {

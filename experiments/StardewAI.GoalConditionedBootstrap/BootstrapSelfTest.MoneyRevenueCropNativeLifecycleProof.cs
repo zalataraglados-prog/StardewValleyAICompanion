@@ -135,6 +135,7 @@ internal static partial class BootstrapSelfTest
             MoneyRevenueCropNativeLifecycleTransitionRequest>();
         var current = layoutSnapshot;
         var sequence = 0;
+        var rainOnlyVisitDay = commitment.PlantingTotalDay + 1;
         var finalHarvestDay = commitment.HarvestWaves.Max(value =>
             value.HarvestTotalDay);
         for (var totalDay = commitment.PlantingTotalDay;
@@ -162,7 +163,8 @@ internal static partial class BootstrapSelfTest
                     ref sequence,
                     "executor.plant_seed");
             }
-            if (commitment.RequiredWateringTotalDays.Contains(totalDay))
+            if (commitment.RequiredWateringTotalDays.Contains(totalDay) &&
+                totalDay != rainOnlyVisitDay)
             {
                 current = AddLifecycleTransition(
                     root,
@@ -199,7 +201,8 @@ internal static partial class BootstrapSelfTest
                     current,
                     totalDay,
                     ref sequence,
-                    "executor.sleep");
+                    "executor.sleep",
+                    rainOnNextDay: totalDay + 1 == rainOnlyVisitDay);
             }
         }
 
@@ -216,14 +219,14 @@ internal static partial class BootstrapSelfTest
         var proof = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             requestPath);
         Require(proof.Status == "verified_native_crop_lifecycle" &&
-                proof.TransitionCount == 102 &&
-                proof.CropActionQueueCount == 30 &&
+                proof.TransitionCount == 101 &&
+                proof.CropActionQueueCount == 29 &&
                 proof.SupportingRouteQueueCount == 48 &&
                 proof.CropIngressRouteQueueCount == 24 &&
                 proof.SleepIngressRouteQueueCount == 24 &&
                 proof.NativeDayRolloverCount == 24 &&
                 proof.VerifiedPlantActionCount == 2 &&
-                proof.VerifiedWaterActionCount == 48 &&
+                proof.VerifiedWaterActionCount == 46 &&
                 proof.VerifiedHarvestActionCount == 10 &&
                 proof.NativeCropLifecycleVerified &&
                 !proof.FormalProductTrainingAuthorized,
@@ -639,7 +642,8 @@ internal static partial class BootstrapSelfTest
         ref int sequence,
         string optionId,
         int[]? targetXs = null,
-        string routeTargetLocation = "")
+        string routeTargetLocation = "",
+        bool rainOnNextDay = false)
     {
         targetXs ??= new[] { 5, 6 };
         var after = optionId switch
@@ -650,7 +654,7 @@ internal static partial class BootstrapSelfTest
             "executor.traverse_connector" => LifecycleRouteToLocation(
                 before,
                 routeTargetLocation),
-            "executor.sleep" => LifecycleSleep(before),
+            "executor.sleep" => LifecycleSleep(before, rainOnNextDay),
             _ => throw new InvalidDataException(
                 "Unknown lifecycle fixture option " + optionId)
         };
@@ -1009,7 +1013,9 @@ internal static partial class BootstrapSelfTest
         return after;
     }
 
-    private static SnapshotEnvelope LifecycleSleep(SnapshotEnvelope before)
+    private static SnapshotEnvelope LifecycleSleep(
+        SnapshotEnvelope before,
+        bool rainOnNextDay = false)
     {
         var after = LifecycleMutate(before, crops =>
         {
@@ -1044,7 +1050,7 @@ internal static partial class BootstrapSelfTest
                         day,
                         fullyGrown,
                         ready);
-                crop["watered"] = false;
+                crop["watered"] = rainOnNextDay;
             }
         }, advanceDay: true);
         return LifecycleSetPlayerLocation(after, "FarmHouse", 0);

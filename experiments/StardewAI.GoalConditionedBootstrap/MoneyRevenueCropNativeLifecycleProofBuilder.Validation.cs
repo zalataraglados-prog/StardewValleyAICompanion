@@ -18,7 +18,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static void ValidateTransitionChain(
         LoadedTransition[] transitions,
         SnapshotEnvelope source,
-        LifecycleCommitmentContext[] contexts)
+        LifecycleCommitmentContext[] contexts,
+        MoneyRevenueCropDailyCapacityProof capacity)
     {
         var sourceCalendar = ReadCalendar(source);
         var firstDay = contexts.Min(value =>
@@ -106,8 +107,10 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                         contexts[0].Layout.LocationId,
                 "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
                 day + ".");
-            Require(dayActions.Count > 0 || supportingRoutes.Count == 0,
-                "Money Revenue crop lifecycle routed to crops without a crop action on day " +
+            Require(dayActions.Count > 0 ||
+                    supportingRoutes.Count == 0 ||
+                    capacity.Days.Any(value => value.TotalDay == day),
+                "Money Revenue crop lifecycle routed to crops without a crop action or an aggregate capacity boundary on day " +
                 day + ".");
             ValidateDayActions(
                 day,
