@@ -40,7 +40,93 @@ public sealed class MoneyRevenueCropProductionDecisionRequest
 
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
+
+    [JsonPropertyName("teacher_request_path")]
+    public string TeacherRequestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("teacher_request_sha256")]
+    public string TeacherRequestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("teacher_layout_snapshots")]
+    public MoneyRevenueCropTeacherLayoutSnapshotBinding[]
+        TeacherLayoutSnapshots { get; set; } =
+            Array.Empty<MoneyRevenueCropTeacherLayoutSnapshotBinding>();
+
+    [JsonPropertyName("teacher_candidate_evaluations")]
+    public MoneyRevenueCropTeacherCandidateEvaluation[]
+        TeacherCandidateEvaluations { get; set; } =
+            Array.Empty<MoneyRevenueCropTeacherCandidateEvaluation>();
+
+    [JsonPropertyName("teacher_selection_policy")]
+    public string TeacherSelectionPolicy { get; set; } = string.Empty;
 }
+
+public sealed class MoneyRevenueCropProductionTeacherRequest
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "money_revenue_crop_production_teacher_request.v1";
+
+    [JsonPropertyName("snapshot_path")]
+    public string SnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("farm_layout_snapshot_paths")]
+    public string[] FarmLayoutSnapshotPaths { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("base_strategy_ledger_path")]
+    public string BaseStrategyLedgerPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("decision_id")]
+    public string DecisionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("decision_recorded_at")]
+    public string DecisionRecordedAt { get; set; } = string.Empty;
+
+    [JsonPropertyName("maximum_tile_count")]
+    public int MaximumTileCount { get; set; } = 8;
+
+    [JsonPropertyName("max_queue_item_count")]
+    public int MaxQueueItemCount { get; set; } = 8;
+
+    [JsonPropertyName("formal_product_training_authorized")]
+    public bool FormalProductTrainingAuthorized { get; set; }
+}
+
+public sealed record MoneyRevenueCropTeacherLayoutSnapshotBinding(
+    [property: JsonPropertyName("path")] string Path,
+    [property: JsonPropertyName("sha256")] string Sha256,
+    [property: JsonPropertyName("state_hash")] string StateHash,
+    [property: JsonPropertyName("min_x")] int MinX,
+    [property: JsonPropertyName("min_y")] int MinY,
+    [property: JsonPropertyName("max_x")] int MaxX,
+    [property: JsonPropertyName("max_y")] int MaxY,
+    [property: JsonPropertyName("tile_count")] int TileCount);
+
+public sealed record MoneyRevenueCropTeacherCandidateEvaluation(
+    [property: JsonPropertyName("seed_id")] string SeedId,
+    [property: JsonPropertyName("seed_qualified_item_id")]
+    string SeedQualifiedItemId,
+    [property: JsonPropertyName("shop_id")] string ShopId,
+    [property: JsonPropertyName("seed_unit_price")] int SeedUnitPrice,
+    [property: JsonPropertyName("existing_seed_quantity")]
+    int ExistingSeedQuantity,
+    [property: JsonPropertyName("tile_count")] int TileCount,
+    [property: JsonPropertyName("harvest_wave_count")]
+    int HarvestWaveCount,
+    [property: JsonPropertyName("minimum_gross_revenue")]
+    long MinimumGrossRevenue,
+    [property: JsonPropertyName("seed_acquisition_cost")]
+    long SeedAcquisitionCost,
+    [property: JsonPropertyName("minimum_net_revenue")]
+    long MinimumNetRevenue,
+    [property: JsonPropertyName("last_harvest_total_day")]
+    int LastHarvestTotalDay,
+    [property: JsonPropertyName("required_watering_action_count")]
+    int RequiredWateringActionCount,
+    [property: JsonPropertyName("admitted")] bool Admitted,
+    [property: JsonPropertyName("block_reasons")] string[] BlockReasons,
+    [property: JsonPropertyName("selected")] bool Selected);
 
 public sealed class MoneyRevenueCropProductionDecisionCommitment
 {
@@ -150,6 +236,15 @@ public sealed class MoneyRevenueCropProductionDecisionReceipt
 
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
+
+    [JsonPropertyName("teacher_request_path")]
+    public string TeacherRequestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("teacher_request_sha256")]
+    public string TeacherRequestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("teacher_selection_policy")]
+    public string TeacherSelectionPolicy { get; set; } = string.Empty;
 
     [JsonPropertyName("decision_policy")]
     public string DecisionPolicy { get; set; } =

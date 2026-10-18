@@ -19,6 +19,15 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                 fullRequestPath,
                 "Money Revenue crop-production decision request");
         ValidateRequest(request);
+        if (request.SchemaVersion ==
+            "money_revenue_crop_production_decision_request.v2")
+        {
+            var rebuilt =
+                MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                    request.TeacherRequestPath);
+            Require(BootstrapArtifactGuard.EqualJson(request, rebuilt),
+                "Money Revenue crop-production Teacher decision does not rebuild exactly.");
+        }
 
         var snapshotPath = RequiredFile(
             request.SnapshotPath,
@@ -107,6 +116,11 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
             finalActiveCommitmentIds.SetEquals(requestedCommitmentIds);
         return new MoneyRevenueCropProductionDecisionReceipt
         {
+            SchemaVersion = request.SchemaVersion.EndsWith(
+                ".v2",
+                StringComparison.Ordinal)
+                    ? "money_revenue_crop_production_decision_receipt.v2"
+                    : "money_revenue_crop_production_decision_receipt.v1",
             Status = allAccepted
                 ? "crop_production_decision_committed"
                 : "crop_production_decision_rejected",
@@ -133,15 +147,20 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                     value.Tiles)).ToArray(),
             MaxQueueItemCount = request.MaxQueueItemCount,
             AllCommitmentsAccepted = allAccepted,
-            FormalProductTrainingAuthorized = false
+            FormalProductTrainingAuthorized = false,
+            TeacherRequestPath = request.TeacherRequestPath,
+            TeacherRequestSha256 = request.TeacherRequestSha256,
+            TeacherSelectionPolicy = request.TeacherSelectionPolicy
         };
     }
 
     private static void ValidateRequest(
         MoneyRevenueCropProductionDecisionRequest request)
     {
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_decision_request.v1" &&
+        var supportedSchema = request.SchemaVersion is
+            "money_revenue_crop_production_decision_request.v1" or
+            "money_revenue_crop_production_decision_request.v2";
+        Require(supportedSchema &&
                 !string.IsNullOrWhiteSpace(request.DecisionId) &&
                 request.GoalId == "earn_money" &&
                 request.DeadlineTotalDayExclusive == 224 &&
@@ -150,6 +169,20 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                 request.MaxQueueItemCount is >= 1 and <= 8 &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production decision request is invalid.");
+        if (request.SchemaVersion ==
+            "money_revenue_crop_production_decision_request.v2")
+        {
+            Require(!string.IsNullOrWhiteSpace(request.TeacherRequestPath) &&
+                    request.TeacherRequestSha256 is { Length: 64 } &&
+                    request.TeacherLayoutSnapshots is { Length: > 0 } &&
+                    request.TeacherCandidateEvaluations is { Length: > 0 } &&
+                    request.TeacherCandidateEvaluations.Count(value =>
+                        value.Selected) == 1 &&
+                    request.TeacherSelectionPolicy ==
+                        MoneyRevenueCropProductionTeacherDecisionBuilder
+                            .SelectionPolicy,
+                "Money Revenue crop-production Teacher binding is invalid.");
+        }
         Require(DateTimeOffset.TryParse(
                     request.DecisionRecordedAt,
                     CultureInfo.InvariantCulture,

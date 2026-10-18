@@ -89,7 +89,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         else
         {
             sitePreparationField = Field(
-                ReadFarmSitePreparationContext(location, bounds),
+                FarmSitePreparationProjector.ReadContext(location, bounds),
                 "bounded Game1.currentLocation native diggable, passability, occupancy and Farm resource-clump queries",
                 tick,
                 "vanilla_1_6_15_farm_site_preparation");

@@ -76,7 +76,7 @@ $receiptRaw = [IO.File]::ReadAllText(
     [Text.Encoding]::UTF8)
 $receipt = $receiptRaw | ConvertFrom-Json
 if ([string]$receipt.schema_version -ne
-        "money_revenue_crop_production_decision_receipt.v1" -or
+        "money_revenue_crop_production_decision_receipt.v2" -or
     [string]$receipt.status -ne "crop_production_decision_committed" -or
     -not [bool]$receipt.all_commitments_accepted -or
     [bool]$receipt.formal_product_training_authorized -or
@@ -88,6 +88,10 @@ if ([string]$receipt.schema_version -ne
     @($receipt.layout_intents).Count -ne @($receipt.mutations).Count -or
     [int]$receipt.max_queue_item_count -lt 1 -or
     [int]$receipt.max_queue_item_count -gt 8 -or
+    [string]::IsNullOrWhiteSpace([string]$receipt.teacher_request_path) -or
+    [string]$receipt.teacher_request_sha256 -notmatch '^[0-9a-f]{64}$' -or
+    [string]$receipt.teacher_selection_policy -ne
+        "authoritative_transparent_crop_net_revenue_then_earliest_terminal_v1" -or
     $null -eq $receipt.final_ledger) {
     throw "Money crop production decision receipt is not committed and complete."
 }
@@ -100,6 +104,11 @@ if (-not [string]::Equals(
 Assert-RuntimeFileIdentity -Path $decisionPath `
     -ExpectedSha256 ([string]$receipt.request_sha256) `
     -Label "Money crop production decision request" | Out-Null
+$teacherRequestPath = [IO.Path]::GetFullPath(
+    [string]$receipt.teacher_request_path)
+Assert-RuntimeFileIdentity -Path $teacherRequestPath `
+    -ExpectedSha256 ([string]$receipt.teacher_request_sha256) `
+    -Label "Money crop production Teacher request" | Out-Null
 $snapshotPath = [IO.Path]::GetFullPath([string]$receipt.snapshot_path)
 Assert-RuntimeFileIdentity -Path $snapshotPath `
     -ExpectedSha256 ([string]$receipt.snapshot_sha256) `
@@ -190,6 +199,9 @@ $manifest = [ordered]@{
     decision_request_sha256 = Get-RuntimeFileSha256 -Path $decisionPath
     decision_receipt_path = $receiptPath
     decision_receipt_sha256 = Get-RuntimeFileSha256 -Path $receiptPath
+    teacher_request_path = $teacherRequestPath
+    teacher_request_sha256 = Get-RuntimeFileSha256 -Path $teacherRequestPath
+    teacher_selection_policy = [string]$receipt.teacher_selection_policy
     snapshot_path = $snapshotPath
     snapshot_sha256 = Get-RuntimeFileSha256 -Path $snapshotPath
     strategy_ledger_path = $ledgerPath

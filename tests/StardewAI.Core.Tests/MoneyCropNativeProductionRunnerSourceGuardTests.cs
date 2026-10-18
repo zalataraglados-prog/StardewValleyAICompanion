@@ -167,6 +167,7 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         foreach (var property in new[]
         {
+            "teacher_request_sha256",
             "decision_request_sha256",
             "decision_receipt_sha256",
             "snapshot_sha256",
@@ -186,6 +187,16 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("Assert-MoneyCropInputIdSet", ProductionInput,
             StringComparison.Ordinal);
         Assert.Contains("formal_product_training_authorized", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_crop_production_decision_request.v2",
+            ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_crop_production_decision_receipt.v2",
+            ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("teacher_selection_policy", ProductionInput,
             StringComparison.Ordinal);
         Assert.Contains("seed_quantity_shortfall", ProductionInput,
             StringComparison.Ordinal);

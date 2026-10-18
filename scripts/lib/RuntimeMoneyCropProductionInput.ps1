@@ -92,6 +92,8 @@ function Read-MoneyCropNativeProductionInputManifest {
 
     $artifacts = @{}
     foreach ($binding in @(
+        @("TeacherRequestPath", "teacher_request_path",
+            "teacher_request_sha256", "Money crop Teacher request"),
         @("DecisionRequestPath", "decision_request_path",
             "decision_request_sha256", "Money crop decision request"),
         @("DecisionReceiptPath", "decision_receipt_path",
@@ -164,7 +166,14 @@ function Read-MoneyCropNativeProductionInputManifest {
     Assert-MoneyCropInputCondition `
         -Condition (
             [string]$decisionRequest.schema_version -eq
-                "money_revenue_crop_production_decision_request.v1" -and
+                "money_revenue_crop_production_decision_request.v2" -and
+            (Test-MoneyCropInputPathEqual `
+                -Left ([string]$decisionRequest.teacher_request_path) `
+                -Right $artifacts.TeacherRequestPath) -and
+            [string]$decisionRequest.teacher_request_sha256 -eq
+                [string]$manifest.teacher_request_sha256 -and
+            [string]$decisionRequest.teacher_selection_policy -eq
+                [string]$manifest.teacher_selection_policy -and
             (Test-MoneyCropInputPathEqual `
                 -Left ([string]$decisionRequest.snapshot_path) `
                 -Right $artifacts.SnapshotPath) -and
@@ -185,7 +194,7 @@ function Read-MoneyCropNativeProductionInputManifest {
     Assert-MoneyCropInputCondition `
         -Condition (
             [string]$decisionReceipt.schema_version -eq
-                "money_revenue_crop_production_decision_receipt.v1" -and
+                "money_revenue_crop_production_decision_receipt.v2" -and
             [string]$decisionReceipt.status -eq
                 "crop_production_decision_committed" -and
             [bool]$decisionReceipt.all_commitments_accepted -and
@@ -209,6 +218,13 @@ function Read-MoneyCropNativeProductionInputManifest {
                 [long]$manifest.target_total_money_earned -and
             [string]$decisionReceipt.source_state_hash -eq
                 [string]$manifest.source_state_hash -and
+            (Test-MoneyCropInputPathEqual `
+                -Left ([string]$decisionReceipt.teacher_request_path) `
+                -Right $artifacts.TeacherRequestPath) -and
+            [string]$decisionReceipt.teacher_request_sha256 -eq
+                [string]$manifest.teacher_request_sha256 -and
+            [string]$decisionReceipt.teacher_selection_policy -eq
+                [string]$manifest.teacher_selection_policy -and
             [int]$decisionReceipt.max_queue_item_count -eq
                 [int]$manifest.max_queue_item_count -and
             @($decisionReceipt.mutations).Count -eq
