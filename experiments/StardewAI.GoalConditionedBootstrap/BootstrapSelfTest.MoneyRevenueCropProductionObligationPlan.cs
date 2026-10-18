@@ -82,6 +82,7 @@ internal static partial class BootstrapSelfTest
             plan,
             snapshot);
         VerifyMoneyCropSeedReservationProof(root, snapshot);
+        VerifyMoneyCropNativeLifecycleProof();
 
         var pastPlantingSnapshot = CloneSnapshot(snapshot);
         var pastTime = JsonNode.Parse(
@@ -770,8 +771,25 @@ internal static partial class BootstrapSelfTest
         }, JsonDefaults.Options);
         state["player"] = JsonSerializer.SerializeToElement(new
         {
-            location_id = MoneyCropField("Farm")
+            location_id = MoneyCropField("Farm"),
+            seed_inventory = MoneyCropRuntimeField(new[]
+            {
+                new
+                {
+                    slot_index = 0,
+                    item_id = "745",
+                    seed_id = "745",
+                    stack = 40
+                }
+            })
         }, JsonDefaults.Options);
+        var farm = JsonNode.Parse(state["farm"].GetRawText())!.AsObject();
+        farm["crops"] = JsonSerializer.SerializeToNode(
+            MoneyCropRuntimeField(Array.Empty<object>()),
+            JsonDefaults.Options);
+        state["farm"] = JsonSerializer.SerializeToElement(
+            farm,
+            JsonDefaults.Options);
         var hoeDirtTiles = Enumerable.Range(0, 100).Select(index => new
         {
             tile_x = 5 + index % 10,

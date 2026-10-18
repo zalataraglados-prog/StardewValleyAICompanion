@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v4" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v5" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v5" &&
+                    "money_revenue_crop_production_proof_fragment_index.v6" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -56,6 +56,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndex.SeedReservationProofPaths is not null &&
                 fragmentIndex.SeedAcquisitionProofPaths is not null &&
                 fragmentIndex.DailyCapacityProofPaths is not null &&
+                fragmentIndex.NativeLifecycleProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof fragment index is invalid.");
 
@@ -108,11 +109,25 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             "Money Revenue crop daily-capacity proof paths are duplicated.");
         var dailyCapacityProofs = dailyCapacityProofPaths.Select(path =>
             VerifyDailyCapacityProof(path, planPath, planSha256, plan)).ToArray();
+        var nativeLifecycleProofPaths =
+            (fragmentIndex.NativeLifecycleProofPaths ??
+                throw new InvalidDataException(
+                    "Money Revenue crop native-lifecycle proof paths are missing."))
+            .Select(path => RequiredFile(
+                path,
+                "Money Revenue crop native-lifecycle proof fragment"))
+            .ToArray();
+        Require(nativeLifecycleProofPaths.Distinct(PathComparer).Count() ==
+                    nativeLifecycleProofPaths.Length,
+            "Money Revenue crop native-lifecycle proof paths are duplicated.");
+        var nativeLifecycleProofs = nativeLifecycleProofPaths.Select(path =>
+            VerifyNativeLifecycleProof(path, planPath, planSha256, plan)).ToArray();
 
         var allEvidenceIds = proofs.Select(value => value.EvidenceRequestId)
             .Concat(seedProofs.Select(value => value.EvidenceRequestId))
             .Concat(acquisitionProofs.Select(value => value.EvidenceRequestId))
             .Concat(dailyCapacityProofs.Select(value => value.EvidenceRequestId))
+            .Concat(nativeLifecycleProofs.Select(value => value.EvidenceRequestId))
             .ToArray();
         Require(allEvidenceIds.Distinct(StringComparer.Ordinal).Count() ==
                     allEvidenceIds.Length,
@@ -123,6 +138,8 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             .Concat(acquisitionProofs.Select(value =>
                 (value.EvidenceRequestId, Value: (object)value)))
             .Concat(dailyCapacityProofs.Select(value =>
+                (value.EvidenceRequestId, Value: (object)value)))
+            .Concat(nativeLifecycleProofs.Select(value =>
                 (value.EvidenceRequestId, Value: (object)value)))
             .ToDictionary(value => value.EvidenceRequestId, value => value.Value, StringComparer.Ordinal);
         var verifiedIds = plan.PendingEvidenceRequestIds
@@ -151,10 +168,43 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             VerifiedSeedReservations = seedProofs,
             VerifiedSeedAcquisitions = acquisitionProofs,
             VerifiedDailyCapacities = dailyCapacityProofs,
+            VerifiedNativeLifecycles = nativeLifecycleProofs,
             FutureCropProductionProofReady = false,
             FreshSaveRevenueScheduleReady = false,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static MoneyRevenueCropNativeLifecycleProof
+        VerifyNativeLifecycleProof(
+            string proofPath,
+            string planPath,
+            string planSha256,
+            MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var proof = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropNativeLifecycleProof>(
+                proofPath,
+                "Money Revenue crop native-lifecycle proof");
+        var rebuilt = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
+            proof.RequestPath);
+        Require(proof.SchemaVersion ==
+                    "money_revenue_crop_native_lifecycle_proof.v1" &&
+                BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
+                string.Equals(
+                    Path.GetFullPath(proof.CropProductionPlanPath),
+                    planPath,
+                    PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
+                plan.PendingEvidenceRequestIds.Contains(
+                    proof.EvidenceRequestId,
+                    StringComparer.Ordinal) &&
+                proof.EvidenceRequestId ==
+                    "native-crop-lifecycle:" + proof.CommitmentId &&
+                proof.NativeCropLifecycleVerified &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money Revenue crop native-lifecycle proof is not exact or is outside the denominator.");
+        return proof;
     }
 
     private static MoneyRevenueCropDailyCapacityProof

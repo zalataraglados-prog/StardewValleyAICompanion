@@ -68,6 +68,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-seed-reservation-proof", BuildMoneyRevenueCropSeedReservationProof),
     new("build-money-revenue-crop-planting-layout-proof", BuildMoneyRevenueCropPlantingLayoutProof),
     new("build-money-revenue-crop-daily-capacity-proof", BuildMoneyRevenueCropDailyCapacityProof),
+    new("build-money-revenue-crop-native-lifecycle-proof", BuildMoneyRevenueCropNativeLifecycleProof),
     new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
     new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
@@ -799,6 +800,13 @@ static void BuildMoneyRevenueCropPlantingLayoutProof(Arguments options)
 static void BuildMoneyRevenueCropDailyCapacityProof(Arguments options)
 {
     var proof = MoneyRevenueCropDailyCapacityProofBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), proof);
+}
+
+static void BuildMoneyRevenueCropNativeLifecycleProof(Arguments options)
+{
+    var proof = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), proof);
 }
