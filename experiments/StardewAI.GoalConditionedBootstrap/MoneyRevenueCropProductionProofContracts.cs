@@ -107,7 +107,7 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_fragment_index.v4";
+        "money_revenue_crop_production_proof_fragment_index.v5";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -127,6 +127,10 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
     public string[] SeedAcquisitionProofPaths { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("daily_capacity_proof_paths")]
+    public string[] DailyCapacityProofPaths { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
@@ -135,7 +139,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpointRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint_request.v3";
+        "money_revenue_crop_production_proof_checkpoint_request.v4";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -151,7 +155,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint.v3";
+        "money_revenue_crop_production_proof_checkpoint.v4";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -201,6 +205,10 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
     public MoneyRevenueCropSeedAcquisitionProof[] VerifiedSeedAcquisitions
         { get; set; } = Array.Empty<MoneyRevenueCropSeedAcquisitionProof>();
 
+    [JsonPropertyName("verified_daily_capacities")]
+    public MoneyRevenueCropDailyCapacityProof[] VerifiedDailyCapacities
+        { get; set; } = Array.Empty<MoneyRevenueCropDailyCapacityProof>();
+
     [JsonPropertyName("future_crop_production_proof_ready")]
     public bool FutureCropProductionProofReady { get; set; }
 
@@ -213,9 +221,9 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
     [JsonPropertyName("checkpoint_policy")]
     public string CheckpointPolicy { get; set; } =
         "Only independently rebuilt proof fragments inside the exact plan " +
-        "denominator are verified. Version 3 admits planting-layout, exact " +
-        "committed seed-reservation and exact shared-rollout seed-acquisition " +
-        "fragments; every unsupported capacity, lifecycle, retention and terminal " +
+        "denominator are verified. Version 4 admits planting-layout, exact " +
+        "committed seed-reservation, exact shared-rollout seed-acquisition and " +
+        "aggregate daily crop-capacity fragments; every unsupported lifecycle, retention and terminal " +
         "request remains pending, so this checkpoint cannot authorize future-crop " +
         "proof, a fresh-save revenue schedule or formal product training.";
 }

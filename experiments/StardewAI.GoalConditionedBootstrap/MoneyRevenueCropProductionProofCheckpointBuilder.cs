@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v3" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v4" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v4" &&
+                    "money_revenue_crop_production_proof_fragment_index.v5" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -55,6 +55,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndex.PlantingLayoutProofPaths is not null &&
                 fragmentIndex.SeedReservationProofPaths is not null &&
                 fragmentIndex.SeedAcquisitionProofPaths is not null &&
+                fragmentIndex.DailyCapacityProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof fragment index is invalid.");
 
@@ -94,10 +95,24 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             "Money Revenue crop seed-acquisition proof paths are duplicated.");
         var acquisitionProofs = acquisitionProofPaths.Select(path =>
             VerifyAcquisitionProof(path, planPath, planSha256, plan)).ToArray();
+        var dailyCapacityProofPaths =
+            (fragmentIndex.DailyCapacityProofPaths ??
+                throw new InvalidDataException(
+                    "Money Revenue crop daily-capacity proof paths are missing."))
+            .Select(path => RequiredFile(
+                path,
+                "Money Revenue crop daily-capacity proof fragment"))
+            .ToArray();
+        Require(dailyCapacityProofPaths.Distinct(PathComparer).Count() ==
+                    dailyCapacityProofPaths.Length,
+            "Money Revenue crop daily-capacity proof paths are duplicated.");
+        var dailyCapacityProofs = dailyCapacityProofPaths.Select(path =>
+            VerifyDailyCapacityProof(path, planPath, planSha256, plan)).ToArray();
 
         var allEvidenceIds = proofs.Select(value => value.EvidenceRequestId)
             .Concat(seedProofs.Select(value => value.EvidenceRequestId))
             .Concat(acquisitionProofs.Select(value => value.EvidenceRequestId))
+            .Concat(dailyCapacityProofs.Select(value => value.EvidenceRequestId))
             .ToArray();
         Require(allEvidenceIds.Distinct(StringComparer.Ordinal).Count() ==
                     allEvidenceIds.Length,
@@ -106,6 +121,8 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var proofByRequest = proofs.Select(value => (value.EvidenceRequestId, Value: (object)value))
             .Concat(seedProofs.Select(value => (value.EvidenceRequestId, Value: (object)value)))
             .Concat(acquisitionProofs.Select(value =>
+                (value.EvidenceRequestId, Value: (object)value)))
+            .Concat(dailyCapacityProofs.Select(value =>
                 (value.EvidenceRequestId, Value: (object)value)))
             .ToDictionary(value => value.EvidenceRequestId, value => value.Value, StringComparer.Ordinal);
         var verifiedIds = plan.PendingEvidenceRequestIds
@@ -133,10 +150,47 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             VerifiedPlantingLayouts = proofs,
             VerifiedSeedReservations = seedProofs,
             VerifiedSeedAcquisitions = acquisitionProofs,
+            VerifiedDailyCapacities = dailyCapacityProofs,
             FutureCropProductionProofReady = false,
             FreshSaveRevenueScheduleReady = false,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static MoneyRevenueCropDailyCapacityProof
+        VerifyDailyCapacityProof(
+            string proofPath,
+            string planPath,
+            string planSha256,
+            MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var proof = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropDailyCapacityProof>(
+                proofPath,
+                "Money Revenue crop daily-capacity proof");
+        var rebuilt = MoneyRevenueCropDailyCapacityProofBuilder.Build(
+            proof.RequestPath);
+        Require(proof.SchemaVersion ==
+                    "money_revenue_crop_daily_capacity_proof.v1" &&
+                BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
+                string.Equals(
+                    Path.GetFullPath(proof.CropProductionPlanPath),
+                    planPath,
+                    PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
+                plan.PendingEvidenceRequestIds.Contains(
+                    proof.EvidenceRequestId,
+                    StringComparer.Ordinal) &&
+                proof.EvidenceRequestId ==
+                    "daily-capacity:" + proof.CommitmentId &&
+                proof.CoveredCommitmentIds.SequenceEqual(
+                    plan.Commitments.Select(value => value.CommitmentId)
+                        .OrderBy(value => value, StringComparer.Ordinal),
+                    StringComparer.Ordinal) &&
+                proof.DailyCapacityVerified &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money Revenue crop daily-capacity proof is not exact or is outside the denominator.");
+        return proof;
     }
 
     private static MoneyRevenueCropSeedAcquisitionProof

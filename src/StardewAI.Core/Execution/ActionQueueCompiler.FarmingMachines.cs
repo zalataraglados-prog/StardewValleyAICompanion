@@ -22,10 +22,12 @@ namespace StardewAI.Core.Execution
         {
             var playerX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
             var playerY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
-            var routeTicks = playerX.HasValue && playerY.HasValue
-                ? Math.Max(0, Math.Abs(playerX.Value - targetX) + Math.Abs(playerY.Value - targetY) - 1) * 30
-                : 30;
-            return routeTicks + 5 + 60 + 20;
+            var routeTiles = playerX.HasValue && playerY.HasValue
+                ? Math.Max(0, Math.Abs(playerX.Value - targetX) +
+                    Math.Abs(playerY.Value - targetY) - 1)
+                : 1;
+            return CropMaintenanceBudgetPolicy.MovementTicks(routeTiles) +
+                CropMaintenanceBudgetPolicy.WaterToolTicksPerTile;
         }
 
         private static JsonElement? ReadCropArray(SnapshotEnvelope snapshot)

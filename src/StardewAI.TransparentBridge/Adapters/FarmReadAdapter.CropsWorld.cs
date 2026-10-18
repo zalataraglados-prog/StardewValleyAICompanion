@@ -41,6 +41,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_max_quality = ReadIntNullable(pair.Value, "HarvestMaxQuality"),
                     harvest_method = ReadString(pair.Value, "HarvestMethod"),
                     is_paddy_crop = ReadBoolNullable(pair.Value, "IsPaddyCrop"),
+                    is_raised = ReadBoolNullable(pair.Value, "IsRaised"),
                     needs_watering = ReadBoolNullable(pair.Value, "NeedsWatering"),
                     plantable_location_rule_count = ReadCount(pair.Value, "PlantableLocationRules")
                 };

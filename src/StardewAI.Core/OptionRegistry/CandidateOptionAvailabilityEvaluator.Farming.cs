@@ -299,7 +299,7 @@ namespace StardewAI.Core.OptionRegistry
                     QualifiedItemId = qualifiedItemId,
                     SlotIndex = NullableReadInt(result, "slot_index"),
                     Quantity = seedStack,
-                    EstimatedTicks = 60,
+                    EstimatedTicks = CropMaintenanceBudgetPolicy.PlantTicksPerTile,
                     EnergyCost = 0,
                     AvailabilityClass = "transparent_planting_context",
                     Parameters = new[]
@@ -582,7 +582,7 @@ namespace StardewAI.Core.OptionRegistry
                         TileX = x,
                         TileY = y,
                         ExpectedEffect = "current_location.crops[" + x + "," + y + "].needs_watering=false",
-                        EstimatedTicks = 60,
+                        EstimatedTicks = CropMaintenanceBudgetPolicy.WaterToolTicksPerTile,
                         EnergyCost = 2,
                         BlockReasons = blockReasons
                     };
