@@ -37,8 +37,14 @@ internal static partial class BootstrapSelfTest
             });
         var runPlan = MoneyRevenueCropNativeProductionRunPlanBuilder.Build(
             requestPath);
-        var expectedFirstDay = plan.Commitments.Min(value =>
-            value.PlantingTotalDay);
+        var sourceSnapshot = CurrentTeacherFrontierSupport.Read<
+            StardewAI.Contracts.State.SnapshotEnvelope>(
+                plan.SnapshotPath,
+                "Money crop native-production source snapshot");
+        var expectedFirstDay = sourceSnapshot.State["time"]
+            .GetProperty("total_days")
+            .GetProperty("value")
+            .GetInt32();
         var expectedLastDay = plan.Commitments.Max(value =>
             value.HarvestWaves.Max(wave => wave.HarvestTotalDay));
         var expectedActionCount = plan.Commitments.Sum(commitment =>
@@ -47,6 +53,8 @@ internal static partial class BootstrapSelfTest
                 commitment.HarvestWaves.Length));
         Require(runPlan.Status == "native_crop_production_run_ready" &&
                 runPlan.FirstTotalDay == expectedFirstDay &&
+                runPlan.SourceTotalDay == expectedFirstDay &&
+                runPlan.SourceStateHash == sourceSnapshot.StateHash &&
                 runPlan.LastTotalDay == expectedLastDay &&
                 runPlan.DayCount == expectedLastDay - expectedFirstDay + 1 &&
                 runPlan.ActionCount == expectedActionCount &&
@@ -83,6 +91,14 @@ internal static partial class BootstrapSelfTest
                         day.ActionBatches.Any(),
                 "Money crop native-production run day lost compiler order or capture boundary.");
         }
+        Require(runPlan.Days
+                    .Where(day => day.TotalDay < plan.Commitments.Min(value =>
+                        value.PlantingTotalDay))
+                    .All(day => day.ActionBatches.Length == 0 &&
+                        day.CaptureLayoutCommitmentIds.Length == 0 &&
+                        !day.CaptureDailyCapacitySnapshot &&
+                        day.NativeSleepRequired),
+            "Money crop native-production pre-plant days are not sleep-only boundaries.");
 
         var overlappingRequestPath = Path.Combine(
             root,

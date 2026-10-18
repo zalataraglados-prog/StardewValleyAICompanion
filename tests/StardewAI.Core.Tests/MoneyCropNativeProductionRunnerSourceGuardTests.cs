@@ -36,6 +36,12 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("source_save_unchanged", Runner,
             StringComparison.Ordinal);
+        Assert.Contains("money_crop_native_source_preflight.v1", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("$initialStateHash -eq [string]$runPlan.source_state_hash",
+            Runner, StringComparison.Ordinal);
+        Assert.Contains("$initialDay -eq [int]$runPlan.source_total_day",
+            Runner, StringComparison.Ordinal);
         Assert.Contains("Stop-RuntimeEvidenceProcesses", Runner,
             StringComparison.Ordinal);
     }

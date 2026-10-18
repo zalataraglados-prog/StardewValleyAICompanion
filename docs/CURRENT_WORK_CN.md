@@ -7,9 +7,10 @@
 ## 当前切片 · 2026-10-18 Money 原生作物生产收集器
 
 - `Invoke-RuntimeMoneyCropNativeProduction.ps1` 已把 `money_revenue_crop_native_production_run_plan.v1` 接入隔离源存档、精确双 Mod allowlist、现有 action/plan compiler、RuntimeTestHarness 原生执行和统一回执链。运行器按连续日期逐批执行 `plant -> conditional water -> harvest`，每次跨地图只编译一个透明 connector 并 fresh replan，每个非终端日复用既有 `recovery.stabilize_day` 生成唯一原生睡眠。
+- run plan 现在从权威 crop-production 源快照当天开始，而不是错误地跳到最早种植日；源日到种植日前的每一天只能有一个原生 sleep boundary。运行器在任何动作前输出 `money_crop_native_source_preflight.v1`，要求隔离存档首次 fresh full snapshot 的 `state_hash` 和 `total_days` 同时精确匹配计划源边界；不匹配时立即停止，不能用同日期的相似存档代替。
 - 浇水批次在执行前只按透明 `farm.crops[].needs_watering` 过滤；雨天不生成冗余浇水，但若当天逐日容量证明要求边界快照，仍可通过资源中性的 crop-ingress 到达 Farm。跨地图 move 被现有 compiler 重写为 connector 时现在保留唯一 `candidate_id`，因此路线、作物动作和睡眠的 queue/receipt/after snapshot 都能维持可审计候选身份。
 - 当前收集器会物化 planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。它尚未执行真实游戏采集，也尚未接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
-- 下一固定切片：准备一份与权威 run-plan request 精确匹配的隔离源存档，完成首次隐藏静音原生运行并修复仅由真实回执暴露的缺口；成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得另写第二套作物候选、规划器或执行器。
+- 下一固定切片：从 Money denominator 物化权威 crop-production plan、布局意图与其精确源存档，完成首次隐藏静音原生运行并修复仅由真实回执暴露的缺口；成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套作物候选、规划器或执行器。
 
 ## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
