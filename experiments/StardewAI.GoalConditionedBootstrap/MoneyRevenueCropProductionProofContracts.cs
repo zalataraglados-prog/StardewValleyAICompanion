@@ -107,7 +107,7 @@ public sealed class MoneyRevenueCropNativeLifecycleProofRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_lifecycle_proof_request.v1";
+        "money_revenue_crop_native_lifecycle_proof_request.v2";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -157,13 +157,15 @@ public sealed record MoneyRevenueCropNativeLifecycleTransitionProof(
     [property: JsonPropertyName("after_state_hash")] string AfterStateHash,
     [property: JsonPropertyName("item_count")] int ItemCount,
     [property: JsonPropertyName("option_id")] string OptionId,
+    [property: JsonPropertyName("action_commitment_id")]
+    string ActionCommitmentId,
     [property: JsonPropertyName("verified")] bool Verified);
 
 public sealed class MoneyRevenueCropNativeLifecycleProof
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_lifecycle_proof.v1";
+        "money_revenue_crop_native_lifecycle_proof.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -204,6 +206,13 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
     [JsonPropertyName("seed_qualified_item_id")]
     public string SeedQualifiedItemId { get; set; } = string.Empty;
 
+    [JsonPropertyName("shared_transition_denominator_commitment_ids")]
+    public string[] SharedTransitionDenominatorCommitmentIds { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("shared_native_trajectory_verified")]
+    public bool SharedNativeTrajectoryVerified { get; set; }
+
     [JsonPropertyName("transition_count")]
     public int TransitionCount { get; set; }
 
@@ -235,10 +244,12 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
 
     [JsonPropertyName("proof_policy")]
     public string ProofPolicy { get; set; } =
-        "Every crop action is admitted only through an existing action queue " +
-        "and verified execution receipt. Homogeneous queues of at most the " +
-        "training queue limit must cover each committed tile exactly once for " +
-        "every scheduled plant and harvest operation. Scheduled watering must " +
+        "One continuous native world-state trajectory is shared by every crop " +
+        "commitment in the exact production plan. Every crop action is admitted " +
+        "only through an existing action queue and verified execution receipt. " +
+        "Each homogeneous queue belongs to exactly one non-overlapping commitment " +
+        "layout, while the complete queue set must cover every scheduled plant " +
+        "and harvest operation. Scheduled watering must " +
         "leave every tile watered; already-watered rain tiles need no redundant " +
         "water action, while explicit water actions may target each tile at most " +
         "once. Consecutive fresh " +
@@ -395,7 +406,7 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_fragment_index.v11";
+        "money_revenue_crop_production_proof_fragment_index.v12";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -447,7 +458,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpointRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint_request.v10";
+        "money_revenue_crop_production_proof_checkpoint_request.v11";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -463,7 +474,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint.v10";
+        "money_revenue_crop_production_proof_checkpoint.v11";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;

@@ -9,22 +9,17 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static void ValidateTransitionChain(
         LoadedTransition[] transitions,
         SnapshotEnvelope source,
-        MoneyRevenueCropPlantingLayoutProof layout,
-        MoneyRevenueCropProductionCommitmentPlan commitment,
-        CropCatalogRow catalog)
+        LifecycleCommitmentContext[] contexts)
     {
         var sourceCalendar = ReadCalendar(source);
-        var firstDay = commitment.PlantingTotalDay;
-        var lastDay = commitment.HarvestWaves.Max(value =>
-            value.HarvestTotalDay);
+        var firstDay = contexts.Min(value =>
+            value.Commitment.PlantingTotalDay);
+        var lastDay = contexts.Max(value => value.FinalHarvestDay);
         Require(transitions.Select(value => value.QueuePath)
                     .Distinct(PathComparer).Count() == transitions.Length &&
                 transitions.Select(value => value.ReceiptPath)
                     .Distinct(PathComparer).Count() == transitions.Length,
             "Money Revenue crop lifecycle queue or receipt paths are duplicated.");
-        Require(transitions[0].Before.StateHash ==
-                    layout.PlantingStateHash,
-            "Money Revenue crop lifecycle does not begin at the planting layout snapshot.");
 
         for (var index = 0; index < transitions.Length; index++)
         {
@@ -60,15 +55,18 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         }
 
         var cursor = 0;
-        var layoutTiles = layout.Tiles
-            .Select(value => (value.TileX, value.TileY))
-            .ToHashSet();
         for (var day = firstDay; day <= lastDay; day++)
         {
             Require(cursor < transitions.Length &&
                     transitions[cursor].Request.TotalDay == day,
                 "Money Revenue crop lifecycle is missing day " + day + ".");
             var dayStart = transitions[cursor].Before;
+            Require(contexts.Where(value =>
+                        value.Commitment.PlantingTotalDay == day)
+                    .All(value => value.Layout.PlantingStateHash ==
+                        dayStart.StateHash),
+                "Money Revenue crop lifecycle day start drifted from a planting layout snapshot on day " +
+                day + ".");
             var dayActions = new List<LoadedTransition>();
             while (cursor < transitions.Length &&
                 transitions[cursor].Request.TotalDay == day &&
@@ -80,10 +78,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 day,
                 dayActions,
                 dayStart,
-                layout,
-                commitment,
-                catalog,
-                layoutTiles);
+                contexts);
 
             if (day < lastDay)
             {
@@ -95,9 +90,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     day + ".");
                 ValidateDayRollover(
                     transitions[cursor++],
-                    layout,
-                    commitment,
-                    catalog);
+                    contexts);
             }
         }
         Require(cursor == transitions.Length,
@@ -108,13 +101,15 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         int totalDay,
         List<LoadedTransition> transitions,
         SnapshotEnvelope dayStart,
-        MoneyRevenueCropPlantingLayoutProof layout,
-        MoneyRevenueCropProductionCommitmentPlan commitment,
-        CropCatalogRow catalog,
-        HashSet<(int X, int Y)> layoutTiles)
+        LifecycleCommitmentContext[] contexts)
     {
-        var actual = new List<(string OptionId, int X, int Y)>();
+        var actual = new List<(
+            string CommitmentId,
+            string OptionId,
+            int X,
+            int Y)>();
         var previousRank = -1;
+        var locationId = contexts[0].Layout.LocationId;
         foreach (var transition in transitions)
         {
             var beforeCalendar = ReadCalendar(transition.Before);
@@ -133,28 +128,30 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 "Money Revenue crop action queues are out of native lifecycle order.");
             previousRank = rank;
             var batchTiles = items.Select(item =>
-                ReadTarget(item, layout.LocationId, transition.Before)).ToArray();
+                ReadTarget(item, locationId, transition.Before)).ToArray();
+            Require(batchTiles.Length > 0 &&
+                    batchTiles.Distinct().Count() == batchTiles.Length,
+                "Money Revenue crop action queue contains no targets or duplicate tiles.");
+            var context = ResolveActionContext(batchTiles, contexts);
             if (optionIds[0] == PlantOption)
             {
                 Require(items.All(item => NormalizeObjectId(
                         UniqueParameter(
                             item.NormalizedCommand?.Parameters ??
                                 Array.Empty<SmallModelActionParameter>(),
-                            "seed_id")) == commitment.SeedQualifiedItemId),
+                            "seed_id")) ==
+                        context.Commitment.SeedQualifiedItemId),
                     "Money Revenue crop planting queue seed identity drifted.");
                 var beforeSeeds = SeedQuantity(
                     transition.Before,
-                    commitment.SeedQualifiedItemId);
+                    context.Commitment.SeedQualifiedItemId);
                 var afterSeeds = SeedQuantity(
                     transition.After,
-                    commitment.SeedQualifiedItemId);
+                    context.Commitment.SeedQualifiedItemId);
                 Require(beforeSeeds >= batchTiles.Length &&
                         afterSeeds == beforeSeeds - batchTiles.Length,
                     "Money Revenue native planting queue did not consume its exact seed count.");
             }
-            Require(batchTiles.Distinct().Count() == batchTiles.Length &&
-                    batchTiles.All(layoutTiles.Contains),
-                "Money Revenue crop action queue contains duplicate or foreign tiles.");
             foreach (var tile in batchTiles)
             {
                 ValidateCropActionTransition(
@@ -162,35 +159,60 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     tile,
                     transition.Before,
                     transition.After,
-                    layout,
-                    commitment,
-                    catalog);
-                actual.Add((optionIds[0], tile.X, tile.Y));
+                    context.Layout,
+                    context.Commitment,
+                    context.Catalog);
+                actual.Add((
+                    context.Commitment.CommitmentId,
+                    optionIds[0],
+                    tile.X,
+                    tile.Y));
             }
         }
 
         Require(actual.Distinct().Count() == actual.Count,
             "Money Revenue crop lifecycle repeats an action on the same tile and day.");
-        Require(actual.Where(value => value.OptionId == WaterOption)
-                    .All(_ => commitment.RequiredWateringTotalDays.Contains(
-                        totalDay)),
+        Require(actual.Where(value => value.OptionId == WaterOption).All(value =>
+                    contexts.Single(context =>
+                            context.Commitment.CommitmentId ==
+                                value.CommitmentId)
+                        .Commitment.RequiredWateringTotalDays.Contains(
+                            totalDay)),
             "Money Revenue crop lifecycle watered outside the obligation schedule.");
-        var expected = new List<(string OptionId, int X, int Y)>();
-        foreach (var tile in layoutTiles.OrderBy(value => value.Y)
-                     .ThenBy(value => value.X))
+        var expected = new List<(
+            string CommitmentId,
+            string OptionId,
+            int X,
+            int Y)>();
+        foreach (var context in contexts)
         {
-            if (totalDay == commitment.PlantingTotalDay)
-                expected.Add((PlantOption, tile.X, tile.Y));
-            if (commitment.HarvestWaves.Any(value =>
-                    value.HarvestTotalDay == totalDay))
-                expected.Add((HarvestOption, tile.X, tile.Y));
+            foreach (var tile in context.Tiles.OrderBy(value => value.Y)
+                         .ThenBy(value => value.X))
+            {
+                if (totalDay == context.Commitment.PlantingTotalDay)
+                    expected.Add((
+                        context.Commitment.CommitmentId,
+                        PlantOption,
+                        tile.X,
+                        tile.Y));
+                if (context.Commitment.HarvestWaves.Any(value =>
+                        value.HarvestTotalDay == totalDay))
+                {
+                    expected.Add((
+                        context.Commitment.CommitmentId,
+                        HarvestOption,
+                        tile.X,
+                        tile.Y));
+                }
+            }
         }
         Require(actual.Where(value => value.OptionId != WaterOption)
-                    .OrderBy(value => value.OptionId, StringComparer.Ordinal)
+                    .OrderBy(value => value.CommitmentId, StringComparer.Ordinal)
+                    .ThenBy(value => value.OptionId, StringComparer.Ordinal)
                     .ThenBy(value => value.Y).ThenBy(value => value.X)
-                    .SequenceEqual(expected.OrderBy(
-                            value => value.OptionId,
-                            StringComparer.Ordinal)
+                    .SequenceEqual(expected
+                        .OrderBy(value => value.CommitmentId, StringComparer.Ordinal)
+                        .ThenBy(value => value.OptionId, StringComparer.Ordinal)
                         .ThenBy(value => value.Y).ThenBy(value => value.X)),
             "Money Revenue crop lifecycle day " + totalDay +
             " does not exactly cover its scheduled tile actions.");
@@ -198,36 +220,60 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var final = transitions.Count > 0
             ? transitions[^1].After
             : dayStart;
-        foreach (var tile in layoutTiles)
+        foreach (var context in contexts.Where(value =>
+                     totalDay >= value.Commitment.PlantingTotalDay &&
+                     totalDay <= value.FinalHarvestDay))
         {
-            var crop = ReadCrop(final, layout.LocationId, tile.X, tile.Y);
-            var harvested = commitment.HarvestWaves.Any(value =>
-                value.HarvestTotalDay == totalDay);
-            if (harvested && !catalog.RegrowDays.HasValue)
+            foreach (var tile in context.Tiles)
             {
-                Require(crop is null,
-                    "A one-shot crop remained after native harvest.");
-                continue;
-            }
-            Require(crop is not null &&
-                    CropIdentityMatches(crop, commitment) &&
-                    !crop.Dead,
-                "Money Revenue crop lifecycle lost a committed crop tile.");
-            var verifiedCrop = crop ?? throw new InvalidDataException(
-                "Money Revenue crop lifecycle lost a committed crop tile.");
-            if (commitment.RequiredWateringTotalDays.Contains(totalDay))
-            {
-                Require(verifiedCrop.Watered,
-                    "Money Revenue crop lifecycle left a required crop tile unwatered.");
-            }
-            if (harvested)
-            {
-                Require(!verifiedCrop.ReadyForHarvest &&
-                        verifiedCrop.FullyGrown &&
-                        verifiedCrop.DayOfCurrentPhase == catalog.RegrowDays,
-                    "Money Revenue regrow crop did not enter its exact post-harvest countdown.");
+                var crop = ReadCrop(
+                    final,
+                    context.Layout.LocationId,
+                    tile.X,
+                    tile.Y);
+                var harvested = context.Commitment.HarvestWaves.Any(value =>
+                    value.HarvestTotalDay == totalDay);
+                if (harvested && !context.Catalog.RegrowDays.HasValue)
+                {
+                    Require(crop is null,
+                        "A one-shot crop remained after native harvest.");
+                    continue;
+                }
+                Require(crop is not null &&
+                        CropIdentityMatches(crop, context.Commitment) &&
+                        !crop.Dead,
+                    "Money Revenue crop lifecycle lost a committed crop tile.");
+                var verifiedCrop = crop ?? throw new InvalidDataException(
+                    "Money Revenue crop lifecycle lost a committed crop tile.");
+                if (context.Commitment.RequiredWateringTotalDays.Contains(
+                        totalDay))
+                {
+                    Require(verifiedCrop.Watered,
+                        "Money Revenue crop lifecycle left a required crop tile unwatered.");
+                }
+                if (harvested)
+                {
+                    Require(!verifiedCrop.ReadyForHarvest &&
+                            verifiedCrop.FullyGrown &&
+                            verifiedCrop.DayOfCurrentPhase ==
+                                context.Catalog.RegrowDays,
+                        "Money Revenue regrow crop did not enter its exact post-harvest countdown.");
+                }
             }
         }
+    }
+
+    private static LifecycleCommitmentContext ResolveActionContext(
+        (int X, int Y)[] tiles,
+        LifecycleCommitmentContext[] contexts)
+    {
+        var owners = contexts.Where(context =>
+                tiles.Any(context.Tiles.Contains))
+            .ToArray();
+        Require(owners.Length == 1 &&
+                tiles.All(owners[0].Tiles.Contains),
+            "Money Revenue crop action queue mixes commitments or contains foreign tiles.");
+        return owners[0];
     }
 
     private static void ValidateCropActionTransition(
@@ -293,9 +339,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static void ValidateDayRollover(
         LoadedTransition transition,
-        MoneyRevenueCropPlantingLayoutProof layout,
-        MoneyRevenueCropProductionCommitmentPlan commitment,
-        CropCatalogRow catalog)
+        LifecycleCommitmentContext[] contexts)
     {
         var beforeCalendar = ReadCalendar(transition.Before);
         var afterCalendar = ReadCalendar(transition.After);
@@ -305,32 +349,38 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 NativeDaySettlementSupport.IsSingleNativeSleepQueue(
                     transition.Queue),
             "Money Revenue crop lifecycle day rollover is not one native sleep transition.");
-        foreach (var tile in layout.Tiles)
+        foreach (var context in contexts.Where(value =>
+                     transition.Request.TotalDay >=
+                        value.Commitment.PlantingTotalDay &&
+                     transition.Request.TotalDay < value.FinalHarvestDay))
         {
-            var before = ReadCrop(
-                transition.Before,
-                layout.LocationId,
-                tile.TileX,
-                tile.TileY);
-            var after = ReadCrop(
-                transition.After,
-                layout.LocationId,
-                tile.TileX,
-                tile.TileY);
-            Require(before is not null && after is not null &&
-                    CropIdentityMatches(before, commitment) &&
-                    CropIdentityMatches(after, commitment),
-                "Money Revenue crop disappeared across native sleep.");
-            var verifiedBefore = before ?? throw new InvalidDataException(
-                "Money Revenue crop disappeared across native sleep.");
-            var verifiedAfter = after ?? throw new InvalidDataException(
-                "Money Revenue crop disappeared across native sleep.");
-            var projected = ProjectNativeDay(
-                verifiedBefore,
-                catalog.NeedsWatering);
-            Require(SameNativeDayState(projected, verifiedAfter),
-                "Money Revenue crop state did not follow Crop.newDay on tile " +
-                tile.TileX + "," + tile.TileY + ".");
+            foreach (var tile in context.Layout.Tiles)
+            {
+                var before = ReadCrop(
+                    transition.Before,
+                    context.Layout.LocationId,
+                    tile.TileX,
+                    tile.TileY);
+                var after = ReadCrop(
+                    transition.After,
+                    context.Layout.LocationId,
+                    tile.TileX,
+                    tile.TileY);
+                Require(before is not null && after is not null &&
+                        CropIdentityMatches(before, context.Commitment) &&
+                        CropIdentityMatches(after, context.Commitment),
+                    "Money Revenue crop disappeared across native sleep.");
+                var verifiedBefore = before ?? throw new InvalidDataException(
+                    "Money Revenue crop disappeared across native sleep.");
+                var verifiedAfter = after ?? throw new InvalidDataException(
+                    "Money Revenue crop disappeared across native sleep.");
+                var projected = ProjectNativeDay(
+                    verifiedBefore,
+                    context.Catalog.NeedsWatering);
+                Require(SameNativeDayState(projected, verifiedAfter),
+                    "Money Revenue crop state did not follow Crop.newDay on tile " +
+                    tile.TileX + "," + tile.TileY + ".");
+            }
         }
     }
 

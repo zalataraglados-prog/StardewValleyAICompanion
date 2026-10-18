@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -42,28 +40,52 @@ internal static partial class BootstrapSelfTest
             MoneyRevenueCropDailyCapacityProofBuilder.Build(
                 secondDailyRequestPath));
 
-        var retentionByRequestId = new Dictionary<string, string>(
+        var supports = BuildSharedSettlementLifecycleSupport(
+            root,
+            planPath,
+            plantingSnapshotPath,
+            plan,
+            layoutPaths,
+            dailyProofPaths,
+            new[]
+            {
+                new[] { 5, 6 },
+                new[] { 7, 8, 9 }
+            });
+        var retentionByRequestId = supports.ToDictionary(
+            support => support.EvidenceRequestId,
+            support => support.RetentionProofPath,
             StringComparer.Ordinal);
-        var lifecyclePaths = new string[plan.Commitments.Length];
-        for (var index = 0; index < plan.Commitments.Length; index++)
-        {
-            var targetXs = index == 0
-                ? new[] { 5, 6 }
-                : new[] { 7, 8, 9 };
-            var support = BuildSharedSettlementLifecycleSupport(
-                root,
-                planPath,
-                plantingSnapshotPath,
-                plan.Commitments[index],
-                layoutPaths[index],
-                dailyProofPaths[index],
-                targetXs,
-                index);
-            lifecyclePaths[index] = support.LifecycleProofPath;
-            retentionByRequestId.Add(
-                support.EvidenceRequestId,
-                support.RetentionProofPath);
-        }
+        var lifecyclePaths = supports.Select(support =>
+            support.LifecycleProofPath).ToArray();
+        var lifecycleProofs = lifecyclePaths.Select(path =>
+            CurrentTeacherFrontierSupport.Read<
+                MoneyRevenueCropNativeLifecycleProof>(
+                    path,
+                    "Shared crop lifecycle fixture"))
+            .ToArray();
+        Require(lifecycleProofs.All(proof =>
+                    proof.SharedNativeTrajectoryVerified &&
+                    proof.SharedTransitionDenominatorCommitmentIds
+                        .SequenceEqual(
+                            plan.Commitments.Select(value =>
+                                    value.CommitmentId)
+                                .OrderBy(value => value, StringComparer.Ordinal),
+                            StringComparer.Ordinal)) &&
+                lifecycleProofs.Select(proof =>
+                        string.Join(",", proof.Transitions.Select(value =>
+                            value.QueueSha256)))
+                    .Distinct(StringComparer.Ordinal).Count() == 1 &&
+                lifecycleProofs[0].Transitions
+                    .Where(value => value.ActionCommitmentId.Length > 0)
+                    .Select(value => value.ActionCommitmentId)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .SequenceEqual(
+                        plan.Commitments.Select(value => value.CommitmentId)
+                            .OrderBy(value => value, StringComparer.Ordinal),
+                        StringComparer.Ordinal),
+            "Shared crop lifecycle proofs did not retain one global trajectory with exact commitment attribution.");
 
         var sharedDay = settlementCapacity.Days.First(day =>
             day.Waves.Length == 2);
@@ -76,26 +98,13 @@ internal static partial class BootstrapSelfTest
                     path,
                     "Shared crop shipping retention fixture"))
             .ToArray();
-        var terminalStart = CurrentTeacherFrontierSupport.Read<
-            SnapshotEnvelope>(
-                retentions[0].AfterSnapshotPath,
-                "Shared crop shipping terminal start fixture");
-        var player = JsonNode.Parse(
-            terminalStart.State["player"].GetRawText())!.AsObject();
-        var inventory = player["inventory"]!["value"]!.AsArray();
-        var retainedRow = inventory.Single(row =>
-            row?["qualified_item_id"]?.GetValue<string>() == "(O)400")!;
-        retainedRow["stack"] = sharedDay.MinimumShippingUnits;
-        player["inventory"]!["value"] = inventory;
-        terminalStart.State["player"] = JsonSerializer.SerializeToElement(
-            player,
-            JsonDefaults.Options);
-        terminalStart.GameTick = retentions.Max(retention =>
+        var terminalStart = retentions.Select(retention =>
             CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
                 retention.AfterSnapshotPath,
-                "Shared crop shipping retention after fixture").GameTick) + 1;
-        terminalStart.StateHash = SnapshotHash.ComputeStateHash(
-            terminalStart.State);
+                "Shared crop shipping retention after fixture"))
+            .MaxBy(snapshot => snapshot.GameTick) ??
+            throw new InvalidDataException(
+                "Shared crop shipping terminal start fixture is missing.");
         var terminalStartPath = Path.Combine(root, "shared-terminal-start.json");
         Write(terminalStartPath, terminalStart);
 

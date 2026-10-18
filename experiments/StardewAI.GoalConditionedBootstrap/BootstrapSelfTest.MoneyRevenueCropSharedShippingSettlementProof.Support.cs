@@ -8,20 +8,19 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private static SharedSettlementLifecycleSupport
+    private static SharedSettlementLifecycleSupport[]
         BuildSharedSettlementLifecycleSupport(
             string root,
             string planPath,
             string plantingSnapshotPath,
-            MoneyRevenueCropProductionCommitmentPlan commitment,
-            string layoutProofPath,
-            string dailyProofPath,
-            int[] targetXs,
-            int fixtureIndex)
+            MoneyRevenueCropProductionObligationPlan plan,
+            string[] layoutProofPaths,
+            string[] dailyProofPaths,
+            int[][] targetXsByCommitment)
     {
         var fixtureRoot = Path.Combine(
             root,
-            "shared-lifecycle-" + fixtureIndex);
+            "shared-lifecycle");
         Directory.CreateDirectory(fixtureRoot);
         var current = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             plantingSnapshotPath,
@@ -29,45 +28,57 @@ internal static partial class BootstrapSelfTest
         var transitions = new List<
             MoneyRevenueCropNativeLifecycleTransitionRequest>();
         var sequence = 0;
-        var finalDay = commitment.HarvestWaves.Max(wave =>
-            wave.HarvestTotalDay);
-        for (var totalDay = commitment.PlantingTotalDay;
+        var firstDay = plan.Commitments.Min(commitment =>
+            commitment.PlantingTotalDay);
+        var finalDay = plan.Commitments.Max(commitment =>
+            commitment.HarvestWaves.Max(wave => wave.HarvestTotalDay));
+        for (var totalDay = firstDay;
              totalDay <= finalDay;
              totalDay++)
         {
-            if (totalDay == commitment.PlantingTotalDay)
+            for (var index = 0; index < plan.Commitments.Length; index++)
             {
-                current = AddLifecycleTransition(
-                    fixtureRoot,
-                    transitions,
-                    current,
-                    totalDay,
-                    ref sequence,
-                    "executor.plant_seed",
-                    targetXs);
+                if (totalDay == plan.Commitments[index].PlantingTotalDay)
+                {
+                    current = AddLifecycleTransition(
+                        fixtureRoot,
+                        transitions,
+                        current,
+                        totalDay,
+                        ref sequence,
+                        "executor.plant_seed",
+                        targetXsByCommitment[index]);
+                }
             }
-            if (commitment.RequiredWateringTotalDays.Contains(totalDay))
+            for (var index = 0; index < plan.Commitments.Length; index++)
             {
-                current = AddLifecycleTransition(
-                    fixtureRoot,
-                    transitions,
-                    current,
-                    totalDay,
-                    ref sequence,
-                    "executor.water_crop",
-                    targetXs);
+                if (plan.Commitments[index].RequiredWateringTotalDays.Contains(
+                        totalDay))
+                {
+                    current = AddLifecycleTransition(
+                        fixtureRoot,
+                        transitions,
+                        current,
+                        totalDay,
+                        ref sequence,
+                        "executor.water_crop",
+                        targetXsByCommitment[index]);
+                }
             }
-            if (commitment.HarvestWaves.Any(wave =>
-                    wave.HarvestTotalDay == totalDay))
+            for (var index = 0; index < plan.Commitments.Length; index++)
             {
-                current = AddLifecycleTransition(
-                    fixtureRoot,
-                    transitions,
-                    current,
-                    totalDay,
-                    ref sequence,
-                    "executor.harvest_crop",
-                    targetXs);
+                if (plan.Commitments[index].HarvestWaves.Any(wave =>
+                        wave.HarvestTotalDay == totalDay))
+                {
+                    current = AddLifecycleTransition(
+                        fixtureRoot,
+                        transitions,
+                        current,
+                        totalDay,
+                        ref sequence,
+                        "executor.harvest_crop",
+                        targetXsByCommitment[index]);
+                }
             }
             if (totalDay < finalDay)
             {
@@ -77,49 +88,53 @@ internal static partial class BootstrapSelfTest
                     current,
                     totalDay,
                     ref sequence,
-                    "executor.sleep",
-                    targetXs);
+                    "executor.sleep");
             }
         }
-        var lifecycleRequestPath = Path.Combine(
-            fixtureRoot,
-            "request.json");
-        var lifecycleProofPath = Path.Combine(fixtureRoot, "proof.json");
-        Write(lifecycleRequestPath,
-            new MoneyRevenueCropNativeLifecycleProofRequest
-            {
-                CropProductionPlanPath = planPath,
-                CommitmentId = commitment.CommitmentId,
-                PlantingLayoutProofPath = layoutProofPath,
-                DailyCapacityProofPath = dailyProofPath,
-                Transitions = transitions.ToArray()
-            });
-        Write(lifecycleProofPath,
-            MoneyRevenueCropNativeLifecycleProofBuilder.Build(
-                lifecycleRequestPath));
+        return plan.Commitments.Select((commitment, index) =>
+        {
+            var lifecycleRequestPath = Path.Combine(
+                fixtureRoot,
+                "request-" + index + ".json");
+            var lifecycleProofPath = Path.Combine(
+                fixtureRoot,
+                "proof-" + index + ".json");
+            Write(lifecycleRequestPath,
+                new MoneyRevenueCropNativeLifecycleProofRequest
+                {
+                    CropProductionPlanPath = planPath,
+                    CommitmentId = commitment.CommitmentId,
+                    PlantingLayoutProofPath = layoutProofPaths[index],
+                    DailyCapacityProofPath = dailyProofPaths[index],
+                    Transitions = transitions.ToArray()
+                });
+            Write(lifecycleProofPath,
+                MoneyRevenueCropNativeLifecycleProofBuilder.Build(
+                    lifecycleRequestPath));
 
-        var wave = commitment.HarvestWaves[0];
-        var retentionRequestPath = Path.Combine(
-            fixtureRoot,
-            "retention-request.json");
-        var retentionProofPath = Path.Combine(
-            fixtureRoot,
-            "retention-proof.json");
-        Write(retentionRequestPath,
-            new MoneyRevenueCropOutputRetentionProofRequest
-            {
-                CropProductionPlanPath = planPath,
-                NativeLifecycleProofPath = lifecycleProofPath,
-                CommitmentId = commitment.CommitmentId,
-                WaveIndex = wave.WaveIndex
-            });
-        var retention = MoneyRevenueCropOutputRetentionProofBuilder.Build(
-            retentionRequestPath);
-        Write(retentionProofPath, retention);
-        return new SharedSettlementLifecycleSupport(
-            lifecycleProofPath,
-            retentionProofPath,
-            retention.EvidenceRequestId);
+            var wave = commitment.HarvestWaves[0];
+            var retentionRequestPath = Path.Combine(
+                fixtureRoot,
+                "retention-request-" + index + ".json");
+            var retentionProofPath = Path.Combine(
+                fixtureRoot,
+                "retention-proof-" + index + ".json");
+            Write(retentionRequestPath,
+                new MoneyRevenueCropOutputRetentionProofRequest
+                {
+                    CropProductionPlanPath = planPath,
+                    NativeLifecycleProofPath = lifecycleProofPath,
+                    CommitmentId = commitment.CommitmentId,
+                    WaveIndex = wave.WaveIndex
+                });
+            var retention = MoneyRevenueCropOutputRetentionProofBuilder.Build(
+                retentionRequestPath);
+            Write(retentionProofPath, retention);
+            return new SharedSettlementLifecycleSupport(
+                lifecycleProofPath,
+                retentionProofPath,
+                retention.EvidenceRequestId);
+        }).ToArray();
     }
 
     private static SharedShippingDepositGroup BuildSharedShippingDepositGroup(
