@@ -795,9 +795,12 @@ internal static partial class BootstrapSelfTest
             {
                 new
                 {
+                    tile_x = 71,
+                    tile_y = 14,
                     completed = true,
                     bin_scope = "personal",
                     player_id = "123",
+                    contents = Array.Empty<object>(),
                     pending_settlement_value = 0,
                     pending_settlement_value_complete = true,
                     pending_settlement_timing =

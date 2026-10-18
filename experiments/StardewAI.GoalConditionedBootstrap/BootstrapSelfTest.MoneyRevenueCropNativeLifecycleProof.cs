@@ -348,6 +348,11 @@ internal static partial class BootstrapSelfTest
                 Write(settlementProofPath, settlement);
                 return settlementProofPath;
             }).ToArray();
+        settlementProofPaths[0] =
+            VerifyMoneyCropShippingTerminalSettlementProof(
+                root,
+                planPath,
+                retentionProofPaths[0]);
         var firstRetention = CurrentTeacherFrontierSupport.Read<
             MoneyRevenueCropOutputRetentionProof>(
                 retentionProofPaths[0],
@@ -795,6 +800,7 @@ internal static partial class BootstrapSelfTest
                 ["qualified_item_id"] = "(O)400",
                 ["stack"] = 2,
                 ["quality"] = 0,
+                ["sell_to_store_price"] = 120,
                 ["maximum_stack_size"] = 999,
                 ["is_empty"] = false
             });
