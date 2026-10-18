@@ -13,32 +13,101 @@ internal static partial class BootstrapSelfTest
     {
         var root = TempArtifactRoot("money-crop-production-obligation-plan");
         var snapshot = MoneyCropProductionSnapshot();
-        var mutation = new CropCommitmentLedgerService().Upsert(
-            null,
-            snapshot,
-            new CropPlantingCommitmentUpsertRequest
-            {
-                StateHash = snapshot.StateHash,
-                ExpectedLedgerRevision = 0,
-                CommitmentId = "money.year2.spring.strawberry",
-                SourceDecisionId = "teacher.money.crop.year2.spring.v1",
-                SeedId = "745",
-                TileCount = 100,
-                PlantingYear = 2,
-                PlantingSeason = "spring",
-                PlantingDayOfMonth = 1,
-                LocationContext = "outdoor_seasonal"
-            },
-            "2026-10-16T00:00:00Z");
-        Require(mutation.Accepted && mutation.Ledger is not null,
-            "Money crop-production fixture commitment was rejected.");
-        var ledger = mutation.Ledger!;
-
         var snapshotPath = Path.Combine(root, "snapshot.json");
+        var decisionRequestPath = Path.Combine(
+            root,
+            "crop-production-decision-request.json");
+        Write(snapshotPath, snapshot);
+        Write(decisionRequestPath,
+            new MoneyRevenueCropProductionDecisionRequest
+            {
+                SnapshotPath = snapshotPath,
+                DecisionId = "teacher.money.crop.year2.spring.v1",
+                DecisionRecordedAt = "2026-10-16T00:00:00Z",
+                Commitments = new[]
+                {
+                    new MoneyRevenueCropProductionDecisionCommitment
+                    {
+                        CommitmentId = "money.year2.spring.strawberry",
+                        SeedId = "745",
+                        TileCount = 100,
+                        PlantingYear = 2,
+                        PlantingSeason = "spring",
+                        PlantingDayOfMonth = 1,
+                        Tiles = Enumerable.Range(0, 100).Select(index =>
+                            new MoneyRevenueCropPlantingTile(
+                                5 + index % 10,
+                                6 + index / 10)).ToArray()
+                    }
+                }
+            });
+        var decisionReceipt =
+            MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
+                decisionRequestPath);
+        Require(decisionReceipt.Status ==
+                    "crop_production_decision_committed" &&
+                decisionReceipt.AllCommitmentsAccepted &&
+                decisionReceipt.Mutations.Length == 1 &&
+                decisionReceipt.Mutations[0].Accepted &&
+                decisionReceipt.Mutations[0].Request.ExpectedLedgerRevision == 0 &&
+                decisionReceipt.Mutations[0].ResultingLedgerRevision == 1 &&
+                decisionReceipt.Mutations[0].ResultingCommitmentRevision == 1 &&
+                decisionReceipt.FinalLedger is not null &&
+                decisionReceipt.LayoutIntents.Single().Tiles.Length == 100 &&
+                decisionReceipt.GoalId == "earn_money" &&
+                decisionReceipt.DeadlineTotalDayExclusive == 224 &&
+                decisionReceipt.TargetTotalMoneyEarned == 1_000_000 &&
+                decisionReceipt.MaxQueueItemCount == 8 &&
+                !decisionReceipt.FormalProductTrainingAuthorized,
+            "Money crop-production Teacher decision was not committed exactly once.");
+        var ledger = decisionReceipt.FinalLedger!;
+
         var ledgerPath = Path.Combine(root, "ledger.json");
         var requestPath = Path.Combine(root, "request.json");
-        Write(snapshotPath, snapshot);
         Write(ledgerPath, ledger);
+        var continuationDecisionPath = Path.Combine(
+            root,
+            "crop-production-decision-continuation.json");
+        Write(continuationDecisionPath,
+            new MoneyRevenueCropProductionDecisionRequest
+            {
+                SnapshotPath = snapshotPath,
+                BaseStrategyLedgerPath = ledgerPath,
+                DecisionId = "teacher.money.crop.year2.spring.continuation.v1",
+                DecisionRecordedAt = "2026-10-16T00:01:00Z",
+                Commitments = new[]
+                {
+                    new MoneyRevenueCropProductionDecisionCommitment
+                    {
+                        CommitmentId = "money.year2.spring.strawberry.extra",
+                        SeedId = "745",
+                        TileCount = 2,
+                        PlantingYear = 2,
+                        PlantingSeason = "spring",
+                        PlantingDayOfMonth = 1,
+                        Tiles = new[]
+                        {
+                            new MoneyRevenueCropPlantingTile(20, 20),
+                            new MoneyRevenueCropPlantingTile(21, 20)
+                        }
+                    }
+                }
+            });
+        var continuationReceipt =
+            MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
+                continuationDecisionPath);
+        Require(continuationReceipt.AllCommitmentsAccepted &&
+                continuationReceipt.BaseStrategyLedgerPath ==
+                    Path.GetFullPath(ledgerPath) &&
+                continuationReceipt.BaseStrategyLedgerSha256 ==
+                    CurrentTeacherFrontierSupport.HashFile(ledgerPath) &&
+                continuationReceipt.Mutations.Single().Request
+                    .ExpectedLedgerRevision == 1 &&
+                continuationReceipt.Mutations.Single()
+                    .ResultingLedgerRevision == 2 &&
+                continuationReceipt.FinalLedger?.CropPlantingCommitments
+                    .Length == 2,
+            "Money crop-production continuation did not preserve ledger revision lineage.");
         Write(requestPath, new MoneyRevenueCropProductionObligationPlanRequest
         {
             SnapshotPath = snapshotPath,
@@ -165,6 +234,54 @@ internal static partial class BootstrapSelfTest
         }
         Require(rejected,
             "A null Money crop-production harvest schedule was admitted.");
+
+        var invalidDecision = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropProductionDecisionRequest>(
+                decisionRequestPath,
+                "Money crop-production invalid decision fixture");
+        invalidDecision.Commitments[0].Tiles[^1] =
+            invalidDecision.Commitments[0].Tiles[0];
+        var invalidDecisionPath = Path.Combine(
+            root,
+            "crop-production-decision-invalid.json");
+        Write(invalidDecisionPath, invalidDecision);
+        rejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
+                invalidDecisionPath);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        Require(rejected,
+            "A Money crop-production decision with duplicate layout tiles was admitted.");
+
+        invalidDecision.Commitments[0].Tiles = new[]
+        {
+            new MoneyRevenueCropPlantingTile(5, 6)
+        };
+        invalidDecision.Commitments[0].TileCount = 1;
+        invalidDecision.Commitments[0].SeedId = "missing-seed";
+        var rejectedDecisionPath = Path.Combine(
+            root,
+            "crop-production-decision-rejected.json");
+        Write(rejectedDecisionPath, invalidDecision);
+        var rejectedReceipt =
+            MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
+                rejectedDecisionPath);
+        Require(rejectedReceipt.Status ==
+                    "crop_production_decision_rejected" &&
+                !rejectedReceipt.AllCommitmentsAccepted &&
+                rejectedReceipt.FinalLedger is null &&
+                rejectedReceipt.Mutations.Length == 1 &&
+                !rejectedReceipt.Mutations[0].Accepted &&
+                rejectedReceipt.Mutations[0].Errors.Contains(
+                    "seed_id_not_found_in_live_crop_catalog",
+                    StringComparer.Ordinal) &&
+                !rejectedReceipt.FormalProductTrainingAuthorized,
+            "A rejected Money crop-production mutation was not preserved for audit.");
     }
 
     private static void VerifyMoneyCropSeedAcquisitionProof(
