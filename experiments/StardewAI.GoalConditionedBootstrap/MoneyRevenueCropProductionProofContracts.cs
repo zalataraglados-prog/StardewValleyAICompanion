@@ -249,11 +249,153 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
         "separate evidence obligations.";
 }
 
+public sealed class MoneyRevenueCropOutputRetentionProofRequest
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "money_revenue_crop_output_retention_proof_request.v1";
+
+    [JsonPropertyName("crop_production_plan_path")]
+    public string CropProductionPlanPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_lifecycle_proof_path")]
+    public string NativeLifecycleProofPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("commitment_id")]
+    public string CommitmentId { get; set; } = string.Empty;
+
+    [JsonPropertyName("wave_index")]
+    public int WaveIndex { get; set; }
+
+    [JsonPropertyName("formal_product_training_authorized")]
+    public bool FormalProductTrainingAuthorized { get; set; }
+}
+
+public sealed record MoneyRevenueCropOutputRetentionHarvestQueueEvidence(
+    [property: JsonPropertyName("queue_id")] string QueueId,
+    [property: JsonPropertyName("queue_path")] string QueuePath,
+    [property: JsonPropertyName("queue_sha256")] string QueueSha256,
+    [property: JsonPropertyName("execution_receipt_path")]
+    string ExecutionReceiptPath,
+    [property: JsonPropertyName("execution_receipt_sha256")]
+    string ExecutionReceiptSha256,
+    [property: JsonPropertyName("before_state_hash")] string BeforeStateHash,
+    [property: JsonPropertyName("after_state_hash")] string AfterStateHash,
+    [property: JsonPropertyName("harvest_action_count")] int HarvestActionCount);
+
+public sealed class MoneyRevenueCropOutputRetentionProof
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "money_revenue_crop_output_retention_proof.v1";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("request_path")]
+    public string RequestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("request_sha256")]
+    public string RequestSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_production_plan_path")]
+    public string CropProductionPlanPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_production_plan_sha256")]
+    public string CropProductionPlanSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_lifecycle_proof_path")]
+    public string NativeLifecycleProofPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("native_lifecycle_proof_sha256")]
+    public string NativeLifecycleProofSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("evidence_request_id")]
+    public string EvidenceRequestId { get; set; } = string.Empty;
+
+    [JsonPropertyName("commitment_id")]
+    public string CommitmentId { get; set; } = string.Empty;
+
+    [JsonPropertyName("wave_index")]
+    public int WaveIndex { get; set; }
+
+    [JsonPropertyName("harvest_total_day")]
+    public int HarvestTotalDay { get; set; }
+
+    [JsonPropertyName("output_retention_key")]
+    public string OutputRetentionKey { get; set; } = string.Empty;
+
+    [JsonPropertyName("harvest_item_qualified_id")]
+    public string HarvestItemQualifiedId { get; set; } = string.Empty;
+
+    [JsonPropertyName("minimum_units")]
+    public int MinimumUnits { get; set; }
+
+    [JsonPropertyName("minimum_gross_revenue")]
+    public long MinimumGrossRevenue { get; set; }
+
+    [JsonPropertyName("before_snapshot_path")]
+    public string BeforeSnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("before_snapshot_sha256")]
+    public string BeforeSnapshotSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("before_state_hash")]
+    public string BeforeStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_snapshot_path")]
+    public string AfterSnapshotPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_snapshot_sha256")]
+    public string AfterSnapshotSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("after_state_hash")]
+    public string AfterStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("inventory_quantity_before")]
+    public int InventoryQuantityBefore { get; set; }
+
+    [JsonPropertyName("inventory_quantity_after")]
+    public int InventoryQuantityAfter { get; set; }
+
+    [JsonPropertyName("inventory_quantity_increase")]
+    public int InventoryQuantityIncrease { get; set; }
+
+    [JsonPropertyName("harvest_queue_count")]
+    public int HarvestQueueCount { get; set; }
+
+    [JsonPropertyName("harvest_action_count")]
+    public int HarvestActionCount { get; set; }
+
+    [JsonPropertyName("harvest_queues")]
+    public MoneyRevenueCropOutputRetentionHarvestQueueEvidence[] HarvestQueues
+        { get; set; } =
+            Array.Empty<MoneyRevenueCropOutputRetentionHarvestQueueEvidence>();
+
+    [JsonPropertyName("native_output_retention_verified")]
+    public bool NativeOutputRetentionVerified { get; set; }
+
+    [JsonPropertyName("formal_product_training_authorized")]
+    public bool FormalProductTrainingAuthorized { get; set; }
+
+    [JsonPropertyName("proof_policy")]
+    public string ProofPolicy { get; set; } =
+        "One proof covers one exact planned harvest wave. It independently " +
+        "rebuilds the crop-production plan and native lifecycle proof, selects " +
+        "only the contiguous verified harvest queues for that wave, requires " +
+        "their action count to equal the complete committed tile denominator, " +
+        "and verifies that the exact harvest item increases in player inventory " +
+        "by at least the conservative minimum units. World debris is not retained " +
+        "inventory and cannot satisfy this proof. Extra native yield is observed " +
+        "but does not raise the planned minimum revenue bound. Settlement and " +
+        "formal product training remain separate gates.";
+}
+
 public sealed class MoneyRevenueCropProductionProofFragmentIndex
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_fragment_index.v6";
+        "money_revenue_crop_production_proof_fragment_index.v7";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -281,6 +423,10 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
     public string[] NativeLifecycleProofPaths { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("output_retention_proof_paths")]
+    public string[] OutputRetentionProofPaths { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
@@ -289,7 +435,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpointRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint_request.v5";
+        "money_revenue_crop_production_proof_checkpoint_request.v6";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -305,7 +451,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint.v5";
+        "money_revenue_crop_production_proof_checkpoint.v6";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -363,6 +509,10 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
     public MoneyRevenueCropNativeLifecycleProof[] VerifiedNativeLifecycles
         { get; set; } = Array.Empty<MoneyRevenueCropNativeLifecycleProof>();
 
+    [JsonPropertyName("verified_output_retentions")]
+    public MoneyRevenueCropOutputRetentionProof[] VerifiedOutputRetentions
+        { get; set; } = Array.Empty<MoneyRevenueCropOutputRetentionProof>();
+
     [JsonPropertyName("future_crop_production_proof_ready")]
     public bool FutureCropProductionProofReady { get; set; }
 
@@ -375,10 +525,11 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
     [JsonPropertyName("checkpoint_policy")]
     public string CheckpointPolicy { get; set; } =
         "Only independently rebuilt proof fragments inside the exact plan " +
-        "denominator are verified. Version 5 admits planting-layout, exact " +
+        "denominator are verified. Version 6 admits planting-layout, exact " +
         "committed seed-reservation, exact shared-rollout seed-acquisition and " +
         "aggregate daily crop-capacity fragments plus receipt-bound native crop " +
-        "lifecycles; every unsupported retention and terminal " +
+        "lifecycles plus per-wave retained inventory outputs; every unsupported " +
+        "terminal " +
         "request remains pending, so this checkpoint cannot authorize future-crop " +
         "proof, a fresh-save revenue schedule or formal product training.";
 }
