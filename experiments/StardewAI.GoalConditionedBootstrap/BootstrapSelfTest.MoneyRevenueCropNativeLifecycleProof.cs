@@ -183,6 +183,40 @@ internal static partial class BootstrapSelfTest
             root,
             "checkpoint-request.json");
         Write(proofPath, proof);
+        var retentionProofPaths = commitment.HarvestWaves.Select(wave =>
+        {
+            var retentionRequestPath = Path.Combine(
+                root,
+                "retention-request-" + wave.WaveIndex + ".json");
+            var retentionProofPath = Path.Combine(
+                root,
+                "retention-proof-" + wave.WaveIndex + ".json");
+            Write(retentionRequestPath,
+                new MoneyRevenueCropOutputRetentionProofRequest
+                {
+                    CropProductionPlanPath = planPath,
+                    NativeLifecycleProofPath = proofPath,
+                    CommitmentId = commitment.CommitmentId,
+                    WaveIndex = wave.WaveIndex
+                });
+            var retentionProof =
+                MoneyRevenueCropOutputRetentionProofBuilder.Build(
+                    retentionRequestPath);
+            Require(retentionProof.Status ==
+                        "verified_native_crop_output_retention" &&
+                    retentionProof.WaveIndex == wave.WaveIndex &&
+                    retentionProof.HarvestTotalDay ==
+                        wave.HarvestTotalDay &&
+                    retentionProof.MinimumUnits == 2 &&
+                    retentionProof.InventoryQuantityIncrease == 2 &&
+                    retentionProof.HarvestQueueCount == 1 &&
+                    retentionProof.HarvestActionCount == 2 &&
+                    retentionProof.NativeOutputRetentionVerified &&
+                    !retentionProof.FormalProductTrainingAuthorized,
+                "Money crop output-retention proof lost its exact wave denominator.");
+            Write(retentionProofPath, retentionProof);
+            return retentionProofPath;
+        }).ToArray();
         Write(fragmentIndexPath,
             new MoneyRevenueCropProductionProofFragmentIndex
             {
@@ -191,7 +225,8 @@ internal static partial class BootstrapSelfTest
                     CurrentTeacherFrontierSupport.HashFile(planPath),
                 PlantingLayoutProofPaths = new[] { layoutProofPath },
                 DailyCapacityProofPaths = new[] { capacityProofPath },
-                NativeLifecycleProofPaths = new[] { proofPath }
+                NativeLifecycleProofPaths = new[] { proofPath },
+                OutputRetentionProofPaths = retentionProofPaths
             });
         Write(checkpointRequestPath,
             new MoneyRevenueCropProductionProofCheckpointRequest
@@ -201,13 +236,92 @@ internal static partial class BootstrapSelfTest
             });
         var checkpoint = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
             checkpointRequestPath);
-        Require(checkpoint.VerifiedFragmentCount == 3 &&
+        Require(checkpoint.VerifiedFragmentCount == 8 &&
                 checkpoint.VerifiedNativeLifecycles.Length == 1 &&
+                checkpoint.VerifiedOutputRetentions.Length == 5 &&
                 checkpoint.VerifiedRequestIds.Contains(
                     proof.EvidenceRequestId,
                     StringComparer.Ordinal) &&
                 !checkpoint.FutureCropProductionProofReady,
             "Money crop lifecycle proof did not enter the checkpoint denominator.");
+
+        var missingOutputAfterPath = Path.Combine(
+            root,
+            "retention-missing-output-after.json");
+        var missingOutputReceiptPath = Path.Combine(
+            root,
+            "retention-missing-output-receipt.json");
+        var missingOutputLifecycleRequestPath = Path.Combine(
+            root,
+            "retention-missing-output-lifecycle-request.json");
+        var missingOutputLifecycleProofPath = Path.Combine(
+            root,
+            "retention-missing-output-lifecycle-proof.json");
+        var missingOutputRequestPath = Path.Combine(
+            root,
+            "retention-missing-output-request.json");
+        var lastTransition = transitions[^1];
+        var missingOutputAfter = CurrentTeacherFrontierSupport.Read<
+            SnapshotEnvelope>(
+                lastTransition.AfterSnapshotPath,
+                "Money crop missing-output after snapshot");
+        var missingOutputPlayer = JsonNode.Parse(
+            missingOutputAfter.State["player"].GetRawText())!.AsObject();
+        var missingOutputRow = missingOutputPlayer["inventory"]!["value"]!
+            .AsArray()
+            .Single(value =>
+                value?["qualified_item_id"]?.GetValue<string>() ==
+                    commitment.HarvestItemQualifiedId &&
+                value?["quality"]?.GetValue<int>() == 0)!;
+        var missingOutputStack = missingOutputRow["stack"]!;
+        missingOutputStack.ReplaceWith(
+            missingOutputStack.GetValue<int>() - 2);
+        missingOutputAfter.State["player"] =
+            JsonSerializer.SerializeToElement(
+                missingOutputPlayer,
+                JsonDefaults.Options);
+        missingOutputAfter.StateHash = SnapshotHash.ComputeStateHash(
+            missingOutputAfter.State);
+        var missingOutputReceipt = CurrentTeacherFrontierSupport.Read<
+            QueueExecutionReceiptEnvelope>(
+                lastTransition.ExecutionReceiptPath,
+                "Money crop missing-output execution receipt");
+        missingOutputReceipt.AfterStateHash = missingOutputAfter.StateHash;
+        missingOutputReceipt.StepResults[^1].AfterStateHash =
+            missingOutputAfter.StateHash;
+        Write(missingOutputAfterPath, missingOutputAfter);
+        Write(missingOutputReceiptPath, missingOutputReceipt);
+        var missingOutputTransitions = transitions.ToArray();
+        missingOutputTransitions[^1] = lastTransition with
+        {
+            ExecutionReceiptPath = missingOutputReceiptPath,
+            AfterSnapshotPath = missingOutputAfterPath
+        };
+        Write(missingOutputLifecycleRequestPath,
+            new MoneyRevenueCropNativeLifecycleProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                PlantingLayoutProofPath = layoutProofPath,
+                DailyCapacityProofPath = capacityProofPath,
+                Transitions = missingOutputTransitions
+            });
+        var missingOutputLifecycle =
+            MoneyRevenueCropNativeLifecycleProofBuilder.Build(
+                missingOutputLifecycleRequestPath);
+        Write(missingOutputLifecycleProofPath, missingOutputLifecycle);
+        Write(missingOutputRequestPath,
+            new MoneyRevenueCropOutputRetentionProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                NativeLifecycleProofPath = missingOutputLifecycleProofPath,
+                CommitmentId = commitment.CommitmentId,
+                WaveIndex = commitment.HarvestWaves[^1].WaveIndex
+            });
+        RequireRejects(
+            () => MoneyRevenueCropOutputRetentionProofBuilder.Build(
+                missingOutputRequestPath),
+            "A native crop harvest without retained inventory output was admitted.");
 
         var incompleteRequestPath = Path.Combine(
             root,
@@ -472,7 +586,7 @@ internal static partial class BootstrapSelfTest
         });
 
     private static SnapshotEnvelope LifecycleHarvest(SnapshotEnvelope before) =>
-        LifecycleMutate(before, crops =>
+        AddLifecycleHarvestOutput(LifecycleMutate(before, crops =>
         {
             foreach (var crop in crops)
             {
@@ -481,7 +595,45 @@ internal static partial class BootstrapSelfTest
                 crop["day_of_current_phase"] = 4;
                 crop["days_until_next_harvest_if_watered"] = 4;
             }
-        });
+        }));
+
+    private static SnapshotEnvelope AddLifecycleHarvestOutput(
+        SnapshotEnvelope after)
+    {
+        var player = JsonNode.Parse(after.State["player"].GetRawText())!
+            .AsObject();
+        var inventory = player["inventory"]!["value"]!.AsArray();
+        var matches = inventory.Where(value =>
+                value?["qualified_item_id"]?.GetValue<string>() == "(O)400" &&
+                value?["quality"]?.GetValue<int>() == 0)
+            .ToArray();
+        Require(matches.Length <= 1,
+            "Money crop lifecycle fixture inventory is ambiguous.");
+        if (matches.Length == 0)
+        {
+            inventory.Add(new JsonObject
+            {
+                ["slot_index"] = 1,
+                ["item_id"] = "400",
+                ["qualified_item_id"] = "(O)400",
+                ["stack"] = 2,
+                ["quality"] = 0,
+                ["maximum_stack_size"] = 999,
+                ["is_empty"] = false
+            });
+        }
+        else
+        {
+            var stack = matches[0]!["stack"]!;
+            stack.ReplaceWith(stack.GetValue<int>() + 2);
+        }
+        player["inventory"]!["value"] = inventory;
+        after.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+        return after;
+    }
 
     private static SnapshotEnvelope LifecycleSleep(SnapshotEnvelope before) =>
         LifecycleMutate(before, crops =>

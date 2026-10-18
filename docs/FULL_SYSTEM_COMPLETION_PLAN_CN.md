@@ -9,7 +9,7 @@
 完全体路线图的全局方向不变，但当前实施顺序必须以 `CURRENT_STATUS_CN.md` 为唯一口径：
 
 ```text
-crop-production retention / settlement
+crop-production native settlement
 -> real Money native production collection
 -> terminal proof completion
 -> exact Teacher comparison
@@ -21,7 +21,7 @@ crop-production retention / settlement
 
 已经完成的 terminal-proof、crop obligation、planting layout、site preparation 与 seed-reservation 代码都属于 **production 前置基础设施**，不能自行增加 `/19` 或 Money `0/18`。Full Shipment current-authority `26/26` 已冻结，不再占当前施工资源。
 
-#307、#308、#309、#310 与 #311 已全部关闭；购种 shortfall 已接入共享 acquisition rollout proof，aggregate daily-capacity proof 已按整份作物计划重放共享 BFS、动作时序、时间、体力和水量；native-lifecycle proof 已复用现有动作队列和统一回执验证器，逐格重放反编译的跨日生长与再生规则。下一项不是继续扩展 correctness 清单，而是沿唯一现有作物链完成逐波输出保留与结算证明。
+#307、#308、#309、#310 与 #311 已全部关闭；购种 shortfall 已接入共享 acquisition rollout proof，aggregate daily-capacity proof 已按整份作物计划重放共享 BFS、动作时序、时间、体力和水量；native-lifecycle proof 已复用现有动作队列和统一回执验证器，逐格重放反编译的跨日生长与再生规则；per-wave output-retention proof 已把连续收获回执与透明玩家库存净增绑定，拒绝地面 debris 冒充留存。下一项不是继续扩展 correctness 清单，而是沿唯一现有 Revenue 链完成 ShopMenu sale / shipping settlement 证明。
 
 后期的 dependency DAG、incremental recomputation、selective replay 与 Online Companion 优化继续保留在 #200/#201/#202/#203，但在当前 Money correctness debt 清零且真实采集 trace 证明有性能 blocker 前，不抢占 WIP=1。
 

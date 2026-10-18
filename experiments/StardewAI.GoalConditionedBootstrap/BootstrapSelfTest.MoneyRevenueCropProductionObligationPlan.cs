@@ -781,7 +781,8 @@ internal static partial class BootstrapSelfTest
                     seed_id = "745",
                     stack = 40
                 }
-            })
+            }),
+            inventory = MoneyCropRuntimeField(Array.Empty<object>())
         }, JsonDefaults.Options);
         var farm = JsonNode.Parse(state["farm"].GetRawText())!.AsObject();
         farm["crops"] = JsonSerializer.SerializeToNode(

@@ -4,12 +4,19 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 原生作物生命周期证明
+## 当前切片 · 2026-10-18 Money 作物逐波输出留存证明
+
+- 新增 `money_revenue_crop_output_retention_proof.v1`。每份证明只覆盖一个精确承诺的一个收获波次，独立重建作物义务计划与原生生命周期 proof，并只选择该波次连续的既有 `executor.harvest_crop` 队列和统一执行回执；收获动作数必须等于承诺地块总数。
+- 留存以透明玩家库存为唯一当前终点：精确 `qualified_item_id` 的库存净增必须不少于计划中的保守最小产量。额外随机产量只记录实际增量，不抬高计划的保守收入下界；地面 debris 不等于玩家已持有库存，也不能通过此证明。
+- hermetic 正例覆盖 2 格草莓的 5 个再生收获波次，每波都验证 `2` 个动作与至少 `2` 个实际库存增量；负例保留合法作物收割状态转换但移除最后一波库存增量，证明会失败关闭。镰刀作物若先落为 debris，当前 v1 会失败关闭；后续必须把既有拾取执行与回执接入留存边界，不能把 debris 冒充留存，也不能另建作物执行器。
+- fragment index 已升级为 v7，checkpoint 已升级为 v6，并可逐份重建 output-retention fragment。尚未采集正式 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是把已留存输出接入既有 ShopMenu sale 或 shipping recurrence，证明原生结算与 Money/`totalMoneyEarned` 增量。
+
+## 已收口 · 2026-10-18 Money 原生作物生命周期证明
 
 - 新增 `money_revenue_crop_native_lifecycle_proof.v1`，只编排并验证既有 `executor.plant_seed`、`executor.water_crop`、`executor.harvest_crop` 与 `executor.sleep` 队列，不新增作物候选、规划器或执行器。训练队列每批最多 8 项；证明允许连续分批，但要求每批同类、状态哈希连续、执行回执完整，且同一天对承诺布局的播种/收获格必须不重不漏。浇水日要求最终逐格已浇水；雨天已湿地块无需生成冗余动作，显式浇水仍不得重复。
 - 每个跨日边界必须是唯一原生睡眠队列。验证器从透明桥 `farm.crops` 读取种子、阶段数组、当前阶段、阶段内天数、成熟/再生倒计时、死亡和浇水状态，并逐格重放反编译的 `Crop.newDay` 规则。快照身份、世界日期偏移、队列回执、目标位置和种子身份任何一项漂移都会失败关闭。
 - hermetic 正例完整覆盖同一批次 2 格草莓从播种、48 个逐格浇水动作、24 次原生睡眠到 10 个逐格再生收获动作，共 54 条连续队列转换；它同时验证多项目队列的逐项回执链和按批次聚合的种子消耗，缺最后一段生命周期会被拒绝。fragment index 已升级为 v6，checkpoint 已升级为 v5，并能独立重建 lifecycle fragment。
-- 该层证明原生生命周期执行，不证明每轮实际产量、产物保留或收入结算。尚未采集生产 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是逐收获波次 `output-retention-terminal:<commitment>:<wave>` 证明。
+- 该层证明原生生命周期执行，不证明每轮实际产量、产物保留或收入结算。后续逐波 output-retention proof 已实现，但尚未采集生产 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。
 
 ## 已收口 · 2026-10-18 Money 作物逐日容量证明
 
