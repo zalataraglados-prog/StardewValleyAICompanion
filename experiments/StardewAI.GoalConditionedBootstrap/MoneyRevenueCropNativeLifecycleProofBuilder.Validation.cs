@@ -6,6 +6,15 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 {
+    private static readonly HashSet<string> SupportingRouteOptions = new(
+        new[]
+        {
+            "executor.move_to_tile",
+            "executor.traverse_connector",
+            "executor.wait_ticks"
+        },
+        StringComparer.Ordinal);
+
     private static void ValidateTransitionChain(
         LoadedTransition[] transitions,
         SnapshotEnvelope source,
@@ -60,7 +69,29 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             Require(cursor < transitions.Length &&
                     transitions[cursor].Request.TotalDay == day,
                 "Money Revenue crop lifecycle is missing day " + day + ".");
-            var dayStart = transitions[cursor].Before;
+            var supportingRoutes = new List<LoadedTransition>();
+            while (cursor < transitions.Length &&
+                transitions[cursor].Request.TotalDay == day &&
+                transitions[cursor].Request.TransitionKind ==
+                    SupportingRouteKind)
+            {
+                supportingRoutes.Add(transitions[cursor++]);
+            }
+            Require(cursor < transitions.Length &&
+                    transitions[cursor].Request.TotalDay == day,
+                "Money Revenue crop lifecycle supporting route has no same-day continuation on day " +
+                day + ".");
+            var dayStart = supportingRoutes.Count > 0
+                ? supportingRoutes[^1].After
+                : transitions[cursor].Before;
+            ValidateSupportingRoutes(
+                day,
+                supportingRoutes,
+                contexts[0].Layout.LocationId);
+            Require(ReadPlayerLocation(dayStart) ==
+                    contexts[0].Layout.LocationId,
+                "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
+                day + ".");
             Require(contexts.Where(value =>
                         value.Commitment.PlantingTotalDay == day)
                     .All(value => value.Layout.PlantingStateHash ==
@@ -95,6 +126,46 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         }
         Require(cursor == transitions.Length,
             "Money Revenue crop lifecycle contains transitions outside the exact day denominator.");
+    }
+
+    private static void ValidateSupportingRoutes(
+        int totalDay,
+        List<LoadedTransition> transitions,
+        string targetLocation)
+    {
+        foreach (var transition in transitions)
+        {
+            var beforeCalendar = ReadCalendar(transition.Before);
+            var afterCalendar = ReadCalendar(transition.After);
+            var optionIds = (transition.Queue.Items ??
+                    Array.Empty<ActionQueueItem>())
+                .Select(value => value.OptionId)
+                .ToArray();
+            Require(beforeCalendar.TotalDay == totalDay &&
+                    afterCalendar.TotalDay == totalDay,
+                "Money Revenue crop supporting route crossed a day boundary.");
+            Require(optionIds.Length > 0 &&
+                    optionIds.All(SupportingRouteOptions.Contains) &&
+                    optionIds.Any(value => value is
+                        "executor.move_to_tile" or
+                        "executor.traverse_connector"),
+                "Money Revenue crop supporting route contains a non-route action.");
+            FullShipmentRecoverySettlementBoundary? afterBoundary = null;
+            Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                        transition.Before,
+                        out var beforeBoundary) &&
+                    FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                        transition.After,
+                        out afterBoundary),
+                "Money Revenue crop supporting route persistent boundary is unavailable.");
+            Require(beforeBoundary == afterBoundary,
+                "Money Revenue crop supporting route changed persistent resources.");
+        }
+        if (transitions.Count > 0)
+        {
+            Require(ReadPlayerLocation(transitions[^1].After) == targetLocation,
+                "Money Revenue crop supporting route did not reach the shared crop location.");
+        }
     }
 
     private static void ValidateDayActions(

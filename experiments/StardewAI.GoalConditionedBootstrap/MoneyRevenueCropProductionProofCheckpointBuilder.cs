@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v11" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v12" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v12" &&
+                    "money_revenue_crop_production_proof_fragment_index.v13" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -423,7 +423,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof.v2" &&
+                    "money_revenue_crop_native_lifecycle_proof.v3" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),

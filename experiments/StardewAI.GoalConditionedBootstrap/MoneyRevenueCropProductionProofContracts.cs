@@ -107,7 +107,7 @@ public sealed class MoneyRevenueCropNativeLifecycleProofRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_lifecycle_proof_request.v2";
+        "money_revenue_crop_native_lifecycle_proof_request.v3";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -165,7 +165,7 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_lifecycle_proof.v2";
+        "money_revenue_crop_native_lifecycle_proof.v3";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -219,6 +219,9 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
     [JsonPropertyName("crop_action_queue_count")]
     public int CropActionQueueCount { get; set; }
 
+    [JsonPropertyName("supporting_route_queue_count")]
+    public int SupportingRouteQueueCount { get; set; }
+
     [JsonPropertyName("native_day_rollover_count")]
     public int NativeDayRolloverCount { get; set; }
 
@@ -252,7 +255,10 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
         "and harvest operation. Scheduled watering must " +
         "leave every tile watered; already-watered rain tiles need no redundant " +
         "water action, while explicit water actions may target each tile at most " +
-        "once. Consecutive fresh " +
+        "once. Resource-neutral movement and connector queues may precede the " +
+        "day's crop actions, but must retain the same calendar day, preserve " +
+        "inventory, currency and persistent world state, and end at the shared " +
+        "crop location. Consecutive fresh " +
         "snapshots must form one state-hash chain, while each overnight boundary " +
         "must be a single native sleep queue whose crop phase transition exactly " +
         "matches the decompiled Crop.newDay state machine. This proves lifecycle " +
@@ -406,7 +412,7 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_fragment_index.v12";
+        "money_revenue_crop_production_proof_fragment_index.v13";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -458,7 +464,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpointRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint_request.v11";
+        "money_revenue_crop_production_proof_checkpoint_request.v12";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -474,7 +480,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint.v11";
+        "money_revenue_crop_production_proof_checkpoint.v12";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -563,7 +569,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
     [JsonPropertyName("checkpoint_policy")]
     public string CheckpointPolicy { get; set; } =
         "Only independently rebuilt proof fragments inside the exact plan " +
-        "denominator are verified. Version 10 admits planting-layout, exact " +
+        "denominator are verified. Version 12 admits planting-layout, exact " +
         "committed seed-reservation, exact shared-rollout seed-acquisition and " +
         "aggregate daily crop-capacity fragments plus receipt-bound native crop " +
         "lifecycles plus per-wave retained inventory support. Only a combined " +

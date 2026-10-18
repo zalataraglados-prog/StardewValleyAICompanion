@@ -191,6 +191,19 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         return (parsedX, parsedY);
     }
 
+    private static string ReadPlayerLocation(SnapshotEnvelope snapshot)
+    {
+        Require(TryStateFieldValue(
+                    snapshot,
+                    "player",
+                    "location_id",
+                    out var location) &&
+                location.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(location.GetString()),
+            "Money Revenue crop lifecycle player location is unavailable.");
+        return location.GetString() ?? string.Empty;
+    }
+
     private static string UniqueParameter(
         SmallModelActionParameter[] parameters,
         string name)

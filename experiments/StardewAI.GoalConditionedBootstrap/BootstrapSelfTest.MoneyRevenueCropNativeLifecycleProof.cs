@@ -141,6 +141,16 @@ internal static partial class BootstrapSelfTest
              totalDay <= finalHarvestDay;
              totalDay++)
         {
+            if (totalDay > commitment.PlantingTotalDay)
+            {
+                current = AddLifecycleTransition(
+                    root,
+                    transitions,
+                    current,
+                    totalDay,
+                    ref sequence,
+                    "executor.traverse_connector");
+            }
             if (totalDay == commitment.PlantingTotalDay)
             {
                 current = AddLifecycleTransition(
@@ -197,8 +207,9 @@ internal static partial class BootstrapSelfTest
         var proof = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             requestPath);
         Require(proof.Status == "verified_native_crop_lifecycle" &&
-                proof.TransitionCount == 54 &&
+                proof.TransitionCount == 78 &&
                 proof.CropActionQueueCount == 30 &&
+                proof.SupportingRouteQueueCount == 24 &&
                 proof.NativeDayRolloverCount == 24 &&
                 proof.VerifiedPlantActionCount == 2 &&
                 proof.VerifiedWaterActionCount == 48 &&
@@ -585,6 +596,28 @@ internal static partial class BootstrapSelfTest
             () => MoneyRevenueCropNativeLifecycleProofBuilder.Build(
                 incompleteRequestPath),
             "An incomplete Money crop native lifecycle was admitted.");
+
+        var firstSupportingRouteIndex = transitions.FindIndex(value =>
+            value.TransitionKind == "supporting_route");
+        Require(firstSupportingRouteIndex >= 0,
+            "Money crop lifecycle fixture did not contain a wake route.");
+        var missingWakeRouteRequestPath = Path.Combine(
+            root,
+            "lifecycle-missing-wake-route-request.json");
+        Write(missingWakeRouteRequestPath,
+            new MoneyRevenueCropNativeLifecycleProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                PlantingLayoutProofPath = layoutProofPath,
+                DailyCapacityProofPath = capacityProofPath,
+                Transitions = transitions.Where((_, index) =>
+                    index != firstSupportingRouteIndex).ToArray()
+            });
+        RequireRejects(
+            () => MoneyRevenueCropNativeLifecycleProofBuilder.Build(
+                missingWakeRouteRequestPath),
+            "A Money crop lifecycle that hid its FarmHouse-to-Farm wake route was admitted.");
     }
 
     private static SnapshotEnvelope AddLifecycleTransition(
@@ -602,6 +635,7 @@ internal static partial class BootstrapSelfTest
             "executor.plant_seed" => LifecyclePlant(before, targetXs),
             "executor.water_crop" => LifecycleWater(before, targetXs),
             "executor.harvest_crop" => LifecycleHarvest(before, targetXs),
+            "executor.traverse_connector" => LifecycleRouteToFarm(before),
             "executor.sleep" => LifecycleSleep(before),
             _ => throw new InvalidDataException(
                 "Unknown lifecycle fixture option " + optionId)
@@ -628,9 +662,12 @@ internal static partial class BootstrapSelfTest
         Write(receiptPath, receipt);
         Write(afterPath, after);
         transitions.Add(new MoneyRevenueCropNativeLifecycleTransitionRequest(
-            optionId == "executor.sleep"
-                ? "native_day_rollover"
-                : "crop_actions",
+            optionId switch
+            {
+                "executor.sleep" => "native_day_rollover",
+                "executor.traverse_connector" => "supporting_route",
+                _ => "crop_actions"
+            },
             totalDay,
             queuePath,
             beforePath,
@@ -648,14 +685,16 @@ internal static partial class BootstrapSelfTest
         SnapshotEnvelope before,
         int[] targetXs)
     {
-        var stepTypes = optionId == "executor.sleep"
-            ? new[]
+        var stepTypes = optionId switch
+        {
+            "executor.sleep" => new[]
             {
                 "move_to_bed_adjacent",
                 "step_onto_sleep_touch_tile",
                 "confirm_sleep_yes"
-            }
-            : new[] { optionId["executor.".Length..] };
+            },
+            _ => new[] { optionId["executor.".Length..] }
+        };
         var parameters = optionId == "executor.sleep"
             ? Array.Empty<SmallModelActionParameter>()
             : new[]
@@ -685,7 +724,8 @@ internal static partial class BootstrapSelfTest
                     }
                 }
                 : Array.Empty<SmallModelActionParameter>()).ToArray();
-        var queueTargetXs = optionId == "executor.sleep"
+        var queueTargetXs = optionId is "executor.sleep" or
+            "executor.traverse_connector"
             ? new[] { 5 }
             : targetXs;
         var items = queueTargetXs.Select((targetX, itemIndex) =>
@@ -942,8 +982,9 @@ internal static partial class BootstrapSelfTest
         return after;
     }
 
-    private static SnapshotEnvelope LifecycleSleep(SnapshotEnvelope before) =>
-        LifecycleMutate(before, crops =>
+    private static SnapshotEnvelope LifecycleSleep(SnapshotEnvelope before)
+    {
+        var after = LifecycleMutate(before, crops =>
         {
             foreach (var value in crops)
             {
@@ -979,6 +1020,29 @@ internal static partial class BootstrapSelfTest
                 crop["watered"] = false;
             }
         }, advanceDay: true);
+        return LifecycleSetPlayerLocation(after, "FarmHouse", 0);
+    }
+
+    private static SnapshotEnvelope LifecycleRouteToFarm(
+        SnapshotEnvelope before) =>
+        LifecycleSetPlayerLocation(before, "Farm", 1);
+
+    private static SnapshotEnvelope LifecycleSetPlayerLocation(
+        SnapshotEnvelope before,
+        string locationId,
+        int additionalTicks)
+    {
+        var after = CloneSnapshot(before);
+        var player = JsonNode.Parse(after.State["player"].GetRawText())!
+            .AsObject();
+        player["location_id"]!["value"] = locationId;
+        after.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        after.GameTick = checked(before.GameTick + additionalTicks);
+        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+        return after;
+    }
 
     private static int LifecycleDaysUntilHarvest(
         int[] phaseDays,

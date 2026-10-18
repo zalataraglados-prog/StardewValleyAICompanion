@@ -36,6 +36,16 @@ internal static partial class BootstrapSelfTest
              totalDay <= finalDay;
              totalDay++)
         {
+            if (totalDay > firstDay)
+            {
+                current = AddLifecycleTransition(
+                    fixtureRoot,
+                    transitions,
+                    current,
+                    totalDay,
+                    ref sequence,
+                    "executor.traverse_connector");
+            }
             for (var index = 0; index < plan.Commitments.Length; index++)
             {
                 if (totalDay == plan.Commitments[index].PlantingTotalDay)

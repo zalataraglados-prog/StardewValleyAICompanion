@@ -774,6 +774,17 @@ internal static partial class BootstrapSelfTest
         {
             location_id = MoneyCropField("Farm"),
             money = MoneyCropRuntimeField(0),
+            club_coins = MoneyCropRuntimeField(0),
+            shop_currency_balances = MoneyCropRuntimeField(new
+            {
+                money = 0,
+                qi_gems = 0,
+                club_coins = 0,
+                golden_walnuts = 0,
+                prize_tickets = 0,
+                festival_tokens = 0,
+                calico_eggs = 0
+            }),
             total_money_earned = MoneyCropRuntimeField(0U),
             seed_inventory = MoneyCropRuntimeField(new[]
             {
@@ -846,6 +857,9 @@ internal static partial class BootstrapSelfTest
                 hoe_dirt_tiles = hoeDirtTiles
             })
         }, JsonDefaults.Options);
+        state["world_progress"] = JsonSerializer.SerializeToElement(
+            new { },
+            JsonDefaults.Options);
         snapshot.GameTick = 200;
         snapshot.State = state;
         snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
