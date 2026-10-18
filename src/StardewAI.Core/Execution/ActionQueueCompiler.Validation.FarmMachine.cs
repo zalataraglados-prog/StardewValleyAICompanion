@@ -418,6 +418,19 @@ namespace StardewAI.Core.Execution
                 reasons.Add("till_soil_target_location_mismatch");
             }
 
+            var currentEnergy = ReadStateFieldDoubleOptional(
+                snapshot,
+                "player",
+                "energy");
+            if (!currentEnergy.HasValue)
+            {
+                reasons.Add("till_soil_player_energy_unavailable");
+            }
+            else if (currentEnergy.Value <= 0d)
+            {
+                reasons.Add("till_soil_insufficient_stamina");
+            }
+
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 

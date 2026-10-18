@@ -28,7 +28,7 @@ public sealed class MoneyRevenueCropProductionObligationPlan
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_obligation_plan.v1";
+        "money_revenue_crop_production_obligation_plan.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -105,6 +105,8 @@ public sealed record MoneyRevenueCropProductionCommitmentPlan(
     int SeedSupplyDeadlineTotalDay,
     [property: JsonPropertyName("current_unreserved_seed_quantity")]
     int CurrentUnreservedSeedQuantity,
+    [property: JsonPropertyName("current_reserved_seed_quantity")]
+    int CurrentReservedSeedQuantity,
     [property: JsonPropertyName("seed_quantity_shortfall")]
     int SeedQuantityShortfall,
     [property: JsonPropertyName("seed_supply_status")] string SeedSupplyStatus,

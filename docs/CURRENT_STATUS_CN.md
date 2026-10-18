@@ -102,11 +102,11 @@ counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_
 
 `Initialize-MoneyRevenueTerminalProofCollection.ps1` 现可无游戏物化上述唯一离线复用项：从已验证 sale episode 提取真实 before/after snapshot 与 run identity，保留 request 锚定的 before ledger，另存字节完全一致的 after ledger，构建不可互换的 boundary capture 和 Revenue recurrence。所有 fragment 进入 `money_revenue_terminal_proof_collection_checkpoint.v1` 前都由既有 terminal execution verifier 完整重放；checkpoint 允许保存真实部分进度，但只有 verified request ID 集与完整 denominator 相等时才输出 completion 可消费的 `money_revenue_terminal_proof_index.v1`。其余反事实分支仍为原生采集 blocker，未增加 Money production 分子。
 
-未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v1` 会重新核验这些值，并把当前未预留种子按承诺顺序唯一分配，再列出布局、缺种、预留、日容量、原生成长和逐波输出保留请求。布局 proof 必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；片段进入 checkpoint 前还会被重新构建。当前 v1 只关闭布局证据种类，其余请求保持 pending，future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。场地准备与种子预留基础设施已在后续切片落地；当前不得继续按本段旧顺序施工，而应先关闭下方 #307–#311 correctness blocker，再沿既有唯一作物链继续购种、日容量、生命周期、输出保留与结算；不得另写第二套作物候选、规划器或执行器。
+未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v2` 会重新核验这些值，拒绝已经过去的种植日，把同承诺已有预留与当前未预留供给分开审计，并只将未预留余量按承诺顺序唯一分配。种子预留 proof v2 必须从计划基准 ledger 原子重放 commit request/result，手写最终账本、倒退日期或同日倒退 tick 均失败关闭。布局 proof 仍必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；fragment index v3 及每个 proof 还必须绑定同一计划 SHA-256。其余日容量、生命周期和逐波输出保留请求保持 pending，future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。当前不得跳过下方 #307–#309 correctness blocker；关闭后才沿既有唯一作物链继续购种、日容量、生命周期、输出保留与结算，不得另写第二套作物候选、规划器或执行器。
 
-场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。该计划本身不是 planting-layout proof，也没有增加 Money production 分子；种子预留 proof 已在后续切片实现但仍受 #310 P1 约束，场地准备本身也受 #311 P2 收口约束，因此当前施工顺序以下方 blocker 清单为准。
+场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。局部读取现使用 overflow-safe 边界与不会回绕的遍历，资源团块站位复用共享 BFS，锄地在体力缺失或 `<=0` 时失败关闭。该计划本身不是 planting-layout proof，也没有增加 Money production 分子。
 
-种子预留 proof 现已进入 crop-production checkpoint v2：当前实现能够逐槽核对透明物料图、活动 reservation 的用途/物品/数量与 reservation snapshot，并拒绝部分或超额 claim；但 **#310 P1 尚未证明 committed ledger 必然由原 crop plan 的 strategy-ledger lineage 合法演化，也未完整证明 reservation snapshot 不早于 plan source snapshot**。因此该 fragment 只能视为已实现但待 correctness 收口，不能作为 production evidence。任何 shortfall 仍必须经既有购买链原生补足，再重新快照和提交预留。日容量、生命周期、输出保留与结算也仍未闭合，所以 Money 保持 `0/18`。
+种子预留 proof 现已进入 crop-production checkpoint v2：它只认可 fresh snapshot 上经共享原子提交服务精确重放、且直接继承计划基准 ledger 的完整 reservation，并逐槽对照透明物料图；原计划中的“当前可用数量”和调用方手写的最终 ledger 都不能冒充预留。预留快照不得早于计划源快照，同日还必须保持 tick 单调。任何 shortfall 仍必须经既有购买链原生补足，再重新快照和提交预留。该层没有闭合购种回执、日容量、生命周期或输出保留，因此 Money 仍为 `0/18`。
 
 ### 当前 production 前置 blocker（2026-10-18 审计）
 
@@ -115,8 +115,6 @@ counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_
 - **#307 P1 — RuntimeEvidence / Windows PowerShell 5.1：** `Write-RawJsonProperty` 目前依赖 `System.Text.Json`；仓库支持的 Windows PowerShell 5.1 路径尚未证明可运行。修复必须继续保留 ledger raw JSON 的 lexical representation，不能退回对象往返序列化。
 - **#308 P1 — native-run isolation provenance：** runner 实际只加载 TransparentBridge 与 RuntimeTestHarness，但 `money_threshold_native_outcome_run_summary.v1` / verifier 还没有持久化并验证 exact Mod allowlist，因此历史重放无法证明该 run 未受额外 gameplay mod 污染。
 - **#309 P1 — terminal-proof denominator/boundary：** collection plan 仍需绑定 concrete request denominator 的精确 identity，并修正 reusable shop-sale 的 before-boundary snapshot；在此之前 fragment checkpoint 不能进入 production comparison。
-- **#310 P1 — crop seed reservation lineage/freshness：** 必须证明 reservation ledger 从 plan ledger 合法演化，并建立 reservation snapshot 的 post-plan freshness 下界。
-- **#311 P2 — crop planning fail-closed：** 收口 dependency required-state、past planting deadline、existing reservation reconciliation、exact plan SHA、farm-layout overflow、resource-clump BFS reachability 与 zero-stamina tilling gate。
 
 这些 blocker 的存在**不回退** Full Shipment current-authority `26/26`，也不改变当前正式状态：`CoverageGateReady=2/19`、`Money=0/18`、`formal_product_training_authorized=false`。修复顺序服从 WIP=1：共享 P1 可临时插队，完成后立即返回 Money，不启动其他 Goal Method。
 

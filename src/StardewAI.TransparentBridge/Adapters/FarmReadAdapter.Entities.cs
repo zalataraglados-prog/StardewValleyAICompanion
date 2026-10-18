@@ -271,9 +271,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
     {
         return farm.resourceClumps
             .Where(clump => bounds is null ||
-                clump.Tile.X < bounds.MaxX + 1 &&
+                clump.Tile.X < (double)bounds.MaxX + 1d &&
                 clump.Tile.X + clump.width.Value > bounds.MinX &&
-                clump.Tile.Y < bounds.MaxY + 1 &&
+                clump.Tile.Y < (double)bounds.MaxY + 1d &&
                 clump.Tile.Y + clump.height.Value > bounds.MinY)
             .Select(clump =>
             {

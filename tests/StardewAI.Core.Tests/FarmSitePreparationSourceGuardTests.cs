@@ -25,11 +25,21 @@ public sealed class FarmSitePreparationSourceGuardTests
             "FarmReadAdapter.cs"));
 
         Assert.Contains("\"farm_layout\"", modEntry, StringComparison.Ordinal);
-        Assert.Contains("maxX - minX + 1 > 32", modEntry, StringComparison.Ordinal);
-        Assert.Contains("maxY - minY + 1 > 32", modEntry, StringComparison.Ordinal);
+        Assert.Contains("(long)maxX - minX + 1 > 32", modEntry, StringComparison.Ordinal);
+        Assert.Contains("(long)maxY - minY + 1 > 32", modEntry, StringComparison.Ordinal);
         Assert.Contains("sitePreparationBounds.MinX", modEntry, StringComparison.Ordinal);
         Assert.Contains("CollectFarmSitePreparation", currentLocation, StringComparison.Ordinal);
         Assert.Contains("Where(pair => Inside(bounds, pair.Key))", currentLocation, StringComparison.Ordinal);
+        Assert.Contains("if (x == bounds.MaxX)", currentLocation, StringComparison.Ordinal);
+        Assert.Contains("if (y == bounds.MaxY)", currentLocation, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "x <= bounds.MaxX",
+            currentLocation,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "y <= bounds.MaxY",
+            currentLocation,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("makeHoeDirt(", currentLocation, StringComparison.Ordinal);
         Assert.DoesNotContain("performToolAction(", currentLocation, StringComparison.Ordinal);
 

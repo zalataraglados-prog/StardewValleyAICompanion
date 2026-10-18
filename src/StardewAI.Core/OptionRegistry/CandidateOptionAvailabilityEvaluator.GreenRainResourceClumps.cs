@@ -19,8 +19,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         return clumps.Value.EnumerateArray()
             .Where(clump => clump.ValueKind == JsonValueKind.Object &&
                 string.Equals(ReadString(clump, "clear_kind"), "green_rain_bush", StringComparison.Ordinal))
@@ -40,6 +38,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     Parameter("target_tile_y", (hit?.Y ?? y).ToString()),
                     Parameter("stand_tile_x", (stand?.X ?? x).ToString()),
                     Parameter("stand_tile_y", (stand?.Y ?? y).ToString()),
+                    Parameter("route_distance_tiles", stand?.Distance.ToString() ?? string.Empty),
                     Parameter("resource_clump_tile_x", x.ToString()),
                     Parameter("resource_clump_tile_y", y.ToString()),
                     Parameter("resource_clump_width", width.ToString()),
@@ -83,7 +82,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     blocks.Add("green_rain_resource_clump_no_reachable_perimeter_stand");
                 }
 
-                var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+                var distance = stand?.Distance ?? 0;
                 var effect = (stand is null ? string.Empty : "resource_clump_stand_tile=" + stand.X + "," + stand.Y + ";") +
                     (hit is null ? string.Empty : "resource_clump_hit_tile=" + hit.X + "," + hit.Y + ";") +
                     "current_location.resource_clumps[" + x + "," + y + "].present=false" +

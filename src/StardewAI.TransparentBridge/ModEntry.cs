@@ -812,8 +812,8 @@ public sealed partial class ModEntry : Mod
             !TryReadNonNegativeInt(query, "max_y", out var maxY) ||
             maxX < minX ||
             maxY < minY ||
-            maxX - minX + 1 > 32 ||
-            maxY - minY + 1 > 32)
+            (long)maxX - minX + 1 > 32 ||
+            (long)maxY - minY + 1 > 32)
         {
             return null;
         }

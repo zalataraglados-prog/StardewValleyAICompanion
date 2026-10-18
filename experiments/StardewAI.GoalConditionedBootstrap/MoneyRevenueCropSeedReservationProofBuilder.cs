@@ -12,7 +12,7 @@ public static class MoneyRevenueCropSeedReservationProofBuilder
     {
         var requestFile = RequiredFile(requestPath, "seed-reservation proof request");
         var request = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropSeedReservationProofRequest>(requestFile, "seed-reservation proof request");
-        Require(request.SchemaVersion == "money_revenue_crop_seed_reservation_proof_request.v1" &&
+        Require(request.SchemaVersion == "money_revenue_crop_seed_reservation_proof_request.v2" &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop seed-reservation proof request is invalid.");
@@ -33,18 +33,70 @@ public static class MoneyRevenueCropSeedReservationProofBuilder
                 snapshot.StateHash == SnapshotHash.ComputeStateHash(snapshot.State),
             "Money Revenue crop seed-reservation snapshot is invalid.");
         var source = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(plan.SnapshotPath, "crop-production source snapshot");
+        var sourceTotalDay = ReadInt(source, "time", "total_days");
+        var reservationTotalDay = ReadInt(snapshot, "time", "total_days");
         Require(source.SaveId.Status == FieldStatus.Available &&
                 source.PlayerId.Status == FieldStatus.Available &&
                 snapshot.SaveId.Status == FieldStatus.Available &&
                 snapshot.PlayerId.Status == FieldStatus.Available &&
                 source.SaveId.Value == snapshot.SaveId.Value &&
                 source.PlayerId.Value == snapshot.PlayerId.Value &&
-                ReadInt(snapshot, "time", "total_days") <= exactCommitment.SeedSupplyDeadlineTotalDay,
+                reservationTotalDay >= sourceTotalDay &&
+                reservationTotalDay <= exactCommitment.SeedSupplyDeadlineTotalDay &&
+                (reservationTotalDay != sourceTotalDay ||
+                 snapshot.GameTick >= source.GameTick),
             "Money Revenue crop seed reservation changed actor or missed its deadline.");
 
+        var baseLedger = AcquisitionStrategyLedgerReader.Read(
+            plan.StrategyLedgerPath,
+            source).Ledger;
         var ledgerFile = RequiredFile(request.CommittedStrategyLedgerPath, "committed strategy ledger");
         var ledger = AcquisitionStrategyLedgerReader.Read(ledgerFile, snapshot).Ledger;
+        var commitRequestFile = RequiredFile(
+            request.AtomicCommitRequestPath,
+            "seed-reservation atomic commit request");
+        var commitResultFile = RequiredFile(
+            request.AtomicCommitResultPath,
+            "seed-reservation atomic commit result");
+        var commitRequest = CurrentTeacherFrontierSupport.Read<
+            ReservationPortfolioCommitRequest>(
+                commitRequestFile,
+                "seed-reservation atomic commit request");
+        var commitResult = CurrentTeacherFrontierSupport.Read<
+            ReservationPortfolioCommitResult>(
+                commitResultFile,
+                "seed-reservation atomic commit result");
         var purpose = "crop_seed_supply:" + exactCommitment.CommitmentId;
+        Require(baseLedger.LedgerId == ledger.LedgerId &&
+                ledger.Revision == baseLedger.Revision + 1 &&
+                BootstrapArtifactGuard.EqualJson(
+                    baseLedger.CropPlantingCommitments,
+                    ledger.CropPlantingCommitments) &&
+                commitRequest.StateHash == snapshot.StateHash &&
+                commitRequest.ExpectedLedgerRevision == baseLedger.Revision &&
+                commitRequest.GoalId == "earn_money" &&
+                commitRequest.ReleaseReservationIds.Length == 0 &&
+                commitRequest.CurrencyClaims.Length == 0 &&
+                commitRequest.MachineSupportIntent is null &&
+                commitRequest.MaterialClaims.Length > 0 &&
+                commitRequest.MaterialClaims.All(claim =>
+                    claim.StateHash == snapshot.StateHash &&
+                    claim.ExpectedLedgerRevision == baseLedger.Revision &&
+                    claim.GoalId == "earn_money" &&
+                    claim.QualifiedItemId == exactCommitment.SeedQualifiedItemId &&
+                    claim.Purpose == purpose),
+            "Money Revenue crop seed reservation is not a direct exact descendant of the plan ledger.");
+        var mutationReasons = new List<string>();
+        Require(ReservationPortfolioCommitEvidenceVerifier.ValidateMutation(
+                    commitRequest,
+                    baseLedger,
+                    ledger,
+                    snapshot,
+                    commitResult,
+                    mutationReasons) &&
+                mutationReasons.Count == 0,
+            "Money Revenue crop seed reservation atomic commit cannot be replayed: " +
+            string.Join(",", mutationReasons));
         var claims = ledger.MaterialReservations.Where(row =>
                 row.Status == StrategyCommitmentStatuses.Active &&
                 row.Purpose == purpose &&
@@ -53,7 +105,12 @@ public static class MoneyRevenueCropSeedReservationProofBuilder
             .ToArray();
         Require(claims.Length > 0 && claims.Select(row => row.ReservationId).Distinct(StringComparer.Ordinal).Count() == claims.Length &&
                 claims.All(row => row.SourceStateHash == snapshot.StateHash && row.Quantity > 0) &&
-                claims.Sum(row => row.Quantity) == exactCommitment.TileCount,
+                claims.Sum(row => row.Quantity) == exactCommitment.TileCount &&
+                claims.Select(row => row.ReservationId).Order(StringComparer.Ordinal)
+                    .SequenceEqual(
+                        commitRequest.MaterialClaims.Select(row => row.ReservationId)
+                            .Order(StringComparer.Ordinal),
+                        StringComparer.Ordinal),
             "Money Revenue crop seed reservation is not an exact full-quantity active claim set.");
 
         var graphElement = ReadValue(snapshot, "farm", "material_inventory_graph");
@@ -77,6 +134,12 @@ public static class MoneyRevenueCropSeedReservationProofBuilder
             ReservationSnapshotSha256 = CurrentTeacherFrontierSupport.HashFile(snapshotFile),
             CommittedStrategyLedgerPath = ledgerFile,
             CommittedStrategyLedgerSha256 = CurrentTeacherFrontierSupport.HashFile(ledgerFile),
+            AtomicCommitRequestPath = commitRequestFile,
+            AtomicCommitRequestSha256 = CurrentTeacherFrontierSupport.HashFile(commitRequestFile),
+            AtomicCommitResultPath = commitResultFile,
+            AtomicCommitResultSha256 = CurrentTeacherFrontierSupport.HashFile(commitResultFile),
+            BaseLedgerRevision = baseLedger.Revision,
+            CommittedLedgerRevision = ledger.Revision,
             ReservationStateHash = snapshot.StateHash,
             SeedQualifiedItemId = exactCommitment.SeedQualifiedItemId,
             RequiredQuantity = exactCommitment.TileCount,

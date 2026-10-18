@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
@@ -57,6 +58,7 @@ internal static partial class BootstrapSelfTest
                 !plan.FreshSaveRevenueScheduleReady &&
                 !plan.FormalProductTrainingAuthorized &&
                 commitment.CurrentUnreservedSeedQuantity == 40 &&
+                commitment.CurrentReservedSeedQuantity == 0 &&
                 commitment.SeedQuantityShortfall == 60 &&
                 commitment.RequiredWateringTotalDays.Length == 24 &&
                 commitment.HarvestWaves.Select(value =>
@@ -74,6 +76,48 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyCropSitePreparationPlan(root, planPath);
         VerifyMoneyCropPlantingLayoutCheckpoint(root, planPath, plan);
         VerifyMoneyCropSeedReservationProof(root, snapshot);
+
+        var pastPlantingSnapshot = CloneSnapshot(snapshot);
+        var pastTime = JsonNode.Parse(
+            pastPlantingSnapshot.State["time"].GetRawText())!.AsObject();
+        pastTime["total_days"]!["value"] = 113;
+        pastTime["year"]!["value"] = 2;
+        pastTime["season"]!["value"] = "spring";
+        pastTime["day"]!["value"] = 2;
+        pastPlantingSnapshot.State["time"] =
+            JsonSerializer.SerializeToElement(pastTime, JsonDefaults.Options);
+        pastPlantingSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            pastPlantingSnapshot.State);
+        var materialGraph = JsonSerializer.Deserialize<MaterialInventoryGraph>(
+            pastPlantingSnapshot.State["farm"]
+                .GetProperty("material_inventory_graph")
+                .GetProperty("value")
+                .GetRawText(),
+            JsonDefaults.Options)!;
+        var pastSupply = new MaterialSupplyProjection().Project(
+            materialGraph,
+            ledger.MaterialReservations);
+        var pastPlantingRejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionObligationPlanBuilder.BuildPlan(
+                requestPath,
+                new string('1', 64),
+                snapshotPath,
+                new string('2', 64),
+                ledgerPath,
+                new string('3', 64),
+                new MoneyRevenueCropProductionObligationPlanRequest(),
+                pastPlantingSnapshot,
+                ledger,
+                pastSupply);
+        }
+        catch (InvalidDataException)
+        {
+            pastPlantingRejected = true;
+        }
+        Require(pastPlantingRejected,
+            "A Money crop commitment with a past planting day was admitted.");
 
         ledger.CropPlantingCommitments[0].HarvestTotalDays =
             new[] { 120 };
@@ -153,33 +197,74 @@ internal static partial class BootstrapSelfTest
         var planPath = Path.Combine(root, "seed-reservation-plan.json");
         Write(planPath, plan);
 
-        sourceLedger.Revision++;
-        sourceLedger.MaterialReservations = new[]
+        var commitRequest = new ReservationPortfolioCommitRequest
         {
-            new MaterialReservation
+            StateHash = snapshot.StateHash,
+            ExpectedLedgerRevision = sourceLedger.Revision,
+            PortfolioId = "money.seed-reservation.fixture:portfolio",
+            GoalId = "earn_money",
+            SourceDecisionId = "teacher.money.seed-reservation.v1",
+            MaterialClaims = new[]
             {
-                ReservationId = "money.seed-reservation.fixture:seed:0",
-                Revision = 1,
-                SourceDecisionId = "teacher.money.seed-reservation.v1",
-                SourceStateHash = snapshot.StateHash,
-                GoalId = "earn_money",
-                OwnerPlayerId = 123,
-                NodeId = "player:123",
-                SlotIndex = 0,
-                QualifiedItemId = "(O)745",
-                Quantity = 40,
-                Purpose = "crop_seed_supply:money.seed-reservation.fixture"
+                new MaterialReservationUpsertRequest
+                {
+                    StateHash = snapshot.StateHash,
+                    ExpectedLedgerRevision = sourceLedger.Revision,
+                    ReservationId = "money.seed-reservation.fixture:seed:0",
+                    SourceDecisionId = "teacher.money.seed-reservation.v1",
+                    GoalId = "earn_money",
+                    NodeId = "player:123",
+                    SlotIndex = 0,
+                    QualifiedItemId = "(O)745",
+                    Quantity = 40,
+                    Purpose = "crop_seed_supply:money.seed-reservation.fixture"
+                }
             }
         };
+        var commitResult = new ReservationPortfolioLedgerService().Commit(
+            sourceLedger,
+            snapshot,
+            commitRequest,
+            "2026-10-16T00:01:00Z");
+        Require(commitResult.Accepted && commitResult.Ledger is not null,
+            "Money seed-reservation atomic commit was rejected.");
+        var committedLedger = commitResult.Ledger!;
         var committedLedgerPath = Path.Combine(root, "seed-reservation-committed-ledger.json");
-        Write(committedLedgerPath, sourceLedger);
+        var commitRequestPath = Path.Combine(root, "seed-reservation-commit-request.json");
+        var commitResultPath = Path.Combine(root, "seed-reservation-commit-result.json");
+        Write(committedLedgerPath, committedLedger);
+        Write(commitRequestPath, commitRequest);
+        Write(commitResultPath, commitResult);
+        var resumePlanRequestPath = Path.Combine(
+            root,
+            "seed-reservation-resume-plan-request.json");
+        Write(resumePlanRequestPath,
+            new MoneyRevenueCropProductionObligationPlanRequest
+            {
+                SnapshotPath = snapshotPath,
+                StrategyLedgerPath = committedLedgerPath
+            });
+        var resumePlan = MoneyRevenueCropProductionObligationPlanBuilder.Build(
+            resumePlanRequestPath);
+        var resumedCommitment = resumePlan.Commitments.Single();
+        Require(resumedCommitment.CurrentReservedSeedQuantity == 40 &&
+                resumedCommitment.CurrentUnreservedSeedQuantity == 0 &&
+                resumedCommitment.SeedQuantityShortfall == 0 &&
+                resumedCommitment.SeedSupplyStatus ==
+                    "existing_exact_reservation_satisfies_commitment" &&
+                !resumedCommitment.PendingEvidenceRequestIds.Any(id =>
+                    id.StartsWith("seed-acquisition:",
+                        StringComparison.Ordinal)),
+            "An existing exact seed reservation became a replacement-seed shortfall on resume.");
         var proofRequestPath = Path.Combine(root, "seed-reservation-proof-request.json");
         Write(proofRequestPath, new MoneyRevenueCropSeedReservationProofRequest
         {
             CropProductionPlanPath = planPath,
             CommitmentId = "money.seed-reservation.fixture",
             ReservationSnapshotPath = snapshotPath,
-            CommittedStrategyLedgerPath = committedLedgerPath
+            CommittedStrategyLedgerPath = committedLedgerPath,
+            AtomicCommitRequestPath = commitRequestPath,
+            AtomicCommitResultPath = commitResultPath
         });
         var proof = MoneyRevenueCropSeedReservationProofBuilder.Build(proofRequestPath);
         Require(proof.SeedReservationVerified && proof.RequiredQuantity == 40 &&
@@ -194,6 +279,8 @@ internal static partial class BootstrapSelfTest
         Write(indexPath, new MoneyRevenueCropProductionProofFragmentIndex
         {
             CropProductionPlanPath = planPath,
+            CropProductionPlanSha256 =
+                CurrentTeacherFrontierSupport.HashFile(planPath),
             SeedReservationProofPaths = new[] { proofPath }
         });
         Write(checkpointRequestPath, new MoneyRevenueCropProductionProofCheckpointRequest
@@ -209,16 +296,87 @@ internal static partial class BootstrapSelfTest
                     StringComparer.Ordinal),
             "Money crop seed-reservation proof did not enter the exact checkpoint denominator.");
 
-        sourceLedger.MaterialReservations[0].Quantity = 39;
+        var staleSnapshot = CloneSnapshot(snapshot);
+        var staleTime = JsonNode.Parse(
+            staleSnapshot.State["time"].GetRawText())!.AsObject();
+        staleTime["total_days"]!["value"] = 102;
+        staleSnapshot.State["time"] = JsonSerializer.SerializeToElement(
+            staleTime,
+            JsonDefaults.Options);
+        staleSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            staleSnapshot.State);
+        var staleCommitRequest = JsonSerializer.Deserialize<
+            ReservationPortfolioCommitRequest>(
+                JsonSerializer.Serialize(commitRequest, JsonDefaults.Options),
+                JsonDefaults.Options) ?? throw new InvalidDataException(
+                    "Money seed-reservation stale request clone failed.");
+        staleCommitRequest.StateHash = staleSnapshot.StateHash;
+        foreach (var claim in staleCommitRequest.MaterialClaims)
+        {
+            claim.StateHash = staleSnapshot.StateHash;
+        }
+        var staleCommitResult = new ReservationPortfolioLedgerService().Commit(
+            sourceLedger,
+            staleSnapshot,
+            staleCommitRequest,
+            "2026-10-15T23:59:00Z");
+        Require(staleCommitResult.Accepted &&
+                staleCommitResult.Ledger is not null,
+            "Money seed-reservation stale fixture commit was rejected before proof validation.");
+        var staleSnapshotPath = Path.Combine(
+            root,
+            "seed-reservation-stale-snapshot.json");
+        var staleLedgerPath = Path.Combine(
+            root,
+            "seed-reservation-stale-ledger.json");
+        var staleCommitRequestPath = Path.Combine(
+            root,
+            "seed-reservation-stale-commit-request.json");
+        var staleCommitResultPath = Path.Combine(
+            root,
+            "seed-reservation-stale-commit-result.json");
+        var staleProofRequestPath = Path.Combine(
+            root,
+            "seed-reservation-stale-proof-request.json");
+        Write(staleSnapshotPath, staleSnapshot);
+        Write(staleLedgerPath, staleCommitResult.Ledger!);
+        Write(staleCommitRequestPath, staleCommitRequest);
+        Write(staleCommitResultPath, staleCommitResult);
+        Write(staleProofRequestPath,
+            new MoneyRevenueCropSeedReservationProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = "money.seed-reservation.fixture",
+                ReservationSnapshotPath = staleSnapshotPath,
+                CommittedStrategyLedgerPath = staleLedgerPath,
+                AtomicCommitRequestPath = staleCommitRequestPath,
+                AtomicCommitResultPath = staleCommitResultPath
+            });
+        var staleRejected = false;
+        try
+        {
+            _ = MoneyRevenueCropSeedReservationProofBuilder.Build(
+                staleProofRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            staleRejected = true;
+        }
+        Require(staleRejected,
+            "A predated Money crop seed reservation snapshot was admitted.");
+
+        committedLedger.MaterialReservations[0].Quantity = 39;
         var tamperedLedgerPath = Path.Combine(root, "seed-reservation-ledger-tampered.json");
-        Write(tamperedLedgerPath, sourceLedger);
+        Write(tamperedLedgerPath, committedLedger);
         var tamperedRequestPath = Path.Combine(root, "seed-reservation-request-tampered.json");
         Write(tamperedRequestPath, new MoneyRevenueCropSeedReservationProofRequest
         {
             CropProductionPlanPath = planPath,
             CommitmentId = "money.seed-reservation.fixture",
             ReservationSnapshotPath = snapshotPath,
-            CommittedStrategyLedgerPath = tamperedLedgerPath
+            CommittedStrategyLedgerPath = tamperedLedgerPath,
+            AtomicCommitRequestPath = commitRequestPath,
+            AtomicCommitResultPath = commitResultPath
         });
         var rejected = false;
         try
@@ -230,7 +388,7 @@ internal static partial class BootstrapSelfTest
             rejected = true;
         }
         Require(rejected,
-            "A partial Money crop seed reservation was admitted as full proof.");
+            "A hand-authored partial Money crop seed reservation ledger was admitted as full proof.");
     }
 
     private static void VerifyMoneyCropSitePreparationPlan(
@@ -325,6 +483,8 @@ internal static partial class BootstrapSelfTest
             new MoneyRevenueCropProductionProofFragmentIndex
             {
                 CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 =
+                    CurrentTeacherFrontierSupport.HashFile(planPath),
                 PlantingLayoutProofPaths = new[] { proofPath }
             });
         Write(checkpointRequestPath,
@@ -352,6 +512,38 @@ internal static partial class BootstrapSelfTest
                 !checkpoint.FreshSaveRevenueScheduleReady &&
                 !checkpoint.FormalProductTrainingAuthorized,
             "Money crop-production proof checkpoint admitted incomplete future production.");
+
+        var wrongPlanHashIndexPath = Path.Combine(
+            root,
+            "fragment-index-wrong-plan-hash.json");
+        var wrongPlanHashRequestPath = Path.Combine(
+            root,
+            "checkpoint-request-wrong-plan-hash.json");
+        Write(wrongPlanHashIndexPath,
+            new MoneyRevenueCropProductionProofFragmentIndex
+            {
+                CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 = new string('0', 64),
+                PlantingLayoutProofPaths = new[] { proofPath }
+            });
+        Write(wrongPlanHashRequestPath,
+            new MoneyRevenueCropProductionProofCheckpointRequest
+            {
+                CropProductionPlanPath = planPath,
+                FragmentIndexPath = wrongPlanHashIndexPath
+            });
+        var wrongPlanHashRejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+                wrongPlanHashRequestPath);
+        }
+        catch (InvalidDataException)
+        {
+            wrongPlanHashRejected = true;
+        }
+        Require(wrongPlanHashRejected,
+            "A crop proof fragment index bound to the wrong plan hash was admitted.");
 
         layoutRequest.Tiles[0] = new MoneyRevenueCropPlantingTile(999, 999);
         var invalidLayoutRequestPath = Path.Combine(
@@ -384,6 +576,8 @@ internal static partial class BootstrapSelfTest
             new MoneyRevenueCropProductionProofFragmentIndex
             {
                 CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 =
+                    CurrentTeacherFrontierSupport.HashFile(planPath),
                 PlantingLayoutProofPaths = new[] { tamperedProofPath }
             });
         Write(tamperedCheckpointRequestPath,
