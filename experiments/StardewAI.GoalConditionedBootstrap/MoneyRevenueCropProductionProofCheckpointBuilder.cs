@@ -24,9 +24,12 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             MoneyRevenueCropProductionObligationPlan>(
                 planPath,
                 "Money Revenue crop-production obligation plan");
+        var planSha256 = CurrentTeacherFrontierSupport.HashFile(planPath);
         var rebuiltPlan = MoneyRevenueCropProductionObligationPlanBuilder.Build(
             plan.RequestPath);
-        Require(BootstrapArtifactGuard.EqualJson(plan, rebuiltPlan) &&
+        Require(plan.SchemaVersion ==
+                    "money_revenue_crop_production_obligation_plan.v2" &&
+                BootstrapArtifactGuard.EqualJson(plan, rebuiltPlan) &&
                 plan.PendingEvidenceRequestIds.Length > 0 &&
                 plan.PendingEvidenceRequestIds.Distinct(StringComparer.Ordinal)
                     .Count() == plan.PendingEvidenceRequestIds.Length &&
@@ -43,11 +46,12 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v2" &&
+                    "money_revenue_crop_production_proof_fragment_index.v3" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
-                    StringComparison.OrdinalIgnoreCase) &&
+                    PathComparison) &&
+                fragmentIndex.CropProductionPlanSha256 == planSha256 &&
                 fragmentIndex.PlantingLayoutProofPaths is not null &&
                 fragmentIndex.SeedReservationProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
@@ -61,19 +65,21 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     path,
                     "Money Revenue crop planting-layout proof fragment"))
             .ToArray();
-        Require(proofPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() ==
+        Require(proofPaths.Distinct(PathComparer).Count() ==
                     proofPaths.Length,
             "Money Revenue crop planting-layout proof paths are duplicated.");
-        var proofs = proofPaths.Select(path => VerifyProof(path, planPath, plan))
+        var proofs = proofPaths.Select(path =>
+                VerifyProof(path, planPath, planSha256, plan))
             .ToArray();
         var seedProofPaths = (fragmentIndex.SeedReservationProofPaths ??
                 throw new InvalidDataException(
                     "Money Revenue crop seed-reservation proof paths are missing."))
             .Select(path => RequiredFile(path, "Money Revenue crop seed-reservation proof fragment"))
             .ToArray();
-        Require(seedProofPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() == seedProofPaths.Length,
+        Require(seedProofPaths.Distinct(PathComparer).Count() == seedProofPaths.Length,
             "Money Revenue crop seed-reservation proof paths are duplicated.");
-        var seedProofs = seedProofPaths.Select(path => VerifySeedProof(path, planPath, plan)).ToArray();
+        var seedProofs = seedProofPaths.Select(path =>
+            VerifySeedProof(path, planPath, planSha256, plan)).ToArray();
         Require(proofs.Select(value => value.EvidenceRequestId)
                     .Distinct(StringComparer.Ordinal).Count() == proofs.Length,
             "Money Revenue crop planting-layout evidence request IDs are duplicated.");
@@ -94,8 +100,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             RequestSha256 = CurrentTeacherFrontierSupport.HashFile(
                 fullRequestPath),
             CropProductionPlanPath = planPath,
-            CropProductionPlanSha256 = CurrentTeacherFrontierSupport.HashFile(
-                planPath),
+            CropProductionPlanSha256 = planSha256,
             FragmentIndexPath = fragmentIndexPath,
             FragmentIndexSha256 = CurrentTeacherFrontierSupport.HashFile(
                 fragmentIndexPath),
@@ -115,13 +120,15 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
     private static MoneyRevenueCropSeedReservationProof VerifySeedProof(
         string proofPath,
         string planPath,
+        string planSha256,
         MoneyRevenueCropProductionObligationPlan plan)
     {
         var proof = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropSeedReservationProof>(proofPath, "Money Revenue crop seed-reservation proof");
         var rebuilt = MoneyRevenueCropSeedReservationProofBuilder.Build(proof.RequestPath);
-        Require(proof.SchemaVersion == "money_revenue_crop_seed_reservation_proof.v1" &&
+        Require(proof.SchemaVersion == "money_revenue_crop_seed_reservation_proof.v2" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
-                string.Equals(Path.GetFullPath(proof.CropProductionPlanPath), planPath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(Path.GetFullPath(proof.CropProductionPlanPath), planPath, PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
                 plan.PendingEvidenceRequestIds.Contains(proof.EvidenceRequestId, StringComparer.Ordinal) &&
                 proof.EvidenceRequestId == "seed-reservation:" + proof.CommitmentId &&
                 proof.SeedReservationVerified && !proof.FormalProductTrainingAuthorized,
@@ -132,6 +139,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
     private static MoneyRevenueCropPlantingLayoutProof VerifyProof(
         string proofPath,
         string planPath,
+        string planSha256,
         MoneyRevenueCropProductionObligationPlan plan)
     {
         var proof = CurrentTeacherFrontierSupport.Read<
@@ -146,7 +154,8 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
                     planPath,
-                    StringComparison.OrdinalIgnoreCase) &&
+                    PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
                 plan.PendingEvidenceRequestIds.Contains(
                     proof.EvidenceRequestId,
                     StringComparer.Ordinal) &&
@@ -158,6 +167,16 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             "Money Revenue crop planting-layout proof is not exact or is outside the denominator.");
         return proof;
     }
+
+    private static StringComparison PathComparison =>
+        OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+    private static StringComparer PathComparer =>
+        OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
 
     private static string RequiredFile(string path, string label)
     {

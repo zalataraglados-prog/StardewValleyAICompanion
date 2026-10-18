@@ -107,10 +107,13 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_fragment_index.v2";
+        "money_revenue_crop_production_proof_fragment_index.v3";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_production_plan_sha256")]
+    public string CropProductionPlanSha256 { get; set; } = string.Empty;
 
     [JsonPropertyName("planting_layout_proof_paths")]
     public string[] PlantingLayoutProofPaths { get; set; } =

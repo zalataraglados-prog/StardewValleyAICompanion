@@ -100,10 +100,30 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
                 request.DeadlineTotalDayExclusive);
             var available = availableByItem.GetValueOrDefault(
                 commitment.SeedQualifiedItemId);
-            var allocated = Math.Min(available, commitment.TileCount);
+            var reservationPurpose =
+                "crop_seed_supply:" + commitment.CommitmentId;
+            var existingReservations = ledger.MaterialReservations
+                .Where(value =>
+                    value.Status == StrategyCommitmentStatuses.Active &&
+                    value.Purpose == reservationPurpose)
+                .ToArray();
+            Require(existingReservations.All(value =>
+                    value.QualifiedItemId ==
+                    commitment.SeedQualifiedItemId),
+                "Money Revenue crop seed reservation item drifted: " +
+                commitment.CommitmentId);
+            var existingReserved = existingReservations.Aggregate(
+                0,
+                (total, value) => checked(total + value.Quantity));
+            Require(existingReserved <= commitment.TileCount,
+                "Money Revenue crop seed reservation exceeds its commitment: " +
+                commitment.CommitmentId);
+            var remainingNeed = checked(
+                commitment.TileCount - existingReserved);
+            var allocated = Math.Min(available, remainingNeed);
             availableByItem[commitment.SeedQualifiedItemId] =
                 available - allocated;
-            var shortfall = checked(commitment.TileCount - allocated);
+            var shortfall = checked(remainingNeed - allocated);
             var requestIds = new List<string>
             {
                 "planting-layout:" + commitment.CommitmentId,
@@ -140,10 +160,9 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
                 commitment.BaseGrowDays,
                 commitment.PlantingTotalDay,
                 allocated,
+                existingReserved,
                 shortfall,
-                shortfall == 0
-                    ? "current_unreserved_supply_can_cover_exact_reservation"
-                    : "future_seed_acquisition_required",
+                SeedSupplyStatus(existingReserved, allocated, shortfall),
                 projection.RequiredWateringTotalDays,
                 waves,
                 projection.MinimumTotalUnits,
@@ -255,6 +274,9 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
                 commitment.PlantingYear,
                 plantingSeasonIndex,
                 commitment.PlantingDayOfMonth) + worldOffset);
+        Require(plantingTotalDay >= currentTotalDay,
+            "Money Revenue crop-production planting day predates the source snapshot: " +
+            commitment.CommitmentId);
         var firstHarvest = checked(plantingTotalDay + baseGrowDays);
         var seasonEnd = checked(
             plantingTotalDay + (28 - commitment.PlantingDayOfMonth));
@@ -298,6 +320,17 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
             commitment.CommitmentId);
         return projection;
     }
+
+    private static string SeedSupplyStatus(
+        int existingReserved,
+        int allocated,
+        int shortfall) => shortfall > 0
+            ? "future_seed_acquisition_required"
+            : existingReserved > 0 && allocated == 0
+                ? "existing_exact_reservation_satisfies_commitment"
+                : existingReserved > 0
+                    ? "existing_reservation_plus_unreserved_supply_can_cover_commitment"
+                    : "current_unreserved_supply_can_cover_exact_reservation";
 
     private static MaterialSupplyProjectionResult ReadMaterialSupply(
         SnapshotEnvelope snapshot,

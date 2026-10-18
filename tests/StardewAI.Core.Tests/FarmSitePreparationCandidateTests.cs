@@ -62,6 +62,53 @@ public sealed class FarmSitePreparationCandidateTests
     }
 
     [Fact]
+    public void ReadyToTillCandidateFailsClosedAtZeroStamina()
+    {
+        var snapshot = Snapshot(
+            """
+            {
+              "player": {
+                "location_id":{"value":"Farm","status":"available"},
+                "tile_x":{"value":5,"status":"available"},
+                "tile_y":{"value":5,"status":"available"},
+                "energy":{"value":0,"status":"available"},
+                "inventory":{"value":[],"status":"available"}
+              },
+              "time":{"time":{"value":900,"status":"available"}},
+              "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
+              "current_location": {
+                "map":{"value":{"id":"Farm"},"status":"available"},
+                "site_preparation_context":{"value":{
+                  "projection_status":"complete_bounded_current_farm_region",
+                  "location_id":"Farm",
+                  "hoe_tool_slot_index":2,
+                  "hoe_tool_qualified_item_id":"(T)Hoe",
+                  "hoe_energy_cost_per_single_tile_action":1.7,
+                  "tiles":[{"tile_x":7,"tile_y":5,"status":"ready_to_till"}]
+                },"status":"available"}
+              },
+              "locations":{
+                "collision_grid":{"value":{"location_id":"Farm","width":20,"height":20,"notable_tiles":[]},"status":"available"},
+                "route_action_branch_coverage":{"value":{"rows":[]},"status":"available"}
+              }
+            }
+            """);
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "executor.till_soil" },
+                includeExecutorCalibrationOptions: true)
+            .Options);
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "till_soil_insufficient_stamina",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
     public void FarmResourceClumpCandidateCarriesTheFullCompilerBinding()
     {
         var snapshot = Snapshot(
@@ -114,6 +161,56 @@ public sealed class FarmSitePreparationCandidateTests
             value.Name == "tool_slot_index" && value.Value == "1");
         Assert.Contains(candidate.Parameters, value =>
             value.Name == "max_tool_swings" && value.Value == "5");
+    }
+
+    [Fact]
+    public void FarmResourceClumpRejectsCollisionFreeButUnreachableStandTiles()
+    {
+        var snapshot = Snapshot(
+            """
+            {
+              "player": {
+                "location_id":{"value":"Farm","status":"available"},
+                "tile_x":{"value":5,"status":"available"},
+                "tile_y":{"value":5,"status":"available"},
+                "energy":{"value":270,"status":"available"},
+                "inventory":{"value":[],"status":"available"}
+              },
+              "time":{"time":{"value":900,"status":"available"}},
+              "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}},
+              "farm":{"resource_clumps":{"value":[{
+                "tile_x":8,"tile_y":5,"width":2,"height":2,
+                "parent_sheet_index":600,"clear_kind":"resource_stump",
+                "clear_obstacle_executor_status":"ready","expected_tool_hits_to_clear":5,
+                "tool_slot_index":1,"harvest_experience_projection_status":"exact",
+                "harvest_experience_skill_id":"foraging","harvest_experience_on_success_min":25,
+                "harvest_experience_on_success_max":25,
+                "harvest_experience_condition":"native_player_axe_destroys_resource_stump_or_hollow_log"
+              }],"status":"available"}},
+              "locations":{
+                "collision_grid":{"value":{"location_id":"Farm","width":20,"height":20,"notable_tiles":[
+                  {"tile_x":4,"tile_y":5,"collision_blocked":true},
+                  {"tile_x":6,"tile_y":5,"collision_blocked":true},
+                  {"tile_x":5,"tile_y":4,"collision_blocked":true},
+                  {"tile_x":5,"tile_y":6,"collision_blocked":true}
+                ]},"status":"available"},
+                "route_action_branch_coverage":{"value":{"rows":[]},"status":"available"}
+              }
+            }
+            """);
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "executor.break_farm_resource_clump" },
+                includeExecutorCalibrationOptions: true)
+            .Options);
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "resource_clump_no_adjacent_route_stand_tile",
+            candidate.BlockReasons);
     }
 
     private static SnapshotEnvelope Snapshot(string json)

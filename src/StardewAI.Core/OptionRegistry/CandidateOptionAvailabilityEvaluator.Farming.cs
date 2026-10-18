@@ -779,7 +779,9 @@ namespace StardewAI.Core.OptionRegistry
                         TileX = hitTile?.X ?? x,
                         TileY = hitTile?.Y ?? y,
                         ExpectedEffect = effect,
-                        EstimatedTicks = Math.Max(60, hits * 60),
+                        EstimatedTicks = Math.Max(
+                            60,
+                            (standTile?.Distance ?? 0) * 60 + hits * 60),
                         EnergyCost = hits * 2,
                         AvailabilityClass = "transparent_giant_crop_resource_clump_runtime_verified",
                         BlockReasons = blockReasons.ToArray(),
@@ -787,6 +789,7 @@ namespace StardewAI.Core.OptionRegistry
                         {
                             Parameter("stand_tile_x", standTile?.X.ToString() ?? string.Empty),
                             Parameter("stand_tile_y", standTile?.Y.ToString() ?? string.Empty),
+                            Parameter("route_distance_tiles", standTile?.Distance.ToString() ?? string.Empty),
                             Parameter("resource_clump_tile_x", x.ToString()),
                             Parameter("resource_clump_tile_y", y.ToString()),
                             Parameter("resource_clump_width", width.ToString()),
@@ -824,8 +827,6 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<EventCandidate>();
             }
 
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             return clumps.Value.EnumerateArray()
                 .Where(clump => clump.ValueKind == JsonValueKind.Object &&
                     ReadString(clump, "clear_kind") is "resource_stump" or "hollow_log")
@@ -853,6 +854,7 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("target_tile_y", (hitTile?.Y ?? y).ToString()),
                         Parameter("stand_tile_x", (standTile?.X ?? x).ToString()),
                         Parameter("stand_tile_y", (standTile?.Y ?? y).ToString()),
+                        Parameter("route_distance_tiles", standTile?.Distance.ToString() ?? string.Empty),
                         Parameter("resource_clump_tile_x", x.ToString()),
                         Parameter("resource_clump_tile_y", y.ToString()),
                         Parameter("resource_clump_width", width.ToString()),
@@ -878,7 +880,7 @@ namespace StardewAI.Core.OptionRegistry
 
                     var distance = standTile is null
                         ? 0
-                        : Math.Abs(playerX - standTile.X) + Math.Abs(playerY - standTile.Y);
+                        : standTile.Distance;
                     var effect = (standTile is not null ? "resource_clump_stand_tile=" + standTile.X + "," + standTile.Y + ";" : string.Empty) +
                         (hitTile is not null ? "resource_clump_hit_tile=" + hitTile.X + "," + hitTile.Y + ";" : string.Empty) +
                         "farm.resource_clumps[" + x + "," + y + "].present=false" +
@@ -925,8 +927,6 @@ namespace StardewAI.Core.OptionRegistry
             int width,
             int height)
         {
-            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             var candidates = new List<ResourceClumpStandSelection>();
             for (var offsetX = 0; offsetX < width; offsetX++)
             {
@@ -948,8 +948,24 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return candidates
-                .Where(candidate => !CollisionGridBlocksTile(snapshot, candidate.Stand.X, candidate.Stand.Y))
-                .OrderBy(candidate => Math.Abs(playerX - candidate.Stand.X) + Math.Abs(playerY - candidate.Stand.Y))
+                .Select(candidate => new
+                {
+                    Candidate = candidate,
+                    Distance = CurrentRouteDistance(
+                        snapshot,
+                        candidate.Stand.X,
+                        candidate.Stand.Y)
+                })
+                .Where(value => value.Distance.HasValue)
+                .OrderBy(value => value.Distance)
+                .ThenBy(value => value.Candidate.Stand.Y)
+                .ThenBy(value => value.Candidate.Stand.X)
+                .Select(value => new ResourceClumpStandSelection(
+                    new CandidateTile(
+                        value.Candidate.Stand.X,
+                        value.Candidate.Stand.Y,
+                        value.Distance!.Value),
+                    value.Candidate.Hit))
                 .FirstOrDefault();
         }
 

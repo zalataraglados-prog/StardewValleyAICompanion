@@ -6,25 +6,29 @@
 
 ## 当前切片 · 2026-10-18 Money production 前 correctness 收口
 
+本轮已关闭 **#310** 与 **#311**：
+
+- 种子预留 proof request/proof 升级为 v2。proof 不再接受调用方手写最终 ledger：必须同时提交原子 commit request/result，且验证器会从计划基准 ledger 精确重放 `ReservationPortfolioLedgerService.Commit`，核对 revision、状态哈希、claim ID、数量、槽位、用途和最终 ledger。预留快照不得早于计划源快照，同日还必须保持 tick 单调；伪造账本和早期快照均有负例。
+- 作物义务计划升级为 `money_revenue_crop_production_obligation_plan.v2`。已有同承诺种子 reservation 会显式计入 `current_reserved_seed_quantity`，仅未预留余量参与后续承诺分配；已经过去的种植日失败关闭。proof fragment index 升级为 v3，并以精确计划 SHA-256 和当前文件系统路径语义绑定所有 fragment。
+- Revenue denominator 现在逐项验证依赖图声明的 `required_field_paths`，缺字段、不可用状态或空值都会阻断相应节点。农场局部读取使用 overflow-safe 32×32 边界和不会回绕的遍历；资源团块站位统一复用共享 BFS；锄地候选和编译在体力缺失或 `<=0` 时失败关闭。
+- 验证通过：Core game-free `371/371`、Bootstrap Release `0 warning / 0 error`、完整 hermetic 自测、E 盘隔离游戏依赖下 TransparentBridge Release `0 warning / 0 error`。未启动游戏，Money production cells 仍为 `0/18`，formal training 仍为 false。
+
 当前唯一 primary item 仍是 **Money / Revenue**，但在第一条 production cell 入账前，先按严重度关闭现有 review debt：
 
 1. **#307 P1**：修复共享 raw JSON extraction 的 Windows PowerShell 5.1 兼容性，同时保持 ledger lexical replay。
 2. **#308 P1**：把 native run 的 exact Mod allowlist / build identity 写入 summary，并在 replay/verifier 中强制验证。
 3. **#309 P1**：修正 terminal-proof concrete request denominator/provenance 与 reusable shop-sale before-boundary。
-4. **#310 P1**：绑定 seed reservation 到 plan-ledger lineage，并证明 reservation snapshot 不早于 plan source。
-5. **#311 P2**：一次收口 crop denominator、layout/site-preparation 的 fail-closed 缺口。
-
 这些修复完成后，才继续真实 Money native production collection、terminal proof completion、Teacher comparison 与 criterion-local join。**不得因为已有 terminal/crop infrastructure 就提前把 Money 从 `0/18` 上调。** Full Shipment 已冻结为 current-authority `26/26`，不再作为当前施工项。
 
-## 已实现待收口 · 2026-10-16 Money 种子预留 proof
+## 已收口 · 2026-10-18 Money 种子预留 proof
 
 - `build-money-revenue-crop-seed-reservation-proof` 已能重建义务计划，并核对同一 save/player、透明物料图、活动 reservation、种子身份、状态哈希、库存槽与完整数量。
-- **该切片尚未通过最终 correctness gate：#310 P1 要求 committed reservation ledger 必须证明来自原 crop plan 的 strategy-ledger lineage，并要求 reservation snapshot 具备 post-plan freshness 下界。**
-- 因此 checkpoint v2 中的 seed-reservation fragment 目前只能作为实现进度，不能计入 production evidence。购种 shortfall、日容量、生命周期、输出保留与结算仍 pending；Money 保持 `0/18`，训练授权仍为 false。
-## 已实现待收口 · 2026-10-16 Money 作物场地准备计划
+- #310 已关闭：committed reservation ledger 必须由原 crop plan 的 strategy-ledger lineage 经原子提交服务合法演化，reservation snapshot 具备 post-plan freshness 下界。
+- checkpoint v2 中的 seed-reservation fragment 已通过 correctness gate，但购种 shortfall、日容量、生命周期、输出保留与结算仍 pending；Money 保持 `0/18`，训练授权仍为 false。
+## 已收口 · 2026-10-18 Money 作物场地准备计划
 
 - 透明桥已有目的受限的 `farm_layout` 投影，计划器也已复用现有 `executor.clear_obstacle`、`executor.break_farm_resource_clump`、`executor.till_soil` 候选；清障后必须取得 fresh snapshot 再绑定锄地。
-- **#311 P2 尚未收口**：需要补 overflow-safe bounds、resource-clump BFS reachability、zero-stamina tilling gate，以及与 crop denominator 相关的其他 fail-closed 缺口。
+- #311 已关闭：局部边界与遍历防整数回绕，resource-clump 站位统一使用共享 BFS，zero-stamina 与缺失 stamina 均在候选和编译阶段失败关闭；crop denominator 的 required fields、过期种植日、已有预留和精确计划哈希也已收口。
 - 该层仍只是机械执行计划，不是 planting-layout proof、生产证据或训练授权；Money 保持 `0/18`。
 ## 历史记录 · 2026-10-16 Money 作物布局证明检查点
 

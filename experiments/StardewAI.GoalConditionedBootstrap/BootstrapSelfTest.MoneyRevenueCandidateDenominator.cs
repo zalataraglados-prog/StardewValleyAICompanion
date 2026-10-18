@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -85,8 +86,27 @@ internal static partial class BootstrapSelfTest
             document.RootElement);
         var snapshot = new SnapshotEnvelope
         {
-            StateHash = "revenue-denominator-state"
+            State = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                """
+                {
+                  "current_location": {
+                    "objects": {"value": [], "status": "available"},
+                    "crops": {"value": [], "status": "available"}
+                  },
+                  "player": {
+                    "inventory": {"value": [], "status": "available"}
+                  },
+                  "farm": {
+                    "shipping_bins": {"value": [], "status": "available"}
+                  },
+                  "time": {
+                    "total_days": {"value": 1, "status": "available"}
+                  }
+                }
+                """,
+                JsonDefaults.Options)!
         };
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
         var availability = RevenueDenominatorAvailability(
             snapshot.StateHash,
             includeShipOption: true,
@@ -228,6 +248,37 @@ internal static partial class BootstrapSelfTest
                 "dependency.earn_money.ship",
                 StringComparer.Ordinal),
             "A missing Revenue option evaluation was admitted as authoritative.");
+
+        var missingRequiredFieldSnapshot = CloneSnapshot(snapshot);
+        var farm = JsonNode.Parse(
+            missingRequiredFieldSnapshot.State["farm"].GetRawText())!
+            .AsObject();
+        farm.Remove("shipping_bins");
+        missingRequiredFieldSnapshot.State["farm"] =
+            JsonSerializer.SerializeToElement(farm, JsonDefaults.Options);
+        missingRequiredFieldSnapshot.StateHash = SnapshotHash.ComputeStateHash(
+            missingRequiredFieldSnapshot.State);
+        var missingRequiredField =
+            MoneyRevenueCandidateDenominatorBuilder.BuildCatalog(
+                missingRequiredFieldSnapshot,
+                "snapshot.json",
+                new string('1', 64),
+                "dependencies.json",
+                new string('2', 64),
+                direction,
+                RevenueDenominatorAvailability(
+                    missingRequiredFieldSnapshot.StateHash,
+                    includeShipOption: true,
+                    shipKind: "route_connector_tile"));
+        var missingShippingNode = missingRequiredField.Nodes.Single(node =>
+            node.OptionId == "economy.ship_items");
+        Require(
+            !missingRequiredField.CurrentSnapshotDenominatorAuthoritative &&
+            !missingShippingNode.EnumerationComplete &&
+            missingShippingNode.BlockingReasons.Contains(
+                "required_field_path_unavailable:farm.shipping_bins",
+                StringComparer.Ordinal),
+            "A missing declared Revenue field silently shrank the denominator.");
 
         var unboundStage = MoneyRevenueCandidateDenominatorBuilder.BuildCatalog(
             snapshot,

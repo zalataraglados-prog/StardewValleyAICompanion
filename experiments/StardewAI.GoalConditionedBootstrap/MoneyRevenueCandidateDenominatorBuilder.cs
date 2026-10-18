@@ -59,7 +59,7 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             "Revenue dependency expansion has no actionable nodes.");
 
         var nodes = direction.Nodes
-            .Select(node => BuildNode(node, availability))
+            .Select(node => BuildNode(node, availability, snapshot))
             .OrderBy(node => node.NodeId, StringComparer.Ordinal)
             .ToArray();
         var comparisonIds = nodes
@@ -131,7 +131,8 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
 
     private static MoneyRevenueCandidateNodeCoverage BuildNode(
         RevenueActionNodeDefinition definition,
-        OptionAvailabilityEnvelope availability)
+        OptionAvailabilityEnvelope availability,
+        SnapshotEnvelope snapshot)
     {
         var matches = availability.Options
             .Where(option => string.Equals(
@@ -156,6 +157,11 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             .ToArray();
         if (option.MissingStateFactors.Length > 0)
             reasons.Add("required_state_factors_missing");
+        foreach (var path in definition.RequiredFieldPaths.Where(path =>
+                     !RequiredFieldAvailable(snapshot, path)))
+        {
+            reasons.Add("required_field_path_unavailable:" + path);
+        }
         if (candidates.Any(candidate =>
                 string.IsNullOrWhiteSpace(candidate.CandidateId)))
             reasons.Add("candidate_id_missing");
@@ -190,6 +196,38 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             Candidates = candidates,
             BlockingReasons = reasons.ToArray()
         };
+    }
+
+    private static bool RequiredFieldAvailable(
+        SnapshotEnvelope snapshot,
+        string path)
+    {
+        var separator = path.IndexOf('.');
+        if (separator <= 0 || separator == path.Length - 1)
+            return false;
+        var domain = path[..separator];
+        var field = path[(separator + 1)..];
+        if (!snapshot.State.TryGetValue(domain, out var domainState) ||
+            domainState.ValueKind != JsonValueKind.Object ||
+            !domainState.TryGetProperty(field, out var fieldState) ||
+            fieldState.ValueKind != JsonValueKind.Object ||
+            !fieldState.TryGetProperty("status", out var status) ||
+            status.ValueKind != JsonValueKind.String ||
+            !(string.Equals(
+                  status.GetString(),
+                  "available",
+                  StringComparison.OrdinalIgnoreCase) ||
+              string.Equals(
+                  status.GetString(),
+                  "derived",
+                  StringComparison.OrdinalIgnoreCase)) ||
+            !fieldState.TryGetProperty("value", out var value))
+        {
+            return false;
+        }
+
+        return value.ValueKind is not JsonValueKind.Null and
+            not JsonValueKind.Undefined;
     }
 
     private static MoneyRevenueCandidateNodeCoverage EmptyNode(

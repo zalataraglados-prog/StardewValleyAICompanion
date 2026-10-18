@@ -140,9 +140,9 @@ public sealed partial class CurrentLocationReadAdapter
             ? 0d
             : Math.Max(0d, 2d - Game1.player.FarmingLevel * 0.1d);
         var rows = new List<object>();
-        for (var y = bounds.MinY; y <= bounds.MaxY; y++)
+        for (var y = bounds.MinY; ; y++)
         {
-            for (var x = bounds.MinX; x <= bounds.MaxX; x++)
+            for (var x = bounds.MinX; ; x++)
             {
                 rows.Add(ReadFarmSitePreparationTile(
                     location,
@@ -154,7 +154,11 @@ public sealed partial class CurrentLocationReadAdapter
                     hoeEntry?.SlotIndex,
                     hoeEntry?.Tool?.QualifiedItemId ?? string.Empty,
                     hoeEnergyCost));
+                if (x == bounds.MaxX)
+                    break;
             }
+            if (y == bounds.MaxY)
+                break;
         }
 
         return new

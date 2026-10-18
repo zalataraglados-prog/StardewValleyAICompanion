@@ -37,6 +37,10 @@ namespace StardewAI.Core.OptionRegistry
             var energyCost = ReadSitePreparationDouble(
                 context.Value,
                 "hoe_energy_cost_per_single_tile_action");
+            var currentEnergy = ReadStateFieldDoubleOptional(
+                snapshot,
+                "player",
+                "energy");
             var currentTime = ReadStateFieldInt(snapshot, "time", "time");
             var candidates = new List<EventCandidate>();
             foreach (var tile in tiles.EnumerateArray().Where(row =>
@@ -77,6 +81,10 @@ namespace StardewAI.Core.OptionRegistry
                     blockReasons.Add("till_soil_required_hoe_missing");
                 if (stand is null)
                     blockReasons.Add("till_soil_no_adjacent_route_stand_tile");
+                if (!currentEnergy.HasValue)
+                    blockReasons.Add("till_soil_player_energy_unavailable");
+                else if (currentEnergy.Value <= 0d)
+                    blockReasons.Add("till_soil_insufficient_stamina");
 
                 var estimatedTicks = Math.Max(
                     60,
