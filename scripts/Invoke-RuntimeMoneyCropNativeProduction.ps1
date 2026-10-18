@@ -310,6 +310,8 @@ try {
     $currentPath = $initialPath
     $transitions = [Collections.Generic.List[object]]::new()
     $seedAcquisitionSummaries = [Collections.Generic.List[object]]::new()
+    $seedAcquisitionProofPaths = [Collections.Generic.List[string]]::new()
+    $previousSeedAcquisitionProofPath = ""
     $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
     $layoutSnapshotByCommitment = @{}
     $sitePreparationPlanPaths = [Collections.Generic.List[string]]::new()
@@ -329,6 +331,49 @@ try {
             -Acquisition $acquisition `
             -Name "seed-acquisition-$safeCommitmentId"
         $currentPath = $result.SourcePath
+        $acquisitionTransitions = @($result.Executions | ForEach-Object {
+            New-RuntimeCropTransition `
+                -TransitionKind "seed_acquisition_stage" `
+                -TotalDay $initialDay -Artifacts $_ -RunId $RunId
+        })
+        if ($acquisitionTransitions.Count -eq 0) {
+            throw "Crop seed acquisition $safeCommitmentId emitted no native transitions."
+        }
+        $acquisitionManifestPath = Join-Path $evidenceDirectory `
+            "seed-acquisition-execution-$safeCommitmentId.json"
+        $acquisitionRequestPath = Join-Path $evidenceDirectory `
+            "seed-acquisition-request-$safeCommitmentId.json"
+        $acquisitionProofPath = Join-Path $evidenceDirectory `
+            "seed-acquisition-proof-$safeCommitmentId.json"
+        Write-JsonFile -Path $acquisitionManifestPath -Value ([ordered]@{
+            schema_version =
+                "money_revenue_crop_seed_acquisition_execution_manifest.v1"
+            crop_production_plan_path = $productionPlanPath
+            crop_production_plan_sha256 =
+                (Get-RuntimeFileSha256 -Path $productionPlanPath)
+            commitment_id = [string]$acquisition.commitment_id
+            source_state_hash =
+                [string]$result.Executions[0].Before.state_hash
+            run_id = $RunId
+            transitions = $acquisitionTransitions
+            formal_product_training_authorized = $false
+        })
+        Write-JsonFile -Path $acquisitionRequestPath -Value ([ordered]@{
+            schema_version =
+                "money_revenue_crop_seed_acquisition_proof_request.v2"
+            crop_production_plan_path = $productionPlanPath
+            commitment_id = [string]$acquisition.commitment_id
+            execution_manifest_path = $acquisitionManifestPath
+            prior_seed_acquisition_proof_path =
+                $previousSeedAcquisitionProofPath
+            formal_product_training_authorized = $false
+        })
+        Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+            "build-money-revenue-crop-seed-acquisition-proof",
+            "--request", $acquisitionRequestPath,
+            "--output", $acquisitionProofPath)
+        $seedAcquisitionProofPaths.Add($acquisitionProofPath)
+        $previousSeedAcquisitionProofPath = $acquisitionProofPath
         $seedAcquisitionSummaries.Add([ordered]@{
             commitment_id = [string]$acquisition.commitment_id
             seed_qualified_item_id =
@@ -339,6 +384,7 @@ try {
             purchase_slice_count = [int]$result.PurchaseSliceCount
             execution_count = @($result.Executions).Count
             final_snapshot_path = [string]$result.SourcePath
+            proof_path = $acquisitionProofPath
         })
     }
 
@@ -570,7 +616,7 @@ try {
             (Get-RuntimeFileSha256 -Path $productionPlanPath)
         planting_layout_proof_paths = @($layoutProofPaths)
         seed_reservation_proof_paths = @()
-        seed_acquisition_proof_paths = @()
+        seed_acquisition_proof_paths = @($seedAcquisitionProofPaths)
         daily_capacity_proof_paths = @($capacityProofPaths)
         native_lifecycle_proof_paths = @($lifecycleProofPaths)
         output_retention_proof_paths = @($retentionProofPaths)
@@ -630,6 +676,8 @@ try {
         executed_crop_batch_count = $executedCropBatchCount
         skipped_water_batch_count = $skippedWaterBatchCount
         seed_acquisition_count = $seedAcquisitionSummaries.Count
+        seed_acquisition_proof_count = $seedAcquisitionProofPaths.Count
+        seed_acquisition_proof_paths = @($seedAcquisitionProofPaths)
         seed_acquisitions = $seedAcquisitionSummaries.ToArray()
         site_preparation_plan_count = $sitePreparationPlanPaths.Count
         site_preparation_action_count = $sitePreparationActionCount

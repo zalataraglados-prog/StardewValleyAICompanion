@@ -3256,6 +3256,20 @@ Slice 7 remains assigned to the RTX 5070 node.
   exact plan SHA-256 through the fragment index. Missing fields, catalog drift,
   duplicate commitments, caller-authored ledgers or modified dates/quantities
   fail closed.
+- `money_revenue_crop_native_production_run_plan.v2` expands every nonzero seed
+  shortfall before the crop day loop. The runtime reuses the existing
+  `economy.buy_supplies` candidate, daily-plan compiler, action-queue compiler
+  and RuntimeTestHarness in bounded quantity-one slices; it never edits money
+  or inventory directly. `money_revenue_crop_seed_acquisition_proof.v2` binds
+  the resulting queue/receipt/snapshot chain into the crop checkpoint. It
+  requires a continuous same-day state chain, resource-neutral route/shop
+  support, exact seed/shop/stock/output/price/quantity continuation identity,
+  exact inventory and money deltas per purchase, and an accumulated increase
+  equal to the obligation shortfall before the deadline. The first shortfall
+  starts at the plan source state; later shortfalls must rebuild and chain from
+  the immediately preceding acquisition proof in plan order. The former v1
+  single-terminal-transition adapter could not represent safe multi-purchase
+  execution and is superseded rather than run in parallel.
 - This is an evidence collection denominator, not future production proof. It
   always reports crop proof, fresh-save Revenue schedule and formal training as
   false. The next bounded slice is a resumable checkpoint for those exact

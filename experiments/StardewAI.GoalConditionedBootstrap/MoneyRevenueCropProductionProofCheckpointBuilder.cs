@@ -497,7 +497,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropSeedAcquisitionProofBuilder.Build(
             proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_seed_acquisition_proof.v1" &&
+                    "money_revenue_crop_seed_acquisition_proof.v2" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
