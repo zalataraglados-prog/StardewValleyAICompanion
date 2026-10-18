@@ -6,8 +6,9 @@
 
 ## 当前切片 · 2026-10-18 Money production 前 correctness 收口
 
-本轮已关闭 **#307**、**#310** 与 **#311**：
+本轮已关闭 **#307**、**#308**、**#310** 与 **#311**：
 
+- native outcome summary 升级为 v2，绑定隔离 Mods 根目录运行前后哈希及两个允许模组的目录、UniqueID、版本、manifest 与整目录哈希；回放重新枚举实物，缺失、额外、漂移、错配或历史 v1 均失败关闭。PowerShell 5.1 / C# 哈希一致性已加入 hermetic 测试。
 - 共享 raw JSON 提取已改为 Windows PowerShell 5.1 / PowerShell 7 共用的严格词法扫描，目标 ledger 值按原始字节区间写出，不经过对象往返序列化。双壳层实测覆盖嵌套、转义、时区小数以及缺失/重复属性失败关闭；七条生产调用路径不变。
 - 种子预留 proof request/proof 升级为 v2。proof 不再接受调用方手写最终 ledger：必须同时提交原子 commit request/result，且验证器会从计划基准 ledger 精确重放 `ReservationPortfolioLedgerService.Commit`，核对 revision、状态哈希、claim ID、数量、槽位、用途和最终 ledger。预留快照不得早于计划源快照，同日还必须保持 tick 单调；伪造账本和早期快照均有负例。
 - 作物义务计划升级为 `money_revenue_crop_production_obligation_plan.v2`。已有同承诺种子 reservation 会显式计入 `current_reserved_seed_quantity`，仅未预留余量参与后续承诺分配；已经过去的种植日失败关闭。proof fragment index 升级为 v3，并以精确计划 SHA-256 和当前文件系统路径语义绑定所有 fragment。
@@ -16,8 +17,7 @@
 
 当前唯一 primary item 仍是 **Money / Revenue**，但在第一条 production cell 入账前，先按严重度关闭现有 review debt：
 
-1. **#308 P1**：把 native run 的 exact Mod allowlist / build identity 写入 summary，并在 replay/verifier 中强制验证。
-2. **#309 P1**：修正 terminal-proof concrete request denominator/provenance 与 reusable shop-sale before-boundary。
+1. **#309 P1**：修正 terminal-proof concrete request denominator/provenance 与 reusable shop-sale before-boundary。
 这些修复完成后，才继续真实 Money native production collection、terminal proof completion、Teacher comparison 与 criterion-local join。**不得因为已有 terminal/crop infrastructure 就提前把 Money 从 `0/18` 上调。** Full Shipment 已冻结为 current-authority `26/26`，不再作为当前施工项。
 
 ## 已收口 · 2026-10-18 Money 种子预留 proof

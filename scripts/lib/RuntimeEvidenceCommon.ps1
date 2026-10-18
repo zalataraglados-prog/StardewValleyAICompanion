@@ -37,6 +37,21 @@ function Write-RawJsonProperty {
     Write-Utf8Text -Path $Path -Value $rawValue
 }
 
+function Get-RuntimeFileSha256 {
+    param([Parameter(Mandatory)] [string] $Path)
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    $stream = $null
+    try {
+        $stream = [IO.File]::OpenRead([IO.Path]::GetFullPath($Path))
+        return [BitConverter]::ToString(
+            $algorithm.ComputeHash($stream)).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        if ($null -ne $stream) { $stream.Dispose() }
+        $algorithm.Dispose()
+    }
+}
+
 function Get-DirectoryContentHash {
     param([string] $Path)
     $root = [IO.Path]::GetFullPath($Path).TrimEnd('\')
@@ -48,8 +63,7 @@ function Get-DirectoryContentHash {
                 throw "File escaped hash root: $($_.FullName)"
             }
             $relative = $_.FullName.Substring($root.Length + 1)
-            $hash = (Get-FileHash -LiteralPath $_.FullName `
-                -Algorithm SHA256).Hash.ToLowerInvariant()
+            $hash = Get-RuntimeFileSha256 -Path $_.FullName
             "$relative`t$($_.Length)`t$hash"
         })
     $algorithm = [Security.Cryptography.SHA256]::Create()

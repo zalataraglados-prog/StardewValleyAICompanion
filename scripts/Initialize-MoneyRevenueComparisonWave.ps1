@@ -108,7 +108,7 @@ $runSummaryPath = Resolve-RequiredFile `
 $runSummary = Get-Content -LiteralPath $runSummaryPath -Raw |
     ConvertFrom-Json
 if ([string]$runSummary.schema_version -ne
-        "money_threshold_native_outcome_run_summary.v1" -or
+        "money_threshold_native_outcome_run_summary.v2" -or
     [string]$runSummary.status -ne "passed" -or
     [string]$runSummary.run_id -ne [string]$wave.source_id -or
     [string]$runSummary.dataset_partition -ne $DatasetPartition) {

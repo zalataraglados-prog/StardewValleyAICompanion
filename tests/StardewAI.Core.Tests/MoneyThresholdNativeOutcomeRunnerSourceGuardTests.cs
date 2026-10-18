@@ -43,6 +43,14 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("\"StardewAI.RuntimeTestHarness\"", Source,
             StringComparison.Ordinal);
+        Assert.Contains("Get-MoneyRuntimeModAllowlist", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("isolated_mods_root_path = $isolatedMods", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("runtime_mod_allowlist = $runtimeModAllowlist", Source,
+            StringComparison.Ordinal);
+        Assert.Contains("money_threshold_native_outcome_run_summary.v2", Source,
+            StringComparison.Ordinal);
         Assert.Contains("-TimeoutSeconds $StartupTimeoutSeconds", Source,
             StringComparison.Ordinal);
         Assert.Contains("$initialSnapshotUrl = \"$snapshotUrl&fresh=true\"",
@@ -111,6 +119,14 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.Contains(
             "money_threshold_native_outcome_batch_request.v4",
             BatchSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_threshold_native_outcome_run_summary.v2",
+            BatchSource + ComparisonPlanSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "money_threshold_native_outcome_run_summary.v1",
+            Source + BatchSource + ComparisonPlanSource,
+            StringComparison.Ordinal);
         Assert.Contains("comparison_admissions = $comparisonAdmissions",
             BatchSource, StringComparison.Ordinal);
         Assert.Contains(
