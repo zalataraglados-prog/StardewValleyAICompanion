@@ -217,7 +217,13 @@ internal static partial class BootstrapSelfTest
             Write(retentionProofPath, retentionProof);
             return retentionProofPath;
         }).ToArray();
-        Write(fragmentIndexPath,
+        var retentionOnlyFragmentIndexPath = Path.Combine(
+            root,
+            "retention-only-fragment-index.json");
+        var retentionOnlyCheckpointRequestPath = Path.Combine(
+            root,
+            "retention-only-checkpoint-request.json");
+        Write(retentionOnlyFragmentIndexPath,
             new MoneyRevenueCropProductionProofFragmentIndex
             {
                 CropProductionPlanPath = planPath,
@@ -227,6 +233,176 @@ internal static partial class BootstrapSelfTest
                 DailyCapacityProofPaths = new[] { capacityProofPath },
                 NativeLifecycleProofPaths = new[] { proofPath },
                 OutputRetentionProofPaths = retentionProofPaths
+            });
+        Write(retentionOnlyCheckpointRequestPath,
+            new MoneyRevenueCropProductionProofCheckpointRequest
+            {
+                CropProductionPlanPath = planPath,
+                FragmentIndexPath = retentionOnlyFragmentIndexPath
+            });
+        var retentionOnlyCheckpoint =
+            MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+                retentionOnlyCheckpointRequestPath);
+        Require(retentionOnlyCheckpoint.VerifiedFragmentCount == 3 &&
+                retentionOnlyCheckpoint.VerifiedOutputRetentions.Length == 5 &&
+                retentionOnlyCheckpoint.VerifiedTerminalSettlements.Length == 0 &&
+                commitment.HarvestWaves.All(wave =>
+                    retentionOnlyCheckpoint.PendingRequestIds.Contains(
+                        "output-retention-terminal:" +
+                        wave.OutputRetentionKey,
+                        StringComparer.Ordinal)),
+            "Retained crop output incorrectly closed terminal settlement requests.");
+        var duplicateRetentionPath = Path.Combine(
+            root,
+            "retention-proof-duplicate.json");
+        var duplicateRetentionIndexPath = Path.Combine(
+            root,
+            "retention-duplicate-fragment-index.json");
+        var duplicateRetentionCheckpointRequestPath = Path.Combine(
+            root,
+            "retention-duplicate-checkpoint-request.json");
+        File.Copy(retentionProofPaths[0], duplicateRetentionPath);
+        Write(duplicateRetentionIndexPath,
+            new MoneyRevenueCropProductionProofFragmentIndex
+            {
+                CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 =
+                    CurrentTeacherFrontierSupport.HashFile(planPath),
+                PlantingLayoutProofPaths = new[] { layoutProofPath },
+                DailyCapacityProofPaths = new[] { capacityProofPath },
+                NativeLifecycleProofPaths = new[] { proofPath },
+                OutputRetentionProofPaths = retentionProofPaths
+                    .Append(duplicateRetentionPath)
+                    .ToArray()
+            });
+        Write(duplicateRetentionCheckpointRequestPath,
+            new MoneyRevenueCropProductionProofCheckpointRequest
+            {
+                CropProductionPlanPath = planPath,
+                FragmentIndexPath = duplicateRetentionIndexPath
+            });
+        RequireRejects(
+            () => MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+                duplicateRetentionCheckpointRequestPath),
+            "Duplicate crop output-retention evidence identity was admitted.");
+
+        var settlementProofPaths = retentionProofPaths.Select(
+            (retentionProofPath, index) =>
+            {
+                var retention = CurrentTeacherFrontierSupport.Read<
+                    MoneyRevenueCropOutputRetentionProof>(
+                        retentionProofPath,
+                        "Money crop output-retention proof fixture");
+                var saleBefore = CurrentTeacherFrontierSupport.Read<
+                    SnapshotEnvelope>(
+                        retention.AfterSnapshotPath,
+                        "Money crop terminal sale before fixture");
+                var unitPrice = checked((int)(
+                    retention.MinimumGrossRevenue / retention.MinimumUnits));
+                var saleAfter = LifecycleShopSale(
+                    saleBefore,
+                    retention.HarvestItemQualifiedId,
+                    retention.MinimumUnits,
+                    unitPrice);
+                var fixtureId = "crop-wave-" + retention.WaveIndex;
+                var episodePath = VerifyMoneyRevenueShopRecurrenceArtifact(
+                    saleBefore,
+                    saleAfter,
+                    fixtureId,
+                    retention.HarvestItemQualifiedId,
+                    slotIndex: 1,
+                    quantity: retention.MinimumUnits);
+                var recurrenceRoot = Path.GetDirectoryName(episodePath)!;
+                var settlementRequestPath = Path.Combine(
+                    root,
+                    "settlement-request-" + retention.WaveIndex + ".json");
+                var settlementProofPath = Path.Combine(
+                    root,
+                    "settlement-proof-" + retention.WaveIndex + ".json");
+                Write(settlementRequestPath,
+                    new MoneyRevenueCropTerminalSettlementProofRequest
+                    {
+                        CropProductionPlanPath = planPath,
+                        OutputRetentionProofPath = retentionProofPath,
+                        ShopSaleEpisodePath = episodePath,
+                        RevenueRecurrenceManifestPath = Path.Combine(
+                            recurrenceRoot,
+                            "shop-revenue-recurrence-manifest.json"),
+                        RevenueRecurrenceReceiptPath = Path.Combine(
+                            recurrenceRoot,
+                            "shop-revenue-recurrence-receipt.json")
+                    });
+                var settlement =
+                    MoneyRevenueCropTerminalSettlementProofBuilder.Build(
+                        settlementRequestPath);
+                Require(settlement.Status ==
+                            "verified_native_crop_terminal_settlement" &&
+                        settlement.WaveIndex == index + 1 &&
+                        settlement.SettledQuantity == 2 &&
+                        settlement.SettledRevenue ==
+                            retention.MinimumGrossRevenue &&
+                        settlement.RouteTransitions.Length == 0 &&
+                        settlement.NativeTerminalSettlementVerified &&
+                        !settlement.FormalProductTrainingAuthorized,
+                    "Money crop terminal-settlement proof lost its exact wave binding.");
+                Write(settlementProofPath, settlement);
+                return settlementProofPath;
+            }).ToArray();
+        var firstRetention = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropOutputRetentionProof>(
+                retentionProofPaths[0],
+                "Money crop first output-retention proof fixture");
+        var underSaleBefore = CurrentTeacherFrontierSupport.Read<
+            SnapshotEnvelope>(
+                firstRetention.AfterSnapshotPath,
+                "Money crop under-sale before fixture");
+        var underSaleUnitPrice = checked((int)(
+            firstRetention.MinimumGrossRevenue /
+            firstRetention.MinimumUnits));
+        var underSaleAfter = LifecycleShopSale(
+            underSaleBefore,
+            firstRetention.HarvestItemQualifiedId,
+            quantity: 1,
+            unitPrice: underSaleUnitPrice);
+        var underSaleEpisodePath = VerifyMoneyRevenueShopRecurrenceArtifact(
+            underSaleBefore,
+            underSaleAfter,
+            "crop-wave-under-sale",
+            firstRetention.HarvestItemQualifiedId,
+            slotIndex: 1,
+            quantity: 1);
+        var underSaleRoot = Path.GetDirectoryName(underSaleEpisodePath)!;
+        var underSaleRequestPath = Path.Combine(
+            root,
+            "settlement-under-sale-request.json");
+        Write(underSaleRequestPath,
+            new MoneyRevenueCropTerminalSettlementProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                OutputRetentionProofPath = retentionProofPaths[0],
+                ShopSaleEpisodePath = underSaleEpisodePath,
+                RevenueRecurrenceManifestPath = Path.Combine(
+                    underSaleRoot,
+                    "shop-revenue-recurrence-manifest.json"),
+                RevenueRecurrenceReceiptPath = Path.Combine(
+                    underSaleRoot,
+                    "shop-revenue-recurrence-receipt.json")
+            });
+        RequireRejects(
+            () => MoneyRevenueCropTerminalSettlementProofBuilder.Build(
+                underSaleRequestPath),
+            "A crop terminal sale below the conservative wave quantity was admitted.");
+        Write(fragmentIndexPath,
+            new MoneyRevenueCropProductionProofFragmentIndex
+            {
+                CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 =
+                    CurrentTeacherFrontierSupport.HashFile(planPath),
+                PlantingLayoutProofPaths = new[] { layoutProofPath },
+                DailyCapacityProofPaths = new[] { capacityProofPath },
+                NativeLifecycleProofPaths = new[] { proofPath },
+                OutputRetentionProofPaths = retentionProofPaths,
+                TerminalSettlementProofPaths = settlementProofPaths
             });
         Write(checkpointRequestPath,
             new MoneyRevenueCropProductionProofCheckpointRequest
@@ -239,6 +415,7 @@ internal static partial class BootstrapSelfTest
         Require(checkpoint.VerifiedFragmentCount == 8 &&
                 checkpoint.VerifiedNativeLifecycles.Length == 1 &&
                 checkpoint.VerifiedOutputRetentions.Length == 5 &&
+                checkpoint.VerifiedTerminalSettlements.Length == 5 &&
                 checkpoint.VerifiedRequestIds.Contains(
                     proof.EvidenceRequestId,
                     StringComparer.Ordinal) &&
@@ -631,6 +808,45 @@ internal static partial class BootstrapSelfTest
         after.State["player"] = JsonSerializer.SerializeToElement(
             player,
             JsonDefaults.Options);
+        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+        return after;
+    }
+
+    private static SnapshotEnvelope LifecycleShopSale(
+        SnapshotEnvelope before,
+        string qualifiedItemId,
+        int quantity,
+        int unitPrice)
+    {
+        var after = CloneSnapshot(before);
+        var player = JsonNode.Parse(after.State["player"].GetRawText())!
+            .AsObject();
+        var inventory = player["inventory"]!["value"]!.AsArray();
+        var matches = inventory.Where(value =>
+                value?["qualified_item_id"]?.GetValue<string>() ==
+                    qualifiedItemId &&
+                value?["quality"]?.GetValue<int>() == 0)
+            .ToArray();
+        Require(matches.Length == 1 &&
+                matches[0]!["stack"]!.GetValue<int>() >= quantity,
+            "Money crop ShopMenu sale fixture lacks its exact inventory stack.");
+        var row = matches[0]!;
+        var remaining = row["stack"]!.GetValue<int>() - quantity;
+        if (remaining == 0)
+            inventory.Remove(row);
+        else
+            row["stack"] = remaining;
+        var saleValue = checked(quantity * unitPrice);
+        player["inventory"]!["value"] = inventory;
+        player["money"]!["value"] =
+            checked(player["money"]!["value"]!.GetValue<int>() + saleValue);
+        player["total_money_earned"]!["value"] =
+            checked(player["total_money_earned"]!["value"]!.GetValue<uint>() +
+                (uint)saleValue);
+        after.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        after.GameTick = before.GameTick + 1;
         after.StateHash = SnapshotHash.ComputeStateHash(after.State);
         return after;
     }

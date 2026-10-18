@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v6" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v7" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v7" &&
+                    "money_revenue_crop_production_proof_fragment_index.v8" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -58,6 +58,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndex.DailyCapacityProofPaths is not null &&
                 fragmentIndex.NativeLifecycleProofPaths is not null &&
                 fragmentIndex.OutputRetentionProofPaths is not null &&
+                fragmentIndex.TerminalSettlementProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof fragment index is invalid.");
 
@@ -136,13 +137,36 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             "Money Revenue crop output-retention proof paths are duplicated.");
         var outputRetentionProofs = outputRetentionProofPaths.Select(path =>
             VerifyOutputRetentionProof(path, planPath, planSha256, plan)).ToArray();
+        Require(outputRetentionProofs.Select(proof => proof.EvidenceRequestId)
+                    .Distinct(StringComparer.Ordinal).Count() ==
+                    outputRetentionProofs.Length,
+            "Money Revenue crop output-retention evidence request IDs are duplicated.");
+        var terminalSettlementProofPaths =
+            (fragmentIndex.TerminalSettlementProofPaths ??
+                throw new InvalidDataException(
+                    "Money Revenue crop terminal-settlement proof paths are missing."))
+            .Select(path => RequiredFile(
+                path,
+                "Money Revenue crop terminal-settlement proof fragment"))
+            .ToArray();
+        Require(terminalSettlementProofPaths.Distinct(PathComparer).Count() ==
+                    terminalSettlementProofPaths.Length,
+            "Money Revenue crop terminal-settlement proof paths are duplicated.");
+        var terminalSettlementProofs = terminalSettlementProofPaths.Select(path =>
+            VerifyTerminalSettlementProof(path, planPath, planSha256, plan)).ToArray();
+        Require(terminalSettlementProofs.All(proof =>
+                outputRetentionProofPaths.Contains(
+                    Path.GetFullPath(proof.OutputRetentionProofPath),
+                    PathComparer)),
+            "Money Revenue crop terminal settlement lacks its indexed retention support.");
 
         var allEvidenceIds = proofs.Select(value => value.EvidenceRequestId)
             .Concat(seedProofs.Select(value => value.EvidenceRequestId))
             .Concat(acquisitionProofs.Select(value => value.EvidenceRequestId))
             .Concat(dailyCapacityProofs.Select(value => value.EvidenceRequestId))
             .Concat(nativeLifecycleProofs.Select(value => value.EvidenceRequestId))
-            .Concat(outputRetentionProofs.Select(value => value.EvidenceRequestId))
+            .Concat(terminalSettlementProofs.Select(value =>
+                value.EvidenceRequestId))
             .ToArray();
         Require(allEvidenceIds.Distinct(StringComparer.Ordinal).Count() ==
                     allEvidenceIds.Length,
@@ -156,7 +180,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 (value.EvidenceRequestId, Value: (object)value)))
             .Concat(nativeLifecycleProofs.Select(value =>
                 (value.EvidenceRequestId, Value: (object)value)))
-            .Concat(outputRetentionProofs.Select(value =>
+            .Concat(terminalSettlementProofs.Select(value =>
                 (value.EvidenceRequestId, Value: (object)value)))
             .ToDictionary(value => value.EvidenceRequestId, value => value.Value, StringComparer.Ordinal);
         var verifiedIds = plan.PendingEvidenceRequestIds
@@ -187,10 +211,41 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             VerifiedDailyCapacities = dailyCapacityProofs,
             VerifiedNativeLifecycles = nativeLifecycleProofs,
             VerifiedOutputRetentions = outputRetentionProofs,
+            VerifiedTerminalSettlements = terminalSettlementProofs,
             FutureCropProductionProofReady = false,
             FreshSaveRevenueScheduleReady = false,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static MoneyRevenueCropTerminalSettlementProof
+        VerifyTerminalSettlementProof(
+            string proofPath,
+            string planPath,
+            string planSha256,
+            MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var proof = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropTerminalSettlementProof>(
+                proofPath,
+                "Money Revenue crop terminal-settlement proof");
+        var rebuilt = MoneyRevenueCropTerminalSettlementProofBuilder.Build(
+            proof.RequestPath);
+        Require(proof.SchemaVersion ==
+                    "money_revenue_crop_terminal_settlement_proof.v1" &&
+                BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
+                string.Equals(
+                    Path.GetFullPath(proof.CropProductionPlanPath),
+                    planPath,
+                    PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
+                plan.PendingEvidenceRequestIds.Contains(
+                    proof.EvidenceRequestId,
+                    StringComparer.Ordinal) &&
+                proof.NativeTerminalSettlementVerified &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money Revenue crop terminal-settlement proof is not exact or is outside the denominator.");
+        return proof;
     }
 
     private static MoneyRevenueCropOutputRetentionProof

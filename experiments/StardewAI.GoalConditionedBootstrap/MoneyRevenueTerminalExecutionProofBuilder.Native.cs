@@ -176,7 +176,8 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
                 options.Count(row => row ==
                     "executor.ship_inventory_item_to_bin") == 1 &&
                 options.Take(options.Length - 1)
-                    .All(ResourceNeutralRouteOptions.Contains),
+                    .All(MoneyRevenueResourceNeutralTerminalRouteVerifier
+                        .ResourceNeutralOptions.Contains),
             "Money Revenue shipping deposit queue contains a resource-consuming support action.");
         var receiptReasons = QueueExecutionReceiptValidator.Validate(
             queue,

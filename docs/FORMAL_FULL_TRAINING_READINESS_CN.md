@@ -14,13 +14,13 @@ Money production cells:  0/18
 Formal product training: false
 ```
 
-Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation、seed-reservation、seed-acquisition、aggregate daily-capacity、native crop lifecycle 与 per-wave output-retention proof 的基础设施。#307、#308、#309、#310 与 #311 已收口，当前没有已知 P0/P1 review issue 阻止继续施工，但这些修复没有自行增加分子。
+Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation、seed-reservation、seed-acquisition、aggregate daily-capacity、native crop lifecycle、per-wave output-retention 与 native ShopMenu settlement proof 的基础设施。#307、#308、#309、#310 与 #311 已收口，当前没有已知 P0/P1 review issue 阻止继续施工，但这些修复没有自行增加分子。
 
-**准入规则：**购种 shortfall、逐日容量、原生生命周期与逐波输出留存都已有精确 proof 类型，但仍需真实 fragment；容量 proof 必须在整份计划上聚合全部承诺，并拒绝缺日、超时、体力不足、不可达或需要未建模补水的日程；生命周期 proof 必须由连续既有动作队列、执行回执和逐格 `Crop.newDay` 转换组成；留存 proof 只接受精确物品进入透明玩家库存的净增，不能以地面 debris 或预计产量替代。只有这些 fragment、原生结算，以及真实 native outcome、完整 terminal proof、exact Teacher comparison 和 criterion-local join 全部成立时，相应 Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
+**准入规则：**购种 shortfall、逐日容量、原生生命周期、逐波输出留存与原生商店结算都有精确 proof 类型，但仍需真实 fragment；容量 proof 必须在整份计划上聚合全部承诺，并拒绝缺日、超时、体力不足、不可达或需要未建模补水的日程；生命周期 proof 必须由连续既有动作队列、执行回执和逐格 `Crop.newDay` 转换组成；留存 proof 只接受精确物品进入透明玩家库存的净增，不能以地面 debris 或预计产量替代；组合 terminal 请求只有在资源中性路线后把保守数量通过原生售卖转换成精确收入时才能关闭。运输箱分支及结算日内容量仍须补齐。只有这些 fragment、真实 native outcome、完整 terminal proof、exact Teacher comparison 和 criterion-local join 全部成立时，相应 Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 
-crop-production checkpoint v6 已能重建 planting-layout、seed-reservation、seed-acquisition、daily-capacity、native-lifecycle 与 output-retention fragment。#310 已证明 reservation ledger 的 plan-ledger lineage、原子 commit replay 与 post-plan freshness 下界；seed acquisition 完整重放共享 rollout；daily capacity 对全部承诺的日期并集逐日重放共享 BFS、时序、时间、体力和水量；native lifecycle 逐批验证既有播种/浇水/收获队列，并以单一原生睡眠队列重放跨日生长和再生；output retention 按波次核对完整收获动作与玩家库存净增。正式购种/容量/生命周期/留存 fragment 与原生结算仍 pending，所以 Money 保持 `0/18`，正式训练保持 false。下一固定切片是原生结算证明。
+crop-production checkpoint v7 已能重建 planting-layout、seed-reservation、seed-acquisition、daily-capacity、native-lifecycle、output-retention 与 native ShopMenu terminal-settlement fragment。output retention 仅作为支持片段，不能单独关闭 `output-retention-terminal:*`；组合 proof 还必须重建共享资源中性路线、精确售卖 episode 与 Revenue recurrence。正式购种/容量/生命周期/留存/结算 fragment 与运输箱分支仍 pending，所以 Money 保持 `0/18`，正式训练保持 false。下一固定切片是运输箱投递、隔夜结算和结算日内容量证明。
 ## 已收口待后续证据 · 2026-10-18 Money 作物场地准备
 
 作物场地准备已通过有界 `farm_layout` 透明快照和既有清障/资源块/BFS/锄地候选形成执行计划；清障后必须 fresh snapshot 重绑。#311 已关闭 bounds overflow、BFS reachability、stamina gate 及相关作物分母 fail-closed 缺口。该层仍只是基础设施，不产生 production cell；Money 保持 `0/18` 且 `formal_product_training_authorized=false`。
