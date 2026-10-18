@@ -41,7 +41,11 @@ namespace StardewAI.Core.Execution
                     continue;
                 }
 
-                var connector = BuildCrossLocationConnectorStep(snapshot, currentLocation, step.TargetLocation, step.StepId);
+                var connector = BuildCrossLocationConnectorStep(
+                    snapshot,
+                    currentLocation,
+                    step.TargetLocation,
+                    step);
                 if (connector is not null)
                 {
                     expanded.Add(connector);
@@ -59,7 +63,7 @@ namespace StardewAI.Core.Execution
             SnapshotEnvelope snapshot,
             string currentLocation,
             string targetLocation,
-            string sourceStepId)
+            SmallModelPlanStep sourceStep)
         {
             var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
             if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object)
@@ -103,13 +107,19 @@ namespace StardewAI.Core.Execution
 
             return new SmallModelPlanStep
             {
-                StepId = (string.IsNullOrWhiteSpace(sourceStepId) ? "cross_location_move" : sourceStepId) + ".connector",
+                StepId = (string.IsNullOrWhiteSpace(sourceStep.StepId)
+                    ? "cross_location_move"
+                    : sourceStep.StepId) + ".connector",
                 Kind = "traverse_connector",
                 TargetLocation = currentLocation,
                 TargetTileX = edge.FromX,
                 TargetTileY = edge.FromY,
                 EstimatedMinutes = GameClockBudgetPolicy.MovementTilesToGameMinutes(pathTiles.Value + 1),
-                Preconditions = new[] { "transparent_route_connector_still_matches_snapshot=true" },
+                Preconditions = sourceStep.Preconditions
+                    .Where(value => value.StartsWith("candidate_id:", StringComparison.Ordinal))
+                    .Append("transparent_route_connector_still_matches_snapshot=true")
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
                 ExpectedEffects = new[]
                 {
                     "player.location_id=" + edge.TargetLocation,

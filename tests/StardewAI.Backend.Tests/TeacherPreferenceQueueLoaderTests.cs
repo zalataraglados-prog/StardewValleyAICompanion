@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Training;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
@@ -248,9 +249,9 @@ public sealed class TeacherPreferenceQueueLoaderTests
     }
 
     [Fact]
-    public void PrecompiledQueueOptionsRequireBoundedProductEvidenceMode()
+    public void PrecompiledQueueOptionsAllowEitherBoundedNativeExecutor()
     {
-        var valid = LiveTrainingOptions.Parse(new[]
+        var product = LiveTrainingOptions.Parse(new[]
         {
             "--precompiled-queue", "queue.json",
             "--skip-training",
@@ -259,7 +260,21 @@ public sealed class TeacherPreferenceQueueLoaderTests
             "--required-verified-actions", "1",
             "--max-queue-item-attempts", "8"
         });
-        Assert.True(valid.UsePrecompiledQueue);
+        var harness = LiveTrainingOptions.Parse(new[]
+        {
+            "--precompiled-queue", "queue.json",
+            "--skip-training",
+            "--max-attempts", "1",
+            "--required-verified-actions", "1",
+            "--max-queue-item-attempts", "8"
+        });
+        Assert.True(product.UsePrecompiledQueue);
+        Assert.True(product.UseProductExecutor);
+        Assert.True(harness.UsePrecompiledQueue);
+        Assert.False(harness.UseProductExecutor);
+        Assert.Equal(
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            harness.PolicyTrajectoryExecutorVersion);
 
         var error = Assert.Throws<ArgumentException>(() =>
             LiveTrainingOptions.Parse(new[]

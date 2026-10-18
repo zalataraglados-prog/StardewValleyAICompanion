@@ -1,0 +1,545 @@
+[CmdletBinding()]
+param(
+    [string] $ProjectRoot =
+        (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
+    [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
+    [Parameter(Mandatory)]
+    [string] $SourceSaveSlotPath,
+    [Parameter(Mandatory)]
+    [string] $RunPlanRequestPath,
+    [string] $RunId =
+        ("money-crop-native-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
+    [string] $OutputDirectory =
+        "artifacts\runtime-money-crop-native-production",
+    [int] $BackendPort = 5132,
+    [int] $StartupTimeoutSeconds = 180,
+    [switch] $SkipBuild,
+    [switch] $SkipDeploy
+)
+
+$ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
+. (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropNative.ps1")
+
+function Get-SafeArtifactName {
+    param([Parameter(Mandatory)] [string] $Value)
+    return ($Value -replace '[^a-zA-Z0-9._-]', '_')
+}
+
+function Copy-RuntimeSnapshotArtifact {
+    param(
+        [Parameter(Mandatory)] [string] $SourcePath,
+        [Parameter(Mandatory)] [string] $DestinationPath
+    )
+    Write-Utf8Text -Path $DestinationPath -Value (
+        Get-Content -LiteralPath $SourcePath -Raw)
+    return [IO.Path]::GetFullPath($DestinationPath)
+}
+
+function Assert-RunPlan {
+    param([Parameter(Mandatory)] $Plan)
+    if ([string]$Plan.schema_version -ne
+            "money_revenue_crop_native_production_run_plan.v1" -or
+        [string]$Plan.status -ne "native_crop_production_run_ready" -or
+        -not [bool]$Plan.native_production_run_ready -or
+        [bool]$Plan.formal_product_training_authorized -or
+        @($Plan.days).Count -ne [int]$Plan.day_count -or
+        @($Plan.covered_commitment_ids).Count -eq 0) {
+        throw "Money crop native-production run plan is not executable."
+    }
+    $days = @($Plan.days)
+    for ($index = 0; $index -lt $days.Count; $index++) {
+        if ([int]$days[$index].total_day -ne
+            [int]$Plan.first_total_day + $index) {
+            throw "Money crop native-production run plan is not contiguous."
+        }
+    }
+}
+
+$sourceSave = Assert-RuntimeSourceSaveSlot -Path $SourceSaveSlotPath
+$sourceSlotName = Split-Path -Leaf $sourceSave
+$requestPath = Resolve-RuntimeEvidenceInputPath `
+    -ProjectRoot $ProjectRoot -Path $RunPlanRequestPath
+$outputRoot = Resolve-RuntimeEvidenceInputPath `
+    -ProjectRoot $ProjectRoot -Path $OutputDirectory
+$runDirectory = Join-Path $outputRoot $RunId
+$isolatedSaves = Join-Path $runDirectory "isolated-saves"
+$isolatedSlot = Join-Path $isolatedSaves $sourceSlotName
+$isolatedMods = Join-Path $runDirectory "smapi-mods"
+$artifactDirectory = Join-Path $runDirectory "transitions"
+$evidenceDirectory = Join-Path $runDirectory "evidence"
+$runPlanPath = Join-Path $runDirectory "crop-native-run-plan.json"
+$fragmentIndexPath = Join-Path $evidenceDirectory "fragment-index.json"
+$checkpointRequestPath = Join-Path $evidenceDirectory `
+    "checkpoint-request.json"
+$checkpointPath = Join-Path $evidenceDirectory "checkpoint.json"
+$summaryPath = Join-Path $runDirectory "summary.json"
+$failurePath = Join-Path $runDirectory "failure.json"
+
+$runtimeGameDirectory = Join-Path $RuntimeRoot "Stardew Valley"
+$smapiPath = Join-Path $runtimeGameDirectory "StardewModdingAPI.exe"
+$backendDll = Join-Path $ProjectRoot `
+    "src\StardewAI.Backend\bin\Release\net8.0\StardewAI.Backend.dll"
+$loopDll = Join-Path $ProjectRoot `
+    "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
+$bootstrapDll = Join-Path $ProjectRoot `
+    "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
+$backendUrl = "http://127.0.0.1:$BackendPort"
+$snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full"
+$executorUrl = "http://127.0.0.1:8767"
+$backendStdout = Join-Path $runDirectory "backend.stdout.log"
+$backendStderr = Join-Path $runDirectory "backend.stderr.log"
+$gameStdout = Join-Path $runDirectory "game.stdout.log"
+$gameStderr = Join-Path $runDirectory "game.stderr.log"
+
+if (-not (Test-Path -LiteralPath $requestPath -PathType Leaf)) {
+    throw "Money crop native-production run-plan request is missing: $requestPath"
+}
+if (-not (Test-Path -LiteralPath $smapiPath -PathType Leaf)) {
+    throw "Runtime SMAPI is missing: $smapiPath"
+}
+Assert-RuntimePortsUnused -Ports @($BackendPort, 8765, 8767) `
+    -OperationName "Money crop native production"
+if (Test-Path -LiteralPath $runDirectory) {
+    throw "Money crop native run directory already exists: $runDirectory"
+}
+
+New-Item -ItemType Directory -Force -Path $isolatedSaves | Out-Null
+New-Item -ItemType Directory -Force -Path $isolatedMods | Out-Null
+New-Item -ItemType Directory -Force -Path $artifactDirectory | Out-Null
+New-Item -ItemType Directory -Force -Path $evidenceDirectory | Out-Null
+
+if (-not $SkipBuild) {
+    foreach ($project in @(
+        "src\StardewAI.Backend\StardewAI.Backend.csproj",
+        "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj",
+        "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
+    )) {
+        & dotnet build (Join-Path $ProjectRoot $project) `
+            -c Release --no-restore --nologo | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Release build failed before Money crop native production: $project"
+        }
+    }
+}
+foreach ($required in @($backendDll, $loopDll, $bootstrapDll)) {
+    if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
+        throw "Required Release artifact is missing: $required"
+    }
+}
+
+Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+    "build-money-revenue-crop-native-production-run-plan",
+    "--request", $requestPath,
+    "--output", $runPlanPath)
+$runPlan = Get-Content -LiteralPath $runPlanPath -Raw | ConvertFrom-Json
+Assert-RunPlan -Plan $runPlan
+$productionPlanPath = [IO.Path]::GetFullPath(
+    [string]$runPlan.crop_production_plan_path)
+$productionPlan = Get-Content -LiteralPath $productionPlanPath -Raw |
+    ConvertFrom-Json
+$runPlanRequest = Get-Content -LiteralPath $requestPath -Raw |
+    ConvertFrom-Json
+
+$sourceSaveSha256Before = Get-DirectoryContentHash -Path $sourceSave
+Copy-Item -LiteralPath $sourceSave -Destination $isolatedSlot -Recurse
+$isolatedSaveSha256Before = Get-DirectoryContentHash -Path $isolatedSlot
+if ($sourceSaveSha256Before -ne $isolatedSaveSha256Before) {
+    throw "Isolated crop source save does not equal its source."
+}
+
+if (-not $SkipDeploy) {
+    $deployArguments = @{
+        ProjectRoot = $ProjectRoot
+        RuntimeRoot = $RuntimeRoot
+    }
+    if ($SkipBuild) { $deployArguments.NoBuild = $true }
+    & (Join-Path $ProjectRoot `
+        "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
+        @deployArguments | Out-Null
+    & (Join-Path $ProjectRoot `
+        "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
+        @deployArguments | Out-Null
+}
+foreach ($modName in @(
+    "StardewAI.TransparentBridge",
+    "StardewAI.RuntimeTestHarness"
+)) {
+    $sourceMod = Join-Path $runtimeGameDirectory "Mods\$modName"
+    if (-not (Test-Path -LiteralPath $sourceMod -PathType Container)) {
+        throw "Required crop runtime Mod is missing: $sourceMod"
+    }
+    Copy-Item -LiteralPath $sourceMod `
+        -Destination (Join-Path $isolatedMods $modName) -Recurse
+}
+$runtimeModAllowlist = @(Get-RuntimeExactModAllowlist `
+    -ModsRoot $isolatedMods `
+    -OperationName "Money crop runtime" `
+    -ExpectedUniqueIds ([ordered]@{
+        "StardewAI.RuntimeTestHarness" = "StardewAI.RuntimeTestHarness"
+        "StardewAI.TransparentBridge" = "StardewAI.TransparentBridge"
+    }))
+$isolatedModsSha256Before = Get-DirectoryContentHash -Path $isolatedMods
+
+$environmentNames = @(
+    "STARDEWAI_TEST_SAVES",
+    "STARDEWAI_TEST_SLOT",
+    "STARDEWAI_TEST_AUTO_LOAD",
+    "STARDEWAI_SAVE_ISOLATION_PATH",
+    "STARDEWAI_TRAINING_RUN_ID",
+    "STARDEWAI_TRAINING_MODE",
+    "STARDEWAI_TRAINING_OUTPUT_DIR",
+    "STARDEWAI_SUPPRESS_LOCAL_RENDER",
+    "SDL_AUDIODRIVER",
+    "ALSOFT_DRIVERS",
+    "SMAPI_MODS_PATH",
+    "ASPNETCORE_URLS")
+$savedEnvironment = Save-RuntimeProcessEnvironment -Names $environmentNames
+$backendProcess = $null
+$gameProcess = $null
+$sourceSaveSha256After = "not_checked"
+
+try {
+    $env:STARDEWAI_TEST_SAVES = $isolatedSaves
+    $env:STARDEWAI_TEST_SLOT = $sourceSlotName
+    $env:STARDEWAI_TEST_AUTO_LOAD = "true"
+    $env:STARDEWAI_SAVE_ISOLATION_PATH = $isolatedSaves
+    $env:STARDEWAI_TRAINING_RUN_ID = $RunId
+    $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_TRAINING_OUTPUT_DIR = $runDirectory
+    $env:STARDEWAI_SUPPRESS_LOCAL_RENDER = "1"
+    $env:SDL_AUDIODRIVER = "dummy"
+    $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $isolatedMods
+    $env:ASPNETCORE_URLS = $backendUrl
+
+    $backendProcess = Start-RuntimeEvidenceProcess `
+        -FilePath "dotnet" -ArgumentList @($backendDll) `
+        -WorkingDirectory $ProjectRoot `
+        -StandardOutputPath $backendStdout `
+        -StandardErrorPath $backendStderr
+    Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
+    $gameProcess = Start-RuntimeEvidenceProcess `
+        -FilePath $smapiPath -WorkingDirectory $runtimeGameDirectory `
+        -StandardOutputPath $gameStdout `
+        -StandardErrorPath $gameStderr
+    Wait-Json -Url "$executorUrl/health" `
+        -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
+
+    $initial = Get-FreshRuntimeSnapshot `
+        -Url "$snapshotUrl&fresh=true" `
+        -TimeoutSeconds $StartupTimeoutSeconds
+    $initialPath = Join-Path $evidenceDirectory "initial-snapshot.json"
+    Save-RuntimeSnapshotAndIngest -Path $initialPath -Capture $initial `
+        -BackendUrl $backendUrl -SnapshotProfile "full"
+    $initialDay = [int](Read-StateValue `
+        $initial.Value "time" "total_days")
+    if ($initialDay -ne [int]$runPlan.first_total_day) {
+        throw "Isolated crop save starts on day $initialDay, expected $($runPlan.first_total_day)."
+    }
+
+    $runtimeQueueContext = New-RuntimeQueueContext `
+        -LoopDll $loopDll -ArtifactDirectory $artifactDirectory `
+        -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl `
+        -SnapshotProfile "full" -ExecutorRoot $executorUrl `
+        -ProductUrl "http://127.0.0.1:8768" -RunId $RunId `
+        -IsolatedSavesPath $isolatedSaves
+    $currentPath = $initialPath
+    $transitions = [Collections.Generic.List[object]]::new()
+    $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
+    $layoutSnapshotByCommitment = @{}
+    $executedCropBatchCount = 0
+    $skippedWaterBatchCount = 0
+
+    foreach ($day in @($runPlan.days)) {
+        $totalDay = [int]$day.total_day
+        $current = Import-RuntimeSnapshotFile -Path $currentPath `
+            -BackendUrl $backendUrl -SnapshotProfile "full"
+        if ([int](Read-StateValue $current.Value "time" "total_days") -ne
+            $totalDay) {
+            throw "Crop runtime day boundary drifted before day $totalDay."
+        }
+        $visitCropLocation = [bool]$day.capture_daily_capacity_snapshot -or
+            @($day.action_batches).Count -gt 0
+        if ($visitCropLocation) {
+            $route = Invoke-RuntimeCropRoute -Context $runtimeQueueContext `
+                -BackendUrl $backendUrl -SnapshotProfile "full" `
+                -SourceSnapshotPath $currentPath `
+                -TargetLocation ([string]$runPlan.location_id) `
+                -TotalDay $totalDay -Name "day-$totalDay-crop-ingress"
+            foreach ($routeArtifact in @($route.Artifacts)) {
+                $transitions.Add((New-RuntimeCropTransition `
+                    -TransitionKind "supporting_route_to_crop" `
+                    -TotalDay $totalDay -Artifacts $routeArtifact `
+                    -RunId $RunId))
+            }
+            $currentPath = $route.SourcePath
+        }
+
+        if ([bool]$day.capture_daily_capacity_snapshot) {
+            $dailyPath = Join-Path $evidenceDirectory `
+                "daily-capacity-day-$totalDay.json"
+            $dailySnapshotPaths.Add((Copy-RuntimeSnapshotArtifact `
+                -SourcePath $currentPath -DestinationPath $dailyPath))
+        }
+        foreach ($commitmentId in @($day.capture_layout_commitment_ids)) {
+            $safeId = Get-SafeArtifactName -Value ([string]$commitmentId)
+            $layoutPath = Join-Path $evidenceDirectory `
+                "layout-snapshot-$safeId.json"
+            $layoutSnapshotByCommitment[[string]$commitmentId] =
+                Copy-RuntimeSnapshotArtifact -SourcePath $currentPath `
+                    -DestinationPath $layoutPath
+        }
+
+        foreach ($batch in @($day.action_batches)) {
+            $batchName = "day-$totalDay-batch-$([int]$batch.batch_index)"
+            $result = Invoke-RuntimeCropActionBatch `
+                -Context $runtimeQueueContext -BackendUrl $backendUrl `
+                -SnapshotProfile "full" -SourceSnapshotPath $currentPath `
+                -Batch $batch -TotalDay $totalDay -Name $batchName
+            if ($result.Skipped) {
+                $skippedWaterBatchCount++
+                continue
+            }
+            $transitions.Add((New-RuntimeCropTransition `
+                -TransitionKind "crop_actions" -TotalDay $totalDay `
+                -Artifacts $result.Artifacts -RunId $RunId))
+            $currentPath = $result.SourcePath
+            $executedCropBatchCount++
+        }
+
+        if ([bool]$day.native_sleep_required) {
+            $current = Import-RuntimeSnapshotFile -Path $currentPath `
+                -BackendUrl $backendUrl -SnapshotProfile "full"
+            $homeLocation = Get-RuntimeCropHomeLocation `
+                -Snapshot $current.Value
+            $homeRoute = Invoke-RuntimeCropRoute `
+                -Context $runtimeQueueContext -BackendUrl $backendUrl `
+                -SnapshotProfile "full" -SourceSnapshotPath $currentPath `
+                -TargetLocation $homeLocation -TotalDay $totalDay `
+                -Name "day-$totalDay-sleep-ingress"
+            foreach ($routeArtifact in @($homeRoute.Artifacts)) {
+                $transitions.Add((New-RuntimeCropTransition `
+                    -TransitionKind "supporting_route_to_sleep" `
+                    -TotalDay $totalDay -Artifacts $routeArtifact `
+                    -RunId $RunId))
+            }
+            $currentPath = $homeRoute.SourcePath
+            $sleep = Invoke-RuntimeDailyPlanStep `
+                -Context $runtimeQueueContext `
+                -Name "day-$totalDay-native-rollover" `
+                -OptionId "recovery.stabilize_day" `
+                -CandidateKind "recovery_sleep_immediately" `
+                -CandidateId "recovery:native_save_boundary" `
+                -CandidateParameters @(
+                    "control_plane.native_save_boundary=true") `
+                -SourceSnapshotPath $currentPath
+            $sleepItems = @($sleep.Queue.items)
+            if ($sleepItems.Count -ne 1 -or
+                [string]$sleepItems[0].option_id -ne "executor.sleep") {
+                throw "Day $totalDay did not compile one native sleep queue."
+            }
+            $transitions.Add((New-RuntimeCropTransition `
+                -TransitionKind "native_day_rollover" `
+                -TotalDay $totalDay -Artifacts $sleep -RunId $RunId))
+            $currentPath = $sleep.AfterPath
+        }
+    }
+
+    $layoutProofPaths = [Collections.Generic.List[string]]::new()
+    $layoutProofByCommitment = @{}
+    foreach ($intent in @($runPlanRequest.layout_intents)) {
+        $commitmentId = [string]$intent.commitment_id
+        if (-not $layoutSnapshotByCommitment.ContainsKey($commitmentId)) {
+            throw "Missing planting boundary for commitment $commitmentId."
+        }
+        $safeId = Get-SafeArtifactName -Value $commitmentId
+        $layoutRequestPath = Join-Path $evidenceDirectory `
+            "layout-request-$safeId.json"
+        $layoutProofPath = Join-Path $evidenceDirectory `
+            "layout-proof-$safeId.json"
+        Write-JsonFile -Path $layoutRequestPath -Value ([ordered]@{
+            schema_version =
+                "money_revenue_crop_planting_layout_proof_request.v1"
+            crop_production_plan_path = $productionPlanPath
+            commitment_id = $commitmentId
+            planting_snapshot_path =
+                $layoutSnapshotByCommitment[$commitmentId]
+            location_id = [string]$intent.location_id
+            tiles = @($intent.tiles)
+            formal_product_training_authorized = $false
+        })
+        Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+            "build-money-revenue-crop-planting-layout-proof",
+            "--request", $layoutRequestPath,
+            "--output", $layoutProofPath)
+        $layoutProofPaths.Add($layoutProofPath)
+        $layoutProofByCommitment[$commitmentId] = $layoutProofPath
+    }
+
+    $capacityProofPaths = [Collections.Generic.List[string]]::new()
+    $lifecycleProofPaths = [Collections.Generic.List[string]]::new()
+    $retentionProofPaths = [Collections.Generic.List[string]]::new()
+    foreach ($commitment in @($productionPlan.commitments)) {
+        $commitmentId = [string]$commitment.commitment_id
+        $safeId = Get-SafeArtifactName -Value $commitmentId
+        $capacityRequestPath = Join-Path $evidenceDirectory `
+            "capacity-request-$safeId.json"
+        $capacityProofPath = Join-Path $evidenceDirectory `
+            "capacity-proof-$safeId.json"
+        Write-JsonFile -Path $capacityRequestPath -Value ([ordered]@{
+            schema_version =
+                "money_revenue_crop_daily_capacity_proof_request.v1"
+            crop_production_plan_path = $productionPlanPath
+            commitment_id = $commitmentId
+            planting_layout_proof_paths = @($layoutProofPaths)
+            daily_snapshot_paths = @($dailySnapshotPaths)
+            formal_product_training_authorized = $false
+        })
+        Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+            "build-money-revenue-crop-daily-capacity-proof",
+            "--request", $capacityRequestPath,
+            "--output", $capacityProofPath)
+        $capacityProofPaths.Add($capacityProofPath)
+
+        $lifecycleRequestPath = Join-Path $evidenceDirectory `
+            "lifecycle-request-$safeId.json"
+        $lifecycleProofPath = Join-Path $evidenceDirectory `
+            "lifecycle-proof-$safeId.json"
+        Write-JsonFile -Path $lifecycleRequestPath -Value ([ordered]@{
+            schema_version =
+                "money_revenue_crop_native_lifecycle_proof_request.v3"
+            crop_production_plan_path = $productionPlanPath
+            commitment_id = $commitmentId
+            planting_layout_proof_path =
+                $layoutProofByCommitment[$commitmentId]
+            daily_capacity_proof_path = $capacityProofPath
+            transitions = @($transitions)
+            formal_product_training_authorized = $false
+        })
+        Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+            "build-money-revenue-crop-native-lifecycle-proof",
+            "--request", $lifecycleRequestPath,
+            "--output", $lifecycleProofPath)
+        $lifecycleProofPaths.Add($lifecycleProofPath)
+
+        foreach ($wave in @($commitment.harvest_waves)) {
+            $retentionRequestPath = Join-Path $evidenceDirectory `
+                "retention-request-$safeId-$([int]$wave.wave_index).json"
+            $retentionProofPath = Join-Path $evidenceDirectory `
+                "retention-proof-$safeId-$([int]$wave.wave_index).json"
+            Write-JsonFile -Path $retentionRequestPath -Value ([ordered]@{
+                schema_version =
+                    "money_revenue_crop_output_retention_proof_request.v1"
+                crop_production_plan_path = $productionPlanPath
+                native_lifecycle_proof_path = $lifecycleProofPath
+                commitment_id = $commitmentId
+                wave_index = [int]$wave.wave_index
+                formal_product_training_authorized = $false
+            })
+            Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+                "build-money-revenue-crop-output-retention-proof",
+                "--request", $retentionRequestPath,
+                "--output", $retentionProofPath)
+            $retentionProofPaths.Add($retentionProofPath)
+        }
+    }
+
+    Write-JsonFile -Path $fragmentIndexPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_crop_production_proof_fragment_index.v13"
+        crop_production_plan_path = $productionPlanPath
+        crop_production_plan_sha256 =
+            (Get-RuntimeFileSha256 -Path $productionPlanPath)
+        planting_layout_proof_paths = @($layoutProofPaths)
+        seed_reservation_proof_paths = @()
+        seed_acquisition_proof_paths = @()
+        daily_capacity_proof_paths = @($capacityProofPaths)
+        native_lifecycle_proof_paths = @($lifecycleProofPaths)
+        output_retention_proof_paths = @($retentionProofPaths)
+        terminal_settlement_proof_paths = @()
+        settlement_capacity_proof_paths = @()
+        shared_shipping_settlement_proof_paths = @()
+        formal_product_training_authorized = $false
+    })
+    Write-JsonFile -Path $checkpointRequestPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_crop_production_proof_checkpoint_request.v12"
+        crop_production_plan_path = $productionPlanPath
+        fragment_index_path = $fragmentIndexPath
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
+        "build-money-revenue-crop-production-proof-checkpoint",
+        "--request", $checkpointRequestPath,
+        "--output", $checkpointPath)
+    $checkpoint = Get-Content -LiteralPath $checkpointPath -Raw |
+        ConvertFrom-Json
+
+    $sourceSaveSha256After = Get-DirectoryContentHash -Path $sourceSave
+    if ($sourceSaveSha256After -ne $sourceSaveSha256Before) {
+        throw "Source save changed during isolated crop native production."
+    }
+    $isolatedModsSha256After = Get-DirectoryContentHash -Path $isolatedMods
+    if ($isolatedModsSha256After -ne $isolatedModsSha256Before) {
+        throw "Isolated runtime Mods changed during crop native production."
+    }
+    $summary = [ordered]@{
+        schema_version = "money_crop_native_production_run_summary.v1"
+        status = "passed"
+        run_id = $RunId
+        run_plan_path = $runPlanPath
+        run_plan_sha256 = Get-RuntimeFileSha256 -Path $runPlanPath
+        crop_production_plan_path = $productionPlanPath
+        source_save_slot_path = $sourceSave
+        source_save_sha256_before = $sourceSaveSha256Before
+        source_save_sha256_after = $sourceSaveSha256After
+        isolated_save_slot_path = $isolatedSlot
+        isolated_save_sha256_before = $isolatedSaveSha256Before
+        isolated_mods_root_path = $isolatedMods
+        isolated_mods_sha256_before = $isolatedModsSha256Before
+        isolated_mods_sha256_after = $isolatedModsSha256After
+        runtime_mod_allowlist = $runtimeModAllowlist
+        transition_count = $transitions.Count
+        executed_crop_batch_count = $executedCropBatchCount
+        skipped_water_batch_count = $skippedWaterBatchCount
+        planting_layout_proof_count = $layoutProofPaths.Count
+        daily_capacity_proof_count = $capacityProofPaths.Count
+        native_lifecycle_proof_count = $lifecycleProofPaths.Count
+        output_retention_proof_count = $retentionProofPaths.Count
+        checkpoint_path = $checkpointPath
+        checkpoint_verified_fragment_count =
+            [int]$checkpoint.verified_fragment_count
+        checkpoint_pending_request_count =
+            [int]$checkpoint.pending_request_count
+        formal_product_training_authorized = $false
+    }
+    Write-JsonFile -Path $summaryPath -Value $summary
+    $summary | ConvertTo-Json -Depth 32
+}
+catch {
+    $failureMessage = $_.Exception.Message
+    try {
+        $sourceSaveSha256After = Get-DirectoryContentHash -Path $sourceSave
+    }
+    catch {
+        $sourceSaveSha256After = "hash_failed"
+    }
+    Write-JsonFile -Path $failurePath -Value ([ordered]@{
+        schema_version = "money_crop_native_production_run_failure.v1"
+        status = "failed"
+        run_id = $RunId
+        error = $failureMessage
+        source_save_slot_path = $sourceSave
+        source_save_sha256_before = $sourceSaveSha256Before
+        source_save_sha256_after = $sourceSaveSha256After
+        source_save_unchanged =
+            $sourceSaveSha256After -eq $sourceSaveSha256Before
+        formal_product_training_authorized = $false
+    })
+    throw
+}
+finally {
+    Stop-RuntimeEvidenceProcesses -Processes @($gameProcess, $backendProcess)
+    Restore-RuntimeProcessEnvironment -Values $savedEnvironment
+}

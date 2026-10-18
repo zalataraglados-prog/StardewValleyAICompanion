@@ -50,6 +50,9 @@
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />
     <Compile Include="MoneyDependencyExpansionArchitectureTests.cs" />
+    <Compile Include="MoneyThresholdNativeOutcomeRunnerSourceGuardTests.cs" />
+    <Compile Include="MoneyCropNativeProductionRunnerSourceGuardTests.cs" />
+    <Compile Include="MoneyCropNativeProductionCompilerTests.cs" />
     <Compile Include="BushHarvestMainlineTests.cs" />
     <Compile Include="CommunityCenterDonationMainlineTests.cs" />
     <Compile Include="CommunityCenterTransparencyTests.cs" />

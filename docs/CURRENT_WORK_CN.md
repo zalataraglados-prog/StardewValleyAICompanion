@@ -4,18 +4,19 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 原生生产 runner 固定编排
+## 当前切片 · 2026-10-18 Money 原生作物生产收集器
 
-- 新增 `money_revenue_crop_native_production_run_plan.v1`。它把精确 Teacher 作物承诺和调用方给出的不重叠 Farm 布局意图一次展开为连续日期、布局采证边界、逐日容量快照边界、固定 `plant -> conditional water -> harvest` 顺序、最多 8 项的同承诺动作批次，以及每个非终端日唯一原生睡眠。
-- 该 plan 不调用模型反复选择机械动作，也不新增播种/浇水/收获/睡眠实现。运行时只能逐批送入现有 action compiler 和执行/回执链；浇水批次必须按当天透明 `needs_watering` 过滤，不能在雨天制造冗余动作。plan 自身不是 proof、Teacher label 或训练授权。
-- hermetic 双承诺正例覆盖完整日期和动作分母、2 项批次上限、动作顺序、条件浇水与睡眠数；布局重叠失败关闭。下一固定切片是运行壳层：隔离源存档，按 plan 逐日采集 fresh snapshot，编译并执行当天批次，落盘全部 queue/receipt/after snapshot，随后物化 layout、daily-capacity、shared lifecycle、retention 与 settlement fragment。
+- `Invoke-RuntimeMoneyCropNativeProduction.ps1` 已把 `money_revenue_crop_native_production_run_plan.v1` 接入隔离源存档、精确双 Mod allowlist、现有 action/plan compiler、RuntimeTestHarness 原生执行和统一回执链。运行器按连续日期逐批执行 `plant -> conditional water -> harvest`，每次跨地图只编译一个透明 connector 并 fresh replan，每个非终端日复用既有 `recovery.stabilize_day` 生成唯一原生睡眠。
+- 浇水批次在执行前只按透明 `farm.crops[].needs_watering` 过滤；雨天不生成冗余浇水，但若当天逐日容量证明要求边界快照，仍可通过资源中性的 crop-ingress 到达 Farm。跨地图 move 被现有 compiler 重写为 connector 时现在保留唯一 `candidate_id`，因此路线、作物动作和睡眠的 queue/receipt/after snapshot 都能维持可审计候选身份。
+- 当前收集器会物化 planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。它尚未执行真实游戏采集，也尚未接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
+- 下一固定切片：准备一份与权威 run-plan request 精确匹配的隔离源存档，完成首次隐藏静音原生运行并修复仅由真实回执暴露的缺口；成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得另写第二套作物候选、规划器或执行器。
 
 ## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
-- `money_revenue_crop_native_lifecycle_proof.v3` 不再为每个承诺接受一条互相独立的世界时间线。每份逐承诺 proof 都必须从 aggregate daily-capacity proof 加载整份计划的全部布局，并重放同一条连续 world-state/tick 链；每个原生睡眠只出现一次，同时验证全部仍活跃作物的反编译 `Crop.newDay` 转换。v3 进一步承认睡醒位于 `FarmHouse`、睡前又必须回家的真实原生状态：`supporting_route_to_crop` 和 `supporting_route_to_sleep` 分别位于当天作物动作前后，只能复用既有移动/连接器/有界等待 primitive，必须由统一执行回执验真、保持同一日期、保持库存/货币/持久世界状态不变并最终到达声明的 `Farm` 或 home 地点；缺路线、隐藏传送或夹带资源动作均失败关闭。雨天等没有实际作物动作的日期不得生成无效 crop-ingress 路线。
+- `money_revenue_crop_native_lifecycle_proof.v3` 不再为每个承诺接受一条互相独立的世界时间线。每份逐承诺 proof 都必须从 aggregate daily-capacity proof 加载整份计划的全部布局，并重放同一条连续 world-state/tick 链；每个原生睡眠只出现一次，同时验证全部仍活跃作物的反编译 `Crop.newDay` 转换。v3 进一步承认睡醒位于 `FarmHouse`、睡前又必须回家的真实原生状态：`supporting_route_to_crop` 和 `supporting_route_to_sleep` 分别位于当天作物动作前后，只能复用既有移动/连接器/有界等待 primitive，必须由统一执行回执验真、保持同一日期、保持库存/货币/持久世界状态不变并最终到达声明的 `Farm` 或 home 地点；缺路线、隐藏传送或夹带资源动作均失败关闭。雨天没有实际作物动作时不得生成无依据路线；只有 aggregate daily-capacity 明确要求当天 Farm 边界快照时，才允许资源中性的 crop-ingress。
 - 作物动作队列仍复用现有播种、浇水和收获执行器，但每个同类队列必须完整归属于一个不重叠承诺布局。transition proof 记录 `action_commitment_id`；output-retention 只选择本承诺的连续收获批次，因此同日多承诺不会互相吞并库存增量或动作分母。
 - fragment index 已升级为 v13、checkpoint 已升级为 v12。hermetic 双承诺正例不再建立两份独立生命周期后合成终点库存，而是在一条共享轨迹中顺序完成 `2+3` 格的全部动作、逐承诺留存、5 次原生投箱与一次共享睡眠结算，并在每天动作前后用两类显式资源中性路线连接 `FarmHouse` 与 `Farm`。正式 fragment 仍未采集，Money 保持 `0/18`。
-- 下一固定切片仍是 real Money native production collection runner：用一个可恢复逐日循环采集 fresh snapshot，选择当前日队列并复用既有编译/执行/回执链，按达成的计划义务输出 v2 lifecycle 与后续 retention/settlement fragment；不得另建作物规划器或动作执行器。
+- 上方收集器已实现该逐日循环。下一固定切片是首次真实隔离运行及 terminal settlement 接线；不得另建作物规划器或动作执行器。
 
 ## 已收口 · 2026-10-18 Money 同日多波共享原生结算证明
 

@@ -102,7 +102,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         ValidateTransitionChain(
             transitions,
             sourceSnapshot,
-            contexts);
+            contexts,
+            capacity);
 
         var transitionProofs = transitions.Select(value =>
             new MoneyRevenueCropNativeLifecycleTransitionProof(
