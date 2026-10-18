@@ -69,7 +69,7 @@ if (-not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
 $plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
 $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
 if ([string]$plan.schema_version -ne
-        "money_revenue_terminal_proof_collection_plan.v1" -or
+        "money_revenue_terminal_proof_collection_plan.v2" -or
     [string]$plan.status -ne "terminal_proof_collection_required" -or
     [bool]$plan.terminal_proof_index_ready -or
     [bool]$plan.formal_product_training_authorized -or
@@ -156,8 +156,18 @@ foreach ($item in @($plan.work_items | Where-Object {
     }
     $episode = Get-Content -LiteralPath $episodePath -Raw | ConvertFrom-Json
     $beforeSnapshotPath = Resolve-RequiredFile `
-        -Path ([string]$episode.before_snapshot_path) `
-        -Label "Reusable shop-sale before snapshot"
+        -Path ([string]$request.terminal_snapshot_path) `
+        -Label "Reusable shop-sale terminal request snapshot"
+    $beforeSnapshotSha256 = Get-RuntimeFileSha256 -Path $beforeSnapshotPath
+    if (-not (Test-SamePath `
+            -Left ([string]$item.terminal_snapshot_path) `
+            -Right $beforeSnapshotPath) -or
+        $beforeSnapshotSha256 -ne
+            ([string]$request.terminal_snapshot_sha256).ToLowerInvariant() -or
+        $beforeSnapshotSha256 -ne
+            ([string]$item.terminal_snapshot_sha256).ToLowerInvariant()) {
+        throw "Reusable shop-sale terminal request boundary drifted: $requestId"
+    }
     $afterSnapshotPath = Resolve-RequiredFile `
         -Path ([string]$episode.after_snapshot_path) `
         -Label "Reusable shop-sale after snapshot"

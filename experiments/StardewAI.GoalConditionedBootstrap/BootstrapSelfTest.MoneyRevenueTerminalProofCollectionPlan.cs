@@ -11,7 +11,11 @@ internal static partial class BootstrapSelfTest
             DatasetPartition = "train",
             SourceStateHash = sourceStateHash,
             SelectedCatalogCandidateId = "candidate.selected-shop-sale",
-            AlternativeCount = 3,
+            AlternativeDenominatorCatalogPath =
+                "alternative-denominator.json",
+            AlternativeDenominatorFileSha256 = new string('a', 64),
+            AlternativeDenominatorCatalogSha256 = new string('b', 64),
+            AlternativeCount = 2,
             ExistingNativeEpisodeReuseCount = 1
         };
         var requests = new[]
@@ -55,10 +59,37 @@ internal static partial class BootstrapSelfTest
         };
         var catalog = new MoneyRevenueCounterfactualProofRequestCatalog
         {
+            ConcreteAlternativeCatalogPath = "concrete-denominator.json",
+            ConcreteAlternativeCatalogFileSha256 = new string('c', 64),
+            ConcreteAlternativeCatalogSha256 = new string('d', 64),
             SourceStateHash = sourceStateHash,
             RequestCount = requests.Length,
             RequestIds = requests.Select(value => value.RequestId).ToArray(),
             Requests = requests
+        };
+        var concreteCatalog = new MoneyRevenueConcreteAlternativeDenominatorCatalog
+        {
+            SourceStateHash = sourceStateHash,
+            AlternativeDenominatorCatalogPath =
+                comparisonPlan.AlternativeDenominatorCatalogPath,
+            AlternativeDenominatorFileSha256 =
+                comparisonPlan.AlternativeDenominatorFileSha256,
+            AlternativeDenominatorCatalogSha256 =
+                comparisonPlan.AlternativeDenominatorCatalogSha256,
+            SkeletonDenominatorComplete = true,
+            TerminalRebindDenominatorComplete = true,
+            CurrentConcreteDenominatorAuthoritative = true,
+            SkeletonCount = comparisonPlan.AlternativeCount,
+            ConcreteAlternativeCount = requests.Length,
+            ConcreteAlternativeIds = requests
+                .Select(value => value.ConcreteAlternativeId)
+                .ToArray(),
+            Alternatives = requests.Select(value =>
+                new MoneyRevenueConcreteAlternative
+                {
+                    ConcreteAlternativeId = value.ConcreteAlternativeId
+                }).ToArray(),
+            CatalogSha256 = catalog.ConcreteAlternativeCatalogSha256
         };
         var reusableSale = new MoneyRevenueReusableShopSaleEpisode(
             "episode.json",
@@ -73,6 +104,8 @@ internal static partial class BootstrapSelfTest
         var plan = MoneyRevenueTerminalProofCollectionPlanBuilder.BuildPlan(
             "request.json",
             new string('1', 64),
+            comparisonPlan.RunId,
+            comparisonPlan.DatasetPartition,
             "comparison-plan.json",
             new string('2', 64),
             comparisonPlan,
@@ -81,8 +114,15 @@ internal static partial class BootstrapSelfTest
             "counterfactual-catalog.json",
             new string('4', 64),
             catalog,
+            catalog.ConcreteAlternativeCatalogPath,
+            catalog.ConcreteAlternativeCatalogFileSha256,
+            concreteCatalog,
             reusableSale);
         Require(plan.RequestCount == 3 &&
+                plan.AlternativeDenominatorCatalogPath ==
+                    comparisonPlan.AlternativeDenominatorCatalogPath &&
+                plan.ConcreteAlternativeCatalogPath ==
+                    catalog.ConcreteAlternativeCatalogPath &&
                 plan.OfflineReuseReadyCount == 1 &&
                 plan.NativeCollectionRequiredCount == 2 &&
                 !plan.TerminalProofIndexReady &&
@@ -115,6 +155,8 @@ internal static partial class BootstrapSelfTest
             _ = MoneyRevenueTerminalProofCollectionPlanBuilder.BuildPlan(
                 "request.json",
                 new string('1', 64),
+                comparisonPlan.RunId,
+                comparisonPlan.DatasetPartition,
                 "comparison-plan.json",
                 new string('2', 64),
                 comparisonPlan,
@@ -123,6 +165,9 @@ internal static partial class BootstrapSelfTest
                 "counterfactual-catalog.json",
                 new string('4', 64),
                 catalog,
+                catalog.ConcreteAlternativeCatalogPath,
+                catalog.ConcreteAlternativeCatalogFileSha256,
+                concreteCatalog,
                 reusableSale);
         }
         catch (InvalidDataException)
@@ -131,6 +176,96 @@ internal static partial class BootstrapSelfTest
         }
         Require(duplicateRejected,
             "Duplicate Money Revenue terminal-proof requests were admitted.");
+
+        catalog.RequestIds = requests.Select(value => value.RequestId).ToArray();
+        catalog.Requests = requests;
+        concreteCatalog.AlternativeDenominatorCatalogSha256 =
+            new string('e', 64);
+        var wrongDenominatorRejected = false;
+        try
+        {
+            _ = MoneyRevenueTerminalProofCollectionPlanBuilder.BuildPlan(
+                "request.json",
+                new string('1', 64),
+                comparisonPlan.RunId,
+                comparisonPlan.DatasetPartition,
+                "comparison-plan.json",
+                new string('2', 64),
+                comparisonPlan,
+                "counterfactual-manifest.json",
+                new string('3', 64),
+                "counterfactual-catalog.json",
+                new string('4', 64),
+                catalog,
+                catalog.ConcreteAlternativeCatalogPath,
+                catalog.ConcreteAlternativeCatalogFileSha256,
+                concreteCatalog,
+                reusableSale);
+        }
+        catch (InvalidDataException)
+        {
+            wrongDenominatorRejected = true;
+        }
+        Require(wrongDenominatorRejected,
+            "Wrong Money Revenue alternative denominator was admitted.");
+
+        concreteCatalog.AlternativeDenominatorCatalogSha256 =
+            comparisonPlan.AlternativeDenominatorCatalogSha256;
+        var wrongPartitionRejected = false;
+        try
+        {
+            _ = MoneyRevenueTerminalProofCollectionPlanBuilder.BuildPlan(
+                "request.json",
+                new string('1', 64),
+                comparisonPlan.RunId,
+                "validation",
+                "comparison-plan.json",
+                new string('2', 64),
+                comparisonPlan,
+                "counterfactual-manifest.json",
+                new string('3', 64),
+                "counterfactual-catalog.json",
+                new string('4', 64),
+                catalog,
+                catalog.ConcreteAlternativeCatalogPath,
+                catalog.ConcreteAlternativeCatalogFileSha256,
+                concreteCatalog,
+                reusableSale);
+        }
+        catch (InvalidDataException)
+        {
+            wrongPartitionRejected = true;
+        }
+        Require(wrongPartitionRejected,
+            "Wrong Money Revenue run partition was admitted.");
+
+        var wrongRunRejected = false;
+        try
+        {
+            _ = MoneyRevenueTerminalProofCollectionPlanBuilder.BuildPlan(
+                "request.json",
+                new string('1', 64),
+                "run.wrong",
+                comparisonPlan.DatasetPartition,
+                "comparison-plan.json",
+                new string('2', 64),
+                comparisonPlan,
+                "counterfactual-manifest.json",
+                new string('3', 64),
+                "counterfactual-catalog.json",
+                new string('4', 64),
+                catalog,
+                catalog.ConcreteAlternativeCatalogPath,
+                catalog.ConcreteAlternativeCatalogFileSha256,
+                concreteCatalog,
+                reusableSale);
+        }
+        catch (InvalidDataException)
+        {
+            wrongRunRejected = true;
+        }
+        Require(wrongRunRejected,
+            "Wrong Money Revenue run identity was admitted.");
     }
 
     private static MoneyRevenueCounterfactualProofRequest

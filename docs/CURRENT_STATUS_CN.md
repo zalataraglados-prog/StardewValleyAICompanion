@@ -98,27 +98,25 @@ Money batch 更新链可在调用方显式提供现有 production coverage reque
 
 comparison 侧现由 `Initialize-MoneyRevenueComparisonWave.ps1` 以 `partition + source_row_id` 从 work plan 精确定位 corpus row 和 native run summary，并生成带全路径哈希、source identity 与缺失 criterion 集的 handoff。completion 可只处理 handoff 列出的缺口，并把新 admission 与已有 index 按 `run_id + criterion_id` 累积合并，防止局部补证据时丢掉旧分子。该接线仍要求后续 acquisition rollout、strategy ledger 与 terminal proof 全部真实存在，不会凭 handoff 生成 Teacher 标签。
 
-counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_plan.v1`。它重建并逐字节核对 comparison plan 与 request catalog，把每个权威 request 恰好映射为一个 terminal-proof 工作项；只有与 source state、candidate、物品槽、数量、单价和商店都完全一致的既有原生 sale episode 可以进入离线复用通道，其余 shop/shipping alternative 必须原生采集。该计划明确列出账本边界、资源中性终端路线、原生收入动作、recurrence 和终端证明阶段，但自身不是 terminal proof index、Teacher 标签或 production evidence；Money 仍为 `0/18`。
+counterfactual catalog 之后现使用 `money_revenue_terminal_proof_collection_plan.v2`。它重建并逐字节核对 comparison plan、concrete denominator 与 request catalog，显式绑定请求期望的 run/partition、骨架分母路径与双哈希、具体分母路径与双哈希，并以 concrete request 数量而非 skeleton 数量建立工作分母。每个权威 concrete request 恰好映射为一个 terminal-proof 工作项；只有与 source state、candidate、物品槽、数量、单价和商店都完全一致的既有原生 sale episode 可以进入离线复用通道，其余 shop/shipping alternative 必须原生采集。该计划明确列出账本边界、资源中性终端路线、原生收入动作、recurrence 和终端证明阶段，但自身不是 terminal proof index、Teacher 标签或 production evidence；Money 仍为 `0/18`。
 
-`Initialize-MoneyRevenueTerminalProofCollection.ps1` 现可无游戏物化上述唯一离线复用项：从已验证 sale episode 提取真实 before/after snapshot 与 run identity，保留 request 锚定的 before ledger，另存字节完全一致的 after ledger，构建不可互换的 boundary capture 和 Revenue recurrence。所有 fragment 进入 `money_revenue_terminal_proof_collection_checkpoint.v1` 前都由既有 terminal execution verifier 完整重放；checkpoint 允许保存真实部分进度，但只有 verified request ID 集与完整 denominator 相等时才输出 completion 可消费的 `money_revenue_terminal_proof_index.v1`。其余反事实分支仍为原生采集 blocker，未增加 Money production 分子。
+`Initialize-MoneyRevenueTerminalProofCollection.ps1` 现可无游戏物化上述唯一离线复用项：after boundary 继续来自已验证 sale episode，before boundary 则严格使用 request/verifier 规定的 terminal snapshot，并同时核对 request、work item 与实物 SHA-256。所有 fragment 进入 `money_revenue_terminal_proof_collection_checkpoint.v1` 前都由既有 terminal execution verifier 完整重放；checkpoint 允许保存真实部分进度，但只有 verified request ID 集与完整 denominator 相等时才输出 completion 可消费的 `money_revenue_terminal_proof_index.v1`。其余反事实分支仍为原生采集 blocker，未增加 Money production 分子。
 
-未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v2` 会重新核验这些值，拒绝已经过去的种植日，把同承诺已有预留与当前未预留供给分开审计，并只将未预留余量按承诺顺序唯一分配。种子预留 proof v2 必须从计划基准 ledger 原子重放 commit request/result，手写最终账本、倒退日期或同日倒退 tick 均失败关闭。布局 proof 仍必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；fragment index v3 及每个 proof 还必须绑定同一计划 SHA-256。其余日容量、生命周期和逐波输出保留请求保持 pending，future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。当前不得跳过下方 #309 correctness blocker；关闭后才沿既有唯一作物链继续购种、日容量、生命周期、输出保留与结算，不得另写第二套作物候选、规划器或执行器。
+未来作物承诺现在具备独立的精确采证计划和可恢复 checkpoint。既有种植账本从透明原生作物目录记录种子身份、逐日浇水日期、全部收获波次、保守最小产量和零品质毛收入；`money_revenue_crop_production_obligation_plan.v2` 会重新核验这些值，拒绝已经过去的种植日，把同承诺已有预留与当前未预留供给分开审计，并只将未预留余量按承诺顺序唯一分配。种子预留 proof v2 必须从计划基准 ledger 原子重放 commit request/result，手写最终账本、倒退日期或同日倒退 tick 均失败关闭。布局 proof 仍必须在精确 planting-day 快照上逐格核对 Farm 室外空 HoeDirt、原生种植许可和不晚于承诺上界的调整后生长周期；fragment index v3 及每个 proof 还必须绑定同一计划 SHA-256。其余购种 shortfall、日容量、生命周期、逐波输出保留与结算请求保持 pending，future-proof、fresh-save schedule 和 formal training 三个 gate 固定为 false，因此 Money 仍是 `0/18`。下一切片沿既有唯一作物链补这些证明，不得另写第二套作物候选、规划器或执行器。
 
 场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。局部读取现使用 overflow-safe 边界与不会回绕的遍历，资源团块站位复用共享 BFS，锄地在体力缺失或 `<=0` 时失败关闭。该计划本身不是 planting-layout proof，也没有增加 Money production 分子。
 
 种子预留 proof 现已进入 crop-production checkpoint v2：它只认可 fresh snapshot 上经共享原子提交服务精确重放、且直接继承计划基准 ledger 的完整 reservation，并逐槽对照透明物料图；原计划中的“当前可用数量”和调用方手写的最终 ledger 都不能冒充预留。预留快照不得早于计划源快照，同日还必须保持 tick 单调。任何 shortfall 仍必须经既有购买链原生补足，再重新快照和提交预留。该层没有闭合购种回执、日容量、生命周期或输出保留，因此 Money 仍为 `0/18`。
 
-### 当前 production 前置 blocker（2026-10-18 审计）
+### production 前 correctness debt 已清零（2026-10-18 审计）
 
-在任何 Money production cell 入账前，当前主线必须先关闭以下已确认 correctness debt：
-
-- **#309 P1 — terminal-proof denominator/boundary：** collection plan 仍需绑定 concrete request denominator 的精确 identity，并修正 reusable shop-sale 的 before-boundary snapshot；在此之前 fragment checkpoint 不能进入 production comparison。
-
-这些 blocker 的存在**不回退** Full Shipment current-authority `26/26`，也不改变当前正式状态：`CoverageGateReady=2/19`、`Money=0/18`、`formal_product_training_authorized=false`。修复顺序服从 WIP=1：共享 P1 可临时插队，完成后立即返回 Money，不启动其他 Goal Method。
+#307、#308、#309、#310 与 #311 均已按各自验收边界收口；当前没有已知 P0/P1 review issue 阻止 Money 主线继续。该结论不增加证据分子：`CoverageGateReady=2/19`、`Money=0/18`、`formal_product_training_authorized=false` 仍保持不变。下一施工单位回到 Money，先完成既有 crop-production checkpoint 中的购种 shortfall、日容量、生命周期、逐波输出保留与结算，再进行真实 native collection、terminal proof completion、Teacher comparison 和 criterion-local join。
 
 #307 已关闭：共享 raw JSON helper 现在在 Windows PowerShell 5.1 与 PowerShell 7 上通过同一严格词法扫描原样截取根属性，不再依赖 `System.Text.Json`，也不对 ledger 值做对象往返序列化。真实双壳层测试覆盖嵌套对象、转义字符串、时区小数以及缺失/重复属性失败关闭；七条 ledger 调用路径仍统一复用该 helper。
 
 #308 已关闭：`money_threshold_native_outcome_run_summary.v2` 持久化隔离 Mods 根目录、运行前后根内容哈希，以及 TransparentBridge / RuntimeTestHarness 各自的目录名、UniqueID、版本、manifest 哈希和整目录哈希。回放会重新枚举真实目录并复核全部身份；缺失、额外、漂移、错配和历史 v1 summary 均失败关闭。PowerShell 5.1 与 C# 的目录哈希实现由 hermetic 跨进程测试锁定一致。
+
+#309 已关闭：terminal-proof collection request/plan 升级为 v2，明确绑定期望 run/partition、骨架与 concrete denominator 的路径和哈希，并以 concrete catalog 校验 request 数量。离线复用 sale episode 的 before capture 改用 request/verifier 的 terminal snapshot；错误 catalog、run、partition、boundary 和部分 fragment 均失败关闭，且不会创建 Teacher label 或 production cell。
 
 ## 4. 单项闭环施工原则（WIP = 1）
 

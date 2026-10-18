@@ -191,7 +191,9 @@ if (-not [string]::IsNullOrWhiteSpace($SourceStrategyLedgerPath)) {
     $counterfactualStatus = "counterfactual_proof_collection_ready"
     Write-JsonFile -Path $terminalProofCollectionPlanRequestPath -Value ([ordered]@{
         schema_version =
-            "money_revenue_terminal_proof_collection_plan_request.v1"
+            "money_revenue_terminal_proof_collection_plan_request.v2"
+        run_id = [string]$plan.run_id
+        dataset_partition = [string]$plan.dataset_partition
         comparison_collection_plan_path = $planPath
         counterfactual_request_manifest_path = $counterfactualManifestPath
         counterfactual_request_catalog_path = $counterfactualCatalogPath

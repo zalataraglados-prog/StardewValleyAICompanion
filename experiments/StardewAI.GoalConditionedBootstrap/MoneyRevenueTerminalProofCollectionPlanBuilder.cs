@@ -13,7 +13,10 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
                 fullRequestPath,
                 "Money Revenue terminal-proof collection-plan request");
         Require(request.SchemaVersion ==
-                    "money_revenue_terminal_proof_collection_plan_request.v1" &&
+                    "money_revenue_terminal_proof_collection_plan_request.v2" &&
+                !string.IsNullOrWhiteSpace(request.RunId) &&
+                MoneyThresholdEvidenceCellProjector.IsRequiredPartition(
+                    request.DatasetPartition) &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue terminal-proof collection-plan request is invalid.");
 
@@ -51,6 +54,20 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
                 counterfactualCatalog.CounterfactualProofCollectionReady &&
                 !counterfactualCatalog.FormalProductTrainingAuthorized,
             "Money Revenue counterfactual request catalog is not exact.");
+        var concreteCatalogPath = RequiredFile(
+            counterfactualCatalog.ConcreteAlternativeCatalogPath,
+            "Money Revenue concrete alternative catalog");
+        var concreteCatalog = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueConcreteAlternativeDenominatorCatalog>(
+                concreteCatalogPath,
+                "Money Revenue concrete alternative catalog");
+        var rebuiltConcreteCatalog =
+            MoneyRevenueConcreteAlternativeDenominatorBuilder.Build(
+                concreteCatalog.ManifestPath);
+        Require(BootstrapArtifactGuard.EqualJson(
+                    concreteCatalog,
+                    rebuiltConcreteCatalog),
+            "Money Revenue concrete alternative catalog is not exact.");
 
         var verifiedSale = NativeShopSaleEpisodeVerifier.Verify(
             comparisonPlan.NativeTerminalEpisodePath);
@@ -70,6 +87,8 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
         return BuildPlan(
             fullRequestPath,
             CurrentTeacherFrontierSupport.HashFile(fullRequestPath),
+            request.RunId,
+            request.DatasetPartition,
             comparisonPlanPath,
             CurrentTeacherFrontierSupport.HashFile(comparisonPlanPath),
             comparisonPlan,
@@ -78,12 +97,17 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
             counterfactualCatalogPath,
             CurrentTeacherFrontierSupport.HashFile(counterfactualCatalogPath),
             counterfactualCatalog,
+            concreteCatalogPath,
+            CurrentTeacherFrontierSupport.HashFile(concreteCatalogPath),
+            concreteCatalog,
             reusableSale);
     }
 
     internal static MoneyRevenueTerminalProofCollectionPlan BuildPlan(
         string requestPath,
         string requestSha256,
+        string requestedRunId,
+        string requestedDatasetPartition,
         string comparisonPlanPath,
         string comparisonPlanSha256,
         MoneyRevenueComparisonCollectionPlan comparisonPlan,
@@ -92,21 +116,56 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
         string counterfactualCatalogPath,
         string counterfactualCatalogSha256,
         MoneyRevenueCounterfactualProofRequestCatalog catalog,
+        string concreteCatalogPath,
+        string concreteCatalogFileSha256,
+        MoneyRevenueConcreteAlternativeDenominatorCatalog concreteCatalog,
         MoneyRevenueReusableShopSaleEpisode reusableSale)
     {
         var requests = catalog.Requests ??
             Array.Empty<MoneyRevenueCounterfactualProofRequest>();
         var requestIds = catalog.RequestIds ?? Array.Empty<string>();
+        var concreteIds = concreteCatalog.ConcreteAlternativeIds ??
+            Array.Empty<string>();
+        var concreteAlternatives = concreteCatalog.Alternatives ??
+            Array.Empty<MoneyRevenueConcreteAlternative>();
         Require(catalog.RequestCount > 0 &&
                 requests.Length == catalog.RequestCount &&
-                comparisonPlan.AlternativeCount == catalog.RequestCount &&
+                concreteCatalog.CurrentConcreteDenominatorAuthoritative &&
+                !concreteCatalog.FormalProductTrainingAuthorized &&
+                comparisonPlan.AlternativeCount == concreteCatalog.SkeletonCount &&
+                concreteCatalog.ConcreteAlternativeCount == catalog.RequestCount &&
+                concreteAlternatives.Length == catalog.RequestCount &&
+                concreteIds.Length == catalog.RequestCount &&
+                comparisonPlan.RunId == requestedRunId &&
+                comparisonPlan.DatasetPartition == requestedDatasetPartition &&
                 catalog.SourceStateHash == comparisonPlan.SourceStateHash &&
+                concreteCatalog.SourceStateHash == comparisonPlan.SourceStateHash &&
+                MoneyThresholdEvidenceCellProjector.IsRequiredPartition(
+                    comparisonPlan.DatasetPartition) &&
+                !string.IsNullOrWhiteSpace(comparisonPlan.RunId) &&
+                SamePath(
+                    concreteCatalog.AlternativeDenominatorCatalogPath,
+                    comparisonPlan.AlternativeDenominatorCatalogPath) &&
+                concreteCatalog.AlternativeDenominatorFileSha256 ==
+                    comparisonPlan.AlternativeDenominatorFileSha256 &&
+                concreteCatalog.AlternativeDenominatorCatalogSha256 ==
+                    comparisonPlan.AlternativeDenominatorCatalogSha256 &&
+                SamePath(
+                    catalog.ConcreteAlternativeCatalogPath,
+                    concreteCatalogPath) &&
+                catalog.ConcreteAlternativeCatalogFileSha256 ==
+                    concreteCatalogFileSha256 &&
+                catalog.ConcreteAlternativeCatalogSha256 ==
+                    concreteCatalog.CatalogSha256 &&
                 requests.All(value => value is not null &&
                     !string.IsNullOrWhiteSpace(value.RequestId)) &&
                 requests.Select(value => value.RequestId)
                     .Distinct(StringComparer.Ordinal).Count() == requests.Length &&
                 requestIds.SequenceEqual(
                     requests.Select(value => value.RequestId),
+                    StringComparer.Ordinal) &&
+                concreteIds.SequenceEqual(
+                    requests.Select(value => value.ConcreteAlternativeId),
                     StringComparer.Ordinal),
             "Money Revenue terminal-proof request denominator is not exact.");
 
@@ -130,6 +189,15 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
             RequestSha256 = requestSha256,
             ComparisonCollectionPlanPath = comparisonPlanPath,
             ComparisonCollectionPlanSha256 = comparisonPlanSha256,
+            AlternativeDenominatorCatalogPath =
+                comparisonPlan.AlternativeDenominatorCatalogPath,
+            AlternativeDenominatorFileSha256 =
+                comparisonPlan.AlternativeDenominatorFileSha256,
+            AlternativeDenominatorCatalogSha256 =
+                comparisonPlan.AlternativeDenominatorCatalogSha256,
+            ConcreteAlternativeCatalogPath = concreteCatalogPath,
+            ConcreteAlternativeCatalogFileSha256 = concreteCatalogFileSha256,
+            ConcreteAlternativeCatalogSha256 = concreteCatalog.CatalogSha256,
             CounterfactualRequestManifestPath = counterfactualManifestPath,
             CounterfactualRequestManifestSha256 =
                 counterfactualManifestSha256,
@@ -241,6 +309,14 @@ public static class MoneyRevenueTerminalProofCollectionPlanBuilder
             ? fullPath
             : throw new FileNotFoundException(label + " is missing.", fullPath);
     }
+
+    private static bool SamePath(string left, string right) =>
+        !string.IsNullOrWhiteSpace(left) &&
+        !string.IsNullOrWhiteSpace(right) &&
+        string.Equals(
+            Path.GetFullPath(left),
+            Path.GetFullPath(right),
+            StringComparison.OrdinalIgnoreCase);
 
     private static void Require(bool condition, string message)
     {
