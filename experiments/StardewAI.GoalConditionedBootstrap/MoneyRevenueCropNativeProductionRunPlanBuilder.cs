@@ -106,6 +106,22 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 intents,
                 request.MaxQueueItemCount))
             .ToArray();
+        var seedAcquisitions = plan.Commitments
+            .Where(value => value.SeedQuantityShortfall > 0)
+            .Select((value, index) =>
+                new MoneyRevenueCropNativeSeedAcquisition(
+                    index + 1,
+                    value.CommitmentId,
+                    value.SeedQualifiedItemId,
+                    value.SeedQuantityShortfall,
+                    value.SeedSupplyDeadlineTotalDay,
+                    "economy.buy_supplies_one_unit_fresh_snapshot_slices"))
+            .ToArray();
+        Require(seedAcquisitions.All(value =>
+                    value.RequiredQuantity > 0 &&
+                    value.DeadlineTotalDay >= sourceTotalDay &&
+                    value.DeadlineTotalDay <= lastDay),
+            "Money Revenue crop seed-acquisition denominator is invalid.");
         return new MoneyRevenueCropNativeProductionRunPlan
         {
             Status = "native_crop_production_run_ready",
@@ -127,6 +143,8 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
             ActionCount = days.Sum(value => value.ActionBatches.Sum(batch =>
                 batch.Tiles.Length)),
             MaxQueueItemCount = request.MaxQueueItemCount,
+            SeedAcquisitionCount = seedAcquisitions.Length,
+            SeedAcquisitions = seedAcquisitions,
             Days = days,
             NativeProductionRunReady = true,
             FormalProductTrainingAuthorized = false

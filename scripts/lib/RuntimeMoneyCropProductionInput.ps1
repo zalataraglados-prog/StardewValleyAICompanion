@@ -303,10 +303,12 @@ function Read-MoneyCropNativeProductionInputManifest {
     Assert-MoneyCropInputCondition `
         -Condition (
             [string]$runPlan.schema_version -eq
-                "money_revenue_crop_native_production_run_plan.v1" -and
+                "money_revenue_crop_native_production_run_plan.v2" -and
             [string]$runPlan.status -eq
                 "native_crop_production_run_ready" -and
             [bool]$runPlan.native_production_run_ready -and
+            @($runPlan.seed_acquisitions).Count -eq
+                [int]$runPlan.seed_acquisition_count -and
             (Test-MoneyCropInputPathEqual `
                 -Left ([string]$runPlan.request_path) `
                 -Right $artifacts.RunPlanRequestPath) -and
@@ -341,6 +343,35 @@ function Read-MoneyCropNativeProductionInputManifest {
     Assert-MoneyCropInputIdSet `
         -Values @($runPlan.covered_commitment_ids) `
         -ExpectedValues $expectedIds -Label "Native run plan"
+
+    $expectedAcquisitions = @($obligationPlan.commitments | Where-Object {
+        [int]$_.seed_quantity_shortfall -gt 0
+    })
+    $actualAcquisitions = @($runPlan.seed_acquisitions)
+    Assert-MoneyCropInputCondition `
+        -Condition ($actualAcquisitions.Count -eq
+            $expectedAcquisitions.Count) `
+        -Message "Money crop seed-acquisition denominator is incomplete."
+    for ($index = 0; $index -lt $expectedAcquisitions.Count; $index++) {
+        $expected = $expectedAcquisitions[$index]
+        $actual = $actualAcquisitions[$index]
+        Assert-MoneyCropInputCondition `
+            -Condition (
+                [int]$actual.acquisition_index -eq ($index + 1) -and
+                [string]$actual.commitment_id -eq
+                    [string]$expected.commitment_id -and
+                [string]$actual.seed_qualified_item_id -eq
+                    [string]$expected.seed_qualified_item_id -and
+                [int]$actual.required_quantity -eq
+                    [int]$expected.seed_quantity_shortfall -and
+                [int]$actual.deadline_total_day -eq
+                    [int]$expected.seed_supply_deadline_total_day -and
+                [string]$actual.execution_policy -eq
+                    "economy.buy_supplies_one_unit_fresh_snapshot_slices") `
+            -Message (
+                "Money crop seed-acquisition binding drifted at index " +
+                ($index + 1) + ".")
+    }
 
     return [pscustomobject]@{
         ManifestPath = $manifestPath

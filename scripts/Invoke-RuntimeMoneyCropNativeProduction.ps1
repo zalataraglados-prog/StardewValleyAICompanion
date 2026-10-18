@@ -18,6 +18,7 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropNative.ps1")
+. (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropSeedAcquisition.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropProductionInput.ps1")
 
 function Get-SafeArtifactName {
@@ -38,15 +39,46 @@ function Copy-RuntimeSnapshotArtifact {
 function Assert-RunPlan {
     param([Parameter(Mandatory)] $Plan)
     if ([string]$Plan.schema_version -ne
-            "money_revenue_crop_native_production_run_plan.v1" -or
+            "money_revenue_crop_native_production_run_plan.v2" -or
         [string]$Plan.status -ne "native_crop_production_run_ready" -or
         -not [bool]$Plan.native_production_run_ready -or
         [bool]$Plan.formal_product_training_authorized -or
         [string]::IsNullOrWhiteSpace([string]$Plan.source_state_hash) -or
         [int]$Plan.source_total_day -ne [int]$Plan.first_total_day -or
         @($Plan.days).Count -ne [int]$Plan.day_count -or
-        @($Plan.covered_commitment_ids).Count -eq 0) {
+        @($Plan.covered_commitment_ids).Count -eq 0 -or
+        @($Plan.seed_acquisitions).Count -ne
+            [int]$Plan.seed_acquisition_count) {
         throw "Money crop native-production run plan is not executable."
+    }
+    foreach ($acquisition in @($Plan.seed_acquisitions)) {
+        if ([int]$acquisition.acquisition_index -le 0 -or
+            [string]::IsNullOrWhiteSpace(
+                [string]$acquisition.commitment_id) -or
+            [string]::IsNullOrWhiteSpace(
+                [string]$acquisition.seed_qualified_item_id) -or
+            [int]$acquisition.required_quantity -le 0 -or
+            [int]$acquisition.deadline_total_day -lt
+                [int]$Plan.source_total_day -or
+            [string]$acquisition.execution_policy -ne
+                "economy.buy_supplies_one_unit_fresh_snapshot_slices") {
+            throw "Money crop native-production seed acquisition is invalid."
+        }
+    }
+    $acquisitionIndexes = @($Plan.seed_acquisitions | ForEach-Object {
+        [int]$_.acquisition_index
+    })
+    $expectedAcquisitionIndexes = if ($acquisitionIndexes.Count -eq 0) {
+        @()
+    }
+    else {
+        @(1..$acquisitionIndexes.Count)
+    }
+    if ([string]::Join(",", $acquisitionIndexes) -ne
+        [string]::Join(",", $expectedAcquisitionIndexes) -or
+        @($Plan.seed_acquisitions.commitment_id | Select-Object -Unique).Count -ne
+            @($Plan.seed_acquisitions).Count) {
+        throw "Money crop native-production seed acquisitions are duplicated or out of order."
     }
     $days = @($Plan.days)
     for ($index = 0; $index -lt $days.Count; $index++) {
@@ -277,6 +309,7 @@ try {
         -IsolatedSavesPath $isolatedSaves
     $currentPath = $initialPath
     $transitions = [Collections.Generic.List[object]]::new()
+    $seedAcquisitionSummaries = [Collections.Generic.List[object]]::new()
     $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
     $layoutSnapshotByCommitment = @{}
     $sitePreparationPlanPaths = [Collections.Generic.List[string]]::new()
@@ -286,6 +319,28 @@ try {
         Measure-Object -Minimum).Minimum)
     $executedCropBatchCount = 0
     $skippedWaterBatchCount = 0
+
+    foreach ($acquisition in @($runPlan.seed_acquisitions)) {
+        $safeCommitmentId = Get-SafeArtifactName `
+            -Value ([string]$acquisition.commitment_id)
+        $result = Invoke-RuntimeCropSeedAcquisition `
+            -Context $runtimeQueueContext -BackendUrl $backendUrl `
+            -SnapshotProfile "full" -SourceSnapshotPath $currentPath `
+            -Acquisition $acquisition `
+            -Name "seed-acquisition-$safeCommitmentId"
+        $currentPath = $result.SourcePath
+        $seedAcquisitionSummaries.Add([ordered]@{
+            commitment_id = [string]$acquisition.commitment_id
+            seed_qualified_item_id =
+                [string]$acquisition.seed_qualified_item_id
+            required_quantity = [int]$result.RequiredQuantity
+            initial_quantity = [int]$result.InitialQuantity
+            final_quantity = [int]$result.FinalQuantity
+            purchase_slice_count = [int]$result.PurchaseSliceCount
+            execution_count = @($result.Executions).Count
+            final_snapshot_path = [string]$result.SourcePath
+        })
+    }
 
     foreach ($day in @($runPlan.days)) {
         $totalDay = [int]$day.total_day
@@ -574,6 +629,8 @@ try {
         transition_count = $transitions.Count
         executed_crop_batch_count = $executedCropBatchCount
         skipped_water_batch_count = $skippedWaterBatchCount
+        seed_acquisition_count = $seedAcquisitionSummaries.Count
+        seed_acquisitions = $seedAcquisitionSummaries.ToArray()
         site_preparation_plan_count = $sitePreparationPlanPaths.Count
         site_preparation_action_count = $sitePreparationActionCount
         site_preparation_plan_paths = @($sitePreparationPlanPaths)

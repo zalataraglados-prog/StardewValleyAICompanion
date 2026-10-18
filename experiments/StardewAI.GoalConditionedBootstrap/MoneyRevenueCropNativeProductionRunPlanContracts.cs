@@ -41,6 +41,15 @@ public sealed record MoneyRevenueCropNativeProductionActionBatch(
     [property: JsonPropertyName("tiles")]
     MoneyRevenueCropPlantingTile[] Tiles);
 
+public sealed record MoneyRevenueCropNativeSeedAcquisition(
+    [property: JsonPropertyName("acquisition_index")] int AcquisitionIndex,
+    [property: JsonPropertyName("commitment_id")] string CommitmentId,
+    [property: JsonPropertyName("seed_qualified_item_id")]
+    string SeedQualifiedItemId,
+    [property: JsonPropertyName("required_quantity")] int RequiredQuantity,
+    [property: JsonPropertyName("deadline_total_day")] int DeadlineTotalDay,
+    [property: JsonPropertyName("execution_policy")] string ExecutionPolicy);
+
 public sealed record MoneyRevenueCropNativeProductionRunDay(
     [property: JsonPropertyName("total_day")] int TotalDay,
     [property: JsonPropertyName("capture_layout_commitment_ids")]
@@ -56,7 +65,7 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_production_run_plan.v1";
+        "money_revenue_crop_native_production_run_plan.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -103,6 +112,13 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
     [JsonPropertyName("max_queue_item_count")]
     public int MaxQueueItemCount { get; set; }
 
+    [JsonPropertyName("seed_acquisition_count")]
+    public int SeedAcquisitionCount { get; set; }
+
+    [JsonPropertyName("seed_acquisitions")]
+    public MoneyRevenueCropNativeSeedAcquisition[] SeedAcquisitions
+        { get; set; } = Array.Empty<MoneyRevenueCropNativeSeedAcquisition>();
+
     [JsonPropertyName("days")]
     public MoneyRevenueCropNativeProductionRunDay[] Days { get; set; } =
         Array.Empty<MoneyRevenueCropNativeProductionRunDay>();
@@ -117,7 +133,10 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
     public string PlanningPolicy { get; set; } =
         "The exact crop commitments and non-overlapping layout intents are " +
         "expanded once from the exact source snapshot into a continuous native-day " +
-        "schedule. Pre-plant days contain only one native sleep boundary. Plant, conditional " +
+        "schedule. Exact seed shortfalls are explicit pre-production obligations, " +
+        "executed as bounded one-unit native purchase slices through the existing " +
+        "economy.buy_supplies candidate, planner and compiler chain. Pre-plant days " +
+        "otherwise contain only one native sleep boundary. Plant, conditional " +
         "water and harvest batches preserve compiler order and the configured " +
         "queue limit; one native sleep closes every non-terminal day. Runtime " +
         "must keep every commitment inside one bounded farm-layout projection, " +
