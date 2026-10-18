@@ -4,12 +4,19 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 作物逐日容量证明
+## 当前切片 · 2026-10-18 Money 原生作物生命周期证明
+
+- 新增 `money_revenue_crop_native_lifecycle_proof.v1`，只编排并验证既有 `executor.plant_seed`、`executor.water_crop`、`executor.harvest_crop` 与 `executor.sleep` 队列，不新增作物候选、规划器或执行器。训练队列每批最多 8 项；证明允许连续分批，但要求每批同类、状态哈希连续、执行回执完整，且同一天对承诺布局的播种/收获格必须不重不漏。浇水日要求最终逐格已浇水；雨天已湿地块无需生成冗余动作，显式浇水仍不得重复。
+- 每个跨日边界必须是唯一原生睡眠队列。验证器从透明桥 `farm.crops` 读取种子、阶段数组、当前阶段、阶段内天数、成熟/再生倒计时、死亡和浇水状态，并逐格重放反编译的 `Crop.newDay` 规则。快照身份、世界日期偏移、队列回执、目标位置和种子身份任何一项漂移都会失败关闭。
+- hermetic 正例完整覆盖同一批次 2 格草莓从播种、48 个逐格浇水动作、24 次原生睡眠到 10 个逐格再生收获动作，共 54 条连续队列转换；它同时验证多项目队列的逐项回执链和按批次聚合的种子消耗，缺最后一段生命周期会被拒绝。fragment index 已升级为 v6，checkpoint 已升级为 v5，并能独立重建 lifecycle fragment。
+- 该层证明原生生命周期执行，不证明每轮实际产量、产物保留或收入结算。尚未采集生产 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是逐收获波次 `output-retention-terminal:<commitment>:<wave>` 证明。
+
+## 已收口 · 2026-10-18 Money 作物逐日容量证明
 
 - 新增 `money_revenue_crop_daily_capacity_proof.v1`。每个证明都会重建精确作物义务计划和**全部活动承诺**的布局证明，再按所有承诺的播种、保守浇水和收获日期并集逐日聚合；不同承诺不能分别通过后再在同一天超额占用时间、体力或水量。
 - 每一天必须提供同一存档、玩家和游戏版本的 fresh snapshot，透明字段状态必须可读，`total_days` 必须与 year/season/day 保持同一世界日期偏移。容量计算复用共享单源 BFS 距离场、游戏时钟换算和编译器所有的移动、播种、浇水、收获时序；透明桥新增原版作物 `is_raised` 与精确 power-zero 水壶状态。v1 在需要补水路线时失败关闭，不猜测或省略补水。
 - hermetic 正例覆盖 25 天、100 格作物：播种日 `100 播种 + 100 浇水`、同日 `100 浇水 + 100 收获` 及最终纯收获日；负例拒绝缺一天、日期字段漂移和 `99/100` 水量。fragment index 已升级为 v5，checkpoint 已升级为 v4。
-- 该层只证明计划内逐日维护容量，不证明原生生长生命周期、逐波输出保留、结算或正式训练。尚未采集生产 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是 `native-crop-lifecycle:<commitment>`。
+- 该层只证明计划内逐日维护容量，不证明原生生长生命周期、逐波输出保留、结算或正式训练。后续原生生命周期 proof 已实现，但正式 fragment 仍需真实采集。
 
 ## 已收口 · 2026-10-18 Money production 前 correctness 收口
 
