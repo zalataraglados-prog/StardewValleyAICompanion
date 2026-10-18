@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v9" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v10" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v10" &&
+                    "money_revenue_crop_production_proof_fragment_index.v11" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -60,6 +60,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndex.OutputRetentionProofPaths is not null &&
                 fragmentIndex.TerminalSettlementProofPaths is not null &&
                 fragmentIndex.SettlementCapacityProofPaths is not null &&
+                fragmentIndex.SharedShippingSettlementProofPaths is not null &&
                 !fragmentIndex.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof fragment index is invalid.");
 
@@ -178,6 +179,36 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     planPath,
                     planSha256))
             .ToArray();
+        var sharedShippingSettlementProofPaths =
+            (fragmentIndex.SharedShippingSettlementProofPaths ??
+                throw new InvalidDataException(
+                    "Money Revenue crop shared shipping settlement proof paths are missing."))
+            .Select(path => RequiredFile(
+                path,
+                "Money Revenue crop shared shipping settlement proof fragment"))
+            .ToArray();
+        Require(sharedShippingSettlementProofPaths
+                    .Distinct(PathComparer).Count() ==
+                    sharedShippingSettlementProofPaths.Length,
+            "Money Revenue crop shared shipping settlement proof paths are duplicated.");
+        var sharedShippingSettlementProofs =
+            sharedShippingSettlementProofPaths.Select(path =>
+                VerifySharedShippingSettlementProof(
+                    path,
+                    planPath,
+                    planSha256,
+                    plan))
+            .ToArray();
+        Require(sharedShippingSettlementProofs.All(proof =>
+                proof.Waves.All(wave =>
+                    outputRetentionProofPaths.Contains(
+                        Path.GetFullPath(wave.OutputRetentionProofPath),
+                        PathComparer))) &&
+                sharedShippingSettlementProofs.All(proof =>
+                    settlementCapacityProofPaths.Contains(
+                        Path.GetFullPath(proof.SettlementCapacityProofPath),
+                        PathComparer)),
+            "Money Revenue shared crop shipping settlement lacks indexed retention or capacity support.");
         var shippingSettlements = terminalSettlementProofs.Where(proof =>
                 proof.TerminalKind ==
                     MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement)
@@ -198,6 +229,8 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             .Concat(nativeLifecycleProofs.Select(value => value.EvidenceRequestId))
             .Concat(terminalSettlementProofs.Select(value =>
                 value.EvidenceRequestId))
+            .Concat(sharedShippingSettlementProofs.SelectMany(value =>
+                value.CoveredTerminalRequestIds))
             .ToArray();
         Require(allEvidenceIds.Distinct(StringComparer.Ordinal).Count() ==
                     allEvidenceIds.Length,
@@ -213,6 +246,9 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 (value.EvidenceRequestId, Value: (object)value)))
             .Concat(terminalSettlementProofs.Select(value =>
                 (value.EvidenceRequestId, Value: (object)value)))
+            .Concat(sharedShippingSettlementProofs.SelectMany(value =>
+                value.CoveredTerminalRequestIds.Select(requestId =>
+                    (EvidenceRequestId: requestId, Value: (object)value))))
             .ToDictionary(value => value.EvidenceRequestId, value => value.Value, StringComparer.Ordinal);
         var verifiedIds = plan.PendingEvidenceRequestIds
             .Where(proofByRequest.ContainsKey)
@@ -244,10 +280,44 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             VerifiedOutputRetentions = outputRetentionProofs,
             VerifiedTerminalSettlements = terminalSettlementProofs,
             VerifiedSettlementCapacities = settlementCapacityProofs,
+            VerifiedSharedShippingSettlements =
+                sharedShippingSettlementProofs,
             FutureCropProductionProofReady = false,
             FreshSaveRevenueScheduleReady = false,
             FormalProductTrainingAuthorized = false
         };
+    }
+
+    private static MoneyRevenueCropSharedShippingSettlementProof
+        VerifySharedShippingSettlementProof(
+            string proofPath,
+            string planPath,
+            string planSha256,
+            MoneyRevenueCropProductionObligationPlan plan)
+    {
+        var proof = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropSharedShippingSettlementProof>(
+                proofPath,
+                "Money Revenue crop shared shipping settlement proof");
+        var rebuilt = MoneyRevenueCropSharedShippingSettlementProofBuilder
+            .Build(proof.RequestPath);
+        Require(proof.SchemaVersion ==
+                    "money_revenue_crop_shared_shipping_settlement_proof.v1" &&
+                BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
+                string.Equals(
+                    Path.GetFullPath(proof.CropProductionPlanPath),
+                    planPath,
+                    PathComparison) &&
+                proof.CropProductionPlanSha256 == planSha256 &&
+                proof.CoveredTerminalRequestIds.Length > 1 &&
+                proof.CoveredTerminalRequestIds.All(requestId =>
+                    plan.PendingEvidenceRequestIds.Contains(
+                        requestId,
+                        StringComparer.Ordinal)) &&
+                proof.SharedNativeShippingSettlementVerified &&
+                !proof.FormalProductTrainingAuthorized,
+            "Money Revenue shared crop shipping settlement proof is not exact or is outside the denominator.");
+        return proof;
     }
 
     private static MoneyRevenueCropSettlementCapacityProof

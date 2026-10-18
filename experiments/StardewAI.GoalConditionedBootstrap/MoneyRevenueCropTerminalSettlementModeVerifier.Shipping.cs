@@ -15,13 +15,62 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
             SnapshotEnvelope terminalStart,
             MoneyRevenueCropOutputRetentionProof retention)
     {
-        Require(string.IsNullOrWhiteSpace(request.ShopSaleEpisodePath) &&
-                request.ShippingDepositTransitions.Length ==
-                    retention.MinimumUnits,
+        Require(string.IsNullOrWhiteSpace(request.ShopSaleEpisodePath),
             "Money Revenue crop shipping settlement shape is invalid.");
-        var transitions = request.ShippingDepositTransitions ??
-            throw new InvalidDataException(
-                "Money Revenue crop shipping transitions are missing.");
+        var batch = VerifyShippingDepositBatch(
+            terminalStart,
+            request.RouteTransitions,
+            request.ShippingDepositTransitions,
+            retention.HarvestItemQualifiedId,
+            retention.MinimumUnits,
+            retention.MinimumGrossRevenue,
+            expectedPendingValue: 0,
+            transitionIndexOffset: 0);
+        var transitions = request.ShippingDepositTransitions;
+        var recurrence = VerifyShippingRecurrence(
+            request.RevenueRecurrenceManifestPath,
+            request.RevenueRecurrenceReceiptPath,
+            transitions[^1].AfterSnapshotPath,
+            batch.After.StateHash,
+            batch.PendingValueAfter);
+
+        return new MoneyRevenueCropTerminalSettlementVerification(
+            MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement,
+            batch.TerminalActionBefore.StateHash,
+            recurrence.FinalStateHash,
+            batch.RouteTransitions,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            batch.Deposits,
+            batch.SlotIndex,
+            batch.SettledQuantity,
+            batch.UnitPrice,
+            checked((int)batch.PendingValueAfter),
+            recurrence.ManifestPath,
+            recurrence.ManifestSha256,
+            recurrence.ReceiptPath,
+            recurrence.ReceiptSha256);
+    }
+
+    internal static MoneyRevenueCropShippingDepositBatchVerification
+        VerifyShippingDepositBatch(
+            SnapshotEnvelope terminalStart,
+            MoneyRevenueTerminalQueueTransitionProof[] routeTransitions,
+            MoneyRevenueTerminalQueueTransitionProof[] transitions,
+            string qualifiedItemId,
+            int expectedQuantity,
+            long minimumGrossRevenue,
+            long expectedPendingValue,
+            int transitionIndexOffset)
+    {
+        Require(expectedQuantity > 0 &&
+                minimumGrossRevenue > 0 &&
+                expectedPendingValue >= 0 &&
+                transitionIndexOffset >= 0 &&
+                transitions is { Length: > 0 } &&
+                transitions.Length == expectedQuantity,
+            "Money Revenue crop shipping deposit batch shape is invalid.");
         Require(transitions.All(row => row is not null &&
                     !string.IsNullOrWhiteSpace(row.TransitionId)) &&
                 transitions.Select(row => row.TransitionId)
@@ -32,7 +81,7 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
         var expected = terminalStart;
         MoneyRevenueResourceNeutralTerminalRouteVerification? route = null;
         var deposits = new List<MoneyRevenueCropShippingDepositEvidence>();
-        long pendingValue = 0;
+        long pendingValue = expectedPendingValue;
         int? unitPrice = null;
         int? slotIndex = null;
         for (var index = 0; index < transitions.Length; index++)
@@ -86,7 +135,7 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
                 receipt,
                 before,
                 after,
-                retention.HarvestItemQualifiedId,
+                qualifiedItemId,
                 expectedQuantity: 1);
             Require(deposit.Verified &&
                     deposit.SlotIndex.HasValue &&
@@ -114,10 +163,10 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
             {
                 route = MoneyRevenueResourceNeutralTerminalRouteVerifier.Verify(
                     terminalStart,
-                    request.RouteTransitions,
+                    routeTransitions,
                     new MoneyRevenueTerminalContinuationIdentity(
                         NativeShippingOptionId,
-                        retention.HarvestItemQualifiedId,
+                        qualifiedItemId,
                         exactSlotIndex,
                         1,
                         exactUnitPrice,
@@ -134,7 +183,7 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
                 "Money Revenue crop shipping deposit value lineage drifted.");
             pendingValue = afterPending;
             deposits.Add(new MoneyRevenueCropShippingDepositEvidence(
-                index,
+                transitionIndexOffset + index,
                 transition.TransitionId,
                 Hash(queuePath),
                 Hash(beforePath),
@@ -151,16 +200,38 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
                 optionIds));
             expected = after;
         }
-        Require(pendingValue >= retention.MinimumGrossRevenue,
+        Require(pendingValue - expectedPendingValue >= minimumGrossRevenue,
             "Money Revenue crop shipping deposits do not cover conservative wave revenue.");
         var exactRoute = route ?? throw new InvalidDataException(
             "Money Revenue crop shipping route was not verified.");
 
+        return new MoneyRevenueCropShippingDepositBatchVerification(
+            exactRoute.TerminalActionBefore,
+            expected,
+            exactRoute.Evidence,
+            deposits.ToArray(),
+            slotIndex!.Value,
+            unitPrice!.Value,
+            deposits.Count,
+            expectedPendingValue,
+            pendingValue);
+    }
+
+    internal static MoneyRevenueCropShippingRecurrenceVerification
+        VerifyShippingRecurrence(
+            string recurrenceManifest,
+            string recurrenceReceipt,
+            string expectedBeforeSnapshotPath,
+            string expectedBeforeStateHash,
+            long pendingValue)
+    {
+        Require(pendingValue > 0,
+            "Money Revenue crop shipping recurrence value is invalid.");
         var recurrenceManifestPath = RequiredFile(
-            request.RevenueRecurrenceManifestPath,
+            recurrenceManifest,
             "Money Revenue crop shipping recurrence manifest");
         var recurrenceReceiptPath = RequiredFile(
-            request.RevenueRecurrenceReceiptPath,
+            recurrenceReceipt,
             "Money Revenue crop shipping recurrence receipt");
         var manifest = CurrentTeacherFrontierSupport.Read<
             MoneyRevenueRecurrenceProofManifest>(
@@ -178,14 +249,14 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
                     MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement &&
                 SamePath(
                     manifest.Transitions[0].BeforeSnapshotPath,
-                    transitions[^1].AfterSnapshotPath) &&
+                    expectedBeforeSnapshotPath) &&
                 BootstrapArtifactGuard.EqualJson(recurrence, rebuilt) &&
                 recurrence.ProofVerified &&
                 recurrence.Prefix is not null &&
                 recurrence.Transitions.Length == 1 &&
                 recurrence.Transitions[0].Progression.TransitionKind ==
                     MoneyRevenueTransitionKinds.NativeShippingDaySettlement &&
-                recurrence.Prefix.InitialStateHash == expected.StateHash &&
+                recurrence.Prefix.InitialStateHash == expectedBeforeStateHash &&
                 recurrence.Prefix.TotalRevenue == pendingValue &&
                 recurrence.Transitions[0].Progression
                     .ConsumedPendingShippingValue == pendingValue &&
@@ -195,19 +266,8 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
             throw new InvalidDataException(
                 "Money Revenue crop shipping recurrence prefix is missing.");
 
-        return new MoneyRevenueCropTerminalSettlementVerification(
-            MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement,
-            exactRoute.TerminalActionBefore.StateHash,
+        return new MoneyRevenueCropShippingRecurrenceVerification(
             prefix.FinalStateHash,
-            exactRoute.Evidence,
-            string.Empty,
-            string.Empty,
-            string.Empty,
-            deposits.ToArray(),
-            slotIndex!.Value,
-            deposits.Count,
-            unitPrice!.Value,
-            checked((int)pendingValue),
             recurrenceManifestPath,
             Hash(recurrenceManifestPath),
             recurrenceReceiptPath,

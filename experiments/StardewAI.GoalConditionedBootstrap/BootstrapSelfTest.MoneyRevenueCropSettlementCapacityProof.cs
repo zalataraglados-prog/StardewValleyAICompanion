@@ -135,6 +135,15 @@ internal static partial class BootstrapSelfTest
                 proof.CoveredTerminalRequestIds.Length == 10 &&
                 proof.AggregateSettlementCapacityVerified,
             "Same-day crop settlement waves were not aggregated exactly.");
+        VerifySharedMoneyCropShippingSettlement(
+            root,
+            planPath,
+            plan,
+            plantingSnapshotPath,
+            layoutPaths,
+            dailySnapshotPaths,
+            dailyProofPath,
+            proof);
 
         var lateSnapshot = MoneyCropDailyCapacitySnapshot(120, 100);
         var lateTime = JsonNode.Parse(
@@ -184,4 +193,5 @@ internal static partial class BootstrapSelfTest
             PlantingDayOfMonth = 1,
             LocationContext = "outdoor_seasonal"
         };
+
 }
