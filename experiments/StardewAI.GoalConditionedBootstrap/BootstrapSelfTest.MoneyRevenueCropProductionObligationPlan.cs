@@ -772,6 +772,8 @@ internal static partial class BootstrapSelfTest
         state["player"] = JsonSerializer.SerializeToElement(new
         {
             location_id = MoneyCropField("Farm"),
+            money = MoneyCropRuntimeField(0),
+            total_money_earned = MoneyCropRuntimeField(0U),
             seed_inventory = MoneyCropRuntimeField(new[]
             {
                 new
@@ -787,6 +789,23 @@ internal static partial class BootstrapSelfTest
         var farm = JsonNode.Parse(state["farm"].GetRawText())!.AsObject();
         farm["crops"] = JsonSerializer.SerializeToNode(
             MoneyCropRuntimeField(Array.Empty<object>()),
+            JsonDefaults.Options);
+        farm["shipping_bins"] = JsonSerializer.SerializeToNode(
+            MoneyCropRuntimeField(new[]
+            {
+                new
+                {
+                    completed = true,
+                    bin_scope = "personal",
+                    player_id = "123",
+                    pending_settlement_value = 0,
+                    pending_settlement_value_complete = true,
+                    pending_settlement_timing =
+                        "next_native_day_transition",
+                    contents_signature = "empty-shipping-scope",
+                    contents_truncated = false
+                }
+            }),
             JsonDefaults.Options);
         state["farm"] = JsonSerializer.SerializeToElement(
             farm,

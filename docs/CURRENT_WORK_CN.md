@@ -4,7 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 作物逐波输出留存证明
+## 当前切片 · 2026-10-18 Money 作物原生商店结算证明
+
+- `output-retention-terminal:<commitment>:<wave>` 是“留存+终端结算”的组合义务。checkpoint 不再让单独的 output-retention fragment 关闭该请求；新增 `money_revenue_crop_terminal_settlement_proof.v1` 后，只有独立重建作物计划、留存 proof、资源中性路线、精确 ShopMenu sale 与单转换 Revenue recurrence 的组合 proof 才能计入分子。
+- 终端路线验证已从原 `MoneyRevenueTerminalExecutionProofBuilder` 抽成单一共享验证器，原 terminal proof 与作物结算 proof 共用同一组允许动作、continuation identity、执行回执、状态连续性与持久资源不变门槛，没有新增路线候选、编译器或执行器。
+- hermetic 正例为 5 个草莓收获波次分别出售保守 `2` 件并取得精确收入。仅有 5 个留存 fragment 时 checkpoint 仍只验证布局、容量和生命周期 `3` 项，5 个 terminal 请求保持 pending；加入 5 个组合结算 proof 后才成为 `8` 项。少卖 1 件会失败关闭。
+- fragment index 已升级为 v8，checkpoint 已升级为 v7。当前 v1 只关闭已留存产物的原生商店售卖分支；运输箱逐件投递、原生隔夜结算及其日内容量仍 pending。尚未采集正式 fragment，Money 仍为 `0/18`，`formal_product_training_authorized=false`。
+
+## 已收口 · 2026-10-18 Money 作物逐波输出留存证明
 
 - 新增 `money_revenue_crop_output_retention_proof.v1`。每份证明只覆盖一个精确承诺的一个收获波次，独立重建作物义务计划与原生生命周期 proof，并只选择该波次连续的既有 `executor.harvest_crop` 队列和统一执行回执；收获动作数必须等于承诺地块总数。
 - 留存以透明玩家库存为唯一当前终点：精确 `qualified_item_id` 的库存净增必须不少于计划中的保守最小产量。额外随机产量只记录实际增量，不抬高计划的保守收入下界；地面 debris 不等于玩家已持有库存，也不能通过此证明。

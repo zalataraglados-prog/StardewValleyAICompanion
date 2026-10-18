@@ -13,7 +13,11 @@ internal static partial class BootstrapSelfTest
     private static string VerifyMoneyRevenueShopRecurrenceArtifact(
         SnapshotEnvelope before,
         SnapshotEnvelope after,
-        string fixtureId = "default")
+        string fixtureId = "default",
+        string qualifiedItemId = "(O)24",
+        int slotIndex = 0,
+        int quantity = 1,
+        string shopId = "SeedShop")
     {
         var root = TempArtifactRoot(
             "money-revenue-shop-artifact",
@@ -30,9 +34,12 @@ internal static partial class BootstrapSelfTest
         var afterMoney = after.State["player"].GetProperty("money")
             .GetProperty("value").GetInt32();
         var saleValue = checked(afterMoney - beforeMoney);
-        Require(saleValue > 0,
+        Require(saleValue > 0 && quantity > 0 && saleValue % quantity == 0,
             "Shop-sale recurrence fixture requires positive revenue.");
+        var unitPrice = saleValue / quantity;
         var saleValueText = saleValue.ToString(
+            CultureInfo.InvariantCulture);
+        var unitPriceText = unitPrice.ToString(
             CultureInfo.InvariantCulture);
         var changes = new[]
         {
@@ -62,8 +69,9 @@ internal static partial class BootstrapSelfTest
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = reasons,
             RequestedEffect =
-                "shop_id=SeedShop;qualified_item_id=(O)24;quantity=1;" +
-                "expected_unit_price=" + saleValueText,
+                "shop_id=" + shopId + ";qualified_item_id=" +
+                qualifiedItemId + ";quantity=" + quantity +
+                ";expected_unit_price=" + unitPriceText,
             ObservedEffect = "money_increased_by_exact_sale_value",
             BlockReasons = Array.Empty<string>(),
             ChangedFacts = changes
@@ -81,12 +89,16 @@ internal static partial class BootstrapSelfTest
                 StateHash = before.StateHash,
                 Parameters = new[]
                 {
-                    RevenueParameter("slot_index", "0"),
-                    RevenueParameter("qualified_item_id", "(O)24"),
-                    RevenueParameter("quantity", "1"),
-                    RevenueParameter("expected_unit_price", saleValueText),
+                    RevenueParameter(
+                        "slot_index",
+                        slotIndex.ToString(CultureInfo.InvariantCulture)),
+                    RevenueParameter("qualified_item_id", qualifiedItemId),
+                    RevenueParameter(
+                        "quantity",
+                        quantity.ToString(CultureInfo.InvariantCulture)),
+                    RevenueParameter("expected_unit_price", unitPriceText),
                     RevenueParameter("expected_total_value", saleValueText),
-                    RevenueParameter("expected_shop_id", "SeedShop")
+                    RevenueParameter("expected_shop_id", shopId)
                 },
                 Steps = new[]
                 {
@@ -94,7 +106,7 @@ internal static partial class BootstrapSelfTest
                     {
                         StepId = result.QueueItemId + ":sell",
                         StepType = "sell_shop_item",
-                        Target = "SeedShop:(O)24",
+                        Target = shopId + ":" + qualifiedItemId,
                         ExpectedEffect =
                             "money_increased_by_exact_sale_value",
                         EstimatedTicks = 30
