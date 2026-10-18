@@ -16,11 +16,34 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeEvidenceCommon.ps1"));
+    private static readonly string ProductionInput = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeMoneyCropProductionInput.ps1"));
 
     [Fact]
     public void RunnerUsesImmutableSaveAndExactMinimalModSet()
     {
-        Assert.Contains("Assert-RuntimeSourceSaveSlot", Runner,
+        Assert.Contains("[string] $ProductionInputManifestPath", Runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("[string] $SourceSaveSlotPath", Runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("[string] $RunPlanRequestPath", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("Read-MoneyCropNativeProductionInputManifest", Runner,
+            StringComparison.Ordinal);
+        Assert.Equal(3,
+            Runner.Split(
+                "Read-MoneyCropNativeProductionInputManifest",
+                StringSplitOptions.None).Length - 1);
+        Assert.Contains(
+            "production input manifest changed before process startup",
+            Runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "production input manifest changed during native production",
+            Runner,
             StringComparison.Ordinal);
         Assert.Contains("Copy-Item -LiteralPath $sourceSave", Runner,
             StringComparison.Ordinal);
@@ -49,8 +72,10 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
     [Fact]
     public void RunnerCompilesExistingActionsAndRoutesWithoutASecondExecutor()
     {
-        Assert.Contains(
+        Assert.DoesNotContain(
             "build-money-revenue-crop-native-production-run-plan",
+            Runner, StringComparison.Ordinal);
+        Assert.Contains("Copy-Item -LiteralPath $productionInput.RunPlanPath",
             Runner, StringComparison.Ordinal);
         Assert.Contains("Invoke-RuntimeCropActionBatch", Runner,
             StringComparison.Ordinal);
@@ -96,6 +121,42 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.DoesNotContain("api/v1/training/execute", Runner + CropRuntime,
             StringComparison.Ordinal);
         Assert.DoesNotContain("debug.", Runner + CropRuntime,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ManifestVerifierClosesEveryProductionInputLineage()
+    {
+        Assert.Contains(
+            "money_crop_native_production_input_manifest.v1",
+            ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("Assert-RuntimeFileIdentity", ProductionInput,
+            StringComparison.Ordinal);
+        foreach (var property in new[]
+        {
+            "decision_request_sha256",
+            "decision_receipt_sha256",
+            "snapshot_sha256",
+            "strategy_ledger_sha256",
+            "crop_production_obligation_request_sha256",
+            "crop_production_obligation_plan_sha256",
+            "crop_native_run_plan_request_sha256",
+            "crop_native_run_plan_sha256",
+            "source_save_tree_sha256"
+        })
+        {
+            Assert.Contains(property, ProductionInput,
+                StringComparison.Ordinal);
+        }
+        Assert.Contains("Get-RuntimeRawJsonProperty", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("Assert-MoneyCropInputIdSet", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("formal_product_training_authorized", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            ProductionInput,
             StringComparison.Ordinal);
     }
 

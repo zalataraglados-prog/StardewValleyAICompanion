@@ -52,6 +52,26 @@ function Get-RuntimeFileSha256 {
     }
 }
 
+function Assert-RuntimeFileIdentity {
+    param(
+        [Parameter(Mandatory)] [string] $Path,
+        [Parameter(Mandatory)] [string] $ExpectedSha256,
+        [Parameter(Mandatory)] [string] $Label
+    )
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        throw "$Label is missing: $fullPath"
+    }
+    $actualSha256 = Get-RuntimeFileSha256 -Path $fullPath
+    if (-not [string]::Equals(
+            $actualSha256,
+            $ExpectedSha256,
+            [StringComparison]::OrdinalIgnoreCase)) {
+        throw "$Label hash drifted: $fullPath"
+    }
+    return $fullPath
+}
+
 function Get-DirectoryContentHash {
     param([string] $Path)
     $root = [IO.Path]::GetFullPath($Path).TrimEnd('\')

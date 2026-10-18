@@ -4,9 +4,7 @@ param(
         (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [Parameter(Mandatory)]
-    [string] $SourceSaveSlotPath,
-    [Parameter(Mandatory)]
-    [string] $RunPlanRequestPath,
+    [string] $ProductionInputManifestPath,
     [string] $RunId =
         ("money-crop-native-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory =
@@ -20,6 +18,7 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropNative.ps1")
+. (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropProductionInput.ps1")
 
 function Get-SafeArtifactName {
     param([Parameter(Mandatory)] [string] $Value)
@@ -58,10 +57,13 @@ function Assert-RunPlan {
     }
 }
 
-$sourceSave = Assert-RuntimeSourceSaveSlot -Path $SourceSaveSlotPath
+$productionInput = Read-MoneyCropNativeProductionInputManifest `
+    -ProjectRoot $ProjectRoot -Path $ProductionInputManifestPath
+$productionInputManifest = $productionInput.Manifest
+$productionInputManifestPath = $productionInput.ManifestPath
+$productionInputManifestSha256 = $productionInput.ManifestSha256
+$sourceSave = $productionInput.SourceSavePath
 $sourceSlotName = Split-Path -Leaf $sourceSave
-$requestPath = Resolve-RuntimeEvidenceInputPath `
-    -ProjectRoot $ProjectRoot -Path $RunPlanRequestPath
 $outputRoot = Resolve-RuntimeEvidenceInputPath `
     -ProjectRoot $ProjectRoot -Path $OutputDirectory
 $runDirectory = Join-Path $outputRoot $RunId
@@ -96,9 +98,6 @@ $backendStderr = Join-Path $runDirectory "backend.stderr.log"
 $gameStdout = Join-Path $runDirectory "game.stdout.log"
 $gameStderr = Join-Path $runDirectory "game.stderr.log"
 
-if (-not (Test-Path -LiteralPath $requestPath -PathType Leaf)) {
-    throw "Money crop native-production run-plan request is missing: $requestPath"
-}
 if (-not (Test-Path -LiteralPath $smapiPath -PathType Leaf)) {
     throw "Runtime SMAPI is missing: $smapiPath"
 }
@@ -133,20 +132,22 @@ foreach ($required in @($backendDll, $loopDll, $bootstrapDll)) {
     }
 }
 
-Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-    "build-money-revenue-crop-native-production-run-plan",
-    "--request", $requestPath,
-    "--output", $runPlanPath)
+Copy-Item -LiteralPath $productionInput.RunPlanPath `
+    -Destination $runPlanPath
+Assert-RuntimeFileIdentity -Path $runPlanPath `
+    -ExpectedSha256 ([string]$productionInputManifest.crop_native_run_plan_sha256) `
+    -Label "Copied Money crop native run plan" | Out-Null
 $runPlan = Get-Content -LiteralPath $runPlanPath -Raw | ConvertFrom-Json
 Assert-RunPlan -Plan $runPlan
-$productionPlanPath = [IO.Path]::GetFullPath(
-    [string]$runPlan.crop_production_plan_path)
-$productionPlan = Get-Content -LiteralPath $productionPlanPath -Raw |
-    ConvertFrom-Json
-$runPlanRequest = Get-Content -LiteralPath $requestPath -Raw |
-    ConvertFrom-Json
+$productionPlanPath = $productionInput.ObligationPlanPath
+$productionPlan = $productionInput.ObligationPlan
+$runPlanRequest = $productionInput.RunPlanRequest
 
 $sourceSaveSha256Before = Get-DirectoryContentHash -Path $sourceSave
+if ($sourceSaveSha256Before -ne
+    [string]$productionInputManifest.source_save_tree_sha256) {
+    throw "Money crop source save drifted after manifest validation."
+}
 Copy-Item -LiteralPath $sourceSave -Destination $isolatedSlot -Recurse
 $isolatedSaveSha256Before = Get-DirectoryContentHash -Path $isolatedSlot
 if ($sourceSaveSha256Before -ne $isolatedSaveSha256Before) {
@@ -185,6 +186,12 @@ $runtimeModAllowlist = @(Get-RuntimeExactModAllowlist `
         "StardewAI.TransparentBridge" = "StardewAI.TransparentBridge"
     }))
 $isolatedModsSha256Before = Get-DirectoryContentHash -Path $isolatedMods
+$currentProductionInput = Read-MoneyCropNativeProductionInputManifest `
+    -ProjectRoot $ProjectRoot -Path $productionInputManifestPath
+if ($currentProductionInput.ManifestSha256 -ne
+    $productionInputManifestSha256) {
+    throw "Money crop production input manifest changed before process startup."
+}
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -246,6 +253,8 @@ try {
     Write-JsonFile -Path $sourcePreflightPath -Value ([ordered]@{
         schema_version = "money_crop_native_source_preflight.v1"
         status = if ($sourceBoundaryMatches) { "matched" } else { "rejected" }
+        production_input_manifest_path = $productionInputManifestPath
+        production_input_manifest_sha256 = $productionInputManifestSha256
         run_plan_path = $runPlanPath
         expected_source_state_hash = [string]$runPlan.source_state_hash
         observed_source_state_hash = $initialStateHash
@@ -537,10 +546,18 @@ try {
     if ($isolatedModsSha256After -ne $isolatedModsSha256Before) {
         throw "Isolated runtime Mods changed during crop native production."
     }
+    $currentProductionInput = Read-MoneyCropNativeProductionInputManifest `
+        -ProjectRoot $ProjectRoot -Path $productionInputManifestPath
+    if ($currentProductionInput.ManifestSha256 -ne
+        $productionInputManifestSha256) {
+        throw "Money crop production input manifest changed during native production."
+    }
     $summary = [ordered]@{
         schema_version = "money_crop_native_production_run_summary.v1"
         status = "passed"
         run_id = $RunId
+        production_input_manifest_path = $productionInputManifestPath
+        production_input_manifest_sha256 = $productionInputManifestSha256
         run_plan_path = $runPlanPath
         run_plan_sha256 = Get-RuntimeFileSha256 -Path $runPlanPath
         crop_production_plan_path = $productionPlanPath
@@ -587,6 +604,8 @@ catch {
         status = "failed"
         run_id = $RunId
         error = $failureMessage
+        production_input_manifest_path = $productionInputManifestPath
+        production_input_manifest_sha256 = $productionInputManifestSha256
         source_save_slot_path = $sourceSave
         source_save_sha256_before = $sourceSaveSha256Before
         source_save_sha256_after = $sourceSaveSha256After

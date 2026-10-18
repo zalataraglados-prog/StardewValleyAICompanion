@@ -16,24 +16,6 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
 
-function Assert-FileIdentity {
-    param(
-        [Parameter(Mandatory)] [string] $Path,
-        [Parameter(Mandatory)] [string] $ExpectedSha256,
-        [Parameter(Mandatory)] [string] $Label
-    )
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        throw "$Label is missing: $Path"
-    }
-    $actual = Get-RuntimeFileSha256 -Path $Path
-    if (-not [string]::Equals(
-            $actual,
-            $ExpectedSha256,
-            [StringComparison]::OrdinalIgnoreCase)) {
-        throw "$Label hash drifted: $Path"
-    }
-}
-
 if ([string]::IsNullOrWhiteSpace($InputId) -or
     [IO.Path]::GetFileName($InputId) -ne $InputId -or
     $InputId.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0) {
@@ -115,13 +97,13 @@ if (-not [string]::Equals(
         [StringComparison]::OrdinalIgnoreCase)) {
     throw "Money crop decision receipt points at a different request."
 }
-Assert-FileIdentity -Path $decisionPath `
+Assert-RuntimeFileIdentity -Path $decisionPath `
     -ExpectedSha256 ([string]$receipt.request_sha256) `
-    -Label "Money crop production decision request"
+    -Label "Money crop production decision request" | Out-Null
 $snapshotPath = [IO.Path]::GetFullPath([string]$receipt.snapshot_path)
-Assert-FileIdentity -Path $snapshotPath `
+Assert-RuntimeFileIdentity -Path $snapshotPath `
     -ExpectedSha256 ([string]$receipt.snapshot_sha256) `
-    -Label "Money crop production decision snapshot"
+    -Label "Money crop production decision snapshot" | Out-Null
 
 Write-RawJsonProperty -Path $ledgerPath -RawJson $receiptRaw `
     -PropertyName "final_ledger"
