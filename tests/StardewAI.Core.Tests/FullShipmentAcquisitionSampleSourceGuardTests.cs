@@ -2091,6 +2091,10 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             "scripts",
             "lib",
             "RuntimeEvidenceCommon.ps1");
+        var rawJson = ReadRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeRawJson.ps1");
         var runner = ReadRepositoryFile(
             "scripts",
             "Invoke-RuntimeFullShipmentSapPrefixSmoke.ps1");
@@ -2111,8 +2115,20 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             common,
             StringComparison.Ordinal);
         Assert.Contains(
-            "$document.RootElement.GetProperty($PropertyName)",
+            "function Get-RuntimeRawJsonProperty",
+            rawJson,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ConvertFrom-Json -InputObject $nameToken",
+            rawJson,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RuntimeRawJson.ps1",
             common,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "[Text.Json.JsonDocument]",
+            common + rawJson,
             StringComparison.Ordinal);
         foreach (var source in new[] { runner, rebuild, shop, resume })
         {
@@ -2131,6 +2147,52 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             Assert.DoesNotContain(
                 ".Value.ledger",
                 source,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void RuntimeRawJsonExtractionRunsOnWindowsPowerShell51AndPwsh()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var scriptPath = Path.Combine(
+            FindRepositoryRoot(),
+            "scripts",
+            "Test-RuntimeEvidenceRawJsonExtraction.ps1");
+        foreach (var executable in new[] { "powershell.exe", "pwsh.exe" })
+        {
+            using var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = executable,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            process.StartInfo.ArgumentList.Add("-NoProfile");
+            process.StartInfo.ArgumentList.Add("-NonInteractive");
+            process.StartInfo.ArgumentList.Add("-ExecutionPolicy");
+            process.StartInfo.ArgumentList.Add("Bypass");
+            process.StartInfo.ArgumentList.Add("-File");
+            process.StartInfo.ArgumentList.Add(scriptPath);
+
+            Assert.True(process.Start(), $"Unable to start {executable}.");
+            var standardOutput = process.StandardOutput.ReadToEnd();
+            var standardError = process.StandardError.ReadToEnd();
+            Assert.True(
+                process.WaitForExit(30_000),
+                $"{executable} raw JSON extraction test timed out.");
+            Assert.True(
+                process.ExitCode == 0,
+                $"{executable} failed: {standardError}");
+            Assert.Contains(
+                "runtime_raw_json_extraction_pass",
+                standardOutput,
                 StringComparison.Ordinal);
         }
     }
@@ -2876,6 +2938,13 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
 
     private static string ReadRepositoryFile(params string[] segments)
     {
+        return File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            Path.Combine(segments)));
+    }
+
+    private static string FindRepositoryRoot()
+    {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
         while (directory is not null &&
             !File.Exists(Path.Combine(
@@ -2885,9 +2954,7 @@ public sealed class FullShipmentAcquisitionSampleSourceGuardTests
             directory = directory.Parent;
         }
 
-        return File.ReadAllText(Path.Combine(
-            directory?.FullName ?? throw new InvalidOperationException(
-                "Cannot find repository root."),
-            Path.Combine(segments)));
+        return directory?.FullName ?? throw new InvalidOperationException(
+            "Cannot find repository root.");
     }
 }
