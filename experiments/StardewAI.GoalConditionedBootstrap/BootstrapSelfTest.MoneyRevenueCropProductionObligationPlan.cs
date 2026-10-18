@@ -79,6 +79,19 @@ internal static partial class BootstrapSelfTest
                 {
                     new MoneyRevenueCropProductionDecisionCommitment
                     {
+                        CommitmentId = "money.year2.spring.strawberry",
+                        SeedId = "745",
+                        TileCount = 100,
+                        PlantingYear = 2,
+                        PlantingSeason = "spring",
+                        PlantingDayOfMonth = 1,
+                        Tiles = Enumerable.Range(0, 100).Select(index =>
+                            new MoneyRevenueCropPlantingTile(
+                                5 + index % 10,
+                                6 + index / 10)).ToArray()
+                    },
+                    new MoneyRevenueCropProductionDecisionCommitment
+                    {
                         CommitmentId = "money.year2.spring.strawberry.extra",
                         SeedId = "745",
                         TileCount = 2,
@@ -101,13 +114,43 @@ internal static partial class BootstrapSelfTest
                     Path.GetFullPath(ledgerPath) &&
                 continuationReceipt.BaseStrategyLedgerSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(ledgerPath) &&
-                continuationReceipt.Mutations.Single().Request
+                continuationReceipt.Mutations[0].Request
                     .ExpectedLedgerRevision == 1 &&
-                continuationReceipt.Mutations.Single()
+                continuationReceipt.Mutations[0]
                     .ResultingLedgerRevision == 2 &&
+                continuationReceipt.Mutations[0]
+                    .ResultingCommitmentRevision == 2 &&
+                continuationReceipt.Mutations[1].Request
+                    .ExpectedLedgerRevision == 2 &&
+                continuationReceipt.Mutations[1]
+                    .ResultingLedgerRevision == 3 &&
+                continuationReceipt.Mutations[1]
+                    .ResultingCommitmentRevision == 1 &&
                 continuationReceipt.FinalLedger?.CropPlantingCommitments
                     .Length == 2,
             "Money crop-production continuation did not preserve ledger revision lineage.");
+        var incompleteContinuation = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCropProductionDecisionRequest>(
+                continuationDecisionPath,
+                "Money crop-production incomplete continuation fixture");
+        incompleteContinuation.Commitments =
+            incompleteContinuation.Commitments.Skip(1).ToArray();
+        var incompleteContinuationPath = Path.Combine(
+            root,
+            "crop-production-decision-incomplete-continuation.json");
+        Write(incompleteContinuationPath, incompleteContinuation);
+        var incompleteContinuationRejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
+                incompleteContinuationPath);
+        }
+        catch (InvalidDataException)
+        {
+            incompleteContinuationRejected = true;
+        }
+        Require(incompleteContinuationRejected,
+            "A crop-production continuation omitted an active base commitment.");
         Write(requestPath, new MoneyRevenueCropProductionObligationPlanRequest
         {
             SnapshotPath = snapshotPath,
