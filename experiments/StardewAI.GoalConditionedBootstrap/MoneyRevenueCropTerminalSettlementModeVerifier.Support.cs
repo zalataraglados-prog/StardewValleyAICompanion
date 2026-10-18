@@ -47,3 +47,21 @@ internal sealed record MoneyRevenueCropTerminalSettlementVerification(
     string RevenueRecurrenceManifestSha256,
     string RevenueRecurrenceReceiptPath,
     string RevenueRecurrenceReceiptSha256);
+
+internal sealed record MoneyRevenueCropShippingDepositBatchVerification(
+    SnapshotEnvelope TerminalActionBefore,
+    SnapshotEnvelope After,
+    MoneyRevenueTerminalQueueTransitionEvidence[] RouteTransitions,
+    MoneyRevenueCropShippingDepositEvidence[] Deposits,
+    int SlotIndex,
+    int UnitPrice,
+    int SettledQuantity,
+    long PendingValueBefore,
+    long PendingValueAfter);
+
+internal sealed record MoneyRevenueCropShippingRecurrenceVerification(
+    string FinalStateHash,
+    string ManifestPath,
+    string ManifestSha256,
+    string ReceiptPath,
+    string ReceiptSha256);

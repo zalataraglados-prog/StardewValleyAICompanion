@@ -4,12 +4,19 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-18 Money 作物结算日聚合容量证明
+## 当前切片 · 2026-10-18 Money 同日多波共享原生结算证明
+
+- 新增 `money_revenue_crop_shared_shipping_settlement_proof.v1`，用于一个收获日存在多个承诺/波次时的真实组合边界。它独立重建作物义务计划、整计划结算容量证明与每份输出留存证明，要求终端 fresh snapshot 在同一存档、玩家和收获日中持有全部保守库存分母。
+- 投箱逻辑没有复制：旧单波 `money_revenue_crop_terminal_settlement_proof.v2` 与新共享证明现在共同调用同一个单件原生投递批次校验器和同一个 Revenue 睡眠 recurrence 校验器。共享模式只允许一条资源中性路线，随后按容量证明固定顺序连续投递全部波次；待结算值必须从 `0` 跨波次严格递增，最后只允许一次原生睡眠结算。
+- fragment index 已升级为 v11、checkpoint 已升级为 v10。共享证明覆盖的每个 `output-retention-terminal:*` ID 才进入 request numerator；留存与聚合容量仍只作支持。单波 proof 与共享 proof 重复覆盖同一 request、重复波次、跨日波次、错误顺序、库存不足或金额链断裂均失败关闭。
+- hermetic 正例对同日两个承诺建立 `2+3` 件真实留存支持，执行 5 条连续单件投箱队列并以唯一睡眠结算 `600g`，checkpoint 同时关闭两个终端 request。正式 fragment 仍未采集，所以 Money 保持 `0/18`、`formal_product_training_authorized=false`。下一固定切片是 real Money native production collection runner：从 Teacher 承诺生成有退出条件的逐日队列，复用现有播种/浇水/收获/投箱/睡眠执行器采集上述全部 proof fragment。
+
+## 已收口 · 2026-10-18 Money 作物结算日聚合容量证明
 
 - 新增 `money_revenue_crop_settlement_capacity_proof.v1`。它重建完整作物义务计划、整计划逐日容量证明和全部布局证明，再把不同承诺的保守收获波次按同一 `harvest_total_day` 合并；每个保守单位都必须占用一条只含一次原生单件投递的 fresh-replan 队列。
 - 路线和时序没有产生第二套实现：作物维护层公开既有确定性 BFS 的终点；运输候选与容量证明共用 `ShippingBinRouteProjector`；投递编译器与容量证明共用 `ShippingSettlementBudgetPolicy.NativeSingleItemDepositTicks`。聚合日预算由既有维护 ticks、维护终点至运输箱站位的 BFS 尾程和 `N` 次投递 ticks 组成，必须在 autonomous recovery cutoff 前整体可达且不超时。
-- checkpoint fragment index 已升级为 v10、checkpoint 已升级为 v9。只要索引包含任一原生 shipping terminal proof，就必须有且只能有一份精确重建的整计划容量证明覆盖全部对应 terminal request；该支持证明不进入 request denominator，也不增加 numerator。hermetic 正例把同日两个承诺的 `2+3` 件产出合并为 5 条单件队列，并拒绝 18:50 起步的超时日及缺失聚合支持的 shipping checkpoint。
-- 该切片只证明计划可容纳，不把多个真实波次伪装成已经完成的一次原生隔夜结算。正式 fragment 尚未采集，Money 仍为 `0/18`，`formal_product_training_authorized=false`。下一固定切片是 real Money native production collection；采集组合必须明确证明同一结算夜下多个波次的连续投递和共享睡眠归因，再进入 terminal proof completion、Teacher comparison 与 criterion-local join。
+- 当时 checkpoint fragment index 升级为 v10、checkpoint 升级为 v9；当前已由上方共享结算切片推进到 v11/v10。整计划容量证明仍只作支持，不进入 request denominator，也不增加 numerator。
+- 该切片只证明计划可容纳；上方共享结算证明现已补齐多个真实波次连续投递和共享睡眠的组合边界。正式 fragment 尚未采集，Money 仍为 `0/18`，`formal_product_training_authorized=false`。
 
 ## 已收口 · 2026-10-18 Money 作物逐波输出留存证明
 

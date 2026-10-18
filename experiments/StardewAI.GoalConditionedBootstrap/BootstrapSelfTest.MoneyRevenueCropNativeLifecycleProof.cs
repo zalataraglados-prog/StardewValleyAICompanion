@@ -593,13 +593,15 @@ internal static partial class BootstrapSelfTest
         SnapshotEnvelope before,
         int totalDay,
         ref int sequence,
-        string optionId)
+        string optionId,
+        int[]? targetXs = null)
     {
+        targetXs ??= new[] { 5, 6 };
         var after = optionId switch
         {
-            "executor.plant_seed" => LifecyclePlant(before),
-            "executor.water_crop" => LifecycleWater(before),
-            "executor.harvest_crop" => LifecycleHarvest(before),
+            "executor.plant_seed" => LifecyclePlant(before, targetXs),
+            "executor.water_crop" => LifecycleWater(before, targetXs),
+            "executor.harvest_crop" => LifecycleHarvest(before, targetXs),
             "executor.sleep" => LifecycleSleep(before),
             _ => throw new InvalidDataException(
                 "Unknown lifecycle fixture option " + optionId)
@@ -610,7 +612,7 @@ internal static partial class BootstrapSelfTest
         var queuePath = Path.Combine(root, prefix + "-queue.json");
         var receiptPath = Path.Combine(root, prefix + "-receipt.json");
         var afterPath = Path.Combine(root, prefix + "-after.json");
-        var queue = LifecycleQueue(prefix, optionId, before);
+        var queue = LifecycleQueue(prefix, optionId, before, targetXs);
         var selectedCandidateId = "candidate." + prefix;
         var runId = "run." + prefix;
         var receipt = LifecycleReceipt(
@@ -643,7 +645,8 @@ internal static partial class BootstrapSelfTest
     private static ActionQueueEnvelope LifecycleQueue(
         string prefix,
         string optionId,
-        SnapshotEnvelope before)
+        SnapshotEnvelope before,
+        int[] targetXs)
     {
         var stepTypes = optionId == "executor.sleep"
             ? new[]
@@ -682,10 +685,10 @@ internal static partial class BootstrapSelfTest
                     }
                 }
                 : Array.Empty<SmallModelActionParameter>()).ToArray();
-        var targetXs = optionId == "executor.sleep"
+        var queueTargetXs = optionId == "executor.sleep"
             ? new[] { 5 }
-            : new[] { 5, 6 };
-        var items = targetXs.Select((targetX, itemIndex) =>
+            : targetXs;
+        var items = queueTargetXs.Select((targetX, itemIndex) =>
             new ActionQueueItem
             {
                 QueueItemId = prefix + ".item." + itemIndex,
@@ -797,11 +800,13 @@ internal static partial class BootstrapSelfTest
         };
     }
 
-    private static SnapshotEnvelope LifecyclePlant(SnapshotEnvelope before)
+    private static SnapshotEnvelope LifecyclePlant(
+        SnapshotEnvelope before,
+        int[] targetXs)
     {
         var after = LifecycleMutate(before, crops =>
         {
-            foreach (var tileX in new[] { 5, 6 })
+            foreach (var tileX in targetXs)
             {
                 crops.Add(LifecycleCropRow(
                     tileX,
@@ -816,7 +821,7 @@ internal static partial class BootstrapSelfTest
         var player = JsonNode.Parse(after.State["player"].GetRawText())!
             .AsObject();
         var stack = player["seed_inventory"]!["value"]![0]!["stack"]!;
-        stack.ReplaceWith(stack.GetValue<int>() - 2);
+        stack.ReplaceWith(stack.GetValue<int>() - targetXs.Length);
         after.State["player"] = JsonSerializer.SerializeToElement(
             player,
             JsonDefaults.Options);
@@ -824,27 +829,34 @@ internal static partial class BootstrapSelfTest
         return after;
     }
 
-    private static SnapshotEnvelope LifecycleWater(SnapshotEnvelope before) =>
+    private static SnapshotEnvelope LifecycleWater(
+        SnapshotEnvelope before,
+        int[] targetXs) =>
         LifecycleMutate(before, crops =>
         {
-            foreach (var crop in crops)
+            foreach (var crop in crops.Where(crop => targetXs.Contains(
+                         crop!["tile_x"]!.GetValue<int>())))
                 crop!["watered"] = true;
         });
 
-    private static SnapshotEnvelope LifecycleHarvest(SnapshotEnvelope before) =>
+    private static SnapshotEnvelope LifecycleHarvest(
+        SnapshotEnvelope before,
+        int[] targetXs) =>
         AddLifecycleHarvestOutput(LifecycleMutate(before, crops =>
         {
-            foreach (var crop in crops)
+            foreach (var crop in crops.Where(crop => targetXs.Contains(
+                         crop!["tile_x"]!.GetValue<int>())))
             {
                 crop!["fully_grown"] = true;
                 crop["ready_for_harvest"] = false;
                 crop["day_of_current_phase"] = 4;
                 crop["days_until_next_harvest_if_watered"] = 4;
             }
-        }));
+        }), targetXs.Length);
 
     private static SnapshotEnvelope AddLifecycleHarvestOutput(
-        SnapshotEnvelope after)
+        SnapshotEnvelope after,
+        int quantity)
     {
         var player = JsonNode.Parse(after.State["player"].GetRawText())!
             .AsObject();
@@ -862,7 +874,7 @@ internal static partial class BootstrapSelfTest
                 ["slot_index"] = 1,
                 ["item_id"] = "400",
                 ["qualified_item_id"] = "(O)400",
-                ["stack"] = 2,
+                ["stack"] = quantity,
                 ["quality"] = 0,
                 ["sell_to_store_price"] = 120,
                 ["maximum_stack_size"] = 999,
@@ -872,7 +884,7 @@ internal static partial class BootstrapSelfTest
         else
         {
             var stack = matches[0]!["stack"]!;
-            stack.ReplaceWith(stack.GetValue<int>() + 2);
+            stack.ReplaceWith(stack.GetValue<int>() + quantity);
         }
         player["inventory"]!["value"] = inventory;
         after.State["player"] = JsonSerializer.SerializeToElement(
