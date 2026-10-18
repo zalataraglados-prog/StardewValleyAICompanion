@@ -120,8 +120,11 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
         "schedule. Pre-plant days contain only one native sleep boundary. Plant, conditional " +
         "water and harvest batches preserve compiler order and the configured " +
         "queue limit; one native sleep closes every non-terminal day. Runtime " +
-        "must capture planting-layout and daily-capacity snapshots at the marked " +
-        "boundaries, compile each batch through the existing action compiler, " +
-        "and retain every queue receipt. This is orchestration, not evidence, a " +
+        "must keep every commitment inside one bounded farm-layout projection, " +
+        "rebuild the existing site-preparation plan after every preparation " +
+        "action, and only then capture planting-layout and daily-capacity " +
+        "snapshots at the marked boundaries. It compiles each batch through " +
+        "the existing action compiler and retains every queue receipt. This is " +
+        "orchestration, not evidence, a " +
         "second crop planner, a model label or formal training authorization.";
 }

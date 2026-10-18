@@ -73,6 +73,200 @@ function New-RuntimeCropTransition {
     }
 }
 
+function Invoke-RuntimeCropSitePreparationAction {
+    param(
+        [Parameter(Mandatory)] $Context,
+        [Parameter(Mandatory)] [string] $BackendUrl,
+        [Parameter(Mandatory)] [string] $SourceSnapshotPath,
+        [Parameter(Mandatory)] $Step,
+        [Parameter(Mandatory)] [int] $TotalDay,
+        [Parameter(Mandatory)] [string] $Name
+    )
+    $source = Import-RuntimeSnapshotFile -Path $SourceSnapshotPath `
+        -BackendUrl $BackendUrl -SnapshotProfile "farm_layout"
+    $sourceDay = [int](Read-StateValue $source.Value "time" "total_days")
+    $sourceLocation = [string](Read-StateValue `
+        $source.Value "player" "location_id")
+    $optionId = [string]$Step.action_option_id
+    $candidateId = [string]$Step.candidate_id
+    if ($sourceDay -ne $TotalDay -or $sourceLocation -ne "Farm" -or
+        $optionId -notin @(
+            "executor.clear_obstacle",
+            "executor.break_farm_resource_clump",
+            "executor.till_soil") -or
+        [string]::IsNullOrWhiteSpace($candidateId)) {
+        throw "Crop site-preparation action $Name has an invalid source or binding."
+    }
+
+    $parameters = [Collections.Generic.List[object]]::new()
+    foreach ($parameter in @($Step.parameters)) {
+        if ([string]$parameter.name -eq "precondition") {
+            throw "Crop site-preparation candidate supplied an unexpected precondition."
+        }
+        $parameters.Add([ordered]@{
+            name = [string]$parameter.name
+            value = [string]$parameter.value
+        })
+    }
+    $parameters.Add([ordered]@{
+        name = "precondition"
+        value = "candidate_id:$candidateId"
+    })
+    $modelOutput = [ordered]@{
+        schema_version = "small_model_action.v1"
+        model_output_id = "model-output:site-preparation:$candidateId"
+        source_model = "authoritative_crop_site_preparation_plan.v1"
+        state_hash = [string]$source.Value.state_hash
+        goal_id = "daily.closed_loop"
+        execution_mode = "training_singleplayer"
+        actor = [ordered]@{
+            actor_id = "training_farmer.main"
+            actor_type = "training_farmer"
+            control_surface = "training_sandbox"
+        }
+        actions = @([ordered]@{
+            action_id = "site-preparation:$candidateId"
+            option_id = $optionId
+            rationale = "authoritative_crop_site_preparation_plan"
+            parameters = @($parameters)
+        })
+    }
+    $compileRoot = Join-Path $Context.ArtifactDirectory "$Name-compile"
+    $modelOutputPath = Join-Path $compileRoot "model-output.json"
+    $queuePath = Join-Path $compileRoot "compiled-queue.json"
+    Write-JsonFile -Path $modelOutputPath -Value $modelOutput
+    $compiled = Invoke-JsonPost `
+        -Url "$BackendUrl/api/v1/small-model/action-queue/compile" `
+        -Body $modelOutput
+    Write-Utf8Text -Path $queuePath -Value $compiled.Raw
+    $items = @($compiled.Value.items)
+    if ([string]$compiled.Value.schema_version -ne "action_queue.v1" -or
+        [string]$compiled.Value.status -ne "pending" -or
+        $items.Count -ne 1 -or
+        [string]$items[0].option_id -ne $optionId -or
+        [string]$items[0].status -ne "pending") {
+        $diagnostics = @($compiled.Value.compiler_diagnostics) -join " | "
+        throw "Crop site-preparation action $Name did not compile exactly: $diagnostics"
+    }
+
+    $artifacts = Invoke-RuntimePrecompiledQueue -Context $Context `
+        -Name $Name -QueuePath $queuePath -BeforePath $source.Path `
+        -ExecutionTarget "runtime_harness"
+    if ([string]$artifacts.Execution.selected_candidate_id -ne
+        $candidateId) {
+        throw "Crop site-preparation action $Name candidate identity drifted."
+    }
+    return $artifacts
+}
+
+function Invoke-RuntimeCropSitePreparation {
+    param(
+        [Parameter(Mandatory)] $Context,
+        [Parameter(Mandatory)] [string] $BackendUrl,
+        [Parameter(Mandatory)] [string] $SnapshotRootUrl,
+        [Parameter(Mandatory)] [string] $BootstrapDll,
+        [Parameter(Mandatory)] [string] $ProductionPlanPath,
+        [Parameter(Mandatory)] [string] $SourceSnapshotPath,
+        [Parameter(Mandatory)] $LayoutIntent,
+        [Parameter(Mandatory)] [int] $TotalDay,
+        [Parameter(Mandatory)] [string] $OutputDirectory
+    )
+    $tiles = @($LayoutIntent.tiles)
+    if ($tiles.Count -eq 0) {
+        throw "Crop site-preparation layout contains no tiles."
+    }
+    $minX = [int](($tiles | Measure-Object tile_x -Minimum).Minimum)
+    $maxX = [int](($tiles | Measure-Object tile_x -Maximum).Maximum)
+    $minY = [int](($tiles | Measure-Object tile_y -Minimum).Minimum)
+    $maxY = [int](($tiles | Measure-Object tile_y -Maximum).Maximum)
+    if ($maxX - $minX + 1 -gt 32 -or $maxY - $minY + 1 -gt 32) {
+        throw "Crop site-preparation layout exceeds one bounded farm projection."
+    }
+
+    $commitmentId = [string]$LayoutIntent.commitment_id
+    $safeId = $commitmentId -replace '[^a-zA-Z0-9._-]', '_'
+    $planPaths = [Collections.Generic.List[string]]::new()
+    $executions = [Collections.Generic.List[object]]::new()
+    $currentFullPath = [IO.Path]::GetFullPath($SourceSnapshotPath)
+    $maxIterations = 2 * $tiles.Count + 1
+    for ($iteration = 1; $iteration -le $maxIterations; $iteration++) {
+        $iterationName = "site-preparation-$safeId-$($iteration.ToString('D3'))"
+        $layoutUrl = "$SnapshotRootUrl/api/v1/snapshot?profile=farm_layout" +
+            "&min_x=$minX&min_y=$minY&max_x=$maxX&max_y=$maxY&fresh=true"
+        $capture = Get-FreshRuntimeSnapshot -Url $layoutUrl -TimeoutSeconds 60
+        $layoutSnapshotPath = Join-Path $OutputDirectory `
+            "$iterationName-snapshot.json"
+        Save-RuntimeSnapshotAndIngest -Path $layoutSnapshotPath `
+            -Capture $capture -BackendUrl $BackendUrl `
+            -SnapshotProfile "farm_layout"
+        $observedDay = [int](Read-StateValue `
+            $capture.Value "time" "total_days")
+        $observedLocation = [string](Read-StateValue `
+            $capture.Value "player" "location_id")
+        if ($observedDay -ne $TotalDay -or $observedLocation -ne "Farm") {
+            throw "Crop site-preparation snapshot left its Farm/day boundary."
+        }
+
+        $requestPath = Join-Path $OutputDirectory `
+            "$iterationName-request.json"
+        $planPath = Join-Path $OutputDirectory "$iterationName-plan.json"
+        Write-JsonFile -Path $requestPath -Value ([ordered]@{
+            schema_version =
+                "money_revenue_crop_site_preparation_plan_request.v1"
+            crop_production_plan_path = $ProductionPlanPath
+            commitment_id = $commitmentId
+            preparation_snapshot_path = $layoutSnapshotPath
+            location_id = "Farm"
+            tiles = $tiles
+            formal_product_training_authorized = $false
+        })
+        Invoke-RuntimeBootstrap -BootstrapDll $BootstrapDll -Arguments @(
+            "build-money-revenue-crop-site-preparation-plan",
+            "--request", $requestPath,
+            "--output", $planPath)
+        $planPaths.Add($planPath)
+        $plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
+        if ([string]$plan.schema_version -ne
+                "money_revenue_crop_site_preparation_plan.v1" -or
+            [string]$plan.commitment_id -ne $commitmentId -or
+            [int]$plan.preparation_total_day -ne $TotalDay -or
+            [int]$plan.tile_count -ne $tiles.Count -or
+            [int]$plan.blocked_count -ne 0 -or
+            -not [bool]$plan.site_preparation_plan_ready -or
+            [bool]$plan.formal_product_training_authorized) {
+            $reasons = @($plan.steps | ForEach-Object {
+                @($_.block_reasons)
+            }) -join ","
+            throw "Crop site preparation is blocked for ${commitmentId}: $reasons"
+        }
+
+        $pending = @($plan.steps | Where-Object {
+            [string]$_.plan_status -ne "already_prepared"
+        })
+        if ($pending.Count -eq 0) {
+            return [pscustomobject]@{
+                SourcePath = $currentFullPath
+                PlanPaths = @($planPaths)
+                Executions = @($executions)
+            }
+        }
+
+        $step = $pending[0]
+        if ([string]$step.plan_status -notin @(
+                "direct_till_ready",
+                "clear_then_fresh_snapshot_rebind")) {
+            throw "Crop site-preparation plan returned an unsupported ready status."
+        }
+        $execution = Invoke-RuntimeCropSitePreparationAction `
+            -Context $Context -BackendUrl $BackendUrl `
+            -SourceSnapshotPath $layoutSnapshotPath -Step $step `
+            -TotalDay $TotalDay -Name $iterationName
+        $executions.Add($execution)
+        $currentFullPath = $execution.AfterPath
+    }
+    throw "Crop site preparation exceeded its bounded action count for $commitmentId."
+}
+
 function Invoke-RuntimeCropActionBatch {
     param(
         [Parameter(Mandatory)] $Context,

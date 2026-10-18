@@ -8,9 +8,10 @@
 
 - `Invoke-RuntimeMoneyCropNativeProduction.ps1` 已把 `money_revenue_crop_native_production_run_plan.v1` 接入隔离源存档、精确双 Mod allowlist、现有 action/plan compiler、RuntimeTestHarness 原生执行和统一回执链。运行器按连续日期逐批执行 `plant -> conditional water -> harvest`，每次跨地图只编译一个透明 connector 并 fresh replan，每个非终端日复用既有 `recovery.stabilize_day` 生成唯一原生睡眠。
 - run plan 现在从权威 crop-production 源快照当天开始，而不是错误地跳到最早种植日；源日到种植日前的每一天只能有一个原生 sleep boundary。运行器在任何动作前输出 `money_crop_native_source_preflight.v1`，要求隔离存档首次 fresh full snapshot 的 `state_hash` 和 `total_days` 同时精确匹配计划源边界；不匹配时立即停止，不能用同日期的相似存档代替。
+- 播种日不再假设选中地块已经长期保持 HoeDirt。每个承诺的布局必须能被一个 `32×32` `farm_layout` 投影完整覆盖；运行器在布局与容量取证前调用既有 `money_revenue_crop_site_preparation_plan.v1`，一次只执行一个现有 `clear_obstacle`、`break_farm_resource_clump` 或 `till_soil` 候选，每次状态变化后重新抓取 fresh bounded snapshot 并重建计划，直到全部目标格被透明状态确认为 `already_prepared`。阻塞、候选缺失、日期/地点漂移或有界动作数耗尽都会停止运行，不会直接尝试播种。
 - 浇水批次在执行前只按透明 `farm.crops[].needs_watering` 过滤；雨天不生成冗余浇水，但若当天逐日容量证明要求边界快照，仍可通过资源中性的 crop-ingress 到达 Farm。跨地图 move 被现有 compiler 重写为 connector 时现在保留唯一 `candidate_id`，因此路线、作物动作和睡眠的 queue/receipt/after snapshot 都能维持可审计候选身份。
 - 当前收集器会物化 planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。它尚未执行真实游戏采集，也尚未接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
-- 下一固定切片：从 Money denominator 物化权威 crop-production plan、布局意图与其精确源存档，完成首次隐藏静音原生运行并修复仅由真实回执暴露的缺口；成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套作物候选、规划器或执行器。
+- 下一固定切片：从 Money denominator 物化权威 crop-production plan、上游非机械布局决定与其精确源存档，完成首次隐藏静音原生运行并修复仅由真实回执暴露的缺口；成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套作物候选、规划器或执行器。
 
 ## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
@@ -84,6 +85,7 @@
 - 透明桥已有目的受限的 `farm_layout` 投影，计划器也已复用现有 `executor.clear_obstacle`、`executor.break_farm_resource_clump`、`executor.till_soil` 候选；清障后必须取得 fresh snapshot 再绑定锄地。
 - #311 已关闭：局部边界与遍历防整数回绕，resource-clump 站位统一使用共享 BFS，zero-stamina 与缺失 stamina 均在候选和编译阶段失败关闭；crop denominator 的 required fields、过期种植日、已有预留和精确计划哈希也已收口。
 - 该层仍只是机械执行计划，不是 planting-layout proof、生产证据或训练授权；Money 保持 `0/18`。
+- 当前原生作物运行器已消费该计划：播种日按一个候选一次执行并在每次清障/锄地后 fresh rebind，完成后才捕获 planting-layout 与 aggregate daily-capacity 边界。场地准备动作本身仍不增加证据分子，也不改变训练授权。
 ## 历史记录 · 2026-10-16 Money 作物布局证明检查点
 
 - `money_revenue_crop_production_obligation_plan.v1` 的每项承诺现显式保留种植季节、基础生长天数，并把 `planting-layout:<commitment>` 纳入同一个证据分母。旧计划缺字段或请求分母漂移时必须重建，不能沿用。
