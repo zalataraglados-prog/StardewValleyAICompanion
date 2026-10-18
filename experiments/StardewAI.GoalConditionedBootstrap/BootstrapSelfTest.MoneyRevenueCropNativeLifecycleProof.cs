@@ -100,6 +100,36 @@ internal static partial class BootstrapSelfTest
         var capacityProof = MoneyRevenueCropDailyCapacityProofBuilder.Build(
             capacityRequestPath);
         Write(capacityProofPath, capacityProof);
+        var settlementCapacityRequestPath = Path.Combine(
+            root,
+            "settlement-capacity-request.json");
+        var settlementCapacityProofPath = Path.Combine(
+            root,
+            "settlement-capacity-proof.json");
+        Write(settlementCapacityRequestPath,
+            new MoneyRevenueCropSettlementCapacityProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                DailyCapacityProofPath = capacityProofPath
+            });
+        var settlementCapacity =
+            MoneyRevenueCropSettlementCapacityProofBuilder.Build(
+                settlementCapacityRequestPath);
+        Require(settlementCapacity.Status ==
+                    "verified_aggregate_crop_settlement_capacity" &&
+                settlementCapacity.SettlementDayCount == 5 &&
+                settlementCapacity.Days.All(day =>
+                    day.Waves.Length == 1 &&
+                    day.MinimumShippingUnits == 2 &&
+                    day.RequiredQueueCount == 2 &&
+                    day.QueueItemCountPerTransition == 1 &&
+                    day.TimeBudgetFits &&
+                    day.AllTargetsReachable &&
+                    day.ShippingBinReachable) &&
+                settlementCapacity.AggregateSettlementCapacityVerified &&
+                !settlementCapacity.FormalProductTrainingAuthorized,
+            "Money crop aggregate settlement capacity lost its day denominator.");
+        Write(settlementCapacityProofPath, settlementCapacity);
 
         var transitions = new List<
             MoneyRevenueCropNativeLifecycleTransitionRequest>();
@@ -407,7 +437,11 @@ internal static partial class BootstrapSelfTest
                 DailyCapacityProofPaths = new[] { capacityProofPath },
                 NativeLifecycleProofPaths = new[] { proofPath },
                 OutputRetentionProofPaths = retentionProofPaths,
-                TerminalSettlementProofPaths = settlementProofPaths
+                TerminalSettlementProofPaths = settlementProofPaths,
+                SettlementCapacityProofPaths = new[]
+                {
+                    settlementCapacityProofPath
+                }
             });
         Write(checkpointRequestPath,
             new MoneyRevenueCropProductionProofCheckpointRequest
@@ -421,11 +455,41 @@ internal static partial class BootstrapSelfTest
                 checkpoint.VerifiedNativeLifecycles.Length == 1 &&
                 checkpoint.VerifiedOutputRetentions.Length == 5 &&
                 checkpoint.VerifiedTerminalSettlements.Length == 5 &&
+                checkpoint.VerifiedSettlementCapacities.Length == 1 &&
                 checkpoint.VerifiedRequestIds.Contains(
                     proof.EvidenceRequestId,
                     StringComparer.Ordinal) &&
                 !checkpoint.FutureCropProductionProofReady,
             "Money crop lifecycle proof did not enter the checkpoint denominator.");
+
+        var missingSettlementCapacityIndexPath = Path.Combine(
+            root,
+            "missing-settlement-capacity-fragment-index.json");
+        var missingSettlementCapacityRequestPath = Path.Combine(
+            root,
+            "missing-settlement-capacity-checkpoint-request.json");
+        Write(missingSettlementCapacityIndexPath,
+            new MoneyRevenueCropProductionProofFragmentIndex
+            {
+                CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 =
+                    CurrentTeacherFrontierSupport.HashFile(planPath),
+                PlantingLayoutProofPaths = new[] { layoutProofPath },
+                DailyCapacityProofPaths = new[] { capacityProofPath },
+                NativeLifecycleProofPaths = new[] { proofPath },
+                OutputRetentionProofPaths = retentionProofPaths,
+                TerminalSettlementProofPaths = settlementProofPaths
+            });
+        Write(missingSettlementCapacityRequestPath,
+            new MoneyRevenueCropProductionProofCheckpointRequest
+            {
+                CropProductionPlanPath = planPath,
+                FragmentIndexPath = missingSettlementCapacityIndexPath
+            });
+        RequireRejects(
+            () => MoneyRevenueCropProductionProofCheckpointBuilder.Build(
+                missingSettlementCapacityRequestPath),
+            "A native crop shipping settlement without aggregate day capacity was admitted.");
 
         var missingOutputAfterPath = Path.Combine(
             root,

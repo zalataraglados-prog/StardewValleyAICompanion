@@ -41,6 +41,11 @@ public sealed record CropMaintenanceCapacityEvaluation(
     bool AllTargetsReachable,
     string[] BlockingReasons);
 
+public readonly record struct CropMaintenanceRouteEvaluation(
+    int MovementTileCount,
+    int EndTileX,
+    int EndTileY);
+
 public static class CropMaintenanceCapacityEvaluator
 {
     public static CropMaintenanceCapacityEvaluation Evaluate(
@@ -147,7 +152,7 @@ public static class CropMaintenanceCapacityEvaluator
                 orderedTargets);
             if (route.HasValue)
             {
-                movementTiles = route.Value;
+                movementTiles = route.Value.MovementTileCount;
                 allTargetsReachable = true;
             }
             else
@@ -245,7 +250,61 @@ public static class CropMaintenanceCapacityEvaluator
                 .ToArray());
     }
 
-    private static int? BuildRoute(
+    public static CropMaintenanceRouteEvaluation? EvaluateRoute(
+        SnapshotEnvelope snapshot,
+        string locationId,
+        IReadOnlyCollection<CropMaintenanceTileTarget> targets)
+    {
+        var playerLocation = ReadStateFieldString(
+            snapshot,
+            "player",
+            "location_id");
+        var startX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
+        var startY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
+        var collisionGrid = ReadStateFieldValue(
+            snapshot,
+            "locations",
+            "collision_grid");
+        if (!string.Equals(
+                playerLocation,
+                locationId,
+                StringComparison.OrdinalIgnoreCase) ||
+            !startX.HasValue ||
+            !startY.HasValue ||
+            !collisionGrid.HasValue ||
+            collisionGrid.Value.ValueKind != JsonValueKind.Object ||
+            !string.Equals(
+                ReadString(collisionGrid.Value, "location_id"),
+                locationId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+        var width = ReadInt(collisionGrid.Value, "width");
+        var height = ReadInt(collisionGrid.Value, "height");
+        if (width <= 0 || height <= 0)
+            return null;
+        var blocked = RouteGridPathfinder.ReadBlockedTiles(
+            collisionGrid.Value);
+        var unsupported = RouteGridPathfinder.ReadUnsupportedActionTiles(
+            snapshot);
+        foreach (var target in targets.Where(value => value.BlocksMovement))
+        {
+            blocked.Add(RouteGridPathfinder.Key(
+                target.TileX,
+                target.TileY));
+        }
+        return BuildRoute(
+            startX.Value,
+            startY.Value,
+            width,
+            height,
+            blocked,
+            unsupported,
+            targets);
+    }
+
+    private static CropMaintenanceRouteEvaluation? BuildRoute(
         int startX,
         int startY,
         int width,
@@ -298,7 +357,10 @@ public static class CropMaintenanceCapacityEvaluator
             currentY = selected.Stand.Y;
             remaining.Remove(selected.Target);
         }
-        return total;
+        return new CropMaintenanceRouteEvaluation(
+            total,
+            currentX,
+            currentY);
     }
 
     private static bool TryReadExactWateringCan(

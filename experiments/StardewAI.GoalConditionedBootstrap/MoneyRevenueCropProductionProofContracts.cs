@@ -395,7 +395,7 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_fragment_index.v9";
+        "money_revenue_crop_production_proof_fragment_index.v10";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -431,6 +431,10 @@ public sealed class MoneyRevenueCropProductionProofFragmentIndex
     public string[] TerminalSettlementProofPaths { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("settlement_capacity_proof_paths")]
+    public string[] SettlementCapacityProofPaths { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
@@ -439,7 +443,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpointRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint_request.v8";
+        "money_revenue_crop_production_proof_checkpoint_request.v9";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -455,7 +459,7 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_production_proof_checkpoint.v8";
+        "money_revenue_crop_production_proof_checkpoint.v9";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -522,6 +526,11 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
         { get; set; } =
             Array.Empty<MoneyRevenueCropTerminalSettlementProof>();
 
+    [JsonPropertyName("verified_settlement_capacities")]
+    public MoneyRevenueCropSettlementCapacityProof[]
+        VerifiedSettlementCapacities { get; set; } =
+            Array.Empty<MoneyRevenueCropSettlementCapacityProof>();
+
     [JsonPropertyName("future_crop_production_proof_ready")]
     public bool FutureCropProductionProofReady { get; set; }
 
@@ -534,12 +543,14 @@ public sealed class MoneyRevenueCropProductionProofCheckpoint
     [JsonPropertyName("checkpoint_policy")]
     public string CheckpointPolicy { get; set; } =
         "Only independently rebuilt proof fragments inside the exact plan " +
-        "denominator are verified. Version 7 admits planting-layout, exact " +
+        "denominator are verified. Version 9 admits planting-layout, exact " +
         "committed seed-reservation, exact shared-rollout seed-acquisition and " +
         "aggregate daily crop-capacity fragments plus receipt-bound native crop " +
         "lifecycles plus per-wave retained inventory support. Only a combined " +
         "native terminal-settlement proof can close an output-retention-terminal " +
-        "request; every unsupported terminal " +
+        "request. Shipping terminal proofs additionally require one exact plan-" +
+        "wide aggregate settlement-capacity support proof, which never increments " +
+        "the request numerator. Every unsupported terminal " +
         "request remains pending, so this checkpoint cannot authorize future-crop " +
         "proof, a fresh-save revenue schedule or formal product training.";
 }

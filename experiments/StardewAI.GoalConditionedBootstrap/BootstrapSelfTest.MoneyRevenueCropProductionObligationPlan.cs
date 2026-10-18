@@ -76,6 +76,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyCropSitePreparationPlan(root, planPath);
         VerifyMoneyCropPlantingLayoutCheckpoint(root, planPath, plan);
         VerifyMoneyCropDailyCapacityProof(root, planPath, plan);
+        VerifyMoneyCropSettlementCapacityAggregation();
         VerifyMoneyCropSeedAcquisitionProof(
             root,
             planPath,
