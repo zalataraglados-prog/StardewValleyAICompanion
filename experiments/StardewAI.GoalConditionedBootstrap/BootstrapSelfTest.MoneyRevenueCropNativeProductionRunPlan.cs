@@ -51,13 +51,30 @@ internal static partial class BootstrapSelfTest
             commitment.TileCount *
             (1 + commitment.RequiredWateringTotalDays.Length +
                 commitment.HarvestWaves.Length));
+        var expectedSeedAcquisitions = plan.Commitments
+            .Where(commitment => commitment.SeedQuantityShortfall > 0)
+            .ToArray();
         Require(runPlan.Status == "native_crop_production_run_ready" &&
+                runPlan.SchemaVersion ==
+                    "money_revenue_crop_native_production_run_plan.v2" &&
                 runPlan.FirstTotalDay == expectedFirstDay &&
                 runPlan.SourceTotalDay == expectedFirstDay &&
                 runPlan.SourceStateHash == sourceSnapshot.StateHash &&
                 runPlan.LastTotalDay == expectedLastDay &&
                 runPlan.DayCount == expectedLastDay - expectedFirstDay + 1 &&
                 runPlan.ActionCount == expectedActionCount &&
+                runPlan.SeedAcquisitionCount ==
+                    expectedSeedAcquisitions.Length &&
+                runPlan.SeedAcquisitions.Select(value =>
+                    (value.CommitmentId, value.SeedQualifiedItemId,
+                        value.RequiredQuantity, value.DeadlineTotalDay))
+                    .SequenceEqual(expectedSeedAcquisitions.Select(value =>
+                        (value.CommitmentId, value.SeedQualifiedItemId,
+                            value.SeedQuantityShortfall,
+                            value.SeedSupplyDeadlineTotalDay))) &&
+                runPlan.SeedAcquisitions.All(value =>
+                    value.ExecutionPolicy ==
+                        "economy.buy_supplies_one_unit_fresh_snapshot_slices") &&
                 runPlan.Days.Count(day => day.NativeSleepRequired) ==
                     runPlan.DayCount - 1 &&
                 runPlan.Days.SelectMany(day => day.ActionBatches)

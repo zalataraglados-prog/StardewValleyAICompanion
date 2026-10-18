@@ -16,6 +16,11 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeEvidenceCommon.ps1"));
+    private static readonly string SeedAcquisitionRuntime = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeMoneyCropSeedAcquisition.ps1"));
     private static readonly string ProductionInput = File.ReadAllText(
         FindRepositoryFile(
             "scripts",
@@ -79,6 +84,8 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             Runner, StringComparison.Ordinal);
         Assert.Contains("Invoke-RuntimeCropActionBatch", Runner,
             StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeCropSeedAcquisition", Runner,
+            StringComparison.Ordinal);
         Assert.Contains("Invoke-RuntimeCropSitePreparation", Runner,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -125,6 +132,31 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
     }
 
     [Fact]
+    public void SeedShortfallsReuseBoundedPurchasePlanningAndExactInventoryDeltas()
+    {
+        Assert.Contains("Invoke-RuntimeRanking", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeDailyPlanStep", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("economy.buy_supplies", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("continuation.quantity", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("value = \"1\"", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("Import-RuntimeSnapshotFile", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("PurchaseSliceCount", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("exceeded its exact target quantity",
+            SeedAcquisitionRuntime, StringComparison.Ordinal);
+        Assert.DoesNotContain("addItemToInventory", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Money", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ManifestVerifierClosesEveryProductionInputLineage()
     {
         Assert.Contains(
@@ -154,6 +186,14 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("Assert-MoneyCropInputIdSet", ProductionInput,
             StringComparison.Ordinal);
         Assert.Contains("formal_product_training_authorized", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("seed_quantity_shortfall", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("seed_supply_deadline_total_day", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "economy.buy_supplies_one_unit_fresh_snapshot_slices",
+            ProductionInput,
             StringComparison.Ordinal);
         Assert.DoesNotContain("formal_product_training_authorized = $true",
             ProductionInput,

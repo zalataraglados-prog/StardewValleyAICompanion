@@ -155,12 +155,14 @@ $actualCommitmentIds = @($runPlan.covered_commitment_ids | ForEach-Object {
     [string]$_
 } | Sort-Object)
 if ([string]$runPlan.schema_version -ne
-        "money_revenue_crop_native_production_run_plan.v1" -or
+        "money_revenue_crop_native_production_run_plan.v2" -or
     [string]$runPlan.status -ne "native_crop_production_run_ready" -or
     -not [bool]$runPlan.native_production_run_ready -or
     [bool]$runPlan.formal_product_training_authorized -or
     [string]$runPlan.source_state_hash -ne
         [string]$receipt.source_state_hash -or
+    @($runPlan.seed_acquisitions).Count -ne
+        [int]$runPlan.seed_acquisition_count -or
     [string]::Join("`n", $expectedCommitmentIds) -ne
         [string]::Join("`n", $actualCommitmentIds)) {
     throw "Money crop native-production run plan drifted from its decision."
