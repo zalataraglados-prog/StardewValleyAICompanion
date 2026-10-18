@@ -68,7 +68,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var rebuiltLifecycle = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             lifecycle.RequestPath);
         Require(lifecycle.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof.v1" &&
+                    "money_revenue_crop_native_lifecycle_proof.v2" &&
                 BootstrapArtifactGuard.EqualJson(
                     lifecycle,
                     rebuiltLifecycle) &&
@@ -76,6 +76,10 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
                 lifecycle.CropProductionPlanSha256 ==
                     CurrentTeacherFrontierSupport.HashFile(planPath) &&
                 lifecycle.CommitmentId == verifiedCommitment.CommitmentId &&
+                lifecycle.SharedNativeTrajectoryVerified &&
+                lifecycle.SharedTransitionDenominatorCommitmentIds.Contains(
+                    verifiedCommitment.CommitmentId,
+                    StringComparer.Ordinal) &&
                 lifecycle.NativeCropLifecycleVerified &&
                 !lifecycle.FormalProductTrainingAuthorized,
             "Money Revenue crop native-lifecycle proof is not exact.");
@@ -83,7 +87,9 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var harvestTransitions = lifecycle.Transitions
             .Where(value => value.TotalDay == wave.HarvestTotalDay &&
                 value.TransitionKind == "crop_actions" &&
-                value.OptionId == "executor.harvest_crop")
+                value.OptionId == "executor.harvest_crop" &&
+                value.ActionCommitmentId ==
+                    verifiedCommitment.CommitmentId)
             .ToArray();
         Require(harvestTransitions.Length > 0 &&
                 harvestTransitions.All(value => value.Verified) &&

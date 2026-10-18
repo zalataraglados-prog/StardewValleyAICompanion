@@ -16,7 +16,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof_request.v1" &&
+                    "money_revenue_crop_native_lifecycle_proof_request.v2" &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.Transitions is { Length: > 0 } &&
                 !request.FormalProductTrainingAuthorized,
@@ -88,16 +88,21 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var sourceSnapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             RequiredFile(plan.SnapshotPath, "Money Revenue crop source snapshot"),
             "Money Revenue crop source snapshot");
-        var cropCatalog = ReadCropCatalogRow(
-            sourceSnapshot,
-            commitment.SeedQualifiedItemId);
+        var contexts = LoadLifecycleContexts(
+            plan,
+            planPath,
+            planSha256,
+            capacity,
+            sourceSnapshot);
+        var primaryContext = contexts.Single(value =>
+            value.Commitment.CommitmentId == commitment.CommitmentId);
+        Require(SamePath(primaryContext.LayoutPath, layoutPath),
+            "Money Revenue crop lifecycle primary layout drifted from aggregate capacity support.");
         var transitions = request.Transitions.Select(LoadTransition).ToArray();
         ValidateTransitionChain(
             transitions,
             sourceSnapshot,
-            layout,
-            commitment,
-            cropCatalog);
+            contexts);
 
         var transitionProofs = transitions.Select(value =>
             new MoneyRevenueCropNativeLifecycleTransitionProof(
@@ -118,6 +123,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 value.Request.TransitionKind == CropActionsKind
                     ? value.Queue.Items[0].OptionId
                     : "executor.sleep",
+                ResolveActionCommitmentId(value, contexts),
                 true)).ToArray();
         return new MoneyRevenueCropNativeLifecycleProof
         {
@@ -138,6 +144,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             CommitmentId = commitment.CommitmentId,
             LocationId = layout.LocationId,
             SeedQualifiedItemId = commitment.SeedQualifiedItemId,
+            SharedTransitionDenominatorCommitmentIds = contexts.Select(value =>
+                value.Commitment.CommitmentId).ToArray(),
+            SharedNativeTrajectoryVerified = true,
             TransitionCount = transitions.Length,
             CropActionQueueCount = transitions.Count(value =>
                 value.Request.TransitionKind == CropActionsKind),
@@ -224,6 +233,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private sealed record CropCatalogRow(
         bool NeedsWatering,
         int? RegrowDays);
+
+    private sealed record LifecycleCommitmentContext(
+        string LayoutPath,
+        MoneyRevenueCropPlantingLayoutProof Layout,
+        MoneyRevenueCropProductionCommitmentPlan Commitment,
+        CropCatalogRow Catalog,
+        HashSet<(int X, int Y)> Tiles,
+        int FinalHarvestDay);
 
     private sealed record CropState(
         string SeedId,

@@ -825,24 +825,30 @@ internal static partial class BootstrapSelfTest
         after.State["player"] = JsonSerializer.SerializeToElement(
             player,
             JsonDefaults.Options);
+        after.GameTick = before.GameTick + targetXs.Length;
         after.StateHash = SnapshotHash.ComputeStateHash(after.State);
         return after;
     }
 
     private static SnapshotEnvelope LifecycleWater(
         SnapshotEnvelope before,
-        int[] targetXs) =>
-        LifecycleMutate(before, crops =>
+        int[] targetXs)
+    {
+        var after = LifecycleMutate(before, crops =>
         {
             foreach (var crop in crops.Where(crop => targetXs.Contains(
                          crop!["tile_x"]!.GetValue<int>())))
                 crop!["watered"] = true;
         });
+        after.GameTick = before.GameTick + targetXs.Length;
+        return after;
+    }
 
     private static SnapshotEnvelope LifecycleHarvest(
         SnapshotEnvelope before,
-        int[] targetXs) =>
-        AddLifecycleHarvestOutput(LifecycleMutate(before, crops =>
+        int[] targetXs)
+    {
+        var after = AddLifecycleHarvestOutput(LifecycleMutate(before, crops =>
         {
             foreach (var crop in crops.Where(crop => targetXs.Contains(
                          crop!["tile_x"]!.GetValue<int>())))
@@ -853,6 +859,9 @@ internal static partial class BootstrapSelfTest
                 crop["days_until_next_harvest_if_watered"] = 4;
             }
         }), targetXs.Length);
+        after.GameTick = before.GameTick + targetXs.Length;
+        return after;
+    }
 
     private static SnapshotEnvelope AddLifecycleHarvestOutput(
         SnapshotEnvelope after,

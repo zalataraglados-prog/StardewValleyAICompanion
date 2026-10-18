@@ -13,7 +13,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v10" &&
+                    "money_revenue_crop_production_proof_checkpoint_request.v11" &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -46,7 +46,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 fragmentIndexPath,
                 "Money Revenue crop-production proof fragment index");
         Require(fragmentIndex.SchemaVersion ==
-                    "money_revenue_crop_production_proof_fragment_index.v11" &&
+                    "money_revenue_crop_production_proof_fragment_index.v12" &&
                 string.Equals(
                     Path.GetFullPath(fragmentIndex.CropProductionPlanPath),
                     planPath,
@@ -423,7 +423,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof.v1" &&
+                    "money_revenue_crop_native_lifecycle_proof.v2" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
@@ -435,6 +435,12 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     StringComparer.Ordinal) &&
                 proof.EvidenceRequestId ==
                     "native-crop-lifecycle:" + proof.CommitmentId &&
+                proof.SharedNativeTrajectoryVerified &&
+                proof.SharedTransitionDenominatorCommitmentIds
+                    .SequenceEqual(
+                        plan.Commitments.Select(value => value.CommitmentId)
+                            .OrderBy(value => value, StringComparer.Ordinal),
+                        StringComparer.Ordinal) &&
                 proof.NativeCropLifecycleVerified &&
                 !proof.FormalProductTrainingAuthorized,
             "Money Revenue crop native-lifecycle proof is not exact or is outside the denominator.");
