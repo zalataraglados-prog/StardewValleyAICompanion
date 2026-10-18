@@ -47,6 +47,17 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
 
         var normalized = ValidateAndNormalizeCommitments(
             request.Commitments);
+        var requestedCommitmentIds = normalized.Select(value =>
+                value.CommitmentId)
+            .ToHashSet(StringComparer.Ordinal);
+        var existingActiveCommitmentIds = (ledger?.CropPlantingCommitments ??
+                Array.Empty<CropPlantingCommitment>())
+            .Where(value => value.Status == StrategyCommitmentStatuses.Active)
+            .Select(value => value.CommitmentId)
+            .ToArray();
+        Require(existingActiveCommitmentIds.All(
+                requestedCommitmentIds.Contains),
+            "Money Revenue crop-production decision must restate every active crop commitment from its base ledger.");
         var mutations = new List<
             MoneyRevenueCropProductionDecisionMutationReceipt>();
         var service = new CropCommitmentLedgerService();
@@ -85,9 +96,15 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
             ledger = result.Ledger;
         }
 
+        var finalActiveCommitmentIds = (ledger?.CropPlantingCommitments ??
+                Array.Empty<CropPlantingCommitment>())
+            .Where(value => value.Status == StrategyCommitmentStatuses.Active)
+            .Select(value => value.CommitmentId)
+            .ToHashSet(StringComparer.Ordinal);
         var allAccepted = mutations.Count == normalized.Length &&
             mutations.All(value => value.Accepted) &&
-            ledger is not null;
+            ledger is not null &&
+            finalActiveCommitmentIds.SetEquals(requestedCommitmentIds);
         return new MoneyRevenueCropProductionDecisionReceipt
         {
             Status = allAccepted

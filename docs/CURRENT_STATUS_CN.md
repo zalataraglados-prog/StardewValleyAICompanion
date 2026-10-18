@@ -67,7 +67,7 @@ PR #298 随后补回 deferred pickup 的精确需求数量绑定。该共享 cor
 
 ## 3. 当前唯一 Coverage 主施工单位：Money / Revenue
 
-2026-10-18 更新：`money_revenue_crop_production_decision_receipt.v1` 已补齐未来作物生产的类型化起点。权威 Teacher 提交精确源快照、UTC 决策时间、作物承诺和全局不重叠的 `Farm` 布局；构建器只按顺序复用唯一 `CropCommitmentLedgerService.Upsert`，保留每次 typed request/result、revision、最终 ledger 与同源布局意图。它不自行选择作物或布局、不执行机械动作，也不增加证据分子。当前仍缺单一初始化器把正式 decision receipt 原样物化为 ledger、obligation plan、run-plan request/plan 和绑定源存档目录哈希的 production input manifest；正式 Teacher decision artifact 与首次真实原生采集也都尚未产生，因此 `Money=0/18`、`formal_product_training_authorized=false` 不变。
+2026-10-18 更新：`money_revenue_crop_production_decision_receipt.v1` 已补齐未来作物生产的类型化起点。权威 Teacher 提交精确源快照、UTC 决策时间、作物承诺和全局不重叠的 `Farm` 布局；构建器只按顺序复用唯一 `CropCommitmentLedgerService.Upsert`，保留每次 typed request/result、revision、最终 ledger 与同源布局意图。`Initialize-MoneyRevenueCropNativeProduction.ps1` 又从该收据原样提取 ledger，依次复用既有 obligation/run-plan builder，并生成绑定源存档目录与全部 8 个引用制品 SHA-256 的 `money_crop_native_production_input_manifest.v1`；初始化器不自行选择作物或布局、不执行机械动作，也不增加证据分子。当前剩余接线缺口是让运行器只接受并重新验证该 manifest，拒绝独立传入错配的存档或 run-plan；正式 Teacher decision artifact 与首次真实原生采集仍未产生，因此 `Money=0/18`、`formal_product_training_authorized=false` 不变。
 
 当前 coverage 主线固定为：
 

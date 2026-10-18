@@ -7,12 +7,13 @@
 ## 当前切片 · 2026-10-18 Money 原生作物生产收集器
 
 - `build-money-revenue-crop-production-decision-receipt` 已补上生产链原先缺失的起点。权威 Teacher 必须提交精确源快照、UTC 决策时间、非空作物承诺以及与每项承诺等量且全局不重叠的 `Farm` 布局；构建器按请求顺序逐项调用唯一的 `CropCommitmentLedgerService.Upsert`，保留每次 typed request、接受/拒绝结果、账本 revision 和最终 ledger，并把同一布局意图直接交给既有 native run-plan builder。空/重复/越界布局、失效作物或日期、身份及 revision 漂移均失败关闭；该收据不选择作物、不生成布局、不执行动作，也不授权训练。
+- `Initialize-MoneyRevenueCropNativeProduction.ps1` 已把上述收据接到唯一生产输入物化链。它拒绝覆盖已有输入目录，先保护源存档目录哈希，再原样提取 `final_ledger`，依次调用既有 obligation-plan 与 native run-plan builder，最后生成 `money_crop_native_production_input_manifest.v1`，绑定源存档目录、Teacher 决策、快照、账本、两级请求和两级计划的绝对路径与 SHA-256。离线功能实跑已验证全部 8 个引用制品哈希一致，且源存档目录前后未变；该 manifest 仍不是原生证据或训练授权。
 - `Invoke-RuntimeMoneyCropNativeProduction.ps1` 已把 `money_revenue_crop_native_production_run_plan.v1` 接入隔离源存档、精确双 Mod allowlist、现有 action/plan compiler、RuntimeTestHarness 原生执行和统一回执链。运行器按连续日期逐批执行 `plant -> conditional water -> harvest`，每次跨地图只编译一个透明 connector 并 fresh replan，每个非终端日复用既有 `recovery.stabilize_day` 生成唯一原生睡眠。
 - run plan 现在从权威 crop-production 源快照当天开始，而不是错误地跳到最早种植日；源日到种植日前的每一天只能有一个原生 sleep boundary。运行器在任何动作前输出 `money_crop_native_source_preflight.v1`，要求隔离存档首次 fresh full snapshot 的 `state_hash` 和 `total_days` 同时精确匹配计划源边界；不匹配时立即停止，不能用同日期的相似存档代替。
 - 播种日不再假设选中地块已经长期保持 HoeDirt。每个承诺的布局必须能被一个 `32×32` `farm_layout` 投影完整覆盖；运行器在布局与容量取证前调用既有 `money_revenue_crop_site_preparation_plan.v1`，一次只执行一个现有 `clear_obstacle`、`break_farm_resource_clump` 或 `till_soil` 候选，每次状态变化后重新抓取 fresh bounded snapshot 并重建计划，直到全部目标格被透明状态确认为 `already_prepared`。阻塞、候选缺失、日期/地点漂移或有界动作数耗尽都会停止运行，不会直接尝试播种。
 - 浇水批次在执行前只按透明 `farm.crops[].needs_watering` 过滤；雨天不生成冗余浇水，但若当天逐日容量证明要求边界快照，仍可通过资源中性的 crop-ingress 到达 Farm。跨地图 move 被现有 compiler 重写为 connector 时现在保留唯一 `candidate_id`，因此路线、作物动作和睡眠的 queue/receipt/after snapshot 都能维持可审计候选身份。
 - 当前收集器会物化 planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。它尚未执行真实游戏采集，也尚未接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
-- 下一固定切片：新增单一初始化器，从上述决策收据原样提取最终 ledger，并自动物化 obligation request/plan、run-plan request/plan 与绑定源存档目录哈希的 production input manifest；随后才用正式 Teacher 决策制品完成首次隐藏静音原生运行。成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套作物候选、规划器或执行器。
+- 下一固定切片：让原生运行器只接受并重新验证上述 production input manifest，拒绝调用方把另一份源存档或 run-plan request 混入；随后才用正式 Teacher 决策制品完成首次隐藏静音原生运行。成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套作物候选、规划器或执行器。
 
 ## 已收口 · 2026-10-18 Money 整计划共享原生生命周期
 
