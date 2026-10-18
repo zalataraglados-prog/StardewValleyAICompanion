@@ -54,6 +54,31 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             Runner, StringComparison.Ordinal);
         Assert.Contains("Invoke-RuntimeCropActionBatch", Runner,
             StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeCropSitePreparation", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-crop-site-preparation-plan",
+            CropRuntime, StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeCropSitePreparationAction",
+            CropRuntime, StringComparison.Ordinal);
+        Assert.Contains("executor.till_soil", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("executor.clear_obstacle", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("executor.break_farm_resource_clump", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("fresh=true", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("$step = $pending[0]", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.True(
+            Runner.IndexOf(
+                "Invoke-RuntimeCropSitePreparation",
+                StringComparison.Ordinal) <
+            Runner.IndexOf(
+                "daily-capacity-day-$totalDay.json",
+                StringComparison.Ordinal),
+            "Site preparation must finish before the planting-day capacity boundary is captured.");
         Assert.Contains("Invoke-RuntimeCropRoute", Runner,
             StringComparison.Ordinal);
         Assert.Contains("api/v1/small-model/action-queue/compile",

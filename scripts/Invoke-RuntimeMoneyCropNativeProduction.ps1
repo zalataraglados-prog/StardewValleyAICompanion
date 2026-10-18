@@ -70,6 +70,7 @@ $isolatedSlot = Join-Path $isolatedSaves $sourceSlotName
 $isolatedMods = Join-Path $runDirectory "smapi-mods"
 $artifactDirectory = Join-Path $runDirectory "transitions"
 $evidenceDirectory = Join-Path $runDirectory "evidence"
+$sitePreparationDirectory = Join-Path $evidenceDirectory "site-preparation"
 $runPlanPath = Join-Path $runDirectory "crop-native-run-plan.json"
 $fragmentIndexPath = Join-Path $evidenceDirectory "fragment-index.json"
 $checkpointRequestPath = Join-Path $evidenceDirectory `
@@ -111,6 +112,7 @@ New-Item -ItemType Directory -Force -Path $isolatedSaves | Out-Null
 New-Item -ItemType Directory -Force -Path $isolatedMods | Out-Null
 New-Item -ItemType Directory -Force -Path $artifactDirectory | Out-Null
 New-Item -ItemType Directory -Force -Path $evidenceDirectory | Out-Null
+New-Item -ItemType Directory -Force -Path $sitePreparationDirectory | Out-Null
 
 if (-not $SkipBuild) {
     foreach ($project in @(
@@ -268,6 +270,8 @@ try {
     $transitions = [Collections.Generic.List[object]]::new()
     $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
     $layoutSnapshotByCommitment = @{}
+    $sitePreparationPlanPaths = [Collections.Generic.List[string]]::new()
+    $sitePreparationActionCount = 0
     $proofFirstDay = [int](@($productionPlan.commitments |
         ForEach-Object { [int]$_.planting_total_day } |
         Measure-Object -Minimum).Minimum)
@@ -298,6 +302,28 @@ try {
                     -RunId $RunId))
             }
             $currentPath = $route.SourcePath
+        }
+
+        foreach ($commitmentId in @($day.capture_layout_commitment_ids)) {
+            $layoutIntents = @($runPlanRequest.layout_intents | Where-Object {
+                [string]$_.commitment_id -eq [string]$commitmentId
+            })
+            if ($layoutIntents.Count -ne 1) {
+                throw "Expected one layout intent for planting commitment $commitmentId."
+            }
+            $preparation = Invoke-RuntimeCropSitePreparation `
+                -Context $runtimeQueueContext -BackendUrl $backendUrl `
+                -SnapshotRootUrl "http://127.0.0.1:8765" `
+                -BootstrapDll $bootstrapDll `
+                -ProductionPlanPath $productionPlanPath `
+                -SourceSnapshotPath $currentPath `
+                -LayoutIntent $layoutIntents[0] -TotalDay $totalDay `
+                -OutputDirectory $sitePreparationDirectory
+            $currentPath = $preparation.SourcePath
+            foreach ($planPath in @($preparation.PlanPaths)) {
+                $sitePreparationPlanPaths.Add([string]$planPath)
+            }
+            $sitePreparationActionCount += @($preparation.Executions).Count
         }
 
         if ([bool]$day.capture_daily_capacity_snapshot) {
@@ -531,6 +557,9 @@ try {
         transition_count = $transitions.Count
         executed_crop_batch_count = $executedCropBatchCount
         skipped_water_batch_count = $skippedWaterBatchCount
+        site_preparation_plan_count = $sitePreparationPlanPaths.Count
+        site_preparation_action_count = $sitePreparationActionCount
+        site_preparation_plan_paths = @($sitePreparationPlanPaths)
         planting_layout_proof_count = $layoutProofPaths.Count
         daily_capacity_proof_count = $capacityProofPaths.Count
         native_lifecycle_proof_count = $lifecycleProofPaths.Count

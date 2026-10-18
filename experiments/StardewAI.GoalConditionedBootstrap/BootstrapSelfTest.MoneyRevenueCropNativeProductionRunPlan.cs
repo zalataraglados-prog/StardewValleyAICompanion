@@ -124,5 +124,31 @@ internal static partial class BootstrapSelfTest
             () => MoneyRevenueCropNativeProductionRunPlanBuilder.Build(
                 overlappingRequestPath),
             "Overlapping Money crop native-production layout intents were admitted.");
+
+        var unboundedRequestPath = Path.Combine(
+            root,
+            "native-run-plan-unbounded-request.json");
+        var unboundedIntents = intents.Select((intent, index) =>
+            index == 0
+                ? intent with
+                {
+                    Tiles = new[]
+                    {
+                        new MoneyRevenueCropPlantingTile(5, 6),
+                        new MoneyRevenueCropPlantingTile(37, 6)
+                    }
+                }
+                : intent).ToArray();
+        Write(unboundedRequestPath,
+            new MoneyRevenueCropNativeProductionRunPlanRequest
+            {
+                CropProductionPlanPath = planPath,
+                LayoutIntents = unboundedIntents,
+                MaxQueueItemCount = 2
+            });
+        RequireRejects(
+            () => MoneyRevenueCropNativeProductionRunPlanBuilder.Build(
+                unboundedRequestPath),
+            "A layout outside one bounded farm-layout projection was admitted.");
     }
 }

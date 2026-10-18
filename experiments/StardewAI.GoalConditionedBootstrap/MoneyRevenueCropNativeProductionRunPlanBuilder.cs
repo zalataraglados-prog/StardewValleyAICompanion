@@ -73,7 +73,8 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                     matches[0].Tiles.All(tile =>
                         tile.TileX >= 0 && tile.TileY >= 0) &&
                     matches[0].Tiles.Distinct().Count() ==
-                        matches[0].Tiles.Length,
+                        matches[0].Tiles.Length &&
+                    FitsFarmLayoutProjection(matches[0].Tiles),
                 "Money Revenue crop native-production layout intent is invalid for " +
                 commitment.CommitmentId + ".");
             return new LayoutState(
@@ -215,6 +216,20 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 value.TryGetInt32(out result),
             "Money Revenue crop native-production source day is unavailable.");
         return result;
+    }
+
+    private static bool FitsFarmLayoutProjection(
+        MoneyRevenueCropPlantingTile[] tiles)
+    {
+        if (tiles.Length == 0)
+            return false;
+
+        var minX = tiles.Min(value => value.TileX);
+        var maxX = tiles.Max(value => value.TileX);
+        var minY = tiles.Min(value => value.TileY);
+        var maxY = tiles.Max(value => value.TileY);
+        return (long)maxX - minX + 1 <= 32 &&
+            (long)maxY - minY + 1 <= 32;
     }
 
     private static void Require(bool condition, string message)
