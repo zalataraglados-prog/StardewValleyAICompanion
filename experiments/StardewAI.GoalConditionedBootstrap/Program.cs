@@ -62,6 +62,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-concrete-alternative-denominator", BuildMoneyRevenueConcreteAlternativeDenominator),
     new("build-money-revenue-counterfactual-proof-requests", BuildMoneyRevenueCounterfactualProofRequests),
     new("build-money-revenue-terminal-proof-collection-plan", BuildMoneyRevenueTerminalProofCollectionPlan),
+    new("build-money-revenue-crop-production-decision-receipt", BuildMoneyRevenueCropProductionDecisionReceipt),
     new("build-money-revenue-crop-production-obligation-plan", BuildMoneyRevenueCropProductionObligationPlan),
     new("build-money-revenue-crop-native-production-run-plan", BuildMoneyRevenueCropNativeProductionRunPlan),
     new("build-money-revenue-crop-site-preparation-plan", BuildMoneyRevenueCropSitePreparationPlan),
@@ -770,6 +771,15 @@ static void BuildMoneyRevenueCropProductionObligationPlan(Arguments options)
     var plan = MoneyRevenueCropProductionObligationPlanBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), plan);
+}
+
+static void BuildMoneyRevenueCropProductionDecisionReceipt(Arguments options)
+{
+    var receipt = MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
+        options.Required("request"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.AllCommitmentsAccepted)
+        Environment.ExitCode = 2;
 }
 
 static void BuildMoneyRevenueCropNativeProductionRunPlan(Arguments options)
