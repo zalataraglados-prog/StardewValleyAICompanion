@@ -106,7 +106,19 @@ counterfactual catalog 之后现新增 `money_revenue_terminal_proof_collection_
 
 场地准备组合现已落地：透明桥的 `farm_layout` profile 仅投影调用方给定的最多 `32×32` Farm 区域；计划器把精确布局逐格绑定到现有清障、资源块破坏、BFS 站位与锄地候选。任何清障后续都必须重新取得 fresh snapshot 才能绑定锄地，计划不跨状态边界臆测第二步。该计划本身不是 planting-layout proof，也没有增加 Money production 分子；下一施工切片为种子预留/购种 proof。
 
-种子预留 proof 现已进入 crop-production checkpoint v2：它只认可 fresh snapshot 上已经原子提交到 strategy ledger 的完整种子 reservation，并逐槽对照透明物料图；原计划中的“当前可用数量”不再能冒充预留。任何 shortfall 必须先经既有购买链原生补足，再重新快照和提交预留。该层没有闭合购种回执、日容量、生命周期或输出保留，因此 Money 仍为 `0/18`。
+种子预留 proof 现已进入 crop-production checkpoint v2：当前实现能够逐槽核对透明物料图、活动 reservation 的用途/物品/数量与 reservation snapshot，并拒绝部分或超额 claim；但 **#310 P1 尚未证明 committed ledger 必然由原 crop plan 的 strategy-ledger lineage 合法演化，也未完整证明 reservation snapshot 不早于 plan source snapshot**。因此该 fragment 只能视为已实现但待 correctness 收口，不能作为 production evidence。任何 shortfall 仍必须经既有购买链原生补足，再重新快照和提交预留。日容量、生命周期、输出保留与结算也仍未闭合，所以 Money 保持 `0/18`。
+
+### 当前 production 前置 blocker（2026-10-18 审计）
+
+在任何 Money production cell 入账前，当前主线必须先关闭以下已确认 correctness debt：
+
+- **#307 P1 — RuntimeEvidence / Windows PowerShell 5.1：** `Write-RawJsonProperty` 目前依赖 `System.Text.Json`；仓库支持的 Windows PowerShell 5.1 路径尚未证明可运行。修复必须继续保留 ledger raw JSON 的 lexical representation，不能退回对象往返序列化。
+- **#308 P1 — native-run isolation provenance：** runner 实际只加载 TransparentBridge 与 RuntimeTestHarness，但 `money_threshold_native_outcome_run_summary.v1` / verifier 还没有持久化并验证 exact Mod allowlist，因此历史重放无法证明该 run 未受额外 gameplay mod 污染。
+- **#309 P1 — terminal-proof denominator/boundary：** collection plan 仍需绑定 concrete request denominator 的精确 identity，并修正 reusable shop-sale 的 before-boundary snapshot；在此之前 fragment checkpoint 不能进入 production comparison。
+- **#310 P1 — crop seed reservation lineage/freshness：** 必须证明 reservation ledger 从 plan ledger 合法演化，并建立 reservation snapshot 的 post-plan freshness 下界。
+- **#311 P2 — crop planning fail-closed：** 收口 dependency required-state、past planting deadline、existing reservation reconciliation、exact plan SHA、farm-layout overflow、resource-clump BFS reachability 与 zero-stamina tilling gate。
+
+这些 blocker 的存在**不回退** Full Shipment current-authority `26/26`，也不改变当前正式状态：`CoverageGateReady=2/19`、`Money=0/18`、`formal_product_training_authorized=false`。修复顺序服从 WIP=1：共享 P1 可临时插队，完成后立即返回 Money，不启动其他 Goal Method。
 
 ## 4. 单项闭环施工原则（WIP = 1）
 
