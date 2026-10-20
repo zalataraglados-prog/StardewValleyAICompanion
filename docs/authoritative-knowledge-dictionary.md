@@ -1,5 +1,9 @@
 # Authoritative Game Knowledge Dictionary
 
+## 2026-10-20 native crop lifecycle checkpoint-resume authority
+
+`money_revenue_crop_native_lifecycle_proof.v4` may cross a process restart only at one explicitly declared save boundary: immediately after a verified `native_day_rollover` and immediately before the next day's `supporting_route_to_crop`. Both snapshots must identify the same save, player, game and calendar day, place the player at the transparent home location, and be deeply equal after excluding only runtime training identity, save-isolation path, recursive transparent-read ticks and the Movie Theater projection fingerprint. Inventory, currencies, crops, world progress, calendar, player location and every other game-state field remain exact. Undeclared discontinuities, unused declarations and resumes at any other transition kind fail closed.
+
 ## 2026-10-20 native crop shipping terminal authority
 
 A shipping-bin deposit does not end a crop terminal trajectory. Single-wave `money_revenue_crop_terminal_settlement_proof.v3` and same-day multi-wave `money_revenue_crop_shared_shipping_settlement_proof.v2` require four distinct, state-continuous stages: resource-neutral approach to the bin, one verified native single-item deposit for every conservative retained unit, resource-neutral ingress from the final deposit state to the transparent `home_location_id`, and exactly one native sleep settlement. The post-deposit ingress may use only the existing movement, connector and bounded-wait primitives; its queue receipts, before/after hashes, resource neutrality, movement occurrence and final home location are rebuilt by the shared terminal-route verifier. A fixture that sleeps beside the shipping bin is invalid even if the following day credits the expected money. This authority changes proof admissibility only and does not itself add a Money production cell.

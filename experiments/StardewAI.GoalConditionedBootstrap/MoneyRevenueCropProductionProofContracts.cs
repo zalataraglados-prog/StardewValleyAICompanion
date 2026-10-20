@@ -107,7 +107,7 @@ public sealed class MoneyRevenueCropNativeLifecycleProofRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_lifecycle_proof_request.v3";
+        "money_revenue_crop_native_lifecycle_proof_request.v4";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -126,6 +126,11 @@ public sealed class MoneyRevenueCropNativeLifecycleProofRequest
         { get; set; } =
             Array.Empty<MoneyRevenueCropNativeLifecycleTransitionRequest>();
 
+    [JsonPropertyName("checkpoint_resumes")]
+    public MoneyRevenueCropNativeLifecycleCheckpointResumeRequest[]
+        CheckpointResumes { get; set; } =
+            Array.Empty<MoneyRevenueCropNativeLifecycleCheckpointResumeRequest>();
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
@@ -140,6 +145,19 @@ public sealed record MoneyRevenueCropNativeLifecycleTransitionRequest(
     [property: JsonPropertyName("run_id")] string RunId,
     [property: JsonPropertyName("executor_version")] string ExecutorVersion,
     [property: JsonPropertyName("selected_candidate_id")] string SelectedCandidateId);
+
+public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeRequest(
+    [property: JsonPropertyName("transition_index")] int TransitionIndex);
+
+public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeProof(
+    [property: JsonPropertyName("transition_index")] int TransitionIndex,
+    [property: JsonPropertyName("total_day")] int TotalDay,
+    [property: JsonPropertyName("prior_after_state_hash")] string PriorAfterStateHash,
+    [property: JsonPropertyName("resumed_before_state_hash")] string ResumedBeforeStateHash,
+    [property: JsonPropertyName("normalized_state_sha256")] string NormalizedStateSha256,
+    [property: JsonPropertyName("prior_run_id")] string PriorRunId,
+    [property: JsonPropertyName("resumed_run_id")] string ResumedRunId,
+    [property: JsonPropertyName("verified")] bool Verified);
 
 public sealed record MoneyRevenueCropNativeLifecycleTransitionProof(
     [property: JsonPropertyName("transition_kind")] string TransitionKind,
@@ -165,7 +183,7 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_native_lifecycle_proof.v3";
+        "money_revenue_crop_native_lifecycle_proof.v4";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -245,6 +263,14 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
         { get; set; } =
             Array.Empty<MoneyRevenueCropNativeLifecycleTransitionProof>();
 
+    [JsonPropertyName("checkpoint_resume_count")]
+    public int CheckpointResumeCount { get; set; }
+
+    [JsonPropertyName("checkpoint_resumes")]
+    public MoneyRevenueCropNativeLifecycleCheckpointResumeProof[]
+        CheckpointResumes { get; set; } =
+            Array.Empty<MoneyRevenueCropNativeLifecycleCheckpointResumeProof>();
+
     [JsonPropertyName("native_crop_lifecycle_verified")]
     public bool NativeCropLifecycleVerified { get; set; }
 
@@ -265,8 +291,12 @@ public sealed class MoneyRevenueCropNativeLifecycleProof
         "the day's crop actions, but must use resource-neutral movement and " +
         "connector primitives, retain the same calendar day, preserve inventory, " +
         "currency and persistent world state, and end at the declared crop or " +
-        "home location. Consecutive fresh " +
-        "snapshots must form one state-hash chain, while each overnight boundary " +
+        "home location. Consecutive fresh snapshots must form one state-hash " +
+        "chain. A declared checkpoint resume is allowed only after a verified " +
+        "native rollover and before the next crop-ingress route, where complete " +
+        "normalized save state is equal after excluding runtime identity and " +
+        "transparent-read metadata. Inventory, money, crops, calendar and other " +
+        "game state remain exact. Each overnight boundary " +
         "must be a single native sleep queue whose crop phase transition exactly " +
         "matches the decompiled Crop.newDay state machine. This proves lifecycle " +
         "execution only; harvested quantity, retention and terminal revenue remain " +

@@ -423,7 +423,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof.v3" &&
+                    "money_revenue_crop_native_lifecycle_proof.v4" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),

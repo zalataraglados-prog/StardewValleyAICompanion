@@ -71,6 +71,8 @@ PR #298 随后补回 deferred pickup 的精确需求数量绑定。该共享 cor
 
 同日终局运输箱契约已经升级为单波 `money_revenue_crop_terminal_settlement_proof.v3` 与多波 `money_revenue_crop_shared_shipping_settlement_proof.v2`。两者都要求投箱前路线、逐件原生投递、投箱后资源中性回家路线和唯一原生睡眠四段连续证据；不能在运输箱旁直接构造睡眠。这是 proof admissibility 修正，不增加 Money production 分子。
 
+短 continuation 所需的共享生命周期现为 `money_revenue_crop_native_lifecycle_proof.v4`。它只在原生跨日之后、下一天 crop-ingress 之前接受声明过的 checkpoint resume，并对完整透明存档状态做归一化等价验证；只排除运行身份、隔离路径和读取元数据，不排除任何玩法状态。恢复证据会记录两侧原始状态哈希、运行 ID 与归一化 SHA-256。该能力避免重跑已验证的 13 日机械轨迹，但不能跳过第 18 天收获、终局投箱、结算或 Teacher/join。
+
 2026-10-18 更新：`money_revenue_crop_production_teacher_request.v1 -> money_revenue_crop_production_decision_request.v2 -> money_revenue_crop_production_decision_receipt.v2` 已补齐未来作物生产的正式 Teacher 起点。Teacher 从同源 fresh full snapshot、互不重叠的 bounded Farm snapshots、实时作物目录、商店 stock/价格、money、种子/物料与场地状态生成完整候选分母，以保守净收入、最早终结日、浇水动作数和种子 ID 确定性排序；架豆、稻田、特殊种植和非 `Grab` 收获在独立证明接入前明确拒绝。收据会从 Teacher request 重建并逐字节核对决定，再复用唯一 `CropCommitmentLedgerService.Upsert`。`Initialize-MoneyRevenueCropNativeProduction.ps1` 从该收据原样提取 ledger，依次复用既有 obligation/run-plan builder，并生成绑定源存档目录与全部 9 个引用制品 SHA-256 的 `money_crop_native_production_input_manifest.v1`；运行器在启动游戏前复核源存档树、Teacher request、决定、收据、快照、账本和两级 request/plan 血缘。该段的“尚未首跑”状态已由上方 2026-10-20 v22 结果取代；当前数字仍为 `Money=0/18`、`formal_product_training_authorized=false`。
 
 当前 coverage 主线固定为：

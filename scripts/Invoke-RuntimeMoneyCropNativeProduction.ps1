@@ -567,13 +567,14 @@ try {
             "lifecycle-proof-$safeId.json"
         Write-JsonFile -Path $lifecycleRequestPath -Value ([ordered]@{
             schema_version =
-                "money_revenue_crop_native_lifecycle_proof_request.v3"
+                "money_revenue_crop_native_lifecycle_proof_request.v4"
             crop_production_plan_path = $productionPlanPath
             commitment_id = $commitmentId
             planting_layout_proof_path =
                 $layoutProofByCommitment[$commitmentId]
             daily_capacity_proof_path = $capacityProofPath
             transitions = @($transitions)
+            checkpoint_resumes = @()
             formal_product_training_authorized = $false
         })
         Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
