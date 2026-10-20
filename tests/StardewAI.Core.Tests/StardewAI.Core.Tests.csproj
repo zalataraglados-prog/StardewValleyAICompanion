@@ -43,6 +43,8 @@
     <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
+    <Compile Include="CandidateOptionAvailabilityEvaluatorTests.EconomyRouting.cs" />
+    <Compile Include="CandidateOptionAvailabilityEvaluatorTests.Recovery.cs" />
     <Compile Include="SnapshotStateCacheTests.cs" />
     <Compile Include="StrategyCommitmentLedgerTests.cs" />
     <Compile Include="SequentialPlanProjectionTests.cs" />

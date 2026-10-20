@@ -216,6 +216,42 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void BuySuppliesRetainsRouteWhenEndpointAndEntranceOpenLaterToday()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"378",
+                "qualified_item_id":"(O)378",
+                "display_name":"Copper Ore",
+                "price":150,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false, endpointExtra:
+                ",\"direct_time_gate_known\":true,\"direct_time_allowed\":false,\"open_time\":1000,\"close_time\":1700",
+                routeGraphExtra: """
+              ,{"kind":"locked_door_warp","from_location":"Town","from_x":1,"from_y":1,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":true,"time_allowed":false,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"effective_open_time":1100,"close_time":1600,"unresolved_reason":null}}
+            """), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(1100, candidate.NextOpenTime);
+        Assert.Equal(1100, candidate.EffectiveOpenTime);
+        Assert.Equal(1600, candidate.ClosesAt);
+        Assert.Contains("shop_endpoint_not_open_yet", candidate.GateReasons);
+        Assert.Contains("shop_entrance_not_open_yet", candidate.GateReasons);
+        Assert.DoesNotContain(
+            "shop_endpoint_direct_time_gate_blocked",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
     public void BuySuppliesExcludesRemoteDialogueShopWhenRuntimeOwnerIsNotAtCounter()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

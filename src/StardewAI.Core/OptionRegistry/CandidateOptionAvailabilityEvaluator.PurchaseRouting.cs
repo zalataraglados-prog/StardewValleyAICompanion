@@ -305,7 +305,7 @@ namespace StardewAI.Core.OptionRegistry
                 AvailabilityClass = objectivePrefix + "_cross_map_route_step",
                 AllowedNow = route.AllowedNow,
                 AllowedToday = route.AllowedToday,
-                NextOpenTime = route.NextOpenTime ?? gate.NextOpenTime,
+                NextOpenTime = LaterTime(route.NextOpenTime, gate.NextOpenTime),
                 EffectiveOpenTime = gate.OpenTime,
                 ClosesAt = gate.CloseTime,
                 WaitCost = route.WaitCost,

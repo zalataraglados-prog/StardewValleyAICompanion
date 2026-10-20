@@ -194,11 +194,13 @@ internal static partial class BootstrapSelfTest
             observed,
             projectionFingerprint: "canonical-tag-order",
             openStatus: "closed");
+        SetSeedAcquisitionNonSemanticMetadata(planned, 100);
+        SetSeedAcquisitionNonSemanticMetadata(observed, 200);
         observed = SeedAcquisitionRuntimeBoundary(observed);
         Require(
             MoneyRevenueCropSeedAcquisitionProofBuilder
                 .SameRuntimeSourceBoundary(planned, observed),
-            "Money crop seed-acquisition rejected a movie-theater fingerprint-only source drift.");
+            "Money crop seed-acquisition rejected non-semantic runtime source drift.");
 
         SetSeedAcquisitionMovieTheaterBoundary(
             observed,
@@ -208,6 +210,98 @@ internal static partial class BootstrapSelfTest
             !MoneyRevenueCropSeedAcquisitionProofBuilder
                 .SameRuntimeSourceBoundary(planned, observed),
             "Money crop seed-acquisition ignored semantic movie-theater source drift.");
+
+        VerifyDailyQuestOfferLazyDisplayNormalization(source);
+    }
+
+    private static void VerifyDailyQuestOfferLazyDisplayNormalization(
+        SnapshotEnvelope source)
+    {
+        var before = CloneSnapshot(source);
+        var after = CloneSnapshot(source);
+        SetDailyQuestOfferBoundary(
+            before,
+            fingerprint: "unloaded-display",
+            description: string.Empty,
+            descriptionAvailable: false,
+            targetMessage: string.Empty,
+            targetCount: 1);
+        SetDailyQuestOfferBoundary(
+            after,
+            fingerprint: "localized-display",
+            description: "Localized delivery description",
+            descriptionAvailable: true,
+            targetMessage: "Localized completion message",
+            targetCount: 1);
+        Require(
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                before,
+                out var beforeBoundary) &&
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                after,
+                out var afterBoundary) &&
+            beforeBoundary == afterBoundary,
+            "Persistent boundary rejected daily-quest lazy display loading.");
+
+        SetDailyQuestOfferBoundary(
+            after,
+            fingerprint: "semantic-drift",
+            description: "Localized delivery description",
+            descriptionAvailable: true,
+            targetMessage: "Localized completion message",
+            targetCount: 2);
+        Require(
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                after,
+                out afterBoundary) &&
+            beforeBoundary != afterBoundary,
+            "Persistent boundary ignored semantic daily-quest drift.");
+    }
+
+    private static void SetDailyQuestOfferBoundary(
+        SnapshotEnvelope snapshot,
+        string fingerprint,
+        string description,
+        bool descriptionAvailable,
+        string targetMessage,
+        int targetCount)
+    {
+        var quests = snapshot.State.TryGetValue(
+                "quests",
+                out var questsElement)
+            ? JsonNode.Parse(questsElement.GetRawText())!.AsObject()
+            : new JsonObject();
+        quests["daily_quest_offer"] = new JsonObject
+        {
+            ["status"] = "available",
+            ["value"] = new JsonObject
+            {
+                ["available"] = true,
+                ["can_accept"] = true,
+                ["accepted_daily_quest"] = false,
+                ["offer_fingerprint"] = fingerprint,
+                ["quest"] = new JsonObject
+                {
+                    ["quest_type"] = 3,
+                    ["accepted"] = false,
+                    ["completed"] = false,
+                    ["money_reward"] = 90,
+                    ["description"] = description,
+                    ["description_available"] = descriptionAvailable,
+                    ["per_type_fields"] = new JsonObject
+                    {
+                        ["item_id"] = "(O)18",
+                        ["target_npc"] = "Lewis",
+                        ["target_count"] = targetCount,
+                        ["target_message"] = targetMessage
+                    }
+                }
+            }
+        };
+        snapshot.State["quests"] = JsonSerializer.SerializeToElement(
+            quests,
+            JsonDefaults.Options);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
     }
 
     private static void SetSeedAcquisitionMovieTheaterBoundary(
@@ -224,6 +318,32 @@ internal static partial class BootstrapSelfTest
             {
                 ["projection_fingerprint"] = projectionFingerprint,
                 ["open_status"] = openStatus
+            }
+        };
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+    }
+
+    private static void SetSeedAcquisitionNonSemanticMetadata(
+        SnapshotEnvelope snapshot,
+        long tick)
+    {
+        var player = JsonNode.Parse(
+            snapshot.State["player"].GetRawText())!.AsObject();
+        var movieTheaterValue = player["movie_theater"]!["value"]!.AsObject();
+        movieTheaterValue["read_at_tick"] = tick;
+        movieTheaterValue["runtime_cache"] = new JsonObject
+        {
+            ["projection_tick"] = tick + 1,
+            ["rows"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["machine_probe_cache_tick"] = tick + 2,
+                    ["semantic_value"] = "stable"
+                }
             }
         };
         snapshot.State["player"] = JsonSerializer.SerializeToElement(

@@ -79,6 +79,7 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
         {
             movieTheaterValue.Remove("projection_fingerprint");
         }
+        RuntimeSnapshotBoundaryNormalization.RemoveNonSemanticMetadata(state);
         return state;
     }
 

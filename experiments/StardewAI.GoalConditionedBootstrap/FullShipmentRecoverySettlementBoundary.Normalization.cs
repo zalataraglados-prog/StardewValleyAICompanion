@@ -30,6 +30,9 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             case ("quests", "adventure_guild_reward"):
                 NormalizeAdventureGuildReward(value);
                 break;
+            case ("quests", "daily_quest_offer"):
+                NormalizeDailyQuestOffer(value);
+                break;
             case ("world_progress", "game_state_query_unlock_state"):
                 NormalizeGameStateQueryUnlockState(value);
                 break;
@@ -40,6 +43,7 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
                 NormalizeMarriageHouse(value);
                 break;
         }
+        RuntimeSnapshotBoundaryNormalization.RemoveNonSemanticMetadata(value);
         return JsonSerializer.SerializeToElement(normalized);
     }
 
@@ -93,6 +97,30 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
         ];
         foreach (var field in routeFields)
             reward.Remove(field);
+    }
+
+    private static void NormalizeDailyQuestOffer(JsonNode value)
+    {
+        if (value is not JsonObject offer)
+            return;
+        offer.Remove("offer_fingerprint");
+        if (offer["quest"] is not JsonObject quest)
+            return;
+        foreach (var field in new[]
+                 {
+                     "title",
+                     "title_available",
+                     "description",
+                     "description_available",
+                     "current_objective",
+                     "current_objective_available",
+                     "reward_description"
+                 })
+        {
+            quest.Remove(field);
+        }
+        if (quest["per_type_fields"] is JsonObject perTypeFields)
+            perTypeFields.Remove("target_message");
     }
 
     private static void NormalizeGameStateQueryUnlockState(JsonNode value)
