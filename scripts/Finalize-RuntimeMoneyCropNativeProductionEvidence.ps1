@@ -83,6 +83,7 @@ if ([string]::Join("`n", $plannedCommitmentIds) -ne
 }
 
 $layoutProofPaths = [Collections.Generic.List[string]]::new()
+$seedReservationProofPaths = [Collections.Generic.List[string]]::new()
 $seedAcquisitionProofPaths = [Collections.Generic.List[string]]::new()
 $capacityProofPaths = [Collections.Generic.List[string]]::new()
 $lifecycleProofPaths = [Collections.Generic.List[string]]::new()
@@ -104,6 +105,35 @@ foreach ($commitment in @($productionPlan.commitments)) {
     $layoutProofPaths.Add([IO.Path]::GetFullPath($layoutProofPath))
     $capacityProofPaths.Add([IO.Path]::GetFullPath($capacityProofPath))
     $lifecycleProofPaths.Add([IO.Path]::GetFullPath($lifecycleProofPath))
+
+    $matchingAcquisitions = @($runPlan.seed_acquisitions |
+        Where-Object {
+            [string]$_.commitment_id -eq $commitmentId
+        })
+    if ($matchingAcquisitions.Count -gt 1) {
+        throw "Money crop run contains duplicate acquisitions for $commitmentId."
+    }
+    $reservationSnapshotPath = Join-Path $evidenceDirectory `
+        "initial-snapshot.json"
+    if ($matchingAcquisitions.Count -eq 1) {
+        $acquisitionProofPath = Join-Path $evidenceDirectory `
+            "seed-acquisition-proof-$safeId.json"
+        Assert-MoneyCropEvidenceFiles -Paths @($acquisitionProofPath)
+        $acquisitionProof = Get-Content `
+            -LiteralPath $acquisitionProofPath -Raw | ConvertFrom-Json
+        if ([string]$acquisitionProof.commitment_id -ne $commitmentId) {
+            throw "Money crop seed acquisition proof commitment drifted."
+        }
+        $reservationSnapshotPath =
+            [string]$acquisitionProof.after_snapshot_path
+    }
+    $reservationProofPath = New-MoneyCropSeedReservationProof `
+        -BootstrapDll $bootstrapDll `
+        -ProductionPlanPath $productionPlanPath `
+        -CommitmentId $commitmentId `
+        -ReservationSnapshotPath $reservationSnapshotPath `
+        -EvidenceDirectory $evidenceDirectory
+    $seedReservationProofPaths.Add($reservationProofPath)
 
     $commitmentRetentionPaths = @(New-MoneyCropOutputRetentionProofs `
         -BootstrapDll $bootstrapDll `
@@ -130,6 +160,7 @@ $checkpointResult = Complete-MoneyCropProductionProofCheckpoint `
     -ProductionPlanPath $productionPlanPath `
     -EvidenceDirectory $evidenceDirectory `
     -PlantingLayoutProofPaths $layoutProofPaths.ToArray() `
+    -SeedReservationProofPaths $seedReservationProofPaths.ToArray() `
     -SeedAcquisitionProofPaths $seedAcquisitionProofPaths.ToArray() `
     -DailyCapacityProofPaths $capacityProofPaths.ToArray() `
     -NativeLifecycleProofPaths $lifecycleProofPaths.ToArray() `
@@ -144,6 +175,7 @@ $summary = [ordered]@{
     run_plan_path = $runPlanPath
     crop_production_plan_path = $productionPlanPath
     planting_layout_proof_count = $layoutProofPaths.Count
+    seed_reservation_proof_count = $seedReservationProofPaths.Count
     seed_acquisition_proof_count = $seedAcquisitionProofPaths.Count
     daily_capacity_proof_count = $capacityProofPaths.Count
     native_lifecycle_proof_count = $lifecycleProofPaths.Count

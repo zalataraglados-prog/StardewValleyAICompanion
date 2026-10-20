@@ -273,6 +273,7 @@ try {
     $transitions = [Collections.Generic.List[object]]::new()
     $seedAcquisitionSummaries = [Collections.Generic.List[object]]::new()
     $seedAcquisitionProofPaths = [Collections.Generic.List[string]]::new()
+    $seedReservationProofPaths = [Collections.Generic.List[string]]::new()
     $previousSeedAcquisitionProofPath = ""
     $dailySnapshotPaths = [Collections.Generic.List[string]]::new()
     $wateringCanRefillReceipts = [Collections.Generic.List[object]]::new()
@@ -349,6 +350,16 @@ try {
             final_snapshot_path = [string]$result.SourcePath
             proof_path = $acquisitionProofPath
         })
+    }
+
+    foreach ($commitment in @($productionPlan.commitments)) {
+        $reservationProofPath = New-MoneyCropSeedReservationProof `
+            -BootstrapDll $bootstrapDll `
+            -ProductionPlanPath $productionPlanPath `
+            -CommitmentId ([string]$commitment.commitment_id) `
+            -ReservationSnapshotPath $currentPath `
+            -EvidenceDirectory $evidenceDirectory
+        $seedReservationProofPaths.Add($reservationProofPath)
     }
 
     foreach ($day in @($runPlan.days)) {
@@ -587,6 +598,7 @@ try {
         -ProductionPlanPath $productionPlanPath `
         -EvidenceDirectory $evidenceDirectory `
         -PlantingLayoutProofPaths $layoutProofPaths.ToArray() `
+        -SeedReservationProofPaths $seedReservationProofPaths.ToArray() `
         -SeedAcquisitionProofPaths $seedAcquisitionProofPaths.ToArray() `
         -DailyCapacityProofPaths $capacityProofPaths.ToArray() `
         -NativeLifecycleProofPaths $lifecycleProofPaths.ToArray() `
@@ -635,6 +647,8 @@ try {
         seed_acquisition_count = $seedAcquisitionSummaries.Count
         seed_acquisition_proof_count = $seedAcquisitionProofPaths.Count
         seed_acquisition_proof_paths = @($seedAcquisitionProofPaths)
+        seed_reservation_proof_count = $seedReservationProofPaths.Count
+        seed_reservation_proof_paths = @($seedReservationProofPaths)
         seed_acquisitions = $seedAcquisitionSummaries.ToArray()
         site_preparation_plan_count = $sitePreparationPlanPaths.Count
         site_preparation_action_count = $sitePreparationActionCount

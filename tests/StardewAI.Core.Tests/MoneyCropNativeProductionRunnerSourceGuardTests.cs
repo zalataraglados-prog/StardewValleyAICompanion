@@ -35,6 +35,12 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1"));
+    private static readonly string SeedReservationCommitBuilder =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "MoneyRevenueCropSeedReservationCommitBuilder.cs"));
     private static readonly string CropProjection = File.ReadAllText(
         FindRepositoryFile(
             "src",
@@ -349,6 +355,29 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             EvidenceFinalization, StringComparison.Ordinal);
         Assert.Contains(
             "[object[]] $SharedShippingSettlementProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SeedReservationUsesTypedCoreCommitReplayForRunnerAndRecovery()
+    {
+        Assert.Contains("New-MoneyCropSeedReservationProof", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("New-MoneyCropSeedReservationProof",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-crop-seed-reservation-commit-request",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains(
+            "replay-money-revenue-crop-seed-reservation-commit",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains("ReservationPortfolioLedgerService().Commit",
+            SeedReservationCommitBuilder, StringComparison.Ordinal);
+        Assert.Contains("MaterialSupplyProjection().Project",
+            SeedReservationCommitBuilder, StringComparison.Ordinal);
+        Assert.Contains("crop_seed_supply:", SeedReservationCommitBuilder,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("material_reservations =",
             EvidenceFinalization, StringComparison.Ordinal);
     }
 

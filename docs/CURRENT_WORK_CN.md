@@ -8,10 +8,10 @@
 
 - 首份真实隔离作物运行 `money-crop-native-20261019-v22` 已完成 13 个连续游戏日的机械执行。共享生命周期证明现重放 `48` 条连续 transition，其中作物队列 `12`、作物/睡眠支持路线各 `12`、原生跨日 `12`；验证了 `5` 次播种、`50` 次浇水和 `5` 次收获。逐波留存证明确认 `(O)190` 实际库存从 `0` 增至 `5`，保守毛收入下界为 `1750g`。这些是真实运行 fragment，但尚未形成任一 Money production cell，`Money=0/18`、正式训练仍为 false。
 - 运行后证明构建不再强迫重跑游戏。`RuntimeMoneyCropEvidenceFinalization.ps1` 是原 runner 与离线 finalizer 的唯一共享实现；`Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1` 会重新验证 production input manifest、源存档树、执行过的 run plan 和全部既有 proof，再只补 output-retention、fragment index 与 checkpoint。它不启动游戏、不修改存档，也不另写第二套证明语义。
-- v22 的 checkpoint v12 当前为 `verified fragments=4 / pending requests=2`。已验证：planting layout、exact seed acquisition、aggregate daily capacity、shared native lifecycle；output retention 作为 terminal supporting proof 已重建。剩余精确 request 只有 `seed-reservation:<commitment>` 与 `output-retention-terminal:<wave>`。
-- 下一固定顺序：先把购种后的 fresh inventory boundary 通过现有 `ReservationPortfolioLedgerService.Commit` 形成可重放 seed reservation，不允许手写 ledger；再从 v22 已保存的第 18 天原生起点做短 continuation，复用既有收获、单件投箱和唯一原生睡眠，生成 settlement-capacity 与 terminal/shared shipping proof。checkpoint 两项清零后，才进入 Teacher comparison 与 criterion-local join。
+- v22 的 checkpoint v12 当前为 `verified fragments=5 / pending requests=1`。已验证：planting layout、exact seed acquisition、exact seed reservation、aggregate daily capacity、shared native lifecycle；output retention 作为 terminal supporting proof 已重建。seed reservation 由透明库存投影生成精确原子 commit request，再通过共享 `ReservationPortfolioLedgerService.Commit` 重放，未手写最终账本。剩余精确 request 只有 `output-retention-terminal:<wave>`。
+- 下一固定顺序：从 v22 已保存的第 18 天原生起点做短 continuation，复用既有收获、单件投箱、回家路线和唯一原生睡眠，生成 settlement-capacity 与 terminal/shared shipping proof。唯一 pending request 清零后，才进入 Teacher comparison 与 criterion-local join。
 - PR #337 的两项明确 P1 review debt 已关闭：递归 source-boundary 归一化会移除所有层级的三个非语义 tick 字段并精确报告持久字段漂移；商店 endpoint 与 entrance 的未来营业窗口会在上游 defer 到两者较晚开放时间，不再被永久 block。当前 GitHub 没有新的明确修复 issue；ongoing/deferred/roadmap issue 只保留为约束，不扩张本轮审计。
-- 验证：PowerShell AST 通过，Core game-free `446/446`，GoalConditionedBootstrap Release `0 warning / 0 error`，v22 离线 finalizer 成功生成 checkpoint。下一步不重跑 13 日轨迹。
+- 验证：PowerShell AST 通过，Core game-free `447/447`，GoalConditionedBootstrap Release `0 warning / 0 error`，完整 hermetic 自测与 v22 离线 finalizer 均成功。下一步不重跑 13 日轨迹。
 
 ## 当前切片 · 2026-10-18 Money 原生作物生产收集器
 

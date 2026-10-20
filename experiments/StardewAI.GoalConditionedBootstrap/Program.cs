@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 using StardewAI.Core.Infrastructure;
@@ -68,6 +69,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-native-production-run-plan", BuildMoneyRevenueCropNativeProductionRunPlan),
     new("build-money-revenue-crop-site-preparation-plan", BuildMoneyRevenueCropSitePreparationPlan),
     new("build-money-revenue-crop-seed-acquisition-proof", BuildMoneyRevenueCropSeedAcquisitionProof),
+    new("build-money-revenue-crop-seed-reservation-commit-request", BuildMoneyRevenueCropSeedReservationCommitRequest),
+    new("replay-money-revenue-crop-seed-reservation-commit", ReplayMoneyRevenueCropSeedReservationCommit),
     new("build-money-revenue-crop-seed-reservation-proof", BuildMoneyRevenueCropSeedReservationProof),
     new("build-money-revenue-crop-planting-layout-proof", BuildMoneyRevenueCropPlantingLayoutProof),
     new("build-money-revenue-crop-daily-capacity-proof", BuildMoneyRevenueCropDailyCapacityProof),
@@ -813,6 +816,31 @@ static void BuildMoneyRevenueCropSeedReservationProof(Arguments options)
     var proof = MoneyRevenueCropSeedReservationProofBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), proof);
+}
+
+static void BuildMoneyRevenueCropSeedReservationCommitRequest(
+    Arguments options)
+{
+    var request = MoneyRevenueCropSeedReservationCommitBuilder.Build(
+        options.Required("crop-production-plan"),
+        options.Required("commitment-id"),
+        options.Required("reservation-snapshot"));
+    Write(options.Required("output"), request);
+}
+
+static void ReplayMoneyRevenueCropSeedReservationCommit(Arguments options)
+{
+    var request = CurrentTeacherFrontierSupport.Read<
+        ReservationPortfolioCommitRequest>(
+            options.Required("request"),
+            "Money Revenue crop seed-reservation commit request");
+    var result = MoneyRevenueCropSeedReservationCommitBuilder.Replay(
+        options.Required("crop-production-plan"),
+        options.Required("commitment-id"),
+        options.Required("reservation-snapshot"),
+        request,
+        options.Required("updated-at"));
+    Write(options.Required("output"), result);
 }
 
 static void BuildMoneyRevenueCropSeedAcquisitionProof(Arguments options)

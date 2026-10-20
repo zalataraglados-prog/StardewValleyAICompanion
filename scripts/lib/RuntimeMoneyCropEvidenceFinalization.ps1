@@ -81,6 +81,77 @@ function Assert-MoneyCropEvidenceFiles {
     }
 }
 
+function New-MoneyCropSeedReservationProof {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $BootstrapDll,
+        [Parameter(Mandatory)] [string] $ProductionPlanPath,
+        [Parameter(Mandatory)] [string] $CommitmentId,
+        [Parameter(Mandatory)] [string] $ReservationSnapshotPath,
+        [Parameter(Mandatory)] [string] $EvidenceDirectory
+    )
+
+    Assert-MoneyCropEvidenceFiles -Paths @(
+        $BootstrapDll,
+        $ProductionPlanPath,
+        $ReservationSnapshotPath)
+    if ([string]::IsNullOrWhiteSpace($CommitmentId)) {
+        throw "Money crop seed-reservation commitment id is missing."
+    }
+    $snapshot = Get-Content -LiteralPath $ReservationSnapshotPath -Raw |
+        ConvertFrom-Json
+    if ([string]::IsNullOrWhiteSpace([string]$snapshot.real_timestamp)) {
+        throw "Money crop seed-reservation snapshot timestamp is missing."
+    }
+
+    New-Item -ItemType Directory -Force -Path $EvidenceDirectory | Out-Null
+    $safeId = Get-MoneyCropSafeArtifactName -Value $CommitmentId
+    $commitRequestPath = Join-Path $EvidenceDirectory `
+        "seed-reservation-commit-request-$safeId.json"
+    $commitResultPath = Join-Path $EvidenceDirectory `
+        "seed-reservation-commit-result-$safeId.json"
+    $committedLedgerPath = Join-Path $EvidenceDirectory `
+        "seed-reservation-committed-ledger-$safeId.json"
+    $proofRequestPath = Join-Path $EvidenceDirectory `
+        "seed-reservation-request-$safeId.json"
+    $proofPath = Join-Path $EvidenceDirectory `
+        "seed-reservation-proof-$safeId.json"
+
+    Invoke-RuntimeBootstrap -BootstrapDll $BootstrapDll -Arguments @(
+        "build-money-revenue-crop-seed-reservation-commit-request",
+        "--crop-production-plan", $ProductionPlanPath,
+        "--commitment-id", $CommitmentId,
+        "--reservation-snapshot", $ReservationSnapshotPath,
+        "--output", $commitRequestPath)
+    Invoke-RuntimeBootstrap -BootstrapDll $BootstrapDll -Arguments @(
+        "replay-money-revenue-crop-seed-reservation-commit",
+        "--crop-production-plan", $ProductionPlanPath,
+        "--commitment-id", $CommitmentId,
+        "--reservation-snapshot", $ReservationSnapshotPath,
+        "--request", $commitRequestPath,
+        "--updated-at", ([string]$snapshot.real_timestamp),
+        "--output", $commitResultPath)
+    $commitResultRaw = Get-Content -LiteralPath $commitResultPath -Raw
+    Write-RawJsonProperty -Path $committedLedgerPath `
+        -RawJson $commitResultRaw -PropertyName "ledger"
+    Write-JsonFile -Path $proofRequestPath -Value ([ordered]@{
+        schema_version =
+            "money_revenue_crop_seed_reservation_proof_request.v2"
+        crop_production_plan_path = $ProductionPlanPath
+        commitment_id = $CommitmentId
+        reservation_snapshot_path = $ReservationSnapshotPath
+        committed_strategy_ledger_path = $committedLedgerPath
+        atomic_commit_request_path = $commitRequestPath
+        atomic_commit_result_path = $commitResultPath
+        formal_product_training_authorized = $false
+    })
+    Invoke-RuntimeBootstrap -BootstrapDll $BootstrapDll -Arguments @(
+        "build-money-revenue-crop-seed-reservation-proof",
+        "--request", $proofRequestPath,
+        "--output", $proofPath)
+    return [IO.Path]::GetFullPath($proofPath)
+}
+
 function New-MoneyCropOutputRetentionProofs {
     [CmdletBinding()]
     param(

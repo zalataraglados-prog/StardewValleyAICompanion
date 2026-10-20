@@ -368,34 +368,17 @@ internal static partial class BootstrapSelfTest
         var planPath = Path.Combine(root, "seed-reservation-plan.json");
         Write(planPath, plan);
 
-        var commitRequest = new ReservationPortfolioCommitRequest
-        {
-            StateHash = snapshot.StateHash,
-            ExpectedLedgerRevision = sourceLedger.Revision,
-            PortfolioId = "money.seed-reservation.fixture:portfolio",
-            GoalId = "earn_money",
-            SourceDecisionId = "teacher.money.seed-reservation.v1",
-            MaterialClaims = new[]
-            {
-                new MaterialReservationUpsertRequest
-                {
-                    StateHash = snapshot.StateHash,
-                    ExpectedLedgerRevision = sourceLedger.Revision,
-                    ReservationId = "money.seed-reservation.fixture:seed:0",
-                    SourceDecisionId = "teacher.money.seed-reservation.v1",
-                    GoalId = "earn_money",
-                    NodeId = "player:123",
-                    SlotIndex = 0,
-                    QualifiedItemId = "(O)745",
-                    Quantity = 40,
-                    Purpose = "crop_seed_supply:money.seed-reservation.fixture"
-                }
-            }
-        };
-        var commitResult = new ReservationPortfolioLedgerService().Commit(
-            sourceLedger,
-            snapshot,
-            commitRequest,
+        var commitRequest =
+            MoneyRevenueCropSeedReservationCommitBuilder.Build(
+                planPath,
+                "money.seed-reservation.fixture",
+                snapshotPath);
+        var commitResult =
+            MoneyRevenueCropSeedReservationCommitBuilder.Replay(
+                planPath,
+                "money.seed-reservation.fixture",
+                snapshotPath,
+                commitRequest,
             "2026-10-16T00:01:00Z");
         Require(commitResult.Accepted && commitResult.Ledger is not null,
             "Money seed-reservation atomic commit was rejected.");
