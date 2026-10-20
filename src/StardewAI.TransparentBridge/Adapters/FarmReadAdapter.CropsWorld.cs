@@ -32,7 +32,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_item_qualified_id = QualifyObjectId(harvestItemId),
                     harvest_item_category = harvestItem.Category,
                     harvest_context_tags = harvestItem.ContextTags,
-                    harvest_unit_sale_price = harvestItem.SalePrice,
+                    harvest_unit_base_price = harvestItem.BasePrice,
+                    harvest_unit_sale_price = harvestItem.SellToStorePrice,
                     harvest_min_stack = ReadIntNullable(pair.Value, "HarvestMinStack"),
                     harvest_max_stack = ReadIntNullable(pair.Value, "HarvestMaxStack"),
                     harvest_max_increase_per_farming_level = ReadFloatNullable(pair.Value, "HarvestMaxIncreasePerFarmingLevel"),
@@ -65,7 +66,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         var qualifiedId = QualifyObjectId(itemId);
         if (string.IsNullOrWhiteSpace(qualifiedId))
         {
-            return new HarvestItemProjection(null, 0, Array.Empty<string>());
+            return new HarvestItemProjection(null, null, 0, Array.Empty<string>());
         }
 
         try
@@ -73,12 +74,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             var item = ItemRegistry.Create(qualifiedId);
             return new HarvestItemProjection(
                 item.salePrice(),
+                item.sellToStorePrice(-1L),
                 item.Category,
                 item.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray());
         }
         catch
         {
-            return new HarvestItemProjection(null, 0, Array.Empty<string>());
+            return new HarvestItemProjection(null, null, 0, Array.Empty<string>());
         }
     }
 
@@ -185,7 +187,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
     private sealed record CropDirtRow(Vector2 Tile, HoeDirt Dirt, bool IsGardenPot);
 
-    private sealed record HarvestItemProjection(int? SalePrice, int Category, string[] ContextTags);
+    private sealed record HarvestItemProjection(
+        int? BasePrice,
+        int? SellToStorePrice,
+        int Category,
+        string[] ContextTags);
 
     private static int? ReadDaysUntilNextHarvestIfWatered(Crop crop, bool readyForHarvest)
     {

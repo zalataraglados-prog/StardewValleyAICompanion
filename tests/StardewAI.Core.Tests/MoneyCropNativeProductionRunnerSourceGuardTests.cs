@@ -47,6 +47,37 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "StardewAI.TransparentBridge",
             "Adapters",
             "FarmReadAdapter.CropsWorld.cs"));
+    private static readonly string FarmProjection = File.ReadAllText(
+        FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.cs"));
+
+    [Fact]
+    public void CropCatalogUsesNativeSellToStoreRevenueSemantics()
+    {
+        Assert.Contains(
+            "harvest_unit_base_price = harvestItem.BasePrice",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "harvest_unit_sale_price = harvestItem.SellToStorePrice",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "item.sellToStorePrice(-1L)",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "harvest_unit_sale_price = harvestItem.SalePrice",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Item.sellToStorePrice(-1)",
+            FarmProjection,
+            StringComparison.Ordinal);
+    }
 
     [Fact]
     public void RunnerUsesImmutableSaveAndExactMinimalModSet()

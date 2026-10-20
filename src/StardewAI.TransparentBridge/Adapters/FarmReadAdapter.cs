@@ -137,7 +137,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 is_farm = farm.IsFarm,
                 greenhouse_unlocked = farm.greenhouseUnlocked.Value
             }, "Game1.getFarm().Name/NameOrUniqueName/IsFarm/greenhouseUnlocked", tick, "vanilla_1_6_farm"),
-            ["crop_catalog"] = Field(ReadCropCatalog(), "Game1.cropData (Data\\Crops)", tick, "vanilla_1_6_crop_data"),
+            ["crop_catalog"] = Field(ReadCropCatalog(), "Game1.cropData (Data\\Crops); ItemRegistry.Create; Item.salePrice; Item.sellToStorePrice(-1)", tick, "vanilla_1_6_crop_data_and_native_sale_price"),
             ["shipping_bins"] = Field(ReadShippingBins(farm), "Game1.getFarm().buildings as ShippingBin", tick, "vanilla_1_6_farm"),
             ["grandpa_score"] = Field(farm.grandpaScore.Value, "Game1.getFarm().grandpaScore.Value", tick, "vanilla_1_6_farm"),
             ["buildings"] = Field(ReadBuildings(farm), "Game1.getFarm().buildings", tick, "vanilla_1_6_farm"),
