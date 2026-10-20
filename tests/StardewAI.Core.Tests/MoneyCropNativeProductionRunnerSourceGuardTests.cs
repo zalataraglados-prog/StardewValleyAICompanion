@@ -26,6 +26,15 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeMoneyCropProductionInput.ps1"));
+    private static readonly string EvidenceFinalization = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeMoneyCropEvidenceFinalization.ps1"));
+    private static readonly string EvidenceFinalizer = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1"));
     private static readonly string CropProjection = File.ReadAllText(
         FindRepositoryFile(
             "src",
@@ -269,6 +278,8 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
     [Fact]
     public void RunnerRetainsExactProofChainWithoutTrainingAuthorization()
     {
+        var proofChain = Runner + EvidenceFinalization;
+
         Assert.Contains("supporting_route_to_crop", Runner,
             StringComparison.Ordinal);
         Assert.Contains("supporting_route_to_sleep", Runner,
@@ -286,12 +297,59 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("build-money-revenue-crop-native-lifecycle-proof",
             Runner, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-crop-output-retention-proof",
-            Runner, StringComparison.Ordinal);
+            proofChain, StringComparison.Ordinal);
         Assert.Contains(
             "build-money-revenue-crop-production-proof-checkpoint",
-            Runner, StringComparison.Ordinal);
+            proofChain, StringComparison.Ordinal);
+        Assert.Contains("New-MoneyCropOutputRetentionProofs", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("Complete-MoneyCropProductionProofCheckpoint", Runner,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("formal_product_training_authorized = $true",
-            Runner, StringComparison.Ordinal);
+            proofChain, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExistingRunFinalizerReusesProofCodeWithoutLaunchingTheGame()
+    {
+        Assert.Contains("Read-MoneyCropNativeProductionInputManifest",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("Assert-RuntimeFileIdentity -Path $runPlanPath",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("Assert-MoneyCropNativeRunPlan",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("New-MoneyCropOutputRetentionProofs",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("Complete-MoneyCropProductionProofCheckpoint",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("money_crop_native_evidence_finalization_summary.v1",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.DoesNotContain("StardewModdingAPI", EvidenceFinalizer,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Start-Process", EvidenceFinalizer,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Invoke-RuntimeCropActionBatch",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            EvidenceFinalizer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SharedFinalizerKeepsSettlementFragmentsExplicitlyEmptyByDefault()
+    {
+        Assert.Contains(
+            "money_revenue_crop_production_proof_fragment_index.v13",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_crop_production_proof_checkpoint_request.v12",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains("[object[]] $TerminalSettlementProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains("[object[]] $SettlementCapacityProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains(
+            "[object[]] $SharedShippingSettlementProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
     }
 
     [Fact]

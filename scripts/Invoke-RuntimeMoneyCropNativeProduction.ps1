@@ -20,11 +20,8 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropNative.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropSeedAcquisition.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropProductionInput.ps1")
-
-function Get-SafeArtifactName {
-    param([Parameter(Mandatory)] [string] $Value)
-    return ($Value -replace '[^a-zA-Z0-9._-]', '_')
-}
+. (Join-Path $PSScriptRoot `
+    "lib\RuntimeMoneyCropEvidenceFinalization.ps1")
 
 function Copy-RuntimeSnapshotArtifact {
     param(
@@ -34,62 +31,6 @@ function Copy-RuntimeSnapshotArtifact {
     Write-Utf8Text -Path $DestinationPath -Value (
         Get-Content -LiteralPath $SourcePath -Raw)
     return [IO.Path]::GetFullPath($DestinationPath)
-}
-
-function Assert-RunPlan {
-    param([Parameter(Mandatory)] $Plan)
-    if ([string]$Plan.schema_version -ne
-            "money_revenue_crop_native_production_run_plan.v3" -or
-        [string]$Plan.status -ne "native_crop_production_run_ready" -or
-        -not [bool]$Plan.native_production_run_ready -or
-        [bool]$Plan.formal_product_training_authorized -or
-        [string]::IsNullOrWhiteSpace([string]$Plan.source_state_hash) -or
-        [int]$Plan.source_total_day -ne [int]$Plan.first_total_day -or
-        @($Plan.days).Count -ne [int]$Plan.day_count -or
-        @($Plan.covered_commitment_ids).Count -eq 0 -or
-        @($Plan.seed_acquisitions).Count -ne
-            [int]$Plan.seed_acquisition_count) {
-        throw "Money crop native-production run plan is not executable."
-    }
-    foreach ($acquisition in @($Plan.seed_acquisitions)) {
-        if ([int]$acquisition.acquisition_index -le 0 -or
-            [string]::IsNullOrWhiteSpace(
-                [string]$acquisition.commitment_id) -or
-            [string]::IsNullOrWhiteSpace(
-                [string]$acquisition.seed_qualified_item_id) -or
-            [string]::IsNullOrWhiteSpace(
-                [string]$acquisition.shop_id) -or
-            [int]$acquisition.max_unit_price -le 0 -or
-            [int]$acquisition.required_quantity -le 0 -or
-            [int]$acquisition.deadline_total_day -lt
-                [int]$Plan.source_total_day -or
-            [string]$acquisition.execution_policy -ne
-                "economy.buy_supplies_one_unit_fresh_snapshot_slices") {
-            throw "Money crop native-production seed acquisition is invalid."
-        }
-    }
-    $acquisitionIndexes = @($Plan.seed_acquisitions | ForEach-Object {
-        [int]$_.acquisition_index
-    })
-    $expectedAcquisitionIndexes = if ($acquisitionIndexes.Count -eq 0) {
-        @()
-    }
-    else {
-        @(1..$acquisitionIndexes.Count)
-    }
-    if ([string]::Join(",", $acquisitionIndexes) -ne
-        [string]::Join(",", $expectedAcquisitionIndexes) -or
-        @($Plan.seed_acquisitions.commitment_id | Select-Object -Unique).Count -ne
-            @($Plan.seed_acquisitions).Count) {
-        throw "Money crop native-production seed acquisitions are duplicated or out of order."
-    }
-    $days = @($Plan.days)
-    for ($index = 0; $index -lt $days.Count; $index++) {
-        if ([int]$days[$index].total_day -ne
-            [int]$Plan.first_total_day + $index) {
-            throw "Money crop native-production run plan is not contiguous."
-        }
-    }
 }
 
 $productionInput = Read-MoneyCropNativeProductionInputManifest `
@@ -173,7 +114,7 @@ Assert-RuntimeFileIdentity -Path $runPlanPath `
     -ExpectedSha256 ([string]$productionInputManifest.crop_native_run_plan_sha256) `
     -Label "Copied Money crop native run plan" | Out-Null
 $runPlan = Get-Content -LiteralPath $runPlanPath -Raw | ConvertFrom-Json
-Assert-RunPlan -Plan $runPlan
+Assert-MoneyCropNativeRunPlan -Plan $runPlan
 $productionPlanPath = $productionInput.ObligationPlanPath
 $productionPlan = $productionInput.ObligationPlan
 $runPlanRequest = $productionInput.RunPlanRequest
@@ -345,7 +286,7 @@ try {
     $skippedWaterBatchCount = 0
 
     foreach ($acquisition in @($runPlan.seed_acquisitions)) {
-        $safeCommitmentId = Get-SafeArtifactName `
+        $safeCommitmentId = Get-MoneyCropSafeArtifactName `
             -Value ([string]$acquisition.commitment_id)
         $result = Invoke-RuntimeCropSeedAcquisition `
             -Context $runtimeQueueContext -BackendUrl $backendUrl `
@@ -468,7 +409,8 @@ try {
                 -SourcePath $currentPath -DestinationPath $dailyPath))
         }
         foreach ($commitmentId in @($day.capture_layout_commitment_ids)) {
-            $safeId = Get-SafeArtifactName -Value ([string]$commitmentId)
+            $safeId = Get-MoneyCropSafeArtifactName `
+                -Value ([string]$commitmentId)
             $layoutPath = Join-Path $evidenceDirectory `
                 "layout-snapshot-$safeId.json"
             $layoutSnapshotByCommitment[[string]$commitmentId] =
@@ -558,7 +500,7 @@ try {
         if (-not $layoutSnapshotByCommitment.ContainsKey($commitmentId)) {
             throw "Missing planting boundary for commitment $commitmentId."
         }
-        $safeId = Get-SafeArtifactName -Value $commitmentId
+        $safeId = Get-MoneyCropSafeArtifactName -Value $commitmentId
         $layoutRequestPath = Join-Path $evidenceDirectory `
             "layout-request-$safeId.json"
         $layoutProofPath = Join-Path $evidenceDirectory `
@@ -587,7 +529,7 @@ try {
     $retentionProofPaths = [Collections.Generic.List[string]]::new()
     foreach ($commitment in @($productionPlan.commitments)) {
         $commitmentId = [string]$commitment.commitment_id
-        $safeId = Get-SafeArtifactName -Value $commitmentId
+        $safeId = Get-MoneyCropSafeArtifactName -Value $commitmentId
         $capacityRequestPath = Join-Path $evidenceDirectory `
             "capacity-request-$safeId.json"
         $capacityProofPath = Join-Path $evidenceDirectory `
@@ -629,58 +571,30 @@ try {
             "--output", $lifecycleProofPath)
         $lifecycleProofPaths.Add($lifecycleProofPath)
 
-        foreach ($wave in @($commitment.harvest_waves)) {
-            $retentionRequestPath = Join-Path $evidenceDirectory `
-                "retention-request-$safeId-$([int]$wave.wave_index).json"
-            $retentionProofPath = Join-Path $evidenceDirectory `
-                "retention-proof-$safeId-$([int]$wave.wave_index).json"
-            Write-JsonFile -Path $retentionRequestPath -Value ([ordered]@{
-                schema_version =
-                    "money_revenue_crop_output_retention_proof_request.v1"
-                crop_production_plan_path = $productionPlanPath
-                native_lifecycle_proof_path = $lifecycleProofPath
-                commitment_id = $commitmentId
-                wave_index = [int]$wave.wave_index
-                formal_product_training_authorized = $false
-            })
-            Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-                "build-money-revenue-crop-output-retention-proof",
-                "--request", $retentionRequestPath,
-                "--output", $retentionProofPath)
-            $retentionProofPaths.Add($retentionProofPath)
+        $commitmentRetentionPaths = @(New-MoneyCropOutputRetentionProofs `
+            -BootstrapDll $bootstrapDll `
+            -ProductionPlanPath $productionPlanPath `
+            -Commitment $commitment `
+            -LifecycleProofPath $lifecycleProofPath `
+            -EvidenceDirectory $evidenceDirectory)
+        foreach ($path in $commitmentRetentionPaths) {
+            $retentionProofPaths.Add([string]$path)
         }
     }
 
-    Write-JsonFile -Path $fragmentIndexPath -Value ([ordered]@{
-        schema_version =
-            "money_revenue_crop_production_proof_fragment_index.v13"
-        crop_production_plan_path = $productionPlanPath
-        crop_production_plan_sha256 =
-            (Get-RuntimeFileSha256 -Path $productionPlanPath)
-        planting_layout_proof_paths = @($layoutProofPaths)
-        seed_reservation_proof_paths = @()
-        seed_acquisition_proof_paths = @($seedAcquisitionProofPaths)
-        daily_capacity_proof_paths = @($capacityProofPaths)
-        native_lifecycle_proof_paths = @($lifecycleProofPaths)
-        output_retention_proof_paths = @($retentionProofPaths)
-        terminal_settlement_proof_paths = @()
-        settlement_capacity_proof_paths = @()
-        shared_shipping_settlement_proof_paths = @()
-        formal_product_training_authorized = $false
-    })
-    Write-JsonFile -Path $checkpointRequestPath -Value ([ordered]@{
-        schema_version =
-            "money_revenue_crop_production_proof_checkpoint_request.v12"
-        crop_production_plan_path = $productionPlanPath
-        fragment_index_path = $fragmentIndexPath
-        formal_product_training_authorized = $false
-    })
-    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-        "build-money-revenue-crop-production-proof-checkpoint",
-        "--request", $checkpointRequestPath,
-        "--output", $checkpointPath)
-    $checkpoint = Get-Content -LiteralPath $checkpointPath -Raw |
-        ConvertFrom-Json
+    $checkpointResult = Complete-MoneyCropProductionProofCheckpoint `
+        -BootstrapDll $bootstrapDll `
+        -ProductionPlanPath $productionPlanPath `
+        -EvidenceDirectory $evidenceDirectory `
+        -PlantingLayoutProofPaths $layoutProofPaths.ToArray() `
+        -SeedAcquisitionProofPaths $seedAcquisitionProofPaths.ToArray() `
+        -DailyCapacityProofPaths $capacityProofPaths.ToArray() `
+        -NativeLifecycleProofPaths $lifecycleProofPaths.ToArray() `
+        -OutputRetentionProofPaths $retentionProofPaths.ToArray()
+    $fragmentIndexPath = $checkpointResult.FragmentIndexPath
+    $checkpointRequestPath = $checkpointResult.CheckpointRequestPath
+    $checkpointPath = $checkpointResult.CheckpointPath
+    $checkpoint = $checkpointResult.Checkpoint
 
     $sourceSaveSha256After = Get-DirectoryContentHash -Path $sourceSave
     if ($sourceSaveSha256After -ne $sourceSaveSha256Before) {

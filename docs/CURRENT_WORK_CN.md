@@ -4,6 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
+## 当前切片 · 2026-10-20 Money v22 证据恢复与终端结算
+
+- 首份真实隔离作物运行 `money-crop-native-20261019-v22` 已完成 13 个连续游戏日的机械执行。共享生命周期证明现重放 `48` 条连续 transition，其中作物队列 `12`、作物/睡眠支持路线各 `12`、原生跨日 `12`；验证了 `5` 次播种、`50` 次浇水和 `5` 次收获。逐波留存证明确认 `(O)190` 实际库存从 `0` 增至 `5`，保守毛收入下界为 `1750g`。这些是真实运行 fragment，但尚未形成任一 Money production cell，`Money=0/18`、正式训练仍为 false。
+- 运行后证明构建不再强迫重跑游戏。`RuntimeMoneyCropEvidenceFinalization.ps1` 是原 runner 与离线 finalizer 的唯一共享实现；`Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1` 会重新验证 production input manifest、源存档树、执行过的 run plan 和全部既有 proof，再只补 output-retention、fragment index 与 checkpoint。它不启动游戏、不修改存档，也不另写第二套证明语义。
+- v22 的 checkpoint v12 当前为 `verified fragments=4 / pending requests=2`。已验证：planting layout、exact seed acquisition、aggregate daily capacity、shared native lifecycle；output retention 作为 terminal supporting proof 已重建。剩余精确 request 只有 `seed-reservation:<commitment>` 与 `output-retention-terminal:<wave>`。
+- 下一固定顺序：先把购种后的 fresh inventory boundary 通过现有 `ReservationPortfolioLedgerService.Commit` 形成可重放 seed reservation，不允许手写 ledger；再从 v22 已保存的第 18 天原生起点做短 continuation，复用既有收获、单件投箱和唯一原生睡眠，生成 settlement-capacity 与 terminal/shared shipping proof。checkpoint 两项清零后，才进入 Teacher comparison 与 criterion-local join。
+- PR #337 的两项明确 P1 review debt 已关闭：递归 source-boundary 归一化会移除所有层级的三个非语义 tick 字段并精确报告持久字段漂移；商店 endpoint 与 entrance 的未来营业窗口会在上游 defer 到两者较晚开放时间，不再被永久 block。当前 GitHub 没有新的明确修复 issue；ongoing/deferred/roadmap issue 只保留为约束，不扩张本轮审计。
+- 验证：PowerShell AST 通过，Core game-free `446/446`，GoalConditionedBootstrap Release `0 warning / 0 error`，v22 离线 finalizer 成功生成 checkpoint。下一步不重跑 13 日轨迹。
+
 ## 当前切片 · 2026-10-18 Money 原生作物生产收集器
 
 - `build-money-revenue-crop-production-teacher-decision` 已补上原先缺失的正式 Teacher 决策生成。输入是同一状态边界的 fresh full snapshot 与一组互不重叠的 bounded `farm_layout` snapshots；候选只来自透明桥实时作物目录、实时商店 stock/价格、现有种子、money、物料供给和可准备地块。确定性策略先按保守净收入最大、再按最早终结日、浇水动作数和种子 ID 排序，并输出完整候选评估、选中作物和紧凑布局。架豆、稻田、特殊种植规则和非 `Grab` 收获在各自拓扑/留存证明接入前明确失败关闭，不会被静默遗漏或假设可执行。
@@ -15,8 +24,8 @@
 - run plan 现在从权威 crop-production 源快照当天开始，而不是错误地跳到最早种植日；源日到种植日前的每一天只能有一个原生 sleep boundary。运行器在任何动作前输出 `money_crop_native_source_preflight.v1`，要求隔离存档首次 fresh full snapshot 的 `state_hash` 和 `total_days` 同时精确匹配计划源边界；不匹配时立即停止，不能用同日期的相似存档代替。
 - 播种日不再假设选中地块已经长期保持 HoeDirt。每个承诺的布局必须能被一个 `32×32` `farm_layout` 投影完整覆盖；运行器在布局与容量取证前调用既有 `money_revenue_crop_site_preparation_plan.v1`，一次只执行一个现有 `clear_obstacle`、`break_farm_resource_clump` 或 `till_soil` 候选，每次状态变化后重新抓取 fresh bounded snapshot 并重建计划，直到全部目标格被透明状态确认为 `already_prepared`。阻塞、候选缺失、日期/地点漂移或有界动作数耗尽都会停止运行，不会直接尝试播种。
 - 浇水批次在执行前只按透明 `farm.crops[].needs_watering` 过滤；雨天不生成冗余浇水，但若当天逐日容量证明要求边界快照，仍可通过资源中性的 crop-ingress 到达 Farm。跨地图 move 被现有 compiler 重写为 connector 时现在保留唯一 `candidate_id`，因此路线、作物动作和睡眠的 queue/receipt/after snapshot 都能维持可审计候选身份。
-- 当前收集器会物化 seed-acquisition v2、planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。Teacher v2 构建器和无手写物化入口已经完成，但尚未从 fresh production capture 产生首份正式制品，也尚未执行真实游戏采集或接入 terminal ShopMenu/shipping settlement，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
-- 下一固定切片：从精确源存档捕获 fresh full snapshot 与覆盖候选地块的 bounded Farm snapshots，物化首份不可变 Teacher v2 输入，再完成首次隐藏静音原生运行。成功后在同一连续轨迹上接入 terminal shipping/shop settlement、结算容量和 shared settlement proof，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套购买器、作物候选、规划器或执行器。
+- 当前收集器会物化 seed-acquisition v2、planting-layout、aggregate daily-capacity、shared lifecycle v3、逐波 output-retention、fragment index v13 和 partial checkpoint v12；源存档及隔离 Mod 目录都做前后哈希保护。上方 2026-10-20 切片记录了首份真实 v22 制品；terminal ShopMenu/shipping settlement 尚未闭合，因此 `Money production cells=0/18`、`formal_product_training_authorized=false` 不变。
+- 下一固定切片已由 v22 checkpoint 收敛为 seed reservation 与 terminal shipping settlement 两项，再进入 Teacher comparison 与 criterion-local join。不得手写生产 JSON，也不得另写第二套购买器、作物候选、规划器或执行器。
 
 ## 已收口 · 2026-10-18 Money 购种原生切片证明 v2
 
