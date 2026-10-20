@@ -254,6 +254,10 @@ public sealed partial class ModEntry : Mod
             {
                 ResetPostSleepDialogueInput(sleep);
             }
+            if (menu is not LevelUpMenu && sleep.PostSleepLevelUpMenu is not null)
+            {
+                ResetPostSleepLevelUpInput(sleep);
+            }
             if (menu is null)
             {
                 if (!NativeNewDayWorldStable(sleep))
@@ -280,6 +284,10 @@ public sealed partial class ModEntry : Mod
                 {
                     reasons.Add("post_sleep_dialogue_advanced_natively");
                 }
+                if (sleep.SawPostSleepLevelUp)
+                {
+                    reasons.Add("post_sleep_non_profession_level_up_closed_natively");
+                }
                 CompleteSleep(sleep, "verified", reasons.ToArray());
                 return;
             }
@@ -287,6 +295,12 @@ public sealed partial class ModEntry : Mod
             if (menu is ShippingMenu shippingMenu)
             {
                 TickShipSummaryClosePhase(sleep, shippingMenu);
+                return;
+            }
+
+            if (menu is LevelUpMenu levelUpMenu)
+            {
+                TickPostSleepLevelUpMenu(sleep, levelUpMenu);
                 return;
             }
 
@@ -359,6 +373,80 @@ public sealed partial class ModEntry : Mod
                 CompleteBlockedSleep(sleep, "post_sleep_menu_not_closed");
             }
         }
+    }
+
+    private void TickPostSleepLevelUpMenu(
+        ActiveSleep sleep,
+        LevelUpMenu levelUpMenu)
+    {
+        sleep.PostSleepWaitTicks++;
+        if (sleep.PostSleepWaitTicks > 1800)
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_level_up_menu_not_closed");
+            return;
+        }
+
+        if (Game1.Date.TotalDays != sleep.StartTotalDays + 1)
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_level_up_menu_wrong_day");
+            return;
+        }
+
+        if (levelUpMenu.isProfessionChooser)
+        {
+            CompleteBlockedSleep(
+                sleep,
+                "post_sleep_profession_choice_requires_planned_selection");
+            return;
+        }
+
+        if (!ReferenceEquals(sleep.PostSleepLevelUpMenu, levelUpMenu))
+        {
+            ResetPostSleepLevelUpInput(sleep);
+            sleep.PostSleepLevelUpMenu = levelUpMenu;
+        }
+
+        if (sleep.PostSleepLevelUpInputDispatched)
+        {
+            sleep.PostSleepLevelUpInputWaitTicks++;
+            if (sleep.PostSleepLevelUpInputWaitTicks > 120)
+            {
+                sleep.PostSleepLevelUpInputDispatched = false;
+                sleep.PostSleepLevelUpInputWaitTicks = 0;
+            }
+            return;
+        }
+
+        if (!levelUpMenu.CanReceiveInput())
+        {
+            return;
+        }
+
+        if (levelUpMenu.okButton is null)
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_level_up_ok_button_missing");
+            return;
+        }
+
+        sleep.PostSleepLevelUpInputAttempts++;
+        if (sleep.PostSleepLevelUpInputAttempts > 16)
+        {
+            CompleteBlockedSleep(sleep, "post_sleep_level_up_input_budget_exhausted");
+            return;
+        }
+
+        levelUpMenu.receiveGamePadButton(
+            Microsoft.Xna.Framework.Input.Buttons.B);
+        sleep.SawPostSleepLevelUp = true;
+        sleep.PostSleepLevelUpInputDispatched = true;
+        sleep.PostSleepLevelUpInputWaitTicks = 0;
+    }
+
+    private static void ResetPostSleepLevelUpInput(ActiveSleep sleep)
+    {
+        sleep.PostSleepLevelUpMenu = null;
+        sleep.PostSleepLevelUpInputDispatched = false;
+        sleep.PostSleepLevelUpInputWaitTicks = 0;
     }
 
     private bool TickSleepMoveToStand(ActiveSleep sleep)

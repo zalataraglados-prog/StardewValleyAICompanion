@@ -31,6 +31,12 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeMoneyCropEvidenceFinalization.ps1"));
+    private static readonly string TerminalSettlementRuntime =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "scripts",
+                "lib",
+                "RuntimeMoneyCropTerminalSettlement.ps1"));
     private static readonly string EvidenceFinalizer = File.ReadAllText(
         FindRepositoryFile(
             "scripts",
@@ -344,10 +350,29 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             proofChain, StringComparison.Ordinal);
         Assert.Contains("New-MoneyCropOutputRetentionProofs", Runner,
             StringComparison.Ordinal);
+        Assert.Contains("New-RuntimeCropSettlementCapacityProof", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeCropTerminalSettlement", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("executor.ship_inventory_item_to_bin",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("terminal-settlement-home-ingress",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("native_shipping_settlement",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-crop-terminal-settlement-proof",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.Contains("Complete-MoneyCropProductionProofCheckpoint", Runner,
             StringComparison.Ordinal);
+        Assert.Contains("-TerminalSettlementProofPaths", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("-SettlementCapacityProofPaths", Runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("api/v1/training/execute",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.DoesNotContain("formal_product_training_authorized = $true",
-            proofChain, StringComparison.Ordinal);
+            proofChain + TerminalSettlementRuntime, StringComparison.Ordinal);
     }
 
     [Fact]

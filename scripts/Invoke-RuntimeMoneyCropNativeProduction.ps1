@@ -22,16 +22,8 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeMoneyCropProductionInput.ps1")
 . (Join-Path $PSScriptRoot `
     "lib\RuntimeMoneyCropEvidenceFinalization.ps1")
-
-function Copy-RuntimeSnapshotArtifact {
-    param(
-        [Parameter(Mandatory)] [string] $SourcePath,
-        [Parameter(Mandatory)] [string] $DestinationPath
-    )
-    Write-Utf8Text -Path $DestinationPath -Value (
-        Get-Content -LiteralPath $SourcePath -Raw)
-    return [IO.Path]::GetFullPath($DestinationPath)
-}
+. (Join-Path $PSScriptRoot `
+    "lib\RuntimeMoneyCropTerminalSettlement.ps1")
 
 $productionInput = Read-MoneyCropNativeProductionInputManifest `
     -ProjectRoot $ProjectRoot -Path $ProductionInputManifestPath
@@ -594,6 +586,26 @@ try {
         }
     }
 
+    if ($capacityProofPaths.Count -ne 1 -or
+        $retentionProofPaths.Count -ne 1) {
+        throw "Money crop native production currently requires one aggregate capacity proof and one terminal wave."
+    }
+    $settlementCapacityProofPaths = @(
+        New-RuntimeCropSettlementCapacityProof `
+            -BootstrapDll $bootstrapDll `
+            -ProductionPlanPath $productionPlanPath `
+            -DailyCapacityProofPath $capacityProofPaths[0] `
+            -EvidenceDirectory $evidenceDirectory)
+    $terminal = Invoke-RuntimeCropTerminalSettlement `
+        -Context $runtimeQueueContext -BackendUrl $backendUrl `
+        -SnapshotProfile "full" -SourceSnapshotPath $currentPath `
+        -ProductionPlanPath $productionPlanPath `
+        -OutputRetentionProofPath $retentionProofPaths[0] `
+        -EvidenceDirectory $evidenceDirectory -BootstrapDll $bootstrapDll `
+        -RunId $RunId -TotalDay ([int]$runPlan.last_total_day)
+    $terminalSettlementProofPaths = @($terminal.TerminalProofPath)
+    $currentPath = $terminal.SourcePath
+
     $checkpointResult = Complete-MoneyCropProductionProofCheckpoint `
         -BootstrapDll $bootstrapDll `
         -ProductionPlanPath $productionPlanPath `
@@ -603,7 +615,9 @@ try {
         -SeedAcquisitionProofPaths $seedAcquisitionProofPaths.ToArray() `
         -DailyCapacityProofPaths $capacityProofPaths.ToArray() `
         -NativeLifecycleProofPaths $lifecycleProofPaths.ToArray() `
-        -OutputRetentionProofPaths $retentionProofPaths.ToArray()
+        -OutputRetentionProofPaths $retentionProofPaths.ToArray() `
+        -TerminalSettlementProofPaths $terminalSettlementProofPaths `
+        -SettlementCapacityProofPaths $settlementCapacityProofPaths
     $fragmentIndexPath = $checkpointResult.FragmentIndexPath
     $checkpointRequestPath = $checkpointResult.CheckpointRequestPath
     $checkpointPath = $checkpointResult.CheckpointPath
@@ -660,6 +674,13 @@ try {
             $wateringCanRefillReceipts.Count
         native_lifecycle_proof_count = $lifecycleProofPaths.Count
         output_retention_proof_count = $retentionProofPaths.Count
+        terminal_settlement_proof_count =
+            $terminalSettlementProofPaths.Count
+        settlement_capacity_proof_count =
+            $settlementCapacityProofPaths.Count
+        shipping_deposit_count = [int]$terminal.ShippingDepositCount
+        settlement_route_transition_count =
+            [int]$terminal.SettlementRouteTransitionCount
         checkpoint_path = $checkpointPath
         checkpoint_verified_fragment_count =
             [int]$checkpoint.verified_fragment_count

@@ -75,6 +75,49 @@ public sealed class RuntimeSleepSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void PostSleepLevelUpClosesOnlyNonProfessionMenusThroughNativeInput()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Sleep.cs"));
+        var start = source.IndexOf(
+            "private void TickPostSleepLevelUpMenu",
+            StringComparison.Ordinal);
+        var end = source.IndexOf(
+            "private bool TickSleepMoveToStand",
+            start,
+            StringComparison.Ordinal);
+        var slice = source[start..end];
+
+        Assert.Contains("levelUpMenu.isProfessionChooser", slice,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "post_sleep_profession_choice_requires_planned_selection",
+            slice,
+            StringComparison.Ordinal);
+        Assert.Contains("levelUpMenu.CanReceiveInput()", slice,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "levelUpMenu.receiveGamePadButton(",
+            slice,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Microsoft.Xna.Framework.Input.Buttons.B",
+            slice,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("receiveLeftClick", slice,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("okButtonClicked", slice,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("exitThisMenu", slice,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.activeClickableMenu = null", slice,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
