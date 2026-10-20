@@ -2,7 +2,7 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。下次先从 v10 最终隔离存档闭合一条 Money 连续生产段；该有界段验收后，按 CURRENT_STATUS_CN.md 第 6 节的 11 核心增量复杂度队列从小到大施工。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
 ## 当前切片 · 2026-10-21 Money 首条完整原生作物生产段
 
@@ -12,7 +12,7 @@
 - `money_revenue_crop_native_production_segment_receipt.v1` 已对 v10 做完整深回放。它从 run summary 逐层重建 Teacher 决策、commit receipt、obligation plan、native run plan、checkpoint 和 terminal recurrence，并重新哈希源存档、双 Mod、最终透明快照及最终隔离存档树。回执确认 Teacher 完整候选数 `50`、选中 `(O)474` 共 `5` 格、购种成本 `400g`、保守/实际毛收入 `875g`、净现金收入 `475g`；结果哈希为 `9cb93fde39c45b8e83cc5f541f64b3de7929985381a79620b3d2724acf04f6ec`。
 - `money_revenue_crop_production_teacher_comparison_receipt.v1` 已把上述原生结果接回完整 Teacher 分母：`50` 个候选中 `5` 个 admitted、`45` 个带明确原因 blocked，选中候选对另外 `4` 个 admitted 候选形成确定性偏好对。只有选中候选 `crop:474:SeedShop:5` 带原生观测，未执行候选不会伪装成 native outcome。comparison receipt 哈希为 `6ed3e5ab911d6b3c1ce6bca8f3edce7a81de2b6a5ab0293e283792a22874b392`。
 - 该结果关闭的是第一条完整生产段及其 segment-level outcome-backed Teacher comparison，不是 Money threshold cell：`875g` 尚未跨越最低 `50,000g` criterion，且 comparison receipt 明确保持 `criterion_local_join_ready=false`。因此 `Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false` 均保持不变。
-- 下一固定顺序：从该段最终隔离存档捕获下一次 Teacher 边界并重复，不从零随机探索。只有累计原生轨迹真实跨越权威 Money 阈值时，才接入既有 criterion-local `6 x 3` production join。
+- 下一固定顺序：从该段最终隔离存档捕获下一次 Teacher 边界并闭合一条连续生产段，不从零随机探索。该有界段验收后暂停 Money，转入 CURRENT_STATUS_CN.md 第 6 节的 11 核心增量复杂度队列；Money 最终返回时，只有累计原生轨迹真实跨越权威阈值，才接入既有 criterion-local `6 x 3` production join。
 - 未来 runner 摘要升级为 `money_crop_native_production_run_summary.v2`，会直接落盘最终快照路径/哈希、最终状态哈希和最终隔离存档树哈希；回执构建器仍兼容已成功的 v1/v10，但 v2 缺失任一最终身份都会失败关闭。当前验证基线：PowerShell AST 通过，Core game-free `455/455`，GoalConditionedBootstrap Release `0 warning / 0 error`。
 
 ## 历史记录 · 2026-10-20 Money v22 证据恢复与终端结算

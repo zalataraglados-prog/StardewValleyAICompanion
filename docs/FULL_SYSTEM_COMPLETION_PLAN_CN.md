@@ -2,9 +2,13 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。下次先完成 v10 之后的一条 Money 连续生产段；随后按 CURRENT_STATUS_CN.md 第 6 节的 11 核心增量复杂度队列从小到大推进。Money Exit Gate 保留为 Money 自身退出标准，不再强制阻塞前面的较小 root method。
 
-## 当前记录 · 2026-10-18 Money Exit Gate 施工顺序校正
+## 当前记录 · 2026-10-21 11 核心复杂度顺序
+
+当前 Money 有界连续段验收后，固定顺序为：`complete_community_center`（复核后冻结） -> `earn_pet_love` -> `obtain_skull_key` -> `complete_full_shipment` -> `complete_master_angler` -> `obtain_rusty_key` -> `raise_friendships` -> `complete_museum_collection` -> `raise_skill_levels` -> `marriage_and_house_upgrade` -> `earn_money`。排序按当前增量工程成本，而非玩法名称或 criterion 数量；完整依据、改序条件和 WIP 约束以 `CURRENT_STATUS_CN.md` 第 6 节为准。
+
+## 历史记录 · 2026-10-18 Money Exit Gate 施工顺序校正
 
 完全体路线图的全局方向不变，但当前实施顺序必须以 `CURRENT_STATUS_CN.md` 为唯一口径：
 

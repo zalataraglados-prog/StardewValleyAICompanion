@@ -2,7 +2,7 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。下次先闭合从 v10 最终隔离存档开始的一条 Money 连续生产段；随后按 CURRENT_STATUS_CN.md 第 6 节锁定的 11 核心增量复杂度顺序逐项施工。Money Exit Gate 标准不降低，但不再要求在其他较小 root method 之前一次做完。
 
 ## 当前准入状态 · 2026-10-21
 
@@ -20,7 +20,7 @@ Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricef
 
 `money_revenue_crop_production_teacher_comparison_receipt.v1` 已关闭 segment-level comparison：完整保留 `50` 候选、`5` admitted、`45` blocked 及 `4` 条选中候选偏好对，并只把真实成本/收入绑定到唯一执行候选。它不把 counterfactual 推演冒充原生结果，也明确保持 `criterion_local_join_ready=false`。
 
-**准入规则没有降低：**该生产段尚未跨越最低 `50,000g` Money criterion，也尚未通过 criterion-local join，因此不能增加 `0/18` 分子。下一门是从最终隔离存档继续下一次 Teacher 决策。只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合时，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
+**准入规则没有降低：**该生产段尚未跨越最低 `50,000g` Money criterion，也尚未通过 criterion-local join，因此不能增加 `0/18` 分子。下次先从最终隔离存档继续一次 Teacher 决策并闭合一条连续生产段，随后按 canonical 复杂度队列转入较小 root method。Money 最终返回时，仍只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 

@@ -136,10 +136,11 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 
 ```text
 同一时间只允许 1 个 primary root method / progression family 作为 coverage 施工单位。
-当前：Money / Revenue
+当前恢复点：从 v10 最终隔离存档闭合下一条 Money 连续生产段。
+该有界段验收后：按第 6 节的 11 核心复杂度顺序施工。
 ```
 
-在当前项达到 Exit Gate 前，不启动 Friendship、Skill、Museum/Rusty、Marriage、Master Angler 等下一项的新的 coverage expansion。
+当前恢复点只要求再闭合一条连续 Money 段，不要求在切换前把 Money `18/18` 全部做完。该段验收后必须停止继续深挖 Money，按第 6 节从当前增量复杂度最低的未完成 root method 开始。任何时刻仍只允许一个 primary item；不得以“复杂度排序”为由重新并行展开多个半成品。
 
 ### 允许的中断
 
@@ -149,7 +150,7 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 - 当前项被一个共享基础设施硬 blocker 阻塞；
 - 已测量确认的性能热点使当前项无法在可接受反馈时间内继续。
 
-中断处理完成后必须**回到同一 primary item**，不得顺势切换到另一个 Goal Method。
+中断处理完成后必须**回到同一 primary item**，直到它达到本轮显式退出条件；不得借中断顺势跳过第 6 节队列。
 
 ### 不算“并行开新项”的工作
 
@@ -163,7 +164,7 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 
 ## 5. Money Exit Gate
 
-Money 完成并允许切换下一项，至少要同时满足：
+Money 自身最终完成，至少要同时满足：
 
 1. 当前 Revenue denominator / transition / ledger / reservation continuity 的 P1 review debt 清零；
 2. 6×3 production work plan 的每个 cell 都具备：
@@ -177,18 +178,29 @@ Money 完成并允许切换下一项，至少要同时满足：
 7. 相关文档和本状态面板同步；
 8. 高成本全量验证仅在该项 Exit Gate 时统一跑一次，不在每个小 PR 重复执行。
 
-只有上述标准完成后，才选择下一个 primary item。
+上述标准仍定义 Money 自身的最终 Exit Gate，但自 2026-10-21 的复杂度排序指令生效后，不再作为开始其他较小 root method 的前置条件。Money 回到队列时仍必须完整满足本 Gate，不能因被排到后面而降低标准。
 
 ## 6. 下一项如何选择
 
-Money 完成后，不预先固定 Friendship / Skill / Museum 的顺序。先重新生成：
+### 2026-10-21 固定的 11 核心复杂度队列
 
-- Goal Method reconciliation；
-- blocker 分类；
-- 当前 evidence reuse 情况；
-- 预计新增工作量 / 共享基础设施收益。
+这里的复杂度是**从当前仓库状态继续完成所需的增量工程成本**，不是玩法表面难度、criterion 数量或代码行数。排序依据包括当前 authority 状态、可复用原生证据、剩余依赖展开、跨日长度、候选分母规模和不可逆结算风险。当前 Money 有界连续段完成后，按下表从小到大施工：
 
-然后只选**一个**下一施工单位。
+| 顺序 | root method | 当前增量判断 | 本轮处理方式 |
+| ---: | --- | --- | --- |
+| 1 | `complete_community_center` | 当前唯一 coverage-ready root，增量近零 | 复核 current authority 后冻结；无漂移则直接跳过 |
+| 2 | `earn_pet_love` | executable，已有历史三分区原生/Teacher 工件 | 优先重放并重绑，仅重采失效分区 |
+| 3 | `obtain_skull_key` | executable，已有历史三分区工件和矿井终局链 | 优先重放并重绑，仅修当前 authority 差异 |
+| 4 | `complete_full_shipment` | split-complete，且 runtime strata 当前权威为 `26/26` | 只补顶层 dependency/coverage 接线，不重写动作链 |
+| 5 | `complete_master_angler` | split-complete，已有钓鱼与蟹笼执行基础 | 补顶层依赖、日历窗口与正式接线 |
+| 6 | `obtain_rusty_key` | 复用博物馆前 60 件与奖励事件，分母小于全博物馆 | 先闭合阈值子集，再给全博物馆复用 |
+| 7 | `raise_friendships` | 社交执行器可复用，但有多人、多日程与礼物约束 | 建立共享社交 recurrence 后闭合分区 |
+| 8 | `complete_museum_collection` | 大型异构获取分母与捐赠 recurrence | 复用 Rusty Key 的 acquisition/reservation/donation 链 |
+| 9 | `raise_skill_levels` | 五套 XP 来源、资源与机会成本共同参与 | 先统一 XP deficit/Teacher 分母，再做长轨迹 |
+| 10 | `marriage_and_house_upgrade` | 组合社交、采购、房屋、日历、求婚和婚礼结算 | 复用 Friendship 与 Money 支持链后施工 |
+| 11 | `earn_money` | 六阈值 × 三分区，且要求连续经济 recurrence | 回到现有生产段链，完成 `18/18` 与 Money Exit Gate |
+
+此表是新的默认开发顺序。每项开工前仍要重新生成 Goal Method reconciliation、blocker 分类和 evidence reuse 报告，但它们用于确认“重绑、补证或重采”的范围，不得静默改变顺序。只有出现可验证的硬依赖倒置或 P0/P1 correctness blocker 时，才允许先编辑本表及其余当前态文档，再调整尚未开始的项；已开工项仍遵守 WIP=1。
 
 ## 7. 两组 `4/19` 的差集与恢复队列
 
@@ -205,8 +217,7 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 完全一致时直接重绑，只有失效分区才重采。Full Shipment/Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，
 不得另写第二套动作、候选或执行器。
 
-这些修复不打断当前 Money `WIP=1`。Money Exit Gate 完成后，重新生成 reconciliation，并把上述四项作为高复用候选优先
-评估；仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
+这些既有成果解释了新队列为何把 Community Center、Pet Love、Skull Key、Full Shipment 和 Master Angler 放在前部。当前恢复点的一条 Money 连续段验收后，重新生成 reconciliation，并严格按第 6 节逐项消费；仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
 
 ## 8. 最近的深度优化状态
 
